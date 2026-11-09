@@ -127,7 +127,7 @@ SAFE_CODES = {'android_feed_unavailable', 'delivery_outcome_unknown', 'conversat
 # The services a source error names (SourceError categories: salesflare:HTTP_401, trello_http, google_meet_invalid_page)
 SERVICES = set('''gmail calendar outlook slack salesflare hubspot pipedrive intercom stripe zoom trello shortcut github google
 meet linkedin x rss whatsapp android docs journal maton telegram openclaw gog wacli microsoft gbrain codex claude openai
-anthropic crm imap smtp graph fleet notion jira linear asana airtable teams'''.split())
+anthropic crm imap smtp graph fleet notion jira linear asana airtable teams salesforce'''.split())
 # Words those codes are made of besides (each part of a snake_case or dotted code must be a known word or service)
 SAFE_WORDS |= set('''invalid page cursor broker credential unreachable signin expired unreadable http missing timezone window feed
 advancing opportunities join disabled method ratelimited browser busy reader signed story member move history workspace

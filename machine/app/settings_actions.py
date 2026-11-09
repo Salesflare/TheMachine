@@ -58,7 +58,7 @@ class SettingsActionsApp:
                'security_setting': 'security_action', 'own_address': 'own_address_action',
                'own_domain': 'own_domain_action', 'set_people_lookup': 'set_people_lookup_action',
                'set_agents': 'set_agents_action', 'tip_done': 'tip_done_action', 'set_locale': 'set_locale_action',
-               'connector_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
+               'connector_sync': 'connector_sync_action', 'connector_contact_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
                'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action',
                # LEARNING_ACTIONS less missed_work_label (MissedWorkApp)
                **dict.fromkeys(('learnings_share', 'learnings_withdraw', 'learnings_later', 'learnings_never',
@@ -132,7 +132,7 @@ class SettingsActionsApp:
     def connector_sync_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
             raise ValueError('Only the owner stops or restarts a sync, on the dashboard (Connections)')
-        return self.connector_sync(args)
+        return self.connector_contact_sync(args) if name == 'connector_contact_sync' else self.connector_sync(args)
 
     def set_work_hours_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

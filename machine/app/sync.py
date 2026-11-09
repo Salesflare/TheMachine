@@ -613,6 +613,50 @@ class SyncApp:
             self.sync_soon(account['id'])
         return {'ok': True, 'do': do, 'salesflare': salesflare_progress(account, state)}
 
+    def connector_contact_sync(self, args):
+        """Update contact details on a Salesforce card (connectors/salesforce.py, crm_sync.py): preview reads what it
+        would change now and writes nothing; on needs a preview from the last half hour (the owner saw it first); off
+        stops it. Kept in the connection's checkpoint, like Stop."""
+        import crm_sync
+        account = next((a for a in self.config['accounts'] if a['id'] == args.get('account')), None)
+        if not account or account.get('service') != 'salesforce':
+            raise ValueError('Only a Salesforce connection updates contact details')
+        if account.get('shared'):
+            raise ValueError('A connection your Fleet shares only reads')
+        do = args.get('do')
+        if do not in ('preview', 'on', 'off'):
+            raise ValueError('Choose preview, on or off')
+        plugin = load_connector('salesforce')
+        if do == 'preview':
+            try:
+                shown, _ = plugin.preview(self.store, self.config, account, CONNECTOR_HELPERS)
+            except SourceError as error:
+                raise ValueError(f'Salesforce did not answer ({error.category}). Try again in a minute') from None
+        lock = self.sync_lock(account['id'])
+        if not lock.acquire(timeout=20):
+            raise ValueError('It is reading Salesforce. Try again in a minute')
+        try:
+            with self.store.connect() as db:
+                row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
+                state = json.loads(row['state'] or '{}') if row else {}
+                if do == 'preview':
+                    state['contact_preview_at'] = now()
+                elif do == 'on':
+                    if not crm_sync.preview_fresh(state, now()):
+                        raise ValueError('Look at what would change first')
+                    state.update(contact_sync=now())
+                    state.pop('contact_sync_at', None)  # the first round goes now
+                else:
+                    state.pop('contact_sync', None)
+                db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?) ON CONFLICT(account_id) DO UPDATE SET state=excluded.state',
+                           (account['id'], json.dumps(state)))
+        finally:
+            lock.release()
+        LOG.info('connector_contact_sync account=%s do=%s', account['id'], do)
+        if do == 'on':
+            self.sync_soon(account['id'])
+        return {'ok': True, 'do': do, **({'changes': shown} if do == 'preview' else {}), 'crm': plugin.card(account, state)}
+
     def sync_retrying(self, account, source=None):
         """One sync of the account; when the service answers 429 or a transient 5xx, one more try shortly after (its
         Retry-After when that is short, else QUICK_RETRY_SECONDS). A second failure goes to the caller. Not for Slack's

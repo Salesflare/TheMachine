@@ -45,7 +45,7 @@ from machine.cards import (
 from machine.chat import chat_result_files
 from machine.config import WORKSPACE
 from machine.faults import FAULT_WHERE
-from machine.sources.connectors import docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
+from machine.sources.connectors import crm_sync_health, docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
@@ -810,6 +810,8 @@ class ViewsStore(ConversationStore):
                                       'first_import': slack_first_import_progress(state)}
                 if account.get('service') == 'salesflare':  # its round of accounts, what it set aside, Stop and Restart
                     channel_health = {'salesflare': salesflare_progress(account, state)}
+                if account.get('service') == 'salesforce':  # Update contact details: on or off, and what it updated last
+                    channel_health = {'crm_sync': crm_sync_health(account, state)}
                 if account.get('service') == 'intercom':  # who a reply goes out as, after the owner's Send; none: it only reads
                     channel_health = {'replies_as': (account.get('reply_admin_name') or 'you') if next_actions.intercom_replies_on(account) else ''}
                 if account.get('service') == 'teams':  # what it can't read yet and why: admin, license or blocked (connectors/teams.py)

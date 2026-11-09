@@ -426,7 +426,7 @@ class FleetApp:
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
         provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
-        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet'):
+        if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet', 'salesforce'):
             return
         import slack_api
 

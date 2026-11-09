@@ -591,9 +591,9 @@ def _touches(kind, m, owner, wrote_to):
         # A card the owner made about someone (New card, Who): that person, lightly, as one the card is about.
         return [(str(p['id']), p.get('name'), 0.05, 'about') for p in (m.get('about') or ())[:5]
                 if isinstance(p, dict) and p.get('kind') == 'person' and str(p.get('id') or '').strip()]
-    if kind in ('salesflare.email', 'salesflare.meeting'):
+    if kind in ('salesflare.email', 'salesflare.meeting', 'salesforce.opportunity', 'salesforce.task', 'salesforce.activity'):  # a Salesforce meeting the owner hosted is met too
         contacts = [c for c in m.get('contacts') or () if isinstance(c, dict) and '@' in str(c.get('email') or '')][:5]
-        met = kind == 'salesflare.meeting' and str(m.get('host') or '').lower() in owner.emails
+        met = (kind == 'salesflare.meeting' or bool(m.get('meeting'))) and str(m.get('host') or '').lower() in owner.emails
         return [('email:' + str(c['email']).lower(), c.get('name'), (WEIGHTS['met'] / math.sqrt(len(contacts))) if met else 0.05,
                  'met' if met else 'seen') for c in contacts if not owner.mine(str(c['email']).lower()) and not bulk(str(c['email']).lower())]
     return []
@@ -1287,10 +1287,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         crm = m.get('crm_account') if isinstance(m.get('crm_account'), dict) else None
         if crm and crm.get('domain') and crm.get('name'):
             crm_names[str(crm['domain']).lower()] = str(crm['name'])
-        if kind in ('salesflare.email', 'salesflare.meeting'):
+        if kind in ('salesflare.email', 'salesflare.meeting', 'salesforce.opportunity', 'salesforce.task', 'salesforce.activity'):
             for c in m.get('contacts') or ():
                 if isinstance(c, dict) and '@' in str(c.get('email') or ''):
-                    appears['email:' + str(c['email']).lower()].add('a Salesflare contact' + (' at ' + str(crm['name']) if crm and crm.get('name') else ''))
+                    appears['email:' + str(c['email']).lower()].add(f"a {kind.split('.')[0].title()} contact" + (' at ' + str(crm['name']) if crm and crm.get('name') else ''))
         elif kind in ('stripe.event', 'intercom.conversation'):
             for _, addr in addresses(relayed(kind, m).get('from'))[:1]:
                 if addr.rsplit('@', 1)[1] in owner.domains or relay(addr):
