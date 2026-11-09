@@ -556,7 +556,10 @@ class ReviewApp:
             LOG.error('review prompt too long chars=%s limit=%s', len(request['message']), PROMPT_LIMIT)
             receipt = {'status': 'error', 'error': 'prompt_too_long', 'error_phase': 'runtime'}
         else:
+            if request['action'] == 'start':  # what this start offers; a retry resends the first start's, with its own list
+                request['_offered'] = offered_edits
             receipt = runner(request)
+            offered_edits = request.get('_offered', offered_edits)
         result = receipt.get('status', 'unavailable')
         with self.store.connect() as db:
             if result == 'admitted':

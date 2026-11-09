@@ -1,4 +1,5 @@
 """Durable execution custody, not an approval layer. Uses the existing SQLite connection."""
+import datetime
 import json
 import hashlib
 import re
@@ -14,6 +15,8 @@ def initialize(db):
       CREATE TABLE IF NOT EXISTS preparation_calls(
         job_id TEXT NOT NULL,call_id TEXT NOT NULL,tool TEXT NOT NULL,params TEXT NOT NULL,
         result TEXT,error TEXT,started_at TEXT NOT NULL,finished_at TEXT,PRIMARY KEY(job_id,call_id));
+      CREATE TABLE IF NOT EXISTS gateway_starts(
+        job_id TEXT PRIMARY KEY,request TEXT NOT NULL,created_at TEXT NOT NULL);
     ''')
     columns = {r['name'] for r in db.execute('PRAGMA table_info(preparations)')}
     if 'session_job_id' not in columns:
@@ -25,6 +28,30 @@ def initialize(db):
     db.execute('''INSERT OR IGNORE INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at)
                   SELECT job_id,suggestion_id,session_job_id,status,coalesce(started_at,created_at)
                   FROM preparations WHERE status IN ('starting','running')''')
+
+
+START_KEEP_DAYS = 2
+
+
+def same_start(db, request, stamp):
+    """The start to send for this run id. Its id is the Gateway's idempotency key, and an earlier start under it may have
+    reached the Gateway: OpenClaw (2026.11.2) refuses the same key with other content for good ("Pending input
+    idempotency key conflicts with the accepted input"), and a retry builds its message again (newer agent work, files),
+    so every retry under one id sends exactly the first one it built. Kept until the run is admitted or over."""
+    db.execute('DELETE FROM gateway_starts WHERE created_at<?',
+               ((datetime.datetime.fromisoformat(stamp) - datetime.timedelta(days=START_KEEP_DAYS)).isoformat(),))
+    row = db.execute('SELECT request FROM gateway_starts WHERE job_id=?', (request['job_id'],)).fetchone()
+    if row:
+        kept = json.loads(row[0])
+        if kept.get('kind') == request.get('kind') and kept.get('session_job_id') == request.get('session_job_id'):
+            return kept
+    db.execute('INSERT OR REPLACE INTO gateway_starts(job_id,request,created_at) VALUES(?,?,?)',
+               (request['job_id'], json.dumps(request, ensure_ascii=False), stamp))
+    return request
+
+
+def start_settled(db, job_id):
+    db.execute('DELETE FROM gateway_starts WHERE job_id=?', (job_id,))
 
 
 def tool_intent(db, args, stamp):
