@@ -817,7 +817,7 @@ class GraphActionsApp:
     def forget_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
             raise ValueError('Only the owner can remove a fact, on the dashboard')
-        return self.store.forget_fact(args['id'])
+        return self.store.forget_fact(args['id'], bool(args.get('undo')))
 
     def edit_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

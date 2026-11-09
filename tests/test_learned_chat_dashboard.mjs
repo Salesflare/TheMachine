@@ -77,10 +77,10 @@ try{
    if(shots)await log.locator('.chat-fixed.gone').screenshot({path:`${shots}/chat-fixed-${width}-undone.png`});
   }
   if(scheme==='dark'){
-   // Undo removes it; the line then says so, with no buttons.
+   // Undo removes it (and brings back a wording it replaced); the line then says so, with no buttons.
    await line.locator('[data-learned-undo="31"]').click();
    await page.locator('#toast',{hasText:'Removed from what I’ve learned.'}).waitFor({state:'attached'});
-   assert.deepEqual(posts.filter(p=>p.action==='forget_fact').at(-1),{action:'forget_fact',args:{id:31}});
+   assert.deepEqual(posts.filter(p=>p.action==='forget_fact').at(-1),{action:'forget_fact',args:{id:31,undo:true}});
    await log.locator('.chat-learned.gone').waitFor();
    assert.equal(await log.locator('.chat-learned.gone .learned-acts').innerText(),'Removed from what I’ve learned');
    assert.equal(await log.locator('.chat-learned.gone button').count(),0);

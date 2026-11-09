@@ -293,6 +293,12 @@ remove them.
   also sets aside those not used in 21 days while there are more than 70. Learning lists them under **Set aside** with
   **Bring back**. One the owner edited or brought back is never set aside.
 - A review gets the facts used or said most lately first, up to its limit, so a long list leaves out the stalest.
+- A fact or rule about no one saved again is checked against the current ones by their content words. When a current
+  one already holds every word, it counts as said again. When the new one holds every word of a current one and more,
+  it takes its place, and the old one stays behind it (**Undo merge**; the to-do chat's **Undo** brings it back). A
+  difference in a number, a capitalized word or a negation keeps them apart. One the owner edited is never replaced.
+  The condense pass marks facts whose stored vectors are close in meaning (cosine 0.88 or more) as likely the same, to
+  check first.
 - Now and then a review condenses the list. Notes that say the same thing or contradict each other become one (the
   newer wins), a note about how you write on one channel moves into that channel's block, and the originals stay
   behind it.
