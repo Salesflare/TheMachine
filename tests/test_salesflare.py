@@ -127,7 +127,9 @@ class SalesflareConnector(unittest.TestCase):
         a.sync_salesflare(self.store, {}, ACCOUNT, crm)  # first account committed
         pending = self.store.checkpoint('work-crm')['window']['pending']
         with patch.object(crm, 'get', side_effect=a.SourceError('network:TimeoutError:salesflare_read')):
-            with self.assertRaises(a.SourceError):
+            self.assertTrue(a.sync_salesflare(self.store, {}, ACCOUNT, crm)['more'])  # one hiccup: back of the round
+            self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], pending)
+            with self.assertRaises(a.SourceError):  # two in a row: Salesflare is down, the sync fails and backs off
                 a.sync_salesflare(self.store, {}, ACCOUNT, crm)
         self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], pending)
 
@@ -246,26 +248,59 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual(self.store.purge_email_subject_exclusions({}), {'work-gmail': 1})
         self.assertEqual([r['source_id'] for r in self.store.events(['work-gmail'])], ['g2'])
 
+    def run_through_hiccups(self, crm, account):
+        for _ in range(12):
+            try:
+                if not a.sync_salesflare(self.store, {}, account, crm)['more']:
+                    return
+            except a.SourceError:
+                pass
+        self.fail('sync did not finish')
+
     def test_account_that_keeps_timing_out_is_set_aside_after_three_tries(self):
         crm = FakeCRM()
         original = crm.get
         def slow_acme(path, params=None):
             if path == '/accounts/10/feed':
+                crm.calls.append((path, dict(params or {})))
                 raise a.SourceError('network:TimeoutError:salesflare_read')
             return original(path, params)
         crm.get = slow_acme
-        for _ in range(2):
-            with self.assertRaises(a.SourceError):
-                a.sync_salesflare(self.store, {}, {**ACCOUNT, 'accounts_per_batch': 5}, crm)
-        self.run_to_completion(crm)  # third failure: set aside, Globex still imported
+        self.run_through_hiccups(crm, {**ACCOUNT, 'accounts_per_batch': 5})  # third failure: set aside, Globex still imported
         state = self.store.checkpoint('work-crm')
         self.assertEqual(state['skipped_accounts'], [10])
         self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'meeting:7'})
+        self.assertEqual(sum(p == '/accounts/10/feed' for p, _ in crm.calls), 3)
 
+    def test_a_gateway_timeout_moves_the_account_to_the_back_and_the_batch_goes_on(self):
+        # Salesflare's feed now and then hangs until its gateway answers 504 after two minutes, and the same read a
+        # minute later answers at once (report s_f0d5d0200384ed92). The accounts before it stay read, the ones after
+        # it are read in the same sync, and the slow one is asked again only at the back of the round.
+        crm = FakeCRM()
+        crm.accounts[40] = {'id': 40, 'name': 'Initech', 'domain': 'initech.com', 'last_email_date': iso(1),
+                            'last_meeting_date': None, 'customers': []}
+        original = crm.get
+        hangs = {'/accounts/10/feed': 1}
+        def gateway(path, params=None):
+            if hangs.get(path):
+                hangs[path] -= 1
+                crm.calls.append((path, dict(params or {})))
+                raise a.SourceError('salesflare', 504, route='/accounts/{id}/feed')
+            return original(path, params)
+        crm.get = gateway
+        batch = {**ACCOUNT, 'accounts_per_batch': 2}
+        with self.assertLogs(a.LOG, 'WARNING') as logged:
+            self.assertTrue(a.sync_salesflare(self.store, {}, batch, crm)['more'])  # no failed sync, no quick refire
+        self.assertIn('salesflare slow account error=salesflare:HTTP_504 route=/accounts/{id}/feed try=1 in_a_row=1', logged.output[0])
+        window = self.store.checkpoint('work-crm')['window']
+        self.assertEqual(window['pending'], [20, 10])  # Initech (40) read, Acme (10) at the back
+        self.assertEqual(sum(p == '/accounts/10/feed' for p, _ in crm.calls), 1)
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1', 'meeting:7'})
+        self.assertEqual((state['skipped_accounts'], state['last_round']['read'], state['last_round']['set_aside']), ([], 3, 0))
 
-    def test_a_gateway_timeout_keeps_the_accounts_read_before_it_and_sets_a_repeat_offender_aside(self):
-        # Salesflare's gateway answers 504 after about two minutes on a slow account read (report s_f0d5d0200384ed92):
-        # the accounts already read in the batch stay read, and an account that keeps timing out is set aside.
+    def test_a_repeat_offender_is_set_aside_and_two_in_a_row_back_off(self):
         crm = FakeCRM()
         original = crm.get
         def gateway(path, params=None):
@@ -274,12 +309,13 @@ class SalesflareConnector(unittest.TestCase):
             return original(path, params)
         crm.get = gateway
         batch = {**ACCOUNT, 'accounts_per_batch': 5}
-        for _ in range(2):
-            with self.assertRaises(a.SourceError):
-                a.sync_salesflare(self.store, {}, batch, crm)
-            self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], [20])  # Acme (10) is kept
+        self.assertTrue(a.sync_salesflare(self.store, {}, batch, crm)['more'])  # Acme read, Globex to the back
+        self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], [20])
+        with self.assertRaises(a.SourceError):  # Globex again, with no answer in between: back off
+            a.sync_salesflare(self.store, {}, batch, crm)
+        self.assertEqual(self.store.checkpoint('work-crm')['window']['pending'], [20])
         self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1'})
-        self.run_to_completion(crm)  # third time: set aside, the round ends
+        self.run_through_hiccups(crm, batch)  # third time: set aside, the round ends
         state = self.store.checkpoint('work-crm')
         self.assertEqual((state['skipped_accounts'], state['last_round']['read'], state['last_round']['set_aside']), ([20], 1, 1))
         view = a.salesflare_progress(ACCOUNT, state)
@@ -349,9 +385,31 @@ class SalesflareConnector(unittest.TestCase):
                 patch('machine.sources.salesflare.urllib.request.urlopen', side_effect=error), \
                 self.assertLogs(sf.LOG, 'WARNING') as logged, self.assertRaises(sf.SourceError) as raised:
             source.get('/accounts/7/feed', {'types': 'email'})
-        self.assertEqual(raised.exception.status, 504)
+        self.assertEqual((raised.exception.status, raised.exception.route, str(raised.exception)),
+                         (504, '/accounts/{id}/feed', 'salesflare:HTTP_504'))
         self.assertRegex(logged.output[0], r'salesflare answered route=/accounts/\{id\}/feed status=504 after=\d+s$')
         self.assertNotIn('7', logged.output[0].split('route=')[1].split()[0])
+        # The sync's own failure line names the route too, not only salesflare:HTTP_504
+        from machine.app.sync import error_route
+        self.assertEqual(error_route(raised.exception), ' route=/accounts/{id}/feed')
+        self.assertEqual(error_route(a.SourceError('salesflare', 504)), '')
+
+    def test_a_feed_read_waits_a_minute_not_three(self):
+        # A feed answers in about a second; a hang lasts until the gateway's 504 at 120 s. Account lists keep 180 s.
+        import urllib.parse
+        from machine.sources import salesflare as sf
+        source = sf.Salesflare({}, {**ACCOUNT, 'credential': 'salesflare', 'credential_variable': 'K'})
+        waits = []
+        def urlopen(request, timeout):
+            waits.append((sf.route_of(urllib.parse.urlsplit(request.full_url).path), timeout))
+            raise TimeoutError()
+        with patch('machine.sources.salesflare.credential', return_value='K=secret'), \
+                patch('machine.sources.salesflare.urllib.request.urlopen', side_effect=urlopen):
+            for path in ('/accounts/7/feed', '/accounts', '/accounts/7'):
+                with self.assertRaises(sf.SourceError) as raised:
+                    source.get(path, {'limit': 1})
+                self.assertEqual(raised.exception.route, sf.route_of(path))
+        self.assertEqual(waits, [('/accounts/{id}/feed', 60), ('/accounts', 180), ('/accounts/{id}', 180)])
 
 
 class SalesflareStopAndRestart(unittest.TestCase):
