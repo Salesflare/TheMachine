@@ -306,7 +306,8 @@ class ContactSyncTests(OrgCase):
         self.turn_on()
         self.patch_status = 400  # a validation rule in the org
         self.sync()
-        self.assertEqual(salesforce.card(ACCOUNT, self.store.checkpoint(ACCOUNT['id']))['contact_failed'], 1)
+        card = salesforce.card(ACCOUNT, self.store.checkpoint(ACCOUNT['id']))
+        self.assertEqual((card['contact_failed'], [r['why'] for r in card['contact_refused']]), (1, ['A rule in Salesforce refused it']))
         self.patch_status = 204
         state = self.store.checkpoint(ACCOUNT['id'])
         state.pop('contact_sync_at')

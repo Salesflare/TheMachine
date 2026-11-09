@@ -128,6 +128,7 @@
  "A restricted key with Read on Events, Customers and Account.": "Een beperkte sleutel met Read op Events, Customers en Account.",
  "A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.": "Een review-to-do verstuurt nooit iets. Je review gaat terug naar wie erom vroeg, en die verstuurt zelf.",
  "A role is a few words (up to 60 characters): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"": "Een rol is een paar woorden (tot 60 tekens): \"accountant\", \"investeerder\", \"klant bij Globex\", \"boekhoudkantoor\"",
+ "A rule in Salesforce refused it": "Een regel in Salesforce weigerde het",
  "A rule is about an address or a domain": "Een regel gaat over een adres of een domein",
  "A rule is {}": "Een regel is {}",
  "A shared inbox, like support@. No to-dos from it. Its mail still fills in the Graph.": "Een gedeelde inbox, zoals support@. Geen to-do's ervan. De mail vult de Graph nog steeds aan.",
@@ -4906,6 +4907,7 @@
  "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.": "De cloud stuurt verzoeken voor de officiële app door, maar bewaart niets. Je privéadres is versleuteld tot op deze Machine.",
  "The code refreshes by itself.": "De code vernieuwt zichzelf.",
  "The complete diff for this proposal is not available": "De volledige diff van dit voorstel is niet beschikbaar",
+ "The contact is gone from Salesforce": "Het contact staat niet meer in Salesforce",
  "The control plane does not take this yet. Try again later.": "Het control plane neemt dit nog niet aan. Probeer het later opnieuw.",
  "The control plane gave no start link. Try again.": "Het control plane gaf geen startlink. Probeer het opnieuw.",
  "The dashboard said: “{}”": "Het dashboard zei: “{}”",
@@ -6032,6 +6034,7 @@
   "one": "Je update bewaarde {} eigen bestand",
   "other": "Je update bewaarde {} eigen bestanden"
  },
+ "Your user may not edit this contact": "Je gebruiker mag dit contact niet bewerken",
  "Your username: {}. Friends add you by it.": "Je gebruikersnaam: {}. Vrienden voegen je daarmee toe.",
  "Your usual hours": "Je gebruikelijke uren",
  "Your week": "Je week",
@@ -6388,6 +6391,7 @@
  "unknown statement": "onbekende verklaring",
  "unmasked client frame": "ongemaskeerd clientframe",
  "until {}": "tot {}",
+ "updates": "updates",
  "usually daily": "meestal dagelijks",
  "usually every {} days": {
   "one": "meestal elke {} dag",
@@ -6515,9 +6519,9 @@
  "{} commented on “{}”": "{} reageerde op “{}”",
  "{} commented on “{}”: “{}”": "{} reageerde op “{}”: “{}”",
  "{} connected": "{} gekoppeld",
- "{} contacts Salesforce turned down": {
-  "one": "{} contact geweigerd door Salesforce",
-  "other": "{} contacten geweigerd door Salesforce"
+ "{} contacts not updated: Salesforce refused the change": {
+  "one": "{} contact niet bijgewerkt: Salesforce weigerde de wijziging",
+  "other": "{} contacten niet bijgewerkt: Salesforce weigerde de wijziging"
  },
  "{} could not be decided.": "{} kon niet beslist worden.",
  "{} crashed": "{} is gecrasht",

@@ -403,19 +403,23 @@ def plan_contacts(store, source, state, now):
     return items, field
 
 
+# Why Salesforce refused one contact's update, by its answer: shown with that contact on the card
+REFUSED = {400: 'A rule in Salesforce refused it', 403: 'Your user may not edit this contact', 404: 'The contact is gone from Salesforce'}
+
+
 def apply_contacts(store, source, account, state, now, helpers):
     """Update contact details: the planned changes, each a PATCH of one Contact and a dated line on the person."""
     import crm_sync
     items, field = plan_contacts(store, source, state, now)
     names = {**WRITABLE, **({'linkedin_url': field} if field else {})}
-    done, failed = [], 0
+    done, failed = [], []
     source.account = {**account, 'linkedin_field': field}
     for item in items:
         try:
             source.update(item['contact_id'], {names[c['field']]: c['new'] for c in item['changes']})
         except helpers.SourceError as error:
             if error.status in (400, 403, 404):  # a validation rule, a locked or deleted contact: this one stays as it is
-                failed += 1
+                failed.append({'name': item['name'], 'why': REFUSED[error.status]})
                 continue
             raise
         item['done_at'] = now.isoformat()
@@ -427,9 +431,10 @@ def apply_contacts(store, source, account, state, now, helpers):
     state['contact_updates'] = (crm_sync.shown(done) + list(state.get('contact_updates') or []))[:50]
     state['contact_sync_at'] = now.isoformat()
     if failed:
-        state['contact_failed'] = failed
+        state['contact_failed'], state['contact_refused'] = len(failed), failed[:10]
     else:
         state.pop('contact_failed', None)
+        state.pop('contact_refused', None)
     return len(done)
 
 
@@ -531,7 +536,7 @@ def preview(store, config, account, helpers):
 def card(account, state):
     """The card's sync details: whether it updates contact details, and the last few it updated."""
     return {'contact_sync': bool(state.get('contact_sync')) and not account.get('shared'), 'contact_updates': list(state.get('contact_updates') or [])[:5],
-            'contact_failed': int(state.get('contact_failed') or 0), 'linkedin_field': bool(state.get('linkedin_field')),
+            'contact_failed': int(state.get('contact_failed') or 0), 'contact_refused': list(state.get('contact_refused') or [])[:10], 'linkedin_field': bool(state.get('linkedin_field')),
             'can_write': not account.get('shared'), 'stopped': state.get('stopped') or None}
 
 

@@ -128,6 +128,7 @@
  "A restricted key with Read on Events, Customers and Account.": "Una chiave limitata con Read su Events, Customers e Account.",
  "A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.": "Un’attività di revisione non invia mai nulla. La tua revisione torna a chi l’ha chiesta, che invia di persona.",
  "A role is a few words (up to 60 characters): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"": "Un ruolo è qualche parola (fino a 60 caratteri): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"",
+ "A rule in Salesforce refused it": "Una regola di Salesforce l’ha rifiutato",
  "A rule is about an address or a domain": "Una regola riguarda un indirizzo o un dominio",
  "A rule is {}": "Una regola è {}",
  "A shared inbox, like support@. No to-dos from it. Its mail still fills in the Graph.": "Una casella condivisa, come support@. Nessuna attività da qui. La sua posta continua ad alimentare il Graph.",
@@ -4906,6 +4907,7 @@
  "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.": "Il cloud instrada le richieste dell’app ufficiale ma non conserva nulla. Il tuo indirizzo privato è cifrato fino a questa Machine.",
  "The code refreshes by itself.": "Il codice si aggiorna da solo.",
  "The complete diff for this proposal is not available": "Il diff completo di questa proposta non è disponibile",
+ "The contact is gone from Salesforce": "Il contatto non è più in Salesforce",
  "The control plane does not take this yet. Try again later.": "Il control plane non lo accetta ancora. Riprova più tardi.",
  "The control plane gave no start link. Try again.": "Il control plane non ha fornito alcun link di avvio. Riprova.",
  "The dashboard said: “{}”": "La dashboard ha detto: “{}”",
@@ -6032,6 +6034,7 @@
   "one": "Il tuo aggiornamento ha conservato {} dei tuoi file",
   "other": "Il tuo aggiornamento ha conservato {} dei tuoi file"
  },
+ "Your user may not edit this contact": "Il tuo utente non può modificare questo contatto",
  "Your username: {}. Friends add you by it.": "Il tuo nome utente: {}. Gli amici ti aggiungono con questo.",
  "Your usual hours": "I tuoi orari abituali",
  "Your week": "La tua settimana",
@@ -6388,6 +6391,7 @@
  "unknown statement": "dichiarazione sconosciuta",
  "unmasked client frame": "frame del client non mascherato",
  "until {}": "fino a {}",
+ "updates": "aggiornamenti",
  "usually daily": "di solito ogni giorno",
  "usually every {} days": {
   "one": "di solito ogni {} giorno",
@@ -6515,9 +6519,9 @@
  "{} commented on “{}”": "{} ha commentato “{}”",
  "{} commented on “{}”: “{}”": "{} ha commentato “{}”: “{}”",
  "{} connected": "{} connessi",
- "{} contacts Salesforce turned down": {
-  "one": "{} contatto rifiutato da Salesforce",
-  "other": "{} contatti rifiutati da Salesforce"
+ "{} contacts not updated: Salesforce refused the change": {
+  "one": "{} contatto non aggiornato: Salesforce ha rifiutato la modifica",
+  "other": "{} contatti non aggiornati: Salesforce ha rifiutato la modifica"
  },
  "{} could not be decided.": "Non è stato possibile decidere {}.",
  "{} crashed": "{} si è bloccato",

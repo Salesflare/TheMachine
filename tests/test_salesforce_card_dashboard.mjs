@@ -22,7 +22,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.i
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='connector_contact_sync'){const d=call.args.do;
-   if(d==='on')sf.crm_sync={...sf.crm_sync,contact_sync:true,contact_updates:preview.map(p=>({...p,at:ago(0.1)})),contact_failed:1};
+   if(d==='on')sf.crm_sync={...sf.crm_sync,contact_sync:true,contact_updates:preview.map(p=>({...p,at:ago(0.1)})),contact_failed:1,contact_refused:[{name:'Robin Placeholder',why:'A rule in Salesforce refused it'}]};
    if(d==='off')sf.crm_sync={...sf.crm_sync,contact_sync:false};
    res.end(JSON.stringify({ok:true,do:d,...(d==='preview'?{changes:preview}:{}),crm:sf.crm_sync}));return}
   res.end('{}');return}
@@ -61,7 +61,11 @@ try{
   await card.locator('[data-crm-sync="off"]').waitFor();
   assert.equal(calls.at(-1).args.do,'on');
   assert.equal(await card.locator('.crm-sync-line').innerText(),'Updates contact details in Salesforce.');
-  assert.match(await card.locator('.crm-sync').innerText(),/1 contact Salesforce turned down/);
+  const refused=card.locator('.crm-sync-refused');
+  assert.equal(await refused.locator('summary').innerText(),'1 contact not updated: Salesforce refused the change');
+  await refused.locator('summary').click();
+  assert.match(await refused.innerText(),/Robin Placeholder[\s\S]*A rule in Salesforce refused it/);
+  assert.match(await card.innerText(),/30\s*updates/);
   await inside();await shot('on');
   // Turn off
   await card.locator('[data-crm-sync="off"]').click();

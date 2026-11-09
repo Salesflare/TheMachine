@@ -128,6 +128,7 @@
  "A restricted key with Read on Events, Customers and Account.": "A restricted key with Read on Events, Customers and Account.",
  "A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.": "A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.",
  "A role is a few words (up to 60 characters): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"": "A role is a few words (up to 60 characters): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"",
+ "A rule in Salesforce refused it": "A rule in Salesforce refused it",
  "A rule is about an address or a domain": "A rule is about an address or a domain",
  "A rule is {}": "A rule is {}",
  "A shared inbox, like support@. No to-dos from it. Its mail still fills in the Graph.": "A shared inbox, like support@. No to-dos from it. Its mail still fills in the Graph.",
@@ -4906,6 +4907,7 @@
  "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.": "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.",
  "The code refreshes by itself.": "The code refreshes by itself.",
  "The complete diff for this proposal is not available": "The complete diff for this proposal is not available",
+ "The contact is gone from Salesforce": "The contact is gone from Salesforce",
  "The control plane does not take this yet. Try again later.": "The control plane does not take this yet. Try again later.",
  "The control plane gave no start link. Try again.": "The control plane gave no start link. Try again.",
  "The dashboard said: “{}”": "The dashboard said: “{}”",
@@ -6032,6 +6034,7 @@
   "one": "Your update kept {} of your own files",
   "other": "Your update kept {} of your own files"
  },
+ "Your user may not edit this contact": "Your user may not edit this contact",
  "Your username: {}. Friends add you by it.": "Your username: {}. Friends add you by it.",
  "Your usual hours": "Your usual hours",
  "Your week": "Your week",
@@ -6388,6 +6391,7 @@
  "unknown statement": "unknown statement",
  "unmasked client frame": "unmasked client frame",
  "until {}": "until {}",
+ "updates": "updates",
  "usually daily": "usually daily",
  "usually every {} days": {
   "one": "usually every {} day",
@@ -6515,9 +6519,9 @@
  "{} commented on “{}”": "{} commented on “{}”",
  "{} commented on “{}”: “{}”": "{} commented on “{}”: “{}”",
  "{} connected": "{} connected",
- "{} contacts Salesforce turned down": {
-  "one": "{} contact Salesforce turned down",
-  "other": "{} contacts Salesforce turned down"
+ "{} contacts not updated: Salesforce refused the change": {
+  "one": "{} contact not updated: Salesforce refused the change",
+  "other": "{} contacts not updated: Salesforce refused the change"
  },
  "{} could not be decided.": "{} could not be decided.",
  "{} crashed": "{} crashed",

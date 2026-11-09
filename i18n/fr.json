@@ -128,6 +128,7 @@
  "A restricted key with Read on Events, Customers and Account.": "Une clé restreinte avec Read sur Events, Customers et Account.",
  "A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.": "Une tâche de relecture n’envoie jamais rien. Votre relecture revient à la personne qui l’a demandée, qui envoie elle-même.",
  "A role is a few words (up to 60 characters): \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"": "Un rôle tient en quelques mots (60 caractères au plus) : \"accountant\", \"investor\", \"customer at Globex\", \"accounting firm\"",
+ "A rule in Salesforce refused it": "Une règle de Salesforce l’a refusé",
  "A rule is about an address or a domain": "Une règle porte sur une adresse ou un domaine",
  "A rule is {}": "Une règle vaut {}",
  "A shared inbox, like support@. No to-dos from it. Its mail still fills in the Graph.": "Une boîte partagée, comme support@. Aucune tâche n’en vient. Ses e-mails alimentent toujours le Graph.",
@@ -4906,6 +4907,7 @@
  "The cloud routes requests for the official app but stores nothing. Your private address is encrypted all the way to this Machine.": "Le cloud achemine les requêtes de l’app officielle mais ne conserve rien. Votre adresse privée est chiffrée jusqu’à cette Machine.",
  "The code refreshes by itself.": "Le code se renouvelle tout seul.",
  "The complete diff for this proposal is not available": "Le diff complet de cette proposition n’est pas disponible",
+ "The contact is gone from Salesforce": "Le contact n’est plus dans Salesforce",
  "The control plane does not take this yet. Try again later.": "Le plan de contrôle n’accepte pas encore ceci. Réessayez plus tard.",
  "The control plane gave no start link. Try again.": "Le plan de contrôle n’a donné aucun lien de démarrage. Réessayez.",
  "The dashboard said: “{}”": "Le tableau de bord a affiché : « {} »",
@@ -6032,6 +6034,7 @@
   "one": "Votre mise à jour a gardé {} de vos fichiers",
   "other": "Votre mise à jour a gardé {} de vos fichiers"
  },
+ "Your user may not edit this contact": "Votre utilisateur ne peut pas modifier ce contact",
  "Your username: {}. Friends add you by it.": "Votre nom d’utilisateur : {}. Vos amis vous ajoutent avec.",
  "Your usual hours": "Vos horaires habituels",
  "Your week": "Votre semaine",
@@ -6388,6 +6391,7 @@
  "unknown statement": "déclaration inconnue",
  "unmasked client frame": "trame client non masquée",
  "until {}": "jusqu’au {}",
+ "updates": "mises à jour",
  "usually daily": "en général chaque jour",
  "usually every {} days": {
   "one": "en général à {} jour d’intervalle",
@@ -6515,9 +6519,9 @@
  "{} commented on “{}”": "{} a commenté « {} »",
  "{} commented on “{}”: “{}”": "{} a commenté « {} » : « {} »",
  "{} connected": "{} connectés",
- "{} contacts Salesforce turned down": {
-  "one": "{} contact refusé par Salesforce",
-  "other": "{} contacts refusés par Salesforce"
+ "{} contacts not updated: Salesforce refused the change": {
+  "one": "{} contact non mis à jour : Salesforce a refusé la modification",
+  "other": "{} contacts non mis à jour : Salesforce a refusé la modification"
  },
  "{} could not be decided.": "{} n’a pas pu être tranché.",
  "{} crashed": "{} a planté",
