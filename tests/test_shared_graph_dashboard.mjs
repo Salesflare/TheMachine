@@ -102,7 +102,7 @@ try{
   assert.equal(await page.locator('#fleet-start-'+FL).count(),0);
   // the admin's Team Graph OKs wait under To-dos too, not only in the Fleet tab: one answer counts for the team
   await page.locator('#suggestions #fleet-share-p1').waitFor();
-  assert.match(await page.locator('#fleet-share-p1').innerText(),/Kim Lee joined Acme\. Share the team's Graph with them\?\s+kim@acme\.example\s+Only admins decide this, once for the whole team\.[\s\S]*Share\s+Not now$/);
+  assert.match(await page.locator('#fleet-share-p1').innerText(),/Kim Lee joined Acme\. Share the team's Graph with them\?\s+Needs you\s+Fleet[\s\S]*?kim@acme\.example\s+Only admins decide this, once for the whole team\.[\s\S]*Share\s+Not now$/);
   assert.match(await page.locator('#fleet-share-p2').innerText(),/Tom Ray asks to stop sharing their Work with the team\.[\s\S]*Approve\s+Not now$/);
   if(width===1440)await page.locator('#fleet-share-p1').screenshot({path:(process.env.SHOTS||'/tmp')+'/graph-ask-suggestion-1440.png'});
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=people');
