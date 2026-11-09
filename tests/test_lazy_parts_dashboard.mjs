@@ -9,9 +9,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // (machine/web/serving.py dashboard_files): the page loads and is drawn whole without them (the load event doesn't wait
 // for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
-// draw. Settings opened while its panels are on their way opens once they're in, drawn. A link straight to Calendar
-// opens it once its part is in. When they can't load, the rest is drawn all the same, and Calendar, the Graph,
-// Settings and the game say so.
+// draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
+// they're in, drawn. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
+// all the same, and Calendar, the Graph, Settings, the Fleet and the game say so.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -42,7 +42,8 @@ try{
   // Held back: the page loads (the load event doesn't wait for them) and is drawn whole, then asks for each of them
   let release;hold=new Promise(r=>release=r);asked.length=0;
   await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
-  for(const until=Date.now()+20000;asked.length<Object.keys(files).length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
+  // (held, a browser asks for at most 6 at a time from one host: the rest are asked for as those come in)
+  for(const until=Date.now()+20000;asked.length<Math.min(6,Object.keys(files).length);){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
   assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen),'undefinedundefinedundefined');
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
@@ -52,11 +53,13 @@ try{
   await p.evaluate(()=>showTab('calendar'));assert.equal(await p.locator('#calendar-view').innerHTML(),'');
   await p.evaluate(()=>showTab('feedback'));assert.equal(await p.locator('#learn-tabs').innerHTML(),'');
   await p.evaluate(()=>showTab('people'));assert.equal(await p.locator('#people-view').innerHTML(),'');
+  // The Fleet's data in, its tab's views wait for their part
+  await p.evaluate(()=>{fleetData={on:false,fleets:[]};fleetShown=fleetView(false,true)});assert.equal(await p.locator('#fleet-view').innerHTML(),'');
   await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
   release();hold=null;
   // #help-panel is made by Help's part: until it's in, there's none (the check waits, it doesn't throw). Settings has a
   // block of its own below: opened here too, whichever part came last would decide what shows.
-  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!=='');
+  await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet'));
   assert.deepEqual(await graphRules(),[true,'grid']);
   await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
   // In: Help opens, and the fourth poke's game plays
@@ -117,6 +120,7 @@ try{
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();
   await p.evaluate(()=>{document.querySelector('#toast').className='';document.querySelector('#open-settings').click()});
   await p.locator('#toast.show.error',{hasText:'Offline.'}).waitFor();assert.equal(await p.locator('#settings').isHidden(),true);
+  await p.evaluate(()=>{fleetData={on:false,fleets:[]};return fleetView(false,true)});assert.equal(await p.locator('#fleet-view .error').innerText(),'Offline.');
   await context.close();refuse=false}
  assert.deepEqual(errors,[]);
  console.log('ok lazy parts');
