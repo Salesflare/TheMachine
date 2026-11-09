@@ -12,10 +12,11 @@ import fleet
 import i18n
 from machine.cards import card, controls, delivery_time
 from machine.config import LOG
-from machine.delivery.push import hold_mail, push_notify, push_reach, push_send, result_lead
+from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, result_lead, shown_as_reminder
 from machine.delivery.telegram import DeliveryNotSent, telegram
 from machine.text import encoded
 import notify
+import still_needed
 from timeutil import in_hours, local_tz, now
 
 
@@ -93,6 +94,31 @@ def reconcile_uncertain(store, config, grace_minutes=30):
                                (now(), row['suggestion_id']))
 
 
+# An owner step this close before a ping (written instructions, then their receipt) means that ping answered them: seen
+PING_ANSWERED = dt.timedelta(minutes=5)
+
+
+def unseen_ping(db, row):
+    """A newer result for a to-do whose last notification the owner hasn't seen yet: no dashboard touched since it went
+    (notify.last_seen), and no step of theirs on it since (or just before it, so the ping answered that step). Such a
+    result updates the to-do in place, silently; it notifies again only once they saw the earlier one. A snooze
+    coming back always notifies: that is what it was for."""
+    if not row.get('message_id') or not row.get('last_notified_at') or not (
+            row.get('status') == 'prepared' or row.get('preparation_status') == 'blocked'):
+        return False
+    try:
+        pinged = dt.datetime.fromisoformat(row['last_notified_at'])
+    except (TypeError, ValueError):
+        return False
+    if pinged.tzinfo is None:
+        pinged = pinged.replace(tzinfo=dt.timezone.utc)
+    if notify.last_seen() >= pinged.timestamp():
+        return False
+    touches = still_needed.NOT_TOUCHES
+    return not db.execute(f"SELECT 1 FROM decisions WHERE suggestion_id=? AND created_at>=? AND (choice='snooze' OR source NOT IN ({','.join('?' * len(touches))})) LIMIT 1",
+                          (row['id'], (pinged - PING_ANSWERED).isoformat(), *touches)).fetchone()
+
+
 def deliver(store, config):
     # Owner approved grouped delivery. Bounded batches avoid a notification flood.
     for _ in range(max(1, min(10, int(config.get('delivery_batch_size', 5))))):
@@ -147,10 +173,16 @@ def deliver_one(store, config, edit_cards=True):
                    ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=3)).isoformat(),))
         retry_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
-        rows = db.execute("SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1",(retry_cutoff,now())).fetchall()
+        rows = db.execute("SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1",(retry_cutoff,now())).fetchall()
         if not rows:
             return
         row = dict(rows[0])
+        row['_first'] = not row['message_id']  # never delivered before: its notification is no reminder (push.first_result)
+        if row['reminder'] and unseen_ping(db, row):
+            # A rerun's newer result while the earlier notification is still unseen: the card is edited, no new ping
+            db.execute("UPDATE deliveries SET status='sent',reminder=0,error=NULL,needs_edit=1,updated_at=? WHERE suggestion_id=?", (now(), row['id']))
+            LOG.info('delivery suggestion=%s quiet=unseen', row['id'])
+            return True
         # Enforce at delivery too: the last work day's queued work may catch up on a day off.
         # Owner-selected snoozes/preparations are reminders and keep their timing.
         work=row.get('area')!='personal' and any(a['id'] in json.loads(row['account_ids']) and a.get('boundary','').startswith('work:') for a in config.get('accounts',[]))
@@ -231,9 +263,9 @@ def deliver_one(store, config, edit_cards=True):
         except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
         try:
             work = any(a['id'] in json.loads(row.get('account_ids') or '[]') and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
-            ready = row['_result_notice'] and row['status'] == 'prepared'
+            ready = (row['_result_notice'] or first_result(row)) and row['status'] == 'prepared'
             lead = row.get('_lead', 'Ready')
-            title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if row.get('reminder') and not row['_result_notice'] else row['title']
+            title = (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if ready else i18n.t('Reminder: {}', row['title']) if shown_as_reminder(row) and not row['_result_notice'] else row['title']
             hold_mail(store, config, notify.kind_of(row), title, 'suggestion:' + row['id'], work)
         except Exception as failure:LOG.warning('mail hold error=%s', type(failure).__name__)
     if row['_result_notice']:

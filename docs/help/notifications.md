@@ -24,12 +24,12 @@ It checks whether you're actually using the dashboard, not just whether it's ope
 
 - Using it (in front, and you clicked, typed or scrolled in the last 10 minutes): nothing buzzes. Telegram arrives silently.
 - Away (in the background, closed, or idle for 10 minutes): a push goes a minute after you left, unless you came back and saw it.
-- Still unseen 15 minutes later: one email with everything that waits for you, at most one an hour. What you already handled is left out. A day spent at the dashboard may bring no email at all.
+- Still unseen 15 minutes later: one email with everything that waits for you, at most one an hour. What you already handled, or what the morning digest just listed, is left out. A day spent at the dashboard may bring no email at all.
 - A teammate hands you a to-do and your Machine has no phone or Telegram to reach you: one email with its title and a link, 15 minutes later if still unseen. **Email** for **Results and questions** turns it off.
 - Outside your work hours: nothing. The morning digest has it.
 - A new work to-do on a day off waits for your next work day's digest time. The to-do shows when it will reach you, like Notification Mon 2 Nov · 08:30.
 
-Only what needs you notifies, not progress or edits. A burst buzzes once. The app's icon shows how many to-dos need you.
+Only what needs you notifies, not progress or edits. A newer result on a to-do you haven't seen yet updates it without a new notification. A burst buzzes once. The app's icon shows how many to-dos need you.
 
 ## Buttons on notifications
 

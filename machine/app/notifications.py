@@ -133,7 +133,11 @@ class NotificationsApp:
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        return notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
+        digest = notify.compose(meetings, due, overnight, root, show, when, None, total, top, ready, promised, pace)
+        if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
+            digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
+                                      {p['covers'] for p in promised if p.get('covers')})
+        return digest
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
@@ -175,6 +179,10 @@ class NotificationsApp:
                 LOG.info('digest email skipped reason=not_paired')
             if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
                 went.append('email')
+                with self.store.connect() as db:  # the hourly waiting-for-you email doesn't list them again
+                    dropped = notify.drop_covered(db, ['suggestion:' + i for i in digest.get('covers', ())], notify.wall())
+                if dropped:
+                    LOG.info('notify email dropped digest=%d', dropped)
         with self.store.connect() as db:
             notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
         LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
