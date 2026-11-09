@@ -1,3 +1,4 @@
+/*@lazy*/
 /* Fleet › Manage (dashboard/fleet-manage.js): a row per person or invite, its buttons to the right, under it on a phone */
 .manage-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:0 0 14px}.manage-head h2{margin:0;font-size:1.15rem}.manage-head+.fleet-acct{margin:calc(-1*var(--sp-2)) 0 var(--sp-4)}
 .manage-fleet{margin:0 0 28px}
@@ -25,6 +26,8 @@
 .manage-confirm p{margin:0 0 10px}
 .manage-confirm form{display:flex;flex-wrap:wrap;gap:8px;margin:0}
 .manage-go{margin:10px 0 0}
+/*@eager*/
 #fleet-view .manage-invite-link,#fleet-view button.link[data-manage-open]{min-height:0;box-shadow:none;background:none;border:0;padding:0;font:inherit;color:var(--text);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+/*@lazy*/
 @media (max-width:640px){.manage-invite-form{grid-template-columns:minmax(0,1fr)}.manage-fleet .fp-row>.actions{justify-content:flex-start}}
 .manage-fleet .actions>button,.manage-fleet .actions>select{flex:0 0 auto;width:auto;min-width:0}

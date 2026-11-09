@@ -1,5 +1,3 @@
-// The Fleet: what teammates' Machines said, the questions waiting for you, your rules per teammate, and the log of both directions.
-const fleetPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const FLEET_RULE={ask:'Ask me first',always:'Always answer',never:'Never'};
 // One Fleet rule, the same for every kind: Ask me first | Always | Never, how much they hear, Only about… and an example of
 // what that teammate would get, from made-up sample data. A new kind gets all of it; FLEET_KIND_UI gives it its own words
@@ -75,18 +73,9 @@ const SHARE_NOTE={intercom:'Use a dedicated Intercom app with read permissions o
  stripe:'Teammates read failed payments, disputes and cancellations. Nobody changes anything in Stripe. Untick who shouldn’t.'};
 // An admin without Stripe here: connect it once for the team (hosted: the account page signs it in; else Connections, + Add)
 const fleetConnectStripe=blocked=>html`<article class="share-connect"><p><strong>Stripe for the team</strong></p>${blocked?html`<p class="muted">Your Stripe connection here can’t be shared: its key opens more than Stripe.</p>`:''}<p class="muted">Connect it once. Teammates’ Machines read it, read only.</p><div class="actions">${state.manage_url?html`<a class="btn-link" href="${safeHref(state.manage_url+"#source-stripe")}" target="_blank" rel="noopener">Connect Stripe ↗</a>`:html`<button type="button" data-fleet-connect="stripe">Connect Stripe</button>`}</div></article>`;
-// Share: the OK is signed at once; sealing the team's Graph for them runs after (shared_connectors.graph_soon). One line while it does.
-const graphSendingLine=n=>html`<p class="graph-sending" role="status"><i class="spin" aria-hidden="true"></i>Sharing with ${n}…</p>`;
-const graphSent={};  // fleet: how many Share with all shared with, to say so once the line is gone
-function graphSendingWatch(){const list=(fleetData?.shared?.graph)||[];let busy=false;
- for(const g of list){if(g.sending)busy=true;else if(graphSent[g.fleet]){toast(`Shared with ${graphSent[g.fleet]}.`);delete graphSent[g.fleet]}}
- clearTimeout(graphSendingWatch.t);graphSendingWatch.t=busy?setTimeout(()=>fleetView(true).then(graphSendingWatch),4000):0}
 function fleetBrief(f,work){const b=(f.briefs||{})[work.id];if(!b)return'';const items=b.items||[],n=b.shown||5;
  const line=(i,k)=>html`<li class="fleet-brief-item${k>=n?html` fleet-brief-more`:''}"${k>=n?html` hidden`:''}><span class="fleet-brief-line"><strong title="${i.title}">${i.title}</strong><small class="muted">${i.why}</small></span><span class="fleet-brief-do">${i.open?html`<a class="fleet-brief-open" href="${safeURL(i.open)}" target="_blank" rel="noopener">Open</a>`:''}${i.ask?html`<button type="button" class="ghost" data-brief-ask="${i.ask}" data-fleet="${work.id}">Ask</button>`:''}<button type="button" class="quiet" data-brief-hide="${i.key}" data-fleet="${work.id}">Not needed</button></span></li>`;
  return html`<article class="fleet-brief" id="fleet-brief-${work.id}"><p><strong>What the Fleet saw</strong> <small class="muted">${fleetDay(b.built_at)}</small></p>${items.length?html`<ul class="fleet-brief-list">${items.map(line)}</ul>${items.length>n?html`<button type="button" class="quiet fleet-brief-show" data-brief-more>Show ${items.length-n} more</button>`:''}`:html`<p class="muted">Nothing that needs the team.</p>`}</article>`}
-// Teammates' brief asks (fleet.py QUIET): never a to-do. One quiet box in their Fleet's pane, the latest ask per teammate
-// (older ones expire), with the same choices as before. Nothing is shared until the owner picks one; unanswered, they expire.
-const FLEET_QUIET=['brief'];
 // What an answer would share, as counts (an ask from before counts came along: its preview line)
 const briefCounts=d=>{const c=d?.counts;if(!c)return d?.preview?[d.preview.replace(/ \(as hashes\)/,'')]:[];
  return [['Companies: {}',c.touched],['Went quiet: {}',c.quiet],['Unanswered emails: {}',c.unanswered],['Meetings with outside people: {}',c.meetings]].map(([k,n])=>k.replace('{}',n))};
