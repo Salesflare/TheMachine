@@ -64,11 +64,15 @@ Je Machine merkt ook werk op dat je op een ritme doet en stelt het voor als rout
 - dezelfde vraag, drie keer of meer op rij, zoals "vat de open supporttickets samen" elke maandag;
 - een mail die je op een ritme verstuurt, zoals een weekrapport aan je team;
 - nieuwsbrieven en updatemails die elke week terugkomen;
-- een druk Slack-kanaal waar anderen elke week in schrijven.
+- een druk Slack-kanaal waar anderen elke week in schrijven;
+- mails die je één voor één doorstuurt naar dezelfde persoon, zoals mails van school en de club naar je partner: een wekelijks overzicht voor hen bespaart het doorsturen;
+- dezelfde vraag die je op een ritme beantwoordt, zoals een maandelijkse goedkeuring voor dezelfde persoon.
 
-Elk voorstel zegt wat hij zag, zoals "4 keer op rij gevraagd", en liep één keer, zodat je een echt resultaat ziet. Denk aan een teamoverzicht, een briefing voor een wekelijkse call, een support- of dev-overzicht, een stand van je cijfers of een samenvatting van de nieuwsbrieven die je krijgt.
+Elk voorstel zegt wat hij zag, zoals "4 keer op rij gevraagd" of "6 mails doorgestuurd naar Sam in 3 weken", en liep één keer, zodat je een echt resultaat ziet. Denk aan een teamoverzicht, een briefing voor een wekelijkse call, een support- of dev-overzicht, een stand van je cijfers of een samenvatting van de nieuwsbrieven die je krijgt.
 
-Hij stelt alleen voor wat bij jou past en duidelijk helpt: een nieuwsoverzicht alleen over je eigen nieuwsbrieven, nooit een algemeen. Past er niets, dan is er geen voorstel. Hij kijkt hoogstens één keer per dag, en alles blijft op je Machine. Een to-do die je op een ritme afvinkt, komt in plaats daarvan als aanbod voor een terugkerende to-do.
+Hij stelt alleen voor wat bij jou past en duidelijk helpt: een nieuwsoverzicht alleen over je eigen nieuwsbrieven, nooit een algemeen. Past er niets, dan is er geen voorstel.
+
+Hij kijkt hoogstens één keer per dag en brengt hoogstens één nieuw voorstel per week, zonder melding. **Nee, bedankt** brengt dat voorstel nooit terug. Doorgestuurde mails en antwoorden blijven bij het account waarvan ze vertrokken, zodat Werk en Privé niet mengen. Alles blijft op je Machine. Een to-do die je op een ritme afvinkt, komt in plaats daarvan als aanbod voor een terugkerende to-do.
 
 ## Routines en terugkerende to-do's
 
