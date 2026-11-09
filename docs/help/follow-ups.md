@@ -25,7 +25,7 @@ For one project, **Follow-ups…** in its **⋯** on the board or on its page. *
 
 ## Asking or sending by itself
 
-**Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual or failed still waits for you, and the Careful level always asks. A follow-up never goes out twice.
+**Ask me before sending** is the default: drafts wait in your to-dos. **Send without asking** is a standing yes for that board or project. Anything unusual or failed still waits for you, and the Careful level always asks. A follow-up never goes out twice. Follow-ups never notify you, by push or email: their drafts wait in your list and the morning digest.
 
 Right before one goes, the thread is checked again. If anyone wrote since the draft, it isn't sent: "Not sent: new message in the thread". The to-do shows that message, who wrote it and when, with **Read it** and **Redo for this message**, which asks for a new draft that takes it into account.
 
