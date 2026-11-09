@@ -186,7 +186,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   attachment methods (`mail_attachment`, `gmail_attachments`, `outlook_attachments`, `share_files`) into `MailApp`,
   `still_needed_step` into `RecapApp`, calling `FirstLookStore.still_needed_ask`, adding a source from the dashboard
   (`connect_action`, `connect_run`, `connect_view`, `team_domains`, `connect_form`, `same_signin` and the sign-in
-  pages) into the new `ConnectApp` (`machine/app/connect.py`).
+  pages) into the new `ConnectApp` (`machine/app/connect.py`), the dispatcher's card, source and learning branches
+  into `ACTIONS` handlers (`card_owner_action` in `CardActionsApp`, `connect_owner_action` in `ConnectApp`,
+  `learnings_action` in `SettingsActionsApp`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   routines, connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`

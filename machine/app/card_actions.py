@@ -13,6 +13,7 @@ import crm_import
 import doc_writes
 import fleet
 import follow_ups
+import graph
 import i18n
 from machine.browser import FINAL_STEPS
 from machine.cards import asked_snooze_time, owner_snooze_until, undated_card
@@ -148,7 +149,10 @@ class CardActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'task_import': 'task_import_action', 'prepare': 'prepare_action', 'revise_draft': 'revise_draft_action',
                'confirm_action': 'confirm_action_action', 'refresh_card': 'refresh_card_action',
-               'chat_upload': 'chat_upload_action', 'chat_file_remove': 'chat_upload_action', 'decide': 'decide_action'}
+               'chat_upload': 'chat_upload_action', 'chat_file_remove': 'chat_upload_action', 'decide': 'decide_action',
+               # CARD_ACTIONS less the repeat ones (RecurringApp)
+               **dict.fromkeys(('card_new', 'card_project', 'card_rename', 'card_move', 'card_report_seen', 'card_use_sources',
+                                'card_merge'), 'card_owner_action')}
 
     def task_import_action(self, name, args, owner_dashboard=False):
         # a task link someone sent this owner by email (task_invites.py)
@@ -504,3 +508,22 @@ class CardActionsApp:
         if not row or json.loads(row['evidence']).get('digest') != crm_import.digest(kind, text):
             return None
         return json.loads(row['draft'])
+
+    def card_owner_action(self, name, args, owner_dashboard=False):
+        # a to-do added, renamed, moved or merged by the owner (CARD_ACTIONS)
+        if not owner_dashboard:
+            raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
+        if name == 'card_new':
+            return self.card_new_repeating(args)  # recurring_app.py: Repeats, or a rhythm in the words
+        if name == 'card_project':  # the to-do's project, by hand ('' for none): graph.set_card_project
+            with self.store.connect() as db:
+                return {'id': str(args.get('suggestion_id') or ''), 'project': graph.set_card_project(db, args.get('suggestion_id'), args.get('project'))}
+        if name == 'card_rename':
+            return self.store.rename_card(args.get('suggestion_id'), args.get('title'), args.get('reset') is True, args.get('decision_id'))
+        if name == 'card_move':  # More, Move to Work (todo_areas.py); undo: the move its toast's Undo takes back
+            return self.store.move_card(args.get('suggestion_id'), args.get('area'), args.get('decision_id'), undo=args.get('undo'))
+        if name == 'card_report_seen':  # Just done, Got it: the owner saw what their confirmed steps did
+            return self.store.report_seen(args.get('ids'))
+        if name == 'card_use_sources':  # "Use this email for this to-do": what its stuck run asked for (use_sources)
+            return self.store.use_sources(args.get('suggestion_id'), args.get('decision_id'))
+        return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
