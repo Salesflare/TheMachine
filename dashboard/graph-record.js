@@ -226,10 +226,8 @@ const openBetween=n=>{const o=n.open||{},row=(label,p)=>html`<div class="promise
 // with a menu: Not about them takes only this link away, Forget deletes the fact everywhere.
 const shortName=n=>n.kind==='person'?String(n.name||'').split(/\s+/)[0]||n.name:n.name;
 const knownAbout=n=>{const k=n.open?.known||[],who=shortName(n);return k.length?html`<div class="section-head graph-known-head"><h2>Known about ${who}</h2></div><ul class="graph-known">${k.map(f=>html`<li><span>${f.text}${factMeta(f)}</span><details class="fact-menu"><summary aria-label="Options for this fact" title="Options">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-fact-unlink="${f.id}">Not about ${who}<small>Only takes it off this page</small></button><button type="button" role="menuitem" class="danger" data-fact-forget="${f.id}" data-who="${who}">Forget<small>Deletes it everywhere</small></button></div></details></li>`)}</ul>`:''};
-// Recent changes (record_log.py): what The Machine changed or learned about this record, when and from where, folded
-// right above the Timeline. A few lines open, the rest under Show more. Each line's ⋯ has the page's own correction for it:
-// Edit, Not about / Forget, Remove, Undo. No notifications and nothing new to visit: it is only here.
-let rcOpen='';  // the record whose log the owner opened: it stays open through the page's own refreshes
+// Recent changes (record_log.py), folded above the Timeline; each ⋯ has the page's own fix. rcOpen keeps it open on redraws.
+let rcOpen='';
 const RC_SHOWN=3;
 const rcDay=v=>{const d=new Date(v);return localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
 const RC_SIDE={work:'Marked as a Work contact',personal:'Marked as a Personal contact'},RC_AI={details:'Details changed',crm:'Fields or tags changed',summary:'Summary line added'};
@@ -265,7 +263,7 @@ const recentLog=n=>{const log=n.log||[];if(!log.length)return'';
   return html`<li${i>=RC_SHOWN?html` hidden`:''}><time datetime="${x.at}">${rcDay(x.at)}</time><span class="rc-text">${rcText(n,x)}</span>${x.was?html`<small class="rc-was">${t('Was: {}',x.was)}</small>`:''}${src?html`<small class="rc-src">${src}</small>`:''}${rcMenu(n,x)}</li>`})}</ul>${log.length>RC_SHOWN?html`<button type="button" class="ghost rc-more" data-rc-more>${t('Show more')}</button>`:''}</details></section>`};
 $('#people-view').addEventListener('click',async e=>{const box=e.target.closest('.record-log');if(!box)return;
  if(e.target.closest('[data-rc-more]')){for(const li of box.querySelectorAll('.rc-list li[hidden]'))li.hidden=false;e.target.closest('[data-rc-more]').remove();return}
- const item=e.target.closest('.rc-menu [role=menuitem]');if(item)item.closest('details').open=false;  /* the page's own handler does the rest */
+ const item=e.target.closest('.rc-menu [role=menuitem]');if(item)item.closest('details').open=false;
  const back=e.target.closest('[data-rc-stage]');if(back){back.disabled=true;try{await graphPost('graph_stage',{node_id:graphNode,stage:back.dataset.rcStage});toast(t('Moved back to {}.',back.dataset.rcStage));await people(graphNode,true)}catch(err){errCaught(err);back.disabled=false;toast(err.message,true)}return}
  const ai=e.target.closest('[data-rc-ai-undo]');if(ai){ai.disabled=true;try{await sharePost('ai_undo',{id:+ai.dataset.rcAiUndo});toast(t('Undone.'));await people(graphNode,true)}catch(err){errCaught(err);ai.disabled=false;toast(err.message,true)}}},true);
 $('#people-view').addEventListener('toggle',e=>{if(e.target.matches?.('.rc-fold'))rcOpen=e.target.open?graphNode:''},true);

@@ -158,7 +158,7 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 .share-chip:hover{color:var(--text)}.ge-head time+.share-chip,.ge-meta+.share-chip{margin-left:8px}
 .share-note{margin:0 0 14px;font-size:var(--fs-sm)}
 .keep-private{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:8px 0 16px}.keep-private small{font-size:var(--fs-xs)}
-/* Recent changes: folded under the record, quiet like Joined from; a line is its day, what changed, where from, and ⋯ */
+/* Recent changes: day, what changed, source, ⋯ */
 .record-log{margin:4px 0 14px}.record-log .rc-fold>summary{cursor:pointer;color:var(--faint);width:fit-content}.record-log .rc-fold>summary .count{color:var(--faint);font-size:var(--fs-xs)}
 .rc-list{list-style:none;margin:6px 0 0;padding:0}
 .rc-list li{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;column-gap:var(--sp-2);align-items:start;padding:6px 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.45}
