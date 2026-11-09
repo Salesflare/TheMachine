@@ -235,6 +235,131 @@ def handoff_wait(db, suggestion, awake=False):
     return {'name': (str(row['name'] or '').split() or ['them'])[0]}
 
 
+def kept_steps(db, suggestion_id, job_id, action, do_now=False):
+    """(action, kept): a run carrying out one step (a Confirm, or do_now) keeps the to-do's other waiting steps
+    (next_actions.kept_steps), so it closes only when every step is done or the owner marks it done (2026-11-06)."""
+    job = db.execute('SELECT action_id FROM preparations WHERE suggestion_id=? AND job_id=?', (suggestion_id, job_id)).fetchone()
+    if not do_now and not (job and db.execute("SELECT 1 FROM action_jobs WHERE id=? AND status='local_preparation'", (job['action_id'],)).fetchone()):
+        return action, []
+    taken = {r[0] for r in db.execute(f"SELECT revision FROM action_jobs WHERE suggestion_id=? AND status NOT IN {NOT_TAKEN}", (suggestion_id,))}
+    return next_actions.kept_steps(db.execute('SELECT next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()[0], action, taken)
+
+
+def queue_preparation(db, suggestion_id, decision_id, action_id=None, resume_action=False):
+    old = db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
+    if old and old['status'] in ('queued','starting','running'):
+        return
+    session_job_id = old['session_job_id'] if old else None
+    if resume_action and old:action_id=old['action_id']
+    # New work replaces a confirmed final step that never saved its result. It may have
+    # gone through already, so a later Confirm checks the source first, never resubmits blindly.
+    for left in db.execute("SELECT id,status,payload FROM action_jobs WHERE suggestion_id=? AND status IN ('local_preparation','paused') AND id IS NOT ?",(suggestion_id,action_id)).fetchall():
+        payload=json.loads(left['payload'])
+        if payload['kind']!='finish':continue
+        payload['finish_result']={'state':'uncertain','body':'Replaced by new work before its result was saved.','at':now(),'was':left['status']}
+        db.execute("UPDATE action_jobs SET status='finish_uncertain',payload=?,updated_at=? WHERE id=?",(encoded(payload),now(),left['id']))
+    db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,use_events=NULL,connect=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
+               (suggestion_id,decision_id,uuid.uuid4().hex,now(),now()))
+    db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id) WHERE suggestion_id=?',(session_job_id,suggestion_id))
+    db.execute('UPDATE preparations SET action_id=? WHERE suggestion_id=?',(action_id,suggestion_id))
+    if action_id:  # the same approved step carries on (Try again, the end of a snooze, Undo, Reopen)
+        db.execute("UPDATE action_jobs SET status='local_preparation',updated_at=? WHERE id=? AND status='paused'",(now(),action_id))
+
+
+def stop_chat(db, suggestion_id, job_id, text, via=None):
+    """The chat's Stop: the card's current run ends now, kept as it was. Its preparation waits (blocked, error
+    'stopped', so Try again or a new message carries on), any further tool call of the run is refused
+    (preparation_state.tool_intent) and the worker aborts it in its session at once (stop_stale_runs). What it had
+    said so far is kept for the chat, and where Stop was pressed (`via`: None the chat, 'browser' the Browser view).
+    False when nothing was running any more."""
+    db.execute('BEGIN IMMEDIATE')
+    stamp = now()
+    stopped = db.execute("UPDATE preparations SET status='blocked',reason=?,details=NULL,questions=NULL,error='stopped',retry_at=NULL,updated_at=? "
+                         "WHERE suggestion_id=? AND job_id=? AND status IN ('queued','starting','running')",
+                         (CHAT_STOPPED, stamp, suggestion_id, job_id)).rowcount
+    if not stopped:
+        return False
+    db.execute('INSERT OR REPLACE INTO chat_stops(job_id,suggestion_id,text,at,via) VALUES(?,?,?,?,?)', (job_id, suggestion_id, text or '', stamp, via))
+    pause_idle_steps(db, suggestion_id)
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+    return True
+
+
+def skill_update_reviewed(db, suggestion_id, source, reviewed):
+    """Update <skill> on a card from notes changes the owner's skill: only from the dashboard, after its before and
+    after (reviewed names what was shown, skill_review_token). It keeps that version, so nothing else is applied."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skill_clusters'").fetchone():
+        return
+    cluster = db.execute("SELECT c.* FROM skill_clusters c JOIN suggestions s ON s.id=c.suggestion_id WHERE c.suggestion_id=? "
+                         "AND c.status IN ('pending','declined','failed') AND c.target_id IS NOT NULL AND s.status!='snoozed'", (suggestion_id,)).fetchone()
+    if not cluster:
+        return
+    shown = skill_update_view(db, cluster)
+    if not shown:
+        raise ValueError('That skill is gone')
+    if shown.get('stale'):
+        raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next check suggests it on the new version")
+    if source != 'dashboard' or not reviewed:
+        raise ValueError('Open it on the dashboard to see the before and after first')
+    if reviewed != shown['review']:
+        raise ValueError(f"{shown['skill']} changed since. Look at the before and after again")
+    sha = db.execute('SELECT sha FROM skills WHERE id=?', (cluster['target_id'],)).fetchone()['sha']
+    db.execute('UPDATE skill_clusters SET reviewed_sha=? WHERE id=?', (sha, cluster['id']))
+
+
+def rewait_handoffs(db):
+    """A card that came back early from a teammate's handoff, by an older check-in rule (an urgent card after 3 hours),
+    while they still haven't answered and nothing else happened on it: back to Later until its check-in now."""
+    try:
+        rows = db.execute("SELECT s.id,s.urgent,s.due,d.created_at FROM suggestions s JOIN decisions d ON d.rowid="
+                          "(SELECT MAX(rowid) FROM decisions WHERE suggestion_id=s.id) WHERE s.status='pending' "
+                          "AND d.source='fleet' AND d.choice='snooze' AND d.id LIKE 'fleet-handoff-wait-%'").fetchall()
+    except sqlite3.OperationalError:
+        return 0
+    moved = 0
+    for row in rows:
+        if not handoff_wait(db, {'id': row['id'], 'status': 'snoozed'}):
+            continue  # answered, declined or gone: it is back for a reason
+        try:
+            until = handoff_checkin(bool(row['urgent']), row['due'], start=row['created_at'])
+        except ValueError:
+            continue
+        if until > now():
+            db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='pending' WHERE id=? AND status='pending'",
+                       (until, row['id']))
+            moved += 1
+    return moved
+
+
+def bind_feedback_prompt(db, suggestion_id, request_id, message_id):
+    db.execute("UPDATE feedback_prompts SET status='sent',message_id=?,error=NULL,updated_at=? WHERE request_id=? AND suggestion_id=?",
+               (str(message_id),now(),request_id,suggestion_id))
+    db.execute('UPDATE suggestions SET feedback_prompt_message_id=? WHERE id=? AND feedback_request_id=? AND feedback_until>?',
+               (str(message_id),suggestion_id,request_id,now()))
+
+
+def _not_done(db, row, feedback, decision_id, source):
+    """Not done on a to-do that looked done (looks_done): it is a normal to-do again, and the decision (with what the
+    hint or the run said) is what the next review and the learning pass read. A run's already_done result goes back to
+    Needs your decision; nothing starts by itself."""
+    if row['status'] in ('completed', 'rejected', 'snoozed') or not looks_done(dict(row)):
+        if source == 'telegram':
+            return {'status': row['status'], 'duplicate': True, 'skipped': True, 'reason': 'stale_not_done'}
+        raise ValueError('This to-do no longer looks done')
+    try:
+        said = json.loads(row['handled_hint'] or 'null') or {}
+    except ValueError:
+        said = {}
+    why = (said.get('reason') if isinstance(said, dict) else '') or first_sentence(row['body'])
+    note = ' '.join(str(feedback or '').split()) or 'Not done yet. It looked done because: ' + why
+    db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)', (decision_id, row['id'], 'not_done', note[:5000], source, now()))
+    status = 'pending' if row['status'] == 'prepared' and outcome_state(row) == 'already_done' else row['status']
+    db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' THEN NULL ELSE outcome END,undo_until=NULL WHERE id=?",
+               (status, status, row['id']))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+    return {'status': status, 'not_done': True}
+
+
 class DecisionsStore:
     """Store methods for what the owner decides about a to-do and for preparing it."""
 
@@ -251,14 +376,8 @@ class DecisionsStore:
         return [a for a in steps if a.get('revision') not in taken]
 
     def kept_steps(self, suggestion_id, job_id, action, do_now=False):
-        """(action, kept): a run carrying out one step (a Confirm, or do_now) keeps the to-do's other waiting steps
-        (next_actions.kept_steps), so it closes only when every step is done or the owner marks it done (2026-11-06)."""
         with self.connect() as db:
-            job = db.execute('SELECT action_id FROM preparations WHERE suggestion_id=? AND job_id=?', (suggestion_id, job_id)).fetchone()
-            if not do_now and not (job and db.execute("SELECT 1 FROM action_jobs WHERE id=? AND status='local_preparation'", (job['action_id'],)).fetchone()):
-                return action, []
-            taken = {r[0] for r in db.execute(f"SELECT revision FROM action_jobs WHERE suggestion_id=? AND status NOT IN {NOT_TAKEN}", (suggestion_id,))}
-            return next_actions.kept_steps(db.execute('SELECT next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()[0], action, taken)
+            return kept_steps(db, suggestion_id, job_id, action, do_now)
 
     def looks_handled(self, suggestion_id, reason, event_ids):
         """A later signal suggests an open card is already done. Only a hint: the owner still closes it."""
@@ -284,24 +403,7 @@ class DecisionsStore:
         return {'saved': True}
 
     def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False):
-        old = db.execute('SELECT * FROM preparations WHERE suggestion_id=?',(suggestion_id,)).fetchone()
-        if old and old['status'] in ('queued','starting','running'):
-            return
-        session_job_id = old['session_job_id'] if old else None
-        if resume_action and old:action_id=old['action_id']
-        # New work replaces a confirmed final step that never saved its result. It may have
-        # gone through already, so a later Confirm checks the source first, never resubmits blindly.
-        for left in db.execute("SELECT id,status,payload FROM action_jobs WHERE suggestion_id=? AND status IN ('local_preparation','paused') AND id IS NOT ?",(suggestion_id,action_id)).fetchall():
-            payload=json.loads(left['payload'])
-            if payload['kind']!='finish':continue
-            payload['finish_result']={'state':'uncertain','body':'Replaced by new work before its result was saved.','at':now(),'was':left['status']}
-            db.execute("UPDATE action_jobs SET status='finish_uncertain',payload=?,updated_at=? WHERE id=?",(encoded(payload),now(),left['id']))
-        db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES(?,?,?,'queued',?,?) ON CONFLICT(suggestion_id) DO UPDATE SET decision_id=excluded.decision_id,job_id=excluded.job_id,status='queued',created_at=excluded.created_at,updated_at=excluded.updated_at,error=NULL,reason=NULL,details=NULL,questions=NULL,move_to=NULL,use_events=NULL,connect=NULL,started_at=NULL,retry_at=NULL,attempts=0,auto_retries=0",
-                   (suggestion_id,decision_id,uuid.uuid4().hex,now(),now()))
-        db.execute('UPDATE preparations SET session_job_id=coalesce(?,job_id) WHERE suggestion_id=?',(session_job_id,suggestion_id))
-        db.execute('UPDATE preparations SET action_id=? WHERE suggestion_id=?',(action_id,suggestion_id))
-        if action_id:  # the same approved step carries on (Try again, the end of a snooze, Undo, Reopen)
-            db.execute("UPDATE action_jobs SET status='local_preparation',updated_at=? WHERE id=? AND status='paused'",(now(),action_id))
+        return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action)
 
     def decide(self, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False,
                reviewed=None, files=None):
@@ -322,44 +424,11 @@ class DecisionsStore:
             return result
 
     def stop_chat(self, suggestion_id, job_id, text, via=None):
-        """The chat's Stop: the card's current run ends now, kept as it was. Its preparation waits (blocked, error
-        'stopped', so Try again or a new message carries on), any further tool call of the run is refused
-        (preparation_state.tool_intent) and the worker aborts it in its session at once (stop_stale_runs). What it had
-        said so far is kept for the chat, and where Stop was pressed (`via`: None the chat, 'browser' the Browser view).
-        False when nothing was running any more."""
         with self.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
-            stamp = now()
-            stopped = db.execute("UPDATE preparations SET status='blocked',reason=?,details=NULL,questions=NULL,error='stopped',retry_at=NULL,updated_at=? "
-                                 "WHERE suggestion_id=? AND job_id=? AND status IN ('queued','starting','running')",
-                                 (CHAT_STOPPED, stamp, suggestion_id, job_id)).rowcount
-            if not stopped:
-                return False
-            db.execute('INSERT OR REPLACE INTO chat_stops(job_id,suggestion_id,text,at,via) VALUES(?,?,?,?,?)', (job_id, suggestion_id, text or '', stamp, via))
-            pause_idle_steps(db, suggestion_id)
-            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
-            return True
+            return stop_chat(db, suggestion_id, job_id, text, via)
 
     def skill_update_reviewed(self, db, suggestion_id, source, reviewed):
-        """Update <skill> on a card from notes changes the owner's skill: only from the dashboard, after its before and
-        after (reviewed names what was shown, skill_review_token). It keeps that version, so nothing else is applied."""
-        if not db.execute("SELECT 1 FROM sqlite_master WHERE name='skill_clusters'").fetchone():
-            return
-        cluster = db.execute("SELECT c.* FROM skill_clusters c JOIN suggestions s ON s.id=c.suggestion_id WHERE c.suggestion_id=? "
-                             "AND c.status IN ('pending','declined','failed') AND c.target_id IS NOT NULL AND s.status!='snoozed'", (suggestion_id,)).fetchone()
-        if not cluster:
-            return
-        shown = skill_update_view(db, cluster)
-        if not shown:
-            raise ValueError('That skill is gone')
-        if shown.get('stale'):
-            raise ValueError(f"{shown['skill']} changed after this was suggested. Not now, or wait: the next check suggests it on the new version")
-        if source != 'dashboard' or not reviewed:
-            raise ValueError('Open it on the dashboard to see the before and after first')
-        if reviewed != shown['review']:
-            raise ValueError(f"{shown['skill']} changed since. Look at the before and after again")
-        sha = db.execute('SELECT sha FROM skills WHERE id=?', (cluster['target_id'],)).fetchone()['sha']
-        db.execute('UPDATE skill_clusters SET reviewed_sha=? WHERE id=?', (sha, cluster['id']))
+        return skill_update_reviewed(db, suggestion_id, source, reviewed)
 
     def wait_handoff(self, suggestion_id, feedback, decision_id, expected_decision):
         with self.connect() as db:
@@ -643,27 +712,7 @@ class DecisionsStore:
             return len(rows)
 
     def rewait_handoffs(self, db):
-        """A card that came back early from a teammate's handoff, by an older check-in rule (an urgent card after 3 hours),
-        while they still haven't answered and nothing else happened on it: back to Later until its check-in now."""
-        try:
-            rows = db.execute("SELECT s.id,s.urgent,s.due,d.created_at FROM suggestions s JOIN decisions d ON d.rowid="
-                              "(SELECT MAX(rowid) FROM decisions WHERE suggestion_id=s.id) WHERE s.status='pending' "
-                              "AND d.source='fleet' AND d.choice='snooze' AND d.id LIKE 'fleet-handoff-wait-%'").fetchall()
-        except sqlite3.OperationalError:
-            return 0
-        moved = 0
-        for row in rows:
-            if not handoff_wait(db, {'id': row['id'], 'status': 'snoozed'}):
-                continue  # answered, declined or gone: it is back for a reason
-            try:
-                until = handoff_checkin(bool(row['urgent']), row['due'], start=row['created_at'])
-            except ValueError:
-                continue
-            if until > now():
-                db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='pending' WHERE id=? AND status='pending'",
-                           (until, row['id']))
-                moved += 1
-        return moved
+        return rewait_handoffs(db)
 
     def request_feedback(self, suggestion_id, request_id, after_message_id=None, card_message_id=None, managed=False, kind='change'):
         # kind 'dismiss': the next reply is the reason for dismissing, and dismisses the item.
@@ -745,32 +794,10 @@ class DecisionsStore:
 
     def bind_feedback_prompt(self, suggestion_id, request_id, message_id):
         with self.connect() as db:
-            # The receipt and binding commit together; replay never sends a new prompt.
-            db.execute("UPDATE feedback_prompts SET status='sent',message_id=?,error=NULL,updated_at=? WHERE request_id=? AND suggestion_id=?",
-                       (str(message_id),now(),request_id,suggestion_id))
-            db.execute('UPDATE suggestions SET feedback_prompt_message_id=? WHERE id=? AND feedback_request_id=? AND feedback_until>?',
-                       (str(message_id),suggestion_id,request_id,now()))
+            bind_feedback_prompt(db, suggestion_id, request_id, message_id)
 
     def _not_done(self, db, row, feedback, decision_id, source):
-        """Not done on a to-do that looked done (looks_done): it is a normal to-do again, and the decision (with what the
-        hint or the run said) is what the next review and the learning pass read. A run's already_done result goes back to
-        Needs your decision; nothing starts by itself."""
-        if row['status'] in ('completed', 'rejected', 'snoozed') or not looks_done(dict(row)):
-            if source == 'telegram':
-                return {'status': row['status'], 'duplicate': True, 'skipped': True, 'reason': 'stale_not_done'}
-            raise ValueError('This to-do no longer looks done')
-        try:
-            said = json.loads(row['handled_hint'] or 'null') or {}
-        except ValueError:
-            said = {}
-        why = (said.get('reason') if isinstance(said, dict) else '') or first_sentence(row['body'])
-        note = ' '.join(str(feedback or '').split()) or 'Not done yet. It looked done because: ' + why
-        db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)', (decision_id, row['id'], 'not_done', note[:5000], source, now()))
-        status = 'pending' if row['status'] == 'prepared' and outcome_state(row) == 'already_done' else row['status']
-        db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' THEN NULL ELSE outcome END,undo_until=NULL WHERE id=?",
-                   (status, status, row['id']))
-        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
-        return {'status': status, 'not_done': True}
+        return _not_done(db, row, feedback, decision_id, source)
 
     def prepare(self, suggestion_id, body, job_id=None, next_action=None, outcome=None, note_kind=None, require_note=False, finish_state=None, title=None, send_now=False):
         if not body.strip():

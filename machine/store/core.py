@@ -51,6 +51,44 @@ import voice_input
 import whatsapp_images
 
 
+def check_sealed(db):
+    for table, column, _ in message_seal.sealed_columns(db):
+        for _ in db.execute(f'SELECT {column} FROM {table}'):
+            pass
+
+
+def exclude_sources(db, account, source_ids, reason='account_content_filter'):
+    removed = set()
+    for source_id in set(source_ids):
+        row = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?',
+                         (account, source_id)).fetchone()
+        if row:
+            removed.add(row['id'])
+            db.execute('DELETE FROM events WHERE id=?', (row['id'],))
+    if removed:
+        # Keep historical review receipts, but clearly mark evidence that
+        # the owner excluded. No source text is retained in these receipts.
+        for review in db.execute('SELECT id,items FROM analyses').fetchall():
+            items = json.loads(review['items'])
+            if any(item['id'] in removed for item in items):
+                for item in items:
+                    if item['id'] in removed:
+                        item['excluded'] = reason
+                db.execute('UPDATE analyses SET items=? WHERE id=?', (encoded(items), review['id']))
+    return len(removed)
+
+
+def checkpoint(db, account):
+    row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account,)).fetchone()
+    return json.loads(row[0]) if row else None
+
+
+def fix_done(db, name):
+    """A one-time fix by this name already ran (store_fixes)."""
+    db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
+    return bool(db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone())
+
+
 class StoreCore:
     """The database: one per Machine. Store (assistant.py) adds the methods by table group."""
 
@@ -550,9 +588,7 @@ class StoreCore:
 
     def check_sealed(self):
         with self.connect() as db:
-            for table, column, _ in message_seal.sealed_columns(db):
-                for _ in db.execute(f'SELECT {column} FROM {table}'):
-                    pass
+            check_sealed(db)
 
     def database_ok(self):
         """The live database is whole and, when sealed, every sealed value opens with this Machine's key."""
@@ -637,24 +673,7 @@ class StoreCore:
             return self.exclude_sources(db, account, ids, reason='owner_exclude_rule')
 
     def exclude_sources(self, db, account, source_ids, reason='account_content_filter'):
-        removed = set()
-        for source_id in set(source_ids):
-            row = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?',
-                             (account, source_id)).fetchone()
-            if row:
-                removed.add(row['id'])
-                db.execute('DELETE FROM events WHERE id=?', (row['id'],))
-        if removed:
-            # Keep historical review receipts, but clearly mark evidence that
-            # the owner excluded. No source text is retained in these receipts.
-            for review in db.execute('SELECT id,items FROM analyses').fetchall():
-                items = json.loads(review['items'])
-                if any(item['id'] in removed for item in items):
-                    for item in items:
-                        if item['id'] in removed:
-                            item['excluded'] = reason
-                    db.execute('UPDATE analyses SET items=? WHERE id=?', (encoded(items), review['id']))
-        return len(removed)
+        return exclude_sources(db, account, source_ids, reason)
 
     def trim_stored_quoted_history(self):
         """One-off cleanup: trim quoted reply history from already stored emails, as new
@@ -783,8 +802,7 @@ class StoreCore:
 
     def checkpoint(self, account):
         with self.connect() as db:
-            row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account,)).fetchone()
-            return json.loads(row[0]) if row else None
+            return checkpoint(db, account)
 
     def tool_approval_proposal(self, proposal_id, title, detail):
         if (not re.fullmatch(r'[a-f0-9]{64}', str(proposal_id)) or not isinstance(detail, str) or
@@ -812,10 +830,8 @@ class StoreCore:
                       "AND trim(coalesce(p.reason,''))<>'' AND (s.status='pending' OR s.status='snoozed' AND s.resume_status='pending')")
 
     def fix_done(self, name):
-        """A one-time fix by this name already ran (store_fixes)."""
         with self.connect() as db:
-            db.execute('CREATE TABLE IF NOT EXISTS store_fixes(name TEXT PRIMARY KEY,at TEXT NOT NULL)')
-            return bool(db.execute('SELECT 1 FROM store_fixes WHERE name=?', (name,)).fetchone())
+            return fix_done(db, name)
 
     def requeue_once(self, name, find):
         """Once (store_fixes): the messages find(db) gives go back to the review, pending with no deferrals, after a copy
