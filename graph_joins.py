@@ -10,7 +10,10 @@ A name joins two identities only when each of them is one person's own:
 - A name alone never joins a work contact with a personal chat. An identity's side is the side of the accounts it was
   seen in (graph.account_side); for an account that was never placed, a company address, Slack and the CRM are work,
   WhatsApp and Telegram personal, and anything else says nothing. When a name is on a work identity and on a personal
-  one, each side joins within itself only, and the pair is left for "Same person?" (graph.likely_same) to ask.
+  one, they are one person as before when something else agrees (Keys.agree): the work side is a colleague (an
+  address at the owner's own domain), the chat's number is known for the work side (a connector's profile, the
+  owner's own edit), both are on one project, both are at one organization, or one signal has both. When the name is
+  all there is, each side joins within itself only, and the pair is left for "Same person?" (graph.likely_same) to ask.
 
 Nothing is stored: it is worked out again each build, from the signals. The owner's and the agent's own merges
 (graph_merges) are joined before any of this and are never undone by it. So a person an older build made of several
@@ -44,7 +47,9 @@ class Keys:
         self.carried = collections.defaultdict(set)  # identifier -> the full names it was seen under
         self.seen_in = collections.defaultdict(set)  # identifier -> the sides of the accounts it was seen in
         self.lists = set()
-        self._shared = {}
+        self.signals = collections.defaultdict(set)  # identifier -> the signals it is on
+        self.threads = collections.defaultdict(set)  # identifier -> its conversations; conversation -> its signals
+        self._shared, self._known = {}, None
 
     def see(self, event_id, account_id, kind, m, found, key, exact):
         """One signal's identities (graph.touches) and its conversation (graph.thread_key)."""
@@ -52,6 +57,10 @@ class Keys:
         listed = (LIST_ID.search(listed).group(1) if LIST_ID.search(listed) else listed).strip('.')
         side = 'work' if kind.startswith(CRM_KINDS) else self.side_of_account.get(account_id)
         for identifier, name, _, _ in found:
+            self.signals[identifier].add(event_id)
+            if key:
+                self.threads[identifier].add((account_id, key))
+                self.threads[(account_id, key)].add(event_id)
             if side:
                 self.seen_in[identifier].add(side)
             if listed and identifier.startswith('email:') and identifier[6:].replace('@', '.') == listed:
@@ -96,10 +105,56 @@ class Keys:
                 {'work'} if space in WORK_SPACES or space == 'email' and value.rsplit('@', 1)[-1] not in self.freemail else set())
         return sides.pop() if len(sides) == 1 else None
 
-    def join_names(self, union, known, best):
+    def known(self, db):
+        """What the Machine knows besides names, read once: {'phones' | 'orgs' | 'projects': identifier -> set}, and
+        'events': signal -> its projects."""
+        if self._known is None:
+            import enrichment
+            from graph import folded_words
+            self.fold = folded_words
+            out = self._known = {k: collections.defaultdict(set) for k in ('phones', 'orgs', 'projects', 'events')}
+            digits = lambda value: re.sub(r'\D', '', str(value or ''))[-9:]
+            for identifier, facts in enrichment.people_facts(db, fields={'phone'}).items():  # a connector's profile (Slack, the CRM)
+                out['phones'][identifier].add(digits(facts['phone'][0]))
+            for r in db.execute("SELECT identifier,json_extract(profile,'$.phone') FROM person_profiles WHERE status='found' AND profile IS NOT NULL"):
+                out['phones'][r[0]].add(digits(r[1]))
+            for r in db.execute("SELECT identifier,fields FROM person_edits"):  # the owner's own edit
+                with contextlib.suppress(ValueError, AttributeError, TypeError):
+                    out['phones'][r[0]] |= {digits(v) for v in (json.loads(r[1]).get('phones') or {}).get('added') or ()}
+            for r in db.execute('SELECT identifier,org,org_id FROM person_orgs'):  # where they said they work
+                out['orgs'][r[0]] |= {folded_words(r[1])} | ({r[2][4:]} if str(r[2] or '').startswith('org:') else set())
+            for r in db.execute('SELECT event_id,project_id FROM event_projects'):
+                out['events'][r[0]].add(r[1])
+            for r in db.execute('SELECT project_id,node_id FROM project_people'):  # put on a project by the owner
+                out['projects'][r[1]].add(r[0])
+        return self._known
+
+    def agree(self, db, work, chat):
+        """Whether something besides the name says these work identities and these personal ones are one person."""
+        known = self.known(db)
+        address = lambda i: i[6:] if i.startswith('email:') else ''
+        own = {self.fold(d.split('.')[0]) for d in self.owner.domains}
+        if any(address(i).rsplit('@', 1)[-1] in self.owner.domains or known['orgs'].get(i, set()) & own for i in work):
+            return True  # a colleague: the owner knows who that is
+        if set().union(*(self.signals[i] for i in work)) & set().union(*(self.signals[i] for i in chat)):
+            return True
+        numbers = {i[3:][-9:] for i in chat if i.startswith('wa:') and i[3:].isdigit() and len(i) > 10}  # the chat's own number
+        if numbers & set().union(*(known['phones'].get(i, ()) for i in work)):
+            return True
+
+        def projects(side):  # a project its own signals are on, or one a conversation of theirs is on
+            events = set().union(*(self.signals[i] for i in side), *(self.threads[t] for i in side for t in self.threads[i]))
+            return set().union(*(known['events'].get(e, ()) for e in events), *(known['projects'].get(i, ()) for i in side))
+
+        def orgs(side):
+            domains = {address(i).rsplit('@', 1)[-1] for i in side if address(i)} - self.freemail
+            return domains | {self.fold(d.split('.')[0]) for d in domains} | set().union(*(known['orgs'].get(i, ()) for i in side))
+        return bool(projects(work) & projects(chat) or orgs(work) & orgs(chat))
+
+    def join_names(self, db, union, known, best):
         """The same full name on different channels is one person, unless two people carry it on one channel (two
         addresses or two chats not shown to be one), someone said they differ, or it is all a work contact and a
-        personal chat have in common: then it is only a question. best: identifier -> the name it mostly goes by."""
+        personal chat have in common (agree): then it is only a question. best: identifier -> the name it mostly goes by."""
         by_name = collections.defaultdict(set)
         for identifier in known:
             full = self.plain_name(best(identifier))
@@ -113,7 +168,8 @@ class Keys:
                 continue
             group = sorted(group, key=email_first)
             sides = {i: self.side(union.members[union.find(i)]) for i in group}
-            both = {'work', 'personal'} <= set(sides.values())
+            ids = lambda side: set().union(*(union.members[union.find(i)] for i in group if sides[i] == side))
+            both = {'work', 'personal'} <= set(sides.values()) and not self.agree(db, ids('work'), ids('personal'))
             for other in group[1:]:
                 first = next((i for i in group if sides[i] and sides[i] == sides[other]), None) if both else group[0]
                 if first and first != other:

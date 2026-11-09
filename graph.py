@@ -1374,7 +1374,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         union.join(address, number, 'signature')
     # The same full name on different channels is one person, unless two people carry it on one channel, someone said
     # they differ, or it is a work contact and a personal chat with nothing but the name in common: then it is a question.
-    keys.join_names(union, known, best)
+    keys.join_names(db, union, known, best)
     joined = collections.defaultdict(list)
     for a, b, why in union.edges:
         joined[union.find(a)].append((a, b, why))

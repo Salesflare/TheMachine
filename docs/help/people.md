@@ -60,7 +60,7 @@ To change their picture, click it: **Upload a picture**, pick one found for them
 
 When two people might be one, their page asks if they are the same person, and People lists them under **Same person?**. **Merge** joins them, with all their messages, notes, roles and projects. **Not the same** keeps them apart for good. Your answer shows on the pair for a moment, then the pair leaves the list. The list goes when nothing is left to ask.
 
-A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
+A shared address, like info@ or a mailing list, is never joined to the people who write through it. A work contact from outside your company and a personal chat with only a name in common are not joined by themselves: they are listed as a question.
 
 **Merge all** merges every pair in the list at once, except the ones you marked **Not the same**. **Undo** right after splits them all again.
 

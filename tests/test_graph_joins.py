@@ -148,6 +148,114 @@ class Joins(unittest.TestCase):
             self.assertEqual(page['same'], [{'id': 'wa:00000000021', 'why': 'Same name', 'from': '+00000000021', 'name': 'Jan Peeters'}])
             self.assertEqual(graph.detail(db, 'wa:00000000021')['same'][0]['from'], 'jan@client.example')
 
+    # ... unless something besides the name agrees
+
+    JAN = {'email:jan@client.example': ['email:jan@client.example', 'wa:32470000021']}
+
+    def jan(self, *more):
+        """A client by mail and a chat under the same full name, and whatever else is known."""
+        self.add(mail(2, 'Jan Peeters <jan@client.example>', 'sam@acme.example'), chat(1, '32470000021', 'Jan Peeters'), *more)
+
+    def one(self, expected=None):
+        for _ in range(2):
+            self.build()
+            self.assertEqual({k: v[1] for k, v in self.people().items()}, expected or self.JAN)
+            self.assertEqual(self.asked(), [])
+        with self.store.connect() as db:
+            return [j['by'] for j in graph.detail(db, next(iter(expected or self.JAN)))['joined']]
+
+    def test_the_chat_number_a_connector_read_for_the_work_contact_keeps_them_one(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES('email:jan@client.example','phone','+32 470 00 00 21',2,'google',?)", (NOW.isoformat(),))
+        self.assertEqual(self.one(), ['name'])
+
+    def test_the_chat_number_the_owner_put_on_the_work_contact_keeps_them_one(self):
+        self.jan()
+        with self.store.connect() as db:  # written the national way: the same number
+            db.execute("INSERT INTO person_edits(identifier,fields,updated_at) VALUES('email:jan@client.example',?,?)", (json.dumps({'phones': {'added': ['0470 00 00 21']}}), NOW.isoformat()))
+        self.one()
+
+    def test_another_number_on_the_work_contact_is_no_evidence(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES('email:jan@client.example','phone','+32 470 99 99 99',2,'google',?)", (NOW.isoformat(),))
+        self.build()
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+
+    def test_a_shared_project_keeps_them_one(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(7,'Rollout',?)", (NOW.isoformat(),))
+            for event_id, in db.execute('SELECT id FROM events').fetchall():  # the mail and the chat are on one project
+                db.execute("INSERT INTO event_projects(event_id,project_id,source,created_at) VALUES(?,7,'review',?)", (event_id, NOW.isoformat()))
+        self.one()
+
+    def test_a_project_on_one_side_only_is_no_evidence(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO projects(id,name,created_at) VALUES(7,'Rollout',?)", (NOW.isoformat(),))
+            db.execute("INSERT INTO event_projects(event_id,project_id,source,created_at) SELECT id,7,'review',? FROM events WHERE kind='gmail.message'", (NOW.isoformat(),))
+        self.build()
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+
+    def test_the_same_organization_keeps_them_one(self):
+        self.jan()
+        with self.store.connect() as db:  # the chat said where they work: the company the address is at
+            db.execute("INSERT INTO person_orgs(identifier,org,org_id,source,created_at) VALUES('wa:32470000021','Client','org:client.example','owner',?)", (NOW.isoformat(),))
+        self.one()
+
+    def test_another_organization_is_no_evidence(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_orgs(identifier,org,org_id,source,created_at) VALUES('wa:32470000021','Elsewhere',NULL,'owner',?)", (NOW.isoformat(),))
+        self.build()
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+
+    def test_a_signal_with_both_on_it_keeps_them_one(self):
+        """No connector puts an address and a chat number on one signal today, so this is asked of the rule itself."""
+        with self.store.connect() as db:
+            keys = graph.graph_joins.Keys(self.config, graph.Owner(self.config, db), graph.plain_name, graph.account_side, graph.FREEMAIL)
+            keys.see(1, 'work', 'gmail.message', {}, [('email:jan@client.example', 'Jan Peeters', 1, 'them')], 't1', True)
+            keys.see(2, 'chat', 'whatsapp.message', {}, [('wa:32470000021', 'Jan Peeters', 1, 'them')], 'wa:1', False)
+            self.assertFalse(keys.agree(db, {'email:jan@client.example'}, {'wa:32470000021'}))
+            keys.see(3, 'work', 'calendar.event', {}, [('email:jan@client.example', 'Jan Peeters', 1, 'met'), ('wa:32470000021', 'Jan Peeters', 1, 'met')], None, False)
+            self.assertTrue(keys.agree(db, {'email:jan@client.example'}, {'wa:32470000021'}))
+
+    def test_a_colleague_with_only_the_name_stays_one(self):
+        self.add(mail(2, 'Kim Colleague <kim@acme.example>', 'sam@acme.example'), chat(1, '32470000041', 'Kim Colleague'))
+        self.one({'email:kim@acme.example': ['email:kim@acme.example', 'wa:32470000041']})
+
+    def test_an_outside_contact_with_only_the_name_is_asked(self):
+        self.jan()
+        self.build()
+        self.assertEqual({k: v[1] for k, v in self.people().items()}, {'email:jan@client.example': ['email:jan@client.example'], 'wa:32470000021': ['wa:32470000021']})
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+
+    def test_not_the_same_is_never_rejoined_by_evidence(self):
+        self.jan()
+        self.build()
+        self.say('wa:32470000021', 'email:jan@client.example', False)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES('email:jan@client.example','phone','+32 470 00 00 21',2,'google',?)", (NOW.isoformat(),))
+            db.execute("INSERT INTO person_orgs(identifier,org,org_id,source,created_at) VALUES('wa:32470000021','Client','org:client.example','owner',?)", (NOW.isoformat(),))
+        for _ in range(2):
+            self.build()
+            self.assertEqual(set(self.people()), {'email:jan@client.example', 'wa:32470000021'})
+            self.assertEqual(self.asked(), [])
+
+    def test_evidence_that_goes_away_asks_and_never_undoes_a_merge(self):
+        self.jan()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES('email:jan@client.example','phone','+32 470 00 00 21',2,'google',?)", (NOW.isoformat(),))
+        self.one()
+        with self.store.connect() as db:
+            db.execute('DELETE FROM person_facts')
+        self.build()  # the number is gone: two people and a question, not a silent split
+        self.assertEqual(self.asked(), [('email:jan@client.example', 'wa:32470000021', 'Same name')])
+        self.say('wa:32470000021', 'email:jan@client.example', True, 'agent')  # the agent's merge counts as the owner's
+        self.one()
+
     def test_merge_by_the_owner_survives_rebuilds_and_is_not_asked_again(self):
         self.add(mail(2, 'Jan Peeters <jan@client.example>', 'sam@acme.example'), chat(1, '00000000021', 'Jan Peeters'))
         self.build()
