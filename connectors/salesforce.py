@@ -374,7 +374,7 @@ def contacts_for(source, emails, extra=None):
     parameters: each address is checked against a strict pattern and quoted, and the field name must be a custom field's."""
     out = []
     if extra is not None and not CUSTOM_FIELD.fullmatch(str(extra)):
-        raise ValueError('not a custom field name')
+        raise ValueError(repr(extra))  # not a custom field's name
     for start in range(0, len(emails), 100):
         chunk = [e for e in emails[start:start + 100] if re.fullmatch(r'[^@\s\'\\]{1,100}@[A-Za-z0-9.-]{1,200}', e)]
         if not chunk:
