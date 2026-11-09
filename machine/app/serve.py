@@ -10,6 +10,8 @@ import abilities
 import agent_jobs
 import browser_login
 import embeddings
+import error_feed
+from machine.actions import DASHBOARD_ACTIONS
 from machine.browser import AGENT_DB
 from machine.config import LOG
 from machine.model_usage import node_bin
@@ -21,7 +23,7 @@ import work_removal
 
 
 class ServeApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    ACTIONS = {'client_error': 'client_error_action'}
 
     def packed_page(self, etag, coding, page):
         """The dashboard page compressed in `coding`, made once per page (its ETag) and coding: the best compression,
@@ -114,3 +116,8 @@ class ServeApp:
         while not self.stop.is_set():
             server.handle_request()
         server.server_close()
+
+    def client_error_action(self, name, args, owner_dashboard=False):
+        # the dashboard's own errors, as signatures for the error reports (error_feed.py)
+        with self.store.connect() as db:
+            return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}

@@ -188,7 +188,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   (`connect_action`, `connect_run`, `connect_view`, `team_domains`, `connect_form`, `same_signin` and the sign-in
   pages) into the new `ConnectApp` (`machine/app/connect.py`), the dispatcher's card, source and learning branches
   into `ACTIONS` handlers (`card_owner_action` in `CardActionsApp`, `connect_owner_action` in `ConnectApp`,
-  `learnings_action` in `SettingsActionsApp`).
+  `learnings_action` in `SettingsActionsApp`), and the rest of them: `events_action` (events, related, begin_analysis)
+  in `ReviewApp`, `mail_attachment_action` and `task_page_action` in `MailApp`, `client_error_action` in `ServeApp`,
+  `bug_offer_action` in `SupportApp`; only the Fleet and Family prefix route stays in `App.action`.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   routines, connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
