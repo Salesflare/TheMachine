@@ -11,6 +11,9 @@ const SOURCE_TIPS={'Added by you':'Made with New to-do','The Machine itself':'Pr
 // the same as at the last whole render; Learning, Connections and the rest stay as they are drawn (a chat's open or
 // close redrew them all, some 40 ms of each).
 let drawnWhole=null;
+// The app icon's badge: the To-dos count in the sidebar (what needs the owner now), set on each render from the Machine's
+// own data, cleared at 0. Work or Personal alone leaves it as All has it; a push sets it the same way (sw.js, waiting_count).
+function appBadge(n){try{if(navigator.setAppBadge)(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch{}}
 function render(view){const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash);  // a page's first drawing on To-dos (below)
 scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first)renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
@@ -43,7 +46,7 @@ const recent=finished.sort((a,b)=>closedAt(b).localeCompare(closedAt(a))),doneTo
 putIfChanged($('#suggestion-summary'),make('div',{class:'summary-row'},make('div',{class:'scope-filter',role:'group','aria-label':'Show'},[['all','All'],['work','Work'],['personal','Personal']].map(([v,label])=>make('button',{type:'button','data-scope':v,'aria-pressed':scopeFilter===v},label)))));
 putIfChanged($('#suggestion-stats'),make('div',{class:'stats'},[[fuv.ready,'Ready','mint','ready'],[fuv.needs,'To decide','amber','needs'],[fuv.preparing,'Preparing','lavender','preparing'],[later,'Later','lavender','later']].map(([items,title,tone,key])=>make('button',{type:'button',class:`stat t-${tone}${items.length?'':' zero'}`,'data-fold-tile':key,'aria-expanded':!!items.length&&(key==='later'?laterOpen:!folded.has(key)),
  'aria-label':items.length?t('{} {}, tap to show or hide',items.length,t(title)):items.length+' '+t(title),...(items.length?{}:{disabled:''})},make('b',{},items.length),make('span',{},title)))));
-$('#badge-inbox').textContent=(open.length-fuHidden+(fleetData?fleetCards.length:scopeFilter==='personal'?0:state.fleet?.waiting||0))||'';$('#tab-fleet').hidden=!state.fleet?.on;$('#badge-fleet').textContent='';
+$('#badge-inbox').textContent=(open.length-fuHidden+(fleetData?fleetCards.length:scopeFilter==='personal'?0:state.fleet?.waiting||0))||'';if(scopeFilter==='all'&&!shownCached)appBadge(+$('#badge-inbox').textContent||0);$('#tab-fleet').hidden=!state.fleet?.on;$('#badge-fleet').textContent='';
 // "All clear" only when the Machine itself just said so: a copy from the device keeps the loading outline instead
 if(!shownCached)try{localStorage.setItem('skeleton-cards',String(Math.min(4,outstanding.length+fleetCards.length)))}catch{}
 const loading=shownCached&&!outstanding.length&&!fleetCards.length;$('#suggestions').toggleAttribute('aria-busy',loading);

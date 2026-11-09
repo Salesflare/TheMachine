@@ -133,7 +133,7 @@ pushCheck(true);
 if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.open)return;const u=new URL(e.data.open,location.href);
  if(u.origin!==location.origin||u.pathname!==location.pathname||u.search!==location.search){location.href=u.href;return}if(u.hash!==location.hash)location.hash=u.hash;else dispatchEvent(new HashChangeEvent('hashchange'))});
 // Settings, Notifications (notify.py): each kind by channel, this device, the digest time and quiet hours. The app
-// icon's badge counts the to-dos that need the owner. While this page is in front of them, it tells the Machine so no
+// icon's badge is the To-dos count (appBadge in shell-render.js). While this page is in front of them, it tells the Machine so no
 // push goes out (a heartbeat a minute; the Machine forgets it after two).
 const NOTIFY_KINDS=[['todo','New to-dos','A reply, a request, anything urgent'],['result','Results and questions','Ready to approve, stuck, a Fleet question'],
  ['reminder','Reminders','Snoozes and waits coming back'],['digest','Morning digest','Meetings, what’s due, what came in overnight']];
@@ -144,8 +144,6 @@ const notifyHM=t=>{try{return fmtHM('2000-01-01T'+t)}catch{return t}};
 const RECAP_DAYS=['Mondays after {}','Tuesdays after {}','Wednesdays after {}','Thursdays after {}','Fridays after {}','Saturdays after {}','Sundays after {}'];
 const recapRow=(r,cols)=>!r?'':html`<div class="notify-row" role="row"><span role="rowheader"><strong>Weekly recap</strong><small><span>${t(RECAP_DAYS[(r.weekday||5)-1]||RECAP_DAYS[4],notifyHM(r.at||'16:00'))}</span><span aria-hidden="true"> · </span><a class="learn" href="${HELP}weekly-recap" target="_blank" rel="noopener">Learn more</a></small></span>${cols.map((c,i)=>i<cols.length-1?html`<span class="notify-cell" role="cell"></span>`:html`<span class="notify-cell" role="cell">${r.saveable?html`<button type="button" class="lookup-switch" role="switch" aria-checked="${!!r.on}" aria-label="Weekly recap" data-recap-switch></button>`:html`<span class="notify-na">${r.on?'On':'Off'}</span>`}</span>`)}</div>`;
 function renderNotify(){const n=state?.notify,box=$('#settings-notify');
- const waiting=(state?.suggestions||[]).filter(x=>['pending','prepared'].includes(x.status)).length;
- try{if(navigator.setAppBadge){if(waiting)navigator.setAppBadge(waiting).catch(()=>{});else navigator.clearAppBadge().catch(()=>{})}}catch{}
  if(!box||!n){if(box)box.hidden=true;return}box.hidden=false;
  const cols=['push',...(n.telegram?['telegram']:[]),...(n.email?['email']:[])],grid=$('#notify-grid');
  grid.style.setProperty('--notify-cols',cols.length);
