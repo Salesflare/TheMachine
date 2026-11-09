@@ -3920,6 +3920,7 @@
  "Salesflare CRM": "Salesflare CRM",
  "Salesflare did not answer: {}": "O Salesflare não respondeu: {}",
  "Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.": "O Salesflare não deixa esta chave de API abrir estas contas. Use a chave de um usuário que consiga vê-las.",
+ "Salesflare hasn’t switched on feed access for API keys for your team, so no emails or meetings come in. Salesflare support can switch it on.": "O Salesflare não ativou o acesso ao feed com chaves de API para a sua equipe, então não chegam e-mails nem reuniões. O suporte do Salesflare pode ativar.",
  "Salesforce": "Salesforce",
  "Salesforce asks you to connect again": "O Salesforce pede para você conectar de novo",
  "Salesforce did not answer ({}). Try again in a minute": "O Salesforce não respondeu ({}). Tente de novo em um minuto",

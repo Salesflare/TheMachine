@@ -26,6 +26,8 @@ La sua scheda sotto **Connessioni**, **Altre fonti** mostra a che punto è: quan
 
 I riquadri contano gli account che ha potuto aprire e le email e riunioni che ha portato dentro. Se Salesflare non permette alla tua chiave API di aprire nessun account, la scheda dice **Serve il tuo aiuto**: usa la chiave di un utente che può vederli. Se Salesflare va spesso in timeout ma ogni nuovo tentativo riesce, dice che Salesflare **a volte è lento**.
 
+Se Salesflare non ha attivato l’accesso al feed con chiavi API per il tuo team, la scheda lo dice: non arrivano email né riunioni finché il supporto di Salesflare non lo attiva. Ricontrolla circa ogni ora e riprende da sola appena funziona.
+
 - **Ferma**: non arriva nulla di nuovo finché non premi **Avvia**. Riprende da dove era.
 - **Riavvia sincronizzazione**: abbandona il giro in corso, con i suoi errori, e rilegge subito l'ultima settimana. Non si perde nulla di quello che ha portato.
 - **Chiavi API**: apre la pagina delle chiavi API di Salesflare, per creare una nuova chiave.

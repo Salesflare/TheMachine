@@ -425,10 +425,12 @@ function connActions(c){const name=c.display_name||c.email||c.id;
 // Salesflare (assistant.py salesflare_progress): what it reads, the round of accounts it is on, Stop or Start, Restart
 // for a round that is stuck, and where its API keys are.
 // No access to any account (no_access_all) says so with the way out (another key); the counts are one round's.
+// Salesflare refusing the feed for the whole team (feed_off) says who can switch it on, instead of counting accounts.
 function salesflareBox(c){const v=c.salesflare||{},r=v.round,id=c.id,n=x=>Number(x||0).toLocaleString(DL);
  const line=v.stopped?'Nothing new comes in until you start it.':r?[t('Checked {} of {} accounts so far.',n(r.done),n(r.accounts)),r.stuck?t('Started {}, may be stuck.',ago(r.started)):''].filter(Boolean).join(' '):c.last_success?'':'Finding the accounts with recent emails and meetings…';
- const aside=[v.slow_accounts?t('{} skipped as too slow',n(v.slow_accounts)):'',v.no_access&&!v.no_access_all?t('{} without access',n(v.no_access)):''].filter(Boolean).join(' · ');
- const locked=v.no_access_all&&!v.stopped?html`<p class="alert sf-locked">${t('Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.')}</p>`:'';
+ const aside=[v.slow_accounts?t('{} skipped as too slow',n(v.slow_accounts)):'',v.no_access&&!v.no_access_all&&!v.feed_off?t('{} without access',n(v.no_access)):''].filter(Boolean).join(' · ');
+ const locked=v.stopped?'':v.feed_off?html`<p class="alert sf-feed-off">${t('Salesflare hasn’t switched on feed access for API keys for your team, so no emails or meetings come in. Salesflare support can switch it on.')}</p>`
+  :v.no_access_all?html`<p class="alert sf-locked">${t('Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.')}</p>`:'';
  const btn=(act,label)=>html`<button type="button" class="head-link" data-sf-sync="${act}" data-account="${id}">${label}</button>`;
  return html`${locked}${line?html`<p class="note sf-line${r?.stuck&&!v.stopped?' sf-stuck':''}">${line}</p>`:''}${aside?html`<p class="muted sf-aside">${aside}</p>`:''}${
   c.shared_by?'':html`<div class="sf-actions">${v.stopped?btn('start',t('Start (a button)')):btn('stop','Stop')}${btn('restart','Restart sync')}${v.keys_url?html`<a class="head-link" href="${safeHref(v.keys_url)}" target="_blank" rel="noopener">API keys ↗</a>`:''}</div>`}`}
@@ -454,7 +456,7 @@ function syncPlain(c){let st={};try{st=JSON.parse(c.state||'{}')||{}}catch{}cons
  if(!c.last_success&&!c.state)return ['Waiting for the first sync. It starts within a few minutes.'];
  if(st.resync_reason||st.mode==='resync')out.push('Reading the last days again to fill a gap.');
  else if(st.mode==='bootstrap')out.push('First read: catching up on the last days.');
- else if(c.last_success&&!c.salesflare?.round&&!c.salesflare?.no_access_all&&!syncFlaky(c))out.push('Caught up. Checks for new items every few minutes.');
+ else if(c.last_success&&!c.salesflare?.round&&!c.salesflare?.no_access_all&&!c.salesflare?.feed_off&&!syncFlaky(c))out.push('Caught up. Checks for new items every few minutes.');
  const until=c.salesflare?.synced_until||(/^\d{4}-\d\d-\d\dT/.test(st.watermark||'')?st.watermark:'');if(until)out.push(t('Read up to {}',date(until)));
  if(c.service==='slack'&&c.conversations)out.push(t('{} of {} conversations read at least once',c.conversations_collected||0,c.conversations));
  return out}
