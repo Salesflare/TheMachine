@@ -109,7 +109,29 @@ async function bugOfferOpen(id){const o=await bugOfferGet({id});
 const bugOfferRoute=()=>{const m=/^#bug-offer=(bo_[a-f0-9]{16})$/.exec(location.hash);if(!m)return;history.replaceState(null,'',location.pathname+location.search);bugOfferOpen(m[1])};
 addEventListener('hashchange',bugOfferRoute);bugOfferRoute();
 function bugShotShow(){const img=$('#bug-shot-img');img.hidden=!bugShot;if(bugShot)img.src=bugShot;else img.removeAttribute('src');$('#bug-shot-remove').hidden=!bugShot}
-async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');  // a JPEG at most 1600 px wide
+// Still not right's box under a Fixed line (shell-banners.js renderFixed): what is still off, an optional image, Send
+function fixedForm(id){return make('form',{class:'fixed-off','data-fixed-form':id,novalidate:''},
+ make('label',{},t('What’s still off?'),make('textarea',{rows:'2',maxlength:'4000',spellcheck:'true',autocapitalize:'sentences'})),
+ make('div',{class:'fixed-off-tools'},make('button',{type:'button',class:'chat-say','data-fixed-pick':''},t('Attach an image')),
+  make('input',{type:'file',accept:'image/png,image/jpeg,image/webp',hidden:''}),
+  fixedShot?make('img',{src:fixedShot,alt:t('Screenshot to send')}):'',fixedShot?make('button',{type:'button',class:'chat-say','data-fixed-unpick':''},t('Remove')):'',
+  make('span',{class:'fixed-off-go'},make('button',{type:'button',class:'ghost','data-fixed-cancel':''},t('Cancel')),make('button',{class:'primary'},t('Send')))),
+ make('p',{class:'fixed-off-error',role:'status'}))}
+// Its Cancel, and an image to add or remove
+document.addEventListener('click',e=>{const b=e.target.closest('#fixed-notice button');if(!b)return;const d=b.dataset;
+ if(d.fixedCancel!==undefined){fixedOpen=null;fixedShot=null;renderFixed();return}
+ if(d.fixedPick!==undefined){b.parentNode.querySelector('input[type=file]').click();return}
+ if(d.fixedUnpick!==undefined){const w=$('#fixed-notice textarea').value;fixedShot=null;renderFixed();$('#fixed-notice textarea').value=w}});
+document.addEventListener('change',async e=>{const input=e.target.closest('#fixed-notice input[type=file]');if(!input)return;const f=input.files[0],out=$('#fixed-notice .fixed-off-error'),w=$('#fixed-notice textarea').value;
+ if(!f)return;if(f.size>20e6){out.textContent=t('That image is too big.');return}
+ try{fixedShot=await bugShrink(await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)}))}catch{out.textContent=t('That image can’t be read.');return}
+ renderFixed();$('#fixed-notice textarea').value=w});
+document.addEventListener('submit',async e=>{const form=e.target.closest('[data-fixed-form]');if(!form)return;e.preventDefault();const id=form.dataset.fixedForm,send=form.querySelector('.primary'),out=form.querySelector('.fixed-off-error');
+ send.disabled=true;out.textContent='';
+ try{await fixedPost({answer:'not_right',report:id,text:form.querySelector('textarea').value.trim(),...(fixedShot?{screenshot:fixedShot}:{})});fixedDrop(id);toast(t('Thanks. We’ll take another look.'))}
+ catch(err){out.textContent=err.message||t('Can’t reach your account right now. Try again.');send.disabled=false}});
+// An image picked or taken for a report, as a JPEG at most 1600 px wide (Report a bug, help-panel.js, and Still not right)
+async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');
  c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
 $('#bug-shot-pick').onclick=()=>$('#bug-shot-file').click();
 $('#bug-shot-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;$('#bug-error').textContent='';if(f.size>20e6){$('#bug-error').textContent='That image is too big.';return}

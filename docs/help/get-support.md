@@ -26,7 +26,9 @@ We take it from there. A self-hosted Machine can send one when it's on the Netwo
 
 Or just tell your Machine in chat that something is wrong. It opens **Report a bug** for you, with your words and a short summary filled in. Nothing goes until you tap **Send**.
 
-Once we fix a bug you reported and your Machine runs the fix, we tell you once: a short line on your dashboard (**Got it** closes it) and a short email. A self-hosted Machine hears of it when it's on the Network.
+Once we fix a bug you reported and your Machine runs the fix, we tell you once: a short line on your dashboard and a short email. A self-hosted Machine hears of it when it's on the Network.
+
+The line asks if it really works now. Tap **Works now**, or **Still not right** to say what's still off, with an image if it helps. That goes to us as a new report, linked to the first one. **×** closes the line without an answer.
 
 Offline, or sent many in a row? Your report isn't lost. Your Machine keeps it and sends it later by itself. Until then it shows under **Waiting to go out**.
 

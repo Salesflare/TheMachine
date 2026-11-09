@@ -3523,13 +3523,13 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
     release = language = None  # set by the app: () -> the release this code is (assistant.running_release), the UI language
     fixed_now = ()  # the last answer, for the dashboard's state (no call of its own)
 
-    def fixed(self, seen=None):
-        """The fixed bugs to show, [{id, text, at}] (text in the owner's language, from the control plane); seen
-        closes one, on every Machine of theirs."""
+    def fixed(self, seen=None, answer=None):
+        """The fixed bugs to show, [{id, text, at}] (text in the owner's language, from the control plane); seen closes
+        one, on every Machine of theirs; answer ({answer: works|not_right, report, text, screenshot}) answers its question."""
         import time
-        if seen:
-            self.fixed_now = [f for f in self.fixed_now if f['id'] != seen]
-            found = self.relay.call('POST', '/fixed', {'seen': str(seen)[:40]}, timeout=20) or {}
+        if seen or answer:
+            self.fixed_now = [f for f in self.fixed_now if f['id'] != (seen or answer.get('report'))]
+            found = self.relay.call('POST', '/fixed', answer or {'seen': str(seen)[:40]}, timeout=40 if answer else 20) or {}
         else:
             ask = {'release': (self.release and self.release()) or '', 'lang': (self.language and self.language()) or ''}
             found = self.relay.call('GET', '/fixed?' + urllib.parse.urlencode(ask), timeout=20) or {}

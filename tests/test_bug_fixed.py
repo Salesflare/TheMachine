@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import fleet  # noqa: E402
 import dashboard_parts
+from machine import actions  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('bug_fixed_assistant', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec)
@@ -55,6 +56,29 @@ class Fixed(unittest.TestCase):
         self.assertEqual(f.fixed_now, [])
         self.assertEqual(f.relay.calls, [('POST', '/fixed', {'seen': 's_045cc20be4f1c3e6'})])
 
+    def test_works_now_and_still_not_right_answer_and_close_it(self):
+        f = paired({'fixed': [{'id': 's_c09e28545b5e9226', 'text': 'Fixed: y.', 'at': ''}], 'follow_up': 's_00000000000000aa'})
+        f.fixed_now = [{'id': 's_045cc20be4f1c3e6', 'text': 'Fixed: x.', 'at': ''}, {'id': 's_c09e28545b5e9226', 'text': 'Fixed: y.', 'at': ''}]
+        works = {'answer': 'works', 'report': 's_045cc20be4f1c3e6', 'text': '', 'screenshot': None}
+        self.assertEqual([i['id'] for i in f.fixed(answer=works)], ['s_c09e28545b5e9226'])
+        off = {'answer': 'not_right', 'report': 's_c09e28545b5e9226', 'text': 'still empty after adding one', 'screenshot': 'data:image/png;base64,AAAA'}
+        f.relay.answer = {'fixed': []}
+        self.assertEqual(f.fixed(answer=off), [])
+        self.assertEqual(f.relay.calls, [('POST', '/fixed', works), ('POST', '/fixed', off)])
+
+    def test_the_action_checks_the_answer_and_says_a_refusal(self):
+        app = object.__new__(a.App)
+        app.fleet = paired(ValueError('You sent a few reports just now; we have them. Write to support by email if there is more.'))
+        app.fleet.fixed_now = [{'id': 's_045cc20be4f1c3e6', 'text': 'Fixed: x.', 'at': ''}]
+        with self.assertRaises(ValueError):
+            app.support_action('bug_fixed', {'answer': 'maybe', 'report': 's_045cc20be4f1c3e6'})
+        with self.assertRaises(ValueError):
+            app.support_action('bug_fixed', {'answer': 'not_right', 'report': 's_045cc20be4f1c3e6', 'screenshot': 'javascript:alert(1)'})
+        with self.assertRaisesRegex(ValueError, 'a few reports'):
+            app.support_action('bug_fixed', {'answer': 'not_right', 'report': 's_045cc20be4f1c3e6', 'text': 'still off'})
+        self.assertEqual(len(app.fleet.relay.calls), 1)  # only the good one was asked
+        self.assertIn('bug_fixed', actions.UPLOAD_ACTIONS)  # its screenshot fits
+
     def test_the_round_asks_once_an_hour_and_never_fails(self):
         f = paired(fleet.Unavailable('down'))
         f.fixed_round()
@@ -72,6 +96,8 @@ class Fixed(unittest.TestCase):
         self.assertIn('state.fixed', page)  # self-hosted: from the state, no call of its own on each render
         self.assertIn("'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ())", (ROOT / 'machine/web/handler.py').read_text())
         self.assertIn("'/_machine/fixed'", page)
+        for hook in ('data-fixed-works', 'data-fixed-off', 'data-fixed-form', "answer:'works'", "answer:'not_right'"):
+            self.assertIn(hook, page)  # the question: Works now, Still not right with its box; × still closes without an answer
 
 
 if __name__ == '__main__':

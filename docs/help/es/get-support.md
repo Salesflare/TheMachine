@@ -26,7 +26,9 @@ Desde ahí nos encargamos nosotros. Una Machine autoalojada puede enviar uno cua
 
 También puedes decirle a tu Machine en el chat que algo en ella va mal. Te ofrece enviar un informe y te da un enlace que abre **Informar de un error** con tus palabras y un resumen corto ya escritos. Nada sale hasta que tocas **Enviar**. Sin una cuenta a la que enviarlo, te dice dónde escribir.
 
-Cuando corregimos un error que reportaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel (**Entendido** la cierra) y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
+Cuando corregimos un error que reportaste y tu Machine ya tiene la corrección, te lo decimos una vez: una línea corta en tu panel y un correo corto. Una Machine autoalojada se entera cuando está en la Network.
+
+La línea pregunta si de verdad ya funciona. Toca **Ya funciona**, o **Aún no está bien** para decir qué sigue fallando, con una imagen si ayuda. Nos llega como un reporte nuevo, enlazado al primero. **×** cierra la línea sin responder.
 
 Si un informe no puede salir enseguida (no tienes conexión o enviaste muchos en poco tiempo), no se pierde. Tu Machine lo guarda, te dice cuándo sale y lo envía sola. Los informes que aún esperan aparecen en **Esperando para salir**.
 

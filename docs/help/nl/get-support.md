@@ -26,7 +26,9 @@ Vanaf dan nemen wij het over. Een zelf gehoste Machine kan er een versturen als 
 
 Je kunt je Machine ook in de chat zeggen dat er iets mis is met hem. Hij biedt aan een melding te versturen en geeft je een link die **Een bug melden** opent met je eigen woorden en een korte samenvatting al ingevuld. Er gaat niets weg tot je op **Versturen** tikt. Zonder account om naartoe te sturen, zegt hij waar je kunt schrijven.
 
-Als we een bug oplossen die je meldde en je Machine de oplossing heeft, laten we het je één keer weten: een korte regel op je dashboard (**Begrepen** sluit hem) en een korte e-mail. Een zelf gehoste Machine hoort het als hij op het Network zit.
+Als we een bug oplossen die je meldde en je Machine de oplossing heeft, laten we het je één keer weten: een korte regel op je dashboard en een korte e-mail. Een zelf gehoste Machine hoort het als hij op het Network zit.
+
+De regel vraagt of het nu echt werkt. Tik op **Werkt nu**, of op **Nog niet goed** om te zeggen wat er nog niet klopt, met een afbeelding als dat helpt. Dat komt bij ons binnen als een nieuwe melding, gekoppeld aan de eerste. **×** sluit de regel zonder antwoord.
 
 Kan een bugmelding niet meteen weg (je bent offline, of je stuurde er veel in korte tijd), dan gaat ze niet verloren. Je Machine bewaart ze, zegt wanneer ze weggaat en verstuurt ze vanzelf. Bugmeldingen die nog wachten, staan onder **Wacht op verzending**.
 

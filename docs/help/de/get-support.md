@@ -26,7 +26,9 @@ Ab da kümmern wir uns. Eine selbst gehostete Machine kann einen Bericht senden,
 
 Du kannst deiner Machine auch im Chat sagen, dass bei ihr etwas nicht stimmt. Sie bietet an, einen Bericht zu senden, und gibt dir einen Link, der **Fehler melden** mit deinen Worten und einer kurzen Zusammenfassung öffnet. Nichts geht raus, bis du auf **Senden** tippst. Ohne Konto, an das sie senden kann, sagt sie dir, wohin du schreiben kannst.
 
-Wenn wir einen Bug beheben, den du gemeldet hast, und deine Machine die Korrektur hat, sagen wir es dir einmal: eine kurze Zeile in deinem Dashboard (**Verstanden** schließt sie) und eine kurze E-Mail. Eine selbst gehostete Machine erfährt es, wenn sie im Network ist.
+Wenn wir einen Bug beheben, den du gemeldet hast, und deine Machine die Korrektur hat, sagen wir es dir einmal: eine kurze Zeile in deinem Dashboard und eine kurze E-Mail. Eine selbst gehostete Machine erfährt es, wenn sie im Network ist.
+
+Die Zeile fragt, ob es jetzt wirklich funktioniert. Tippe auf **Funktioniert jetzt**, oder auf **Noch nicht richtig**, um zu sagen, was noch nicht stimmt, gern mit einem Bild. Das kommt als neue Meldung bei uns an, verknüpft mit der ersten. **×** schließt die Zeile ohne Antwort.
 
 Wenn ein Bericht nicht sofort rausgehen kann (du bist offline oder hast in kurzer Zeit viele gesendet), geht er nicht verloren. Deine Machine behält ihn, sagt, wann er rausgeht, und sendet ihn von selbst. Berichte, die noch warten, stehen unter **Wartet auf den Versand**.
 

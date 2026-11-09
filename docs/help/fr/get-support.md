@@ -26,7 +26,9 @@ Nous prenons le relais. Une Machine auto-hébergée peut en envoyer un quand ell
 
 Vous pouvez aussi dire à votre Machine dans le chat que quelque chose ne va pas chez elle. Elle propose d’envoyer un signalement et vous donne un lien qui ouvre **Signaler un bug** avec vos mots et un court résumé déjà remplis. Rien ne part avant que vous touchiez **Envoyer**. Sans compte où l’envoyer, elle vous dit où écrire.
 
-Quand nous corrigeons un bug que vous avez signalé et que votre Machine a le correctif, nous vous le disons une fois : une courte ligne sur votre tableau de bord (**Compris** la ferme) et un court e-mail. Une Machine auto-hébergée l'apprend quand elle est sur le Network.
+Quand nous corrigeons un bug que vous avez signalé et que votre Machine a le correctif, nous vous le disons une fois : une courte ligne sur votre tableau de bord et un court e-mail. Une Machine auto-hébergée l'apprend quand elle est sur le Network.
+
+La ligne demande si ça marche vraiment. Touchez **Ça marche**, ou **Toujours pas réglé** pour dire ce qui ne va toujours pas, avec une image si besoin. Cela nous arrive comme un nouveau signalement, lié au premier. **×** ferme la ligne sans répondre.
 
 Si un signalement ne peut pas partir tout de suite (vous êtes hors ligne, ou vous en avez envoyé beaucoup en peu de temps), il n’est pas perdu. Votre Machine le garde, indique quand il partira et l’envoie d’elle-même. Les signalements encore en attente s’affichent sous **En attente d’envoi**.
 

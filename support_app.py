@@ -123,6 +123,19 @@ class SupportApp:
         if name == 'bug_fixed':  # a bug the owner reported, fixed and running here now (fleet.Fleet.fixed); seen closes one
             if not getattr(self, 'fleet', None):
                 return {'fixed': []}
+            if args.get('answer') is not None:  # its question: Works now, or Still not right with what is still off
+                said, shot = args.get('answer'), args.get('screenshot')
+                if said not in ('works', 'not_right') or not isinstance(args.get('report'), str):
+                    raise ValueError('Choose Works now or Still not right.')
+                if shot is not None and not (isinstance(shot, str) and re.fullmatch(r'data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+', shot)
+                                             and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
+                    raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
+                try:
+                    return {'fixed': self.fleet.fixed(answer={'answer': said, 'report': args['report'][:40], 'screenshot': shot or None,
+                                                              'text': str(args.get('text') or '').strip()[:self.BUG_TEXT]})}
+                except (fleet.Off, fleet.Unavailable, OSError) as error:
+                    LOG.info('fixed answer not sent error=%s', type(error).__name__)
+                    raise ValueError('Can’t reach your account right now. Try again.') from None
             try:
                 return {'fixed': self.fleet.fixed(args.get('seen') or None)}
             except (fleet.Off, fleet.Unavailable, OSError, ValueError) as error:

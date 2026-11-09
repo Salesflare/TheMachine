@@ -19,20 +19,34 @@ function reviewBanner(p){if(!p)return [];const when=pauseWhen(p.until),name=p.na
  return [make('span',{},line),make('button',{type:'button',class:'head-link','data-review-now':''},t('Check now'))]}
 // A bug the owner reported, fixed and running here now: the control plane says so once this Machine runs the fix (its
 // cloud/support_fixes.py; hosted through /_machine/fixed with the owner's sign-in, self-hosted through the Network,
-// state.fixed, which the Fleet's hourly look keeps). One quiet line each, until Got it, which closes it on every Machine
-// of theirs. Hosted: looked at every 15 minutes.
+// state.fixed, which the Fleet's hourly look keeps). One quiet line each, until it is answered or closed, on every
+// Machine of theirs. Hosted: looked at every 15 minutes.
 let fixedList=[],fixedAt=0,fixedGone=new Set();
 async function fixedLoad(){if(!state.manage_url){fixedList=(Array.isArray(state.fixed)?state.fixed:[]).filter(f=>f&&f.id&&!fixedGone.has(f.id));renderFixed();return}
  if(Date.now()-fixedAt<9e5)return;fixedAt=Date.now();
  try{const r=await fetch('/_machine/fixed',{credentials:'same-origin',redirect:'manual'});if(!r.ok)return;fixedList=((await r.json()).fixed||[]).filter(f=>!fixedGone.has(f.id))}catch{return}renderFixed()}
 // Each banner is built again only when what it says changes (a rebuild would drop focus from its button)
 const bannerSet=(b,key,nodes)=>{if(b.dataset.shown!==key){b.replaceChildren(...nodes);b.dataset.shown=key}b.hidden=!nodes.length};
-function renderFixed(){const b=$('#fixed-notice');if(!b)return;bannerSet(b,JSON.stringify(fixedList.map(f=>[f.id,f.text])),
- fixedList.map(f=>make('div',{class:'notice-card fixed-notice'},make('span',{},f.text),make('button',{type:'button',class:'head-link','data-fixed':f.id},t('Got it')))));
+// Each asks whether it is really fixed: Works now (kept, closed) or Still not right, which opens a small box for what
+// is still off and an optional image (help-panel.js, loaded then), sent as a new report linked to this one
+// (support_fixes.answer). × closes it without an answer, as before.
+let fixedOpen=null,fixedShot=null;
+function renderFixed(){const b=$('#fixed-notice');if(!b)return;bannerSet(b,JSON.stringify([fixedList.map(f=>[f.id,f.text]),fixedOpen,!!fixedShot]),
+ fixedList.map(f=>make('div',{class:'notice-card fixed-notice'},make('span',{},f.text),
+  make('span',{class:'fixed-ask'},make('button',{type:'button',class:'head-link','data-fixed-works':f.id},t('Works now')),
+   make('button',{type:'button',class:'head-link','data-fixed-off':f.id,'aria-expanded':String(fixedOpen===f.id)},t('Still not right'))),
+  make('button',{type:'button',class:'fixed-close','data-fixed':f.id,'aria-label':t('Close'),title:t('Close')},'×'),
+  fixedOpen===f.id&&typeof fixedForm==='function'?fixedForm(f.id):'')));
  if(state?.greeting)b.hidden=true}  // a new owner's first views stay quiet (Store.greeting)
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-fixed]');if(!b)return;const id=b.dataset.fixed;fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);renderFixed();
- try{if(state.manage_url)await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify({seen:id})});
-  else await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'bug_fixed',args:{seen:id}})})}catch{}});
+const fixedDrop=id=>{fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);if(fixedOpen===id){fixedOpen=null;fixedShot=null}renderFixed()};
+// Hosted: to its account with the owner's sign-in there; self-hosted: through the Network (bug_fixed). The account's reason as an Error.
+async function fixedPost(body){if(state.manage_url){const r=await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify(body)});
+  if(!r.ok){let d={};try{d=await r.json()}catch{}throw Error(d.error||t('Can’t reach your account right now. Try again.'))}return}
+ await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,...(body.screenshot?{'X-Upload':'bug-report'}:{})},body:JSON.stringify({action:'bug_fixed',args:body})})}
+document.addEventListener('click',async e=>{const b=e.target.closest('#fixed-notice button');if(!b)return;const d=b.dataset;
+ if(d.fixed){fixedDrop(d.fixed);try{await fixedPost({seen:d.fixed})}catch{}return}
+ if(d.fixedWorks){fixedDrop(d.fixedWorks);try{await fixedPost({answer:'works',report:d.fixedWorks})}catch{}return}
+ if(d.fixedOff)lazyRun('help',()=>{fixedOpen=fixedOpen===d.fixedOff?null:d.fixedOff;fixedShot=null;renderFixed();$('#fixed-notice textarea')?.focus()})});  // its box: help-panel.js
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=state.model_pause?['model',state.model_pause]:['review',state.review_pause],nodes=p[0]==='model'?limitBanner(p[1]):reviewBanner(p[1]);
  bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
