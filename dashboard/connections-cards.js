@@ -434,7 +434,7 @@ function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.mana
 // Work (with its company) or Personal: the owner marks each sign-in. Leaving a Work Fleet removes that company's work
 // accounts from this Machine (work_removal.py); personal ones stay.
 // A company by how the Machine names it (work_or_personal.work_labels): plain Work when its name was only made from a domain
-const scopeLabel=b=>{b=String(b||'');const named=/^work:./.test(b)&&Object.hasOwn(state.work_labels||{},b)?String(state.work_labels[b]):'';
+const scopeLabel=b=>{b=String(b||'');const named=/^work:./.test(b)&&Object.prototype.hasOwnProperty.call(state.work_labels||{},b)?String(state.work_labels[b]):'';
  return /^owner:/.test(b)?'':named?named.replace(/^Work(?= · |$)/,t('Work')): /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
 function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.service==='gateway')return '';
  const all=[...new Set([...(state.connectors||[]).map(x=>String(x.boundary||'')),b])],cur=b==='personal'?'personal:me':b;
