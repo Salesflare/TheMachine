@@ -41,7 +41,7 @@ Routinen laufen nacheinander und warten, wenn das Nutzungslimit deines KI-Abos k
 
 ## Ändern oder stoppen
 
-Das steht im ⋯-Menü der Routine. **Bearbeiten** ändert, was sie tut; wann sie läuft und ihre bisherigen Ergebnisse bleiben. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. Beide haben **Speichern** und **Abbrechen**; am Computer brechen auch Esc oder ein Klick daneben ab.
+Das steht im ⋯-Menü der Routine. **Bearbeiten** ändert ihren Namen und was sie tut; wann sie läuft und ihre bisherigen Ergebnisse bleiben. **Zeitpunkt ändern** nimmt einen neuen Rhythmus in deinen eigenen Worten, wie „jeden Werktag um 8“. Beide haben **Speichern** und **Abbrechen**; am Computer brechen auch Esc oder ein Klick daneben ab.
 
 In **Bearbeiten** lässt **Ausprobieren** die neuen Worte einmal laufen und zeigt dort das Ergebnis. Die Routine bleibt, wie sie war, bis **Speichern**.
 

@@ -129,14 +129,15 @@ class RoutinesApp:
         return self.routines_view(row['id'])
 
     def routine_edit_action(self, name, args, owner_dashboard):
-        """Edit: what it does, in new words, and its script steps (steps; left out: as they are). When it runs and what
-        it found so far stay."""
+        """Edit: what it does, in new words, its script steps (steps; left out: as they are) and its name (name; left
+        out: as it is). When it runs and what it found so far stay."""
         if not owner_dashboard:
             raise ValueError('Routines are changed by the owner, on the dashboard')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = routines.get(db, args.get('id'))
-            routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp(), args.get('steps') if 'steps' in args else False)
+            routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp(), args.get('steps') if 'steps' in args else False,
+                                         args.get('name') if 'name' in args else None)
             routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
         return self.routines_view(row['id'])
 

@@ -41,7 +41,7 @@ Routines run one at a time and wait when your AI plan's usage is low, like all b
 
 ## Change or stop it
 
-These are in the ⋯ menu on the routine. **Edit** changes what it does; when it runs and its results so far stay. **Change when** takes a new rhythm in your own words, like "every weekday at 8". Both have **Save** and **Cancel**; on a computer, Esc or a click outside cancels too.
+These are in the ⋯ menu on the routine. **Edit** changes its name and what it does; when it runs and its results so far stay. **Change when** takes a new rhythm in your own words, like "every weekday at 8". Both have **Save** and **Cancel**; on a computer, Esc or a click outside cancels too.
 
 In **Edit**, **Try it** runs the new words once and shows the result there. The routine stays as it was until **Save**.
 

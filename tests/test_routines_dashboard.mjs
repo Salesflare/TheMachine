@@ -25,7 +25,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/routines'){res.end(all());return}
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_try'){if(b.args.id===ID)list=list.map(r=>({...r,test:{id:'t2',state:'ready',started_at:now,trial:b.args.words,result:'**Tried** it',got:!!b.args.steps?.get}}));else trying=[tryOne(b.args.words)];res.end(all());return}
-  if(b.action==='routine_edit'){list=list.map(r=>({...r,steps:b.args.steps}));res.end(all());return}
+  if(b.action==='routine_edit'){list=list.map(r=>({...r,steps:b.args.steps,...(b.args.name?{name:b.args.name}:{})}));res.end(all());return}
   if(b.action==='routine_state'&&b.args.id===TID){trying=[];res.end(all());return}
   if(b.action==='routine_accept'){list=[...list,{...suggestion(),state:'on'}];suggested=[];res.end(JSON.stringify({routines:list,suggested}));return}
   if(b.action==='routine_old_job'){list=list.map(r=>({...r,old_job:false}));res.end(JSON.stringify({routines:list,suggested}));return}
@@ -138,6 +138,20 @@ try{
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
   assert.equal(await card.locator('.rt-form [data-step="get"]').inputValue(),'python3 ~/scripts/deals.py --open');
   await card.locator('[data-rt-cancel]').click();
+  // Its name, in the title's place above the schedule line: Cancel keeps both as they were, Save sends a new name with the words
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();const nm=card.locator('.rt-form .rt-name');
+  assert.equal(await nm.inputValue(),'Sum up my deals');assert.equal(await card.locator('h3').isVisible(),false,'one title: the field');
+  const [nb,wb,eb]=await Promise.all([nm.boundingBox(),card.locator('.rt-when').boundingBox(),card.locator('.rt-form textarea').boundingBox()]);
+  assert.ok(nb.y+nb.height<=wb.y+1&&wb.y+wb.height<=eb.y+1,'name, then when, then the words');
+  assert.equal(await page.evaluate(()=>document.activeElement.tagName),'TEXTAREA','the words have the focus, as before');
+  await nm.fill('Deals digest');await card.locator('[data-rt-cancel]').click();
+  assert.equal(await card.locator('h3').innerText(),'Sum up my deals');assert.equal(sent('routine_edit').length,2,'Cancel saves nothing');
+  await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
+  assert.equal(await nm.inputValue(),'Sum up my deals','Cancel took the typed name back');
+  await nm.fill('  Deals digest ');await nm.press('Enter');
+  for(let i=0;i<60&&sent('routine_edit').length<3;i++)await page.waitForTimeout(50);
+  assert.deepEqual(sent('routine_edit').at(-1),{action:'routine_edit',id:ID,words:'Sum up my deals',steps,name:'Deals digest'});
+  await card.locator('h3').waitFor();assert.equal(await card.locator('h3').innerText(),'Deals digest');
   // The Machine's own recipe: under Advanced only, read-only
   list=list.map(r=>({...r,steps:undefined,recipe:['gh pr list --repo acme/widgets --state merged --search merged:>={days_ago:7}']}));await page.evaluate(()=>routinesView(true));
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();

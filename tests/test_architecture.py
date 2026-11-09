@@ -416,7 +416,8 @@ OVER_BUDGET = {}
 # still off and its image load with Help (about 3.3 KB of buttons and styles; first load 1,499,738).
 # 1,500,000 -> 1,502,000 (2026-11-09): a routine's to-do offers Also change the routine, on To-dos itself (about 1.8 KB;
 # first load 1,501,675).
-FIRST_LOAD_CEILING = 1_502_000
+# 1,502,000 -> 1,504,000 (2026-11-09): Edit names a routine too, in its title's place (about 1.3 KB; first load 1,502,991).
+FIRST_LOAD_CEILING = 1_504_000
 LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 124_000}
 
 
