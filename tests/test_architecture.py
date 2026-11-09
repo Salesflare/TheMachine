@@ -423,9 +423,13 @@ OVER_BUDGET = {}
 # Don't raise this for a feature: a new page, panel, dialog or anything that only runs once the owner opens or clicks
 # something goes in a part that loads when first needed (dashboard_parts.LAZY, lazyRun in shell-core.js), and what
 # To-dos draws first stays small. Only a change to that first draw itself may raise it, saying why.
+# 2026-11-09: main had reached this ceiling (1,423,014, then 1,421,700). Settings' Connected AIs and Apps panels
+# (settings-ai.js, settings-ai.css, settings-apps.js) load when first needed, with Settings' other panels (first load
+# 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
 FIRST_LOAD_CEILING = 1_423_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 124_000, 'talk': 52_000}
+# settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000}
 
 
 def budget(name):

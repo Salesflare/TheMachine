@@ -1,0 +1,16 @@
+/* Settings, Connected AIs: the rows settings-ai.js draws, which load with it (dashboard_parts.LAZY). */
+/*@lazy*/
+.settings-list>.ai-conn{flex-wrap:wrap;gap:8px}
+.ai-conn .grow{flex-basis:100%}
+.ai-controls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ai-controls .ghost{padding-inline:10px}
+.ai-controls select{width:auto;max-width:100%;field-sizing:content}
+.ai-url{display:block;margin-top:6px;overflow-wrap:anywhere;font-size:var(--fs-sm)}
+#ai-official .ai-later strong{color:var(--muted)}
+.settings-list>.ai-activity{display:block;padding:10px 16px}
+/* One line per AI, Messages and Change on the right; Change opens its controls below. */
+.settings-list>.ai-conn{flex-wrap:nowrap;gap:12px;align-items:center}.settings-list>.ai-conn .grow{flex:1 1 auto;min-width:0}
+.ai-end{display:flex;gap:10px;align-items:center;flex:0 0 auto}.ai-msg-label{font-size:var(--fs-sm);color:var(--muted)}
+.settings-list>.ai-edit{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-top:0;border-top:0}
+.ai-msg-note{color:var(--muted);font-size:var(--fs-xs)}
+@media(max-width:560px){.settings-list>.ai-conn{flex-wrap:wrap}.ai-end{flex-basis:100%;justify-content:flex-end}}
