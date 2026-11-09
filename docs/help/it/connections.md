@@ -18,6 +18,8 @@ Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che
 
 Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Sei uscito prima di finire? Riapri **Connessioni**, su qualsiasi dispositivo, e riprendi dallo stesso passaggio. Una volta collegata, la tua Machine si riavvia per iniziare a leggerla, poi apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
 
+Una fonte già collegata lo indica nell’elenco, con il suo account. Sceglila per aggiungerne un’altra accanto: il modulo lo dice e rimanda a quella che hai già.
+
 L’elenco è diviso in gruppi (**Email e calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**), dalla A alla Z in ciascuno.
 
 **Suggerito per te** compare in alto quando la tua Machine vede un motivo per una fonte, con quel motivo in una riga: email da Stripe, riunioni Zoom nel tuo calendario, messaggi che rimandano a Google Docs, o una configurazione non finita. Li conta sulla tua Machine; non esce nulla. Nessun motivo, nessuna sezione. Una fonte già collegata non viene mai suggerita.
