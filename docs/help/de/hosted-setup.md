@@ -11,12 +11,12 @@ Eine gehostete Machine läuft in der Cloud, in der EU, nur für dich. Wir halten
 ## Registrieren
 
 1. Tippe auf app.themachine.computer auf **Weiter mit Google** oder **Weiter mit Microsoft**. Damit wird dein Konto angelegt. Mit Google fragt derselbe Bildschirm auch nach deinem Gmail und deinem Kalender. Erlaubst du sie, ist deine E-Mail verbunden, ohne zweiten Google-Bildschirm.
-2. Tippe auf **Passkey hinzufügen** und nutze deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Lieber eine Authenticator-App? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und tippe auf **Einschalten**. Speichere die Wiederherstellungscodes, die danach kommen.
-3. Wähle Größe und Adresse deiner Machine. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht. Fragt die Einrichtung nicht nach einer Zahlungskarte, füge vorher eine auf deiner Kontoseite hinzu.
+2. Wähle Größe und Adresse deiner Machine. Die ersten {trial_days} Tage sind kostenlos, und vor ihrem Ende wird nichts abgebucht. Fragt die Einrichtung nicht nach einer Zahlungskarte, füge vorher eine auf deiner Kontoseite hinzu.
+3. Tippe auf **Passkey hinzufügen** und nutze deinen Fingerabdruck, dein Gesicht oder die PIN deines Geräts. Lieber eine Authenticator-App? Öffne **Stattdessen eine Authenticator-App verwenden**, scanne den Code, gib die sechs Ziffern ein und tippe auf **Einschalten**. Speichere die Wiederherstellungscodes, die danach kommen.
 
 ## Deine Einrichtungsseite
 
-Die Registrierung ist ein Ablauf in fünf Schritten, einer pro Bildschirm: dein Passkey, dein Tarif, dann **E-Mail und Kalender**, **Deine KI** und **Erste Aufgaben**. Oben steht, bei welchem Schritt du bist. Eine Zeile zeigt, wie weit deine Machine mit dem Starten ist. Du musst nicht darauf warten: Beide Schritte funktionieren, während sie startet.
+Die Registrierung ist ein Ablauf in fünf Schritten, einer pro Bildschirm: dein Tarif, dein Passkey, dann **E-Mail und Kalender**, **Deine KI** und **Erste Aufgaben**. Oben steht, bei welchem Schritt du bist. Eine Zeile zeigt, wie weit deine Machine mit dem Starten ist. Du musst nicht darauf warten: Beide Schritte funktionieren, während sie startet.
 
 1. **E-Mail und Kalender**: ein Tippen auf **Google verbinden** oder **Microsoft verbinden**. Es beginnt mit dem Konto, mit dem du dich angemeldet hast. Gmail und Kalender schon bei der Registrierung mit Google erlaubt? Dann überspringt die Einrichtung diesen Schritt, und es geht weiter mit deiner KI. Arbeit oder privat ergibt sich aus der Adresse; das änderst du später beim Konto. Siehe [Gmail](gmail.md) und [Microsoft](microsoft.md).
 2. **Deine KI**: Melde dich mit ChatGPT oder Claude an, oder nutze einen Schlüssel deines KI-Anbieters. Bei Claude fügst du den Code von der Seite von Claude ein, und es geht von selbst weiter. Kein Abo? Hol dir ChatGPT oder Claude, oder nutze einen Schlüssel: Der Schritt verlinkt die Schlüsselseite jedes Anbieters, und der Anbieter rechnet nach Nutzung ab. Siehe [ChatGPT](chatgpt.md).

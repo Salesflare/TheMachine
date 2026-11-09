@@ -11,8 +11,8 @@ Een gehoste Machine draait in de cloud, in de EU, alleen voor jou. Wij houden he
 ## Aanmelden
 
 1. Druk op app.themachine.computer op **Doorgaan met Google** of **Doorgaan met Microsoft**. Zo maak je je account aan.
-2. Scan de code met een authenticator-app, typ de zes cijfers en druk op **Aanzetten**. Een passkey kan later.
-3. Kies de grootte en de naam van je Machine, en voeg dan je betaalkaart toe. De eerste {trial_days} dagen zijn gratis en er wordt niets aangerekend voordat ze voorbij zijn.
+2. Kies de grootte en de naam van je Machine, en voeg dan je betaalkaart toe. De eerste {trial_days} dagen zijn gratis en er wordt niets aangerekend voordat ze voorbij zijn.
+3. Scan de code met een authenticator-app, typ de zes cijfers en druk op **Aanzetten**. Een passkey kan later.
 
 ## Je setuppagina
 

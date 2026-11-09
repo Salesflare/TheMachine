@@ -11,8 +11,8 @@ Une Machine hébergée tourne dans le cloud, dans l’UE, rien que pour vous. No
 ## Inscription
 
 1. Sur app.themachine.computer, appuyez sur **Continuer avec Google** ou **Continuer avec Microsoft**. Cela crée votre compte.
-2. Scannez le code avec une app d’authentification, tapez les six chiffres et appuyez sur **Activer**. Une clé d’accès peut venir plus tard.
-3. Choisissez la taille et le nom de votre Machine, puis ajoutez votre carte de paiement. Les {trial_days} premiers jours sont gratuits et rien n’est prélevé avant la fin.
+2. Choisissez la taille et le nom de votre Machine, puis ajoutez votre carte de paiement. Les {trial_days} premiers jours sont gratuits et rien n’est prélevé avant la fin.
+3. Scannez le code avec une app d’authentification, tapez les six chiffres et appuyez sur **Activer**. Une clé d’accès peut venir plus tard.
 
 ## Votre page de configuration
 

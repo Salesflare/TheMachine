@@ -11,8 +11,8 @@ Uma Machine hospedada roda na nuvem, na UE, só para você. Nós mantemos ela fu
 ## Criar a conta
 
 1. Em app.themachine.computer, toque em **Continuar com o Google** ou **Continuar com a Microsoft**. Isso cria a sua conta.
-2. Escaneie o código com um app autenticador, digite os seis dígitos e toque em **Ativar**. Uma passkey pode vir depois.
-3. Escolha o tamanho e o nome da sua Machine, depois adicione seu cartão de pagamento. Os primeiros {trial_days} dias são grátis e nada é cobrado antes de eles acabarem.
+2. Escolha o tamanho e o nome da sua Machine, depois adicione seu cartão de pagamento. Os primeiros {trial_days} dias são grátis e nada é cobrado antes de eles acabarem.
+3. Escaneie o código com um app autenticador, digite os seis dígitos e toque em **Ativar**. Uma passkey pode vir depois.
 
 ## Sua página de configuração
 
