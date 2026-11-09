@@ -71,20 +71,18 @@ document.addEventListener('mouseover',e=>{if(e.target.closest('.row-more'))retur
  if(!a||!fine()){rowMore.hidden=true;return}const r=a.getBoundingClientRect();Object.assign(rowMore.style,{left:r.right-28+'px',top:r.top+(r.height-24)/2+'px'});rowMore.dataset.id=rowId(a);rowMore.hidden=false});
 document.addEventListener('scroll',()=>{rowMore.hidden=true;rowHover=null;rowMenuClose();renamePlace()},true);addEventListener('resize',()=>renamePlace());
 function rowMenuClose(){document.querySelector('.row-menu')?.remove()}
-// The to-do's own Mark done, Snooze and Not needed, named as its buttons and its ⋯ name them (a decision's hidden Mark
-// done too, like the chat's menu), so a row closes without opening it. They answer like those: at once, with Undo.
-// Not needed here skips the card's optional why (still asked on the card), like Still needed?'s Not needed.
+// The to-do's own Mark done, Snooze and Not needed, as its buttons name them, with their Undo. Not needed skips the optional why.
 const ROW_ACTS=['complete','snooze','reject'];
 function rowActs(id){const s=cardOf(id);if(!s||closed(s))return [];const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));
  const found=new Map();for(const b of t.content.querySelectorAll('article>.actions [data-choice]')){const c=b.dataset.choice;if(ROW_ACTS.includes(c)&&!found.has(c))found.set(c,(b.dataset.full||b.textContent).trim())}
  return ROW_ACTS.filter(c=>found.get(c)).map(c=>[c,found.get(c)])}
-// Opened from the keyboard (the menu key, Shift+F10): focus goes back to the list after, never to the page's top.
+// Opened from the keyboard: focus goes back to the list after.
 let rowMenuKeys=null;
-// It opens below the point (a row's ⋯, the row, a finger); with no room there it opens above (up), so the row stays in sight.
+// Below the point; with no room there, above (up), so the row stays in sight.
 function rowMenu(id,x,y,keys=null,up=y){rowMenuClose();rowMenuKeys=keys;const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');m.setAttribute('aria-label',cardOf(id)?.title||'');const acts=rowActs(id);
  setHTML(m,html`<button type="button" role="menuitem" data-row-rename="${id}">Rename</button><button type="button" role="menuitem" data-row-open="${id}">Open</button>${acts.length?html`<hr role="separator">${acts.map(([c,label])=>html`<button type="button" role="menuitem" data-row-act="${c}" data-card="${id}">${label}</button>`)}`:''}`);document.body.append(m);
  const r=m.getBoundingClientRect();Object.assign(m.style,{left:Math.max(8,Math.min(x,innerWidth-r.width-8))+'px',top:Math.max(8,y+r.height>innerHeight-8?Math.min(up,innerHeight-8)-r.height:y)+'px'});m.querySelector('button').focus()}
-// Where the keyboard goes once the menu is gone: the row, or (it left the list) the one after it, else the one before.
+// Focus to the row, or (it left the list) the next or previous one.
 function rowRefocus(id){const k=rowMenuKeys;rowMenuKeys=null;if(!k)return;const go=()=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')];
  (rows.find(a=>rowId(a)===id)||rows.find(a=>rowId(a)===k.next)||rows.find(a=>rowId(a)===k.prev))?.focus()};go();requestAnimationFrame(()=>setTimeout(go,50))}
 const rowKeys=a=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')],i=rows.indexOf(a);return {next:rowId(rows[i+1]),prev:rowId(rows[i-1])}};
@@ -97,14 +95,14 @@ document.addEventListener('click',e=>{const rn=e.target.closest('[data-row-renam
  if(op){e.preventDefault();rowMenuKeys=null;rowMenuClose();chatGo(op.dataset.rowOpen);return}
  if(act){e.preventDefault();rowAct(act.dataset.rowAct,act.dataset.card);return}
  if(!e.target.closest('.row-menu'))rowMenuClose()});
-// In the menu: arrows, Home and End move, Enter or Space picks, Esc or Tab closes.
+// Arrows, Home and End move; Esc or Tab closes.
 document.addEventListener('keydown',e=>{const m=document.querySelector('.row-menu');if(!m)return;
  if(e.key==='Escape'){const id=m.querySelector('[data-row-open]')?.dataset.rowOpen;rowMenuClose();e.stopPropagation();e.preventDefault();rowRefocus(id);return}
  if(e.key==='Tab'){rowMenuKeys=null;rowMenuClose();return}
  const items=[...m.querySelectorAll('button')],i=items.indexOf(document.activeElement),to={ArrowDown:i+1,ArrowUp:i-1,Home:0,End:items.length-1}[e.key];
  if(to===undefined)return;e.preventDefault();e.stopPropagation();items[(to+items.length)%items.length]?.focus()},true);
 document.addEventListener('contextmenu',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();
- // From the keyboard (no right button, no finger): the menu opens under the row, and the keyboard comes back to the list
+ // From the keyboard (no right button, no finger): under the row
  const r=a.getBoundingClientRect();e.button!==2&&e.pointerType!=='touch'?rowMenu(rowId(a),r.left+16,r.bottom+4,rowKeys(a),r.top-4):rowMenu(rowId(a),e.clientX,e.clientY)});
 document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();const id=rowId(a);requestAnimationFrame(()=>renameAt(id,titleEl(id,'row'),'row'))});
 // A long press on a row on a phone opens the same menu; the tap that ends it doesn't open the card.
@@ -112,7 +110,7 @@ document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)re
  document.addEventListener('touchstart',e=>{const a=e.target.closest(ROWS);if(!a||e.touches.length!==1)return;pressed=false;const t=e.touches[0];start=[t.clientX,t.clientY];
   clearTimeout(timer);timer=setTimeout(()=>{pressed=true;navigator.vibrate?.(10);{const r=a.getBoundingClientRect();rowMenu(rowId(a),start[0],r.bottom+4,null,r.top-4)}},500)},{passive:true});
  document.addEventListener('touchmove',e=>{if(timer&&start&&Math.hypot(e.touches[0].clientX-start[0],e.touches[0].clientY-start[1])>8){clearTimeout(timer);timer=null}},{passive:true});
- // The tap that ends it is no pick either: near the screen's edge the menu sits under the finger, and Not needed must not go by itself
+ // Nor does it pick from the menu under the finger
  document.addEventListener('touchend',()=>{clearTimeout(timer);timer=null;if(pressed)setTimeout(()=>{pressed=false},400)},{passive:true});
  document.addEventListener('click',e=>{if(pressed&&(e.target.closest(ROWS)||e.target.closest('.row-menu'))){e.preventDefault();e.stopImmediatePropagation();pressed=false}},true)}
 // Rename in the chat header's menu; a click on the chat's title; a click or tap on a to-do's title (Ctrl or Cmd click

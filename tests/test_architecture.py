@@ -408,7 +408,9 @@ OVER_BUDGET = {}
 # 1,525,351).
 # 1,527,000 -> 1,491,000 (2026-11-09): Settings' Skills panel loads when first needed, with Settings' other panels (first
 # load 1,525,351 -> 1,489,064).
-FIRST_LOAD_CEILING = 1_491_000
+# 1,491,000 -> 1,494,000 (2026-11-09): the sidebar to-do menu's Mark done, Snooze and Not needed, with keyboard use and
+# placement on a phone (about 3 KB after trimming); main was 1.3 KB under.
+FIRST_LOAD_CEILING = 1_494_000
 LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 124_000}
 
 
