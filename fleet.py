@@ -2628,7 +2628,9 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         return bool(self.meta('ask_meetings', False))
 
     def meeting_round(self):
-        """Ask each Work Fleet once about the outside people of each open card on a meeting in the next week."""
+        """Ask each Work Fleet once about the outside people of each open card on a meeting in the next week: only a
+        meeting on one of that Fleet's accounts (fleet_accounts), and never for a Personal to-do. A Family Fleet is
+        never asked."""
         if not self.meetings_on():
             return 0
         return sum(self.meeting_round_in(ref) for ref in self.work_fleets() if self.teammates(ref))
@@ -2637,8 +2639,12 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         mine, team = self.my_emails(), {e for m in self.teammates(fleet) for e in m.get('emails', [])}
         today = dt.datetime.now(dt.timezone.utc)
         asked = 0
+        accounts = self.fleet_accounts(fleet)  # a personal calendar, or another company's, never reaches this Fleet
+        if not accounts:
+            return 0
         with self.connect() as db:
             cards = db.execute(f"SELECT id,event_ids FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD))}) "
+                               "AND coalesce(area,'')<>'personal' "  # Personal (todo_areas.py), also on a work calendar
                                "AND id NOT IN (SELECT substr(context,6) FROM fleet_out WHERE context LIKE 'card:%' AND fleet=?)",
                                OPEN_CARD + (fleet,)).fetchall()
             todo = []
@@ -2646,7 +2652,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 ids = json.loads(card['event_ids'] or '[]')
                 if not ids:
                     continue
-                for event in db.execute(f"SELECT metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND id IN ({','.join('?' * len(ids))})", ids):
+                for event in db.execute(f"SELECT metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND id IN ({','.join('?' * len(ids))}) "
+                                        f"AND account_id IN ({','.join('?' * len(accounts))})", (*ids, *accounts)):
                     m = json.loads(event['metadata'] or '{}')
                     start = m.get('start') if isinstance(m.get('start'), dict) else {}
                     when = str(start.get('dateTime') or start.get('date') or '')
@@ -2851,13 +2858,15 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def claim_match(self, db, card, secret, members, fleet):
         """A card's email shared with teammates: its key, and who of them it is for (Always, Ask me first) within each
-        one's scope, judged by the email's outside companies. None when it is for nobody."""
+        one's scope, judged by the email's outside companies. None when it is for nobody. Only an email in one of this
+        Fleet's accounts (fleet_accounts), and never a Personal to-do's."""
         ids = json.loads(card['event_ids'] or '[]')
-        if not ids:
+        accounts = self.fleet_accounts(fleet)
+        if not ids or not accounts or card['area'] == 'personal':
             return None
         team = {e for m, _, _ in members for e in m.get('emails', [])}
         for event in db.execute(f"SELECT metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND id IN ({','.join('?' * len(ids))}) "
-                                'ORDER BY occurred_at DESC', ids):
+                                f"AND account_id IN ({','.join('?' * len(accounts))}) ORDER BY occurred_at DESC", (*ids, *accounts)):
             meta = json.loads(event['metadata'] or '{}')
             message_id = str(meta.get('message-id') or '').strip().strip('<>').lower()
             people = {a for _, a in graph.addresses(meta.get('to')) + graph.addresses(meta.get('cc')) + graph.addresses(meta.get('from'))}
@@ -2889,7 +2898,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 db.execute('DELETE FROM fleet_claims')
                 return
             db.execute(f"DELETE FROM fleet_claims WHERE fleet NOT IN ({','.join('?' * len(teams))})", tuple(teams))
-            cards = db.execute(f"SELECT id,status,event_ids FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD + ('completed', 'rejected')))}) "
+            cards = db.execute(f"SELECT id,status,event_ids,area FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD + ('completed', 'rejected')))}) "
                                'ORDER BY created_at DESC LIMIT 300', OPEN_CARD + ('completed', 'rejected')).fetchall()
             keyed = {}  # an email shared with teammates in several Fleets: claimed in the first of them
             for card in cards:
@@ -2958,10 +2967,11 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def shared_messages(self, db, card, ref):
         """Message-IDs of a card's emails in this Fleet's accounts that went to the team: a teammate, or an address at the
-        team's own domain that isn't the owner's (info@, a group). Mail only the owner got stays out."""
+        team's own domain that isn't the owner's (info@, a group). Mail only the owner got stays out, and so does a
+        Personal to-do's (todo_areas.py), also on a work mailbox."""
         ids = json.loads(card['event_ids'] or '[]')
         accounts = self.fleet_accounts(ref)
-        if not ids or not accounts:
+        if not ids or not accounts or card['area'] == 'personal':
             return []
         team = {e.lower() for m in self.teammates(ref) for e in m.get('emails', [])}
         domains = {e.rsplit('@', 1)[1] for e in team if '@' in e} - graph.FREEMAIL
@@ -3007,7 +3017,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                     return
             sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
-            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
+            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
             announce, keep = [], set()

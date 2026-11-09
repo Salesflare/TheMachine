@@ -51,7 +51,8 @@ Any Fleet, and any friend, can share:
    What is in an answer: [Answers, not data](#answers-not-data).
 2. **Meeting prep.** If you turn it on (Sharing, **Meetings and brief**), your Machine asks your Work Fleet about the
    outside people in your meetings this week: how close each teammate is, their last contact and open promises. The
-   answers show on the meeting's to-do ("From your Fleet: …") and go into its preparation.
+   answers show on the meeting's to-do ("From your Fleet: …") and go into its preparation. Only meetings on that
+   Fleet's work calendars are asked about: never one on a personal calendar, and never for a Personal to-do.
 3. **No double replies.** When the same email reaches you and a teammate, the first one to take it on claims it. See
    [Shared emails](#shared-emails).
 4. **Shared connectors.** An admin connects Intercom or Stripe once and shares it from the Fleet tab, **Shared
@@ -160,7 +161,8 @@ both have it ("With <other> and <teammate> · waiting").
 **Already on it.** If you are already working on a handoff before you answer it, it can become yours without a tap.
 
 - Your Machine's review looks only at messages you sent and calls you joined after it came, and judges by meaning
-  whether you are acting on it (never a message you only received, never a word list).
+  whether you are acting on it (never a message you only received, never a word list). Only what you did in that
+  Fleet's work accounts counts: a message from a personal account never tells a teammate anything.
 - It then accepts it for you, quietly: your to-do says "Marked as yours, since you talked to Sam about it" with **Not
   mine**, which undoes it and tells your teammate.
 - They see "<you> is on it · talked to Sam on Slack, Fri 10:12", and their to-do is done. Only where (email, Slack, a
@@ -209,7 +211,8 @@ After a meeting that several members of one Work Fleet attended (in the last two
 which follow-up: the organizer's, else that of the member who joined the Fleet first, so there is only ever one
 proposal.
 
-- It starts from that owner's own open to-dos and promises on the meeting. The owner fills in each teammate's part
+- It starts from that owner's own open to-dos and promises on the meeting, from that Fleet's work accounts only
+  (never a Personal to-do or a promise made from a personal account). The owner fills in each teammate's part
   ("send the pricing", "book the demo") on a to-do with the meeting's title and day, then **Send the split** or **Not
   needed**.
 - With [Zoom](sources.md) connected, the meeting's summary fills in the empty parts: the review gives each next step

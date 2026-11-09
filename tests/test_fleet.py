@@ -218,6 +218,85 @@ class Fleet(unittest.TestCase):
             self.fleet.annotate(db, suggestions)
         self.assertTrue(suggestions[0]['fleet_context'][0].startswith('Pat: '))
 
+    def calendar_event(self, account, source, attendees):
+        start = (NOW + dt.timedelta(days=2)).isoformat()
+        self.store.commit_page(account, {}, [{
+            'account_id': account, 'source_id': source, 'kind': 'calendar.event', 'occurred_at': NOW.isoformat(), 'title': 'Appointment', 'body': '',
+            'deleted': False, 'metadata': {'start': {'dateTime': start}, 'status': 'confirmed', 'attendees': [{'email': a} for a in attendees]}}])
+        return start
+
+    def test_a_personal_calendar_event_is_never_asked_about_in_a_work_fleet(self):
+        """Work is shared, personal never: a doctor's or notary's address on the owner's own calendar stays here."""
+        self.calendar_event('home', 'cal-home', ['owner@gmail.com', 'dr.jones@clinic.example'])
+        card = self.card('pending', 'cal-home')
+        self.fleet.set_meta('ask_meetings', True)
+        for accounts, area in (('["home"]', 'personal'), ('["home"]', None), ('["work"]', None), ('["home","work"]', None)):  # however the to-do is filed
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET account_ids=?,area=? WHERE id=?', (accounts, area, card))
+            self.assertEqual(self.fleet.meeting_round(), 0)
+        self.assertEqual(self.relay.sent('/ask'), [])
+        self.assertNotIn('clinic.example', json.dumps(self.relay.calls))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM fleet_out').fetchone()[0], 0)
+
+    def test_a_personal_to_do_on_a_work_calendar_event_is_never_asked_about(self):
+        start = self.calendar_event('work', 'cal-own', ['owner@acme.example', 'notary@notary.example'])
+        card = self.card('pending', 'cal-own')
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET area='personal' WHERE id=?", (card,))  # Move to Personal (todo_areas.py)
+        self.fleet.set_meta('ask_meetings', True)
+        self.assertEqual(self.fleet.meeting_round(), 0)
+        self.assertNotIn('notary.example', json.dumps(self.relay.calls))
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET area=NULL WHERE id=?', (card,))  # back in Work: asked as before
+        self.assertEqual(self.fleet.meeting_round(), 1)
+        self.assertEqual(self.relay.sent('/ask')[-1]['question'], {'emails': ['notary@notary.example'], 'when': start[:10]})
+
+    def test_a_to_do_on_a_work_and_a_personal_event_asks_only_about_the_work_one(self):
+        self.calendar_event('home', 'cal-home', ['owner@gmail.com', 'dr.jones@clinic.example'])
+        start = self.calendar_event('work', 'cal-work', ['owner@acme.example', 'sam@client.example'])
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute("SELECT id FROM events WHERE source_id IN ('cal-home','cal-work') ORDER BY source_id")]
+            db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,?,?,?,?,?)',
+                       ('c-both', 'k-both', 'Prepare', 'Prepare both', json.dumps(ids), '["home","work"]', 'pending', NOW.isoformat()))
+        self.fleet.set_meta('ask_meetings', True)
+        self.assertEqual(self.fleet.meeting_round(), 1)
+        self.assertEqual(self.relay.sent('/ask')[-1]['question'], {'emails': ['sam@client.example'], 'when': start[:10]})
+        self.assertNotIn('clinic.example', json.dumps(self.relay.calls))
+
+    def test_meeting_asks_never_go_to_a_family_fleet(self):
+        self.relay.directory['fleets'].append({'kind': 'family', 'name': 'Home', 'secret': 'f' * 64, 'members': [
+            {'member_id': 'me2', 'name': 'Owner', 'role': 'owner', 'me': True, 'emails': ['owner@gmail.com']},
+            {'member_id': 'kin1', 'name': 'Robin', 'role': 'member', 'emails': ['robin@family.example']}]})
+        self.fleet.directory(refresh=True)
+        self.calendar_event('home', 'cal-home', ['owner@gmail.com', 'dr.jones@clinic.example'])
+        self.card('pending', 'cal-home')
+        start = self.calendar_event('work', 'cal-work', ['owner@acme.example', 'sam@client.example'])
+        self.card('pending', 'cal-work')
+        self.fleet.set_meta('ask_meetings', True)
+        self.assertEqual(self.fleet.meeting_round(), 1)
+        (ask,) = self.relay.sent('/ask')
+        self.assertEqual((ask['question'], self.fleet.kind_of(ask['fleet'])), ({'emails': ['sam@client.example'], 'when': start[:10]}, 'work'))
+
+    def test_an_email_in_a_personal_account_or_on_a_personal_to_do_is_never_claimed(self):
+        """Handling claims: a hash goes out only for an email in the Fleet's accounts, on a to-do that isn't Personal."""
+        private = mail('home', 1, 'dana@family.example', 'owner@gmail.com', cc=TEAM, message_id='<party@family.example>')
+        shared = mail('work', 1, 'sam@client.example', 'owner@acme.example', cc=TEAM, message_id='<deal@client.example>')
+        for item in (private, shared):
+            self.store.commit_page(item['account_id'], {}, [item])
+        self.card('accepted', private['source_id'])
+        card = self.card('accepted', shared['source_id'])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET area='personal' WHERE id=?", (card,))
+        self.fleet.set_rule('work', 'pat1', 'handling', 'always')
+        self.fleet.claims_round()
+        self.assertEqual(self.relay.sent('/claim') + self.relay.sent('/claims'), [])
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET area=NULL WHERE id=?', (card,))
+        self.fleet.claims_round()
+        key = fleet.hashlib.sha256(('s' * 64 + '\n' + 'deal@client.example').encode()).hexdigest()
+        self.assertEqual([c['key'] for c in self.relay.sent('/claim')], [key])  # the work one, as before
+
     def test_meeting_answer_counts_promises_and_details_add_them(self):
         self.fleet.set_rule('work', 'pat1', 'meeting', 'always')
         self.ask('meeting', {'emails': ['sam@client.example', 'nobody@else.example', 'dana@family.example']})

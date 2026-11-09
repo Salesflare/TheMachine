@@ -854,14 +854,16 @@ class Requests:
 
     def message_keys(self, card_id, fleet_ref):
         """The card's emails as sha256(Fleet secret + Message-ID), as handling claims send them: the teammate's Machine
-        can see it has the same email, and nothing else of it travels."""
+        can see it has the same email, and nothing else of it travels. Only emails in that Fleet's accounts."""
         secret = (self.fleets().get(fleet_ref) or {}).get('secret')
-        if not secret:
+        accounts = self.fleet_accounts(fleet_ref)
+        if not secret or not accounts:
             return []
         with self.connect() as db:
             card = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
             ids = json.loads(card['event_ids'] or '[]') if card else []
-            rows = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?))", (json.dumps(ids),)).fetchall()
+            rows = db.execute("SELECT metadata FROM events WHERE kind='gmail.message' AND id IN (SELECT value FROM json_each(?)) "
+                              f"AND account_id IN ({','.join('?' * len(accounts))})", (json.dumps(ids), *accounts)).fetchall()
         found = [str(json.loads(r['metadata'] or '{}').get('message-id') or '').strip().strip('<>').lower() for r in rows]
         return [fleet._hash(secret, m) for m in dict.fromkeys(found) if m][:5]
 
@@ -1039,13 +1041,17 @@ class Requests:
             event_id = int(event_id.strip())
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND kind='handoff' AND status='waiting'", (str(ask_id),)).fetchone()
-            event = db.execute('SELECT id,kind,occurred_at,title,metadata FROM events WHERE id=? AND deleted=0', (event_id,)).fetchone() \
+            event = db.execute('SELECT id,kind,occurred_at,title,metadata,account_id FROM events WHERE id=? AND deleted=0', (event_id,)).fetchone() \
                 if isinstance(event_id, int) and not isinstance(event_id, bool) else None
         if not row:
             raise ValueError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
         if not event or event['kind'] not in ON_IT:
             raise ValueError('event_id is the email, chat message or calendar call that shows the owner acting on it')
         event = dict(event)
+        # What a Work Fleet hears comes only from its own accounts: a message from a personal account, or another
+        # company's, never tells a teammate anything (not where, when or to whom).
+        if event.pop('account_id') not in self.fleet_accounts(row['fleet']):
+            raise ValueError("Only a message or call in one of that Fleet's work accounts counts; one in a personal or other account never tells a teammate anything")
         if not (self.own_event and self.own_event(event)):
             raise ValueError("Only a message the owner sent or a call they joined shows they took it on; a message they received doesn't")
         if dt.datetime.fromisoformat(event['occurred_at']) < dt.datetime.fromisoformat(row['at']):
@@ -1176,7 +1182,7 @@ class Requests:
         if not accounts:
             return 0
         with self.connect() as db:
-            events = db.execute(f"SELECT id,source_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND history=0 "
+            events = db.execute(f"SELECT id,source_id,title,occurred_at,metadata,account_id FROM events WHERE kind='calendar.event' AND deleted=0 AND history=0 "
                                 f"AND account_id IN ({','.join('?' * len(accounts))}) AND occurred_at>=? AND occurred_at<=?",
                                 (*accounts, (today - dt.timedelta(days=FOLLOWUP_DAYS + 1)).isoformat(), today.isoformat())).fetchall()
             known = {r['id'] for r in db.execute('SELECT id FROM fleet_splits')}
@@ -1186,7 +1192,10 @@ class Requests:
                 continue
             members = found.get('members', [])
             mine = self.my_emails()
+            own = self.fleet_accounts(ref)  # a meeting on another company's calendar is never split in this Fleet
             for event in events:
+                if event['account_id'] not in own:
+                    continue
                 m = json.loads(event['metadata'] or '{}')
                 try:
                     end = dt.datetime.fromisoformat(str(m.get('end_at') or event['occurred_at']).replace('Z', '+00:00'))
@@ -1210,7 +1219,7 @@ class Requests:
                 if 'out:' + key in known or 'in:' + key in known:
                     continue
                 parts = [{'member_id': p['member_id'], 'name': fleet.clean(fleet.label(p), 80), 'mine': bool(p.get('me')),
-                          'what': self.own_followups(event) if p.get('me') else ''} for p in there]
+                          'what': self.own_followups(event, own) if p.get('me') else ''} for p in there]
                 with self.connect() as db:
                     db.execute('INSERT OR IGNORE INTO fleet_splits(id,fleet,meeting,direction,event_id,title,day,proposer,parts,status,at,updated_at) '
                                'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', ('out:' + key, ref, key, 'out', event['id'], fleet.clean(event['title'], 80), day,
@@ -1219,15 +1228,18 @@ class Requests:
                 proposed += 1
         return proposed
 
-    def own_followups(self, event):
+    def own_followups(self, event, accounts):
         """The owner's own follow-ups from a meeting, to start the split with: open cards on it, and promises they made
-        from its start to a day after. From this Machine's own data only."""
+        from its start to a day after. From this Machine's own data only, and of it only the Fleet's accounts
+        (fleet_accounts): never a Personal to-do, nor a promise made from a personal account."""
         with self.connect() as db:
             cards = [r['title'] for r in db.execute(f"SELECT title FROM suggestions WHERE status IN ({','.join('?' * len(OPEN))}) "
+                                                    "AND coalesce(area,'')<>'personal' "
                                                     "AND EXISTS (SELECT 1 FROM json_each(suggestions.event_ids) WHERE value=?)", (*OPEN, event['id']))]
             try:
-                promised = [r['what'] for r in db.execute("SELECT what FROM promises WHERE direction='mine' AND status='open' AND created_at>=? AND created_at<=?",
-                                                          (event['occurred_at'], (dt.datetime.fromisoformat(event['occurred_at']) + dt.timedelta(days=1)).isoformat()))]
+                promised = [r['what'] for r in db.execute("SELECT what FROM promises WHERE direction='mine' AND status='open' AND created_at>=? AND created_at<=? "
+                                                          f"AND account_id IN ({','.join('?' * len(accounts))})",
+                                                          (event['occurred_at'], (dt.datetime.fromisoformat(event['occurred_at']) + dt.timedelta(days=1)).isoformat(), *accounts))]
             except Exception:  # an install without promises yet
                 promised = []
         return fleet.clean('; '.join(dict.fromkeys(cards + promised)), 200)

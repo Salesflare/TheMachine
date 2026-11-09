@@ -195,6 +195,24 @@ class Silent(unittest.TestCase):
         self.assertNotIn('40k', json.dumps(self.answered()))  # no content
         self.assertEqual(done['how'], 'emailed Jo')
 
+    def test_a_message_from_a_personal_account_never_tells_the_teammate_anything(self):
+        """Work is shared, personal never: what the owner sent from their own mailbox says nothing to a Work teammate."""
+        ask = self.waiting()
+        item = mail('home', 0, 'Owner Example <owner@gmail.com>', 'Robin Roe <robin@private.example>')
+        item['metadata']['labels'], item['occurred_at'] = ['SENT'], later()
+        chat = {'account_id': 'home', 'source_id': 'w-own', 'kind': 'whatsapp.message', 'occurred_at': later(), 'title': '', 'body': 'On it',
+                'deleted': False, 'metadata': {'user_id': 'UOWNER', 'chat_name': 'Robin Roe'}}
+        for event_id in (self.event(item), self.event(chat)):
+            with self.assertRaisesRegex(ValueError, 'personal or other account'):
+                self.fleet.handoff_on_it(ask, event_id)
+        self.assertEqual(self.answered(), {'id': ask, 'status': 'waiting'})  # nothing told: not where, when or to whom
+        self.assertNotIn('Robin', json.dumps(self.relay.calls))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status,choice FROM fleet_in WHERE id=?', (ask,)).fetchone()[:], ('waiting', None))
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM suggestions').fetchone()[0], 0)  # and no to-do made
+        self.fleet.handoff_on_it(ask, self.sent_email())  # one from the work account still counts
+        self.assertEqual(self.answered()['answer']['where'], 'email')
+
     def test_a_slack_message_and_a_joined_call_count_a_declined_call_does_not(self):
         ask = self.waiting()
         slack = {'account_id': 'work', 'source_id': 's-own', 'kind': 'slack.message', 'occurred_at': later(), 'title': '', 'body': 'On it',
