@@ -32,7 +32,7 @@ class Gateway:
     """Stands in for talk-live-run.mjs: what it was asked, and what it answers."""
 
     def __init__(self, ready=True, start=None, offer=None):
-        self.calls, self.ready = [], ready
+        self.calls, self.ready, self.held = [], ready, []
         self.answers = {'start': start or {'secret': SECRET, 'offer_url': 'https://api.openai.com/v1/realtime/calls',
                                            'offer_headers': {}, 'voice_session_id': 'vs1', 'model': 'gpt-realtime-2.1', 'via': 'key'},
                         'offer': offer or {'sdp': ANSWER}, 'end': {'ok': True}}
@@ -42,6 +42,23 @@ class Gateway:
         self.calls.append(request)
         self.answers['status'] = {'ready': self.ready, 'model': 'gpt-realtime-2.1'}
         return subprocess.CompletedProcess(command, 0, json.dumps(self.answers[request['method']]), '')
+
+    def hold(self, env):
+        """A conversation's own helper (talk-live-run.mjs --hold): every request of one conversation goes to it."""
+        gateway = self
+
+        class Held:
+            closed = False
+
+            def ask(self, request, timeout=40):
+                assert not self.closed, 'asked after its connection closed'
+                gateway.calls.append(request)
+                gateway.held.append((self, request['method']))
+                return gateway.answers[request['method']]
+
+            def close(self):
+                self.closed = True
+        return Held()
 
 
 class Clock:
@@ -55,7 +72,7 @@ class Clock:
 class Sessions(unittest.TestCase):
     def setUp(self):
         self.gateway, self.clock = Gateway(), Clock()
-        self.talk = t.Talk({'_node': 'node'}, runner=self.gateway, clock=self.clock)
+        self.talk = t.Talk({'_node': 'node'}, runner=self.gateway, clock=self.clock, holder=self.gateway.hold)
 
     def test_the_helper_is_asked_for_its_own_session_only(self):
         started = self.talk.start(SID, {})
@@ -160,6 +177,107 @@ class Sessions(unittest.TestCase):
         self.assertEqual(offer(401, 'Invalid or expired realtime session token'), {'error': 'unavailable', 'reason': 'session', 'status': 401, 'openai': 0})
         self.assertEqual(offer(200, ANSWER), {'sdp': ANSWER})
 
+    def test_one_conversation_keeps_one_helper_until_it_ends(self):
+        # The Gateway drops a session when the connection that made it closes (OpenClaw 2026.11): start, the offer and
+        # end go to the same helper, which keeps that connection, and it closes only when the conversation is over
+        talk_id = self.talk.start(SID, {})['id']
+        self.talk.offer(talk_id, OFFER, {})
+        self.talk.end(talk_id, {})
+        (held, _), = {(h, 0) for h, _ in self.gateway.held}
+        self.assertEqual([m for _, m in self.gateway.held], ['start', 'offer', 'end'])
+        self.assertTrue(held.closed)
+        # A start the Gateway refuses, a refused offer and a forgotten conversation close theirs too
+        self.gateway.held.clear()
+        self.gateway.answers['start'] = {'error': 'unavailable', 'reason': 'auth'}
+        with self.assertRaises(ValueError):
+            self.talk.start(SID, {})
+        self.assertTrue(self.gateway.held[-1][0].closed)
+        self.gateway.answers['start'] = Gateway().answers['start']
+        talk_id = self.talk.start(SID, {})['id']
+        self.gateway.answers['offer'] = {'error': 'unavailable', 'reason': 'session', 'status': 401}
+        with self.assertRaises(ValueError):
+            self.talk.offer(talk_id, OFFER, {})
+        self.assertTrue(self.gateway.held[-1][0].closed)
+        self.talk.start(SID, {})
+        self.clock.now += t.LIMIT_SECONDS + t.GRACE_SECONDS + 1
+        self.talk.sweep()
+        self.assertTrue(self.gateway.held[-1][0].closed)
+
+    @unittest.skipUnless(shutil.which('node'), 'needs node')
+    def test_the_session_outlives_its_start(self):
+        # Report s_0e17234b973dc8f7: after OpenClaw 2026.11.2 every offer got the broker's 401 a fraction of a second
+        # after the start, because the one-shot helper's Gateway connection (and the session with it) was already gone.
+        # The real helper and Held here, against a stand-in Gateway whose sessions live only while their connection is open.
+        import http.server
+        temp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, temp, True)
+        sdk = temp / 'openclaw' / 'dist' / 'plugin-sdk'
+        sdk.mkdir(parents=True)
+        (sdk / 'gateway-runtime.js').write_text(r"""
+import {writeFileSync, unlinkSync, appendFileSync} from 'node:fs';
+const DIR = process.env.FAKE_GATEWAY_DIR;
+const log = value => appendFileSync(DIR + '/log', JSON.stringify(value) + '\n');
+let made = 0;
+export class GatewayClient {
+  constructor(opts) { this.opts = opts; this.tokens = []; }
+  start() { log({connect: this.opts.scopes}); setTimeout(() => this.opts.onHelloOk?.({}), 5); }
+  async request(method, params) {
+    log({method, params});
+    if (method === 'talk.client.create') {
+      const token = `t${process.pid}x${++made}`;
+      writeFileSync(`${DIR}/alive-${token}`, '');
+      this.tokens.push(token);
+      return {transport: 'webrtc', clientSecret: token, offerUrl: '/plugins/openai/realtime/calls', voiceSessionId: 'vs1', model: 'gpt-realtime-2.1'};
+    }
+    return {ok: true};
+  }
+  stop() { log({stop: true}); for (const token of this.tokens) { try { unlinkSync(`${DIR}/alive-${token}`); } catch {} } }
+}
+export async function callGatewayFromCli(method, options, params, extra) {
+  const client = new GatewayClient(extra);
+  client.start();
+  try { return await client.request(method, params); } finally { client.stop(); }
+}
+""")
+
+        class Broker(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                token = self.headers.get('Authorization', '').removeprefix('Bearer ')
+                alive = token.isalnum() and (temp / f'alive-{token}').exists()
+                self.send_response(201 if alive else 401)
+                self.end_headers()
+                self.wfile.write((ANSWER if alive else 'Invalid or expired realtime session token').encode())
+
+            def log_message(self, *args):
+                pass
+        server = http.server.HTTPServer(('127.0.0.1', 0), Broker)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        env = {'PATH': os.environ.get('PATH', ''), 'OPENCLAW_PACKAGE_DIR': str(temp / 'openclaw'), 'FAKE_GATEWAY_DIR': str(temp),
+               'OPENCLAW_GATEWAY_PORT': str(server.server_port), 'OPENCLAW_CONFIG_PATH': '/nonexistent'}
+        talk = t.Talk({'_node': shutil.which('node')}, clock=self.clock)
+        started = talk.start(None, env)
+        self.assertEqual(started['via'], 'signin')
+        self.assertEqual(talk.offer(started['id'], OFFER, env), {'sdp': ANSWER})
+        process = talk.open[started['id']]['held'].process
+        talk.end(started['id'], env)
+        process.wait(10)
+        log = [json.loads(line) for line in (temp / 'log').read_text().splitlines()]
+        self.assertEqual(log[0], {'connect': ['operator.read', 'operator.talk']})
+        self.assertEqual([x.get('method') or next(iter(x)) for x in log], ['connect', 'talk.client.create', 'talk.client.close', 'stop'])
+        self.assertEqual(log[2]['params'], {'sessionKey': t.SESSION_PREFIX + 'main', 'voiceSessionId': 'vs1'})
+        # Closing stdin (the service forgot the conversation) ends it on the Gateway's side as well
+        started = talk.start(SID, env)
+        process = talk.open[started['id']]['held'].process
+        self.clock.now += t.LIMIT_SECONDS + t.GRACE_SECONDS + 1
+        talk.sweep()
+        process.wait(10)
+        self.assertEqual([x.get('method') or next(iter(x)) for x in [json.loads(line) for line in (temp / 'log').read_text().splitlines()]][-2:],
+                         ['talk.client.close', 'stop'])
+        self.assertEqual(list(temp.glob('alive-*')), [])
+
     def test_one_per_to_do_and_two_in_all(self):
         first = self.talk.start(SID, {})['id']
         with self.assertRaisesRegex(ValueError, 'already open for this to-do'):
@@ -190,7 +308,7 @@ class Sessions(unittest.TestCase):
         self.gateway.answers['start'] = {'error': 'unavailable', 'reason': 'timeout'}
         with self.assertRaisesRegex(ValueError, 'couldn’t start. Try again'):
             self.talk.start(SID, {})
-        broken = t.Talk({}, runner=lambda *x, **y: (_ for _ in ()).throw(OSError()), clock=self.clock)
+        broken = t.Talk({}, runner=self.gateway, clock=self.clock, holder=lambda env: (_ for _ in ()).throw(OSError()))
         with self.assertRaisesRegex(ValueError, 'couldn’t start'):
             broken.start(SID, {})
 
@@ -384,7 +502,7 @@ class Api(unittest.TestCase):
         self.app.config = {'accounts': [], 'tailscale_owner': 'owner@example.com', 'database': str(Path(temp.name) / 'events.sqlite'),
                            'dashboard_host': 'machine.example:8443', 'port': 0, 'http_timeout': 1}
         self.gateway = Gateway()
-        self.app._talk = t.Talk({}, runner=self.gateway)
+        self.app._talk = t.Talk({}, runner=self.gateway, holder=self.gateway.hold)
         self.app._talk.status({}, True, wait=True)
         with self.store.connect() as db:
             db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at) VALUES(?,?,?,'','[]','[]',?,?)",
@@ -843,7 +961,8 @@ class Api(unittest.TestCase):
         self.assertEqual(self.act('talk_send', {'id': talk_id})['status'], 'not_asked')   # one yes, one draft
 
     def test_talk_ends_after_its_own_limit(self):
-        talk = t.Talk({}, runner=Gateway(), clock=Clock())
+        gateway = Gateway()
+        talk = t.Talk({}, runner=gateway, clock=Clock(), holder=gateway.hold)
         main = talk.start(None, {})['id']
         own = talk.start(SID, {})['id']
         talk.clock.now += t.LIMIT_SECONDS + t.GRACE_SECONDS + 1
@@ -1253,7 +1372,8 @@ class Sealed(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'events.sqlite'
             store = a.Store(path, protect=True)
-            talk = t.Talk({}, runner=Gateway())
+            gateway = Gateway()
+            talk = t.Talk({}, runner=gateway, holder=gateway.hold)
             talk_id = talk.start(SID, {})['id']
             with store.connect() as db:
                 talk.line(db, talk_id, 'user', 'Tell Quinzel the zebra code', 1)
@@ -1281,7 +1401,8 @@ class Dashboard(unittest.TestCase):
 
     def test_the_helper_never_asks_to_write(self):
         helper = (ROOT / 'talk-live-run.mjs').read_text()
-        self.assertIn("scopes: ['operator.read', 'operator.talk']", helper)
+        self.assertIn("const SCOPES = ['operator.read', 'operator.talk'];", helper)
+        self.assertIn("role: 'operator', scopes: SCOPES,", helper)   # the held connection asks for the same two
         self.assertNotIn('operator.write', helper.replace('never operator.write', ''))
         self.assertNotIn('operator.admin', helper)
 
