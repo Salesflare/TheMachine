@@ -15,8 +15,9 @@ Your proactive AI assistant. It reads your email, chats, calendar and phone, tur
 
 Everyone should have a Machine of their own. Not another AI you have to tell what to do: a Machine that knows your
 world, gets things done, works with other people's Machines, and belongs to you. For life. The Machine works without being asked, asks for less of your attention,
-is yours for life, works with other people's AIs, covers your whole life, keeps up with the future, and is for
-everyone.
+is yours for life, works with other people's AIs, helps you be more efficient at work and more attentive to the people
+in your life, keeps up with the future, and is for everyone: simple from the start, as powerful as you want it to be.
+Ultimately, The Machine Network should be independently operable and community-governed.
 What we believe, in order, and how every change is judged: [Product vision](docs/vision.md).
 
 Website: [themachine.computer](https://themachine.computer). Rather not run it yourself? The same Machine is also [hosted for you](https://themachine.computer/pricing) on a private server in the EU (beta). Export and import move everything between the two.
