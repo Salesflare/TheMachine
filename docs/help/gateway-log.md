@@ -12,7 +12,9 @@ Your Machine's own log: failed runs, refused handoffs, Telegram messages that di
 
 ## Fixes an update set aside
 
-When The Machine updates and one of its own fixes no longer fits the new version, the update sets that fix aside and goes on, so your Machine never stays on an old version. A to-do, **Redo a fix the update set aside**, names the fix. Ask to redo it on the new version, or close the to-do.
+When The Machine updates and one of its own fixes no longer fits the new version, the update sets that fix aside and goes on, so your Machine never stays on an old version. A to-do, **Redo a fix the update set aside**, names the fix.
+
+**Redo it** has your Machine make it again on the new version, as with any fix of its own: you see the change and tap **Merge fix**. Once it is merged, the old copy is dropped. Or close the to-do.
 
 ## Your own files an update kept
 

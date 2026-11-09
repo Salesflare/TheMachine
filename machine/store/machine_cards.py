@@ -1,6 +1,7 @@
 """The Machine's own to-dos, a Store mixin: changes an update set aside (parked_fixes.py) and problems in the
 computer's own logs (machine/system_logs.py). Each goes through machine_card, which writes it. Do it on one from the
-logs runs only its one safe fix (machine_fix), never an AI run."""
+logs runs only its one safe fix (machine_fix), never an AI run. Redo it on a fix an update set aside (parked_redo)
+starts the usual self-fix run from that commit, merged only through the usual Merge fix checks."""
 import datetime as dt
 import hashlib
 import json
@@ -16,6 +17,16 @@ def machine_fix_finding(db, suggestion_id):
                      "WHERE s.id=? AND s.origin='machine' AND e.kind='machine.system_log'", (suggestion_id,)).fetchone()
     finding = json.loads(row['metadata'] or '{}') if row else {}
     return finding if finding.get('fix') else None
+
+
+def parked_redo(db, suggestion_id):
+    """The set-aside fix ({commit, subject}) a to-do of an update's is about, which Redo it makes again, else None."""
+    row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                     "WHERE s.id=? AND s.origin='machine' AND e.kind='machine.parked_fix'", (suggestion_id,)).fetchone()
+    try:
+        return parked_fixes.redoable(json.loads(row['metadata'] or '{}')) if row else None
+    except (ValueError, TypeError, AttributeError):
+        return None
 
 
 class MachineCardsStore:
@@ -76,8 +87,9 @@ class MachineCardsStore:
         return machine_fix_finding(db, suggestion_id)
 
     def machine_fix_views(self, db, cards):
-        """machine_log on each to-do from the computer's logs, so it keeps Not needed (cards.controls, the dashboard), and
-        machine_fix on each such open one with a safe fix: the command Do it runs, so it offers Do it."""
+        """machine_log on each to-do from the computer's logs, so it keeps Not needed (cards.controls, the dashboard),
+        machine_fix on each such open one with a safe fix: the command Do it runs, so it offers Do it, and parked_redo on
+        each open one about a fix an update set aside, so it offers Redo it."""
         ids = [c['id'] for c in cards if c.get('origin') == 'machine']
         for n in range(0, len(ids), 500):
             chunk = ids[n:n + 500]
@@ -92,6 +104,10 @@ class MachineCardsStore:
                 argv = system_logs.fix_command(finding) if finding else None
                 if argv and (card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered'):
                     card['machine_fix'] = ' '.join(argv)
+            # a fix an update set aside, still open: Redo it starts the usual self-fix run (cards.controls says when)
+            if card.get('origin') == 'machine' and card.get('status') in ('pending', 'accepted', 'instructions', 'prepared') \
+                    and not card.get('machine_log') and parked_redo(db, card['id']):
+                card['parked_redo'] = True
 
     def machine_fix(self, job):
         """Do it on a to-do from the computer's logs (its preparation starting from the owner's Do it): runs its one

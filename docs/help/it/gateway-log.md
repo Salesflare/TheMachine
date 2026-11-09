@@ -12,7 +12,9 @@ Il log della tua Machine: esecuzioni non riuscite, passaggi rifiutati, messaggi 
 
 ## Correzioni messe da parte da un aggiornamento
 
-Quando The Machine si aggiorna e una delle sue correzioni non va più bene per la nuova versione, l’aggiornamento mette da parte quella correzione e va avanti, così la tua Machine non resta mai su una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, nomina la correzione. Chiedi di rifarla sulla nuova versione, oppure chiudi l’attività.
+Quando The Machine si aggiorna e una delle sue correzioni non va più bene per la nuova versione, l’aggiornamento mette da parte quella correzione e va avanti, così la tua Machine non resta mai su una versione vecchia. Un’attività, **Rifai una correzione messa da parte dall’aggiornamento**, nomina la correzione.
+
+Con **Rifai** la tua Machine la rifà sulla nuova versione, come ogni sua correzione: vedi la modifica e tocchi **Merge fix**. Una volta unita, la vecchia copia sparisce. Oppure chiudi l’attività.
 
 ## I tuoi file conservati da un aggiornamento
 

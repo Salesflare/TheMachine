@@ -51,6 +51,7 @@ from machine.chat import (
 from machine.config import LOG, ROOT
 from machine.model_usage import node_bin, node_env
 from machine.store.cards import use_line
+from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
 import talk_live
@@ -284,6 +285,7 @@ class CardChatApp:
         own_files = chat_files.of_cards(db, [suggestion_id])
         # planned: only the owner can do its step; one of The Machine's own (origin machine) has Do it, never Plan it
         title, planned = (card['title'] or '', bool(card['owner_step']) and card['origin'] != 'machine') if card else ('', False)
+        redo = bool(card and card['origin'] == 'machine' and parked_redo(db, suggestion_id))  # Redo it on a fix an update set aside
         for r in db.execute('SELECT id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids) if ids else []:
             m = json.loads(r['metadata'])
             kinds[r['id']], metas[r['id']] = r['kind'], m
@@ -392,7 +394,8 @@ class CardChatApp:
                 if taps and (choice == 'undo' or (taps[-1]['choice'], choice) in CHAT_UNDONE and at - taps[-1]['at'] < 60000):
                     owner.remove(taps[-1])
                     continue
-                said = 'Unsnoozed' if choice == 'unsnooze' else 'Plan it' if choice == 'accept' and planned else CHAT_OWNER_WORDS[choice]
+                said = ('Unsnoozed' if choice == 'unsnooze' else 'Plan it' if choice == 'accept' and planned
+                        else 'Started redoing the fix' if choice == 'accept' and redo else CHAT_OWNER_WORDS[choice])
                 owner.append({'kind': 'event', 'text': said + via + why,
                               'choice': choice, 'mine': True, 'at': at})
         owner.extend(card_chat_handoffs(db, suggestion_id))

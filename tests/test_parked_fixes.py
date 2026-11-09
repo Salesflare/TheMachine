@@ -73,7 +73,7 @@ class ParkedFixes(unittest.TestCase):
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # the next sync: no second one
         [todo] = self.todos()
         self.assertEqual(todo['title'], 'Redo a fix the update set aside')
-        self.assertIn('Ask to redo it on the new version', todo['body'])
+        self.assertIn('Redo it on the new version', todo['body'])
         with self.store.connect() as db:
             event = db.execute("SELECT kind, version, analyzed_version, body FROM events WHERE source_id=?", ('parked:' + fix,)).fetchone()
         self.assertEqual(tuple(event)[:3], ('machine.parked_fix', 1, 1))  # read already: no review makes another to-do
@@ -123,6 +123,93 @@ class ParkedFixes(unittest.TestCase):
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
         self.assertEqual([t['title'] for t in self.todos()],
                          ['Your update kept 2 of your own files', 'Your update kept 1 of your own files'])
+
+    def card(self):
+        with self.store.connect() as db:
+            card = dict(db.execute("SELECT * FROM suggestions WHERE dedupe_key LIKE 'parked:%' ORDER BY rowid DESC").fetchone())
+            self.store.machine_fix_views(db, [card])
+        return card
+
+    def machine(self):
+        app = object.__new__(a.App)
+        app.store, app.config = self.store, {**self.config, 'fix_dir': str(self.app.parent / 'fixes')}
+        return app
+
+    def test_redo_it_leads_and_starts_the_usual_self_fix_run_from_the_set_aside_commit(self):
+        fix = self.commit('graph.py', 'fixed', 'Graph: a KeyError on an empty name')
+        self.park(fix)
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        card = self.card()
+        self.assertTrue(card['parked_redo'])
+        self.assertIn('Redo it on the new version', card['body'])
+        labels = [b['label'] for k in a.controls(card)['blocks'] for b in k['buttons']]
+        taps = [b['action']['value'].rsplit(':', 1)[1] for k in a.controls(card)['blocks'] for b in k['buttons']]
+        self.assertEqual((labels, taps), (['Redo it', 'Mark done', 'Snooze'], ['accept', 'complete', 'snooze']))
+        self.store.decide(card['id'], 'accept', '', 'd1', 'dashboard')
+        calls = []
+        self.machine().preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        [start] = calls
+        message = start['message']
+        # the usual self-fix: a clone of the running code, the set-aside commit fetched into it, saved as a merge to review
+        self.assertIn(f'git clone {self.app} {self.app.parent / "fixes"}/', message)
+        self.assertIn(f'git fetch {self.app} refs/machine/parked/{fix}', message)
+        self.assertIn('{kind:merge,label:Merge fix', message)
+        self.assertNotIn('only the owner can do themselves', message)  # not an owner-only step any more
+        self.assertNotIn('send_now:true', message.split('Follow the preparation rules')[0])
+        card = self.card()
+        self.assertEqual([b['action']['value'].rsplit(':', 1)[1] for k in a.controls(card)['blocks'] for b in k['buttons']],
+                         ['complete', 'snooze'])  # running: no second Redo it
+        with self.store.connect() as db:
+            owner, _ = self.machine().card_chat_service(db, card['id'])
+        events = [i['text'] for i in owner if i['kind'] == 'event']
+        self.assertEqual(events, ['Started redoing the fix'])  # what happened, without "You"
+
+    def test_a_stuck_redo_offers_try_again(self):
+        self.park(self.commit('graph.py', 'fixed', 'Graph: a fix'))
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        card = {**self.card(), 'status': 'accepted', 'preparation_status': 'blocked'}
+        taps = [b['action']['value'].rsplit(':', 1)[1] for k in a.controls(card)['blocks'] for b in k['buttons']]
+        self.assertEqual(taps, ['complete', 'retry', 'snooze'])
+        card['preparation_reason'] = 'The tests fail on the new code.'  # with a reason: Answer leads, as on any to-do
+        taps = [b['action']['value'].rsplit(':', 1)[1] for k in a.controls(card)['blocks'] for b in k['buttons']]
+        self.assertIn('retry', taps)
+        self.assertNotIn('accept', taps)
+
+    def test_changes_and_kept_files_have_no_redo_it(self):
+        (self.app / 'app.py').write_text('edited')
+        changes = git(self.app, 'stash', 'create', 'Uncommitted changes set aside by an update')
+        self.park(changes)
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        card = self.card()
+        self.assertEqual(card['title'], 'Bring back changes the update set aside')
+        self.assertNotIn('parked_redo', card)
+        self.assertEqual([b['label'] for k in a.controls(card)['blocks'] for b in k['buttons']], ['Mark done', 'Snooze'])
+        self.assertIsNone(parked_fixes.redoable({'commit': 'kept-' + 'a' * 40}))
+
+    def test_once_the_redo_merged_the_set_aside_fix_goes(self):
+        fix = self.commit('graph.py', 'fixed', 'Graph: a fix')
+        self.park(fix)
+        a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
+        card = self.card()
+        app = self.machine()
+
+        class Merged:
+            restart = None
+
+            def complete(self, action, receipt, operation):
+                return {'activation_ready': False}
+
+        job = {'id': 'job1', 'suggestion_id': card['id'], 'error': None}
+        with self.store.connect() as db:
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES('job1',?,'r1','{}','sent',?,?,'ap','dashboard','')", (card['id'], a.now(), a.now()))
+        app.merge_effect({**job, 'id': 'undo1'}, {'kind': 'merge'}, {'commit': 'c' * 40}, 'undo', Merged())
+        self.assertTrue(git(self.app, 'for-each-ref', parked_fixes.PARKED))  # an undo keeps it
+        app.merge_effect(job, {'kind': 'merge'}, {'commit': 'c' * 40}, 'merge', Merged())
+        self.assertEqual(git(self.app, 'for-each-ref', parked_fixes.PARKED), '')
+        self.assertEqual(parked_fixes.pending(self.app), [])
+        self.assertFalse(parked_fixes.drop(self.app, 'not a commit'))
+
 
 if __name__ == '__main__':
     unittest.main()

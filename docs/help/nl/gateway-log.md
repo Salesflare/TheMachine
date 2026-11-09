@@ -12,7 +12,9 @@ Het eigen logboek van je Machine: mislukte runs, geweigerde overdrachten, Telegr
 
 ## Fixes die een update opzij zette
 
-Als The Machine bijwerkt en een van zijn eigen fixes niet meer past op de nieuwe versie, zet de update die fix opzij en gaat verder, zodat je Machine nooit op een oude versie blijft. Een to-do, **Doe een fix opnieuw die de update opzij zette**, noemt de fix. Vraag om hem opnieuw te doen op de nieuwe versie, of sluit de to-do.
+Als The Machine bijwerkt en een van zijn eigen fixes niet meer past op de nieuwe versie, zet de update die fix opzij en gaat verder, zodat je Machine nooit op een oude versie blijft. Een to-do, **Doe een fix opnieuw die de update opzij zette**, noemt de fix.
+
+Met **Doe opnieuw** maakt je Machine hem opnieuw op de nieuwe versie, zoals elke eigen fix: je ziet de wijziging en tikt op **Merge fix**. Zodra hij gemerged is, verdwijnt de oude kopie. Of sluit de to-do.
 
 ## Je eigen bestanden die een update bewaarde
 

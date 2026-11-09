@@ -5,7 +5,8 @@ each one under refs/machine/parked/ and moves on (scripts/release.py move_to, an
 way), so a Machine never stays behind on an old version. This module lists what is parked, for the service to turn
 each into a to-do once (Store.parked_fix_cards, through the first Gateway source as with the service's own errors),
 and the same for files the owner added that an update renamed rather than overwrite them (KEPT): one to-do per update.
-Plain functions of the app folder; nothing here writes."""
+Redo it on a set-aside fix's to-do starts the usual self-fix run from that commit (redo_prompt); once its merge is in,
+the ref goes (drop). Plain functions of the app folder; only drop writes."""
 import re
 import subprocess
 from pathlib import Path
@@ -78,6 +79,38 @@ def card(item):
                        'on the new version, or close this.'),
                 i18n.t('Uncommitted changes in The Machine’s code, kept as {}.', short))
     return (i18n.t('Redo a fix the update set aside'),
-            i18n.t('It no longer fit the newest version, so the update set it aside and moved on. Ask to redo it on the '
-                   'new version, or close this.'),
+            i18n.t('It no longer fit the newest version, so the update set it aside and moved on. Redo it on the new '
+                   'version, or close this.'),
             i18n.t('A fix of The Machine’s own: “{}”, kept as {}.', item['subject'], short))
+
+
+def redoable(metadata):
+    """The set-aside fix a to-do's signal names ({commit, subject}) when Redo it can make it again: one of The Machine's
+    own commits, not uncommitted changes nor files an update kept. Else None."""
+    metadata = metadata or {}
+    commit = str(metadata.get('commit') or '')
+    if metadata.get('changes') or not re.fullmatch(r'[0-9a-f]{40}', commit):
+        return None
+    return {'commit': commit, 'subject': str(metadata.get('subject') or '')[:200]}
+
+
+def redo_prompt(item, app, fix_dir, job_id):
+    """What the run that Redo it starts is told: the usual self-fix (PREPARATION.md, Fixing The Machine itself), made
+    from the set-aside commit on the code running now, and saved as a merge the owner reviews."""
+    return (f'''
+This to-do is a fix of The Machine's own that an update set aside: "{item['subject']}", kept as {PARKED}{item['commit']}. '''
+            f'''Redo it on the code running now, the way Fixing The Machine itself in the preparation rules says: git clone {app} {fix_dir}/{job_id}, '''
+            f'''then in that clone git fetch {app} {PARKED}{item['commit']} and git cherry-pick FETCH_HEAD; where it no longer applies, make the same change '''
+            '''by hand on the new code. Keep its test (add one if it has none), run the whole suite, commit, and save it as {kind:merge,label:Merge fix,clone:<the clone path>,summary:<what the fix changes>}. '''
+            '''When the running code already does what the fix did, save outcome:'already_done' saying so, with no next actions.''')
+
+
+def drop(app, sha, timeout=30):
+    """Forget a set-aside fix once its redo merged: its ref under PARKED goes. Whether it went."""
+    if not re.fullmatch(r'[0-9a-f]{40}', str(sha)):
+        return False
+    try:
+        return not subprocess.run(['git', '-C', str(app), 'update-ref', '-d', PARKED + sha], capture_output=True,
+                                  timeout=timeout).returncode
+    except (OSError, subprocess.TimeoutExpired):
+        return False
