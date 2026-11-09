@@ -29,9 +29,10 @@ body main{padding-top:0}
 .side-cards{order:3;display:block;flex:1 1 0;min-height:0;margin:14px -8px 0 0;padding:0 2px 16px 0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .side-label{display:flex;align-items:center;gap:2px;margin:0 0 2px;padding:0 4px 0 4px;min-height:26px;font:var(--fw-medium) var(--fs-xs)/1.3 var(--sans);color:var(--side-quiet)}
 .side-label>span{margin-right:auto}
-.side-label button{min-height:0;margin:0;padding:3px 7px;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--side-quiet);font:inherit;cursor:pointer}
+.side-label button{min-height:0;margin:0;padding:3px 7px;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--side-ink);font:inherit;cursor:pointer}
 @media(hover:hover) and (pointer:fine){.side-label button:hover{color:var(--text)}}
-.side-label button[aria-pressed="true"]{color:var(--text);background:var(--c-hover)}
+/* All / Work / Personal: the pick looks like the selected nav row */
+:is(.side-label,.scope-filter) button[aria-pressed="true"]{background:color-mix(in srgb,var(--text) 12%,transparent);color:var(--text);font-weight:var(--fw-strong);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 14%,transparent)}
 .side-head{display:flex;align-items:center;gap:6px;width:100%;min-height:28px;margin:6px 0 0;padding:0 10px;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--side-quiet);font:var(--fw-medium) var(--fs-xs)/1.3 var(--sans);text-align:left;cursor:pointer}
 @media(hover:hover) and (pointer:fine){.side-head:hover{color:var(--text)}}
 .side-head .count{margin-left:auto;font-variant-numeric:tabular-nums}

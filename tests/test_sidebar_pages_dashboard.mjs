@@ -142,6 +142,27 @@ try{
   assert.equal((await page.locator('#quality').innerText()).trim(),'Not enough to-dos yet. These numbers start once you decide on a few.');
   assert.ok(await page.locator('#learn-tabs').isHidden());
   await context.close()}
+ // The sidebar's All / Work / Personal: the pick stands out in light and dark (a tint like the selected nav row, full ink,
+ // heavier type), and every option keeps text at 4.5:1 or more on the sidebar
+ {const {context,page}=await open(1440,900);
+  await page.locator('#side-cards .side-label button[data-scope="work"]').click();
+  await page.locator('#side-cards .side-label button[data-scope="work"][aria-pressed="true"]').waitFor();await page.mouse.move(900,880);
+  for(const scheme of ['light','dark']){
+   await page.emulateMedia({colorScheme:scheme});await page.waitForFunction(s=>document.documentElement.dataset.theme===s,scheme);await page.waitForTimeout(400);  // past the colors' ease
+   const m=await page.evaluate(()=>{const cv=document.createElement('canvas').getContext('2d',{willReadFrequently:true});
+    const rgba=c=>{cv.clearRect(0,0,1,1);cv.fillStyle='#000';cv.fillStyle=c;cv.fillRect(0,0,1,1);return [...cv.getImageData(0,0,1,1).data]};
+    const over=(top,bot)=>{const a=top[3]/255;return [0,1,2].map(i=>Math.round(top[i]*a+bot[i]*(1-a)))};
+    const lum=c=>{const [r,g,b]=c.map(v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4});return .2126*r+.7152*g+.0722*b};
+    const ratio=(a,b)=>{const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p);return (x+.05)/(y+.05)};
+    const side=rgba(getComputedStyle(document.querySelector('.app-side')).backgroundColor);
+    return [...document.querySelectorAll('#side-cards .side-label button')].map(b=>{const s=getComputedStyle(b),bg=over(rgba(s.backgroundColor),side);
+     return {pressed:b.getAttribute('aria-pressed')==='true',text:ratio(over(rgba(s.color),bg),bg),fill:ratio(bg,side),weight:+s.fontWeight}})});
+   const on=m.filter(x=>x.pressed),off=m.filter(x=>!x.pressed);
+   assert.equal(on.length,1,scheme);
+   assert.ok(on[0].fill>=1.2&&on[0].weight>=600,scheme+': the pick is marked '+JSON.stringify(on[0]));
+   for(const x of off)assert.ok(x.fill<1.01&&x.weight<600,scheme+': the others are plain '+JSON.stringify(x));
+   for(const x of m)assert.ok(x.text>=4.5,scheme+': text contrast '+JSON.stringify(x))}
+  await context.close()}
  assert.deepEqual(errors,[]);
  console.log('sidebar pages dashboard ok');
 }finally{await browser?.close();server.close()}

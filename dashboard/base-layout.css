@@ -89,7 +89,6 @@ a.btn-link[hidden]{display:none}
 .summary-row .lead{margin:0}
 .scope-filter{display:inline-flex;padding:3px;border:1px solid var(--border);border-radius:999px;background:var(--surface)}
 .scope-filter button{border:0;background:none;color:var(--muted);font:600 .8rem/1 inherit;padding:7px 12px;border-radius:999px;cursor:pointer;min-height:0;box-shadow:none}
-.scope-filter button[aria-pressed="true"]{background:var(--cream);color:var(--charcoal)}
 .chip.scope{--c:var(--faint);font-weight:500}
 .chip.scope::before{display:none}a.chip.who{text-decoration:none;max-width:16em;overflow:hidden;white-space:nowrap;gap:4px}a.chip.who svg{width:11px;height:11px;flex:none;opacity:.7}a.chip.who span{overflow:hidden;text-overflow:ellipsis}a.chip.who:hover{color:var(--text);text-decoration:underline}a.chip.who .who-short{display:none}a.chip.who.org{max-width:12em}@media (max-width:600px){a.chip.who .who-short{display:inline}a.chip.who .who-short~*,a.chip.who .who-full:has(+.who-short){display:none}}
 /* A to-do's project (projectChip): a link to its page and a small picker; the picker opens under the card's badges */
