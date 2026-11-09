@@ -54,6 +54,7 @@ RUN_STATES = ('running', 'ready', 'nothing', 'failed')
 DEFAULT_AT = '08:00'
 NAME_MAX = 80
 PLACEHOLDER_MAX = 28  # a name made from the words until the first run names it: a card's title line on a phone
+OWNER_NAMED = 'owner'  # name_check of a routine the owner named in Edit: no run renames it
 INSTRUCTIONS_MAX = 2000
 RESULT_MAX = 4000
 WHY_MAX = 200
@@ -86,7 +87,7 @@ def ensure(db):
         if column not in have:
             db.execute(f'ALTER TABLE routine_runs ADD COLUMN {column} TEXT')
     routine_changes.ensure(db)  # a lasting change learned from a note on one of its to-dos
-    for r in db.execute("SELECT id,name,instructions FROM routines WHERE state!='stopped'").fetchall():  # a long placeholder made before gets short
+    for r in db.execute("SELECT id,name,instructions FROM routines WHERE state!='stopped' AND coalesce(name_check,'')!='owner'").fetchall():  # a long placeholder made before gets short
         short = name_of(r[2])
         if short and r[1] != short and r[1] == _long_name_of(r[2]):
             db.execute('UPDATE routines SET name=? WHERE id=?', (short, r[0]))
@@ -291,23 +292,37 @@ def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
                (json.dumps(rule), anchor.isoformat(), at, first_due(rule, anchor, at, now_local).isoformat(), stamp, row['id']))
 
 
-def change_instructions(db, routine_id, instructions, stamp, steps=False):
-    """Edit: what the routine does, in new words, and its script steps (False: as they are). Its rhythm and its runs
-    stay; a name made from the old words follows."""
+def clean_name(name):
+    """The owner's own name for a routine (Edit): one line, at most NAME_MAX characters."""
+    name = ' '.join(str(name or '').split())
+    if not name:
+        raise ValueError('Give it a name')
+    if len(name) > NAME_MAX:
+        raise ValueError('Keep the name under 80 characters')  # NAME_MAX
+    return name
+
+
+def change_instructions(db, routine_id, instructions, stamp, steps=False, name=None):
+    """Edit: what the routine does, in new words, its script steps (False: as they are) and its name (None: as it is).
+    Its rhythm and its runs stay; a name made from the old words follows, unless the owner named it."""
     row = get(db, routine_id)
     steps = steps_of(row) if steps is False else clean_steps(steps)
     instructions = _words(instructions, steps)
-    made = placeholder(row)
-    name = (name_of(instructions) or row['name']) if made else row['name']
+    name = None if name is None else clean_name(name)
+    name = None if name == row['name'] else name
+    owned = row['name_check'] == OWNER_NAMED or name is not None
+    made = not owned and placeholder(row)
+    name = name or ((name_of(instructions) or row['name']) if made else row['name'])
     db.execute('UPDATE routines SET name=?,instructions=?,steps=?,version=version+1,name_check=?,updated_at=?,recipe=? WHERE id=?',
-               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, None if made else '1', stamp,
+               (name[:NAME_MAX], instructions, json.dumps(steps) if steps else None, OWNER_NAMED if owned else None if made else '1', stamp,
                 row['recipe'] if instructions == row['instructions'] else None, row['id']))  # new words: a new recipe
 
 
 def needs_name(row):
     """A routine the owner made has the start of its words as a placeholder name until its first run gives it a short
-    one (no model call of its own); after Edit, the next run keeps its name unless it no longer fits."""
-    return row['name_check'] == '1' or placeholder(row)
+    one (no model call of its own); after Edit, the next run keeps its name unless it no longer fits. One the owner
+    named stays."""
+    return row['name_check'] != OWNER_NAMED and (row['name_check'] == '1' or placeholder(row))
 
 
 def named(db, routine_id, name, stamp):

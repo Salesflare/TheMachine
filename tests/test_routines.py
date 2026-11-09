@@ -252,6 +252,28 @@ class Runs(unittest.TestCase):
         self.act('routine_edit', id=rid, words='Sum up my open deals')
         self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals')
 
+    def test_edit_takes_the_owners_name_and_no_run_renames_it(self):
+        rid = self.make('every Monday at 9 sum up my open deals')
+        edit = lambda words, **more: self.app.action('routine_edit', {'id': rid, 'words': words, **more}, owner_dashboard=True)  # noqa: E731 (act's own name)
+        for bad, why in (('  ', 'Give it a name'), ('x' * 81, 'under 80 characters')):
+            with self.assertRaisesRegex(ValueError, why):
+                edit('Sum up my open deals', name=bad)
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Sum up my open deals')  # nothing kept
+        edit('Sum up my open deals', name='  Deals   digest ')
+        r = self.app.routines_view()['routines'][0]
+        self.assertEqual((r['name'], r['instructions']), ('Deals digest', 'Sum up my open deals'))
+        edit('Sum up my won deals')  # new words keep the owner's name
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals digest')
+        with self.store.connect() as db:
+            row = rt.get(db, rid)
+            self.assertFalse(rt.needs_name(row))  # a run never asks for a name
+            rt.named(db, rid, 'Won deals', 'now')
+            rt.ensure(db)
+        self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals digest')
+        edit('Sum up my won deals', name='Sum up my won deals')  # even the words' own start
+        with self.store.connect() as db:
+            self.assertFalse(rt.needs_name(rt.get(db, rid)))
+
     def tables(self):
         """Every row outside the routines' own tables: a test run must leave them as they were. data_stamps only counts
         writes to tables the to-dos' views read (routines among them), for their cache."""
