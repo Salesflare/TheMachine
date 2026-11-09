@@ -31,7 +31,9 @@ concurrency:
 jobs:
   tests:
     runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
-    timeout-minutes: 30
+    # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes, and a run cut at 30 with
+    # no failure has to start over, which costs more than the extra minutes.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
