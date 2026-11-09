@@ -1388,8 +1388,12 @@ class Dashboard(unittest.TestCase):
         html = dashboard_parts.assemble(ROOT)
         self.assertIn('${micBtn()}${talkBtn()}', html)
         # What the voice asks goes to the chat the way a typed message does: a decision 'other', never a send or Approve
-        start, end = html.index('async function talkAsk('), html.index("document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]')")
-        body = html[start:end]
+        # (the session's part, todos-chat-talk-live.js, from talkAsk to its end; then what follows a turn, which stays in
+        # todos-chat-talk.js)
+        live = (ROOT / 'dashboard' / 'todos-chat-talk-live.js').read_text(encoding='utf-8')
+        self.assertIn(live, html)
+        start, end = html.index('function talkTurnDone('), html.index("document.addEventListener('click',async e=>{const b=e.target.closest('[data-voice-undo]')")
+        body = live[live.index('async function talkAsk('):] + html[start:end]
         self.assertIn("choice:'other'", body)
         for word in ('approve', 'send_draft', "'accept'", 'deliver', 'confirm_action'):
             self.assertNotIn(word, body)
