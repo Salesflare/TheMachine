@@ -21,6 +21,8 @@ Les routines ne font que lire : vos messages, des pages web, GitHub et des sites
 
 Quand la tâche d’une routine finit par une publication ou un message, elle fait tout jusqu’à cette étape et montre le brouillon, comme **Publierait sur X :**. Après une vraie exécution, vous le recevez comme tâche à approuver ; une exécution de test le montre seulement. Son nom dit de quoi il s’agit et où cela part, son bouton nomme l’étape, comme **Publier**, et **De votre routine** en dessous ouvre la routine.
 
+La tâche commence dans l’espace du compte d’où elle part, comme Travail pour le compte X de votre entreprise, et ne demande donc jamais à être déplacée.
+
 Chaque exécution connaît le dernier résultat, elle peut donc dire ce qui a changé depuis.
 
 Après une bonne exécution, votre Machine peut s’écrire une recette pour la lecture qui est la même à chaque fois, comme les e-mails ou les changements GitHub à regarder. Les exécutions suivantes lisent cela d’abord, en code simple, et l’IA choisit seulement ce qui compte et l’écrit, avec moins de tokens. Une recette ne fait que lire ; si elle ne fonctionne plus, l’exécution lit d’elle-même et la répare. Elle apparaît sous **Avancé : étapes de script** dans le menu ⋯.

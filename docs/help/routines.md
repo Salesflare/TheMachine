@@ -23,6 +23,8 @@ Routines only read: your messages, web pages, GitHub and sites like X in the bro
 
 When a routine’s job ends in a post or a message, it does everything up to that step and shows the draft, like **Would post on X:**. After a real run you get it as a to-do to approve; a test run only shows it. Its name says what it is about and where it goes, its button names the step, like **Post it**, and **From your routine** under it opens the routine.
 
+The to-do starts in the area of the account it goes out from, like Work for your company’s X account, so it never asks to be moved.
+
 A run can follow your [skills](skills.md) that are on, picked by what the routine does: only the ones that fit are read in full. The result names them under **Used:**. A skill never makes a routine send or change anything.
 
 Your routines are under **Your routines**, below any suggestions. A long result folds to a short preview; **Show more** opens it.

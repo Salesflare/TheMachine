@@ -23,6 +23,8 @@ Routinen lesen nur: deine Nachrichten, Webseiten, GitHub und Seiten wie X im Bro
 
 Endet die Aufgabe einer Routine mit einem Post oder einer Nachricht, erledigt sie alles bis zu diesem Schritt und zeigt den Entwurf, etwa **Würde auf X posten:**. Nach einem echten Lauf bekommst du ihn als To-do zum Freigeben; ein Testlauf zeigt ihn nur. Sein Name sagt, worum es geht und wohin es geht, sein Button nennt den Schritt, etwa **Posten**, und **Von deiner Routine** darunter öffnet die Routine.
 
+Das To-do startet im Bereich des Kontos, von dem es ausgeht, etwa Arbeit für das X-Konto deiner Firma, und bittet also nie ums Verschieben.
+
 Ein Lauf kann deinen eingeschalteten [Skills](skills.md) folgen, ausgewählt nach dem, was die Routine tut: Nur die passenden werden ganz gelesen. Das Ergebnis nennt sie unter **Verwendet:**. Ein Skill bringt eine Routine nie dazu, etwas zu senden oder zu ändern.
 
 Deine Routinen stehen unter **Deine Routinen**, unter den Vorschlägen. Ein langes Ergebnis ist auf eine kurze Vorschau eingeklappt; **Mehr anzeigen** öffnet es.

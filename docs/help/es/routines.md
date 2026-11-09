@@ -21,6 +21,8 @@ Las rutinas solo leen: tus mensajes, páginas web, GitHub y sitios como X en el 
 
 Cuando la tarea de una rutina termina en una publicación o un mensaje, hace todo hasta ese paso y muestra el borrador, como **Publicaría en X:**. Tras una ejecución real lo recibes como tarea para aprobar; una ejecución de prueba solo lo muestra. Su nombre dice de qué trata y adónde va, su botón nombra el paso, como **Publícalo**, y **De tu rutina** debajo abre la rutina.
 
+La tarea empieza en el área de la cuenta desde la que sale, como Trabajo para la cuenta de X de tu empresa, así que nunca pide moverla.
+
 Cada ejecución conoce el último resultado, así puede decir qué cambió desde entonces.
 
 Después de una buena ejecución, tu Machine puede escribirse una receta para la lectura que es igual cada vez, como qué correos o cambios de GitHub mirar. Las siguientes ejecuciones leen eso primero, con código simple, y la IA solo elige lo que importa y lo escribe, con menos tokens. Una receta solo lee; si deja de funcionar, la ejecución lee por sí misma y la arregla. Aparece en **Avanzado: pasos de script** en el menú ⋯.

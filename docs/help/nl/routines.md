@@ -21,6 +21,8 @@ Routines lezen alleen: je berichten, webpagina’s, GitHub en sites zoals X in d
 
 Eindigt de taak van een routine in een post of bericht, dan doet ze alles tot die stap en toont ze het concept, zoals **Zou op X posten:**. Na een echte run krijg je het als to-do om goed te keuren; een testrun toont het alleen. De naam zegt waarover het gaat en waar het naartoe gaat, de knop noemt de stap, zoals **Plaatsen**, en **Van je routine** eronder opent de routine.
 
+De to-do begint in het gebied van het account waar hij vandaan gaat, zoals Werk voor het X-account van je bedrijf, dus hij vraagt nooit om te verhuizen.
+
 Elke run kent het vorige resultaat, zodat hij kan zeggen wat er sindsdien veranderde.
 
 Na een goede run kan je Machine zelf een recept schrijven voor het lezen dat elke keer hetzelfde is, zoals welke mails of GitHub-wijzigingen hij bekijkt. De volgende runs lezen dat eerst, in gewone code, en de AI kiest alleen wat telt en schrijft het op, met minder tokens. Een recept leest alleen; werkt het niet meer, dan leest de run zelf en herstelt hij het. Je ziet het onder **Geavanceerd: scriptstappen** in het ⋯-menu.
