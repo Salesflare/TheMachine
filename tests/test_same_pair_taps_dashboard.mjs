@@ -9,7 +9,10 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // later answers yet, so tapped pairs came back with their buttons, and rows jumped under the finger as answered ones
 // went. Now an answered pair keeps its place with its answer, and the rows below it never move. A slow Machine here:
 // each answer is stored only when its reply goes out. On a phone and a desktop.
-// SAME_SHOT=<dir> writes screenshots of the answered lists, light and dark.
+// Then the answered pairs go: a few seconds after the last tap, and at once on leaving People and coming back. They
+// stayed for good, with a count of 0 over rows that only said Merged., as long as the dashboard stayed open: People
+// opened from the menu was a quiet refresh, which kept every answered row. A list with nothing left to ask goes too.
+// SAME_SHOT=<dir> writes screenshots of the answered lists and of the lists after, light and dark.
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const node=(kind,id,name,extra={})=>({id,kind,name,strength:2,last_at:day(1),signals:3,ids:[],links:[],recent:[],around:[],open:{},...extra});
@@ -56,7 +59,7 @@ try{
    for(const i of [0,1,2]){await press(page.locator(merge(i)));await pause(150)}  // the next tap while the last is saving
    const action=list==='people'?'graph_same':'graph_org_merge';
    await until(()=>calls.filter(c=>c.action===action).length===3,list+': three merges sent');
-   await pause(1500);  // every reply in, and the redraws after them
+   await pause(1200);  // every reply in, and the redraws after them (still before the answered pairs go)
    const got=await seen(page);
    assert.deepEqual(got.back,[],`${list} ${tag}: a merged pair came back with its buttons`);
    assert.equal(got.moved,0,`${list} ${tag}: the rows under the finger moved`);
@@ -64,8 +67,28 @@ try{
    assert.deepEqual(await page.locator(`${panel} .same-pair .role-row .muted`).allTextContents(),['Merged.','Merged.','Merged.']);
    assert.equal(await page.locator(`${panel} .section-head .count`).first().textContent(),'1',`${list} ${tag}: the count is the open pairs`);
    if(shotDir)await page.screenshot({path:`${shotDir}/${list}-${tag}-${scheme}.png`});
-   // Opened again, the list is what the Machine has: only the pair not answered
-   await page.evaluate(()=>people(null));assert.equal(await page.locator(`${panel} .same-pair`).count(),1,`${list} ${tag}: opened again`)}
+   // A few seconds after the last answer the answered pairs go by themselves; the pair still open keeps its buttons
+   await page.locator(`${panel} .same-pair`).nth(1).waitFor({state:'detached',timeout:6000});
+   assert.equal(await page.locator(`${panel} .same-pair`).count(),1,`${list} ${tag}: answered pairs go after a moment`);
+   assert.equal(await page.locator(merge(3)).count(),1);
+   // The last one: answered, then To-dos and back to People from the menu (a quiet refresh) before it settles. The pair
+   // is gone at once, and with nothing left to ask so is the list's heading and its count of 0
+   await press(page.locator(merge(3)));await until(()=>calls.filter(c=>c.action===action).length===4,list+': the fourth merge sent');
+   await page.locator(`${panel} .pair-said`).waitFor();
+   if(shotDir)await page.screenshot({path:`${shotDir}/${list}-${tag}-${scheme}-last.png`});
+   state[list].unshift(pairs[3]);  // a Machine that still lists it (a slow rebuild) never brings it back
+   await page.evaluate(()=>document.querySelector('nav [data-tab="inbox"]').click());
+   await page.evaluate(()=>document.querySelector('nav [data-tab="people"]').click());
+   if(list==='orgs')await page.evaluate(()=>document.querySelector('[data-graph-sub="orgs"]').click());
+   assert.equal(await page.locator(`${panel} .same-pair`).count(),0,`${list} ${tag}: an answered pair stays after leaving People`);
+   await pause(1200);  // the quiet refresh in
+   assert.equal(await page.locator(`${panel} .same-pair`).count(),0,`${list} ${tag}: a late list brought an answered pair back`);
+   assert.equal(await page.locator(`${panel} .section-head h2`).filter({hasText:/^Same/}).count(),0,`${list} ${tag}: nothing left to ask, the heading stays`);
+   if(shotDir)await page.screenshot({path:`${shotDir}/${list}-${tag}-${scheme}-after.png`});
+   // Once the Machine no longer lists it, the answer is forgotten: a pair that is asked again later shows its buttons
+   state[list]=state[list].filter(s=>s!==pairs[3]);await page.evaluate(()=>people(null));
+   state[list]=[pairs[3]];await page.evaluate(()=>people(null));
+   assert.equal(await page.locator(merge(3)).count(),1,`${list} ${tag}: asked again later`)}
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('same pair taps dashboard ok');

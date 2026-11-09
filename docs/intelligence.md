@@ -116,8 +116,10 @@ name to compare.
 
 - The person page asks it quietly ("Same person as …?"), and People lists them under **Same person?** with **Merge** and
   **Not the same**. Not the same is remembered (`graph_merges` `same=0`).
-- An answered pair keeps its place in the list, its answer instead of the buttons, until the list is opened again, so
-  quick taps never move rows or bring a pair back. A pair that merges already made one (A and B, then B and C: A and C)
+- An answered pair keeps its place in the list, its answer instead of the buttons, while the owner taps through, so
+  quick taps never move rows or bring a pair back. A few seconds after the last answer, on leaving People and on opening
+  the list again, answered pairs go (the list's heading too when nothing is left); a late list that still has one never
+  shows it again. A pair that merges already made one (A and B, then B and C: A and C)
   is not asked, and a second Merge on a merged pair, people or organizations, is a quiet success.
 - **Merge all** merges every listed pair in one go (`graph_same_all`); one Undo splits that batch and asks again.
 - A merged person keeps every identity, signal, role, note, project and photo. Their page lists why they are one
