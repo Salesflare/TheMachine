@@ -10,6 +10,8 @@ site: Connect, Remove
 
 Las conversaciones de las que eres miembro: canales, canales privados, mensajes directos y mensajes de grupo, los últimos 7 días al conectar y luego todo lo nuevo. Nunca se une a un canal ni abre una conversación por su cuenta. Un canal tranquilo se lee una vez al día más o menos; cuando una tarea necesita sus mensajes más nuevos, The Machine lo lee enseguida.
 
+Cerca de un año de mensajes antiguos llega después, poco a poco, como [historial](history.md).
+
 Las personas aparecen con su nombre y las apps con el suyo, nunca con un ID de Slack. Alguien cuya cuenta de Slack ya no existe aparece como antiguo usuario de Slack.
 
 ## Qué puede enviar

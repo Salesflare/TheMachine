@@ -24,14 +24,17 @@ class CheckNowApp:
             return
         wake = wakes.setdefault(account_id, threading.Event())
         wake.clear()
+        end = time.monotonic() + seconds
+        until = self.__dict__.setdefault('collector_rest_until', {})  # history's Slack lane reads only with room before it
+        until[account_id] = end
         self.collector_resting.add(account_id)
         try:
-            end = time.monotonic() + seconds
             while not self.stop.is_set() and (left := end - time.monotonic()) > 0:
                 if wake.wait(min(left, 60)):
                     return
         finally:
             self.collector_resting.discard(account_id)
+            until.pop(account_id, None)
 
     def wake_collectors(self, wanted):
         """Check now (check_now.run): every resting collector whose account `wanted` takes reads now. Returns their ids;

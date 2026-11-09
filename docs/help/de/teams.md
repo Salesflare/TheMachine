@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## Was es liest
 
-Deine 1:1-, Gruppen- und Meeting-Chats in Teams: die letzten 7 Tage beim Verbinden, danach alle paar Minuten neue Nachrichten. Ältere Chats kommen später nach und nach dazu, ohne etwas aufzuhalten.
+Deine 1:1-, Gruppen- und Meeting-Chats in Teams: die letzten 7 Tage beim Verbinden, danach alle paar Minuten neue Nachrichten. Ältere Chats aus etwa einem Jahr, mit dem OK deines Admins auch Channel-Threads, kommen später nach und nach als [Verlauf](history.md) dazu, ohne etwas aufzuhalten.
 
 Mit dem OK deines Admins liest es außerdem:
 

@@ -1,14 +1,14 @@
 ---
 title: Histórico
 area: connections
-summary: Cerca de um ano de e-mails, reuniões e conversas do WhatsApp antigos, para pesquisar, ler e conhecer as suas pessoas. Nunca uma tarefa.
+summary: Cerca de um ano de e-mails, reuniões e mensagens do WhatsApp, Slack e Teams antigos, para pesquisar, ler e conhecer as suas pessoas. Nunca uma tarefa.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## O que ele guarda
 
-Cada conta de e-mail, agenda e WhatsApp guarda cerca de um ano de mensagens e reuniões antigas. A pesquisa as encontra, também por significado, uma conversa as mostra e a [Agenda](calendar.md) mostra as reuniões passadas.
+Cada conta de e-mail, agenda, WhatsApp, Slack e Teams guarda cerca de um ano de mensagens e reuniões antigas. A pesquisa as encontra, também por significado, uma conversa as mostra e a [Agenda](calendar.md) mostra as reuniões passadas.
 
 O cartão diz até onde ele vai: **Histórico: até** um mês, quando já chegou.
 
@@ -28,4 +28,4 @@ Ele usa o acesso que cada conexão já tem. Nada novo é pedido.
 
 ## Até onde
 
-Cerca de um ano por padrão. Machines auto-hospedadas podem definir `history_days` na configuração (0 desliga, até 730). Telegram, Slack e outras fontes guardam o que leem hoje.
+Cerca de um ano por padrão. Machines auto-hospedadas podem definir `history_days` na configuração (0 desliga, até 730). Telegram e outras fontes guardam o que leem hoje.

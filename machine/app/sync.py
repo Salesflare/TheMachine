@@ -505,8 +505,17 @@ class SyncApp:
             if self.stop.wait(ABILITY_CHECK_SECONDS):
                 break
 
+    def slack_source(self, account):
+        """The one Slack client of a connection: its collector and its history (machine/app/history.py) share it, so
+        they share its pacing too (Slack allows about one history read a minute)."""
+        sources = self.__dict__.setdefault('slack_sources', {})
+        found = sources.get(account['id'])
+        if found is None or found.account != account:
+            found = sources[account['id']] = Slack(self.config, account, self.stop)
+        return found
+
     def collector(self, account):
-        source = Slack(self.config, account, self.stop) if account.get('service') == 'slack' else None
+        source = self.slack_source(account) if account.get('service') == 'slack' else None
         try:
             wait = self.resume_wait(account)
         except Exception as error:  # never keep a source from starting

@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## Wat het leest
 
-Je 1-op-1-, groeps- en meetingchats in Teams: de laatste 7 dagen bij het koppelen, daarna om de paar minuten nieuwe berichten. Oudere chats komen later beetje bij beetje binnen, zonder iets op te houden.
+Je 1-op-1-, groeps- en meetingchats in Teams: de laatste 7 dagen bij het koppelen, daarna om de paar minuten nieuwe berichten. Oudere chats tot ongeveer een jaar terug, en met het OK van je admin ook kanaalthreads, komen later beetje bij beetje binnen als [geschiedenis](history.md), zonder iets op te houden.
 
 Met het OK van je beheerder leest het ook:
 

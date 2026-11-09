@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## Qué lee
 
-Tus chats individuales, de grupo y de reuniones en Teams: los últimos 7 días al conectarlo, y luego los mensajes nuevos cada pocos minutos. Los chats más antiguos llegan después, poco a poco, sin frenar nada.
+Tus chats individuales, de grupo y de reuniones en Teams: los últimos 7 días al conectarlo, y luego los mensajes nuevos cada pocos minutos. Cerca de un año de chats antiguos, y de hilos de canales con el visto bueno de tu admin, llega después como [historial](history.md), poco a poco, sin frenar nada.
 
 Con el OK de tu admin, también lee:
 

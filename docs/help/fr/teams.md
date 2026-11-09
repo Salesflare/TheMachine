@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## Ce qu’il lit
 
-Vos chats individuels, de groupe et de réunion dans Teams : les 7 derniers jours à la connexion, puis les nouveaux messages toutes les quelques minutes. Les chats plus anciens arrivent plus tard, petit à petit, sans rien bloquer.
+Vos chats individuels, de groupe et de réunion dans Teams : les 7 derniers jours à la connexion, puis les nouveaux messages toutes les quelques minutes. Environ un an d’anciens chats, et de fils de canaux avec l’accord de votre admin, arrive plus tard comme [historique](history.md), petit à petit, sans rien bloquer.
 
 Avec l’accord de votre admin, il lit aussi :
 

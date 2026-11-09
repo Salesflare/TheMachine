@@ -1,14 +1,14 @@
 ---
 title: History
 area: connections
-summary: About a year of older mail, meetings and WhatsApp chats, to search, read and know your people. Never a to-do.
+summary: About a year of older mail, meetings and WhatsApp, Slack and Teams messages, to search, read and know your people. Never a to-do.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## What it keeps
 
-Your Machine brings in about a year of older email, meetings and WhatsApp chats. Search finds them, also by meaning, threads show them, and the [Calendar](calendar.md) shows past meetings.
+Your Machine brings in about a year of older email, meetings and WhatsApp, Slack and Teams messages. Search finds them, also by meaning, threads show them, and the [Calendar](calendar.md) shows past meetings.
 
 Each connection in **Connections** says how far back it reaches, like **History: back to** November 2025.
 
@@ -28,4 +28,4 @@ It uses the access each connection already has. Nothing new to approve.
 
 ## How far back
 
-About a year. On your own computer, `history_days` in the settings file changes it (0 turns it off, up to 730). Telegram, Slack and other sources don't bring in older history.
+About a year. On your own computer, `history_days` in the settings file changes it (0 turns it off, up to 730). Telegram and other sources don't bring in older history.

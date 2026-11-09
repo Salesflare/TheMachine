@@ -63,6 +63,7 @@ from machine.sources.calendar import Calendar, calendar_event
 from machine.sources.connectors import intercom_link, intercom_own_event
 from machine.sources.exclusions import calendar_title_excluded, default_exclusions
 from machine.sources.gmail import Gmail, message_event
+from machine.sources.slack import slack_event
 from machine.sources.whatsapp import WhatsApp, whatsapp_event
 from machine.store.cards import CardsStore
 from machine.store.core import StoreCore
@@ -127,7 +128,8 @@ class App(*APP_MIXINS):
     # action name -> method, from the mixins' ACTIONS; App.action calls it as method(name, args, owner_dashboard). Who
     # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
     ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
-    HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event)}
+    HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event),
+                       'slack': (None, slack_event)}  # Slack's client is the collector's own (SyncApp.slack_source)
 
     def __init__(self, config, config_path=None):
         set_timezone(config.get('timezone'))

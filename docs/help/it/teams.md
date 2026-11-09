@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## Cosa legge
 
-Le tue chat individuali, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni quando lo colleghi, poi i nuovi messaggi ogni pochi minuti. Le chat più vecchie arrivano dopo, un po’ alla volta, senza bloccare nulla.
+Le tue chat individuali, di gruppo e delle riunioni in Teams: gli ultimi 7 giorni quando lo colleghi, poi i nuovi messaggi ogni pochi minuti. Circa un anno di chat più vecchie, e di thread dei canali con l’ok del tuo admin, arriva dopo come [cronologia](history.md), un po’ alla volta, senza bloccare nulla.
 
 Con l’OK del tuo admin legge anche:
 

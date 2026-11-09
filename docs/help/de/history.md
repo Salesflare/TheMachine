@@ -1,14 +1,14 @@
 ---
 title: Verlauf
 area: connections
-summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-Chats zum Suchen, Lesen und Kennen deiner Leute. Nie eine Aufgabe.
+summary: Etwa ein Jahr ältere Mails, Meetings und WhatsApp-, Slack- und Teams-Nachrichten zum Suchen, Lesen und Kennen deiner Leute. Nie eine Aufgabe.
 covers: history
 code: machine/app/history.py, machine/store/history.py, machine/store/graph_history.py
 keywords: older messages, backfill, archive, past emails
 ---
 ## Was er behält
 
-Jedes E-Mail-Konto, jeder Kalender und WhatsApp behält etwa ein Jahr ältere Nachrichten und Meetings. Die Suche findet sie, auch nach Bedeutung, ein Verlauf zeigt sie, und der [Kalender](calendar.md) zeigt vergangene Meetings.
+Jedes E-Mail-Konto, jeder Kalender, WhatsApp, Slack und Teams behält etwa ein Jahr ältere Nachrichten und Meetings. Die Suche findet sie, auch nach Bedeutung, ein Verlauf zeigt sie, und der [Kalender](calendar.md) zeigt vergangene Meetings.
 
 Die Karte sagt, wie weit er zurückreicht: **Verlauf: zurück bis** zu einem Monat, sobald er da ist.
 
@@ -28,4 +28,4 @@ Er nutzt den Zugriff, den jede Verbindung schon hat. Nichts Neues wird gefragt.
 
 ## Wie weit zurück
 
-Standardmäßig etwa ein Jahr. Selbst gehostete Machines können `history_days` in der Konfiguration setzen (0 schaltet ihn aus, bis 730). Telegram, Slack und andere Quellen behalten, was sie heute lesen.
+Standardmäßig etwa ein Jahr. Selbst gehostete Machines können `history_days` in der Konfiguration setzen (0 schaltet ihn aus, bis 730). Telegram und andere Quellen behalten, was sie heute lesen.

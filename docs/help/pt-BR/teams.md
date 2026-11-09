@@ -8,7 +8,7 @@ site: Connect Microsoft Teams
 ---
 ## O que ele lê
 
-Seus chats individuais, de grupo e de reuniões no Teams: os últimos 7 dias ao conectar, depois as mensagens novas a cada poucos minutos. Chats mais antigos chegam depois, aos poucos, sem travar nada.
+Seus chats individuais, de grupo e de reuniões no Teams: os últimos 7 dias ao conectar, depois as mensagens novas a cada poucos minutos. Cerca de um ano de chats antigos, e de threads de canais com o ok do seu admin, chega depois como [histórico](history.md), aos poucos, sem travar nada.
 
 Com o OK do seu admin, ele também lê:
 

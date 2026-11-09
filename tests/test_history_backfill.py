@@ -98,7 +98,8 @@ class Base(unittest.TestCase):
         self.app.config = {'accounts': list(self.accounts), 'database': str(self.store.path)}
         self.app.collector_resting = {x['id'] for x in self.accounts}
         self.app.HISTORY_SOURCES = {'whatsapp': (FakeWhatsApp, a.whatsapp_event), 'mail': (FakeGmail, a.message_event),
-                                    'calendar': (FakeCalendar, a.calendar_event, a.calendar_title_excluded)}
+                                    'calendar': (FakeCalendar, a.calendar_event, a.calendar_title_excluded),
+                                    'slack': (None, a.slack_event)}
         FakeWhatsApp.rows, FakeWhatsApp.reads, FakeGmail.reads, FakeCalendar.reads = [], [], [], []
         with self.store.connect() as db:  # each connection's own first week is in (OnboardingFirst tests one that isn't)
             db.executemany('INSERT INTO milestones(name,at) VALUES(?,?)', [('first_import:' + i, NOW) for i in ('wa', 'work', 'cal')])
@@ -456,6 +457,167 @@ class OnboardingFirst(Base):
         with mock.patch.object(embeddings, 'embed_pending', side_effect=embeddings.EmbeddingError('http_429')):
             self.assertEqual(self.app.history_embed_step(settings), app_history.WAIT_SECONDS)
         self.assertEqual(self.app.history_wait(), 'rate_limit')
+
+
+SLACK = {'id': 'slack', 'service': 'slack', 'transport': 'broker', 'team_id': 'T0ACME0001', 'user_id': 'U0OWNER01',
+         'email': 'owner@example.com', 'slack_host': 'acme-example.slack.com', 'boundary': 'work:Example'}
+LIVE_AFTER = dt.datetime.fromisoformat(NOW) - dt.timedelta(days=7)
+
+
+def ts(at):
+    return f'{dt.datetime.fromisoformat(at).timestamp():.6f}'
+
+
+def slack_msg(at, user, text, **more):
+    return {'type': 'message', 'ts': ts(at), 'user': user, 'text': text, **more}
+
+
+class FakeSlackClient:
+    """The collector's Slack client as history uses it: its pacing and conversations.history / replies pages."""
+
+    def __init__(self, account, pages):
+        self.account, self.pages, self.reads, self.wait, self.round, self.fail = account, pages, [], 0, 180, None
+
+    def limited_wait(self):
+        return self.wait
+
+    def limited_gap(self):
+        return 65
+
+    def get(self, method, params):
+        self.reads.append((method, dict(params)))
+        if self.fail:
+            raise self.fail
+        return self.pages[(method, params['channel'], params.get('ts'), params.get('cursor'))]
+
+
+class SlackHistory(Base):
+    """Slack's year of history: the collector's own conversations only, newest first, a page at a time in a slow lane
+    that never takes a minute the collector wants, resting on a 429 and going on from its saved cursor."""
+    accounts = [SLACK]
+    KICKOFF = '2026-05-01T10:00:00+00:00'
+
+    def setUp(self):
+        super().setUp()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_import:slack',?)", (NOW,))
+            db.execute('INSERT INTO checkpoints(account_id,state) VALUES(?,?)', ('slack', json.dumps({
+                'mode': 'incremental', 'phase': 'scan', 'index': 0, 'after': f'{LIVE_AFTER.timestamp():.6f}', 'channels': [
+                    {'id': 'C0SALES001', 'name': 'sales', 'type': 'channel', 'last_activity': 1790000000.0, 'threads': []},
+                    {'id': 'D0SAM00001', 'name': 'DM U0SAM0001', 'type': 'dm', 'last_activity': 1793000000.0, 'threads': []},
+                    {'id': 'C0LEFT0001', 'name': 'left-it', 'type': 'channel', 'error': 'slack_not_in_channel', 'threads': []}]})))
+        self.client = FakeSlackClient(SLACK, {
+            ('conversations.history', 'D0SAM00001', None, None): {'messages': [slack_msg('2026-09-01T10:00:00+00:00', 'U0SAM0001', 'Can we talk pricing?')],
+                                                                  'response_metadata': {'next_cursor': 'dm2'}},
+            ('conversations.history', 'D0SAM00001', None, 'dm2'): {'messages': [slack_msg('2026-03-01T10:00:00+00:00', 'U0OWNER01', 'Sent the deck')]},
+            ('conversations.history', 'C0SALES001', None, None): {'messages': [slack_msg(self.KICKOFF, 'U0ROBIN01', 'Kickoff notes', reply_count=1)]},
+            ('conversations.replies', 'C0SALES001', ts(self.KICKOFF), None): {'messages': [
+                slack_msg(self.KICKOFF, 'U0ROBIN01', 'Kickoff notes', reply_count=1),
+                slack_msg('2026-05-02T10:00:00+00:00', 'U0SAM0001', 'Looks good', thread_ts=ts(self.KICKOFF))]}})
+        self.app.slack_sources = {'slack': self.client}
+        self.app.collector_rest_until = {'slack': app_history.time.monotonic() + 300}
+        gap = mock.patch.object(app_history, 'SLACK_GAP_SECONDS', 0); gap.start(); self.addCleanup(gap.stop)
+
+    def test_a_year_of_its_own_conversations_newest_first_then_thread_replies(self):
+        self.first_look_over()
+        for _ in range(5):
+            self.assertTrue(self.app.history_step())
+        self.assertFalse(self.app.history_step())
+        self.assertEqual(self.app.history_why, 'done')
+        self.assertEqual([(m, p['channel'], p.get('cursor')) for m, p in self.client.reads],
+                         [('conversations.history', 'D0SAM00001', None), ('conversations.history', 'D0SAM00001', 'dm2'),
+                          ('conversations.history', 'C0SALES001', None), ('conversations.replies', 'C0SALES001', None)])
+        params = self.client.reads[0][1]  # back a year, up to where the live import starts; Slack's page size
+        self.assertEqual((params['oldest'], params['latest'], params['limit']),
+                         (ts('2025-11-06T09:00:00+00:00'), f'{LIVE_AFTER.timestamp():.6f}', 15))
+        self.assertNotIn('C0LEFT0001', json.dumps(self.client.reads))  # never a conversation the live sync can't read
+        rows = self.rows('SELECT title,history,version=analyzed_version FROM events ORDER BY occurred_at')
+        self.assertEqual([(r[1], r[2]) for r in rows], [(1, 1)] * 4)  # history, reviewed from the start: no to-do sees it
+        self.assertEqual(len(rows), 4)  # the thread's first message once
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM events WHERE history=0').fetchone()[0], 0)
+            self.assertEqual(history.progress(db, ['slack'])['slack'], {'back_to': '2026-03', 'done': True, 'kept': 4})
+            graph_history.ensure(db)
+            self.assertTrue(graph_history.advance(db, '2025-01-01T00:00:00+00:00', NOW))
+            self.assertEqual(len(graph_history.rows(db, '2025-01-01T00:00:00+00:00')), 4)  # the Graph counts it
+        connector = next(c for c in self.app.store.snapshot([SLACK])['connectors'] if c['id'] == 'slack')
+        self.assertEqual(connector['backfill'], {'back_to': '2026-03', 'done': True, 'kept': 4})  # the card's History line
+
+    def test_its_slow_lane_never_takes_a_minute_the_collector_wants(self):
+        self.first_look_over()
+        self.assertTrue(self.app.history_step())  # the list: no Slack call
+        self.app.collector_resting = set()  # the collector reads now
+        self.assertFalse(self.app.history_step())
+        self.app.collector_resting = {'slack'}
+        self.app.collector_rest_until = {'slack': app_history.time.monotonic() + 60}  # it reads again within a minute
+        self.assertFalse(self.app.history_step())
+        self.app.collector_rest_until = {'slack': app_history.time.monotonic() + 300}
+        self.client.wait = 120  # this connection's minute of the round is two minutes off
+        self.assertFalse(self.app.history_step())
+        self.assertEqual((self.client.reads, self.app.history_why), ([], 'sync'))
+        self.client.wait = 0
+        self.assertTrue(self.app.history_step())
+        self.assertEqual(len(self.client.reads), 1)
+        with mock.patch.object(app_history, 'SLACK_GAP_SECONDS', 180):
+            self.assertTrue(self.app.history_step())  # the lane's gap starts with this read
+            self.assertFalse(self.app.history_step())  # and holds the next one back
+        self.assertEqual(len(self.client.reads), 2)
+
+    def test_a_429_rests_all_history_and_the_walk_goes_on_from_its_cursor(self):
+        self.first_look_over()
+        self.assertTrue(self.app.history_step())
+        self.assertTrue(self.app.history_step())  # the direct message's first page: its cursor is saved
+        self.client.fail = a.SourceError('slack:conversations.history', 429, retry_after=3600)
+        self.assertFalse(self.app.history_step())
+        self.assertEqual(self.app.history_why, 'rate_limit')
+        self.assertGreater(self.app.history_rested - app_history.time.monotonic(), 3500)  # Slack's Retry-After, over the usual rest
+        self.assertEqual(self.app.history_wait(), 'rate_limit')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM checkpoints WHERE account_id='slack' AND (error IS NOT NULL OR retry_at IS NOT NULL)").fetchone())
+            self.assertEqual(history.get(db, 'slack')['state']['cursor'], 'dm2')
+        # a restart after the rest: a new service, the same database
+        self.app = restarted = object.__new__(a.App)
+        restarted.store, restarted.config, restarted.HISTORY_SOURCES = self.store, {'accounts': [SLACK], 'database': str(self.store.path)}, {'slack': (None, a.slack_event)}
+        restarted.collector_resting, restarted.slack_sources = {'slack'}, {'slack': self.client}
+        restarted.collector_rest_until = {'slack': app_history.time.monotonic() + 300}
+        self.client.fail, self.client.reads = None, []
+        later = (dt.datetime.fromisoformat(NOW) + dt.timedelta(hours=2)).isoformat()
+        with mock.patch.object(app_history, 'now', return_value=later):
+            self.assertTrue(restarted.history_step())
+        self.assertEqual([(m, p['channel'], p.get('cursor')) for m, p in self.client.reads], [('conversations.history', 'D0SAM00001', 'dm2')])
+
+    def test_the_real_client_shares_one_minute_between_collector_and_history(self):
+        client = a.Slack({}, SLACK)
+        self.assertEqual((client.round, client.limited_gap()), (180, 65))
+        client.last_limited, client.last_call = app_history.time.monotonic() - 10, 0
+        self.assertGreater(client.limited_wait(), 54)  # a read ten seconds ago: not within the same minute
+        client.last_limited = app_history.time.monotonic() - 500
+        with mock.patch.object(client, 'slot_wait', return_value=0):
+            self.assertEqual(client.limited_wait(), 0)
+        self.assertTrue(client.limited_lock.acquire(blocking=False)); client.limited_lock.release()
+
+
+class TeamsHistory(Base):
+    accounts = [{'id': 'teams', 'service': 'teams', 'email': 'owner@example.com', 'boundary': 'work:Example'}]
+
+    def test_a_teams_history_from_before_channels_walks_its_channels_too(self):
+        self.first_look_over()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO milestones(name,at) VALUES('first_import:teams',?)", (NOW,))
+            history.save(db, 'teams', {'chats': [], 'upper': '2026-10-29T09:00:00+00:00', 'target': '2025-11-06T09:00:00+00:00'},
+                         NOW, 5, '2026-01-01T00:00:00+00:00', True, 365)
+        seen = []
+
+        def page(config, account, helpers, state, upper, target):
+            seen.append((dict(state), upper, target))
+            state['channels'] = []
+            return [], True
+        import machine.sources.connectors as connectors
+        with mock.patch.object(connectors, 'load_connector', return_value=mock.Mock(history_page=page)):
+            self.assertTrue(self.app.history_step())
+            self.assertFalse(self.app.history_step())  # its channels are in: done again
+        self.assertEqual(seen[0][1:], ('2026-10-29T09:00:00+00:00', '2025-11-06T09:00:00+00:00'))  # the same window
+        self.assertEqual(seen[0][0]['chats'], [])  # its chats are not read again
 
 
 if __name__ == '__main__':
