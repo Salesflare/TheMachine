@@ -37,7 +37,7 @@ from machine.sources.calendar import calendar_account_owner, company_domains, in
 from machine.sources.connectors import writable_calendars
 from machine.store.views import DONE_FIRST
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
-from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, close_kept
+from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, aside, close_kept
 from machine.web import status_delta
 from machine.web.serving import (
     compress_body,
@@ -447,7 +447,7 @@ def make_handler(app):
         def get_api_session(self, path):
             # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
             # copy never keeps it) and whose data the device may keep (dashboard_cache_scope)
-            app.store.note_activity('visit')
+            aside(lambda: app.store.note_activity('visit'), 'visit', once=False)  # counted off the request (timing.aside)
             self.output(200, {'csrf': dashboard_csrf(app.token, app.config['tailscale_owner']),
                               'cache_scope': dashboard_cache_scope(app.token, app.config['tailscale_owner'])})
 
@@ -463,11 +463,8 @@ def make_handler(app):
             since = (urllib.parse.parse_qs(path.query).get('since') or [''])[0]
             self.output(200, status_delta.changes({**dashboard_status(app.action('status', {'full': True, 'done': DONE_FIRST})), 'talk_ready': app.talk_ready(), 'ui_version': dashboard_version(), 'source_url': source_url(), 'meaning': {'on': bool(embeddings.settings(app.config))}, 'fixed': list(getattr(getattr(app, 'fleet', None), 'fixed_now', None) or ()), 'browser_link': browser_link(app.config),
                               'browser_embed': browser_embed(app.config, self.headers.get('Host', ''))}, since))
-            try:
-                app.store.note_card_shown()
-                app.store.note_activity('dashboard')
-            except sqlite3.Error as error:
-                LOG.warning('card shown not noted error=%s', type(error).__name__)
+            # after the answer and off the request: on its thread the next request of this connection would wait
+            aside(lambda: (app.store.note_card_shown(), app.store.note_activity('dashboard')), 'dashboard shown')
 
         def get_api_merge_diff(self, path):
             args=urllib.parse.parse_qs(path.query)

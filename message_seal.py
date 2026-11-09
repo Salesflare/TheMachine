@@ -602,7 +602,12 @@ def ensure_triggers(db):
         for sql in _guard_sql(table, column, plain):
             name = sql.split()[2]
             if name not in present:
-                db.execute(sql)
+                try:
+                    db.execute(sql)
+                except sqlite3.OperationalError as error:
+                    # another thread's connect made this guard while this one waited for the write lock: it is there
+                    if f'trigger {name} already exists' not in str(error):
+                        raise
     for name, sql in SEARCH_SEALED.items():
         if 'event_search' in _tables(db) and present.get(name) != sql:
             db.execute(f'DROP TRIGGER IF EXISTS {name}')

@@ -14,6 +14,7 @@ from machine.config import LOG
 from machine.store.review import REVIEW_SESSION_PREFIX
 from machine.store.views import sender_first_name
 from machine.text import _address, encoded
+from machine.timing import answering, aside
 import next_actions
 import still_needed
 from timeutil import local_tz, now
@@ -316,6 +317,24 @@ class FirstLookStore:
         except (sqlite3.Error, ValueError) as error:
             LOG.warning('activity not noted kind=%s error=%s', kind, type(error).__name__)
 
+    def first_asked(self, db, name, detail):
+        """The mark made the first time something is asked ({'at', 'detail'}; detail() says what it starts as). The
+        dashboard's status asks: there the mark is written off the request (timing.aside), which answers from what
+        it is about to be, so a first view never waits for the write lock behind an import."""
+        row = db.execute('SELECT at,detail FROM milestones WHERE name=?', (name,)).fetchone()
+        if row:
+            return row
+        made = (name, now(), detail())
+        if not answering():
+            db.execute('INSERT OR IGNORE INTO milestones(name,at,detail) VALUES(?,?,?)', made)
+            return db.execute('SELECT at,detail FROM milestones WHERE name=?', (name,)).fetchone()
+        aside(lambda: self.mark_first_asked(made), 'first ' + name)
+        return {'at': made[1], 'detail': made[2]}
+
+    def mark_first_asked(self, made):
+        with self.connect() as db:
+            db.execute('INSERT OR IGNORE INTO milestones(name,at,detail) VALUES(?,?,?)', made)
+
     def first_tips(self):
         """The first-use tips still to show on the dashboard (FIRST_TIPS), kept on the Machine so every device agrees.
         Only a new person gets them: the first time this is asked, someone who has already decided a to-do is past them
@@ -324,10 +343,7 @@ class FirstLookStore:
         with self.connect() as db:
             decided = db.execute('SELECT count(*) FROM (SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES))
                                  + ') LIMIT ?)', (*TIP_SOURCES, FIRST_TIPS_UNTIL)).fetchone()[0]
-            row = db.execute("SELECT detail FROM milestones WHERE name='tips'").fetchone()
-            if not row:
-                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('tips',?,?)", (now(), 'off' if decided else 'on'))
-                row = db.execute("SELECT detail FROM milestones WHERE name='tips'").fetchone()
+            row = self.first_asked(db, 'tips', lambda: 'off' if decided else 'on')
             if row['detail'] != 'on' or decided >= FIRST_TIPS_UNTIL:
                 return []
             done = {r['name'][4:] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'tip:%'")}
@@ -349,10 +365,7 @@ class FirstLookStore:
             decided = lambda since='': db.execute(
                 'SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
                 + ','.join('?' * len(FIRST_ACTIONS)) + ') AND created_at>=? LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS, since)).fetchone()
-            row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
-            if not row:
-                db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('greeting',?,?)", (now(), 'off' if decided() else 'on'))
-                row = db.execute("SELECT at,detail FROM milestones WHERE name='greeting'").fetchone()
+            row = self.first_asked(db, 'greeting', lambda: 'off' if decided() else 'on')
             ends = (dt.datetime.fromisoformat(row['at']) + dt.timedelta(hours=GREETING_HOURS)).isoformat()
             if row['detail'] != 'on' or decided(row['at']) or now() >= ends:
                 return None

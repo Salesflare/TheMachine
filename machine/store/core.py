@@ -25,6 +25,7 @@ import follow_ups
 import graph
 import graph_boards
 import handoff_mail
+import help_topics
 import learning_loop
 from machine.config import LOG
 from machine.sources.exclusions import calendar_title_excluded, email_subject_excluded, excluded_by_rules, routine_rules
@@ -33,7 +34,7 @@ from machine.store.profile import QUALITY_TABLES
 from machine.store.views import CARD_TABLES
 from machine import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
-from machine.timing import _REQUEST_TIMING
+from machine.timing import _REQUEST_TIMING, aside
 import mail_cleanup
 import meet_link
 import message_seal
@@ -402,6 +403,9 @@ class StoreCore:
             pacing.ensure(db)  # how often background work paced (pacing.py): made here, not inside someone's write
             learning_loop.ensure(db)  # the learning loop's changes, each undoable (learning_loop.py)
             person_summary.ensure(db)  # the summary on top of a person's page (person_summary.py)
+            # The dashboard's first view reads it: made here, never by the view itself, which would wait for the
+            # write lock behind a first import (tests/test_first_view_no_lock_wait.py)
+            help_topics.ensure(db)  # what help was asked about (help_topics.py)
             # Promises the owner made and promises made to them, from reviewed messages. Each is
             # checked when due: still open, it becomes a card (status carded, suggestion_id).
             db.execute('CREATE TABLE IF NOT EXISTS promises(id INTEGER PRIMARY KEY,direction TEXT NOT NULL,who TEXT NOT NULL,what TEXT NOT NULL,due TEXT,'
@@ -781,8 +785,11 @@ class StoreCore:
                 timing['db_connections'] += 1
         else:  # kept from this request's last connect: as a new one would be
             db.row_factory, db.isolation_level = db.kept_rows, ''
-        if self.sealer and self.protected and db.execute('PRAGMA schema_version').fetchone()[0] != self._sealed_schema:
-            # a table made since (a migration, joining a Fleet): its guards, and anything it got meanwhile
+        if self.sealer and self.protected and db.execute('PRAGMA schema_version').fetchone()[0] != self._sealed_schema and (
+                timing is None or not timing.get('read') or aside(self.guard_new_tables, 'sealed guards')):
+            # a table made since (a migration, joining a Fleet): its guards, and anything it got meanwhile. Making a
+            # guard takes the write lock: a page's read (a GET) never waits for it behind an import, it hands this
+            # to the side thread (timing.aside) and reads on
             with db:
                 message_seal.ensure_triggers(db)
                 sealed_now = message_seal.leftovers(db, seal=True)
@@ -801,6 +808,10 @@ class StoreCore:
                 kept.append(db)
             else:
                 db.close()
+
+    def guard_new_tables(self):
+        with self.connect():  # outside a request, the connect itself makes them (_connect)
+            pass
 
     def checkpoint(self, account):
         with self.connect() as db:
