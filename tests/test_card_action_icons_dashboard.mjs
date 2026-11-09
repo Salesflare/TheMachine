@@ -21,6 +21,9 @@ const cards=[
   next_action:{kind:'handoff',to_name:'Sam Rivera',label:'Hand off'}},
  {id:'none',title:'Call the garage',body:'They close at 17:00.',status:'prepared',scope:'personal',created_at:now,event_ids:[6],source_line:'Source: Telegram from Sam · Thu 5 Nov',
   outcome:JSON.stringify({state:'needs_you',needs:'call them'})},
+ // A meeting's notes lead (meeting_mail.py): a notes logo and the meeting, even with the notes mail among its originals
+ {id:'notes',title:'Send the board the revised budget',body:'Agreed in the board meeting.',status:'pending',scope:'work',created_at:now,event_ids:[8,9],account_ids:['work-gmail'],
+  source_line:'Source: notes from Board meeting Q4 · Wed 28 Oct (+1 more)',original_urls:['https://mail.google.com/mail/u/0/#all/abc']},
  {id:'done',title:'Sent the quote',body:'Done.',status:'completed',scope:'work',created_at:now,event_ids:[7],source_line:'Source: Slack from #sales · Wed 4 Nov'}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[{id:'work-gmail',service:'gmail'},{id:'work-outlook',service:'outlook'},{id:'work-slack',service:'slack'}],fleet:{on:true,fleets:[]}});
@@ -54,6 +57,8 @@ try{
   assert.deepEqual([hand.button.ico,hand.button.hidden,hand.button.text],['via-ico via-handoff','true','Review handoff to Sam']);
   const none=await info('none');
   assert.equal(none.src.via,'via-telegram');assert.equal(none.draft,null);assert.equal(none.button.ico,'');
+  const notes=await info('notes');
+  assert.equal(notes.src.via,'via-note',JSON.stringify(notes));assert.ok(notes.src.text.startsWith('Notes from Board meeting Q4'),notes.src.text);
   // The source opens the original, as it did under Details
   assert.equal(await page.locator('#task-mail>.card-source [data-original="read"]').count(),1);
   // Every logo has its picture (a mask), in both places

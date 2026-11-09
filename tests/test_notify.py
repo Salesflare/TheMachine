@@ -353,7 +353,7 @@ class Notifications(unittest.TestCase):
         self.assertFalse(notify.active(lambda: clock[0] + notify.ACTIVE_FOR + 1))
 
     def test_telegram_off_for_to_dos_keeps_the_card_off_telegram_and_on_the_phone(self):
-        sid = self.card()
+        sid = self.card(urgent=True)
         self.app.action('notify_set', {'kind': 'todo', 'channel': 'telegram', 'on': False}, owner_dashboard=True)
         config = dict(self.config, telegram_owner='42')
         with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', side_effect=AssertionError('no Telegram')), \
@@ -418,45 +418,68 @@ class Notifications(unittest.TestCase):
         meetings = [{'at': '2026-10-12T09:30:00+00:00', 'title': 'Planning with the agency'}]
         overnight = [{'title': f'To-do {n}'} for n in range(5)]
         full = notify.compose(meetings, [{'title': 'Pay the invoice'}], overnight, 'https://m.example/')
-        self.assertEqual(full['push']['title'], 'Your morning')
-        self.assertEqual(full['push']['body'], '6 to-dos: Pay the invoice, To-do 0, … · First meeting 09:30')
-        self.assertIn('• Pay the invoice', full['text'])
-        self.assertIn('• +2 more', full['text'])
-        self.assertTrue(full['text'].endswith('Open The Machine: https://m.example/'))
+        self.assertEqual(full['push']['title'], 'Good morning, 1 due today')
+        self.assertEqual(full['text'], 'Good morning, 1 due today\n\n1 meeting today, at 09:30.\n\n• Pay the invoice\n'
+                                       '• 09:30 Planning with the agency\n• To-do 0\n\n4 more can wait, about 2 min to clear.\n\n'
+                                       'Open The Machine: https://m.example/')
         careful = notify.compose(meetings, [], overnight, '', show_text=False)
-        self.assertEqual(careful['push']['body'], '5 to-dos waiting · First meeting 09:30')
-        self.assertNotIn('agency', careful['text'] + careful['subject'])
+        self.assertEqual(careful['push']['body'], '1 meeting today, at 09:30.\n5 waiting, about 3 min to clear.')
+        self.assertNotIn('agency', careful['text'] + careful['subject'] + careful['push']['body'])
 
     def test_the_morning_push_says_what_waits_and_when_the_first_meeting_is(self):
-        # Its body was empty on the phone ("Your morning" only): it says how many to-dos wait, the first two, and the
-        # first meeting's time, never the meeting's title; Careful keeps the count and the time; nothing waiting: calm.
+        # The push has the summary's lines: at most three to-do titles, the first meeting by its time (never its title),
+        # then how many more can wait. Careful keeps the counts and the time. Made-up data.
         meeting = [{'at': '2026-10-12T10:00:00+00:00', 'title': 'Board call about the merger'}]
-        line = lambda *args, **kw: notify.compose(*args, **kw)['push']['body']
-        waiting = [{'title': 'Reply to Sam about Tuesday'}, {'title': 'Pay the invoice'}]
-        self.assertEqual(line(meeting, [], [{'title': 'x'}], waiting=waiting, total=3), '3 to-dos: Reply to Sam about Tuesday, Pay the invoice, … · First meeting 10:00')
-        self.assertEqual(line([], [], [{'title': 'x'}], waiting=waiting[:1], total=1), '1 to-do: Reply to Sam about Tuesday')
-        self.assertEqual(line(meeting, [], [], waiting=[], total=0), 'Nothing waiting · First meeting 10:00')
-        self.assertEqual(line([], [{'title': 'x'}], [], waiting=[], total=0), 'Nothing waiting. A calm start.')
-        careful = line(meeting, [], [], show_text=False, waiting=waiting, total=2)
-        self.assertEqual(careful, '2 to-dos waiting · First meeting 10:00')
-        long = line(meeting, [], [], waiting=[{'title': 'Reply ' * 30}, {'title': 'Pay ' * 30}], total=9)
-        self.assertLessEqual(len(long), notify.APP_BODY)
-        self.assertNotIn('merger', line(meeting, [], [], waiting=waiting, total=2))
-        self.assertNotIn('—', long)
+        push = lambda *args, **kw: notify.compose(*args, **kw)['push']
+        top = [{'title': 'Reply to Sam about Tuesday'}, {'title': 'Pay the invoice'}, {'title': 'Book the venue'}]
+        self.assertEqual(push(meeting, [{'title': 'Send the deck'}], [], total=4, top=top)['body'],
+                         'Send the deck\nFirst meeting at 10:00\nReply to Sam about Tuesday\n2 more can wait, about 1 min to clear.')
+        self.assertEqual(push([], [], [], total=1, top=top[:1])['body'], 'Reply to Sam about Tuesday')
+        alone = push(meeting, [], [], total=0)
+        self.assertEqual((alone['title'], alone['body']), ('Good morning, first meeting at 10:00', '1 meeting today, at 10:00.'))
+        careful = push(meeting, [], [], show_text=False, total=2, top=top[:2])
+        self.assertEqual(careful['body'], '1 meeting today, at 10:00.\n2 waiting, about 1 min to clear.')
+        long = push(meeting, [], [], total=9, top=[{'title': 'Reply ' * 30}, {'title': 'Pay ' * 30}])
+        self.assertLessEqual(len(long['body']), notify.APP_BODY)
+        self.assertNotIn('merger', push(meeting, [], [], total=2, top=top[:2])['body'])
+        self.assertNotIn('—', long['body'])
+
+    def test_the_headline_says_why_today_matters_or_only_greets(self):
+        # One true line, in this order: replies ready to send, drafts for an OK, due today, a pile of ten or more,
+        # the first meeting, what is new; nothing of that: the greeting alone. Made-up names.
+        self.assertEqual(notify.headline('Robin', ready=2, replies=2), 'Morning Robin, 2 replies are ready to send')
+        self.assertEqual(notify.headline('Robin', ready=2, replies=1, due=1), 'Morning Robin, 2 ready for your OK')
+        self.assertEqual(notify.headline('', due=1, piled=30, minutes=15), 'Good morning, 1 due today')
+        self.assertEqual(notify.headline('Robin', piled=12, minutes=5, first_at='10:00'), 'Morning Robin, 12 waiting, about 5 min to clear')
+        self.assertEqual(notify.headline('Robin', piled=9, first_at='10:00', new=3), 'Morning Robin, first meeting at 10:00')
+        self.assertEqual(notify.headline('Robin', piled=9, new=1), 'Morning Robin, 1 new to-do')
+        self.assertEqual(notify.headline('Robin', piled=9), 'Morning Robin')
+        self.assertEqual(notify.headline(''), 'Good morning')
+        self.assertEqual(notify.first_name('Robin de Vries'), 'Robin')
+        self.assertEqual(notify.first_name('robin@example.com'), '')
+        self.assertEqual(notify.first_name(None), '')
+
+    def test_the_summary_gives_each_line_one_open_link_and_telegram_drops_it(self):
+        ready = [{'id': 'a1b2c3d4e5f60718', 'title': 'Send the reply to Robin'}]
+        out = notify.compose([], [], [], 'https://m.example/', total=1, ready=ready, replies=['a1b2c3d4e5f60718'], name='Robin')
+        self.assertIn('• Send the reply to Robin · [Open](https://m.example/#chat=a1b2c3d4e5f60718)\n', out['text'])
+        self.assertEqual(out['subject'], 'Morning Robin, 1 reply is ready to send')
+        self.assertIn('• Send the reply to Robin\n', notify.LINKS.sub('', out['text']))
+        self.assertNotIn('[Open]', out['push']['body'])
 
     def test_a_waiting_pile_gets_its_digest_in_the_dashboards_order(self):
         # It was skipped every morning while 17-19 to-dos waited: no meetings, nothing due or new overnight. A pile that
         # waits now gets a digest with the first ones as the to-do list shows them (three, then "+N more"); truly
         # nothing stays quiet. Made-up data.
         top = [{'title': 'Reply to the landlord'}, {'title': 'Send the quote'}, {'title': 'Book the venue'}]
-        pile = notify.compose([], [], [], 'https://m.example/', waiting=top[:2], total=18, top=top)
-        self.assertEqual(pile['subject'], 'Your morning: 18 waiting')
-        self.assertIn('Waiting for you\n• Reply to the landlord\n• Send the quote\n• Book the venue\n• +15 more', pile['text'])
-        self.assertTrue(pile['push']['body'].startswith('18 to-dos: Reply to the landlord, Send the quote'))
-        careful = notify.compose([], [], [], '', show_text=False, waiting=top[:2], total=18, top=top)
+        pile = notify.compose([], [], [], 'https://m.example/', total=18, top=top)
+        self.assertEqual(pile['subject'], 'Good morning, 18 waiting, about 9 min to clear')
+        self.assertIn('• Reply to the landlord\n• Send the quote\n• Book the venue\n\n15 more can wait, about 8 min to clear.', pile['text'])
+        self.assertTrue(pile['push']['body'].startswith('Reply to the landlord\nSend the quote'))
+        careful = notify.compose([], [], [], '', show_text=False, total=18, top=top)
         self.assertNotIn('landlord', careful['text'] + careful['subject'] + careful['push']['body'])
-        self.assertIn('18 waiting', careful['text'])
-        self.assertIsNone(notify.compose([], [], [], waiting=[], total=0, top=[]))
+        self.assertIn('18 waiting, about 9 min to clear.', careful['text'])
+        self.assertIsNone(notify.compose([], [], [], total=0, top=[]))
         # the whole way: the order of tests/test_open_order_dashboard.mjs (overdue or due by tomorrow first, then newest
         # first; a deadline months away goes by its time)
         current = a.dt.datetime(2026, 11, 5, 10, 0, tzinfo=UTC)
@@ -471,9 +494,9 @@ class Notifications(unittest.TestCase):
                 db.execute('UPDATE suggestions SET created_at=?,due=?,urgent=0 WHERE id=?', (created, due, sid))
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(current + a.dt.timedelta(days=2, hours=-1))  # two days on: nothing new overnight, nothing due today
-        self.assertIn('Waiting for you\n• Confirm the dentist\n• Send the venue the final count\n• Reply to Sam about the pilot\n• +3 more', digest['text'])
-        self.assertEqual(digest['subject'], 'Your morning: 6 waiting')
-        self.assertIn('• +3 more\n\n6 ready · about 3 min\n', digest['text'])  # the To-dos header's line, at the default pace
+        self.assertIn('• Confirm the dentist\n• Send the venue the final count\n• Reply to Sam about the pilot\n\n3 more can wait, about 2 min to clear.',
+                      notify.LINKS.sub('', digest['text']))
+        self.assertEqual(digest['subject'], 'Good morning')  # six: no pile yet, nothing due or new
         order = notify.open_order([{'id': k, 'title': t, 'created_at': c, 'due': d} for k, t, c, d in cards], current)
         self.assertEqual([r['id'] for r in order], ['e', 'a', 'c', 'd', 'h', 'b'])
         with self.store.connect() as db:
@@ -482,27 +505,23 @@ class Notifications(unittest.TestCase):
             self.assertIsNone(self.app.digest(current))
 
     def test_ready_and_promises_due_today_lead_and_no_to_do_is_listed_twice(self):
-        # The preview listed the same three to-dos under Overnight and Waiting for you, and the ready drafts and the
-        # promises due today weren't among its first lines. Ready leads, then the promises due today; Overnight and
-        # Waiting never repeat what came before, and "+N more" counts only the rest. The push says the same first.
+        # Ready drafts lead, then the promises due today; no to-do is listed twice, and "more can wait" counts only the
+        # rest. The push says the same first.
         ready = [{'id': 'r1', 'title': 'Reply to Sam about the pilot'}, {'id': 'r2', 'title': 'Answer the supplier'}]
         new = [{'id': 'n1', 'title': 'Book the venue'}, {'id': 'r1', 'title': 'Reply to Sam about the pilot'}]
         top = ready + [{'id': 'n1', 'title': 'Book the venue'}, {'id': 'w1', 'title': 'Pay the invoice'}]
         out = notify.compose([], [], new, 'https://m.example/', total=5, top=top, ready=ready,
                              promised=[{'id': 'promise:1', 'title': 'Send the recap for Wren'}])
-        self.assertTrue(out['text'].startswith('Ready for you\n• Reply to Sam about the pilot\n• Answer the supplier\n\n'
-                                               'Promises due today\n• Send the recap for Wren\n\nOvernight\n• Book the venue\n\n'
-                                               'Waiting for you\n• Pay the invoice\n• +1 more\n\n'), out['text'])
-        self.assertEqual(out['subject'], 'Your morning: 2 ready · 1 promise due today · 1 new · 5 waiting')
-        self.assertEqual(out['push']['body'], '2 ready · 1 promise due today · 5 to-dos: Reply to Sam about the pilot, Answer the supplier, …')
-        # all of what waits is listed above: no Waiting part at all
-        self.assertNotIn('Waiting for you', notify.compose([], [], new, total=3, top=top[:3], ready=ready)['text'])
-        # a promise alone (its to-do not made yet) still gets a digest, without "Nothing waiting" after it
+        self.assertTrue(out['text'].startswith('Good morning, 2 ready for your OK\n\n• Reply to Sam about the pilot\n• Answer the supplier\n'
+                                               '• Send the recap for Wren\n\n3 more can wait, about 2 min to clear.\n\n'), out['text'])
+        self.assertEqual(out['text'].count('Reply to Sam about the pilot'), 1)
+        self.assertEqual(out['push']['body'], 'Reply to Sam about the pilot\nAnswer the supplier\nSend the recap for Wren\n3 more can wait, about 2 min to clear.')
+        # a promise alone (its to-do not made yet) still gets a summary
         alone = notify.compose([], [], [], total=0, top=[], promised=[{'title': 'Send the recap for Wren'}])
-        self.assertEqual(alone['push']['body'], '1 promise due today')
+        self.assertEqual((alone['subject'], alone['push']['body']), ('Good morning, 1 due today', 'Send the recap for Wren'))
         careful = notify.compose([], [], new, show_text=False, total=5, top=top, ready=ready)
         self.assertNotIn('Sam', careful['text'] + careful['subject'] + careful['push']['body'])
-        self.assertTrue(careful['push']['body'].startswith('2 ready · '))
+        self.assertEqual(careful['push']['body'], '5 waiting, about 3 min to clear.')
 
     def test_the_digest_finds_the_ready_ones_and_the_owners_promises_due_today(self):
         current = a.dt.datetime(2026, 11, 5, 8, 30, tzinfo=UTC)
@@ -518,13 +537,14 @@ class Notifications(unittest.TestCase):
                            (direction, who, what, due, current.isoformat(), event, current.isoformat(), current.isoformat()))
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(current)
-        self.assertTrue(digest['text'].startswith('Ready for you\n• Reply to Sam about the pilot\n\nPromises due today\n• Send the pilot recap for Wren\n\n'), digest['text'])
+        self.assertTrue(digest['text'].startswith('Good morning, 1 ready for your OK\n\n• Reply to Sam about the pilot · [Open]('), digest['text'])
+        self.assertIn('\n• Send the pilot recap for Wren\n', digest['text'])
         self.assertEqual(digest['text'].count('Reply to Sam about the pilot'), 1)
         self.assertEqual(digest['text'].count('Book the venue'), 1)
         self.assertNotIn('Send Wren the pilot recap', digest['text'])  # the promise's own to-do: listed as the promise
         self.assertNotIn('rate limits', digest['text'])  # tomorrow's
         self.assertNotIn('contract', digest['text'])  # someone else's
-        self.assertTrue(digest['push']['body'].startswith('1 ready · 1 promise due today · 3 to-dos: Reply to Sam about the pilot, Book the venue'), digest['push']['body'])
+        self.assertEqual(digest['push']['body'], 'Reply to Sam about the pilot\nSend the pilot recap for Wren\nBook the venue\n1 more can wait, about 1 min to clear.')
 
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
@@ -543,8 +563,8 @@ class Notifications(unittest.TestCase):
             self.assertEqual(went, ['push', 'telegram', 'email'])
             self.assertIsNone(self.app.digest_step(current=morning + a.dt.timedelta(minutes=5), push=self.sender, telegram_send=told.append,
                                                    mail=lambda *x: self.fail('twice')))
-        self.assertEqual(self.sent[0]['payload']['title'], 'Your morning')
-        self.assertEqual(mailed, [('https://cp.example/api/fleet', 'token', 'Your morning: 1 new')])
+        self.assertEqual(self.sent[0]['payload']['title'], 'Good morning, 1 new to-do')
+        self.assertEqual(mailed, [('https://cp.example/api/fleet', 'token', 'Good morning, 1 new to-do')])
         self.assertIn('Answer the school', told[0])
 
     def test_no_digest_when_there_is_nothing_or_it_is_turned_off(self):

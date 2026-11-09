@@ -291,7 +291,8 @@ def sandbox_jobs(monday, today):
 
 def load_routines(store, base):
     """Routines (routines.py): two that ran a few times, as the Routines page shows them after a couple of weeks; one
-    from an old OpenClaw job that ran well for a week (Turn off the old job?), and two suggestions from OpenClaw jobs."""
+    from an old OpenClaw job that ran well for a week (Turn off the old job?), two suggestions from OpenClaw jobs and one
+    from mail the owner forwards by hand."""
     import routines
     now = base.replace(tzinfo=None)
     today = now.date()
@@ -321,6 +322,16 @@ def load_routines(store, base):
                     run_id = routines.begin(db, rid, (today - dt.timedelta(days=days)).isoformat(), stamp(days * 24 * 60, base))
                     routines.finish(db, run_id, 'ready' if days == 2 else 'nothing', stamp(days * 24 * 60 - 3, base),
                                     result=result if days == 2 else None, why=None if days == 2 else 'Nothing new this week')
+        # one from what the owner does by hand (routine_patterns.py): school and club mails forwarded to Robin one by one
+        friday = today + dt.timedelta(days=(4 - today.weekday()) % 7)
+        why = {'kind': 'forward', 'n': 6, 'weeks': 3, 'to': 'Robin'}
+        rid = routines.create(db, 'Sort a pattern: Forwards to Robin', {'unit': 'week', 'n': 1}, friday, '08:00', now, stamp(3 * 24 * 60, base),
+                              name='Forwards to Robin', origin='pattern:forward:sandbox', state='sorting', why=why)
+        run_id = routines.begin(db, rid, 'sort:' + stamp(3 * 24 * 60, base), stamp(3 * 24 * 60, base))
+        routines.sorted_as(db, run_id, 'routine', stamp(3 * 24 * 60 - 4, base), name='School digest',
+                           instructions='Every Friday, sum up the week’s school and swim club mails for Robin',
+                           text='**School trip** on Thursday: packed lunch and a rain jacket.\n- Swim club: no training next Tuesday\n'
+                                '- Parent evening sign-up closes Monday')
         db.commit()
 
 

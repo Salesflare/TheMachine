@@ -497,7 +497,7 @@ class AppPush(unittest.TestCase):
         with patch_everywhere(a, 'local_tz', return_value=a.dt.timezone.utc):
             self.app.digest_step(current=morning, push=self.sender)
         notice = a.app_notice(self.store, self.config, 'digest')
-        self.assertEqual((notice['title'], notice['body']), ('Your morning', '1 to-do: Reply to Sam about Tuesday'))
+        self.assertEqual((notice['title'], notice['body']), ('Good morning, 1 new to-do', 'Reply to Sam about Tuesday'))
 
     def test_a_clear_with_a_broken_cloud_is_quiet(self):
         self.register()

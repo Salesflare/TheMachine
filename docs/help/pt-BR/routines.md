@@ -64,11 +64,15 @@ Sua Machine também percebe trabalho que você faz num ritmo e o oferece como ro
 - o mesmo pedido, três vezes ou mais seguidas, como "resuma os tickets de suporte abertos" toda segunda;
 - um e-mail que você envia num ritmo, como um relatório semanal para sua equipe;
 - newsletters e e-mails de novidades que chegam toda semana;
-- um canal do Slack movimentado onde outras pessoas escrevem toda semana.
+- um canal do Slack movimentado onde outras pessoas escrevem toda semana;
+- e-mails que você encaminha um por um para a mesma pessoa, como os da escola e do clube para quem divide a casa com você: um resumo semanal para essa pessoa poupa os encaminhamentos;
+- o mesmo pedido que você responde num ritmo, como uma aprovação mensal para a mesma pessoa.
 
-Cada sugestão diz o que viu, como "Pedido 4 vezes seguidas", e rodou uma vez para você ver um resultado real. Pense num resumo da equipe, um briefing antes de uma call semanal, um resumo de suporte ou de desenvolvimento, o pulso dos seus números ou um resumo das newsletters que você recebe.
+Cada sugestão diz o que viu, como "Pedido 4 vezes seguidas" ou "6 emails encaminhados para Sam em 3 semanas", e rodou uma vez para você ver um resultado real. Pense num resumo da equipe, um briefing antes de uma call semanal, um resumo de suporte ou de desenvolvimento, o pulso dos seus números ou um resumo das newsletters que você recebe.
 
-Ela só sugere o que é seu e claramente útil: um resumo de notícias só das suas próprias newsletters, nunca um genérico. Quando nada serve, não há sugestão. Ela olha no máximo uma vez por dia, e tudo fica na sua Machine. Uma tarefa que você fecha num ritmo chega como oferta de tarefa recorrente.
+Ela só sugere o que é seu e claramente útil: um resumo de notícias só das suas próprias newsletters, nunca um genérico. Quando nada serve, não há sugestão.
+
+Ela olha no máximo uma vez por dia e traz no máximo uma sugestão nova por semana, sem notificação. **Não, obrigado** nunca a traz de volta. Encaminhamentos e respostas ficam com a conta de onde saíram, para que Trabalho e Pessoal não se misturem. Tudo fica na sua Machine. Uma tarefa que você fecha num ritmo chega como oferta de tarefa recorrente.
 
 ## Rotinas e tarefas recorrentes
 

@@ -1,7 +1,7 @@
 ---
 title: Notifications
 area: settings
-summary: Ce qui vous parvient, où et quand : push, Telegram ou e-mail par type, vos heures de travail et le récap du matin.
+summary: Ce qui vous parvient, où et quand : seul ce qui ne peut pas attendre vous notifie, le reste est dans un seul récap du matin.
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
@@ -9,14 +9,25 @@ keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
 ---
 Dans **Paramètres**, **Notifications**, choisissez pour chaque type où il vous parvient :
 
-- **Nouvelles tâches** : une réponse que quelqu’un attend, une demande, tout ce qui est urgent.
-- **Résultats et questions** : un brouillon prêt à approuver ou à envoyer, une tâche bloquée ou qui demande une connexion, une question de la Fleet.
+- **Nouvelles tâches** : seulement ce qui ne peut pas attendre, comme une échéance aujourd’hui ou une urgence.
+- **Résultats et questions** : une réponse prête à envoyer, une connexion qu’une tâche demande, une question de la Fleet.
 - **Rappels** : les mises en attente et les attentes qui reviennent.
-- **Récap du matin** : d’abord les brouillons prêts et les promesses à tenir aujourd’hui, puis les réunions du jour, ce qui arrive à échéance, ce qui est arrivé pendant la nuit et les autres tâches en attente. Chaque tâche n’apparaît qu’une fois.
+- **Récap du matin** : un court résumé de votre journée. Voir plus bas.
 
 Chacun a un interrupteur pour **Push** (l’app sur votre téléphone ou votre ordinateur), **Telegram** quand il est configuré, et **E-mail** sur une Machine hébergée ou sur une Machine du The Machine Network. Tous sont activés, sauf le récap sur Telegram.
 
 Les **Heures de travail** se trouvent dans le même onglet : vos jours de travail, les heures où les notifications peuvent partir, l’heure de retour des mises en attente, l’heure du récap et votre fuseau horaire. Voir [Heures de travail](work-hours.md).
+
+## Seulement ce qui ne peut pas attendre
+
+Un push, une notification Telegram ou un e-mail part seulement pour :
+
+- une tâche à faire aujourd’hui, ou marquée urgente ;
+- une réponse que quelqu’un attend, rédigée et prête à envoyer ;
+- une tâche qui demande que vous vous connectiez ;
+- une mise en attente qui revient à l’heure choisie.
+
+Tout le reste arrive sans bruit sur le tableau de bord (et sans son dans Telegram) et attend le récap du matin. Un jour de repos, seul ce qui est urgent ou à faire aujourd’hui vous notifie. Au plus 8 push par jour. Après 3 jours sans ouvrir le tableau de bord, seul le récap du matin arrive, jusqu’à votre retour.
 
 ## Quand les notifications partent
 
@@ -24,7 +35,7 @@ Comme Slack, il regarde si vous utilisez le tableau de bord, pas seulement s’i
 
 - En cours d’utilisation : le tableau de bord est devant vous, au premier plan, et vous avez cliqué, tapé, fait défiler ou touché l’écran dans les 10 dernières minutes. Rien ne vibre. Telegram arrive sans son.
 - Absent : le tableau de bord est en arrière-plan, réduit, fermé ou inactif depuis 10 minutes. Un push part une minute après que vous l’avez quitté, sauf si vous revenez et le voyez avant.
-- Toujours pas vu 15 minutes plus tard : un seul e-mail avec tout ce qui vous attend encore. Au plus un par heure. Ce que vous avez traité entre-temps, sur Telegram ou ailleurs, n’y figure pas, ni ce que le récap du matin vient de lister. Utiliser le tableau de bord après l’arrivée d’un élément compte comme l’avoir vu : une journée passée sur le tableau de bord peut donc n’envoyer aucun e-mail.
+- Toujours pas vu 15 minutes plus tard, et cela ne peut pas attendre : un e-mail pour cela, au plus un par heure. Ce que vous avez déjà traité n’y figure pas. La plupart des jours, le récap du matin est le seul e-mail.
 - En dehors de vos heures de travail : rien. Le récap du matin contient ce qui est arrivé.
 - Une nouvelle tâche de travail arrivée un jour de repos attend l’heure du récap de votre prochain jour de travail. La tâche indique où et quand elle vous parviendra, par exemple Notification lun. 2 nov. · 08:30, selon la ligne **Nouvelles tâches**. Avec Push et Telegram tous deux désactivés, elle n’indique rien.
 
@@ -51,10 +62,17 @@ Les e-mails qui listent ce qui vous attend ont des liens Ouvrir et Mettre en att
 
 ## Le récap du matin
 
-Il arrive les jours de travail à l’heure du **Récap du matin**, et il n’est sauté que quand il n’y a rien à dire : pas de réunion, rien d’échu ni de nouveau, et aucune tâche en attente. **Aperçu**, sur sa ligne, l’affiche sur la page sans l’envoyer. Par défaut, c’est un push et un e-mail. Le push indique combien de tâches attendent, les deux premières et l’heure de votre première réunion. Toucher le push ouvre aujourd’hui dans l’**Agenda**.
+Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :
+
+- un bonjour avec ce qui compte aujourd’hui, comme "Bonjour Sam, 2 réponses sont prêtes à envoyer" ;
+- vos réunions en une ligne ;
+- au plus trois choses à faire, chacune avec un lien Ouvrir : d’abord les brouillons prêts et les promesses du jour ;
+- combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter."
+
+Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
 
 ## Confidentialité
 
-Le push va directement de votre Machine à votre appareil, chiffré pour cet appareil. Le plan de contrôle ne le voit jamais. L’e-mail est envoyé par le serveur mail de The Machine à l’adresse de votre compte, donc le texte passe par lui et par votre fournisseur de messagerie. Quand [Prudent](security-levels.md) masque le texte des tâches dans les notifications, les e-mails ne contiennent que des chiffres. Désactivez **E-mail** pour un type afin de le tenir entièrement à l’écart de l’e-mail. Il dit aussi combien de temps les tâches en attente vous prennent, comme "4 prêts · environ 2 min".
+Le push va directement de votre Machine à votre appareil, chiffré pour cet appareil. Le plan de contrôle ne le voit jamais. L’e-mail est envoyé par le serveur mail de The Machine à l’adresse de votre compte, donc le texte passe par lui et par votre fournisseur de messagerie. Quand [Prudent](security-levels.md) masque le texte des tâches dans les notifications, les e-mails ne contiennent que des chiffres. Désactivez **E-mail** pour un type afin de le tenir entièrement à l’écart de l’e-mail.
 
 Activez le push pour un appareil dans **Cet appareil**, ou voir [Installer l’app](phone-app.md).

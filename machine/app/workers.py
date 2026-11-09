@@ -11,6 +11,7 @@ import embeddings
 import enrichment
 import error_feed
 import help_topics
+import linkedin_connections
 from machine.config import LOG
 from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
@@ -158,6 +159,23 @@ class WorkersApp:
             except Exception as error:
                 LOG.error('enrichment error=%s', type(error).__name__)
                 wait = 3600
+
+    def linkedin_connections_worker(self):
+        """LinkedIn connections' titles and companies onto the Graph's people (linkedin_connections.py): checks every
+        five minutes; each account's own slow pace decides whether a page is read."""
+        while not self.stop.wait(300):
+            for account in linkedin_connections.accounts(self.config):
+                if self.stop.is_set():
+                    break
+                try:
+                    found = linkedin_connections.step(self.store.connect, self.config, account)
+                except Exception as error:  # noqa: BLE001 - its pace waits; never stops the service
+                    LOG.error('linkedin connections error=%s', type(error).__name__)
+                    continue
+                if found.get('error') or found.get('seen') is not None:
+                    LOG.info('linkedin connections account=%s %s', account['id'], json.dumps(found, sort_keys=True))
+                if found.get('changed') or found.get('noted'):
+                    self.graph_dirty.set()
 
     def background_spaced(self):
         """At most one background turn beyond the first look per BACKGROUND_GAP_SECONDS."""

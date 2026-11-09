@@ -177,6 +177,7 @@ class SilentBatch(unittest.TestCase):
     setUp=ux.UX.setUp
     def test_only_the_first_card_in_a_batch_notifies(self):
         self.store.suggest('two','Second task','Body',[1])
+        with self.store.connect() as db:db.execute('UPDATE suggestions SET urgent=1')  # both can't wait: both would buzz
         class Day(dt.datetime):
             @classmethod
             def now(cls,tz=None):return dt.datetime(2026,10,12,9,0,tzinfo=BXL).astimezone(tz or dt.timezone.utc)

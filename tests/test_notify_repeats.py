@@ -30,7 +30,8 @@ class Repeats(unittest.TestCase):
         self.pushed, self.told = [], []
         self.store.commit_page('home', {}, [{'account_id': 'home', 'source_id': 'm1', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'Quote', 'body': 'Could you send the quote?', 'metadata': {}, 'deleted': False}])
-        self.sid = self.store.suggest('quote', 'Send the quote to the bakery', 'They ask for the quote.', [1])['id']
+        # urgent: it buzzes (only what can't wait does, tests/test_calm_notify.py)
+        self.sid = self.store.suggest('quote', 'Send the quote to the bakery', 'They ask for the quote.', [1], urgent=True)['id']
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET deliver_after=NULL')
 

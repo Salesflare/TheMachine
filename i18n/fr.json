@@ -119,6 +119,7 @@
  "A project by that name is on another board already": "Un projet de ce nom est déjà sur un autre tableau",
  "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"": "Un nom de projet est un libellé court (60 caractères au plus), comme \"Acme VAT\" ou \"Q4 board deck\"",
  "A removed AI": "Une IA retirée",
+ "A reply ready to send, a sign-in, a Fleet question": "Une réponse prête à envoyer, une connexion, une question Fleet",
  "A reply, a request, anything urgent": "Une réponse, une demande, tout ce qui est urgent",
  "A reset starts your ChatGPT usage limits over.": "Une réinitialisation remet vos limites ChatGPT à zéro.",
  "A restricted key with Read on Events, Customers and Account.": "Une clé restreinte avec Read sur Events, Customers et Account.",
@@ -396,6 +397,7 @@
  "Answered on WhatsApp": "Répondu sur WhatsApp",
  "Answered on X": "Répondu sur X",
  "Answered once": "Répondu une fois",
+ "Answered the same request from {} {} times in a row": "Même demande de {0} traitée {1} fois de suite",
  "Answered without asking you.": "Répondu sans vous demander.",
  "Answered, and always from now on": "Répondu, et toujours désormais",
  "Answered.": "Répondu.",
@@ -1400,6 +1402,7 @@
  "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is": "Vérifiez d’abord les compétences présentes selon leur usage : {}. Mettez à jour l’une de celles du propriétaire quand elle fait le même travail, nommez une compétence liée avec une relation d’une ligne quand c’est un travail distinct à côté, ou dites qu’elle est nouvelle quand aucune ne correspond",
  "First look": "Premier passage",
  "First look: your last {} days": "Premier passage : vos {} derniers jours",
+ "First meeting at {}": "Première réunion à {}",
  "First one’s in: {}. Still reading…": "La première est là : {}. Je continue à lire…",
  "First read: catching up on the last days.": "Première lecture : rattrape les derniers jours.",
  "First seen this week.": "Vu pour la première fois cette semaine.",
@@ -1485,6 +1488,7 @@
  "Forgotten everywhere.": "Oublié partout.",
  "Forgotten.": "Oublié.",
  "Formatting": "Mise en forme",
+ "Forwarded {} mails to {} in {} weeks": "{0} e-mails transférés à {1} en {2} semaines",
  "Found": "Trouvé",
  "Found for {}": "Trouvé pour {}",
  "Found in your Outlook sent mail": "Trouvée dans vos e-mails envoyés Outlook",
@@ -1637,6 +1641,25 @@
  "Goes within the hour": "Part dans l’heure",
  "Gone quiet": "Plus de nouvelles",
  "Gone quiet: {}": "Silencieux : {}",
+ "Good morning": "Bonjour",
+ "Good morning, first meeting at {}": "Bonjour, première réunion à {}",
+ "Good morning, {} due today": "Bonjour, {} à faire aujourd’hui",
+ "Good morning, {} new to-dos": {
+  "one": "Bonjour, {} nouvelle tâche",
+  "other": "Bonjour, {} nouvelles tâches"
+ },
+ "Good morning, {} ready for your OK": {
+  "one": "Bonjour, {} à valider",
+  "other": "Bonjour, {} à valider"
+ },
+ "Good morning, {} replies are ready to send": {
+  "one": "Bonjour, {} réponse est prête à envoyer",
+  "other": "Bonjour, {} réponses sont prêtes à envoyer"
+ },
+ "Good morning, {} waiting, about {} min to clear": {
+  "one": "Bonjour, {} vous attend, environ {} min pour tout traiter",
+  "other": "Bonjour, {} vous attendent, environ {} min pour tout traiter"
+ },
  "Google": "Google",
  "Google Calendar": "Google Calendar",
  "Google Calendar isn’t connected yet. Add it under + Add.": "Google Calendar n’est pas encore connecté. Ajoutez-le sous + Ajouter.",
@@ -2374,6 +2397,25 @@
  "More thinking is slower and uses more of your plan.": "Plus de réflexion est plus lent et utilise davantage votre forfait.",
  "Morning digest": "Récap du matin",
  "Morning digest: {}": "Récap du matin : {}",
+ "Morning {}": "Bonjour {}",
+ "Morning {}, first meeting at {}": "Bonjour {}, première réunion à {}",
+ "Morning {}, {} due today": "Bonjour {}, {} à faire aujourd’hui",
+ "Morning {}, {} new to-dos": {
+  "one": "Bonjour {}, {} nouvelle tâche",
+  "other": "Bonjour {}, {} nouvelles tâches"
+ },
+ "Morning {}, {} ready for your OK": {
+  "one": "Bonjour {}, {} à valider",
+  "other": "Bonjour {}, {} à valider"
+ },
+ "Morning {}, {} replies are ready to send": {
+  "one": "Bonjour {}, {} réponse est prête à envoyer",
+  "other": "Bonjour {}, {} réponses sont prêtes à envoyer"
+ },
+ "Morning {}, {} waiting, about {} min to clear": {
+  "one": "Bonjour {}, {} vous attend, environ {} min pour tout traiter",
+  "other": "Bonjour {}, {} vous attendent, environ {} min pour tout traiter"
+ },
  "Mornings": "Le matin",
  "Move": "Déplacer",
  "Move to": "Déplacer vers",
@@ -2852,6 +2894,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "De temps en temps, je partage quelques apprentissages généraux. Rien de personnel.",
  "Now findable by people who have your email.": "Les personnes qui ont votre e-mail peuvent maintenant vous trouver.",
  "Now the rest of the week: {} of {} active conversations": "Maintenant le reste de la semaine : {} sur {} conversations actives",
+ "Now {}": "Maintenant {}",
+ "Now {}, was {}": "Maintenant {}, avant {}",
  "Nudge {}: no reply in {} days": "Relancer {} : pas de réponse depuis {} jours",
  "Number": "Nombre",
  "Numbered list": "Liste numérotée",
@@ -3058,6 +3102,7 @@
  "Only this event goes. Nobody gets an update.": "Seul cet événement est supprimé. Personne n’est prévenu.",
  "Only this one: {}": "Seulement celui-ci : {}",
  "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.": "Seule cette tâche est partagée. {} peut suggérer des modifications ; rien n’est envoyé avant que vous l’envoyiez.",
+ "Only what can’t wait: due today, a reply, urgent": "Seulement ce qui ne peut pas attendre : pour aujourd’hui, une réponse, urgent",
  "Only what needs you, where you want it.": "Seulement ce qui vous attend, là où vous le voulez.",
  "Only you": "Vous seul",
  "Only you and {}": "Vous et {} seulement",
@@ -6366,6 +6411,7 @@
  "{} asks you to take this on: “{}”": "{} vous demande de vous en charger : « {} »",
  "{} asks your Fleet": "{} demande à votre Fleet",
  "{} asks:": "{} demande :",
+ "{} at {}": "{} chez {}",
  "{} board suggestions are open already: wait until the owner decides": "{} suggestions de tableau sont déjà ouvertes : attendez la décision du propriétaire",
  "{} calls": {
   "one": "{} appel",
@@ -6597,6 +6643,10 @@
   "one": "{} réunion",
   "other": "{} réunions"
  },
+ "{} meetings today, the first at {}.": {
+  "one": "{} réunion aujourd’hui, à {}.",
+  "other": "{} réunions aujourd’hui, la première à {}."
+ },
  "{} message": "Message {}",
  "{} message to {}": "Message {} à {}",
  "{} messages": {
@@ -6630,6 +6680,10 @@
   "other": "{} messages en attente de la première vérification"
  },
  "{} min": "{} min",
+ "{} more can wait, about {} min to clear.": {
+  "one": "{} autre peut attendre, environ {} min pour tout traiter.",
+  "other": "{} autres peuvent attendre, environ {} min pour tout traiter."
+ },
  "{} more in Promises": "{} de plus dans Promesses",
  "{} more like this wait. Always shares them too.": {
   "one": "{} autre demande comme celle-ci attend. Toujours la partage aussi.",
@@ -6927,6 +6981,10 @@
   "other": "{} votes vous attendent"
  },
  "{} waiting": "{} en attente",
+ "{} waiting, about {} min to clear.": {
+  "one": "{} vous attend, environ {} min pour tout traiter.",
+  "other": "{} vous attendent, environ {} min pour tout traiter."
+ },
  "{} wants a one-time code.": "{} demande un code à usage unique.",
  "{} wants a passkey.": "{} demande une clé d’accès.",
  "{} wants a quick check that you’re not a robot.": "{} veut vérifier rapidement que vous n’êtes pas un robot.",

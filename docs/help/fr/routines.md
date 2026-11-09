@@ -64,11 +64,15 @@ Votre Machine remarque aussi le travail que vous faites à un rythme et le propo
 - la même demande, trois fois ou plus de suite, comme « résume les tickets de support ouverts » chaque lundi ;
 - un e-mail que vous envoyez à un rythme, comme un rapport hebdomadaire à votre équipe ;
 - des newsletters et e-mails de mise à jour qui reviennent chaque semaine ;
-- un canal Slack animé où d’autres écrivent chaque semaine.
+- un canal Slack animé où d’autres écrivent chaque semaine ;
+- des e-mails que vous transférez un par un à la même personne, comme ceux de l’école et du club à votre partenaire : un condensé hebdomadaire pour cette personne évite les transferts ;
+- la même demande à laquelle vous répondez à un rythme, comme une validation mensuelle pour la même personne.
 
-Chaque suggestion dit ce qu’elle a vu, comme « Demandé 4 fois de suite », et a tourné une fois pour que vous voyiez un vrai résultat. Pensez à un récap d’équipe, un brief avant un appel hebdomadaire, un résumé du support ou du dev, le pouls de vos chiffres ou un condensé des newsletters que vous recevez.
+Chaque suggestion dit ce qu’elle a vu, comme « Demandé 4 fois de suite » ou « 6 e-mails transférés à Sam en 3 semaines », et a tourné une fois pour que vous voyiez un vrai résultat. Pensez à un récap d’équipe, un brief avant un appel hebdomadaire, un résumé du support ou du dev, le pouls de vos chiffres ou un condensé des newsletters que vous recevez.
 
-Elle ne propose que ce qui vous est propre et clairement utile : un condensé d’actualités seulement sur vos propres newsletters, jamais un générique. Quand rien ne convient, il n’y a pas de suggestion. Elle regarde au plus une fois par jour, et tout reste sur votre Machine. Une tâche que vous terminez à un rythme arrive plutôt comme offre de tâche récurrente.
+Elle ne propose que ce qui vous est propre et clairement utile : un condensé d’actualités seulement sur vos propres newsletters, jamais un générique. Quand rien ne convient, il n’y a pas de suggestion.
+
+Elle regarde au plus une fois par jour et apporte au plus une nouvelle suggestion par semaine, sans notification. **Non merci** ne la ramène jamais. Les transferts et les réponses restent avec le compte d’où ils sont partis, pour que Travail et Perso ne se mélangent pas. Tout reste sur votre Machine. Une tâche que vous terminez à un rythme arrive plutôt comme offre de tâche récurrente.
 
 ## Routines et tâches récurrentes
 

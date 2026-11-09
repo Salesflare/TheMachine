@@ -29,3 +29,5 @@ Usa el acceso que ya tiene cada conexión. No se pide nada nuevo.
 ## Hasta dónde
 
 Cerca de un año por defecto. Las Machines autoalojadas pueden poner `history_days` en la configuración (0 lo apaga, hasta 730). Telegram y otras fuentes guardan lo que leen hoy.
+
+Los mensajes de LinkedIn y X llegan 90 días atrás y se leen muy despacio: unas pocas lecturas pequeñas por hora, solo de día, y ninguna durante un día si el sitio se resiste, para que tu cuenta siga segura (`social_history_days`, 0 lo apaga).

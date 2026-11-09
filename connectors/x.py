@@ -41,6 +41,12 @@ SETUP = {'label': 'X', 'what': 'Your mentions and direct messages on X.',
          'note': 'Sign in to X once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://x.com/login',
          'ask': [('handle', 'Your X handle, without @'), ('primary', 'Handle the browser is normally signed in to', '{handle}')]}
 READER = Path(__file__).resolve().parent.parent / 'integrations/x_inbox.py'
+# Older mentions and DMs as history (machine/app/history.py, config social_history_days, 90 days by default): read through
+# the owner's own browser, not X's API, where bulk reads could get the account restricted, so very slowly. One small
+# page per step (20 mentions, or 20 DMs of one conversation, or one page of the DM inbox), a random 8 to 20 minutes
+# apart, at most 24 steps a day, only from 9 to 21 local time (inside active_hours), and a day off after any failed or
+# odd answer.
+HISTORY_PACE = {'page': 20, 'steps_per_day': 24, 'pause_minutes': (8, 20), 'hours': (9, 21)}
 
 
 def browser_env(account):
@@ -54,11 +60,21 @@ class Source:
         self.config, self.account, self.helpers = config, account, helpers
 
     def page(self, since_ms, state):
+        return self.read('sync', since_ms, state)
+
+    def history(self, since_ms, until_ms, state):
+        """One small step back in time (the reader's `history`): its mentions, dms, state and done."""
+        data = self.read('history', since_ms, state, ['--until', str(int(until_ms)), '--count', str(HISTORY_PACE['page'])])
+        if type(data.get('done')) is not bool:
+            raise self.helpers.SourceError('x_invalid_page')
+        return data
+
+    def read(self, command, since_ms, state, extra=()):
         SourceError, account = self.helpers.SourceError, self.account
         try:
-            done = subprocess.run([self.config.get('x_inbox', str(READER)), 'sync', '--handle', account['handle'],
+            done = subprocess.run([self.config.get('x_inbox', str(READER)), command, '--handle', account['handle'],
                                    '--primary', account.get('primary', account['handle']), '--since', str(int(since_ms)),
-                                   '--state', json.dumps(state)], capture_output=True, text=True, timeout=480,
+                                   *extra, '--state', json.dumps(state)], capture_output=True, text=True, timeout=480,
                                   env=browser_env(account))
         except subprocess.TimeoutExpired:
             raise SourceError('x_read_timeout', retry_after=900) from None
@@ -181,3 +197,14 @@ def sync(store, config, account, helpers, source=None):
     if getattr(helpers, 'remember_profiles', None):
         helpers.remember_profiles(store, 'x', profiles(data, people))
     return {'mode': 'incremental', 'events': len(found), 'more': more, 'skipped': sum(skipped.values())}
+
+
+def history_page(config, account, helpers, state, upper, target, source=None):
+    """One step of older mentions and DMs, kept as history (machine/app/history.py, which paces it by HISTORY_PACE),
+    newest first, from `upper` back to `target`. Returns (events, done); state['page'] holds the reader's cursors."""
+    source = source or Source(config, account, helpers)
+    ms = lambda text: int(dt.datetime.fromisoformat(text).timestamp() * 1000)
+    data = source.history(ms(target), ms(upper), state.get('page') or {})
+    found = events(account, data, helpers) if data['mentions'] or data['dms'] else []
+    state['page'] = data['state']
+    return [e for e in found if target <= e['occurred_at'] < upper], data['done']
