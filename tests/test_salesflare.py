@@ -288,7 +288,10 @@ class SalesflareConnector(unittest.TestCase):
     def test_without_access_counts_one_round_never_more_than_its_accounts(self):
         state = {'watermark': iso(1), 'inaccessible_accounts': list(range(136)),
                  'window': {'accounts': 128, 'pending': list(range(123)), 'until': iso(0)}}
-        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 136)  # an older Machine's list, until its round ends
+        # An older Machine's list only grew: its running round counts its own, and the list is replaced when it ends
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 0)
+        self.assertEqual(a.salesflare_progress(ACCOUNT, {**state, 'window': {**state['window'], 'no_access': [5]}})['no_access'], 1)
+        self.assertEqual(a.salesflare_progress(ACCOUNT, {**state, 'window': None})['no_access'], 136)  # no round to go by
         crm = FakeCRM(forbidden={10})
         self.store.commit_page('work-crm', {'inaccessible_accounts': list(range(500, 636))}, [], record_sync=False)
         self.run_to_completion(crm)
@@ -297,6 +300,29 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual(state['last_round'] | {'at': None}, {'at': None, 'accounts': 2, 'read': 1, 'no_access': 1, 'refused': 1, 'set_aside': 0})
         view = a.salesflare_progress(ACCOUNT, state)
         self.assertEqual((view['no_access'], view['no_access_all'], view['last_round']['read']), (1, False, 1))
+
+    def test_an_account_that_becomes_readable_drops_out(self):
+        crm = FakeCRM(forbidden={10, 20})
+        self.run_to_completion(crm)
+        self.assertEqual(self.store.checkpoint('work-crm')['inaccessible_accounts'], [10, 20])
+        crm.forbidden = {20}  # the owner was added to Acme
+        self.store.commit_page('work-crm', {**self.store.checkpoint('work-crm'), 'next_full': 0}, [], record_sync=False)
+        with self.assertLogs(a.LOG, 'INFO') as logged:
+            self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual((state['inaccessible_accounts'], state['last_round']['no_access']), ([20], 1))
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 1)
+        batches = [line.split('salesflare ')[1] for line in logged.output if 'salesflare batch' in line]
+        self.assertEqual(sorted(batches), ['batch read=0 no_access=1 left=0', 'batch read=1 no_access=0 left=1'])
+
+    def test_without_access_during_a_round_adds_new_ones_to_the_last_round(self):
+        last = {'at': iso(2), 'accounts': 128, 'read': 120, 'no_access': 8, 'refused': 8, 'set_aside': 0}
+        state = {'watermark': iso(1), 'inaccessible_accounts': list(range(8)), 'last_round': last,
+                 'window': {'accounts': 128, 'pending': list(range(100)), 'until': iso(0), 'read': 20, 'no_access': [3, 50]}}
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 9)  # 3 was already counted
+        self.assertEqual(a.salesflare_progress(ACCOUNT, {**state, 'window': None})['no_access'], 8)
+        state['inaccessible_accounts'] = list(range(500, 636))
+        self.assertEqual(a.salesflare_progress(ACCOUNT, state)['no_access'], 128)  # never more than the round has
 
     def test_a_key_that_opens_no_account_says_so(self):
         crm = FakeCRM(forbidden={10, 20})
