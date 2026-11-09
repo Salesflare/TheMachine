@@ -425,7 +425,7 @@ OVER_BUDGET = {}
 # To-dos draws first stays small. Only a change to that first draw itself may raise it, saying why.
 FIRST_LOAD_CEILING = 1_423_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'settings': 124_000, 'talk': 52_000}
+LAZY_CEILING = {'calendar': 96_000, 'cleanup': 8_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'settings': 124_000, 'talk': 52_000}
 
 
 def budget(name):
