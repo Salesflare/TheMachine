@@ -94,7 +94,8 @@ Gmail lists as verified send-as for that mailbox and doesn't send through anothe
 - **Names are only names.** What people or their tools add is dropped: "Kim Lee (Initech)", "Ann Bell | Acme", "Sam at
   Globex", "via LinkedIn", emoji, a degree. "Doe, Jane" becomes Jane Doe.
 - **One name, one person.** The same full name on two different channels is one person, unless two people on one
-  channel carry it. The agent's `graph` `merge` or `different` (two person ids) overrides either way.
+  channel carry it, or it is all a work contact and a personal chat have in common (Same person?, below). The agent's
+  `graph` `merge` or `different` (two person ids) overrides either way.
 
 ### Same person?
 
@@ -107,15 +108,32 @@ Identities join by themselves only on strong evidence:
 - their Slack profile's address;
 - the same full name with one person carrying it per channel.
 
-A name alone never joins two identities on one channel. Weaker evidence is only a question: the same full name that two
+A shared address is never what joins people (`graph_joins.py`): a role or team inbox (info@, sales@, team@), an
+automated sender, a mailing list (the address its List-Id names), or an address seen under two or more people's names
+(a group's "Ann via Founders", a mailbox two colleagues answer). The people who wrote through it stay themselves, and
+the address goes by its address.
+
+A name alone never joins two identities on one channel, and never a work contact (work mail, Slack, the CRM) with a
+personal chat (WhatsApp, Telegram, a personal account): the side is the account's Work or Personal, and for an account
+never placed a company address, Slack and the CRM are work, WhatsApp and Telegram personal. They are one person when
+something besides the name agrees: the work contact is a colleague (an address at the owner's own domain, or the
+owner's company as their stated organization), the chat's number is known for the work contact (a connector's profile,
+the owner's own edit), both are on one project, both are at one organization, or one signal has both.
+
+Weaker evidence is only a question: the same full name on a work contact and a personal chat, the same full name that two
 people on one channel carry, or a similar name ("Ann" and "Ann Lee", a nameless jane.doe@ and Jane Doe) with something
 shared besides (the same company domain, people seen with both, a project, the same role). A name read from an address
 (jane.doe@ with no name given) is only ever similar, so the same local part at two domains is never asked by itself; an
 initial ("P") is no name, and a sender named for their own company ("Blue Harbor" at blueharbor.com) has no person's
 name to compare.
 
-- The person page asks it quietly ("Same person as …?"), and People lists them under **Same person?** with **Merge** and
-  **Not the same**. Not the same is remembered (`graph_merges` `same=0`).
+- The person page asks it quietly ("Same person as …?", with why and where the other one is from: their address,
+  number or channel), and People lists them under **Same person?** with **Merge** and **Not the same**. Not the same
+  is remembered (`graph_merges` `same=0`).
+- Each build works the joins out again from the signals, after the owner's and the agent's own merges, which always
+  stand. So someone an older version made of several people comes apart at the next build, with nothing deleted: a
+  note, role or project stays with the identity the person was named for, Keep private goes with every part, and one
+  **Merge** brings a pair back together.
 - An answered pair shows its answer instead of the buttons for a moment, then fades and leaves the list (the list's
   heading too when nothing is left); leaving People and opening the list again take answered pairs away at once. A
   redraw from before the Machine stored the answer, or a late list that still has the pair, never brings it back. A pair that merges already made one (A and B, then B and C: A and C)

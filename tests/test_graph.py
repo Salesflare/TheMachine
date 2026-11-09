@@ -203,16 +203,20 @@ class Graph(unittest.TestCase):
         self.assertLess(dee, 0.25)  # two months of fading, twice over
 
     def test_same_full_name_joins_channels_unless_said_to_differ(self):
-        self.add(mail(1, 'Ann Example <ann@client.com>', 'sam@acme.com'), chat(2, '00000000001', 'Ann Example'),
+        # Work mail and Slack: one side. A work contact and a personal chat with one name are only asked (test_graph_joins.py).
+        self.add(mail(1, 'Ann Example <ann@client.com>', 'sam@acme.com'),
+                 {'account_id': 'slack', 'source_id': 's-ann', 'kind': 'slack.message', 'occurred_at': at(2), 'title': '#DM U0ANN: hi', 'body': 'hi',
+                  'deleted': False, 'metadata': {'conversation_type': 'dm', 'channel_name': 'DM U0ANN', 'user_id': 'U0ANN', 'channel_id': 'D1'}},
                  chat(2, '00000000009', 'Bo Ambiguous'), mail(2, 'Bo Ambiguous <bo@one.com>', 'sam@acme.com'), mail(2, 'Bo Ambiguous <bo@two.com>', 'sam@acme.com'))
+        self.store.remember_name('slack:U0ANN', 'Ann Example', None)  # Slack gave no address: the name is all they share
         self.build()
-        self.assertEqual(self.node('email:ann@client.com')['ids'], ['+00000000001', 'ann@client.com'])
-        self.assertIsNone(self.node('wa:00000000001'))
+        self.assertEqual(self.node('email:ann@client.com')['ids'], ['Slack', 'ann@client.com'])
+        self.assertIsNone(self.node('slack:U0ANN'))
         self.assertIsNotNone(self.node('wa:00000000009'))  # two addresses carry that name: not joined
         with self.store.connect() as db:
-            graph.merge(db, 'wa:00000000001', 'email:ann@client.com', False, NOW.isoformat())
+            graph.merge(db, 'slack:U0ANN', 'email:ann@client.com', False, NOW.isoformat())
         self.build()
-        self.assertIsNotNone(self.node('wa:00000000001'))
+        self.assertIsNotNone(self.node('slack:U0ANN'))
         with self.store.connect() as db:
             graph.merge(db, 'wa:00000000009', 'email:bo@one.com', True, NOW.isoformat())
         self.build()

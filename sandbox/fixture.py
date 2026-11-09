@@ -565,7 +565,8 @@ def build(profile):
     add('work-stripe', 'stripe.event', 20160, 'invoice.payment_failed', 'Cobalt & Finch: €1,180.00, card expired',
         {'customer_name': 'Cobalt & Finch', 'type': 'invoice', 'source_url': 'https://dashboard.stripe.example/invoices/inv-4821'}, 'story:invoice:stripe')
     cards[2]['events'].append('story:invoice:stripe')
-    # Same person? Robin writes from work with their own address in CC and chats on WhatsApp: one person by itself. Two
+    # Same person? Robin writes from work with their own address in CC: one person by itself. Their WhatsApp chat has
+    # only the name in common with that work contact, so it is a question (graph_joins.py). Two
     # Theo Marchettis at two addresses stay two, with a question; so do Nina and Nina Kowalczyk, both at Saltmarsh Media.
     robin_work, robin_home = 'Robin Morgan <robin.morgan@harborlinehealth.example>', 'Robin Morgan <robin@mail.example>'
     add('work-gmail', 'gmail.message', 2200, 'School forms', 'Can you sign the school forms tonight? Sent from work.',

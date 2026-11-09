@@ -60,6 +60,8 @@ Um das Bild zu ändern, klick darauf: **Bild hochladen**, eins der gefundenen au
 
 Wenn zwei Personen eine sein könnten, fragt ihre Seite, ob es dieselbe Person ist, und Personen listet sie unter **Gleiche Person?**. **Zusammenführen** verbindet sie, mit allen Nachrichten, Notizen, Rollen und Projekten. **Nicht dieselbe** hält sie dauerhaft getrennt. Deine Antwort steht kurz beim Paar, dann verschwindet das Paar aus der Liste. Die Liste verschwindet, wenn nichts mehr zu fragen ist.
 
+Eine geteilte Adresse wie info@ oder eine Mailingliste wird nie mit den Personen verbunden, die darüber schreiben. Ein Arbeitskontakt von außerhalb deines Unternehmens und ein privater Chat, die nur den Namen gemeinsam haben, werden nicht von selbst verbunden: Sie stehen als Frage in der Liste.
+
 **Alle zusammenführen** führt jedes Paar in der Liste auf einmal zusammen, außer denen, die du mit **Nicht dieselbe** markiert hast. **Rückgängig** direkt danach trennt sie alle wieder.
 
 Um zwei Personen selbst zusammenzuführen, öffne eine davon, dann **⋯**, **Gleiche Person wie…** und wähle die andere. Die Seite einer zusammengeführten Person zeigt unter **Zusammengeführt aus**, warum, mit **Rückgängig**, um sie wieder zu trennen.

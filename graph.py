@@ -12,8 +12,8 @@ People are matched by identifiers only (email address, phone, Slack user, Linked
 conversation, GitHub login), joined on strong evidence only: Slack reports the user's email, the same
 full name is on two identities in one message or conversation, a lookup found the same LinkedIn
 profile for both, their WhatsApp number is in their own mail, the same full name appears on two
-different channels (one person with it per channel), or the owner or agent says so (merges). Weaker
-evidence (that name shared by two people on one channel, a similar name with the same company, people,
+different channels (one person with it per channel; never through a shared address, graph_joins.py), or the owner or agent says so (merges). Weaker
+evidence (that name shared by two people on one channel or by a work contact and a personal chat, a similar name with the same company, people,
 project or role) is only offered as "Same person?" (graph_same); the owner's Merge or Not the same is
 kept in graph_merges, and Not the same also undoes a merge for good. Projects are named
 by the review agent and the owner, and spread to the rest of their threads; a signal that reads like
@@ -51,6 +51,7 @@ import locale_prefs
 import timeutil
 
 import enrichment
+import graph_joins
 import graph_publish
 import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay  # noqa: F401
@@ -1277,7 +1278,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     appears = collections.defaultdict(set)  # identifier -> where they show up: a hint for a review, never a role
     owner_events = set()
     headlines = set()  # LinkedIn conversations whose person has a headline (read at view time: it stays sealed in the signal)
-    named_on = collections.defaultdict(lambda: collections.defaultdict(set))  # (message or conversation) -> full name -> identifiers
+    keys = graph_joins.Keys(config, owner, plain_name, account_side, FREEMAIL)  # which identities a name may join: never a shared address
     senders = collections.defaultdict(list)  # email identifier -> [(at, event id)] of mail it wrote: its own text may carry its number
     for event_id, account_id, kind, at, m in signals + old:  # signals first: the same email as a signal and history counts as the signal
         if kind == 'gmail.message' and m.get('message-id'):
@@ -1312,13 +1313,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         if kind == 'linkedin.message' and isinstance(m.get('headline'), str) and m['headline'].strip() and not m.get('group'):
             headlines.add('li:' + str(m['conversation_id']))
         per_event[event_id] = (kind, at, account_id, m, found)
-        key, exact = thread_key(kind, m)
-        for identifier, name, _, _ in found:
-            full = plain_name(name) if name and '@' not in str(name) else None
-            if full and full not in owner.names and not ROLE.match(identifier.split(':', 1)[-1]):
-                named_on[('message', event_id)][full].add(identifier)
-                if key and exact:
-                    named_on[('thread', account_id, key)][full].add(identifier)
+        keys.see(event_id, account_id, kind, m, found, *thread_key(kind, m))
         if kind == 'gmail.message' and found[0][3] in ('them', 'seen') and found[0][0].startswith('email:') and event_id not in past:
             senders[found[0][0]].append((at, event_id))
         if any(role in ('owner', 'met') for _, _, _, role in found):
@@ -1359,12 +1354,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         top = names[identifier].most_common(1)
         return top[0][0] if top else None
     # Strong evidence, never a name alone: the same full name on two identities in one message (someone writing from
-    # work with their own address in CC) or one conversation, ...
-    for where, by_full in sorted(named_on.items(), key=lambda item: item[0][0] != 'message'):
-        for full, group in sorted(by_full.items()):
-            group = sorted(group, key=lambda i: (not i.startswith('email:'), i))
-            for other in group[1:]:
-                union.join(group[0], other, where[0])
+    # work with their own address in CC) or one conversation (never through a shared address: graph_joins.py), ...
+    for one, other, where in keys.together():
+        union.join(one, other, where)
     # ... the same LinkedIn profile, found for both by a lookup, and their WhatsApp number in mail they wrote themselves.
     by_profile = collections.defaultdict(set)
     for r in db.execute("SELECT identifier,profile FROM person_profiles WHERE status='found' AND profile IS NOT NULL"):
@@ -1380,23 +1372,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
             union.join(group[0], other, 'profile')
     for address, number in signature_pairs(db, senders, best, known):
         union.join(address, number, 'signature')
-    by_name = collections.defaultdict(set)
-    for identifier in known:
-        full = plain_name(best(identifier))
-        if full:
-            by_name[full].add(identifier)
-    for full, group in sorted(by_name.items()):
-        if full in owner.names:
-            continue  # the owner, writing from another channel
-        spaces = collections.defaultdict(set)
-        for i in group:
-            spaces[i.split(':', 1)[0]].add(union.find(i))
-        # The same full name on different channels is one person, unless two people carry it on one channel
-        # (two addresses or two chats not shown to be one) or someone said they differ: then it is only a question.
-        if len(spaces) > 1 and all(len(roots) == 1 for roots in spaces.values()):
-            group = sorted(group, key=lambda i: (not i.startswith('email:'), i))
-            for other in group[1:]:
-                union.join(group[0], other, 'name')
+    # The same full name on different channels is one person, unless two people carry it on one channel, someone said
+    # they differ, or it is a work contact and a personal chat with nothing but the name in common: then it is a question.
+    keys.join_names(db, union, known, best)
     joined = collections.defaultdict(list)
     for a, b, why in union.edges:
         joined[union.find(a)].append((a, b, why))
@@ -1598,7 +1576,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         counts = collections.Counter()
         for identifier in group:
             counts.update(names.get(identifier, {}))
-        name = shown_name(counts) if counts else shown_id(node, x_names)
+        name = shown_name(counts) if counts and not all(keys.several(i) for i in group) else shown_id(node, x_names)  # a list goes by its address
         if plain_name(name) in owner.names:
             continue  # the owner on another channel (a note-to-self chat, an old address)
         name = next((named[i] for i in group if i in named), name)  # the owner's own name for them wins
@@ -1683,7 +1661,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         # person's name; one read from their address (no name given) is only ever a similar one.
         no_name = name == shown_id(node, x_names)
         sender_org = any(org_from_name(name, i.rsplit('@', 1)[1]) for i in group if i.startswith('email:')) and not no_name
-        alike[node] = {'words': [] if sender_org else name_words(name, node if no_name else None), 'derived': no_name, 'strength': value,
+        alike[node] = {'words': [] if sender_org or all(keys.several(i) for i in group) else name_words(name, node if no_name else None), 'derived': no_name, 'strength': value,
                        'domains': set(domains), 'role': ' '.join(str(role).casefold().split()) if role else None}
         nodes.append((node, 'person', name[:200], round(value, 4), last_day[node].isoformat() if node in last_day else None,
                       len(node_events[node]), usual, int(quiet), None, info))
@@ -1739,7 +1717,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         for one, other in ((a, b), (b, a)):
             asks = infos[one].setdefault('same', [])
             if len(asks) < 3:
-                asks.append({'id': other, 'why': why})
+                asks.append({'id': other, 'why': why, 'from': shown_id(other, x_names)})  # where the other one is from: their address or number
     names_now = {n[0]: n[2] for n in nodes}
     for info in infos.values():
         for ask in info.get('same', ()):
@@ -1845,7 +1823,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     if side_rows is not None:
         db.executemany('INSERT OR REPLACE INTO side_changes(node_id,rule,before,after,why,at) VALUES(?,?,?,?,?,?)', side_rows)
         db.execute('INSERT OR REPLACE INTO side_rule(id,rule,at) VALUES(1,?,?)', (SIDE_RULE, now))
+    private = graph_joins.private_parts(db, union, kept)  # Keep private follows a person this build tells apart
     graph_publish.publish(db, same_rows, nodes, links, event_rows, unnamed_rows)  # only what changed: a short write lock
+    graph_joins.keep_private(db, private)
     graph_history.publish(db, history_rows)
     mailings.publish(db, nodes)  # Hidden senders, under People
     db.execute('INSERT OR REPLACE INTO graph_state(id,built_at,signals,took_ms) VALUES(1,?,?,?)', (now, len(signals), took))
