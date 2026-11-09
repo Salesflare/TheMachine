@@ -71,7 +71,7 @@ REBUILDABLE = {'.git', 'node_modules', '.venv', '.venvs', 'venv', '__pycache__',
 # Tokens that only work for a hosted server; they are never exported
 HOSTED_ONLY = {'google-broker', 'microsoft-broker', 'zoom-broker', 'google_meet-broker', 'google_docs-broker'}
 # Settings a hosted server added that mean nothing elsewhere
-HOSTED_KEYS = ('google_broker', 'microsoft_broker', 'zoom_broker', 'google_meet_broker', 'google_docs_broker', 'manage_url', 'needs_you_file')
+HOSTED_KEYS = ('google_broker', 'microsoft_broker', 'zoom_broker', 'google_meet_broker', 'google_docs_broker', 'salesforce_broker', 'manage_url', 'needs_you_file')
 
 
 class MoveError(Exception):
