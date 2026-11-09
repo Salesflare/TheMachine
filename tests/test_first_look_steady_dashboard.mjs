@@ -5,9 +5,9 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The first look's progress (review_live.first_dig): one count over the week that moves a signal at a time while a
-// batch reads (not 0 then all at its end), stays up between batches instead of the sleepy All clear, and ends with
-// what it read. 2026-11-04: a small mailbox showed "0 of 20 signals", then "Nothing to report" while it still dug.
+// The first look's progress (review_live.first_dig): one count over the week of what its batches saved (never a guess
+// ahead of that), a line that names the batch in hand, a bar that moves while the batch reads (not still, then all at
+// its end), all of it up between batches instead of the sleepy All clear, and an ending with what it read. 2026-11-04: a small mailbox showed "0 of 20 signals", then "Nothing to report" while it still dug.
 // Made-up fixtures, nothing sent.
 const dashboard=await dashboardPage(),shots=process.env.FIRST_LOOK_SHOTS;
 const now=new Date().toISOString();
@@ -17,7 +17,8 @@ const live=()=>({runs:run?[run]:[],queue:null,first_look:null,first_dig:dig});
 const state=()=>({suggestions:[],promises:[],connectors:[{id:'work',display_name:'Work mail',service:'outlook'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
  review_live:live(),first_look_done:done});
-const errors=[],count=async page=>{const m=/^Reading (\d+) of (\d+) messages…$/.exec(await page.locator('#suggestions .fl-count').innerText());assert.ok(m);return [+m[1],+m[2]]};
+const errors=[],line=page=>page.locator('#suggestions .fl-count').innerText();
+const bar=page=>page.evaluate(()=>{const b=document.querySelector('#suggestions .fl-bar');return [parseFloat(b.firstChild.style.width)||0,+b.getAttribute('aria-valuenow')]});
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -39,22 +40,24 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   await page.locator('#suggestions .first-look-empty .fl-count').waitFor();
-  // The first batch: the count moves while it reads, one short of its batch until it saved, over the whole week
-  await page.waitForFunction(()=>/^Reading [1-9]\d* of /.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
-  const [a,total]=await count(page);
+  // The first batch: the line names it over the whole week, the number is what was read (nothing yet), the bar moves
+  assert.equal(await line(page),'Reading the first 20 of 64 messages…');
+  const [a,read]=await bar(page);
   // Nothing got focus by itself: Done / dismissed has no ring on a page nobody pressed a key on yet
   const ringless=()=>page.evaluate(()=>!document.querySelector('#suggestions .kb-on')&&document.activeElement?.id!=='finished-head');
   assert.ok(await ringless(),'no focus on Done / dismissed');
-  assert.equal(total,64);assert.ok(a>=1&&a<20,String(a));
-  await page.waitForTimeout(1500);
-  const [b]=await count(page);assert.ok(b>a,`${b} > ${a}`);
+  assert.equal(read,0);
+  await page.waitForFunction(w=>parseFloat(document.querySelector('#suggestions .fl-bar i')?.style.width)>w,a,{timeout:8000});
+  const [b,still]=await bar(page);assert.ok(b>a&&b<=Math.round(100*19/64),`${b} > ${a}`);
+  assert.deepEqual([still,await line(page)],[0,'Reading the first 20 of 64 messages…']);
   assert.ok(!/All clear/.test(await page.locator('#page-head').innerText()));
   if(shots)await page.screenshot({path:`${shots}/reading-${width}.png`});
   // Between batches, nothing found yet: still looking, the count kept, never the sleepy All clear
   run=null;dig={...dig,read:20};
   await page.evaluate(async()=>{await refresh()});
   await page.waitForFunction(()=>/Reading on/.test(document.querySelector('#suggestions .first-look-empty')?.textContent||''));
-  const [c]=await count(page);assert.ok(c>=20&&c>=b,String(c));
+  assert.equal(await line(page),'Reading 20 of 64 messages…');
+  const [c,saved]=await bar(page);assert.ok(saved===20&&c>=b,String(c));
   assert.ok((await page.locator('#suggestions').innerText()).includes('Nothing for you yet. Reading on.'));
   assert.equal(await page.locator('#suggestions img.sleepy').count(),0);
   assert.ok(!/All clear/.test(await page.locator('#page-head').innerText()));
@@ -62,7 +65,8 @@ try{
   run={run_id:'n'+width,status:'running',started_at:now,preview:0,auto:1,window_hours:null,promising:1,planned:40,done_count:0,claimed_count:40,duration_seconds:3,account_ids:['work'],steps:[]};
   await page.evaluate(async()=>{await refresh()});
   await page.waitForTimeout(1500);
-  const [d]=await count(page);assert.ok(d>20&&d<60,String(d));
+  assert.equal(await line(page),'Read 20 of 64 messages. Reading the next 40…');
+  const [d,kept]=await bar(page);assert.ok(kept===20&&d>c&&d<Math.round(100*60/64),String(d));
   if(shots)await page.screenshot({path:`${shots}/digging-${width}.png`});
   // In Connections it is the first look, not "Checking new messages"
   assert.ok((await page.locator('#review-live').innerText()).includes('First look: your last 7 days'));
