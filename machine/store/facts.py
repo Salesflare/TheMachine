@@ -472,7 +472,7 @@ class FactsStore:
         return {'removed': True}
 
     def fact_overturned(self, fact_id, reason, event_ids):
-        """A newer message says a fact no longer holds (the plan was cancelled, the date or place moved, they no longer
+        """A newer message says a fact no longer holds (the plan was canceled, the date or place moved, they no longer
         need it): it ends today, like one past its end day ('expired:<id>'), so Learning lists it under Ended with Bring
         back. Only on messages that came in after it was last said and after the owner last kept it."""
         reason = ' '.join(str(reason or '').split())

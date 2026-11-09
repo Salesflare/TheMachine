@@ -1,6 +1,6 @@
 """Plans that changed: a newer message overturns what The Machine believed, and it updates its own records itself.
 
-A to-do built on a plan a newer message dropped (the party moved to another venue, the booking was cancelled) closes by
+A to-do built on a plan a newer message dropped (the party moved to another venue, the booking was canceled) closes by
 itself as Not needed, its chat saying "Updated: <why>", with Undo; the same messages never close it again once the owner
 took it back, and the owner's own word after them stands. A fact a newer message overturned ends like one past its end
 day, under Ended with Bring back. The review sees each fact's id so it can end one. Made-up names, no live calls."""
