@@ -86,7 +86,7 @@ try{
  assert.equal(await page.locator('.record-log .rc-fold').evaluate(d=>d.open),false);
  assert.equal((await page.locator('.rc-fold>summary').textContent()).replace(/\s+/g,' ').trim(),'Recent changes 4');
  await page.locator('.rc-fold>summary').click();
- assert.deepEqual(await page.locator('.rc-list li:not([hidden]) .rc-text').allTextContents(),['Ann Example is sister of Bo Example','Ann prefers calls before 10.','To you: Neighbor']);
+ assert.deepEqual(await page.locator('.rc-list li:not([hidden]) .rc-text').allTextContents(),['Ann Example is sister of Bo Example','Ann prefers calls before 10.','Role: Neighbor']);
  assert.equal(await page.locator('.rc-list li').nth(1).locator('.rc-was').textContent(),'Was: Ann prefers calls before 9.');
  assert.equal(await page.locator('.rc-list li').first().locator('.rc-src button').textContent(),'Email from Ann');
  assert.equal(await page.locator('.rc-list li').first().locator('[data-unrelate]').getAttribute('data-related-to'),'email:bo@family.example');

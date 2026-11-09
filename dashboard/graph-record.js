@@ -227,15 +227,15 @@ const openBetween=n=>{const o=n.open||{},row=(label,p)=>html`<div class="promise
 const shortName=n=>n.kind==='person'?String(n.name||'').split(/\s+/)[0]||n.name:n.name;
 const knownAbout=n=>{const k=n.open?.known||[],who=shortName(n);return k.length?html`<div class="section-head graph-known-head"><h2>Known about ${who}</h2></div><ul class="graph-known">${k.map(f=>html`<li><span>${f.text}${factMeta(f)}</span><details class="fact-menu"><summary aria-label="Options for this fact" title="Options">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-fact-unlink="${f.id}">Not about ${who}<small>Only takes it off this page</small></button><button type="button" role="menuitem" class="danger" data-fact-forget="${f.id}" data-who="${who}">Forget<small>Deletes it everywhere</small></button></div></details></li>`)}</ul>`:''};
 // Recent changes (record_log.py): what The Machine changed or learned about this record, when and from where, folded
-// under the record. A few lines open, the rest under Show more. Each line's ⋯ has the page's own correction for it:
+// right above the Timeline. A few lines open, the rest under Show more. Each line's ⋯ has the page's own correction for it:
 // Edit, Not about / Forget, Remove, Undo. No notifications and nothing new to visit: it is only here.
 let rcOpen='';  // the record whose log the owner opened: it stays open through the page's own refreshes
 const RC_SHOWN=3;
 const rcDay=v=>{const d=new Date(v);return localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
 const RC_SIDE={work:'Marked as a Work contact',personal:'Marked as a Personal contact'},RC_AI={details:'Details changed',crm:'Fields or tags changed',summary:'Summary line added'};
 function rcText(n,x){switch(x.kind){
- case 'role':return t('To you: {}',cap(x.role));
- case 'role_fix':return t('To you: {}, corrected from {}',cap(x.role),x.was);
+ case 'role':return t('Role: {}',cap(x.role));
+ case 'role_fix':return t('Role: {}, corrected from {}',cap(x.role),x.was);
  case 'org':return t('Works at {}',x.org);
  case 'member':return t('{} works here',x.name);
  case 'relation':return t('{} is {} {}',x.a_name,x.relation,x.b_name);

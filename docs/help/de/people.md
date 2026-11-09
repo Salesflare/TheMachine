@@ -103,7 +103,7 @@ Unter Bekannt über hat jeder Fakt ein Menü:
 
 ## Letzte Änderungen
 
-**Letzte Änderungen**, eingeklappt unter den Angaben einer Person, Organisation oder eines Projekts, zeigt, was deine Machine dazu geändert oder gelernt hat: eine Rolle, wo jemand arbeitet, wie zwei Personen zusammenhängen, einen Fakt, einen verschobenen Projektstand. Jede Zeile hat ihr Datum und ihre Quelle; tippe auf die Quelle, um die Nachricht zu lesen.
+**Letzte Änderungen**, eingeklappt direkt über dem Verlauf einer Person, Organisation oder eines Projekts, zeigt, was deine Machine dazu geändert oder gelernt hat: eine Rolle, wo jemand arbeitet, wie zwei Personen zusammenhängen, einen Fakt, einen verschobenen Projektstand. Jede Zeile hat ihr Datum und ihre Quelle; tippe auf die Quelle, um die Nachricht zu lesen.
 
 Ist eine Zeile falsch, korrigiert ihr **⋯** sie direkt dort: **Bearbeiten**, **Entfernen**, **Nicht über** die Person, **Vergessen** oder **Rückgängig**, um ein Projekt zurückzusetzen. Drei Zeilen sind sichtbar; **Mehr anzeigen** zeigt den Rest.
 

@@ -103,7 +103,7 @@ Under Known about, each fact has a menu:
 
 ## Recent changes
 
-**Recent changes**, folded under a person's, organization's or project's details, lists what your Machine changed or learned about them: a role, where they work, how two people are related, a fact, a project's move. Each line has its date and its source; tap the source to read the message.
+**Recent changes**, folded right above the timeline of a person, organization or project, lists what your Machine changed or learned about them: a role, where they work, how two people are related, a fact, a project's move. Each line has its date and its source; tap the source to read the message.
 
 When a line is wrong, its **⋯** fixes it right there: **Edit**, **Remove**, **Not about** them, **Forget**, or **Undo** to put a project back where it was. Three lines show; **Show more** has the rest.
 
