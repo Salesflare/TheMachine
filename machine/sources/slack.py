@@ -239,7 +239,7 @@ class Slack:
         if not isinstance(data, dict) or not data.get('ok'):
             label = data.get('error') if isinstance(data, dict) else None
             known = {'ratelimited', 'invalid_cursor', 'thread_not_found', 'channel_not_found', 'user_not_found', 'user_not_visible',
-                     'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'}
+                     'not_in_channel', 'missing_scope', 'invalid_auth', 'token_revoked', 'token_expired'} | SLACK_ACCOUNT_LABELS | SLACK_HICCUP_LABELS
             if label == 'ratelimited' and method in self.limited_reads:
                 self.read_went(True)
             raise SourceError('slack_' + (label if label in known else 'invalid_response') + ':' + method,
@@ -295,6 +295,57 @@ def slack_event(account, channel, raw, names=None):
 def slack_error(error):
     """The Slack error label without the method it came from ('slack_not_in_channel:conversations.history')."""
     return error.category.split(':', 1)[0]
+
+
+# Slack's error labels, by what they are about (https://docs.slack.dev/reference/methods/conversations.history).
+# The sign-in or the whole workspace: every conversation would answer the same, so the sync fails and the connection says so.
+SLACK_ACCOUNT_LABELS = {'account_inactive', 'not_authed', 'no_permission', 'org_login_required', 'ekm_access_denied',
+                        'team_access_not_granted', 'two_factor_setup_required', 'enterprise_is_restricted', 'accesslimited'}
+# Slack's own trouble, answered as a label instead of a 5xx: the same read is tried again, like a 5xx or a timeout.
+SLACK_HICCUP_LABELS = {'internal_error', 'fatal_error', 'service_unavailable', 'request_timeout'}
+# One conversation: the owner left it or was removed (channel_not_found, not_in_channel), the sign-in has no scope for
+# its kind (missing_scope: Slack's history scopes are per kind of conversation), a label not named above
+# (invalid_response: the account was checked just before, see Slack.profile), or a page that says there is more without
+# saying where (missing_cursor). The others are read all the same.
+SLACK_REFUSED = ('slack_channel_not_found', 'slack_not_in_channel', 'slack_missing_scope', 'slack_invalid_response',
+                 'slack_missing_cursor')
+SLACK_REFUSED_REST = 3600  # after a first refusal; doubles each time, up to a day
+SLACK_GONE_AFTER = 3  # refusals in a row before a conversation the owner's list no longer has is dropped
+
+
+def slack_refused(error):
+    """Slack's answer is about this one conversation (SLACK_REFUSED), not about the connection."""
+    return slack_error(error) in SLACK_REFUSED
+
+
+def slack_set_aside(config, channel, label):
+    """A conversation Slack refused: it says so (the Slack card counts it as unavailable) and rests, longer each time
+    in a row, so it never comes first again while the others wait. Its next read that works clears it."""
+    channel['refused'] = int(channel.get('refused') or 0) + 1
+    rest = min(86400, SLACK_REFUSED_REST * 2 ** min(channel['refused'] - 1, 10))
+    channel.update(error=label, due=time.time() + max(rest, slack_interval(config, channel)))
+
+
+def slack_prune(state, listed):
+    """After Slack listed every conversation the owner is in (a complete users.conversations, `listed`): one that is
+    no longer among them and was refused SLACK_GONE_AFTER times in a row leaves the list. What was read from it stays.
+    Never on one refusal, and never from a list that is empty or incomplete."""
+    listed = set(listed or ())
+    if listed:
+        state['channels'] = [c for c in state['channels'] if c['id'] in listed or not c.get('error')
+                             or int(c.get('refused') or 0) < SLACK_GONE_AFTER]
+
+
+def slack_turn_done(state):
+    """A conversation's turn ended, read or set aside: on to the next one, and after the last one the regular rounds."""
+    state.pop('scan', None)
+    state['index'] += 1
+    if state.get('step'):
+        slack_first_import_next(state)
+    elif state['index'] >= len(state['channels']):
+        state.update(index=0, mode='incremental')
+        if time.time() >= state.get('next_discovery', 0):
+            state['phase'] = 'discover'
 
 
 def slack_activity(channel):
@@ -475,10 +526,11 @@ def slack_next_due(store, config, account, source, state):
                 except SourceError as error:
                     # A direct message this token can't open (closed, or with a removed member) failed every sync
                     # and held up every other conversation behind it (2026-11-09): it rests like a quiet one, and
-                    # says it can't be read, until a later read or discovery clears it.
-                    if slack_error(error) not in ('slack_channel_not_found', 'slack_not_in_channel', 'slack_missing_scope'):
+                    # says it can't be read and rests longer each time (slack_set_aside), until a later read clears it
+                    # or discovery drops it.
+                    if not slack_refused(error):
                         raise
-                    channel.update(error=slack_error(error), due=now + slack_interval(config, channel))
+                    slack_set_aside(config, channel, slack_error(error))
                     moved = True
                     continue
                 latest = info.get('latest') or {}

@@ -20,12 +20,13 @@ from machine.sources.gateway import sync_gateway
 from machine.sources.gmail import sync_gmail
 from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
-from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_next, slack_first_import_plan,
-                                   slack_interval, slack_next_due, slack_order, slack_page_names, slack_read_asked,
-                                   slack_limits, slack_read_drop, slack_read_now)
+from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
+                                   slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
+                                   slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_refused,
+                                   slack_set_aside, slack_turn_done, SLACK_HICCUP_LABELS)
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
-from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, upstream_busy
+from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, transient, upstream_busy
 from timeutil import now
 import whatsapp_images
 
@@ -51,6 +52,55 @@ QUICK_RETRY_SECONDS = 15
 QUICK_RETRY_MAX = 60  # a Retry-After longer than this waits in the checkpoint instead
 
 
+SLACK_STUCK_AFTER = 5  # failed tries in a row at one conversation's read before the others get their turn
+
+
+def slack_read_failed(store, config, account, state, channel, scan, params, error):
+    """A conversation's history or replies read failed. True when the sync goes on without it; False when the caller
+    raises the error, as for everything about the connection itself: the sign-in, a rate limit (its Retry-After and
+    round stay as they are), Slack or the network down. Either way one conversation never keeps the turn for good."""
+    label = slack_error(error)
+    if (account.get('fair_incremental') and 'known_threads' in scan and
+            scan['phase'] == 'threads' and error.category.startswith('network:')):
+        # Save the failed frozen thread page, then let other conversations
+        # progress. A repeated timeout cannot starve new channel messages.
+        channel['deferred_thread'] = {'ts': params['ts'], 'oldest': params['oldest'], 'latest': params['latest'],
+                                      'retry_at': time.time() + 600, 'error': str(error)}
+        if scan.get('cursor'):
+            channel['deferred_thread']['cursor'] = scan['cursor']
+        channel.update(last_scan=scan['latest'], threads=scan['known_threads'],
+                       next_thread_index=scan['thread_start'] + 1)
+        state.pop('scan', None)
+        state['index'] = (state['index'] + 1) % len(state['channels'])
+        store.commit_page(account['id'], state, [], record_sync=False)
+        error.retry_after = 65
+    elif label == 'slack_invalid_cursor':
+        scan.pop('cursor', None)
+        store.commit_page(account['id'], state, [], record_sync=False)
+    elif slack_refused(error) or label == 'slack_thread_not_found':
+        # Slack refuses this conversation (the owner left it, or was removed): it says so and rests, and the turn
+        # moves on. It used to stay the most overdue one, so every sync read it again and no other conversation was
+        # read (2026-11-09). A partly read one is never marked complete: its last_scan stays where it was.
+        slack_set_aside(config, channel, label)
+        slack_read_drop(account['id'], channel['id'])  # a run's ask for it ends here: slack_read says it can't be read
+        slack_turn_done(state)
+        store.commit_page(account['id'], state, [], record_sync=False)
+        LOG.warning('sync account=%s slack conversation set aside type=%s error=%s refused=%d', account['id'],
+                    channel.get('type'), label, channel['refused'])
+        # With none left that Slack lets it read, the connection itself says so.
+        return not all(c.get('error') for c in state['channels'])
+    elif not rate_limited(error) and (transient(error) or label == 'invalid_json' or label[len('slack_'):] in SLACK_HICCUP_LABELS):
+        # Slack or the network, as far as anyone can tell: the same page again next time. When it keeps failing at
+        # this one conversation, the others get their turn and it comes back after its usual rest.
+        scan['failed'] = int(scan.get('failed') or 0) + 1
+        if scan['failed'] >= SLACK_STUCK_AFTER:
+            channel['due'] = time.time() + slack_interval(config, channel)
+            slack_read_drop(account['id'], channel['id'])
+            slack_turn_done(state)
+        store.commit_page(account['id'], state, [], record_sync=False)
+    return False
+
+
 def sync_slack(store, config, account, source=None):
     source = source or Slack(config, account)
     source.profile()
@@ -64,6 +114,8 @@ def sync_slack(store, config, account, source=None):
                   'exclude_archived': 'true', 'limit': 100}
         if state.get('page_token'):
             params['cursor'] = state['page_token']
+        else:
+            state['listed'] = []  # every id Slack lists, from the first page on: only a complete list may drop one
         try:
             page = source.get('users.conversations', params)
         except SourceError as error:
@@ -72,6 +124,8 @@ def sync_slack(store, config, account, source=None):
                 store.commit_page(account['id'], state, [], record_sync=False)
             raise
         channels = {c['id']: c for c in state['channels']}
+        if 'listed' in state:
+            state['listed'] += [c['id'] for c in page.get('channels', [])]
         for c in page.get('channels', []):
             if c.get('is_archived'):
                 continue
@@ -92,6 +146,7 @@ def sync_slack(store, config, account, source=None):
         else:
             state.pop('page_token', None)
             state['next_discovery'] = time.time() + 86400
+            slack_prune(state, state.pop('listed', None))
             if state['mode'] == 'bootstrap' and 'index' not in state:
                 # First import: a cheap look at every conversation first, so the read order follows activity.
                 state.update(phase='triage', triage=0)
@@ -118,10 +173,10 @@ def sync_slack(store, config, account, source=None):
             try:
                 info = source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}
             except SourceError as error:
-                if slack_error(error) not in ('slack_channel_not_found', 'slack_not_in_channel', 'slack_missing_scope'):
+                if not slack_refused(error):
                     store.commit_page(account['id'], state, [], record_sync=False)
                     raise
-                info = {}
+                info = {}  # one conversation Slack won't show: read with the quiet ones, never holding up the plan
             latest = info.get('latest') if isinstance(info.get('latest'), dict) else {}
             mark = latest.get('ts') if channel['type'] == 'dm' else info.get('last_read')
             try:
@@ -187,38 +242,24 @@ def sync_slack(store, config, account, source=None):
             params.update(oldest=scan['thread_oldest'],latest=scan['thread_latest'])
     if scan.get('cursor'):
         params['cursor'] = scan['cursor']
+    gone_thread = False
     try:
         page = source.get('conversations.history' if scan['phase'] == 'history' else 'conversations.replies', params)
+        if page.get('has_more') and not page.get('response_metadata', {}).get('next_cursor'):
+            raise SourceError('slack_missing_cursor')
     except SourceError as error:
-        if (account.get('fair_incremental') and 'known_threads' in scan and
-                scan['phase']=='threads' and error.category.startswith('network:')):
-            # Save the failed frozen thread page, then let other conversations
-            # progress. A repeated timeout cannot starve new channel messages.
-            channel['deferred_thread'] = {'ts':params['ts'],'oldest':params['oldest'],'latest':params['latest'],
-                                          'retry_at':time.time()+600, 'error':str(error)}
-            if scan.get('cursor'):
-                channel['deferred_thread']['cursor'] = scan['cursor']
-            channel.update(last_scan=scan['latest'],threads=scan['known_threads'],
-                           next_thread_index=scan['thread_start']+1)
-            state.pop('scan',None)
-            state['index']=(state['index']+1)%len(state['channels'])
-            store.commit_page(account['id'],state,[],record_sync=False)
-            error.retry_after = 65
-        elif slack_error(error) == 'slack_invalid_cursor':
-            scan.pop('cursor', None)
-            store.commit_page(account['id'], state, [], record_sync=False)
-        elif slack_error(error) in ('slack_thread_not_found', 'slack_channel_not_found', 'slack_not_in_channel'):
-            # Keep a visible failure; don't silently mark a partial inaccessible channel complete.
-            channel['error'] = slack_error(error)
-            slack_read_drop(account['id'], channel['id'])  # a run's ask for it ends here: slack_read says it can't be read
-            state.pop('scan', None)
-            if state.get('step'):
-                state['index'] += 1
-                slack_first_import_next(state)
-            else:
-                state['index'] = (state['index'] + 1) % len(state['channels'])
-            store.commit_page(account['id'], state, [], record_sync=False)
-        raise
+        if slack_error(error) == 'slack_thread_not_found' and scan['phase'] == 'threads':
+            # The thread is gone (its first message was deleted): it leaves the list and the conversation reads on.
+            # It used to fail the conversation on every turn, with the thread still in its list.
+            gone_thread, page = True, {}
+            channel['threads'] = [ts for ts in channel.get('threads', []) if ts != params['ts']]
+            if params['ts'] in scan.get('known_threads', []):
+                scan['known_threads'].remove(params['ts'])
+        elif slack_read_failed(store, config, account, state, channel, scan, params, error):
+            return {'mode': state['mode'], 'events': 0, 'more': True}
+        else:
+            raise
+    scan.pop('failed', None)
     names = slack_page_names(store, channel, page.get('messages', []))
     skipped = Skips('slack_invalid_message')  # a message it can't take is counted, never failing the channel's page
     def one(raw):
@@ -236,8 +277,6 @@ def sync_slack(store, config, account, source=None):
     cursor = page.get('response_metadata', {}).get('next_cursor')
     if cursor:
         scan['cursor'] = cursor
-    elif page.get('has_more'):
-        raise SourceError('slack_missing_cursor')
     else:
         scan.pop('cursor', None)
         if scan['phase'] == 'history':
@@ -263,7 +302,10 @@ def sync_slack(store, config, account, source=None):
                     selected = scan['threads']
                 scan['threads'] = selected
         else:
-            scan['thread_index'] += 1
+            if gone_thread:
+                scan['threads'].pop(scan['thread_index'])
+            else:
+                scan['thread_index'] += 1
             postponed = channel.get('deferred_thread')
             if postponed and params.get('ts') == postponed['ts']:
                 channel.pop('deferred_thread',None)
@@ -283,18 +325,12 @@ def sync_slack(store, config, account, source=None):
             if 'known_threads' in scan:
                 channel['next_thread_index'] = scan['thread_start'] + 1
             channel.pop('error', None)
+            channel.pop('refused', None)
             # Thread replies held back on the first pass are read on the very next round.
             channel['due'] = time.time() + (0 if scan.get('waiting') else slack_interval(config, channel))
             if scan['full']:
                 channel['next_full'] = time.time() + 86400
-            state.pop('scan', None)
-            state['index'] += 1
-            if state.get('step'):
-                slack_first_import_next(state)
-            elif state['index'] >= len(state['channels']):
-                state.update(index=0, mode='incremental')
-                if time.time() >= state.get('next_discovery', 0):
-                    state['phase'] = 'discover'
+            slack_turn_done(state)
     if not state.get('titles_named'):  # once: titles stored before members were named in them
         store.name_slack_titles(account['id'])
         state['titles_named'] = True
@@ -327,6 +363,8 @@ def remember_slack_names(store, source, events, channels=(), per_page=3):
         try:
             user = source.get('users.info', {'user': member}).get('user', {})
         except SourceError as error:
+            if str(error).startswith('slack_invalid_response'):
+                continue  # Slack's answer for this one member made no sense: the others are still looked up
             if not str(error).startswith(('slack_user_not_found', 'slack_user_not_visible')):
                 return  # away, or Slack's limit: the rest next page
             user = {'id': member, 'deleted': True}  # an account Slack no longer has
