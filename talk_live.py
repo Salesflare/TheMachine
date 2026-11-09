@@ -31,6 +31,7 @@ import datetime as dt
 import hashlib
 import json
 import logging
+import queue
 import re
 import secrets
 import subprocess
@@ -775,14 +776,57 @@ def subject(found):
     return found.get('focus') if found.get('main') else found['suggestion_id']
 
 
+class Held:
+    """One conversation's talk-live-run.mjs --hold: it keeps the Gateway connection that made the session open until the
+    conversation ends (the Gateway drops a session when its connection closes). One JSON line in, one line out."""
+
+    def __init__(self, node, env):
+        self.process = subprocess.Popen([node, str(ROOT / 'talk-live-run.mjs'), '--hold'], env=env, stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+        self.lines = queue.Queue()
+        threading.Thread(target=self.read, daemon=True, name='talk-live-helper').start()
+
+    def read(self):
+        for line in self.process.stdout:
+            self.lines.put(line)
+        self.lines.put(None)
+
+    def ask(self, request, timeout=40):
+        try:
+            self.process.stdin.write(json.dumps(request) + '\n')
+            self.process.stdin.flush()
+            line = self.lines.get(timeout=timeout)
+            found = json.loads(line) if line else None
+        except (OSError, ValueError, queue.Empty):
+            return {'error': 'unavailable', 'reason': 'timeout'}
+        return found if isinstance(found, dict) else {'error': 'unavailable', 'reason': 'other'}
+
+    def close(self):
+        """Closing stdin ends the conversation on the Gateway's side; it is stopped if it hasn't gone in 30 seconds."""
+        try:
+            self.process.stdin.close()
+        except OSError:
+            pass
+
+        def reap():
+            try:
+                self.process.wait(30)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
+        threading.Thread(target=reap, daemon=True, name='talk-live-reap').start()
+
+
 class Talk:
     """The live conversations this service has open (in memory only), and the Gateway helper."""
 
-    def __init__(self, config=None, runner=subprocess.run, clock=time.monotonic):
+    def __init__(self, config=None, runner=subprocess.run, clock=time.monotonic, holder=None):
         self.config, self.run, self.clock = config or {}, runner, clock
+        self.hold = holder or (lambda env: Held(self.config.get('_node') or 'node', env))
         self.lock, self.asking = threading.Lock(), threading.Lock()
-        self.open = {}      # talk ID -> {'suggestion_id', 'started', 'secret', 'offer_url', 'offer_headers', 'voice_session_id', 'via', 'offered'}
-                            # (+ 'main' and 'focus' for the main conversation, whose suggestion_id is '')
+        self.open = {}      # talk ID -> {'suggestion_id', 'started', 'secret', 'offer_url', 'offer_headers', 'voice_session_id', 'via', 'offered',
+                            # 'held' (its helper, which keeps the session's Gateway connection)} (+ 'main' and 'focus' for the
+                            # main conversation, whose suggestion_id is '')
         self.ready = None   # (good until, {'ready', 'model'}) from the Gateway's catalog
 
     def helper(self, request, env, timeout=40):
@@ -834,15 +878,20 @@ class Talk:
                 raise ValueError('A live conversation is already open for this to-do. End it first.')
             if len(self.open) >= 2:
                 raise ValueError('Two live conversations are already open. End one first.')
-        made = self.helper({'method': 'start', 'session_key': SESSION_PREFIX + (suggestion_id or 'main'), 'voice': voice}, env)
+        try:
+            held = self.hold(env)
+        except OSError:
+            raise ValueError('Talk live couldn’t start. Try again.') from None
+        made = held.ask({'method': 'start', 'session_key': SESSION_PREFIX + (suggestion_id or 'main'), 'voice': voice})
         if made.get('error') or not made.get('secret'):
+            held.close()
             raise ValueError('Talk live couldn’t start. Check the ChatGPT sign-in or OpenAI key, then try again.'
                              if made.get('reason') == 'auth' else 'Talk live couldn’t start. Try again.')
         talk_id = secrets.token_hex(8)
         with self.lock:
             self.open[talk_id] = {'suggestion_id': suggestion_id, 'started': self.clock(), 'secret': made['secret'],
                                   'offer_url': made.get('offer_url'), 'offer_headers': made.get('offer_headers') or {},
-                                  'voice_session_id': made.get('voice_session_id'), 'via': made.get('via'), 'offered': False,
+                                  'voice_session_id': made.get('voice_session_id'), 'via': made.get('via'), 'offered': False, 'held': held,
                                   'limit': MAIN_LIMIT_SECONDS if main else LIMIT_SECONDS, 'languages': list(languages or ['en']),
                                   'read': {}, **({'main': True, 'focus': None} if main else {})}
         return {'id': talk_id, 'via': made.get('via'), 'model': str(made.get('model') or '')[:80]}
@@ -876,8 +925,8 @@ class Talk:
             if found['offered']:
                 raise ValueError('Talk live couldn’t connect. Try again.')
             found['offered'] = True
-        got = self.helper({'method': 'offer', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'), 'sdp': sdp, 'secret': found['secret'],
-                           'offer_url': found['offer_url'], 'offer_headers': found['offer_headers']}, env)
+        got = found['held'].ask({'method': 'offer', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'), 'sdp': sdp, 'secret': found['secret'],
+                                 'offer_url': found['offer_url'], 'offer_headers': found['offer_headers']})
         if got.get('error') or not str(got.get('sdp') or '').startswith('v=0'):
             # Why, in the journal (support reports show it): how the session pays (key or signin), the helper's fixed
             # reason and the HTTP statuses, never the secret, the offer or what OpenAI wrote
@@ -972,12 +1021,14 @@ class Talk:
         with self.lock:
             found = self.open.pop(str(talk_id or ''), None)
         if found:
-            self.helper({'method': 'end', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'),
-                         'voice_session_id': found.get('voice_session_id')}, env, timeout=25)
+            found['held'].ask({'method': 'end', 'session_key': SESSION_PREFIX + (found['suggestion_id'] or 'main'),
+                               'voice_session_id': found.get('voice_session_id')}, timeout=25)
+            found['held'].close()
         return {'ok': True}
 
     def sweep(self):
-        """Conversations past their limit are forgotten (their secret with them)."""
+        """Conversations past their limit are forgotten (their secret with them) and their Gateway connection closed."""
         with self.lock:
-            for talk_id in [k for k, v in self.open.items() if self.clock() - v['started'] > v.get('limit', LIMIT_SECONDS) + GRACE_SECONDS]:
-                self.open.pop(talk_id, None)
+            gone = [self.open.pop(k) for k in [k for k, v in self.open.items() if self.clock() - v['started'] > v.get('limit', LIMIT_SECONDS) + GRACE_SECONDS]]
+        for found in gone:
+            found['held'].close()
