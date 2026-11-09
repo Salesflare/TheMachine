@@ -3,8 +3,8 @@ title: Slack
 area: connections
 summary: De kanalen en directe berichten waarin je zit. Stuurt een direct bericht pas nadat je het goedkeurt.
 covers: connector:slack
-code: assistant.py, next_actions.py, onboarding.py
-site: Connect, More sources, Remove
+code: assistant.py, next_actions.py, onboarding.py, slack_api.py
+site: Connect, Remove
 ---
 ## Wat het leest
 
@@ -18,11 +18,10 @@ Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op 
 
 ## Koppelen
 
-Slack wordt gelezen via Maton, dat de Slack-login bewaart.
+1. **Koppelingen**, **+ Toevoegen**, **Slack**, dan **Inloggen met Slack**, en sta het toe in Slack. Op je eigen computer koppel je hem eerst aan je account op themachine.computer.
+2. Nieuwe berichten en directe berichten komen eerst binnen. Slack laat apps ongeveer één gesprek per minuut lezen, dus oudere berichten komen in een paar uur binnen.
 
-1. Log in op maton.ai, koppel Slack daar en kopieer je Maton API-sleutel vanaf Home.
-2. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen**, open Slack, plak de sleutel en druk op **Verbinden**.
-3. Op je eigen computer: voer `assistant connect slack` uit, of **Koppelingen**, **+ Toevoegen**, Slack.
+Of gebruik een Maton-API-sleutel: log in op maton.ai, koppel Slack daar en kopieer je Maton API-sleutel vanaf Home. Open dan onder Slack **Of gebruik een Maton-API-sleutel** en plak hem, of voer `assistant connect slack` uit op je eigen computer. Een Slack die via Maton gekoppeld is, blijft werken zoals hij is.
 
 ## Verwijderen
 
@@ -31,4 +30,4 @@ Slack wordt gelezen via Maton, dat de Slack-login bewaart.
 
 ## Verwijderen op Slack
 
-Verwijder de Slack-koppeling in Maton, en verwijder de Maton API-sleutel die je gaf. Een Slack-beheerder kan de app ook uit de workspace verwijderen, onder Manage apps.
+Ingelogd met Slack: open in Slack de pagina Manage apps van je workspace en verwijder The Machine. Via Maton: verwijder de Slack-koppeling in Maton, en verwijder de Maton API-sleutel die je gaf. Een Slack-beheerder kan beide apps ook uit de workspace verwijderen, onder Manage apps.

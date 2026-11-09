@@ -3,8 +3,8 @@ title: Slack
 area: connections
 summary: The channels and direct messages you're in. Sends a direct message only after you approve it.
 covers: connector:slack
-code: assistant.py, next_actions.py, onboarding.py
-site: Connect, More sources, Remove
+code: assistant.py, next_actions.py, onboarding.py, slack_api.py
+site: Connect, Remove
 ---
 ## What it reads
 
@@ -18,11 +18,10 @@ A direct message to one person, as you, and only after you approve it on the to-
 
 ## Connect it
 
-The Machine reads Slack through Maton, a service that holds your Slack sign-in.
+1. **Connections**, **+ Add**, **Slack**, then **Sign in with Slack**, and allow it in Slack. On your own computer, pair it with your account on themachine.computer first.
+2. New messages and direct messages come in first. Slack lets apps read about one conversation a minute, so older messages fill in over a few hours.
 
-1. Sign in at maton.ai, connect Slack there, and copy your Maton API key from Home.
-2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources**, open Slack, paste the key and press **Connect**.
-3. On your own computer: run `assistant connect slack`, or **Connections**, **+ Add**, Slack.
+Or use a Maton API key: sign in at maton.ai, connect Slack there and copy your Maton API key from Home. Then open **Or use a Maton API key** under Slack and paste it, or run `assistant connect slack` on your own computer. A Slack connected through Maton keeps working as it is.
 
 ## Remove it
 
@@ -31,4 +30,4 @@ The Machine reads Slack through Maton, a service that holds your Slack sign-in.
 
 ## Uninstall it on Slack
 
-Remove the Slack connection in Maton, and delete the Maton API key you gave. A Slack admin can also remove the app from the workspace, under Manage apps.
+Signed in with Slack: open your workspace's Manage apps page in Slack and remove The Machine. Through Maton: remove the Slack connection in Maton and delete the Maton API key you gave. A Slack admin can also remove either app from the workspace, under Manage apps.

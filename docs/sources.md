@@ -12,7 +12,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `calendar` | `gog` OAuth, or a token broker | `email`, `client`, `calendar_id`, `excluded_title_terms`, `writable` (a shared calendar you may change events on) |
 | `outlook` | Your own Entra app (`graph`), or a token broker | `transport`, `email`, `credential` (with `graph`), `connected_at` (with `broker`, set when connected), `excluded_terms` |
 | `outlook_calendar` | The same sign-in as `outlook` | `transport`, `email`, `credential`, `calendar_id` (`primary`), `excluded_title_terms` |
-| `slack` | A [Maton](https://maton.ai) Slack connection, or Sign in with Slack (The Machine's Slack app, user token through the `slack_broker`, `transport: broker`; only for workspaces the control plane opens it to, until the app is in the Slack Marketplace) | `team_id`, `user_id`, `email`, `slack_host`, `fair_incremental`; Maton only: `credential` + `credential_variable` (file with `MATON_API_KEY=`), `connection_id` (found in Maton during setup) |
+| `slack` | A [Maton](https://maton.ai) Slack connection, or Sign in with Slack (The Machine's Slack app, user token through the `slack_broker`, `transport: broker`; the way + Add connects Slack, Maton the other way) | `team_id`, `user_id`, `email`, `slack_host`, `fair_incremental`; Maton only: `credential` + `credential_variable` (file with `MATON_API_KEY=`), `connection_id` (found in Maton during setup) |
 | `salesflare` | Salesflare API key | `api_base`, `app_base`, `credential`, `credential_variable`, `user_id`, `team_id`, `email`, `owner_emails`, `join_pipelines`, `accounts_per_batch`, `meeting_window_days`, `timeout_seconds` |
 | `android` | OpenClaw Android app paired as a node | `transport: openclaw-feed`, `node_id`, `reconcile_seconds`, `direct_fallback`, `fallback_seconds` |
 | `whatsapp` | `wacli` with a synced local store | `store`, `identity_sha256` (sha256 of the linked JID; the collector refuses a different account) |
@@ -89,6 +89,8 @@ Conversations you already belong to; it never joins channels or opens DMs. Per-c
 - The collector spends at most one such read every `slack_read_seconds` and leaves the rest.
 - It reads busy conversations within the hour and quiet ones once a day, and reads a direct message only when Slack says it has a new message. When several are due at once, the one most overdue for how busy it is goes first, so a day's batch of quiet conversations never holds up a busy channel.
 - Posting isn't held back by this: a send Slack refuses as rate limited waits and goes out a few minutes later.
+- A refused read (HTTP 429) waits at least Slack's `Retry-After`, never retries in a loop, and moves this Machine to another minute (below).
+- The read rate and page size per transport are `SLACK_LIMITS` in `machine/sources/slack.py`. When The Machine's Slack app is approved for the Slack Marketplace, its `broker` row is the one thing to change.
 
 **The first import** reads where the activity is. A quick look at every conversation (a call outside that limit) shows when a direct message last had a message and when you last read each channel. Conversations active today get their last 24 hours read first, then the rest of the week, and quiet ones come last. A direct message with nothing in the window isn't read at all. Signals start within minutes; the whole first import of a large workspace still takes hours.
 

@@ -22,7 +22,7 @@ from machine.sources.rows import Skips
 from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_next, slack_first_import_plan,
                                    slack_interval, slack_next_due, slack_order, slack_page_names, slack_read_asked,
-                                   slack_read_drop, slack_read_now)
+                                   slack_limits, slack_read_drop, slack_read_now)
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, upstream_busy
@@ -174,7 +174,7 @@ def sync_slack(store, config, account, source=None):
         state['scan'] = scan
         store.commit_page(account['id'], state, [], record_sync=False)
     params = {'channel': channel['id'], 'oldest': scan['oldest'], 'latest': scan['latest'],
-              'inclusive': 'true', 'limit': 15}
+              'inclusive': 'true', 'limit': slack_limits(account)['page']}
     if scan['phase'] == 'threads':
         params['ts'] = scan['threads'][scan['thread_index']]
         if scan.get('thread_oldest'):

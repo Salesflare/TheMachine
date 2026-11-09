@@ -275,10 +275,11 @@ def load_connector(service):
 # GitHub, WhatsApp, the phone and Codex have no provider page: the control plane starts them there and the dashboard's
 # form shows their code (GitHub's device code, WhatsApp's QR or pairing code, the phone app's setup code, Codex's code
 # from OpenAI).
-# Not Slack: until The Machine's Slack app is in the Slack Marketplace, + Add connects Slack through Maton; Sign in with
-# Slack shows only on the setup page, for the workspaces the control plane opens it to (its cloud/slack_app.py open_for).
+# Slack too: Sign in with Slack is the way to connect it, a Maton API key the other way (the account page's tile). Until
+# The Machine's Slack app is in the Slack Marketplace, Slack allows it 1 history read a minute: the reader paces itself
+# (sources/slack.py SLACK_LIMITS), new messages and DMs first, older ones gradually.
 HOSTED_SIGNINS = {'google', 'microsoft', 'zoom', 'stripe', 'intercom', 'trello', 'github', 'whatsapp', 'android', 'microsoft_docs',
-                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams'}
+                  'microsoft_docs_write', 'codex', 'google_meet', 'google_docs', 'microsoft_teams', 'slack'}
 
 
 ON_DASHBOARD = ('github', 'whatsapp', 'android', 'codex')
@@ -309,8 +310,7 @@ def reconnect_help(account, manage, docs_consent=False):
                 'hosted_signin': provider}
     if service == 'slack' and account.get('transport') != 'maton':
         # Sign in with Slack (slack_api.py) through the control plane's own Slack app: on a hosted Machine from + Add, on
-        # a self-hosted one once paired. One read through Maton stays on Maton (its Reconnect is Maton's): until the app is
-        # in the Slack Marketplace, Slack holds it to 1 history call a minute, which would read less than Maton does.
+        # a self-hosted one once paired. One read through Maton stays on Maton, unchanged (its Reconnect is Maton's).
         return {'connect_name': 'slack', **({'hosted_signin': 'slack'} if manage else {'signin': 'slack'})}
     if manage and service in SIGNIN_ONLY:  # Intercom, Trello: Sign in with it again under + Add; Disconnect here
         return {'connect_name': service, 'hosted_signin': service}

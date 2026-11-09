@@ -148,6 +148,7 @@ async function connectSetup(form){const name=form.dataset.connectSetup,err=form.
 // Sign in with <provider> on a self-hosted Machine: the Machine asks the control plane for a one-time start link,
 // signed with its own key, and it opens in a new tab. The token comes back sealed for this Machine, which checks it.
 // off: what it says when the control plane has no app for this sign-in (connect_sources signin_off), above the other way
+// later: one line under `about` on what to expect while it reads (Slack: its read limit, new messages first)
 const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. Replies only after you approve them, as yourself. Never assigns or closes.'},
  trello:{label:'Trello',about:'Reads cards, comments and activity on one board you pick next. Never changes anything in Trello.'},
  google:{label:'Google',about:'Gmail and Google Calendar. Sends only emails you approved.',other:'Use your own app',how:'Your own Google Cloud app, step by step.',go:'Set it up',off:'Sign in with {} isn’t available yet. Use your own app instead.'},
@@ -162,7 +163,7 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
  stripe:{label:'Stripe',about:'Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.',other:'Or paste a restricted key',how:'A restricted key with Read on Events, Customers and Account.',go:'Paste a key',off:'Sign in with {} isn’t available yet. Paste a restricted key instead.'},
- slack:{label:'Slack',about:'Your DMs and the channels you’re in. Sends only messages you approved, as yourself.',other:'Or use a Maton API key',how:'Connect Slack in Maton, then paste your Maton API key.',go:'Use Maton',off:'Sign in with {} isn’t available yet. Use a Maton API key instead.'}};
+ slack:{label:'Slack',about:'Your DMs and the channels you’re in. Sends only messages you approved, as yourself.',later:'New messages come in first, older ones gradually.',other:'Or use a Maton API key',how:'Connect Slack in Maton, then paste your Maton API key.',go:'Use Maton',off:'Sign in with {} isn’t available yet. Use a Maton API key instead.'}};
 // A work organization that lets only approved apps in: the short link its Microsoft 365 admin approves The Machine with.
 // It opens Microsoft's approval page with a fresh signed state on each visit (the control plane's site), so it never expires.
 const MS_ADMIN_LINK='https://themachine.computer/m365-admin-consent';
@@ -201,7 +202,8 @@ function hostedSigninBody(s,copy,back){const scope=NO_SCOPE_SIGNIN.includes(s.pr
  if(s.provider==='whatsapp')return html`<p class="muted">${copy.about||''}</p>${scope}<div class="actions"><button type="button" class="primary" data-signin-go>Show the QR code</button>${back}</div><details class="connect-alt"><summary>On your phone? Link with a code instead</summary><label>Your WhatsApp number<br><input type="tel" name="signin-phone" maxlength="24" placeholder="+32 470 12 34 56" autocomplete="off"></label><div class="actions"><button type="button" data-signin-go data-way="code">Get a code</button></div></details>`;
  if(s.provider==='android')return html`<p class="muted">${copy.about||''}</p><ol class="fine"><li>Install OpenClaw from Google Play on your Android phone.</li><li>Press Show a setup code. In the app, add a Gateway and scan it.</li><li>Allow notification access when the app asks.</li><li>In the app’s settings, turn on Forward Notification Events, so notifications come in as they arrive.</li></ol><div class="actions"><button type="button" class="primary" data-signin-go>Show a setup code</button>${back}</div>`;
  const other=copy.other&&s.own&&connectList?.manage_url?html`<p class="fine"><a href="${safeHref(connectList.manage_url+HOSTED_TILE[s.provider])}" target="_blank" rel="noopener"><span>${copy.other}</span> ↗</a></p>`:'';
- return html`<p class="muted">${copy.about||''}</p>${scope}<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}${other}`}
+ return html`<p class="muted">${copy.about||''}</p>${signinLater(copy)}${scope}<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}${other}`}
+const signinLater=copy=>copy.later?html`<p class="muted">${copy.later}</p>`:'';
 function hostedSigninGo(s,way){const form=document.createElement('form'),box=$('#connect-add'),add=(name,value)=>{const i=document.createElement('input');i.type='hidden';i.name=name;i.value=value;form.append(i)};
  form.method='post';form.action='/_machine/connect';form.hidden=true;add('source',s.provider);
  if(!NO_SCOPE_SIGNIN.includes(s.provider)){add('scope',box.querySelector('input[name="signin-scope"]:checked')?.value||'work');add('boundary','')}
@@ -238,7 +240,7 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
-async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
+async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|slack|intercom|trello|github|whatsapp|android|codex)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent
  const x=m[1]==='codex'?connectList?.codex&&codexSource():docs?{...docs,hosted_signin:m[1]}:connectList?.sources.find(v=>v.hosted_signin===m[1]);if(!x||!connectList.manage_url)return;const command=m[2]&&m[2]!=='stopped'?m[2]:'';
@@ -254,7 +256,7 @@ function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paire
  else if(s.state==='failed'||s.state==='stopped')body=html`<p class="alert">${s.state==='stopped'?'That sign-in didn’t finish.':s.error||'Not connected.'}</p><div class="actions"><button type="button" class="primary" data-signin-go>Try again</button>${back}</div>${msAdmin(s)}`;
  // the control plane has no app for it (or refused to start it): no Sign in button, the other way open at once
  else if(s.off&&paired)body=html`<p class="muted">${copy.about||''}</p><p class="note signin-off">${t(s.own&&copy.other&&copy.off||'Sign in with {} isn’t available yet.',s.label)}</p>`;
- else body=html`<p class="muted">${copy.about||''}</p>${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
+ else body=html`<p class="muted">${copy.about||''}</p>${signinLater(copy)}${paired?html`<div class="actions"><button type="button" class="primary" data-signin-go>Sign in with ${s.label}</button>${back}</div>${msAdmin(s)}`
   :html`<p>${t(s.own&&copy.other?'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once, or use your own app below.':'Sign in with {} goes through your account on themachine.computer. Pair this Machine with it once.',s.label)}</p><div class="actions"><button type="button" class="primary" data-connect-pair>Pair this Machine</button>${back}</div>`}`;
  const off=!s.hosted&&s.off&&paired&&s.state==='intro';  // the other way is the way: open, its button first, Back after it
  // Not paired yet: pairing needs an account, so the other way shows open beside it, never folded away as the only way on
