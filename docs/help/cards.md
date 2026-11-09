@@ -76,6 +76,8 @@ A to-do that only mattered until a set time, like a confirmation before a meetin
 
 Before a message or handoff for someone shows as ready, your Machine checks your recent chats with the people in it, group chats too, and waits for Slack to read them. When a later message shows it is done already, like they were asked and said yes, the to-do closes by itself. **Undo** brings it back for a day.
 
+When a newer message changes the plan, like a party moved to another venue or a booking dropped, The Machine updates its to-dos itself. One that still matters follows the new plan. One with nothing left to do moves to **Done / dismissed** as "Not needed", its chat says "Updated:" and why, and **Undo** brings it back for a day.
+
 On your first to-dos, a short tip shows the key moves: **Ask for changes** and **Not needed**, and that nothing goes out until you press **Send**. A tip goes for good once you use its button or press ×.
 
 On your first day, the top of To-dos greets you and names who has waited longest on your reply. That reply is drafted first, so it's ready when you arrive.

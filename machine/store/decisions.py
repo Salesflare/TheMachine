@@ -222,6 +222,28 @@ def pause_idle_steps(db, suggestion_id=None, stamp=None):
         (stamp or now(), suggestion_id, suggestion_id)).rowcount
 
 
+def close_by_itself(db, row, decision_id, feedback, source, stamp, undo_hours, lapsed=False):
+    """Close an open to-do without the owner: Done with Undo for undo_hours, its unfinished work stopped and its message
+    redrawn. lapsed: it reads Not needed (expired_at), not done by them. Store.expire_passed, close_taken_intercom and
+    plan_changed."""
+    sid = row['id']
+    prior_job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
+    resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
+    db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+               (decision_id, sid, 'complete', feedback, source, stamp))
+    db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
+               'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL' + (',expired_at=?' if lapsed else '') + ' WHERE id=?',
+               (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
+                (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
+                encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
+                *((stamp,) if lapsed else ()), sid))
+    db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
+    pause_idle_steps(db, sid)
+    db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
+    db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
+    db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+
+
 def handoff_wait(db, suggestion, awake=False):
     """A card under Later because it is with a teammate who hasn't answered its handoff yet: {'name': their first name}.
     Its time is when it comes back to check in with them, not a snooze of the owner's. awake: the same for a card that
@@ -409,6 +431,42 @@ class DecisionsStore:
             db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': event_ids, 'at': now()}), suggestion_id))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
         return {'saved': True}
+
+    def plan_changed(self, suggestion_id, reason, event_ids, undo_hours=24):
+        """A newer message overturned the plan an open to-do was built on (the party moved to another venue, the booking
+        was dropped, they no longer need it): the to-do closes by itself as Not needed, its chat says "Updated: <reason>",
+        with Undo for a day. Only on messages that came in after the to-do was made and after the owner's own last word on
+        it; once per set of messages, so after the owner takes it back the same messages never close it again. Not while
+        a send of theirs is under way."""
+        reason = ' '.join(str(reason or '').split())
+        ids = sorted({int(i) for i in event_ids or []})
+        if not 5 <= len(reason) <= 200 or not ids:
+            raise ValueError('Give a short plain reason (5-200 characters) and the event_ids of the newer messages')
+        stamp = now()
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown suggestion')
+            if row['status'] not in ('pending', 'accepted', 'instructions', 'prepared', 'snoozed'):
+                return {'skipped': 'already closed'}
+            marks = ','.join('?' * len(ids))
+            found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
+            if found[0] != len(ids):
+                raise ValueError('Every event must exist and be live')
+            newest = found[1] or ''
+            if newest <= row['created_at']:
+                return {'skipped': 'the to-do was made after these messages: update it with suggest and card_id instead'}
+            said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram')", (suggestion_id,)).fetchone()[0]
+            if said and newest <= said:
+                return {'skipped': 'the owner decided on it after these messages; their word stands'}
+            decision_id = 'plan-changed:' + hashlib.sha256(f'{suggestion_id}:{ids}'.encode()).hexdigest()[:32]
+            if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                return {'skipped': 'the owner took it back after these messages closed it'}
+            if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (suggestion_id,)).fetchone():
+                return {'skipped': 'a send of this to-do is under way'}
+            close_by_itself(db, row, decision_id, reason, 'plan', stamp, undo_hours, lapsed=True)
+        return {'closed': True}
 
     def queue_preparation(self, db, suggestion_id, decision_id, action_id=None, resume_action=False):
         return queue_preparation(db, suggestion_id, decision_id, action_id, resume_action)
@@ -648,22 +706,7 @@ class DecisionsStore:
                 sid = row['id']
                 if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
                     continue  # a send on its way settles first
-                decision_id = 'expired:' + uuid.uuid4().hex
-                prior_job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
-                resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
-                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                           (decision_id, sid, 'complete', 'No longer needed: its moment passed.', 'expiry', stamp))
-                db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
-                           'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,expired_at=? WHERE id=?',
-                           (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
-                            (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
-                            encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}),
-                            stamp, sid))
-                db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
-                pause_idle_steps(db, sid)
-                db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
-                db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+                close_by_itself(db, row, 'expired:' + uuid.uuid4().hex, 'No longer needed: its moment passed.', 'expiry', stamp, undo_hours, lapsed=True)
                 closed.append(sid)
         return closed
 
@@ -691,20 +734,7 @@ class DecisionsStore:
                     continue  # closed for this teammate before and the owner took it back
                 if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
                     continue  # a send on its way settles first
-                prior_job = db.execute('SELECT job_id,status FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
-                resume = row['resume_status'] if row['status'] == 'snoozed' else row['status']
-                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                           (decision_id, sid, 'complete', taken[0][1], 'intercom', stamp))
-                db.execute("UPDATE suggestions SET status='completed',completed_from=?,closed_from=?,closed_decision_id=?,undo_until=?,closed_state=?,"
-                           'snoozed_until=NULL,resume_status=NULL,feedback_until=NULL WHERE id=?',
-                           (resume if resume in ('pending', 'accepted', 'prepared', 'instructions') else 'pending', row['status'], decision_id,
-                            (dt.datetime.fromisoformat(stamp) + dt.timedelta(hours=undo_hours)).isoformat(),
-                            encoded({**{k: row[k] for k in ('snoozed_until', 'resume_status')}, 'preparation': dict(prior_job) if prior_job else None}), sid))
-                db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status!='done'", (stamp, sid))
-                pause_idle_steps(db, sid)
-                db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
-                db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+                close_by_itself(db, row, decision_id, taken[0][1], 'intercom', stamp, undo_hours)
                 closed.append(sid)
         return closed
 

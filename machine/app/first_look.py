@@ -306,7 +306,11 @@ class FirstLookApp:
             for n in range(0, len(ids), 500):
                 chunk = ids[n:n + 500]
                 kinds.update(signal_family(r[0]) for r in db.execute(f"SELECT kind FROM events WHERE id IN ({','.join('?' * len(chunk))})", chunk))
-            todos = db.execute('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (start, done['at'])).fetchone()[0]
+            # Its to-dos up to when its last batch ended: a batch still running as it stopped digging saves its to-dos
+            # after that, and its reads already count above (2026-11-09: "found 3 to-dos" over a list of 4)
+            last = db.execute(f"SELECT max(CASE WHEN status IN ('starting','running','recovering') THEN ? ELSE coalesce(finished_at,?) END) "
+                              f"FROM review_runs WHERE run_id IN ({','.join('?' * len(runs))})", (current.isoformat(), done['at'], *runs)).fetchone()[0]
+            todos = db.execute('SELECT count(*) FROM suggestions WHERE created_at>=? AND created_at<=?', (start, max(done['at'], last or ''))).fetchone()[0]
             acted = bool(db.execute('SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(TIP_SOURCES)) + ') AND choice IN ('
                                     + ','.join('?' * len(FIRST_ACTIONS)) + ') AND created_at>=? LIMIT 1', (*TIP_SOURCES, *FIRST_ACTIONS, start)).fetchone())
         services = [a.get('service') for a in self.config.get('accounts', []) if a.get('service') not in SYSTEM_SERVICES]

@@ -356,6 +356,8 @@ def card(row):
             status = t('No reply from {} yet.', handed['name'])
     if row['status'] == 'completed' and row.get('expired_at') and row.get('expires_at'):
         status = expired_text(row)  # its moment passed: closed by itself (Store.expire_passed)
+    elif row['status'] == 'completed' and row.get('expired_at'):
+        status = t('Not needed.')  # a newer message overturned its plan: closed by itself (Store.plan_changed)
     if row['status'] not in ('completed','rejected','snoozed') and row.get('change_prompt',{}).get('status')=='uncertain':
         status+='\n'+t('I couldn’t confirm the message asking what to change. If it arrived, reply to it; otherwise use Ask for changes on the dashboard.')
     # A hashtag, so tapping it in Telegram lists every #work or #personal card.
