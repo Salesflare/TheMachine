@@ -225,6 +225,18 @@ class Dedupe(Base):
         self.send(names=lambda: ['Globex'])
         self.assertEqual(self.net.sent[0]['signatures'][0]['message'], 'lookup failed for <word>')
 
+    def test_a_repeat_sends_the_message_as_this_release_words_it(self):
+        # 2026-11-09: a batch under the older word list rewrote whatsapp_source_unavailable to "<word>" in the kept row,
+        # and each repeat (same signature) was sent as "<word>" ever after
+        sid = self.rec(message='whatsapp_source_unavailable', kind='SourceError', source='sync')
+        self.send()
+        with self.connect() as db:
+            db.execute("UPDATE error_feed SET message='<word>' WHERE id=?", (sid,))
+        self.assertEqual(self.rec(message='whatsapp_source_unavailable', kind='SourceError', source='sync',
+                                  at=NOW + dt.timedelta(minutes=20)), sid)
+        self.send(NOW + dt.timedelta(minutes=30))
+        self.assertEqual(self.net.sent[-1]['signatures'][0]['message'], 'whatsapp_source_unavailable')
+
     def test_what_is_sent_is_only_the_signature(self):
         self.rec(message=ATTEMPTS[0])
         self.send()

@@ -293,7 +293,10 @@ def record(db, source, kind, message, file, function, line=None, version=None, a
         db.execute('INSERT INTO error_feed(id,source,kind,message,location,version,count,first_at,last_at) VALUES(?,?,?,?,?,?,1,?,?)',
                    (sid, source, kind, text, location, version, stamp, stamp))
     else:
-        db.execute('UPDATE error_feed SET count=count+1,last_at=?,location=?,version=coalesce(?,version) WHERE id=?', (stamp, location, version, sid))
+        # The message as this release words it: a batch scrubbed under an older, shorter word list rewrote the kept one,
+        # and a repeat must not send that forever (whatsapp_source_unavailable went on arriving as "<word>", 2026-11-09)
+        db.execute('UPDATE error_feed SET count=count+1,last_at=?,location=?,message=?,version=coalesce(?,version) WHERE id=?',
+                   (stamp, location, text, version, sid))
     return sid
 
 
