@@ -1031,7 +1031,8 @@ class ReviewStore:
                   'next_row_offset': row_offset + len(shown) if row_offset + len(shown) < len(views) else None}
         return {'analysis_id': analysis_id, 'page': int(page), 'pages': pages, **result}
 
-    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None, read=None):
+    def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None, read=None,
+                        no_todo=None):
         # A move to a board's last stage proven by a live page: opened here, before the write transaction (project_success.py)
         checked = project_success.check_links(self.connect, self.accounts, stages if isinstance(stages, list) else [])
         with self.connect() as db:
@@ -1114,7 +1115,13 @@ class ReviewStore:
                 for group, ids in read.items():
                     if group in FIRST_LOOK_READ and isinstance(ids, list):
                         sorted_as.update({int(i): group for i in ids if str(i).isdigit()})
+            # Why an email thread got no to-do, in a few words: the To-dos page's last-check list shows it under the thread
+            # (check_now.mail_check). Optional and never a reason to refuse: a malformed entry is left out.
+            quiet = {int(q['event_id']): ' '.join(str(q['why']).split())[:200] for q in no_todo if isinstance(q, dict)
+                     and str(q.get('event_id') or '').isdigit() and str(q.get('why') or '').strip()} if isinstance(no_todo, list) else {}
             for item in items:
+                if item['id'] in quiet:
+                    item['no_todo'] = quiet[item['id']]
                 if item['id'] in answered:
                     item['no_reply'] = answered[item['id']]  # kept with the review, for checking later why there was no to-do
                 if item['id'] in sorted_as:

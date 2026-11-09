@@ -376,6 +376,10 @@
  "An update kept your own files.": "Een update bewaarde je eigen bestanden.",
  "An update to a skill you have, from": "Een update van een skill die je hebt, van",
  "Analysis expired; begin a fresh review": "Analyse verlopen; begin een nieuwe review",
+ "And {} more threads": {
+  "one": "En nog {} gesprek",
+  "other": "En nog {} gesprekken"
+ },
  "And {} more.": "En nog {}.",
  "Android": "Android",
  "Android notifications": "Android-meldingen",
@@ -755,6 +759,10 @@
  "Checked by your model. Change anything below.": "Gecontroleerd door je model. Wijzig hieronder wat je wilt.",
  "Checked open to-dos": "Bekeek open to-do's",
  "Checked {}": "Gecheckt {}",
+ "Checked {} new emails at {}": {
+  "one": "{} nieuwe e-mail gecheckt om {}",
+  "other": "{} nieuwe e-mails gecheckt om {}"
+ },
  "Checked {} of {} accounts so far.": "{} van {} accounts bekeken tot nu toe.",
  "Checked {} things": {
   "one": "{} ding nagekeken",
@@ -1732,6 +1740,8 @@
  "Held back": "Achtergehouden",
  "Held back this week": "Deze week achtergehouden",
  "Held by {}": "In handen van {}",
+ "Held until tomorrow {}": "Wacht tot morgen {}",
+ "Held until {}": "Wacht tot {}",
  "Help": "Help",
  "Help and bug reports come from the dashboard": "Hulp en bugrapporten komen van het dashboard",
  "Help can’t answer right now.": "Help kan nu niet antwoorden.",
@@ -3548,6 +3558,7 @@
  "Read a thread": "Las een gesprek",
  "Read a to-do": "Las een to-do",
  "Read a web page": "Las een webpagina",
+ "Read again in the next check": "Opnieuw gelezen bij de volgende check",
  "Read earlier work on this to-do": "Las eerder werk aan deze to-do",
  "Read email": "E-mail lezen",
  "Read instructions": "Instructies lezen",
@@ -6217,6 +6228,7 @@
  "not used yet": "nog niet gebruikt",
  "not {}": "niet {}",
  "nothing decided": "nog niets beslist",
+ "nothing needs you": "niets heeft je nodig",
  "notifications": "meldingen",
  "older mail": "oudere mail",
  "older mail or file": "oudere mail of ouder bestand",
@@ -6753,6 +6765,10 @@
   "one": "{} nieuwe filter",
   "other": "{} nieuwe filters"
  },
+ "{} new to-dos": {
+  "one": "{} nieuwe to-do",
+  "other": "{} nieuwe to-do's"
+ },
  "{} new/changed": "{} nieuw/gewijzigd",
  "{} newsletters": {
   "one": "{} nieuwsbrief",
@@ -6998,6 +7014,14 @@
  "{} to-dos cleared in {}": {
   "one": "{} to-do afgehandeld in {}",
   "other": "{} to-do's afgehandeld in {}"
+ },
+ "{} to-dos held until tomorrow {}": {
+  "one": "{} to-do wacht tot morgen {}",
+  "other": "{} to-do's wachten tot morgen {}"
+ },
+ "{} to-dos held until {}": {
+  "one": "{} to-do wacht tot {}",
+  "other": "{} to-do's wachten tot {}"
  },
  "{} to-dos waiting": {
   "one": "{} to-do wacht",

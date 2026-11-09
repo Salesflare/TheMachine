@@ -54,6 +54,12 @@ Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er bi
 
 LinkedIn, X en Salesflare houden hun eigen tempo.
 
+## Laatste check
+
+Na een check die nieuwe e-mails las, zegt een regel boven je to-do’s wat hij vond, zoals "12 nieuwe e-mails gecheckt om 16:11 · niets voor jou" of "· 2 nieuwe to-do’s". Wacht een nieuwe to-do op een beter moment, zoals je ochtendoverzicht, dan staat er tot wanneer: "1 to-do wacht tot morgen 08:30".
+
+Tik op de regel om elk e-mailgesprek te zien: wie schreef, het onderwerp, en de nieuwe to-do of waarom er niets nodig was, zoals "Alleen in cc, een collega antwoordt" of "Afspraak staat al voor donderdag". Een gesprek toont geen reden als de check alleen een vage gaf. De regel blijft 12 uur na de check staan.
+
 ## De knoppen
 
 Een to-do toont zijn volgende stap, zoals **Doe het** of **Nakijken en versturen**, met **Snoozen** ernaast. Zie [Doe het](do-it.md) en [Snoozen](snooze.md).

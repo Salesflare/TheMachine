@@ -54,6 +54,12 @@ La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla c
 
 LinkedIn, X e Salesflare mantengono il loro ritmo.
 
+## Ultimo controllo
+
+Dopo un controllo che ha letto nuove email, una riga sopra le tue attività dice cosa ha trovato, come “12 nuove email controllate alle 16:11 · nulla ha bisogno di te” o “· 2 nuove attività”. Quando una nuova attività aspetta un momento migliore, come il tuo riepilogo del mattino, dice fino a quando: “1 attività in attesa fino a domani 08:30”.
+
+Tocca la riga per vedere ogni conversazione: chi ha scritto, l’oggetto, e la sua nuova attività o perché non serviva nulla, come “Solo in copia, risponde un collega” o “Riunione già fissata per giovedì”. Una conversazione non mostra un motivo quando il controllo ne ha dato solo uno vago. La riga resta per 12 ore dopo il controllo.
+
 ## I pulsanti
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).

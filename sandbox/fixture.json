@@ -7281,6 +7281,79 @@
     "message-id": "<thhireproductdesigner.0@mossgate.example>",
     "source_url": "https://mail.example/#inbox/thhireproductdesigner"
    }
+  },
+  {
+   "key": "check:cc:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 26,
+   "title": "Re: Trial seats for Vantage Rail",
+   "body": "Anouk,\n\nI added the five extra trial seats. They are live now.\n\nPriya",
+   "metadata": {
+    "from": "Priya Okonedo <priya@lumenlabs.example>",
+    "to": "anouk@vantagerail.example",
+    "cc": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-cc-0",
+    "message-id": "<check.cc.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:meet:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 28,
+   "title": "Re: Coffee next week",
+   "body": "Thursday at 10:00 works for me. See you at your office.\n\nYara",
+   "metadata": {
+    "from": "Yara Oakhurst <yara@saltmarshmedia.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-meet-0",
+    "message-id": "<check.meet.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:thanks:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 30,
+   "title": "Re: Export stops at 1,000 rows",
+   "body": "That fixed it, the full export works now. Thanks!\n\nMatteo",
+   "metadata": {
+    "from": "Matteo Brightwater <matteo@kestrelenergy.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-thanks-0",
+    "message-id": "<check.thanks.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:news:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 33,
+   "title": "This week in sales tools",
+   "body": "Five new tools, two price changes and a guide to cleaner pipelines.",
+   "metadata": {
+    "from": "Fieldnote Weekly <digest@fieldnote.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-news-0",
+    "message-id": "<check.news.0@mail.example>"
+   }
   }
  ],
  "cards": [
@@ -9284,5 +9357,24 @@
     ]
    }
   }
- ]
+ ],
+ "last_check": {
+  "minutes": [
+   24,
+   19
+  ],
+  "events": [
+   "check:cc:0",
+   "check:meet:0",
+   "check:thanks:0",
+   "check:news:0",
+   "story:pricing:2"
+  ],
+  "why": {
+   "check:cc:0": "Only cc’d, Priya already added the seats",
+   "check:meet:0": "Coffee already set for Thursday 10:00",
+   "check:thanks:0": "Thanks for the fix, nothing to answer",
+   "check:news:0": "Newsletter, nothing in it needs a reply"
+  }
+ }
 }

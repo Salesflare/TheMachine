@@ -58,6 +58,16 @@ class CheckNowApp:
             threading.Thread(target=check_now.run, args=(self.check, self), name='check-now', daemon=True).start()
         return {'started': started, 'check': self.check_view()}
 
+    def mail_check_view(self):
+        """The line on To-dos after a check that saw new email (check_now.mail_check): what it read and why nothing needed the owner."""
+        try:
+            own = [a.get('email') for a in self.config.get('accounts') or [] if a.get('email')]
+            with self.store.connect() as db:
+                return check_now.mail_check(db, own=own)
+        except Exception as error:  # noqa: BLE001 - the dashboard shows without it
+            LOG.error('mail check view error=%s', type(error).__name__)
+            return None
+
     def check_view(self):
         try:
             with self.store.connect() as db:

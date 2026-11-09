@@ -164,7 +164,7 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
                 db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)', (secrets.token_hex(16), account['id'], stamp(3, base), 'success', 2, None, None))
         if not fresh:
             load_cards(db, fixture, ids, base)
-            load_reviews(db, ids, base, assistant)
+            load_reviews(db, ids, base, assistant, fixture)
             load_boards(db, fixture, ids, base)
             load_companies(db, fixture, base)
             load_history(db, base)
@@ -243,7 +243,7 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
             raise SystemExit('This Machine already has signals: a demo Machine starts empty.')
         ids = insert_events(db, fixture['events'], base)
         load_cards(db, fixture, ids, base)
-        load_reviews(db, ids, base, assistant)
+        load_reviews(db, ids, base, assistant, fixture)
         load_boards(db, fixture, ids, base)
         load_companies(db, fixture, base)
     with store.connect() as db:
@@ -618,7 +618,7 @@ def load_boards(db, fixture, ids, base):
     db.execute("UPDATE board_backfills SET state='done',started_at=?,finished_at=?", ((base - dt.timedelta(hours=1)).isoformat(), base.isoformat()))
 
 
-def load_reviews(db, ids, base, assistant):
+def load_reviews(db, ids, base, assistant, fixture=None):
     """Reviews ran through the day: every signal has been read."""
     items = [{'id': i, 'version': 1} for i in ids.values()]
     for n, chunk in enumerate(range(0, len(items), 60)):
@@ -629,6 +629,15 @@ def load_reviews(db, ids, base, assistant):
         db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status,summary,owner_session,owner_run) VALUES(?,?,?,?,'complete',?,?,?)",
                    (f'sandbox-analysis-{n}', stamp(at, base), stamp(at - 4, base), json.dumps(items[chunk:chunk + 60]), 'Read and sorted.',
                     assistant.REVIEW_SESSION_PREFIX + run_id, run_id))
+    last = fixture.get('last_check') if fixture else None
+    if last:  # the last check of new email, with the review's reason for each thread it made no to-do for (check_now.mail_check)
+        started, finished = last['minutes']
+        items = [{'id': ids[k], 'version': 1, **({'no_todo': last['why'][k]} if k in last['why'] else {})} for k in last['events'] if k in ids]
+        db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,finished_at,attempts,planned) VALUES(?,'ok',?,?,?,1,?)",
+                   ('sandbox-run-last', stamp(started, base), stamp(finished, base), stamp(finished, base), len(items)))
+        db.execute("INSERT INTO analyses(id,started_at,finished_at,items,status,summary,owner_session,owner_run) VALUES(?,?,?,?,'complete',?,?,?)",
+                   ('sandbox-analysis-last', stamp(started, base), stamp(finished, base), json.dumps(items), 'Read and sorted.',
+                    assistant.REVIEW_SESSION_PREFIX + 'sandbox-run-last', 'sandbox-run-last'))
 
 
 def main():

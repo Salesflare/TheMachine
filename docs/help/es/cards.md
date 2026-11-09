@@ -54,6 +54,12 @@ Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo q
 
 LinkedIn, X y Salesflare siguen su propio ritmo.
 
+## Última revisión
+
+Tras una revisión que leyó correos nuevos, una línea encima de tus tareas dice lo que encontró, como «12 correos nuevos revisados a las 16:11 · nada te necesita» o «· 2 tareas nuevas». Cuando una tarea nueva espera un momento mejor, como tu resumen de la mañana, dice hasta cuándo: «1 tarea en espera hasta mañana 08:30».
+
+Toca la línea para ver cada conversación: quién escribió, el asunto, y su tarea nueva o por qué no hacía falta nada, como «Solo en copia, responde un compañero» o «Reunión ya fijada para el jueves». Una conversación no muestra motivo cuando la revisión solo dio uno vago. La línea se queda 12 horas después de la revisión.
+
 ## Los botones
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).
