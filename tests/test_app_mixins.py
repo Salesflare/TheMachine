@@ -98,6 +98,11 @@ class AppMixins(unittest.TestCase):
         self.assertEqual(set(a.GBrainApp.ACTIONS), a.GBRAIN_ACTIONS)
         self.assertEqual(set(a.SharedGraphApp.ACTIONS), a.GRAPH_SHARE_ACTIONS)
         self.assertEqual(set(a.MeetApp.ACTIONS), a.MEET_ACTIONS)
+        self.assertEqual({n for n, m in a.ConnectApp.ACTIONS.items() if m == 'connect_owner_action'}, set(a.CONNECT_ACTIONS))
+        repeat = {n for n, m in a.RecurringApp.ACTIONS.items()}
+        self.assertEqual({n for n, m in a.CardActionsApp.ACTIONS.items() if m == 'card_owner_action'}, a.CARD_ACTIONS - repeat)
+        self.assertEqual({n for n, m in a.SettingsActionsApp.ACTIONS.items() if m == 'learnings_action'},
+                         a.LEARNING_ACTIONS - set(a.MissedWorkApp.ACTIONS))
 
     def test_every_reviewed_action_resolves(self):
         # each name the reviewed sets let a caller send reaches a mixin's handler or one of App.action's own branches

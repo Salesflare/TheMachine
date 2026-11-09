@@ -59,7 +59,11 @@ class SettingsActionsApp:
                'own_domain': 'own_domain_action', 'set_people_lookup': 'set_people_lookup_action',
                'set_agents': 'set_agents_action', 'tip_done': 'tip_done_action', 'set_locale': 'set_locale_action',
                'connector_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
-               'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action'}
+               'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action',
+               # LEARNING_ACTIONS less missed_work_label (MissedWorkApp)
+               **dict.fromkeys(('learnings_share', 'learnings_withdraw', 'learnings_later', 'learnings_never',
+                                'set_learnings_vote', 'learnings_votes_decide', 'set_help_topics', 'set_error_reports',
+                                'set_learnings_auto', 'set_learnings_offer'), 'learnings_action')}
 
     def set_voice_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
@@ -278,3 +282,30 @@ class SettingsActionsApp:
                 activity_log.note_accounts(db, self.config.get('accounts') or [], now())
         except sqlite3.Error as error:
             LOG.warning('activity connections not noted error=%s', type(error).__name__)
+
+    def learnings_action(self, name, args, owner_dashboard=False):
+        # team learnings, Help topics and error reports, from Settings (LEARNING_ACTIONS)
+        if not owner_dashboard:
+            raise ValueError('Only the owner shares learnings, from the dashboard')
+        if name == 'learnings_share':
+            return {**self.learnings_share(args), 'team_learnings': self.learnings_view()}
+        if name == 'learnings_withdraw':
+            return {**self.learnings_withdraw(args), 'team_learnings': self.learnings_view()}
+        with self.store.connect() as db:
+            if name == 'learnings_later':
+                team_learnings.later(db, str(args.get('id') or ''))
+            elif name == 'learnings_never':
+                team_learnings.never(db, str(args.get('id') or '') or None)
+            elif name == 'set_learnings_vote':  # On, Ask first or Off ({mode}); {on} from an older dashboard
+                team_learnings.set_vote(db, args['mode'] if 'mode' in args else args.get('on') is not False)
+            elif name == 'learnings_votes_decide':  # Ask first: these votes may go, or never will
+                team_learnings.decide_votes(db, args.get('ids'), args.get('send') is True)
+            elif name == 'set_help_topics':
+                help_topics.set_on(db, args.get('on') is not False)
+            elif name == 'set_error_reports':
+                error_feed.set_on(db, args.get('on') is not False)
+            elif name == 'set_learnings_auto':  # Send learnings automatically, off unless chosen
+                team_learnings.set_auto(db, args.get('on') is True)
+            else:
+                team_learnings.set_offer(db, args.get('on') is not False)
+        return {'team_learnings': self.learnings_view()}

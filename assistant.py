@@ -1328,55 +1328,9 @@ class App(*APP_MIXINS):
                             shared_graph.ensure(db)
                             result['share_groups'] = shared_graph.groups(db)
             return result
-        if name in CARD_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Cards are added, renamed and merged by the owner, on the dashboard')
-            if name == 'card_new':
-                return self.card_new_repeating(args)  # recurring_app.py: Repeats, or a rhythm in the words
-            if name == 'card_project':  # the to-do's project, by hand ('' for none): graph.set_card_project
-                with self.store.connect() as db:
-                    return {'id': str(args.get('suggestion_id') or ''), 'project': graph.set_card_project(db, args.get('suggestion_id'), args.get('project'))}
-            if name == 'card_rename':
-                return self.store.rename_card(args.get('suggestion_id'), args.get('title'), args.get('reset') is True, args.get('decision_id'))
-            if name == 'card_move':  # More, Move to Work (todo_areas.py); undo: the move its toast's Undo takes back
-                return self.store.move_card(args.get('suggestion_id'), args.get('area'), args.get('decision_id'), undo=args.get('undo'))
-            if name == 'card_report_seen':  # Just done, Got it: the owner saw what their confirmed steps did
-                return self.store.report_seen(args.get('ids'))
-            if name == 'card_use_sources':  # "Use this email for this to-do": what its stuck run asked for (use_sources)
-                return self.store.use_sources(args.get('suggestion_id'), args.get('decision_id'))
-            return self.store.merge_answer(args.get('suggestion_id'), args.get('merge') is True, args.get('decision_id'))
-        if name in CONNECT_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Only the owner adds a source, from the dashboard')
-            return self.connect_action(name, args)
         if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
             with self.store.connect() as db:
                 return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}
-        if name in LEARNING_ACTIONS:
-            if not owner_dashboard:
-                raise ValueError('Only the owner shares learnings, from the dashboard')
-            if name == 'learnings_share':
-                return {**self.learnings_share(args), 'team_learnings': self.learnings_view()}
-            if name == 'learnings_withdraw':
-                return {**self.learnings_withdraw(args), 'team_learnings': self.learnings_view()}
-            with self.store.connect() as db:
-                if name == 'learnings_later':
-                    team_learnings.later(db, str(args.get('id') or ''))
-                elif name == 'learnings_never':
-                    team_learnings.never(db, str(args.get('id') or '') or None)
-                elif name == 'set_learnings_vote':  # On, Ask first or Off ({mode}); {on} from an older dashboard
-                    team_learnings.set_vote(db, args['mode'] if 'mode' in args else args.get('on') is not False)
-                elif name == 'learnings_votes_decide':  # Ask first: these votes may go, or never will
-                    team_learnings.decide_votes(db, args.get('ids'), args.get('send') is True)
-                elif name == 'set_help_topics':
-                    help_topics.set_on(db, args.get('on') is not False)
-                elif name == 'set_error_reports':
-                    error_feed.set_on(db, args.get('on') is not False)
-                elif name == 'set_learnings_auto':  # Send learnings automatically, off unless chosen
-                    team_learnings.set_auto(db, args.get('on') is True)
-                else:
-                    team_learnings.set_offer(db, args.get('on') is not False)
-            return {'team_learnings': self.learnings_view()}
         raise ValueError('Unknown operation')
 
     def fleet_card(self, kind, ask_id, name, title, body, evidence, action=None, due=None, into=None, family=False, via=None, carried=()):

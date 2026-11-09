@@ -23,7 +23,11 @@ from sources import MICROSOFT_SERVICES
 
 
 class ConnectApp:
-    ACTIONS = {}  # its actions are still App.action's own branch (CONNECT_ACTIONS)
+    # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
+    ACTIONS = dict.fromkeys(('codex_signin', 'codex_signin_state', 'connect_abilities', 'connect_answer', 'connect_cancel',
+                             'connect_poll', 'connect_remove', 'connect_running', 'connect_scope', 'connect_signin',
+                             'connect_signin_state', 'connect_site_signin', 'connect_sources', 'connect_start'),
+                            'connect_owner_action')  # CONNECT_ACTIONS
 
     def connect_action(self, name, args):
         """Connections, Add: the sources this install can add, and adding one with the same steps as `assistant
@@ -288,6 +292,12 @@ class ConnectApp:
             view['fix'] = 'check what you filled in and try again'  # Try again is right there: no command for a terminal
         view['reconnect'] = session.get('account_id')  # the account signing in again, if that is what this is
         return view
+
+    def connect_owner_action(self, name, args, owner_dashboard=False):
+        # a source added from the dashboard (CONNECT_ACTIONS)
+        if not owner_dashboard:
+            raise ValueError('Only the owner adds a source, from the dashboard')
+        return self.connect_action(name, args)
 
 
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
