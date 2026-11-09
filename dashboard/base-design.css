@@ -50,7 +50,6 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
 .scope-filter,[data-theme="light"] .scope-filter{background:var(--sunken);border:0;padding:3px}
 .scope-filter button{font:var(--fw-medium) var(--fs-sm)/1 var(--sans);color:var(--muted);padding:7px 12px}
 .scope-filter button:hover{color:var(--text)}
-.scope-filter button[aria-pressed="true"]{background:var(--c-accent-tint);color:var(--text);box-shadow:0 0 0 1px color-mix(in srgb,var(--mint) 18%,transparent)}
 :is(.fleet-tabs,.sub-tabs) button[aria-selected="true"]{background:var(--c-accent-tint);border-color:transparent;color:var(--text)}
 :is(.fleet-tabs,.sub-tabs) button[aria-selected="true"] .badge{background:color-mix(in srgb,var(--mint) 22%,transparent);color:var(--text)}
 /* Desktop: tabs that do not fit take a second row, never hidden under a fade (phones scroll the row) */
