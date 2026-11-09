@@ -27,7 +27,7 @@ Eine Benachrichtigung hat **Zurückstellen** (bis morgen) und **Als erledigt mar
 
 Ein letzter Schritt, den du bestätigt hast und der durchging, zeigt **Erledigt** mit dem, was passiert ist, bis du auf der Seite Aufgaben auf **Verstanden** tippst. Auf dem iPhone kann das warten, bis du die App das nächste Mal öffnest.
 
-Ist **Text in Benachrichtigungen** unter **Einstellungen**, **Sicherheit** aus, bleibt es bei der festen Zeile. Blendet dein Handy sensible Inhalte von Benachrichtigungen auf dem Sperrbildschirm aus, steht dort nur die feste Zeile. Eine Benachrichtigung ist nie nur ein Titel: Darf sie nichts zeigen, steht darunter „Zum Öffnen tippen.“
+Ist **Text in Benachrichtigungen** unter **Einstellungen**, **Sicherheit** aus, bleibt es bei der festen Zeile. Blendet dein Handy sensible Inhalte von Benachrichtigungen auf dem Sperrbildschirm aus, steht dort nur die feste Zeile. Eine Benachrichtigung ist nie nur ein Titel: Darf sie nichts zeigen, steht darunter „Zum Öffnen tippen.“ Erreicht dein Handy deine Machine gerade nicht, zeigt es die Details, sobald es wieder online ist.
 
 Es gelten dieselben Regeln wie für Push im Web: was du je Art unter [Benachrichtigungen](notifications.md) gewählt hast, deine [Arbeitszeiten](work-hours.md), und nichts, solange du ein Dashboard benutzt.
 

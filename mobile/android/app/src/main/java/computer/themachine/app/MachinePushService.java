@@ -36,7 +36,7 @@ import org.json.JSONObject;
  * own) and shows its title and next step ("Pick a time with Sam", "Send to Sam: Tuesday 10:00 works") with its
  * buttons (NotificationActions). Without an answer (offline, signed out, Tailscale off) it shows the fixed words with
  * "Tap to open.", or how many are waiting ("2 to-dos need you"), and asks once more: an answer then takes their
- * place. The lock screen gets only the fixed words
+ * place. Still none: it asks again once the phone is online (NoticeRetry), while the fixed one shows. The lock screen gets only the fixed words
  * when the phone hides sensitive content (the public version). A "clear" push takes a to-do's notification away.
  * Replaces Capacitor's own service, which it still runs.
  */
@@ -60,6 +60,7 @@ public class MachinePushService extends MessagingService {
         String kind = text(data.get("kind")), state = text(data.get("state")), tag = text(data.get("tag"));
         if (!PushText.TAG.matcher(kind).matches() || !PushText.TAG.matcher(tag).matches()) return;
         if ("clear".equals(kind)) { // the to-do no longer waits (done, snoozed, sent, here or on another device)
+            NoticeRetry.cancel(c, tag);
             clear(c, tag);
             return;
         }
@@ -77,11 +78,11 @@ public class MachinePushService extends MessagingService {
                 return;
             }
             notice = fetchNotice(c, tag, kind);
-            if (notice == null) return;
-            clear(c, tag); // out of the fixed one's count, which goes once it counts nothing
-            if (text(data.get("many")).isEmpty()) NotificationManagerCompat.from(c).cancel(PushText.group(kind, state), 0); // one that counts nothing
-            if (notice.gone) return;
-            present(c, data, notice, true);
+            if (notice == null) { // still nothing (no network yet, Tailscale off): again once the phone is online
+                NoticeRetry.schedule(c, data);
+                return;
+            }
+            late(c, data, notice);
             return;
         }
         if (notice.gone) { // handled in the meantime: nothing to show
@@ -89,6 +90,37 @@ public class MachinePushService extends MessagingService {
             return;
         }
         present(c, data, notice, false);
+    }
+
+    /**
+     * A late answer for a wakeup shown with the fixed words: the to-do's own notification takes their place, quietly
+     * (it already buzzed), or both go when the to-do no longer waits.
+     */
+    static void late(Context c, Map<String, String> data, Notice notice) {
+        String kind = text(data.get("kind")), state = text(data.get("state")), tag = text(data.get("tag"));
+        clear(c, tag); // out of the fixed one's count, which goes once it counts nothing
+        if (text(data.get("many")).isEmpty()) NotificationManagerCompat.from(c).cancel(PushText.group(kind, state), 0); // one that counts nothing
+        if (notice.gone) return;
+        present(c, data, notice, true);
+    }
+
+    /**
+     * Whether a wakeup's fixed notification still shows and still stands for it: not tapped, swiped away or taken away
+     * by a "clear", and the app not opened since (seen) for a kind that counts.
+     */
+    static boolean fixedShows(Context c, Map<String, String> data) {
+        String group = PushText.group(text(data.get("kind")), text(data.get("state")));
+        boolean shown = false;
+        NotificationManager manager = c.getSystemService(NotificationManager.class);
+        try {
+            for (android.service.notification.StatusBarNotification n : manager == null ? new android.service.notification.StatusBarNotification[0] : manager.getActiveNotifications()) {
+                if (group.equals(n.getTag())) shown = true;
+            }
+        } catch (RuntimeException e) {
+            return false;
+        }
+        Set<String> tags = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getStringSet(group, new HashSet<>());
+        return PushText.stillWaiting(shown, data.get("many"), tags, text(data.get("tag")));
     }
 
     /** The notification for a wakeup: the to-do's own with its notice, else the fixed words for its kind. */
@@ -246,7 +278,7 @@ public class MachinePushService extends MessagingService {
         final Map<String, String> events = new HashMap<>();
     }
 
-    private static Notice fetchNotice(Context c, String tag, String kind) {
+    static Notice fetchNotice(Context c, String tag, String kind) {
         String answer = request(c, PushText.noticeUrl(machine(c), tag, kind), null, null, null);
         if (answer == null) return null;
         try {

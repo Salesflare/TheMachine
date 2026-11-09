@@ -62,7 +62,9 @@ rename). Every other link opens in the system browser. Only the app's own start 
    ready or needs-you, the to-do id, the fixed text and a "{} to-dos need you" line), the notice with the WebView's
    cookies (over Tailscale for a Machine of their own), buttons in `NotificationActions` (Android 12+: unlock first; the opening ones open the app).
    No answer: the fixed text with "Tap to open.", or the count of that kind since the app was last opened, at once;
-   the app asks once more 2 seconds later, and an answer then takes its place without a second buzz. Several of the
+   the app asks once more 2 seconds later, and an answer then takes its place without a second buzz. Still none:
+   `NoticeRetry` (JobScheduler, any network) asks again once the phone is online, backing off, for up to 12 hours,
+   while the fixed one still shows (not tapped, swiped away or cleared, the app not opened since). Several of the
    app's notifications are grouped by Android itself (its summary is only the header). Words: `PushText` (tests:
    `PushTextTest`).
 8. iOS: the relay's alert has `mutable-content`, and the Notification Service extension (`NotificationService/`,

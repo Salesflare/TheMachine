@@ -54,6 +54,30 @@ public class PushTextTest {
     }
 
     @Test
+    public void aWakeupWithoutAnAnswerIsAskedAboutAgainForHalfADay() {
+        long since = 1_000_000_000L;
+        assertFalse(PushText.retryOver(since, since + 60_000));
+        assertFalse(PushText.retryOver(since, since + 11 * 3_600_000L));
+        assertTrue(PushText.retryOver(since, since + 13 * 3_600_000L));
+        assertTrue(PushText.retryOver(0, since)); // nothing known about when: no more asking
+        assertTrue(PushText.retryOver(since, since - 1)); // the clock went back
+    }
+
+    @Test
+    public void onlyAFixedNotificationThatStillShowsIsReplaced() {
+        java.util.Set<String> counted = new java.util.HashSet<>(java.util.Arrays.asList("card_1", "card_2"));
+        // "Your morning": one at a time, it stands for its wakeup while it shows
+        assertTrue(PushText.stillWaiting(true, "", counted, "digest"));
+        assertTrue(PushText.stillWaiting(true, null, null, "digest"));
+        // tapped or swiped away: nothing comes back
+        assertFalse(PushText.stillWaiting(false, "", counted, "digest"));
+        // "2 to-dos are ready": only while it still counts this one (opening the app or a clear takes it out)
+        assertTrue(PushText.stillWaiting(true, "{} to-dos are ready", counted, "card_1"));
+        assertFalse(PushText.stillWaiting(true, "{} to-dos are ready", counted, "card_3"));
+        assertFalse(PushText.stillWaiting(true, "{} to-dos are ready", new java.util.HashSet<>(), "card_1"));
+    }
+
+    @Test
     public void severalOfAKindShareOneNotification() {
         assertEquals("machine-result-needs", PushText.group("result", "needs"));
         assertEquals("machine-todo", PushText.group("todo", ""));
