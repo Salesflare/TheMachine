@@ -150,32 +150,36 @@ const whosWho=(items,total)=>items?.length?html`<div class="section-head"><h2>Wh
 // Same person? The graph joins identities only on strong evidence (the same name on one message, the same LinkedIn
 // profile, their number in their own mail); a likely match is a quiet question here and in People: Merge or Not the
 // same, which is remembered. Joined identities list why, each with Undo (it splits them for good).
-// Same person? and Same organization? while the owner taps through them: a pair they answered keeps its place, its
-// answer instead of the buttons, while they keep tapping. A redraw that left before the server stored the answer
-// (another tap's, a poll's) never brings it back, and the rows under their finger never move. A few seconds after the
-// last answer (PAIR_SETTLE_MS), on leaving People and on opening the list again, answered pairs go, and the section
-// with them when nothing is left to ask. An answered pair a late list still has stays hidden; once the Machine's list
-// no longer has it, its answer is forgotten. pairSaid: key -> answer.
-const pairSaid=new Map(),pairRows={p:[],o:[]},PAIR_SETTLE_MS=3000;let pairTimer=0;
+// Same person? and Same organization?: an answered pair shows its answer instead of the buttons for a moment
+// (PAIR_SHOW_MS), then fades and leaves the list; the list's heading goes with the last pair. Leaving People, another
+// list and opening the list again take answered pairs away at once. A redraw from before the Machine stored the answer
+// (another tap's, a poll's, a slow rebuild's) never brings a pair back: an answered pair a late list still has stays
+// hidden, and once the Machine's list no longer has it, its answer is forgotten. pairSaid: key -> answer.
+const pairSaid=new Map(),pairRows={p:[],o:[]},pairTimers=new Map(),PAIR_SHOW_MS=1200;
 const pairKey=(k,a,b)=>k+':'+[a,b].sort().join('|');
 function pairsSteady(k,items){const fresh=new Map((items||[]).map(s=>[pairKey(k,s.a.id,s.b.id),s]));
  const rows=pairRows[k].filter(([key])=>fresh.has(key)||pairSaid.has(key)).map(([key,s])=>[key,fresh.get(key)||s]),have=new Set(rows.map(r=>r[0]));
  for(const [key,s] of fresh)if(!have.has(key)&&!pairSaid.has(key))rows.push([key,s]);pairRows[k]=rows;
  for(const key of pairSaid.keys())if(key.startsWith(k+':')&&!fresh.has(key)&&!have.has(key))pairSaid.delete(key);
  return rows.map(([key,s])=>pairSaid.has(key)?{...s,said:pairSaid.get(key)}:s)}
-// Answered pairs leave the lists: their rows, and a list's heading when no row is left
-function pairsSettle(){clearTimeout(pairTimer);for(const k of ['p','o'])pairRows[k]=pairRows[k].filter(([key])=>!pairSaid.has(key));
- for(const list of [$('#people-view'),graphKept?.f].flatMap(v=>v?[...v.querySelectorAll('.graph-list[data-pairs]')]:[])){  /* the lists shown, and the ones a search put aside */for(const row of list.querySelectorAll('.same-pair'))if(row.querySelector('.pair-said'))row.remove();
+// Answered pairs (all of them, or the one key) leave the lists: their rows, and a list's heading when none is left
+function pairsSettle(only){for(const [key,t] of pairTimers)if(!only||key===only){clearTimeout(t);pairTimers.delete(key)}
+ const gone=key=>pairSaid.has(key)&&(!only||key===only);for(const k of ['p','o'])pairRows[k]=pairRows[k].filter(([key])=>!gone(key));
+ for(const list of [$('#people-view'),graphKept?.f].flatMap(v=>v?[...v.querySelectorAll('.graph-list[data-pairs]')]:[])){  /* the lists shown, and the ones a search put aside */
+  for(const row of list.querySelectorAll('.same-pair[data-pair]'))if(gone(row.dataset.pair))row.remove();
   const left=list.querySelectorAll('.same-pair').length,head=list.previousElementSibling?.matches('.section-head')?list.previousElementSibling:null;
   if(!left){head?.remove();list.remove()}else if(left<2)head?.querySelector('.same-all')?.remove()}}
-// The answer on the row at once, its buttons back if saving it failed
-function pairAnswer(box,key,said){pairSaid.set(key,said);clearTimeout(pairTimer);pairTimer=setTimeout(pairsSettle,PAIR_SETTLE_MS);
+// The answer on the row at once, its buttons back if saving it failed; a moment later the row fades and goes
+function pairAnswer(box,key,said){pairSaid.set(key,said);clearTimeout(pairTimers.get(key));
+ pairTimers.set(key,setTimeout(()=>{for(const r of document.querySelectorAll('#people-view .same-pair[data-pair]'))if(r.dataset.pair===key)r.classList.add('pair-leaving');
+  pairTimers.set(key,setTimeout(()=>pairsSettle(key),250))},PAIR_SHOW_MS));
  const row=box?.querySelector('.role-row'),was=row&&[...row.childNodes];if(row)row.replaceChildren(make('span',{class:'muted pair-said'},said));
- return ()=>{pairSaid.delete(key);if(row)row.replaceChildren(...was)}}
+ const head=box?.closest('.graph-list[data-pairs]')?.previousElementSibling?.querySelector('.count');if(head)head.textContent=Math.max(0,+head.textContent-1);
+ return ()=>{clearTimeout(pairTimers.get(key));pairTimers.delete(key);pairSaid.delete(key);box?.classList.remove('pair-leaving');if(row)row.replaceChildren(...was);if(head)head.textContent=+head.textContent+1}}
 const pairDone=s=>html`<p class="graph-sub role-row"><span class="muted pair-said">${s.said}</span></p>`;
 const sameAsk=n=>html`${(n.same||[]).filter(s=>s.name).map(s=>html`<div class="same-ask"><p class="graph-sub">Same person as ${nodeButton({id:s.id,name:s.name})}?<br><span class="muted">${sameWhy(s.why)}</span></p>${pairSaid.has(pairKey('p',n.id,s.id))?pairDone({said:pairSaid.get(pairKey('p',n.id,s.id))}):html`<p class="graph-sub role-row"><button data-same="1" data-a="${n.id}" data-b="${s.id}">Merge</button><button class="ghost" data-same="0" data-a="${n.id}" data-b="${s.id}">Not the same</button></p>`}</div>`)}`;
 const joinedRow=n=>n.joined?.length?html`<details class="joined"><summary class="graph-sub">Joined from ${n.ids?.length||n.joined.length+1} identities</summary>${n.joined.map(j=>html`<div class="graph-sub relation"><span><span class="mono">${j.a_shown}</span> and <span class="mono">${j.b_shown}</span> · <span class="muted">${j.why}</span></span><button class="ghost" data-same="0" data-a="${j.a}" data-b="${j.b}" data-split>Undo</button></div>`)}</details>`:'';
-const sameList=(found,items=pairsSteady('p',found),open=items.filter(s=>!s.said))=>html`${contactsInList()}${items.length?html`<div class="section-head"><h2>Same person?</h2><span class="count">${open.length}</span>${items.length>1?html`<button type="button" class="ghost same-all${open.length>1?'':' spent'}" data-same-all="${JSON.stringify(open.map(s=>[s.a.id,s.b.id]))}" ${open.length>1?'':'disabled'}>Merge all</button>`:''}<p>Possible doubles. Merge them or keep them apart.</p></div><div class="graph-list" data-pairs="p">${items.map(s=>html`<article class="same-pair"><div class="graph-row">${personPic(s.a)}${nodeButton(s.a)}<span class="muted">and</span>${personPic(s.b)}${nodeButton(s.b)}</div><p class="graph-sub">${s.why} · <span class="mono">${[s.a.ids?.[0],s.b.ids?.[0]].filter(Boolean).join(', ')}</span></p>${s.said?pairDone(s):html`<p class="graph-sub role-row"><button data-same="1" data-a="${s.a.id}" data-b="${s.b.id}">Merge</button><button class="ghost" data-same="0" data-a="${s.a.id}" data-b="${s.b.id}">Not the same</button></p>`}</article>`)}</div>`:''}`;
+const sameList=(found,items=pairsSteady('p',found),open=items.filter(s=>!s.said))=>html`${contactsInList()}${items.length?html`<div class="section-head"><h2>Same person?</h2><span class="count">${open.length}</span>${items.length>1?html`<button type="button" class="ghost same-all${open.length>1?'':' spent'}" data-same-all="${JSON.stringify(open.map(s=>[s.a.id,s.b.id]))}" ${open.length>1?'':'disabled'}>Merge all</button>`:''}<p>Possible doubles. Merge them or keep them apart.</p></div><div class="graph-list" data-pairs="p">${items.map(s=>html`<article class="same-pair" data-pair="${pairKey('p',s.a.id,s.b.id)}"><div class="graph-row">${personPic(s.a)}${nodeButton(s.a)}<span class="muted">and</span>${personPic(s.b)}${nodeButton(s.b)}</div><p class="graph-sub">${s.why} · <span class="mono">${[s.a.ids?.[0],s.b.ids?.[0]].filter(Boolean).join(', ')}</span></p>${s.said?pairDone(s):html`<p class="graph-sub role-row"><button data-same="1" data-a="${s.a.id}" data-b="${s.b.id}">Merge</button><button class="ghost" data-same="0" data-a="${s.a.id}" data-b="${s.b.id}">Not the same</button></p>`}</article>`)}</div>`:''}`;
 // Sharing a contact (contact_share.py): from a person's page (⋯, Share contact…) or About you (Share my contact), to one
 // teammate, friend or Family member. Pick the fields, look at exactly what goes, then Send. A Personal or private
 // contact needs one more tick. Contacts shared here wait under People: Add (or add to the person you have) or Dismiss.

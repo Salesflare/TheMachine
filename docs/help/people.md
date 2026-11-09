@@ -58,7 +58,7 @@ To change their picture, click it: **Upload a picture**, pick one found for them
 
 ## Merge two people
 
-When two people might be one, their page asks if they are the same person, and People lists them under **Same person?**. **Merge** joins them, with all their messages, notes, roles and projects. **Not the same** keeps them apart for good. Your answer shows on the pair for a few seconds, so you can tap through the list quickly. Then answered pairs leave the list, and the list goes when nothing is left to ask.
+When two people might be one, their page asks if they are the same person, and People lists them under **Same person?**. **Merge** joins them, with all their messages, notes, roles and projects. **Not the same** keeps them apart for good. Your answer shows on the pair for a moment, then the pair leaves the list. The list goes when nothing is left to ask.
 
 **Merge all** merges every pair in the list at once, except the ones you marked **Not the same**. **Undo** right after splits them all again.
 
