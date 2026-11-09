@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         # A pull request and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        include: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.10.7"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        include: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -57,7 +57,9 @@ jobs:
           key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
       - name: Install OpenClaw and browser
         run: |
-          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }}
+          # the runner's npm cache can predate a new pin (ETARGET offline): then ask the registry
+          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }} \
+            || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.openclaw }}
           # our runner has Chromium's system libraries already, and a job there has no sudo
           npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
@@ -141,7 +143,7 @@ jobs:
         run: python -m pip install --quiet tzdata
       - name: Install OpenClaw and browser
         run: |
-          npm install --global openclaw@2026.10.7
+          npm install --global openclaw@2026.11.2
           npx --yes --package=playwright@1.63.0 playwright install chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages

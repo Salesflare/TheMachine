@@ -10,7 +10,7 @@ Ideas that would reshuffle the product go to the owner as a proposal, not a pull
 ## Development
 
 1. Clone the repository. Use Python 3.12+ and a supported Node version ([README](README.md#requirements)).
-2. Install the pinned OpenClaw: `npm install -g openclaw@2026.10.7` (the version in `openclaw-pin.json`).
+2. Install the pinned OpenClaw: `npm install -g openclaw@2026.11.2` (the version in `openclaw-pin.json`).
 3. Install Chromium, or set `CHROMIUM_PATH` to an existing Chromium executable.
 4. Run `python3 scripts/test.py`. No real accounts or Gateway are needed.
 

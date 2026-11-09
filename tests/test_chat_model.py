@@ -193,5 +193,57 @@ class AppTest(unittest.TestCase):
         self.assertEqual(seen[-1], (None, None))  # nothing picked: Help as before
 
 
+def claude_row(provider, name):
+    return {'id': name, 'name': name, 'provider': provider, 'available': True,
+            'thinkingLevels': [{'id': x} for x in ('low', 'medium', 'high')], 'thinkingDefault': 'medium'}
+
+
+# OpenClaw 2026.10 lists Claude Code's models as claude-cli/*; 2026.11 as anthropic/* pinned to Claude CLI
+OLD_LIST = {'models': [claude_row('claude-cli', 'claude-opus-5-5'), claude_row('claude-cli', 'claude-sonnet-5-5')]}
+NEW_LIST = {'models': [claude_row('anthropic', 'claude-opus-5-5'), claude_row('anthropic', 'claude-sonnet-5-5'),
+                       claude_row('claude-cli', 'claude-sonnet-5-5')]}
+PINNED = {'anthropic/*': {'agentRuntime': {'id': 'claude-cli'}}, 'anthropic/claude-opus-5-5': {'agentRuntime': {'id': 'claude-cli'}}}
+
+
+class ClaudeNames(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.oc = Path(self.temp.name) / 'openclaw.json'
+        self.config = {'openclaw_config': str(self.oc)}
+
+    def machine(self, primary, models=None):
+        self.oc.write_text(json.dumps({'agents': {'defaults': {'model': {'primary': primary}, **({'models': models} if models else {})}}}))
+
+    def refs(self, reply):
+        return [m['ref'] for m in chat_model.parse_catalog(reply, self.config)]
+
+    def test_the_same_claude_choices_whichever_way_openclaw_names_them(self):
+        want = ['claude-cli/claude-opus-5-5', 'claude-cli/claude-sonnet-5-5']
+        self.machine('claude-cli/claude-opus-5-5', PINNED)  # an older Machine's main model, on a newer OpenClaw
+        self.assertEqual(self.refs(OLD_LIST), want)
+        self.assertEqual(self.refs(NEW_LIST), want)  # once each, under the main model's name
+        self.machine('anthropic/claude-opus-5-5', PINNED)  # after `openclaw doctor --fix`
+        self.assertEqual(self.refs(OLD_LIST), ['anthropic/claude-opus-5-5', 'anthropic/claude-sonnet-5-5'])
+        self.assertEqual(self.refs(NEW_LIST), ['anthropic/claude-opus-5-5', 'anthropic/claude-sonnet-5-5'])
+
+    def test_the_current_choice_stays_selected_under_the_other_name(self):
+        self.machine('anthropic/claude-opus-5-5', PINNED)
+        models = chat_model.parse_catalog(NEW_LIST, self.config)
+        # a to-do kept its choice from before the rename: still that model, not the main one
+        self.assertEqual(chat_model.resolve(self.config, models, {'model': 'claude-cli/claude-sonnet-5-5'})['model'],
+                         'anthropic/claude-sonnet-5-5')
+        self.machine('claude-cli/claude-opus-5-5', PINNED)
+        models = chat_model.parse_catalog(NEW_LIST, self.config)
+        self.assertEqual(chat_model.resolve(self.config, models)['model'], 'claude-cli/claude-opus-5-5')
+
+    def test_an_anthropic_api_key_s_models_are_not_claude_code_s(self):
+        self.machine('claude-cli/claude-opus-5-5')  # nothing pins anthropic/* to Claude CLI: those run on an API key
+        self.assertEqual(self.refs(NEW_LIST), ['anthropic/claude-opus-5-5', 'anthropic/claude-sonnet-5-5', 'claude-cli/claude-sonnet-5-5'])
+        models = chat_model.parse_catalog(NEW_LIST, self.config)
+        self.assertEqual(chat_model.resolve(self.config, models, {'model': 'claude-cli/claude-opus-5-5'})['model'],
+                         'claude-cli/claude-opus-5-5')  # not listed, no API-key twin stands in: the main model, as before
+
+
 if __name__ == '__main__':
     unittest.main()

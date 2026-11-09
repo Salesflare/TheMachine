@@ -88,15 +88,60 @@ def allowed(config, ref):
     return not keys or ref in keys or ref.split('/')[0] + '/*' in keys or '*' in keys
 
 
+def runtime(config, key):
+    """The agent runtime OpenClaw's config pins a model key to (agents.defaults.models[key].agentRuntime.id), or None."""
+    models = openclaw_settings(config).get('models')
+    entry = models.get(key) if isinstance(models, dict) else None
+    found = entry.get('agentRuntime') if isinstance(entry, dict) else None
+    return found.get('id') if isinstance(found, dict) and found.get('id') not in (None, 'default') else None
+
+
+def claude_code(config, ref):
+    """Whether a model ref runs through Claude Code: `claude-cli/*`, or an `anthropic/*` one the config pins to Claude
+    CLI (the form OpenClaw 2026.11 lists and `openclaw doctor --fix` writes; older ones list `claude-cli/*`)."""
+    provider = ref.split('/')[0]
+    return provider == 'claude-cli' or (provider == 'anthropic' and
+                                        (runtime(config, ref) or runtime(config, 'anthropic/*')) == 'claude-cli')
+
+
+def claude_form(config):
+    """The provider Claude Code's models go by in the picker: the main model's when it runs through Claude Code (so it
+    stays the selected one), else `anthropic` when the config pins those to Claude CLI, else `claude-cli`."""
+    main_model = main(config)[0]
+    if main_model and claude_code(config, main_model):
+        return main_model.split('/')[0]
+    return 'anthropic' if runtime(config, 'anthropic/*') == 'claude-cli' else 'claude-cli'
+
+
+def same_claude(config, ref, refs):
+    """`ref` as the picker names it: itself when listed, else the same Claude Code model under its other name
+    (`claude-cli/x` and `anthropic/x` pinned to Claude CLI), else None."""
+    if not ref or ref in refs:
+        return ref if ref in refs else None
+    provider, _, name = ref.partition('/')
+    if provider in ('anthropic', 'claude-cli') and claude_code(config, ref):
+        other = ('claude-cli' if provider == 'anthropic' else 'anthropic') + '/' + name
+        if other in refs and claude_code(config, other):
+            return other
+    return None
+
+
 def parse_catalog(reply, config=None):
     """The models a chat can pick, from a `models.list` reply: [{'ref', 'name', 'levels', 'default'}], signed-in and
-    allowed ones only, in the Gateway's order (each provider's recommended ones first)."""
+    allowed ones only, in the Gateway's order (each provider's recommended ones first). Claude Code's models show once,
+    under one name (claude_form), whether the Gateway lists them as `claude-cli/*`, `anthropic/*` or both."""
     out, seen = [], set()
+    form = claude_form(config)
     for row in (reply or {}).get('models') or []:
         if not isinstance(row, dict) or row.get('available') is not True:
             continue
         ref = f"{row.get('provider')}/{row.get('id')}"
-        if not REF.fullmatch(ref) or ref in seen or not allowed(config, ref):
+        names = [ref]
+        if REF.fullmatch(ref) and ref.split('/')[0] in ('anthropic', 'claude-cli') and claude_code(config, ref):
+            # one model under either name: the allowlist may name it either way too
+            names = [f"{p}/{ref.split('/', 1)[1]}" for p in ('anthropic', 'claude-cli')]
+            ref = form + '/' + ref.split('/', 1)[1]
+        if not REF.fullmatch(ref) or ref in seen or not any(allowed(config, name) for name in names):
             continue
         levels = [x.get('id') for x in row.get('thinkingLevels') or [] if isinstance(x, dict)]
         levels = [x for x in LEVELS if x in levels]  # in order, only the ones OpenClaw knows
@@ -234,8 +279,8 @@ def resolve(config, models, own=None):
     picked = {**saved_default(config), **clean(own)}
     by_ref = {m['ref']: m for m in models or []}
     model = picked.get('model') or main_model
-    if models is not None and model not in by_ref:
-        model = main_model
+    if models is not None and model not in by_ref:  # a Claude Code model kept under its other name is still that one
+        model = same_claude(config, model, by_ref) or same_claude(config, main_model, by_ref) or main_model
     entry = by_ref.get(model)
     levels = entry['levels'] if entry else []
     thinking = picked.get('thinking') or main_thinking or (entry or {}).get('default')
