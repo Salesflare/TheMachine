@@ -17,6 +17,7 @@ from machine.store.cards import awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
 from machine.text import _address, encoded
+import memory_use
 from timeutil import local_tz, now
 
 
@@ -465,6 +466,7 @@ class PromisesStore:
             due = 'due ' + dt.date.fromisoformat(p['due']).strftime('%a, %b ') + str(dt.date.fromisoformat(p['due']).day) if p['due'] else 'no date'
             who = f"you with {p['who']}" if p.get('together') else f"you → {p['who']}" if p['direction'] == 'mine' else f"{p['who']} → you"
             lines.append(f"- #{p['id']} {who}: {p['what']} ({due}; said {made:%a, %b} {made.day}, event {p['event_id']})")
+            memory_use.note('promise', p['id'], lines[-1], 'always', source='signal', at=p['made_at'])
         return '\n'.join(lines)
 
     def slipped(self, run_id, limit=5):

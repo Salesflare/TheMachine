@@ -65,7 +65,7 @@ _BY_PART = {
     'decisions': _names('decisions decision_annotations tool_approval_proposals'),
     'promises': _names('promises promise_log'),
     'memories': _names('''facts fact_about person_summaries person_summary_runs gbrain_meta gbrain_notes gbrain_pages
-        note_kinds'''),
+        note_kinds memory_use'''),
     'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
         pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
         whatsapp_photo_prefs team_learning_prefs'''),

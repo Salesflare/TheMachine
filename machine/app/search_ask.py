@@ -15,7 +15,9 @@ import embeddings
 import graph
 import locale_prefs
 import timeutil
+from machine.app.recall import recall
 from machine.text import shown_body
+import memory_use
 from timeutil import now
 from models import background_model, has_model
 import search_ask
@@ -320,7 +322,9 @@ class SearchAskApp:
             LOG.warning('search ask not searched error=%s', type(error).__name__)
             return {'error': True}
         try:
-            found = search_ask.ask(question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine)
+            memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
+            found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine)
+            memory_use.record(self.store, 'ask', memory.rows())  # the messages its prompt held: ids only
         except (search_ask.Unavailable, help_chat.Unavailable) as error:
             LOG.info('search ask not answered error=%s', type(error).__name__)
             return {'error': True}

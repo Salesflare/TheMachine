@@ -28,6 +28,7 @@ from machine.store.review import own_message
 from machine.text import clamp
 from machine.web.handler import event_glance
 import meeting_notes
+import memory_use
 import own_addresses
 import project_success
 from sources import gog_read, SourceError
@@ -550,6 +551,12 @@ class GraphActionsApp:
             sides = {area.get(a) for a in json.loads(row['account_ids'] or '[]')} - {None} if row else set()  # a summary's lines in this area only
             text = graph.context_lines(db, ids, skip_card=suggestion_id, sides=sides) if ids else ''
             brain = self.gbrain_lines(db, ids) if text else ''
+            if text and memory_use.collecting():  # which records its lines are, for the use log (memory_use.py)
+                nodes = [r['id'] for r in graph.for_events(db, ids)[:8] if r['kind'] in ('person', 'project')]
+                lines = text.split('\n')
+                if len(lines) <= len(nodes) and all(line.startswith('- ') for line in lines):  # one line each, strongest first, cut at the end
+                    for node, line in zip(nodes, lines):
+                        memory_use.note('record', node, line, 'about', about=(node,), source='signal')
         if not text:
             return ''
         unknown = self.store.no_role_yet(ids)
@@ -572,6 +579,7 @@ class GraphActionsApp:
         where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
         part=embeddings.starts(found)  # a long one that matched further on: where to read it
         lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}"+(f' · matches at body_offset {part[i]}' if i in part else '') for i,_ in found if i in rows]
+        for (i,score),line in zip([f for f in found if f[0] in rows],lines):memory_use.note('signal',i,line,'closeness',source='signal',at=rows[i]['occurred_at'],score=score)
         return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
 
     def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30, signals_only=False):
@@ -622,6 +630,7 @@ class GraphActionsApp:
         rebuild so nothing derived from them is left."""
         with self.store.connect() as db:
             done = graph.delete_person(db, node_id, self.config, now())
+            memory_use.forget_person(db, done['needles'])  # the log of what prompts read never keeps their address
         notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
         self.graph_build()
         return {**done, 'notes': notes}

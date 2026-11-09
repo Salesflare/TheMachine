@@ -20,6 +20,7 @@ from machine.sources.gmail import Gmail
 from machine.store.review import own_message
 from machine.store.voices import conversation_of
 from machine.text import _address
+import memory_use
 import model_budget
 import next_actions
 import own_addresses
@@ -472,7 +473,14 @@ class FollowUpsApp:
         on = [{**k, 'path': str(root / k['slug'] / 'SKILL.md')} for k in on]
         fitting = follow_ups.fitting_skills(on, names, rules, row['title'])
         picked = {k['slug'] for k in fitting}
-        return follow_ups.prep_skill_note(fitting, [k for k in on if k['slug'] not in picked], room)
+        text = follow_ups.prep_skill_note(fitting, [k for k in on if k['slug'] not in picked], room)
+        if text and memory_use.collecting():  # which skills it holds, for the use log (memory_use.py)
+            for k in fitting:  # in full, or as a line that says to read it first
+                memory_use.note('skill', k['slug'], str(k.get('body') or '').strip() if '\n<<<\n' in text else k['path'], 'match', source='owner')
+            for k in on:  # the others that are on, as a short index
+                if k['slug'] not in picked and f"\n- {k['name']}: " in text:
+                    memory_use.note('skill', k['slug'], ' '.join(str(k.get('description') or '').split())[:160], 'always', source='owner')
+        return text
 
     def follow_up_change_note(self, job):
         """What a rewrite from the follow-up review's Change adds to its turn (follow_ups.change_note), else '': the

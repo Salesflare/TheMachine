@@ -9,6 +9,7 @@ run), the service:
   ended and those of a card that is still open (not done or dismissed);
 - clears the evidence a profile or learnings run read (`profile_runs.evidence`) 90 days (Careful: 30) after it ended (the run, its
   times and its result stay);
+- deletes the log of what prompts read of memory (`memory_use`, ids and numbers only) older than 60 days (Careful: 30);
 - gives the freed space back: the first time with one VACUUM, which also switches the database to incremental
   vacuuming, then each night `PRAGMA incremental_vacuum` in small steps. The VACUUM only runs when no review,
   preparation or profile run is going on, and deletes go in small batches, so the service keeps working meanwhile;
@@ -31,6 +32,8 @@ import sqlite3
 import sys
 import time
 from zoneinfo import ZoneInfo
+
+import memory_use
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -355,6 +358,10 @@ def run(connect, database, now=None, live=(), rotate=True, busy=None, local_tz=N
     report = {'sync_activity': prune_sync(connect, now),
               'preparation_calls': prune_preparations(connect, now),
               'profile_evidence': prune_profile_evidence(connect, now)}
+    try:  # what prompts read of what was learned: ids and numbers, kept memory_use.KEEP_DAYS
+        report['memory_use'] = memory_use.prune(connect, now, _keep_days(connect, memory_use.KEEP_DAYS))
+    except sqlite3.Error as error:  # tried again tomorrow
+        report['memory_use'] = {'failed': type(error).__name__}
     try:
         report['space'] = give_back_space(connect, database, busy)
     except sqlite3.Error as error:  # tried again tomorrow
