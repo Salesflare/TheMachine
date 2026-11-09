@@ -86,7 +86,8 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | Due (a to-do's date) | Deadline (never "Te doen": that means to do) | Échéance | Fällig | Vence | Scadenza | Vence, Prazo |
 | Do it | Doe het | Faire | Ausführen | Hazlo | Fallo | Fazer |
 | Ask for changes (one name for redoing a to-do, with or without a draft; never "Change how" or "Change") | Wijzigingen vragen | Demander des modifications | Änderungen anfragen | Pedir cambios | Chiedi modifiche | Pedir mudanças |
-| Drop (a promise the owner lets go of) | Laten vallen | Abandonner | Fallen lassen | Descartar | Lascia perdere | Descartar |
+| Not happening (a promise the owner lets go of; was Drop, which read like Mark done) | Gaat niet door | N’aura pas lieu | Findet nicht statt | No va a pasar | Non succederà | Não vai acontecer |
+| Nudge (a short follow-up on someone else's promise) | Herinneren | Relancer | Erinnern | Recordar | Sollecita | Lembrar |
 | Dismiss (a tip or suggestion The Machine raised, never a to-do: that is Not needed) | Afwijzen | Écarter | Verwerfen | Descartar | Scarta | Descartar |
 | task, Tasks (when it means a to-do: "All tasks", "View task") | to-do, To-do's | tâche, Tâches | Aufgabe, Aufgaben | tarea, Tareas | attività, Attività | tarefa, Tarefas |
 | task (an agent's job: "your agent can use it in any task") | taak | tâche | Aufgabe | tarea | compito | tarefa |

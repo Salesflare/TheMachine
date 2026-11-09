@@ -15,7 +15,13 @@ Unter **Versprechen** auf der Seite Aufgaben:
 - Was du zugesagt hast, und für wen: **Du hast versprochen**.
 - Was andere zugesagt haben: **Dir versprochen**.
 
-Jedes offene hat **Als erledigt markieren** und **Fallen lassen**. Ein offenes Versprechen wird zur Aufgabe, wenn es fällig ist (deines am Morgen davor, damit ein Tag dafür bleibt), und erscheint an seinem Tag im [Kalender](calendar.md). Ist es schon eine Aufgabe, führt es zu ihr, und **Als erledigt markieren** oder **Fallen lassen** schließt diese Aufgabe mit. Sieht deine Machine, dass es erledigt ist, schließen beide, mit einer Zeile dazu.
+Jedes hat ein Menü **⋯**:
+
+- **Ausführen** bei deinen: Es wird jetzt zur Aufgabe, und deine Machine bereitet sie vor. **Erinnern** bei denen anderer: Deine Machine schreibt einen kurzen Entwurf zum Nachfassen, dort, wo es versprochen wurde. Nichts geht raus, bis du es sendest. Ist es schon eine Aufgabe, öffnet sich diese.
+- **Als erledigt markieren**: Es wurde eingehalten.
+- **Findet nicht statt**: Es passiert nicht, also verfolgt deine Machine es nicht mehr, ohne Aufgabe.
+
+Ein offenes Versprechen wird auch von selbst zur Aufgabe, wenn es fällig ist (deines am Morgen davor, damit ein Tag dafür bleibt), und erscheint an seinem Tag im [Kalender](calendar.md). Ist es schon eine Aufgabe, führt es zu ihr, und **Als erledigt markieren** oder **Findet nicht statt** schließt diese Aufgabe mit. Sieht deine Machine, dass es erledigt ist, schließen beide, mit einer Zeile dazu.
 
 Vorher liest deine Machine, was danach kam. Schon gehalten, etwa durch eine Antwort von dir oder ein Meeting dazu? Dann schließt es sich als gehalten, ohne Aufgabe.
 

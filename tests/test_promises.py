@@ -330,6 +330,51 @@ class Promises(unittest.TestCase):
         self.assertEqual(self.row(promise)['status'], 'dropped')
         self.assertIn('promise_close', a.OWNER_ACTIONS)
 
+    def asked(self, card):
+        """A to-do's status, and the owner's Do it on it with its note."""
+        with self.store.connect() as db:
+            decision = db.execute("SELECT choice,feedback,source FROM decisions WHERE suggestion_id=? AND id LIKE 'promise-ask:%'", (card,)).fetchone()
+            queued = db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (card,)).fetchone()
+        return self.card_status(card), decision and tuple(decision), queued and queued[0]
+
+    def test_nudge_makes_the_to_do_now_and_prepares_a_follow_up(self):
+        """Nudge on someone else's promise, days before its date: the to-do it would get then comes now, with the
+        owner's Do it, so its run drafts a short follow-up. Nothing goes out: the draft waits on the to-do."""
+        promise = self.record(due='2026-10-30')['id']
+        with self.assertRaisesRegex(ValueError, 'Only the owner'):
+            self.app().action('promise_todo', {'id': promise})
+        done = self.app().action('promise_todo', {'id': promise}, owner_dashboard=True)
+        self.assertEqual((self.row(promise)['status'], self.row(promise)['suggestion_id']), ('carded', done['card']))
+        card = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == done['card'])
+        self.assertEqual(card['title'], 'Waiting on Sam Lee: send the signed contract')
+        self.assertIsNotNone(card['awaiting'])  # their reply still closes it
+        self.assertEqual(self.asked(done['card']),
+                         ('accepted', ('accept', 'Nudge them: a short follow-up where they promised it.', 'dashboard'), 'queued'))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM deliveries WHERE message_id IS NOT NULL').fetchone()[0], 0)
+        # Asked again: the same to-do opens, no second one and no second run
+        self.assertEqual(self.app().action('promise_todo', {'id': promise}, owner_dashboard=True), {'id': promise, 'card': done['card'], 'existing': True})
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM suggestions').fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT count(*) FROM decisions WHERE id LIKE 'promise-ask:%'").fetchone()[0], 1)
+        self.assertIn('promise_todo', a.OWNER_ACTIONS)
+        self.assertIn('promise_todo', a.DASHBOARD_ACTIONS)
+
+    def test_do_it_on_the_owners_promise_prepares_its_to_do_or_opens_the_one_it_has(self):
+        mine = self.app().action('promise', {'direction': 'mine', 'event_id': self.mine, 'who': 'Alex', 'what': 'send the Q3 deck', 'due': '2026-10-29'})['id']
+        done = self.app().action('promise_todo', {'id': mine}, owner_dashboard=True)
+        self.assertFalse(done['existing'])
+        self.assertEqual(self.asked(done['card']), ('accepted', ('accept', '', 'dashboard'), 'queued'))
+        # One whose matter has an open to-do already: that one opens, as it is
+        open_card = self.store.suggest('work:contract', 'Sam sends the contract', 'Body.', [self.theirs], 'now')
+        theirs = self.record()['id']
+        self.assertEqual(self.app().action('promise_todo', {'id': theirs}, owner_dashboard=True), {'id': theirs, 'card': open_card['id'], 'existing': True})
+        self.assertEqual(self.asked(open_card['id']), ('pending', None, None))
+        # A closed one has nothing to do
+        self.app().action('promise_close', {'id': mine, 'status': 'dropped'}, owner_dashboard=True)
+        with self.assertRaisesRegex(ValueError, 'no longer open'):
+            self.app().action('promise_todo', {'id': mine}, owner_dashboard=True)
+
     def test_the_list_follows_the_card(self):
         promise = self.record(due='2026-10-20')['id']
         self.at('2026-10-21T07:00:00+00:00')
