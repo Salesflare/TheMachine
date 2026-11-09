@@ -138,6 +138,59 @@ def own_text(body):
     return (body or '').split('[Quoted earlier messages', 1)[0].strip()
 
 
+def tune_voice(channel, text, current):
+    """A learning pass's voice block, checked like a learned update: short, and keeping most of the current one."""
+    channel, text = voice_channel(channel), voice_block(text)
+    if not 2 <= len(channel) <= 30 or not 5 <= len(text) <= VOICE_CHARS or text.count('\n') >= VOICE_LINES:
+        raise ValueError('not a voice block')
+    if current and len(text) < VOICE_KEEP * len(current['text']):
+        raise ValueError('a learned update keeps most of the block')
+    return channel, text
+
+
+def card_channels(db, suggestion_id):
+    """The channels a card's draft goes out on: its ready drafts first, then the messages it is about."""
+    row = db.execute('SELECT event_ids,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row:
+        return [], []
+    drafts = [a for a in next_actions.actions(row['next_action']) if a.get('kind') in DRAFT_EVENT_KINDS] if row['next_action'] else []
+    events = [dict(e) for e in db.execute('SELECT e.id,e.account_id,e.kind,e.metadata FROM json_each(?) i JOIN events e ON e.id=i.value '
+                                          'WHERE e.deleted=0', (row['event_ids'],))]
+    kinds = [DRAFT_EVENT_KINDS[a['kind']] for a in drafts] + [e['kind'] for e in events if e['kind'] in EVENT_CHANNELS]
+    return list(dict.fromkeys(kinds)), events + [{'kind': DRAFT_EVENT_KINDS[a['kind']], 'account_id': a.get('account_id'),
+                                                 'metadata': {k: a[k] for k in ('thread_id', 'chat_id', 'conversation_id', 'channel_id') if a.get(k)}}
+                                                for a in drafts]
+
+
+def tag_note(db, suggestion_id, kind, source='assistant'):
+    """Record what the Change note behind this preparation was. Returns False when there's no untagged note."""
+    job = db.execute("SELECT p.decision_id,d.choice FROM preparations p JOIN decisions d ON d.id=p.decision_id WHERE p.suggestion_id=?", (suggestion_id,)).fetchone()
+    if not job or job['choice'] != 'other' or db.execute('SELECT 1 FROM note_kinds WHERE decision_id=?', (job['decision_id'],)).fetchone():
+        return False
+    if kind not in NOTE_KINDS:
+        raise ValueError("Say what the owner's Change note was: note_kind " + ', '.join(NOTE_KINDS) +
+                         ' (style: how it was written; fact: something you didn\'t know; continue: keep going or finish the job; new_ask: something else to do)')
+    db.execute('INSERT INTO note_kinds VALUES(?,?,?,?,?)', (job['decision_id'], suggestion_id, kind, source, now()))
+    return True
+
+
+def rule_changes(db, since):
+    return [dict(r) for r in db.execute('SELECT at,kind,text FROM rule_changes WHERE at>=? ORDER BY at', (since,))]
+
+
+def note_rule_files(db, paths):
+    """Log an edit to the rule files (AGENTS.md, PREPARATION.md) once, by content hash."""
+    for path in paths:
+        try:
+            digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
+        except OSError:
+            continue
+        name = Path(path).name
+        last = db.execute("SELECT ref FROM rule_changes WHERE kind='file' AND text LIKE ? ORDER BY id DESC LIMIT 1", (name + ' %',)).fetchone()
+        if not last or last['ref'] != digest:
+            db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'file',?,?)", (now(), name + (' edited' if last else ' tracked'), digest))
+
+
 class VoicesStore:
     """Store methods for how the owner writes, per channel."""
 
@@ -361,13 +414,7 @@ class VoicesStore:
         return run_id
 
     def tune_voice(self, channel, text, current):
-        """A learning pass's voice block, checked like a learned update: short, and keeping most of the current one."""
-        channel, text = voice_channel(channel), voice_block(text)
-        if not 2 <= len(channel) <= 30 or not 5 <= len(text) <= VOICE_CHARS or text.count('\n') >= VOICE_LINES:
-            raise ValueError('not a voice block')
-        if current and len(text) < VOICE_KEEP * len(current['text']):
-            raise ValueError('a learned update keeps most of the block')
-        return channel, text
+        return tune_voice(channel, text, current)
 
     def apply_tune(self, run_id):
         with self.connect() as db:
@@ -404,17 +451,7 @@ class VoicesStore:
         return written
 
     def card_channels(self, suggestion_id, db):
-        """The channels a card's draft goes out on: its ready drafts first, then the messages it is about."""
-        row = db.execute('SELECT event_ids,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-        if not row:
-            return [], []
-        drafts = [a for a in next_actions.actions(row['next_action']) if a.get('kind') in DRAFT_EVENT_KINDS] if row['next_action'] else []
-        events = [dict(e) for e in db.execute('SELECT e.id,e.account_id,e.kind,e.metadata FROM json_each(?) i JOIN events e ON e.id=i.value '
-                                              'WHERE e.deleted=0', (row['event_ids'],))]
-        kinds = [DRAFT_EVENT_KINDS[a['kind']] for a in drafts] + [e['kind'] for e in events if e['kind'] in EVENT_CHANNELS]
-        return list(dict.fromkeys(kinds)), events + [{'kind': DRAFT_EVENT_KINDS[a['kind']], 'account_id': a.get('account_id'),
-                                                     'metadata': {k: a[k] for k in ('thread_id', 'chat_id', 'conversation_id', 'channel_id') if a.get(k)}}
-                                                    for a in drafts]
+        return card_channels(db, suggestion_id)
 
     def own_examples(self, suggestion_id, limit=VOICE_EXAMPLES, scan=200):
         """The owner's own recent messages on the card's channel: in the same conversation first, then to the same
@@ -585,15 +622,7 @@ class VoicesStore:
         return '\n'.join(f"- {v['channel']}:{voice_lines(v['text'])}" for v in self.voices())
 
     def tag_note(self, suggestion_id, kind, db, source='assistant'):
-        """Record what the Change note behind this preparation was. Returns False when there's no untagged note."""
-        job = db.execute("SELECT p.decision_id,d.choice FROM preparations p JOIN decisions d ON d.id=p.decision_id WHERE p.suggestion_id=?", (suggestion_id,)).fetchone()
-        if not job or job['choice'] != 'other' or db.execute('SELECT 1 FROM note_kinds WHERE decision_id=?', (job['decision_id'],)).fetchone():
-            return False
-        if kind not in NOTE_KINDS:
-            raise ValueError("Say what the owner's Change note was: note_kind " + ', '.join(NOTE_KINDS) +
-                             ' (style: how it was written; fact: something you didn\'t know; continue: keep going or finish the job; new_ask: something else to do)')
-        db.execute('INSERT INTO note_kinds VALUES(?,?,?,?,?)', (job['decision_id'], suggestion_id, kind, source, now()))
-        return True
+        return tag_note(db, suggestion_id, kind, source)
 
     def note_kind_counts(self, days=30):
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=days)).isoformat()
@@ -606,17 +635,8 @@ class VoicesStore:
 
     def rule_changes(self, since):
         with self.connect() as db:
-            return [dict(r) for r in db.execute('SELECT at,kind,text FROM rule_changes WHERE at>=? ORDER BY at', (since,))]
+            return rule_changes(db, since)
 
     def note_rule_files(self, paths):
-        """Log an edit to the rule files (AGENTS.md, PREPARATION.md) once, by content hash."""
         with self.connect() as db:
-            for path in paths:
-                try:
-                    digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
-                except OSError:
-                    continue
-                name = Path(path).name
-                last = db.execute("SELECT ref FROM rule_changes WHERE kind='file' AND text LIKE ? ORDER BY id DESC LIMIT 1", (name + ' %',)).fetchone()
-                if not last or last['ref'] != digest:
-                    db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'file',?,?)", (now(), name + (' edited' if last else ' tracked'), digest))
+            note_rule_files(db, paths)
