@@ -24,6 +24,8 @@ Nothing. (On your own computer, the `join_pipelines` setting can make it add you
 
 Under **Connections**, **Other sources**, Salesflare shows how far it is: accounts read this round, and any skipped because Salesflare was too slow. A round that runs for hours says it may be stuck.
 
+Its tiles count the accounts it could open and the emails and meetings it brought in. If Salesflare lets your API key open none of the accounts, the card says **Needs your help**: use the key of a user who can see them. If Salesflare keeps timing out but each retry gets through, it says Salesflare is **slow at times**.
+
 - **Stop**: nothing new comes in until you press **Start**. It goes on where it was.
 - **Restart sync**: starts over and reads the last week again. Nothing it brought in is lost.
 - **API keys**: opens Salesflare's API keys page, to make a new key.

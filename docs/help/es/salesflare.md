@@ -24,6 +24,8 @@ Nada, a menos que configures `join_pipelines` en el archivo de ajustes de tu Mac
 
 Su tarjeta en **Conexiones**, **Otras fuentes** muestra cómo va: cuántas cuentas ha leído en esta ronda, y cuántas se saltó porque Salesflare tardó demasiado en responder. Una ronda que dura horas avisa de que puede estar atascada.
 
+Sus casillas cuentan las cuentas que pudo abrir y los emails y reuniones que trajo. Si Salesflare no deja que tu clave API abra ninguna cuenta, la tarjeta dice **Necesita tu ayuda**: usa la clave de un usuario que pueda verlas. Si Salesflare se queda sin responder a menudo pero cada reintento funciona, dice que Salesflare **a veces va lento**.
+
 - **Detener**: no entra nada nuevo hasta que pulses **Iniciar**. Sigue donde estaba.
 - **Reiniciar sincronización**: descarta la ronda en curso, con sus errores, y vuelve a leer la última semana ahora. No se pierde nada de lo que trajo.
 - **Claves de API**: abre la página de claves de API de Salesflare, para crear una clave nueva.

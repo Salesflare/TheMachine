@@ -749,6 +749,7 @@
  "Checked by your model. Change anything below.": "Verificado pelo seu modelo. Altere o que quiser abaixo.",
  "Checked open to-dos": "Verificou as tarefas abertas",
  "Checked {}": "Verificado {}",
+ "Checked {} of {} accounts so far.": "{} de {} contas verificadas até agora.",
  "Checked {} things": {
   "one": "{} item verificado",
   "other": "{} itens verificados"
@@ -959,6 +960,8 @@
  "Connected account": "Conta conectada",
  "Connected accounts": "Contas conectadas",
  "Connected · some conversations waiting": "Conectado · algumas conversas aguardando",
+ "Connected · some syncs fail": "Conectado · algumas sincronizações falham",
+ "Connected · {} is slow at times": "Conectado · {} às vezes fica lento",
  "Connected.": "Conectado.",
  "Connected: {}": "Conectado: {}",
  "Connected: {} and {} more": {
@@ -3773,6 +3776,7 @@
  "Salesflare": "Salesflare",
  "Salesflare CRM": "Salesflare CRM",
  "Salesflare did not answer: {}": "O Salesflare não respondeu: {}",
+ "Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.": "O Salesflare não deixa esta chave de API abrir estas contas. Use a chave de um usuário que consiga vê-las.",
  "Same": "Mesma",
  "Same LinkedIn page": "Mesma página do LinkedIn",
  "Same as the 30 days before": "Igual aos 30 dias anteriores",
@@ -4833,6 +4837,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "As imagens são grandes demais juntas. Uma tarefa pode levar até {} de imagens.",
  "The import didn’t go through. The export is still here to try again.": "A importação não deu certo. A exportação continua aqui para tentar de novo.",
  "The last check failed.": "A última verificação falhou.",
+ "The last sync worked.": "A última sincronização funcionou.",
  "The last tries did not finish. Still trying.": "As últimas tentativas não terminaram. Continuo tentando.",
  "The last try did not finish; it tries again shortly.": "A última tentativa não terminou; tenta de novo em breve.",
  "The last update didn’t finish. Your Machine kept the version before it.": "A última atualização não terminou. Sua Machine manteve a versão anterior.",
@@ -5949,6 +5954,7 @@
  "about: one sentence on which projects belong (up to 200 characters)": "about: uma frase sobre quais projetos pertencem (até 200 caracteres)",
  "accepted": "aceito",
  "accepted with a change": "aceito com uma alteração",
+ "accounts read": "contas lidas",
  "after a sign-in": "após o login",
  "after your changes": "depois das suas mudanças",
  "alerts": "alertas",
@@ -6017,6 +6023,7 @@
  "email failed": "falha no e-mail",
  "email waiting to go out": "e-mail aguardando envio",
  "emailed {}": "mandou email para {}",
+ "emails and meetings": "e-mails e reuniões",
  "event is the id of a meeting on a calendar you can change (from events or the Calendar)": "event é o id de uma reunião em um calendário que você pode alterar (de events ou do Calendário)",
  "events": "eventos",
  "everyone": "todos",
@@ -6435,11 +6442,10 @@
   "one": "{} tentativa falha seguida",
   "other": "{} tentativas falhas seguidas"
  },
- "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
-  "one": "{} sincronização com falha nas últimas 24 horas. Falhas antigas não afetam uma conexão que se recuperou.",
-  "other": "{} sincronizações com falha nas últimas 24 horas. Falhas antigas não afetam uma conexão que se recuperou."
+ "{} failed syncs in the last 24 hours.": {
+  "one": "{} sincronização com falha nas últimas 24 horas.",
+  "other": "{} sincronizações com falha nas últimas 24 horas."
  },
- "{} failed syncs in the last 24h. Old failures don’t affect a recovered connection.": "{} sincronizações com falha nas últimas 24h. Falhas antigas não afetam uma conexão recuperada.",
  "{} failed {} times in a day": "{} falhou {} vezes em um dia",
  "{} files": {
   "one": "{} arquivo",

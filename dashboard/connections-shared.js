@@ -13,15 +13,20 @@ if(c.error&&/_signed_out$/.test(c.error))return {tone:'orange',text:'Signed out 
 if(TELEGRAM_STOP[c.error])return {tone:'orange',text:TELEGRAM_STOP[c.error]};
 if(c.error==='android_offline')return {tone:'orange',text:'Phone disconnected'};
 if(c.error){const help=/(auth|unauthor|forbidden|permission|invalid_grant|signin_expired|HTTP_40[13])/.test(c.error);return help?{tone:'orange',text:'Needs your help'}:c.last_success&&again?resting:{tone:'amber',text:'Reconnecting automatically'}}
+if(c.salesflare?.no_access_all)return {tone:'orange',text:'Needs your help'};  // it reads no account (salesflare_progress)
 if(c.signals===false)return {tone:'mint',text:'Connected'};  // action-only: nothing to sync, so never "waiting"
 if(!c.last_success)return {tone:'muted',text:'Waiting for first sync'};
 if(again)return resting;
 const since=Math.max(Date.parse(c.last_success),Date.parse(w?.reads_again_at||w?.opened_at||'')||0);
 if(Date.now()-since>Math.max(900000,(c.poll_seconds||300)*3000))return {tone:'amber',text:'Waiting for a fresh sync'};
 if(c.service==='slack'&&(c.conversation_errors||c.deferred_threads))return {tone:'amber',text:'Connected · some conversations waiting'};
+if(syncFlaky(c))return {tone:'amber',text:/HTTP_(429|5\d\d)|network|timeout/i.test(c.last_failure.error||'')?t('Connected · {} is slow at times',service(c.service)):t('Connected · some syncs fail')};
 return {tone:'mint',text:'Connected'}
 }
 function connectorTone(c){return connectorHealth(c).tone}
+// Failing again and again while each retry gets through (6 or more in 24 hours, the last one in the past 3 hours): no
+// longer a blip, so the card says so calmly. A blip that recovered stays Connected.
+const syncFlaky=c=>c.failures_24h>=6&&!!c.last_failure&&Date.now()-Date.parse(c.last_failure.at)<3*3600e3;
 let healthPane=(localStorage.getItem('health-pane')||'').replace(/^phone$/,'other'),healthPicked=false,savedLoginCount=0;
 // Connections, Add: every source this install can add, set up right here with the same steps as `assistant connect`;
 // its questions show one at a time. On a hosted machine Google, Microsoft, Zoom, Stripe, Intercom and Trello sign in right

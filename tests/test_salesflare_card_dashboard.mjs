@@ -11,12 +11,19 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // - Relative times follow the dashboard's region, not the browser's language: a French browser still reads "3 hours ago".
 // - Feedback, What you decided: the cards start on the same left edge as the sections above, at both widths.
 // - What's shared, Your connections: another person's calendar read through the owner's sign-in is named for it.
+// - A CRM's tiles count accounts read and emails and meetings, not messages; a key that opens no account needs help;
+//   a sync that keeps failing says so calmly (amber, no Caught up); a row of empty bars isn't drawn (report s_f0d5d0200384ed92).
 const dashboard=await dashboardPage();
 const ago=h=>new Date(Date.now()-h*3600e3).toISOString();
 const sf={id:'work-crm',service:'salesflare',what:'Accounts, contacts and deals, so it knows who matters.',email:'owner@acme.example',display_name:'CRM',boundary:'work:Acme',last_success:ago(0.05),total:12,signals_24h:2,pending:0,
  salesflare:{stopped:null,synced_until:ago(5),round:{since:ago(170),started:ago(3),accounts:42,done:12,stuck:true,failing:1},slow_accounts:2,no_access:0,keys_url:'https://app.salesflare.com/#/settings/apikeys'}};
+const syncs=(n,fail)=>Array.from({length:n},(_,i)=>({at:ago(i*0.1),status:fail&&i===fail?'failed':'success',signals:0,error:fail&&i===fail?'salesflare:HTTP_504':null}));
+const locked={...sf,id:'crm-locked',display_name:'CRM locked',total:0,signals_24h:0,last_sync_signals:0,sync_activity:syncs(12),failures_24h:0,
+ salesflare:{stopped:null,synced_until:ago(1),round:null,last_round:{accounts:128,read:0,no_access:128,refused:128,set_aside:0},no_access_all:true,slow_accounts:0,no_access:128,keys_url:sf.salesflare.keys_url}};
+const flaky={...sf,id:'crm-flaky',display_name:'CRM flaky',total:340,signals_24h:9,sync_activity:syncs(12,3),failures_24h:35,last_failure:{at:ago(0.3),error:'salesflare:HTTP_504'},
+ salesflare:{stopped:null,synced_until:ago(1),round:null,last_round:{accounts:128,read:126,no_access:2,refused:2,set_aside:0},no_access_all:false,slow_accounts:0,no_access:2,keys_url:sf.salesflare.keys_url}};
 const decisions=[1,2,3].map(i=>({suggestion_id:'c'+i,choice:'complete',source:'dashboard',created_at:ago(i)}));
-const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf],suggestion_counts:{},decisions,analyses:[],deliveries:[],
+const state={suggestions:[1,2,3].map(i=>({id:'c'+i,title:'To-do '+i,body:'Made-up.',status:'completed',scope:'work',created_at:ago(i)})),promises:[],connectors:[sf,locked,flaky],suggestion_counts:{},decisions,analyses:[],deliveries:[],
  review_health:{},review_runs:[],locale:{locale:'en-BE',region:'BE',language:'en',clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}};
 const calls=[];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.invalid');res.setHeader('Content-Type','application/json');
@@ -44,10 +51,29 @@ try{
   const why=async e=>new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconsole errors: ${JSON.stringify(logged)}\npage: ${await page.evaluate(()=>JSON.stringify({notice:document.querySelector('#notice')?.textContent,refreshFailed,tab:document.querySelector('main>section:not([hidden])')?.id,healthPane,connectors:document.querySelectorAll('#connectors article').length})).catch(x=>x.message)}`);
   await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article')).catch(async e=>{throw await why(e)});
   await page.evaluate(()=>showTab('health','other'));
-  const card=page.locator('#connectors article',{hasText:'Salesflare CRM'});
+  const card=page.locator('#connectors article[data-conn="work-crm"]');
   await card.waitFor().catch(async e=>{throw await why(e)});
   assert.equal(await card.locator('.conn-what').innerText(),'Accounts, contacts and deals, so it knows who matters.');
-  assert.match(await card.locator('.sf-line').innerText(),/^Reading 12 of 42 accounts\. Started 3 hours ago, may be stuck\.$/);
+  assert.match(await card.locator('.sf-line').innerText(),/^Checked 12 of 42 accounts so far\. Started 3 hours ago, may be stuck\.$/);
+  // Kris's card: no account opens. Tiles fit a CRM, no empty bars, Needs your help with the way out, not Caught up
+  const lk=page.locator('#connectors article[data-conn="crm-locked"]');
+  assert.deepEqual(await lk.locator('.figures span').allInnerTexts(),['accounts read','emails and meetings','last 24h']);
+  assert.deepEqual(await lk.locator('.figures b').allInnerTexts(),['0','0','0']);
+  assert.equal(await lk.locator('.spark').count(),0);
+  assert.equal(await lk.locator('.connection-status').innerText(),'Needs your help');
+  assert.match(await lk.locator('.sf-locked').innerText(),/^Salesflare doesn’t let this API key open these accounts\. Use the key of a user who can see them\.$/);
+  assert.equal(await lk.locator('.sf-aside').count(),0);
+  assert.doesNotMatch(await lk.locator('.conn-plain').allInnerTexts().then(x=>x.join(' ')),/Caught up/);
+  // A CRM that keeps failing but gets through: amber and calm, plain words under Details
+  const fl=page.locator('#connectors article[data-conn="crm-flaky"]');
+  assert.equal(await fl.locator('.connection-status').innerText(),'Connected · Salesflare CRM is slow at times');
+  assert.ok(await fl.locator('.state-dot.t-amber').count());
+  assert.deepEqual(await fl.locator('.figures b').allInnerTexts(),['126','340','9']);
+  assert.equal(await fl.locator('.spark').count(),1);
+  assert.equal(await fl.locator('.sf-aside').innerText(),'2 without access');
+  const details=await fl.locator('[id^="sync-details-"]').evaluate(d=>{d.open=true;return d.innerText});
+  assert.match(details,/35 failed syncs in the last 24 hours\. The last sync worked\./);
+  assert.doesNotMatch(details,/Old failures|Caught up/);
   assert.equal(await card.locator('.sf-aside').innerText(),'2 skipped as too slow');
   assert.equal(await card.locator('a.head-link').getAttribute('href'),'https://app.salesflare.com/#/settings/apikeys');
   assert.equal(await card.locator('a.head-link').getAttribute('target'),'_blank');

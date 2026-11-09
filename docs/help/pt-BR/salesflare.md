@@ -24,6 +24,8 @@ Nada, a menos que você defina `join_pipelines` no arquivo de configurações da
 
 O cartão dele em **Conexões**, **Outras fontes** mostra o andamento: quantas contas ela leu nesta rodada e quantas pulou porque o Salesflare demorou demais para responder. Uma rodada que dura horas avisa que pode estar travada.
 
+Os blocos contam as contas que ela conseguiu abrir e os e-mails e reuniões que trouxe. Se o Salesflare não deixa sua chave de API abrir nenhuma conta, o cartão diz **Precisa da sua ajuda**: use a chave de um usuário que consiga vê-las. Se o Salesflare demora demais com frequência, mas cada nova tentativa funciona, ele diz que o Salesflare **às vezes fica lento**.
+
 - **Parar**: nada novo chega até você clicar em **Início**. Ela continua de onde estava.
 - **Reiniciar sincronização**: descarta a rodada atual, com os erros dela, e lê a última semana de novo agora. Nada do que ela já trouxe se perde.
 - **Chaves de API**: abre a página de chaves de API do Salesflare, para criar uma chave nova.

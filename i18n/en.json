@@ -749,6 +749,7 @@
  "Checked by your model. Change anything below.": "Checked by your model. Change anything below.",
  "Checked open to-dos": "Checked open to-dos",
  "Checked {}": "Checked {}",
+ "Checked {} of {} accounts so far.": "Checked {} of {} accounts so far.",
  "Checked {} things": {
   "one": "Checked {} thing",
   "other": "Checked {} things"
@@ -959,6 +960,8 @@
  "Connected account": "Connected account",
  "Connected accounts": "Connected accounts",
  "Connected · some conversations waiting": "Connected · some conversations waiting",
+ "Connected · some syncs fail": "Connected · some syncs fail",
+ "Connected · {} is slow at times": "Connected · {} is slow at times",
  "Connected.": "Connected.",
  "Connected: {}": "Connected: {}",
  "Connected: {} and {} more": {
@@ -3773,6 +3776,7 @@
  "Salesflare": "Salesflare",
  "Salesflare CRM": "Salesflare CRM",
  "Salesflare did not answer: {}": "Salesflare did not answer: {}",
+ "Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.": "Salesflare doesn’t let this API key open these accounts. Use the key of a user who can see them.",
  "Same": "Same",
  "Same LinkedIn page": "Same LinkedIn page",
  "Same as the 30 days before": "Same as the 30 days before",
@@ -4833,6 +4837,7 @@
  "The images are too big together. A to-do can carry up to {} of images.": "The images are too big together. A to-do can carry up to {} of images.",
  "The import didn’t go through. The export is still here to try again.": "The import didn’t go through. The export is still here to try again.",
  "The last check failed.": "The last check failed.",
+ "The last sync worked.": "The last sync worked.",
  "The last tries did not finish. Still trying.": "The last tries did not finish. Still trying.",
  "The last try did not finish; it tries again shortly.": "The last try did not finish; it tries again shortly.",
  "The last update didn’t finish. Your Machine kept the version before it.": "The last update didn’t finish. Your Machine kept the version before it.",
@@ -5949,6 +5954,7 @@
  "about: one sentence on which projects belong (up to 200 characters)": "about: one sentence on which projects belong (up to 200 characters)",
  "accepted": "accepted",
  "accepted with a change": "accepted with a change",
+ "accounts read": "accounts read",
  "after a sign-in": "after a sign-in",
  "after your changes": "after your changes",
  "alerts": "alerts",
@@ -6017,6 +6023,7 @@
  "email failed": "email failed",
  "email waiting to go out": "email waiting to go out",
  "emailed {}": "emailed {}",
+ "emails and meetings": "emails and meetings",
  "event is the id of a meeting on a calendar you can change (from events or the Calendar)": "event is the id of a meeting on a calendar you can change (from events or the Calendar)",
  "events": "events",
  "everyone": "everyone",
@@ -6435,11 +6442,10 @@
   "one": "{} failed attempt in a row",
   "other": "{} failed attempts in a row"
  },
- "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered.": {
-  "one": "{} failed sync in the last 24 hours. Old failures don’t affect a connection that recovered.",
-  "other": "{} failed syncs in the last 24 hours. Old failures don’t affect a connection that recovered."
+ "{} failed syncs in the last 24 hours.": {
+  "one": "{} failed sync in the last 24 hours.",
+  "other": "{} failed syncs in the last 24 hours."
  },
- "{} failed syncs in the last 24h. Old failures don’t affect a recovered connection.": "{} failed syncs in the last 24h. Old failures don’t affect a recovered connection.",
  "{} failed {} times in a day": "{} failed {} times in a day",
  "{} files": {
   "one": "{} file",
