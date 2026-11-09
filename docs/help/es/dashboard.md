@@ -19,6 +19,8 @@ order: 4
 
 La barra lateral muestra tus tareas igual que la página. Las solicitudes de tu Fleet también están en **Por decidir**, así su número coincide con el de arriba. Toca una para verla.
 
+Para el menú de una tarea, pasa el ratón por encima y haz clic en **⋯**, haz clic derecho en ella o mantenla pulsada en el móvil. Con el teclado, pulsa `Shift F10` sobre ella. Además de **Renombrar** y **Abrir**, el menú tiene los botones de la propia tarea: **Marcar como hecha**, **Posponer** y **No hace falta**, cada uno con **Deshacer**.
+
 **Navegador** muestra el navegador propio de tu Machine. En un ordenador se abre junto a la barra lateral, al tamaño del espacio que tiene, igual que **Ver en el navegador** en una tarea y **Abrir el navegador** cuando un sitio pide iniciar sesión. En un teléfono se abre en una pestaña nueva.
 
 La ventana delantera del navegador se muestra en el centro y el resto de la pantalla queda oscuro; un botón en la esquina muestra la pantalla entera. En una pantalla baja, toda la barra lateral se desplaza como una sola columna, tareas incluidas, como el menú en un teléfono.

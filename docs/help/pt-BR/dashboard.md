@@ -19,6 +19,8 @@ order: 4
 
 A barra lateral lista suas tarefas como a página. Os pedidos do seu Fleet também ficam em **A decidir**, então o número bate com o de cima. Toque em um para vê-lo.
 
+Para o menu de uma tarefa, passe o mouse sobre ela e clique em **⋯**, clique nela com o botão direito ou toque e segure no celular. Pelo teclado, aperte `Shift F10` nela. Além de **Renomear** e **Abrir**, o menu tem os botões da própria tarefa: **Marcar como feita**, **Adiar** e **Não precisa**, cada um com **Desfazer**.
+
 **Navegador** mostra o navegador da própria Machine. No computador, ele abre ao lado da barra lateral, no tamanho do espaço disponível, e o mesmo vale para **Ver no navegador** em uma tarefa e **Abrir o navegador** quando um site precisa de login. No celular, ele abre em uma nova aba.
 
 A janela da frente do navegador aparece no meio e o resto da tela fica escuro. Um botão no canto mostra a tela inteira. Em uma tela baixa, a barra lateral inteira rola como uma coluna só, tarefas incluídas, como o menu no celular.

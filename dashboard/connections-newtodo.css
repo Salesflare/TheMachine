@@ -163,7 +163,9 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .row-more svg{width:16px;height:16px}
 .row-menu{position:fixed;z-index:72;display:flex;flex-direction:column;min-width:150px;padding:5px;border:1px solid var(--border);border-radius:12px;background:var(--surface);box-shadow:0 12px 30px #0005}
 .row-menu button{min-height:0;margin:0;padding:7px 12px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:500 .9rem/1.3 var(--sans);text-align:left}
-.row-menu button:hover{background:var(--c-hover)}
+.row-menu button:hover,.row-menu button:focus-visible{background:var(--c-hover)}
+.row-menu hr{width:auto;height:0;margin:4px 6px;border:0;border-top:1px solid var(--border)}
+@media (pointer:coarse){.row-menu{min-width:190px}.row-menu button{padding:11px 14px;font-size:1rem}}
 @media(hover:hover) and (pointer:fine){.card h3 .title-link{cursor:text}}
 .chat-title{cursor:text}
 /* This device: the shared quiet notice card (.notice-card) at the top of Suggestions, to install the app or turn on notifications. */
