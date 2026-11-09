@@ -25,14 +25,32 @@ from sources import SourceError, credential
 from timeutil import now
 
 
+# Slack's read limit, per transport: The Machine's own Slack app (Sign in with Slack, `broker`) and Maton's. Slack allows
+# an app outside its Marketplace about one conversations.history or .replies read a minute per workspace, 15 messages a
+# page. read_seconds: at most one such read this often by default (config slack_read_seconds overrides it, never under
+# floor); page: messages asked for per read. When The Machine's Slack app is approved for the Marketplace, the `broker`
+# row is the only thing to change (Slack's Tier 3: 50+ reads a minute, up to 200 messages a page); Maton keeps its own.
+SLACK_LIMITS = {'broker': {'read_seconds': 180, 'floor': 65, 'page': 15},
+                'maton': {'read_seconds': 180, 'floor': 65, 'page': 15}}
+
+
+def slack_limits(account):
+    return SLACK_LIMITS['broker' if (account or {}).get('transport') == 'broker' else 'maton']
+
+
 class Slack:
     METHODS = {'auth.test', 'users.info', 'users.conversations', 'conversations.history',
                'conversations.replies', 'conversations.info'}
+    # Seconds between two calls of a method, by Slack's tier for it: users.conversations is Tier 2 (20 a minute), the
+    # others here allow more. A first import lists a large workspace's conversations page after page: at the 2 seconds
+    # every other call waits, that went over Tier 2 and came back as 429s.
+    CALL_GAP = {'users.conversations': 3.5}
 
     def __init__(self, config, account, stop=None):
         self.config, self.account, self.stop = config, account, stop
         self.verified_until = 0
         self.last_call = 0
+        limits = slack_limits(account)
         # Conservative non-Marketplace limits match this connection's observed
         # one-success-per-minute replies. Warm up after restart rather than
         # forgetting a request sent just before shutdown.
@@ -42,7 +60,7 @@ class Slack:
         # the channel first. So this collector spends at most one of those reads every
         # slack_read_seconds (default 3 minutes) and leaves the rest of the minute to others.
         self.limited_reads = {'conversations.history', 'conversations.replies'}
-        self.read_seconds = max(65, int(config.get('slack_read_seconds', 180)))
+        self.read_seconds = max(limits['floor'], int(config.get('slack_read_seconds', limits['read_seconds'])))
         self.last_limited = time.monotonic()
         # Machines on one workspace (a team's hosted servers, an own install) share that one read a minute. Each reads
         # in its own minute of a round, on the clock: a slot picked from this Machine and connection. A 429 means
@@ -54,7 +72,7 @@ class Slack:
         # in slack-rounds.json next to the database: a release restarts a team's Machines together, and starting
         # over from the first slot each time brought the same 429s back right after every update (2026-10-28).
         self.round, self.calm, self.limited_at = self.read_seconds, 0, 0.0
-        self.slots = self.round // 60
+        self.slots = max(1, self.round // 60)
         self.slot = int(hashlib.sha256(f"{socket.gethostname()}|{account.get('connection_id') or account.get('id')}".encode()).hexdigest(), 16) % self.slots
         kept = self.rounds_kept().get(str(account.get('id')))
         if isinstance(kept, dict) and kept.get('base') == self.read_seconds:
@@ -62,7 +80,7 @@ class Slack:
                 rounds = int(kept['round']) // self.read_seconds
                 if self.read_seconds <= int(kept['round']) <= self.round_max() and rounds & (rounds - 1) == 0 and 0 <= int(kept['slot']) < int(kept['round']) // 60:
                     self.round, self.slot, self.limited_at = int(kept['round']), int(kept['slot']), float(kept.get('limited_at') or 0)
-                    self.slots = self.round // 60
+                    self.slots = max(1, self.round // 60)
             except (KeyError, TypeError, ValueError):
                 pass
 
@@ -115,7 +133,7 @@ class Slack:
         """After a history or replies read: Slack refused it for the rate limit (limited) or took it."""
         if limited:
             self.round, self.calm, self.limited_at = min(self.round_max(), self.round * 2), 0, time.time()
-            before, self.slots = self.slot, self.round // 60
+            before, self.slots = self.slot, max(1, self.round // 60)
             if self.slots > 1:
                 self.slot = random.choice([n for n in range(self.slots) if n != before])
             self.keep_round()
@@ -123,13 +141,13 @@ class Slack:
             self.calm += 1
             if self.calm >= self.SLACK_CALM and time.time() - self.limited_at >= self.SLACK_CALM_SECONDS:
                 self.round, self.calm = self.round // 2, 0
-                self.slots = self.round // 60
+                self.slots = max(1, self.round // 60)
                 self.slot %= self.slots
                 self.keep_round()
 
     def pace(self, method):
         stamp = time.monotonic()
-        delay = max(0, 2 - (stamp - self.last_call))
+        delay = max(0, self.CALL_GAP.get(method, 2) - (stamp - self.last_call))
         if method in self.limited_reads:
             if self.slots < 2:
                 delay = max(delay, self.round - (stamp - self.last_limited))

@@ -35,7 +35,7 @@ const server=createServer(async(req,res)=>{
    {name:'intercom',service:'intercom',label:'Intercom',connected:0,broker:false,account_page:'source-intercom',hosted_signin:'intercom'},
    {name:'whatsapp',service:'whatsapp',label:'WhatsApp',connected:0,broker:false,hosted_signin:'whatsapp'},
    {name:'android',service:'android',label:'Android phone',connected:0,broker:false,hosted_signin:'android'},
-   {name:'slack',service:'slack',label:'Slack',connected:0,broker:false}]}));return}
+   {name:'slack',service:'slack',label:'Slack',connected:0,broker:false,hosted_signin:'slack'}]}));return}
   res.end('{}');return}
  res.end('{}');
 });
@@ -73,6 +73,11 @@ try{
   // Stopped at the provider
   await page.goto('about:blank');await page.goto(base+'/#connect=stripe/stopped');
   await box(page).getByText('That sign-in didn’t finish.').waitFor();
+  // Sign in with Slack: back from Slack to its own form, which follows the connecting
+  states={'slack/c_0123456789abcdef':[{state:'connecting'},{state:'done'}]};
+  await page.goto('about:blank');await page.goto(base+'/#connect=slack/c_0123456789abcdef');
+  await box(page).getByText('Connected.').waitFor({timeout:10000});
+  assert.equal(await box(page).locator('h3').innerText(),'Slack');
   // GitHub: started on the dashboard, its code right here
   states={'github/c_00000000000000aa':[{state:'starting'},{state:'code',code:'ABCD-1234',url:'https://github.com/login/device'},{state:'code',code:'ABCD-1234',url:'https://github.com/login/device'},
    {state:'connecting'},{state:'done'}]};

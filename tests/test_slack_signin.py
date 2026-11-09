@@ -160,6 +160,65 @@ class SlackSignin(unittest.TestCase):
         self.assertEqual(onboarding.missing({**self.config, 'slack_broker': {}}, BROKER), 'slack_broker url is not set')
         self.assertEqual(onboarding.missing(self.config, BROKER), '')
 
+    def test_add_on_a_hosted_machine_signs_in_with_slack(self):
+        """+ Add's Slack tile is Sign in with Slack on a hosted Machine too (Maton is the other way, on the account page)."""
+        import assistant
+        app = object.__new__(assistant.App)
+        app.config = {**self.config, 'manage_url': 'https://cp.example/account'}
+        app.store = assistant.Store(Path(self.config['database']))
+        found = {s['name']: s for s in app.action('connect_sources', {}, owner_dashboard=True)['sources']}
+        self.assertIn('slack', a.HOSTED_SIGNINS)
+        self.assertEqual(found['slack'].get('hosted_signin'), 'slack')
+        self.assertFalse(found['slack'].get('broker'))  # its own tile: the dashboard offers "Or use a Maton API key" beside it
+
+
+class SlackPace(unittest.TestCase):
+    """How the reader keeps to Slack's limits: one history read per round (SLACK_LIMITS, by transport), Tier 2 lists
+    spaced out, and a 429 honored with Slack's Retry-After, never a quick retry."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.config = {'database': str(Path(tmp.name) / 'events.sqlite'), 'credentials': {}}
+        self.waits = []
+
+    def slack(self, account, config=None):
+        stop = type('Stop', (), {'wait': lambda _, seconds: self.waits.append(round(seconds, 1)) or False})()
+        return a.Slack({**self.config, **(config or {})}, {**account, 'id': 'acct-' + account['transport']}, stop=stop)
+
+    def test_the_read_rate_and_page_come_from_slack_limits_per_transport(self):
+        from machine.sources import slack
+        self.assertEqual(slack.slack_limits(BROKER), slack.SLACK_LIMITS['broker'])
+        self.assertEqual(slack.slack_limits(MATON), slack.SLACK_LIMITS['maton'])
+        self.assertEqual((self.slack(BROKER).read_seconds, self.slack(MATON).read_seconds), (180, 180))
+        self.assertEqual(self.slack(BROKER, {'slack_read_seconds': 30}).read_seconds, 65)  # never under Slack's own minute
+        # Once the app is in the Slack Marketplace, its row is the only change: Maton accounts keep their pace
+        faster = {**slack.SLACK_LIMITS, 'broker': {'read_seconds': 2, 'floor': 1, 'page': 200}}
+        with patch.object(slack, 'SLACK_LIMITS', faster):
+            fast, maton = self.slack(BROKER), self.slack(MATON)
+            self.assertEqual((fast.read_seconds, fast.slots, maton.read_seconds), (2, 1, 180))
+            self.assertEqual((slack.slack_limits(BROKER)['page'], slack.slack_limits(MATON)['page']), (200, 15))
+
+    def test_a_history_read_waits_its_round_and_a_conversation_list_its_tier(self):
+        source = self.slack(BROKER)
+        source.pace('conversations.history')
+        self.assertGreaterEqual(self.waits[-1], 64)  # never two reads in Slack's minute, after a restart too
+        source.pace('users.conversations')
+        self.assertEqual(self.waits[-1], 3.5)  # Tier 2: 20 a minute
+        source.pace('conversations.info')
+        self.assertEqual(self.waits[-1], 2.0)
+
+    def test_a_429_waits_slacks_retry_after_and_moves_the_round(self):
+        source = self.slack(BROKER)
+        source.request = lambda method, values, fresh=False: urllib.request.Request('https://slack.com/api/' + method)
+        error = urllib.error.HTTPError('https://slack.com/api/conversations.history', 429, 'limited', {'Retry-After': '120'}, None)
+        with patch.object(source, 'pace'), patch('urllib.request.urlopen', side_effect=error):
+            with self.assertRaises(a.SourceError) as caught:
+                source.get('conversations.history', {'channel': 'C0GENERAL'})
+        self.assertEqual(caught.exception.status, 429)
+        self.assertTrue(125 <= caught.exception.retry_after <= 180)  # Slack's 120 s plus a spread, never sooner
+        self.assertEqual(source.round, 360)  # the next read waits a longer round
+
 
 if __name__ == '__main__':
     unittest.main()
