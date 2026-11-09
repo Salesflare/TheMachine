@@ -39,7 +39,7 @@ assert.equal(await page.locator('script').count(),0);
 for(const width of [320,390]){await page.setViewportSize({width,height:650});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
 await page.screenshot({path:'/tmp/261012-approval-mobile.png',fullPage:true});
 await page.setViewportSize({width:390,height:844});
-await page.goto('http://127.0.0.1:'+server.address().port);await page.getByText('Needs your decision',{exact:true}).last().waitFor();
+await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#suggestions .chip',{hasText:/^Needs you$/}).last().waitFor();
 // A to-do held for later says where it will reach the owner (Settings, Notifications: New to-dos), never Telegram when that is off.
 {const said=await page.evaluate(at=>[{telegram:true,push:2},{telegram:false,push:2},{telegram:true,push:0},{telegram:false,push:0},undefined].map(ch=>deliveryLabel(at,ch)),suggestions[0].deliver_after);
  assert.match(said[0],/^Telegram and notification Tomorrow · /);assert.match(said[1],/^Notification Tomorrow · /);assert.match(said[2],/^Telegram Tomorrow · /);assert.deepEqual(said.slice(3),['','']);
@@ -96,7 +96,7 @@ await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[
 await scopeClick(page,'Personal');
 assert.equal(await page.locator('#task-'+ids[0]).count(),0);
 await scopeClick(page,'All');
-await page.locator('#section-ready').click();
+await page.locator('#section-foryou').click();
 assert.equal(await page.locator('#task-'+ids[2]).count(),0);
 await navClick(page.locator('nav [data-tab="feedback"]'));
 await page.evaluate(id=>location.hash='#card='+id,ids[2]);
@@ -104,7 +104,7 @@ await page.locator('#task-'+ids[2]).waitFor({state:'visible'});
 await page.waitForFunction(()=>location.hash==='');
 assert.equal(await page.locator('#inbox').evaluate(el=>el.hidden),false);
 assert.equal(await page.locator('nav [data-tab="inbox"]').getAttribute('aria-current'),'page');
-assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('folded-sections'))),['ready']);
+assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('folded-sections'))),['foryou']);
 await page.evaluate(id=>location.hash='#card='+id,ids[3]);
 await page.locator('#task-'+ids[3]).waitFor({state:'visible'});
 assert.equal(await page.locator('#later-list').getAttribute('open'),'');
@@ -173,12 +173,12 @@ Object.assign(suggestions[1],{preparation_status:'blocked',preparation_started_a
 delete suggestions[0].due;delete suggestions[2].due;delete suggestions[2].next_action;await page.evaluate(()=>refresh());}
 {// Coming back later is folded by default and stays open once opened.
 const later=page.locator('#later-list');assert.equal(await later.getAttribute('open'),null);assert.equal(await page.locator('#task-'+ids[3]).isVisible(),false);
-// Section heads fold their section: Later opens, Ready folds (and is remembered), tapping again restores.
+// Section heads fold their section: Later opens, For you folds (and is remembered), tapping again restores.
 await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor();
 await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor({state:'hidden'});
-await page.locator('#section-ready').click();assert.equal(await page.locator('#task-'+ids[2]).count(),0);assert.equal(await page.locator('#section-ready').getAttribute('aria-expanded'),'false');
-assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('folded-sections'))),['ready']);
-await page.locator('#section-ready').click();assert.equal(await page.locator('#task-'+ids[2]).isVisible(),true);
+await page.locator('#section-foryou').click();assert.equal(await page.locator('#task-'+ids[2]).count(),0);assert.equal(await page.locator('#section-foryou').getAttribute('aria-expanded'),'false');
+assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('folded-sections'))),['foryou']);
+await page.locator('#section-foryou').click();assert.equal(await page.locator('#task-'+ids[2]).isVisible(),true);
 await later.locator(':scope>summary').getByText('Coming back later').waitFor();await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor();
 await page.evaluate(()=>refresh());assert.equal(await page.locator('#task-'+ids[3]).isVisible(),true);
 await later.locator(':scope>summary').click();await page.locator('#task-'+ids[3]).waitFor({state:'hidden'});await page.waitForTimeout(300);await page.screenshot({path:'/tmp/261012-later-folded.png'});}

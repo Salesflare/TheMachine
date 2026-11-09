@@ -22,7 +22,7 @@ Voor hij een opvolging schrijft of iets doorgeeft, kijkt hij in het gesprek of e
 - Een antwoord reageert op de nieuwste e-mail van de thread, en de bron van de to-do opent die e-mail.
 - Een stap die iets vastlegt, zoals verzenden, betalen of boeken, stopt en wacht op je bevestiging.
 - In de chat van een to-do wordt een concept nooit verstuurd in hetzelfde bericht dat het schreef.
-- Tot je goedkeurt, wacht de to-do onder **Voor jou klaargezet**, waar één keer staat dat er niets weggaat tot je het goedkeurt, of er staat **Heeft je nodig**, nooit klaar. Dat een concept weg is, staat er pas als het echt weg is.
+- Tot je goedkeurt, wacht de to-do onder **Voor jou** als **Klaargezet**, en de lijst zegt één keer dat er niets weggaat tot je het goedkeurt. Een to-do die nog iets van je nodig heeft, zegt **Wacht op jou**, nooit klaar. Dat een concept weg is, staat er pas als het echt weg is.
 - Een lang concept toont de eerste 3 regels. **Meer tonen** opent de rest; **Nakijken en versturen** toont altijd alles.
 
 Wat hij kan versturen, hangt af van de bron: een e-mail, een direct bericht in Slack, een bericht op WhatsApp, Telegram, LinkedIn of X. Het artikel van elke koppeling zegt wat die kan versturen.

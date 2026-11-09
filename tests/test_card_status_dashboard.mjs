@@ -63,7 +63,7 @@ try{
   assert.equal(await page.locator('#probe #task-n1 button.more').textContent(),'Show more');
   // Prepared ahead with a draft: no line of its own; Ready's header says once that nothing goes out until you approve
   assert.deepEqual(await notes('a1'),[]);
-  assert.equal(await page.locator('#section-ready .section-note').textContent(),'Nothing goes out until you approve it.');
+  assert.equal(await page.locator('#section-foryou .section-note').textContent(),'Nothing goes out until you approve it.');
   // Once the reply went out, the old needs line is gone; the sent line says it
   assert.ok(!(await text('s1')).includes('Needs you'));
   // Prepared, not done: a result saved as done while its draft still waits reads as ready to approve, never Finished

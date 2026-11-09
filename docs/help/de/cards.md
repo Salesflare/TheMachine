@@ -12,9 +12,8 @@ Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas di
 
 Die Seite **Aufgaben** gruppiert sie:
 
-- **Bereit für dich**: vorbereitet und wartet auf deine Freigabe.
-- **Braucht deine Entscheidung**: etwas, das nur du entscheiden kannst.
-- **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und wandert dann zu **Bereit für dich**.
+- **Für dich**: alles, was auf dich wartet, das Dringendste zuerst. Jede Aufgabe zeigt **Vorbereitet** (die Arbeit ist getan, und **Ausführen** oder **Senden** erledigt sie) oder **Braucht dich** (zuerst deine Entscheidung oder eine Antwort).
+- **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und zeigt dann **Vorbereitet**.
 - **Gerade erledigt**: ein letzter Schritt, den du bestätigt hast, etwa ein Formular absenden oder ein Issue anlegen, ist gelungen, während du weg warst. Er zeigt, was passiert ist, bis du auf **Verstanden** tippst, höchstens einen Tag, und dein Handy erfährt es auch. Danach steht er nur noch unter Erledigt.
 - **Kommt später zurück**: zurückgestellt, und Aufgaben ohne Antwort auf **Noch nötig?** (unten).
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
@@ -22,7 +21,7 @@ Die Seite **Aufgaben** gruppiert sie:
 
 Nach dem Senden sagt ein kurzer Hinweis, wo die Aufgabe jetzt ist, etwa „Gesendet. Verschoben nach Erledigt.“ oder, wenn sie auf eine Antwort wartet, „Gesendet. Verschoben nach Später bis Mo.“ **Öffnen** bringt dich hin. Dass der E-Mail-Verlauf für ein paar Tage aus deinem Posteingang verschwindet, betrifft nur dein Postfach. Die Suche findet eine Aufgabe nach Titel oder Empfänger, auch in Später und Erledigt.
 
-In Bereit für dich, Braucht deine Entscheidung, Wird vorbereitet und Wartet auf andere steht eine Aufgabe, die überfällig ist oder bis morgen fällig ist, oben. Die übrigen kommen neueste zuerst, nach der Zeit, die jede Aufgabe zeigt. Die Seitenleiste hat dieselbe Reihenfolge.
+**Für dich** zeigt zuerst, was überfällig oder bis morgen fällig ist, dann Fragen aus deiner Fleet, dann Aufgaben, die **Vorbereitet** sind, dann die, die dich brauchen. Darin jeweils neueste zuerst. Die anderen offenen Gruppen zeigen Überfälliges oder bis morgen Fälliges oben, den Rest neueste zuerst. Die Seitenleiste hat dieselbe Reihenfolge.
 
 Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich. Eine Aufgabe mit einem Antwortentwurf scheint auch erledigt, wenn du in dieser Unterhaltung selbst geantwortet hast, etwa in Gmail oder Slack.
 
@@ -44,7 +43,7 @@ Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer les
 
 Die Antwort geht trotzdem von der Arbeitsadresse, an der sie ankam, und sie erscheint nie in einer Work Fleet oder im Team-Graph.
 
-Ab zwei wartenden Aufgaben geht **Durchgehen** in der Überschrift von Bereit für dich und von Braucht deine Entscheidung sie einzeln durch, jeden Entwurf vollständig, mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter, was zu sehen ist, `S` stellt zurück, `→` überspringt und Esc hört auf. Unter dem Titel sagt die Überschrift auch, wie lange sie in deinem Tempo dauern, etwa "etwa 2 Min.".
+Ab zwei wartenden Aufgaben geht **Durchgehen** in der Überschrift von Für dich sie einzeln durch, in der Reihenfolge der Liste, jeden Entwurf vollständig, mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter, was zu sehen ist, `S` stellt zurück, `→` überspringt und Esc hört auf. Unter dem Titel sagt die Überschrift auch, wie lange sie in deinem Tempo dauern, etwa "etwa 2 Min.".
 
 ## Jetzt prüfen
 

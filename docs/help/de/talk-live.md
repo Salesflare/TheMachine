@@ -19,7 +19,7 @@ Die Leiste hat **Stummschalten** und **Ende**. Verabschiede dich oder sag, dass 
 
 ## Alle Aufgaben durchsprechen
 
-Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt sie nacheinander durch: zuerst **Bereit**, dann **Zu entscheiden**. Sie sieht auch deine anderen Aufgaben, etwa die noch **Wird vorbereitet**, und sagt dir, wenn eine bereit ist.
+Tippe in der Seitenleiste (auf dem Handy im Menü) auf **Sprechen**, um alles, was auf dich wartet, per Stimme durchzugehen. The Machine sagt, wie viele warten, und nimmt die unter **Für dich** nacheinander durch, die dringendste zuerst. Sie sieht auch deine anderen Aufgaben, etwa die noch **Wird vorbereitet**, und sagt dir, wenn eine bereit ist.
 
 Sprechen hat eine eigene Seite: ein Gespräch von Anfang bis Ende, oben die Aufgabe, um die es geht, mit ihrem Entwurf und **Chat öffnen**. Sie springt nicht von Chat zu Chat.
 

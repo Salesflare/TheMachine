@@ -12,9 +12,8 @@ Your Machine reads everything new and makes a to-do only when something needs yo
 
 The **To-dos** page groups them:
 
-- **Ready for you**: prepared and waiting for your OK.
-- **Needs your decision**: something only you can decide.
-- **Preparing**: your Machine is working on it. After **Do it**, a to-do stays in place while it prepares, then moves to **Ready for you**.
+- **For you**: everything waiting on you, most urgent first. Each says **Prepared** (the work is done, and **Do it** or **Send** carries it out) or **Needs you** (it needs your decision or an answer first).
+- **Preparing**: your Machine is working on it. After **Do it**, a to-do stays in place while it prepares, then shows as **Prepared**.
 - **Just done**: a last step you confirmed, like a form or an issue, went through while you were away. It stays until you tap **Got it**, for a day at most, and your phone hears of it too.
 - **Coming back later**: snoozed to-dos, and ones with no answer to **Still needed?** (below).
 - **Promises**: what you promised and what others promised you. See [Promises](promises.md).
@@ -22,7 +21,7 @@ The **To-dos** page groups them:
 
 After you send, a short note says where the to-do went, like "Sent. Moved to Done." or "Sent. Moved to Later until Mon." **Open** takes you to it. Search finds a to-do by its title or by who it went to, also in Later and Done.
 
-In the open groups, to-dos that are overdue or due by tomorrow come first. The rest are newest first. The sidebar keeps the same order.
+**For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then **Prepared** to-dos, then the ones that need you. Within each, newest first. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 
 **Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. A to-do with a reply draft also looks done when you answered that conversation yourself, like in Gmail or Slack.
 
@@ -44,7 +43,7 @@ A to-do can always read the messages it came from. When it needs other messages 
 
 Such a Personal to-do still replies from the work address its email came in on, and it never shows up in a Work Fleet or the Team Graph.
 
-With two or more waiting, **Go through** in the header of Ready for you and of Needs your decision steps through them one at a time, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
+With two or more waiting, **Go through** in the header of For you steps through them one at a time, in the list's order, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
 
 ## Check now
 

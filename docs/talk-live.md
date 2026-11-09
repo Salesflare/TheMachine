@@ -80,7 +80,8 @@ OpenAI's server-side turn detection lets the owner interrupt: the voice stops an
 - `todo_details`: the to-do's title, state, last 25 messages and who its drafts go to (read only, through `talk_tool`).
   Never a draft's text: `read_draft` reads one out.
 - `find_todos`: to-dos by words in their title, by `state`, or both, each with its state in plain words
-  (`talk_live.STATES`: ready, to decide, preparing, waiting on others, snoozed; then `talk_live.LOOKS_DONE`, one the
+  (`talk_live.STATES`: prepared, needs you, preparing, waiting on others, snoozed; the old names ready and to decide
+  still work (`STATE_ALIASES`); then `talk_live.LOOKS_DONE`, one the
   dashboard shows at the top of Done that isn't closed yet), what needs the owner first,
   at most 20, with `count`. Words that name a state and match no title ("anything preparing?") find that state. Done and
   dismissed ones (`talk_live.CLOSED`) come from the Done / dismissed list when asked for by state or name, or when no
@@ -125,15 +126,15 @@ a time; a to-do's own Talk live can run beside it.
 
 **Tools** (`talk_live.MAIN_TOOLS`):
 
-- `list_todos` (the page's own): every open to-do in the order the lists show (Ready, To decide, Preparing, Waiting on
-  others, Later; not one that looks done, which sits in Done), at most 30, each with its id, state, title and who it's from, and `counts` per state.
+- `list_todos` (the page's own): every open to-do in the order the lists show (For you, most urgent first, then Preparing,
+  Waiting on others, Later; not one that looks done, which sits in Done), at most 30, each with its id, state, title and who it's from, and `counts` per state.
 - `open_todo`: the page shows that to-do in Talk's view, tells the Machine (`talk_focus`) and returns `todo_details`; a
   closed one too, even one the page hasn't loaded.
 - The to-do tools above, about the to-do in focus (`find_todos` with ids here), plus `ask_to_send_all`.
 - The tools in [The rest of the Machine](#the-rest-of-the-machine).
 
 **Instructions** (`talk_live.main_instructions`): the same voice and rules, plus going through the to-dos one by one:
-ready and to decide first, then in a few words how many are still preparing. Replies are one or two sentences, without
+the ones in For you first, in its order, then in a few words how many are still preparing. Replies are one or two sentences, without
 lists of options.
 
 **Focus.** The conversation works on the to-do on screen. The Machine keeps it (`Talk.focus`); `todo_details`,
@@ -156,7 +157,7 @@ Lines before any to-do is open are kept with no to-do.
 Leaving the view doesn't end Talk; **Talk** in the sidebar goes back, and **T** ends it. Its hint, **Say yes to send
 it.**, shows only while a send question is open; **Muted** while muted.
 
-**New to-dos.** One that shows up in Ready or To decide is told to the voice once (`talk_live.NEW_NOTE`), when neither
+**New to-dos.** One that shows up in For you is told to the voice once (`talk_live.NEW_NOTE`), when neither
 side is talking (`response.done`, and 1.2 s after `input_audio_buffer.speech_stopped`). One that was preparing gets
 `READY_NOTE` ("is ready now"). One Talk made itself isn't told; the transcript gets **Added a to-do: …**.
 

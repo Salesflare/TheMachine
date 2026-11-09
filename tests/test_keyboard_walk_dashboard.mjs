@@ -34,9 +34,9 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  const run=async(folded,check)=>{const context=await browser.newContext({viewport:{width:1280,height:900},locale:'en-US'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
-  if(folded)await context.addInitScript(()=>{try{localStorage.setItem('folded-sections',JSON.stringify(['ready','needs','preparing']))}catch{}});
+  if(folded)await context.addInitScript(()=>{try{localStorage.setItem('folded-sections',JSON.stringify(['foryou','preparing']))}catch{}});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator(folded?'#section-ready':'#task-a1a1a1a1a1a1a1a1').waitFor();
+  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator(folded?'#section-foryou':'#task-a1a1a1a1a1a1a1a1').waitFor();
   try{await check(page)}finally{await context.close()}};
  const focus=page=>page.evaluate(()=>{const a=document.activeElement;return a===document.body?'body':a.id||a.tagName.toLowerCase()});
  const press=async(page,...keys)=>{for(const k of keys){await page.keyboard.press(k);await page.waitForTimeout(60)}};
@@ -48,11 +48,10 @@ try{
   assert.ok(await ring(page),'the first to-do shows the ring');
   if(process.env.SHOT_DIR)await page.screenshot({path:process.env.SHOT_DIR+'/keys-landing.png'});
   await press(page,'j');assert.equal(await focus(page),'task-a2a2a2a2a2a2a2a2');
-  await press(page,'ArrowDown');assert.equal(await focus(page),'section-needs','a list head is a stop');
-  await press(page,'ArrowDown');assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1');
-  await press(page,'ArrowUp','k');assert.equal(await focus(page),'task-a2a2a2a2a2a2a2a2');
-  // Coming back later is folded: → opens it, ↓ goes in, ← on the head folds it again
-  await press(page,'j','j','j');assert.equal(await focus(page),'later-head');
+  await press(page,'ArrowDown');assert.equal(await focus(page),'task-b1b1b1b1b1b1b1b1','prepared and needs-you to-dos are one list');
+  await press(page,'ArrowUp');assert.equal(await focus(page),'task-a2a2a2a2a2a2a2a2');
+  // Coming back later is folded, its head is a stop: → opens it, ↓ goes in, ← on the head folds it again
+  await press(page,'j','j');assert.equal(await focus(page),'later-head','a list head is a stop');
   assert.equal(await page.locator('#later-list').evaluate(d=>d.open),false);
   await press(page,'ArrowRight');assert.equal(await page.locator('#later-list').evaluate(d=>d.open),true);
   await press(page,'ArrowDown');assert.equal(await focus(page),'task-c1c1c1c1c1c1c1c1');
@@ -99,15 +98,14 @@ try{
 
  // Everything folded (what the owner saw): the first list head has focus, Enter opens it, ↓ goes to its first to-do
  await run(true,async page=>{
-  await page.waitForFunction(()=>document.activeElement?.id==='section-ready');
+  await page.waitForFunction(()=>document.activeElement?.id==='section-foryou');
   assert.ok(await ring(page),'the head shows the ring');
   if(process.env.SHOT_DIR)await page.screenshot({path:process.env.SHOT_DIR+'/keys-folded.png'});
   assert.equal(await page.locator('#suggestions article.card:visible').count(),0);
-  await press(page,'j');assert.equal(await focus(page),'section-needs');
-  await press(page,'k','Enter');await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
-  assert.equal(await focus(page),'section-ready','the head keeps focus after it opens');
+  await press(page,'Enter');await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
+  assert.equal(await focus(page),'section-foryou','the head keeps focus after it opens');
   await press(page,'ArrowDown');assert.equal(await focus(page),'task-a1a1a1a1a1a1a1a1');
-  await press(page,'ArrowUp','ArrowLeft');await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor({state:'detached'});assert.equal(await focus(page),'section-ready');
+  await press(page,'ArrowUp','ArrowLeft');await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor({state:'detached'});assert.equal(await focus(page),'section-foryou');
   // A to-do in Coming back later (the owner's page: all clear, one snoozed): open the list, its to-do, its chat. One Esc
   // in the empty box closes the chat, and the list is still open with focus back on that to-do, not on the page.
   for(let i=0;i<6&&await focus(page)!=='later-head';i++)await press(page,'j');assert.equal(await focus(page),'later-head');

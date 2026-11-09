@@ -37,9 +37,9 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-long1').waitFor();await page.waitForTimeout(300);
   const why=`${width} ${scheme}`;
   // Said once, in the header
-  assert.equal(await page.locator('#section-ready .section-note').textContent(),'Nothing goes out until you approve it.',why);
+  assert.equal(await page.locator('#section-foryou .section-note').textContent(),'Nothing goes out until you approve it.',why);
   assert.equal(await page.locator('#suggestions .status-line',{hasText:'Nothing goes out'}).count(),0,why+': not on each to-do');
-  assert.equal(await page.locator('#section-needs .section-note').count(),0,why+': only Ready says it');
+  assert.equal(await page.locator('#suggestions .section-note').count(),1,why+': only For you says it');
   // The long one: the summary and 3 draft lines, one Show more for both
   const card=page.locator('#task-long1');
   const look=()=>card.evaluate(c=>{const db=c.querySelector('.draft .db'),lh=parseFloat(getComputedStyle(db).lineHeight);

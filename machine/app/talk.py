@@ -343,10 +343,12 @@ class TalkApp:
             words = [w for w in re.findall(r'\w+', str(args.get('words') or '').lower()) if len(w) > 1][:6]
             want = str(args.get('state') or '').strip().lower()
             known = talk_live.STATES + (talk_live.LOOKS_DONE,) + talk_live.CLOSED   # the dashboard's order
+            want = talk_live.STATE_ALIASES.get(want, want)
             want = want if want in known else ''
             if not words and not want:
                 return {'todos': []}
-            named = next((st for st in known if set(st.split()) <= set(words)), '') if not want else ''
+            named = next((talk_live.STATE_ALIASES.get(st, st) for st in known + tuple(talk_live.STATE_ALIASES)
+                          if set(st.split()) <= set(words)), '') if not want else ''
             match = lambda rows: rows if not words else [r for r in rows if all(w in (r['title'] or '').lower() for w in words)] or \
                 [r for r in rows if any(w in (r['title'] or '').lower() for w in words)]
             found = []

@@ -1505,6 +1505,7 @@
  "For how long": "Hoe lang",
  "For iPhone and Android, with notifications.": "Voor iPhone en Android, met meldingen.",
  "For this project": "Voor dit project",
+ "For you": "Voor jou",
  "Forget": "Vergeten",
  "Forget all saved sign-ins": "Alle opgeslagen logins vergeten",
  "Forget every saved sign-in? Your Machine asks again next time.": "Elke opgeslagen login vergeten? Je Machine vraagt het de volgende keer opnieuw.",
@@ -3473,6 +3474,7 @@
  "Prepare email": "E-mail klaarzetten",
  "Prepare next step": "Volgende stap voorbereiden",
  "Prepare only an owner-accepted suggestion or written instruction": "Bereid alleen een suggestie voor die de eigenaar aanvaard heeft, of een geschreven instructie",
+ "Prepared": "Klaargezet",
  "Prepared ahead": "Vooraf voorbereid",
  "Prepared ahead: the draft is saved; the owner sends it themselves": "Vooraf voorbereid: het concept is opgeslagen; de eigenaar verstuurt het zelf",
  "Preparing": "Wordt voorbereid",
@@ -6640,6 +6642,7 @@
   "one": "{} opvolging overgeslagen voor {}",
   "other": "{} opvolgingen overgeslagen voor {}"
  },
+ "{} for you": "{} voor jou",
  "{} for {} did not check out ({})": "{} voor {} klopte niet ({})",
  "{} found": "{} gevonden",
  "{} friend requests waiting": {

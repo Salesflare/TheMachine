@@ -211,7 +211,7 @@ function sideTipText(el){if(el.id==='side-toggle')return el.getAttribute('aria-l
  if(el.matches('.app-side .head-side>.settings-link'))return (el.querySelector('.lbl')?.textContent.trim()||el.getAttribute('aria-label')||'')+(el.dataset.keys?' · '+el.dataset.keys:'');
  return (el.getAttribute('aria-label')||'')+(el.dataset.keys?' · '+el.dataset.keys:'')}
 function sideLabels(){for(const b of document.querySelectorAll('.app-side nav [data-tab]')){const name=b.querySelector('.nl')?.textContent.trim()||'',n=+(b.querySelector('.badge')?.textContent||0),t=b.dataset.tab,c=sideCounts||{};
-  const tr=window.t,more=t==='inbox'?[[c.ready,'{} ready'],[c.needs,'{} to decide']].filter(([k])=>k).map(([k,w])=>tr(w,k)).join(' · ')||(n?tr('{} waiting',n):''):!n?'':t==='health'?tr(['{} needs a look','{} need a look'],n):t==='people'?tr('{} waiting',n):t==='calendar'?tr('{} today',n):String(n);
+  const tr=window.t,more=t==='inbox'?(c.foryou?tr('{} for you',c.foryou):'')||(n?tr('{} waiting',n):''):!n?'':t==='health'?tr(['{} needs a look','{} need a look'],n):t==='people'?tr('{} waiting',n):t==='calendar'?tr('{} today',n):String(n);
   const label=more?name+' · '+more:name;if(b.getAttribute('aria-label')!==label)b.setAttribute('aria-label',label)}
  const live=$('#live'),u=$('#updated').textContent.trim();if(u&&live.getAttribute('aria-label')!==u)live.setAttribute('aria-label',u)}
 function sideTipHide(){clearTimeout(sideTipTimer);if(sideTipFor){if(sideTipFor.dataset.tipTitle!==undefined){sideTipFor.title=sideTipFor.dataset.tipTitle;delete sideTipFor.dataset.tipTitle}sideTipFor=null}sideTip.hidden=true}

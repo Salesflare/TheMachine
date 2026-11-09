@@ -1505,6 +1505,7 @@
  "For how long": "Wie lange",
  "For iPhone and Android, with notifications.": "Für iPhone und Android, mit Benachrichtigungen.",
  "For this project": "Für dieses Projekt",
+ "For you": "Für dich",
  "Forget": "Vergessen",
  "Forget all saved sign-ins": "Alle gespeicherten Anmeldungen vergessen",
  "Forget every saved sign-in? Your Machine asks again next time.": "Jede gespeicherte Anmeldung vergessen? Deine Machine fragt beim nächsten Mal wieder.",
@@ -3473,6 +3474,7 @@
  "Prepare email": "E-Mail vorbereiten",
  "Prepare next step": "Nächsten Schritt vorbereiten",
  "Prepare only an owner-accepted suggestion or written instruction": "Bereite nur einen vom Besitzer angenommenen Vorschlag oder eine schriftliche Anweisung vor",
+ "Prepared": "Vorbereitet",
  "Prepared ahead": "Vorbereitet",
  "Prepared ahead: the draft is saved; the owner sends it themselves": "Vorbereitet: Der Entwurf ist gespeichert; der Besitzer sendet ihn selbst",
  "Preparing": "Wird vorbereitet",
@@ -6640,6 +6642,7 @@
   "one": "{} Nachfassen übersprungen für {}",
   "other": "{} Nachfassen übersprungen für {}"
  },
+ "{} for you": "{} für dich",
  "{} for {} did not check out ({})": "{} für {} hat die Prüfung nicht bestanden ({})",
  "{} found": "{} gefunden",
  "{} friend requests waiting": {
