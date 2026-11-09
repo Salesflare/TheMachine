@@ -1045,13 +1045,11 @@ class Requests:
                 if isinstance(event_id, int) and not isinstance(event_id, bool) else None
         if not row:
             raise ValueError('That handoff is not waiting for the owner (answered, expired or unknown); their own answer stands')
-        if not event or event['kind'] not in ON_IT:
-            raise ValueError('event_id is the email, chat message or calendar call that shows the owner acting on it')
-        event = dict(event)
         # What a Work Fleet hears comes only from its own accounts: a message from a personal account, or another
         # company's, never tells a teammate anything (not where, when or to whom).
-        if event.pop('account_id') not in self.fleet_accounts(row['fleet']):
-            raise ValueError("Only a message or call in one of that Fleet's work accounts counts; one in a personal or other account never tells a teammate anything")
+        if not event or event['kind'] not in ON_IT or event['account_id'] not in self.fleet_accounts(row['fleet']):
+            raise ValueError('event_id is the email, chat message or calendar call that shows the owner acting on it')
+        event = dict(event)
         if not (self.own_event and self.own_event(event)):
             raise ValueError("Only a message the owner sent or a call they joined shows they took it on; a message they received doesn't")
         if dt.datetime.fromisoformat(event['occurred_at']) < dt.datetime.fromisoformat(row['at']):

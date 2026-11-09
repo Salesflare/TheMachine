@@ -203,7 +203,7 @@ class Silent(unittest.TestCase):
         chat = {'account_id': 'home', 'source_id': 'w-own', 'kind': 'whatsapp.message', 'occurred_at': later(), 'title': '', 'body': 'On it',
                 'deleted': False, 'metadata': {'user_id': 'UOWNER', 'chat_name': 'Robin Roe'}}
         for event_id in (self.event(item), self.event(chat)):
-            with self.assertRaisesRegex(ValueError, 'personal or other account'):
+            with self.assertRaisesRegex(ValueError, 'shows the owner acting on it'):
                 self.fleet.handoff_on_it(ask, event_id)
         self.assertEqual(self.answered(), {'id': ask, 'status': 'waiting'})  # nothing told: not where, when or to whom
         self.assertNotIn('Robin', json.dumps(self.relay.calls))

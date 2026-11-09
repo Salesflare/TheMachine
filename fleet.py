@@ -2629,8 +2629,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def meeting_round(self):
         """Ask each Work Fleet once about the outside people of each open card on a meeting in the next week: only a
-        meeting on one of that Fleet's accounts (fleet_accounts), and never for a Personal to-do. A Family Fleet is
-        never asked."""
+        meeting on one of that Fleet's accounts (fleet_accounts), never for a Personal to-do, never a Family Fleet."""
         if not self.meetings_on():
             return 0
         return sum(self.meeting_round_in(ref) for ref in self.work_fleets() if self.teammates(ref))
@@ -2640,11 +2639,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         today = dt.datetime.now(dt.timezone.utc)
         asked = 0
         accounts = self.fleet_accounts(fleet)  # a personal calendar, or another company's, never reaches this Fleet
-        if not accounts:
-            return 0
         with self.connect() as db:
-            cards = db.execute(f"SELECT id,event_ids FROM suggestions WHERE status IN ({','.join('?' * len(OPEN_CARD))}) "
-                               "AND coalesce(area,'')<>'personal' "  # Personal (todo_areas.py), also on a work calendar
+            cards = db.execute(f"SELECT id,event_ids FROM suggestions WHERE coalesce(area,'')<>'personal' AND status IN ({','.join('?' * len(OPEN_CARD))}) "
                                "AND id NOT IN (SELECT substr(context,6) FROM fleet_out WHERE context LIKE 'card:%' AND fleet=?)",
                                OPEN_CARD + (fleet,)).fetchall()
             todo = []
@@ -2652,8 +2648,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                 ids = json.loads(card['event_ids'] or '[]')
                 if not ids:
                     continue
-                for event in db.execute(f"SELECT metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND id IN ({','.join('?' * len(ids))}) "
-                                        f"AND account_id IN ({','.join('?' * len(accounts))})", (*ids, *accounts)):
+                for event in db.execute(f"SELECT metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND id IN ({','.join('?' * len(ids))}) AND account_id IN ({','.join('?' * len(accounts))})", (*ids, *accounts)):
                     m = json.loads(event['metadata'] or '{}')
                     start = m.get('start') if isinstance(m.get('start'), dict) else {}
                     when = str(start.get('dateTime') or start.get('date') or '')
@@ -2858,8 +2853,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def claim_match(self, db, card, secret, members, fleet):
         """A card's email shared with teammates: its key, and who of them it is for (Always, Ask me first) within each
-        one's scope, judged by the email's outside companies. None when it is for nobody. Only an email in one of this
-        Fleet's accounts (fleet_accounts), and never a Personal to-do's."""
+        one's scope, judged by the email's outside companies. None when it is for nobody, in another account or Personal."""
         ids = json.loads(card['event_ids'] or '[]')
         accounts = self.fleet_accounts(fleet)
         if not ids or not accounts or card['area'] == 'personal':
@@ -2967,8 +2961,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def shared_messages(self, db, card, ref):
         """Message-IDs of a card's emails in this Fleet's accounts that went to the team: a teammate, or an address at the
-        team's own domain that isn't the owner's (info@, a group). Mail only the owner got stays out, and so does a
-        Personal to-do's (todo_areas.py), also on a work mailbox."""
+        team's own domain that isn't the owner's (info@, a group). Mail only the owner got and a Personal to-do's stay out."""
         ids = json.loads(card['event_ids'] or '[]')
         accounts = self.fleet_accounts(ref)
         if not ids or not accounts or card['area'] == 'personal':
