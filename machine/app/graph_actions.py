@@ -570,7 +570,8 @@ class GraphActionsApp:
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
         # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
         where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
-        lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}" for i,_ in found if i in rows]
+        part=embeddings.starts(found)  # a long one that matched further on: where to read it
+        lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}"+(f' · matches at body_offset {part[i]}' if i in part else '') for i,_ in found if i in rows]
         return ('\n\nPossibly related (found by meaning in this task\'s accounts; read any that matter with events, its account and event_ids):\n'+'\n'.join(lines)) if lines else ''
 
     def related(self, accounts, event_ids=(), query='', limit=8, exclude=(), timeout=30, signals_only=False):

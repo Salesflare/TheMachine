@@ -204,17 +204,23 @@ OWNER_AREA_RULE = ('They gave it no area. Place it by what it is about and who i
                    'The message it follows up on places it too. Leave both out only when it is truly unclear.')
 
 
-def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None, assigned=None):
+def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief=False, owner_in_thread=False, team_inbox=None, assigned=None,
+                passage=None):
     """What a reviewer needs from a signal, without sync bookkeeping. brief: bulk mail as a title line (bulk_kind).
     team_inbox: the team address it only went to (team_only). assigned: who an Intercom conversation is assigned to
-    (intercom_assignment)."""
+    (intercom_assignment). passage: where a search by meaning matched in a long body (embeddings.Hit.start): a body
+    that doesn't fit is shown from there instead of from its start (body_matched, with body_offset as for any part)."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'])
     if brief and not row.get('deleted') and bulk_kind(row['kind'], metadata, row['title'], owner_in_thread):
         return title_view(row, metadata)
     compact, metadata_clipped = compact_metadata({k: v for k, v in metadata.items() if not (k == 'files' and row['kind'] == 'owner.card')})
     text = re.sub(r'\s+', ' ', row['body']).strip()
+    matched = bool(passage) and not offset and len(text) > preview
+    offset = passage if matched else offset
     view = {'id': row['id'], 'account_id': row['account_id'], 'source_id': clamp(row['source_id'], 500), 'kind': row['kind'], 'occurred_at': row['occurred_at'],
             'title': clamp(row['title']), 'body': text[offset:offset + preview]}
+    if matched:
+        view['body_matched'] = True
     if offset or len(text) > offset + preview:
         view.update(body_clipped=True, body_chars=len(text), body_offset=offset,
                     body_next_offset=offset + len(view['body']) if offset + len(view['body']) < len(text) else None)

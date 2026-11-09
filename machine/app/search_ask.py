@@ -90,16 +90,19 @@ class SearchAskApp:
         accounts = self.search_ask_accounts(area)
         if not accounts:
             return []
-        order = []
+        order, starts = [], {}
         if embeddings.settings(self.config):
             found, _ = self.related(accounts, (), question, FOUND if not days else 40, timeout=8)
-            order = [i for i, _ in found]
+            order, starts = [i for i, _ in found], embeddings.starts(found)
         if days or not order:
             with self.store.connect() as db:
                 order += [i for i in embeddings.fts_ids(db, accounts, question, FOUND_IN_DAYS if days else FOUND) if i not in order]
         if not order:
             return []
         rows = self.store.events(accounts, event_ids=order, kinds=list(graph.MESSAGE_KINDS))
+        for row in rows:  # a long one that matched further on: the answer reads that part, not its start
+            if row['id'] in starts and len(row['body']) > search_ask.SOURCE_CHARS:
+                row['body'] = embeddings.passage_text(row['body'], starts[row['id']])
         if days:
             rows = [r for r in rows if self.search_ask_in(r, days)]
         place = {e: n for n, e in enumerate(order)}

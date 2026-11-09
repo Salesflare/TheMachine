@@ -484,8 +484,7 @@ class StoreCore:
             db.execute('CREATE INDEX IF NOT EXISTS events_signal_counts ON events(account_id,ingested_at,analyzed_version,version,deferrals) WHERE history=0')
             # A to-do's decisions: the to-do list and the Done list ask each to-do's latest one, a pass over all decisions each
             db.execute('CREATE INDEX IF NOT EXISTS decisions_suggestion ON decisions(suggestion_id,created_at)')
-            for schema in embeddings.SCHEMAS:  # after the monotonic-ID migration, which rebuilds events
-                db.execute(schema)
+            embeddings.ensure(db)  # after the monotonic-ID migration, which rebuilds events
             graph.ensure(db)
             follow_ups.ensure(db)  # automated follow-ups on boards and projects (follow_ups.py): new tables only
             bounces.ensure(db)  # addresses that bounce (bounces.py): new tables only

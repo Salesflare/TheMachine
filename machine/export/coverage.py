@@ -48,7 +48,7 @@ LEFT_OUT = {
         'push_subscriptions', 'notify_app_devices',
     },
     'message contents and their search index (only references go in)': {
-        'chat_files', 'chats', 'event_search', 'event_vector_skips', 'event_vectors', 'events_monotonic', 'messages', 'outbox',
+        'chat_files', 'chats', 'event_passages', 'event_search', 'event_vector_skips', 'event_vectors', 'events_monotonic', 'messages', 'outbox',
         'talk_lines', 'team_mail', 'android_inbox',
     },
     'teammates\' and other Machines\' data, not this Machine\'s learning': {

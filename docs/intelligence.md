@@ -449,6 +449,16 @@ differently, the same topic in another source, an answer that already came in.
   deleted with its event. Changing `model` or `dims` re-embeds.
 - **What is embedded.** The title plus the first 2,000 characters of the body, without quoted earlier messages and
   invisible format characters.
+- **Long signals.** Meeting notes, transcripts and summaries, Salesflare meetings and Intercom conversations longer
+  than that also get a vector per later passage (`event_passages`: where the passage starts in the body, and its
+  vector, no text). A passage is 1,000 to 1,600 characters (a quarter of that in scripts without spaces), cut at a
+  speaker turn or paragraph where there is one: about one topic, and well inside what the model reads at once. At
+  most 200 per signal. A hit on a later passage returns that part of the body (`body_offset` says where, and
+  `review_view` reads on from there), within the same size limits as before, and a signal still shows once. Mail keeps
+  its one vector: long mail is mostly newsletters, and keyword search already reads all of it.
+- **Splitting runs in the background.** Newest first, live signals before imported history, 4 passages per pass, then
+  a rest of at least 20 seconds and ten times the pass. It waits while a history import, a first look or a review is
+  running. A changed signal drops its old passages and is split again.
 - **Fitting the server.** Each input is cut to `max_input_tokens` (2,048 by default; 8,191 for api.openai.com), counted
   as one token per UTF-8 byte, the worst case (`bytes_per_token` raises that). A request holds up to
   `max_batch_tokens` (8,192; 300,000 for OpenAI) and `max_batch_inputs` (64; 2,048). A signal the server still refuses
@@ -468,7 +478,9 @@ differently, the same topic in another source, an answer that already came in.
 ### Costs
 
 - No GPU needed. On CPU the server embeds a few signals per second: a first backfill of 5,000 signals takes about 30 to
-  40 minutes on a 4-core desktop CPU, and each new signal well under a second.
+  40 minutes on a 4-core desktop CPU, and each new signal well under a second. A passage of a long signal takes about
+  as long (1 to 2 seconds each on a busy desktop): a two-hour transcript is about 120 passages, split over some 30
+  passes in 10 to 20 minutes.
 - The model takes about 0.3 to 0.5 GB of RAM while the server runs and no CPU when idle.
 - On a small 2-core arm64 server (October 2026) it was slower and bigger: about 130 tokens a second on one core (a few
   thousand signals take a few hours once), and 370 MB idle growing to 850 MB while embedding with `--no-repack`, or
