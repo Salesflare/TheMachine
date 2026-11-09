@@ -79,12 +79,15 @@ function rowActs(id){const s=cardOf(id);if(!s||closed(s))return [];const t=docum
 // Opened from the keyboard: focus goes back to the list after.
 let rowMenuKeys=null;
 // Below the point; with no room there, above (up), so the row stays in sight.
-function rowMenu(id,x,y,keys=null,up=y){rowMenuClose();rowMenuKeys=keys;const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');m.setAttribute('aria-label',cardOf(id)?.title||'');const acts=rowActs(id);
+function rowMenu(id,x,y,keys=null,up=y){rowMenuClose();rowMenuKeys=keys;rowMenuGen++;const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');m.setAttribute('aria-label',cardOf(id)?.title||'');const acts=rowActs(id);
  setHTML(m,html`<button type="button" role="menuitem" data-row-rename="${id}">Rename</button><button type="button" role="menuitem" data-row-open="${id}">Open</button>${acts.length?html`<hr role="separator">${acts.map(([c,label])=>html`<button type="button" role="menuitem" data-row-act="${c}" data-card="${id}">${label}</button>`)}`:''}`);document.body.append(m);
  const r=m.getBoundingClientRect();Object.assign(m.style,{left:Math.max(8,Math.min(x,innerWidth-r.width-8))+'px',top:Math.max(8,y+r.height>innerHeight-8?Math.min(up,innerHeight-8)-r.height:y)+'px'});m.querySelector('button').focus()}
-// Focus to the row, or (it left the list) the next or previous one.
-function rowRefocus(id){const k=rowMenuKeys;rowMenuKeys=null;if(!k)return;const go=()=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')];
- (rows.find(a=>rowId(a)===id)||rows.find(a=>rowId(a)===k.next)||rows.find(a=>rowId(a)===k.prev))?.focus()};go();requestAnimationFrame(()=>setTimeout(go,50))}
+// Focus to the row, or (it left the list) the next or previous one. Once more after the list redraws, unless the
+// keyboard went on meanwhile (a menu opened again, focus left the list): a late refocus never takes focus back.
+let rowMenuGen=0;
+function rowRefocus(id){const k=rowMenuKeys;rowMenuKeys=null;if(!k)return;const gen=rowMenuGen,go=()=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')];
+ (rows.find(a=>rowId(a)===id)||rows.find(a=>rowId(a)===k.next)||rows.find(a=>rowId(a)===k.prev))?.focus()};go();
+ requestAnimationFrame(()=>setTimeout(()=>{const f=document.activeElement;if(gen===rowMenuGen&&(!f||f===document.body||f.closest('#side-cards')))go()},50))}
 const rowKeys=a=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')],i=rows.indexOf(a);return {next:rowId(rows[i+1]),prev:rowId(rows[i-1])}};
 async function rowAct(choice,id){const k=rowMenuKeys;rowMenuClose();
  if(choice==='snooze'){rowMenuKeys=null;openSnooze(id);if(k)$('#snooze-dialog').addEventListener('close',()=>{rowMenuKeys=k;rowRefocus(id)},{once:true});return}

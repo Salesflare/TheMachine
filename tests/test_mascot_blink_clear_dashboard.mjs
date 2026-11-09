@@ -43,8 +43,9 @@ try{
   assert.equal(await page.locator(ROBOT).getAttribute('src'),'brand/wave-look.webp','checking: the waving robot, glancing aside');
   assert.match(await page.locator('#suggestions .all-clear .poke-line').textContent(),/Rummaging|Snooping/);
   assert.ok(blinks(await run(page,10000),'brand/wave-look.webp','brand/wave-blink.webp').length>=1,'the all-clear robot blinks within 10 seconds');
-  // A redraw puts a new robot in its place: that one blinks too
-  await page.evaluate(()=>{const i=document.querySelector('#suggestions .all-clear img.sleepy');i.replaceWith(i.cloneNode())});
+  // A redraw puts a new robot in its place: that one blinks too. Like a real redraw it is drawn in its pose (clearPose),
+  // never as a copy of the old one, which may be mid-blink (eyes shut, a frame with no blink of its own)
+  await page.evaluate(()=>{const i=document.querySelector('#suggestions .all-clear img.sleepy'),n=i.cloneNode();n.classList.remove('blinking');n.setAttribute('src',clearPose());i.replaceWith(n)});
   await run(page,500);
   assert.ok(blinks(await run(page,10000),'brand/wave-look.webp','brand/wave-blink.webp').length>=1,'the redrawn robot blinks');
   // The check ends: sleepy (its eyes are shut already, no blink); a new check: the same robot blinks again

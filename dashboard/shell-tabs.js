@@ -179,7 +179,11 @@ function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').v
  const parts=sideGroups.map(([items,title,key])=>{const open=!!q||sideOpen(key),cut=q?{list:sideAll(items,key,q),more:false}:sideList(items,key),count=q?cut.list.length:cut.count;if(!count)return'';
   return html`<div class="side-group${['done','later','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${raw(CHEVRON)}<span>${title}</span><span class="count">${count}</span></button>${open?[cut.list.map(x=>sideRow(x,chatId)),cut.more?sideMoreRow(key):'']:''}</div>`}).filter(Boolean);
  const side=html`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${parts.length?parts:html`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
- if(String(side)!==sideHTML){sideHTML=String(side);const back=sideKeep(box);setHTML(box,side);back();requestAnimationFrame(chatFades)}}
+ if(String(side)!==sideHTML){sideHTML=String(side);const back=sideKeep(box),focus=sideFocus(box);setHTML(box,side);back();focus();requestAnimationFrame(chatFades)}}
+// A redraw (a reply from the Machine, whenever it lands) keeps the keyboard on the row or heading it was on.
+function sideFocus(box){const f=document.activeElement,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold||n.dataset.scope;
+ const k=f&&f!==box&&box.contains(f)&&key(f);if(!k)return()=>{};
+ return()=>{const a=document.activeElement;if(a&&a!==document.body&&!box.contains(a))return;[...box.querySelectorAll('a[href],button')].find(n=>key(n)===k)?.focus({preventScroll:true})}}
 // The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were.
 // Until the sidebar has scrolled (or taken focus, which can scroll it) it is at its top and there is nothing to keep: reading
 // scrollTop while the page is still drawing forced a layout of the whole page before the first to-do was painted.
