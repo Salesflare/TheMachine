@@ -303,6 +303,14 @@ off), with the sign-ins the connections already have: no new scopes (`machine/ap
   from where the last walk stopped; a shallower one keeps what came in.
 - **Resumable:** each step saves its cursor in `history_backfill`, and a row already here is never written again, so
   a restart or a replayed step keeps nothing twice. Every Machine starts it by itself after an update.
+- **LinkedIn and X:** read through the owner's own signed-in browser with no API, where bulk reads could get the
+  account restricted, so they have their own depth (`social_history_days`, 90 by default, 0 to 365, 0 turns it off) and
+  pace (`HISTORY_PACE` in `connectors/linkedin.py` and `connectors/x.py`): one small page per step (10 LinkedIn
+  conversations or messages, 20 X mentions or DMs), a random 8 to 20 minutes apart, at most 24 steps a day per
+  account, only from 9 to 21 local time (inside the account's `active_hours`), and never while that connection's own
+  sync is failing. Any failed or odd answer (a 429, a security check, a page it doesn't expect) stops that account's
+  history for a day; only a browser busy with another job is just a pause. Same scope as the sync: LinkedIn spam is
+  left out, X's encrypted chats aren't read. The readers' `history` commands do the paging.
 
 ## The Machine's browser
 

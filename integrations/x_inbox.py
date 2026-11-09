@@ -14,6 +14,7 @@ an error.
   x-inbox mentions --handle H [--primary P] [--limit N] [--json]
   x-inbox dms --handle H [--primary P] [--limit N] [--json]
   x-inbox sync --handle H --primary P --since MS --state JSON   (JSON for the personal assistant)
+  x-inbox history --handle H --primary P --since MS --until MS --state JSON   (JSON: one small page of older items)
   x-inbox send --handle H --primary P (--reply-to ID | --conversation ID) --text T [--long] [--send-id ID] [--check] [--yes] [--json]
   x-inbox verify --send-id ID                         (JSON: did that send land?)
 
@@ -107,6 +108,73 @@ async () => {
   };
   try {
     await switchTo(target.id);
+    if (P.mode === 'history') {
+      // Older mentions and DMs, one small data request per run: first the Mentions tab further back, then the DM inbox's
+      // conversations active since P.since, one page of one conversation at a time. Only items from P.since to P.until
+      // return. Anything unexpected throws, so the caller stops for a day instead of trying again.
+      const S = {phase: 'mentions', queue: [], ...(P.state || {})}, odd = (what) => fail('odd-answer', {detail: what});
+      const dmq = 'include_groups=true&include_inbox_timelines=true&dm_users=true&include_conversation_info=true&count=' + P.count;
+      const queueFrom = (box) => {
+        const users = box.users || {}, name = (id) => (users[id] || {}).name || '@' + ((users[id] || {}).screen_name || '?');
+        const convs = Object.values(box.conversations || {});
+        convs.filter(c => +(c.sort_timestamp || 0) >= P.since).sort((a, b) => +b.sort_timestamp - +a.sort_timestamp).forEach(c => {
+          const others = (c.participants || []).map(p => p.user_id).filter(id => id !== target.id);
+          if (!S.queue.some(q => q.id === c.conversation_id))
+            S.queue.push({id: c.conversation_id, with: c.name || others.map(name).join(', ') || 'X conversation', group: c.type === 'GROUP_DM', request: c.trusted === false});
+        });
+        return convs;
+      };
+      if (S.phase === 'mentions') {
+        const j = await call('/i/api/2/notifications/mentions.json?tweet_mode=extended&include_ext_alt_text=true&count=' + P.count + (S.cursor ? '&cursor=' + encodeURIComponent(S.cursor) : ''));
+        if (!j || typeof j !== 'object' || !j.globalObjects) throw odd('mentions answer without its objects');
+        const tweets = j.globalObjects.tweets || {}, users = j.globalObjects.users || {};
+        let oldest = Infinity;
+        for (const t of Object.values(tweets)) {
+          const mentioned = t.in_reply_to_user_id_str === target.id || ((t.entities || {}).user_mentions || []).some(m => m.id_str === target.id);
+          if (t.user_id_str === target.id || !mentioned) continue;
+          const at = Date.parse(t.created_at); oldest = Math.min(oldest, at);
+          if (at < P.since || at >= P.until) continue;
+          const u = users[t.user_id_str] || {}, parent = t.in_reply_to_status_id_str && tweets[t.in_reply_to_status_id_str];
+          out.mentions.push({id: t.id_str, at, text: expand(t), lang: t.lang, conversation_id: t.conversation_id_str,
+            author: {id: t.user_id_str, name: u.name || '', screen_name: u.screen_name || '', followers: u.followers_count || 0, verified: !!(u.verified || u.ext_is_blue_verified)},
+            reply_to: t.in_reply_to_status_id_str ? {id: t.in_reply_to_status_id_str, screen_name: t.in_reply_to_screen_name || '', to_account: t.in_reply_to_user_id_str === target.id,
+              text: parent ? expand(parent).slice(0, 600) : null} : null,
+            quoted: t.quoted_status_id_str && tweets[t.quoted_status_id_str] ? expand(tweets[t.quoted_status_id_str]).slice(0, 600) : null});
+        }
+        const next = (JSON.stringify(j.timeline || {}).match(/"cursor":\{"value":"([^"]+)","cursorType":"Bottom"/) || [])[1];
+        if (next && next === S.cursor && Object.keys(tweets).length) throw odd('mentions cursor did not advance');
+        if (!next || !Object.keys(tweets).length || oldest < P.since) { S.phase = 'dm_inbox'; delete S.cursor; } else S.cursor = next;
+      } else if (S.phase === 'dm_inbox' || (S.phase === 'dms' && !S.queue.length && S.inbox_max)) {
+        const first = S.phase === 'dm_inbox';
+        const j = await call(first ? '/i/api/1.1/dm/inbox_initial_state.json?' + dmq : '/i/api/1.1/dm/inbox_timeline/trusted.json?' + dmq + '&max_id=' + encodeURIComponent(S.inbox_max));
+        const box = first ? j && j.inbox_initial_state : j && j.inbox_timeline;
+        if (!box || typeof box !== 'object') throw odd('DM inbox answer without its timeline');
+        const convs = queueFrom(box);
+        const line = first ? ((box.inbox_timelines || {}).trusted || {}) : box;
+        const more = line.status === 'HAS_MORE' && line.min_entry_id && line.min_entry_id !== S.inbox_max
+          && convs.length && !convs.some(c => +(c.sort_timestamp || 0) < P.since);
+        S.inbox_max = more ? line.min_entry_id : null;
+        S.phase = 'dms';
+      } else if (S.phase === 'dms' && S.queue.length) {
+        const c = S.queue[0];
+        const j = await call('/i/api/1.1/dm/conversation/' + encodeURIComponent(c.id) + '.json?' + dmq + '&context=FETCH_DM_CONVERSATION_HISTORY' + (c.max_id ? '&max_id=' + encodeURIComponent(c.max_id) : ''));
+        const line = j && j.conversation_timeline;
+        if (!line || typeof line !== 'object') throw odd('DM conversation answer without its timeline');
+        const users = line.users || {}, person = (id) => { const u = users[id] || {}; return {id, name: u.name || '', screen_name: u.screen_name || ''}; };
+        const msgs = (line.entries || []).map(e => e.message && e.message.message_data).filter(Boolean);
+        for (const m of msgs) {
+          if (+m.time < P.since || +m.time >= P.until) continue;
+          out.dms.push({id: m.id, at: +m.time, conversation_id: c.id, from_me: m.sender_id === target.id, from: person(m.sender_id),
+            with: c.with, group: c.group, request: c.request, text: expand(m) + (m.attachment ? (m.text ? ' ' : '') + '[attachment]' : '')});
+        }
+        if (line.status !== 'HAS_MORE' || !line.min_entry_id || !msgs.length || msgs.some(m => +m.time < P.since)) S.queue.shift();
+        else if (line.min_entry_id === c.max_id) throw odd('DM cursor did not advance');
+        else c.max_id = line.min_entry_id;
+      }
+      out.state = S;
+      out.done = S.phase === 'dms' && !S.queue.length && !S.inbox_max;
+      return out;
+    }
     // Mentions and replies: the Notifications → Mentions tab. Reading doesn't mark them seen.
     const backlog = P.state.mention_catchup || {};
     let cursor = backlog.cursor || null, sinceId = String(backlog.since_id || P.state.mention_since_id || '0'), top = String(backlog.top || sinceId);
@@ -824,6 +892,10 @@ def main():
         s.add_argument('--limit', type=int, default=20); s.add_argument('--json', action='store_true')
     s = sub.add_parser('sync'); s.add_argument('--handle', required=True); s.add_argument('--primary', required=True)
     s.add_argument('--since', type=int, required=True); s.add_argument('--state', default='{}')
+    s = sub.add_parser('history', help='JSON: one small page of older mentions or DMs, from --since to --until (ms)')
+    s.add_argument('--handle', required=True); s.add_argument('--primary', required=True)
+    s.add_argument('--since', type=int, required=True); s.add_argument('--until', type=int, required=True)
+    s.add_argument('--count', type=int, default=20); s.add_argument('--state', default='{}')
     s = sub.add_parser('send', help='reply to a post or send a DM (preview unless --yes)')
     s.add_argument('--handle', required=True); s.add_argument('--primary', required=True)
     g = s.add_mutually_exclusive_group(required=True)
@@ -846,6 +918,9 @@ def main():
             else:
                 for x in res['accounts']:
                     print(('* ' if x['id'] == res['active'] else '  ') + '@' + x['screen_name'] + '  ' + x['name'])
+        elif a.cmd == 'history':
+            print(json.dumps(run('history', handle=a.handle, primary=a.primary, since=a.since, until=a.until,
+                                 count=max(1, min(a.count, 40)), state=json.loads(a.state)), ensure_ascii=False))
         elif a.cmd == 'sync':
             print(json.dumps(run('sync', handle=a.handle, primary=a.primary, since=a.since, state=json.loads(a.state)), ensure_ascii=False))
         else:

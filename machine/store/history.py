@@ -16,6 +16,11 @@ import json
 SIGNAL = 'history=0'  # in SQL on events: a signal, never history
 DEFAULT_DAYS = 365  # how far back, per connection (config history_days); 0 turns the backfill off
 MAX_DAYS = 730
+# LinkedIn and X are read through the owner's own signed-in browser, with no API: bulk reads could get the account
+# restricted, so their history has its own, shorter depth (config social_history_days; 0 turns it off) and pace.
+SOCIAL = ('linkedin', 'x')
+SOCIAL_DAYS = 90
+SOCIAL_MAX_DAYS = 365
 
 
 def ensure(db):
@@ -87,13 +92,16 @@ def first_import_done(db, account_id):
     return isinstance(state, dict) and state.get('mode') not in ('bootstrap', 'resync') and not state.get('page_token')
 
 
-def depth(config):
-    """How many days back history goes: config history_days (0 to MAX_DAYS), DEFAULT_DAYS when unset or not a number."""
+def depth(config, account=None):
+    """How many days back history goes: config history_days (0 to MAX_DAYS), DEFAULT_DAYS when unset or not a number.
+    For a LinkedIn or X connection: config social_history_days (0 to SOCIAL_MAX_DAYS), SOCIAL_DAYS by default."""
+    key, default, most = ('social_history_days', SOCIAL_DAYS, SOCIAL_MAX_DAYS) if (account or {}).get('service') in SOCIAL \
+        else ('history_days', DEFAULT_DAYS, MAX_DAYS)
     try:
-        value = int((config or {}).get('history_days', DEFAULT_DAYS))
+        value = int((config or {}).get(key, default))
     except (TypeError, ValueError):
-        return DEFAULT_DAYS
-    return max(0, min(value, MAX_DAYS))
+        return default
+    return max(0, min(value, most))
 
 
 def get(db, account_id):

@@ -29,3 +29,5 @@ Ze gebruikt de toegang die elke koppeling al heeft. Er wordt niets nieuws gevraa
 ## Hoe ver terug
 
 Standaard ongeveer een jaar. Zelf gehoste Machines kunnen `history_days` instellen in de configuratie (0 zet ze uit, tot 730). Telegram en andere bronnen bewaren wat ze vandaag lezen.
+
+LinkedIn- en X-berichten gaan 90 dagen terug en worden heel traag gelezen: een paar kleine leesbeurten per uur, alleen overdag, en een dag geen als de site tegenwerkt, zodat je account veilig blijft (`social_history_days`, 0 zet het uit).

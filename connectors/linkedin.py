@@ -38,6 +38,11 @@ SETUP = {'label': 'LinkedIn', 'what': 'Your LinkedIn messages.',
          'hints': {'linkedin_signed_out': 'the browser it reads with is not signed in to LinkedIn; sign in there, then connect again'},
          'note': 'Sign in to LinkedIn once in the OpenClaw browser first: openclaw browser --browser-profile openclaw open https://www.linkedin.com/login'}
 READER = Path(__file__).resolve().parent.parent / 'integrations/linkedin_inbox.py'
+# Older messages as history (machine/app/history.py, config social_history_days, 90 days by default): LinkedIn has no
+# API for this and bulk reads could get the account restricted, so very slowly. One small page per step (two requests:
+# who is signed in, then 10 conversations or 10 messages of one), a random 8 to 20 minutes apart, at most 24 steps a
+# day, only from 9 to 21 local time (inside active_hours), and a day off after any failed or odd answer.
+HISTORY_PACE = {'page': 10, 'steps_per_day': 24, 'pause_minutes': (8, 20), 'hours': (9, 21)}
 
 
 class Source:
@@ -46,7 +51,7 @@ class Source:
 
     def run(self, command, timeout=480):
         SourceError = self.helpers.SourceError
-        if command[:1] not in (['sync'], ['verify']):
+        if command[:1] not in (['sync'], ['verify'], ['history']):
             raise SourceError('unsupported_linkedin_method')
         try:
             result = subprocess.run([self.config.get('linkedin_inbox', str(READER)), *command], capture_output=True, text=True, timeout=timeout,
@@ -77,6 +82,14 @@ class Source:
     def page(self, since_ms, state):
         data = self.run(['sync', '--since', str(int(since_ms)), '--state', json.dumps(state)])
         if not isinstance(data.get('messages'), list) or not isinstance(data.get('state'), dict):
+            raise self.helpers.SourceError('linkedin_invalid_page')
+        return data
+
+    def history(self, since_ms, until_ms, state):
+        """One small step back in time (the reader's `history`): {'messages', 'state', 'done'}."""
+        data = self.run(['history', '--since', str(int(since_ms)), '--until', str(int(until_ms)),
+                         '--count', str(HISTORY_PACE['page']), '--state', json.dumps(state)])
+        if not isinstance(data.get('messages'), list) or not isinstance(data.get('state'), dict) or type(data.get('done')) is not bool:
             raise self.helpers.SourceError('linkedin_invalid_page')
         return data
 
@@ -165,3 +178,15 @@ def sync(store, config, account, helpers, source=None):
     if getattr(helpers, 'remember_profiles', None):
         helpers.remember_profiles(store, 'linkedin', profiles(page))
     return {'mode': 'incremental', 'events': len(found), 'more': more, 'skipped': sum(skipped.values())}
+
+
+def history_page(config, account, helpers, state, upper, target, source=None):
+    """One step of older messages, kept as history (machine/app/history.py, which paces it by HISTORY_PACE): a page of
+    conversations active since `target`, or one page of one conversation's messages, newest first, from `upper` back to
+    `target`, spam left out as the sync does. Returns (events, done); state['page'] holds the reader's cursors."""
+    source = source or Source(config, account, helpers)
+    ms = lambda text: int(dt.datetime.fromisoformat(text).timestamp() * 1000)
+    data = source.history(ms(target), ms(upper), state.get('page') or {})
+    found = events(account, data, helpers) if data['messages'] else []
+    state['page'] = data['state']
+    return [e for e in found if target <= e['occurred_at'] < upper], data['done']

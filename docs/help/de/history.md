@@ -29,3 +29,5 @@ Er nutzt den Zugriff, den jede Verbindung schon hat. Nichts Neues wird gefragt.
 ## Wie weit zurück
 
 Standardmäßig etwa ein Jahr. Selbst gehostete Machines können `history_days` in der Konfiguration setzen (0 schaltet ihn aus, bis 730). Telegram und andere Quellen behalten, was sie heute lesen.
+
+LinkedIn- und X-Nachrichten reichen 90 Tage zurück und werden sehr langsam gelesen: ein paar kleine Abrufe pro Stunde, nur tagsüber, und einen Tag lang keine, wenn die Seite sich wehrt, damit dein Konto sicher bleibt (`social_history_days`, 0 schaltet es aus).

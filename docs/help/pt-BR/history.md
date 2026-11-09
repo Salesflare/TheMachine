@@ -29,3 +29,5 @@ Ele usa o acesso que cada conexão já tem. Nada novo é pedido.
 ## Até onde
 
 Cerca de um ano por padrão. Machines auto-hospedadas podem definir `history_days` na configuração (0 desliga, até 730). Telegram e outras fontes guardam o que leem hoje.
+
+Mensagens do LinkedIn e do X voltam 90 dias e são lidas bem devagar: poucas leituras pequenas por hora, só de dia, e nenhuma por um dia se o site resistir, para sua conta ficar segura (`social_history_days`, 0 desliga).
