@@ -1956,6 +1956,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "Het start zodra je hoofdmodel kan draaien: log ervoor in of voeg een sleutel toe.",
  "It starts when your mail is in.": "Het start wanneer je mail binnen is.",
  "It stopped and started again {} times within an hour, so something keeps making it fail.": "Het stopte en startte {} keer opnieuw binnen een uur, dus iets laat het steeds mislukken.",
+ "It stopped unexpectedly {0} times between {1} and {2} ({3}) and left crash reports.": "Het stopte {0} keer onverwacht tussen {1} en {2} ({3}) en liet crashrapporten achter.",
  "It syncs again within a minute after.": "Binnen een minuut daarna synct het weer.",
  "It took too long.": "Het duurde te lang.",
  "It used more memory than it is allowed, so the system stopped it.": "Het gebruikte meer geheugen dan toegestaan, dus het systeem stopte het.",

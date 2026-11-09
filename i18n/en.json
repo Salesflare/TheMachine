@@ -1956,6 +1956,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "It starts once your main model can run: sign in for it or add a key.",
  "It starts when your mail is in.": "It starts when your mail is in.",
  "It stopped and started again {} times within an hour, so something keeps making it fail.": "It stopped and started again {} times within an hour, so something keeps making it fail.",
+ "It stopped unexpectedly {0} times between {1} and {2} ({3}) and left crash reports.": "It stopped unexpectedly {0} times between {1} and {2} ({3}) and left crash reports.",
  "It syncs again within a minute after.": "It syncs again within a minute after.",
  "It took too long.": "It took too long.",
  "It used more memory than it is allowed, so the system stopped it.": "It used more memory than it is allowed, so the system stopped it.",

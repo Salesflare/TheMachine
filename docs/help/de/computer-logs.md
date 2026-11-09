@@ -19,6 +19,8 @@ Ein Dienst, der immer wieder neu startet, einer, der an einem Tag mehrmals gesch
 
 Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und bleibt still.
 
+Browser, die Tests und Agents steuern (headless, Playwright, Puppeteer, CI), bleiben still, ebenso ein Programm, das endet, während sein Dienst gestoppt oder neu gestartet wird. Ein Programm, das immer wieder abstürzt, ergibt eine Aufgabe, die sagt, wie oft und wann.
+
 ## Was du bekommst
 
 Eine Aufgabe, die in einfachen Worten sagt, was passiert ist, warum es wichtig ist und was du tun kannst. Die Befehle, die den Grund zeigen, stehen unter Mehr anzeigen. Frag in ihrem Chat, und The Machine sieht es sich an. Alles, was sie ändert, wartet auf dein OK, wie bei Do it.

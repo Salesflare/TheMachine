@@ -19,6 +19,8 @@ Un service qui redémarre sans cesse, un service qui a échoué plusieurs fois d
 
 Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s’affiche.
 
+Les navigateurs que pilotent les tests et les agents (headless, Playwright, Puppeteer, CI) restent silencieux, tout comme un programme qui s’arrête pendant que son service est arrêté ou redémarré. Un programme qui plante encore et encore donne une seule tâche, qui dit combien de fois et quand.
+
 ## Ce que vous recevez
 
 Une tâche qui dit en mots simples ce qui s’est passé, pourquoi c’est important et ce que vous pouvez faire. Les commandes qui montrent pourquoi sont sous Afficher plus. Demandez dans son chat et The Machine s’en occupe. Tout ce qu’elle modifie attend votre accord, comme avec Do it.

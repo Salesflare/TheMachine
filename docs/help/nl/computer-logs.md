@@ -19,6 +19,8 @@ Een service die blijft herstarten, een die op een dag een paar keer mislukte of 
 
 Een enkele herstart of een enkele mislukte run is normaal en blijft stil.
 
+Browsers die tests en agents besturen (headless, Playwright, Puppeteer, CI) blijven stil, net als een programma dat stopt terwijl zijn service gestopt of herstart wordt. Een programma dat telkens weer crasht, geeft één to-do die zegt hoe vaak en wanneer.
+
 ## Wat je krijgt
 
 Een to-do die in gewone woorden zegt wat er gebeurde, waarom het telt en wat je kunt doen. De commando's die tonen waarom, staan onder Meer tonen. Vraag het in de chat ervan en The Machine zoekt het uit. Alles wat hij verandert, wacht op je OK, zoals bij Do it.
