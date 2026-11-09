@@ -201,8 +201,10 @@ anything.
   and **Not now**. A name dismissed with Not now is never suggested again; nothing is a board until saved
   (`board_suggestions`).
 - **The editor** sets the name, stages (rename, reorder, add, remove, up to 8), the optional Stalled or declined row, a
-  line on which projects belong (`about`), who sees it and the projects on it. A removed stage's projects go to the
-  nearest earlier stage, and the toast says so. Deleting a board keeps its projects.
+  line on which projects belong (`about`), who sees it and the projects on it. A renamed stage keeps its projects,
+  their past moves and its follow-up setting under the new name. A removed stage's projects go to the nearest earlier
+  stage, and the toast says so. Deleting a board keeps its projects. Saving answers at once; the Graph rebuilds in
+  the background.
 
 **Sorting.** A saved board's projects are sorted within minutes: a review starts for them even without a full batch of
 new signals (`sort_gap_seconds`, default 60) and gets them at the top of its prompt as "Boards to sort".

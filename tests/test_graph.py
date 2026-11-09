@@ -1727,6 +1727,30 @@ class Boards(unittest.TestCase):
             self.assertTrue(db.execute('SELECT 1 FROM projects WHERE id=? AND closed_at IS NULL', (a.split(':')[1],)).fetchone())  # the project stays
             self.assertEqual(graph.boards(db, NOW.isoformat()), [])
 
+    def test_renaming_a_stage_answers_at_once_and_nothing_keeps_the_old_name(self):
+        import follow_ups
+        asked, agreed, later = self.mails()
+        with self.store.connect() as db:
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+            a = graph.set_stage(db, 'Paperkite', 'Agreed', 'review', NOW.isoformat(), board='Listings', reason='said yes', event_id=agreed)['node_id']
+            b = graph.set_stage(db, 'Bramblebox', 'Live', 'review', NOW.isoformat(), board='Listings', reason='live', event_id=later)['node_id']
+            follow_ups.save(db, 'board', board_id, {'on': True, 'channels': ['email'], 'stages': {'Agreed': {'on': False}, 'Live': {'on': True, 'days': 9}}}, NOW.isoformat())
+        # as on a running Machine: the Graph rebuild goes to the graph worker, the edit answers without a build
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
+        with patch.object(graph, 'build', side_effect=AssertionError('a board edit waits for no build')):
+            self.app.action('board_save', {'board_id': board_id, 'name': 'Listings', 'about': 'Partners we list with',  # Agreed and Live swap names
+                                           'stages': [{'name': 'Contacted', 'was': 'Contacted'}, {'name': 'Live', 'was': 'Agreed'}, {'name': 'Agreed', 'was': 'Live'}]}, owner_dashboard=True)
+        self.assertTrue(self.app.graph_dirty.is_set())
+        with self.store.connect() as db:
+            stage = lambda n: db.execute('SELECT stage FROM projects WHERE id=?', (n.split(':')[1],)).fetchone()[0]
+            self.assertEqual((stage(a), stage(b)), ('Live', 'Agreed'))  # each project stays in its stage, under the new name
+            self.assertEqual(graph.project_moves(db, a)['moves'][0]['stage'], 'Live')  # its history names the stage as it is called now
+            self.assertEqual(graph.project_moves(db, b)['moves'][0]['stage'], 'Agreed')
+            rule = follow_ups.rule(db, 'board', board_id)['stages']
+            self.assertEqual(rule, {'Live': {'on': False}, 'Agreed': {'on': True, 'days': 9}})  # the per-stage follow-up setting went along
+            board = db.execute('SELECT * FROM boards WHERE id=?', (board_id,)).fetchone()
+            self.assertEqual(follow_ups.stage_rule(follow_ups.rule(db, 'board', board_id), board, 'Live'), (False, 3))
+
 
 class Find(unittest.TestCase):
     """graph.find folds each node's text once and reads only its matches whole: the same nodes, in the same order, as
