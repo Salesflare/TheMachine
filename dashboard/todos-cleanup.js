@@ -1,5 +1,5 @@
-// A lazy part (dashboard_parts.LAZY 'cleanup'): todos-cards.js draws a cleanup to-do through lazyIn('cleanup'), its
-// plain text until this part is in.
+// A lazy part (dashboard_parts.LAZY 'routinetodos'): todos-cards.js draws a cleanup to-do through lazyIn('routinetodos'),
+// its plain text until this part is in. Its to-do has no Do it or Ask for changes (todos-cards.js choices).
 // A routine template's cleanup (mail_cleanup.py): a row per newsletter or spam mail with Keep or Unsubscribe (Not spam or
 // Spam), kept here until the one confirm; nothing changes before it. Then each row says how it went.
 const cleanupPicks=new Map();
