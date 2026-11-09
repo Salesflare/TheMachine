@@ -225,6 +225,9 @@ def check_prerequisites():
         have = '.'.join(map(str, version_tuple(got) or ())) or 'unknown'
         note = '' if have == want else f' (tested with {want}; the Telegram Change prompt falls back to a plain prompt on other versions)'
         say(f'  ok    openclaw {have}{note}')
+        if version_tuple(got) and version_tuple(got) < version_tuple(want):
+            say(f'  note  to update: openclaw backup create --verify, then openclaw update --tag {want}. It migrates'
+                ' OpenClaw\'s data and restarts its Gateway; after a plain npm install, run openclaw doctor --fix before the restart')
         facts['openclaw_version'] = have
     else:
         ok = False
@@ -311,13 +314,13 @@ ALLOW_SCRIPTS = re.compile(r'--allow-scripts=([\w@./,-]+)')
 
 def allow_install_scripts(npm, command, output, ui):
     """npm 11+ skips package install scripts unless they're allowed, and says which ones it skipped. OpenClaw
-    needs them (its own setup and native parts such as koffi), so run exactly those, for the package just installed."""
+    needs them (its own setup and native parts such as koffi), so the install runs again with exactly those allowed,
+    as npm's own message says. (`npm rebuild -g` instead can stop on the files the install just put down.)"""
     skipped = ALLOW_SCRIPTS.search(output)
     if not skipped:
         return subprocess.CompletedProcess(command, 0, '', '')
-    prefix = command[command.index('--prefix'):command.index('--prefix') + 2] if '--prefix' in command else []
     ui.say(f'  Running the install steps npm held back: {skipped.group(1).replace(",", ", ")}')
-    result = run([npm, 'rebuild', '-g', *prefix, f'--allow-scripts={skipped.group(1)}'], timeout=1800)
+    result = run([*command, f'--allow-scripts={skipped.group(1)}'], timeout=1800)
     if result.returncode != 0:
         ui.say(((result.stderr or '') + (result.stdout or '')).strip()[-1500:])
     return result

@@ -25,6 +25,26 @@ def free_port():
         return s.getsockname()[1]
 
 
+class OpenClawUpdateNote(unittest.TestCase):
+    def test_an_older_openclaw_gets_the_update_path_that_migrates_its_data(self):
+        said = []
+        versions = {'node': 'v24.22.1\n', 'openclaw': 'OpenClaw 2026.10.7 (abc)\n'}
+        run = lambda args, **kw: subprocess.CompletedProcess(args, 0, versions.get(Path(args[0]).name, ''), '')
+        for have, noted in (('2026.10.7', True), (installer.required_openclaw(), False)):
+            versions['openclaw'] = f'OpenClaw {have} (abc)\n'
+            said.clear()
+            with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say', side_effect=said.append), \
+                    mock.patch.object(installer.shutil, 'which', side_effect=lambda name: f'/bin/{name}' if name in ('node', 'openclaw') else None), \
+                    mock.patch.object(installer, 'resolve_tool', side_effect=lambda path: path), \
+                    mock.patch.object(installer, 'openclaw_package_dir', return_value='/lib/openclaw'), \
+                    mock.patch.object(installer.onboarding.portable, 'tailscale', return_value=None), \
+                    mock.patch.object(installer.service, 'available', return_value=False):
+                installer.check_prerequisites()
+            text = '\n'.join(said)
+            self.assertEqual(f'openclaw update --tag {installer.required_openclaw()}' in text, noted, text)
+            self.assertEqual('openclaw doctor --fix' in text, noted)
+
+
 class InstallerTest(unittest.TestCase):
     def test_plugin_enable_is_retried_while_the_gateway_applies_the_install(self):
         calls, tries = [], iter([1, 0])
@@ -557,7 +577,7 @@ class InstallerTest(unittest.TestCase):
                 return subprocess.CompletedProcess(args, 0, f'{npm_prefix}\n', '')
             if args[1:3] == ['install', '-g']:
                 binary = Path(args[args.index('--prefix') + 1]) / 'bin/openclaw'
-                binary.parent.mkdir(parents=True); binary.write_text('#!/bin/sh\n'); binary.chmod(0o755)
+                binary.parent.mkdir(parents=True, exist_ok=True); binary.write_text('#!/bin/sh\n'); binary.chmod(0o755)
                 return subprocess.CompletedProcess(args, 0, '', 'npm warn install-scripts Run `npm install -g --allow-scripts=esbuild,koffi,openclaw`'
                                                    ' to allow these scripts once\n')
             if args[1:] == ['onboard', '--install-daemon']:  # OpenClaw's own wizard: model, Gateway, Telegram bot
@@ -581,8 +601,9 @@ class InstallerTest(unittest.TestCase):
             self.assertIn(str(self.home / '.local/bin'), os.environ['PATH'])  # the rest of this run finds it
         local = self.home / '.local'
         self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.11.2', '--prefix', str(local)], ran)
-        # npm 11 held back the install scripts: exactly those run for this install.
-        self.assertIn([str(self.bin / 'npm'), 'rebuild', '-g', '--prefix', str(local), '--allow-scripts=esbuild,koffi,openclaw'], ran)
+        # npm 11 held back the install scripts: the install runs again with exactly those allowed, as npm says (no rebuild)
+        self.assertIn([str(self.bin / 'npm'), 'install', '-g', 'openclaw@2026.11.2', '--prefix', str(local), '--allow-scripts=esbuild,koffi,openclaw'], ran)
+        self.assertFalse(any('rebuild' in a for a in ran))
         self.assertIn([str(local / 'bin/openclaw'), 'onboard', '--install-daemon'], ran)
         self.assertIn([str(local / 'bin/openclaw'), 'health'], ran)
         self.assertFalse(any('channels' in a for a in ran))  # the wizard already added the bot
