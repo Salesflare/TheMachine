@@ -2764,19 +2764,15 @@ def open_line(items):
 
 
 def card_people(db, event_ids, limit=3):
-    """Who a card is directly about, with their role, and a weight to rank cards by: how close they are to the owner,
-    more when their organization pays the owner (billed through Stripe). The people of its main source (its first
-    event) come first, the one waiting on it; the rest closest first. Someone else on a meeting or a side thread it
-    holds is never shown as who the to-do is for only because they are closer."""
+    """Who a card is directly about, with their role: its main source's people (its first event) first, the rest closest
+    first; and a weight to rank cards by: how close they are, more when their organization pays the owner (Stripe)."""
     ids = [int(i) for i in event_ids or ()]
     if not ids:
         return [], 0.0
-    marks = ','.join('?' for _ in ids)
     found = db.execute(f"SELECT n.id,n.name,n.strength,n.info,o.id org_id,o.name org_name,o.info org_info,g.event_id FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id "
-                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({marks}) "
+                       f"LEFT JOIN graph_nodes o ON o.id=json_extract(n.info,'$.org') WHERE g.direct=1 AND n.kind='person' AND g.event_id IN ({','.join('?' * len(ids))}) "
                        "ORDER BY n.strength DESC", ids).fetchall()
-    lead = {r['id'] for r in found if r['event_id'] == ids[0]}
-    rows = list({r['id']: r for r in sorted(found, key=lambda r: r['id'] not in lead)}.values())
+    rows = list({r['id']: r for r in sorted(found, key=lambda r: r['event_id'] != ids[0])}.values())  # the one waiting on it leads
     people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
                **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
