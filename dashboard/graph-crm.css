@@ -32,6 +32,7 @@
 .owner-pick select{max-width:100%;margin:0}.tile-owner.mine-hide{display:none}
 .org-sites li{display:flex;align-items:center;gap:8px;min-height:34px}.org-sites ul{margin:4px 0 0;padding:0;list-style:none}.org-sites li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .ge-change .ge-dot{flex:none;width:28px;display:grid;place-items:center;color:var(--c-text-3)}
+.ge-change .ge-head h4{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}  /* a change says it whole ("Now …, was …") */
 /*@eager*/
 #crm-form fieldset{margin:0;padding:0;border:0;min-width:0}#crm-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 /*@lazy*/

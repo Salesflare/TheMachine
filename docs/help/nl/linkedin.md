@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: Je LinkedIn-berichten, gelezen in de eigen ingelogde browser van je Machine. Antwoordt pas nadat je het goedkeurt.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## Wat het leest
 
 Je LinkedIn-berichten. Het leest ze in een tabblad van de eigen browser van je Machine, ingelogd als jou, af en toe tijdens de uren dat je wakker bent. Het gebruikt geen API-sleutel en markeert niets als gelezen.
+
+## Functies en bedrijven
+
+Het houdt ook de functies en bedrijven van je LinkedIn-connecties bij op de mensen die al in je Graph staan, vanuit je lijst met connecties. Het opent hun profielen niet en voegt geen nieuwe mensen toe. Verandert iemands functie of bedrijf, dan staat dat in hun tijdlijn, zoals "Nu Head of Sales bij Acme, was Sales Lead bij Acme".
+
+Het leest heel traag: één pagina tegelijk, minuten uit elkaar, een paar dozijn pagina's per dag, alleen overdag. Zo'n 3.000 connecties duren ongeveer vier dagen. Duwt LinkedIn terug, dan stopt het tot de volgende dag.
 
 ## Wat het kan versturen
 

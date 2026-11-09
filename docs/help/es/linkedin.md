@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: Tus mensajes de LinkedIn, leídos en el navegador propio de tu Machine con tu sesión iniciada. Solo responde después de que lo apruebes.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## Qué lee
 
 Tus mensajes de LinkedIn. Los lee en una pestaña del navegador propio de tu Machine, con tu sesión iniciada, de vez en cuando durante el día. No usa ninguna clave de API y no marca nada como leído.
+
+## Cargos y empresas
+
+También mantiene al día los cargos y empresas de tus contactos de LinkedIn en las personas que ya están en tu Graph, desde tu lista de contactos. No abre sus perfiles ni añade personas nuevas. Cuando cambia el cargo o la empresa de alguien, su cronología lo dice, como "Ahora Head of Sales en Acme, antes Sales Lead en Acme".
+
+Lee muy despacio: una página cada vez, con minutos de separación, unas pocas docenas de páginas al día, solo de día. Unos 3.000 contactos tardan unos cuatro días. Si LinkedIn pone freno, para hasta el día siguiente.
 
 ## Qué puede enviar
 
