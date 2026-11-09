@@ -204,6 +204,48 @@ class Protected(unittest.TestCase):
             pass
         self.assertEqual(sqlite3.connect(self.path).execute("SELECT count(*) FROM network_replies WHERE typeof(body)='blob'").fetchone()[0], 2)
 
+    def test_a_waiting_notification_keeps_its_to_do_title_sealed_and_sends_it_readable(self):
+        import notify
+        store = assistant.Store(self.path, protect=True)
+        title = f'Reply about {CANARY}'
+        with store.connect() as db:
+            notify.ensure(db)
+        with store.connect() as db:
+            notify.hold(db, 'push', 'todo', title, 5000.0, ref='suggestion:s1', payload={'title': title, 'tag': 's1'}, clock=lambda: 5000.0)
+            notify.hold(db, 'email', 'todo', title, 5000.0, ref='suggestion:s1', clock=lambda: 5000.0)
+            notify.app_line_save(db, 's1', f'Ready: {title}', body=f'1 to-do: {title}')
+        self.assertNotIn(CANARY.encode(), files(self.path))
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual({r[0] for r in raw.execute('SELECT typeof(title) FROM notify_queue')}, {'blob'})
+            self.assertEqual(raw.execute("SELECT typeof(payload) FROM notify_queue WHERE channel='push'").fetchone()[0], 'blob')
+            self.assertEqual(raw.execute('SELECT typeof(line),typeof(body) FROM notify_app_lines').fetchone(), ('blob', 'blob'))
+        with store.connect() as db:
+            self.assertEqual(notify.app_line(db, 's1'), f'Ready: {title}')
+            self.assertEqual(notify.app_line_body(db, 's1'), f'1 to-do: {title}')
+            with unittest.mock.patch.object(notify, 'active', return_value=False), unittest.mock.patch.object(notify, 'push_now', return_value=True), \
+                    unittest.mock.patch.object(notify, 'last_seen', return_value=0.0):
+                pushes, lines = notify.take_due(db, clock=lambda: 5000.0)
+        self.assertEqual([p['payload'] for p in pushes], [{'title': title, 'tag': 's1'}])
+        self.assertEqual([line['title'] for line in lines], [title])
+
+    def test_an_update_seals_the_notifications_a_sealed_machine_already_kept_plain(self):
+        import notify
+        store = assistant.Store(self.path, protect=True)
+        with sqlite3.connect(self.path) as raw:  # as the version before left it: the tables there, without guards, the rows plain
+            for statement in (notify.SCHEMA, notify.DIGESTS, notify.QUEUE, notify.APP_DEVICES, notify.APP_LINES_TABLE):
+                raw.execute(statement)
+            raw.execute("INSERT INTO notify_queue(channel,kind,title,payload,created,due) VALUES('email','todo',?,?,1,1)", (CANARY, json.dumps({'title': CANARY})))
+            raw.execute("INSERT INTO notify_app_lines(tag,line,at,body) VALUES('s1',?,?,?)", (CANARY, notify.wall(), CANARY))
+        store = assistant.Store(self.path)  # the updated app starts
+        with store.connect() as db:
+            self.assertEqual(db.execute('SELECT title,payload FROM notify_queue').fetchone()[:], (CANARY, json.dumps({'title': CANARY})))
+            self.assertEqual(notify.app_line(db, 's1'), CANARY)
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual(raw.execute('SELECT typeof(title),typeof(payload) FROM notify_queue').fetchone(), ('blob', 'blob'))
+            self.assertEqual(raw.execute('SELECT typeof(line),typeof(body) FROM notify_app_lines').fetchone(), ('blob', 'blob'))
+            with self.assertRaises(sqlite3.OperationalError):  # no key: a plain write fails, it is never stored
+                raw.execute("INSERT INTO notify_queue(channel,kind,title,created,due) VALUES('email','todo','plain',1,1)")
+
     def test_project_sort_note_is_sealed_and_legacy_notes_are_migrated(self):
         store = assistant.Store(self.path, protect=True)
         import graph
@@ -538,6 +580,46 @@ class Protected(unittest.TestCase):
         self.assertEqual(learnings.export(self.path)['tables']['suggestions'][0]['kind'], 'gmail.message')
 
 
+# Kept in a database of its own, never in the Machine's: checked there
+OTHER_DATABASES = {'telegram_store.py': "the Telegram account's own store, its text sealed by telegram_store itself"}
+# A migration's copy of a table, renamed to that table at once (machine/store/core.py): the same columns
+RENAMED = {'promises_next', 'events_monotonic'}
+MADE = re.compile(r'CREATE TABLE(?: IF NOT EXISTS)? (\w+)')
+ADDED = re.compile(r'ALTER TABLE (\w+) ADD COLUMN (\w+) (\w+)')
+
+
+def source_modules():
+    return [p for p in sorted(ROOT.rglob('*.py'))
+            if not {'tests', 'node_modules', '.git', '.venv', 'sandbox', 'scripts'} & set(p.relative_to(ROOT).parts[:-1])
+            and not p.name.startswith('test_') and p.relative_to(ROOT).as_posix() not in OTHER_DATABASES]
+
+
+def make_source_tables(db):
+    """Make in `db` every table a CREATE TABLE in the source's strings makes, and every column an ALTER TABLE written
+    out in full adds. Returns the table names the source mentions that could not be made (a statement built at run
+    time): such a table has to be written so this can read it."""
+    import ast
+    named = set()
+    for path in source_modules():
+        source = path.read_text(encoding='utf-8')
+        for node in ast.walk(ast.parse(source)):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str) and 'CREATE TABLE' in node.value:
+                for statement in node.value.split(';'):
+                    made = MADE.search(statement)
+                    if made and statement.strip().startswith('CREATE TABLE'):
+                        named.add(made[1])
+                        try:
+                            db.execute(statement)
+                        except sqlite3.OperationalError:  # there already; or no statement by itself: named, so it
+                            pass                          # has to be there in the end
+        for table, column, kind in ADDED.findall(source):
+            try:
+                db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {kind}')
+            except sqlite3.OperationalError:  # there already, or a table of another database
+                pass
+    return named - RENAMED - {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+
+
 class NothingOutsideTheSealedFields(unittest.TestCase):
     def test_learnings_never_select_a_sealed_column(self):
         sealed = {('events', c) for c in ('title', 'body', 'metadata')}
@@ -584,6 +666,15 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'team_learning_votes.text': "another Machine's general learning, scrubbed by the team and stripped again here",
             'team_learning_votes.reason': 'the general reason sent with a vote, stripped (team_learnings.save_votes)',
             'follow_up_cards.state': 'open, sent, skipped, stopped, handled or detached',
+            'agent_jobs.draft_revision': "a draft's revision id (agent_jobs.draft_revision)",
+            'family_invite_log.what': 'offered, later or opened (family_invites.py)', 'family_invite_offers.state': 'offered, later or invited',
+            'fleet_learnings.text': 'a general learning for the team, learned like a fact, names checked out (fleet_learnings.check)',
+            'fleet_learn_removed.text': 'the same team learning, kept so it is not learned again',
+            'gbrain_pages.state': 'made, kept or gone (gbrain.py)',
+            'learned_fixes.state': 'removed', 'learned_fixes.text': "what the first look's summary said of someone or the hours left off it, learned like a fact (also in learning_changes)",
+            'meet_log.what': 'a step code matched in SQL, like asked_in (meet.py)', 'meet_sessions.state': 'a booking stage', 'meet_sessions.note': 'a reason code: no_machine, keys, failed, no_slot, rounds, no_answer or passed',
+            'missed_audit_items.what': 'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
+            'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',
         }
         sealed = {f'{t}.{c}' for t, cs in message_seal.DERIVED.items() for c in cs} | {f'{t}.{c}' for t, c, _ in message_seal.DERIVED_JSON}
@@ -592,11 +683,11 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
                            r'description|note|content|feedback|reason|detail|view|info|items|context|rule|state|transcript|quote|evidence|message$')
         with tempfile.TemporaryDirectory() as temp:
             store = assistant.Store(Path(temp) / 'events.sqlite')
-            import agent_jobs, discovery, fleet, fleet_requests, network, skills
             with store.connect() as db:
-                for module in (network, fleet, skills, fleet_requests, discovery, agent_jobs):
-                    db.executescript(module.SCHEMA)
-                fleet.Fleet.ensure_schema(db) if hasattr(fleet.Fleet, 'ensure_schema') else None
+                # every table the source can make, whenever it makes it (app start, a feature's first use): a table
+                # the Store's own start does not make was never looked at here, and notify_queue kept to-do titles plain
+                missing = make_source_tables(db)
+                self.assertEqual(missing, set(), 'a table the source names was not made here: this check cannot see its columns')
                 for (table,) in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'event_search%'"):
                     for _, column, kind, *_ in db.execute(f'PRAGMA table_info({table})'):
                         name = f'{table}.{column}'
