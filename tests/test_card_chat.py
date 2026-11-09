@@ -102,7 +102,7 @@ class CardChat(unittest.TestCase):
                 {'role': 'assistant', 'content': [{'type': 'text', 'text': 'Late.'}], 'timestamp': 'x', '__openclaw': {'runId': 'r3', 'recordTimestampMs': 4000}}]
         items = a.chat_items(msgs, [])
         self.assertEqual([i['kind'] for i in items], ['reply', 'reply', 'reply'])
-        self.assertTrue(items[0]['noted'])  # "Noted for next time" on the reply the learning came with
+        self.assertTrue(items[0]['noted'])  # "Saved to what I’ve learned" on the reply the learning came with
         self.assertNotIn('noted', items[1])
         self.assertNotIn('skill', json.dumps(items))
         self.assertEqual(items[1]['text'], 'Found it in the-file.')

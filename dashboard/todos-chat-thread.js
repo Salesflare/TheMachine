@@ -224,13 +224,14 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}
   else if(i.kind==='reply'){const ds=i.drafts||[],h=headline(i.text);
    const tab=n===tabAt?html`<a class="agent-file via-browser" href="${safeHref(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-show="${s.id}">View in Machine browser</a>`:'';
-   // A reply cut off by Stop: a small Stopped right under what it said so far, before the card's choices
-   const noted=html`${i.stopped?html`<small class="chat-noted chat-stopped">Stopped</small>`:''}${i.noted?html`<small class="chat-noted">Noted for next time</small>`:''}`;
+   // Stopped, and what the run learned, right under the reply's text: at its foot a bare note read as a label on
+   // the owner's next message
+   const noted=html`${i.stopped?html`<small class="chat-noted chat-stopped">Stopped</small>`:''}${i.noted?html`<small class="chat-noted chat-noted-learned"><a class="link" href="#learning=learned">Saved to what I’ve learned</a></small>`:''}`;
    // Without a headline the reply is plain text and its drafts are the result; with one, the headline and summary lead the result
    const fileOf=f=>html`<button type="button" class="agent-file via-file" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">${f.label}<span aria-hidden="true"> ›</span></button>`;
    const copy=n===copyAt,files=orEmpty(html`${(i.files||[]).filter(f=>!copy||f!==i.files[0]).map(fileOf)}`);
    const chips=tab||files?html`<div class="chat-files">${tab}${files}</div>`:'';
-   if(!res||!h)push(i,html`<div class="chat-msg machine">${i.text||!i.stopped?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${chips}${noted}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
+   if(!res||!h)push(i,html`<div class="chat-msg machine">${i.text||!i.stopped?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${noted}${chips}${ds.length||copy?'':options(n,false)}${res?'':tm(i.at)}</div>`);
    if(!res)return;
    if(copy){const f=(i.files||[])[0]||{label:'Draft',path:(s.result_files||[]).find(f=>!/\.pdf$/i.test(f.name))?.path},key=s.id+'|'+f.path,text=chatFiles.get(key),fk=k+':file';
     const df=draftFile(text),src=rows.findLast(x=>x.kind==='source'&&!x.mine&&x.via),where=src?chatVia(src.via)+(src.note?' note':''):'';
@@ -243,7 +244,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     const links=orEmpty(html`${[chatLong(d.body,quiet?2:4)?html`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?html`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean)}`);
     return html`<div class="chat-draft${went||not?html` went`:''}${last?html` current`:''}"><div class="chat-draft-head"><span>${what}${to}</span>${went?(liveSent?'':html`<span class="went-tag">Sent</span>`):not?html`<span class="went-tag not">Not sent</span>`:last||!quiet?'':html`<span>Earlier draft</span>`}</div>${d.subject&&!d.reply?html`<div class="chat-draft-subject">${d.subject}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?html` open`:''}${d.kind==='email'||d.kind==='email_demo'?html` mail-text`:''}">${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
      ${before&&chatOpenSet.has(dk+':diff')?html`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?html`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`})}`;
-   const head=h?html`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?html`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${chips}${noted}`:'';
+   const head=h?html`<div class="chat-result-head"><span class="chat-result-title" translate="no">${format(h.title)}</span></div>${h.rest?html`<div class="bubble" translate="no">${clamp(k,chatMarkdown(h.rest),quiet&&chatLong(h.rest,2))}</div>`:''}${noted}${chips}`:'';
    push(i,result(n,i,html`${head}${parts}${ds.length?options(n,true):h?options(n,false):''}`,!h&&ds.length===1))}});
  // A result with files: its links under the last reply
  if(p.links&&!drafts.length&&s?.status==='prepared'&&!p.copy)out.push(html`<div class="chat-links">${p.links}</div>`);
