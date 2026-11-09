@@ -84,6 +84,7 @@ from mail_cleanup_app import MailCleanupApp
 from birthdays_app import BirthdaysApp
 from missed_work_app import MissedWorkApp
 import next_actions
+import notify
 from recurring_app import RecurringApp
 from routines_app import RoutinesApp
 from shared_graph_app import SharedGraphApp
@@ -151,6 +152,8 @@ class App(*APP_MIXINS):
         except OSError:
             self.config_stamp = None
         self.store = Store(config['database'], protect=self.protection_now(config))
+        with self.store.connect() as db:  # the first view reads these: made at start, never by a view waiting behind an import
+            notify.ensure(db)
         self.store.exclusions = {a['id']: rules for a in config['accounts'] if (rules := (a.get('exclude') or []) + default_exclusions(config, a))}
         self.store.owner_user_ids = {a['user_id'] for a in config['accounts'] if a.get('service') == 'slack' and a.get('user_id')}
         self.store.accounts = config['accounts']
