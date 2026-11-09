@@ -245,6 +245,16 @@ function routineBrowserRead(params: any) {
 }
 const GH_READS = /^(?:pr (?:list|view|diff|checks|status)|issue (?:list|view|status)|release (?:list|view)|run (?:list|view)|repo view|search \S+|api)$/;
 const GIT_READS = new Set(['log', 'show', 'diff', 'status', 'shortlog', 'rev-parse', 'describe', 'ls-remote']);
+// Git options that run a program or name a config, repository or output file. Git takes any unique start of a long
+// option (--upl= is --upload-pack=), so a long option that starts one of these is out too.
+const GIT_NEVER = ['--upload-pack', '--receive-pack', '--exec', '--exec-path', '--ext-diff', '--textconv', '--output',
+  '--config', '--config-env', '--git-dir', '--work-tree', '--namespace', '--open-files-in-pager'];
+function gitRunsProgram(sub: string, raw: string) {
+  const arg = raw.replace(/["'\\]/g, ''), name = arg.split('=')[0];
+  if (/^--[^-]/.test(name) && GIT_NEVER.some(never => never.startsWith(name))) return true;
+  if (sub === 'ls-remote' && /^-[^-]*u/.test(arg)) return true;  // -u is --upload-pack there
+  return /::|core\.sshCommand|core\.pager|GIT_SSH/i.test(arg);  // ext:: and other remote helpers; ssh and pager settings
+}
 // One gh or git command that only reads: no pipes, redirects, chaining or substitution, and for gh api only GET.
 export function routineShellRead(params: any) {
   const text = commandText(params);
@@ -255,7 +265,7 @@ export function routineShellRead(params: any) {
   if (args.some(arg => /^[<>]+$/.test(arg) || /^--output\b|^--web$|^-w$/.test(arg))) return false;
   if (tool === 'git') {
     const rest = args[0] === '-C' ? args.slice(2) : args;
-    return GIT_READS.has(rest[0]) && !rest.some(arg => /^--(?:ext-diff|textconv)$/.test(arg));
+    return GIT_READS.has(rest[0]) && !rest.slice(1).some(arg => gitRunsProgram(rest[0], arg));
   }
   if (tool !== 'gh') return false;
   const verb = args[0] === 'api' ? 'api' : args.slice(0, 2).join(' ');
