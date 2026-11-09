@@ -13,7 +13,7 @@ import i18n
 import locale_prefs
 from machine.sources.slack import slack_ids_named, slack_name_table
 from machine.store import graph_identifiers
-from machine.store.cards import awaiting_key, awaiting_match
+from machine.store.cards import awaiting_key, awaiting_match, same_thread_card
 from machine.store.review import AUTOMATED_LABELS, CARD_OPEN, own_message, ROBOT_SENDER
 from machine.store.voices import OWN_KINDS
 from machine.text import _address, encoded
@@ -38,6 +38,30 @@ def promise_check_at(direction, due, made_at, digest_at='08:30', current=None):
     if direction == 'mine':
         target = max(target, current + dt.timedelta(hours=3))
     return target.astimezone(dt.timezone.utc).isoformat()
+
+
+def before_blocked(db, event_id, check_at, digest_at='08:30', thread=True):
+    """Someone else's promise that an open to-do with a deadline waits on (a to-do holding the promise's message, or with
+    thread the one in its thread): checked the morning before that deadline when that is sooner (never sooner than three
+    hours from now), so the chase comes while it can still help. check_at as it was otherwise."""
+    marks = ','.join('?' * len(CARD_OPEN))
+    dues = [r['due'] for r in db.execute(f"SELECT s.due,s.dedupe_key FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN ({marks}) "
+                                         "AND s.due IS NOT NULL", (event_id, *CARD_OPEN)) if not r['dedupe_key'].startswith('promise:')]
+    if not dues and thread:
+        row = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id=?', (event_id,)).fetchone()
+        card = row and same_thread_card(db, [row])
+        if card and card['status'] in CARD_OPEN and card['due'] and not card['dedupe_key'].startswith('promise:'):
+            dues = [card['due']]
+    try:
+        deadline = min(dt.date.fromisoformat(str(d)[:10]) for d in dues) if dues else None
+    except ValueError:
+        return check_at
+    if not deadline:
+        return check_at
+    hour, minute = (int(x) for x in digest_at.split(':'))
+    target = max(dt.datetime.combine(deadline - dt.timedelta(days=1), dt.time(hour, minute), local_tz()),
+                 dt.datetime.fromisoformat(now()) + dt.timedelta(hours=3))
+    return target.astimezone(dt.timezone.utc).isoformat() if target < dt.datetime.fromisoformat(check_at) else check_at
 
 
 def promise_logged(db, promise_id, kind, detail=None):
@@ -227,6 +251,8 @@ class PromisesStore:
             # them is no sign it was kept; the review closes those, or the check when it's due.
             watch = awaiting_key(dict(event), self.owner_user_ids) if direction == 'theirs' and event['kind'] == 'gmail.message' else None
             check_at = promise_check_at(direction, due, event['occurred_at'], digest_at)
+            if direction == 'theirs':
+                check_at = before_blocked(db, event['id'], check_at, digest_at)
             who = who_named(db, who)  # a sender the review only knew by an id or a number: their name
             stamp = now()
             # `what` is sealed under message protection (a fresh nonce each time), so the same promise is found by
@@ -277,6 +303,8 @@ class PromisesStore:
                 except ValueError:
                     raise ValueError('due must be YYYY-MM-DD') from None
                 check_at = promise_check_at(row['direction'], due, row['made_at'], digest_at)
+                if row['direction'] == 'theirs':
+                    check_at = before_blocked(db, row['event_id'], check_at, digest_at)
                 db.execute('UPDATE promises SET due=?,check_at=?,note=?,updated_at=? WHERE id=?', (due, check_at, reason or row['note'] if source == 'dashboard' else reason or None, now(), row['id']))
                 promise_logged(db, row['id'], 'due', due)
                 return {'id': row['id'], 'status': 'open', 'due': due, 'check_at': check_at}
@@ -346,6 +374,11 @@ class PromisesStore:
                 db.execute("UPDATE promises SET status='answered',note=?,updated_at=? WHERE id=?",
                            (f"They wrote again: {answer['title'][:150]}", now(), row['id']))
                 promise_logged(db, row['id'], 'answered', answer['id'])
+        # A to-do with a deadline that came to hold someone else's promise after it was made: checked before that deadline
+        for row in db.execute("SELECT id,event_id,check_at FROM promises WHERE status='open' AND direction='theirs'").fetchall():
+            sooner = before_blocked(db, row['event_id'], row['check_at'], thread=False)
+            if sooner != row['check_at']:
+                db.execute('UPDATE promises SET check_at=? WHERE id=?', (sooner, row['id']))
         self.close_seen_done(db)
         self.retitle_cut_promises(db)
 
