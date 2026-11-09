@@ -403,8 +403,10 @@ OVER_BUDGET = {}
 # set to, with Change, and the setup to-do's row when the mail says the other. The company field and its autofill stay:
 # Zoom, Teams and Google Meet still ask an address and a company up front.
 # 1,700,000 -> 1,614,000 (2026-11-09): the Fleet tab's views load when first needed (first load 1,698,510 -> 1,612,616).
-FIRST_LOAD_CEILING = 1_614_000
-LAZY_CEILING = {'calendar': 96_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 88_000}
+# 1,614,000 -> 1,527,000 (2026-11-09): the Connections tab's views load when first needed (first load 1,612,918 ->
+# 1,525,351).
+FIRST_LOAD_CEILING = 1_527_000
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 88_000}
 
 
 def budget(name):
