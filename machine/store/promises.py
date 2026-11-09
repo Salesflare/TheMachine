@@ -219,6 +219,30 @@ def promise_text(p):
     return title, body
 
 
+def retitle_cut_promises(db):
+    """An open promise to-do whose title an older version cut off at 90 characters, mid-sentence ("... and verify
+    they still"): the title it gets now (promise_title). Only while its title is still exactly that cut one: a
+    rename (theirs or a review's) or another language since leaves it as it is."""
+    rows = db.execute("SELECT s.id,s.title,p.direction,p.who,p.what,e.occurred_at made_at,p.due FROM suggestions s "
+                      "JOIN promises p ON p.suggestion_id=s.id AND s.dedupe_key='promise:'||p.id JOIN events e ON e.id=p.event_id "
+                      f"WHERE p.status='carded' AND s.title_source!='user' AND s.status IN ({','.join('?' * len(CARD_OPEN))})", CARD_OPEN).fetchall()
+    for row in rows:
+        p = dict(row)
+        old = (p['what'][:1].upper() + p['what'][1:] if p['direction'] == 'mine' else i18n.t('Waiting on {}: {}', p['who'], p['what']))
+        cut = len(old) > PROMISE_TITLE_MAX and row['title'] == old[:PROMISE_TITLE_MAX]
+        # 2026-11-06: release 1231 made those whole with a Slack member's label as their name, its first word as
+        # the first name ("Waiting on Slack: ..." for "Slack teammate U02AB3CD4"): those get the person's name
+        label = p['who'].split()[0] if p['direction'] != 'mine' and graph.slack_ids_in(p['who']) and p['who'].split() else ''
+        wrong = label and row['title'] == promise_title({**p, 'who': label}, promise_text({**p, 'who': label})[0])
+        if not (cut or wrong):
+            continue
+        named = promise_who_named(db, p)
+        title = promise_title(named, promise_text(named)[0])
+        if title != row['title']:
+            db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, row['id']))
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+
+
 class PromisesStore:
     """Store methods for promises."""
 
@@ -383,27 +407,7 @@ class PromisesStore:
         self.retitle_cut_promises(db)
 
     def retitle_cut_promises(self, db):
-        """An open promise to-do whose title an older version cut off at 90 characters, mid-sentence ("... and verify
-        they still"): the title it gets now (promise_title). Only while its title is still exactly that cut one: a
-        rename (theirs or a review's) or another language since leaves it as it is."""
-        rows = db.execute("SELECT s.id,s.title,p.direction,p.who,p.what,e.occurred_at made_at,p.due FROM suggestions s "
-                          "JOIN promises p ON p.suggestion_id=s.id AND s.dedupe_key='promise:'||p.id JOIN events e ON e.id=p.event_id "
-                          f"WHERE p.status='carded' AND s.title_source!='user' AND s.status IN ({','.join('?' * len(CARD_OPEN))})", CARD_OPEN).fetchall()
-        for row in rows:
-            p = dict(row)
-            old = (p['what'][:1].upper() + p['what'][1:] if p['direction'] == 'mine' else i18n.t('Waiting on {}: {}', p['who'], p['what']))
-            cut = len(old) > PROMISE_TITLE_MAX and row['title'] == old[:PROMISE_TITLE_MAX]
-            # 2026-11-06: release 1231 made those whole with a Slack member's label as their name, its first word as
-            # the first name ("Waiting on Slack: ..." for "Slack teammate U02AB3CD4"): those get the person's name
-            label = p['who'].split()[0] if p['direction'] != 'mine' and graph.slack_ids_in(p['who']) and p['who'].split() else ''
-            wrong = label and row['title'] == promise_title({**p, 'who': label}, promise_text({**p, 'who': label})[0])
-            if not (cut or wrong):
-                continue
-            named = promise_who_named(db, p)
-            title = promise_title(named, promise_text(named)[0])
-            if title != row['title']:
-                db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, row['id']))
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+        return retitle_cut_promises(db)
 
     def promises(self, days=14):
         """Open promises and those closed in the last days, soonest first."""

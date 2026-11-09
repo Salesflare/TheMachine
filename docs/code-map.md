@@ -275,7 +275,8 @@ The table checks read the SQL in each module's strings. A statement whose table 
   passes them in. The mixins above stay until their code moves that way.
   Store mixins go the same way: a method that needs nothing of the Store becomes a function of `db` in its module
   (`card_channels(db, suggestion_id)` in `machine/store/voices.py`), and the Store keeps a thin method that passes
-  `db` in, so callers and tests that patch `Store` are unchanged.
+  `db` in, so callers and tests that patch `Store` are unchanged. A `@staticmethod` already is one: it moves out as is
+  and the class keeps `name = staticmethod(name)` (`fact_state` in `machine/store/facts.py`).
 - **Shared helpers** go to plain modules of plain functions that take what they need as arguments (`timeutil.py`,
   `models.py`, `sources.py`), never a mixin. `assistant.py` imports their names, so its own code and the
   tests that patch them on `assistant` keep working; state such as the zone or the hours lives in the helper module, so

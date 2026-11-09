@@ -76,22 +76,115 @@ def first_value(db, marks, since):
 FIRST_LOOK_NAMES, FIRST_LOOK_NAME_SIGNALS = 6, 80
 
 
+def note_first_import(db, account, state):
+    """Milestones of a source's first import: its first page in, and the whole import in (its checkpoint leaves
+    bootstrap). Only a source that starts here is timed: one already past its first import keeps no milestone."""
+    row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account,)).fetchone()
+    try:
+        before = json.loads(row['state'] or '{}') if row else {}
+    except (TypeError, ValueError):
+        return
+    if before.get('mode') not in ('bootstrap', None) or (before and 'mode' not in before):
+        return  # past its first import (or a plugin's own cursor): not timed
+    db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_page:' + account, now()))
+    if (state or {}).get('mode', 'incremental') not in ('bootstrap', 'resync') and not (state or {}).get('page_token'):
+        db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_import:' + account, now()))
+
+
+def reviews_failing(db):
+    """How many reviews in a row ended without going well, the newest back to the last one that did (at most a dozen
+    counted). For the dashboard's first look (App.first_look, App.first_dig_live): from the third on, it says the
+    tries keep failing instead of "Reading on"."""
+    failed = 0
+    for (status,) in db.execute('SELECT status FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 12'):
+        if status == 'ok':
+            break
+        failed += 1
+    return failed
+
+
+def review_batch_saved(db, run_id):
+    """The run's reviewer saved its batch (finish_analysis) and left no batch of its own unfinished: a first look's
+    pass that did its work, also when its runtime reported a failure after it (App.review_step)."""
+    session = REVIEW_SESSION_PREFIX + run_id
+    return bool(db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1", (run_id, session)).fetchone()
+                and not db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND status IN ('running','retryable') LIMIT 1", (run_id,)).fetchone())
+
+
+def note_first_look(db, look):
+    """The first look's last state, for the health report (first_cards_report): kept only when it changed."""
+    detail = encoded({k: look.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at') if look.get(k) is not None}) if look else None
+    row = db.execute("SELECT detail FROM milestones WHERE name='first_look_state'").fetchone()
+    if not row or row['detail'] != detail:
+        db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_look_state',?,?)", (now(), detail))
+
+
+def first_magic_done(db):
+    """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
+    beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,
+    an install from before this was recorded)."""
+    if db.execute("SELECT 1 FROM milestones WHERE name='first_card_shown'").fetchone():
+        return True
+    settled = (dt.datetime.fromisoformat(now()) - dt.timedelta(seconds=FIRST_MAGIC_SETTLE_SECONDS)).isoformat()
+    return bool(db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND finished_at<=? LIMIT 1", (settled,)).fetchone())
+
+
+def greeting_name(db, row):
+    """Who to name in the hello for this message: the sender's first name as the message gives it, else the name the
+    Graph knows them by, else their organization ("Acme Town Hall"). '' when only a mailbox name ("billing",
+    "frontdesk") or an address is known: no line then, never a name made up from an address."""
+    m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
+    person = sender_first_name(m)
+    if person:
+        return person
+    address = _address(m.get('from'))
+    for r in db.execute("SELECT n.name,o.name org FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id LEFT JOIN graph_nodes o "
+                        "ON o.id=json_extract(n.info,'$.org') AND o.kind='org' WHERE g.direct=1 AND n.kind='person' AND g.event_id=? "
+                        "ORDER BY n.strength DESC", (row['id'],)):
+        name = sender_first_name({'from': graph.person_name(r['name'] or '') + (f' <{address}>' if address else '')})
+        if name:
+            return name
+        org = ' '.join(str(r['org'] or '').split())
+        if org and '@' not in org and re.search(r'[^\W\d_]{2}', org):
+            return org
+    return ''
+
+
+def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
+    """Still needed? (still_needed.py) in the weekly recap's choices table: ends the question of a to-do that closed
+    (dropped when it was rejected), then asks once on each to-do still_needed.due names. Returns the ids asked now."""
+    db.execute("UPDATE recap_items SET status=CASE WHEN (SELECT status FROM suggestions WHERE id=recap_items.ref)='rejected' THEN 'dropped' "
+               "ELSE 'closed' END,decided_at=? WHERE kind=? AND status='open' AND COALESCE((SELECT status FROM suggestions WHERE id=recap_items.ref),"
+               "'rejected') IN ('completed','rejected')", (stamp, still_needed.KIND))
+    rows = still_needed.due(db, stamp, skip, tz)
+    for r in rows:
+        db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES(?,'',0,?,?,?,?,'open')",
+                   ('sn_' + secrets.token_hex(6), still_needed.KIND, r['id'], r['title'], json.dumps({'asked_at': stamp})))
+    return [r['id'] for r in rows]
+
+
+def greeting_on(db, at):
+    """The hello's first view is now (`at`), whatever was decided before: for the sandbox, whose sample history is
+    older than its owner's first look (the site demo shows the first view)."""
+    db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (at,))
+
+
+def setup_closed(db, step, closed=True):
+    """The setup to-do's row (or card) closed with its ×, or back (closed=False; step 'all': every one), on every device
+    (milestones 'setup:<step>'; machine/app/setup_card.py checks the step)."""
+    if closed:
+        db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('setup:' + step, now()))
+    elif step == 'all':
+        db.execute("DELETE FROM milestones WHERE name LIKE 'setup:%'")
+    else:
+        db.execute('DELETE FROM milestones WHERE name=?', ('setup:' + step,))
+
+
 class FirstLookStore:
     """Store methods for a new Machine's first steps."""
 
     def note_first_import(self, db, account, state):
-        """Milestones of a source's first import: its first page in, and the whole import in (its checkpoint leaves
-        bootstrap). Only a source that starts here is timed: one already past its first import keeps no milestone."""
-        row = db.execute('SELECT state FROM checkpoints WHERE account_id=?', (account,)).fetchone()
-        try:
-            before = json.loads(row['state'] or '{}') if row else {}
-        except (TypeError, ValueError):
-            return
-        if before.get('mode') not in ('bootstrap', None) or (before and 'mode' not in before):
-            return  # past its first import (or a plugin's own cursor): not timed
-        db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_page:' + account, now()))
-        if (state or {}).get('mode', 'incremental') not in ('bootstrap', 'resync') and not (state or {}).get('page_token'):
-            db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('first_import:' + account, now()))
+        return note_first_import(db, account, state)
 
     def first_look_run(self, run_id, db=None):
         """Whether a review run is part of the first look: a preview it started by itself, the quick first review, or
@@ -104,25 +197,9 @@ class FirstLookStore:
         row = db.execute('SELECT preview,auto,window_hours,promising FROM review_runs WHERE run_id=?', (run_id,)).fetchone()
         return bool(row and ((row['preview'] and row['auto']) or row['window_hours'] or row['promising']))
 
-    @staticmethod
-    def reviews_failing(db):
-        """How many reviews in a row ended without going well, the newest back to the last one that did (at most a dozen
-        counted). For the dashboard's first look (App.first_look, App.first_dig_live): from the third on, it says the
-        tries keep failing instead of "Reading on"."""
-        failed = 0
-        for (status,) in db.execute('SELECT status FROM review_runs WHERE finished_at IS NOT NULL ORDER BY finished_at DESC LIMIT 12'):
-            if status == 'ok':
-                break
-            failed += 1
-        return failed
+    reviews_failing = staticmethod(reviews_failing)  # a function of db, at the top of this module
 
-    @staticmethod
-    def review_batch_saved(db, run_id):
-        """The run's reviewer saved its batch (finish_analysis) and left no batch of its own unfinished: a first look's
-        pass that did its work, also when its runtime reported a failure after it (App.review_step)."""
-        session = REVIEW_SESSION_PREFIX + run_id
-        return bool(db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete' LIMIT 1", (run_id, session)).fetchone()
-                    and not db.execute("SELECT 1 FROM analyses WHERE owner_run=? AND status IN ('running','retryable') LIMIT 1", (run_id,)).fetchone())
+    review_batch_saved = staticmethod(review_batch_saved)  # a function of db, at the top of this module
 
     def first_look_names(self, db, runs):
         """Who the first look is reading about, for its live line on the owner's own dashboard ("Bumped into Mila, Acme
@@ -183,20 +260,10 @@ class FirstLookStore:
         return names[:FIRST_LOOK_NAMES]
 
     def note_first_look(self, db, look):
-        """The first look's last state, for the health report (first_cards_report): kept only when it changed."""
-        detail = encoded({k: look.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at') if look.get(k) is not None}) if look else None
-        row = db.execute("SELECT detail FROM milestones WHERE name='first_look_state'").fetchone()
-        if not row or row['detail'] != detail:
-            db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('first_look_state',?,?)", (now(), detail))
+        return note_first_look(db, look)
 
     def first_magic_done(self, db):
-        """The first look has done its job, so the rest of onboarding (profile, voices, roles, organizations, drafts
-        beyond the first) may start: the first card was shown, or a review finished a while ago (one that found no card,
-        an install from before this was recorded)."""
-        if db.execute("SELECT 1 FROM milestones WHERE name='first_card_shown'").fetchone():
-            return True
-        settled = (dt.datetime.fromisoformat(now()) - dt.timedelta(seconds=FIRST_MAGIC_SETTLE_SECONDS)).isoformat()
-        return bool(db.execute("SELECT 1 FROM review_runs WHERE status='ok' AND finished_at<=? LIMIT 1", (settled,)).fetchone())
+        return first_magic_done(db)
 
     def note_card_shown(self):
         """The first card the dashboard showed on a new install (one with cards from before this was recorded keeps none)."""
@@ -302,56 +369,15 @@ class FirstLookStore:
                                                  and meta(r).get('thread_id') == thread)]
         return self.waiting_since(db, same)
 
-    @staticmethod
-    def greeting_name(db, row):
-        """Who to name in the hello for this message: the sender's first name as the message gives it, else the name the
-        Graph knows them by, else their organization ("Acme Town Hall"). '' when only a mailbox name ("billing",
-        "frontdesk") or an address is known: no line then, never a name made up from an address."""
-        m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-        person = sender_first_name(m)
-        if person:
-            return person
-        address = _address(m.get('from'))
-        for r in db.execute("SELECT n.name,o.name org FROM graph_events g JOIN graph_nodes n ON n.id=g.node_id LEFT JOIN graph_nodes o "
-                            "ON o.id=json_extract(n.info,'$.org') AND o.kind='org' WHERE g.direct=1 AND n.kind='person' AND g.event_id=? "
-                            "ORDER BY n.strength DESC", (row['id'],)):
-            name = sender_first_name({'from': graph.person_name(r['name'] or '') + (f' <{address}>' if address else '')})
-            if name:
-                return name
-            org = ' '.join(str(r['org'] or '').split())
-            if org and '@' not in org and re.search(r'[^\W\d_]{2}', org):
-                return org
-        return ''
+    greeting_name = staticmethod(greeting_name)  # a function of db, at the top of this module
 
-    @staticmethod
-    def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
-        """Still needed? (still_needed.py) in the weekly recap's choices table: ends the question of a to-do that closed
-        (dropped when it was rejected), then asks once on each to-do still_needed.due names. Returns the ids asked now."""
-        db.execute("UPDATE recap_items SET status=CASE WHEN (SELECT status FROM suggestions WHERE id=recap_items.ref)='rejected' THEN 'dropped' "
-                   "ELSE 'closed' END,decided_at=? WHERE kind=? AND status='open' AND COALESCE((SELECT status FROM suggestions WHERE id=recap_items.ref),"
-                   "'rejected') IN ('completed','rejected')", (stamp, still_needed.KIND))
-        rows = still_needed.due(db, stamp, skip, tz)
-        for r in rows:
-            db.execute("INSERT INTO recap_items(id,week,n,kind,ref,line,data,status) VALUES(?,'',0,?,?,?,?,'open')",
-                       ('sn_' + secrets.token_hex(6), still_needed.KIND, r['id'], r['title'], json.dumps({'asked_at': stamp})))
-        return [r['id'] for r in rows]
+    still_needed_ask = staticmethod(still_needed_ask)  # a function of db, at the top of this module
 
-    @staticmethod
-    def greeting_on(db, at):
-        """The hello's first view is now (`at`), whatever was decided before: for the sandbox, whose sample history is
-        older than its owner's first look (the site demo shows the first view)."""
-        db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (at,))
+    greeting_on = staticmethod(greeting_on)  # a function of db, at the top of this module
 
     def setup_closed(self, step, closed=True):
-        """The setup to-do's row (or card) closed with its ×, or back (closed=False; step 'all': every one), on every device
-        (milestones 'setup:<step>'; machine/app/setup_card.py checks the step)."""
         with self.connect() as db:
-            if closed:
-                db.execute('INSERT OR IGNORE INTO milestones(name,at) VALUES(?,?)', ('setup:' + step, now()))
-            elif step == 'all':
-                db.execute("DELETE FROM milestones WHERE name LIKE 'setup:%'")
-            else:
-                db.execute('DELETE FROM milestones WHERE name=?', ('setup:' + step,))
+            setup_closed(db, step, closed)
 
     def tip_done(self, tip):
         """A first-use tip closed (×) or its button used on the dashboard: it never comes back, on any device."""
