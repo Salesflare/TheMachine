@@ -569,16 +569,25 @@ def start_sorting(db, job, now_local, stamp):
     return rid, begin(db, rid, 'sort:' + stamp, stamp)
 
 
-def start_pattern(db, found, now_local, stamp):
-    """A 'sorting' row for a pattern in the owner's activity (routine_patterns.candidates) and its one run."""
+def start_pattern(db, found, now_local, stamp, work=False):
+    """A 'sorting' row for a pattern in the owner's activity (routine_patterns.candidates) and its one run. work: the
+    pattern is a Work account's (its routine stays on that side)."""
     rid = create(db, 'Sort a pattern: ' + found['name'], found['rule'], found['anchor'], found['at'], now_local, stamp,
-                 name=short_name(found['name']) or 'Pattern', origin=found['key'], state='sorting', why=found['why'])
+                 name=short_name(found['name']) or 'Pattern', origin=found['key'], state='sorting', why=found['why'], work=work)
     return rid, begin(db, rid, 'sort:' + stamp, stamp)
 
 
 def last_pattern_at(db):
     """When the last pattern was handed to a sorting run (its row's created_at), or None."""
     return db.execute("SELECT max(created_at) FROM routines WHERE origin LIKE 'pattern:%'").fetchone()[0]
+
+
+def last_pattern_offered_at(db):
+    """When a pattern last became something to answer (a suggested routine, or a recurring to-do offer): the end of its
+    sorting run, or None. A pattern sorted as nothing doesn't count."""
+    return db.execute("SELECT max(r.finished_at) FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE t.origin LIKE 'pattern:%' "
+                      "AND r.period LIKE 'sort:%' AND r.finished_at IS NOT NULL AND (t.state NOT IN ('sorting','skipped') "
+                      'OR EXISTS(SELECT 1 FROM recurring_offers o WHERE o.key=t.origin))').fetchone()[0]
 
 
 def sort_again(db, row, stamp):

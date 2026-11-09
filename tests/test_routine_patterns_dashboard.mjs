@@ -7,12 +7,16 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // A routine suggested from what the owner does (routine_patterns.py) says what was seen at the end of its rhythm line
 // ("Weekly on Monday · 8:00 AM · Asked 4 times in a row"), in the owner's language; a suggestion from an OpenClaw job has none.
 // Its preview renders as Markdown, a real list.
-// The section's line names OpenClaw only when every suggestion came from it. SHOTS=<folder> also saves screenshots.
+// The section's line names OpenClaw only when every suggestion came from it. A repeat the owner does by hand says what
+// and to whom ("Forwarded 6 mails to Sam in 3 weeks"), on the phone too. SHOTS=<folder> also saves screenshots.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),SID='e5'.repeat(16),OID='f6'.repeat(16);
 const pattern={id:SID,name:'Monday tickets',instructions:'Sum up the open support tickets from the past week',rule:{unit:'week',n:1},anchor:'2026-11-09',at:'08:00',
  state:'suggested',next_due:null,from_openclaw:false,why:{kind:'ask',n:4},
  runs:[{id:'r1',state:'ready',started_at:now,result:'**3 open tickets**, 1 urgent: login fails on the phone app.\n- 2 waiting on a reply\n- 1 new since Friday'}]};
+const FID='a7'.repeat(16);
+const forward={...pattern,id:FID,name:'School digest',instructions:'Every Friday, sum up this week’s school and club mails for Sam',anchor:'2026-11-13',
+ why:{kind:'forward',n:6,weeks:3,to:'Sam'},runs:[{id:'r2',state:'ready',started_at:now,result:'**School trip** on Thursday: bring a packed lunch.\n- Swim club: no training next Tuesday'}]};
 const openclaw={...pattern,id:OID,name:'Dev summary',instructions:'Sum up what each developer shipped',from_openclaw:true,why:null,runs:[]};
 let suggested=[pattern],language='en';
 const state=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
@@ -29,7 +33,7 @@ const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height] of [[390,844],[1440,900]])for(const scheme of ['light','dark']){
-  suggested=[pattern];
+  suggested=[forward,pattern];
   const context=await browser.newContext({viewport:{width,height},timezoneId:'Europe/Brussels',colorScheme:scheme});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
@@ -39,6 +43,10 @@ try{
   assert.equal(await s.locator('.rt-run li').count(),2,'the preview list renders as a list');
   assert.equal(await page.locator('.rt-sugg>.fine').innerText(),'Each one ran once to show you.');
   const box=await s.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,'the suggestion fits the screen');
+  const f=page.locator(`.rt-sugg [data-rt="${FID}"]`);
+  assert.match(await f.locator('.rt-when').innerText(),/ · Forwarded 6 mails to Sam in 3 weeks$/);
+  const seen=await f.locator('.rt-seen').boundingBox(),card=await f.boundingBox();
+  assert.ok(seen.x>=card.x&&seen.x+seen.width<=card.x+card.width,'the evidence line fits its card');
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/pattern-${width}-${scheme}.png`,fullPage:true});
   if(width===390&&scheme==='light'){
    // An OpenClaw suggestion says nothing extra; with only those, the section names OpenClaw
@@ -48,7 +56,7 @@ try{
    assert.equal(await page.locator('.rt-sugg>.fine').innerText(),'From your OpenClaw jobs. Each one ran once to show you.');
    // Every kind words its own line
    for(const [why,line] of [[{kind:'sent',n:5},'Sent 5 times in a row'],[{kind:'mail',n:3},'3 senders every week'],
-                            [{kind:'slack',n:40},'About 40 messages a week']]){
+                            [{kind:'slack',n:40},'About 40 messages a week'],[{kind:'reply',n:4,to:'Pat'},'Answered the same request from Pat 4 times in a row']]){
     suggested=[{...pattern,why}];await page.evaluate(()=>routinesView(true));
     await page.locator(`.rt-sugg [data-rt="${SID}"]`).waitFor();
     assert.ok((await page.locator('.rt-when').innerText()).endsWith(' · '+line),line);

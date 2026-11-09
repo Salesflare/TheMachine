@@ -150,6 +150,14 @@ def greeting_name(db, row):
     return ''
 
 
+def owners_name(name, owner_name):
+    """True when `name` is the owner's own full name ("Sam Lee <sam@other.example>" for owner Sam Lee): their other
+    mailbox, which own_addresses rightly doesn't take on a name alone, still isn't someone else to name to them
+    (2026-11-09: "Jeroen has been waiting on your reply" to Jeroen). Full names only: a first name is no match."""
+    owner = graph.plain_name(owner_name)
+    return bool(owner) and graph.plain_name(name) == owner
+
+
 def still_needed_ask(db, stamp, skip=lambda row: False, tz=dt.timezone.utc):
     """Still needed? (still_needed.py) in the weekly recap's choices table: ends the question of a to-do that closed
     (dropped when it was rejected), then asks once on each to-do still_needed.due names. Returns the ids asked now."""
@@ -201,7 +209,7 @@ class FirstLookStore:
 
     review_batch_saved = staticmethod(review_batch_saved)  # a function of db, at the top of this module
 
-    def first_look_names(self, db, runs):
+    def first_look_names(self, db, runs, owner_name=''):
         """Who the first look is reading about, for its live line on the owner's own dashboard ("Bumped into Mila, Acme
         and Jonah so far"): up to FIRST_LOOK_NAMES first names of people and their organizations, from the signals its
         batches claimed (the batch that reads now first, in the order it reads them). Each named as the Graph knows them,
@@ -250,9 +258,9 @@ class FirstLookStore:
             except ValueError:
                 continue
             sender = _address(meta.get('from')).lower()
-            if (sender and sender in own) or meta.get('from_me'):
+            if (sender and sender in own) or meta.get('from_me') or owners_name(meta.get('sender_display') or meta.get('from'), owner_name):
                 continue  # the owner's own message: whom they wrote to is no find
-            for r in known.get(event_id, [])[:1]:
+            for r in [r for r in known.get(event_id, []) if not owners_name(r['name'], owner_name)][:1]:
                 add(sender_first_name({'from': graph.person_name(r['name'] or '')}))
                 add(r['org'])
             if event_id not in known and items[event_id].get('read') == 'people':
@@ -346,6 +354,10 @@ class FirstLookStore:
             best = None
             for card in db.execute('SELECT id,status,event_ids FROM suggestions WHERE ' + activity.SHOWN, (now(),)).fetchall():
                 found = self.greeting_wait(db, card)
+                m = found and found[1]['metadata']
+                m = found and (m if isinstance(m, dict) else json.loads(m or '{}'))
+                if found and owners_name(m.get('sender_display') or m.get('from'), owner_name):
+                    continue  # their own other mailbox: no one waits on them there
                 person = found and self.greeting_name(db, found[1])
                 key = found and (card['status'] != 'prepared', found[0])
                 if person and (not best or key < best[0]):

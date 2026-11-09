@@ -119,6 +119,7 @@
  "A project by that name is on another board already": "A project by that name is on another board already",
  "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"": "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"",
  "A removed AI": "A removed AI",
+ "A reply ready to send, a sign-in, a Fleet question": "A reply ready to send, a sign-in, a Fleet question",
  "A reply, a request, anything urgent": "A reply, a request, anything urgent",
  "A reset starts your ChatGPT usage limits over.": "A reset starts your ChatGPT usage limits over.",
  "A restricted key with Read on Events, Customers and Account.": "A restricted key with Read on Events, Customers and Account.",
@@ -396,6 +397,7 @@
  "Answered on WhatsApp": "Answered on WhatsApp",
  "Answered on X": "Answered on X",
  "Answered once": "Answered once",
+ "Answered the same request from {} {} times in a row": "Answered the same request from {} {} times in a row",
  "Answered without asking you.": "Answered without asking you.",
  "Answered, and always from now on": "Answered, and always from now on",
  "Answered.": "Answered.",
@@ -1397,6 +1399,7 @@
  "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is": "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is",
  "First look": "First look",
  "First look: your last {} days": "First look: your last {} days",
+ "First meeting at {}": "First meeting at {}",
  "First one’s in: {}. Still reading…": "First one’s in: {}. Still reading…",
  "First read: catching up on the last days.": "First read: catching up on the last days.",
  "First seen this week.": "First seen this week.",
@@ -1482,6 +1485,7 @@
  "Forgotten everywhere.": "Forgotten everywhere.",
  "Forgotten.": "Forgotten.",
  "Formatting": "Formatting",
+ "Forwarded {} mails to {} in {} weeks": "Forwarded {} mails to {} in {} weeks",
  "Found": "Found",
  "Found for {}": "Found for {}",
  "Found in your Outlook sent mail": "Found in your Outlook sent mail",
@@ -1634,6 +1638,25 @@
  "Goes within the hour": "Goes within the hour",
  "Gone quiet": "Gone quiet",
  "Gone quiet: {}": "Gone quiet: {}",
+ "Good morning": "Good morning",
+ "Good morning, first meeting at {}": "Good morning, first meeting at {}",
+ "Good morning, {} due today": "Good morning, {} due today",
+ "Good morning, {} new to-dos": {
+  "one": "Good morning, {} new to-do",
+  "other": "Good morning, {} new to-dos"
+ },
+ "Good morning, {} ready for your OK": {
+  "one": "Good morning, {} ready for your OK",
+  "other": "Good morning, {} ready for your OK"
+ },
+ "Good morning, {} replies are ready to send": {
+  "one": "Good morning, {} reply is ready to send",
+  "other": "Good morning, {} replies are ready to send"
+ },
+ "Good morning, {} waiting, about {} min to clear": {
+  "one": "Good morning, {} waiting, about {} min to clear",
+  "other": "Good morning, {} waiting, about {} min to clear"
+ },
  "Google": "Google",
  "Google Calendar": "Google Calendar",
  "Google Calendar isn’t connected yet. Add it under + Add.": "Google Calendar isn’t connected yet. Add it under + Add.",
@@ -2371,6 +2394,25 @@
  "More thinking is slower and uses more of your plan.": "More thinking is slower and uses more of your plan.",
  "Morning digest": "Morning digest",
  "Morning digest: {}": "Morning digest: {}",
+ "Morning {}": "Morning {}",
+ "Morning {}, first meeting at {}": "Morning {}, first meeting at {}",
+ "Morning {}, {} due today": "Morning {}, {} due today",
+ "Morning {}, {} new to-dos": {
+  "one": "Morning {}, {} new to-do",
+  "other": "Morning {}, {} new to-dos"
+ },
+ "Morning {}, {} ready for your OK": {
+  "one": "Morning {}, {} ready for your OK",
+  "other": "Morning {}, {} ready for your OK"
+ },
+ "Morning {}, {} replies are ready to send": {
+  "one": "Morning {}, {} reply is ready to send",
+  "other": "Morning {}, {} replies are ready to send"
+ },
+ "Morning {}, {} waiting, about {} min to clear": {
+  "one": "Morning {}, {} waiting, about {} min to clear",
+  "other": "Morning {}, {} waiting, about {} min to clear"
+ },
  "Mornings": "Mornings",
  "Move": "Move",
  "Move to": "Move to",
@@ -2849,6 +2891,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "Now and then I share a few general learnings. Nothing personal.",
  "Now findable by people who have your email.": "Now findable by people who have your email.",
  "Now the rest of the week: {} of {} active conversations": "Now the rest of the week: {} of {} active conversations",
+ "Now {}": "Now {}",
+ "Now {}, was {}": "Now {}, was {}",
  "Nudge {}: no reply in {} days": "Nudge {}: no reply in {} days",
  "Number": "Number",
  "Numbered list": "Numbered list",
@@ -3055,6 +3099,7 @@
  "Only this event goes. Nobody gets an update.": "Only this event goes. Nobody gets an update.",
  "Only this one: {}": "Only this one: {}",
  "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.": "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.",
+ "Only what can’t wait: due today, a reply, urgent": "Only what can’t wait: due today, a reply, urgent",
  "Only what needs you, where you want it.": "Only what needs you, where you want it.",
  "Only you": "Only you",
  "Only you and {}": "Only you and {}",
@@ -6360,6 +6405,7 @@
  "{} asks you to take this on: “{}”": "{} asks you to take this on: “{}”",
  "{} asks your Fleet": "{} asks your Fleet",
  "{} asks:": "{} asks:",
+ "{} at {}": "{} at {}",
  "{} board suggestions are open already: wait until the owner decides": "{} board suggestions are open already: wait until the owner decides",
  "{} calls": {
   "one": "{} call",
@@ -6592,6 +6638,10 @@
   "one": "{} meeting",
   "other": "{} meetings"
  },
+ "{} meetings today, the first at {}.": {
+  "one": "{} meeting today, at {}.",
+  "other": "{} meetings today, the first at {}."
+ },
  "{} message": "{} message",
  "{} message to {}": "{} message to {}",
  "{} messages": {
@@ -6625,6 +6675,10 @@
   "other": "{} messages waiting for their first check"
  },
  "{} min": "{} min",
+ "{} more can wait, about {} min to clear.": {
+  "one": "{} more can wait, about {} min to clear.",
+  "other": "{} more can wait, about {} min to clear."
+ },
  "{} more in Promises": "{} more in Promises",
  "{} more like this wait. Always shares them too.": {
   "one": "{} more like this waits. Always shares it too.",
@@ -6922,6 +6976,10 @@
   "other": "{} votes wait for you"
  },
  "{} waiting": "{} waiting",
+ "{} waiting, about {} min to clear.": {
+  "one": "{} waiting, about {} min to clear.",
+  "other": "{} waiting, about {} min to clear."
+ },
  "{} wants a one-time code.": "{} wants a one-time code.",
  "{} wants a passkey.": "{} wants a passkey.",
  "{} wants a quick check that you’re not a robot.": "{} wants a quick check that you’re not a robot.",

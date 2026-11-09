@@ -1,7 +1,7 @@
 ---
 title: Notifiche
 area: settings
-summary: Cosa ti arriva, dove e quando: push, Telegram o email per tipo, il tuo orario di lavoro e il riepilogo del mattino.
+summary: Cosa ti arriva, dove e quando: notifica solo ciò che non può aspettare, il resto è in un solo riepilogo del mattino.
 covers: settings:notify
 code: notify.py, dashboard.html, assistant.py, sw.js
 order: 2
@@ -9,14 +9,25 @@ keywords: alerts, notify, ping, buzz, quiet, too many, push, sound, interrupt
 ---
 In **Impostazioni**, **Notifiche**, scegli per ogni tipo dove ti arriva:
 
-- **Nuove attività**: una risposta che qualcuno aspetta, una richiesta, qualsiasi cosa urgente.
-- **Risultati e domande**: una bozza pronta da approvare o inviare, un compito bloccato o che richiede un accesso, una domanda della Fleet.
+- **Nuove attività**: solo ciò che non può aspettare, come una scadenza di oggi o qualcosa di urgente.
+- **Risultati e domande**: una risposta pronta da inviare, un accesso che serve a un compito, una domanda della Fleet.
 - **Promemoria**: attività posticipate e attese che tornano.
-- **Riepilogo del mattino**: prima le bozze pronte e le promesse in scadenza oggi, poi le riunioni di oggi, cosa scade, cosa è arrivato durante la notte e le altre attività in attesa. Ogni attività compare una sola volta.
+- **Riepilogo del mattino**: un breve riepilogo della tua giornata. Vedi sotto.
 
 Ognuno ha un interruttore per **Push** (l'app sul telefono o sul computer), per **Telegram** quando è configurato e per **Email** su una Machine in hosting o su una Machine nel The Machine Network. Sono tutti attivi, tranne il riepilogo su Telegram.
 
 L'**Orario di lavoro** è nella stessa scheda: i tuoi giorni lavorativi, le ore in cui possono partire le notifiche, quando tornano i posticipi, l'ora del riepilogo e il tuo fuso orario. Vedi [Orario di lavoro](work-hours.md).
+
+## Solo ciò che non può aspettare
+
+Una push, una notifica Telegram o un'email parte solo per:
+
+- un'attività in scadenza oggi, o segnata come urgente;
+- una risposta che qualcuno aspetta, scritta e pronta da inviare;
+- un compito che ha bisogno che tu acceda;
+- un'attività posticipata che torna all'ora che hai scelto.
+
+Tutto il resto arriva in silenzio sulla dashboard (e senza suono su Telegram) e aspetta il riepilogo del mattino. In un giorno libero notifica solo ciò che è urgente o in scadenza oggi. Al massimo 8 push al giorno. Dopo 3 giorni senza aprire la dashboard arriva solo il riepilogo del mattino, finché non torni.
 
 ## Quando notifica
 
@@ -24,7 +35,7 @@ Come Slack, guarda se stai usando la dashboard, non solo se è aperta:
 
 - In uso: la dashboard è davanti a te, in primo piano, e negli ultimi 10 minuti hai cliccato, scritto, scorso o toccato. Non vibra niente. Telegram arriva senza suono.
 - Assente: la dashboard è in secondo piano, ridotta a icona, chiusa o inattiva da 10 minuti. Una push parte un minuto dopo che l'hai lasciata, a meno che tu non torni e la veda prima.
-- Ancora non vista dopo 15 minuti: una sola email con tutto ciò che ti aspetta ancora. Al massimo una all'ora. Ciò che hai gestito nel frattempo, su Telegram o altrove, resta fuori, così come ciò che il riepilogo del mattino ha appena elencato. Usare la dashboard dopo che qualcosa è arrivato conta come averlo visto: in una giornata passata sulla dashboard può non arrivare nessuna email.
+- Ancora non vista dopo 15 minuti, e non può aspettare: un'email per quella, al massimo una all'ora. Ciò che hai già gestito resta fuori. Quasi sempre il riepilogo del mattino è l'unica email.
 - Fuori dal tuo orario di lavoro: niente. Il riepilogo del mattino contiene ciò che è arrivato.
 - Una nuova attività di lavoro arrivata in un giorno libero aspetta l'ora del riepilogo del tuo prossimo giorno lavorativo. L'attività mostra dove e quando ti raggiungerà, come Notifica lun 2 nov · 08:30, secondo la riga **Nuove attività**. Con Push e Telegram entrambi spenti lì, non dice nulla.
 
@@ -51,10 +62,17 @@ Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la d
 
 ## Il riepilogo del mattino
 
-Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, e salta solo quando non c'è niente da dire: nessuna riunione, niente in scadenza o di nuovo e nessuna attività in attesa. **Anteprima**, nella sua riga, lo mostra sulla pagina senza inviarlo. Di default è una push e un'email. La push dice quante attività aspettano, le prime due e l'ora della tua prima riunione. Toccando la push si apre oggi nel **Calendario**.
+Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:
+
+- un saluto con ciò che conta oggi, come "Buongiorno Sam, 2 risposte sono pronte da inviare";
+- le tue riunioni in una riga;
+- al massimo tre cose da fare, ognuna con un link Apri: prima le bozze pronte e le promesse in scadenza oggi;
+- quante altre possono aspettare e quanto ti richiedono al tuo ritmo, come "Altre 12 possono aspettare, circa 5 min per sbrigarle."
+
+La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
 
 ## Privacy
 
-Le push vanno dalla tua Machine direttamente al tuo dispositivo, crittografate per quel dispositivo. Il control plane non le vede mai. Le email le invia il server di posta di The Machine all'indirizzo del tuo account, quindi il testo passa da lì e dal provider di posta. Quando [Prudente](security-levels.md) nasconde il testo delle attività nelle notifiche, le email contengono solo conteggi. Disattiva **Email** per un tipo per tenerlo del tutto fuori dalle email. Dice anche quanto ti richiedono le attività in attesa, come "4 pronti · circa 2 min".
+Le push vanno dalla tua Machine direttamente al tuo dispositivo, crittografate per quel dispositivo. Il control plane non le vede mai. Le email le invia il server di posta di The Machine all'indirizzo del tuo account, quindi il testo passa da lì e dal provider di posta. Quando [Prudente](security-levels.md) nasconde il testo delle attività nelle notifiche, le email contengono solo conteggi. Disattiva **Email** per un tipo per tenerlo del tutto fuori dalle email.
 
 Attiva le push per un dispositivo in **Questo dispositivo**, oppure vedi [Installa l'app](phone-app.md).

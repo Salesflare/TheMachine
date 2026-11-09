@@ -16,11 +16,18 @@ to email notifications"):
 - While in use, nothing buzzes: no push to any device, Telegram arrives silently, and what came in counts as seen.
 - Push when away: right away when the owner has been away a while, else AWAY_GRACE after they left (Slack: mobile one
   minute after the desktop locks). Left out when they came back and saw it in the meantime.
-- Email for what is still unseen and still waiting EMAIL_AFTER later, bundled into one, at most once per EMAIL_EVERY
-  (Slack: bundled every 15 minutes or hourly, only while inactive). Morning digest on work days.
+- Email for what can't wait (calm_reason) and is still unseen and still waiting EMAIL_AFTER later, bundled into one, at
+  most once per EMAIL_EVERY (Slack: bundled every 15 minutes or hourly, only while inactive). Morning summary (the
+  digest, compose) on work days.
 - A teammate's handoff to an owner their Machine can't ping (no phone or Telegram): one email of its own for it, also
   EMAIL_AFTER later and only while still unseen and waiting (take_handoffs, handoff_mail).
-- A batch buzzes once (assistant.deliver_one); nothing goes out outside work hours (Slack: notification schedule)."""
+- A batch buzzes once (assistant.deliver_one); nothing goes out outside work hours (Slack: notification schedule).
+
+Calm (docs/vision.md, "instant and calm"): only what can't wait buzzes (calm_reason). A new to-do that can wait is on
+the dashboard and in the next morning summary, without a push, a Telegram buzz or a waiting email. What can't wait: due
+today, someone waiting on the owner's reply, a sign-in a run needs, urgent, or a snooze the owner set coming back. Even
+then: on a day off only what is urgent or due, at most PUSH_CAP a day, and none after AWAY_DAYS without a dashboard
+visit (the morning summary keeps going). So the one email a day is the morning summary."""
 from __future__ import annotations
 
 import datetime as dt
@@ -34,6 +41,7 @@ import uuid
 import urllib.error
 import urllib.request
 
+import clear_pace
 from i18n import t
 
 LOG = logging.getLogger('personal-assistant')
@@ -68,6 +76,14 @@ APP_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
 # A tag that is no to-do (the morning) can keep a body line under it too ("3 to-dos: ... · First meeting 10:00").
 APP_LINES_TABLE = "CREATE TABLE IF NOT EXISTS notify_app_lines(tag TEXT PRIMARY KEY,line TEXT NOT NULL,at REAL NOT NULL,body TEXT NOT NULL DEFAULT '')"
 APP_LINE, APP_LINES, APP_LINE_DAYS, APP_BODY = 60, 200, 3, 120
+# Calm: what can't wait (calm_reason). A safety net, not a budget: a busy day of real deadlines still gets through.
+URGENT_WHY = ('urgent', 'due', 'reminder')  # what still buzzes on a day off
+PUSH_CAP = 8  # pushes a day at most
+AWAY_DAYS = 3  # no dashboard visit (or decision) in this many days: only the morning summary
+VISIT_EVERY = 600  # seconds: the kept visit time moves at most this often
+OWNER_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # decisions that show the owner is around
+PILE = 10  # this many waiting: the morning summary's headline names the pile and the time to clear it
+LINKS = re.compile(r' · \[[^\]\n]+\]\([^)\s]+\)')  # a summary line's Open link: Telegram gets the line without it
 
 
 def ensure(db):
@@ -168,6 +184,70 @@ def push_now(clock=wall):
     """A push may go now: no dashboard in use, and AWAY_GRACE since the owner last touched one (Slack: mobile a minute
     after the desktop locks). Otherwise it is held (hold) and goes once that is true, unless they saw it first."""
     return not active(clock) and clock() >= last_seen(clock) + AWAY_GRACE
+
+
+# -- calm: only what can't wait buzzes
+def _stamp(db, key, value):
+    db.execute('INSERT INTO notify_prefs(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (key, str(value)))
+
+
+def visited(db, clock=wall):
+    """A dashboard is in use: kept (at most every VISIT_EVERY), so a restart doesn't forget the owner was here."""
+    ensure(db)
+    at = clock()
+    row = db.execute("SELECT value FROM notify_prefs WHERE key='_visit_last'").fetchone()
+    if not row or at - float(row[0] or 0) >= VISIT_EVERY:
+        _stamp(db, '_visit_last', at)
+
+
+def away(db, clock=wall):
+    """No dashboard visit and no decision of the owner's (dashboard, Telegram, chat, voice) in AWAY_DAYS. A Machine that
+    never kept a visit starts its count now, so nobody goes quiet the day this arrives."""
+    ensure(db)
+    at = clock()
+    row = db.execute("SELECT value FROM notify_prefs WHERE key='_visit_last'").fetchone()
+    if not row:
+        _stamp(db, '_visit_last', at)
+        return False
+    last = max(float(row[0] or 0), last_seen(clock))
+    if at - last < AWAY_DAYS * 86400:
+        return False
+    since = dt.datetime.fromtimestamp(at - AWAY_DAYS * 86400, dt.timezone.utc).isoformat()
+    try:
+        decided = db.execute('SELECT 1 FROM decisions WHERE source IN (' + ','.join('?' * len(OWNER_SOURCES)) + ') AND created_at>=? LIMIT 1',
+                             (*OWNER_SOURCES, since)).fetchone()
+    except Exception:  # noqa: BLE001 - no decisions table (a bare test database): only the visit counts
+        decided = None
+    return not decided
+
+
+def pushed_today(db, day):
+    """How many pushes buzzed on `day` (local, ISO)."""
+    ensure(db)
+    row = db.execute("SELECT value FROM notify_prefs WHERE key='_push_day'").fetchone()
+    when, _, count = str(row[0] if row else '').partition(' ')
+    return int(count) if when == day and count.isdigit() else 0
+
+
+def count_push(db, day):
+    """One more push buzzed on `day`."""
+    _stamp(db, '_push_day', f'{day} {pushed_today(db, day) + 1}')
+
+
+def calm_reason(db, why, work_day, day, clock=wall):
+    """Why a to-do's notification stays quiet now, or '' when it may buzz. why: what makes it unable to wait ('urgent',
+    'due', 'reply', 'signin', 'reminder', or '' for nothing, deliver.why_now). 'later' (it can wait: the dashboard and
+    the morning summary have it), 'day_off' (a non-work day: only URGENT_WHY), 'away' (no visit in AWAY_DAYS), 'cap'
+    (PUSH_CAP pushes today already)."""
+    if not why:
+        return 'later'
+    if not work_day and why not in URGENT_WHY:
+        return 'day_off'
+    if away(db, clock):
+        return 'away'
+    if pushed_today(db, day) >= PUSH_CAP:
+        return 'cap'
+    return ''
 
 
 def hold(db, channel, kind, title, due, ref=None, payload=None, show=True, clock=wall):
@@ -349,26 +429,6 @@ def drop_all(db):
     return db.execute('DELETE FROM notify_queue').rowcount
 
 
-def morning_line(meetings, waiting, total, show_text=True, clock=lambda iso: iso[11:16], ready=0, promised=0):
-    """The morning notification's body, two lines at most: what is ready and which of the owner's promises are due
-    today first, then how many to-dos wait and the first two of them, and when the first meeting starts ("2 ready ·
-    1 promise due today · 3 to-dos: Reply to Sam, Pay the invoice, … · First meeting 10:00"), the digest's own order.
-    Without show_text only the counts and the time. Nothing waiting: a calm line. Meeting titles and people's words
-    never go in it."""
-    first = clock(meetings[0]['at']) if meetings else ''
-    lead = ' · '.join(c for c in (t('{} ready', ready) if ready else '', t('{} promises due today', promised) if promised else '') if c)
-    if lead and not total:  # a promise without its to-do yet: no "Nothing waiting" after it
-        return clip(lead, APP_BODY)
-    if total and show_text and waiting:
-        names = ', '.join(clip(w['title'], 40) for w in waiting[:2]) + (', …' if total > 2 else '')
-        line = t('{} to-dos: {} · First meeting {}', total, names, first) if first else t('{} to-dos: {}', total, names)
-    elif total:
-        line = t('{} to-dos waiting · First meeting {}', total, first) if first else t('{} to-dos waiting', total)
-    else:
-        line = t('Nothing waiting · First meeting {}', first) if first else t('Nothing waiting. A calm start.')
-    return clip(lead + ' · ' + line if lead else line, APP_BODY)
-
-
 def brief_line(titles, show_text=True):
     """The team brief notification's body: how many things it has for the team and the first two, as the brief
     shows them ("3 things for the team: Acme is waiting for a reply, Globex went quiet, …"). Without show_text only
@@ -419,69 +479,115 @@ def promised_today(promises, top, today, text):
             for p in promises if p['direction'] == 'mine' and p.get('due') == today and p['state'] in ('open', 'card')]
 
 
+def first_name(name):
+    """The owner's first name for the greeting, or '' when it doesn't look like one."""
+    first = (str(name or '').split() or [''])[0]
+    return first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
+
+
+def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', new=0):
+    """The morning summary's first line (the email's subject, the push's title): a greeting with the owner's first name
+    and the one thing that makes today matter, only when it is true ("Morning Sam, 2 replies are ready to send"). With
+    nothing worth saying: the greeting alone. In order: drafts ready for their OK, what is due today, a pile of PILE or
+    more (and the time to clear it), the first meeting, what is new. Whole sentences per case, for the catalogs."""
+    if ready and replies >= ready:
+        return t('Morning {}, {} replies are ready to send', name, ready) if name else t('Good morning, {} replies are ready to send', ready)
+    if ready:
+        return t('Morning {}, {} ready for your OK', name, ready) if name else t('Good morning, {} ready for your OK', ready)
+    if due:
+        return t('Morning {}, {} due today', name, due) if name else t('Good morning, {} due today', due)
+    if piled >= PILE:
+        return (t('Morning {}, {} waiting, about {} min to clear', name, piled, minutes) if name
+                else t('Good morning, {} waiting, about {} min to clear', piled, minutes))
+    if first_at:
+        return t('Morning {}, first meeting at {}', name, first_at) if name else t('Good morning, first meeting at {}', first_at)
+    if new:
+        return t('Morning {}, {} new to-dos', name, new) if name else t('Good morning, {} new to-dos', new)
+    return t('Morning {}', name) if name else t('Good morning')
+
+
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), pace=''):
-    """The digest from its parts: meetings [{at, title, guests}], due and overnight [{id?, title}].
+            top=None, ready=(), promised=(), per=None, name='', replies=()):
+    """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
-    Without show_text (Careful, or notify_text off) it carries counts only. waiting [{title}] (the first ones) and
-    total (how many) are the to-dos waiting for the owner, for the push's body (morning_line); left out: ready, due and
-    overnight. top [{id?, title}] are the waiting to-dos in the dashboard's order (open_order): with total, a "Waiting
-    for you" part, so a pile that waits still gets its digest when nothing is due or new. Nothing at all: None.
-    ready [{id?, title}] (prepared, waiting for the owner's OK) and promised [{id?, title}] (the owner's own promises
-    due today; covers: the id of a to-do made from that promise) come first, in the text and the push: what can go out
-    in a click and what was promised for today.
-    A to-do is listed once, in the first part it belongs to (by id, else by title): Overnight and Waiting for you never
-    repeat what came before, and Waiting's "+N more" counts only the rest. pace: the time to clear what waits, at the
-    dashboard's pace, with the count ("4 ready · about 2 min", clear_pace.line), under the waiting part."""
+
+    It reads: a greeting with what makes today matter (headline, also the subject and the push's title), the day's
+    meetings in a line when there are any, at most three lines that each start with what to do (a to-do's title says
+    that) with one Open link, then how many more can wait and the time they take ("12 more can wait, about 5 min to
+    clear."), at the owner's own pace (per: seconds per action, clear_pace). No news, no tips.
+
+    The three: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
+    someone waits for) and promised [{id?, title}] (the owner's own promises due today; covers: the id of a to-do made
+    from that promise) first, then what is due, the first meeting, what came in overnight, and the waiting to-dos in the
+    dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
+    (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
+    Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
+    body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
+    key = lambda i: i.get('id') or ('title', i['title'])
 
     def once(items):
-        key = lambda i: i.get('id') or ('title', i['title'])
         fresh = [i for i in items if key(i) not in seen]
         seen.update(key(i) for i in fresh)
         return fresh
     ready, promised = once(list(ready)), once(list(promised))
     seen.update(p['covers'] for p in promised if p.get('covers'))  # a promise's own to-do: listed with the promise
-    due, overnight = once(list(due)), once(list(overnight))
-    piled = total if top is not None and total else 0
-    rest = [w for w in top or [] if (w.get('id') or ('title', w['title'])) not in seen]
-    left = max(0, piled - (len(top or []) - len(rest))) if rest else 0  # the waiting ones not listed above
-    if not (meetings or due or overnight or piled or ready or promised):
+    due, overnight, rest = once(list(due)), once(list(overnight)), once(list(top or []))
+    todos = ready + due + overnight + rest
+    total = len(todos) if total is None else total
+    if not (meetings or todos or promised or total):
         return None
-    # in the owner's language (i18n.py); English when there is no entry
-    counts = [t('{} ready', len(ready)) if ready else '', t('{} promises due today', len(promised)) if promised else '',
-              t('{} meetings', len(meetings)) if meetings else '', t('{} due', len(due)) if due else '',
-              t('{} new', len(overnight)) if overnight else '', t('{} waiting', piled) if piled else '']
-    summary = ' · '.join(c for c in counts if c)
-    lines = []
-    if show_text:
-        def part(head, items, line, count=None):
-            if not items:
-                return
-            count = len(items) if count is None else max(count, len(items[:3]))
-            lines.append(head)
-            lines.extend('• ' + line(i) for i in items[:3])
-            if count > len(items[:3]):  # the ones not listed (fewer than three listed: the rest of a count)
-                lines.append(t('• +{} more', count - len(items[:3])))
-            lines.append('')
-        part(t('Ready for you'), ready, lambda r: r['title'])
-        part(t('Promises due today'), promised, lambda p: p['title'])
-        part(t('Today'), meetings, lambda m: clock(m['at']) + ' ' + m['title'])
-        part(t('Due'), due, lambda d: d['title'])
-        part(t('Overnight'), overnight, lambda o: o['title'])
-        if left:
-            part(t('Waiting for you'), rest, lambda w: w['title'], left)
+    per = per or 30
+    # the three lines: (to-do or None for the first meeting, text)
+    picks = [(i, i['title']) for i in ready + promised + due]
+    if meetings:
+        picks.append((None, clock(meetings[0]['at']) + ' ' + meetings[0]['title']))
+    picks += [(i, i['title']) for i in overnight + rest]
+    picks = picks[:3] if show_text else []
+    listed = sum(1 for i, _ in picks if i is not None and not str(i.get('id') or '').startswith('promise:'))
+    more = max(0, total - listed)
+    minutes = clear_pace.minutes(more, per) if more else 0
+    first_at = clock(meetings[0]['at']) if meetings else ''
+    head = headline(name, len(ready), sum(1 for r in ready if r.get('id') in set(replies)), len(due) + len(promised),
+                    total, clear_pace.minutes(total, per) if total else 0, first_at, len(overnight))
+    about_meeting = bool(first_at) and not (ready or due or promised or total >= PILE)  # headline's own order
+    opening = t('{} meetings today, the first at {}.', len(meetings), first_at) if meetings else ''
+    if more:
+        tail = t('{} more can wait, about {} min to clear.', more, minutes) if picks else t('{} waiting, about {} min to clear.', more, minutes)
     else:
-        lines += [summary, '']
-    if piled and pace:
-        lines += [pace, '']
+        tail = ''
+
+    def link(item):
+        ident = str((item or {}).get('id') or '')
+        return f" · [{t('Open')}]({root}#chat={ident})" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+    lines = [head, '']
+    if opening and not about_meeting:  # a headline about the first meeting already says it
+        lines += [opening, '']
+    if picks:
+        lines += ['• ' + text + link(item) for item, text in picks] + ['']
+    if tail:
+        lines += [tail, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
-    if waiting is None:  # the first ones in the digest's own order
-        waiting = ready + due + overnight + (rest if piled else [])
-    body = morning_line(meetings, waiting, len(waiting) if total is None else total, show_text, clock, len(ready), len(promised))
-    return {'push': {'title': t('Your morning'), 'body': body[:200], 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
-            'text': '\n'.join(lines).strip(), 'subject': t('Your morning: {}', summary)}
+    # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
+    # for them all, and the count then says what was left out.
+    shown = [(item, clip(text, 40) if item is not None else t('First meeting at {}', first_at)) for item, text in picks
+             if item is not None or not about_meeting]
+    for keep in range(len(shown), -1, -1):
+        counted = sum(1 for i, _ in shown[:keep] if i is not None and not str(i.get('id') or '').startswith('promise:'))
+        left = max(0, total - counted)
+        if not left:
+            last = ''
+        elif keep:
+            last = t('{} more can wait, about {} min to clear.', left, clear_pace.minutes(left, per))
+        else:
+            last = t('{} waiting, about {} min to clear.', left, clear_pace.minutes(left, per))
+        parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [opening, last]) if x] or [head]
+        if len('\n'.join(parts)) <= APP_BODY:
+            break
+    body = '\n'.join(clip(x, APP_BODY) for x in parts)
+    return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
+            'text': '\n'.join(lines).strip(), 'subject': head}
 
 
 # -- email, through the control plane (hosted and paired Machines)

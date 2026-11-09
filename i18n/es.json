@@ -119,6 +119,7 @@
  "A project by that name is on another board already": "Ya hay un proyecto con ese nombre en otro tablero",
  "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"": "Un nombre de proyecto es una etiqueta corta (hasta 60 caracteres), como \"Acme VAT\" o \"Q4 board deck\"",
  "A removed AI": "Una IA quitada",
+ "A reply ready to send, a sign-in, a Fleet question": "Una respuesta lista para enviar, un inicio de sesión, una pregunta de Fleet",
  "A reply, a request, anything urgent": "Una respuesta, una petición, algo urgente",
  "A reset starts your ChatGPT usage limits over.": "Un reinicio pone tus límites de ChatGPT a cero.",
  "A restricted key with Read on Events, Customers and Account.": "Una clave restringida con Read en Events, Customers y Account.",
@@ -396,6 +397,7 @@
  "Answered on WhatsApp": "Respondido en WhatsApp",
  "Answered on X": "Respondido en X",
  "Answered once": "Respondida una vez",
+ "Answered the same request from {} {} times in a row": "Misma petición de {0} respondida {1} veces seguidas",
  "Answered without asking you.": "Se responde sin preguntarte.",
  "Answered, and always from now on": "Respondida, y siempre a partir de ahora",
  "Answered.": "Respondido.",
@@ -1397,6 +1399,7 @@
  "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is": "Revisa primero las habilidades de aquí según para qué sirve cada una: {}. Actualiza una de las del propietario cuando haga el mismo trabajo, nombra una relacionada con una relación de una línea cuando sea un trabajo distinto al lado, o di que es nueva cuando no haya ninguna",
  "First look": "Primer vistazo",
  "First look: your last {} days": "Primer vistazo: tus últimos {} días",
+ "First meeting at {}": "Primera reunión a las {}",
  "First one’s in: {}. Still reading…": "Ya llegó la primera: {}. Sigo leyendo…",
  "First read: catching up on the last days.": "Primera lectura: se pone al día con los últimos días.",
  "First seen this week.": "Vistas por primera vez esta semana.",
@@ -1482,6 +1485,7 @@
  "Forgotten everywhere.": "Olvidado en todas partes.",
  "Forgotten.": "Olvidado.",
  "Formatting": "Formato",
+ "Forwarded {} mails to {} in {} weeks": "{0} correos reenviados a {1} en {2} semanas",
  "Found": "Encontrados",
  "Found for {}": "Encontrado para {}",
  "Found in your Outlook sent mail": "Encontrada en tus enviados de Outlook",
@@ -1634,6 +1638,25 @@
  "Goes within the hour": "Va en menos de una hora",
  "Gone quiet": "Sin contacto reciente",
  "Gone quiet: {}": "Sin contacto reciente: {}",
+ "Good morning": "Buenos días",
+ "Good morning, first meeting at {}": "Buenos días: primera reunión a las {}",
+ "Good morning, {} due today": "Buenos días: {} para hoy",
+ "Good morning, {} new to-dos": {
+  "one": "Buenos días: {} tarea nueva",
+  "other": "Buenos días: {} tareas nuevas"
+ },
+ "Good morning, {} ready for your OK": {
+  "one": "Buenos días: {} para revisar",
+  "other": "Buenos días: {} para revisar"
+ },
+ "Good morning, {} replies are ready to send": {
+  "one": "Buenos días: {} respuesta lista para enviar",
+  "other": "Buenos días: {} respuestas listas para enviar"
+ },
+ "Good morning, {} waiting, about {} min to clear": {
+  "one": "Buenos días: {} espera, unos {} min para terminar",
+  "other": "Buenos días: {} esperan, unos {} min para terminar"
+ },
  "Google": "Google",
  "Google Calendar": "Google Calendar",
  "Google Calendar isn’t connected yet. Add it under + Add.": "Google Calendar aún no está conectado. Añádelo en + Añadir.",
@@ -2371,6 +2394,25 @@
  "More thinking is slower and uses more of your plan.": "Más razonamiento es más lento y usa más de tu plan.",
  "Morning digest": "Resumen matutino",
  "Morning digest: {}": "Resumen matutino: {}",
+ "Morning {}": "Buenos días, {}",
+ "Morning {}, first meeting at {}": "Buenos días, {}: primera reunión a las {}",
+ "Morning {}, {} due today": "Buenos días, {}: {} para hoy",
+ "Morning {}, {} new to-dos": {
+  "one": "Buenos días, {}: {} tarea nueva",
+  "other": "Buenos días, {}: {} tareas nuevas"
+ },
+ "Morning {}, {} ready for your OK": {
+  "one": "Buenos días, {}: {} para revisar",
+  "other": "Buenos días, {}: {} para revisar"
+ },
+ "Morning {}, {} replies are ready to send": {
+  "one": "Buenos días, {}: {} respuesta lista para enviar",
+  "other": "Buenos días, {}: {} respuestas listas para enviar"
+ },
+ "Morning {}, {} waiting, about {} min to clear": {
+  "one": "Buenos días, {}: {} espera, unos {} min para terminar",
+  "other": "Buenos días, {}: {} esperan, unos {} min para terminar"
+ },
  "Mornings": "Por la mañana",
  "Move": "Mover",
  "Move to": "Mover a",
@@ -2849,6 +2891,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "De vez en cuando comparto algunos aprendizajes generales. Nada personal.",
  "Now findable by people who have your email.": "Ahora te pueden encontrar quienes tienen tu correo.",
  "Now the rest of the week: {} of {} active conversations": "Ahora el resto de la semana: {} de {} conversaciones activas",
+ "Now {}": "Ahora {}",
+ "Now {}, was {}": "Ahora {}, antes {}",
  "Nudge {}: no reply in {} days": "Recordar a {}: sin respuesta en {} días",
  "Number": "Número",
  "Numbered list": "Lista numerada",
@@ -3055,6 +3099,7 @@
  "Only this event goes. Nobody gets an update.": "Solo se elimina este evento. Nadie recibe aviso.",
  "Only this one: {}": "Solo este: {}",
  "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.": "Solo va esta tarea. {} puede sugerir cambios; nada se envía hasta que lo envíes tú.",
+ "Only what can’t wait: due today, a reply, urgent": "Solo lo que no puede esperar: para hoy, una respuesta, urgente",
  "Only what needs you, where you want it.": "Solo lo que te necesita, donde lo quieras.",
  "Only you": "Solo tú",
  "Only you and {}": "Solo tú y {}",
@@ -6360,6 +6405,7 @@
  "{} asks you to take this on: “{}”": "{} te pide que te encargues de esto: “{}”",
  "{} asks your Fleet": "{} pregunta a tu Fleet",
  "{} asks:": "{} pregunta:",
+ "{} at {}": "{} en {}",
  "{} board suggestions are open already: wait until the owner decides": "Ya hay {} sugerencias de tablero abiertas: espera a que decida el propietario",
  "{} calls": {
   "one": "{} llamada",
@@ -6592,6 +6638,10 @@
   "one": "{} reunión",
   "other": "{} reuniones"
  },
+ "{} meetings today, the first at {}.": {
+  "one": "{} reunión hoy, a las {}.",
+  "other": "{} reuniones hoy, la primera a las {}."
+ },
  "{} message": "Mensaje de {}",
  "{} message to {}": "Mensaje de {} a {}",
  "{} messages": {
@@ -6625,6 +6675,10 @@
   "other": "{} mensajes esperando la primera revisión"
  },
  "{} min": "{} min",
+ "{} more can wait, about {} min to clear.": {
+  "one": "{} más puede esperar, unos {} min para terminar.",
+  "other": "{} más pueden esperar, unos {} min para terminar."
+ },
  "{} more in Promises": "{} más en Promesas",
  "{} more like this wait. Always shares them too.": {
   "one": "{} más como esta espera. Siempre la comparte también.",
@@ -6922,6 +6976,10 @@
   "other": "{} votos te esperan"
  },
  "{} waiting": "{} en espera",
+ "{} waiting, about {} min to clear.": {
+  "one": "{} espera, unos {} min para terminar.",
+  "other": "{} esperan, unos {} min para terminar."
+ },
  "{} wants a one-time code.": "{} pide un código de un solo uso.",
  "{} wants a passkey.": "{} pide una llave de acceso.",
  "{} wants a quick check that you’re not a robot.": "{} quiere comprobar rápido que no eres un robot.",

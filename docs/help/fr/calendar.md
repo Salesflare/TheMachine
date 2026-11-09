@@ -47,6 +47,8 @@ Chacune a son propre **Ajouter des notes** ou **Ajouter une transcription**, **I
 
 Avec [Zoom](zoom.md) ou [Google Meet](google-meet.md) connecté, ses notes apparaissent dans Notes et sa transcription dans Transcription, marquées **De Zoom** ou **De Google Meet**. Elles ne remplacent jamais ce que vous avez ajouté : quand les deux existent, les deux s’affichent.
 
+Les notes peuvent aussi se trouver dans l’événement de l’agenda lui-même, ajoutées après son début, ou arriver par e-mail de Zoom ou Gemini. Après la réunion, The Machine n’en tire des to-dos que pour des prochaines étapes claires. Les mêmes notes arrivées de deux façons donnent un seul to-do, avec la réunion comme source : **Notes de** la réunion.
+
 Une réunion avec une transcription et sans notes propose **Générer les notes**. The Machine les rédige à partir de la transcription : un court résumé, les décisions et les actions avec qui s’en charge, dans la langue de la réunion.
 
 The Machine affiche **Rédaction des notes…** et continue quand vous fermez la réunion ; une longue prend quelques minutes. Elle utilise votre propre modèle et attend si vous atteignez votre limite d’utilisation. Les notes indiquent **Rédigées par The Machine**, ne remplacent jamais celles que vous avez ajoutées, et les suivis en découlent comme de celles de Zoom.

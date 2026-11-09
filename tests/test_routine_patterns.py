@@ -143,19 +143,24 @@ class Candidates(Base):
         self.assertEqual(self.found(), [])
 
 
+def sorting_app(self):
+    """An App with the Gateway stubbed (self.gateway), on this test's store and a made-up clock."""
+    self.app = object.__new__(a.App); self.app.store = self.store
+    self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
+                       'openclaw_state': self.temp.name + '/none.sqlite'}  # a hosted Machine: no OpenClaw jobs
+    self.now = T(2026, 11, 9, 6, 0)
+    self.clock = [1_000_000.0]
+    for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
+                        ('background_spaced', lambda s: True), ('background_started', lambda s: None),
+                        ('preparation_gateway', lambda s, request: self.gateway(request))):
+        p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+    self.sent, self.answer = [], {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
+
+
 class Sorting(Base):
     def setUp(self):
         super().setUp()
-        self.app = object.__new__(a.App); self.app.store = self.store
-        self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
-                           'openclaw_state': self.temp.name + '/none.sqlite'}  # a hosted Machine: no OpenClaw jobs
-        self.now = T(2026, 11, 9, 6, 0)
-        self.clock = [1_000_000.0]
-        for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
-                            ('background_spaced', lambda s: True), ('background_started', lambda s: None),
-                            ('preparation_gateway', lambda s, request: self.gateway(request))):
-            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
-        self.sent, self.answer = [], {'start': {'status': 'admitted'}, 'status': {'status': 'pending'}}
+        sorting_app(self)
         for day in MONDAYS[1:]:
             self.ask(day, 'Sum up the open support tickets')
 
@@ -231,6 +236,123 @@ class Sorting(Base):
         self.assertEqual(len(self.starts()), 1)
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT state FROM routines").fetchone()[0], 'sorting')
+
+
+class Repeats(Base):
+    """Manual work the owner repeats: forwards to the same one person, and the same request answered on a rhythm."""
+    def mail(self, day, title, account='home', hour=19, body='', **metadata):
+        self.n += 1
+        metadata.setdefault('labels', ['SENT'])
+        with self.store.connect() as db:
+            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,?,?)',
+                       (account, f'm{self.n}', 'gmail.message', at(day, hour), title, body, json.dumps(metadata), 'h', at(day, hour)))
+
+    def forwards(self, days, to='Sam Rivers <sam@mail.example>', account='home'):
+        for k, day in enumerate(days):
+            self.mail(day, f'Fwd: {"Swim club" if k % 2 else "Oakfield School"} news {k}', account,
+                      body=f'See below\n---------- Forwarded message ---------\nFrom: Oakfield School <office@oakfield.example>\nTrip on day {k}',
+                      to=to, **{'from': 'Alex <alex@home.example>'})
+
+    def test_forwards_to_the_same_person_week_after_week(self):
+        days = [TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)]
+        self.forwards(days)
+        [c] = self.found()
+        self.assertEqual((c['kind'], c['account'], c['rule'], c['at'], c['why']),
+                         ('forward', 'home', {'unit': 'week', 'n': 1}, '08:00', {'kind': 'forward', 'n': 6, 'weeks': 3, 'to': 'Sam'}))
+        self.assertTrue(c['key'].startswith('pattern:forward:'))
+        self.assertIn('sam@mail.example', c['evidence'][0])
+        self.assertIn('originally from Oakfield School', c['evidence'][-1])
+        self.assertGreater(c['anchor'], TODAY)
+
+    def test_weak_or_mixed_forwards_are_no_pattern(self):
+        self.forwards([TODAY - dt.timedelta(days=d) for d in (15, 8, 3, 1)])  # four: not enough
+        self.forwards([TODAY - dt.timedelta(days=d) for d in (6, 5, 4, 2, 1)], to='Robin <robin@mail.example>')  # one week only
+        self.forwards([TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)], to='sam@mail.example, kim@mail.example')  # a group
+        self.forwards([TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)], to='Alex <alex@home.example>')  # their own address
+        for d, account in zip((17, 15, 10, 8, 3, 1), ('home', 'w') * 3):  # Work and Personal never add up
+            self.forwards([TODAY - dt.timedelta(days=d)], to='Kai <kai@mail.example>', account=account)
+        self.forwards([TODAY - dt.timedelta(days=d) for d in (40, 33, 26, 22, 20)], to='Lee <lee@mail.example>')  # stopped weeks ago
+        self.assertEqual(self.found(), [])
+
+    def test_a_forward_is_never_a_report_the_owner_sends(self):
+        for day in MONDAYS[1:]:
+            self.mail(day, 'Doorst: Weekly numbers', to='team@acme.example')
+        self.assertEqual(self.found(), [])
+
+    def test_the_same_request_answered_every_month(self):
+        for k, day in enumerate((D(2026, 8, 3), D(2026, 9, 2), D(2026, 10, 1), D(2026, 11, 3))):
+            for again in range(2):  # a back and forth in one thread counts once
+                self.mail(day + dt.timedelta(days=again), f'Re: Timesheet approval {9 + k}/2026', 'w', hour=10, to='Pat Lane <pat@acme.example>',
+                          thread_id=f't{k}', **{'in-reply-to': f'<r{k}@acme.example>'})
+        self.mail(D(2026, 11, 5), 'Re: Lunch?', 'w', to='pat@acme.example', thread_id='lunch')
+        [c] = self.found()
+        self.assertEqual((c['kind'], c['account'], c['rule'], c['why']),
+                         ('reply', 'w', {'unit': 'month', 'n': 1}, {'kind': 'reply', 'n': 4, 'to': 'Pat'}))
+        self.assertEqual(c['titles'], ['timesheet approval'])
+
+    def test_the_same_request_answered_every_quarter(self):
+        for k, day in enumerate((D(2026, 2, 3), D(2026, 5, 4), D(2026, 8, 3), D(2026, 11, 2))):
+            self.mail(day, 'RE: Quarterly VAT figures', 'w', to='books@accountant.example', thread_id=f'q{k}')
+        [c] = self.found()
+        self.assertEqual((c['rule'], c['why']), ({'unit': 'month', 'n': 3}, {'kind': 'reply', 'n': 4, 'to': 'books@accountant.example'}))
+
+
+class RepeatSorting(Base):
+    """A repeat goes to the same sorting run: on its own side, at most one new suggestion a week, never again after No thanks."""
+    gateway, starts, running, report = Sorting.gateway, Sorting.starts, Sorting.running, Sorting.report
+    mail, helper = Repeats.mail, Repeats.forwards
+
+    def setUp(self):
+        super().setUp()
+        sorting_app(self)
+        self.app.config['accounts'].append({'id': 'home', 'boundary': 'personal'})
+
+    def test_forwards_become_a_personal_suggestion_with_their_evidence(self):
+        self.helper([TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)])
+        self.app.routines_step()
+        [start] = self.starts()
+        for said in ('forwards these mails one by one', 'home (personal)', 'read only that account', 'Oakfield School'):
+            self.assertIn(said, start['message'])
+        self.report(kind='routine', name='School digest', instructions='Every Friday, sum up the school and club mails for Sam',
+                    text='**Trip** on Thursday.')
+        [s] = self.app.routines_view()['suggested']
+        self.assertEqual(s['why'], {'kind': 'forward', 'n': 6, 'weeks': 3, 'to': 'Sam'})
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT work FROM routines').fetchone()[0], 0)
+
+    def test_a_work_accounts_repeat_stays_work(self):
+        self.helper([TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)], to='Pat <pat@acme.example>', account='w')
+        self.app.routines_step()
+        self.assertIn('w (work)', self.starts()[0]['message'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT work FROM routines').fetchone()[0], 1)
+
+    def later(self, hours):
+        with self.store.connect() as db:
+            back = lambda s: (dt.datetime.fromisoformat(s) - dt.timedelta(hours=hours)).isoformat()  # noqa: E731
+            for table, column in (('routines', 'created_at'), ('routine_runs', 'started_at'), ('routine_runs', 'finished_at')):
+                for rowid, value in db.execute(f'SELECT rowid,{column} FROM {table} WHERE {column} IS NOT NULL').fetchall():
+                    db.execute(f'UPDATE {table} SET {column}=? WHERE rowid=?', (back(value), rowid))
+        self.app._routines_jobs_at = self.app._routines_patterns_at = 0
+
+    def test_one_new_suggestion_a_week_and_no_thanks_is_for_good(self):
+        self.helper([TODAY - dt.timedelta(days=d) for d in (17, 15, 10, 8, 3, 1)])
+        for k, day in enumerate((D(2026, 8, 3), D(2026, 9, 2), D(2026, 10, 1), D(2026, 11, 3))):
+            self.mail(day, f'Re: Timesheet approval {k}', 'w', to='pat@acme.example', thread_id=f't{k}')
+        self.app.routines_step()
+        self.report(kind='routine', name='School digest', instructions='Sum up the school mails for Sam', text='Nothing urgent.')
+        self.later(30)
+        self.app.routines_step()
+        self.assertEqual(len(self.starts()), 1)  # a day later: still the same week
+        self.later(24 * 6)
+        self.app.routines_step()
+        self.assertEqual(len(self.starts()), 2)  # a week later: the next one
+        self.assertIn('answers the same request', self.starts()[1]['message'])
+        self.report(kind='skip', why='Different matters')
+        [s] = self.app.routines_view()['suggested']
+        self.app.action('routine_state', {'id': s['id'], 'to': 'stop'}, owner_dashboard=True)  # No thanks
+        with self.store.connect() as db:
+            self.assertEqual(rp.candidates(db, TODAY, TZ, skip=rt.sorted_origins(db)), [])
 
 
 if __name__ == '__main__':

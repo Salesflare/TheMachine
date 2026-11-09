@@ -119,6 +119,7 @@
  "A project by that name is on another board already": "Een project met die naam staat al op een ander bord",
  "A project name is a short label (up to 60 characters), like \"Acme VAT\" or \"Q4 board deck\"": "Een projectnaam is een kort label (tot 60 tekens), zoals \"Acme btw\" of \"Q4-bestuursdeck\"",
  "A removed AI": "Een verwijderde AI",
+ "A reply ready to send, a sign-in, a Fleet question": "Een antwoord klaar om te versturen, een aanmelding, een Fleet-vraag",
  "A reply, a request, anything urgent": "Een antwoord, een vraag, iets dringends",
  "A reset starts your ChatGPT usage limits over.": "Een reset zet je ChatGPT-gebruikslimieten opnieuw op nul.",
  "A restricted key with Read on Events, Customers and Account.": "Een beperkte sleutel met Read op Events, Customers en Account.",
@@ -396,6 +397,7 @@
  "Answered on WhatsApp": "Beantwoord op WhatsApp",
  "Answered on X": "Beantwoord op X",
  "Answered once": "Eén keer beantwoord",
+ "Answered the same request from {} {} times in a row": "Dezelfde vraag van {0} {1} keer op rij beantwoord",
  "Answered without asking you.": "Beantwoord zonder het jou te vragen.",
  "Answered, and always from now on": "Beantwoord, en voortaan altijd",
  "Answered.": "Beantwoord.",
@@ -1397,6 +1399,7 @@
  "First check the skills here by what each is for: {}. Update one of the owner's own when it does the same job, name a related one with a one-line relation when it is a separate job next to it, or say it is new when none is": "Check eerst de skills hier op waarvoor elk dient: {}. Werk een van de eigen skills van de eigenaar bij als die hetzelfde doet, noem een verwante met een relatie van één regel als het een aparte taak ernaast is, of zeg dat hij nieuw is als er geen is",
  "First look": "Eerste blik",
  "First look: your last {} days": "Eerste blik: je laatste {} dagen",
+ "First meeting at {}": "Eerste afspraak om {}",
  "First one’s in: {}. Still reading…": "De eerste is binnen: {}. Ik lees verder…",
  "First read: catching up on the last days.": "Eerste keer lezen: haalt de laatste dagen in.",
  "First seen this week.": "Deze week voor het eerst gezien.",
@@ -1482,6 +1485,7 @@
  "Forgotten everywhere.": "Overal vergeten.",
  "Forgotten.": "Vergeten.",
  "Formatting": "Opmaak",
+ "Forwarded {} mails to {} in {} weeks": "{0} mails doorgestuurd naar {1} in {2} weken",
  "Found": "Gevonden",
  "Found for {}": "Gevonden voor {}",
  "Found in your Outlook sent mail": "Gevonden in je verzonden mail in Outlook",
@@ -1634,6 +1638,25 @@
  "Goes within the hour": "Gaat binnen het uur",
  "Gone quiet": "Stil geworden",
  "Gone quiet: {}": "Stil geworden: {}",
+ "Good morning": "Goeiemorgen",
+ "Good morning, first meeting at {}": "Goeiemorgen, eerste afspraak om {}",
+ "Good morning, {} due today": "Goeiemorgen, {} voor vandaag",
+ "Good morning, {} new to-dos": {
+  "one": "Goeiemorgen, {} nieuwe to-do",
+  "other": "Goeiemorgen, {} nieuwe to-do’s"
+ },
+ "Good morning, {} ready for your OK": {
+  "one": "Goeiemorgen, {} klaargezet voor je akkoord",
+  "other": "Goeiemorgen, {} klaargezet voor je akkoord"
+ },
+ "Good morning, {} replies are ready to send": {
+  "one": "Goeiemorgen, {} antwoord staat klaar om te versturen",
+  "other": "Goeiemorgen, {} antwoorden staan klaar om te versturen"
+ },
+ "Good morning, {} waiting, about {} min to clear": {
+  "one": "Goeiemorgen, {} wacht op je, ongeveer {} min werk",
+  "other": "Goeiemorgen, {} wachten op je, ongeveer {} min werk"
+ },
  "Google": "Google",
  "Google Calendar": "Google Calendar",
  "Google Calendar isn’t connected yet. Add it under + Add.": "Google Calendar is nog niet gekoppeld. Voeg die toe onder + Toevoegen.",
@@ -2371,6 +2394,25 @@
  "More thinking is slower and uses more of your plan.": "Meer denkwerk is trager en gebruikt meer van je abonnement.",
  "Morning digest": "Ochtendoverzicht",
  "Morning digest: {}": "Ochtendoverzicht: {}",
+ "Morning {}": "Goeiemorgen {}",
+ "Morning {}, first meeting at {}": "Goeiemorgen {}, eerste afspraak om {}",
+ "Morning {}, {} due today": "Goeiemorgen {}, {} voor vandaag",
+ "Morning {}, {} new to-dos": {
+  "one": "Goeiemorgen {}, {} nieuwe to-do",
+  "other": "Goeiemorgen {}, {} nieuwe to-do’s"
+ },
+ "Morning {}, {} ready for your OK": {
+  "one": "Goeiemorgen {}, {} klaargezet voor je akkoord",
+  "other": "Goeiemorgen {}, {} klaargezet voor je akkoord"
+ },
+ "Morning {}, {} replies are ready to send": {
+  "one": "Goeiemorgen {}, {} antwoord staat klaar om te versturen",
+  "other": "Goeiemorgen {}, {} antwoorden staan klaar om te versturen"
+ },
+ "Morning {}, {} waiting, about {} min to clear": {
+  "one": "Goeiemorgen {}, {} wacht op je, ongeveer {} min werk",
+  "other": "Goeiemorgen {}, {} wachten op je, ongeveer {} min werk"
+ },
  "Mornings": "’s Ochtends",
  "Move": "Verplaatsen",
  "Move to": "Verplaatsen naar",
@@ -2849,6 +2891,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "Af en toe deel ik een paar algemene inzichten. Niets persoonlijks.",
  "Now findable by people who have your email.": "Mensen die je e-mailadres hebben, kunnen je nu vinden.",
  "Now the rest of the week: {} of {} active conversations": "Nu de rest van de week: {} van {} actieve gesprekken",
+ "Now {}": "Nu {}",
+ "Now {}, was {}": "Nu {}, was {}",
  "Nudge {}: no reply in {} days": "Herinner {}: geen antwoord in {} dagen",
  "Number": "Getal",
  "Numbered list": "Genummerde lijst",
@@ -3055,6 +3099,7 @@
  "Only this event goes. Nobody gets an update.": "Alleen deze afspraak verdwijnt. Niemand krijgt een update.",
  "Only this one: {}": "Alleen deze: {}",
  "Only this to-do goes. {} can suggest changes; nothing is sent until you send it.": "Alleen deze to-do gaat mee. {} kan wijzigingen voorstellen; er gaat niets weg tot jij verstuurt.",
+ "Only what can’t wait: due today, a reply, urgent": "Alleen wat niet kan wachten: vandaag te doen, een antwoord, dringend",
  "Only what needs you, where you want it.": "Alleen wat jou nodig heeft, waar je het wilt.",
  "Only you": "Alleen jij",
  "Only you and {}": "Alleen jij en {}",
@@ -6360,6 +6405,7 @@
  "{} asks you to take this on: “{}”": "{} vraagt of jij dit oppakt: “{}”",
  "{} asks your Fleet": "{} vraagt je Fleet",
  "{} asks:": "{} vraagt:",
+ "{} at {}": "{} bij {}",
  "{} board suggestions are open already: wait until the owner decides": "Er staan al {} bordsuggesties open: wacht tot de eigenaar beslist",
  "{} calls": {
   "one": "{} oproep",
@@ -6592,6 +6638,10 @@
   "one": "{} afspraak",
   "other": "{} afspraken"
  },
+ "{} meetings today, the first at {}.": {
+  "one": "{} afspraak vandaag, om {}.",
+  "other": "{} afspraken vandaag, de eerste om {}."
+ },
  "{} message": "{}-bericht",
  "{} message to {}": "{}-bericht aan {}",
  "{} messages": {
@@ -6625,6 +6675,10 @@
   "other": "{} berichten wachten op de eerste check"
  },
  "{} min": "{} min",
+ "{} more can wait, about {} min to clear.": {
+  "one": "{} andere kan wachten, ongeveer {} min werk.",
+  "other": "{} andere kunnen wachten, ongeveer {} min werk."
+ },
  "{} more in Promises": "Nog {} in Beloftes",
  "{} more like this wait. Always shares them too.": {
   "one": "Er wacht nog {} zoals deze. Altijd deelt die ook.",
@@ -6922,6 +6976,10 @@
   "other": "{} stemmen wachten op jou"
  },
  "{} waiting": "{} wachtend",
+ "{} waiting, about {} min to clear.": {
+  "one": "{} wacht op je, ongeveer {} min werk.",
+  "other": "{} wachten op je, ongeveer {} min werk."
+ },
  "{} wants a one-time code.": "{} vraagt een eenmalige code.",
  "{} wants a passkey.": "{} wil een passkey.",
  "{} wants a quick check that you’re not a robot.": "{} wil even nagaan dat je geen robot bent.",

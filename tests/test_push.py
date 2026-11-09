@@ -87,7 +87,7 @@ class PhoneNotifications(unittest.TestCase):
     def delivery_fixture(self):
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message',
             'occurred_at': a.now(), 'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
-        sid = self.store.suggest('one', 'First', 'First body', [1])['id']
+        sid = self.store.suggest('one', 'First', 'First body', [1], urgent=True)['id']  # urgent: it buzzes (only what can't wait does)
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET deliver_after=NULL WHERE id=?', (sid,))
         return sid
@@ -147,7 +147,7 @@ class PhoneNotifications(unittest.TestCase):
         from unittest.mock import patch
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
-        first = self.store.suggest('one', 'First', 'First body', [1])['id']; second = self.store.suggest('two', 'Second', 'Second body', [1])['id']
+        first = self.store.suggest('one', 'First', 'First body', [1], urgent=True)['id']; second = self.store.suggest('two', 'Second', 'Second body', [1], urgent=True)['id']
         with self.store.connect() as db: db.execute('UPDATE suggestions SET deliver_after=NULL')
         class Daytime(a.dt.datetime):
             @classmethod
@@ -165,7 +165,7 @@ class PhoneNotifications(unittest.TestCase):
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
         follow = self.store.suggest('follow-up:7:1', 'Follow up with Example Co', 'No reply for 3 days. Follow-up 3 of at most 3.', [1])['id']
-        other = self.store.suggest('two', 'Reply to Sam', 'Sam asked for the quote.', [1])['id']
+        other = self.store.suggest('two', 'Reply to Sam', 'Sam asked for the quote.', [1], urgent=True)['id']  # can't wait: it buzzes
         with self.store.connect() as db:
             db.execute('UPDATE suggestions SET deliver_after=NULL')
             db.execute("UPDATE suggestions SET created_at='2026-10-14T09:00:00+00:00' WHERE id=?", (follow,))  # goes first
@@ -212,7 +212,7 @@ class PhoneNotifications(unittest.TestCase):
     def test_without_telegram_cards_reach_the_app_and_nothing_goes_to_telegram(self):
         self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
                                              'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
-        card = self.store.suggest('one', 'First', 'First body', [1])['id']
+        card = self.store.suggest('one', 'First', 'First body', [1], urgent=True)['id']
         with self.store.connect() as db: db.execute('UPDATE suggestions SET deliver_after=NULL')
         config = dict(self.config, telegram_owner='')
         self.assertFalse(a.telegram_on(config))

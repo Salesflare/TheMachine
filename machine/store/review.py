@@ -13,6 +13,7 @@ import bounces
 import chat_files
 import graph
 from machine.config import LOG
+import meeting_mail
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
@@ -838,6 +839,20 @@ class ReviewStore:
             pass
         return hints
 
+    def meeting_hints(self, hints, rows):
+        """A meeting's notes in a review's batch, by whichever way they came (its record, its calendar event edited after
+        it began, the meeting app's notes mail): the meeting, its record and the open to-dos already made from it, with
+        the rule (meeting_mail.hint). Added to hints by event id."""
+        try:
+            with self.connect() as db:
+                for row in rows:
+                    found = meeting_mail.hint(db, row)
+                    if found:
+                        hints.setdefault(row['id'], {})['meeting'] = found
+        except (sqlite3.Error, ValueError, TypeError, KeyError):
+            pass
+        return hints
+
     def unnamed_text(self, run_id, limit=2):
         """Up to two groups of threads that read alike and share people but have no project, each offered
         to one review (again only once it has doubled)."""
@@ -971,6 +986,7 @@ class ReviewStore:
         replies = self.card_replies(rows)
         hints = self.project_hints([r['id'] for r in rows])
         self.bounce_hints(hints, [r['id'] for r in rows])
+        self.meeting_hints(hints, rows)
         owned, teams = self.owner_threads(rows), self.team_inboxes(rows)
         with self.connect() as db:
             assigned = self.intercom_assignments(db, rows)
@@ -998,6 +1014,7 @@ class ReviewStore:
         replies = self.card_replies([rows[i] for i in ids if i in rows])
         hints = self.project_hints([i for i in ids if i in rows])
         self.bounce_hints(hints, [i for i in ids if i in rows])
+        self.meeting_hints(hints, [rows[i] for i in ids if i in rows])
         owned, teams = self.owner_threads([rows[i] for i in ids if i in rows]), self.team_inboxes([rows[i] for i in ids if i in rows])
         with self.connect() as db:
             assigned = self.intercom_assignments(db, [rows[i] for i in ids if i in rows])

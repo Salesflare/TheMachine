@@ -161,6 +161,7 @@ Inbox conversations and messages (`connectors/linkedin.py` with `integrations/li
 - Spam is skipped.
 - **Signed out:** a busy browser retries in 10 minutes, a signed-out one hourly. Connections shows "Signed out of LinkedIn", and setup and doctor say in plain words that LinkedIn is signed out in that browser.
 - **Tabs:** every tab the reader opens is closed when it's done, also tabs a stopped run left behind. A sign-in tab you opened yourself stays.
+- **Connections:** each connection's title and company (read from their headline, "Head of Sales at Acme") and profile link go onto the people already in the Graph (`linkedin_connections.py`), from the My Network, Connections list, 40 at a time. No profile is opened and no person is made: a connection matches by profile link (vanity or member id), else by full name and company when exactly one person fits. A new title or company is a line in the person's timeline ("Now Head of Sales at Acme, was Sales Lead at Acme"). Paced like a person: one page per step, a random 8 to 20 minutes apart, at most 24 a day, 9 to 21 local time, never while the sync fails or before its first import, a day off after any failed or odd answer, a new pass a week after the last one started. 500 connections take about 3 hours, 3,000 about four days. `"connections": false` on the account turns it off.
 - LinkedIn's query IDs are pinned; `linkedin_inbox.py discover` refreshes them when LinkedIn changes its client.
 
 **Which browser:** by default the reader uses OpenClaw's `openclaw` browser profile. A browser holds one LinkedIn sign-in per profile, so a second account gets a browser profile of its own: `"browser_profile"` on the account, or `"browser_cdp"` to read through a browser's DevTools address instead of OpenClaw's browser commands (like `http://127.0.0.1:9222`). It reads and sends there. Without those on the account, the reader takes `LINKEDIN_INBOX_BROWSER_PROFILE` and `LINKEDIN_INBOX_BROWSER_CDP` from its environment.
@@ -303,6 +304,14 @@ off), with the sign-ins the connections already have: no new scopes (`machine/ap
   from where the last walk stopped; a shallower one keeps what came in.
 - **Resumable:** each step saves its cursor in `history_backfill`, and a row already here is never written again, so
   a restart or a replayed step keeps nothing twice. Every Machine starts it by itself after an update.
+- **LinkedIn and X:** read through the owner's own signed-in browser with no API, where bulk reads could get the
+  account restricted, so they have their own depth (`social_history_days`, 90 by default, 0 to 365, 0 turns it off) and
+  pace (`HISTORY_PACE` in `connectors/linkedin.py` and `connectors/x.py`): one small page per step (10 LinkedIn
+  conversations or messages, 20 X mentions or DMs), a random 8 to 20 minutes apart, at most 24 steps a day per
+  account, only from 9 to 21 local time (inside the account's `active_hours`), and never while that connection's own
+  sync is failing. Any failed or odd answer (a 429, a security check, a page it doesn't expect) stops that account's
+  history for a day; only a browser busy with another job is just a pause. Same scope as the sync: LinkedIn spam is
+  left out, X's encrypted chats aren't read. The readers' `history` commands do the paging.
 
 ## The Machine's browser
 

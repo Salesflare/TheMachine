@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: Suas mensagens do LinkedIn, lidas no navegador da sua Machine, já com login feito. Ela só responde depois que você aprova.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## O que ela lê
 
 Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com login feito como você, de vez em quando durante o dia. Ela não usa chave de API e não marca nada como lido.
+
+## Cargos e empresas
+
+Ela também mantém atualizados os cargos e empresas das suas conexões do LinkedIn nas pessoas que já estão no seu Graph, a partir da sua lista de conexões. Ela não abre os perfis nem cria pessoas novas. Quando o cargo ou a empresa de alguém muda, a linha do tempo da pessoa mostra, como "Agora Head of Sales em Acme, antes Sales Lead em Acme".
+
+Ela lê bem devagar: uma página por vez, com minutos de intervalo, algumas dezenas de páginas por dia, só durante o dia. Cerca de 3.000 conexões levam uns quatro dias. Se o LinkedIn frear, ela para até o dia seguinte.
 
 ## O que ela pode enviar
 
