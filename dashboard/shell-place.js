@@ -5,14 +5,17 @@
 // moment, so the rows that load next come back where they were. Anything that scrolled meanwhile (the reader, a link,
 // Back, the app opening a card) wins and is noted instead; so does content hidden on purpose (another tab, a fold).
 // At the very top nothing is held, so a new card or a banner shows.
-const place={mark:null,hold:0,holdEnd:0,touch:false,lifted:0,glide:0,opened:0};
+// Asking where the page is scrolled makes the browser lay it out first, which on a phone drawing its first to-dos costs
+// hundreds of ms. So once the page was seen at the very top (top), a change there asks nothing until a scroll event says
+// it moved: where a page is scrolled only changes with one.
+const place={mark:null,hold:0,holdEnd:0,touch:false,lifted:0,glide:0,opened:0,top:false};
 const placeScroll=window.scrollTo.bind(window);
 const placeShown=n=>n.isConnected&&n.getClientRects().length>0;
 const placeTop=()=>{const t=document.querySelector('.topbar'),r=t?.getBoundingClientRect();return r&&r.height&&r.bottom>0&&getComputedStyle(t).position!=='static'?r.bottom:0};
 const placeSig=n=>[...n.attributes].filter(a=>!/^(class|style|hidden|open|tabindex|aria-|data-fit)/.test(a.name)).map(a=>a.name+'='+a.value).join(' ');
 const placeText=n=>n.textContent.trim().slice(0,160);
-function placeNote(){if(scrollY<1){place.mark=null;return}  // at the very top nothing is held (placeKeep): nothing to measure
- const y=placeTop()+1,levels=[];let el=document.body;
+function placeNote(){if(scrollY<1){place.mark=null;place.top=true;return}  // at the very top nothing is held (placeKeep): nothing to measure
+ place.top=false;const y=placeTop()+1,levels=[];let el=document.body;
  for(let d=0;d<40;d++){let next=null,i=0;
   for(const k of el.children){const r=k.getBoundingClientRect();if(r.height>0&&r.bottom>y&&!['SCRIPT','STYLE','DIALOG'].includes(k.tagName)){const p=getComputedStyle(k).position;if(p!=='fixed'&&p!=='sticky'){next=k;break}}i++}
   if(!next)break;levels.push({node:next,id:next.id,idx:i,tag:next.tagName,sig:placeSig(next),top:next.getBoundingClientRect().top});el=next;if(next.getBoundingClientRect().top>=y)break}
@@ -28,7 +31,8 @@ function placeFind(levels){let at=-1;for(let i=levels.length-1;i>=0;i--)if(level
  let el=at>=0?levels[at].node:document.body;
  for(let j=at+1;j<levels.length;j++){const k=placeChild(el,levels[j]);if(!k||!placeShown(k))break;el=k;at=j}
  return at>0&&at>=levels.length-3?{el,top:levels[at].top}:null}  // only the same content, drawn anew: a different view (another pane) is a move
-function placeKeep(){const m=place.mark;if(!m||m.y<1||Date.now()<place.glide)return placeNote();
+function placeKeep(){const m=place.mark;if(!m&&place.top)return;  // still at the very top: nothing held, nothing to note
+ if(!m||m.y<1||Date.now()<place.glide)return placeNote();
  const max=document.documentElement.scrollHeight-innerHeight,clamped=scrollY<m.y-.5&&scrollY>=max-1&&Date.now()>place.opened;  // a page just opened may be shorter
  if(Math.abs(scrollY-m.y)>=1&&!clamped)return placeNote();  // someone scrolled: the reader, a link, the app
  const f=placeFind(m.levels);if(!f)return placeNote();
@@ -42,7 +46,7 @@ function placeKeep(){const m=place.mark;if(!m||m.y<1||Date.now()<place.glide)ret
 // clamp for a list that shrank and hold the height again, the page jumping up and back every few seconds.
 function placeLetGo(){clearTimeout(place.hold);place.hold=setTimeout(()=>{document.body.style.minHeight='';placeNote()},Math.max(0,Math.min(1500,place.holdEnd-Date.now())))}
 let placeQueued=false;
-addEventListener('scroll',()=>{if(placeQueued)return;placeQueued=true;requestAnimationFrame(()=>{placeQueued=false;placeNote()})},{passive:true});
+addEventListener('scroll',()=>{place.top=false;if(placeQueued)return;placeQueued=true;requestAnimationFrame(()=>{placeQueued=false;placeNote()})},{passive:true});
 addEventListener('resize',()=>requestAnimationFrame(placeNote));
 new MutationObserver(rows=>{if(rows.some(r=>!(r.target===document.body&&r.attributeName==='style'))){placeKeep();if(document.body.style.minHeight)placeLetGo()}}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','open','style','src']});
 document.addEventListener('load',e=>{if(e.target.tagName==='IMG')placeKeep()},true);
