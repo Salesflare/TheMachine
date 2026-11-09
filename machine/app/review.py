@@ -63,10 +63,17 @@ FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, 
 def first_eta_minutes(run=None, look=None, queue=None, current=None):
     """About how many minutes until the first to-dos, for the setup page (first_cards_report) and the empty state
     (App.review_live), so both say the same. run {planned, done}: a first review running now. look: the first look's
-    state (App.first_look). queue (App.review_queue): the first regular review. None when nothing is on its way."""
+    state (App.first_look). queue (App.review_queue): the first regular review. None when nothing is on its way.
+    A running review's time counts down from its start (run started_at): its done count only moves when a batch saves,
+    so without it the quick look said "about 4 min" all through its one batch (2026-11-09)"""
     current = current or dt.datetime.fromisoformat(now())
     if run:
-        return max(1, -(-max((run.get('planned') or 0) - (run.get('done') or 0), 1) * FIRST_LOOK_SIGNAL_SECONDS // 60))
+        left = max((run.get('planned') or 0) - (run.get('done') or 0), 1) * FIRST_LOOK_SIGNAL_SECONDS
+        try:
+            left -= max(0, int((current - dt.datetime.fromisoformat(run['started_at'])).total_seconds())) if run.get('started_at') else 0
+        except (TypeError, ValueError):
+            pass
+        return max(1, -(-left // 60))
     if look:
         if not (look.get('state') == 'due' or look.get('why') in ('mail', 'settling', 'retry')):
             return None
@@ -306,7 +313,7 @@ def first_cards_report(db, accounts=(), current=None):
     if active:
         done = sum(len(json.loads(items)) for (items,) in rows("SELECT items FROM analyses WHERE owner_run=? AND status='complete'", (active[0],)))
         out['look'] = {'state': 'running', 'quick': bool(active[5]), 'done': done, 'planned': active[6] or 0}
-        eta = first_eta_minutes({'planned': active[6] or 0, 'done': done}, None, None, current)
+        eta = first_eta_minutes({'planned': active[6] or 0, 'done': done, 'started_at': active[2]}, None, None, current)
     elif state:
         out['look'] = {k: state.get(k) for k in ('state', 'why', 'quick', 'waiting', 'retry_at')}
         eta = first_eta_minutes(None, state, None, current)
@@ -673,7 +680,8 @@ class ReviewApp:
             queue, look = self.review_queue(db), self.first_look(db)
             # Before the first to-do ever: about when the first ones come (first_eta_minutes), for the empty state
             eta = None if newest[0] else first_eta_minutes(
-                {'planned': runs[0].get('planned') or runs[0].get('claimed_count') or 0, 'done': runs[0].get('done_count') or 0} if runs else None, look, queue)
+                {'planned': runs[0].get('planned') or runs[0].get('claimed_count') or 0, 'done': runs[0].get('done_count') or 0,
+                 'started_at': runs[0].get('started_at')} if runs else None, look, queue)
             return {'runs': runs, 'queue': queue, 'first_look': look, 'first_dig': self.first_dig_live(db),
                     'cards': {'count': newest[0], 'newest': newest[1]}, 'ai_connecting': ai_connecting(self.config), 'first_eta': eta}
 

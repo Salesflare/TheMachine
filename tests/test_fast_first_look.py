@@ -104,6 +104,14 @@ class FastFirstLook(unittest.TestCase):
         self.assertEqual(eta(None, None, queue), -(-(120 + 55 * a.FIRST_LOOK_SIGNAL_SECONDS) // 60))
         self.assertIsNone(eta(None, None, {**queue, 'first': False}))  # not the first review: not for someone new
         self.assertIsNone(eta(None, None, None))
+        # It counts down while the batch reads: the done count only moves when a batch saves (2026-11-09: "about 4 min"
+        # all through a quick look whose first to-dos came after 98 s)
+        started = lambda seconds: (current - dt.timedelta(seconds=seconds)).isoformat()
+        self.assertEqual(eta({'planned': 20, 'done': 0, 'started_at': started(0)}, None, None), 4)
+        self.assertEqual(eta({'planned': 20, 'done': 0, 'started_at': started(90)}, None, None), 3)
+        self.assertEqual(eta({'planned': 20, 'done': 0, 'started_at': started(200)}, None, None), 1)
+        self.assertEqual(eta({'planned': 20, 'done': 0, 'started_at': started(900)}, None, None), 1)  # late: about a minute, never 0
+        self.assertEqual(eta({'planned': 20, 'done': 0, 'started_at': 'not a time'}, None, None), 4)
         self.store.commit_page('work', {}, [signal('m1')])
         self.app.config['review_worker'] = {'enabled': True}
         live = self.app.review_live()
