@@ -184,7 +184,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   and message protection into `WorkersApp`; `serve` and `packed_page` into the new `ServeApp`
   (`machine/app/serve.py`), `dictation_openai` into `VoiceApp`, its script path from `machine.config.ROOT`, the mail
   attachment methods (`mail_attachment`, `gmail_attachments`, `outlook_attachments`, `share_files`) into `MailApp`,
-  `still_needed_step` into `RecapApp`, calling `FirstLookStore.still_needed_ask`.
+  `still_needed_step` into `RecapApp`, calling `FirstLookStore.still_needed_ask`, adding a source from the dashboard
+  (`connect_action`, `connect_run`, `connect_view`, `team_domains`, `connect_form`, `same_signin` and the sign-in
+  pages) into the new `ConnectApp` (`machine/app/connect.py`).
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   routines, connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
