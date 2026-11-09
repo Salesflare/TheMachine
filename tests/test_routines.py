@@ -351,7 +351,8 @@ class Runs(unittest.TestCase):
             view = self.store.suggestion_result(card, db)
         # The to-do says it is the routine's, by the routine's name (its name now: this run named it), with a link to it
         # while the routine is on the Routines page, and its button names the step
-        self.assertEqual(card['source_line'], 'Source: your routine Check what shipped in the · Mon, Nov 9')
+        # (the day is the day the draft was made, by the real clock: any day, not the one this test was written on)
+        self.assertRegex(card['source_line'], r'^Source: your routine Check what shipped in the · [A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2}$')
         self.assertEqual(view['routine'], {'id': rid, 'name': 'Check what shipped', 'live': True})
         self.assertEqual(view['labels'], {'accept': 'Post it'})
         self.now = T(2026, 11, 10, 9, 30)
