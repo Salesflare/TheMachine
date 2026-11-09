@@ -10,6 +10,14 @@ from machine import system_logs
 from timeutil import now
 
 
+def machine_fix_finding(db, suggestion_id):
+    """The finding of an open to-do from the computer's logs whose safe fix Do it may run, else None."""
+    row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                     "WHERE s.id=? AND s.origin='machine' AND e.kind='machine.system_log'", (suggestion_id,)).fetchone()
+    finding = json.loads(row['metadata'] or '{}') if row else {}
+    return finding if finding.get('fix') else None
+
+
 class MachineCardsStore:
     def machine_card(self, account_id, kind, source_id, title, body, signal, metadata, digest=None, at=None):
         """A to-do of The Machine's own (an update's note, a problem in the computer's logs) with its signal, once per
@@ -65,11 +73,7 @@ class MachineCardsStore:
         return made
 
     def machine_fix_finding(self, db, suggestion_id):
-        """The finding of an open to-do from the computer's logs whose safe fix Do it may run, else None."""
-        row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
-                         "WHERE s.id=? AND s.origin='machine' AND e.kind='machine.system_log'", (suggestion_id,)).fetchone()
-        finding = json.loads(row['metadata'] or '{}') if row else {}
-        return finding if finding.get('fix') else None
+        return machine_fix_finding(db, suggestion_id)
 
     def machine_fix_views(self, db, cards):
         """machine_log on each to-do from the computer's logs, so it keeps Not needed (cards.controls, the dashboard), and

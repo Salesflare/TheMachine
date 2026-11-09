@@ -74,6 +74,69 @@ SET_ASIDE_AFTER = 2
 RUN_SIGNAL_BUDGET = 120
 
 
+def record_sync_activity(db, account, status, signals=None, error=None, retry_at=None):
+    # Source-page receipts share their content/checkpoint transaction. Keep
+    # a small redacted history, independent of a transient current error.
+    stamp = now()
+    db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)',
+               (uuid.uuid4().hex,account,stamp,status,signals,error,retry_at))
+
+
+def signed_in_again(db, account_ids):
+    """A reconnect that worked: these accounts' sign-in errors end now, and their sync reads at once (no wait for
+    the retry). Without it the setup page kept "Sign in to Google again" until the next sync round."""
+    for account in account_ids:
+        db.execute('UPDATE checkpoints SET error=NULL,error_at=NULL,failures=0,retry_at=NULL WHERE account_id=? AND error IS NOT NULL', (account,))
+
+
+def tombstone(db, account, source_id):
+    row = db.execute('SELECT * FROM events WHERE account_id=? AND source_id=?', (account, source_id)).fetchone()
+    if not row:
+        return None
+    return {'account_id': account, 'source_id': source_id, 'kind': row['kind'],
+            'occurred_at': row['occurred_at'], 'title': row['title'], 'body': '',
+            'metadata': json.loads(row['metadata']), 'deleted': True}
+
+
+def move_meeting_transcripts(db):
+    """Make what meeting_notes.transcript_moves says, in the caller's transaction, first keeping each row's old kind
+    and source_id in meeting_moves (to put it back by hand). [moved event ids]"""
+    db.execute(meeting_notes.MOVES)
+    moved = []
+    for event_id, old_source, new_source, metadata in meeting_notes.transcript_moves(db):
+        db.execute('INSERT OR REPLACE INTO meeting_moves VALUES(?,?,?,?,?,?)',
+                   (event_id, meeting_notes.NOTES, old_source, meeting_notes.TRANSCRIPT, new_source, now()))
+        db.execute('UPDATE events SET kind=?,source_id=?,metadata=? WHERE id=? AND kind=?',
+                   (meeting_notes.TRANSCRIPT, new_source, metadata, event_id, meeting_notes.NOTES))
+        moved.append(event_id)
+    return moved
+
+
+def save_meeting_notes(db, write):
+    """Make what meeting_notes.plan says, in the caller's transaction: notes on a meeting are a signal like any other."""
+    if write[0] == 'remove':
+        db.execute('UPDATE events SET deleted=1,version=version+1,ingested_at=? WHERE id=?', (now(), write[1]))
+        return {}
+    r = write[-1]
+    if write[0] == 'update':
+        db.execute('UPDATE events SET kind=?,occurred_at=?,title=?,body=?,metadata=?,deleted=0,content_hash=?,ingested_at=?,version=version+1,deferrals=0 WHERE id=?',
+                   (r['kind'], r['occurred_at'], r['title'], r['body'], r['metadata'], r['content_hash'], r['ingested_at'], write[1]))
+        return {'notes_id': write[1]}
+    return {'notes_id': db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at) '
+                                   'VALUES(?,?,?,?,?,?,?,0,?,?)', (r['account_id'], r['source_id'], r['kind'], r['occurred_at'], r['title'], r['body'],
+                                                                   r['metadata'], r['content_hash'], r['ingested_at'])).lastrowid}
+
+
+def add_ai_request(db, account, key, stamp, title, text, meta):
+    """A connected AI's to-do as its first evidence (App.ai_card): an ai.request event on one of the owner's
+    accounts, already marked reviewed (analyzed_version 1) so no review or preparation reads it by itself. The
+    event's id."""
+    db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
+               "VALUES(?,?,'ai.request',?,?,?,?,0,?,1,1,?)",
+               (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
+    return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
+
+
 class EventsStore:
     """Store methods for the events table and the sync checkpoints."""
 
@@ -268,11 +331,7 @@ class EventsStore:
         return [rows[e['source_id']] for e in events if e['source_id'] in rows]
 
     def record_sync_activity(self, db, account, status, signals=None, error=None, retry_at=None):
-        # Source-page receipts share their content/checkpoint transaction. Keep
-        # a small redacted history, independent of a transient current error.
-        stamp = now()
-        db.execute('INSERT INTO sync_activity VALUES(?,?,?,?,?,?,?)',
-                   (uuid.uuid4().hex,account,stamp,status,signals,error,retry_at))
+        return record_sync_activity(db, account, status, signals, error, retry_at)
 
     def failed(self, account, error):
         with self.connect() as db:
@@ -295,20 +354,12 @@ class EventsStore:
                        (account, '{}', str(error), now(), retry_at))
 
     def signed_in_again(self, account_ids):
-        """A reconnect that worked: these accounts' sign-in errors end now, and their sync reads at once (no wait for
-        the retry). Without it the setup page kept "Sign in to Google again" until the next sync round."""
         with self.connect() as db:
-            for account in account_ids:
-                db.execute('UPDATE checkpoints SET error=NULL,error_at=NULL,failures=0,retry_at=NULL WHERE account_id=? AND error IS NOT NULL', (account,))
+            signed_in_again(db, account_ids)
 
     def tombstone(self, account, source_id):
         with self.connect() as db:
-            row = db.execute('SELECT * FROM events WHERE account_id=? AND source_id=?', (account, source_id)).fetchone()
-            if not row:
-                return None
-            return {'account_id': account, 'source_id': source_id, 'kind': row['kind'],
-                    'occurred_at': row['occurred_at'], 'title': row['title'], 'body': '',
-                    'metadata': json.loads(row['metadata']), 'deleted': True}
+            return tombstone(db, account, source_id)
 
     def events(self, account_ids, query='', limit=40, pending=False, event_ids=None, reviewable=False, since='', kinds=None):
         if not account_ids:
@@ -353,31 +404,10 @@ class EventsStore:
         return rows
 
     def move_meeting_transcripts(self, db):
-        """Make what meeting_notes.transcript_moves says, in the caller's transaction, first keeping each row's old kind
-        and source_id in meeting_moves (to put it back by hand). [moved event ids]"""
-        db.execute(meeting_notes.MOVES)
-        moved = []
-        for event_id, old_source, new_source, metadata in meeting_notes.transcript_moves(db):
-            db.execute('INSERT OR REPLACE INTO meeting_moves VALUES(?,?,?,?,?,?)',
-                       (event_id, meeting_notes.NOTES, old_source, meeting_notes.TRANSCRIPT, new_source, now()))
-            db.execute('UPDATE events SET kind=?,source_id=?,metadata=? WHERE id=? AND kind=?',
-                       (meeting_notes.TRANSCRIPT, new_source, metadata, event_id, meeting_notes.NOTES))
-            moved.append(event_id)
-        return moved
+        return move_meeting_transcripts(db)
 
     def save_meeting_notes(self, db, write):
-        """Make what meeting_notes.plan says, in the caller's transaction: notes on a meeting are a signal like any other."""
-        if write[0] == 'remove':
-            db.execute('UPDATE events SET deleted=1,version=version+1,ingested_at=? WHERE id=?', (now(), write[1]))
-            return {}
-        r = write[-1]
-        if write[0] == 'update':
-            db.execute('UPDATE events SET kind=?,occurred_at=?,title=?,body=?,metadata=?,deleted=0,content_hash=?,ingested_at=?,version=version+1,deferrals=0 WHERE id=?',
-                       (r['kind'], r['occurred_at'], r['title'], r['body'], r['metadata'], r['content_hash'], r['ingested_at'], write[1]))
-            return {'notes_id': write[1]}
-        return {'notes_id': db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,ingested_at) '
-                                       'VALUES(?,?,?,?,?,?,?,0,?,?)', (r['account_id'], r['source_id'], r['kind'], r['occurred_at'], r['title'], r['body'],
-                                                                       r['metadata'], r['content_hash'], r['ingested_at'])).lastrowid}
+        return save_meeting_notes(db, write)
 
     def meeting(self, account_ids, event_id, owner=(), writable=(), names=None):
         """One meeting as the Calendar shows it, for its details wherever it is opened (a timeline, Events, a to-do's
@@ -607,11 +637,5 @@ class EventsStore:
         return changed
 
     def add_ai_request(self, account, key, stamp, title, text, meta):
-        """A connected AI's to-do as its first evidence (App.ai_card): an ai.request event on one of the owner's
-        accounts, already marked reviewed (analyzed_version 1) so no review or preparation reads it by itself. The
-        event's id."""
         with self.connect() as db:
-            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                       "VALUES(?,?,'ai.request',?,?,?,?,0,?,1,1,?)",
-                       (account, key, stamp, title, text, json.dumps(meta), hashlib.sha256(text.encode()).hexdigest(), stamp))
-            return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, key)).fetchone()[0]
+            return add_ai_request(db, account, key, stamp, title, text, meta)

@@ -53,33 +53,41 @@ def same_day_run(before, anchor_at):
     return before[-max(len(today), BEFORE_MIN):]
 
 
+def context_anchor(db, suggestion_id):
+    """The to-do's main message that has a conversation to show (its first such source), or None."""
+    row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    if not row:
+        raise ValueError('Unknown suggestion')
+    ids = [i for i in json.loads(row['event_ids'] or '[]') if isinstance(i, int)][:20]
+    if not ids:
+        return None
+    found = {r['id']: r for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN ('
+                                            + ','.join('?' * len(ids)) + ')', ids)}
+    return next((found[i] for i in ids if i in found and found[i]['kind'] in CONTEXT_KEYS and _meta(found[i]).get(CONTEXT_KEYS[found[i]['kind']])), None)
+
+
+def conversation_ids(db, anchor, side, cursor=None):
+    """Event ids of the anchor's conversation on one side ('before': newest first; 'after': oldest first), up to SCAN
+    read. cursor: an event of that conversation to page from instead of the anchor."""
+    kind, key = anchor['kind'], CONTEXT_KEYS[anchor['kind']]
+    start = cursor or anchor
+    rows = db.execute(
+        _SIDE_SQL['before' if side == 'before' else 'after'],
+        (anchor['account_id'], kind, '$.' + key, str(_meta(anchor)[key]), start['occurred_at'], start['occurred_at'], start['id'], SCAN)).fetchall()
+    if kind == 'slack.message':
+        m = _meta(anchor)
+        rows = [r for r in rows if slack_member(m, _meta(r))]
+    return rows
+
+
 class ConversationStore:
     """Store methods for a source message's conversation."""
 
     def context_anchor(self, db, suggestion_id):
-        """The to-do's main message that has a conversation to show (its first such source), or None."""
-        row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
-        if not row:
-            raise ValueError('Unknown suggestion')
-        ids = [i for i in json.loads(row['event_ids'] or '[]') if isinstance(i, int)][:20]
-        if not ids:
-            return None
-        found = {r['id']: r for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE deleted=0 AND id IN ('
-                                                + ','.join('?' * len(ids)) + ')', ids)}
-        return next((found[i] for i in ids if i in found and found[i]['kind'] in CONTEXT_KEYS and _meta(found[i]).get(CONTEXT_KEYS[found[i]['kind']])), None)
+        return context_anchor(db, suggestion_id)
 
     def conversation_ids(self, db, anchor, side, cursor=None):
-        """Event ids of the anchor's conversation on one side ('before': newest first; 'after': oldest first), up to SCAN
-        read. cursor: an event of that conversation to page from instead of the anchor."""
-        kind, key = anchor['kind'], CONTEXT_KEYS[anchor['kind']]
-        start = cursor or anchor
-        rows = db.execute(
-            _SIDE_SQL['before' if side == 'before' else 'after'],
-            (anchor['account_id'], kind, '$.' + key, str(_meta(anchor)[key]), start['occurred_at'], start['occurred_at'], start['id'], SCAN)).fetchall()
-        if kind == 'slack.message':
-            m = _meta(anchor)
-            rows = [r for r in rows if slack_member(m, _meta(r))]
-        return rows
+        return conversation_ids(db, anchor, side, cursor)
 
     def message_context(self, suggestion_id, before=None):
         """{'event_id', 'before', 'after', 'earlier'} for a to-do's source message: the messages before it (at most
