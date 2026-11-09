@@ -253,10 +253,11 @@ class Runs(unittest.TestCase):
         self.assertEqual(self.app.routines_view()['routines'][0]['name'], 'Deals')
 
     def tables(self):
-        """Every row outside the routines' own tables: a test run must leave them as they were."""
+        """Every row outside the routines' own tables: a test run must leave them as they were. data_stamps only counts
+        writes to tables the to-dos' views read (routines among them), for their cache."""
         with self.store.connect() as db:
             names = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'routine%' "
-                                               "AND name NOT LIKE 'sqlite_%'")]
+                                               "AND name NOT LIKE 'sqlite_%' AND name<>'data_stamps'")]
             return {n: [tuple(r) for r in db.execute(f'SELECT * FROM "{n}"')] for n in names}
 
     def report(self, text, **more):

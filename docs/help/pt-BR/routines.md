@@ -3,7 +3,7 @@ title: Rotinas
 area: cards
 summary: Trabalho que sua Machine faz sozinha, num ritmo, como um resumo de segunda-feira dos seus deals abertos. Ela só lê.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, dashboard/routines-page.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, dashboard/routines-page.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter
 ---
@@ -36,6 +36,8 @@ As rotinas rodam uma de cada vez e esperam quando o uso do seu plano de IA está
 ## Mudar ou parar
 
 Fica no menu ⋯ da rotina. **Mudar quando** aceita um novo ritmo com suas próprias palavras, como "todo dia útil às 8". **Pausar** para as execuções até **Retomar**; o que foi perdido durante a pausa não roda depois. **Parar** encerra uma rotina de vez.
+
+Quando você usa **Pedir mudanças** em uma tarefa de uma rotina e sua nota vale para toda execução, como "nunca use emoji", a tarefa oferece **Mudar também a rotina**. Ela mostra o que muda nas palavras da rotina, e a rotina só muda quando você toca em **Mudar**. **Deixar como está** a deixa como está. Uma correção só desse rascunho não oferece nada.
 
 ## Avançado: etapas de script
 

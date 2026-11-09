@@ -62,6 +62,7 @@ import missed_work
 import next_actions
 import own_addresses
 import recurring
+import routine_changes
 import skills
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
 import still_needed
@@ -77,7 +78,7 @@ WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
 CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decisions', 'email_bounces',
                'events', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
-               'promises', 'recap_items', 'recurring_series', 'skill_clusters', 'skill_task_decided', 'skills',
+               'promises', 'recap_items', 'recurring_series', 'routine_changes', 'routines', 'skill_clusters', 'skill_task_decided', 'skills',
                'slack_members', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
@@ -453,6 +454,11 @@ class ViewsStore(ConversationStore):
         proposed = skills.for_task(db, suggestion['id']) if not pre or 'skills' not in pre or suggestion['id'] in pre['skills'] else None
         if proposed:
             extra['proposed_skill'] = proposed
+        # A routine's to-do whose note holds for its next runs too: Also change the routine (routine_changes.py). Read only
+        # for a routine's to-do, so other cards cost no query.
+        if suggestion.get('status') not in ('completed','rejected') and any(json.loads(r['metadata'] or '{}').get('routine') for r in rows):
+            change=routine_changes.view(db,suggestion['id'])
+            if change:extra['routine_change']=change
         action=suggestion.get('next_action');action=json.loads(action) if isinstance(action,str) else action
         if action:
             states={r['revision']:{**{k:r[k] for k in ('status','error','message_id','snooze_status','snooze_until','snooze_error') if r[k] is not None or k in ('status','error','message_id')},
