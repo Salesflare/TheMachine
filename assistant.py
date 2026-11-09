@@ -1131,17 +1131,14 @@ from machine.app.connect import (
     same_signin,
 )
 
+from machine.main import (  # noqa: F401 - the service and its mixins (machine/main.py), re-exported
+    APP_MIXINS,
+    App,
+    Store,
+)
+
 
 VERIFIED_DECISION_SOURCES = ('telegram', 'dashboard')
-
-
-class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, FirstLookStore, ProfileStore,
-            PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore):
-    """The service's database: every table, through the Store mixins it is made of (machine/store/*)."""
-
-
-
-
 
 
 SOURCE_KIND['fleet.request'] = 'Fleet'
@@ -1151,172 +1148,7 @@ SOURCE_KIND['fleet.message'] = 'message'
 SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff carried, on a Machine that doesn't read it
 
 
-
 MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook'), ('calendar', 'outlook_calendar')
-
-
-
-
-# App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
-APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp)
-
-# App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
-APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
-               VoiceApp)
-APP_MIXINS += (CardChatApp, ConversationApp, ExportApp, FirstLookApp, FleetApp, PreparationApp, RecapApp, ReviewApp, TalkApp)
-APP_MIXINS += (ServeApp,)
-APP_MIXINS += (NewCardsApp,)
-APP_MIXINS += (MailApp,)
-APP_MIXINS += (SyncApp,)
-APP_MIXINS += (ActionRunsApp,)
-APP_MIXINS += (WorkersApp,)
-APP_MIXINS += (StatusApp,)
-APP_MIXINS += (DocsApp,)
-APP_MIXINS += (CardActionsApp,)
-APP_MIXINS += (FeedbackApp,)
-APP_MIXINS += (ProfileApp,)
-APP_MIXINS += (BrowserApp,)
-APP_MIXINS += (NotificationsApp, SettingsActionsApp)
-APP_MIXINS += (RecapSettingsApp,)
-APP_MIXINS += (SearchAskApp,)
-APP_MIXINS += (ReviewSavesApp,)
-APP_MIXINS += (CalendarClashesApp,)
-APP_MIXINS += (ConnectApp,)
-
-
-class App(*APP_MIXINS):
-    # action name -> method, from the mixins' ACTIONS; App.action calls it as method(name, args, owner_dashboard). Who
-    # may call an action is still the reviewed sets above (OWNER_ACTIONS, DASHBOARD_ACTIONS, SUPPORT_ACTIONS, ...).
-    ACTION_HANDLERS = {name: method for mixin in APP_MIXINS for name, method in mixin.ACTIONS.items()}
-    HISTORY_SOURCES = {'mail': (Gmail, message_event), 'calendar': (Calendar, calendar_event, calendar_title_excluded), 'whatsapp': (WhatsApp, whatsapp_event)}
-
-    def __init__(self, config, config_path=None):
-        set_timezone(config.get('timezone'))
-        locale_prefs.configure(config)
-        try:
-            set_work_hours(config.get('work_hours'))
-        except ValueError as error:
-            LOG.warning('work_hours ignored, using the defaults: %s', error)
-            set_work_hours(None)
-        self.config = config
-        self.config_path = Path(config_path) if config_path else None  # where Work hours are saved
-        try:  # what the app starts with: changes after it are followed (follow_config)
-            self.config_stamp = self.config_path.stat().st_mtime_ns if self.config_path else None
-        except OSError:
-            self.config_stamp = None
-        self.store = Store(config['database'], protect=self.protection_now(config))
-        self.store.exclusions = {a['id']: rules for a in config['accounts'] if (rules := (a.get('exclude') or []) + default_exclusions(config, a))}
-        self.store.owner_user_ids = {a['user_id'] for a in config['accounts'] if a.get('service') == 'slack' and a.get('user_id')}
-        self.store.accounts = config['accounts']
-        self.store.config = config
-        self.note_connections()
-        self.token = credential(config, 'api-token')
-        self.owner_token = owner_credential(config)
-        self.stop = threading.Event()
-        self.graph_dirty = threading.Event()
-        # Check now (check_now.py): the one check, and each collector's early wake and its last finished read
-        self.check, self.collector_wakes, self.collector_reads, self.collector_resting = check_now.Check(), {}, {}, set()
-        self.model_usage = None
-        self.chat_catalog = chat_model.Catalog()  # the models a chat can pick, from the Gateway (chat_model.py)
-        # The Fleet (fleet.py): only when the control plane put this Machine in one.
-        self.fleet_attach()
-        # Skills (skills.py): the owner's how-tos, written to the OpenClaw workspace; shared ones come in through the Fleet.
-        self.skills = skills.Skills(self.store.connect, config.get('openclaw_workspace') or WORKSPACE, self.fleet, config=config)
-        self.skills.finder = self.skills_find_start
-        # Hand to Claude Code / Hand to Codex on a card (agent_jobs.py): only where the tool is there to hand to.
-        self.agents = agent_jobs.AgentJobs(self.store.connect, config, Path(config['database']).parent / 'agent-jobs',
-                                           card=self.agent_card, revise=self.agent_revise,
-                                           network=(lambda body: self.fleet.relay.call('POST', '/agent-results', body)) if self.fleet else None,
-                                           ) if agent_jobs.settings(config) is not None else None
-        if self.fleet:
-            self.fleet.skills = self.skills
-            self.fleet.graph_build = self.graph_build  # a shared contact the owner adds (contact_share.py)
-            self.fleet.about_you = self.about_you  # Share my contact: the owner's own addresses and numbers
-
-    MESSAGE_CACHE = 40  # source emails kept in memory for the dashboard, newest used last
-    MESSAGE_TTL = 600  # seconds
-
-    MAILBOX_LOOKUP_MAX = 10  # messages per mailbox one search keeps
-
-    NO_DOC_CONNECTION = 'No Docs connection in this to-do’s area can do things. Give what you need in the to-do instead.'
-
-    def action(self, name, args, owner_dashboard=False):
-        if name in self.ACTION_HANDLERS:  # an action a domain mixin handles (APP_MIXINS)
-            return getattr(self, self.ACTION_HANDLERS[name])(name, args, owner_dashboard)
-        if name.startswith('fleet_') or name in FAMILY_ACTIONS:
-            return self.fleet_action(name, args, owner_dashboard)
-        raise ValueError('Unknown operation')
-
-    def fleet_card(self, kind, ask_id, name, title, body, evidence, action=None, due=None, into=None, family=False, via=None, carried=()):
-        """A card for a Fleet request the owner accepted (fleet_requests.py), made from this Machine's own data. Its
-        first evidence is a Fleet event on one of the owner's work accounts, marked reviewed so no model reads it by
-        itself; an intro also gets its double-opt-in draft, which goes out only with the owner's own Send. A Family's
-        to-do or plan (family.py) is a personal card on any of the owner's accounts, never a work one by necessity."""
-        accounts = fleet.work_accounts(self.config)
-        if family:  # a personal account first
-            accounts = [a['id'] for a in self.config.get('accounts', []) if a['id'] not in accounts] + accounts
-        elif via and not accounts:  # a task by email can land on an install with only personal accounts
-            accounts = [a['id'] for a in self.config.get('accounts', [])]
-        with self.store.connect() as db:
-            own = [r['account_id'] for r in db.execute(f"SELECT account_id FROM events WHERE id IN ({','.join('?' * len(evidence)) or 'NULL'})", evidence)]
-        account = next((a for a in own if a in accounts), accounts[0] if accounts else None)
-        if not account:
-            raise ValueError('this Machine has no account' if family else 'this Machine has no work account')
-        stamp, source_id = now(), 'fleet:' + str(ask_id)
-        meta = {'sender_display': f"{name} ({via or ('your Family' if family else 'your Fleet')})", 'fleet_kind': kind}
-        with self.store.connect() as db:
-            db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                       "VALUES(?,?,'fleet.request',?,?,?,?,0,?,1,1,?)",
-                       (account, source_id, stamp, title, body, json.dumps(meta), hashlib.sha256((title + body).encode()).hexdigest(), stamp))
-            event_id = db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, source_id)).fetchone()[0]
-            # A handoff's sources (fleet_requests.parse_sources): copies of the emails or messages the card was built from,
-            # saved here so they read like any card's sources, offline. Marked reviewed: no model reads them by itself.
-            copies = []
-            first = name.split()[0] if name else 'a teammate'
-            for n, src in enumerate(carried):
-                cid = source_id + ':' + str(n)
-                where = src.get('intercom')
-                own = where and intercom_own_event(db, self.config, where)
-                if own:  # this Machine reads that workspace too: the card is on the conversation itself (its link, reply)
-                    copies.append(own)
-                    continue
-                db.execute('INSERT OR IGNORE INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                           'VALUES(?,?,?,?,?,?,?,0,?,1,1,?)',
-                           (account, cid, 'fleet.email' if src['kind'] == 'email' else 'fleet.intercom' if where else 'fleet.message', src['when'],
-                            src['subject'] or '(no subject)', src['body'],
-                            json.dumps({'sender_display': f"{src['from']}, via {first}", 'from': src['from'], 'carried_by': name,
-                                        'fleet_kind': kind, **({'truncated': True} if src.get('clipped') else {}),
-                                        **({'intercom': where, 'conversation_id': where['conversation_id'], 'source_url': intercom_link(where),
-                                            **({'contact_email': where['contact'], 'contact_name': re.sub(r'\s*<[^>]*>', '', src['from']).strip()[:100]}
-                                               if where.get('contact') else {})} if where else {})}),
-                            hashlib.sha256((src['subject'] + src['body']).encode()).hexdigest(), stamp))
-                copies.append(db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account, cid)).fetchone()[0])
-        if into:  # a handoff on something the owner already has a card on: it joins that card, with their summary
-            with self.store.connect() as db:
-                row = db.execute('SELECT event_ids,body FROM suggestions WHERE id=?', (into,)).fetchone()
-                ids = json.loads(row['event_ids'] or '[]')
-                if event_id not in ids:
-                    db.execute('UPDATE suggestions SET event_ids=?,body=? WHERE id=?',
-                               (json.dumps([*ids, *[c for c in copies if c not in ids], event_id]), ((row['body'] or '') + '\n\n' + body[:700])[:2400], into))
-            return into
-        # A review to-do has its own key: confirm_action refuses any send from it (fleet_reviews.py)
-        card = self.store.suggest(('fleet-review:' if kind == fleet_reviews.KIND else 'fleet:') + str(ask_id), title[:90], body[:700], [*copies, event_id, *[e for e in evidence if e != event_id]], when='now',
-                                  work=not family and account in fleet.work_accounts(self.config), due=due)
-        if action and not card.get('duplicate'):
-            with self.store.connect() as db:
-                row = db.execute('SELECT account_ids FROM suggestions WHERE id=?', (card['id'],)).fetchone()
-                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
-            draft = next_actions.validate(action, self.config, json.loads(row['account_ids']))
-            self.store.prepare(card['id'], f"A double-opt-in email to {action['to'][0]}: it asks them first whether they want the "
-                                           f"introduction. Read it, change it if you like, and send it yourself.", next_action=draft,
-                               outcome={'state': 'needs_you', 'needs': 'read and send the intro email'})
-        return card['id']
-
-    BUG_SHOT_BYTES = 2 * 1024 * 1024
-    BUG_TEXT = 4000
-
-    HELP_TOPICS_SECONDS = 6 * 3600
 
 
 def main():
@@ -1364,7 +1196,6 @@ def main():
         app = App(config)
         for account in config['accounts']:
             print(account['id'], sync_source(app.store, config, account))
-
 
 
 if __name__ == '__main__':

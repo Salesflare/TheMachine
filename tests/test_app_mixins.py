@@ -27,7 +27,7 @@ import dashboard_parts  # noqa: E402
 def action_branches():
     # App.action's own if-branches (not the lookup in ACTION_HANDLERS), as (line, compiled test, names it spells out)
     found = []
-    tree = ast.parse((ROOT / 'assistant.py').read_text(encoding='utf-8'))
+    tree = ast.parse((ROOT / 'machine' / 'main.py').read_text(encoding='utf-8'))
     app = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == 'App')
     action = next(n for n in app.body if isinstance(n, ast.FunctionDef) and n.name == 'action')
     for node in action.body:

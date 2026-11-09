@@ -340,7 +340,8 @@ def sql_strings(found):
 # are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
-               'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py'}
+               'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py',
+               'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 
 @functools.lru_cache(maxsize=None)
@@ -509,11 +510,11 @@ class Architecture(unittest.TestCase):
 
     def test_only_assistant_imports_the_app_mixins(self):
         for name in python_files(tests=False):
-            if name == 'assistant.py':
+            if name in ('assistant.py', 'machine/main.py'):  # main.py composes App; assistant.py re-exports the mixins
                 continue
             lines = loads_module(nodes(name), lambda m: m.endswith('_app'))
             with self.subTest(module=name):
-                self.assertEqual(lines, [], f'{name} imports a *_app module (App methods); only assistant.py composes them')
+                self.assertEqual(lines, [], f'{name} imports a *_app module (App methods); only machine/main.py composes them')
 
     def test_each_table_is_created_by_one_module(self):
         creates, _ = schema_and_writes()
@@ -535,7 +536,7 @@ class Architecture(unittest.TestCase):
                 for module, line in sorted(modules.items()):
                     if module != first and module not in OTHER_WRITERS.get(table, ()):
                         if table == 'events':
-                            self.fail(f'{module}:{line} writes events, the sealed table: only assistant.py may '
+                            self.fail(f'{module}:{line} writes events, the sealed table: only the Store and App may '
                                       '(tests/test_message_seal.py). Call the Store method that does it.')
                         self.fail(f'{module}:{line} writes table {table}, which {first} owns. Call a function of '
                                   f'{first} that does it (add one there if needed). Only if that can\'t be, add '
