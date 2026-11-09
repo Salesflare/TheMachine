@@ -405,8 +405,10 @@ OVER_BUDGET = {}
 # 1,700,000 -> 1,614,000 (2026-11-09): the Fleet tab's views load when first needed (first load 1,698,510 -> 1,612,616).
 # 1,614,000 -> 1,527,000 (2026-11-09): the Connections tab's views load when first needed (first load 1,612,918 ->
 # 1,525,351).
-FIRST_LOAD_CEILING = 1_527_000
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 88_000}
+# 1,527,000 -> 1,491,000 (2026-11-09): Settings' Skills panel loads when first needed, with Settings' other panels (first
+# load 1,525,351 -> 1,489,064).
+FIRST_LOAD_CEILING = 1_491_000
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 124_000}
 
 
 def budget(name):
