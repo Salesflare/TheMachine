@@ -140,7 +140,7 @@ class ParkedFixes(unittest.TestCase):
         self.park(fix)
         a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())
         card = self.card()
-        self.assertTrue(card['parked_redo'])
+        self.assertEqual(card['parked_redo'], 'redo')  # nothing runs on it: the dashboard offers Redo it
         self.assertIn('Redo it on the new version', card['body'])
         labels = [b['label'] for k in a.controls(card)['blocks'] for b in k['buttons']]
         taps = [b['action']['value'].rsplit(':', 1)[1] for k in a.controls(card)['blocks'] for b in k['buttons']]

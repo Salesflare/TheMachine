@@ -104,10 +104,11 @@ class MachineCardsStore:
                 argv = system_logs.fix_command(finding) if finding else None
                 if argv and (card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered'):
                     card['machine_fix'] = ' '.join(argv)
-            # a fix an update set aside, still open: Redo it starts the usual self-fix run (cards.controls says when)
+            # a fix an update set aside, still open: Redo it starts the usual self-fix run (cards.controls says when).
+            # 'redo' while nothing runs on it (pending, or a result that only answered): the dashboard offers Redo it then
             if card.get('origin') == 'machine' and card.get('status') in ('pending', 'accepted', 'instructions', 'prepared') \
                     and not card.get('machine_log') and parked_redo(db, card['id']):
-                card['parked_redo'] = True
+                card['parked_redo'] = 'redo' if card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered' else True
 
     def machine_fix(self, job):
         """Do it on a to-do from the computer's logs (its preparation starting from the owner's Do it): runs its one

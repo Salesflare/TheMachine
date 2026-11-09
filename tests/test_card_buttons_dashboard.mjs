@@ -22,7 +22,7 @@ const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pri
  {id:'m1',title:'backup failed 3 times in a day',body:'It waits for your OK.',status:'pending',scope:'personal',origin:'machine',owner_step:1,machine_log:true,created_at:now,event_ids:[6]},
  {id:'m2',title:'Your update kept 1 of your own files',body:'notes.md',status:'pending',scope:'personal',origin:'machine',owner_step:1,created_at:now,event_ids:[7]},
  // a fix an update set aside: Redo it starts the usual self-fix run
- {id:'m3',title:'Redo a fix the update set aside',body:'It no longer fit the newest version, so the update set it aside and moved on. Redo it on the new version, or close this.',status:'pending',scope:'personal',origin:'machine',owner_step:1,parked_redo:true,created_at:now,event_ids:[8]}];
+ {id:'m3',title:'Redo a fix the update set aside',body:'It no longer fit the newest version, so the update set it aside and moved on. Redo it on the new version, or close this.',status:'pending',scope:'personal',origin:'machine',owner_step:1,parked_redo:'redo',created_at:now,event_ids:[8]}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  // en-BE: English date words in the day-month order (a source date is shown in the region's order)
  locale:{locale:'en-BE',region:'BE',language:'en',language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
