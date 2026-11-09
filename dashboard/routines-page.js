@@ -3,7 +3,7 @@
 // why: what was seen, on the rhythm line), each with the result of one real run; Add or No thanks.
 // A new one shows a test run first (routine_try, dry: nothing sent or kept): Add, Change or Cancel. Edit's Try it, too.
 // Advanced (the card's ...): script steps. Get data's output goes to the run; Check gets the result.
-let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0,rtStale=false;
+let routinesData=null,routinesAt=0,rtForm=null,rtTimer=0,rtStale=false,rtMissed=0;
 const RT_STATE={ready:'Ready',nothing:'Nothing new',failed:'Didn’t work',running:'Running…'};
 const rtTime=at=>localeTime(new Date('2000-01-01T'+at),DL,{hour:'numeric',minute:'2-digit'});
 const rtDay=v=>localeDate(v,DL,{weekday:'short',day:'numeric',month:'short'});
@@ -35,8 +35,9 @@ const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}"
 // when the form closes. A rebuild keeps what is on screen in place (rtKeep).
 function routinesRender(){const box=$('#routines-view'),list=routinesData?.routines;if(!box||!list)return;
  if(!(rtForm&&rtPatch(box)))rtKeep(box,()=>rtFull(box,list));
- // A run in progress: look again in a few seconds, so its result shows in the card when it is ready
- clearTimeout(rtTimer);if([...list,...routinesData.suggested||[],...routinesData.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>box.offsetParent?routinesView(true):routinesAt=0,4000)}
+ rtLook(4000)}
+// A run in progress: look again in a few seconds (slower after a failed look), so its result shows in the card when ready
+function rtLook(ms){const d=routinesData;clearTimeout(rtTimer);if([...d.routines,...d.suggested||[],...d.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>$('#routines-view')?.offsetParent?routinesView(true):routinesAt=0,ms)}
 function rtFull(box,list){rtStale=false;const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),
   fo=document.activeElement,typing=fo?.id==='rt-words'&&[fo.selectionStart,fo.selectionEnd];
  setHTML(box,html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
@@ -61,7 +62,8 @@ function rtScroller(box){for(let e=box.parentElement;e&&e!==document.body;e=e.pa
 // Grows with its words, up to six lines (routines-page.css)
 function rtGrow(x){const p=x.parentElement;p.style.minHeight=p.offsetHeight+'px';x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px';p.style.minHeight=''}
 async function routinesView(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
- try{routinesData=await request('api/routines');routinesAt=Date.now();routinesRender()}catch(e){errCaught(e);toast(e.message,true)}}
+ try{routinesData=await request('api/routines');routinesAt=Date.now();rtMissed=0;routinesRender()}
+ catch(e){errCaught(e);if(force&&routinesData)rtLook(Math.min(3e4,4e3*2**++rtMissed));else toast(e.message,true)}}
 const rtPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function rtDo(action,args,b,done){if(b)b.disabled=true;try{routinesData={...routinesData,...await rtPost(action,args)};routinesAt=Date.now();routinesRender();if(done)toast(done);return true}catch(e){errCaught(e);toast(e.message,true);if(b)b.disabled=false;return false}}
 // Edit and Change when: one at a time, under the card's text, with Save and Cancel (Esc, or a click outside on a computer).
