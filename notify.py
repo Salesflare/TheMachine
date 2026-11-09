@@ -114,7 +114,7 @@ def kind_of(row):
     if row.get('reminder'):
         if row.get('status') in ('prepared', 'instructions') or row.get('preparation_status') == 'blocked':
             return 'result'
-        return 'reminder'
+        return 'todo' if row.get('_first') else 'reminder'  # never delivered before (deliver_one): new, no reminder
     return 'todo'
 
 
@@ -323,6 +323,20 @@ def digest_done(db, day, status, channels):
     """The digest of `day` is done: sent (on `channels`), empty or not sent."""
     channels = json.dumps(channels, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
     db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', (status, channels, day))
+
+
+def drop_covered(db, refs, before):
+    """The morning digest email went and listed these to-dos (refs, 'suggestion:<id>'): the waiting-for-you email lines
+    held for them before it (created up to `before`, epoch seconds) are dropped, so the next hourly email doesn't repeat
+    them. What comes in after the digest still gets its line. Returns how many."""
+    ensure(db)
+    refs = sorted({str(r) for r in refs if r})
+    gone = 0
+    for n in range(0, len(refs), 400):
+        chunk = refs[n:n + 400]
+        gone += db.execute(f"DELETE FROM notify_queue WHERE channel='email' AND created<=? AND ref IN ({','.join('?' * len(chunk))})",
+                           (before, *chunk)).rowcount
+    return gone
 
 
 def drop_pushes(db):

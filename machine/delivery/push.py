@@ -120,6 +120,18 @@ def nudge_wait(db, suggestion_id, job_id, outcome, actions):
     return {'state': 'waiting', 'waiting_on': ' '.join(str(promise['who']).split())[:200]}
 
 
+def first_result(row):
+    """A to-do whose first notification is its result: prepared (or stuck) before it was ever delivered (deliver_one
+    sets _first: no earlier message). It reads as a result ("Ready: ..."), never as a reminder of something unseen."""
+    return bool(row.get('_first') and (row.get('status') == 'prepared' or row.get('preparation_status') == 'blocked'))
+
+
+def shown_as_reminder(row):
+    """A delivery says "Reminder:" only when an earlier notification for that to-do went out: its reminder flag also
+    lets a prepared to-do through deliver_one the first time (Store.prepare), and that one is no reminder."""
+    return bool(row.get('reminder') and not row.get('_first'))
+
+
 def push_notify(store, config, row, sender=None):
     """Phone notification for the installed dashboard app, next to the Telegram one
     . Best effort: never changes the Telegram delivery state."""
@@ -134,7 +146,7 @@ def push_notify(store, config, row, sender=None):
     work = any(a['id'] in ids and str(a.get('boundary') or '').startswith('work:') for a in config.get('accounts', []))
     with store.connect() as db:
         text = security_levels.notify_text(db, work)  # Careful: no card text on a lock screen
-    if row.get('_result_notice'):
+    if row.get('_result_notice') or first_result(row):
         ready = row['status'] == 'prepared'
         signin = not ready and (row.get('preparation_browser') or {}).get('signin_url')
         # A run the service stopped (a timeout, two failures) asks nothing: Stuck, as on the card
@@ -147,10 +159,11 @@ def push_notify(store, config, row, sender=None):
         payload['_line'] = (notify.app_line_text(lead + ': {}', row['title']) if lead else notify.clip(row['title'], notify.APP_LINE)) if text else i18n.t(lead or 'To-do')
         payload['_state'] = 'ready' if ready else 'needs'
     else:
-        payload = {'title': (i18n.t('Reminder: {}', row['title']) if row.get('reminder') else row['title']) if text else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'),
+        reminder = shown_as_reminder(row)
+        payload = {'title': (i18n.t('Reminder: {}', row['title']) if reminder else row['title']) if text else i18n.t('Reminder') if reminder else i18n.t('New to-do'),
                    'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
-        payload['_line'] = (notify.app_line_text('Reminder: {}' if row.get('reminder') else 'New to-do: {}', row['title']) if text
-                            else i18n.t('Reminder') if row.get('reminder') else i18n.t('New to-do'))
+        payload['_line'] = (notify.app_line_text('Reminder: {}' if reminder else 'New to-do: {}', row['title']) if text
+                            else i18n.t('Reminder') if reminder else i18n.t('New to-do'))
         if notify.kind_of(row) == 'result':  # a reminder for a prepared or stuck to-do: ready or needs-you, as a result says
             payload['_state'] = 'ready' if row.get('status') == 'prepared' else 'needs'
     payload['tag'] = row['id']  # a newer notification for the same card replaces the older one
