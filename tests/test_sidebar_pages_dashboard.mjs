@@ -102,7 +102,7 @@ try{
   const bars=page.locator('#quality .bars [role="listitem"]'),n=await bars.count();
   assert.match(going,/Worth it, week by week\s+Since .+\. Each bar is that week’s Worth it\./);assert.ok(n>=5&&n<8,'weeks since the first: '+n);
   assert.match(await bars.first().getAttribute('aria-label'),/^Week of .+: \d+% worth it, \d+ decided$/);
-  assert.match(await bars.nth(n-2).getAttribute('aria-label'),/^Week of .+: nothing decided$/);assert.equal((await bars.nth(n-2).innerText()).trim().split(/\s+/).length,1,'only its date');
+  assert.match(await bars.nth(n-2).getAttribute('aria-label'),/^Week of .+: nothing decided$/);assert.doesNotMatch((await bars.nth(n-2).innerText()).trim(),/%|\d+ decided/,'only its date');  // "9", or "Nov 2" when a month starts there
   assert.doesNotMatch(going,/Rules changed|◆/);
   // a first week that starts mid-week is labeled with the first day itself, as "Since" says
   assert.equal(await bars.first().locator('.w').innerText(),await page.evaluate(f=>new Date(f+'T12:00').toLocaleDateString(DL,{day:'numeric',month:'short'}),QUALITY.trend.first));
