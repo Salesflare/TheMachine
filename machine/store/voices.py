@@ -148,6 +148,21 @@ def tune_voice(channel, text, current):
     return channel, text
 
 
+def owner_voice(db, channel, text, ref):
+    """A voice block reworded by the owner (Here's what I've learned, first_learned.py): their own words from now on,
+    or the channel gone when nothing is left (text '')."""
+    if text:
+        db.execute("UPDATE voices SET text=?,source='owner',ref=?,updated_at=? WHERE channel=?", (text, ref, now(), channel))
+    else:
+        db.execute('DELETE FROM voices WHERE channel=?', (channel,))
+    db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'voice',?,?)", (now(), f'{channel} voice: {text}' if text else f'Removed {channel} voice', ref))
+
+
+def study_voice(db, channel, text, ref):
+    """A voice as the voice study writes it, unless the channel has one: for the sandbox, whose Machine never ran one."""
+    db.execute("INSERT OR IGNORE INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,'study',?,?)", (channel, text, ref, now()))
+
+
 def card_channels(db, suggestion_id):
     """The channels a card's draft goes out on: its ready drafts first, then the messages it is about."""
     row = db.execute('SELECT event_ids,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
@@ -449,6 +464,8 @@ class VoicesStore:
             db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'voice',?,?)",
                        (now(), f'How you write, read again from your own messages: {written} channel' + ('' if written == 1 else 's'), ref))
         return written
+
+    study_voice = staticmethod(study_voice)  # a function of db, at the top of this module
 
     def card_channels(self, suggestion_id, db):
         return card_channels(db, suggestion_id)

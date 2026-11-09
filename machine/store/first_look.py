@@ -169,6 +169,12 @@ def greeting_on(db, at):
     db.execute("INSERT OR REPLACE INTO milestones(name,at,detail) VALUES('greeting',?,'on')", (at,))
 
 
+def first_look_ended(db, at, why='cards'):
+    """The first look stopped digging at `at` (App.first_dig's milestone): for the sandbox, whose Machine never ran one,
+    so the list shows its ending and Here's what I've learned (the site demo too)."""
+    db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig_done',?,?)", (at, why))
+
+
 def setup_closed(db, step, closed=True):
     """The setup to-do's row (or card) closed with its ×, or back (closed=False; step 'all': every one), on every device
     (milestones 'setup:<step>'; machine/app/setup_card.py checks the step)."""
@@ -374,6 +380,8 @@ class FirstLookStore:
     still_needed_ask = staticmethod(still_needed_ask)  # a function of db, at the top of this module
 
     greeting_on = staticmethod(greeting_on)  # a function of db, at the top of this module
+
+    first_look_ended = staticmethod(first_look_ended)  # a function of db, at the top of this module
 
     def setup_closed(self, step, closed=True):
         with self.connect() as db:

@@ -184,6 +184,17 @@ def link_fact(db, fact_id, node_ids, by):
                    [(fact_id, n, by, now()) for n in dict.fromkeys(node_ids)])
 
 
+def owner_fact(db, text, decision_id, about=(), replaces=None):
+    """A fact in the owner's own words (Here's what I've learned, first_learned.py), tied to who it is about, in place
+    of an older one (replaces: its id). Returns the new fact's id."""
+    fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,'fact')", (text, decision_id, now())).lastrowid
+    if about:
+        link_fact(db, fact_id, about, 'owner')
+    if replaces:
+        db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), replaces))
+    return fact_id
+
+
 def replaced_facts(db, replaces):
     """The current facts and rules a condensed one replaces, oldest first."""
     if replaces in (None, '', []):

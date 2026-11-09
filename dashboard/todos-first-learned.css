@@ -1,3 +1,4 @@
+/*@lazy*/
 /* Here's what I've learned (todos-first-learned.js): one small card under the first to-dos, its parts side by side on a wide screen, tight rows with Not right. */
 .learned-card{margin:var(--sp-4) 0;padding:10px 14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);font-size:var(--fs-sm);line-height:1.35;text-align:left}
 body.chat-open .learned-card{display:none}

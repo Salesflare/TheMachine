@@ -254,10 +254,11 @@ def fill_machine(config, fixture_path=HERE / 'fixture.json', base=None):
 def load_first_look(db, base):
     """The first look ended an hour ago, with the voice study done (first_learned.py): so the list shows Here's what
     I've learned under the to-dos, from the made-up mail and Graph above, the way a new owner sees it the first day."""
-    db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig_done',?,'cards')", (stamp(60, base),))
+    import assistant
+    assistant.Store.first_look_ended(db, stamp(60, base))
     for channel, text in (('Email', 'Short and warm, gets to the point in the first line\nSigns off with "Best, Alex"\nWrites English, switches to Dutch with Dutch speakers'),
                           ('All', 'Short sentences, no filler\nFriendly, never formal')):
-        db.execute('INSERT OR IGNORE INTO voices(channel,text,source,ref,updated_at) VALUES(?,?,?,?,?)', (channel, text, 'study', 'study:sandbox', stamp(50, base)))
+        assistant.Store.study_voice(db, channel, text, 'study:sandbox')
 
 
 def load_history(db, base):

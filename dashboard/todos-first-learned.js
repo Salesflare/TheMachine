@@ -2,7 +2,8 @@
 // (in the ending when there are none), how the owner writes, the people they work with most right now with what they
 // work on together, and their usual hours. Work facts only, no filler: a part without enough signal isn't there. Each
 // row has Not right, which opens a one-line fix in its place (Save; Remove takes it off); every fix is kept with Undo
-// under Learning, Changes. The × closes it for good, on every device.
+// under Learning, Changes. The × closes it for good, on every device. A lazy part (dashboard_parts.LAZY): shell-render.js
+// learnedSlot loads it only while state.first_look_learned is there, and draws the list again once it's in (lazyRun).
 let lfOpen=null,lfText=null;  // the row being fixed: its key ('v<line>', 'p:<node id>', 'h'), and what is typed in it so far
 const LF_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>';
 const lfDay=(d,o)=>localeDate(new Date(2024,0,d),DL,{weekday:o});  // 1 Jan 2024 was a Monday: ISO weekday d

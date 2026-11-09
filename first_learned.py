@@ -265,11 +265,8 @@ def fix_voice(db, channel, line, text):
         raise ValueError('That makes the block too long. Edit it under How you write instead')
     run = _token('voice')
     before = json.dumps(dict(row))
-    if block:
-        db.execute("UPDATE voices SET text=?,source='owner',ref=?,updated_at=? WHERE channel=?", (block, run, now(), row['channel']))
-    else:
-        db.execute('DELETE FROM voices WHERE channel=?', (row['channel'],))
-    db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'voice',?,?)", (now(), f"{row['channel']} voice: {block}" if block else f"Removed {row['channel']} voice", run))
+    from machine.store import voices
+    voices.owner_voice(db, row['channel'], block, run)
     return learning_loop.record(db, run, 'voice', row['channel'], before, block, WHY)
 
 
@@ -288,10 +285,8 @@ def fix_person(db, node_id, topic):
     old = db.execute(f"SELECT f.id,f.text FROM facts f JOIN fact_about a ON a.fact_id=f.id WHERE f.removed_at IS NULL AND a.removed_at IS NULL "
                      f"AND f.decision_id LIKE 'learned:person:%' AND a.node_id IN ({marks}) ORDER BY f.created_at DESC LIMIT 1", ids).fetchone()
     text = f'{name}: {topic}'
-    fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,'fact')", (text, run, now())).lastrowid
-    db.execute("INSERT OR IGNORE INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'owner',?)", (fact_id, row['id'], now()))
-    if old:
-        db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), old['id']))
+    from machine.store import facts
+    fact_id = facts.owner_fact(db, text, run, [row['id']], old['id'] if old else None)
     db.execute("DELETE FROM learned_fixes WHERE key=?", ('person:' + row['id'],))
     return learning_loop.record(db, run, 'fact', fact_id, json.dumps({'id': old['id'], 'text': old['text']}) if old else None, text, WHY)
 
@@ -303,9 +298,8 @@ def fix_hours(db, text):
         raise ValueError('Say when you usually work, or tap Remove')
     run = _token('hours')
     old = owner_facts(db, 'hours:')
-    fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,'fact')", (text, run, now())).lastrowid
-    if old:
-        db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), old[0][0]))
+    from machine.store import facts
+    fact_id = facts.owner_fact(db, text, run, replaces=old[0][0] if old else None)
     db.execute("DELETE FROM learned_fixes WHERE key='hours'")
     return learning_loop.record(db, run, 'fact', fact_id, json.dumps({'id': old[0][0], 'text': old[0][1]}) if old else None, text, WHY)
 
