@@ -100,8 +100,7 @@ class ReadNow(Base):
             def get(self, method, params=None):
                 raise a.SourceError('slack_not_in_channel:' + method)
         self.read()
-        with self.assertRaises(a.SourceError):
-            a.sync_slack(self.store, {}, SLACK, Refusing({}))
+        a.sync_slack(self.store, {}, SLACK, Refusing({}))  # the other conversations are read as before
         self.assertEqual(self.read()['status'], 'cannot_read')
         self.assertFalse(slack_source.READ_NOW)
 

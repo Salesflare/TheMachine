@@ -102,12 +102,15 @@ class FirstImport(unittest.TestCase):
         source, calls = self.source({'DA': a.SourceError('slack_not_in_channel:conversations.history')})
         a.sync_slack(self.store, {}, self.account, source)
         a.sync_slack(self.store, {}, self.account, source)
-        with self.assertRaises(a.SourceError):
-            a.sync_slack(self.store, {}, self.account, source)
+        a.sync_slack(self.store, {}, self.account, source)  # one refused conversation is no failed sync
         state = self.store.checkpoint('slack')
-        self.assertEqual({c['id']: c for c in state['channels']}['DA']['error'], 'slack_not_in_channel')
+        refused = {c['id']: c for c in state['channels']}['DA']
+        self.assertEqual(refused['error'], 'slack_not_in_channel')
+        self.assertGreater(refused['due'], time.time() + 3000)  # and it rests, so the regular rounds don't start with it each time
         a.sync_slack(self.store, {}, self.account, source)
         self.assertEqual(calls[-1][1]['channel'], 'CB')
+        self.run_all(source)
+        self.assertEqual(sum(c[0] == 'conversations.history' and c[1]['channel'] == 'DA' for c in calls), 1)
 
     def test_regular_rounds_keep_their_state_and_only_change_order(self):
         old = f'{self.now - 40 * DAY:.6f}'

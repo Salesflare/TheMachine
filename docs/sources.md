@@ -88,6 +88,7 @@ Conversations you already belong to; it never joins channels or opens DMs. Per-c
 
 - The collector spends at most one such read every `slack_read_seconds` and leaves the rest.
 - It reads busy conversations within the hour and quiet ones once a day, and reads a direct message only when Slack says it has a new message. When several are due at once, the one most overdue for how busy it is goes first, so a day's batch of quiet conversations never holds up a busy channel.
+- A conversation Slack no longer lets you read (you left it, or were removed) never holds up the others. It is set aside, counted as unavailable on the Slack card, and tried again after an hour, then less often, up to once a day. Once Slack no longer lists it among your conversations and it was refused three times in a row, it leaves the list; what was read from it stays. A revoked sign-in or a rate limit is about the whole connection and still shows as a sync error.
 - Posting isn't held back by this: a send Slack refuses as rate limited waits and goes out a few minutes later.
 - A refused read (HTTP 429) waits at least Slack's `Retry-After`, never retries in a loop, and moves this Machine to another minute (below).
 - The read rate and page size per transport are `SLACK_LIMITS` in `machine/sources/slack.py`. When The Machine's Slack app is approved for the Slack Marketplace, its `broker` row is the one thing to change.

@@ -403,7 +403,7 @@ class HistoryApp:
         list (users.conversations: the channels, private channels, direct and group messages the owner is in, never one
         more), most recently active first, each back to the target; then the replies of the threads found on the way.
         Reads only in Slack's slow lane (SLACK_GAP_SECONDS): None when it isn't its turn, so the others go."""
-        from machine.sources.slack import slack_activity, slack_error, slack_limits, slack_page_names
+        from machine.sources.slack import slack_activity, slack_error, slack_limits, slack_page_names, slack_refused
         event = self.HISTORY_SOURCES['slack'][1]
         live = self.store.checkpoint(account['id']) or {}
         known = {c['id']: c for c in live.get('channels') or [] if isinstance(c, dict) and c.get('id') and not c.get('error')}
@@ -437,9 +437,9 @@ class HistoryApp:
         except SourceError as error:
             if slack_error(error) == 'slack_invalid_cursor':
                 state['cursor'] = None
-            elif slack_error(error) not in ('slack_thread_not_found', 'slack_channel_not_found', 'slack_not_in_channel'):
+            elif slack_error(error) != 'slack_thread_not_found' and not slack_refused(error):
                 raise
-            else:  # gone, or no longer the owner's: on to the next one
+            else:  # gone, no longer the owner's, or refused for this one conversation: on to the next one
                 state.update(cursor=None, **({'threads': state['threads'][1:]} if thread else {'chats': state['chats'][1:]}))
             return 0, None, False
         messages = [m for m in page.get('messages') or [] if isinstance(m, dict)]

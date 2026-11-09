@@ -9,6 +9,8 @@ from seams import patch_everywhere  # noqa: E402
 
 spec=importlib.util.spec_from_file_location('assistant_fairness',Path(__file__).parent.parent.joinpath('assistant.py'))
 a=importlib.util.module_from_spec(spec);spec.loader.exec_module(a)
+from machine.app import sync as slack_sync  # noqa: E402
+from machine.sources import slack as slack_source  # noqa: E402
 
 
 class ReopenAndSlack(unittest.TestCase):
@@ -215,6 +217,230 @@ class ReopenAndSlack(unittest.TestCase):
         self.assertEqual(calls[-1][1]['oldest'],'1000.000000')
         self.assertEqual(calls[-1][1]['latest'],'3000.000000')
         self.assertNotIn('deferred_thread',self.store.checkpoint('slack')['channels'][0])
+
+
+class RefusedConversation(unittest.TestCase):
+    """A conversation Slack won't let the owner read (they left it, or were removed) says so and rests; the others are
+    read all the same. It used to stay the most overdue one, so every sync read it again and nothing else (2026-11-09)."""
+
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.store=a.Store(Path(self.temp.name)/'events.sqlite')
+        self.account={'id':'slack','user_id':'U1','slack_host':'example.slack.com'}
+        self.now=now=a.time.time()
+        self.channels=[{'id':'C1','name':'left','type':'channel','threads':[],'last_scan':f'{now-7200:.6f}','next_full':now+86400,
+                        'last_activity':now-3600,'due':now-60},
+                       {'id':'C2','name':'busy','type':'channel','threads':[],'last_scan':f'{now-7200:.6f}','next_full':now+86400,
+                        'last_activity':now-3600,'due':now-30}]
+        names=patch_everywhere(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
+        self.calls=[]
+
+    def state(self,**changes):
+        self.store.commit_page('slack',{'mode':'incremental','phase':'scan','after':'1000.000000','channels':self.channels,'index':0,
+                                        'next_discovery':self.now+86400,'titles_named':True,**changes},[])
+
+    def source(self,answer):
+        """answer(method, params): a SourceError to raise, a page to return, or None for a page with one new message."""
+        calls,now=self.calls,self.now
+        class Source(a.Slack):
+            def __init__(self):pass
+            def profile(self):pass
+            def get(self,method,params):
+                calls.append((method,params['channel']) if 'channel' in params else (method,))
+                found=answer(method,params)
+                if isinstance(found,Exception):raise found
+                return found if found is not None else {'messages':[{'ts':f'{now-10:.6f}','text':'New','user':'U3'}]}
+        return Source()
+
+    def refusing(self,label,channel='C1'):
+        return self.source(lambda method,params:a.SourceError(label+':'+method) if params.get('channel')==channel else None)
+
+    def channel(self,channel_id='C1'):
+        return {c['id']:c for c in self.store.checkpoint('slack')['channels']}.get(channel_id)
+
+    def failure(self):
+        with self.store.connect() as db:
+            return db.execute("SELECT error FROM checkpoints WHERE account_id='slack'").fetchone()['error']
+
+    def test_a_conversation_the_owner_left_is_set_aside_and_the_others_are_read(self):
+        # The owner left C1; C2 is busy. Eight syncs in a row all read C1 and never C2.
+        self.state();source=self.refusing('slack_not_in_channel')
+        for _ in range(8):
+            a.sync_slack(self.store,{},self.account,source)  # one refused conversation is no failed sync
+        self.assertEqual(self.calls,[('conversations.history','C1'),('conversations.history','C2')])
+        self.assertEqual([e['body'] for e in self.store.events(['slack'])],['New'])
+        left=self.channel()
+        self.assertEqual((left['error'],left['refused']),('slack_not_in_channel',1))
+        self.assertGreater(left['due'],self.now+3000)  # it rests: not read again every sync
+        self.assertEqual(left['last_scan'],self.channels[0]['last_scan'])  # never marked read
+        cp=self.store.checkpoint('slack')
+        self.assertEqual((cp['index'],'scan' in cp),(0,False))
+        self.assertIsNone(self.failure())  # the Slack card counts it as unavailable; the connection itself is fine
+        health=self.store.snapshot([{**self.account,'service':'slack','boundary':'work:Example'}])['connectors'][0]
+        self.assertEqual(health['conversation_errors'],1)
+
+    def test_any_answer_about_one_conversation_moves_on(self):
+        # A label Slack.read doesn't know comes as slack_invalid_response; a missing scope is per kind of conversation.
+        # Both kept the scan and the index where they were, so the same page was read forever.
+        for label in ('slack_invalid_response','slack_missing_scope','slack_channel_not_found','slack_thread_not_found'):
+            with self.subTest(label):
+                self.calls.clear();self.state();source=self.refusing(label)
+                for _ in range(8):
+                    a.sync_slack(self.store,{},self.account,source)
+                self.assertEqual(self.calls,[('conversations.history','C1'),('conversations.history','C2')])
+                self.assertEqual(self.channel()['error'],label)
+                self.assertNotIn('scan',self.store.checkpoint('slack'))
+        # a page that says there is more without a cursor: the same, nothing of it is half kept
+        self.calls.clear();self.state()
+        source=self.source(lambda method,params:{'messages':[{'ts':f'{self.now-20:.6f}','text':'Half'}],'has_more':True} if params['channel']=='C1' else None)
+        for _ in range(8):
+            a.sync_slack(self.store,{},self.account,source)
+        self.assertEqual(self.calls,[('conversations.history','C1'),('conversations.history','C2')])
+        self.assertEqual(self.channel()['error'],'slack_missing_cursor')
+
+    def test_a_rate_limit_still_fails_the_sync_and_keeps_its_wait(self):
+        for error in (a.SourceError('slack:conversations.history',429,95),a.SourceError('slack_ratelimited:conversations.history',retry_after=60)):
+            with self.subTest(str(error)):
+                self.calls.clear();self.state();source=self.source(lambda method,params:error)
+                for _ in range(8):
+                    with self.assertRaises(a.SourceError) as raised:a.sync_slack(self.store,{},self.account,source)
+                    self.assertEqual(raised.exception.retry_after,error.retry_after)
+                self.assertEqual(self.calls,[('conversations.history','C1')]*8)  # the same read, when Slack allows it again
+                cp=self.store.checkpoint('slack')
+                self.assertEqual((cp['index'],cp['scan']['phase']),(0,'history'))
+                self.assertNotIn('failed',cp['scan'])
+                self.assertNotIn('error',self.channel())
+                self.assertEqual(self.channel()['due'],self.channels[0]['due'])
+
+    def test_the_sign_in_or_the_workspace_still_fails_the_sync(self):
+        for label in ('slack_token_revoked','slack_invalid_auth','slack_token_expired','slack_account_inactive','slack_ekm_access_denied'):
+            with self.subTest(label):
+                self.calls.clear();self.state();source=self.refusing(label)
+                for _ in range(3):
+                    with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},self.account,source)
+                self.assertEqual(self.calls,[('conversations.history','C1')]*3)
+                self.assertNotIn('error',self.channel())
+
+    def test_slack_labels_keep_their_name(self):
+        # Slack.read names what is about the account or Slack itself, so the sync can tell it from one conversation's answer.
+        client=a.Slack({},{**self.account,'credential':'slack','credential_variable':'KEY','connection_id':'c1'})
+        def answer(label):
+            reply=unittest.mock.MagicMock();reply.__enter__.return_value=reply
+            reply.headers={'Maton-Connection':'c1'};reply.read.return_value=json.dumps({'ok':False,'error':label}).encode()
+            with patch.object(client,'pace'),patch_everywhere(a,'credential',return_value='KEY=fake'),patch.object(a.urllib.request,'urlopen',return_value=reply):
+                with self.assertRaises(a.SourceError) as raised:client.get('conversations.history',{'channel':'C1'})
+            return raised.exception
+        self.assertEqual(str(answer('account_inactive')),'slack_account_inactive:conversations.history')
+        self.assertFalse(slack_source.slack_refused(answer('account_inactive')))
+        self.assertFalse(slack_source.slack_refused(answer('internal_error')))
+        self.assertEqual(str(answer('access_denied')),'slack_invalid_response:conversations.history')
+        self.assertTrue(slack_source.slack_refused(answer('access_denied')))
+        self.assertTrue(slack_source.slack_refused(answer('not_in_channel')))
+        self.assertEqual(answer('ratelimited').retry_after,60)
+
+    def test_a_conversation_that_comes_back_is_read_again(self):
+        self.state();a.sync_slack(self.store,{},self.account,self.refusing('slack_not_in_channel'))
+        first=self.channel()['due']
+        cp=self.store.checkpoint('slack');cp['channels'][0]['due']=0;self.store.commit_page('slack',cp,[],record_sync=False)
+        a.sync_slack(self.store,{},self.account,self.refusing('slack_not_in_channel'))
+        again=self.channel()
+        self.assertEqual(again['refused'],2)
+        self.assertGreater(again['due']-a.time.time(),(first-self.now)*1.5)  # refused again: a longer rest
+        cp=self.store.checkpoint('slack');cp['channels'][0]['due']=0;self.store.commit_page('slack',cp,[],record_sync=False)
+        self.calls.clear()
+        a.sync_slack(self.store,{},self.account,self.source(lambda method,params:None))  # the owner was added again
+        self.assertEqual(self.calls,[('conversations.history','C1')])
+        back=self.channel()
+        self.assertNotIn('error',back);self.assertNotIn('refused',back)
+        self.assertGreater(float(back['last_scan']),self.now-5)
+        self.assertLess(back['due'],a.time.time()+3700)  # and at its usual pace
+
+    def test_when_slack_refuses_every_conversation_the_connection_says_so(self):
+        self.state();source=self.source(lambda method,params:a.SourceError('slack_missing_scope:'+method))
+        a.sync_slack(self.store,{},self.account,source)  # C1: C2 may still be readable
+        with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},self.account,source)
+        self.assertEqual({c['id'] for c in self.store.checkpoint('slack')['channels'] if c.get('error')},{'C1','C2'})
+        self.assertFalse(a.sync_slack(self.store,{},self.account,source)['more'])  # both rest
+
+    def test_a_thread_that_is_gone_leaves_the_list_and_its_conversation_reads_on(self):
+        old,kept=f'{self.now-9000:.6f}',f'{self.now-8000:.6f}'
+        self.channels[0]['threads']=[old,kept]
+        self.state()
+        source=self.source(lambda method,params:a.SourceError('slack_thread_not_found:'+method) if params.get('ts')==old else {'messages':[]})
+        while a.sync_slack(self.store,{'slack_thread_retention_days':10**6},self.account,source)['more']:pass
+        one=self.channel()
+        self.assertEqual(one['threads'],[kept])
+        self.assertNotIn('error',one)
+        self.assertGreater(float(one['last_scan']),self.now-5)
+        self.assertIn(('conversations.history','C2'),self.calls)
+        fair={**self.account,'fair_incremental':True}  # one known thread a turn: the same
+        self.channels[0]['threads']=[old,kept];self.calls.clear();self.state()
+        while a.sync_slack(self.store,{'slack_thread_retention_days':10**6},fair,source)['more']:pass
+        self.assertEqual(self.channel()['threads'],[kept])
+        self.assertNotIn('error',self.channel())
+
+    def test_a_read_that_keeps_failing_gives_the_others_their_turn(self):
+        # Slack's 500 or a timeout at one conversation: the same page again, but not forever while the others wait.
+        self.state()
+        source=self.source(lambda method,params:a.SourceError('slack:'+method,500) if params['channel']=='C1' else None)
+        for _ in range(slack_sync.SLACK_STUCK_AFTER):
+            with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},self.account,source)
+        self.assertEqual(self.calls,[('conversations.history','C1')]*slack_sync.SLACK_STUCK_AFTER)
+        stuck=self.channel()
+        self.assertNotIn('error',stuck)  # not refused: it comes back after its usual rest
+        self.assertGreater(stuck['due'],self.now+3000)
+        a.sync_slack(self.store,{},self.account,source)
+        self.assertEqual(self.calls[-1],('conversations.history','C2'))
+        # a page that works in between starts the count again
+        self.calls.clear();self.state()
+        answers=[a.SourceError('slack:conversations.history',500)]*(slack_sync.SLACK_STUCK_AFTER-1)+[{'messages':[],'response_metadata':{'next_cursor':'more'}}]+[a.SourceError('slack:conversations.history',500)]
+        source=self.source(lambda method,params:answers.pop(0))
+        for _ in range(len(answers)):
+            try:a.sync_slack(self.store,{},self.account,source)
+            except a.SourceError:pass
+        self.assertEqual(self.store.checkpoint('slack')['scan']['failed'],1)
+
+    def test_triage_and_the_dm_check_take_an_unknown_answer_for_one_conversation(self):
+        # conversations.info with a label Slack.read doesn't know: the first import's look ahead stayed on that conversation.
+        self.channels=[{'id':'C1','name':'odd','type':'channel','threads':[]},{'id':'C2','name':'busy','type':'channel','threads':[]}]
+        self.state(mode='bootstrap',phase='triage',triage=0)
+        self.store.commit_page('slack',{k:v for k,v in self.store.checkpoint('slack').items() if k!='index'},[])
+        source=self.source(lambda method,params:a.SourceError('slack_invalid_response:'+method) if params['channel']=='C1'
+                           else {'channel':{'last_read':f'{self.now-60:.6f}'}} if method=='conversations.info' else None)
+        a.sync_slack(self.store,{},self.account,source)
+        cp=self.store.checkpoint('slack')
+        self.assertEqual((cp['phase'],cp.get('step')),('scan','recent'))
+        for _ in range(12):
+            if not a.sync_slack(self.store,{},self.account,source)['more']:break
+        cp=self.store.checkpoint('slack')
+        self.assertEqual(cp['mode'],'incremental')
+        odd=self.channel()
+        self.assertEqual(odd['error'],'slack_invalid_response')
+        self.assertGreater(odd['due'],self.now+3000)  # after the first import too: it has a rest, so it isn't first every sync
+        self.assertEqual(sum(c==('conversations.history','C1') for c in self.calls),1)
+        self.assertIn(('conversations.history','C2'),self.calls)
+
+    def test_discovery_drops_one_that_stays_refused_and_is_no_longer_listed(self):
+        def discover(listed,pages=1,**changes):
+            self.channels=[{'id':'C1','name':'left','type':'channel','threads':[],'error':'slack_not_in_channel','refused':slack_source.SLACK_GONE_AFTER,'due':self.now+9000},
+                           {'id':'C2','name':'busy','type':'channel','threads':[],'last_scan':f'{self.now-60:.6f}','due':self.now+9000},
+                           {'id':'C3','name':'once','type':'channel','threads':[],'error':'slack_not_in_channel','refused':1,'due':self.now+9000},
+                           {'id':'C4','name':'archived','type':'channel','threads':[],'last_scan':f'{self.now-60:.6f}','due':self.now+9000}]
+            self.state(phase='discover',**changes)
+            answers=[{'channels':[{'id':i,'name':i} for i in listed],**({'response_metadata':{'next_cursor':'next'}} if n+1<pages else {})} for n in range(pages)]
+            source=self.source(lambda method,params:answers.pop(0))
+            for _ in range(pages):
+                a.sync_slack(self.store,{},self.account,source)
+            cp=self.store.checkpoint('slack')
+            self.assertNotIn('listed',cp)
+            return sorted(c['id'] for c in cp['channels'])
+        # Refused three times in a row and not in the owner's list any more: gone. One refusal, or no error: kept.
+        self.assertEqual(discover(['C2']),['C2','C3','C4'])
+        self.assertEqual(discover(['C2'],pages=2),['C2','C3','C4'])
+        self.assertEqual(discover(['C1','C2']),['C1','C2','C3','C4'])  # still listed: Slack may let it be read again
+        self.assertEqual(discover([]),['C1','C2','C3','C4'])  # an empty list drops nothing
+        # a discovery that was under way when this version arrived saw only its last pages: it drops nothing
+        self.assertEqual(discover(['C2'],page_token='half-way'),['C1','C2','C3','C4'])
 
 
 if __name__=='__main__':unittest.main()

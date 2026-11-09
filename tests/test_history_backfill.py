@@ -543,6 +543,24 @@ class SlackHistory(Base):
         connector = next(c for c in self.app.store.snapshot([SLACK])['connectors'] if c['id'] == 'slack')
         self.assertEqual(connector['backfill'], {'back_to': '2026-03', 'done': True, 'kept': 4})  # the card's History line
 
+    def test_a_conversation_slack_refuses_never_holds_up_the_others(self):
+        # An answer about one conversation that isn't "gone" (a label Slack.read doesn't know, a missing scope for its
+        # kind) kept that conversation first in line, so this connection's history never went on.
+        self.first_look_over()
+        read = self.client.get
+        def get(method, params):
+            if params['channel'] == 'D0SAM00001':
+                self.client.reads.append((method, dict(params)))
+                raise a.SourceError('slack_invalid_response:' + method)
+            return read(method, params)
+        self.client.get = get
+        for _ in range(8):
+            if not self.app.history_step():
+                break
+        self.assertEqual(self.app.history_why, 'done')
+        self.assertEqual([(m, p['channel']) for m, p in self.client.reads],
+                         [('conversations.history', 'D0SAM00001'), ('conversations.history', 'C0SALES001'), ('conversations.replies', 'C0SALES001')])
+
     def test_its_slow_lane_never_takes_a_minute_the_collector_wants(self):
         self.first_look_over()
         self.assertTrue(self.app.history_step())  # the list: no Slack call
