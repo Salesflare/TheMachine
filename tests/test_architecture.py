@@ -418,7 +418,7 @@ OVER_BUDGET = {}
 # first load 1,501,675).
 # 1,502,000 -> 1,504,000 (2026-11-09): Edit names a routine too, in its title's place (about 1.3 KB; first load 1,502,991).
 FIRST_LOAD_CEILING = 1_504_000
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 124_000}
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'settings': 124_000}
 # +300 (2026-11-09): a suggested routine also says what it saw for forwards and replies ("Forwarded 6 mails to Sam in 3
 # weeks"), about 0.2 KB on Routines (first load 1,502,113). On its own line, so it adds to a raise above.
 FIRST_LOAD_CEILING += 300

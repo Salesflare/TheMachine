@@ -45,6 +45,7 @@ LAZY = {
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-record.js', 'graph-tabs.js',
               'graph-crm.js'),
     'help': ('help-panel.js',),
+    'learned': ('todos-first-learned.css', 'todos-first-learned.js'),
     'settings': ('settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-export.js', 'settings-upkeep.js'),
     'learning': ('learning-missed.js',),
 }

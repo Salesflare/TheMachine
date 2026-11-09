@@ -82,7 +82,7 @@ LEFT_OUT = {
         'faults', 'feedback_prompts', 'first_look_ahead', 'gateway_starts', 'follow_up_advice', 'follow_up_basis', 'follow_up_cards', 'follow_up_changes',
         'follow_up_ends', 'follow_up_holds', 'follow_up_pace', 'follow_up_pauses', 'follow_up_sends', 'follow_up_threads',
         'forgotten_people', 'forgotten_salt', 'graph_edits', 'graph_history', 'graph_history_events', 'graph_imports', 'graph_offers', 'graph_org_asks', 'graph_role_asks',
-        'graph_state', 'graph_unnamed', 'handoff_mails', 'help_topics', 'history_backfill', 'learning_changes', 'learning_signals',
+        'graph_state', 'graph_unnamed', 'handoff_mails', 'help_topics', 'history_backfill', 'learned_fixes', 'learning_changes', 'learning_signals',
         'learning_state', 'meet_links', 'meet_log', 'meet_pins', 'meet_seen', 'meet_sessions', 'meeting_moves', 'meeting_writes',
         'merge_effects', 'milestones', 'missed_audit_calibration', 'missed_audit_items', 'missed_audits', 'moved_in', 'note_kinds', 'notify_app_lines',
         'notify_digests', 'notify_queue', 'pacing_starts', 'person_summary_runs', 'preparation_calls', 'preparation_runs', 'preparations',

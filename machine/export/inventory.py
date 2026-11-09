@@ -66,7 +66,7 @@ _BY_PART = {
     'promises': _names('promises promise_log'),
     'memories': _names('''facts fact_about person_summaries person_summary_runs gbrain_meta gbrain_notes gbrain_pages
         note_kinds'''),
-    'preferences': _names('''learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
+    'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
         pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
         whatsapp_photo_prefs team_learning_prefs'''),
     'graph': _names('''graph_nodes graph_identifiers graph_edits graph_events graph_history graph_history_events graph_imports graph_links graph_merges graph_names graph_offers
