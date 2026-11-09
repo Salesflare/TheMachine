@@ -80,6 +80,7 @@ from machine.store.review import ReviewStore
 from machine.store.views import ViewsStore
 from machine.store.voices import VoicesStore
 from meet_app import MeetApp
+from mail_cleanup_app import MailCleanupApp
 from missed_work_app import MissedWorkApp
 import next_actions
 from recurring_app import RecurringApp
@@ -100,7 +101,7 @@ class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, Fi
 
 # App's domain mixins (<domain>_app.py): each holds a domain's App methods and the actions it handles (its ACTIONS).
 APP_MIXINS = (SupportApp, CalendarApp, SkillsApp, AgentsApp, GBrainApp, SharedGraphApp, RecurringApp, CorrectionsApp, AiApp, MeetApp, MissedWorkApp,
-              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp)
+              WhatsAppImagesApp, CheckNowApp, SetupCardApp, HistoryApp, RoutinesApp, MailCleanupApp)
 # App's mixins in machine/app/: methods moved out of App as is (docs/code-map.md)
 APP_MIXINS += (FollowUpsApp, GraphActionsApp, KnowledgeExportApp, MeetingWritesApp, ModelPacingApp, PromiseChecksApp, SignaturesApp, SummariesApp,
                VoiceApp)

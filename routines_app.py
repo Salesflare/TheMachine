@@ -41,6 +41,7 @@ import routine_changes
 import routine_imports
 import routine_recipe
 import routine_patterns
+import routine_templates
 import routines
 import skills
 import todo_areas
@@ -139,6 +140,8 @@ class RoutinesApp:
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = routines.get(db, args.get('id'))
+            if routine_templates.key_of(row['origin']):
+                raise ValueError('A template’s words stay as they are')
             routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp(), args.get('steps') if 'steps' in args else False,
                                          args.get('name') if 'name' in args else None)
             routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
@@ -168,7 +171,10 @@ class RoutinesApp:
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if args.get('id'):
-                rid = routines.get(db, args.get('id'), routines.LIVE + ('trying',))['id']
+                row = routines.get(db, args.get('id'), routines.LIVE + ('trying',))
+                if routine_templates.key_of(row['origin']):
+                    raise ValueError('A template’s words stay as they are')
+                rid = row['id']
                 routines.try_words(db, rid, args.get('words'), stamp, args.get('steps') if 'steps' in args else False)
             else:
                 got = routines.read(args.get('words'), now.date())
@@ -241,11 +247,15 @@ class RoutinesApp:
     def routines_view(self, made=None):
         now = dt.datetime.now(dt.timezone.utc)
         with self.store.connect() as db:
-            out = {'routines': routines.view(db), 'suggested': routines.view(db, ('suggested',)), 'trying': routines.view(db, ('trying',))}
+            out = {'routines': routines.view(db), 'suggested': routines.view(db, ('suggested',)), 'trying': routines.view(db, ('trying',)),
+                   'templates': routine_templates.view(db, bool(self.cleanup_mark_accounts()))}
             for routine in out['routines']:  # a week of good runs: turn the old OpenClaw job off? (only while it is on)
                 row = routines.get(db, routine['id'])
                 routine['old_job'] = routines.old_job_due(db, row, now) and routine_imports.still_on(self.config, row['origin'][9:])
         for routine in out['routines'] + out['suggested'] + out['trying']:
+            routine['template'] = routine_templates.key_of(routine['origin'])  # its words are the template's: no Edit
+            if routine['template']:
+                routine['instructions'] = routine_templates.what(routine['template'])
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why
@@ -271,6 +281,8 @@ class RoutinesApp:
             db.execute('BEGIN IMMEDIATE')
             mine = db.execute('SELECT t.*,r.trial,r.period,r.steps AS run_steps FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE r.id=?',
                               (m.group(1),)).fetchone()
+            if mine and mine['trial'] is None and routine_templates.key_of(mine['origin']) == 'spam':
+                return self.routine_spam_result(mine, m.group(1), args, stamp, db)  # mail_cleanup_app.py
             if not mine or mine['state'] != 'sorting':
                 kept = self.routine_recipe_kept(db, mine, args.get('recipe'), stamp) if args.get('recipe') is not None else None
                 draft = self.routine_draft(args.get('draft'), self.config.get('accounts', []))
@@ -601,20 +613,31 @@ class RoutinesApp:
                 with self.store.connect() as db:
                     routines.finish(db, run['id'], 'failed', stamp, error='not_started')
                 return
+            with self.store.connect() as db:
+                origin = db.execute('SELECT origin FROM routines WHERE id=?', (run['routine_id'],)).fetchone()[0]
+            template = routine_templates.key_of(origin)
+            if template:  # a template's own run (mail_cleanup_app.py): plain code, or a turn only when there is mail to read
+                message = self.routine_template_run(run, template)
+                if message is True:
+                    return
             now_run = run['period'].startswith(('now:', 'test:'))  # the owner pressed it: only the usage limit holds it
             if self.background_pause(owner=now_run, job='routine') or not (now_run or self.background_spaced()):
                 return
-            if routines.steps_of(run).get('get') and run['data'] is None and run['routine_state'] != 'sorting':  # never before a tap
+            if template:
+                pass  # no script steps and no recipe: the template's message
+            elif routines.steps_of(run).get('get') and run['data'] is None and run['routine_state'] != 'sorting':  # never before a tap
                 self.routine_spawn(self.routine_fetch, run['id'])  # Get data first, then this run's turn at a next step
                 return
-            if self.routine_recipe_due(run):
+            elif self.routine_recipe_due(run):
                 self.routine_spawn(self.routine_recipe_fetch, run['id'])  # the recipe reads first, then this run's turn
                 return
             with self.store.connect() as db:
                 last = routines.last_result(db, run['routine_id'])
                 run['since'] = routines.last_run(db, run['routine_id'])
                 row = db.execute('SELECT state,origin FROM routines WHERE id=?', (run['routine_id'],)).fetchone()
-            if row['state'] == 'sorting' and str(row['origin'] or '').startswith('pattern:'):
+            if template:
+                pass
+            elif row['state'] == 'sorting' and str(row['origin'] or '').startswith('pattern:'):
                 found = self.routine_pattern(row['origin'])
                 if not found:  # it no longer holds: nothing to sort
                     with self.store.connect() as db:

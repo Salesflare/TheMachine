@@ -401,11 +401,13 @@ ROUTINE_ACTIONS = {
     'routine_accept',
     'routine_change_keep',
     'routine_change_save',
+    'routine_cleanup',
     'routine_edit',
     'routine_new',
     'routine_old_job',
     'routine_run_now',
     'routine_state',
+    'routine_template',
     'routine_try',
     'routine_when',
 }

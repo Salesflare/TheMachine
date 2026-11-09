@@ -57,7 +57,7 @@ _BY_PART = {
         meet_pins meet_seen meet_sessions meet_prefs meeting_moves talk_lines moved_in'''),
     'todos': _names('''suggestions suggestion_keys card_moves card_uses analyses review_runs review_save_failures first_look_ahead feedback_prompts
         recaps recap_items thread_snoozes slipped milestones chat_stops preparations preparation_runs preparation_calls
-        recurring_cards recurring_offers recurring_series routines routine_runs routine_changes task_pages follow_up_advice follow_up_basis follow_up_cards
+        recurring_cards recurring_offers recurring_series routines routine_runs routine_changes mail_cleanup_items mail_cleanup_senders task_pages follow_up_advice follow_up_basis follow_up_cards
         follow_up_changes follow_up_ends follow_up_holds follow_up_pace follow_up_pauses follow_up_rules follow_up_threads
         missed_audits missed_audit_items missed_audit_calibration project_success calendar_clashes gateway_starts'''),
     'drafts': _names('''draft_edits draft_saves draft_seen deliveries action_jobs calendar_writes meeting_writes handoff_mails
