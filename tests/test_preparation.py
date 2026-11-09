@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -399,6 +400,31 @@ class Preparation(unittest.TestCase):
         calls=[]
         self.app.preparation_step(lambda req:(calls.append(req) or {'status':'admitted'}))
         self.assertEqual(calls[0]['job_id'],first)
+
+    def test_a_retried_start_resends_the_same_message_under_its_key(self):
+        # 2026-11-09 (OpenClaw 2026.11.2): after a Gateway restart a to-do sat 44 minutes in starting. Each retry built its
+        # message again (new agent work lines), and the Gateway refuses its run id with other content for good.
+        self.accept();first=self.job()['job_id']
+        sent=[];receipts=[{'status':'unavailable'},{'run_id':first,'status':'lost','error':'runtime_lost','error_phase':'runtime'},{'status':'admitted'}]
+        def node(command,input=None,**kw):
+            sent.append(json.loads(input))
+            return type('R',(),{'returncode':0,'stdout':json.dumps(receipts.pop(0))})()
+        lines=iter(['\nAgent work: one.','\nAgent work: two.','\nAgent work: three.'])
+        with patch.object(a.subprocess,'run',side_effect=node),patch.object(type(self.app),'agent_work',lambda app,sid:next(lines)):
+            self.app.preparation_step(self.app.preparation_gateway)
+            with self.store.connect() as db:db.execute('UPDATE preparations SET retry_at=NULL')
+            self.app.preparation_step(self.app.preparation_gateway)
+            self.assertEqual((sent[1]['job_id'],sent[1]['message']),(first,sent[0]['message']))  # exactly the first start
+            self.assertIn('Agent work: one.',sent[1]['message'])
+            # The Gateway still refused it (the runner's backstop: lost): a fresh key with a fresh message
+            job=self.job();self.assertNotEqual(job['job_id'],first);self.assertEqual(job['error'],'ai_run_interrupted')
+            with self.store.connect() as db:
+                db.execute('UPDATE preparations SET retry_at=NULL')
+                self.assertIsNone(db.execute('SELECT 1 FROM gateway_starts WHERE job_id=?',(first,)).fetchone())
+            self.app.preparation_step(self.app.preparation_gateway)
+        self.assertEqual(sent[2]['job_id'],job['job_id']);self.assertIn('Agent work: three.',sent[2]['message'])
+        self.assertEqual(self.job()['status'],'running')
+        with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM gateway_starts').fetchone()[0],0)  # admitted: not kept
 
     def test_a_start_while_the_gateway_is_down_waits_for_it_and_carries_on_by_itself(self):
         # 2026-11-02: Ask for changes right after a reboot, Gateway down. The to-do showed a live "Preparing…" timer

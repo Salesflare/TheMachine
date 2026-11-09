@@ -113,6 +113,16 @@ r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[refusa
 assert.equal(r.result.status,'lost');
 r=await run({kind:'review',job_id:id,action:'start',message:'Review'},[refusal,{status:'pending'},{ok:true,status:'aborted',abortedRunId:id},{status:'timeout'}]);
 assert.equal(r.result.status,'unavailable');
+// The Gateway accepted this key with other content (OpenClaw 2026.11.2, after a restart): refused for good, so once the
+// exact run is proven gone it is lost and starts again under a fresh key, instead of retrying until the deadline.
+for(const text of ['Pending input idempotency key conflicts with the accepted input','Input completion idempotency key conflicts with the accepted input']){
+  const conflict=Object.assign(new Error(text),{name:'GatewayClientRequestError',gatewayCode:'UNAVAILABLE'});
+  r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[conflict,{status:'pending'},{ok:true,status:'no-active-run',abortedRunId:null}]);
+  assert.deepEqual(r.result,{run_id:id,status:'lost',error:'runtime_lost',error_phase:'runtime'});
+  assert.deepEqual(r.calls[2].args,{key:'agent:main:assistant-review-preparation-'+id,agentId:'main',runId:id,clearQueued:true});
+  r=await run({kind:'preparation',job_id:id,action:'start',message:'Work'},[conflict,{status:'pending'},new Error('offline')]);
+  assert.equal(r.result.status,'unavailable');  // not proven gone: keeps the key, never a second run beside it
+}
 // Try again on a stuck preparation stops only its exact isolated session and run.
 r=await run({kind:'preparation',job_id:id,action:'stop'},[{ok:true,status:'no-active-run',abortedRunId:null}]);
 assert.equal(r.result.status,'lost');assert.equal(r.calls[0].args.key,'agent:main:assistant-review-preparation-'+id);assert.equal(r.calls[0].args.runId,id);

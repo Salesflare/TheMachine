@@ -661,13 +661,24 @@ class PreparationApp:
             return view
 
     def preparation_gateway(self, request):
-        if request.get('action')=='start' and (request.get('kind') in ('review','profile') or request.get('background')):
-            swap=background_model(self.config)  # never the costliest model for background work
-            if swap:request={**request,'provider':swap[0],'model':swap[1]}
+        """One call to preparation-run.mjs. A start sends exactly what the first start under its run id sent
+        (preparation_state.same_start), and the caller's request then shows what went (its fast, its _ keys)."""
+        sent=request
+        if request.get('action')=='start':
+            if request.get('kind') in ('review','profile') or request.get('background'):
+                swap=background_model(self.config)  # never the costliest model for background work
+                if swap:sent={**request,'provider':swap[0],'model':swap[1]}
+            with self.store.connect() as db:sent=preparation_state.same_start(db,sent,now())
+            if sent is not request:
+                for key in [k for k in request if k not in sent]:del request[key]
+                request.update(sent)
         try:
-            result=subprocess.run([node_bin(self.config),str(ROOT/'preparation-run.mjs')],env=node_env(self.config),input=encoded(request),capture_output=True,text=True,timeout=30)
+            result=subprocess.run([node_bin(self.config),str(ROOT/'preparation-run.mjs')],env=node_env(self.config),
+                                  input=encoded({k:v for k,v in sent.items() if not k.startswith('_')}),capture_output=True,text=True,timeout=30)
             receipt=json.loads(result.stdout) if result.returncode==0 else {'status':'unavailable'}
         except (ValueError,subprocess.TimeoutExpired):return {'status':'unavailable'}
+        if receipt.get('status')=='admitted' or receipt.get('status') in preparation_state.TERMINAL:
+            with self.store.connect() as db:preparation_state.start_settled(db,request['job_id'])
         self.note_usage_limit(receipt)
         return receipt
 

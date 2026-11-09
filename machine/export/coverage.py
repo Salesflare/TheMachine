@@ -79,7 +79,7 @@ LEFT_OUT = {
         'board_backfills_queued', 'board_fit_undo', 'board_offers', 'calendar_clashes', 'calendar_writes', 'card_moves', 'card_uses', 'data_stamps', 'chat_fast_sessions',
         'chat_stops', 'checkpoints', 'decision_annotations', 'decisions', 'deliveries', 'draft_edits', 'draft_saves', 'draft_seen',
         'edits_offered', 'email_bounce_events', 'email_bounce_scan', 'email_bounces', 'error_feed', 'fact_vectors', 'fault_versions',
-        'faults', 'feedback_prompts', 'first_look_ahead', 'follow_up_advice', 'follow_up_basis', 'follow_up_cards', 'follow_up_changes',
+        'faults', 'feedback_prompts', 'first_look_ahead', 'gateway_starts', 'follow_up_advice', 'follow_up_basis', 'follow_up_cards', 'follow_up_changes',
         'follow_up_ends', 'follow_up_holds', 'follow_up_pace', 'follow_up_pauses', 'follow_up_sends', 'follow_up_threads',
         'forgotten_people', 'forgotten_salt', 'graph_edits', 'graph_history', 'graph_history_events', 'graph_imports', 'graph_offers', 'graph_org_asks', 'graph_role_asks',
         'graph_state', 'graph_unnamed', 'handoff_mails', 'help_topics', 'history_backfill', 'learning_changes', 'learning_signals',

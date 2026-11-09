@@ -166,8 +166,12 @@ try {
   // An admission timeout is ambiguous. A "submit a new turn" reply means this
   // key can't be admitted again, but it isn't proof the old execution ended.
   // Reconcile that exact run before allowing a fresh key or external work.
+  // The same for "idempotency key conflicts with the accepted input" (OpenClaw 2026.11.2): this key was accepted with other
+  // content, refused for good, so retrying it only waits out the deadline (2026-11-09: a to-do sat 44 minutes in starting).
+  // The service sends the same content under one key (preparation_state.same_start); this is the backstop.
   let ended=false;
-  if (request.action==='start' && error?.name==='GatewayClientRequestError' && /submit a new turn/i.test(error?.message || '')) {
+  if (request.action==='start' && error?.name==='GatewayClientRequestError' &&
+      /submit a new turn|idempotency key conflicts with the accepted input/i.test(error?.message || '')) {
     try {
       const prior=await callGatewayFromCli('agent.wait',{timeout:'15000'},{runId:request.job_id,timeoutMs:0},scope);
       ended=!!prior?.endedAt && ['ok','error','aborted','timeout'].includes(prior?.status);
