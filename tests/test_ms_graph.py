@@ -582,8 +582,11 @@ class Snooze(Base):
         self.fake.add('out1', SENT, '2099-01-01T09:00:00Z', '2099-01-01T09:00:00Z')
         self.assertEqual(snooze.snooze('acme-outlook', 'conv-1', 'out1'), 'no_permission')
         self.fake.granted |= {'Mail.ReadWrite', 'Mail.Send'}
-        with self.assertRaises(RuntimeError):
-            snooze.snooze('acme-outlook', 'conv-1', 'unknown')  # the send isn't confirmed yet: retried
+        self.assertEqual(snooze.snooze('acme-outlook', 'conv-1', 'unknown'), 'sending')  # not listed yet: asked again
+        self.fake.messages['out1']['parentFolderId'] = 'f-drafts'  # seconds after messages.send: still in Drafts
+        self.assertEqual(snooze.snooze('acme-outlook', 'conv-1', 'out1'), 'sending')
+        self.assertEqual(self.fake.messages['in1']['parentFolderId'], INBOX)
+        self.fake.messages['out1']['parentFolderId'] = SENT
         self.assertEqual(snooze.snooze('acme-outlook', 'conv-1', 'out1'), 'snoozed')
         self.assertEqual(self.fake.messages['in1']['parentFolderId'], SNOOZED)
         self.assertEqual(self.fake.messages['out1']['parentFolderId'], SENT)

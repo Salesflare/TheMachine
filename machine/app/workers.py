@@ -46,6 +46,8 @@ GOOGLE_PHOTO_PAGES = 20
 # out instead of spent in its first minutes. A draft prepared ahead is on the owner's board as Preparing, so it doesn't
 # wait for this gap (2026-10-29: one waited 8 minutes behind a review's start); the usage budget still holds it.
 BACKGROUND_GAP_SECONDS = 600
+# How long a sent Outlook reply may take to reach Sent Items before a thread snooze counts it as an error and backs off.
+SNOOZE_SENDING_GRACE = dt.timedelta(minutes=15)
 
 
 def google_photo_offers(config, account, read=None, facts=None):
@@ -255,6 +257,13 @@ class WorkersApp:
                 if row['until']<=now():status='returned'  # Too late to snooze; leave the thread alone.
                 else:status=gmail.snooze(row['account_id'],row['thread_id'],row['sent_message_id'])
             else:status=gmail.wake(row['account_id'],row['thread_id'])
+            if status=='sending':  # Outlook hasn't put the sent reply in Sent Items yet: ask again in a minute
+                if dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(row['created_at'])>=SNOOZE_SENDING_GRACE:
+                    raise RuntimeError('sent_message_not_confirmed')
+                with self.store.connect() as db:
+                    db.execute('UPDATE thread_snoozes SET retry_at=?,updated_at=? WHERE job_id=?',
+                               ((dt.datetime.fromisoformat(now())+dt.timedelta(minutes=1)).isoformat(),now(),row['job_id']))
+                return
             outlook=next((a for a in self.config.get('accounts',[]) if a['id']==row['account_id'] and a.get('service')=='outlook'),None)
             error={'no_permission':'Outlook can’t move this thread yet: connect the account again with sending on.' if outlook else 'Gmail can’t move this thread yet: the account needs the modify permission.'}.get(status)
             with self.store.connect() as db:

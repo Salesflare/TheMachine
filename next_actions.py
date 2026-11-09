@@ -2589,7 +2589,9 @@ class OutlookSnooze:
         messages = self.messages(account, thread_id)
         sent = next((m for m in messages if m.get('id') == sent_message_id and m.get('parentFolderId') == known.get('sentitems')), None)
         if not sent:
-            raise RuntimeError('sent_message_not_confirmed')
+            # Graph sends in the background: seconds after messages.send the message can still be in Drafts or the
+            # Outbox, or not listed in its conversation yet. The worker asks again shortly (thread_snooze_step).
+            return 'sending'
         # Delayed/retried snooze must not hide a reply that already arrived.
         if any(m.get('parentFolderId') != known.get('sentitems') and m.get('receivedDateTime', '') >= sent.get('receivedDateTime', '')
                for m in messages if m.get('id') != sent_message_id):
