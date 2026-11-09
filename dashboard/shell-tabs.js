@@ -180,8 +180,11 @@ function sideCards(groups){if(groups)sideGroups=groups;const q=$('#side-find').v
   return html`<div class="side-group${['done','later','waiting'].includes(key)?' quiet':''}"><button type="button" class="side-head" data-side-fold="${key}" aria-expanded="${open}">${raw(CHEVRON)}<span>${title}</span><span class="count">${count}</span></button>${open?[cut.list.map(x=>sideRow(x,chatId)),cut.more?sideMoreRow(key):'']:''}</div>`}).filter(Boolean);
  const side=html`<div class="side-label" role="group" aria-label="To-dos">${[['all','All'],['work','Work'],['personal','Personal']].map(([v,t])=>html`<button type="button" data-scope="${v}" aria-pressed="${scopeFilter===v}">${t}</button>`)}</div>${parts.length?parts:html`<p class="side-empty">${q?'No to-dos match.':'No to-dos yet.'}</p>`}`;
  if(String(side)!==sideHTML){sideHTML=String(side);const back=sideKeep(box);setHTML(box,side);back();requestAnimationFrame(chatFades)}}
-// The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were
-function sideKeep(box){const sc=[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold;
+// The card list scrolls in its own box (the computer's sidebar, the phone's drawer): a new card above keeps the rows in view where they were.
+// Until the sidebar has scrolled (or taken focus, which can scroll it) it is at its top and there is nothing to keep: reading
+// scrollTop while the page is still drawing forced a layout of the whole page before the first to-do was painted.
+var sideMoved=false;for(const t of ['scroll','focusin'])document.addEventListener(t,e=>{if(!sideMoved&&e.target.closest?.('.app-side'))sideMoved=true},{capture:true,passive:true});
+function sideKeep(box){const sc=sideMoved&&[box,box.closest('.app-side')].find(x=>x&&x.scrollTop>0);if(!sc)return()=>{};const edge=sc.getBoundingClientRect().top,key=n=>n.getAttribute('href')||n.dataset.sideFold||n.dataset.sideMore||n.dataset.doneFold;
  const row=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more],[data-done-fold]')].find(n=>n.getBoundingClientRect().bottom>edge);if(!row)return()=>{};const k=key(row),top=row.getBoundingClientRect().top;
  return()=>{const n=[...box.querySelectorAll('a[href],[data-side-fold],[data-side-more],[data-done-fold]')].find(x=>key(x)===k);if(n){const d=n.getBoundingClientRect().top-top;if(Math.abs(d)>=1)sc.scrollTop+=d}}}
 $('#side-find').addEventListener('input',()=>sideCards());
