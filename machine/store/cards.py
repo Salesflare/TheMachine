@@ -14,6 +14,7 @@ import chat_files
 import graph
 import i18n
 import locale_prefs
+import meeting_mail
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.calendar import calendar_owned, expiry_moment
@@ -227,14 +228,19 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
     return found
 
 
-def source_line(rows):
-    """One readable line about where a suggestion comes from, for the card."""
+def source_line(rows, db=None):
+    """One readable line about where a suggestion comes from, for the card. With db, a meeting's notes name the meeting
+    ("notes from Board meeting Q4"), and lead over the same notes by mail (meeting_mail.lead)."""
     rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix')]  # the owner's own words ("Added by you"), an update's note
     if not rows:
         return None
+    rows, meeting = meeting_mail.lead(db, rows)
     first = rows[0]  # The reviewer's main evidence (callers keep its order).
     more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
-    if first['kind'] != 'slack.message' and own_message(first):
+    if meeting:
+        when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()), lang='en')
+        line = f'notes from {meeting} · {when}'
+    elif first['kind'] != 'slack.message' and own_message(first):
         # The owner's own message (a "Waiting on" to-do leads with it): who it went to, by the name their messages carry
         m = first['metadata'] if isinstance(first['metadata'], dict) else json.loads(first['metadata'] or '{}')
         when = locale_prefs.day_text(dt.datetime.fromisoformat(first['occurred_at']).astimezone(local_tz()), lang='en')
@@ -403,6 +409,8 @@ class CardsStore:
                 target = same_thread_card(db, rows)
                 if not target:
                     alike = same_matter_cards(db, event_ids, project)
+                    seen = {c['id'] for c in alike}  # and those from the same meeting's notes, by another way (meeting_mail.py)
+                    alike += [c for c in meeting_mail.same_meeting_cards(db, event_ids) if c['id'] not in seen]
                     if alike:
                         raise ValueError('Not saved yet. These open cards share people or the project with this signal: '
                                          + '; '.join(f"{c['id']} \"{c['title']}\" ({c['status']})" for c in alike)
@@ -441,7 +449,7 @@ class CardsStore:
             suggestion_id = suggestion_id or uuid.uuid4().hex[:16]
             db.execute('INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,created_at,deliver_after,source_line,urgent,due,owner_step) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
                        (suggestion_id, dedupe_key[:240], title[:300], body[:5000], encoded(event_ids),
-                        encoded(placed or sorted({r['account_id'] for r in rows})), now(), deliver_after, source_line(sorted([dict(r) for r in rows],key=lambda r:event_ids.index(r['id']))), int(urgent), due,
+                        encoded(placed or sorted({r['account_id'] for r in rows})), now(), deliver_after, source_line(sorted([dict(r) for r in rows],key=lambda r:event_ids.index(r['id'])), db), int(urgent), due,
                         int(bool(owner_step))))
             if expiry:
                 db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
@@ -494,6 +502,16 @@ class CardsStore:
             # The owner's own signal, or older context the review links to it: it fills in the card they made.
             # Not news, so the card stays where they put it (snoozed, done) and nothing is sent.
             return self.fill_owner_card(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, ahead and not closed, project, event_ids)
+        if not own and meeting_mail.joins_quietly(db, old_ids, added):
+            # The same meeting's notes again, another way (its Zoom summary after its notes mail): they join the to-do and
+            # the meeting leads its source line, but it is no news, so where it is (and whether it was sent) stays.
+            db.execute('UPDATE suggestions SET event_ids=?,account_ids=?,source_line=? WHERE id=?',
+                       (encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db), sid))
+            db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                       ('update:' + uuid.uuid4().hex, sid, 'update', "The meeting's notes came in another way and were added", 'assistant', stamp))
+            return {'id': sid, 'status': card['status'], 'duplicate': False, 'attached': True,
+                    'note': 'The same meeting\'s notes were already on this to-do another way: added as evidence, and the meeting '
+                            'leads its source. Nothing new went to the owner.'}
         if closed and reopen is True:
             # Done stays done unless something new happened after it was closed: a message from someone else that came
             # in later. Older signals the review only now reaches, and the owner's own sent reply, are kept as evidence.
@@ -522,7 +540,7 @@ class CardsStore:
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
                    'early=?,outcome=CASE WHEN status=? THEN outcome ELSE NULL END,snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
                    'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
-                   (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence]),
+                   (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
                     deliver_after, int(urgent or bool(card['urgent'])), due, status, int(bool(ahead)), status, sid))
         was = (f"Updated with a new signal{' and brought back' if waiting else ' and reopened' if closed else ''}."
                + (f" Before: {card['title'][:150]}" if title[:300] != card['title'] else ''))
@@ -599,7 +617,7 @@ class CardsStore:
         rows = {r['id']: dict(r) for r in db.execute('SELECT id,account_id,kind,occurred_at,metadata FROM events WHERE id IN ('
                                                     + ','.join('?' * len(ids)) + ')', ids)}
         db.execute('UPDATE suggestions SET based_on=?,event_ids=?,source_line=? WHERE id=?',
-                   (event_id, encoded(ids), source_line([rows[i] for i in ids if i in rows]), suggestion_id))
+                   (event_id, encoded(ids), source_line([rows[i] for i in ids if i in rows], db), suggestion_id))
         return {'based_on': event_id}
 
     def fill_owner_card(self, db, card, title, body, ids, accounts, evidence, due, ahead, project, event_ids):
@@ -621,7 +639,7 @@ class CardsStore:
         # Done or dismissed, it keeps the title it had: Done shows what the to-do was, its status line how it ended.
         retitle = KEEP_OWNER_TITLE + ',' if card['status'] not in ('completed', 'rejected') else ''
         db.execute('UPDATE suggestions SET ' + retitle + 'body=?,event_ids=?,account_ids=?,source_line=?,due=coalesce(due,?) WHERE id=?',
-                   ((title[:300], title[:300]) if retitle else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence), due, sid))
+                   ((title[:300], title[:300]) if retitle else ()) + (body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due, sid))
         if pinned:
             db.execute('UPDATE suggestions SET area=? WHERE id=?', (pinned, sid))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',

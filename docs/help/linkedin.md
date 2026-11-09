@@ -3,12 +3,18 @@ title: LinkedIn
 area: connections
 summary: Your LinkedIn messages, read in your Machine's own signed-in browser. Replies only after you approve.
 covers: connector:linkedin
-code: connectors/linkedin.py, integrations/linkedin_inbox.py
+code: connectors/linkedin.py, integrations/linkedin_inbox.py, linkedin_connections.py
 site: Connect, More sources, Remove
 ---
 ## What it reads
 
 Your LinkedIn messages. It reads them in your Machine's own browser, signed in as you, now and then during waking hours. It marks nothing as read.
+
+## Titles and companies
+
+It also keeps the titles and companies of your LinkedIn connections up to date on the people already in your Graph, from your Connections list. It doesn't open their profiles or add new people. When someone's title or company changes, their timeline says so, like "Now Head of Sales at Acme, was Sales Lead at Acme".
+
+It reads very slowly: one page at a time, minutes apart, a few dozen pages a day, only during the day. About 3,000 connections take some four days. If LinkedIn pushes back, it stops until the next day.
 
 ## What it can send
 

@@ -2891,6 +2891,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "Af en toe deel ik een paar algemene inzichten. Niets persoonlijks.",
  "Now findable by people who have your email.": "Mensen die je e-mailadres hebben, kunnen je nu vinden.",
  "Now the rest of the week: {} of {} active conversations": "Nu de rest van de week: {} van {} actieve gesprekken",
+ "Now {}": "Nu {}",
+ "Now {}, was {}": "Nu {}, was {}",
  "Nudge {}: no reply in {} days": "Herinner {}: geen antwoord in {} dagen",
  "Number": "Getal",
  "Numbered list": "Genummerde lijst",
@@ -6402,6 +6404,7 @@
  "{} asks you to take this on: “{}”": "{} vraagt of jij dit oppakt: “{}”",
  "{} asks your Fleet": "{} vraagt je Fleet",
  "{} asks:": "{} vraagt:",
+ "{} at {}": "{} bij {}",
  "{} board suggestions are open already: wait until the owner decides": "Er staan al {} bordsuggesties open: wacht tot de eigenaar beslist",
  "{} calls": {
   "one": "{} oproep",

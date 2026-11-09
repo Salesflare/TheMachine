@@ -2891,6 +2891,8 @@
  "Now and then I share a few general learnings. Nothing personal.": "De temps en temps, je partage quelques apprentissages généraux. Rien de personnel.",
  "Now findable by people who have your email.": "Les personnes qui ont votre e-mail peuvent maintenant vous trouver.",
  "Now the rest of the week: {} of {} active conversations": "Maintenant le reste de la semaine : {} sur {} conversations actives",
+ "Now {}": "Maintenant {}",
+ "Now {}, was {}": "Maintenant {}, avant {}",
  "Nudge {}: no reply in {} days": "Relancer {} : pas de réponse depuis {} jours",
  "Number": "Nombre",
  "Numbered list": "Liste numérotée",
@@ -6402,6 +6404,7 @@
  "{} asks you to take this on: “{}”": "{} vous demande de vous en charger : « {} »",
  "{} asks your Fleet": "{} demande à votre Fleet",
  "{} asks:": "{} demande :",
+ "{} at {}": "{} chez {}",
  "{} board suggestions are open already: wait until the owner decides": "{} suggestions de tableau sont déjà ouvertes : attendez la décision du propriétaire",
  "{} calls": {
   "one": "{} appel",
