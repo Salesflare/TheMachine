@@ -95,8 +95,10 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   when the owner last talked to them), from any surface: through `knowledge.py` with the caller's `Caller`
   (`knowledge.owner()`, or `knowledge.connection(config, area)` for a connected AI), never a query of its own. Add a
   case to `tests/knowledge_eval.py` for every surface that answers it.
-- **A new route:** `Handler.do_GET` or `do_POST` in `machine/web/handler.py` (`make_handler(app)`, which `App.serve`
-  runs). JSON reads go through `App` methods; owner-only and CSP headers stay as the neighboring routes have them
+- **A new route:** in `machine/web/handler.py` (`make_handler(app)`, which `App.serve` runs). A GET path is a line in
+  `GET_ROUTES` (`'/api/x': 'get_api_x'`) and its `Handler` method, called as `method(path)` after do_GET's owner
+  check; only patterns stay branches of `do_GET` (`tests/test_get_routes.py`). A POST goes in `do_POST`. JSON reads go
+  through `App` methods; owner-only and CSP headers stay as the neighboring routes have them
   (`tests/test_owner_boundary.py`).
 - **A new table:** in its domain module's `ensure(db)`, called from `Store.__init__`, with the functions that write it in
   that same module.
