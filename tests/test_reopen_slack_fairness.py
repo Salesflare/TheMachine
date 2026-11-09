@@ -116,6 +116,38 @@ class ReopenAndSlack(unittest.TestCase):
         self.assertEqual(cp['index'],0)
         self.assertAlmostEqual(cp['channels'][1]['last_activity'],now-10,places=3)
 
+    def test_a_dm_that_cannot_be_opened_does_not_block_the_others(self):
+        # conversations.info said channel_not_found for one direct message, and every sync failed on it (2026-11-09).
+        account={'id':'slack','fair_incremental':True,'slack_host':'example.slack.com'}
+        now=a.time.time()
+        channels=[{'id':'D1','name':'DM U2','type':'dm','threads':[],'last_scan':f'{now-60:.6f}','next_full':now+86400,'last_activity':now-3600},
+                  {'id':'D2','name':'DM U3','type':'dm','threads':[],'last_scan':f'{now-60:.6f}','next_full':now+86400,'last_activity':now-3600}]
+        self.store.commit_page('slack',{'mode':'incremental','phase':'scan','after':'1000.000000','channels':channels,'index':0,
+                                        'next_discovery':now+86400},[])
+        calls=[]
+        class Source(a.Slack):
+            def __init__(self):pass
+            def profile(self):pass
+            def get(self,method,params):
+                calls.append((method,params['channel']))
+                if method=='conversations.info':
+                    if params['channel']=='D1':raise a.SourceError('slack_channel_not_found:conversations.info')
+                    return {'channel':{'latest':{'ts':f'{now-10:.6f}'}}}
+                return {'messages':[{'ts':f'{now-10:.6f}','text':'New','user':'U3'}]}
+        names=patch_everywhere(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
+        while a.sync_slack(self.store,{},account,Source())['more']:pass
+        self.assertIn(('conversations.history','D2'),calls)
+        self.assertEqual(sum(c==('conversations.info','D1') for c in calls),1)  # it rests, not asked again each sync
+        cp=self.store.checkpoint('slack')
+        self.assertEqual(cp['channels'][0]['error'],'slack_channel_not_found')
+        self.assertGreater(cp['channels'][0]['due'],now)
+        # Any other failure still stops the sync, as before.
+        cp['channels'][0]['due']=0
+        self.store.commit_page('slack',cp,[])
+        class Down(Source):
+            def get(self,method,params):raise a.SourceError('network:TimeoutError:conversations.info')
+        with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},account,Down())
+
     def test_a_busy_channel_is_read_before_a_daily_batch_of_quiet_conversations(self):
         # Quiet conversations all come due for their daily read at about the same time. Walking the list in order
         # spent every read on them (one every few minutes) while a busy channel further down waited for hours.
