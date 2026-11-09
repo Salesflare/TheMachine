@@ -10,8 +10,12 @@ are capped (MAX_ENTRIES over WINDOW, short timeouts) and the service reads at mo
 Owner decision (October 10, 2026), kept here as for the Gateway source: routine restarts and noise stay silent. Only
 real problems surface (detect): a unit that keeps restarting (LOOP_RESTARTS within an hour), one systemd gave up on
 (start-limit-hit), one that ran out of memory, one that failed REPEAT_FAILURES times in a day, one that stays failed,
-and a crash dump of a program (not a browser's renderer or a headless test browser). On Omarchy it also reads Hyprland
-(its crashes and the errors it reports in its settings) and the bar, with fixes in Omarchy's own commands.
+and a program that crashed: all its crash dumps over WINDOW make one finding with their count and time span. A
+browser's helper processes and browsers a program drives (headless, Playwright, Puppeteer, CI, remote debugging with a
+throwaway profile) are not the owner's programs and stay quiet (automated). So does anything that ended while a service
+it belongs to was being stopped or restarted (stopping): the service took it down, as a deliberate restart of the
+OpenClaw Gateway does with its browser. On Omarchy it also reads Hyprland (its crashes and the errors it reports in its
+settings) and the bar, with fixes in Omarchy's own commands.
 
 Each finding has a plain cause and a suggested fix (card). The service turns new ones into to-dos through the Machine
 health source (Store.system_log_cards): one per problem, deduped and rate-limited, and nothing on the computer changes
@@ -29,6 +33,8 @@ import sys
 from pathlib import Path
 
 import i18n
+import locale_prefs
+from timeutil import local_tz
 
 WINDOW = dt.timedelta(hours=24)
 EVERY = dt.timedelta(minutes=30)  # the service reads at most this often
@@ -45,8 +51,17 @@ PER_DAY = 2  # new to-dos a day at most
 RESTARTED = '5eb03494b6584870a536b337290809b3'
 RESULT = 'd9b373ed55a64feb8242e02dbe79a49c'
 COREDUMP = 'fc2e22bc6ee647b6b90729ab34a250b1'
+STOPPING = 'de5b426a63be47a7b6ac3eaac82e2f6f'  # a unit is being stopped (a stop or the first half of a restart)
+STOPPED = '9d1aaa27d60140bd96365438aad20286'
 FIELDS = ('MESSAGE_ID', 'USER_UNIT', 'UNIT_RESULT', 'COREDUMP_COMM', 'COREDUMP_EXE', 'COREDUMP_SIGNAL', 'COREDUMP_SIGNAL_NAME',
-          'COREDUMP_PID', 'COREDUMP_UID', 'COREDUMP_CMDLINE')
+          'COREDUMP_PID', 'COREDUMP_UID', 'COREDUMP_CMDLINE', 'COREDUMP_USER_UNIT', 'COREDUMP_TIMESTAMP')
+STOP_SETTLE = dt.timedelta(minutes=2)  # a crash dump is written a little after the stop that caused it
+STOP_LONGEST = dt.timedelta(minutes=15)  # a stop with no end on record counts this long
+# Browsers a program drives rather than the owner: by their path, their flags or the unit they run in
+DRIVEN_PATH = re.compile(r'(ms-playwright|puppeteer|chrome-headless-shell|headless[_-]shell|/selenium/|chromedriver)', re.I)
+DRIVEN_FLAG = re.compile(r'(^|\s)--(headless|enable-automation|remote-debugging-pipe|test-type)(=|\s|$)')
+THROWAWAY_PROFILE = re.compile(r'--user-data-dir=(/tmp/|/var/tmp/|/dev/shm/|\S*(playwright|puppeteer|selenium|\.org\.chromium\.Chromium\.))', re.I)
+CI_UNIT = re.compile(r'(actions\.runner|gitlab-runner|buildkite|jenkins|woodpecker|act[_-]runner|forgejo-runner)', re.I)
 FAILURES = {'exit-code', 'signal', 'core-dump', 'timeout', 'watchdog', 'oom-kill', 'start-limit-hit', 'resources', 'protocol'}
 SIGNALS = {4: 'SIGILL', 5: 'SIGTRAP', 6: 'SIGABRT', 7: 'SIGBUS', 8: 'SIGFPE', 11: 'SIGSEGV', 31: 'SIGSYS'}
 # One to-do per unit: the clearest kind wins.
@@ -114,7 +129,8 @@ def read_journal(hours=WINDOW, run=run_quiet, limit=MAX_ENTRIES):
     can't be read. Only these records (systemd's own, by catalog id) and only these fields: never a message."""
     code, out = run(['journalctl', '--user', '--no-pager', '-q', '-o', 'json', f'--since=-{int(hours.total_seconds() // 60)}min',
                      '-n', str(limit), '--output-fields=' + ','.join(FIELDS),
-                     f'MESSAGE_ID={RESTARTED}', f'MESSAGE_ID={RESULT}', f'MESSAGE_ID={COREDUMP}'])
+                     f'MESSAGE_ID={RESTARTED}', f'MESSAGE_ID={RESULT}', f'MESSAGE_ID={COREDUMP}', f'MESSAGE_ID={STOPPING}',
+                     f'MESSAGE_ID={STOPPED}'])
     if code != 0:
         return None
     rows = []
@@ -178,10 +194,62 @@ def hyprland_config_errors(run=run_quiet, runtime=None):
     return sum(1 for item in found if isinstance(item, str) and item.strip()) if isinstance(found, list) else 0
 
 
-def _helper(cmdline):
-    """A process that isn't a program of its own: a browser's renderer or GPU helper (it says --type=), or a headless
-    browser a test or an agent drove."""
-    return '--type=' in cmdline or '--headless' in cmdline
+def automated(cmdline, exe='', unit=''):
+    """Whether a crashed process isn't one of the owner's programs: a browser's renderer or GPU helper (it says --type=),
+    or a browser a test, an agent or CI drove (headless, Playwright's or Puppeteer's own browsers, automation flags,
+    remote debugging with a throwaway profile, a CI runner's unit). cmdline is None when it wasn't recorded."""
+    if DRIVEN_PATH.search(exe or '') or CI_UNIT.search(unit or ''):
+        return True
+    if cmdline is None:
+        return False
+    if '--type=' in cmdline or DRIVEN_FLAG.search(cmdline) or DRIVEN_PATH.search(cmdline):
+        return True
+    return '--remote-debugging-port' in cmdline and bool(THROWAWAY_PROFILE.search(cmdline))
+
+
+def stop_windows(rows):
+    """{unit: [(start, end)]}: when each unit was being stopped or restarted, from systemd's Stopping record to its
+    Stopped or result record (STOP_LONGEST without one)."""
+    windows = {}
+    open_ = {}
+    for row in sorted(rows, key=lambda r: r['at']):
+        unit, mid = row.get('USER_UNIT') or '', row.get('MESSAGE_ID')
+        if not unit:
+            continue
+        if mid == STOPPING:
+            open_.setdefault(unit, row['at'])
+        elif mid in (STOPPED, RESULT) and unit in open_:
+            windows.setdefault(unit, []).append((open_.pop(unit), row['at']))
+    for unit, start in open_.items():
+        windows.setdefault(unit, []).append((start, start + STOP_LONGEST))
+    return windows
+
+
+def _belongs(unit, crashed_unit, cmdline, exe):
+    """Whether a crashed process belongs to a service: it ran in it, or its command line names the service's own files
+    (OpenClaw's browser keeps its profile in ~/.openclaw and runs in a scope of its own)."""
+    if crashed_unit and crashed_unit == unit:
+        return True
+    name = unit_name(unit).lower()
+    stems = {name, name.split('-')[0]}
+    text = f'{exe} {cmdline or ""}'.lower()
+    return any(len(stem) >= 4 and re.search(r'[/.]' + re.escape(stem) + r'(?=[/.-])', text) for stem in stems)
+
+
+def stopping(row, windows):
+    """Whether a crash happened while a service it belongs to was being stopped or restarted (or just after, STOP_SETTLE):
+    expected, not a problem."""
+    at = _crash_time(row)
+    return any(start <= at <= end + STOP_SETTLE and _belongs(unit, row.get('COREDUMP_USER_UNIT'), row.get('COREDUMP_CMDLINE'), row.get('COREDUMP_EXE'))
+               for unit, spans in windows.items() for start, end in spans)
+
+
+def _crash_time(row):
+    """When the program crashed (systemd-coredump's own time), not when the dump was written."""
+    try:
+        return dt.datetime.fromtimestamp(int(row['COREDUMP_TIMESTAMP']) / 1e6, dt.timezone.utc)
+    except (KeyError, ValueError, TypeError):
+        return row['at']
 
 
 def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None):
@@ -191,20 +259,21 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
     uid = str(os.getuid() if uid is None else uid)
     units = {}
     crashes = {}
+    windows = stop_windows(rows)
     for row in rows:
         mid = row.get('MESSAGE_ID')
         if mid == COREDUMP:
             if row.get('COREDUMP_UID', uid) != uid:
                 continue
             cmdline = row.get('COREDUMP_CMDLINE')
-            if cmdline is not None and _helper(cmdline):
-                continue
             exe = row.get('COREDUMP_EXE') or ''
+            if automated(cmdline, exe, row.get('COREDUMP_USER_UNIT')) or stopping(row, windows):
+                continue
             name = row.get('COREDUMP_COMM') or os.path.basename(exe) or 'a program'
             if not exe and not row.get('COREDUMP_COMM'):
                 continue
             item = crashes.setdefault(os.path.basename(exe) or name, {'name': name, 'times': [], 'known': True})
-            item['times'].append(row['at'])
+            item['times'].append(_crash_time(row))
             item['pid'] = row.get('COREDUMP_PID') or item.get('pid')
             item['signal'] = row.get('COREDUMP_SIGNAL_NAME') or SIGNALS.get(int(row.get('COREDUMP_SIGNAL') or 0) if (row.get('COREDUMP_SIGNAL') or '').isdigit() else 0) or ''
             item['known'] = item['known'] and cmdline is not None
@@ -216,6 +285,8 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
         if mid == RESTARTED:
             entry['restarts'].append(row['at'])
         elif mid == RESULT and row.get('UNIT_RESULT') in FAILURES:
+            if any(start <= row['at'] <= end for start, end in windows.get(unit, ())):
+                continue  # it ended while being stopped or restarted: the stop, not a failure
             entry['failures'].append(row['at'])
             entry['results'].add(row['UNIT_RESULT'])
     found = {}
@@ -252,7 +323,8 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
             continue
         piece = OMARCHY_PIECES.get(exe.lower()) if on_omarchy else None
         findings.append({'key': f'crashed:{exe}', 'kind': 'crashed', 'name': item['name'], 'program': exe, 'count': len(item['times']),
-                         'pid': item.get('pid'), 'signal': item['signal'], 'piece': piece, 'last_at': max(item['times']).isoformat(),
+                         'pid': item.get('pid'), 'signal': item['signal'], 'piece': piece, 'first_at': min(item['times']).isoformat(),
+                         'last_at': max(item['times']).isoformat(),
                          **({'fix': 'restart_bar'} if piece == 'bar' else {})})
     if on_omarchy and config_errors:
         findings.append({'key': 'hyprland_config:hyprland', 'kind': 'hyprland_config', 'name': 'Hyprland', 'count': int(config_errors),
@@ -370,9 +442,21 @@ def explain(finding, which=shutil.which):
         return (crashed,
                 i18n.t('Hyprland, the window manager, stopped unexpectedly and left a crash report. Open apps close with it.'),
                 i18n.t('In a terminal, {} shows where it crashed.', where))
+    signal = finding.get('signal') or i18n.t('no signal recorded')
+    span = _span(finding) if count > 1 else None
     return (crashed,
-            i18n.t('The program stopped unexpectedly ({}) and left a crash report.', finding.get('signal') or i18n.t('no signal recorded')),
+            i18n.t('It stopped unexpectedly {0} times between {1} and {2} ({3}) and left crash reports.', count, *span, signal) if span
+            else i18n.t('The program stopped unexpectedly ({}) and left a crash report.', signal),
             i18n.t('In a terminal, {} shows where it crashed.', where))
+
+
+def _span(finding):
+    """(first, last) crash as the owner reads times ('Mon 9:27 AM'), or None without both."""
+    try:
+        first, last = (dt.datetime.fromisoformat(finding[k]).astimezone(local_tz()) for k in ('first_at', 'last_at'))
+    except (KeyError, TypeError, ValueError):
+        return None
+    return locale_prefs.short_text(first), locale_prefs.short_text(last)
 
 
 def next_step(finding):

@@ -19,6 +19,8 @@ Un servizio che continua a riavviarsi, uno che è fallito più volte in un giorn
 
 Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi.
 
+I browser guidati da test e agenti (headless, Playwright, Puppeteer, CI) restano in silenzio, e così un programma che si ferma mentre il suo servizio viene fermato o riavviato. Un programma che si blocca più e più volte dà una sola attività, che dice quante volte e quando.
+
 ## Cosa ricevi
 
 Un’attività che dice in parole semplici cosa è successo, perché conta e cosa puoi fare. I comandi che mostrano il perché sono sotto Mostra altro. Chiedi nella sua chat e The Machine ci guarda. Tutto ciò che lei cambia aspetta il tuo OK, come con Do it.

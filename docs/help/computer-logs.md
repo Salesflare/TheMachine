@@ -19,6 +19,8 @@ A service that keeps restarting, one that failed several times in a day or stays
 
 A single restart or a single failed run is normal and stays quiet.
 
+Browsers that tests and agents drive (headless, Playwright, Puppeteer, CI) stay quiet, and so does a program that stops while its service is being stopped or restarted. A program that crashes again and again makes one to-do that says how often and when.
+
 ## What you get
 
 A to-do that says what happened in plain words, why it matters and what you can do. The commands that show why are under Show more. Ask in its chat and The Machine looks into it. Anything it changes waits for your OK, as with Do it.

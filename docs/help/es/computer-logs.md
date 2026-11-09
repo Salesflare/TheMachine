@@ -19,6 +19,8 @@ Un servicio que se reinicia una y otra vez, uno que falló varias veces en un d�
 
 Un solo reinicio o una sola ejecución fallida es normal y no avisa.
 
+Los navegadores que manejan las pruebas y los agentes (headless, Playwright, Puppeteer, CI) no avisan, y tampoco un programa que se cierra mientras su servicio se detiene o se reinicia. Un programa que falla una y otra vez da una sola tarea, que dice cuántas veces y cuándo.
+
 ## Qué recibes
 
 Una tarea que dice con palabras simples qué pasó, por qué importa y qué puedes hacer. Los comandos que muestran por qué están en Mostrar más. Pregunta en su chat y The Machine lo revisa. Todo lo que ella cambie espera tu OK, como con Do it.

@@ -19,6 +19,8 @@ Um serviço que fica reiniciando, um que falhou várias vezes em um dia ou conti
 
 Um único reinício ou uma única execução com falha é normal e não gera aviso.
 
+Navegadores que testes e agentes controlam (headless, Playwright, Puppeteer, CI) ficam em silêncio, assim como um programa que para enquanto o serviço dele está sendo parado ou reiniciado. Um programa que trava várias vezes gera uma só tarefa, que diz quantas vezes e quando.
+
 ## O que você recebe
 
 Uma tarefa que diz em palavras simples o que aconteceu, por que importa e o que você pode fazer. Os comandos que mostram o porquê ficam em Mostrar mais. Pergunte no chat dela e The Machine verifica. Tudo o que ela mudar espera o seu OK, como no Do it.

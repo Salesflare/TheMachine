@@ -1956,6 +1956,7 @@
  "It starts once your main model can run: sign in for it or add a key.": "Começa assim que seu modelo principal puder rodar: entre nele ou adicione uma chave.",
  "It starts when your mail is in.": "Começa quando seus e-mails chegarem.",
  "It stopped and started again {} times within an hour, so something keeps making it fail.": "Parou e voltou a iniciar {} vezes em uma hora, então algo continua fazendo ele falhar.",
+ "It stopped unexpectedly {0} times between {1} and {2} ({3}) and left crash reports.": "Parou de repente {0} vezes entre {1} e {2} ({3}) e deixou relatórios de falha.",
  "It syncs again within a minute after.": "Ele sincroniza de novo em até um minuto depois.",
  "It took too long.": "Demorou demais.",
  "It used more memory than it is allowed, so the system stopped it.": "Usou mais memória do que o permitido, então o sistema o encerrou.",

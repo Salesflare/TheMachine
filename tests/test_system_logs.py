@@ -98,6 +98,56 @@ class Detection(unittest.TestCase):
         self.assertEqual([(f['kind'], f['count']) for f in found], [('hyprland_config', 2)])
         self.assertEqual(detect([], config_errors=2), [])
 
+    def test_a_morning_of_test_browsers_and_a_gateway_restart_makes_one_to_do_for_the_owners_own_app(self):
+        # the fixture (tests/system_logs_fixture.jsonl, synthetic): 60 crashes of Playwright's headless Chromium and its
+        # renderers, Playwright's own builds, a Puppeteer Chrome, a remote-debugging Chromium on a /tmp profile, a CI
+        # runner's job, the OpenClaw browser going down with a deliberate Gateway restart, and notes-app crashing 3 times
+        text = (ROOT / 'tests' / 'system_logs_fixture.jsonl').read_text()
+        rows = s.read_journal(run=lambda *a, **k: (0, text))
+        [found] = detect(rows)
+        self.assertEqual((found['key'], found['count']), ('crashed:notes-app', 3))
+        self.assertEqual((found['first_at'], found['last_at']), (NOW.replace(hour=8, minute=10).isoformat(), NOW.replace(hour=11, minute=30).isoformat()))
+        # the Gateway's own failure came from the stop, so it isn't one of its failures either
+        self.assertEqual(detect(rows + [result('openclaw-gateway.service', m) for m in (300, 200)]), [found])
+
+    def test_automated_browsers_by_meaning(self):
+        self.assertTrue(s.automated('/usr/bin/chromium --headless=new about:blank'))
+        self.assertTrue(s.automated('/usr/bin/chromium --type=gpu-process'))
+        self.assertTrue(s.automated('/usr/bin/chromium --enable-automation --user-data-dir=/home/o/x'))
+        self.assertTrue(s.automated('/usr/bin/chromium --remote-debugging-pipe'))
+        self.assertTrue(s.automated(None, '/home/o/.cache/ms-playwright/firefox-1490/firefox/firefox'))  # no command line recorded
+        self.assertTrue(s.automated('/usr/bin/node test.js', '/usr/bin/node', 'actions.runner.org-app.box.service'))
+        self.assertTrue(s.automated('/opt/google/chrome/chrome --remote-debugging-port=0 --user-data-dir=/tmp/x'))
+        # the owner's own browser stays theirs, also with remote debugging on a profile they keep
+        self.assertFalse(s.automated('/opt/google/chrome/chrome --profile-directory=Default'))
+        self.assertFalse(s.automated('/opt/google/chrome/chrome --remote-debugging-port=9222 --user-data-dir=/home/o/.config/chrome-work'))
+        self.assertFalse(s.automated('/usr/bin/headless-notes --open'))  # a word in a name is not a flag
+
+    def test_a_crash_while_its_service_stops_is_expected_but_not_any_other_time(self):
+        browser = '/opt/google/chrome/chrome --remote-debugging-port=18800 --user-data-dir=/home/o/.openclaw/browser/openclaw/user-data'
+        down = crash('/opt/google/chrome/chrome', 20, browser)
+        stop = [{'MESSAGE_ID': s.STOPPING, 'USER_UNIT': 'openclaw-gateway.service', 'at': ago(25)},
+                {'MESSAGE_ID': s.STOPPED, 'USER_UNIT': 'openclaw-gateway.service', 'at': ago(21)}]
+        self.assertEqual(detect(stop + [down]), [])  # just after the stop: the dump is written a moment later
+        self.assertEqual(detect(stop[:1] + [down]), [])  # a stop still going on
+        [found] = detect(stop + [down, crash('/opt/google/chrome/chrome', 200, browser)])
+        self.assertEqual(found['count'], 1)  # the same browser crashing on its own still counts
+        other = [dict(r, USER_UNIT='backup.service') for r in stop]
+        self.assertEqual(len(detect(other + [down])), 1)  # another service's stop says nothing about this browser
+        own = dict(crash('/usr/bin/sync-tool', 20, '/usr/bin/sync-tool --watch'), COREDUMP_USER_UNIT='sync.service')
+        self.assertEqual(detect([dict(r, USER_UNIT='sync.service') for r in stop] + [own]), [])  # it ran in the stopping unit
+
+    def test_repeated_crashes_read_with_their_count_and_time_span(self):
+        rows = [crash('/usr/bin/notes-app', m, '/usr/bin/notes-app') for m in (230, 120, 30)]
+        [found] = detect(rows)
+        with mock.patch('machine.system_logs.local_tz', return_value=dt.timezone.utc), mock.patch('locale_prefs.is_h12', return_value=True):
+            title, body, signal = s.card(found)
+        self.assertEqual(title, 'notes-app crashed 3 times in a day')
+        self.assertTrue(body.startswith('It stopped unexpectedly 3 times between Sat\xa08:10 AM and Sat\xa011:30 AM (SIGSEGV) and left crash reports.'), body)
+        self.assertIn('Seen: 3×', signal)
+        _, body, _ = s.card(dict(found, count=1))
+        self.assertTrue(body.startswith('The program stopped unexpectedly (SIGSEGV) and left a crash report.'), body)
+
     def test_unit_names_read_the_way_the_owner_knows_them(self):
         self.assertEqual(s.unit_name('app-Hyprland-gtk\\x2dlaunch-16f504ee.scope'), 'gtk-launch')
         self.assertEqual(s.unit_name('backup.service'), 'backup')
@@ -120,7 +170,7 @@ class Reading(unittest.TestCase):
         self.assertIn('-n', args)
         fields = next(a for a in args if a.startswith('--output-fields='))
         self.assertNotIn('MESSAGE,', fields + ',')
-        self.assertEqual(sorted(a for a in args if a.startswith('MESSAGE_ID=')), sorted(f'MESSAGE_ID={i}' for i in (s.RESTARTED, s.RESULT, s.COREDUMP)))
+        self.assertEqual(sorted(a for a in args if a.startswith('MESSAGE_ID=')), sorted(f'MESSAGE_ID={i}' for i in (s.RESTARTED, s.RESULT, s.COREDUMP, s.STOPPING, s.STOPPED)))
         self.assertNotIn('MESSAGE', row)
         self.assertIsNone(s.read_journal(run=lambda *a, **k: (1, '')))
 
