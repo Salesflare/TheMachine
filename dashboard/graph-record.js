@@ -226,6 +226,49 @@ const openBetween=n=>{const o=n.open||{},row=(label,p)=>html`<div class="promise
 // with a menu: Not about them takes only this link away, Forget deletes the fact everywhere.
 const shortName=n=>n.kind==='person'?String(n.name||'').split(/\s+/)[0]||n.name:n.name;
 const knownAbout=n=>{const k=n.open?.known||[],who=shortName(n);return k.length?html`<div class="section-head graph-known-head"><h2>Known about ${who}</h2></div><ul class="graph-known">${k.map(f=>html`<li><span>${f.text}${factMeta(f)}</span><details class="fact-menu"><summary aria-label="Options for this fact" title="Options">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-fact-unlink="${f.id}">Not about ${who}<small>Only takes it off this page</small></button><button type="button" role="menuitem" class="danger" data-fact-forget="${f.id}" data-who="${who}">Forget<small>Deletes it everywhere</small></button></div></details></li>`)}</ul>`:''};
+// Recent changes (record_log.py): what The Machine changed or learned about this record, when and from where, folded
+// under the record. A few lines open, the rest under Show more. Each line's ⋯ has the page's own correction for it:
+// Edit, Not about / Forget, Remove, Undo. No notifications and nothing new to visit: it is only here.
+let rcOpen='';  // the record whose log the owner opened: it stays open through the page's own refreshes
+const RC_SHOWN=3;
+const rcDay=v=>{const d=new Date(v);return localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
+const RC_SIDE={work:'Marked as a Work contact',personal:'Marked as a Personal contact'},RC_AI={details:'Details changed',crm:'Fields or tags changed',summary:'Summary line added'};
+function rcText(n,x){switch(x.kind){
+ case 'role':return t('To you: {}',cap(x.role));
+ case 'role_fix':return t('To you: {}, corrected from {}',cap(x.role),x.was);
+ case 'org':return t('Works at {}',x.org);
+ case 'member':return t('{} works here',x.name);
+ case 'relation':return t('{} is {} {}',x.a_name,x.relation,x.b_name);
+ case 'joined':return t('Joined with {}',x.shown);
+ case 'side':return t(RC_SIDE[x.side]||'');
+ case 'move':return t('Moved to {}',x.stage);
+ case 'ai':return x.parts.map(p=>t(RC_AI[p]||'')).filter(Boolean).join(' · ')+(x.undone?' · '+t('undone'):'');
+ default:return x.text||''}}
+function rcSource(s){if(!s)return'';
+ if(s.type==='event'){const brand=!['email','meeting','message'].includes(s.via),label=s.via==='meeting'?t('A meeting'):s.via==='email'?(s.from?t('Email from {}',s.from):s.mine?t('Your email'):t('An email')):
+   brand?(s.from?t('{} message from {}',s.via,s.from):s.mine?t('Your {} message',s.via):t('A {} message',s.via)):(s.from?t('Message from {}',s.from):s.mine?t('Your message'):t('A message'));
+  return html`<button type="button" class="link" data-quote-event="${s.id}" title="${t('Read the message')}">${label}</button>`}
+ if(s.type==='note')return s.card?html`<a href="#card=${s.card}" title="${s.title||''}">${t('Your note')}</a>`:t('Your note');
+ if(s.type==='ai')return s.name?t('From {}',s.name):'';
+ if(s.type==='quote')return html`<span translate="no">“${s.text}”</span>`;
+ return s.via==='LinkedIn headline'?t('Their LinkedIn headline'):''}
+function rcMenu(n,x){const a=x.act||{},who=shortName(n),items=[];
+ if(x.kind==='fact')items.push(html`<button type="button" role="menuitem" data-fact-unlink="${x.fact}">${t('Not about {}',who)}<small>${t('Only takes it off this page')}</small></button>`,html`<button type="button" role="menuitem" class="danger" data-fact-forget="${x.fact}" data-who="${who}">${t('Forget')}<small>${t('Deletes it everywhere')}</small></button>`);
+ if(a.edit)items.push(html`<button type="button" role="menuitem" data-org-edit>${t('Edit')}</button>`);
+ if(a.unrelate)items.push(html`<button type="button" role="menuitem" data-unrelate="${a.unrelate[0]}" data-related-to="${a.unrelate[1]}">${t('Remove')}</button>`);
+ if(a.split)items.push(html`<button type="button" role="menuitem" data-same="0" data-a="${a.split[0]}" data-b="${a.split[1]}" data-split>${t('Undo')}<small>${t('Splits them for good')}</small></button>`);
+ if(a.stage)items.push(html`<button type="button" role="menuitem" data-rc-stage="${a.stage}">${t('Undo')}<small>${t('Back to {}',a.stage)}</small></button>`);
+ if(a.ai_undo)items.push(html`<button type="button" role="menuitem" data-rc-ai-undo="${a.ai_undo}">${t('Undo')}</button>`);
+ return items.length?html`<details class="fact-menu rc-menu"><summary aria-label="${t('Options for this change')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu">${items}</div></details>`:''}
+const recentLog=n=>{const log=n.log||[];if(!log.length)return'';
+ return html`<section class="record-log" id="record-log"><details class="rc-fold"${rcOpen===n.id?html` open`:''}><summary class="graph-sub"><span>${t('Recent changes')}</span> <span class="count">${log.length}</span></summary><ul class="rc-list">${log.map((x,i)=>{const src=rcSource(x.source);
+  return html`<li${i>=RC_SHOWN?html` hidden`:''}><time datetime="${x.at}">${rcDay(x.at)}</time><span class="rc-text">${rcText(n,x)}</span>${x.was?html`<small class="rc-was">${t('Was: {}',x.was)}</small>`:''}${src?html`<small class="rc-src">${src}</small>`:''}${rcMenu(n,x)}</li>`})}</ul>${log.length>RC_SHOWN?html`<button type="button" class="ghost rc-more" data-rc-more>${t('Show more')}</button>`:''}</details></section>`};
+$('#people-view').addEventListener('click',async e=>{const box=e.target.closest('.record-log');if(!box)return;
+ if(e.target.closest('[data-rc-more]')){for(const li of box.querySelectorAll('.rc-list li[hidden]'))li.hidden=false;e.target.closest('[data-rc-more]').remove();return}
+ const item=e.target.closest('.rc-menu [role=menuitem]');if(item)item.closest('details').open=false;  /* the page's own handler does the rest */
+ const back=e.target.closest('[data-rc-stage]');if(back){back.disabled=true;try{await graphPost('graph_stage',{node_id:graphNode,stage:back.dataset.rcStage});toast(t('Moved back to {}.',back.dataset.rcStage));await people(graphNode,true)}catch(err){errCaught(err);back.disabled=false;toast(err.message,true)}return}
+ const ai=e.target.closest('[data-rc-ai-undo]');if(ai){ai.disabled=true;try{await sharePost('ai_undo',{id:+ai.dataset.rcAiUndo});toast(t('Undone.'));await people(graphNode,true)}catch(err){errCaught(err);ai.disabled=false;toast(err.message,true)}}},true);
+$('#people-view').addEventListener('toggle',e=>{if(e.target.matches?.('.rc-fold'))rcOpen=e.target.open?graphNode:''},true);
 // The timeline on a person, project or organization: every source in one list by day, each row its source, who wrote it,
 // when, and the start of the text; cards, promises and project moves among them. Filter by source; Show more loads more.
 const GRAPH_SOURCE={docs:html`<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>`,intercom:html`<path d="M5 5h14v10H9l-4 4z"/>`,zoom:html`<rect x="3" y="7" width="12" height="10" rx="2"/><path d="m15 11 6-3v8l-6-3z"/>`,

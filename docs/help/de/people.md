@@ -2,7 +2,7 @@
 title: Personen
 area: graph
 summary: Alle, mit denen du in Kontakt bist: ihre Seite, Zusammenfassung und Verlauf, und wie du jemanden hinzufügst, bearbeitest, zusammenführst oder löschst.
-code: graph.py, crm.py, bounces.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 ---
 Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Filter, Felder, Tags und Import funktionieren in allen drei Listen gleich: siehe [Der Graph](graph.md).
@@ -100,6 +100,12 @@ Unter Bekannt über hat jeder Fakt ein Menü:
 
 - **Vergessen** löscht ihn überall.
 - Nicht über die Person nimmt ihn nur von dieser Seite.
+
+## Letzte Änderungen
+
+**Letzte Änderungen**, eingeklappt unter den Angaben einer Person, Organisation oder eines Projekts, zeigt, was deine Machine dazu geändert oder gelernt hat: eine Rolle, wo jemand arbeitet, wie zwei Personen zusammenhängen, einen Fakt, einen verschobenen Projektstand. Jede Zeile hat ihr Datum und ihre Quelle; tippe auf die Quelle, um die Nachricht zu lesen.
+
+Ist eine Zeile falsch, korrigiert ihr **⋯** sie direkt dort: **Bearbeiten**, **Entfernen**, **Nicht über** die Person, **Vergessen** oder **Rückgängig**, um ein Projekt zurückzusetzen. Drei Zeilen sind sichtbar; **Mehr anzeigen** zeigt den Rest.
 
 ## Eine Aufgabe zu jemandem
 

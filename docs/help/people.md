@@ -2,7 +2,7 @@
 title: People
 area: graph
 summary: Everyone you're in touch with: their page, summary and timeline, and how to add, edit, merge or delete someone.
-code: graph.py, crm.py, bounces.py, enrichment.py, dashboard.html
+code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 ---
 Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Filters, fields, tags and import work the same on all three lists: see [The Graph](graph.md).
@@ -100,6 +100,12 @@ Under Known about, each fact has a menu:
 
 - **Forget** deletes it everywhere.
 - Not about them only takes it off that page.
+
+## Recent changes
+
+**Recent changes**, folded under a person's, organization's or project's details, lists what your Machine changed or learned about them: a role, where they work, how two people are related, a fact, a project's move. Each line has its date and its source; tap the source to read the message.
+
+When a line is wrong, its **⋯** fixes it right there: **Edit**, **Remove**, **Not about** them, **Forget**, or **Undo** to put a project back where it was. Three lines show; **Show more** has the rest.
 
 ## A to-do about someone
 

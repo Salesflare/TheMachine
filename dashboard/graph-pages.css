@@ -158,6 +158,15 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 .share-chip:hover{color:var(--text)}.ge-head time+.share-chip,.ge-meta+.share-chip{margin-left:8px}
 .share-note{margin:0 0 14px;font-size:var(--fs-sm)}
 .keep-private{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin:8px 0 16px}.keep-private small{font-size:var(--fs-xs)}
+/* Recent changes: folded under the record, quiet like Joined from; a line is its day, what changed, where from, and ⋯ */
+.record-log{margin:4px 0 14px}.record-log .rc-fold>summary{cursor:pointer;color:var(--faint);width:fit-content}.record-log .rc-fold>summary .count{color:var(--faint);font-size:var(--fs-xs)}
+.rc-list{list-style:none;margin:6px 0 0;padding:0}
+.rc-list li{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;column-gap:var(--sp-2);align-items:start;padding:6px 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.45}
+.rc-list li[hidden]{display:none}.rc-list li:first-child{border-top:0}
+.rc-list time{grid-column:1;padding-top:4px;color:var(--faint);font-size:var(--fs-xs);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rc-list .rc-text,.rc-list .rc-was,.rc-list .rc-src{grid-column:2;overflow-wrap:anywhere}.rc-list .rc-text{padding-top:2px;color:var(--text)}
+.rc-list .rc-was,.rc-list .rc-src{color:var(--faint);font-size:var(--fs-xs)}.rc-list .rc-src :is(button.link,a){border:0;background:none;box-shadow:none;margin:0;padding:0;min-height:0;color:inherit;font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.rc-list .rc-src :is(button.link,a):hover{color:var(--text)}
+.rc-list .rc-menu{grid-column:3;grid-row:1/span 3}.record-log .rc-more{margin-top:4px;padding:3px 10px;min-height:0;font-size:var(--fs-sm)}
 /*@eager*/
 .shared-switch{display:flex;align-items:center;gap:12px;margin-top:12px;padding:10px 12px;border-radius:10px;border:1px solid var(--border)}.shared-switch .grow{flex:1;min-width:0}.shared-switch .lookup-switch{background:var(--sunken);min-height:0;box-shadow:inset 0 0 0 1px var(--border)}.shared-switch .lookup-switch[aria-checked=true]{background:var(--mint)}.shared-switch small{display:block;color:var(--muted);font-size:var(--fs-xs)}.lookup-switch:disabled{cursor:default;opacity:.6}
 #share-consent{width:min(460px,calc(100vw - 32px));padding:18px 18px 16px}#share-consent h2{margin:0 0 10px;font-size:1.15rem;color:var(--text)}#share-consent ul{margin:0 0 10px;padding-left:18px}#share-consent li{margin:0 0 6px;line-height:1.45}#share-consent p{margin:0 0 10px;line-height:1.45}#share-consent .fleet-fine{font-size:.86rem;color:var(--muted)}#share-consent .actions{display:flex;gap:8px;margin-top:14px}
