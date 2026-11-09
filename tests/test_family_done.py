@@ -3,6 +3,7 @@ same to-do of another (same email, or the same bill), who and when only, and not
 stands in for the control plane; all names, mail and bills are made up, and nothing is sent anywhere."""
 import json
 import unittest
+from pathlib import Path
 
 import test_family as tfam
 import test_fleet as tf
@@ -44,10 +45,12 @@ class FamilyDone(unittest.TestCase):
         self.app = object.__new__(a.App)
         self.app.store, self.app.config, self.app.fleet = self.store, tf.CONFIG, self.fleet
 
-    def todo(self, key, status='pending', message_id=None, body='Sign up for the school trip.', decided=None):
+    def todo(self, key, status='pending', message_id=None, body='Sign up for the school trip.', decided=None, mail_body=None):
         event_ids = []
         if message_id:
             letter = mail('home', 1, 'School <office@school.example>', 'owner@gmail.com', message_id=message_id)
+            if mail_body:
+                letter['body'] = mail_body
             self.store.commit_page('home', {}, [letter])
             with self.store.connect() as db:
                 event_ids = [db.execute('SELECT id FROM events WHERE source_id=?', (letter['source_id'],)).fetchone()[0]]
@@ -77,6 +80,46 @@ class FamilyDone(unittest.TestCase):
         self.assertIsNone(family_done.bill_of('BE71 0961 2345 6768 +++090/9337/55493+++'))  # not a real IBAN
         self.assertIsNone(family_done.bill_of('BE71 0961 2345 6769 +++090/9337/55494+++'))  # nor a real reference
         self.assertIsNone(family_done.bill_of(''))
+
+    def test_a_form_is_its_link_without_the_scheme(self):
+        self.assertEqual(family_done.forms_of('Order here >>> <https://forms.gle/AbC123xyz789> by Friday, or '
+                                              'HTTPS://Docs.Google.com/forms/d/e/1FAIpQLSf_Zz-0123456789/viewform?usp=sf'),
+                         ['forms.gle/AbC123xyz789', 'docs.google.com/forms/d/e/1FAIpQLSf_Zz-0123456789'])
+        self.assertEqual(family_done.forms_of('https://forms.office.com/r/Xy12Ab34Cd and https://forms.gle/AbC123xyz789 '
+                                              'https://forms.gle/AbC123xyz789'), ['forms.office.com/r/Xy12Ab34Cd', 'forms.gle/AbC123xyz789'])
+        self.assertEqual(family_done.forms_of('https://docs.google.com/document/d/1abcdefghijkl/edit https://school.example/forms'), [])
+
+    def test_a_reminder_matches_the_to_do_done_from_the_first_email(self):
+        form = 'Order the letters via https://forms.gle/AbC123xyz789 before Friday the 13th.'
+        card = self.todo('reminder', message_id='<reminder@school.example>', mail_body='Reminder: ' + form)
+        self.relay.claims[self.key('form:forms.gle/AbC123xyz789')] = 'fm_robin'  # Robin did it from the first email
+        self.fleet.handled_round()
+        self.assertEqual(self.line(card)['name'], 'Robin')
+        self.assertEqual(self.row(card)['status'], 'pending')
+        self.todo('first', 'completed', '<first@school.example>', decided='complete', mail_body=form)
+        self.fleet.handled_round()
+        sent = [c['key'] for c in self.relay.sent('/claim')]
+        self.assertIn(self.key('form:forms.gle/AbC123xyz789'), sent)
+        self.assertNotIn('AbC123', json.dumps(self.relay.calls))  # only the code goes out
+
+    def test_a_form_link_in_many_emails_is_no_match(self):
+        footer = 'Report an absence: https://forms.gle/Footer12345'
+        for n in range(family_done.FORM_SPREAD):
+            self.todo(f'news{n}', 'completed', f'<news-{n}@school.example>', mail_body=f'Newsletter {n}. {footer}')
+        card = self.todo('trip', message_id='<trip@school.example>', mail_body='Pay for the trip. ' + footer)
+        self.relay.claims[self.key('form:forms.gle/Footer12345')] = 'fm_robin'
+        self.fleet.handled_round()
+        self.assertIsNone(self.line(card))
+
+    def test_a_form_link_counts_the_same_in_a_sealed_store(self):
+        sealed = a.Store(Path(self.temp.name) / 'sealed.sqlite', protect=True)
+        for n in range(2):
+            letter = mail('home', 1, 'School <office@school.example>', 'owner@gmail.com')
+            letter['body'] = f'Letter {n}: https://forms.gle/AbC123xyz789'
+            sealed.commit_page('home', {}, [letter])
+        with sealed.connect() as db:
+            self.assertEqual(family_done._spread(db, 'forms.gle/AbC123xyz789'), 2)
+            self.assertEqual(family_done._spread(db, 'forms.gle/Other1234567'), 0)
 
     def test_only_done_goes_out_and_only_as_a_code(self):
         self.todo('paid', 'completed', '<letter-1@school.example>', BILL, decided='complete')

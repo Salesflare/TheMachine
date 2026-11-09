@@ -25,10 +25,11 @@ Geht es in einer Aufgabe um Familienpläne mit jemandem, der noch nicht in deine
 
 ## Schon erledigt
 
-Bekommt ihr beide dieselbe E-Mail oder Rechnung und jemand von euch hakt die Aufgabe ab, steht bei der anderen Person „Robin hat das erledigt · Sa., 7. Nov.“.
+Bekommt ihr beide dieselbe E-Mail, Rechnung oder dasselbe Formular und jemand von euch hakt die Aufgabe ab, steht bei der anderen Person „Robin hat das erledigt · Sa., 7. Nov.“.
 
 - **Erledigt** schließt deine. **Noch nötig** behält sie und blendet die Zeile aus.
 - Nichts schließt sich von selbst.
+- Eine Erinnerung mit demselben Formular-Link zählt als dieselbe Aufgabe.
 - Geteilt wird nur ein Code, nie die Aufgabe. Ausschalten im Bereich Teilen: Aufgaben, die du schon erledigt hast.
 
 ## Regeln

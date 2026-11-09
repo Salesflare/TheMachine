@@ -2990,8 +2990,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         is Always), and mark the owner's open cards a teammate already closed: done by them, or settled by the very
         teammate the card would hand it to. Only from teammates whose handling rule isn't Never. Plain code.
 
-        A Family Fleet the same way, by its own rule (family.DONE): only to-dos closed as done go out, matched by email or
-        bill (family_done.sources), and an open one here gets a quiet line (done_elsewhere: who and when) instead of looking
+        A Family Fleet the same way, by its own rule (family.DONE): only to-dos closed as done go out, matched by email,
+        bill or form (family_done.sources), and an open one here gets a quiet line (done_elsewhere: who and when) instead of looking
         handled. It stays open: the owner taps Done or Still needed."""
         fleets = self.fleets()
         families = [ref for ref, f in fleets.items() if f.get('kind') == family.KIND]
@@ -3006,7 +3006,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
                     return
             sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
-            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
+            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
             announce, keep = [], set()
