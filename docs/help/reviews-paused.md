@@ -12,7 +12,7 @@ To-dos come from checks: your Machine looks at what came in within about 15 minu
 
 On a new hosted Machine, checks start by themselves once your AI and mail are connected. While your Machine reads your mail, To-dos says "Reading your mail, first to-dos in a few minutes." Once it knows how much there is, it says roughly how long: "First to-dos in about 10 min." If a step is missing, **Needs you** names it, like **Connect mail**, with a link to that step.
 
-While it reads, To-dos shows how far it got, a few of the people and organizations it came across, and your first to-do as soon as it's in. The names come from your own mail, and only you see them.
+While it reads, To-dos shows how far it got ("Read 20 of 132 messages. Reading the next 40…"), a few of the people and organizations it came across, and your first to-do as soon as it's in. The number counts messages it has finished reading; the bar keeps moving while it reads the next ones. The names come from your own mail, and only you see them.
 
 When the first look finds nothing for you, it says what it read and offers next steps, like connecting a service that mails you often or asking what changed this week.
 

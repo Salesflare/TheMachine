@@ -5,8 +5,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The live first look: while a new owner waits for their first to-dos, the robot says how far it read ("Reading 12 of
-// 284 emails…"), a few of the people and organizations it bumped into (first_dig.names, one more every few seconds),
+// The live first look: while a new owner waits for their first to-dos, the robot says how far it read ("Read 20 of
+// 284 emails. Reading the next 20…"), a few of the people and organizations it bumped into (first_dig.names, one more every few seconds),
 // and the first to-do's title the moment it is saved, while it reads on. Names and a to-do title only, never a word of
 // a message. Made-up fixtures, nothing sent. FIRST_LOOK_LIVE_SHOTS=<dir> also saves screenshots at 390 and 1440, light
 // and dark: early, names-appearing, first-todo.
@@ -42,8 +42,8 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   const box=page.locator('#suggestions .first-look-empty');
-  // Early: how far it read, in the robot's words, emails when every source is mail; no names yet
-  await page.waitForFunction(()=>/^Reading [1-9]\d* of 284 emails…$/.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
+  // Early: the batch it reads, in the robot's words, emails when every source is mail; no names yet
+  await page.waitForFunction(()=>/^Reading the first 20 of 284 emails…$/.test(document.querySelector('#suggestions .fl-count')?.textContent||''),null,{timeout:8000});
   assert.equal(await box.locator('.fl-names').count(),0);
   await shot('early');
   // Names appearing: the first one at once, one more every few seconds, three at most
@@ -65,7 +65,7 @@ try{
   assert.equal(await box.count(),0);
   const text=await strip.innerText();
   assert.match(text,/Taking a first look at your last 7 days/);
-  assert.match(text,/Reading \d+ of 284 emails…/);
+  assert.match(text,/Read 40 of 284 emails\. Reading the next 20…/);
   assert.ok(text.includes('First one’s in: Send Mila the signed pricing sheet. Still reading…'),text);
   assert.ok(text.includes('Bumped into Mila'),text);
   assert.ok(!text.includes(card.body),'never a word of a message');
@@ -77,7 +77,7 @@ try{
   // A source that is not mail: messages
   dig={...dig,unit:'message'};
   await page.evaluate(async()=>{await refresh()});
-  await page.waitForFunction(()=>/Reading \d+ of 284 messages…/.test(document.querySelector('#first-look .fl-count')?.textContent||''));
+  await page.waitForFunction(()=>/Read 40 of 284 messages\. Reading the next 20…/.test(document.querySelector('#first-look .fl-count')?.textContent||''));
   // Names that are no text never reach the page
   dig={...dig,names:[{x:1},'',null,'<b>Ann</b>']};
   await page.evaluate(async()=>{await refresh()});

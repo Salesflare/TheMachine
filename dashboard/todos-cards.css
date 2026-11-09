@@ -35,12 +35,16 @@ textarea:focus,textarea.filled{height:84px;border-color:var(--border-strong)}
 .fl-bar{display:block;flex:1 1 120px;max-width:240px;height:6px;border-radius:6px;background:var(--tile);overflow:hidden}
 .fl-bar i{display:block;height:100%;background:var(--mint);border-radius:6px;transition:width .4s ease}
 .fl-count{font-size:.85rem}
+/* While a batch is being read: a light sweeps the track and the bar shows from its first second, so the line reads as at work before its number moves */
+.fl-bar.fl-on{background:linear-gradient(90deg,var(--tile) 40%,color-mix(in srgb,var(--mint) 45%,var(--tile)) 50%,var(--tile) 60%) 0 0/300% 100%;animation:fl-sweep 1.8s linear infinite}
+.fl-bar.fl-on i{min-width:6px}
+@keyframes fl-sweep{from{background-position:100% 0}to{background-position:0 0}}
 .fl-names{font-size:.85rem;color:var(--cream);text-wrap:balance;animation:fl-in .4s ease}
 .first-look .fl-names{flex-basis:100%;color:var(--muted)}
 .first-look .fl-first{color:var(--cream);font-weight:600;animation:fl-in .4s ease}
 .all-clear.first-look-empty .fl-names{display:block;margin-top:6px}
 @keyframes fl-in{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.fl-names{animation:none}}
+@media (prefers-reduced-motion:reduce){.fl-names,.fl-bar.fl-on{animation:none}}
 .all-clear.first-look-empty .fl-bar{width:220px;max-width:70vw;margin:10px auto 4px}
 .all-clear.first-look-empty small{display:block;margin-top:6px}
 
