@@ -57,16 +57,14 @@ class Fixed(unittest.TestCase):
         self.assertEqual(f.relay.calls, [('POST', '/fixed', {'seen': 's_045cc20be4f1c3e6'})])
 
     def test_works_now_and_still_not_right_answer_and_close_it(self):
-        f = paired({'fixed': [], 'follow_up': 's_00000000000000aa'})
+        f = paired({'fixed': [{'id': 's_c09e28545b5e9226', 'text': 'Fixed: y.', 'at': ''}], 'follow_up': 's_00000000000000aa'})
         f.fixed_now = [{'id': 's_045cc20be4f1c3e6', 'text': 'Fixed: x.', 'at': ''}, {'id': 's_c09e28545b5e9226', 'text': 'Fixed: y.', 'at': ''}]
-        self.assertEqual(f.fixed_answer('s_045cc20be4f1c3e6', 'works'), {'fixed': f.fixed_now, 'follow_up': 's_00000000000000aa'})
-        self.assertEqual([i['id'] for i in f.fixed_now], ['s_c09e28545b5e9226'])
-        f.fixed_answer('s_c09e28545b5e9226', 'not_right', 'still empty after adding one', 'data:image/png;base64,AAAA')
-        self.assertEqual(f.relay.calls, [
-            ('POST', '/fixed', {'answer': 'works', 'report': 's_045cc20be4f1c3e6', 'text': '', 'screenshot': None}),
-            ('POST', '/fixed', {'answer': 'not_right', 'report': 's_c09e28545b5e9226', 'text': 'still empty after adding one',
-                                'screenshot': 'data:image/png;base64,AAAA'})])
-        self.assertEqual(f.fixed_now, [])
+        works = {'answer': 'works', 'report': 's_045cc20be4f1c3e6', 'text': '', 'screenshot': None}
+        self.assertEqual([i['id'] for i in f.fixed(answer=works)], ['s_c09e28545b5e9226'])
+        off = {'answer': 'not_right', 'report': 's_c09e28545b5e9226', 'text': 'still empty after adding one', 'screenshot': 'data:image/png;base64,AAAA'}
+        f.relay.answer = {'fixed': []}
+        self.assertEqual(f.fixed(answer=off), [])
+        self.assertEqual(f.relay.calls, [('POST', '/fixed', works), ('POST', '/fixed', off)])
 
     def test_the_action_checks_the_answer_and_says_a_refusal(self):
         app = object.__new__(a.App)

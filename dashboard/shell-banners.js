@@ -28,23 +28,16 @@ async function fixedLoad(){if(!state.manage_url){fixedList=(Array.isArray(state.
 // Each banner is built again only when what it says changes (a rebuild would drop focus from its button)
 const bannerSet=(b,key,nodes)=>{if(b.dataset.shown!==key){b.replaceChildren(...nodes);b.dataset.shown=key}b.hidden=!nodes.length};
 // Each asks whether it is really fixed: Works now (kept, closed) or Still not right, which opens a small box for what
-// is still off and an optional image, sent as a new report linked to this one (support_fixes.answer). × closes it
-// without an answer, as before.
+// is still off and an optional image (help-panel.js, loaded then), sent as a new report linked to this one
+// (support_fixes.answer). × closes it without an answer, as before.
 let fixedOpen=null,fixedShot=null;
 function renderFixed(){const b=$('#fixed-notice');if(!b)return;bannerSet(b,JSON.stringify([fixedList.map(f=>[f.id,f.text]),fixedOpen,!!fixedShot]),
  fixedList.map(f=>make('div',{class:'notice-card fixed-notice'},make('span',{},f.text),
   make('span',{class:'fixed-ask'},make('button',{type:'button',class:'head-link','data-fixed-works':f.id},t('Works now')),
    make('button',{type:'button',class:'head-link','data-fixed-off':f.id,'aria-expanded':String(fixedOpen===f.id)},t('Still not right'))),
   make('button',{type:'button',class:'fixed-close','data-fixed':f.id,'aria-label':t('Close'),title:t('Close')},'×'),
-  fixedOpen===f.id?fixedForm(f.id):'')));
+  fixedOpen===f.id&&typeof fixedForm==='function'?fixedForm(f.id):'')));
  if(state?.greeting)b.hidden=true}  // a new owner's first views stay quiet (Store.greeting)
-const fixedForm=id=>make('form',{class:'fixed-off','data-fixed-form':id,novalidate:''},
- make('label',{},t('What’s still off?'),make('textarea',{rows:'2',maxlength:'4000',spellcheck:'true',autocapitalize:'sentences'})),
- make('div',{class:'fixed-off-tools'},make('button',{type:'button',class:'chat-say','data-fixed-pick':''},t('Attach an image')),
-  make('input',{type:'file',accept:'image/png,image/jpeg,image/webp',hidden:''}),
-  fixedShot?make('img',{src:fixedShot,alt:t('Screenshot to send')}):'',fixedShot?make('button',{type:'button',class:'chat-say','data-fixed-unpick':''},t('Remove')):'',
-  make('span',{class:'fixed-off-go'},make('button',{type:'button',class:'ghost','data-fixed-cancel':''},t('Cancel')),make('button',{class:'primary'},t('Send')))),
- make('p',{class:'fixed-off-error',role:'status'}));
 const fixedDrop=id=>{fixedGone.add(id);fixedList=fixedList.filter(f=>f.id!==id);if(fixedOpen===id){fixedOpen=null;fixedShot=null}renderFixed()};
 // Hosted: to its account with the owner's sign-in there; self-hosted: through the Network (bug_fixed). The account's reason as an Error.
 async function fixedPost(body){if(state.manage_url){const r=await fetch('/_machine/fixed',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',redirect:'manual',body:JSON.stringify(body)});
@@ -53,21 +46,7 @@ async function fixedPost(body){if(state.manage_url){const r=await fetch('/_machi
 document.addEventListener('click',async e=>{const b=e.target.closest('#fixed-notice button');if(!b)return;const d=b.dataset;
  if(d.fixed){fixedDrop(d.fixed);try{await fixedPost({seen:d.fixed})}catch{}return}
  if(d.fixedWorks){fixedDrop(d.fixedWorks);try{await fixedPost({answer:'works',report:d.fixedWorks})}catch{}return}
- if(d.fixedOff){fixedOpen=fixedOpen===d.fixedOff?null:d.fixedOff;fixedShot=null;renderFixed();$('#fixed-notice textarea')?.focus();return}
- if(d.fixedCancel!==undefined){fixedOpen=null;fixedShot=null;renderFixed();return}
- if(d.fixedPick!==undefined){b.parentNode.querySelector('input[type=file]').click();return}
- if(d.fixedUnpick!==undefined){const w=$('#fixed-notice textarea').value;fixedShot=null;renderFixed();$('#fixed-notice textarea').value=w}});
-document.addEventListener('change',async e=>{const input=e.target.closest('#fixed-notice input[type=file]');if(!input)return;const f=input.files[0],out=$('#fixed-notice .fixed-off-error'),w=$('#fixed-notice textarea').value;
- if(!f)return;if(f.size>20e6){out.textContent=t('That image is too big.');return}
- try{fixedShot=await bugShrink(await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)}))}catch{out.textContent=t('That image can’t be read.');return}
- renderFixed();$('#fixed-notice textarea').value=w});
-document.addEventListener('submit',async e=>{const form=e.target.closest('[data-fixed-form]');if(!form)return;e.preventDefault();const id=form.dataset.fixedForm,send=form.querySelector('.primary'),out=form.querySelector('.fixed-off-error');
- send.disabled=true;out.textContent='';
- try{await fixedPost({answer:'not_right',report:id,text:form.querySelector('textarea').value.trim(),...(fixedShot?{screenshot:fixedShot}:{})});fixedDrop(id);toast(t('Thanks. We’ll take another look.'))}
- catch(err){out.textContent=err.message||t('Can’t reach your account right now. Try again.');send.disabled=false}});
-// An image picked or taken for a report, as a JPEG at most 1600 px wide (Report a bug, help-panel.js, and Still not right)
-async function bugShrink(src){const img=new Image();img.src=src;await img.decode();const k=Math.min(1,1600/img.naturalWidth),c=document.createElement('canvas');
- c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+ if(d.fixedOff)lazyRun('help',()=>{fixedOpen=fixedOpen===d.fixedOff?null:d.fixedOff;fixedShot=null;renderFixed();$('#fixed-notice textarea')?.focus()})});  // its box: help-panel.js
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=state.model_pause?['model',state.model_pause]:['review',state.review_pause],nodes=p[0]==='model'?limitBanner(p[1]):reviewBanner(p[1]);
  bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;

@@ -131,7 +131,8 @@ class SupportApp:
                                              and len(shot) <= self.BUG_SHOT_BYTES * 4 // 3 + 64):
                     raise ValueError('That screenshot can’t be sent. Try a smaller PNG or JPEG.')
                 try:
-                    return self.fleet.fixed_answer(args['report'], said, str(args.get('text') or '').strip()[:self.BUG_TEXT], shot)
+                    return {'fixed': self.fleet.fixed(answer={'answer': said, 'report': args['report'][:40], 'screenshot': shot or None,
+                                                              'text': str(args.get('text') or '').strip()[:self.BUG_TEXT]})}
                 except (fleet.Off, fleet.Unavailable, OSError) as error:
                     LOG.info('fixed answer not sent error=%s', type(error).__name__)
                     raise ValueError('Can’t reach your account right now. Try again.') from None

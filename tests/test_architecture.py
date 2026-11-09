@@ -412,7 +412,9 @@ OVER_BUDGET = {}
 # placement on a phone (about 3 KB after trimming); main was 1.3 KB under.
 # 1,494,000 -> 1,497,000 (2026-11-09): a routine's to-do names its routine with a link to it and its step on the button,
 # on To-dos itself (about 2.5 KB; first load 1,496,486).
-FIRST_LOAD_CEILING = 1_497_000
+# 1,497,000 -> 1,500,000 (2026-11-09): a Fixed line asks Works now or Still not right, with a close; the box for what is
+# still off and its image load with Help (about 3.3 KB of buttons and styles; first load 1,499,738).
+FIRST_LOAD_CEILING = 1_500_000
 LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 336_000, 'help': 40_000, 'learning': 24_000, 'settings': 124_000}
 
 
