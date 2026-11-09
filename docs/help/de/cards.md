@@ -76,6 +76,8 @@ Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Best�
 
 Bevor eine Nachricht oder Übergabe an jemanden als bereit erscheint, prüft deine Machine deine letzten Chats mit den Beteiligten, auch Gruppenchats, und wartet, bis Slack sie gelesen hat. Zeigt eine spätere Nachricht, dass es schon erledigt ist, etwa weil die Person gefragt wurde und zugesagt hat, schließt sich die Aufgabe von selbst. **Rückgängig** holt sie einen Tag lang zurück.
 
+Wenn eine neuere Nachricht den Plan ändert, etwa ein Fest an einem anderen Ort oder eine abgesagte Buchung, passt The Machine ihre Aufgaben selbst an. Eine, die noch zählt, folgt dem neuen Plan. Eine, bei der nichts mehr zu tun ist, wandert als "Nicht nötig" zu **Erledigt / verworfen**, ihr Chat sagt "Aktualisiert:" und warum, und **Rückgängig** holt sie einen Tag lang zurück.
+
 Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigste: **Änderungen anfragen** und **Nicht nötig**, wenn eine Aufgabe nicht ganz passt, und bei deinem ersten fertigen Entwurf, dass nichts rausgeht, bevor du auf **Senden** tippst. Ein Tipp verschwindet für immer, sobald du seinen Button nutzt oder auf × tippst, auf all deinen Geräten.
 
 An deinem ersten Tag begrüßt dich der Kopf von Aufgaben mit Namen und zeigt, wer am längsten auf deine Antwort wartet. Die Machine entwirft diese Antwort zuerst, damit sie bereitliegt, wenn du ankommst. Nichts geht raus, bevor du sie sendest. Die Zeile verschwindet nach deinem ersten Tag oder deiner ersten entschiedenen Aufgabe.

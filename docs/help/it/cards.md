@@ -76,6 +76,8 @@ Un'attività che contava solo fino a un certo momento, come una conferma prima d
 
 Prima che un messaggio o un passaggio per qualcuno appaia pronto, la tua Machine controlla le tue chat recenti con le persone coinvolte, anche di gruppo, e aspetta che Slack le legga. Se un messaggio successivo mostra che è già fatto, ad esempio la persona è stata già chiesta e ha detto sì, l’attività si chiude da sola. **Annulla** la riporta indietro per un giorno.
 
+Quando un messaggio più recente cambia il piano, come una festa spostata altrove o una prenotazione annullata, The Machine aggiorna da sola le sue attività. Una che conta ancora segue il nuovo piano. Una in cui non resta niente da fare passa tra quelle fatte come "Non serve", la sua chat dice "Aggiornato:" e perché, e **Annulla** la riporta indietro per un giorno.
+
 Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Chiedi modifiche** e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
 
 Il primo giorno, la parte alta delle Attività ti saluta per nome e mostra chi aspetta la tua risposta da più tempo. The Machine prepara prima quella risposta, così è pronta quando arrivi. Non parte nulla finché non la invii. La riga sparisce dopo il primo giorno o la prima attività decisa.
