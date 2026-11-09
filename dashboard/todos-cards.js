@@ -391,8 +391,8 @@ function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'
 const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
 // One The Machine made about itself (origin machine: what an update set aside or kept) has nothing to plan: Done and Snooze.
 // One from the computer's logs (machine_log) keeps Not needed, and with a safe fix (machine_fix) also offers Do it, which runs only that fix.
-// A fix an update set aside (parked_redo) offers Redo it while nothing runs on it (the usual self-fix run), and Try again when that run got stuck.
-const redoLead=s=>s?.origin==='machine'&&!!s.parked_redo&&s.preparation_status!=='blocked'&&(s.status==='pending'||(s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})()));
+// parked_redo (set-aside fix): Redo it, or Try again once stuck
+const redoLead=s=>!!s?.parked_redo&&s.preparation_status!=='blocked'&&(s.status==='pending'||/"state": *"answered"/.test(s.outcome||''));
 const ownFix=s=>!!s?.machine_fix||redoLead(s);
 const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:redoLead(s)?[['accept','Redo it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&s.machine_log)||(c==='retry'&&s.parked_redo))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
