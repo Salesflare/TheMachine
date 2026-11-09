@@ -106,8 +106,10 @@ def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=F
                + ' | '.join(f"{a['id']} ({a['label']}{held(a['id'])})" for a in others) + '>, and a reason that says why in one line. '
                'Ask for a move only to use an account that area has (listed with it), never for what the to-do is about: one about '
                'another company of the owner\'s, its product or its code, stays here when these accounts can do the work. When the '
-               'messages it came from all came in on that area, it moves there by itself and carries on in a new run; otherwise the '
-               'to-do shows the owner a button to move it. You never move it yourself. Once it moves, it carries on by itself.')
+               'messages it came from all came in on that area, or it came from a routine\'s own draft, it moves there by itself and '
+               'carries on in a new run; otherwise the to-do shows the owner a button to move it. You never move it yourself. Once it '
+               'moves, it carries on by itself. When two accounts in different areas could each do it and nothing says which, ask '
+               'which account in questions instead, never to move it.')
         homes = sorted({a['email'] for a in accounts if a['id'] in {x for _, x in sources or ()} - inside and next_actions.mail_account(a) and a.get('email')}) if here == todo_areas.PERSONAL else []
         if homes:  # a matter of the owner's own life on a work mailbox: its reply goes where its thread is (next_actions.personal_reply_home)
             out += (' A reply in one of its own threads goes from the mailbox that thread came in on (' + ', '.join(homes) + '), also one '

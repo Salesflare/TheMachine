@@ -276,6 +276,7 @@
  "day is YYYY-MM-DD",
  "detail-section person-contact",
  "direction is mine or theirs",
+ "draft account is the id of the account it goes out from: {}",
  "draft act is post or send",
  "draft needs title (what it is about and where it goes, like Post on X about the faster search) and text (the exact words)",
  "due is YYYY-MM-DD",

@@ -74,6 +74,7 @@ class Runs(unittest.TestCase):
         self.app = object.__new__(a.App); self.app.store = self.store
         self.app.config = {'accounts': [dict(x) for x in ACCOUNTS], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}  # no OpenClaw jobs (test_routine_imports.py)
+        self.store.accounts = self.app.config['accounts']  # as the App sets it (machine/main.py)
         self.now = T(2026, 11, 9, 6, 0)  # a Monday, early
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: self.paused),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
@@ -340,6 +341,35 @@ class Runs(unittest.TestCase):
         with self.store.connect() as db:
             view = self.store.suggestion_result(card, db)
         self.assertEqual(view['routine'], {'id': rid, 'name': 'Check what shipped in the', 'live': False})
+
+    def test_a_draft_starts_in_the_area_of_the_account_it_goes_out_from(self):
+        # A Personal routine whose post is a company's product news, from that company's X account: its to-do starts in
+        # that company's Work with its accounts, so its run has what it needs and never stops to ask for a move
+        mine = [{'id': 'home-phone', 'service': 'android', 'boundary': 'personal:phone'},
+                {'id': 'acme-mail', 'service': 'gmail', 'email': 'robin@acme.example', 'boundary': 'work:Acme'},
+                {'id': 'side-x', 'service': 'x', 'boundary': 'work:Side Labs'},
+                {'id': 'gateway', 'service': 'gateway', 'boundary': 'owner:system'}]
+        self.app.config['accounts'] = self.store.accounts = mine
+        rid = self.make('every day at 9, check what shipped in the open source repo and draft a short post on X')
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        start = [s for s in self.sent if s['action'] == 'start'][-1]['message']
+        self.assertIn('Accounts: home-phone (android, Personal), acme-mail (gmail, Work at acme.example), side-x (x, Work at Side Labs).', start)
+        self.assertIn('account: the id of the account it goes out from', start)
+        post = {'title': 'Post on X about the faster search', 'text': 'Two new things shipped today.', 'act': 'post'}
+        with self.assertRaisesRegex(ValueError, 'draft account is the id of the account it goes out from: home-phone, acme-mail, side-x'):
+            self.report('Would post on X: hi', draft={**post, 'account': 'gateway'})
+        self.report('Would post on X: Two new things shipped today.', draft={**post, 'account': 'side-x'})
+        with self.store.connect() as db:
+            card = dict(db.execute('SELECT * FROM suggestions').fetchone())
+            source = db.execute('SELECT account_id FROM events WHERE kind=?', ('routine.draft',)).fetchone()[0]
+        self.assertEqual((card['area'], card['account_ids'], source), ('work:Side Labs', '["side-x"]', 'side-x'))
+        # Without an account it keeps the routine's side, as before
+        self.now = T(2026, 11, 10, 9, 30)
+        self.act('routine_run_now', id=rid); self.app.routines_step()
+        self.report('Would post on X: One more thing shipped.', draft={**post, 'text': 'One more thing shipped.'})
+        with self.store.connect() as db:
+            later = dict(db.execute("SELECT * FROM suggestions WHERE id!=?", (card['id'],)).fetchone())
+        self.assertEqual((later['area'], later['account_ids']), (None, '["home-phone"]'))
 
     def test_try_it_shows_new_words_without_changing_the_routine(self):
         rid = self.make('every Monday at 9, sum up my open deals')

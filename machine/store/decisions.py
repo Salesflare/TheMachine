@@ -141,14 +141,22 @@ def follows_sources(db, suggestion_id, area, accounts):
     """Whether a run's move to area happens by itself (Store.preparation_blocked): every message the to-do came from
     came in on that area (todo_areas.sources_area), so the move takes it where its sources already are, and nothing on
     it reaches anyone they did not already. Not for a to-do pinned Personal (its own life, never a Work Fleet's), nor
-    once it has moved: the owner's own move stands, and after a move it made itself or an Undo the next one is theirs."""
+    once it has moved: the owner's own move stands, and after a move it made itself or an Undo the next one is theirs.
+    A to-do made only from the Machine's own words (a routine's draft, MACHINE_OWN) has no messages from anyone: it
+    goes where the account it needs is, since nothing on it reaches anyone new there."""
     row = db.execute('SELECT area,event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     if not row or row['area'] == todo_areas.PERSONAL:
         return False
     if db.execute('SELECT 1 FROM card_moves WHERE suggestion_id=? LIMIT 1', (suggestion_id,)).fetchone():
         return False
-    found = [r[0] for r in db.execute('SELECT e.account_id FROM events e JOIN json_each(?) j ON j.value=e.id', (row['event_ids'] or '[]',))]
+    rows = db.execute('SELECT e.account_id,e.kind FROM events e JOIN json_each(?) j ON j.value=e.id', (row['event_ids'] or '[]',)).fetchall()
+    found = [r[0] for r in rows if r[1] not in MACHINE_OWN]
+    if rows and not found:
+        return True
     return bool(found) and todo_areas.sources_area(found, accounts) == area
+
+
+MACHINE_OWN = ('routine.draft',)  # evidence the Machine wrote itself (routines_app.routine_draft_todo), from no one
 
 
 def draft_saved(db, suggestion_id, action, at=None):
@@ -1119,7 +1127,7 @@ class DecisionsStore:
         """A run that can't go on. move_to: it needs the to-do in another of the owner's areas (todo_areas.py), such as Work
         to send from the company's mailbox. The to-do offers the move for the owner's tap (move_card), and carries on after
         it; it moves by itself when the owner added it without an area (owner_area_open) or the messages it came from are
-        all in that area (follows_sources). use_event_ids: collected messages from another area it needs (up to 5, not
+        all in that area, or it came from no one's (a routine's draft) (follows_sources). use_event_ids: collected messages from another area it needs (up to 5, not
         its own sources already): the to-do offers "Use this email for this to-do" (use_sources), and carries on after it.
         connect: a source it needs that isn't connected (slack, gmail…): the to-do offers Connect Slack, which opens it in
         Connections, and carries on by itself once it is connected (resume_connected); Try again stays in its menu.
@@ -1166,7 +1174,8 @@ class DecisionsStore:
                        (reason,(details or '').strip() or None,encoded(questions),move_to,use_event_ids,connect,now(),suggestion_id))
             pause_idle_steps(db,suggestion_id)  # nothing runs now: its confirmed step waits for Try again or an answer
             # It moves itself (no tap) when the owner added it without an area and nothing placed it yet (the run found where
-            # it belongs), or when the messages it came from are all in that area (follows_sources)
+            # it belongs), or when the messages it came from are all in that area or it has none, only the Machine's own
+            # words, as a routine's draft (follows_sources)
             unplaced=move_to is not None and move_to in owner_area_open(db,suggestion_id)
             sourced=move_to is not None and not unplaced and follows_sources(db,suggestion_id,move_to,getattr(self,'accounts',None) or [])
             if not (unplaced or sourced):
@@ -1174,7 +1183,7 @@ class DecisionsStore:
         if unplaced or sourced:
             try:
                 moved=self.move_card(suggestion_id,move_to,'placed:'+job_id,'placed')
-                why='The owner gave this to-do no area' if unplaced else 'The messages this to-do came from are all in that area'
+                why='The owner gave this to-do no area' if unplaced else 'What this to-do came from is all in that area or The Machine\'s own'
                 return {'status':'moved','area':moved['area'],'resumed':moved['resumed'],
                         'note':why+', so it moved to '+moved['label']+' by itself and carries on in a new run there. Stop here.'}
             except ValueError as error:  # it can't move now (closed meanwhile): the owner gets the one-tap move as usual

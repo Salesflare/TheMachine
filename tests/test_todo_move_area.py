@@ -273,6 +273,28 @@ class MovesByItself(unittest.TestCase):
                 card = self.view(sid)[0]
                 self.assertEqual((card['account_ids'], card['preparation_move_to']), (before, to))
 
+    def test_a_routines_draft_goes_where_the_account_it_needs_is(self):
+        # Made only from the Machine's own words (a routine's draft, in Personal): no one's messages to keep in their
+        # area, so a run that needs the Acme accounts gets them with no tap and carries on, and the line says so
+        source = self.store.reviewed_event('home-phone', 'routine-draft:r1', 'routine.draft', 'Post on X about the faster search',
+                                           'Two new things shipped today.', {'sender_display': 'Check what shipped', 'routine': 'a' * 32})
+        sid, job = self.card([source])
+        self.assertEqual(json.loads(self.view(sid)[0]['account_ids']), ['home-phone'])
+        out = self.store.preparation_blocked(sid, job, 'The post goes from the Acme X account.', move_to='work:Acme')
+        self.assertEqual((out['status'], out['area'], out['resumed']), ('moved', 'work:Acme', True))
+        card, lines = self.view(sid)
+        self.assertEqual((json.loads(card['account_ids']), card['preparation_status'], card['preparation_move_to']),
+                         (['acme-mail', 'acme-chat'], 'queued', None))
+        self.assertEqual(lines, ['Do it', 'Moved to Work at acme.example'])
+        # With one message from someone else on it, that message's area still decides
+        mixed, job = self.card([source, 2])
+        self.assertEqual(self.store.preparation_blocked(mixed, job, 'It needs the Acme Slack.', move_to='work:Acme')['status'], 'blocked')
+
+    def test_the_run_asks_which_account_rather_than_for_a_move(self):
+        line = a.area_prompt(self.app.config, '["home-chat"]')
+        self.assertIn('or it came from a routine\'s own draft, it moves there by itself', line)
+        self.assertIn('ask which account in questions instead, never to move it', line)
+
     def test_after_a_move_the_next_one_is_the_owners(self):
         sid, job = self.card([1], company='work:Beta')
         self.app.action('card_move', {'suggestion_id': sid, 'area': 'personal', 'decision_id': 'mine-1'}, owner_dashboard=True)
