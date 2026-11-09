@@ -36,6 +36,7 @@ class Changes(unittest.TestCase):
         self.app = object.__new__(a.App); self.app.store = self.store
         self.app.config = {'accounts': [{'id': 'w', 'boundary': 'work:acme.example'}], 'timezone': 'Europe/Brussels',
                            'openclaw_state': self.temp.name + '/none.sqlite'}
+        self.store.accounts = self.app.config['accounts']  # as the App sets it (machine/main.py)
         self.now = T(2026, 11, 9, 6, 0)
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
