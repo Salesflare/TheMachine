@@ -830,8 +830,8 @@ class GraphActionsApp:
         with self.store.connect() as db:
             done = graph.save_board(db, args, now()) if name == 'board_save' else graph.delete_board(db, args.get('board_id'), now()) \
                 if name == 'board_delete' else graph.dismiss_board_suggestion(db, args.get('suggestion_id'), now())
-        if name != 'board_dismiss':
-            self.graph_build()
+        if name != 'board_dismiss':  # the board view reads boards and projects as they are now: the Graph follows in the background
+            self.graph_later()  # a whole build here held a board edit some 12 s on a big Graph
         return done
 
     def project_visibility_action(self, name, args, owner_dashboard=False):

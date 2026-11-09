@@ -340,6 +340,15 @@ def save(db, scope, ref, raw, now):
     return settings
 
 
+def rename_stages(db, board_id, names):
+    """A board's renamed stages ({old: new}): its setting per stage goes along, so a stage set off stays off."""
+    settings = rule(db, 'board', board_id) if names else None
+    if settings and settings.get('stages'):
+        new = {k.casefold(): v for k, v in names.items()}
+        settings['stages'] = {new.get(k.casefold(), k): v for k, v in settings['stages'].items()}
+        db.execute("UPDATE follow_up_rules SET settings=? WHERE scope='board' AND ref=?", (json.dumps(settings, sort_keys=True), int(board_id)))
+
+
 def any_on(db):
     try:
         return any(json.loads(r[0]).get('on') for r in db.execute('SELECT settings FROM follow_up_rules'))

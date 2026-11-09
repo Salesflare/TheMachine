@@ -4192,14 +4192,14 @@ def save_board(db, args, now):
         before = [s['name'] for s in json.loads(old['stages'])]
         renamed = {s['was'].casefold(): s['name'] for s in stages if s.get('was')}
         kept = [n for n in before if n.casefold() in renamed]
-        for was in before:  # renamed stages carry their projects; removed ones hand them to the nearest earlier stage that stays
-            if was.casefold() in renamed:
-                if renamed[was.casefold()] != was:
-                    db.execute('UPDATE projects SET stage=? WHERE board_id=? AND stage=? COLLATE NOCASE', (renamed[was.casefold()], board_id, was))
-                continue
+        gone = {was: db.execute('SELECT id FROM projects WHERE board_id=? AND stage=? COLLATE NOCASE', (board_id, was)).fetchall() for was in before if was.casefold() not in renamed}
+        names = {was: renamed[was.casefold()] for was in kept if renamed[was.casefold()] != was}
+        for table in ('projects', 'project_moves'):  # a renamed stage keeps its projects and past moves; one statement each, so a swap never collides
+            db.execute(f'UPDATE {table} SET stage=coalesce((SELECT value FROM json_each(?) WHERE key={table}.stage COLLATE NOCASE),stage) WHERE board_id=?', (json.dumps(names), board_id))
+        __import__('follow_ups').rename_stages(db, board_id, names)  # and its follow-up setting
+        for was, rows in gone.items():  # removed stages (read before the renames) hand their projects to the nearest earlier stage that stays
             earlier = [n for n in kept if before.index(n) < before.index(was)]
             to = renamed[earlier[-1].casefold()] if earlier else stages[0]['name']
-            rows = db.execute('SELECT id FROM projects WHERE board_id=? AND stage=? COLLATE NOCASE', (board_id, was)).fetchall()
             for r in rows:
                 db.execute('INSERT INTO project_moves(project_id,board_id,stage,reason,event_id,source,at,created_at) VALUES(?,?,?,?,?,?,?,?)',
                            (r['id'], board_id, to, f'{was} was removed', None, 'owner', now, now))
