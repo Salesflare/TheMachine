@@ -58,7 +58,7 @@ LinkedIn, X et Salesflare gardent leur propre rythme.
 
 Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md).
 
-**Demander des modifications** dit ce qu’il faut changer : comment faire, ou, une fois le brouillon prêt, ce qu’il faut y changer. Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sans brouillon, sinon en haut de **…**. Elle quitte la liste tout de suite, avec **Annuler** dans le message. Balayez le message ou faites-le glisser avec la souris pour le fermer plus tôt. Le changement reste.
+**Demander des modifications** dit ce qu’il faut changer : comment faire, ou, une fois le brouillon prêt, ce qu’il faut y changer. Quand la rangée est pleine sur un téléphone, **Mettre en attente** passe dans **…**. **Marquer comme fait** (c’est réglé) est là aussi : visible sur une tâche prête sans brouillon, sinon en haut de **…**, aussi sur une qui attend votre décision. Elle quitte la liste tout de suite, avec **Annuler** dans le message. Balayez le message ou faites-le glisser avec la souris pour le fermer plus tôt. Le changement reste.
 
 Pour la faire autrement, dites-le dans son **Chat**.
 
