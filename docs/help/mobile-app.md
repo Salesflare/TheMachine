@@ -27,7 +27,7 @@ A notification has **Snooze** (until tomorrow) and **Mark done**, and **Do it** 
 
 When a step you confirmed goes through, its notification says **Done** and what happened, until you tap **Got it** on To-dos. On iPhone that can wait until you next open the app.
 
-With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. So does a lock screen that hides notification content. When there's nothing it may show, it says "Tap to open."
+With **Text in notifications** off in **Settings**, **Security**, it keeps the fixed line. So does a lock screen that hides notification content. When there's nothing it may show, it says "Tap to open." If your phone can't reach your Machine when one comes in, it shows the details once it's back online.
 
 They follow the same rules as push on the web: what you picked per kind in [Notifications](notifications.md), your [work hours](work-hours.md), and nothing while you are using a dashboard.
 

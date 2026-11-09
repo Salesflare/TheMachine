@@ -33,6 +33,12 @@
             </intent-filter>
         </service>
 
+        <!-- A wakeup shown with the fixed words: asks the Machine again once the phone is online (NoticeRetry) -->
+        <service
+            android:name=".NoticeRetry"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
+
         <!-- A notification's Do it, Snooze and Mark done buttons: the dashboard's own decision, never a send -->
         <receiver
             android:name=".NotificationActions"

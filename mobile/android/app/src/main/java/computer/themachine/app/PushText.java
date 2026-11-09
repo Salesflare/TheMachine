@@ -93,6 +93,23 @@ final class PushText {
         return machine + path;
     }
 
+    /** How long the app keeps asking about a wakeup it couldn't ask about at once (NoticeRetry). */
+    static final int RETRY_HOURS = 12;
+
+    /** Whether the time to ask again about a wakeup first shown at `since` is over. */
+    static boolean retryOver(long since, long now) {
+        return since <= 0 || now < since || now - since > RETRY_HOURS * 3_600_000L;
+    }
+
+    /**
+     * Whether a wakeup's fixed notification still stands for it: it shows, and for a kind that counts ("2 to-dos need
+     * you") the wakeup is still among what it counts (opening the app or a clear takes it out).
+     */
+    static boolean stillWaiting(boolean shown, String many, java.util.Set<String> counted, String tag) {
+        if (!shown) return false;
+        return many == null || many.isEmpty() || (counted != null && counted.contains(tag));
+    }
+
     /** Where several of a kind without their line add up: one notification that says how many. */
     static String group(String kind, String state) {
         return "machine-" + kind + (state == null || state.isEmpty() ? "" : "-" + state);
