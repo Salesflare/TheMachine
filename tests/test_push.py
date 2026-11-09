@@ -161,6 +161,30 @@ class PhoneNotifications(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual({r[0] for r in db.execute('SELECT status FROM deliveries WHERE suggestion_id IN (?,?)', (first, second))}, {'sent'})
 
+    def test_an_automated_follow_up_reaches_the_list_without_any_notification(self):
+        self.store.commit_page('work', {}, [{'account_id': 'work', 'source_id': 'one', 'kind': 'gmail.message', 'occurred_at': a.now(),
+                                             'title': 'Evidence', 'body': 'Evidence', 'metadata': {}, 'deleted': False}])
+        follow = self.store.suggest('follow-up:7:1', 'Follow up with Example Co', 'No reply for 3 days. Follow-up 3 of at most 3.', [1])['id']
+        other = self.store.suggest('two', 'Reply to Sam', 'Sam asked for the quote.', [1])['id']
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET deliver_after=NULL')
+            db.execute("UPDATE suggestions SET created_at='2026-10-14T09:00:00+00:00' WHERE id=?", (follow,))  # goes first
+            db.execute("INSERT INTO follow_up_cards(suggestion_id,project_id,board_id,grouped,n,of_max,channel,after_event,after_at,created_at) "
+                       "VALUES(?,7,3,1,3,3,'email',1,'2026-10-10T09:00:00+00:00',?)", (follow, a.now()))
+        with patch.object(a.dt, 'datetime', Daytime), patch_everywhere(a, 'telegram', return_value={'messageId': '101'}) as send, \
+                patch_everywhere(a, 'push_notify') as push, patch_everywhere(a, 'hold_mail') as mail:
+            self.assertTrue(a.deliver_one(self.store, self.config, edit_cards=False))
+            # In the list (and Telegram's chat, without a buzz), but no push and no email
+            self.assertEqual((send.call_args.args[1]['id'], send.call_args.args[1]['_silent']), (follow, True))
+            self.assertEqual((push.call_count, mail.call_count), (0, 0))
+            # It doesn't count as a ping: a real to-do right after still buzzes, pushes and emails
+            self.assertTrue(a.deliver_one(self.store, self.config, edit_cards=False))
+            self.assertEqual([c.args[2]['id'] for c in push.call_args_list], [other])
+            self.assertFalse(push.call_args.args[2]['_silent'])
+            self.assertEqual(mail.call_count, 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM deliveries WHERE suggestion_id=?', (follow,)).fetchone()[0], 'sent')
+
     def test_a_later_card_of_a_batch_is_a_silent_notification(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         sent = []

@@ -397,7 +397,8 @@ class FollowUpsApp:
 
     def follow_up_card(self, db, item):
         """A follow-up to-do for one due project, prepared ahead (the owner's voice, the last exchange). A board's go
-        into its grouped to-do; the first of a batch keeps its notification, the others don't add one each."""
+        into its grouped to-do: the first of a batch is delivered, the others go under it. None of them notifies
+        (deliver_one: no buzz, push or email); they wait in the list and the morning digest."""
         p, board, settings = item['project'], item['board'], item['settings']
         msgs = follow_ups.messages(db, p['id'], self.follow_up_mine())
         theirs = [m for m in msgs if not m['mine']]

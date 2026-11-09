@@ -169,7 +169,12 @@ def deliver_one(store, config, edit_cards=True):
             if edit['needs_edit'] and (edit['edit_failures'] or 0) < 3:return
         # A batch (morning digest, several snoozes coming back at 09:00) buzzes once: only
         # the first card in a three-minute window notifies, the rest arrive silently.
-        row['_silent']=bool(db.execute('SELECT 1 FROM deliveries WHERE suggestion_id!=? AND last_notified_at>?',
+        # An automated follow-up (follow_ups.py: drafted on The Machine's own schedule) never pings: no buzz, no push, no
+        # email. Its draft waits quietly in the list and the morning digest for the owner's Send. It doesn't count as
+        # a ping either, so it never silences a real one.
+        row['_quiet']=bool(db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(row['id'],)).fetchone())
+        row['_silent']=row['_quiet'] or bool(db.execute("SELECT 1 FROM deliveries WHERE suggestion_id!=? AND last_notified_at>? "
+            "AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE state='open')",
             (row['id'],(dt.datetime.fromisoformat(now())-dt.timedelta(minutes=3)).isoformat())).fetchone())
         db.execute("UPDATE deliveries SET status='sending',send_kind=?,updated_at=? WHERE suggestion_id=?", ('notice' if row['_result_notice'] else 'card',now(), row['id']))
     status, message_id, error = 'uncertain', None, None
@@ -226,7 +231,7 @@ def deliver_one(store, config, edit_cards=True):
                     db.execute("UPDATE deliveries SET status='queued',reminder=1,error=NULL WHERE suggestion_id=?",(row['id'],))
     # Optional phone delivery must never delay committing a known Telegram receipt. A batch buzzes once (_silent),
     # but every card of it reaches the phone, as it reaches Telegram.
-    if status == 'sent':
+    if status == 'sent' and not row['_quiet']:
         try:push_notify(store, config, row)
         except Exception as failure:LOG.warning('push error=%s', type(failure).__name__)
         try:

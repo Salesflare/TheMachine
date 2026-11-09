@@ -25,7 +25,7 @@ Para um projeto só, **Follow-ups…** no **⋯** do cartão dele ou na página 
 
 ## Perguntar ou enviar sozinha
 
-**Perguntar antes de enviar** é o padrão: os rascunhos esperam nas suas tarefas. **Enviar sem perguntar** é um sim permanente para aquele quadro ou projeto. O que for fora do comum continua esperando por você, assim como o que falhar. Com o modo Cuidadoso ativo, ela sempre pergunta. Um follow-up nunca sai duas vezes.
+**Perguntar antes de enviar** é o padrão: os rascunhos esperam nas suas tarefas. **Enviar sem perguntar** é um sim permanente para aquele quadro ou projeto. O que for fora do comum continua esperando por você, assim como o que falhar. Com o modo Cuidadoso ativo, ela sempre pergunta. Um follow-up nunca sai duas vezes. Follow-ups nunca te notificam, nem por push nem por email: os rascunhos esperam na sua lista e no resumo da manhã.
 
 Logo antes do envio, a conversa é verificada de novo, e se alguém escreveu depois do rascunho, ele não sai: "Não enviado: nova mensagem na conversa". A tarefa mostra essa mensagem, quem escreveu e quando, com **Ler** e **Refazer para esta mensagem**, que pede um rascunho novo que leve ela em conta.
 
