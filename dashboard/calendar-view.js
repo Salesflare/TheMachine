@@ -53,7 +53,8 @@ function calItems(from=calDay(0),to=calDay(1)){const days=[];for(let d=calMid(fr
   out.push({day,kind:'meeting',at:a.getTime(),m,s,past:b.getTime()<now,promises:[]})}
  for(const s of open){if(seen.has(s.id))continue;
   if(s.status==='snoozed'&&s.snoozed_until){const d=new Date(s.snoozed_until),day=localDay(d);if(week.has(day))out.push({day,kind:s.handoff_wait?'checkin':'back',at:d.getTime(),s});continue}
-  if(s.due&&!(looksDone(s)&&s.due<today)&&(s.due<today?withToday:week.has(s.due)))out.push({day:s.due<today?'overdue':s.due,kind:'due',at:-1,s})}
+  // A to-do that looks done (answered elsewhere, or its run found it done) is not due: never Due nor Overdue here
+  if(s.due&&!looksDone(s)&&(s.due<today?withToday:week.has(s.due)))out.push({day:s.due<today?'overdue':s.due,kind:'due',at:-1,s})}
  // One row per promise: said by both sides it is a plan made together, shown as the owner's ("With …"); one about a
  // meeting that day with the same person rides on that meeting's row
  const said=new Map();for(const p of state.promises||[]){if(p.state!=='open'||!p.due||!(p.due<today?withToday:week.has(p.due)))continue;

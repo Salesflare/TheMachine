@@ -19,7 +19,7 @@ A meeting on two calendars shows once. A calendar someone shared with you shows 
 
 A plan made together is one promise, marked "With" and their name. A promise about a meeting that day with the same person sits on that meeting's row.
 
-**Overdue** comes first. A meeting with an open to-do shows it: **Prep ready**, **Preparing** or **To-do**.
+**Overdue** comes first. A meeting with an open to-do shows it: **Prep ready**, **Preparing** or **To-do**. A to-do that looks done (you already answered, or its run found it done) is not shown as **Due**.
 
 ## Agenda, week or month
 

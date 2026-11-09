@@ -19,7 +19,7 @@ Ein Meeting, das in zwei Kalendern steht, erscheint nur einmal. Ein Kalender, de
 
 Ein gemeinsam gemachter Plan ist ein Versprechen, markiert mit „Mit“ und dem Namen der Person. Ein Versprechen zu einem Meeting am selben Tag mit derselben Person steht in der Zeile dieses Meetings.
 
-**Überfällig** kommt zuerst. Ein Meeting mit einer offenen Aufgabe zeigt sie an: **Vorbereitung bereit**, **Wird vorbereitet** oder **Aufgabe**.
+**Überfällig** kommt zuerst. Ein Meeting mit einer offenen Aufgabe zeigt sie an: **Vorbereitung bereit**, **Wird vorbereitet** oder **Aufgabe**. Eine Aufgabe, die scheinbar erledigt ist (du hast schon geantwortet, oder ihr Lauf fand sie erledigt), steht nicht als **Fällig** da.
 
 ## Agenda, Woche oder Monat
 

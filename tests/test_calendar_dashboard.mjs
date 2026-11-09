@@ -38,7 +38,11 @@ const cards=[
  card('e','Renew the shop domain','pending',{due:day(-1)}),
  card('f','Already done and due today','completed',{due:day(0)}),
  card('9','Due next month','pending',{due:day(40)}),
- card('8','Pack for the weekend','pending',{event_ids:'[107]'})];  // a card can't be a shared calendar's meeting
+ card('8','Pack for the weekend','pending',{event_ids:'[107]'}),  // a card can't be a shared calendar's meeting
+ // Look done: answered in the conversation itself, or its run found it done. Not due on any day, also not today or later
+ card('7','Answered in the chat already','prepared',{due:day(1),handled_hint:JSON.stringify({reason:'Answered in Slack',event_ids:[1],at:now})}),
+ card('6','Its run found it done','prepared',{due:day(0),outcome:JSON.stringify({state:'already_done'})}),
+ card('5','Answered before its date passed','pending',{due:day(-1),handled_hint:JSON.stringify({reason:'Answered in Gmail',event_ids:[2],at:now})})];
 const promises=[
  {id:1,direction:'mine',who:'Alex Morgan',what:'Send the Q3 deck',due:day(4),state:'open',made_at:now,check_at:now},
  {id:2,direction:'theirs',who:'Sam Lee',what:'Send the signed contract',due:day(2),state:'open',made_at:now,check_at:now},
@@ -109,6 +113,7 @@ try{
   assert.equal(await page.locator('.cal-item',{hasText:'Pram from Evelien'}).locator('.cal-said').textContent(),'Promised to Evelien Smit: pick up the pram after swimming');
   assert.equal(await page.locator('.cal-item',{hasText:'Dentist'}).locator('.cal-sub').count(),0);assert.match(b[7].rows.join('\n'),/^08:30 \| Dentist \| $/m,'no end time: only the start');
   assert.ok(!b.some(x=>x.rows.join().includes('Due next month')));
+  for(const done of ['Answered in the chat already','Its run found it done','Answered before its date passed'])assert.ok(!b.some(x=>x.rows.join().includes(done)),done+': looks done, so not due');
   // No event line starts with "You"
   assert.ok(!b.flatMap(x=>x.rows).some(r=>r.split(' | ').some(p=>/^You\b/.test(p))));
   // The meeting's card chip; the standup at 00:15 is over and steps back; a meeting without a card opens its details in

@@ -19,7 +19,7 @@ Una riunione presente su due calendari compare una volta sola. Un calendario che
 
 Un piano fatto insieme è una sola promessa, segnata "Con" e il nome dell’altra persona. Una promessa su una riunione di quel giorno con la stessa persona sta sulla riga di quella riunione.
 
-**In ritardo** viene per primo. Una riunione con un’attività aperta la mostra: **Preparazione pronta**, **In preparazione** o **Attività**.
+**In ritardo** viene per primo. Una riunione con un’attività aperta la mostra: **Preparazione pronta**, **In preparazione** o **Attività**. Un’attività che sembra fatta (hai già risposto, o la sua esecuzione l’ha trovata fatta) non appare con una **Scadenza**.
 
 ## Agenda, settimana o mese
 

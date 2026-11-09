@@ -19,7 +19,7 @@ Uma reunião que está em duas agendas aparece uma vez só. Uma agenda que algu�
 
 Um plano feito em conjunto é uma promessa só, marcada com "Com" e o nome da pessoa. Uma promessa sobre uma reunião naquele dia com a mesma pessoa fica na linha dessa reunião.
 
-**Atrasada** vem primeiro. Uma reunião com uma tarefa em aberto mostra essa tarefa: **Preparação pronta**, **Preparando** ou **Tarefa**.
+**Atrasada** vem primeiro. Uma reunião com uma tarefa em aberto mostra essa tarefa: **Preparação pronta**, **Preparando** ou **Tarefa**. Uma tarefa que parece feita (você já respondeu, ou a execução dela a encontrou feita) não aparece como **Vence**.
 
 ## Agenda, semana ou mês
 
