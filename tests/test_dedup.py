@@ -31,17 +31,20 @@ class SamePerson(unittest.TestCase):
     def say(self, x, y, same):
         return self.app.action('graph_same', {'a': x, 'b': y, 'same': same}, owner_dashboard=True)
 
-    def test_work_mail_with_her_own_address_in_cc_is_one_person_and_her_whatsapp_follows(self):
+    def test_work_mail_with_her_own_address_in_cc_is_one_person_and_her_whatsapp_is_asked(self):
         self.add(tg.mail(3, 'Rae Moreno <rae@lab.example>', 'sam@acme.com', cc='Rae Moreno <rae.moreno@gmail.com>', thread='plans'),
                  tg.mail(2, 'Sam <sam@acme.com>', 'Rae Moreno <rae.moreno@gmail.com>', ('SENT',), thread='weekend'),
                  tg.chat(1, '00000000021', 'Rae Moreno'), tg.chat(1, '00000000021', 'Rae Moreno', mine=True))
         self.build()
         people = self.people()
-        self.assertEqual(len(people), 1)
-        node, = people
-        self.assertEqual(sorted(people[node]), ['email:rae.moreno@gmail.com', 'email:rae@lab.example', 'wa:00000000021'])
-        whys = {j['by'] for j in self.node(node)['joined']}
-        self.assertEqual(whys, {'message', 'name'})  # her CC, then one Rae Moreno per channel
+        node = next(n for n in people if n.startswith('email:'))
+        self.assertEqual(sorted(map(sorted, people.values())), [['email:rae.moreno@gmail.com', 'email:rae@lab.example'], ['wa:00000000021']])
+        self.assertEqual({j['by'] for j in self.node(node)['joined']}, {'message'})  # her CC
+        # A work contact and a personal chat with only the name in common: a question, never a join by itself.
+        self.assertEqual(self.same_pairs(), {tuple(sorted((node, 'wa:00000000021')))})
+        self.say(node, 'wa:00000000021', True)
+        self.build()
+        self.assertEqual(list(map(sorted, self.people().values())), [['email:rae.moreno@gmail.com', 'email:rae@lab.example', 'wa:00000000021']])
         # An old link to one of her identities opens the merged person.
         self.assertEqual(self.app.graph_action({'node_id': 'wa:00000000021'})['id'], node)
 
