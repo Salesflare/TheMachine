@@ -859,6 +859,7 @@
  "Closed": "Cerrado",
  "Closed by itself: a teammate took it in Intercom": "Cerrada sola: alguien del equipo la tomó en Intercom",
  "Closed by itself: no longer needed": "Cerrada sola: ya no hace falta",
+ "Closed by itself: {}": "Cerrada sola: {}",
  "Closed by itself: {} took it in Intercom": "Cerrada sola: {} la tomó en Intercom",
  "Closed projects.": "Proyectos cerrados.",
  "Closed. The booking link is off.": "Cerrado. El enlace de reserva está desactivado.",

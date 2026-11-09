@@ -74,6 +74,8 @@ Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succ
 
 Un'attività che contava solo fino a un certo momento, come una conferma prima di una riunione, si chiude da sola quando quel momento è passato. Passa tra quelle fatte con "Non serve più" e quando era. **Annulla** la riporta indietro per un giorno.
 
+Prima che un messaggio o un passaggio per qualcuno appaia pronto, la tua Machine controlla le tue chat recenti con le persone coinvolte, anche di gruppo, e aspetta che Slack le legga. Se un messaggio successivo mostra che è già fatto, ad esempio la persona è stata già chiesta e ha detto sì, l’attività si chiude da sola. **Annulla** la riporta indietro per un giorno.
+
 Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: **Chiedi modifiche** e **Non serve** quando un'attività non è proprio giusta, e sulla tua prima bozza pronta, che non parte nulla finché non premi **Invia**. Un suggerimento sparisce per sempre appena usi il suo pulsante o premi ×, su tutti i tuoi dispositivi.
 
 Il primo giorno, la parte alta delle Attività ti saluta per nome e mostra chi aspetta la tua risposta da più tempo. The Machine prepara prima quella risposta, così è pronta quando arrivi. Non parte nulla finché non la invii. La riga sparisce dopo il primo giorno o la prima attività decisa.

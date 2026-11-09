@@ -42,6 +42,7 @@ from machine.app.new_cards import NewCardsApp
 from machine.app.notifications import NotificationsApp
 from machine.app.preparation import PreparationApp
 from machine.app.profile import ProfileApp
+from machine.app.handled_check import HandledCheckApp
 from machine.app.promise_checks import PromiseChecksApp
 from machine.app.recap import RecapApp
 from machine.app.recap_settings import RecapSettingsApp
@@ -114,6 +115,7 @@ APP_MIXINS += (StatusApp,)
 APP_MIXINS += (DocsApp,)
 APP_MIXINS += (CardActionsApp,)
 APP_MIXINS += (FeedbackApp,)
+APP_MIXINS += (HandledCheckApp,)
 APP_MIXINS += (ProfileApp,)
 APP_MIXINS += (BrowserApp,)
 APP_MIXINS += (NotificationsApp, SettingsActionsApp)

@@ -74,6 +74,8 @@ Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-m�
 
 Une tâche qui ne comptait que jusqu’à un moment précis, comme une confirmation avant une réunion, se ferme d’elle-même une fois ce moment passé. Elle passe dans les tâches terminées avec « Plus nécessaire » et la date. **Annuler** la fait revenir pendant un jour.
 
+Avant qu’un message ou une passation pour quelqu’un apparaisse comme prêt, ta Machine vérifie tes discussions récentes avec les personnes concernées, en groupe aussi, et attend que Slack les ait lues. Si un message plus récent montre que c’est déjà fait, par exemple la personne a été sollicitée et a dit oui, la tâche se ferme d’elle-même. **Annuler** la fait revenir pendant un jour.
+
 Sur vos premières tâches, une courte ligne sous les boutons montre l’essentiel : **Demander des modifications** et **Pas nécessaire** quand une tâche ne convient pas tout à fait, et sur votre premier brouillon prêt, que rien ne part avant que vous appuyiez sur **Envoyer**. Une astuce disparaît pour de bon dès que vous utilisez son bouton ou appuyez sur ×, sur tous vos appareils.
 
 Le premier jour, le haut des Tâches vous salue par votre prénom et indique qui attend votre réponse depuis le plus longtemps. The Machine rédige cette réponse en premier, pour qu’elle soit prête à votre arrivée. Rien ne part avant que vous l’envoyiez. La ligne disparaît après votre premier jour ou votre première tâche décidée.
