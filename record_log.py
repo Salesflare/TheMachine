@@ -52,7 +52,7 @@ def _events(db, ids):
     if not ids:
         return {}
     out = {}
-    for r in db.execute(f"SELECT id,kind,metadata,occurred_at FROM events WHERE deleted=0 AND id IN ({','.join('?' * len(ids))})", ids):
+    for r in db.execute("SELECT id,kind,metadata,occurred_at FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?))", (json.dumps(ids),)):
         meta = _json(r['metadata'], {})
         mine = meta.get('from_me') is True or 'SENT' in (meta.get('labels') or ())
         out[r['id']] = {'type': 'event', 'id': r['id'], 'via': SERVICES.get(r['kind'], 'message'), 'at': r['occurred_at'],
@@ -67,38 +67,38 @@ def _source(events, event_id, via=None):
     return {'type': 'line', 'via': via} if via else None  # the message is gone; say where it was read, if known
 
 
-def _roles(db, ids, marks, out, wanted):
+def _roles(db, ids, out, wanted):
     """What a review read they are to the owner, with its message or the line it was read in; the owner's corrections."""
-    r = db.execute(f"SELECT role,created_at,event_id,quote FROM person_roles WHERE identifier IN ({marks}) AND source!='owner' AND role!='' "
-                   'ORDER BY created_at DESC LIMIT 1', ids).fetchone()
+    r = db.execute("SELECT role,created_at,event_id,quote FROM person_roles WHERE identifier IN (SELECT value FROM json_each(?)) AND source!='owner' AND role!='' "
+                   'ORDER BY created_at DESC LIMIT 1', (ids,)).fetchone()
     if r:
         out.append({'kind': 'role', 'at': r['created_at'], 'role': r['role'], 'event': r['event_id'], 'act': {'edit': True},
                     **({'quote': r['quote']} if r['quote'] else {})})
         wanted.add(r['event_id'])
-    for r in db.execute(f'SELECT old_role,new_role,created_at FROM role_corrections WHERE identifier IN ({marks}) ORDER BY created_at DESC LIMIT 3', ids):
+    for r in db.execute('SELECT old_role,new_role,created_at FROM role_corrections WHERE identifier IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC LIMIT 3', (ids,)):
         out.append({'kind': 'role_fix', 'at': r['created_at'], 'role': r['new_role'], 'was': r['old_role']})
 
 
-def _person(db, row, ids, marks, out, wanted):
+def _person(db, row, ids, out, wanted):
     node_id = row['id']
-    _roles(db, ids, marks, out, wanted)
-    r = db.execute(f"SELECT org,org_id,source,via,event_id,created_at FROM person_orgs WHERE identifier IN ({marks}) AND source!='owner' AND org!='' "
-                   'ORDER BY created_at DESC LIMIT 1', ids).fetchone()
+    _roles(db, ids, out, wanted)
+    r = db.execute("SELECT org,org_id,source,via,event_id,created_at FROM person_orgs WHERE identifier IN (SELECT value FROM json_each(?)) AND source!='owner' AND org!='' "
+                   'ORDER BY created_at DESC LIMIT 1', (ids,)).fetchone()
     if r:
         out.append({'kind': 'org', 'at': r['created_at'], 'org': r['org'], 'org_id': r['org_id'], 'event': r['event_id'], 'via': r['via'],
                     'act': {'edit': True}})
         wanted.add(r['event_id'])
-    for r in db.execute(f"SELECT g.a,g.b,g.relation,g.event_id,g.created_at,x.name AS a_name,y.name AS b_name FROM graph_relations g "
+    for r in db.execute("SELECT g.a,g.b,g.relation,g.event_id,g.created_at,x.name AS a_name,y.name AS b_name FROM graph_relations g "
                         "LEFT JOIN graph_nodes x ON x.id=g.a LEFT JOIN graph_nodes y ON y.id=g.b "
-                        f"WHERE g.source!='owner' AND g.relation!='' AND (g.a IN ({marks}) OR g.b IN ({marks})) ORDER BY g.created_at DESC LIMIT 5", (*ids, *ids)):
+                        "WHERE g.source!='owner' AND g.relation!='' AND (g.a IN (SELECT value FROM json_each(?)) OR g.b IN (SELECT value FROM json_each(?))) ORDER BY g.created_at DESC LIMIT 5", (ids, ids)):
         if r['a_name'] and r['b_name']:
             out.append({'kind': 'relation', 'at': r['created_at'], 'a_name': r['a_name'], 'b_name': r['b_name'], 'relation': r['relation'],
                         'event': r['event_id'], 'act': {'unrelate': [r['a'], r['b']]}})
             wanted.add(r['event_id'])
     try:
         import graph
-        for r in db.execute(f"SELECT a,b,created_at FROM graph_merges WHERE same=1 AND coalesce(source,'agent')!='owner' "
-                            f'AND a IN ({marks}) AND b IN ({marks}) ORDER BY created_at DESC LIMIT 5', (*ids, *ids)):
+        for r in db.execute("SELECT a,b,created_at FROM graph_merges WHERE same=1 AND coalesce(source,'agent')!='owner' "
+                            'AND a IN (SELECT value FROM json_each(?)) AND b IN (SELECT value FROM json_each(?)) ORDER BY created_at DESC LIMIT 5', (ids, ids)):
             other = r['b'] if r['a'] == node_id else r['a']
             out.append({'kind': 'joined', 'at': r['created_at'], 'shown': graph.shown_id(other, {}), 'act': {'split': [r['a'], r['b']]}})
     except sqlite3.OperationalError:
@@ -109,8 +109,8 @@ def _person(db, row, ids, marks, out, wanted):
         out.append({'kind': 'side', 'at': r['at'], 'side': r['after'], 'act': {'edit': True}})
 
 
-def _org(db, row, ids, marks, out, wanted):
-    _roles(db, ids, marks, out, wanted)
+def _org(db, row, ids, out, wanted):
+    _roles(db, ids, out, wanted)
     for r in db.execute("SELECT p.identifier,p.via,p.event_id,p.created_at,n.id AS person,n.name FROM person_orgs p JOIN graph_nodes n "
                         "ON n.kind='person' AND (n.id=p.identifier OR EXISTS (SELECT 1 FROM json_each(n.info,'$.identifiers') j WHERE j.value=p.identifier)) "
                         "WHERE p.source!='owner' AND (p.org_id=? OR (p.org_id IS NULL AND p.org=? COLLATE NOCASE)) ORDER BY p.created_at DESC LIMIT 5",
@@ -136,12 +136,12 @@ def _project(db, row, out, wanted):
         wanted.add(m['event_id'])
 
 
-def _facts(db, ids, marks, out):
-    rows = db.execute(f"SELECT f.id,f.text,f.created_at,f.source,f.suggestion_id,s.title FROM facts f LEFT JOIN suggestions s ON s.id=f.suggestion_id "
+def _facts(db, ids, out):
+    rows = db.execute("SELECT f.id,f.text,f.created_at,f.source,f.suggestion_id,s.title FROM facts f LEFT JOIN suggestions s ON s.id=f.suggestion_id "
                       "WHERE f.removed_at IS NULL AND f.kind='fact' "
-                      f'AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) '
-                      f'AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) '
-                      'ORDER BY f.created_at DESC LIMIT ?', (*ids, *ids, LIMIT)).fetchall()
+                      'AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN (SELECT value FROM json_each(?))) '
+                      'AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN (SELECT value FROM json_each(?))) '
+                      'ORDER BY f.created_at DESC LIMIT ?', (ids, ids, LIMIT)).fetchall()
     for r in rows:
         was = db.execute("SELECT text FROM facts WHERE merged_into=? AND kind='fact' ORDER BY created_at DESC LIMIT 1", ('fact:' + str(r['id']),)).fetchone()
         source = str(r['source'] or '')
@@ -170,14 +170,14 @@ def recent(db, row, limit=LIMIT):
     if not row or row['kind'] not in ('person', 'org', 'project'):
         return []
     info = _json(row['info'], {})
-    ids = list(dict.fromkeys([row['id'], *(info.get('identifiers') or [])]))
-    marks = ','.join('?' * len(ids))
+    # its ids as one JSON list, bound to each json_each(?): every query stays a fixed string
+    ids = json.dumps(list(dict.fromkeys([row['id'], *(info.get('identifiers') or [])])))
     out, wanted = [], set()
-    steps = [lambda: _facts(db, ids, marks, out), lambda: _ai(db, row['id'], out)]
+    steps = [lambda: _facts(db, ids, out), lambda: _ai(db, row['id'], out)]
     if row['kind'] == 'person':
-        steps.insert(0, lambda: _person(db, row, ids, marks, out, wanted))
+        steps.insert(0, lambda: _person(db, row, ids, out, wanted))
     elif row['kind'] == 'org':
-        steps.insert(0, lambda: _org(db, row, ids, marks, out, wanted))
+        steps.insert(0, lambda: _org(db, row, ids, out, wanted))
     else:
         steps.insert(0, lambda: _project(db, row, out, wanted))
     for step in steps:

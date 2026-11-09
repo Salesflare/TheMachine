@@ -86,6 +86,14 @@ class RecordLog(unittest.TestCase):
             db.execute("UPDATE fact_about SET removed_at='2026-11-07T00:00:00+00:00' WHERE fact_id=?", (new,))
         self.assertEqual(self.log(SAM), [])  # Not about Sam takes it off this page and out of the log
 
+    def test_an_identifier_is_only_ever_a_value(self):
+        odd = "wa:1') OR 1=1 --\""  # the ids are bound as one JSON list, never part of the query
+        with self.store.connect() as db:
+            db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,1,1,?)', (odd, 'person', 'Odd Name', json.dumps({'identifiers': [odd]})))
+            db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES(?,'neighbor','review','2026-11-03T10:00:00+00:00')", (odd,))
+            db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES(?,'head of ops','review','2026-11-03T10:00:00+00:00')", (SAM,))
+        self.assertEqual([(x['kind'], x['role']) for x in self.log(odd)], [('role', 'neighbor')])
+
     def test_anything_else_has_no_log(self):
         self.assertEqual(record_log.recent(None, None), [])
 
