@@ -43,9 +43,10 @@ def transient(error):
 
 
 class SourceError(Exception):
-    """Only redacted, structured error labels are allowed in logs/checkpoints."""
-    def __init__(self, category, status=None, retry_after=None):
-        self.category, self.status, self.retry_after = category, status, retry_after
+    """Only redacted, structured error labels are allowed in logs/checkpoints. `route` is the endpoint that failed with its
+    ids masked (/accounts/{id}/feed), logged next to the category so support can tell which request it was."""
+    def __init__(self, category, status=None, retry_after=None, route=None):
+        self.category, self.status, self.retry_after, self.route = category, status, retry_after, route
         super().__init__(category + (f':HTTP_{status}' if status else ''))
 
 

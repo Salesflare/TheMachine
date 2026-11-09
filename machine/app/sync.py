@@ -33,6 +33,12 @@ import whatsapp_images
 SALESFLARE_RESTART_SPREAD = 180  # seconds: team Machines restarted together start their Salesflare rounds apart
 
 
+def error_route(error):
+    """ route=/accounts/{id}/feed when the source said which endpoint failed (ids masked), else nothing."""
+    route = getattr(error, 'route', None)
+    return f' route={route}' if route else ''
+
+
 SALESFLARE_ROUND_SPREAD = 60  # seconds: and a fresh spread each round, so two whose starts landed close drift apart again
 
 
@@ -555,7 +561,7 @@ class SyncApp:
                         # returns. Phone fallback attempts keep their own durable cap.
                         delay = account.get('poll_seconds', 15)
                     self.store.failed(account['id'], error)
-                    LOG.warning('sync account=%s error=%s', account['id'], error)
+                    LOG.warning('sync account=%s error=%s%s', account['id'], error, error_route(error))
                     # Enter the checkpoint wait directly so renewed sign-ins are watched.
                     # Ordinary failures and rate limits retain their normal backoff.
                     if re.search(SIGNIN_ERROR, str(error)):
@@ -670,7 +676,7 @@ class SyncApp:
                 if attempt or not upstream_busy(error) or (source and rate_limited(error)) or wait > QUICK_RETRY_MAX \
                         or self.stop.is_set():
                     raise
-                LOG.info('sync account=%s service busy (%s), retrying in %ds', account['id'], error, wait)
+                LOG.info('sync account=%s service busy (%s%s), retrying in %ds', account['id'], error, error_route(error), wait)
                 if self.stop.wait(wait):
                     raise
 
