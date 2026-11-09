@@ -22,7 +22,7 @@ Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf a
 - Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.
 - Ein Schritt, der etwas verbindlich macht, etwa absenden, bezahlen oder buchen, wartet auf deine Bestätigung, oder darauf, dass du im Chat darum bittest. Bestätigst du einen Schritt, warten die anderen weiter: Die Aufgabe schließt sich erst, wenn jeder Schritt erledigt ist.
 - Im Chat einer Aufgabe wird ein Entwurf nie in derselben Nachricht gesendet, die ihn geschrieben hat.
-- Bis du freigibst, wartet die Aufgabe unter **Bereit für dich**, wo einmal steht, dass nichts rausgeht, bevor du freigibst, oder sie sagt **Braucht dich**, nie fertig. Dass ein Entwurf rausging, steht dort erst, wenn er raus ist.
+- Bis du freigibst, wartet die Aufgabe unter **Für dich** als **Vorbereitet**, und die Liste sagt einmal, dass nichts rausgeht, bevor du freigibst. Eine, die noch etwas von dir braucht, sagt **Braucht dich**, nie fertig. Dass ein Entwurf rausging, steht dort erst, wenn er raus ist.
 - Ein langer Entwurf zeigt seine ersten 3 Zeilen. **Mehr anzeigen** öffnet den Rest; **Prüfen und senden** zeigt immer alles.
 
 Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnachricht, eine Nachricht über WhatsApp, Telegram, LinkedIn oder X. Der Artikel jeder Verbindung sagt, was sie senden kann.

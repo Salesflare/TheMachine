@@ -22,7 +22,7 @@ Prima di scrivere un sollecito o passare qualcosa a qualcun altro, controlla la 
 - Una risposta risponde all'email più recente della sua conversazione, e la fonte dell'attività apre quell'email.
 - Un passo che impegna qualcosa, come inviare un modulo, pagare o prenotare, si ferma e aspetta la tua conferma.
 - Nella chat di un'attività, una bozza non viene mai inviata nello stesso messaggio che l'ha scritta.
-- Finché non approvi, l'attività aspetta in **Pronta per te**, che dice una volta sola che niente parte prima della tua approvazione, oppure dice **Tocca a te**, mai finita. Dice che una bozza è partita solo quando è partita davvero.
+- Finché non approvi, l'attività aspetta in **Per te** come **Preparata**, e l'elenco dice una volta sola che niente parte prima della tua approvazione. Una che ha ancora bisogno di te dice **Serve il tuo intervento**, mai finita. Dice che una bozza è partita solo quando è partita davvero.
 - Una bozza lunga mostra le prime 3 righe. **Mostra altro** apre il resto; **Rivedi e invia** mostra sempre tutto.
 
 Cosa può inviare dipende dalla fonte: un'email, un messaggio diretto su Slack, un messaggio WhatsApp, Telegram, LinkedIn o X. L'articolo di ogni connessione dice cosa può inviare.

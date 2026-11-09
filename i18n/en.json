@@ -1508,6 +1508,7 @@
  "For how long": "For how long",
  "For iPhone and Android, with notifications.": "For iPhone and Android, with notifications.",
  "For this project": "For this project",
+ "For you": "For you",
  "Forget": "Forget",
  "Forget all saved sign-ins": "Forget all saved sign-ins",
  "Forget every saved sign-in? Your Machine asks again next time.": "Forget every saved sign-in? Your Machine asks again next time.",
@@ -3498,6 +3499,7 @@
  "Prepare email": "Prepare email",
  "Prepare next step": "Prepare next step",
  "Prepare only an owner-accepted suggestion or written instruction": "Prepare only an owner-accepted suggestion or written instruction",
+ "Prepared": "Prepared",
  "Prepared ahead": "Prepared ahead",
  "Prepared ahead: the draft is saved; the owner sends it themselves": "Prepared ahead: the draft is saved; the owner sends it themselves",
  "Preparing": "Preparing",
@@ -6684,6 +6686,7 @@
   "one": "{} follow-up skipped for {}",
   "other": "{} follow-ups skipped for {}"
  },
+ "{} for you": "{} for you",
  "{} for {} did not check out ({})": "{} for {} did not check out ({})",
  "{} found": "{} found",
  "{} friend requests waiting": {

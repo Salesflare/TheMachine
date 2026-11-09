@@ -715,8 +715,8 @@ def todo_state(row):
     if waits_on_others(row):
         return 'waiting on others'
     if row['status'] == 'pending' or row.get('preparation_status') == 'blocked':
-        return 'to decide'
-    return 'ready' if row['status'] == 'prepared' else 'preparing'
+        return 'needs you'
+    return 'prepared' if row['status'] == 'prepared' else 'preparing'
 
 
 def delivery_time(when, digest_at='08:30', current=None, work=False, urgent=False):

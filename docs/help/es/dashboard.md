@@ -17,7 +17,7 @@ order: 4
 
 **Buscar**, arriba en la barra lateral, encuentra primero tareas, luego personas, mensajes y más. **Navegador**, **Ayuda** y **Ajustes** están abajo en la barra lateral. En un teléfono, el botón de menú de la barra superior abre la barra lateral.
 
-La barra lateral muestra tus tareas igual que la página. Las solicitudes de tu Fleet también están en **Por decidir**, así su número coincide con el de arriba. Toca una para verla.
+La barra lateral muestra tus tareas igual que la página. Las solicitudes de tu Fleet también están en **Para ti**, así su número coincide con el de arriba. Toca una para verla.
 
 Para el menú de una tarea, pasa el ratón por encima y haz clic en **⋯**, haz clic derecho en ella o mantenla pulsada en el móvil. Con el teclado, pulsa `Shift F10` sobre ella. Además de **Renombrar** y **Abrir**, el menú tiene los botones de la propia tarea: **Marcar como hecha**, **Posponer** y **No hace falta**, cada uno con **Deshacer**.
 
@@ -37,7 +37,7 @@ Desde tu primera visita, cuando termina el primer vistazo, una pequeña tarea ar
 
 Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de la app, nada de instalar en un móvil. La × de una fila la cierra en todos los dispositivos, y la × de arriba cierra toda la tarea.
 
-Después de tu primer día, se reduce a una línea discreta encima de **Lista para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
+Después de tu primer día, se reduce a una línea discreta encima de **Para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
 
 **Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
 

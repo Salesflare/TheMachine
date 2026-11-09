@@ -12,9 +12,8 @@ Tu Machine lee todo lo nuevo y solo crea una tarea cuando algo te necesita. Una 
 
 La página **Tareas** las agrupa:
 
-- **Lista para ti**: preparada y esperando tu aprobación.
-- **Necesita tu decisión**: algo que solo tú puedes decidir.
-- **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego pasa a **Lista para ti**.
+- **Para ti**: todo lo que te espera, lo más urgente primero. Cada tarea dice **Preparada** (el trabajo está hecho, y **Hazlo** o **Enviar** lo lleva a cabo) o **Te necesita** (primero necesita tu decisión o una respuesta).
+- **Preparando**: tu Machine está trabajando en ella. Una tarea a la que acabas de decir **Hazlo** se queda donde estaba mientras se prepara, y luego dice **Preparada**.
 - **Recién hecho**: un último paso que confirmaste, como enviar un formulario o crear un issue, salió bien mientras no estabas. Muestra lo que pasó hasta que tocas **Entendido**, un día como mucho, y tu teléfono también se entera. Después solo está en Hecho.
 - **Vuelve más tarde**: pospuesta, y las tareas sin respuesta a **¿Aún hace falta?** (abajo).
 - **Promesas**: lo que prometiste y lo que otros te prometieron. Consulta [Promesas](promises.md).
@@ -22,7 +21,7 @@ La página **Tareas** las agrupa:
 
 Después de enviar, una nota breve dice dónde está la tarea, como «Enviado. Movido a Hecho.» o, si espera una respuesta, «Enviado. Movido a Más tarde hasta el lun.» **Abrir** te lleva a ella. Que el hilo salga de tu bandeja de entrada unos días solo afecta a tu correo. La búsqueda encuentra una tarea por su título o por a quién se envió, también en Más tarde y Hecho.
 
-En Lista para ti, Necesita tu decisión, Preparando y Esperando a otros, una tarea vencida o que vence a más tardar mañana va primero. Las demás van de la más reciente a la más antigua, según la hora que muestra cada tarea. La barra lateral sigue el mismo orden.
+**Para ti** pone primero lo vencido o lo que vence a más tardar mañana, luego las preguntas de tu Fleet, luego las tareas **Preparada**, luego las que te necesitan. Dentro de cada parte, la más reciente primero. Los demás grupos abiertos ponen primero lo vencido o lo que vence a más tardar mañana, el resto de la más reciente a la más antigua. La barra lateral sigue el mismo orden.
 
 Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti. Una tarea con un borrador de respuesta también parece hecha cuando respondiste tú en esa conversación, como en Gmail o Slack.
 
@@ -44,7 +43,7 @@ Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, tambi
 
 Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca aparece en una Work Fleet ni en el Graph del equipo.
 
-Con dos o más esperando, **Repasar** en el encabezado de Lista para ti y de Necesita tu decisión las recorre una a una, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
+Con dos o más esperando, **Repasar** en el encabezado de Para ti las recorre una a una, en el orden de la lista, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
 
 ## Revisar ahora
 

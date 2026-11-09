@@ -69,10 +69,10 @@ try{
   await quietTagline(page,'at 1440');
   // The cards by section; Done starts folded with its count, opens, and stays open after a reload
   const done=page.locator('[data-side-fold="done"]');assert.equal(await done.getAttribute('aria-expanded'),'false');assert.match(await done.textContent(),/Done\s*12/);
-  assert.equal(await page.locator('#side-cards a').count(),12);
-  await done.click();assert.equal(await page.locator('#side-cards a').count(),22,'Done opens on its 10 latest');
-  await page.locator('[data-side-fold="ready"]').click();assert.equal(await page.locator('#side-cards a').count(),18);
-  await page.reload();await page.locator('#side-cards a').first().waitFor();assert.equal(await page.locator('#side-cards a').count(),18,'folds are remembered');
+  assert.equal(await page.locator('#side-cards a').count(),8,'For you shows its first 8 of 12');assert.equal(await page.locator('[data-side-more="foryou"]').count(),1);
+  await done.click();assert.equal(await page.locator('#side-cards a').count(),18,'Done opens on its 10 latest');
+  await page.locator('[data-side-fold="foryou"]').click();assert.equal(await page.locator('#side-cards a').count(),10);
+  await page.reload();await page.locator('#side-cards a').first().waitFor();assert.equal(await page.locator('#side-cards a').count(),10,'folds are remembered');
   // Long titles fade at the edge and keep the full name as a tooltip
   const a=page.locator('#side-cards a').first();  // the fade is measured on the next frame, once the fonts are in (slower on macOS)
   await page.waitForFunction(()=>document.querySelector('#side-cards a')?.classList.contains('fade'));assert.match(await a.getAttribute('class')||'',/fade/);assert.match(await a.getAttribute('title'),/does not fit the sidebar/);
@@ -120,13 +120,13 @@ try{
  {const {context,page}=await open(1440,900);await page.keyboard.press('Control+b');await page.waitForFunction(()=>document.documentElement.dataset.side==='collapsed');
   assert.equal(await page.locator('#side-toggle').getAttribute('aria-label'),'Expand sidebar');
   const names=await page.evaluate(()=>[...document.querySelectorAll('.app-side nav [data-tab]')].filter(b=>b.offsetParent).map(b=>b.getAttribute('aria-label')));
-  assert.equal(names[0],'To-dos · 4 ready · 8 to decide');assert.deepEqual(names.slice(1),['Calendar','Routines','Graph','Learning','Connections']);
+  assert.equal(names[0],'To-dos · 12 for you');assert.deepEqual(names.slice(1),['Calendar','Routines','Graph','Learning','Connections']);
   for(const q of ['#open-settings','#side-toggle','#live'])assert.ok(await page.locator(q).getAttribute('aria-label'),q+' has a name');
   // The delay is timed in the page, from the pointer arriving to the tip showing: a busy computer can only make it longer
   await page.evaluate(()=>{window.tipTimes={};document.querySelector('#app-side').addEventListener('pointerover',()=>{tipTimes.over??=performance.now()},true);
    new MutationObserver(()=>{if(!document.querySelector('#side-tip').hidden)tipTimes.shown??=performance.now()}).observe(document.querySelector('#side-tip'),{attributes:true,attributeFilter:['hidden']})});
   const row=page.locator('.app-side nav [data-tab="inbox"]');await row.hover();
-  await page.locator('#side-tip').waitFor({state:'visible'});{const t=await page.evaluate(()=>tipTimes);assert.ok(t.shown-t.over>=250,'not at once on hover: '+JSON.stringify(t))}assert.equal(await page.locator('#side-tip').textContent(),'To-dos · 4 ready · 8 to decide · G then T');  // with its key
+  await page.locator('#side-tip').waitFor({state:'visible'});{const t=await page.evaluate(()=>tipTimes);assert.ok(t.shown-t.over>=250,'not at once on hover: '+JSON.stringify(t))}assert.equal(await page.locator('#side-tip').textContent(),'To-dos · 12 for you · G then T');  // with its key
   const pos=await page.evaluate(()=>{const t=document.querySelector('#side-tip').getBoundingClientRect(),s=document.querySelector('#app-side').getBoundingClientRect(),r=document.querySelector('.app-side nav [data-tab="inbox"]').getBoundingClientRect();return {gap:t.left-s.right,mid:Math.abs((t.top+t.bottom)/2-(r.top+r.bottom)/2)}});
   assert.ok(pos.gap>=4&&pos.gap<=16&&pos.mid<2,JSON.stringify(pos));
   await page.screenshot({path:process.env.SHOT_DIR?process.env.SHOT_DIR+'/tip.png':'/dev/null'}).catch(()=>{});

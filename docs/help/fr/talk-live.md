@@ -19,7 +19,7 @@ La barre a **Couper le micro** et **Fin**. Dites au revoir, ou que vous avez fin
 
 ## Passer en revue toutes vos tâches à voix haute
 
-Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et les prend une par une : d’abord **Prête**, puis **À décider**. Elle voit aussi vos autres tâches, comme celles encore **En préparation**, et vous prévient quand l’une est prête.
+Touchez **Parler** dans la barre latérale (dans le menu sur un téléphone) pour passer en revue à la voix tout ce qui vous attend. The Machine dit combien il y en a et prend celles de **Pour vous** une par une, la plus urgente d’abord. Elle voit aussi vos autres tâches, comme celles encore **En préparation**, et vous prévient quand l’une est prête.
 
 Parler a sa propre page : une conversation du début à la fin, avec en haut la tâche dont elle parle, son brouillon et **Ouvrir le chat**. Elle ne vous fait pas passer de chat en chat.
 

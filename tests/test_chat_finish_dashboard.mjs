@@ -48,7 +48,7 @@ try{
  const done=page.locator(`#task-${sent}`);
  assert.equal(await done.count(),1);assert.equal(await done.locator('.outcome').count(),0);
  assert.match(await done.textContent(),/Email sent( at \d\d:\d\d)?\./);assert.ok(!(await done.textContent()).includes('Needs you'));
- assert.equal(await done.isVisible(),false,'a sent card leaves Ready for you');
+ assert.equal(await done.isVisible(),false,'a sent to-do leaves For you');
  const widths=[];
  for(const width of [390,1280]){
   await page.setViewportSize({width,height:900});

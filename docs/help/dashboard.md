@@ -17,7 +17,7 @@ order: 4
 
 **Search**, at the top of the sidebar, finds to-dos, people, messages and more. **Browser**, **Help** and **Settings** sit at the bottom. On a phone, the menu button in the top bar opens the sidebar.
 
-The sidebar lists your to-dos the way the page does. Requests from your Fleet are under **To decide** too, so its count matches the one at the top. Tap one to bring it up.
+The sidebar lists your to-dos the way the page does. Requests from your Fleet are under **For you** too, so its count matches the one at the top. Tap one to bring it up.
 
 For a to-do's menu, hover it and click **⋯**, right-click it, or press and hold it on a phone. With the keyboard, press `Shift F10` on it. Besides **Rename** and **Open**, the menu has the to-do's own **Mark done**, **Snooze** and **Not needed**, each with **Undo**.
 
@@ -39,7 +39,7 @@ A small to-do at the top of To-dos lists what makes The Machine more useful: the
 
 Rows show only where they make sense. The × on a row closes it on every device. The × at the top closes the whole to-do.
 
-After your first day, it folds into one quiet line above **Ready for you**, like "2 steps left · Continue". Tap it to open the to-do, and tap the arrow to fold it again.
+After your first day, it folds into one quiet line above **For you**, like "2 steps left · Continue". Tap it to open the to-do, and tap the arrow to fold it again.
 
 **Undo** or **Show 1 hidden** brings a row back. To bring back the whole to-do, use **Settings**, **General**, **Setup to-do**. **Settings**, **General**, **This device** has the same controls, including **Get the app**.
 

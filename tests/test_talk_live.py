@@ -349,7 +349,7 @@ class Tools(unittest.TestCase):
 
     def test_talk_sees_every_open_todo_and_starts_with_what_needs_the_owner(self):
         # Jeroen, live: "let's go through the to-dos" said nothing needs him while one was still Preparing. Talk sees
-        # them all, starts with ready and to decide, says how many are preparing, and keeps it short.
+        # them all, starts with prepared and needs you, says how many are preparing, and keeps it short.
         text = t.main_instructions('en', 'Thursday')
         for words in ('It has every open to-do and its state', 'how many are still preparing', 'you’ll tell them when one is ready',
                       'There is no draft to send yet.', 'Never say there is nothing before you’ve checked list_todos',
@@ -706,6 +706,9 @@ class Api(unittest.TestCase):
         self.assertEqual([(x['title'], x['state']) for x in find(state='looks done')['todos']], [('Pay the venue deposit', 'looks done')])
         self.assertEqual([x['title'] for x in find(words='looks done')['todos']], ['Pay the venue deposit'])
         self.assertEqual(find(state='nonsense'), {'todos': []})
+        # The words from before For you still find them: "anything to decide?", "what's ready?"
+        self.assertEqual(find(state='to decide'), find(state='needs you'))
+        self.assertEqual(find(state='ready'), find(state='prepared'))
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'd' * 16})
         self.assertEqual(self.act('talk_tool', {'id': talk_id, 'name': 'todo_details', 'args': {}})['output']['state'], 'preparing')
 
@@ -917,7 +920,7 @@ class Api(unittest.TestCase):
         self.assertEqual([(x['title'], x['state']) for x in find(state='dismissed')['todos']], [('Book the offsite venue', 'dismissed')])
         self.assertEqual([x['title'] for x in find(words='anything dismissed')['todos']], ['Book the offsite venue'])
         # Open ones first: a closed one only when no open one matches, latest closed first
-        self.assertEqual([x['state'] for x in find(words='offsite')['todos']], ['to decide'])
+        self.assertEqual([x['state'] for x in find(words='offsite')['todos']], ['needs you'])
         self.assertEqual([(x['title'], x['state']) for x in find(words='venue')['todos']], [('Book the offsite venue', 'dismissed')])
         self.assertEqual([x['id'] for x in find(words='invoice')['todos']], ['c' * 16])
         self.act('talk_focus', {'id': talk_id, 'suggestion_id': 'c' * 16})   # it can open one for its details
@@ -1350,7 +1353,7 @@ class Api(unittest.TestCase):
         self.assertEqual([x['title'] for x in found['todos']], ['Book the offsite venue'])
         found = self.act('talk_tool', {'id': talk_id, 'name': 'find_todos', 'args': {'words': 'offsite'}})['output']
         self.assertNotIn('Old offsite invoice', [x['title'] for x in found['todos']])   # only open ones
-        self.assertEqual({x['state'] for x in found['todos']}, {'to decide'})
+        self.assertEqual({x['state'] for x in found['todos']}, {'needs you'})
         for name in ('ask_chat', 'ask_to_send', 'send_answer', 'send_draft', 'decide'):   # the dashboard's own, through their own actions
             with self.assertRaisesRegex(ValueError, 'Unknown tool'):
                 self.act('talk_tool', {'id': talk_id, 'name': name, 'args': {}})

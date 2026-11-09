@@ -69,9 +69,9 @@ function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.as
  return v.focusing=micPost('talk_focus',{id:v.id,suggestion_id:id}).catch(()=>{})}
 // Every open to-do, in the order the dashboard shows them, each with its state in plain words (talk_live.STATES; one that
 // looks done sits in Done and isn't here):
-// what needs the owner (Ready, To decide) first. At most 30; counts has them all.
+// what needs the owner (For you) first. At most 30; counts has them all.
 const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
-const TALK_STATE={ready:'ready',needs:'to decide',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
+const TALK_STATE={ready:'prepared',needs:'needs you',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
 const talkNeeds=()=>talkTodos.filter(([,l])=>l==='ready'||l==='needs').map(([s])=>s);
 function talkList(){const counts={};for(const [,l] of talkTodos)counts[TALK_STATE[l]]=(counts[TALK_STATE[l]]||0)+1;
  return {todos:talkTodos.slice(0,30).map(([s,l])=>({id:s.id,state:TALK_STATE[l],title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{}),...(s.handoff_still?.name?{with:String(s.handoff_still.name).slice(0,80)}:{})})),count:talkTodos.length,counts}}
@@ -191,7 +191,7 @@ async function talkWatch(v,id,req=''){const at=Date.now();let busy=false;
   const r=await talkChatRead(id);if(!r||r.unavailable)continue;if(r.active){busy=true;continue}
   const said=talkReplies(r.items||[]).map(i=>String(i.text||'').trim()).filter(Boolean);
   if(said.length||busy||Date.now()-at>120000){await refresh().catch(()=>{});talkChatSaid(v,id,said.join(' ').slice(0,3000),req);return}}}
-// A to-do that comes to need the owner while Talk is open (Ready or To decide): a short heads-up at the next pause
+// A to-do that comes to need the owner while Talk is open (in For you): a short heads-up at the next pause
 // (talkTellNext waits while either side talks), once. One that was preparing says it's ready now (notes.ready).
 function talkNew(v){if(!v.dc||v.state!=='live')return;for(const [s,l] of talkTodos)if(l==='preparing')v.prep.add(s.id);
  for(const s of talkNeeds())if(!v.known.has(s.id)){v.known.add(s.id);const note=v.prep.has(s.id)&&v.notes.ready||v.notes.new||'{title}';
