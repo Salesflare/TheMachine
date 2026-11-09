@@ -48,6 +48,7 @@ LAZY = {
     'learned': ('todos-first-learned.css', 'todos-first-learned.js'),
     'settings': ('settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-export.js', 'settings-upkeep.js'),
     'learning': ('learning-missed.js',),
+    'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
     'talk': ('todos-chat-talk-live.js',),
 }

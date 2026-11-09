@@ -772,7 +772,7 @@ class ReviewApp:
                 graph.fit_answer(db, args['_review_run'], args.get('fits'))
                 graph.backfill_answer(db, args['_review_run'], args.get('fits'))
         return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
-                                         args.get('stages'), args.get('team'), args.get('replies'), args.get('read'))
+                                         args.get('stages'), args.get('team'), args.get('replies'), args.get('read'), args.get('no_todo'))
 
     def enrich_action(self, name, args, owner_dashboard=False):
         # the CLI: status, or one domain now

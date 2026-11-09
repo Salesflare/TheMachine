@@ -377,6 +377,10 @@
  "An update kept your own files.": "Uma atualização manteve seus próprios arquivos.",
  "An update to a skill you have, from": "Uma atualização de uma habilidade sua, de",
  "Analysis expired; begin a fresh review": "A análise expirou; comece uma nova revisão",
+ "And {} more threads": {
+  "one": "E mais {} conversa",
+  "other": "E mais {} conversas"
+ },
  "And {} more.": "E mais {}.",
  "Android": "Android",
  "Android notifications": "Notificações do Android",
@@ -756,6 +760,10 @@
  "Checked by your model. Change anything below.": "Verificado pelo seu modelo. Altere o que quiser abaixo.",
  "Checked open to-dos": "Verificou as tarefas abertas",
  "Checked {}": "Verificado {}",
+ "Checked {} new emails at {}": {
+  "one": "{} e-mail novo verificado às {}",
+  "other": "{} e-mails novos verificados às {}"
+ },
  "Checked {} of {} accounts so far.": "{} de {} contas verificadas até agora.",
  "Checked {} things": {
   "one": "{} item verificado",
@@ -1735,6 +1743,8 @@
  "Held back": "Retido",
  "Held back this week": "Retido esta semana",
  "Held by {}": "Guardado por {}",
+ "Held until tomorrow {}": "Aguardando até amanhã {}",
+ "Held until {}": "Aguardando até {}",
  "Help": "Ajuda",
  "Help and bug reports come from the dashboard": "Ajuda e relatos de bugs vêm do painel",
  "Help can’t answer right now.": "A ajuda não pode responder agora.",
@@ -3560,6 +3570,7 @@
  "Read a thread": "Leu uma conversa",
  "Read a to-do": "Leu uma tarefa",
  "Read a web page": "Leu uma página da web",
+ "Read again in the next check": "Lido de novo na próxima verificação",
  "Read earlier work on this to-do": "Leu o trabalho anterior nesta tarefa",
  "Read email": "Ler e-mail",
  "Read instructions": "Ler instruções",
@@ -6232,6 +6243,7 @@
  "not used yet": "ainda não usada",
  "not {}": "não {}",
  "nothing decided": "nada decidido",
+ "nothing needs you": "nada precisa de você",
  "notifications": "notificações",
  "older mail": "e-mail mais antigo",
  "older mail or file": "e-mail ou arquivo mais antigo",
@@ -6768,6 +6780,10 @@
   "one": "{} novo filtro",
   "other": "{} novos filtros"
  },
+ "{} new to-dos": {
+  "one": "{} tarefa nova",
+  "other": "{} tarefas novas"
+ },
  "{} new/changed": "{} novos/alterados",
  "{} newsletters": {
   "one": "{} newsletter",
@@ -7013,6 +7029,14 @@
  "{} to-dos cleared in {}": {
   "one": "{} tarefa resolvida em {}",
   "other": "{} tarefas resolvidas em {}"
+ },
+ "{} to-dos held until tomorrow {}": {
+  "one": "{} tarefa aguardando até amanhã {}",
+  "other": "{} tarefas aguardando até amanhã {}"
+ },
+ "{} to-dos held until {}": {
+  "one": "{} tarefa aguardando até {}",
+  "other": "{} tarefas aguardando até {}"
  },
  "{} to-dos waiting": {
   "one": "{} tarefa esperando",

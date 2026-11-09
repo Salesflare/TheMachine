@@ -13,7 +13,10 @@ with how many new to-dos it brought. Slow sources (SLOW_SERVICES, or read every 
 one waiting out an error keep their own pace. Kept in memory only: a restart forgets a check, which then just ends."""
 from __future__ import annotations
 
+import collections
 import datetime as dt
+import email.utils
+import json
 import threading
 import time
 
@@ -45,6 +48,112 @@ def reviews(db, queue, min_signals):
             'reading': (queue or {}).get('why') == 'mail',  # a mailbox's first import still coming in
             'next_review': (queue or {}).get('starts_at') if waiting else None,
             'soon': bool(waiting) and waiting >= min_signals * 3 / 4}
+
+
+MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
+MAIL_CHECK_HOURS = 12        # the To-dos page says what the last check of new mail found for this long after it
+MAIL_CHECK_THREADS = 40      # its list shows at most this many threads
+SAME_WHY = 3                 # one reason given for this many threads of one check is a label, not a reason
+
+
+def mail_check(db, current=None, own=()):
+    """What the last check that saw new email found, for the line on To-dos (docs/help/cards.md#last-check): when it
+    ran, how many new emails, how many new to-dos it made and how many of those are held until later, and one row per
+    thread: who, the subject, and either its new to-do or why it needed nothing (the review's finish_analysis no_todo).
+    Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. `own`: the
+    owner's addresses, so a thread shows who wrote to them rather than their own reply. None without such a check in
+    the last MAIL_CHECK_HOURS."""
+    current = current or dt.datetime.now(dt.timezone.utc)
+    since = (current - dt.timedelta(hours=MAIL_CHECK_HOURS)).isoformat()
+    own = {str(a).lower() for a in own if a}
+    for review in db.execute("SELECT started_at,finished_at,items FROM analyses WHERE status='complete' AND finished_at>=? "
+                             'ORDER BY finished_at DESC LIMIT 12', (since,)).fetchall():
+        # new messages only: a later version of one already read (its labels or read state changed) is not new mail
+        batch = [i for i in json.loads(review['items'] or '[]') if isinstance(i, dict) and not i.get('excluded')]
+        items = {i['id']: i for i in batch if i.get('version', 1) == 1}
+        if not items:
+            continue
+        mail = db.execute('SELECT id,account_id,occurred_at,title,metadata FROM events WHERE kind IN (%s) AND deleted=0 AND id IN '
+                          '(SELECT value FROM json_each(?)) ORDER BY occurred_at' % ','.join('?' * len(MAIL_KINDS)),
+                          (*MAIL_KINDS, json.dumps(sorted(items)))).fetchall()
+        if mail:
+            return _mail_view(db, review, items, {i['id'] for i in batch}, mail, current, own)
+    return None
+
+
+def _thread_key(account_id, meta, event_id):
+    return (account_id, str(meta.get('thread_id') or meta.get('conversation_id') or f'event:{event_id}'))
+
+
+def _meta(value):
+    if isinstance(value, dict):
+        return value
+    try:
+        found = json.loads(value or '{}')
+    except (TypeError, ValueError):
+        return {}
+    return found if isinstance(found, dict) else {}
+
+
+def _sender(value):
+    name, address = email.utils.parseaddr(str(value or ''))
+    return (name.strip().strip('"') or address).strip(), address.lower()
+
+
+def _mail_view(db, review, items, batch, mail, current, own):
+    threads = {}
+    for row in mail:
+        meta = _meta(row['metadata'])
+        thread = threads.setdefault(_thread_key(row['account_id'], meta, row['id']), {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False})
+        thread['ids'].append(row['id'])
+        thread['last'] = row['occurred_at']  # rows come oldest first
+        name, address = _sender(meta.get('from'))
+        if name and (address not in own or not thread['from']):
+            thread['from'] = name
+        thread['subject'] = (row['title'] or '').strip() or thread['subject']
+        item = items[row['id']]
+        if item.get('no_todo'):
+            thread['why'] = item['no_todo']
+        thread['later'] = thread['later'] or bool(item.get('deferred'))
+    # The to-dos this check made: created while it ran, from a message it read or one in the same thread
+    end = (dt.datetime.fromisoformat(review['finished_at']) + dt.timedelta(minutes=1)).isoformat()
+    made = db.execute('SELECT id,title,event_ids,deliver_after FROM suggestions WHERE created_at>=? AND created_at<=? ORDER BY created_at',
+                      (review['started_at'], end)).fetchall()
+    cards = [(card, {int(i) for i in json.loads(card['event_ids'] or '[]') if str(i).isdigit()}) for card in made]
+    linked = {i for _, ids in cards for i in ids}
+    keys = {r['id']: _thread_key(r['account_id'], _meta(r['metadata']), r['id'])
+            for r in db.execute('SELECT id,account_id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(linked)),))}
+    now_iso, todos, held = current.isoformat(), 0, []
+    for card, ids in cards:
+        hit = [threads[keys[i]] for i in ids if keys.get(i) in threads]
+        if not hit and not ids & batch:
+            continue  # not from this check (the owner's own, a chat's)
+        todos += 1
+        later = card['deliver_after'] if card['deliver_after'] and card['deliver_after'] > now_iso else None
+        if later:
+            held.append(later)
+        for thread in hit[:1]:
+            thread.setdefault('todo', card['title'])
+            thread.setdefault('held_until', later)
+    said = collections.Counter(' '.join(t['why'].casefold().split()).rstrip('.') for t in threads.values() if t['why'])
+    rows = []
+    # to-dos first, then the newest thread first
+    for thread in sorted(sorted(threads.values(), key=lambda t: t['last'], reverse=True), key=lambda t: 'todo' in t, reverse=True):
+        why = thread['why']
+        if why and (len(why.split()) < 3 or said[' '.join(why.casefold().split()).rstrip('.')] >= SAME_WHY):
+            why = None
+        row = {'from': thread['from'], 'subject': thread['subject'][:160]}
+        if 'todo' in thread:
+            row['todo'] = thread['todo']
+            if thread.get('held_until'):
+                row['held_until'] = thread['held_until']
+        elif thread['later']:
+            row['later'] = True
+        elif why:
+            row['why'] = why
+        rows.append(row)
+    return {'at': review['finished_at'], 'emails': len(mail), 'todos': todos, 'held': len(held),
+            'held_until': min(held) if held else None, 'threads': rows[:MAIL_CHECK_THREADS], 'more': max(0, len(rows) - MAIL_CHECK_THREADS)}
 
 
 def epoch(text):

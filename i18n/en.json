@@ -377,6 +377,10 @@
  "An update kept your own files.": "An update kept your own files.",
  "An update to a skill you have, from": "An update to a skill you have, from",
  "Analysis expired; begin a fresh review": "Analysis expired; begin a fresh review",
+ "And {} more threads": {
+  "one": "And {} more thread",
+  "other": "And {} more threads"
+ },
  "And {} more.": "And {} more.",
  "Android": "Android",
  "Android notifications": "Android notifications",
@@ -756,6 +760,10 @@
  "Checked by your model. Change anything below.": "Checked by your model. Change anything below.",
  "Checked open to-dos": "Checked open to-dos",
  "Checked {}": "Checked {}",
+ "Checked {} new emails at {}": {
+  "one": "Checked {} new email at {}",
+  "other": "Checked {} new emails at {}"
+ },
  "Checked {} of {} accounts so far.": "Checked {} of {} accounts so far.",
  "Checked {} things": {
   "one": "Checked {} thing",
@@ -1735,6 +1743,8 @@
  "Held back": "Held back",
  "Held back this week": "Held back this week",
  "Held by {}": "Held by {}",
+ "Held until tomorrow {}": "Held until tomorrow {}",
+ "Held until {}": "Held until {}",
  "Help": "Help",
  "Help and bug reports come from the dashboard": "Help and bug reports come from the dashboard",
  "Help can’t answer right now.": "Help can’t answer right now.",
@@ -3560,6 +3570,7 @@
  "Read a thread": "Read a thread",
  "Read a to-do": "Read a to-do",
  "Read a web page": "Read a web page",
+ "Read again in the next check": "Read again in the next check",
  "Read earlier work on this to-do": "Read earlier work on this to-do",
  "Read email": "Read email",
  "Read instructions": "Read instructions",
@@ -6232,6 +6243,7 @@
  "not used yet": "not used yet",
  "not {}": "not {}",
  "nothing decided": "nothing decided",
+ "nothing needs you": "nothing needs you",
  "notifications": "notifications",
  "older mail": "older mail",
  "older mail or file": "older mail or file",
@@ -6768,6 +6780,10 @@
   "one": "{} new filter",
   "other": "{} new filters"
  },
+ "{} new to-dos": {
+  "one": "{} new to-do",
+  "other": "{} new to-dos"
+ },
  "{} new/changed": "{} new/changed",
  "{} newsletters": {
   "one": "{} newsletter",
@@ -7013,6 +7029,14 @@
  "{} to-dos cleared in {}": {
   "one": "{} to-do cleared in {}",
   "other": "{} to-dos cleared in {}"
+ },
+ "{} to-dos held until tomorrow {}": {
+  "one": "{} to-do held until tomorrow {}",
+  "other": "{} to-dos held until tomorrow {}"
+ },
+ "{} to-dos held until {}": {
+  "one": "{} to-do held until {}",
+  "other": "{} to-dos held until {}"
  },
  "{} to-dos waiting": {
   "one": "{} to-do waiting",

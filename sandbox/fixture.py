@@ -289,6 +289,31 @@ SUGGESTED = {'name': 'Hiring', 'visibility': 'only_you', 'about': 'Roles we are 
                           ('Hire: product designer', 'mossgate.example', 'Signe Laurier', [(3, False, 'Portfolio for the product designer role')])]}
 
 
+# The last check of new email (check_now.mail_check, the line above the to-dos): it ran from 24 to 19 minutes ago and
+# read these emails and the newest of the pricing story, which became its to-do. Each key: who, to, cc, subject, body,
+# minutes ago, and the review's reason it needed nothing (finish_analysis no_todo).
+LAST_CHECK = {'minutes': (24, 19), 'todo_events': ['story:pricing:2'], 'emails': [
+    ('check:cc:0', 'Priya Okonedo <priya@lumenlabs.example>', 'anouk@vantagerail.example', 'alex@lumenlabs.example', 'Re: Trial seats for Vantage Rail',
+     'Anouk,\n\nI added the five extra trial seats. They are live now.\n\nPriya', 26, 'Only cc’d, Priya already added the seats'),
+    ('check:meet:0', 'Yara Oakhurst <yara@saltmarshmedia.example>', 'alex@lumenlabs.example', '', 'Re: Coffee next week',
+     'Thursday at 10:00 works for me. See you at your office.\n\nYara', 28, 'Coffee already set for Thursday 10:00'),
+    ('check:thanks:0', 'Matteo Brightwater <matteo@kestrelenergy.example>', 'alex@lumenlabs.example', '', 'Re: Export stops at 1,000 rows',
+     'That fixed it, the full export works now. Thanks!\n\nMatteo', 30, 'Thanks for the fix, nothing to answer'),
+    ('check:news:0', 'Fieldnote Weekly <digest@fieldnote.example>', 'alex@lumenlabs.example', '', 'This week in sales tools',
+     'Five new tools, two price changes and a guide to cleaner pipelines.', 33, 'Newsletter, nothing in it needs a reply'),
+]}
+
+
+def last_check_data():
+    """The emails of the last check (LAST_CHECK) and what the sandbox's review of them said."""
+    events = [{'key': key, 'account_id': 'work-gmail', 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject, 'body': body,
+               'metadata': {'from': sender, 'to': to, **({'cc': cc} if cc else {}), 'labels': ['INBOX', 'UNREAD'], 'thread_id': 't-' + key.replace(':', '-'),
+                            'message-id': f'<{key.replace(":", ".")}@mail.example>'}}
+              for key, sender, to, cc, subject, body, minutes, _ in LAST_CHECK['emails']]
+    return events, {'minutes': list(LAST_CHECK['minutes']), 'events': [e['key'] for e in events] + LAST_CHECK['todo_events'],
+                    'why': {key: why for key, *_, why in LAST_CHECK['emails']}}
+
+
 def board_data():
     """Boards, their projects, the messages behind each move and one open card on a project waiting for a reply."""
     events, boards, cards = [], [], []
@@ -613,10 +638,11 @@ def build(profile):
         ],
     }
     board_events, boards, board_cards = board_data()
+    check_events, last_check = last_check_data()
     return {'note': 'Synthetic. Every name, company and address is invented; see sandbox/fixture.py.', 'seed': SEED,
             'owner': OWNER, 'accounts': ACCOUNTS, 'companies': companies, 'people': people, 'projects': PROJECTS,
-            'events': events + board_events, 'cards': cards + board_cards, 'promises': promises, 'network': network, 'agent_job': job,
-            'saved_logins': [{'site': site, 'username': user} for site, user in SAVED_LOGINS], 'boards': boards}
+            'events': events + board_events + check_events, 'cards': cards + board_cards, 'promises': promises, 'network': network, 'agent_job': job,
+            'saved_logins': [{'site': site, 'username': user} for site, user in SAVED_LOGINS], 'boards': boards, 'last_check': last_check}
 
 
 if __name__ == '__main__':

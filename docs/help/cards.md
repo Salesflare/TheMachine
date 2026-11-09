@@ -54,6 +54,12 @@ Your Machine reads each source every few minutes, day and night. It checks what 
 
 LinkedIn, X and Salesflare keep their own pace.
 
+## Last check
+
+After a check that read new email, a line above your to-dos says what it found, like "Checked 12 new emails at 16:11 · nothing needs you" or "· 2 new to-dos". When a new to-do waits for a better moment, like your morning summary, it says until when: "1 to-do held until tomorrow 08:30".
+
+Tap the line to see each email thread: who wrote, the subject, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. The line shows for 12 hours after the check.
+
 ## The buttons
 
 A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).
