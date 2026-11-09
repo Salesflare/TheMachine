@@ -19,7 +19,7 @@ Een afspraak in twee agenda's staat er één keer. Een agenda die iemand met je 
 
 Een plan dat jullie samen maakten, is één belofte, gemarkeerd met "Met" en de naam. Een belofte over een afspraak die dag met dezelfde persoon staat op de rij van die afspraak.
 
-**Te laat** komt eerst. Een afspraak met een open to-do toont die: **Voorbereiding klaar**, **Wordt voorbereid** of **To-do**.
+**Te laat** komt eerst. Een afspraak met een open to-do toont die: **Voorbereiding klaar**, **Wordt voorbereid** of **To-do**. Een to-do die al gedaan lijkt (je antwoordde al, of de uitvoering vond hem gedaan) staat er niet met een **Deadline**.
 
 ## Agenda, week of maand
 

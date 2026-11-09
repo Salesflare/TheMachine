@@ -19,7 +19,7 @@ Une réunion présente dans deux agendas ne s’affiche qu’une fois. Un agenda
 
 Un projet prévu ensemble est une seule promesse, marquée « Avec » et le nom de la personne. Une promesse liée à une réunion du même jour avec la même personne se place sur la ligne de cette réunion.
 
-**En retard** vient en premier. Une réunion avec une tâche ouverte l’affiche : **Préparation prête**, **En préparation** ou **Tâche**.
+**En retard** vient en premier. Une réunion avec une tâche ouverte l’affiche : **Préparation prête**, **En préparation** ou **Tâche**. Une tâche qui semble faite (vous avez déjà répondu, ou son exécution l’a trouvée faite) n’apparaît pas avec une **Échéance**.
 
 ## Agenda, semaine ou mois
 

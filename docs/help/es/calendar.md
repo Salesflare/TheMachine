@@ -19,7 +19,7 @@ Una reunión que está en dos calendarios aparece una vez. Un calendario que alg
 
 Un plan hecho en común es una sola promesa, marcada "Con" y su nombre. Una promesa sobre una reunión de ese día con la misma persona va en la fila de esa reunión.
 
-**Vencida** sale primero. Una reunión con una tarea abierta la muestra: **Preparación lista**, **Preparando** o **Tarea**.
+**Vencida** sale primero. Una reunión con una tarea abierta la muestra: **Preparación lista**, **Preparando** o **Tarea**. Una tarea que parece hecha (ya respondiste, o su ejecución la encontró hecha) no aparece como **Vence**.
 
 ## Agenda, semana o mes
 
