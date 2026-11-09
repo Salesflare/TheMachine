@@ -35,7 +35,9 @@ class ConnectApp:
         A hosted machine's control plane signs in Google and Microsoft itself: those link to its account page."""
         import onboarding
         if onboarding._assistant is None:
-            onboarding._assistant = sys.modules[type(self).__module__]  # App's module (assistant.py), not a second copy of it
+            # assistant.py, the entry that re-exports App (machine/main.py), as loaded already, not a second copy of it
+            onboarding._assistant = next((m for m in list(sys.modules.values()) if hasattr(m, 'SourceError')
+                                          and isinstance(getattr(m, 'App', None), type) and isinstance(self, m.App)), None)
         lock = self.__dict__.setdefault('connect_lock', threading.Lock())
         sessions = self.__dict__.setdefault('connect_sessions', {})
         with lock:

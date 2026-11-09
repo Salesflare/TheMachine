@@ -18,7 +18,7 @@ writes it; other modules call the owner's functions.
 
 | domain | modules | tables (owner) |
 |---|---|---|
-| service core | `assistant.py`: sources and sync, `Store`, `App` (actions, workers), notify delivery, prompts | `events` (sealed, the only writer), `suggestions` (to-dos), `decisions`, `deliveries`, `preparations`, `action_jobs`, `analyses`, `profile_runs`, `facts`, `promises`, `voices`, `checkpoints`, `faults` and the rest of its 45 |
+| service core | `assistant.py` (the entry, `main()`), `machine/main.py` (`Store`, `App` and its mixins) | `events` (sealed, the only writer), `suggestions` (to-dos), `decisions`, `deliveries`, `preparations`, `action_jobs`, `analyses`, `profile_runs`, `facts`, `promises`, `voices`, `checkpoints`, `faults` and the rest of its 45 |
 | message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
 | graph and CRM | `graph`, `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures`, `person_summary`, `project_success` (a project's done-when, its proof and blocker), `knowledge` (what every surface asks about a record, no table) | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*`; `person_summar*` (person_summary); `project_success` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
@@ -42,13 +42,13 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
 ## Where new code goes
 
 - **A new action** (a dashboard button, a CLI or agent call): in a domain that has an App mixin (`<domain>_app.py`,
-  listed in `APP_MIXINS` in `assistant.py`), a line in its `ACTIONS` (`'name': 'method'`) and the method there, called
+  listed in `APP_MIXINS` in `machine/main.py`), a line in its `ACTIONS` (`'name': 'method'`) and the method there, called
   as `method(name, args, owner_dashboard)`; `App.action` looks there first. Otherwise its branch in `App.action`, with
   the code it calls in its domain's module when there is one. Either way, add the name to the right `*_ACTIONS` set in
   `machine/actions.py`, one name per line, sorted. Those sets are the security boundary and stay together there;
   a handler still checks `owner_dashboard` itself where its branch did.
 - **App methods of a domain** (workers, reads, what its actions call): in its mixin when it has one. A mixin imports
-  what it needs like any module, never `assistant`, and only `assistant.py` imports it. The mixins today:
+  what it needs like any module, never `assistant`, and only `machine/main.py` imports it (`assistant.py` re-exports it). The mixins today:
   - `support_app.py` (`SupportApp`): Help and Report a bug.
   - `calendar_app.py` (`CalendarApp`): the Calendar's actions.
   - `skills_app.py` (`SkillsApp`): the skill actions and the skills kept here.
@@ -191,6 +191,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `learnings_action` in `SettingsActionsApp`), and the rest of them: `events_action` (events, related, begin_analysis)
   in `ReviewApp`, `mail_attachment_action` and `task_page_action` in `MailApp`, `client_error_action` in `ServeApp`,
   `bug_offer_action` in `SupportApp`; only the Fleet and Family prefix route stays in `App.action`.
+  Then `Store`, `APP_MIXINS` and `App` themselves into `machine/main.py`; `assistant.py` keeps `main()` and re-exports them.
 - **Dashboard code:** in its area's part in `dashboard/` (`<area>-<what>.js`: shell, todos, settings, graph, calendar,
   routines, connections, help, events, new, fleet), next to the functions it works with, never at the end of the script. The
   page's core is in the `shell-*` parts too: locale and error reports (`shell-core.js`), network and outbox, `render()`
@@ -233,10 +234,10 @@ test_app_mixins.py` (they run in CI with every suite).
 | rule | check |
 |---|---|
 | Each module defines or imports every global name it uses. A function moved without its import fails here, not with a `NameError` at runtime. Covers every `*.py`, subfolders and tests included. | `tests/test_architecture.py` |
-| No module loads `assistant.py`. The service runs it as `__main__`, so an import elsewhere makes a second copy with its own `Store` and globals. The entry points that do so today are listed in `LOADS_ASSISTANT`; tests may. Only `assistant.py` imports `*_app.py` modules. | `tests/test_architecture.py` |
+| No module loads `assistant.py`. The service runs it as `__main__`, so an import elsewhere makes a second copy with its own `Store` and globals. The entry points that do so today are listed in `LOADS_ASSISTANT`; tests may. Only `machine/main.py` composes the `*_app.py` modules (`assistant.py` re-exports them). | `tests/test_architecture.py` |
 | Each table is created by one module, its owner (today's few shared ones are in `SHARED_SCHEMA`). | `tests/test_architecture.py` |
 | Only the owner writes a table. Today's other writers are listed in `OTHER_WRITERS`. That list may only shrink: a new writer fails with the owner's name, and an entry that no longer writes fails until it's removed. | `tests/test_architecture.py` |
-| Only `assistant.py` writes `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
+| Only the Store and App (`machine/main.py`, `machine/store/*`) write `events`, the sealed table (and the sandbox's fixture loader, through the sealed connection). Covers subfolders. | `tests/test_message_seal.py` |
 | Nothing reads `dashboard.html` itself; every part in `dashboard/` is included once, its include line is in its place (a script, the stylesheet, the markup), and it is whole (statements that parse on their own, whole rules, whole elements); the service serves the assembled page; Python and Node assemble the same page. | `tests/test_dashboard_parts.py` |
 | No action is mapped by two mixins, no member is defined in two of them or in both `App` and a mixin, every handler is a method, every name in `OWNER_ACTIONS` or `DASHBOARD_ACTIONS` reaches a mixin's handler or a branch of `App.action`, no branch of `App.action` names an action a mixin maps (it would never run), and every action the dashboard sends is in `DASHBOARD_ACTIONS` and has a handler. | `tests/test_app_mixins.py` |
 | Code in `machine/` imports only from its own layer or the ones below it, and any root module, never with `import *`; `machine/__init__.py` imports nothing. The layers, lowest first: `actions`, `config`, `names`, `text`, `timing`; `browser`, `cards`, `chat`, `faults`, `model_usage`, `prompts`, `sources`; `store`, `upkeep`; `delivery`, `export`, `web`; `app`, `main`. A new area gets its layer in `MACHINE_LAYERS`. | `tests/test_architecture.py` |
