@@ -131,6 +131,16 @@ class Requests(unittest.TestCase):
             event_id = db.execute('SELECT id FROM events WHERE source_id=?', (shared['source_id'],)).fetchone()[0]
         return self.store.suggest(key, title, body, [event_id], due='2026-11-03')['id']
 
+    def test_a_handoff_carries_keys_only_for_emails_in_the_fleets_accounts(self):
+        card = self.handed_card()
+        private = mail('home', 1, 'Dana Roe <dana@family.example>', 'owner@gmail.com', message_id='<party@family.example>')
+        self.store.commit_page('home', {}, [private])
+        with self.store.connect() as db:
+            other = db.execute('SELECT id FROM events WHERE source_id=?', (private['source_id'],)).fetchone()[0]
+            ids = json.loads(db.execute('SELECT event_ids FROM suggestions WHERE id=?', (card,)).fetchone()[0])
+            db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps(ids + [other]), card))
+        self.assertEqual(self.fleet.message_keys(card, self.ref), [fleet._hash('s' * 64, self.handed_id)])
+
     def test_a_handoff_goes_with_the_summary_the_owner_read_and_the_sender_sees_how_it_went(self):
         card = self.handed_card()
         draft = self.app.action('fleet_handoff_draft', {'suggestion_id': card}, owner_dashboard=True)
@@ -891,6 +901,29 @@ class Requests(unittest.TestCase):
         self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'stage': 'adjusted', 'what': 'Book the demo for next week'}})
         self.assertEqual(self.fleet.view()['splits'][0]['parts'][1]['what'], 'Book the demo for next week')
         self.assertEqual(self.told[-1], 'Pat accepted their part of the follow-ups, changed to: “Book the demo for next week”.')
+
+    def test_a_split_starts_only_from_the_fleets_accounts_and_never_from_a_personal_to_do(self):
+        event_id = self.meeting()
+        personal = self.store.suggest('k-private', 'Book the dentist', 'Before the trip.', [event_id])['id']
+        self.store.suggest('k-pricing', 'Send Sam the pricing', 'Sam asked for pricing.', [event_id])
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET area='personal' WHERE id=?", (personal,))
+            at = db.execute('SELECT occurred_at FROM events WHERE id=?', (event_id,)).fetchone()[0]
+            for n, (account, what) in enumerate((('home', 'Call the notary'), ('work', 'Send the contract'))):
+                db.execute('INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',
+                           ('mine', 'someone@else.example', what, at, 9000 + n, account, 'open', at, at))
+        self.assertEqual(self.fleet.followup_round(), 1)
+        (split,) = self.fleet.view()['splits']
+        self.assertEqual(split['parts'][0]['what'], 'Send Sam the pricing; Send the contract')
+        self.assertNotIn('dentist', json.dumps(split))
+        self.assertNotIn('notary', json.dumps(split))
+
+    def test_a_meeting_on_a_personal_calendar_is_never_split_with_the_team(self):
+        event_id = self.meeting()
+        with self.store.connect() as db:
+            db.execute("UPDATE events SET account_id='home' WHERE id=?", (event_id,))
+        self.assertEqual(self.fleet.followup_round(), 0)
+        self.assertEqual(self.fleet.view()['splits'], [])
 
     def test_a_split_from_a_teammate_shows_the_owner_their_part_and_wins_over_their_own_proposal(self):
         event_id = self.meeting()
