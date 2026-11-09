@@ -1242,95 +1242,10 @@ class App(*APP_MIXINS):
     NO_DOC_CONNECTION = 'No Docs connection in this to-do’s area can do things. Give what you need in the to-do instead.'
 
     def action(self, name, args, owner_dashboard=False):
-        accounts = [a['id'] for a in self.config['accounts']]
-        selected = args.get('account_ids', [])
         if name in self.ACTION_HANDLERS:  # an action a domain mixin handles (APP_MIXINS)
             return getattr(self, self.ACTION_HANDLERS[name])(name, args, owner_dashboard)
-        if name == 'bug_offer':
-            return self.bug_offer(args)
-        if name in ('events', 'related') and selected in ('all', ['all']):
-            selected = accounts  # search everything, asked for explicitly
-        if name in ['events', 'begin_analysis', 'related'] and (not selected or not set(selected) <= set(accounts)):
-            raise ValueError('Choose explicit configured account_ids (' + json.dumps(accounts) + ', or ["all"] to search every account with events '
-                             'or related); cross-account reads must be intentional. A to-do\'s own accounts are its account_ids in status.')
-        if name == 'mail_attachment':
-            return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
-        if name in task_pages.ACTIONS:  # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
-            if not owner_dashboard:
-                raise ValueError('Task pages are shared from the dashboard')
-            return self.task_pages.action(name, args)
         if name.startswith('fleet_') or name in FAMILY_ACTIONS:
             return self.fleet_action(name, args, owner_dashboard)
-        if name == 'related':
-            if not args.get('event_ids') and not str(args.get('query') or '').strip():
-                raise ValueError('Give event_ids, a query or both')
-            query = str(args.get('query') or '')
-            if not embeddings.settings(self.config) and not query.strip():  # no meaning search here: the given signals' own words
-                query = ' '.join(r['title'] for r in self.store.events(selected, event_ids=[int(i) for i in args['event_ids']]))
-            found, semantic = self.related(selected, args.get('event_ids') or (), query,
-                                           min(int(args.get('limit') or 8), embeddings.MAX_LIMIT), args.get('exclude_event_ids') or ())
-            score = dict(found)
-            rows = sorted(self.store.events(selected, event_ids=list(score)), key=lambda r: list(score).index(r['id']))
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
-            for view in result['events']:
-                view['similarity'] = score.get(view['id'])
-            return {**result, 'semantic': semantic}
-        if name == 'events' and args.get('mailbox') is True:
-            # Older than what is collected: the mailboxes' own search, live and read-only; what it finds is kept to link
-            ids, failed = self.mailbox_lookup(selected, args.get('query'), args.get('limit') or 5)
-            rows = sorted(self.store.events(selected, event_ids=ids), key=lambda r: ids.index(r['id'])) if ids else []
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
-            if failed:
-                result['mailbox_errors'] = failed
-            if not ids:
-                result['note'] = 'Nothing in those mailboxes matches. Try other words (the person\'s address, part of the subject).'
-            return result
-        if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
-            # Meaning and keywords fused, best first; the plain keyword search stays the default.
-            # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
-            found, _ = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
-            order = [i for i, _ in found]
-            args = {**args, 'event_ids': order, 'query': ''}
-        if name == 'events':
-            kinds = args.get('kinds')
-            if kinds is not None and not (isinstance(kinds, list) and all(isinstance(k, str) and re.fullmatch(r'[a-z_]+\.[a-z_]+', k) for k in kinds)):
-                raise ValueError('kinds is a list of event kinds')
-            rows = self.store.events(selected, args.get('query', ''), args.get('limit', 40), event_ids=args.get('event_ids'), kinds=kinds)
-            if args.get('semantic') and args.get('event_ids') is not None:
-                rows.sort(key=lambda r: args['event_ids'].index(r['id']) if r['id'] in args['event_ids'] else 0)
-            # The CLI reads whole rows; agent tool results must stay under OpenClaw's size cut.
-            if args.get('full'):
-                return rows
-            if args.get('metadata_offset') is not None:
-                if len(args.get('event_ids') or []) != 1 or len(rows) != 1:
-                    raise ValueError('Read metadata with one explicit, available event_id')
-                return metadata_page(rows[0], int(args['metadata_offset']))
-            result = event_page(rows, int(args.get('body_offset') or 0), int(args.get('row_offset') or 0))
-            if args.get('event_ids') is not None:
-                result['unavailable_event_ids'] = sorted(set(args['event_ids']) - {r['id'] for r in rows})
-            if len(encoded(result)) > REVIEW_PAGE_CHARS:
-                raise ValueError('Request a smaller list of event_ids')
-            return result
-        if name == 'begin_analysis':
-            result = self.store.begin_analysis(selected, args.get('limit', 40), args.get('_review_session'), args.get('_review_run'))
-            if isinstance(result, dict) and result.get('analysis_id'):
-                with self.store.connect() as db:
-                    result['projects'] = graph.active_projects(db)  # reuse these names in finish_analysis and suggest
-                    result['boards'] = graph.boards_brief(db)  # projects of one kind in stages, moved with finish_analysis stages
-                team = self.team_accounts()
-                if team:  # Work messages the Shared Graph needs a call on (finish_analysis team)
-                    with self.store.connect() as db:
-                        row = db.execute('SELECT items FROM analyses WHERE id=?', (result['analysis_id'],)).fetchone()
-                        ids = [i['id'] for i in json.loads(row['items']) if not i.get('excluded')] if row else []
-                        result['team'] = [r[0] for r in db.execute(f"SELECT id FROM events WHERE id IN ({','.join('?' * len(ids))}) AND account_id IN "
-                                                                   f"({','.join('?' * len(team))}) ORDER BY id", (*ids, *team))] if ids else []
-                        if result['team']:  # the groups unsure threads already have: reuse a name for the same kind of thread
-                            shared_graph.ensure(db)
-                            result['share_groups'] = shared_graph.groups(db)
-            return result
-        if name == 'client_error':  # the dashboard's own errors, as signatures for the error reports (error_feed.py)
-            with self.store.connect() as db:
-                return {'ok': True, 'counted': error_feed.record_client(db, args.get('errors'), self.store.code_version, DASHBOARD_ACTIONS)}
         raise ValueError('Unknown operation')
 
     def fleet_card(self, kind, ask_id, name, title, body, evidence, action=None, due=None, into=None, family=False, via=None, carried=()):

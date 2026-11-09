@@ -24,6 +24,7 @@ class SupportApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = dict.fromkeys(('bug_fixed', 'bug_later', 'bug_offer_open', 'bug_preview', 'bug_queued', 'bug_send', 'help_article',
                              'help_ask', 'support_access'), 'support_dashboard_action')
+    ACTIONS['bug_offer'] = 'bug_offer_action'
 
     def support_dashboard_action(self, name, args, owner_dashboard):
         if not owner_dashboard:
@@ -192,3 +193,7 @@ class SupportApp:
         return {'linked': True, 'id': item['id'], 'url': url,
                 'say': ('Offer it in one short message: you wrote it up as a bug report for The Machine team. ' + how +
                         ' Nothing is sent until they tap Send there. Never say it was sent, filed or that anyone is looking at it.')}
+
+    def bug_offer_action(self, name, args, owner_dashboard=False):
+        # the agent's chat offer of a bug report (assistant_signals bug_offer): not owner-only, the owner sends it
+        return self.bug_offer(args)

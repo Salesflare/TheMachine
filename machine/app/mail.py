@@ -28,7 +28,7 @@ import task_pages
 
 
 class MailApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    ACTIONS = {'mail_attachment': 'mail_attachment_action', **dict.fromkeys(task_pages.ACTIONS, 'task_page_action')}
 
     @functools.cached_property
     def task_pages(self):
@@ -317,3 +317,12 @@ class MailApp:
         if part is None:
             return [a for a in fetch(self, account, row['source_id'])[0] if a.get('kind', 'file') == 'file' and not a.get('inline')]
         return fetch(self, account, row['source_id'], part)[1]
+
+    def mail_attachment_action(self, name, args, owner_dashboard=False):
+        return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
+
+    def task_page_action(self, name, args, owner_dashboard=False):
+        # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
+        if not owner_dashboard:
+            raise ValueError('Task pages are shared from the dashboard')
+        return self.task_pages.action(name, args)
