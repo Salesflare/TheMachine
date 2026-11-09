@@ -19,13 +19,14 @@ becomes more useful every day.
 - **An AI that works with other people's AIs.** Your colleagues, family and friends have their own Machines. They
   coordinate plans, exchange what their owners permit, delegate work and keep commitments moving. Eventually, this
   should work across different AI products too. Every person remains in control of their own AI and information.
-- **An AI for your whole life.** Work and personal life are parts of the same life. Your Machine understands both,
-  while keeping their boundaries intact. It follows you between your devices, apps and conversations.
+- **An AI for your whole life.** You're one person. Your Machine helps you be more efficient at work and more attentive
+  to the people in your life. It understands both, respects their boundaries, and follows you between devices, apps
+  and conversations.
 - **An AI that keeps up with the future.** As models become smarter, tools become more capable and new ways of
   working emerge, your Machine improves with them. You shouldn't have to rebuild your AI every time technology
   advances.
-- **And it should be for everyone.** Not just developers, early adopters or people who can afford expensive
-  technology. Easy to start, affordable to use, and available in your own language.
+- **And it should be for everyone.** Simple from the start. As powerful as you want it to be. Easy to begin with,
+  affordable and available in your own language, with deeper control and customization if you want them.
 
 We want people to spend less time managing information, software and each other, and more time doing what matters to
 them.
@@ -65,15 +66,19 @@ The Machine should become more capable while demanding less of your life.
    Useful within minutes. No technical knowledge required. Plain language, simple interactions, accessible design and
    support for people's own languages.
 
+   Simple from the start. As powerful as you want it to be. One experience with optional layers of depth: use its
+   suggestions, adjust a routine, inspect its logic or even write code. Complexity should be available when you want
+   it, never imposed when you don't. More capability must not make the basics harder.
+
    Free to run yourself. Fairly priced when hosted. Powerful AI shouldn't be reserved for people with big budgets or
    technical skills.
 5. **It brings you closer to people.**
 
-   The Machine helps you remember what matters to people, keep your promises, notice when someone needs attention and
-   be better prepared for conversations.
+   The Machine helps you be more attentive: remember what matters to people, stay in touch, keep your promises, notice
+   when someone needs attention and follow through.
 
-   It learns your voice without secretly impersonating you. It should strengthen human relationships, not replace
-   them.
+   It learns your voice without secretly impersonating you. It should help you care for your relationships, not
+   automate or replace them.
 6. **It's with you everywhere.**
 
    One continuously updated understanding of your world, across your computer, phone, browser, communication tools and
@@ -119,6 +124,7 @@ The Machine should become more capable while demanding less of your life.
     The Graph and Boards can progressively replace manual relationship management, coordination and recordkeeping.
 
     The long-term goal is an open network where personal AIs can collaborate regardless of who built or hosts them.
+    Ultimately, it should be independently operable and community-governed.
 
     Coordination should become automatic. Trust and ownership should remain personal.
 
