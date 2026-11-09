@@ -64,11 +64,15 @@ Tu Machine también nota el trabajo que haces con un ritmo y lo ofrece como ruti
 - la misma petición, tres veces o más seguidas, como "resume los tickets de soporte abiertos" cada lunes;
 - un correo que envías con un ritmo, como un informe semanal a tu equipo;
 - newsletters y correos de novedades que llegan cada semana;
-- un canal de Slack con mucho movimiento donde otros escriben cada semana.
+- un canal de Slack con mucho movimiento donde otros escriben cada semana;
+- correos que reenvías uno a uno a la misma persona, como los del colegio y el club a tu pareja: un resumen semanal para esa persona te ahorra reenviarlos;
+- la misma petición que respondes con un ritmo, como una aprobación mensual para la misma persona.
 
-Cada sugerencia dice lo que vio, como "Pedido 4 veces seguidas", y se ejecutó una vez para que veas un resultado real. Piensa en un resumen del equipo, un brief antes de una llamada semanal, un resumen de soporte o de desarrollo, el pulso de tus cifras o un resumen de las newsletters que recibes.
+Cada sugerencia dice lo que vio, como "Pedido 4 veces seguidas" o "6 correos reenviados a Sam en 3 semanas", y se ejecutó una vez para que veas un resultado real. Piensa en un resumen del equipo, un brief antes de una llamada semanal, un resumen de soporte o de desarrollo, el pulso de tus cifras o un resumen de las newsletters que recibes.
 
-Solo sugiere lo que es tuyo y claramente útil: un resumen de noticias solo sobre tus propias newsletters, nunca uno genérico. Cuando nada encaja, no hay sugerencia. Mira como mucho una vez al día, y todo se queda en tu Machine. Una tarea que cierras con un ritmo llega en cambio como oferta de tarea recurrente.
+Solo sugiere lo que es tuyo y claramente útil: un resumen de noticias solo sobre tus propias newsletters, nunca uno genérico. Cuando nada encaja, no hay sugerencia.
+
+Mira como mucho una vez al día y trae como mucho una sugerencia nueva por semana, sin notificación. **No, gracias** nunca la vuelve a traer. Los reenvíos y las respuestas se quedan con la cuenta desde la que salieron, para que Trabajo y Personal no se mezclen. Todo se queda en tu Machine. Una tarea que cierras con un ritmo llega en cambio como oferta de tarea recurrente.
 
 ## Rutinas y tareas recurrentes
 

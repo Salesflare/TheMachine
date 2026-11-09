@@ -74,11 +74,15 @@ Your Machine also notices work you do on a rhythm and offers it as a routine und
 - the same ask, three times or more in a row, like "sum up the open support tickets" every Monday;
 - a mail you send on a rhythm, like a weekly report to your team;
 - newsletters and update mails that keep coming every week;
-- a busy Slack channel that others write in every week.
+- a busy Slack channel that others write in every week;
+- mail you forward one by one to the same person, like school and club mails to your partner: a weekly digest for them saves the forwarding;
+- the same request you answer on a rhythm, like a monthly approval for the same person.
 
-Each suggestion says what it saw, like "Asked 4 times in a row", and ran once so you see a real result. Think of a team recap, a brief before a weekly call, a support or dev summary, a pulse on your numbers, or a digest of the newsletters you get.
+Each suggestion says what it saw, like "Asked 4 times in a row" or "Forwarded 6 mails to Sam in 3 weeks", and ran once so you see a real result. Think of a team recap, a brief before a weekly call, a support or dev summary, a pulse on your numbers, or a digest of the newsletters you get.
 
-It only suggests what is specific to you and clearly useful: a news digest only over your own newsletters, never a generic one. When nothing fits, there is no suggestion. It looks at most once a day, and all of it stays on your Machine. A to-do you close on a rhythm comes as a recurring to-do offer instead.
+It only suggests what is specific to you and clearly useful: a news digest only over your own newsletters, never a generic one. When nothing fits, there is no suggestion.
+
+It looks at most once a day and brings at most one new suggestion a week, without a notification. **No thanks** never brings that one back. Forwards and replies stay with the account they were sent from, so Work and Personal don’t mix. All of it stays on your Machine. A to-do you close on a rhythm comes as a recurring to-do offer instead.
 
 ## Routines and recurring to-dos
 

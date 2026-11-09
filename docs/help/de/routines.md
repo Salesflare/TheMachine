@@ -74,11 +74,15 @@ Deine Machine bemerkt auch Arbeit, die du in einem Rhythmus erledigst, und schl�
 - dieselbe Bitte, dreimal oder öfter hintereinander, wie „fasse die offenen Support-Tickets zusammen“ jeden Montag;
 - eine Mail, die du in einem Rhythmus sendest, wie einen Wochenbericht an dein Team;
 - Newsletter und Update-Mails, die jede Woche wieder kommen;
-- einen vollen Slack-Kanal, in dem andere jede Woche schreiben.
+- einen vollen Slack-Kanal, in dem andere jede Woche schreiben;
+- Mails, die du einzeln an dieselbe Person weiterleitest, wie Mails von Schule und Verein an deinen Partner: ein wöchentlicher Digest für sie spart das Weiterleiten;
+- dieselbe Anfrage, die du in einem Rhythmus beantwortest, wie eine monatliche Freigabe für dieselbe Person.
 
-Jeder Vorschlag sagt, was sie gesehen hat, wie „4 Mal hintereinander gefragt“, und lief einmal, damit du ein echtes Ergebnis siehst. Denk an eine Team-Zusammenfassung, ein Briefing vor einem wöchentlichen Call, eine Support- oder Dev-Übersicht, einen Puls deiner Zahlen oder einen Digest der Newsletter, die du bekommst.
+Jeder Vorschlag sagt, was sie gesehen hat, wie „4 Mal hintereinander gefragt“ oder „6 E-Mails in 3 Wochen an Sam weitergeleitet“, und lief einmal, damit du ein echtes Ergebnis siehst. Denk an eine Team-Zusammenfassung, ein Briefing vor einem wöchentlichen Call, eine Support- oder Dev-Übersicht, einen Puls deiner Zahlen oder einen Digest der Newsletter, die du bekommst.
 
-Sie schlägt nur vor, was zu dir passt und klar hilft: einen News-Digest nur über deine eigenen Newsletter, nie einen allgemeinen. Passt nichts, gibt es keinen Vorschlag. Sie schaut höchstens einmal am Tag, und alles bleibt auf deiner Machine. Eine Aufgabe, die du in einem Rhythmus erledigst, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe.
+Sie schlägt nur vor, was zu dir passt und klar hilft: einen News-Digest nur über deine eigenen Newsletter, nie einen allgemeinen. Passt nichts, gibt es keinen Vorschlag.
+
+Sie schaut höchstens einmal am Tag und bringt höchstens einen neuen Vorschlag pro Woche, ohne Benachrichtigung. **Nein danke** bringt diesen Vorschlag nie zurück. Weitergeleitete Mails und Antworten bleiben bei dem Konto, von dem sie gesendet wurden, damit Arbeit und Privat sich nicht mischen. Alles bleibt auf deiner Machine. Eine Aufgabe, die du in einem Rhythmus erledigst, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe.
 
 ## Routinen und wiederkehrende Aufgaben
 

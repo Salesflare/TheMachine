@@ -64,11 +64,15 @@ La tua Machine nota anche il lavoro che fai con un ritmo e lo propone come routi
 - la stessa richiesta, tre volte o più di fila, come "riassumi i ticket di supporto aperti" ogni lunedì;
 - un’email che invii con un ritmo, come un report settimanale al tuo team;
 - newsletter ed email di aggiornamento che arrivano ogni settimana;
-- un canale Slack molto attivo dove altri scrivono ogni settimana.
+- un canale Slack molto attivo dove altri scrivono ogni settimana;
+- email che inoltri una per una alla stessa persona, come quelle della scuola e del club al tuo partner: un riepilogo settimanale per quella persona ti risparmia gli inoltri;
+- la stessa richiesta a cui rispondi con un ritmo, come un’approvazione mensile per la stessa persona.
 
-Ogni suggerimento dice cosa ha visto, come "Chiesto 4 volte di fila", ed è stato eseguito una volta perché tu veda un risultato vero. Pensa a un riepilogo del team, un brief prima di una call settimanale, un riepilogo del supporto o dello sviluppo, il polso dei tuoi numeri o un riassunto delle newsletter che ricevi.
+Ogni suggerimento dice cosa ha visto, come "Chiesto 4 volte di fila" o "6 email inoltrate a Sam in 3 settimane", ed è stato eseguito una volta perché tu veda un risultato vero. Pensa a un riepilogo del team, un brief prima di una call settimanale, un riepilogo del supporto o dello sviluppo, il polso dei tuoi numeri o un riassunto delle newsletter che ricevi.
 
-Propone solo ciò che è tuo e chiaramente utile: un riassunto di notizie solo sulle tue newsletter, mai uno generico. Quando niente va bene, non c’è nessun suggerimento. Guarda al massimo una volta al giorno, e tutto resta sulla tua Machine. Un’attività che chiudi con un ritmo arriva invece come offerta di attività ricorrente.
+Propone solo ciò che è tuo e chiaramente utile: un riassunto di notizie solo sulle tue newsletter, mai uno generico. Quando niente va bene, non c’è nessun suggerimento.
+
+Guarda al massimo una volta al giorno e porta al massimo un nuovo suggerimento a settimana, senza notifica. **No, grazie** non lo riporta mai. Inoltri e risposte restano con l’account da cui sono partiti, così Lavoro e Personale non si mescolano. Tutto resta sulla tua Machine. Un’attività che chiudi con un ritmo arriva invece come offerta di attività ricorrente.
 
 ## Routine e attività ricorrenti
 
