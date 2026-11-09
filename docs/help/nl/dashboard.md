@@ -19,6 +19,8 @@ order: 4
 
 De zijbalk toont je to-do's zoals de pagina. Verzoeken uit je Fleet staan ook onder **Te beslissen**, zodat het aantal klopt met dat bovenaan. Tik op een verzoek om het te tonen.
 
+Voor het menu van een to-do: ga er met de muis over en klik op **⋯**, klik er met de rechtermuisknop op, of houd hem ingedrukt op een telefoon. Met het toetsenbord druk je er `Shift F10` op. Naast **Hernoemen** en **Openen** heeft het menu de eigen knoppen van de to-do: **Markeer als gedaan**, **Snoozen** en **Niet nodig**, elk met **Ongedaan maken**.
+
 **Browser** toont de eigen browser van je Machine. Op een computer opent hij naast de zijbalk, zo groot als de ruimte die er is, net als **Bekijken in browser** op een to-do en **Browser openen** als een site een login nodig heeft. Op een telefoon opent hij in een nieuw tabblad.
 
 Het voorste venster van de browser staat in het midden en de rest van het scherm is donker; een knop in de hoek toont het hele scherm. Op een laag scherm scrolt de hele zijbalk als één kolom, to-do's inbegrepen, zoals het menu op een telefoon.

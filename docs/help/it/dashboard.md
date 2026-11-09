@@ -19,6 +19,8 @@ order: 4
 
 La barra laterale elenca le tue attività come la pagina. Anche le richieste della tua Fleet sono in **Da decidere**, così il numero corrisponde a quello in alto. Toccane una per vederla.
 
+Per il menu di un’attività, passaci sopra con il mouse e fai clic su **⋯**, fai clic destro su di essa o tienila premuta sul telefono. Con la tastiera, premi `Shift F10` su di essa. Oltre a **Rinomina** e **Apri**, il menu ha i pulsanti dell’attività stessa: **Segna come fatto**, **Posticipa** e **Non serve**, ognuno con **Annulla**.
+
 **Browser** mostra il browser della tua Machine. Su un computer si apre accanto alla barra laterale, grande quanto lo spazio disponibile, e lo stesso fanno **Vedi nel browser** su un'attività e **Apri il browser** quando un sito richiede l'accesso. Su un telefono si apre in una nuova scheda.
 
 La finestra in primo piano del browser compare al centro e il resto dello schermo è scuro; un pulsante nell'angolo mostra lo schermo intero. Su uno schermo basso l'intera barra laterale scorre come un'unica colonna, attività comprese, come il menu su un telefono.

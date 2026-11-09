@@ -71,24 +71,48 @@ document.addEventListener('mouseover',e=>{if(e.target.closest('.row-more'))retur
  if(!a||!fine()){rowMore.hidden=true;return}const r=a.getBoundingClientRect();Object.assign(rowMore.style,{left:r.right-28+'px',top:r.top+(r.height-24)/2+'px'});rowMore.dataset.id=rowId(a);rowMore.hidden=false});
 document.addEventListener('scroll',()=>{rowMore.hidden=true;rowHover=null;rowMenuClose();renamePlace()},true);addEventListener('resize',()=>renamePlace());
 function rowMenuClose(){document.querySelector('.row-menu')?.remove()}
-function rowMenu(id,x,y){rowMenuClose();const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');
- setHTML(m,html`<button type="button" role="menuitem" data-row-rename="${id}">Rename</button><button type="button" role="menuitem" data-row-open="${id}">Open</button>`);document.body.append(m);
- const r=m.getBoundingClientRect();Object.assign(m.style,{left:Math.max(8,Math.min(x,innerWidth-r.width-8))+'px',top:Math.max(8,Math.min(y,innerHeight-r.height-8))+'px'});m.querySelector('button').focus()}
-rowMore.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const r=rowMore.getBoundingClientRect();rowMenu(rowMore.dataset.id,r.left,r.bottom+4)});
-document.addEventListener('click',e=>{const rn=e.target.closest('[data-row-rename]'),op=e.target.closest('[data-row-open]');
- if(rn){e.preventDefault();const id=rn.dataset.rowRename;rowMenuClose();renameAt(id,titleEl(id,'row'),'row');return}
- if(op){e.preventDefault();rowMenuClose();chatGo(op.dataset.rowOpen);return}
+// The to-do's own Mark done, Snooze and Not needed, as its buttons name them, with their Undo. Not needed skips the optional why.
+const ROW_ACTS=['complete','snooze','reject'];
+function rowActs(id){const s=cardOf(id);if(!s||closed(s))return [];const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));
+ const found=new Map();for(const b of t.content.querySelectorAll('article>.actions [data-choice]')){const c=b.dataset.choice;if(ROW_ACTS.includes(c)&&!found.has(c))found.set(c,(b.dataset.full||b.textContent).trim())}
+ return ROW_ACTS.filter(c=>found.get(c)).map(c=>[c,found.get(c)])}
+// Opened from the keyboard: focus goes back to the list after.
+let rowMenuKeys=null;
+// Below the point; with no room there, above (up), so the row stays in sight.
+function rowMenu(id,x,y,keys=null,up=y){rowMenuClose();rowMenuKeys=keys;const m=document.createElement('div');m.className='row-menu';m.setAttribute('role','menu');m.setAttribute('aria-label',cardOf(id)?.title||'');const acts=rowActs(id);
+ setHTML(m,html`<button type="button" role="menuitem" data-row-rename="${id}">Rename</button><button type="button" role="menuitem" data-row-open="${id}">Open</button>${acts.length?html`<hr role="separator">${acts.map(([c,label])=>html`<button type="button" role="menuitem" data-row-act="${c}" data-card="${id}">${label}</button>`)}`:''}`);document.body.append(m);
+ const r=m.getBoundingClientRect();Object.assign(m.style,{left:Math.max(8,Math.min(x,innerWidth-r.width-8))+'px',top:Math.max(8,y+r.height>innerHeight-8?Math.min(up,innerHeight-8)-r.height:y)+'px'});m.querySelector('button').focus()}
+// Focus to the row, or (it left the list) the next or previous one.
+function rowRefocus(id){const k=rowMenuKeys;rowMenuKeys=null;if(!k)return;const go=()=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')];
+ (rows.find(a=>rowId(a)===id)||rows.find(a=>rowId(a)===k.next)||rows.find(a=>rowId(a)===k.prev))?.focus()};go();requestAnimationFrame(()=>setTimeout(go,50))}
+const rowKeys=a=>{const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')],i=rows.indexOf(a);return {next:rowId(rows[i+1]),prev:rowId(rows[i-1])}};
+async function rowAct(choice,id){const k=rowMenuKeys;rowMenuClose();
+ if(choice==='snooze'){rowMenuKeys=null;openSnooze(id);if(k)$('#snooze-dialog').addEventListener('close',()=>{rowMenuKeys=k;rowRefocus(id)},{once:true});return}
+ try{const go=saveDecision(id,choice,'');rowMenuKeys=k;rowRefocus(id);await go}catch(err){errCaught(err);toast(err.message,true)}}
+rowMore.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const r=rowMore.getBoundingClientRect();rowMenu(rowMore.dataset.id,r.left,r.bottom+4,null,r.top-4)});
+document.addEventListener('click',e=>{const rn=e.target.closest('[data-row-rename]'),op=e.target.closest('[data-row-open]'),act=e.target.closest('.row-menu [data-row-act]');
+ if(rn){e.preventDefault();const id=rn.dataset.rowRename;rowMenuKeys=null;rowMenuClose();renameAt(id,titleEl(id,'row'),'row');return}
+ if(op){e.preventDefault();rowMenuKeys=null;rowMenuClose();chatGo(op.dataset.rowOpen);return}
+ if(act){e.preventDefault();rowAct(act.dataset.rowAct,act.dataset.card);return}
  if(!e.target.closest('.row-menu'))rowMenuClose()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.row-menu')){rowMenuClose();e.stopPropagation()}},true);
-document.addEventListener('contextmenu',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();rowMenu(rowId(a),e.clientX,e.clientY)});
+// Arrows, Home and End move; Esc or Tab closes.
+document.addEventListener('keydown',e=>{const m=document.querySelector('.row-menu');if(!m)return;
+ if(e.key==='Escape'){const id=m.querySelector('[data-row-open]')?.dataset.rowOpen;rowMenuClose();e.stopPropagation();e.preventDefault();rowRefocus(id);return}
+ if(e.key==='Tab'){rowMenuKeys=null;rowMenuClose();return}
+ const items=[...m.querySelectorAll('button')],i=items.indexOf(document.activeElement),to={ArrowDown:i+1,ArrowUp:i-1,Home:0,End:items.length-1}[e.key];
+ if(to===undefined)return;e.preventDefault();e.stopPropagation();items[(to+items.length)%items.length]?.focus()},true);
+document.addEventListener('contextmenu',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();
+ // From the keyboard (no right button, no finger): under the row
+ const r=a.getBoundingClientRect();e.button!==2&&e.pointerType!=='touch'?rowMenu(rowId(a),r.left+16,r.bottom+4,rowKeys(a),r.top-4):rowMenu(rowId(a),e.clientX,e.clientY)});
 document.addEventListener('dblclick',e=>{const a=e.target.closest(ROWS);if(!a)return;e.preventDefault();const id=rowId(a);requestAnimationFrame(()=>renameAt(id,titleEl(id,'row'),'row'))});
 // A long press on a row on a phone opens the same menu; the tap that ends it doesn't open the card.
 {let timer=null,pressed=false,start=null;
  document.addEventListener('touchstart',e=>{const a=e.target.closest(ROWS);if(!a||e.touches.length!==1)return;pressed=false;const t=e.touches[0];start=[t.clientX,t.clientY];
-  clearTimeout(timer);timer=setTimeout(()=>{pressed=true;navigator.vibrate?.(10);rowMenu(rowId(a),start[0],start[1]+8)},500)},{passive:true});
+  clearTimeout(timer);timer=setTimeout(()=>{pressed=true;navigator.vibrate?.(10);{const r=a.getBoundingClientRect();rowMenu(rowId(a),start[0],r.bottom+4,null,r.top-4)}},500)},{passive:true});
  document.addEventListener('touchmove',e=>{if(timer&&start&&Math.hypot(e.touches[0].clientX-start[0],e.touches[0].clientY-start[1])>8){clearTimeout(timer);timer=null}},{passive:true});
- document.addEventListener('touchend',()=>{clearTimeout(timer);timer=null},{passive:true});
- document.addEventListener('click',e=>{if(pressed&&e.target.closest(ROWS)){e.preventDefault();e.stopImmediatePropagation();pressed=false}},true)}
+ // Nor does it pick from the menu under the finger
+ document.addEventListener('touchend',()=>{clearTimeout(timer);timer=null;if(pressed)setTimeout(()=>{pressed=false},400)},{passive:true});
+ document.addEventListener('click',e=>{if(pressed&&(e.target.closest(ROWS)||e.target.closest('.row-menu'))){e.preventDefault();e.stopImmediatePropagation();pressed=false}},true)}
 // Rename in the chat header's menu; a click on the chat's title; a click or tap on a to-do's title (Ctrl or Cmd click
 // still opens its chat in a new tab, and Chat › on its last row opens it here).
 document.addEventListener('click',e=>{const b=e.target.closest('[data-rename]');if(b){e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');const id=b.dataset.rename;requestAnimationFrame(()=>renameAt(id,titleEl(id)));return}

@@ -19,6 +19,8 @@ order: 4
 
 Die Seitenleiste listet deine Aufgaben wie die Seite. Anfragen aus deiner Fleet stehen auch unter **Zu entscheiden**, so stimmt die Zahl mit der oben überein. Tippe auf eine, um sie zu zeigen.
 
+Für das Menü einer Aufgabe fahre mit der Maus darüber und klicke auf **⋯**, klicke sie mit der rechten Maustaste an oder halte sie auf dem Handy gedrückt. Mit der Tastatur drücke `Shift F10` darauf. Neben **Umbenennen** und **Öffnen** hat das Menü die eigenen Knöpfe der Aufgabe: **Als erledigt markieren**, **Zurückstellen** und **Nicht nötig**, jeweils mit **Rückgängig**.
+
 **Browser** zeigt den eigenen Browser deiner Machine. Auf einem Computer öffnet er sich neben der Seitenleiste, ebenso **Im Browser ansehen** bei einer Aufgabe und **Browser öffnen**, wenn eine Website eine Anmeldung braucht. Ein schmales Fenster, etwa die App auf dem halben Bildschirm, zeigt ihn unter der oberen Leiste, nicht in einem zweiten Fenster. Auf dem Handy öffnet er sich in einem neuen Tab.
 
 Das vordere Fenster des Browsers steht in der Mitte, und der Rest des Bildschirms ist dunkel. Ein Button in der Ecke zeigt den ganzen Bildschirm. Ändert sich die Größe des Fensters, passt sich die Ansicht wieder an. **Vergrößern** gibt ihm das ganze Fenster; ein zweiter Druck geht zurück. Die Anmeldung aus einer Aufgabe hat auch **Vergrößern**.
