@@ -338,6 +338,7 @@ TASKS = ('SELECT Id, Subject, Description, Status, ActivityDate, IsClosed, TaskS
 MEETINGS = ('SELECT Id, Subject, Description, StartDateTime, ActivityDateTime, OwnerId, Owner.Email, Who.Type, Who.Name, Who.Email, '
             'Who.Title, AccountId, Account.Name, Account.Website, SystemModstamp FROM Event WHERE SystemModstamp >= {since} '
             'ORDER BY SystemModstamp LIMIT {limit}')
+CUSTOM_FIELD = re.compile(r'[A-Za-z][A-Za-z0-9_]{0,79}__c')  # an org's own field, as the API names it: nothing else goes in a query
 CONTACTS = ('SELECT Id, Name, Email, Title, Phone, LastModifiedDate{extra} FROM Contact WHERE Email IN ({emails}) '
             'ORDER BY LastModifiedDate DESC LIMIT {limit}')
 
@@ -360,7 +361,8 @@ def linkedin_field(source, state, now):
     for field in (described or {}).get('fields') or []:
         if not isinstance(field, dict) or not field.get('updateable') or field.get('type') not in ('url', 'string'):
             continue
-        if 'linkedin' in (str(field.get('name') or '') + ' ' + str(field.get('label') or '')).lower() and field.get('custom'):
+        if ('linkedin' in (str(field.get('name') or '') + ' ' + str(field.get('label') or '')).lower() and field.get('custom')
+                and CUSTOM_FIELD.fullmatch(str(field.get('name') or ''))):
             found = str(field['name'])
             break
     state.update(linkedin_field=found, linkedin_checked=now.isoformat())
@@ -368,8 +370,11 @@ def linkedin_field(source, state, now):
 
 
 def contacts_for(source, emails, extra=None):
-    """The Salesforce Contacts with these addresses, as crm_sync.plan takes them."""
+    """The Salesforce Contacts with these addresses, as crm_sync.plan takes them. SOQL over REST has no bound
+    parameters: each address is checked against a strict pattern and quoted, and the field name must be a custom field's."""
     out = []
+    if extra is not None and not CUSTOM_FIELD.fullmatch(str(extra)):
+        raise ValueError('not a custom field name')
     for start in range(0, len(emails), 100):
         chunk = [e for e in emails[start:start + 100] if re.fullmatch(r'[^@\s\'\\]{1,100}@[A-Za-z0-9.-]{1,200}', e)]
         if not chunk:

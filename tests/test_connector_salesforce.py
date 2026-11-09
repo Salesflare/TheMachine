@@ -214,6 +214,19 @@ class SalesforceTests(OrgCase):
                 source.update(contact, fields)
         self.assertEqual(self.writes, [])
         self.assertEqual(salesforce.quoted("o'neil@x.example"), "'o\\'neil@x.example'")
+        # SOQL has no bound parameters: an address that could break out of its quotes is dropped, a field name that
+        # isn't a custom field's never goes in, and a describe that offers one is ignored
+        reads = []
+        source.query = lambda soql, limit: reads.append(soql) or []
+        salesforce.contacts_for(source, ["x' OR Name != '@acme.example", 'ok@acme.example'], 'LinkedIn__c')
+        self.assertEqual(len(reads), 1)
+        self.assertIn("Email IN ('ok@acme.example')", reads[0])
+        self.assertNotIn(' OR ', reads[0])
+        for bad in ('Name FROM User --', 'LinkedIn__c, Email', 'LinkedIn'):
+            with self.assertRaises(ValueError):
+                salesforce.contacts_for(source, ['ok@acme.example'], bad)
+        source.get = lambda path: {'fields': [{'name': 'LinkedIn__c, Name', 'label': 'LinkedIn', 'type': 'url', 'updateable': True, 'custom': True}]}
+        self.assertIsNone(salesforce.linkedin_field(source, {}, salesforce.dt.datetime.now(salesforce.dt.timezone.utc)))
 
     def test_wrong_signin_is_refused(self):
         mail_grants.put(self.config, 'salesforce', 'someone@else.example', 'refresh-2')
