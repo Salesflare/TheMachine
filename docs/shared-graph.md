@@ -39,8 +39,8 @@ confirms that the company has told its people. A required connection is on whate
 
 **Only what the owner took part in.** Mail and meeting notes a Machine sees through a shared CRM (a teammate's mailbox,
 a meeting a teammate logged) never go from it (`secondhand`). They go from their owner's Machine, under that owner's own
-choices, and never come back to them as a teammate's. A teammate's thread the owner is on themselves isn't shown under
-From the team, and each timeline line shows once.
+choices, and never come back to them as a teammate's. A teammate's thread the owner is on themselves isn't shown among
+the team's items in a page's Timeline (Mine · Team), and each timeline line shows once.
 
 Inside a connection that is on, each thread is still sorted ([Threads](#threads)), and **Keep private** on a thread or
 record still wins.

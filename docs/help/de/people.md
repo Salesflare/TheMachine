@@ -36,7 +36,7 @@ Jede Seite einer Person und Organisation hat einen, das Neueste zuerst: E-Mails,
 
 Anstehende Meetings stehen oben unter **Demnächst**, das nächste zuerst; **Alle anstehenden zeigen** zeigt den Rest. Ein Meeting zeigt, wer dabei war, jede Person einmal. Eins mit Notizen oder Transkript zeigt **Notizen** oder **Transkript**; ein Klick öffnet sie.
 
-Deine Verläufe gehören dir: Der Graph des Teams zeigt nur, was deine Freigaberegeln erlauben.
+Deine Verläufe gehören dir: Der Graph des Teams zeigt nur, was deine Freigaberegeln erlauben. Auf einer Seite fügt **Team** über dem Verlauf hinzu, was Teammitglieder geteilt haben, jeweils mit ihrem Namen; **Meine** zeigt nur deins.
 
 ## Arbeit und Privat
 

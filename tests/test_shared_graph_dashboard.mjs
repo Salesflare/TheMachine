@@ -133,20 +133,26 @@ try{
   assert.deepEqual(calls.find(c=>c.action==='graph_rule'),{action:'graph_rule',args:{key:'@client.example',choice:'private',name:'Client Co'}});
   await page.locator('#share-pop').waitFor({state:'detached'});
   assert.match(await page.locator('.keep-private').innerText(),/Not shared with your team yet\./);
-  assert.match(await page.locator('.team-block').innerText(),/Lee asked for the renewal quote/);
+  // The team's line and threads are in the Timeline, each saying who it came from, under Mine · Team
+  const tl=page.locator('.graph-timeline');assert.equal(await page.locator('.team-block').count(),0);
+  assert.match(await tl.locator('.ge-team',{hasText:'Lee asked for the renewal quote'}).innerText(),/via Ada/);
   // A shared board's whole timeline: a meeting and an Intercom conversation say what they are
-  assert.match(await page.locator('.team-thread',{hasText:'Due diligence call'}).innerText(),/Meeting · [A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2} · Ada/);  // US dates: Sat, Oct 24
-  assert.match(await page.locator('.team-thread',{hasText:'Can we test the API?'}).innerText(),/Intercom · 3 messages · /);
-  await shot(page.locator('.team-block'),(process.env.SHOTS||'/tmp')+'/team-block-timeline-'+width+'.png');
+  assert.equal(await tl.locator('[data-team-thread]',{hasText:'Due diligence call'}).getAttribute('aria-label'),'Calendar: Due diligence call');
+  assert.match(await tl.locator('[data-team-thread]',{hasText:'Can we test the API?'}).innerText(),/3 messages · \d\d?:\d\d( [AP]M)? · via Ada/);
+  assert.equal(await tl.locator('[data-team-thread]',{hasText:'Can we test the API?'}).getAttribute('aria-label'),'Intercom: Can we test the API?');
+  await shot(tl,(process.env.SHOTS||'/tmp')+'/team-timeline-'+width+'.png');
   await page.locator('[data-keep-private]').first().click();
   await new Promise(r=>setTimeout(r,300));
   assert.equal(calls.some(c=>c.action==='graph_private'&&c.args.node_id===lee.id&&c.args.private===true),true);
-  await page.locator('.team-thread summary').first().click();
-  await page.locator('.team-files li').nth(1).waitFor();
-  const link=page.locator('.team-files a',{hasText:'rollout-plan.pdf'});
+  // A shared thread opens like an own one, with its files
+  await page.locator('[data-team-thread]',{hasText:'Rollout timeline'}).click();
+  await page.locator('#email-dialog[open] .team-files li').nth(1).waitFor();
+  const link=page.locator('#email-dialog .team-files a',{hasText:'rollout-plan.pdf'});
   assert.equal(await link.getAttribute('href'),'api/team-file?thread='+encodeURIComponent(TID)+'&file='+FILE);
-  assert.match(await page.locator('.team-files li').nth(1).innerText(),/all-hands\.mp4\s+too large to share/);
-  assert.equal(await page.locator('.team-files a').count(),1);
+  assert.match(await page.locator('#email-dialog .team-files li').nth(1).innerText(),/all-hands\.mp4\s+too large to share/);
+  assert.equal(await page.locator('#email-dialog .team-files a').count(),1);
+  assert.match(await page.locator('#email-dialog .email-text').innerText(),/Here is the plan\./);
+  await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'});
   await page.locator('.team-ask summary').click();
   await page.locator('.team-ask-form button.primary').click();
   await new Promise(r=>setTimeout(r,300));
