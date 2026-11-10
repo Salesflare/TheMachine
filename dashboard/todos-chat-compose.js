@@ -17,7 +17,8 @@ function chatKeepPlace(fn){const log=$('#chat-log');if(!log)return fn();const l=
  if(end&&chat?.items?.length){chatToEnd();return}if(l)l.scrollTop=keep;const n=at>=0?$('#chat-log').children[at]:null;if(!n)return;
  const d=n.getBoundingClientRect().top-y;if(Math.abs(d)>.5){if(l)l.scrollTop+=d;else scrollBy(0,d)}}
 // Long names fade out at the edge instead of wrapping; the full name is in their tooltip.
-function chatFades(){document.querySelectorAll('.chat-side a,.chat-title,.side-cards a').forEach(n=>{const cut=n.scrollHeight>n.clientHeight+1;n.classList.toggle('fade',n.scrollWidth>n.clientWidth+1||cut);
+function chatFades(){document.querySelectorAll('.chat-side a,.chat-title,.side-cards a').forEach(n=>{const cut=!n.matches('.chat-title')&&n.scrollHeight>n.clientHeight+1;  // the chat's title is one line, its box trimmed to its capitals (todos-chat.css)
+ n.classList.toggle('fade',n.scrollWidth>n.clientWidth+1||cut);
  // A title cut after its second line ends where its last whole word does, often well before the edge: fade out there
  if(!cut||!n.firstChild||n.firstChild.nodeType!==3){n.style.removeProperty('--fade-x');return}
  const box=n.getBoundingClientRect(),r=document.createRange(),txt=n.firstChild;let lo=0,hi=txt.length;
