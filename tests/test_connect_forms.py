@@ -258,7 +258,7 @@ class FormTest(unittest.TestCase):
             self.act('connect_site_signin', {'site': 'x'})
             self.act('connect_site_signin', {'site': 'facebook'})  # the Import birthdays from Facebook to-do
         self.assertEqual([c.args[1] for c in tab.call_args_list],
-                         ['https://www.linkedin.com/login', 'https://x.com/i/flow/login', 'https://www.facebook.com/login/'])
+                         ['https://www.linkedin.com/login?_l=en_US', 'https://x.com/i/flow/login', 'https://www.facebook.com/login/'])
         self.assertEqual(focus.call_count, 3)
         for bad in ('chatgpt', 'https://evil.example', None):
             with self.assertRaises(ValueError):
@@ -267,15 +267,26 @@ class FormTest(unittest.TestCase):
             self.app.action('connect_site_signin', {'site': 'linkedin'})  # not from the dashboard
 
     def test_linkedins_sign_in_page_opens_in_the_owners_language(self):
-        # LinkedIn picks its sign-in page's language from the server's country; its _l parameter sets the owner's
+        # LinkedIn picks its sign-in page's language from the server's country; its _l parameter sets the owner's. English
+        # needs one too: without it a hosted Machine abroad still showed the server country's language
         from machine.app import connect
-        for language, locale, expected in (('nl', None, '?_l=nl_NL'), ('de', None, '?_l=de_DE'), ('fr', None, '?_l=fr_FR'),
-                                           ('es', None, '?_l=es_ES'), ('it', None, '?_l=it_IT'), ('pt-BR', None, '?_l=pt_BR'),
-                                           ('en', None, ''), (None, None, ''), (None, 'nl-BE', '?_l=nl_NL'),  # signup's guess
-                                           ('en', 'nl-BE', ''), ('xx', None, '')):
+        from machine.browser import site_language
+        for language, locale, expected in (('nl', None, 'nl_NL'), ('de', None, 'de_DE'), ('fr', None, 'fr_FR'),
+                                           ('es', None, 'es_ES'), ('it', None, 'it_IT'), ('pt-BR', None, 'pt_BR'),
+                                           ('en', None, 'en_US'), (None, None, 'en_US'), (None, 'nl-BE', 'nl_NL'),  # signup's guess
+                                           ('en', 'nl-BE', 'en_US'), ('xx', None, 'en_US'), ('xx', 'nl-BE', 'nl_NL')):
             config = {k: v for k, v in (('language', language), ('locale', locale)) if v}
-            self.assertEqual(connect.signin_url('linkedin', config), 'https://www.linkedin.com/login' + expected, (language, locale))
+            self.assertEqual(connect.signin_url('linkedin', config), 'https://www.linkedin.com/login?_l=' + expected, (language, locale))
             self.assertEqual(connect.signin_url('x', config), 'https://x.com/i/flow/login')  # X's page has no such address
+        nl = {'language': 'nl'}
+        for url, expected in (('https://www.linkedin.com/login', 'https://www.linkedin.com/login?_l=nl_NL'),
+                              ('https://www.linkedin.com/login/?_l=de_DE&session_redirect=%2Ffeed%2F',
+                               'https://www.linkedin.com/login/?session_redirect=%2Ffeed%2F&_l=nl_NL'),  # its own _l replaced
+                              ('https://linkedin.com/uas/login', 'https://linkedin.com/uas/login?_l=nl_NL'),
+                              ('https://www.linkedin.com/checkpoint/challenge/AgE', None),  # a step under way: as it is
+                              ('https://www.linkedin.com/feed/', None), ('http://www.linkedin.com/login', None),
+                              ('https://notlinkedin.com/login', None), ('https://shop.example/login', None), ('', None)):
+            self.assertEqual(site_language(url, nl), expected or url, url)
         self.app.config['language'] = 'nl'
         cdp = assistant.browser_login.browser_cdp
         with patch.object(cdp, '_http', return_value=[]), patch.object(cdp, 'open_tab', return_value='t1') as tab, \
@@ -295,9 +306,26 @@ class FormTest(unittest.TestCase):
             self.act('connect_site_signin', {'site': 'linkedin'})
             self.assertEqual((opened.call_count, navigate.call_count, focus.call_args.kwargs['target']), (0, 0, 'pin'))
             self.act('connect_site_signin', {'site': 'linkedin', 'fresh': True})
-            self.assertEqual(navigate.call_args.args[1:], ('pin', 'https://www.linkedin.com/login'))
+            self.assertEqual(navigate.call_args.args[1:], ('pin', 'https://www.linkedin.com/login?_l=en_US'))  # Try again too
             self.act('connect_site_signin', {'site': 'x'})  # none of X's: a new one
             self.assertEqual(opened.call_args.args[1], 'https://x.com/i/flow/login')
+
+    def test_a_sign_in_page_loaded_in_the_servers_language_loads_again_once_in_the_owners(self):
+        # a LinkedIn sign-in tab from before (no _l: the server country's language) is loaded again in the owner's
+        # language, once; after that, and on a step under way (a code it emailed), Sign in brings the tab up as it is
+        cdp = assistant.browser_login.browser_cdp
+        self.app.config['language'] = 'nl'
+        for url, navigates in (('https://www.linkedin.com/login/', 1), ('https://www.linkedin.com/login?_l=nl_NL', 0),
+                               ('https://www.linkedin.com/checkpoint/challenge/AgE', 0)):
+            self.app.__dict__.pop('signin_localized', None)
+            tabs = [{'type': 'page', 'id': 'old', 'url': url}]
+            with patch.object(cdp, '_http', return_value=tabs), patch.object(cdp, 'open_tab') as opened, \
+                    patch.object(cdp, 'navigate') as navigate, patch.object(assistant.browser_viewer, 'focus'):
+                self.act('connect_site_signin', {'site': 'linkedin'})
+                self.act('connect_site_signin', {'site': 'linkedin'})  # pressed again: not reloaded again
+            self.assertEqual((navigate.call_count, opened.call_count), (navigates, 0), url)
+            if navigates:
+                self.assertEqual(navigate.call_args.args[1:], ('old', 'https://www.linkedin.com/login?_l=nl_NL'))
 
     def test_hosted_github_whatsapp_and_the_phone_sign_in_on_the_dashboard_itself(self):
         self.app.config['manage_url'] = 'https://cp.example.org/setup'

@@ -15,8 +15,7 @@ import browser_viewer
 import codex_signin
 import fleet
 import gbrain
-import locale_prefs
-from machine.browser import browser_link
+from machine.browser import LINKEDIN_SIGNIN_PATH, browser_link, site_language
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
 from machine.sources.connectors import HOSTED_SIGNINS, ON_DASHBOARD, hosted_docs_sources, reconnect_help
@@ -128,9 +127,17 @@ class ConnectApp:
                 under_way = [t for t in tabs if any(browser_login.site(at(t).hostname) == h or browser_login.site(at(t).hostname).endswith('.' + h) for h in hosts)
                              and onboarding.SIGNIN_STEP.search(at(t).path)]
                 url = signin_url(site, self.config)
-                if under_way and args.get('fresh') is True:  # Try again after the site stopped it: its sign-in page afresh
+                # the tabs this opened at the owner's language (a sign-in page loaded before, in the server country's
+                # language, is loaded again once in theirs: nothing is under way on it yet, unlike a code it emailed)
+                localized = self.__dict__.setdefault('signin_localized', {})
+                stale = (under_way and url != CONNECT_SIGNIN[site] and localized.get(under_way[0]['id']) != url
+                         and LINKEDIN_SIGNIN_PATH.fullmatch(at(under_way[0]).path)
+                         and urllib.parse.urlsplit(url).query not in at(under_way[0]).query.split('&'))
+                if under_way and (args.get('fresh') is True or stale):  # Try again after the site stopped it: afresh
                     browser_login.browser_cdp.navigate(base, under_way[0]['id'], url, timeout=20)
                 tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, url)
+                if not under_way or args.get('fresh') is True or stale:
+                    localized[tab] = url
             except (browser_login.browser_cdp.CdpError, OSError, IndexError, TypeError, AttributeError, KeyError):
                 raise ValueError('I couldn’t open the sign-in page in the browser') from None
             try:
@@ -316,17 +323,11 @@ class ConnectApp:
 # Facebook for the Import birthdays from Facebook to-do (birthdays_facebook_app.py), which reads again once it's in.
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login',
                   'facebook': 'https://www.facebook.com/login/'}
-# LinkedIn's sign-in page follows the server's country (a server abroad showed it, and its captcha, in that country's
-# language), not the browser's languages. Its `_l` parameter sets the page's language; it is undocumented, and LinkedIn
-# ignores a value it does not know. Only locales checked to change the page; English needs none.
-LINKEDIN_LOCALES = {'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR'}
 
 
 def signin_url(site, config=None):
-    """The site's sign-in page, in the owner's language where the site takes it from the address."""
-    url = CONNECT_SIGNIN[site]
-    locale = LINKEDIN_LOCALES.get(locale_prefs.language_of(config).lower()) if site == 'linkedin' else None
-    return f'{url}?_l={locale}' if locale else url
+    """The site's sign-in page, in the owner's language where the site takes it from the address (site_language)."""
+    return site_language(CONNECT_SIGNIN[site], config)
 
 
 CONNECT_SIGNIN_WAIT = 600
