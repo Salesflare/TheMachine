@@ -20,7 +20,7 @@ function helpLink(tab){const a=$('#help-link'),slug=(tab==='people'&&GRAPH_HELP[
 const PAGE_TITLES={calendar:'Calendar',routines:'Routines',events:'Messages',people:'Graph',fleet:'Fleet',feedback:'Learning',health:'Connections',settings:'Settings'};
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
-const graphNodePane=id=>id==='me'?'people':/^org:/.test(id)?'orgs':/^project:/.test(id)?'projects':'people';
+const graphNodePane=id=>id==='me'?'people':/^(team:)?org:/.test(id)?'orgs':/^(team:)?project:/.test(id)?'projects':'people';  /* team:…: a record only teammates have */
 function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,roles:rolesWaiting}[graphShown];
  const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects'],roles:['{} role to confirm','{} roles to confirm']}[graphShown];
  const mode=graphShown==='projects'&&!graphDrawn&&graphBoards.length?html`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>html`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`)}</div>`:'';

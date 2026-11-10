@@ -362,7 +362,7 @@ A record (JSON, inside a blob):
 ```
 person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, score, last, timeline: [{at, line}]}
 org:     {r, t: org, name, role, role_hand, d, logo, score, last}
-project: {r, t: project, name, board, stages, stage, stage_hand, stage_at, why, next, about, org: {name, d, logo}, people: [hash], score, last, timeline}
+project: {r, t: project, name, board, board_seen, stages, stage, stage_hand, stage_at, why, next, about, org: {name, d, logo}, people: [hash], score, last, timeline}
 mail:    {tag, subject, messages: [{at, from, to, cc, body, attachments: [{name, size, mime, file | too_large}]}]}
 file:    {name, mime, data}                                   (one attachment; `file` above is its tag)
 ask:     {off, asked}                                         (a member asks to stop sharing, or not any more)
@@ -370,7 +370,9 @@ ask:     {off, asked}                                         (a member asks to 
 
 `r` and `tag` are HMAC(publisher secret, local id): stable per publisher, meaningless to others. `ids` and `d` are
 HMAC(Fleet graph key, address or domain), under each of the newest few key versions the publisher holds, so two
-teammates still match while a new key version reaches everyone. `score` is the publisher's closeness.
+teammates still match while a new key version reaches everyone. `score` is the publisher's closeness. `board_seen` is
+`team` when the project's board is the whole team's and `people` when it was shared with chosen teammates by name (never
+who else has it): the board's header says so on a teammate's Machine.
 
 ## Sync protocol
 
