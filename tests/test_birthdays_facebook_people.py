@@ -20,6 +20,7 @@ import birthdays  # noqa: E402
 import birthdays_facebook as fb  # noqa: E402
 import enrichment  # noqa: E402
 import graph  # noqa: E402
+import graph_show  # noqa: E402
 import person_birthday  # noqa: E402
 import shared_graph  # noqa: E402
 
@@ -139,6 +140,41 @@ class AddPeople(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.step(sid, 'undo_add')
         self.assertEqual(self.step(sid, 'add')['added'], 2)
+
+    def delete(self, name):
+        node = self.people()[name][0]
+        self.app.delete_person(node, workspace=Path(self.store.path).parent / 'workspace')
+
+    def test_someone_deleted_permanently_is_not_added_again_by_name(self):
+        with self.store.connect() as db:  # the owner had them by name only (a hand-added person), and with a middle name
+            db.execute('BEGIN IMMEDIATE')
+            done = graph.create_record(db, 'person', {'name': 'Mira Jane Holt'}, NOW)
+            graph_show.show_new_record(db, done, 'person')
+            db.execute('COMMIT')
+        self.delete('Mira Jane Holt')
+        sid = self.read()
+        view = self.card(sid)
+        self.assertEqual((view['others'], view['others_shown']), (1, ['Theo Brandt']))  # the count on Add leaves them out
+        self.assertEqual(self.step(sid, 'add')['added'], 1)
+        self.assertNotIn('Mira Holt', self.people())
+        self.assertEqual(self.step(sid, 'undo_add')['undone'], 1)  # Undo still takes exactly the one it added
+        self.assertEqual(set(self.people()), {'Sam Rivera', 'Pat Quinn'})
+        self.assertEqual(self.card(sid)['others'], 1)
+
+    def test_someone_deleted_after_the_read_drops_off_the_count_and_add(self):
+        with self.store.connect() as db:  # known by their address, then deleted while the to-do waits
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,'person',?,1,?,5,?)",
+                       ('email:theo@mail.example', 'Theo Brandt', '2026-11-01', json.dumps({'identifiers': ['email:theo@mail.example'], 'wrote': 3})))
+        sid = self.read()
+        self.assertEqual(self.card(sid)['others'], 1)  # Theo matches the person they are now
+        with self.store.connect() as db:
+            fb.put(db, sid, 'preview', {**fb.get(db, sid)[1], 'others': [{'name': 'Mira Holt', 'date': '1990-01-05'},
+                                                                        {'name': 'Theo Brandt', 'date': '--02-07'}]}, NOW)
+        self.delete('Theo Brandt')
+        self.assertEqual((self.card(sid)['others'], self.card(sid)['others_shown']), (1, ['Mira Holt']))
+        self.assertEqual(self.step(sid, 'add')['added'], 1)
+        self.assertEqual(set(self.people()), {'Sam Rivera', 'Pat Quinn', 'Mira Holt'})
+        self.assertEqual(self.step(sid, 'undo_add')['undone'], 1)
 
     def test_add_after_save_on_the_done_todo(self):
         sid = self.read()

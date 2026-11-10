@@ -300,8 +300,8 @@ def found(items, today=None):
 def match(db, names):
     """The page's names against the Graph's people: {'matched': [{id, name, date}], 'ambiguous': [name], 'unmatched': n,
     'others': [{name, date}]}. Matched: exactly one person with the same full name, else with the same first and last
-    name (a middle name on one side only). Others: the unmatched ones with a full name. Someone deleted permanently is
-    nobody."""
+    name (a middle name on one side only). Others: the unmatched ones with a full name, but none with the name of someone
+    the owner deleted permanently (graph.name_keys). Someone deleted permanently is nobody."""
     gone = graph.forgotten(db)
     people, ends = {}, {}
     for row in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'"):
@@ -322,7 +322,7 @@ def match(db, names):
             ambiguous.append(name)
         else:
             unmatched += 1
-            if full:
+            if full and not any(gone(k) for k in graph.name_keys(name)):
                 others.append({'name': name, 'date': value})
     return {'matched': matched, 'ambiguous': ambiguous, 'unmatched': unmatched, 'others': others}
 
@@ -427,29 +427,37 @@ def view(db, suggestion_id, now=None):
         return {'state': 'preview', 'found': data.get('found', 0), 'matched': len(matched), 'new': data.get('new', 0),
                 'shown': [{'id': m['id'], 'name': m['name'], 'date': m['date']} for m in matched[:SHOWN]], 'more': max(0, len(matched) - SHOWN),
                 'ambiguous': (data.get('ambiguous') or [])[:AMBIGUOUS_SHOWN], 'unmatched': data.get('unmatched', 0),
-                'capped': bool(data.get('capped')), 'missing': data.get('missing') or [], **others_view(data)}
+                'capped': bool(data.get('capped')), 'missing': data.get('missing') or [], **others_view(db, data)}
     if state == 'saved':
         people = data.get('people') or []
         return {'state': 'saved', 'saved': data.get('saved', 0), 'people': people[:SHOWN], 'more': max(0, data.get('saved', 0) - SHOWN),
-                **others_view(data)}
+                **others_view(db, data)}
     if state == 'failed':
         return {'state': 'failed', 'empty': bool(data.get('empty'))}  # empty: the page showed no birthdays it could read
     return {'state': state if state in STATES else 'failed'}
 
 
-def others_view(data):
+def addable(db, data):
+    """The friends nobody in the Graph has that Add would add: at most ADD_MAX, none named as someone the owner deleted
+    permanently since the read (graph.name_keys)."""
+    gone = graph.forgotten(db)
+    others = [o for o in data.get('others') or () if isinstance(o, dict) and o.get('name')]
+    return [o for o in others if not any(gone(k) for k in graph.name_keys(o['name']))][:ADD_MAX]
+
+
+def others_view(db, data):
     """The friends nobody in the Graph has, as the to-do shows them: {'others': how many Add adds,
     'others_shown': a few names, 'added': how many it added (Undo takes them away)}."""
-    others = (data.get('others') or [])[:ADD_MAX]
+    others = addable(db, data)
     return {'others': len(others), 'others_shown': [o['name'] for o in others[:SHOWN]], 'added': len(data.get('added') or ())}
 
 
 def add(db, data, stamp):
-    """Add the friends nobody in the Graph has (data's others, at most ADD_MAX) as people, in the caller's transaction:
+    """Add the friends nobody in the Graph has (addable: at most ADD_MAX, none the owner deleted) as people, in the caller's transaction:
     each as if added by hand (graph.create_record), Type Personal (the owner's word, as on their page), with their
     birthday (source facebook). Matched against the Graph again first: a name that now has a person, or more than one,
     is skipped. They show on their own pages at once (graph_show), in one write. Returns [{node_id, name}]."""
-    names = {o['name']: o['date'] for o in (data.get('others') or [])[:ADD_MAX] if isinstance(o, dict) and o.get('name')}
+    names = {o['name']: o['date'] for o in addable(db, data)}
     made = []
     for other in match(db, names)['others']:
         try:

@@ -3116,9 +3116,8 @@ def create_record(db, kind, args, now, owner=None):
         found = resolve(db, identifier) if email else None
         if found:
             return {'node_id': found['id'], 'name': found['name'], 'existing': True}
-        salt = _salt(db)
-        if salt:  # deleted before, added back by the owner: no longer kept out
-            db.execute('DELETE FROM forgotten_people WHERE digest=?', (forgotten_digest(salt, identifier),))
+        if salt := _salt(db):  # deleted before, added back by the owner: no longer kept out (by name only when it has no address)
+            db.executemany('DELETE FROM forgotten_people WHERE digest=?', [(forgotten_digest(salt, k),) for k in {identifier} | (set() if email else name_keys(name))])
         org_id = None
         if org.startswith('org:'):
             row = db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='org'", (org,)).fetchone()
@@ -5084,6 +5083,11 @@ def forgotten_digest(salt, identifier):
     return hmac.new(bytes.fromhex(salt), ' '.join(str(identifier).split()).casefold().encode(), hashlib.sha256).hexdigest()
 
 
+def name_keys(name):
+    """A deleted person's full name as kept (hashed), folded as name_words folds it: whole, and first and last. Empty for one word."""
+    return {'name:' + ' '.join(w), f'name:{w[0]} {w[-1]}'} if name_match(w := name_words(name), w) == 'same' else set()
+
+
 def anyone_forgotten(db):
     try:
         return bool(db.execute('SELECT 1 FROM forgotten_people LIMIT 1').fetchone())
@@ -5159,7 +5163,7 @@ def delete_person(db, node_id, config, now):
     full = {n for n in names if n and plain_name(n)}
     needles = sorted(full | set(emails))
     salt = _salt(db, create=True)
-    db.executemany('INSERT OR IGNORE INTO forgotten_people(digest,created_at) VALUES(?,?)', [(forgotten_digest(salt, i), now) for i in ids])
+    db.executemany('INSERT OR IGNORE INTO forgotten_people(digest,created_at) VALUES(?,?)', [(forgotten_digest(salt, i), now) for i in set(ids).union(*map(name_keys, names))])
     gone = forgotten(db)
     owner = Owner(config or {}, db)
     # Messages they sent, or only between them and the owner.
@@ -5187,14 +5191,10 @@ def delete_person(db, node_id, config, now):
                 db.execute('UPDATE analyses SET items=? WHERE id=?', (json.dumps(items), review['id']))
     # The graph: them, their links and scores, aliases, roles, where they work, relations, looked-up details.
     db.execute(f'DELETE FROM graph_nodes WHERE id IN ({marks})', ids)
-    db.execute(f'DELETE FROM graph_links WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
+    for table in ('graph_links', 'graph_merges', 'graph_same', 'graph_relations'):  # all in SCHEMA
+        db.execute(f'DELETE FROM {table} WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
     db.execute(f'DELETE FROM graph_events WHERE node_id IN ({marks})', ids)
-    db.execute(f'DELETE FROM graph_merges WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    if _table(db, 'graph_same'):
-        db.execute(f'DELETE FROM graph_same WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    db.execute(f'DELETE FROM graph_relations WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    for table in ('graph_names',):
-        db.execute(f'DELETE FROM {table} WHERE node_id IN ({marks})', ids)
+    db.execute(f'DELETE FROM graph_names WHERE node_id IN ({marks})', ids)
     for table in ('identity_names', 'manual_nodes', 'person_roles', 'person_orgs', 'person_edits', 'graph_role_asks', 'graph_org_asks', 'person_profiles', 'person_photos', 'person_photo_tries', 'contact_photo_links', 'whatsapp_photo_asks', 'telegram_photo_asks', 'person_facts', 'role_corrections'):
         if _table(db, table):
             db.execute(f'DELETE FROM {table} WHERE identifier IN ({marks})', ids)
