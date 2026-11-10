@@ -17,7 +17,7 @@ Legge quale servizio si è fermato, come è finito e quale programma si è blocc
 
 Un servizio che continua a riavviarsi, uno che è fallito più volte in un giorno o resta fermo, uno che ha esaurito la memoria e un programma che si è bloccato. Su Omarchy anche un crash di Hyprland o della barra, ed errori nelle impostazioni di Hyprland.
 
-Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi.
+Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi. Lo stesso vale per un servizio che è fallito qualche volta e poi è tornato a funzionare.
 
 I browser guidati da test e agenti (headless, Playwright, Puppeteer, CI) restano in silenzio, e così un programma che si ferma mentre il suo servizio viene fermato o riavviato. Un programma che si blocca più e più volte dà una sola attività, che dice quante volte e quando.
 

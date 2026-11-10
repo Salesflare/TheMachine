@@ -17,7 +17,7 @@ Sie liest, welcher Dienst gestoppt hat, wie er endete und welches Programm abges
 
 Ein Dienst, der immer wieder neu startet, einer, der an einem Tag mehrmals gescheitert ist oder aus bleibt, einer ohne Speicher und ein abgestürztes Programm. Unter Omarchy auch ein Absturz von Hyprland oder der Leiste und Fehler in deinen Hyprland-Einstellungen.
 
-Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und bleibt still.
+Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und bleibt still. Ebenso ein Dienst, der ein paar Mal gescheitert ist und danach wieder gut lief.
 
 Browser, die Tests und Agents steuern (headless, Playwright, Puppeteer, CI), bleiben still, ebenso ein Programm, das endet, während sein Dienst gestoppt oder neu gestartet wird. Ein Programm, das immer wieder abstürzt, ergibt eine Aufgabe, die sagt, wie oft und wann.
 

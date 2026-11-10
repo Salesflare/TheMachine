@@ -17,7 +17,7 @@ It reads which service stopped, how it ended and which program crashed. Never wh
 
 A service that keeps restarting, one that failed several times in a day or stays down, one that ran out of memory, and a program that crashed. On Omarchy also a Hyprland or bar crash, and errors in your Hyprland settings.
 
-A single restart or a single failed run is normal and stays quiet.
+A single restart or a single failed run is normal and stays quiet. So does a service that failed a few times and then ran fine again.
 
 Browsers that tests and agents drive (headless, Playwright, Puppeteer, CI) stay quiet, and so does a program that stops while its service is being stopped or restarted. A program that crashes again and again makes one to-do that says how often and when.
 

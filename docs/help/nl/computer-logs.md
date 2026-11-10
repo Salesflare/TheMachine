@@ -17,7 +17,7 @@ Hij leest welke service stopte, hoe die eindigde en welk programma crashte. Nooi
 
 Een service die blijft herstarten, een die op een dag een paar keer mislukte of eruit blijft liggen, een die geen geheugen meer had, en een programma dat crashte. Op Omarchy ook een crash van Hyprland of de balk, en fouten in je Hyprland-instellingen.
 
-Een enkele herstart of een enkele mislukte run is normaal en blijft stil.
+Een enkele herstart of een enkele mislukte run is normaal en blijft stil. Net als een service die een paar keer mislukte en daarna weer goed liep.
 
 Browsers die tests en agents besturen (headless, Playwright, Puppeteer, CI) blijven stil, net als een programma dat stopt terwijl zijn service gestopt of herstart wordt. Een programma dat telkens weer crasht, geeft één to-do die zegt hoe vaak en wanneer.
 

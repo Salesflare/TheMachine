@@ -17,7 +17,7 @@ Ela lê qual serviço parou, como terminou e qual programa travou. Nunca o que d
 
 Um serviço que fica reiniciando, um que falhou várias vezes em um dia ou continua parado, um que ficou sem memória e um programa que travou. No Omarchy também uma falha do Hyprland ou da barra, e erros nas suas configurações do Hyprland.
 
-Um único reinício ou uma única execução com falha é normal e não gera aviso.
+Um único reinício ou uma única execução com falha é normal e não gera aviso. O mesmo vale para um serviço que falhou algumas vezes e depois voltou a rodar bem.
 
 Navegadores que testes e agentes controlam (headless, Playwright, Puppeteer, CI) ficam em silêncio, assim como um programa que para enquanto o serviço dele está sendo parado ou reiniciado. Um programa que trava várias vezes gera uma só tarefa, que diz quantas vezes e quando.
 

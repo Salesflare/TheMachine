@@ -32,6 +32,15 @@ def result(unit, minutes, how='exit-code'):
     return {'MESSAGE_ID': s.RESULT, 'USER_UNIT': unit, 'UNIT_RESULT': how, 'at': ago(minutes)}
 
 
+def started(unit, minutes):
+    return {'MESSAGE_ID': s.STARTED, 'USER_UNIT': unit, 'JOB_RESULT': 'done', 'at': ago(minutes)}
+
+
+def failed_run(unit, minutes):
+    """A oneshot's run that ended in an error, as systemd logs it: the result, then the start job that failed."""
+    return [result(unit, minutes), {'MESSAGE_ID': s.START_FAILED, 'USER_UNIT': unit, 'JOB_RESULT': 'failed', 'at': ago(minutes)}]
+
+
 def crash(exe, minutes, cmdline=None, uid=UID, signal='11'):
     row = {'MESSAGE_ID': s.COREDUMP, 'COREDUMP_EXE': exe, 'COREDUMP_COMM': exe.rsplit('/', 1)[-1], 'COREDUMP_SIGNAL': signal,
            'COREDUMP_PID': '4242', 'COREDUMP_UID': uid, 'at': ago(minutes)}
@@ -148,6 +157,41 @@ class Detection(unittest.TestCase):
         _, body, _ = s.card(dict(found, count=1))
         self.assertTrue(body.startswith('The program stopped unexpectedly (SIGSEGV) and left a crash report.'), body)
 
+    def test_a_unit_whose_latest_run_went_well_is_not_reported_as_failing(self):
+        unit = 'updater.service'
+        three = [row for m in (1200, 600, 400) for row in failed_run(unit, m)]
+        # three failed runs, then one that finished well: what it does is getting done again
+        self.assertEqual(detect(three + [started(unit, 300)]), [])
+        self.assertEqual(detect(three + [started(unit, 500), started(unit, 300), started(unit, 100)]), [])
+        # the last run failed: reported, with every failed run counted
+        [found] = detect(three)
+        self.assertEqual((found['kind'], found['count'], found['key']), ('repeated_failures', 3, 'repeated_failures:updater'))
+        [found] = detect(three + [started(unit, 500)] + failed_run(unit, 200))
+        self.assertEqual((found['kind'], found['count']), ('repeated_failures', 4))
+        # a run that went well before the three failed ones changes nothing
+        [found] = detect([started(unit, 1300)] + three)
+        self.assertEqual((found['kind'], found['count']), ('repeated_failures', 3))
+        # a start that ended any other way than done is no good run
+        [found] = detect(three + [dict(started(unit, 300), JOB_RESULT='skipped')])
+        self.assertEqual(found['kind'], 'repeated_failures')
+        # the good run of another unit says nothing about this one
+        [found] = detect(three + [started('backup.service', 300)])
+        self.assertEqual(found['unit'], unit)
+
+    def test_a_service_that_fails_after_starting_is_not_cleared_by_starting_again(self):
+        unit = 'sync-notes.service'
+        rows = [row for m in (900, 600, 300) for row in (started(unit, m + 5), result(unit, m))] + [started(unit, 100)]
+        [found] = detect(rows)  # it came up and failed later, three times: being up again proves nothing
+        self.assertEqual((found['kind'], found['count']), ('repeated_failures', 3))
+        # the other kinds keep their own rules: a unit still failed stays reported, one that ran out of memory too
+        [found] = detect(failed_run(unit, 600) + [started(unit, 500)] + failed_run(unit, 200), failed={unit})
+        self.assertEqual(found['kind'], 'stays_failed')
+        oom = [result(unit, 600, 'oom-kill'), result(unit, 400, 'oom-kill'), result(unit, 300, 'oom-kill'), started(unit, 100)]
+        self.assertEqual(detect(oom)[0]['kind'], 'out_of_memory')
+        # start records alone make no finding and hide no unit that failed before the window
+        self.assertEqual(detect([started(unit, 100)]), [])
+        self.assertEqual(detect([started(unit, 100)], failed={unit})[0]['kind'], 'stays_failed')
+
     def test_unit_names_read_the_way_the_owner_knows_them(self):
         self.assertEqual(s.unit_name('app-Hyprland-gtk\\x2dlaunch-16f504ee.scope'), 'gtk-launch')
         self.assertEqual(s.unit_name('backup.service'), 'backup')
@@ -173,6 +217,36 @@ class Reading(unittest.TestCase):
         self.assertEqual(sorted(a for a in args if a.startswith('MESSAGE_ID=')), sorted(f'MESSAGE_ID={i}' for i in (s.RESTARTED, s.RESULT, s.COREDUMP, s.STOPPING, s.STOPPED)))
         self.assertNotIn('MESSAGE', row)
         self.assertIsNone(s.read_journal(run=lambda *a, **k: (1, '')))
+
+    def test_the_starts_of_a_unit_that_failed_are_read_and_only_those(self):
+        calls = []
+        stamp = lambda minutes: str(int(ago(minutes).timestamp() * 1e6))
+        fails = [{'__REALTIME_TIMESTAMP': stamp(m), 'MESSAGE_ID': s.RESULT, 'USER_UNIT': 'updater.service', 'UNIT_RESULT': 'exit-code'} for m in (900, 600, 300)]
+        fails += [{'__REALTIME_TIMESTAMP': stamp(m), 'MESSAGE_ID': s.START_FAILED, 'USER_UNIT': 'updater.service', 'JOB_RESULT': 'failed'} for m in (900, 600, 300)]
+        once = [{'__REALTIME_TIMESTAMP': stamp(50), 'MESSAGE_ID': s.RESULT, 'USER_UNIT': 'backup.service', 'UNIT_RESULT': 'exit-code'}]
+        good = [{'__REALTIME_TIMESTAMP': stamp(100), 'MESSAGE_ID': s.STARTED, 'USER_UNIT': 'updater.service', 'JOB_RESULT': 'done',
+                 'MESSAGE': 'synthetic text that must not be kept'}]
+
+        def run(args, timeout=None, env=None):
+            calls.append(args)
+            return 0, '\n'.join(json.dumps(line) for line in (fails[3:] + good if f'MESSAGE_ID={s.STARTED}' in args else fails[:3] + once))
+        rows = s.read_journal(run=run)
+        self.assertEqual(len(calls), 2)
+        second = calls[1]
+        self.assertEqual(second[:2], ['journalctl', '--user'])
+        self.assertIn('-n', second)
+        self.assertEqual([a for a in second if a.startswith('USER_UNIT=')], ['USER_UNIT=updater.service'])  # not the unit that failed once
+        self.assertEqual(sorted(a for a in second if a.startswith('MESSAGE_ID=')), sorted(f'MESSAGE_ID={i}' for i in (s.STARTED, s.START_FAILED)))
+        self.assertNotIn('MESSAGE,', next(a for a in second if a.startswith('--output-fields=')) + ',')
+        self.assertTrue(all('MESSAGE' not in row for row in rows))
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(s.detect(rows, (), NOW, uid=UID), [])  # three failed runs, then a good one
+        # no unit failed often enough: nothing more is read; a second read that fails leaves the finding as it was
+        calls.clear()
+        s.read_journal(run=lambda args, **kw: calls.append(args) or (0, json.dumps(once[0])))
+        self.assertEqual(len(calls), 1)
+        rows = s.read_journal(run=lambda args, **kw: (1, '') if f'MESSAGE_ID={s.STARTED}' in args else (0, '\n'.join(json.dumps(line) for line in fails)))
+        self.assertEqual([f['kind'] for f in s.detect(rows, (), NOW, uid=UID)], ['repeated_failures'])
 
     def test_coredumpctl_list_is_read_when_the_journal_has_no_crashes(self):
         listed = [{'pid': 7, 'uid': 1000, 'sig': 6, 'exe': '/usr/bin/notes-app', 'time': int(NOW.timestamp() * 1e6)}]

@@ -17,7 +17,7 @@ Elle lit quel service s’est arrêté, comment il s’est terminé et quel prog
 
 Un service qui redémarre sans cesse, un service qui a échoué plusieurs fois dans la journée ou reste arrêté, un service à court de mémoire, et un programme qui a planté. Sous Omarchy aussi un plantage de Hyprland ou de la barre, et des erreurs dans vos réglages Hyprland.
 
-Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s’affiche.
+Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s’affiche. Pareil pour un service qui a échoué quelques fois puis s’est de nouveau bien exécuté.
 
 Les navigateurs que pilotent les tests et les agents (headless, Playwright, Puppeteer, CI) restent silencieux, tout comme un programme qui s’arrête pendant que son service est arrêté ou redémarré. Un programme qui plante encore et encore donne une seule tâche, qui dit combien de fois et quand.
 
