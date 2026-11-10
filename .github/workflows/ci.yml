@@ -203,7 +203,7 @@ jobs:
 
   gate:
     # The check main's rules require, under the name it had before the shards: green only when the plan and every
-    # shard passed (scripts/ci_runs.py gate). No shards, as when the plan picked no tests, passes; a failed or cancelled
+    # shard passed (scripts/ci_runs.py gate). No shards, as when the plan picked no tests, passes; a failed or canceled
     # plan doesn't.
     needs: [plan, tests]
     if: always()

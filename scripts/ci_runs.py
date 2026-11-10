@@ -16,7 +16,7 @@ before these names ran every test, so a run without one counts as full.
 
 scripts/ci_runs.py base SHA   the newest commit under SHA (or SHA itself) whose full run passed; nothing when none
 scripts/ci_runs.py gate PLAN TESTS SHARDS   the one check main's rules require: exit 0 when the plan job and every shard
-                                            passed (results as GitHub gives them: success, failure, cancelled, skipped)"""
+                                            passed (each job's result as GitHub's API names it)"""
 from __future__ import annotations
 
 import importlib.util
