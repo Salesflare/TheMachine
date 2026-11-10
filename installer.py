@@ -1081,6 +1081,7 @@ def may_restart_gateway(paths):
 REINDEX_FRESH = 120  # seconds since the last write to a rebuild's database within which the rebuild counts as running
 BRIDGE_WAITING = 'plugin-waiting'  # in the data folder, next to the stamp: a changed bridge that is not in OpenClaw yet
 SWAP_WAIT = 600  # seconds an update waits for a running index before the bridge goes in
+REBUILD_WAIT = 1200  # the same for a rebuild on local embeddings (local_rebuild); one still running then is never swapped into
 SWAP_QUIET = 60  # seconds the embedding server has to stay quiet, without a break, before the index counts as stopped
 EMBEDDING_COUNTS = re.compile(r'^llamacpp:requests_(?:processing|deferred)\s+([0-9.]+(?:[eE][+-]?[0-9]+)?)\s*$', re.M)
 
@@ -1140,19 +1141,56 @@ def embedding_requests(port):
     return sum(1 for one in working if one) if working else None
 
 
+def agent_dirs():
+    """The folders OpenClaw keeps its agents' databases in, the way it finds them itself: <state dir>/agents/<agent>/
+    agent, and the agentDir openclaw.json sets for an agent (agents.list[].agentDir, ~ for the home folder)."""
+    found = []
+    try:
+        found = sorted((onboarding.openclaw_dir() / 'agents').glob('*/agent'))
+    except OSError:
+        pass
+    agents = onboarding.openclaw_settings().get('agents')
+    for entry in (agents.get('list') if isinstance(agents, dict) else None) or []:
+        value = entry.get('agentDir') if isinstance(entry, dict) else None
+        if isinstance(value, str) and value.strip():
+            found.append(Path(value.strip()).expanduser())
+    return list(dict.fromkeys(found))
+
+
 def reindex_running():
     """Whether OpenClaw is rebuilding a memory index right now: a rebuild database written in the last REINDEX_FRESH
-    seconds. Only looks at file times, never inside."""
+    seconds, in any agent folder (agent_dirs). Only looks at file times, never inside, and never changes them."""
     newest = 0.0
-    try:
-        for path in (onboarding.openclaw_dir() / 'agents').glob('*/agent/*.memory-reindex-*'):
-            try:
-                newest = max(newest, path.stat().st_mtime)
-            except OSError:
-                pass  # removed between the listing and the look: that rebuild just ended
-    except OSError:
-        return False
+    for folder in agent_dirs():
+        try:
+            for path in folder.glob('*.memory-reindex-*'):
+                try:
+                    newest = max(newest, path.stat().st_mtime)
+                except OSError:
+                    pass  # removed between the listing and the look: that rebuild just ended
+        except OSError:
+            continue
     return bool(newest) and time.time() - newest < float(os.environ.get('ASSISTANT_REINDEX_FRESH', REINDEX_FRESH))
+
+
+def local_memory_search():
+    """Whether OpenClaw embeds its memory on this computer (memory.search.provider "local" in openclaw.json, or the
+    same under agents.defaults.memorySearch). Only then does a rebuild take long enough to outlast a Gateway stop."""
+    settings = onboarding.openclaw_settings()
+    def provider(*keys):
+        value = settings
+        for key in keys:
+            value = value.get(key) if isinstance(value, dict) else None
+        return value
+    return 'local' in (provider('memory', 'search', 'provider'), provider('agents', 'defaults', 'memorySearch', 'provider'))
+
+
+def local_rebuild():
+    """A memory index rebuild on local embeddings that runs now (local_memory_search, reindex_running). OpenClaw waits
+    for it on a Gateway stop and on every plugin swap, and nothing cuts it off: the stop runs into systemd's
+    TimeoutStopSec and is killed, the swap fails ("plugin service stop timed out ... memory-core-index"). So neither
+    happens while one runs."""
+    return reindex_running() and local_memory_search()
 
 
 def index_busy():
@@ -1173,12 +1211,17 @@ def gateway_idle(before, indent=''):
     look may have been in a pause). SWAP_WAIT bounds the wait for a busy index, counted from the first busy look and
     through its pauses; a quiet stretch under way at the bound is let finish. True when stopped, or at once when
     nothing can tell at the first look (no embedding server to ask: nothing to wait for). False when it is still
-    running at the bound. An embedding server that goes away during the wait counts as quiet from then on."""
+    running at the bound. An embedding server that goes away during the wait counts as quiet from then on.
+    A rebuild on local embeddings (local_rebuild) gets REBUILD_WAIT instead; one that outlasts it ends every later
+    wait in this run at once while it still runs."""
+    global REBUILD_OUTLASTED
     bound = float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT))
     quiet = float(os.environ.get('ASSISTANT_SWAP_QUIET', SWAP_QUIET))
     pause = float(os.environ.get('ASSISTANT_SWAP_POLL', 2))
-    deadline = quiet_since = None
-    first = True
+    if REBUILD_OUTLASTED and local_rebuild():
+        return False  # this run already waited the whole bound for this rebuild: not again
+    started = quiet_since = None
+    first = told = True
     while True:
         busy = index_busy()
         now = time.monotonic()
@@ -1186,10 +1229,17 @@ def gateway_idle(before, indent=''):
             return True
         if busy:
             quiet_since = None
-            if deadline is None:
-                deadline = now + bound
-                say(f'{indent}OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before {before}.')
-            elif now >= deadline:
+            rebuilding = local_rebuild()
+            if rebuilding and told:
+                told = False
+                say(f'{indent}OpenClaw is rebuilding its memory index on local embeddings; waiting up to {swap_minutes(True)} for it'
+                    f' to finish before {before} (a Gateway stop or plugin swap during a rebuild hangs until it ends).')
+            if started is None:
+                started = now
+                if not rebuilding:
+                    say(f'{indent}OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before {before}.')
+            elif now - started >= (max(bound, rebuild_bound()) if rebuilding else bound):
+                REBUILD_OUTLASTED = rebuilding
                 return False
         else:
             if quiet_since is None:
@@ -1202,8 +1252,17 @@ def gateway_idle(before, indent=''):
         time.sleep(pause)
 
 
-def swap_minutes():
-    return f"{float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT)) / 60:g} min"
+def rebuild_bound():
+    return float(os.environ.get('ASSISTANT_REBUILD_WAIT', REBUILD_WAIT))
+
+
+def swap_minutes(rebuild=False):
+    """The longest gateway_idle waits, for a rebuild on local embeddings (`rebuild`) or any other index run."""
+    bound = float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT))
+    return f"{(max(bound, rebuild_bound()) if rebuild else bound) / 60:g} min"
+
+
+REBUILD_OUTLASTED = False  # gateway_idle: a rebuild on local embeddings outlasted a whole wait in this run
 
 
 def restore_model_runtime(openclaw, restart, after, restarted=False):
@@ -1218,7 +1277,7 @@ def restore_model_runtime(openclaw, restart, after, restarted=False):
         if service.model_runtime(openclaw, run) is not False:
             say('  Reloaded the bridge: model calls work again.')
             return RELOADED if result.returncode == 0 else True
-    if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart) and service.model_runtime(openclaw, run) is not False:
+    if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart, recovery=True) and service.model_runtime(openclaw, run) is not False:
         say('  Model calls work again.')
         return RELOADED
     say('  NOT FIXED: the OpenClaw Gateway cannot run models, so no chat, check or to-do run works until it restarts.'
@@ -1241,8 +1300,11 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     broken and no recovery tried (restore_model_runtime). `restart`: whether that recovery may restart the
     Gateway (may_restart_gateway).
     Returns True when the bridge is in, False when it failed, and WAITING (true as well: the install goes on) when
-    the index was still running at the bound on a Gateway this install may not restart: nothing is forced, the
+    the index was still running at the bound on a Gateway this install may not restart, or was a rebuild on local
+    embeddings (local_rebuild, on any Gateway: a restart would hang on it as well): nothing is forced, the
     stamp stays as it was and BRIDGE_WAITING stays next to it, so the next install or nightly update tries again."""
+    global REBUILD_OUTLASTED
+    REBUILD_OUTLASTED = False
     openclaw = facts.get('openclaw')
     if not openclaw:
         return False
@@ -1275,8 +1337,9 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
             pass
     plugin = str(ROOT / 'openclaw-plugin')
     if not gateway_idle('the bridge goes in'):
-        if not (restart and onboarding.gateway_units()):
-            say(f'OpenClaw plugin {PLUGIN_ID}: not swapped in yet. The memory index is still running after {swap_minutes()} and a swap now would'
+        rebuilding = local_rebuild()  # a rebuild is never swapped into, not even where a restart could follow: that hangs too
+        if rebuilding or not (restart and onboarding.gateway_units()):
+            say(f'OpenClaw plugin {PLUGIN_ID}: not swapped in yet. The memory index is still running after {swap_minutes(rebuilding)} and a swap now would'
                 ' leave the Gateway unable to run models, so nothing in OpenClaw was changed.\n  Everything else is updated. The bridge goes in'
                 ' when the index is done: the next nightly update tries again by itself, and so does ./install.sh.')
             return WAITING
@@ -1322,8 +1385,9 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     if reload:
         # An index can have started since the swap, and a reload fails on a running one the same way: a fresh stretch.
         if not gateway_idle('reloading the bridge', '  '):
-            if not (restart and onboarding.gateway_units()):
-                say(f'OpenClaw plugin {PLUGIN_ID}: not reloaded yet. The memory index is still running after {swap_minutes()} and a reload now'
+            rebuilding = local_rebuild()
+            if rebuilding or not (restart and onboarding.gateway_units()):
+                say(f'OpenClaw plugin {PLUGIN_ID}: not reloaded yet. The memory index is still running after {swap_minutes(rebuilding)} and a reload now'
                     ' would leave the Gateway unable to run models, so the bridge is linked but not reloaded: the Gateway runs the one it had'
                     ' until then.\n  Everything else is updated. The bridge goes in when the index is done: the next nightly update tries'
                     ' again by itself, and so does ./install.sh.')
@@ -1333,7 +1397,8 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         if result.returncode != 0:
             # Reload only works in a running Gateway. One that is down (stopped, still starting, or given up by
             # systemd after failed starts) has the bridge saved and loads it as it starts: start it and check.
-            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip(), restart)
+            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip(), restart,
+                                      recovery=lambda: service.model_runtime(openclaw, run) is False)  # asked only during a rebuild
             if applied is False:
                 if service.model_runtime(openclaw, run) is False:
                     restore_model_runtime(openclaw, restart, 'the failed plugin reload', restarted=True)
@@ -1593,10 +1658,14 @@ def gateway_health(openclaw):
     return found if isinstance(found, dict) and found.get('ok') else None
 
 
-def load_in_gateway(openclaw, reload_error='', restart=True):
+def load_in_gateway(openclaw, reload_error='', restart=True, recovery=False):
     """After a failed reload: True once the Gateway runs with the bridge loaded, None when no Gateway service runs
     here at all (the bridge is saved and loads when the owner starts one), False with the reason said otherwise.
-    `restart` False (may_restart_gateway): the owner restarts this Gateway themself, so it says the command instead."""
+    `restart` False (may_restart_gateway): the owner restarts this Gateway themself, so it says the command instead.
+    During a rebuild on local embeddings (local_rebuild) it waits for that first, like a swap. A planned restart (to
+    load the bridge) leaves the Gateway as it is when the rebuild outlasts the wait. A `recovery` one (the Gateway
+    cannot run models; True, or a call that says it) restarts anyway: no models is worse than a stop that waits for
+    the rebuild."""
     unit = (onboarding.gateway_units() or [None])[0]
     if not unit:
         if gateway_health(openclaw) is None:
@@ -1608,6 +1677,15 @@ def load_in_gateway(openclaw, reload_error='', restart=True):
         say(f'  The OpenClaw Gateway did not take the bridge live ({reload_error[:200]}), and this install leaves restarting it to you'
             f' ("gateway_restart": false in config.json).\n  Restart it: systemctl --user restart {unit}')
         return False
+    if local_rebuild() and not gateway_idle(f'restarting {unit}', '  '):
+        if recovery() if callable(recovery) else recovery:
+            say(f'  OpenClaw is still rebuilding its memory index after {swap_minutes(True)}, but the Gateway cannot run models:'
+                f' restarting {unit} anyway (its stop may wait for the rebuild).')
+        else:
+            say(f'  Not restarting {unit}: OpenClaw is still rebuilding its memory index after {swap_minutes(True)}, and a Gateway stop'
+                ' waits for that rebuild until systemd kills it. The bridge goes in when the rebuild is done: the next nightly update tries'
+                f' again by itself, and so does ./install.sh.\n  Or restart it yourself once the rebuild is done: systemctl --user restart {unit}')
+            return False
     say(f'  The OpenClaw Gateway did not take the bridge live; (re)starting {unit} so it loads it.')
     run(['systemctl', '--user', 'reset-failed', unit], timeout=30)  # after repeated failed starts systemd stops trying
     result = run(['systemctl', '--user', 'restart', unit], timeout=300)

@@ -587,6 +587,122 @@ class InstallerTest(unittest.TestCase):
         with mock.patch.dict(os.environ, {'OPENCLAW_STATE_DIR': str(Path(folder.name) / 'none')}):
             self.assertFalse(REINDEX_RUNNING())  # no OpenClaw state here
 
+    def fake_openclaw(self, provider='local', agent_dir=None):
+        """A fake OpenClaw state folder with openclaw.json saying `provider` for memory search, and `agent_dir` as the
+        agentDir of a second agent. Returns (state folder, the default agent's folder)."""
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        state = Path(folder.name)
+        agent = state / 'agents/main/agent'
+        agent.mkdir(parents=True)
+        (agent / 'openclaw-agent.sqlite').write_text('the real one')
+        settings = {'memory': {'search': {'provider': provider}}}
+        if agent_dir:
+            settings['agents'] = {'list': [{'id': 'main'}, {'id': 'work', 'agentDir': str(agent_dir)}]}
+        (state / 'openclaw.json').write_text(json.dumps(settings))
+        return state, agent
+
+    def test_a_rebuild_on_local_embeddings_is_found_where_openclaw_keeps_the_agent(self):
+        elsewhere = Path(tempfile.mkdtemp(prefix='machine-agent-'))
+        self.addCleanup(shutil.rmtree, elsewhere, True)
+        state, agent = self.fake_openclaw(agent_dir=elsewhere)
+        with mock.patch.dict(os.environ, {'OPENCLAW_STATE_DIR': str(state)}), mock.patch.object(installer, 'reindex_running', REINDEX_RUNNING):
+            for key in ('ASSISTANT_REINDEX_FRESH', 'OPENCLAW_CONFIG_PATH'):
+                os.environ.pop(key, None)
+            self.assertEqual(installer.agent_dirs(), [agent, elsewhere])
+            self.assertTrue(installer.local_memory_search())
+            self.assertFalse(installer.local_rebuild())
+            shadow = elsewhere / 'openclaw-agent.sqlite.memory-reindex-0a1b2c3d'  # an agent with its own agentDir
+            shadow.write_text('rows')
+            self.assertTrue(installer.local_rebuild())
+            old = shadow.stat().st_mtime - 3600  # left behind by a Gateway that stopped mid-rebuild
+            os.utime(shadow, (old, old))
+            self.assertFalse(installer.local_rebuild())
+            self.assertTrue(shadow.exists())  # only looked at, never removed
+            (agent / 'openclaw-agent.sqlite.memory-reindex-4e5f-wal').write_text('rows')
+            self.assertTrue(installer.local_rebuild())
+            for provider in ('none', 'openai'):  # a hosted Machine (none), or a remote provider: not this guard
+                (state / 'openclaw.json').write_text(json.dumps({'memory': {'search': {'provider': provider}}}))
+                self.assertFalse(installer.local_rebuild())
+            (state / 'openclaw.json').write_text(json.dumps({'agents': {'defaults': {'memorySearch': {'provider': 'local'}}}}))
+            self.assertTrue(installer.local_rebuild())
+
+    def test_a_rebuild_on_local_embeddings_is_waited_for_longer(self):
+        self.addCleanup(setattr, installer, 'REBUILD_OUTLASTED', False)
+        with mock.patch.object(installer, 'local_rebuild', return_value=True), mock.patch.dict(os.environ, {'ASSISTANT_REBUILD_WAIT': '1200'}):
+            ok, took, said, _ = self.idle(lambda t: t < 900)  # past the usual 10 minutes, done within 20
+            self.assertEqual((ok, took), (True, 960))
+            self.assertIn('rebuilding its memory index on local embeddings; waiting up to 20 min', said)
+            self.assertIn('a Gateway stop or plugin swap during a rebuild hangs until it ends', said)
+            self.assertNotIn('waiting up to 10 min', said)
+            ok, took, _, _ = self.idle(lambda t: True)
+            self.assertEqual((ok, took), (False, 1200))
+            ok, took, said, seen = self.idle(lambda t: True)  # outlasted once in this run: not waited for again
+            self.assertEqual((ok, took, seen), (False, 0, []))
+
+    def test_a_rebuild_on_local_embeddings_is_never_swapped_into_or_restarted_through(self):
+        # A real Machine, 2026-11-10: the swap went on after the wait, failed on "plugin service stop timed out ...
+        # memory-core-index", and the Gateway restart after it hung for its whole TimeoutStopSec and was killed.
+        self.addCleanup(setattr, installer, 'REBUILD_OUTLASTED', False)
+        with mock.patch.object(installer, 'local_rebuild', return_value=True), mock.patch.dict(os.environ, {'ASSISTANT_REBUILD_WAIT': '0'}):
+            ok, calls, said, stamped, _ = self.swap(busy=[True] * 50, wait='0')  # a Gateway this install may restart
+            self.assertEqual(ok, installer.WAITING)
+            self.assertFalse(stamped)
+            self.assertTrue(self.waiting)  # the next install or nightly update tries again
+            self.assertFalse([c for c in calls if c.startswith(('plugins', 'systemctl'))], calls)
+            self.assertIn('nothing in OpenClaw was changed', said)
+            self.assertNotIn('going on', said)
+            ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0')  # one that started after the swap
+            self.assertEqual((ok, stamped, self.waiting), (installer.WAITING, False, True))
+            self.assertIn('plugins install', calls)
+            self.assertFalse([c for c in calls if c.startswith(('plugins reload', 'systemctl'))], calls)
+            self.assertIn('linked but not reloaded', said)
+        ok, calls, said, _, _ = self.swap(busy=[True] * 50, wait='0')  # any other index run: as before
+        self.assertTrue(ok, said)
+        self.assertIn('going on', said)
+
+    def test_the_gateway_is_not_restarted_during_a_rebuild_on_local_embeddings(self):
+        calls = []
+        def run(command, **kwargs):
+            calls.append(' '.join(command[:3]))
+            return subprocess.CompletedProcess(command, 0, '{"ok": true, "plugins": {"loaded": ["%s"]}}' % installer.PLUGIN_ID, '')
+        said = []
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say', side_effect=said.append), \
+                mock.patch.object(installer.onboarding, 'gateway_units', return_value=['openclaw-gateway.service']), \
+                mock.patch.object(installer, 'local_rebuild', return_value=True), mock.patch.object(installer, 'gateway_idle', return_value=False) as idle:
+            self.assertFalse(installer.load_in_gateway('openclaw', 'reload failed'))
+            idle.assert_called_once()
+            self.assertFalse([c for c in calls if c.startswith('systemctl')], calls)
+            self.assertIn('Not restarting openclaw-gateway.service', '\n'.join(said))
+            self.assertIn('systemctl --user restart openclaw-gateway.service', '\n'.join(said))
+            idle.return_value = True  # the rebuild ended within the wait: the restart goes on
+            self.assertTrue(installer.load_in_gateway('openclaw', 'reload failed'))
+            self.assertIn('systemctl --user restart', calls)
+            calls.clear()
+            idle.return_value = False
+            for recovery in (True, lambda: True):  # no models: still running at the cap, restarted anyway
+                self.assertTrue(installer.load_in_gateway('openclaw', 'the Gateway cannot run models', recovery=recovery))
+                self.assertEqual(calls.count('systemctl --user restart'), 1, calls)
+                calls.clear()
+            self.assertIn('restarting openclaw-gateway.service anyway', '\n'.join(said))
+            self.assertFalse(installer.load_in_gateway('openclaw', 'reload failed', recovery=lambda: False))  # models work: planned
+            self.assertNotIn('systemctl --user restart', calls)
+
+    def test_a_failed_swap_during_a_rebuild_still_gets_its_recovery_restart(self):
+        # The swap went in during a pause nothing could see (None); the rebuild went on, the install failed and took the
+        # models with it. The reload cannot go in during the rebuild; the restart that brings models back must.
+        self.addCleanup(setattr, installer, 'REBUILD_OUTLASTED', False)
+        rebuild = iter([False] + [True] * 200)  # nothing at the first look, a rebuild from then on
+        with mock.patch.object(installer, 'local_rebuild', side_effect=lambda: next(rebuild, True)), \
+                mock.patch.dict(os.environ, {'ASSISTANT_REBUILD_WAIT': '0'}):
+            ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install', busy=[None] + [True] * 50, wait='0')
+        self.assertFalse(ok)
+        self.assertNotIn('plugins reload', calls)  # no reload into the rebuild
+        self.assertIn(self.RESTART, calls)  # but the recovery restart happens
+        self.assertIn('restarting openclaw-gateway.service anyway', said)
+        self.assertIn('Model calls work again', said)
+        self.assertNotIn('NOT FIXED', said)
+
     def openclaw_has(self, record=None, plugin=None, loaded=True, hooks=True, inspect_code=0):
         """A fake OpenClaw whose own record of the bridge is `record` and `plugin` over a good one. Returns (run, calls)."""
         root = str(ROOT / 'openclaw-plugin')
