@@ -15,7 +15,7 @@ Senza un orario, gira alle 8:00. L’orario è quello dell’orologio della tua 
 
 ## Modelli
 
-In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30. Le sue parole restano come sono.
+In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30. La sua scheda mostra le sue parole come ogni routine, e **Modifica** cambia le parole o il nome.
 
 **Pulizia newsletter** crea un’attività con le newsletter dell’ultimo giorno, ognuna con **Tieni** o **Disiscriviti**. La disiscrizione usa il link a un clic della lista, o la sua email di disiscrizione dal tuo indirizzo se l’invio è attivo. Altrimenti mostra **Apri la pagina di disiscrizione**.
 
@@ -26,6 +26,10 @@ Nulla cambia finché non confermi sull’attività. I mittenti già decisi non t
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 
 I compleanni vengono dai tuoi calendari (i compleanni di Google e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph.
+
+Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
+
+Pulizia newsletter e Pulizia spam finiscono sempre nella stessa attività con una scelta per email. Compleanni modificato dà il suo risultato e al massimo una bozza, non un’attività per persona. **Torna al modello** in **Modifica** rimette le sue parole.
 
 ## Cosa fa una routine
 

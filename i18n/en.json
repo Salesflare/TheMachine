@@ -146,7 +146,6 @@
  "A teammate": "A teammate",
  "A teammate uses it too": "A teammate uses it too",
  "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.": "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.",
- "A template’s words stay as they are": "A template’s words stay as they are",
  "A to-do can carry up to {} files.": "A to-do can carry up to {} files.",
  "A tool connection failed.": "A tool connection failed.",
  "A transcript can be up to {} characters": "A transcript can be up to {} characters",
@@ -557,6 +556,7 @@
  "Back to the rule for everyone": "Back to the rule for everyone",
  "Back to the rule for everyone.": "Back to the rule for everyone.",
  "Back to the suggested title": "Back to the suggested title",
+ "Back to the template": "Back to the template",
  "Back to the to-do": "Back to the to-do",
  "Back to {}": "Back to {}",
  "Back {}": "Back {}",
@@ -1422,9 +1422,12 @@
  "Find a person, company or project": "Find a person, company or project",
  "Find a skill": "Find a skill",
  "Find a to-do": "Find a to-do",
+ "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.": "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.",
  "Find in sent mail": "Find in sent mail",
+ "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.": "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.",
  "Find my skills": "Find my skills",
  "Find someone or a project": "Find someone or a project",
+ "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.": "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.",
  "Findable by": "Findable by",
  "Finding the accounts with recent emails and meetings…": "Finding the accounts with recent emails and meetings…",
  "Finding your most active conversations: {} of {} checked": "Finding your most active conversations: {} of {} checked",
@@ -1542,6 +1545,10 @@
  "Found in your Outlook sent mail": "Found in your Outlook sent mail",
  "Found in your mail. Whose is each one?": "Found in your mail. Whose is each one?",
  "Found {} at {}": "Found {} at {}",
+ "Found {} newsletters.": {
+  "one": "Found {} newsletter.",
+  "other": "Found {} newsletters."
+ },
  "Found {} to-dos. Reading on.": {
   "one": "Found {} to-do. Reading on.",
   "other": "Found {} to-dos. Reading on."
@@ -4910,6 +4917,7 @@
  "That reset was already used.": "That reset was already used.",
  "That result changed. Use its current buttons.": "That result changed. Use its current buttons.",
  "That routine is gone": "That routine is gone",
+ "That routine isn’t from a template": "That routine isn’t from a template",
  "That sample couldn’t play.": "That sample couldn’t play.",
  "That screenshot can’t be sent. Try a smaller PNG or JPEG.": "That screenshot can’t be sent. Try a smaller PNG or JPEG.",
  "That setup has ended; start it again": "That setup has ended; start it again",

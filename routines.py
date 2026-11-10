@@ -325,6 +325,15 @@ def needs_name(row):
     return row['name_check'] != OWNER_NAMED and (row['name_check'] == '1' or placeholder(row))
 
 
+def rename(db, routine_id, name, stamp):
+    """The owner's own name for a new one on trial (Change, like Edit's name): no run renames it. The same name is no
+    change."""
+    row = get(db, routine_id, LIVE + ('trying',))
+    name = clean_name(name)
+    if name != row['name']:
+        db.execute('UPDATE routines SET name=?,name_check=?,updated_at=? WHERE id=?', (name, OWNER_NAMED, stamp, row['id']))
+
+
 def named(db, routine_id, name, stamp):
     """A run's short name for its routine (routine_result name), taken only when the routine asked for one."""
     row = db.execute('SELECT * FROM routines WHERE id=?', (routine_id,)).fetchone()
@@ -406,9 +415,9 @@ def try_words(db, routine_id, instructions, stamp, steps=False):
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
         raise ValueError('It’s running already')
     db.execute("DELETE FROM routine_runs WHERE routine_id=? AND period LIKE 'test:%'", (row['id'],))  # only the newest try shows
-    if row['state'] == 'trying':
+    if row['state'] == 'trying':  # its name follows its words, unless the owner named it (rename)
         db.execute('UPDATE routines SET name=?,instructions=?,steps=?,updated_at=?,recipe=? WHERE id=?',
-                   ((name_of(instructions) or row['name'])[:NAME_MAX], instructions, kept, stamp,
+                   (row['name'] if row['name_check'] == OWNER_NAMED else (name_of(instructions) or row['name'])[:NAME_MAX], instructions, kept, stamp,
                     row['recipe'] if instructions == row['instructions'] else None, row['id']))
         return begin(db, row['id'], 'test:' + stamp, stamp)
     run_id = uuid.uuid4().hex

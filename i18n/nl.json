@@ -146,7 +146,6 @@
  "A teammate": "Een teamgenoot",
  "A teammate uses it too": "Een teamgenoot gebruikt het ook",
  "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.": "De Machine van een teamgenoot toont zijn sleutels niet meer op The Machine Network; er is niets verstuurd. Probeer het later opnieuw.",
- "A template’s words stay as they are": "De woorden van een sjabloon blijven zoals ze zijn",
  "A to-do can carry up to {} files.": "Een to-do kan tot {} bestanden bevatten.",
  "A tool connection failed.": "Een toolverbinding is mislukt.",
  "A transcript can be up to {} characters": "Een transcript mag tot {} tekens lang zijn",
@@ -557,6 +556,7 @@
  "Back to the rule for everyone": "Terug naar de regel voor iedereen",
  "Back to the rule for everyone.": "Terug naar de regel voor iedereen.",
  "Back to the suggested title": "Terug naar de voorgestelde titel",
+ "Back to the template": "Terug naar het sjabloon",
  "Back to the to-do": "Terug naar de to-do",
  "Back to {}": "Terug naar {}",
  "Back {}": "Terug {}",
@@ -1422,9 +1422,12 @@
  "Find a person, company or project": "Zoek een persoon, organisatie of project",
  "Find a skill": "Zoek een skill",
  "Find a to-do": "Zoek een to-do",
+ "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.": "Zoek duidelijke spam van onbekende afzenders sinds de vorige keer: koude verkooppraatjes, oplichting, phishing en valse facturen. Laat nieuwsbrieven waarvoor ik me aanmeldde, ontvangstbewijzen en echte mensen weg. Zet ze in één to-do waarin ik per stuk Spam of Geen spam kies.",
  "Find in sent mail": "Zoeken in verzonden mail",
+ "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.": "Zoek mijn naaste contacten die vandaag jarig zijn. Schrijf voor elk een korte felicitatie in hun taal, waar ik meestal met hen praat, die ik zelf verstuur.",
  "Find my skills": "Zoek mijn skills",
  "Find someone or a project": "Zoek iemand of een project",
+ "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.": "Zoek de nieuwsbrieven en mails van mailinglijsten die sinds de vorige keer binnenkwamen, één per afzender. Zet ze in één to-do waarin ik per stuk Houden of Afmelden kies.",
  "Findable by": "Vindbaar voor",
  "Finding the accounts with recent emails and meetings…": "Accounts met recente e-mails en meetings zoeken…",
  "Finding your most active conversations: {} of {} checked": "Je actiefste gesprekken zoeken: {} van {} nagekeken",
@@ -1542,6 +1545,10 @@
  "Found in your Outlook sent mail": "Gevonden in je verzonden mail in Outlook",
  "Found in your mail. Whose is each one?": "Gevonden in je mail. Van wie is elk adres?",
  "Found {} at {}": "{} gevonden in {}",
+ "Found {} newsletters.": {
+  "one": "{} nieuwsbrief gevonden.",
+  "other": "{} nieuwsbrieven gevonden."
+ },
  "Found {} to-dos. Reading on.": {
   "one": "{} to-do gevonden. Ik lees verder.",
   "other": "{} to-do's gevonden. Ik lees verder."
@@ -4910,6 +4917,7 @@
  "That reset was already used.": "Die reset was al gebruikt.",
  "That result changed. Use its current buttons.": "Dat resultaat is gewijzigd. Gebruik de huidige knoppen.",
  "That routine is gone": "Die routine bestaat niet meer",
+ "That routine isn’t from a template": "Die routine komt niet uit een sjabloon",
  "That sample couldn’t play.": "Dat voorbeeld kon niet afspelen.",
  "That screenshot can’t be sent. Try a smaller PNG or JPEG.": "Die screenshot kan niet verstuurd worden. Probeer een kleinere PNG of JPEG.",
  "That setup has ended; start it again": "Die setup is beëindigd; start hem opnieuw",

@@ -146,7 +146,6 @@
  "A teammate": "Un collega",
  "A teammate uses it too": "La usa anche un collega",
  "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.": "La Machine di un collega ha smesso di mostrare le sue chiavi su The Machine Network; non è stato inviato nulla. Riprova più tardi.",
- "A template’s words stay as they are": "Le parole di un modello restano come sono",
  "A to-do can carry up to {} files.": "Un’attività può contenere fino a {} file.",
  "A tool connection failed.": "Una connessione a uno strumento non è riuscita.",
  "A transcript can be up to {} characters": "Una trascrizione può avere fino a {} caratteri",
@@ -557,6 +556,7 @@
  "Back to the rule for everyone": "Torna alla regola per tutti",
  "Back to the rule for everyone.": "Si torna alla regola per tutti.",
  "Back to the suggested title": "Torna al titolo suggerito",
+ "Back to the template": "Torna al modello",
  "Back to the to-do": "Torna all’attività",
  "Back to {}": "Torna a {}",
  "Back {}": "Indietro {}",
@@ -1422,9 +1422,12 @@
  "Find a person, company or project": "Trova una persona, un’azienda o un progetto",
  "Find a skill": "Trova una skill",
  "Find a to-do": "Trova un’attività",
+ "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.": "Trova lo spam evidente da mittenti sconosciuti dall’ultima volta: proposte commerciali a freddo, truffe, phishing e fatture false. Lascia fuori le newsletter a cui mi sono iscritto, le ricevute e le persone vere. Mettile in un’attività dove scelgo Spam o Non è spam per ognuna.",
  "Find in sent mail": "Trova nella posta inviata",
+ "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.": "Trova i miei contatti stretti che compiono gli anni oggi. Per ognuno, prepara un breve augurio nella sua lingua, dove di solito ci sentiamo, che invierò io.",
  "Find my skills": "Trova le mie skill",
  "Find someone or a project": "Trova una persona o un progetto",
+ "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.": "Trova le newsletter e le email delle mailing list arrivate dall’ultima volta, una per mittente. Mettile in un’attività dove scelgo Tieni o Disiscriviti per ognuna.",
  "Findable by": "Trovabile da",
  "Finding the accounts with recent emails and meetings…": "Ricerca degli account con email e riunioni recenti…",
  "Finding your most active conversations: {} of {} checked": "Ricerca delle conversazioni più attive: {} di {} controllate",
@@ -1542,6 +1545,10 @@
  "Found in your Outlook sent mail": "Trovata nella posta inviata di Outlook",
  "Found in your mail. Whose is each one?": "Trovati nella tua posta. Di chi è ciascuno?",
  "Found {} at {}": "{} trovato in {}",
+ "Found {} newsletters.": {
+  "one": "Trovata {} newsletter.",
+  "other": "Trovate {} newsletter."
+ },
  "Found {} to-dos. Reading on.": {
   "one": "Ho trovato {} attività. Continuo a leggere.",
   "other": "Ho trovato {} attività. Continuo a leggere."
@@ -4910,6 +4917,7 @@
  "That reset was already used.": "Quel reset è già stato usato.",
  "That result changed. Use its current buttons.": "Quel risultato è cambiato. Usa i suoi pulsanti attuali.",
  "That routine is gone": "Quella routine non c’è più",
+ "That routine isn’t from a template": "Questa routine non viene da un modello",
  "That sample couldn’t play.": "Non è stato possibile riprodurre l’esempio.",
  "That screenshot can’t be sent. Try a smaller PNG or JPEG.": "Quello screenshot non si può inviare. Prova un PNG o JPEG più piccolo.",
  "That setup has ended; start it again": "Quella configurazione è terminata; riavviala",

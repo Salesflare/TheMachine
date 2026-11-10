@@ -171,18 +171,112 @@ class Cleanup(unittest.TestCase):
         self.assertEqual(self.todos(), [])
         self.assertEqual(self.runs()[0]['state'], 'nothing')
 
-    def test_adding_twice_keeps_one_and_its_words_stay(self):
+    def test_adding_twice_keeps_one(self):
         self.marks = True
         rid = self.act('routine_template', key='spam')['made']
         self.assertEqual(self.act('routine_template', key='spam')['made'], rid)
         with self.store.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM routines WHERE origin='template:spam'").fetchone()[0], 1)
-        with self.assertRaises(ValueError):
-            self.act('routine_edit', id=rid, words='every day do something else entirely')
         view = self.app.routines_view()
-        self.assertEqual([r['template'] for r in view['routines']], ['spam'])
+        self.assertEqual([(r['template'], r['edited']) for r in view['routines']], [('spam', False)])
+        self.assertEqual(view['routines'][0]['instructions'], routine_templates.TEMPLATES['spam']['words'])  # its words, not what it does
         with self.assertRaises(ValueError):
             self.act('routine_template', key='nope')
+
+    def rid(self, key):
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM routines WHERE origin=?', ('template:' + key,)).fetchone()[0]
+
+    def again(self, key):
+        with self.store.connect() as db:
+            routines.run_now(db, self.rid(key), self.app.routines_stamp())
+        self.app.routines_step()
+
+    def turns(self):
+        return [s for s in self.sent if s['action'] == 'start']
+
+    def test_a_rename_or_its_own_words_keep_the_templates_own_run(self):
+        self.mail('Daily Deals <deals@shop.example>', 'Flash sale on lamps', list_unsubscribe=True)
+        self.ways['m1'] = {'one_click': 'https://shop.example/u/1'}
+        self.add('newsletters')
+        rid = self.rid('newsletters')
+        shown = self.app.routines_view()['routines'][0]['instructions']
+        with patch.object(routine_templates.i18n, 't', lambda text, *a: 'NL ' + text if text in shown else text):  # as shown in Dutch
+            dutch = routine_templates.words('newsletters')
+            self.app.action('routine_edit', {'id': rid, 'words': '  ' + dutch + ' ', 'name': 'My newsletters'}, owner_dashboard=True)
+        r = self.app.routines_view()['routines'][0]
+        self.assertEqual((r['name'], r['edited'], r['instructions']), ('My newsletters', False, shown))
+        self.again('newsletters')
+        self.assertEqual(self.turns(), [])  # still plain code, no model
+        # Try it of its own words: its own code, dry, what it would list
+        self.mail('Weekly Digest <digest@blog.example>', 'Ten links', hours_ago=-0.01, list_id='digest.blog.example', list_unsubscribe=True)
+        self.ways['m2'] = {'one_click': 'https://blog.example/u/2'}
+        self.act('routine_try', id=rid, words=shown)
+        self.app.routines_step()
+        self.assertEqual(self.turns(), [])
+        test = self.app.routines_view()['routines'][0]['test']
+        self.assertEqual((test['state'], test['result']), ('ready', 'Found 1 newsletter.'))
+        self.assertEqual(len(self.todos()), 1)  # only the first run's
+
+    def test_new_words_run_as_a_routine_keep_the_cleanup_todo_and_go_back(self):
+        self.add('newsletters')  # no mail yet: nothing
+        rid = self.rid('newsletters')
+        words = 'Find the newsletters since the last run, but never the ones about lamps. One to-do, Keep or Unsubscribe each.'
+        self.act('routine_edit', id=rid, words=words)
+        r = self.app.routines_view()
+        self.assertEqual((r['routines'][0]['edited'], r['routines'][0]['instructions']), (True, words))
+        self.assertEqual([t['added'] for t in r['templates'] if t['key'] == 'newsletters'], [True])  # still from the template
+        self.mail('Daily Deals <deals@shop.example>', 'Flash sale on lamps', hours_ago=-0.01, list_unsubscribe=True)
+        self.mail('Weekly Digest <digest@blog.example>', 'Ten links', hours_ago=-0.01, list_id='digest.blog.example', list_unsubscribe=True)
+        self.ways.update({'m1': {'one_click': 'https://shop.example/u/1'}, 'm2': {'one_click': 'https://blog.example/u/2'}})
+        self.again('newsletters')
+        turn = self.turns()
+        self.assertEqual(len(turn), 1)  # a normal routine's turn now, on its words, with the mail it may pick from
+        self.assertIn(words, turn[0]['message'])
+        self.assertIn('never send, post, reply, change or buy anything', turn[0]['message'])
+        self.assertIn('digest@blog.example', turn[0]['message'])
+        self.assertIn('cleanup: [{event_id', turn[0]['message'])
+        with self.store.connect() as db:
+            digest = db.execute("SELECT id FROM events WHERE source_id='m2'").fetchone()[0]
+        run = next(r for r in self.runs() if r['state'] == 'running')
+        self.act('routine_result', owner=False, _routine_session=SESSION + run['id'], text='One newsletter, lamps left out.',
+                 cleanup=[{'event_id': digest, 'why': 'Weekly links'}, {'event_id': 999999, 'why': 'made up'}])
+        todos = self.todos()
+        self.assertEqual(len(todos), 1)
+        row, extra = self.view(todos[0]['id'])
+        self.assertEqual([(i['address'], i['state']) for i in extra['cleanup']['items']], [('digest@blog.example', 'open')])
+        self.assertEqual(self.clicked, [])  # nothing done before the owner confirms
+        self.assertEqual(self.runs()[-1]['result'], 'One newsletter, lamps left out.')
+        # Back to the template: its words, no script steps, its own code again
+        self.act('routine_edit', id=rid, words=words, steps={'check': {'command': 'true'}})
+        self.act('routine_edit', id=rid, back=True)
+        r = self.app.routines_view()['routines'][0]
+        self.assertEqual((r['edited'], r['instructions'], r['steps']), (False, routine_templates.TEMPLATES['newsletters']['words'], {}))
+        self.again('newsletters')
+        self.assertEqual(len(self.turns()), 1)  # no new turn
+        with self.assertRaisesRegex(ValueError, 'isn’t from a template'):
+            self.act('routine_edit', id=self.act('routine_new', words='every day at 9, sum up my deals')['made'], back=True)
+
+    def test_edited_spam_cleanup_picks_only_from_what_it_was_shown(self):
+        self.marks = True
+        self.add('spam')
+        rid = self.rid('spam')
+        self.act('routine_edit', id=rid, words='Find cold pitches about SEO only. One to-do, Spam or Not spam each.')
+        self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01, body='We noticed your site...')
+        self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, **{'in-reply-to': '<x@partner.example>'})
+        self.again('spam')
+        turn = self.turns()
+        self.assertEqual(len(turn), 1)
+        self.assertIn('Find cold pitches about SEO only', turn[0]['message'])
+        self.assertIn('seo@ranks.example', turn[0]['message'])
+        self.assertNotIn('sam@partner.example', turn[0]['message'])
+        with self.store.connect() as db:
+            seo, sam = [db.execute('SELECT id FROM events WHERE source_id=?', (m,)).fetchone()[0] for m in ('m1', 'm2')]
+        run = next(r for r in self.runs() if r['state'] == 'running')
+        self.act('routine_result', owner=False, _routine_session=SESSION + run['id'], text='One SEO pitch.',
+                 cleanup=[{'event_id': seo, 'why': 'Cold SEO pitch'}, {'event_id': sam, 'why': 'not shown'}])
+        row, extra = self.view(self.todos()[0]['id'])
+        self.assertEqual([(i['address'], i['plan']) for i in extra['cleanup']['items']], [('seo@ranks.example', 'spam')])
 
     def test_spam_cleanup_only_where_mail_can_move_to_spam(self):
         # hosted Gmail reads only: no Spam cleanup to add, and one added before reads nothing and makes no to-do
@@ -271,7 +365,8 @@ class Catalog(unittest.TestCase):
     def test_every_template_has_its_words(self):
         for key, template in routine_templates.TEMPLATES.items():
             self.assertEqual(routine_templates.key_of('template:' + key), key)
-            self.assertTrue(template['name'] and template['what'])
+            self.assertTrue(template['name'] and template['what'] and template['words'])
+            self.assertTrue(routine_templates.is_own(key, template['what']))  # one added before it had words
         self.assertIsNone(routine_templates.key_of('openclaw:abc'))
 
 

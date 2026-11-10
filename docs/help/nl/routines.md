@@ -15,7 +15,7 @@ Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
 
 ## Sjablonen
 
-Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30. De woorden blijven zoals ze zijn.
+Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30. Haar kaart toont haar woorden zoals elke routine, en **Bewerken** past ze of haar naam aan.
 
 **Nieuwsbrieven opruimen** maakt één to-do met de nieuwsbrieven van de voorbije dag, elk met **Houden** of **Afmelden**. Afmelden gebruikt de afmeldlink met één klik van de lijst, of de afmeldmail vanaf je adres als versturen aanstaat. Anders toont het **Afmeldpagina openen**.
 
@@ -26,6 +26,10 @@ Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste,
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
 
 Verjaardagen komen uit je agenda’s (de verjaardagen van Google en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph.
+
+Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
+
+Nieuwsbrieven opruimen en Spam opruimen eindigen nog altijd in dezelfde to-do met een keuze per mail. Een aangepaste Verjaardagen geeft haar resultaat en hoogstens één concept, geen to-do per persoon. **Terug naar het sjabloon** in **Bewerken** zet haar woorden terug.
 
 ## Wat een routine doet
 

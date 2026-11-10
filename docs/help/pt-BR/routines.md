@@ -15,7 +15,7 @@ Sem horário, ela roda às 8:00. O horário é o do relógio da sua Machine.
 
 ## Modelos
 
-Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30. As palavras dela ficam como estão.
+Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30. O cartão dela mostra as palavras como qualquer rotina, e **Editar** muda as palavras ou o nome.
 
 **Limpeza de newsletters** cria uma tarefa com as newsletters do último dia, cada uma com **Manter** ou **Cancelar inscrição**. O cancelamento usa o link de um clique da lista, ou o e-mail de cancelamento a partir do seu endereço se o envio estiver ligado. Se não, mostra **Abrir página de cancelamento**.
 
@@ -26,6 +26,10 @@ Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. 
 **Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesmo escreve, como amigos, família e contatos frequentes. Cada uma traz uma mensagem curta escrita onde vocês costumam conversar, como o chat do WhatsApp ou sua conversa por e-mail, no idioma da pessoa. Ela só sai quando você envia. Um dia sem aniversários não cria tarefa.
 
 Os aniversários vêm das suas agendas (os aniversários do Google e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph.
+
+Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
+
+Limpeza de newsletters e Limpeza de spam continuam terminando na mesma tarefa com uma escolha por e-mail. Aniversários editado dá o resultado e no máximo um rascunho, não uma tarefa por pessoa. **Voltar ao modelo** em **Editar** devolve as palavras.
 
 ## O que uma rotina faz
 

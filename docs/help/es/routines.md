@@ -15,7 +15,7 @@ Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
 ## Plantillas
 
-En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30. Sus palabras quedan como están.
+En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30. Su tarjeta muestra sus palabras como cualquier rutina, y **Editar** cambia sus palabras o su nombre.
 
 **Limpieza de newsletters** crea una tarea con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
 
@@ -26,6 +26,10 @@ Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuel
 **Cumpleaños** crea una tarea para cada contacto cercano que cumple años hoy: personas a las que tú escribes, como amigos, familia y contactos habituales. Cada una trae una felicitación corta redactada donde sueles hablar con ellos, como su chat de WhatsApp o tu hilo de correo, en su idioma. Solo sale cuando tú la envías. Un día sin cumpleaños no crea ninguna tarea.
 
 Los cumpleaños vienen de tus calendarios (los cumpleaños de Google y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph.
+
+Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam usa un turno corto cuando hay correo que leer). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
+
+Limpieza de newsletters y Limpieza de spam siguen terminando en la misma tarea con una opción por correo. Un Cumpleaños editado da su resultado y como mucho un borrador, no una tarea por persona. **Volver a la plantilla** en **Editar** devuelve sus palabras.
 
 ## Qué hace una rutina
 

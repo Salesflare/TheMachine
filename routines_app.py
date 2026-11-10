@@ -134,16 +134,23 @@ class RoutinesApp:
 
     def routine_edit_action(self, name, args, owner_dashboard):
         """Edit: what it does, in new words, its script steps (steps; left out: as they are) and its name (name; left
-        out: as it is). When it runs and what it found so far stay."""
+        out: as it is). When it runs and what it found so far stay. A template's routine (routine_templates.py) saved
+        with the words it showed keeps them as the template's own, so its own code still runs it; back: Back to the
+        template, its words again and no script steps (its name stays)."""
         if not owner_dashboard:
             raise ValueError('Routines are changed by the owner, on the dashboard')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = routines.get(db, args.get('id'))
-            if routine_templates.key_of(row['origin']):
-                raise ValueError('A template’s words stay as they are')
-            routines.change_instructions(db, row['id'], args.get('words'), self.routines_stamp(), args.get('steps') if 'steps' in args else False,
-                                         args.get('name') if 'name' in args else None)
+            key = routine_templates.key_of(row['origin'])
+            words, steps = args.get('words'), args.get('steps') if 'steps' in args else False
+            if args.get('back'):
+                if not key:
+                    raise ValueError('That routine isn’t from a template')
+                words, steps = routine_templates.TEMPLATES[key]['words'], None
+            elif key and routine_templates.is_own(key, words):
+                words = routine_templates.TEMPLATES[key]['words']  # as shown, in the owner's language: still the template's
+            routines.change_instructions(db, row['id'], words, self.routines_stamp(), steps, args.get('name') if 'name' in args else None)
             routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
         return self.routines_view(row['id'])
 
@@ -172,10 +179,13 @@ class RoutinesApp:
             db.execute('BEGIN IMMEDIATE')
             if args.get('id'):
                 row = routines.get(db, args.get('id'), routines.LIVE + ('trying',))
-                if routine_templates.key_of(row['origin']):
-                    raise ValueError('A template’s words stay as they are')
-                rid = row['id']
-                routines.try_words(db, rid, args.get('words'), stamp, args.get('steps') if 'steps' in args else False)
+                rid, words = row['id'], args.get('words')
+                key = routine_templates.key_of(row['origin'])
+                if key and routine_templates.is_own(key, words):
+                    words = routine_templates.TEMPLATES[key]['words']  # a try of the template's words runs its own code
+                routines.try_words(db, rid, words, stamp, args.get('steps') if 'steps' in args else False)
+                if row['state'] == 'trying' and 'name' in args:  # Change names a new one too, like Edit
+                    routines.rename(db, rid, args.get('name'), stamp)
             else:
                 got = routines.read(args.get('words'), now.date())
                 rid, _ = routines.try_new(db, got['instructions'], got['rule'], got['anchor'], got['at'], now, stamp, args.get('steps'))
@@ -253,9 +263,11 @@ class RoutinesApp:
                 row = routines.get(db, routine['id'])
                 routine['old_job'] = routines.old_job_due(db, row, now) and routine_imports.still_on(self.config, row['origin'][9:])
         for routine in out['routines'] + out['suggested'] + out['trying']:
-            routine['template'] = routine_templates.key_of(routine['origin'])  # its words are the template's: no Edit
-            if routine['template']:
-                routine['instructions'] = routine_templates.what(routine['template'])
+            key = routine['template'] = routine_templates.key_of(routine['origin'])
+            # a template's routine shows its words in the owner's language while they are its own; edited: Back to the template
+            routine['edited'] = bool(key) and not routine_templates.own(routine['origin'], routine['instructions'], routine['steps'])
+            if key and not routine['edited']:
+                routine['instructions'] = routine_templates.words(key)
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why
@@ -281,10 +293,15 @@ class RoutinesApp:
             db.execute('BEGIN IMMEDIATE')
             mine = db.execute('SELECT t.*,r.trial,r.period,r.steps AS run_steps FROM routine_runs r JOIN routines t ON t.id=r.routine_id WHERE r.id=?',
                               (m.group(1),)).fetchone()
-            if mine and mine['trial'] is None and routine_templates.key_of(mine['origin']) == 'spam':
+            words = mine and (mine['trial'] if mine['trial'] is not None else mine['instructions'])
+            key = mine and routine_templates.own(mine['origin'], words, routines.steps_of({'steps': mine['run_steps']}))
+            if key == 'spam' and mine['trial'] is None:
                 return self.routine_spam_result(mine, m.group(1), args, stamp, db)  # mail_cleanup_app.py
             if not mine or mine['state'] != 'sorting':
                 kept = self.routine_recipe_kept(db, mine, args.get('recipe'), stamp) if args.get('recipe') is not None else None
+                # an edited Newsletter or Spam cleanup's picks: read before this run's report moves "since"
+                cleanup = self.routine_cleanup_picked(db, mine, args.get('cleanup')) if mine and mine['trial'] is None and not key \
+                    and not routines.is_test(mine) and args.get('cleanup') else None
                 draft = self.routine_draft(args.get('draft'), self.config.get('accounts', []))
                 checked = mine and routines.steps_of({'steps': mine['run_steps']}).get('check')
                 (routines.hold if checked else routines.report)(
@@ -297,6 +314,8 @@ class RoutinesApp:
                     self.routine_spawn(self.routine_check, m.group(1))
                 if draft and mine and mine['trial'] is None and not routines.is_test(mine):  # a test run only shows it
                     self.routine_draft_todo(mine, m.group(1), draft)
+                if cleanup:  # the same cleanup to-do as the template's, after the transaction: no network inside it
+                    self.routine_cleanup_todos(mine, m.group(1), *cleanup)
                 return {'saved': True, **({'recipe': kept} if kept else {}), 'next': 'End your turn now with: Done.'}
             kind = args.get('kind')
             if kind not in ('routine', 'todo', 'skip'):
@@ -510,6 +529,7 @@ class RoutinesApp:
             lines.append(f'Also pass name: a short name for this routine, at most {routines.SHORT_MAX} characters, like Weekly '
                          'standup' + (f'. Its name is "{run["name"]}": pass it again unless it no longer fits.' if run['name_check'] == '1' else '.'))
         lines.append(self.routine_skill_lines(run))
+        lines.append(self.routine_cleanup_lines(run))  # an edited Newsletter or Spam cleanup (mail_cleanup_app.py)
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
         return '\n'.join(x for x in lines if x)
@@ -614,9 +634,11 @@ class RoutinesApp:
                     routines.finish(db, run['id'], 'failed', stamp, error='not_started')
                 return
             with self.store.connect() as db:
-                origin = db.execute('SELECT origin FROM routines WHERE id=?', (run['routine_id'],)).fetchone()[0]
-            template = routine_templates.key_of(origin)
-            if template:  # a template's own run (mail_cleanup_app.py): plain code, or a turn only when there is mail to read
+                run['origin'] = db.execute('SELECT origin FROM routines WHERE id=?', (run['routine_id'],)).fetchone()[0]
+            # a template's own run (mail_cleanup_app.py) while its words are the template's: plain code, or a turn only
+            # when there is mail to read; edited, a normal run on its words
+            template = routine_templates.own(run['origin'], self.routine_words(run), routines.steps_of(run))
+            if template:
                 message = self.routine_template_run(run, template)
                 if message is True:
                     return

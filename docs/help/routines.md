@@ -13,11 +13,11 @@ Open **Routines** in the sidebar and say what it should do and when, in one line
 
 Without a time it runs at 8:00. The time is on your Machine's clock. Its first run gives it a short name.
 
-**Add** first does a test run, so you see what it gives before you keep it. Nothing is sent or saved. Then **Add** keeps it on its rhythm, **Change** tries other words and **Cancel** drops it.
+**Add** first does a test run, so you see what it gives before you keep it. Nothing is sent or saved. Then **Add** keeps it on its rhythm, **Change** tries other words or a new name and **Cancel** drops it.
 
 ## Templates
 
-Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30. Its words stay as they are.
+Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30. Its card shows its words like any routine, and **Edit** changes them or its name.
 
 **Newsletter cleanup** makes one to-do with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise it shows **Open unsubscribe page**.
 
@@ -28,6 +28,10 @@ Nothing changes until you confirm on the to-do. Senders you decided on aren’t 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.
 
 Birthdays come from your calendars (Google’s birthday events and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph.
+
+While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
+
+Newsletter cleanup and Spam cleanup still end in the same to-do with a choice per mail. An edited Birthdays gives its result and at most one draft, not a to-do per person. **Back to the template** in **Edit** puts its words back.
 
 ## What a routine does
 
