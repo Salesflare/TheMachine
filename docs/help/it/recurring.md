@@ -5,11 +5,15 @@ summary: Attività che tornano con un ritmo, come le buste paga il primo lunedì
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## Crearne una
 
 In **Nuova attività**, scegli **Si ripete** e un ritmo: **Giornaliero**, **Giorni feriali**, ogni settimana, ogni mese in una data o in un giorno come il primo lunedì, o ogni anno. **Personalizzato…** accetta parole tue, come every 2 weeks o every last Friday.
+
+Anche i giorni lavorativi: "inviare le fatture il secondo giorno lavorativo del mese" o "chiudere i conti l’ultimo giorno lavorativo del mese". Un giorno lavorativo va dal lunedì al venerdì, senza le festività del tuo paese.
+
+Se le parole non sono chiare, come "every 2nd business day" (il 2 del mese, o un giorno sì e uno no?), l’attività tiene tutte le tue parole e non si ripete. Scegli **Si ripete** per impostarlo.
 
 Oppure dillo e basta: "ogni mese fare le buste paga" in Nuova attività o in Parla crea un'attività che si ripete.
 

@@ -5,11 +5,15 @@ summary: Tarefas que voltam num ritmo, como a folha de pagamento na primeira seg
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## Criar uma
 
 Em **Nova tarefa**, escolha **Repete** e um ritmo: **Diário**, **Dias úteis**, toda semana, todo mês numa data ou num dia como a primeira segunda-feira, ou todo ano. **Personalizado…** aceita suas próprias palavras, como every 2 weeks ou every last Friday.
+
+Dias úteis também: "enviar as faturas no segundo dia útil do mês" ou "fechar as contas no último dia útil do mês". Um dia útil é de segunda a sexta, sem os feriados do seu país.
+
+Se as palavras não estiverem claras, como "every 2nd business day" (o dia 2 do mês, ou dia sim, dia não?), a tarefa mantém todas as suas palavras e não se repete. Escolha **Repete** para definir.
 
 Ou só diga: "todo mês fazer a folha de pagamento" em Nova tarefa ou em Falar cria uma tarefa que se repete.
 

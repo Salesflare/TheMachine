@@ -5,11 +5,15 @@ summary: To-do's die op een ritme terugkomen, zoals de loonlijst op de eerste ma
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## Er een maken
 
 In **Nieuwe to-do** kies je **Herhaalt** en een ritme: **Dagelijks**, **Werkdagen**, wekelijks, maandelijks op een datum of op een weekdag zoals de eerste maandag, of jaarlijks. **Aangepast…** neemt je eigen woorden, zoals every 2 weeks of every last Friday.
+
+Werkdagen kan ook: "facturen sturen elke tweede werkdag van de maand" of "de boekhouding afsluiten op de laatste werkdag van de maand". Een werkdag is maandag tot vrijdag, zonder de feestdagen van je land.
+
+Zijn de woorden niet duidelijk, zoals "every 2nd business day" (de 2e van de maand, of om de dag?), dan houdt de to-do al je woorden en herhaalt ze niet. Kies **Herhaalt** om het in te stellen.
 
 Of zeg het gewoon: "elke maand de loonlijst doen" in Nieuwe to-do of in Praten maakt een to-do die herhaalt.
 
