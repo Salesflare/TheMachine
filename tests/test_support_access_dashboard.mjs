@@ -52,7 +52,7 @@ try{
   assert.match(await page.textContent('#toast .toast-fine'),/^Support can look until /);
   if(shots)await page.screenshot({path:`${shots}/self-hosted-support-access-sent-${width}x${height}.png`});
   // While it's on: no box in Report a bug; Settings shows it with each look and Turn off
-  await page.evaluate(()=>helpOpen('bug'));await page.waitForTimeout(150);assert.equal(await page.textContent('#bug-diag-fine'),'Versions, checks and recent errors. No messages, keys or addresses.','already on: the box adds only the report');
+  await page.evaluate(()=>helpOpen('bug'));await page.waitForFunction(()=>!/24 hours/.test(document.querySelector('#bug-diag-fine').textContent));assert.equal(await page.textContent('#bug-diag-fine'),'Versions, checks and recent errors. No messages, keys or addresses.','already on: the box adds only the report');
   await page.evaluate(()=>{document.querySelector('#help-panel').close();showSettings('security')});
   await page.waitForSelector('#settings-support:not([hidden])');
   assert.equal(await page.textContent('#sa-toggle'),'Turn off');

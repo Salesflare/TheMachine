@@ -177,6 +177,10 @@ jobs:
           # box is short of CPU whatever this is (the suite's own CPU time sets the pace; the log's "CPU ... cores busy"
           # line shows it); fewer would only slow a run when the box is quiet.
           THE_MACHINE_TEST_JOBS: ${{ runner.environment == 'self-hosted' && '6' || '' }}
+          # A file starts only while the runner's load is under 2 per core. One run's 4 shards stay under that; when
+          # several runs overlap (load near 50 on 16 cores), each holds back instead of starving browser tests into
+          # timeouts (scripts/test.py Room).
+          THE_MACHINE_TEST_LOAD: ${{ runner.environment == 'self-hosted' && '2' || '' }}
           # a pull request stops starting files after 5 failed ones: the slot goes to the next pull request
           THE_MACHINE_TEST_MAX_FAILURES: ${{ github.event_name == 'pull_request' && '5' || '' }}
           # this shard's files, longest first (the plan job)

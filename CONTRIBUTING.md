@@ -32,6 +32,8 @@ About the test runner:
   that run side by side.
 - `THE_MACHINE_TEST_MAX_FAILURES=5` stops starting files after 5 failed ones. Each file's line shows its CPU time,
   and the summary how many cores the run kept busy and the computer's load.
+- `THE_MACHINE_TEST_LOAD=2` starts a file only while the computer's load is under 2 per core, with at least one
+  file going. CI sets it on the shared runner, so runs that overlap slow down instead of timing out.
 - If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package directory.
   `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
 
