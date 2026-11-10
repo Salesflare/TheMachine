@@ -29,9 +29,12 @@ return rows}
 // The first look (a review of the last days, right after setup): while there are no cards yet it is the empty
 // state itself; once cards come in, a slim progress strip under the counters.
 // Also with reviews off (where the first look happens): waiting for it is not "All clear".
-// A batch saves what it read at its end, so in between its count moves a signal at a time at the pace the earlier
-// batches took (first_dig.pace), one short of its size until it saved; the bar never moves back.
-const flSeen=new Map();let flPeak=0,flTotal=0;
+// A batch saves what it read at its end. In between only the bar moves, at the pace the earlier batches took
+// (first_dig.pace), one signal short of the batch until it saved, and never back. The number in the line is what its
+// batches saved, never a guess: a count ticking up a signal every few seconds said "Reading 11 of 132" while nothing
+// had been read yet, and its sliver of a bar looked stuck (2026-11-09). The line names the batch in hand instead.
+const flSeen=new Map();let flPeak=0,flTotal=0,flRead=0;
+const flInt=v=>Math.max(0,+v|0),flLeft=run=>run?Math.max(0,(run.planned||run.claimed_count||0)-(run.done_count||0)):0;
 // Once this device saw the first look start, a screen drawn from an older copy (a reload while the Machine restarts as
 // reviews turn on) never goes back to "Connecting ChatGPT…": it says the first look is on, without a count
 const FL_SEEN_KEY='first-look-seen',flSeenAt=()=>{try{return +localStorage.getItem(FL_SEEN_KEY)||0}catch{return 0}};
@@ -44,21 +47,28 @@ function flRunDone(run,pace){const total=run.planned||run.claimed_count||0,real=
 function firstLookInfo(live){const run=(live.runs||[]).find(r=>r.preview||r.window_hours||r.promising),fl=live.first_look,dig=live.first_dig;
 // read already counts what a running batch saved (its done_count), so only the batch's estimate beyond that is added;
 // the total only grows (new mail), so the count never looks like it went back
-if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+dig.todos|0,ahead=run?Math.max(0,flRunDone(run,dig.pace)-(run.done_count||0)):0,done=Math.min(total,Math.max(flPeak,(+dig.read|0)+ahead));flPeak=done;flMark();
+if(dig&&dig.total){const total=flTotal=Math.max(flTotal,0,+dig.total|0),todos=+dig.todos|0,ahead=run?Math.max(0,flRunDone(run,dig.pace)-(run.done_count||0)):0,read=flRead=Math.min(total,Math.max(flRead,flInt(dig.read))),done=Math.min(total,Math.max(flPeak,read+ahead));flPeak=done;flMark();
  const first=todos===1&&typeof dig.first?.title==='string'&&dig.first.title.trim();
- return{title:t('Taking a first look at your last {} days',dig.days||7),done,total,unit:dig.unit,first:!!first&&!(!run&&dig.failing),names:Array.isArray(dig.names)?dig.names.filter(n=>typeof n==='string'&&n.trim()):[],
+ return{title:t('Taking a first look at your last {} days',dig.days||7),done,read,batch:Math.min(flLeft(run),total-read),total,unit:dig.unit,first:!!first&&!(!run&&dig.failing),names:Array.isArray(dig.names)?dig.names.filter(n=>typeof n==='string'&&n.trim()):[],
   wait:!run&&dig.failing?(flFailing(dig)?t('The last tries did not finish. Still trying.'):t(FIRST_LOOK_WAIT.retry)):first?t('First one’s in: {}. Still reading…',first):!dig.read&&!run?.done_count?'':todos?t(['Found {} to-do. Reading on.','Found {} to-dos. Reading on.'],todos):t('Nothing for you yet. Reading on.')}}
 // A batch still ending after the first look stopped digging (first_look_done) is not a new count: its own "9 of 40" after
 // "30 of 132" looked like it went back (2026-11-09); the ending's line says what it read
 if(run&&state.first_look_done&&!(run.started_at>state.first_look_done.at))return null;
-if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),total}}
+if(run){const total=run.planned||run.claimed_count||0;flMark();return{title:t('Taking a first look at your last {} days',firstLookDays(fl,run)),done:flRunDone(run,6),read:Math.min(total,flInt(run.done_count)),batch:flLeft(run),total}}
 if(startsByItself()&&fl?.state!=='due')return setupStep()?{title:t('Your first to-dos show up here'),wait:false}:flBack()?{title:t('Taking a first look at your last {} days',firstLookDays(fl))}:{title:setupLine(),working:!!aiConnecting()};  // not "All clear" before the first read ends
 if((fl?.state==='waiting'&&fl.why!=='model')||fl?.state==='due')return{title:t('A first look at your last {} days starts soon',firstLookDays(fl)),wait:fl.state==='due'?t(FIRST_LOOK_WAIT.due):flWait(fl)};return null}
 // the counts are whole numbers before they reach the page, whatever the status says
-// How far it read, in the robot's voice: "Reading 312 of 1,200 emails…" (messages when not every source is mail)
-const flCount=(done,total,unit)=>t(unit==='email'?'Reading {} of {} emails…':'Reading {} of {} messages…',done.toLocaleString(DL),total.toLocaleString(DL));
-const firstLookBar=i=>{const done=Math.max(0,+i.done|0),total=Math.max(0,+i.total|0);return total?[make('span',{class:'fl-bar',role:'progressbar','aria-label':'Signals checked','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':done},
- make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count'},flCount(done,total,i.unit))]:[]};
+// How far it read, in the robot's voice (messages when not every source is mail). read is what its batches saved
+// (i.read; a bar drawn without one reads its done), batch the size of the one it reads now: "Reading the first 20 of 132
+// emails…", then "Read 20 of 132 emails. Reading the next 40…", and "Reading 60 of 132 emails…" between two batches
+const FL_COUNT={email:['Reading {} of {} emails…','Reading the first {} of {} emails…','Read {} of {} emails. Reading the next {}…',['Reading {} email…','Reading {} emails…']],
+ message:['Reading {} of {} messages…','Reading the first {} of {} messages…','Read {} of {} messages. Reading the next {}…',['Reading {} message…','Reading {} messages…']]};
+const flReadOf=i=>Math.min(flInt(i.done),flInt(i.read??i.done));
+function flCount(i){const w=FL_COUNT[i.unit==='email'?'email':'message'],n=v=>v.toLocaleString(DL),total=flInt(i.total),read=flReadOf(i),batch=Math.min(flInt(i.batch),total-read);
+ return read?batch?t(w[2],n(read),n(total),n(batch)):t(w[0],n(read),n(total)):batch&&batch<total?t(w[1],n(batch),n(total)):t(w[3],total===1?1:n(total))}
+// The bar is where it is by now (i.done: what was read plus the time the batch in hand has taken), its value what was read
+const firstLookBar=i=>{const done=flInt(i.done),total=flInt(i.total);return total?[make('span',{class:'fl-bar'+(i.batch?' fl-on':''),role:'progressbar','aria-label':'Signals checked','aria-valuemin':'0','aria-valuemax':total,'aria-valuenow':flReadOf(i)},
+ make('i',{style:{width:Math.round(100*done/total)+'%'}})),make('span',{class:'fl-count'},flCount(i))]:[]};
 // Who it reads about (first_dig.names: the owner's own people and organizations, never a word of a message), one more
 // every few seconds up to three, so they show up as it finds them
 let flNamesAt=0;
@@ -93,10 +103,10 @@ $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-f
 function renderFirstLook(live){const i=firstLookInfo(live),el=$('#first-look'),empty=$('#suggestions .all-clear');
 if(empty){el.hidden=true;if(i){empty.classList.add('first-look-empty');empty.replaceChildren(...firstLookInner(i))}else if(empty.classList.contains('first-look-empty'))refresh();return}
 if(i){el.replaceChildren(make('strong',{},i.title),...firstLookBar(i),flNamesNode(i),i.wait?make('small',i.first?{class:'fl-first'}:{},i.wait):'');el.hidden=false}else el.hidden=true}
-// The count ticks between polls: only the bar, its number and the names found change, a second at a time
+// The bar moves between polls: only the bar, its line and the names found change, a second at a time
 function firstLookTick(){if(document.hidden||!state)return;const i=firstLookInfo(state.review_live||{});if(!i?.total)return;
  for(const box of document.querySelectorAll('#first-look,#suggestions .first-look-empty')){const bar=box.querySelector('.fl-bar'),count=box.querySelector('.fl-count');if(!bar||!count)continue;
-  const done=Math.max(0,+i.done|0),total=Math.max(1,+i.total|0);bar.setAttribute('aria-valuenow',done);bar.setAttribute('aria-valuemax',total);bar.firstChild.style.width=Math.round(100*done/total)+'%';count.textContent=flCount(done,total,i.unit);
+  const done=flInt(i.done),total=Math.max(1,flInt(i.total)),said=flCount(i);bar.classList.toggle('fl-on',!!i.batch);bar.setAttribute('aria-valuenow',flReadOf(i));bar.setAttribute('aria-valuemax',total);bar.firstChild.style.width=Math.round(100*done/total)+'%';if(count.textContent!==said)count.textContent=said;
   const names=box.querySelector('.fl-names'),line=flNames(i);if(names&&line&&names.textContent!==line)names.textContent=line;else if(!names&&line)count.after(flNamesNode(i))}}
 setInterval(firstLookTick,1000);
 function renderReviewLive(){const live=state.review_live||{},rows=reviewLiveRows(live);$('#review-live').replaceChildren(...rows);const none=$('#analyses .no-reviews');if(none)none.hidden=!!rows.length;renderFirstLook(live)}

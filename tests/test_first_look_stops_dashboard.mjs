@@ -44,7 +44,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
   const strip=page.locator('#first-look');
-  await page.waitForFunction(()=>/Reading \d+ of 132 messages…/.test(document.querySelector('#first-look .fl-count')?.textContent||''),null,{timeout:8000});
+  await page.waitForFunction(()=>/Read 30 of 132 messages\. Reading the next 40…/.test(document.querySelector('#first-look .fl-count')?.textContent||''),null,{timeout:8000});
   await shot('digging');
   // The third to-do: it stopped digging, its last batch (started before that) still reads. No "of 40", no strip.
   cards=[...cards,card('c3','Book the birthday party')];dig=null;
@@ -60,7 +60,7 @@ try{
   // A review that starts after that is its own: it shows its count
   run={...batch('p'+width+scheme,at(1)),preview:1,auto:0,promising:0,planned:12,claimed_count:12};
   await page.evaluate(async()=>{await refresh()});
-  await page.waitForFunction(()=>/Reading \d+ of 12 messages…/.test(document.querySelector('#first-look .fl-count')?.textContent||''),null,{timeout:8000});
+  await page.waitForFunction(()=>/Reading 12 messages…/.test(document.querySelector('#first-look .fl-count')?.textContent||''),null,{timeout:8000});
   await context.close();
  }
  assert.deepEqual(errors,[]);

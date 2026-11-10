@@ -3645,15 +3645,27 @@
  },
  "Read {} from the past week.": "Ich habe {} aus der letzten Woche gelesen.",
  "Read {} from the past week: {}.": "Ich habe {} aus der letzten Woche gelesen: {}.",
+ "Read {} of {} emails. Reading the next {}…": "{} von {} E-Mails gelesen. Jetzt die nächsten {}…",
+ "Read {} of {} messages. Reading the next {}…": "{} von {} Nachrichten gelesen. Jetzt die nächsten {}…",
  "Read {}, all automated.": "{} gelesen, alle automatisch.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Nur lesen: Logs und Einstellungen, bereinigt wie der Bericht. Es endet von selbst.",
  "Read-only. Turn it off any time.": "Nur lesend. Jederzeit abschaltbar.",
  "Reading docs needs its own OK": "Dokumente lesen braucht ein eigenes OK",
  "Reading everything, so you can pretend you did.": "Ich lese alles, damit du so tun kannst, als hättest du es gelesen.",
  "Reading it…": "Wird gelesen…",
+ "Reading the first {} of {} emails…": "Ich lese die ersten {} von {} E-Mails…",
+ "Reading the first {} of {} messages…": "Ich lese die ersten {} von {} Nachrichten…",
  "Reading the last days again to fill a gap.": "Liest die letzten Tage erneut, um eine Lücke zu füllen.",
  "Reading your mail, first to-dos in a few minutes": "Deine E-Mails werden gelesen, die ersten Aufgaben kommen in ein paar Minuten",
  "Reading your notes and conversations for the first time…": "Liest deine Notizen und Unterhaltungen zum ersten Mal…",
+ "Reading {} emails…": {
+  "one": "Ich lese {} E-Mail…",
+  "other": "Ich lese {} E-Mails…"
+ },
+ "Reading {} messages…": {
+  "one": "Ich lese {} Nachricht…",
+  "other": "Ich lese {} Nachrichten…"
+ },
  "Reading {} of {} emails…": "Ich lese {} von {} E-Mails…",
  "Reading {} of {} messages…": "Ich lese {} von {} Nachrichten…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Liest Accounts, Kontakte, E-Mails und Meetings. Ändert nichts.",

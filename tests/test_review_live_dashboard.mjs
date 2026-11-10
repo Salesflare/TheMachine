@@ -36,7 +36,7 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);
  const banner=page.locator('#suggestions .first-look-empty');
  await banner.waitFor();
- assert.match(await banner.textContent(),/Taking a first look at your last 7 days.*Reading 12 of 40 messages….*To-dos show up here as they come\.$/);
+ assert.match(await banner.textContent(),/Taking a first look at your last 7 days.*Read 12 of 40 messages\. Reading the next 28….*To-dos show up here as they come\.$/);
  assert.equal(await page.locator('#suggestions').textContent().then(t=>t.includes('All clear')),false);
  assert.equal(await page.locator('#first-look').isHidden(),true);
  const top=page.locator('#review-live .review-live');

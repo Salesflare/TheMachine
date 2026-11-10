@@ -3645,15 +3645,27 @@
  },
  "Read {} from the past week.": "Ik heb {} van de afgelopen week gelezen.",
  "Read {} from the past week: {}.": "Ik heb {} van de afgelopen week gelezen: {}.",
+ "Read {} of {} emails. Reading the next {}…": "{} van {} e-mails gelezen. Nu de volgende {}…",
+ "Read {} of {} messages. Reading the next {}…": "{} van {} berichten gelezen. Nu de volgende {}…",
  "Read {}, all automated.": "{} gelezen, allemaal automatisch.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Alleen lezen: logs en instellingen, opgeschoond zoals het rapport. Het stopt vanzelf.",
  "Read-only. Turn it off any time.": "Alleen lezen. Zet het uit wanneer je wilt.",
  "Reading docs needs its own OK": "Documenten lezen vraagt een eigen OK",
  "Reading everything, so you can pretend you did.": "Ik lees alles, zodat jij kunt doen alsof.",
  "Reading it…": "Lezen…",
+ "Reading the first {} of {} emails…": "Ik lees de eerste {} van {} e-mails…",
+ "Reading the first {} of {} messages…": "Ik lees de eerste {} van {} berichten…",
  "Reading the last days again to fill a gap.": "Leest de laatste dagen opnieuw om een gat te vullen.",
  "Reading your mail, first to-dos in a few minutes": "Je mail wordt gelezen, eerste to-do's over een paar minuten",
  "Reading your notes and conversations for the first time…": "Leest je notities en gesprekken voor het eerst…",
+ "Reading {} emails…": {
+  "one": "Ik lees {} e-mail…",
+  "other": "Ik lees {} e-mails…"
+ },
+ "Reading {} messages…": {
+  "one": "Ik lees {} bericht…",
+  "other": "Ik lees {} berichten…"
+ },
  "Reading {} of {} emails…": "Ik lees {} van {} e-mails…",
  "Reading {} of {} messages…": "Ik lees {} van {} berichten…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Leest accounts, contacten, e-mails en afspraken. Verandert niets.",

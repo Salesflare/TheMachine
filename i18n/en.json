@@ -3645,15 +3645,27 @@
  },
  "Read {} from the past week.": "Read {} from the past week.",
  "Read {} from the past week: {}.": "Read {} from the past week: {}.",
+ "Read {} of {} emails. Reading the next {}…": "Read {} of {} emails. Reading the next {}…",
+ "Read {} of {} messages. Reading the next {}…": "Read {} of {} messages. Reading the next {}…",
  "Read {}, all automated.": "Read {}, all automated.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Read-only logs and settings, scrubbed like the report. It ends by itself.",
  "Read-only. Turn it off any time.": "Read-only. Turn it off any time.",
  "Reading docs needs its own OK": "Reading docs needs its own OK",
  "Reading everything, so you can pretend you did.": "Reading everything, so you can pretend you did.",
  "Reading it…": "Reading it…",
+ "Reading the first {} of {} emails…": "Reading the first {} of {} emails…",
+ "Reading the first {} of {} messages…": "Reading the first {} of {} messages…",
  "Reading the last days again to fill a gap.": "Reading the last days again to fill a gap.",
  "Reading your mail, first to-dos in a few minutes": "Reading your mail, first to-dos in a few minutes",
  "Reading your notes and conversations for the first time…": "Reading your notes and conversations for the first time…",
+ "Reading {} emails…": {
+  "one": "Reading {} email…",
+  "other": "Reading {} emails…"
+ },
+ "Reading {} messages…": {
+  "one": "Reading {} message…",
+  "other": "Reading {} messages…"
+ },
  "Reading {} of {} emails…": "Reading {} of {} emails…",
  "Reading {} of {} messages…": "Reading {} of {} messages…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Reads accounts, contacts, emails and meetings. Changes nothing.",

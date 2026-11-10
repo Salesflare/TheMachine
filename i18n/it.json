@@ -3645,15 +3645,27 @@
  },
  "Read {} from the past week.": "Ho letto {} dell’ultima settimana.",
  "Read {} from the past week: {}.": "Ho letto {} dell’ultima settimana: {}.",
+ "Read {} of {} emails. Reading the next {}…": "Lette {} email su {}. Ora le {} successive…",
+ "Read {} of {} messages. Reading the next {}…": "Letti {} messaggi su {}. Ora i {} successivi…",
  "Read {}, all automated.": "Letti {}, tutti automatici.",
  "Read-only logs and settings, scrubbed like the report. It ends by itself.": "Solo lettura: log e impostazioni, ripuliti come il report. Finisce da solo.",
  "Read-only. Turn it off any time.": "Solo lettura. Disattivalo quando vuoi.",
  "Reading docs needs its own OK": "Leggere i documenti richiede un OK a parte",
  "Reading everything, so you can pretend you did.": "Leggo tutto, così puoi fingere di averlo fatto tu.",
  "Reading it…": "Lettura…",
+ "Reading the first {} of {} emails…": "Sto leggendo le prime {} email su {}…",
+ "Reading the first {} of {} messages…": "Sto leggendo i primi {} messaggi su {}…",
  "Reading the last days again to fill a gap.": "Rilegge gli ultimi giorni per colmare un vuoto.",
  "Reading your mail, first to-dos in a few minutes": "Leggo la tua posta, le prime attività arrivano tra pochi minuti",
  "Reading your notes and conversations for the first time…": "Lettura delle tue note e conversazioni per la prima volta…",
+ "Reading {} emails…": {
+  "one": "Sto leggendo {} email…",
+  "other": "Sto leggendo {} email…"
+ },
+ "Reading {} messages…": {
+  "one": "Sto leggendo {} messaggio…",
+  "other": "Sto leggendo {} messaggi…"
+ },
  "Reading {} of {} emails…": "Sto leggendo {} email su {}…",
  "Reading {} of {} messages…": "Sto leggendo {} messaggi su {}…",
  "Reads accounts, contacts, emails and meetings. Changes nothing.": "Legge account, contatti, email e riunioni. Non modifica nulla.",

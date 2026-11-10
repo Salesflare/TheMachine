@@ -32,8 +32,9 @@ QUICK_LOOK_HOURS, QUICK_LOOK_SIGNALS, FIRST_LOOK_RETRY_MIN_SECONDS = PREVIEW_DAY
 # percent of the 5-hour window (a sign-in without usage windows, like an API key: FIRST_DIG_SIGNALS signals reviewed,
 # about the same work).
 FIRST_DIG_CARDS, FIRST_DIG_USAGE, FIRST_DIG_SIGNALS = 3, 60, 300
-# The dashboard's bar while it digs (App.first_dig_live): one count over the whole week, moving a signal at a time at the
-# pace this install's first batches took (this many seconds per signal before one finished)
+# The dashboard's bar while it digs (App.first_dig_live): one count over the whole week. The count is what its batches
+# saved; between two saves only the bar moves, a signal's width at a time at the pace this install's first batches took
+# (this many seconds per signal before one finished)
 FIRST_DIG_PACE_SECONDS = 6
 FIRST_DIG_HOURS = 24  # a first review that started longer ago than this digs no more (an install from before it dug)
 # The first look's ending on the dashboard (App.first_look_done): shown this long after it stopped digging. What its
