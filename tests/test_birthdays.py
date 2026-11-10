@@ -7,6 +7,7 @@ import datetime as dt
 import importlib.util
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -106,6 +107,12 @@ class Birthdays(unittest.TestCase):
                             ('routine_spawn', lambda s, target, run_id: target(run_id)), ('cleanup_can_mark', lambda s, account: False)):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(ms_graph, 'call', self.graph_call); p.start(); self.addCleanup(p.stop)
+        # The run's Facebook offer runs inline, with no shared browser (test_birthdays_facebook.py covers it): in a thread it
+        # could still open the store while the temp dir is removed, and it would ask the desktop's own browser
+        self.app.birthdays_facebook_inline = True
+        p = patch.object(a.App, 'birthdays_facebook_base', lambda s: None); p.start(); self.addCleanup(p.stop)
+        threads = set(threading.enumerate())
+        self.addCleanup(lambda: self.assertEqual([t.name for t in set(threading.enumerate()) - threads if t.is_alive()], []))
         self.today = dt.datetime.now(local_tz()).date()
         with self.store.connect() as db:
             graph.ensure(db)
