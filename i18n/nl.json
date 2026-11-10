@@ -6933,6 +6933,7 @@
   "other": "{} uitnodigingen gemaakt. Overgeslagen: {}."
  },
  "{} is Careful: answers wait for you and leave out names.": "{} staat op Voorzichtig: antwoorden wachten op jou en laten namen weg.",
+ "{} is a working name. Save the file in this job's attachments folder under the name the recipient should see: the source file's own name, or the name the earlier ones had (in Drive, or on the last email).": "{} is een werknaam. Bewaar het bestand in de bijlagenmap van deze taak onder de naam die de ontvanger moet zien: de eigen naam van het bronbestand, of de naam die de vorige hadden (in Drive, of bij de laatste e-mail).",
  "{} is already on this to-do": "{} staat al op deze to-do",
  "{} is based in {}": "{} zit in {}",
  "{} is connected. Adding its notifications…": "{} is verbonden. Meldingen worden toegevoegd…",
@@ -7392,6 +7393,7 @@
  "{} won’t get a ping. Let them know.": "{} krijgt geen melding. Laat het even weten.",
  "{} works at {}": "{} werkt bij {}",
  "{} works here": "{} werkt hier",
+ "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.": "{} zou niet openen: {}. Maak het opnieuw vanaf het origineel met assistant xlsx-set (Excel), controleer het met assistant office-check en voeg het dan toe.",
  "{} writing rules": {
   "one": "{} schrijfregel",
   "other": "{} schrijfregels"
