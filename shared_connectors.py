@@ -60,6 +60,47 @@ def shareable(account):
     return isinstance(account, dict) and account.get('service') in SHAREABLE and (account.get('transport') or 'api') in TRANSPORTS
 
 
+def _received(account):
+    shared = account.get('shared')
+    return bool(shared) and not (isinstance(shared, dict) and shared.get('origin'))
+
+
+def covered_by(accounts, account):
+    """The id of the owner's own connection that reads the same workspace (Intercom) or Stripe account as this one from a
+    Fleet share, else None. A covered share rests: no sync of its own, so one workspace never comes in twice (double
+    signals, double to-dos), and what it brought in moves to that own connection (merge_covered), which can also reply."""
+    if not isinstance(account, dict) or account.get('service') not in SHAREABLE or not _received(account):
+        return None
+    key = SHAREABLE[account['service']]['identity']
+    identity = str(account.get(key) or '')
+    if not identity:
+        return None
+    return next((a['id'] for a in accounts or [] if isinstance(a, dict) and a.get('id') and a.get('id') != account.get('id')
+                 and a.get('service') == account['service'] and not _received(a) and not a.get('retired')
+                 and a.get('signals') is not False and str(a.get(key) or '') == identity), None)
+
+
+# Rows that keep a connection's history of its own reads: they stay with the share (it may read again one day)
+OWN_HISTORY = ('checkpoints', 'sync_activity', 'sync_daily', 'activity_accounts', 'history_backfill')
+
+
+def merge_covered(accounts, store):
+    """What a covered share (covered_by) brought in becomes the owner's own connection's, at each start (nothing is left
+    to move after the first). A conversation both read is kept once: the share's copy, which to-dos, promises and the
+    graph point at already, under the own connection's id; the own connection's later copy of it goes, with what was
+    derived from it (search vectors, graph links), and a to-do made from it points at the kept copy instead. Nothing the
+    owner wrote or decided is deleted. Returns {share id: messages moved}."""
+    pairs = [(a['id'], own) for a in accounts or [] if isinstance(a, dict) and (own := covered_by(accounts, a))]
+    moved = {}
+    if not pairs:
+        return moved
+    for shared_id, own_id in pairs:
+        count = store.merge_account(shared_id, own_id, OWN_HISTORY)
+        if count:
+            moved[shared_id] = count  # logged by the Store
+    return moved
+
+
 def _now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 

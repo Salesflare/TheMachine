@@ -39,6 +39,8 @@ In een Werk-Fleet koppelt een eigenaar of beheerder Stripe één keer en deelt h
 
 De Machines van teamgenoten lezen het dan ook, alleen lezen. Onder Koppelingen staat wie het deelde, en alleen de beheerders van de Fleet kunnen het wijzigen of stoppen. Je Machine vernieuwt hun toegang elk uur, dus als hij langer uit staat, pauzeert hun Stripe tot hij terug is. Niemand krijgt ooit je login zelf. Details: [Fleets](fleet.md).
 
+Een teamgenoot die hetzelfde Stripe-account ook zelf koppelt, leest het één keer: de gedeelde rust.
+
 Een Stripe-koppeling via een andere dienst, met één sleutel voor veel koppelingen, kan niet gedeeld worden: die sleutel opent meer dan Stripe. Koppel Stripe dan apart voor het team.
 
 ## Verwijderen

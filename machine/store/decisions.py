@@ -1189,6 +1189,41 @@ class DecisionsStore:
                 LOG.info('connect resume skipped suggestion=%s error=%s', job['suggestion_id'], error)
         return resumed
 
+    def redraft_intercom_emails(self):
+        """An open to-do whose reply was drafted as an email because Intercom couldn't reply here (next_actions
+        INTERCOM_FALLBACK: shared to read only, replies off, not connected) is drafted again, once, when its conversation's
+        Intercom can reply now (the owner signed in with Intercom themselves). Its text and draft are written anew, so it no
+        longer says Intercom can't; the new reply waits for the owner's Send like any draft. Returns the to-dos it started."""
+        repliable = {a['id'] for a in getattr(self, 'accounts', None) or [] if a.get('service') == 'intercom' and next_actions.intercom_replies_on(a)}
+        if not repliable:
+            return []
+        started = []
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("SELECT s.id,s.next_action,s.account_ids FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id "
+                              "WHERE s.status IN ('prepared','accepted') AND p.status='done' AND s.next_action IS NOT NULL "
+                              "AND NOT EXISTS(SELECT 1 FROM decisions d WHERE d.id='intercom-replies:'||s.id) "
+                              "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','rejected'))").fetchall()
+            for row in rows:
+                try:
+                    choices, accounts = next_actions.actions(row['next_action']), set(json.loads(row['account_ids'] or '[]'))
+                except (ValueError, TypeError):
+                    continue
+                if not accounts & repliable or not any(a.get('kind') == 'email' and a.get('intercom_fallback') for a in choices):
+                    continue
+                decision_id = 'intercom-replies:' + row['id']
+                db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                           (decision_id, row['id'], 'prepare_ahead', '', 'intercom_replies', now()))
+                db.execute("UPDATE suggestions SET status='accepted' WHERE id=?", (row['id'],))
+                db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status='done'", (now(), row['id']))
+                self.queue_preparation(db, row['id'], decision_id)
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+                started.append(row['id'])
+            db.execute('COMMIT')
+        for sid in started:
+            LOG.info('intercom replies on: drafting again suggestion=%s', sid)
+        return started
+
     def preparation_blocked(self, suggestion_id, job_id, reason, details=None, note_kind=None, questions=None, move_to=None, use_event_ids=None,
                             connect=None):
         """A run that can't go on. move_to: it needs the to-do in another of the owner's areas (todo_areas.py), such as Work

@@ -39,6 +39,8 @@ In einer Work Fleet verbindet ein Owner oder Admin Stripe einmal und teilt es mi
 
 Die Machines der Teammitglieder lesen es auch, nur lesend. Unter Verbindungen steht, wer es geteilt hat, und nur die Admins der Fleet können es ändern oder stoppen. Deine Machine erneuert ihren Zugriff jede Stunde. Ist sie länger aus, pausiert ihr Stripe, bis sie wieder da ist. Niemand bekommt je deine Anmeldung selbst. Details: [Fleets](fleet.md).
 
+Ein Teammitglied, das dasselbe Stripe-Konto auch selbst verbindet, liest es einmal: Das geteilte ruht.
+
 Eine Stripe-Verbindung über einen anderen Dienst mit einem Schlüssel für viele Verbindungen kann nicht geteilt werden: Dieser Schlüssel öffnet mehr als Stripe. Verbinde Stripe stattdessen einzeln für das Team.
 
 ## Entfernen

@@ -20,7 +20,9 @@ A to-do from Intercom shows the customer, and **Read message** opens the convers
 
 Only conversations assigned to you, or to no one yet, become to-dos. When a teammate takes one in Intercom, its to-do closes by itself, with **Undo**. On an Intercom shared with you, your conversations are the ones assigned to the teammate you write as.
 
-When your Machine can't reply in Intercom (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why and asks **Send by email instead?** To reply in Intercom, tap **Connect your own Intercom** on the to-do and sign in. Nothing goes out before you send it.
+When your Machine can't reply in Intercom (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why and asks **Send by email instead?** To reply in Intercom, tap **Connect your own Intercom** on the to-do and sign in. The to-do is then written again as a reply in Intercom. Nothing goes out before you send it.
+
+Your own Intercom and one shared with you for the same workspace don't both read: the shared one rests, and its conversations move to yours, each once.
 
 ## Connect it
 

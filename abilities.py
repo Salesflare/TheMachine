@@ -87,5 +87,6 @@ def refuse(config, account_id):
     if account is None or not can_act(account) or actions_on(account):
         return None
     import i18n  # noqa: PLC0415
+    from machine import names  # noqa: PLC0415
     return i18n.t('Can do things is off for {}. Turn it on under Connections first.',
-                  str(account.get('display_name') or account.get('email') or account_id))
+                  names.account_name(account, (config or {}).get('accounts') or (), account_id))

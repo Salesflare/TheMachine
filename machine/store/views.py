@@ -50,7 +50,7 @@ from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
 from machine.store import graph_identifiers
-from machine import stamps
+from machine import names, stamps
 from machine.store.cards import source_kind, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
 from machine.store.decisions import handoff_wait, send_retry_ok, skill_update_view, UNDO_MERGE
@@ -65,6 +65,7 @@ import next_actions
 import own_addresses
 import recurring
 import routine_changes
+import shared_connectors
 import skills
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
 import still_needed
@@ -85,6 +86,14 @@ CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'd
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
 DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
+
+
+
+def covered_name(accounts, account):
+    """The name of the owner's own connection that reads what this Fleet share reads, so the share rests; else None."""
+    own = shared_connectors.covered_by(accounts, account)
+    found = next((a for a in accounts if a.get('id') == own), None) if own else None
+    return names.account_name(found, accounts) if found else None
 
 
 def skill_labels(cluster):
@@ -848,7 +857,9 @@ class ViewsStore(ConversationStore):
                                              'service': account.get('service', 'gmail'),
                                              'poll_seconds':account.get('poll_seconds',300),
                                              'read_window': read_window(account),
-                                             'display_name': account.get('display_name') or account.get('email') or UNNAMED.get(account.get('service')) or account['id'],
+                                             'display_name': names.account_name(account, accounts, UNNAMED.get(account.get('service'))),
+                                             # a Fleet share the owner also connected themselves rests (shared_connectors.covered_by)
+                                             'covered_by': covered_name(accounts, account),
                                              **(dict(row) if row else {}), **dict(counts), **channel_health,
                                              **(silent_failure(db, account, row) or {}), 'backfill': history_store.progress(db, [account['id']]).get(account['id'])})
             # Newest first: the dashboard shows the top few and says when each happened.

@@ -20,6 +20,7 @@ from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
 from machine.sources.android import android_app_name
 from machine.sources.calendar import calendar_keys, calendar_owned
+from machine import names as display_names
 from machine.sources.connectors import UNNAMED
 from machine.sources.exclusions import default_exclusions
 from machine.app.recap_settings import recap_settings
@@ -252,7 +253,7 @@ def weekly_recap_message(store, config, current=None):
     in_week = lambda day: tomorrow.isoformat() <= str(day)[:10] < (tomorrow + dt.timedelta(days=7)).isoformat()
     root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
     link = lambda text, card: f'[{recap_escape(text)}]({root}#chat={card})' if root and card else recap_escape(text)
-    names = {x['id']: x.get('display_name') or x.get('email') or UNNAMED.get(x.get('service')) or x['id'] for x in config.get('accounts', [])}
+    names = {x['id']: display_names.account_name(x, config.get('accounts', []), UNNAMED.get(x.get('service'))) for x in config.get('accounts', [])}
     with store.connect() as db:
         batches = [json.loads(r[0]) for r in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=?", (since,))]
         reviewed = sum(sum(1 for i in items if not i.get('deferred') and not i.get('excluded')) for items in batches)

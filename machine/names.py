@@ -55,6 +55,29 @@ def service_name(key, default=None):
     return key.replace('_', ' ').replace('-', ' ').capitalize()
 
 
+# A connection named after a workspace or business rather than an address: where that name is kept
+WORKSPACE_FIELDS = {'intercom': 'workspace_name', 'stripe': 'account_name'}
+WORKSPACE_IDS = {'intercom': 'workspace_id', 'stripe': 'stripe_account'}  # which workspace or account it is
+
+
+def account_name(account, accounts=(), default=None):
+    """What a connection is called on screen: its own name or address; for one without (an Intercom or Stripe shared
+    through a Fleet) what it is, 'Intercom', with its workspace when another connection of that kind reads another
+    workspace ('Intercom · Acme'). Else default, else its id: never a raw key where a name can be found."""
+    account = account or {}
+    own = str(account.get('display_name') or account.get('email') or '').strip()
+    if own:
+        return own
+    service = account_service(account)
+    if service in WORKSPACE_FIELDS:
+        workspace = ' '.join(str(account.get(WORKSPACE_FIELDS[service]) or '').split())[:60]
+        key = WORKSPACE_IDS[service]
+        others = any(isinstance(a, dict) and a.get('id') != account.get('id') and account_service(a) == service
+                     and a.get(key) and a.get(key) != account.get(key) for a in accounts or ())
+        return f'{SERVICES[service]} · {workspace}' if workspace and others else SERVICES[service]
+    return default if default is not None else str(account.get('id') or '')
+
+
 def agent_name(tool, default='The agent'):
     """'codex' -> 'Codex': the agent a job was handed to, never its command-line name."""
     tool = str(tool or '')

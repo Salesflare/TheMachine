@@ -8,6 +8,7 @@ function connectorHealth(c){
 const w=c.read_window,again=w?.reads_again_at&&Date.parse(w.reads_again_at)>Date.now()?w.reads_again_at:null,
  resting={tone:'mint',text:again&&t('Reads again at {}',fmtHM(again)),resting:true};
 if(c.salesflare?.stopped)return {tone:'muted',text:'Stopped'};
+if(c.covered_by)return {tone:'muted',text:t('Rests while your own connection {} reads the same.',c.covered_by),resting:true};  // a Fleet share the owner also connected
 if(c.error==='docs_not_connected')return {tone:'orange',text:'Waiting for your OK to read docs'};
 if(c.error&&/_signed_out$/.test(c.error))return {tone:'orange',text:'Signed out of '+service(c.service)};
 if(TELEGRAM_STOP[c.error])return {tone:'orange',text:TELEGRAM_STOP[c.error]};

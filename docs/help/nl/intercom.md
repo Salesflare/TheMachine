@@ -20,7 +20,9 @@ Een to-do uit een Intercom-gesprek toont waar die vandaan komt: **Bericht lezen*
 
 Alleen gesprekken die aan jou of nog aan niemand zijn toegewezen, worden to-do's, ook die in een teaminbox zonder iemand erop. Neemt een teamgenoot een gesprek over in Intercom, dan sluit de open to-do vanzelf, met **Ongedaan maken**. Bij een Intercom die met je gedeeld is, zijn jouw gesprekken die van de beheerder waarmee je schrijft.
 
-Kan Intercom niet antwoorden vanaf je Machine (alleen-lezen met je gedeeld, antwoorden niet aangezet, of niet gekoppeld), dan gaat het concept per e-mail. De to-do zegt waarom, en de review vraagt **In plaats daarvan per e-mail versturen?** Wil je zelf in Intercom antwoorden, tik dan op **Koppel je eigen Intercom** op de to-do en log in. Er gaat niets weg voor je het verstuurt.
+Kan Intercom niet antwoorden vanaf je Machine (alleen-lezen met je gedeeld, antwoorden niet aangezet, of niet gekoppeld), dan gaat het concept per e-mail. De to-do zegt waarom, en de review vraagt **In plaats daarvan per e-mail versturen?** Wil je zelf in Intercom antwoorden, tik dan op **Koppel je eigen Intercom** op de to-do en log in. Daarna wordt de to-do opnieuw geschreven als antwoord in Intercom. Er gaat niets weg voor je het verstuurt.
+
+Je eigen Intercom en een gedeelde voor dezelfde workspace lezen niet allebei: de gedeelde rust, en zijn gesprekken gaan naar de jouwe, elk één keer.
 
 ## Koppelen
 
