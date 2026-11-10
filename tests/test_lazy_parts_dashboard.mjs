@@ -10,7 +10,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // for them), and they're fetched after that. Calendar, Learning and Help opened while they're on their way open once
 // they're in, and then Help, the game, Calendar and Learning work as before. The Graph's rules are in before its pages
 // draw, and the Fleet tab draws once its views are in. Settings opened while its panels are on their way opens once
-// they're in, drawn (Skills and Connected AIs too). A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
+// they're in, drawn (Skills and Connected AIs too). They're fetched one at a time, not all at once with the page's data. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
 // draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part.
@@ -47,8 +47,9 @@ try{
   // Held back: the page loads (the load event doesn't wait for them) and is drawn whole, then asks for each of them
   let release;hold=new Promise(r=>release=r);asked.length=0;
   await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
-  // (held, a browser asks for at most 6 at a time from one host: the rest are asked for as those come in)
-  for(const until=Date.now()+20000;asked.length<Math.min(6,Object.keys(files).length);){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
+  // one at a time: the next is asked for once the one before is in (it's held, so none other comes)
+  for(const until=Date.now()+20000;!asked.length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
+  await new Promise(r=>setTimeout(r,1500));assert.equal(asked.length,1,'one part at a time');
   assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart),'undefined'.repeat(5));
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
@@ -69,9 +70,10 @@ try{
   await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet')&&document.querySelector('#health-tabs').children.length>0&&document.querySelector('#connectors').children.length>0);
   assert.deepEqual(await graphRules(),[true,'grid']);
   await p.evaluate(()=>showTab('routines'));await p.locator('#routines-view .rt-empty').waitFor();
-  assert.equal(await p.evaluate(()=>typeof talkStart),'function');
+  await p.waitForFunction(()=>typeof talkStart==='function');  // in by itself, in its turn
   await p.evaluate(()=>{document.querySelector('#help-panel').close();showTab('inbox')});
   // In: Help opens, and the fourth poke's game plays
+  for(const until=Date.now()+20000;asked.length<Object.keys(files).length;){assert.ok(Date.now()<until,'the rest are asked for, one after another');await new Promise(r=>setTimeout(r,50))}
   assert.deepEqual(asked.sort(),Object.keys(files).sort(),'each part is asked for once');
   await p.evaluate(()=>document.querySelector('#open-help').click());await p.locator('#help-panel[open]').waitFor();
   await p.evaluate(()=>document.querySelector('#help-panel').close());

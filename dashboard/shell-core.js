@@ -133,7 +133,9 @@ const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not ye
 // Parts that load when first needed (dashboard_parts.py LAZY: Calendar, the game, the Graph's pages, Help, Learning,
 // Routines, Talk's session and the rest, each with its rules). The served page names their files in LAZY_FILES. The page is drawn without them; once it's
 // drawn whole and the browser is idle after
-// the load event, lazySoon() fetches them all, so they're there before they're asked for and never slow the start. A
+// the load event, lazySoon() fetches them one at a time, each once the browser is idle again, so they're there before
+// they're asked for and never slow the start (all at once, they took the connections the page's own data was waiting
+// for). A tab opened before its part is in asks for it at once (lazyPart), whatever the queue. A
 // page with every part inline (the tests, the demo) has none to load. lazyPart(group): that group's file, loaded once
 // (a failed load is tried again on the next call). lazyIn(group): that group is there (or has no file of its own).
 // lazyRun(group,fn): fn now when the group is there, else once it is (opening its tab loads it at once).
@@ -144,7 +146,8 @@ function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[
   again=()=>navigator.onLine!==false&&Date.now()<until?setTimeout(load,3000):no(),
   load=()=>{const s=document.createElement('script');s.src=file;s.onload=()=>{lazyDone[group]=true;ok()};
   s.onerror=()=>{s.remove();fetch(file,{cache:'no-store'}).then(r=>r.status>=502&&r.status<=504?again():no(),again)};document.head.append(s)};load()})}
-const lazyAll=()=>lazyAllRun??=Promise.allSettled(Object.keys(self.LAZY_FILES||{}).map(lazyPart));
+const lazyIdle=()=>new Promise(r=>self.requestIdleCallback?requestIdleCallback(r,{timeout:3000}):setTimeout(r,200));
+const lazyAll=()=>lazyAllRun??=(async()=>{for(const group of Object.keys(self.LAZY_FILES||{})){await lazyIdle();await lazyPart(group).catch(()=>{})}})();
 function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let gone=false;
  const go=()=>{if(gone)return;gone=true;self.requestIdleCallback?requestIdleCallback(()=>lazyAll(),{timeout:2000}):setTimeout(lazyAll,200)};
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
