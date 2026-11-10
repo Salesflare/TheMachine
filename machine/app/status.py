@@ -336,6 +336,10 @@ class StatusApp:
             result['whats_new'] = self.store.whats_new()
         except (sqlite3.Error, ValueError, TypeError) as error:
             LOG.warning('whats new error=%s', type(error).__name__); result['whats_new'] = None
+        try:  # a milestone on done to-dos, celebrated once on To-dos (machine/store/done_milestones.py)
+            result['done_milestone'] = self.store.done_milestone((result.get('done_counts') or {}).get('all'))
+        except (sqlite3.Error, ValueError, TypeError) as error:
+            LOG.warning('done milestone error=%s', type(error).__name__); result['done_milestone'] = None
         result['team_learnings'] = self.learnings_view()
         result['security'] = self.security_view()
         for suggestion in result.get('suggestions', []):

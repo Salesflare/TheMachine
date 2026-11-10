@@ -47,6 +47,7 @@ BRAND_ASSETS = {
     '/brand/wave-hand.webp': ROOT / 'brand/wave-hand.webp',
     '/brand/laugh.webp': ROOT / 'brand/laugh.webp',
     '/brand/party.webp': ROOT / 'brand/party.webp',
+    '/brand/party-512.webp': ROOT / 'brand/party-512.webp',  # the milestone image to share, drawn at 1080 px
     # Home-screen app icons; maskable ones keep the robot inside Android's crop.
     '/brand/app-icon-192.png': ROOT / 'brand/app-icon-192.png',
     '/brand/app-icon-maskable-192.png': ROOT / 'brand/app-icon-maskable-192.png',

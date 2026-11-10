@@ -65,6 +65,7 @@ FEATURES = {
     'phone-app': ('manifest.webmanifest', '"name"'),
     'mobile-app': ('notify.py', 'def app_push'),
     'weekly-recap': ('machine/app/recap.py', 'def weekly_recap'),
+    'milestones': ('machine/store/done_milestones.py', 'LEVELS'),
     'enrichment': ('enrichment.py', 'def '),
     'network': ('network.py', 'def '),
     'friends': ('friends.py', 'def '),

@@ -1,4 +1,5 @@
 [
+ "\"Source Serif 4\",Georgia,serif",
  "${graphBoards.length>1?",
  "${graphLocal?'':",
  "${n&&!graphNode&&words?",
@@ -94,6 +95,7 @@
  "Import {}{}",
  "Imported: {} new, {} updated${r.skipped?",
  "Initech, rival.example",
+ "Inter,system-ui,sans-serif",
  "It doesn’t look done.",
  "It doesn’t wait for a decision.",
  "It has a draft ready. Sending goes through ask_to_send; changes through ask_chat.",
@@ -429,6 +431,7 @@
  "the original",
  "the site",
  "the source",
+ "the-machine-{}-todos{}.png",
  "their time",
  "this account",
  "this file",
