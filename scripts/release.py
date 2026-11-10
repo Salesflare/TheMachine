@@ -293,6 +293,12 @@ def update(args):
     undo_cut_off()
     if git('merge-base', '--is-ancestor', sha, 'HEAD', check=False).returncode == 0:
         print(f'Already on {tag} or newer.')
+        if args.install and not busy():
+            # A changed bridge that could not go into OpenClaw last time (its memory index was running) is tried
+            # again; with none waiting the installer does nothing.
+            code = subprocess.run([str(ROOT / 'install.sh'), '--non-interactive', '--if-bridge-waits'], cwd=ROOT).returncode
+            if code:
+                raise SystemExit(f'./install.sh failed (exit {code}): the bridge that was waiting is still not in OpenClaw.')
         return
     if args.install and busy():
         print(f'{tag} is ready, but something is running: trying again next time.')

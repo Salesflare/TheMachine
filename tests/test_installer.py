@@ -7,6 +7,7 @@ from unittest import mock
 import installer
 
 ROOT = Path(__file__).resolve().parent.parent
+REINDEX_RUNNING = installer.reindex_running  # the real one: InstallerTest.setUp turns it off for every other test
 STUB = '''#!/bin/sh
 echo "{name} $*" >> "{log}"
 if [ "$*" = "$ASSISTANT_TEST_FAIL" ]; then echo "Synthetic failure" >&2; exit 1; fi
@@ -412,6 +413,7 @@ class InstallerTest(unittest.TestCase):
                 mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
                 mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60', 'ASSISTANT_SWAP_WAIT': wait, 'ASSISTANT_PLUGIN_RETRY_WAIT': '0'}):
             ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp, restart=restart)
+        self.waiting = (tmp / installer.BRIDGE_WAITING).exists()
         return ok, calls, '\n'.join(said), stamp.exists(), slept.call_count
 
     RESTART = 'systemctl --user restart openclaw-gateway.service'
@@ -502,12 +504,13 @@ class InstallerTest(unittest.TestCase):
         self.assertIn('going on', said)
         self.assertIn('plugins reload', calls)
         ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0', restart=False)
-        self.assertFalse(ok)
+        self.assertEqual(ok, installer.WAITING)  # the bridge waits; the install goes on
         self.assertFalse(stamped)  # not reloaded is not installed: the next run does it
+        self.assertTrue(self.waiting)
         self.assertIn('plugins install', calls)
         self.assertFalse([c for c in calls if c.startswith(('plugins reload', 'systemctl'))], calls)
         self.assertIn('linked but not reloaded', said)
-        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertIn('the next nightly update tries again by itself', said)
         self.assertNotIn('openclaw memory status', said)
 
     def test_the_reload_that_brings_models_back_waits_for_the_same_quiet(self):
@@ -527,12 +530,123 @@ class InstallerTest(unittest.TestCase):
         self.assertIn('going on', said)
         self.assertIn('plugins install', calls)
         ok, calls, said, stamped, _ = self.swap(busy=[True] * 50, wait='0', restart=False)
-        self.assertFalse(ok)
+        self.assertEqual(ok, installer.WAITING)  # not a failed install: the bridge waits, everything else goes on
         self.assertFalse(stamped)
+        self.assertTrue(self.waiting)  # the nightly update tries again
         self.assertFalse([c for c in calls if c.startswith(('plugins', 'systemctl'))], calls)
         self.assertIn('nothing in OpenClaw was changed', said)
-        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertIn('Everything else is updated', said)
+        self.assertIn('the next nightly update tries again by itself', said)
         self.assertNotIn('openclaw memory status', said)  # that command does not show the run that indexes
+        ok, _, _, stamped, _ = self.swap(busy=[True] * 50, wait='0', unit=None)  # no Gateway service to restart: the same
+        self.assertEqual((ok, stamped, self.waiting), (installer.WAITING, False, True))
+        ok, _, _, stamped, _ = self.swap()  # a swap that goes in leaves nothing waiting
+        self.assertEqual((ok, stamped, self.waiting), (True, True, False))
+        ok, _, _, stamped, _ = self.swap(fail=['install'])  # one that failed is tried again by the nightly update too
+        self.assertEqual((ok, stamped, self.waiting), (False, False, True))
+
+    def test_a_bridge_that_waits_for_the_index_lets_the_rest_of_the_install_go_on(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        paths = mock.Mock(data=Path(folder.name) / 'data')
+        with mock.patch.object(installer, 'install_node_packages'), mock.patch.object(installer, 'install_plugin', return_value=installer.WAITING), \
+                mock.patch.object(installer, 'quiet_openclaw') as quiet, mock.patch.object(installer, 'gateway_keep_retrying'), \
+                mock.patch.object(installer, 'memory_rules'):
+            self.assertTrue(installer.prepare({'node': 'node'}, paths, False, True, False))
+        quiet.assert_called_once()
+
+    def test_a_rebuild_of_the_memory_index_counts_as_running_while_its_database_is_written(self):
+        # A real Machine, 2026-11-10: the embedding server was quiet for a minute, the rebuild went on from its cache,
+        # and the swap failed on OpenClaw's 5 second stop.
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        agent = Path(folder.name) / 'agents/main/agent'
+        agent.mkdir(parents=True)
+        (agent / 'openclaw-agent.sqlite').write_text('the real one')
+        still = subprocess.CompletedProcess([], 0, '  10     1 openclaw-gateway gateway run', '')  # no embedding server at all
+        with mock.patch.dict(os.environ, {'OPENCLAW_STATE_DIR': folder.name}), mock.patch.object(installer, 'run', return_value=still), \
+                mock.patch.object(installer, 'reindex_running', REINDEX_RUNNING):
+            os.environ.pop('ASSISTANT_EMBEDDING_PORTS', None)
+            os.environ.pop('ASSISTANT_REINDEX_FRESH', None)
+            self.assertFalse(installer.reindex_running())
+            self.assertIsNone(installer.index_busy())  # no rebuild, nothing to ask: as before
+            shadow = agent / 'openclaw-agent.sqlite.memory-reindex-0a1b2c3d-wal'
+            shadow.write_text('rows')
+            self.assertTrue(installer.reindex_running())
+            self.assertIs(installer.index_busy(), True)
+            old = shadow.stat().st_mtime - 50  # as long between two writes as a running rebuild was seen to take
+            os.utime(shadow, (old, old))
+            self.assertTrue(installer.reindex_running())
+            old -= 3600  # left behind by a Gateway that stopped mid-rebuild
+            os.utime(shadow, (old, old))
+            self.assertFalse(installer.reindex_running())
+            self.assertIsNone(installer.index_busy())
+            os.environ['ASSISTANT_REINDEX_FRESH'] = '7200'
+            self.assertTrue(installer.reindex_running())
+        with mock.patch.dict(os.environ, {'OPENCLAW_STATE_DIR': str(Path(folder.name) / 'none')}):
+            self.assertFalse(REINDEX_RUNNING())  # no OpenClaw state here
+
+    def openclaw_has(self, record=None, plugin=None, loaded=True, hooks=True, inspect_code=0):
+        """A fake OpenClaw whose own record of the bridge is `record` and `plugin` over a good one. Returns (run, calls)."""
+        root = str(ROOT / 'openclaw-plugin')
+        found = {'plugin': {'id': installer.PLUGIN_ID, 'rootDir': root, 'enabled': True, 'status': 'loaded', **(plugin or {})},
+                 'install': {'source': 'path', 'sourcePath': root, 'installPath': root, **(record or {})}}
+        calls = []
+        def run(command, **kwargs):
+            calls.append(command[1:3])
+            if command[1:3] == ['plugins', 'inspect']:
+                return subprocess.CompletedProcess(command, inspect_code, json.dumps(found), '')
+            if command[1:3] == ['gateway', 'health']:
+                return subprocess.CompletedProcess(command, 0, json.dumps({'ok': True, 'plugins': {'loaded': [installer.PLUGIN_ID] if loaded else []}}), '')
+            return subprocess.CompletedProcess(command, 0, '', '')
+        settings = {'plugins': {'entries': {installer.PLUGIN_ID: {'enabled': True, 'hooks': {'allowConversationAccess': hooks}}}}}
+        return run, calls, settings
+
+    def test_a_new_openclaw_around_an_unchanged_bridge_it_already_runs_needs_no_swap(self):
+        facts, newer = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, {'openclaw': 'openclaw', 'openclaw_version': '2026.11.3'}
+        cases = (({}, False), ({'record': {'sourcePath': '/somewhere/else'}}, True), ({'record': {'source': 'npm'}}, True),
+                 ({'plugin': {'enabled': False}}, True), ({'plugin': {'status': 'error'}}, True), ({'plugin': {'rootDir': '/somewhere/else'}}, True),
+                 ({'loaded': False}, True), ({'hooks': False}, True), ({'inspect_code': 1}, True))
+        for case, swapped in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                stamp = Path(tmp) / 'plugin-installed'
+                run, calls, settings = self.openclaw_has(**case)
+                with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say') as say, \
+                        mock.patch.object(installer, 'index_busy', return_value=None), mock.patch.object(installer.time, 'sleep'), \
+                        mock.patch.object(installer.onboarding, 'openclaw_settings', return_value=settings):
+                    self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+                    calls.clear()
+                    self.assertTrue(installer.install_plugin(newer, stamp=stamp))  # OpenClaw was updated, the bridge was not
+                    self.assertEqual(['plugins', 'install'] in calls, swapped, calls)
+                    self.assertEqual(['plugins', 'reload'] in calls, swapped, calls)
+                    self.assertFalse((Path(tmp) / installer.BRIDGE_WAITING).exists())
+                    if not swapped:
+                        self.assertIn('already loaded by this OpenClaw', say.call_args[0][0])
+                    calls.clear()
+                    self.assertTrue(installer.install_plugin(newer, stamp=stamp))  # and the stamp is up to date either way
+                    self.assertEqual(calls, [])
+
+    def test_a_stamp_from_before_its_parts_were_kept_still_counts_and_gets_them(self):
+        facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}
+        run, calls, settings = self.openclaw_has()
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say'), \
+                mock.patch.object(installer, 'index_busy', return_value=None), mock.patch.object(installer.time, 'sleep'), \
+                mock.patch.object(installer.onboarding, 'openclaw_settings', return_value=settings):
+            stamp = Path(tmp) / 'plugin-installed'
+            stamp.write_text(installer.plugin_fingerprint(facts) + '\n')  # as every install before this one wrote it
+            self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+            self.assertEqual(calls, [])  # the same bridge: no swap because the stamp grew
+            self.assertEqual(installer.read_stamp(stamp), (installer.plugin_fingerprint(facts), installer.bridge_parts(facts)))
+            stamp.write_text('0' * 64 + '\n')  # an old stamp that does not match cannot say what changed: the usual swap
+            self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+            self.assertIn(['plugins', 'install'], calls)
+            self.assertNotIn(['plugins', 'inspect'], calls)
+            calls.clear()
+            changed = {**installer.bridge_parts(facts), 'files': '0' * 64}  # the bridge's own files changed: always a swap
+            stamp.write_text('0' * 64 + '\n' + json.dumps(changed) + '\n')
+            self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+            self.assertIn(['plugins', 'reload'], calls)
+            self.assertNotIn(['plugins', 'inspect'], calls)
 
     def test_a_failed_plugin_install_that_took_the_model_runtime_down_gets_it_back(self):
         ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install')
@@ -609,6 +723,7 @@ class InstallerTest(unittest.TestCase):
                 raise OSError('refused')
             return Answer(metrics[port])
         with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, ps, '')), \
+                mock.patch.object(installer, 'reindex_running', return_value=False), \
                 mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen), mock.patch.dict(os.environ):
             os.environ.pop('ASSISTANT_EMBEDDING_PORTS', None)
             self.assertEqual(installer.gateway_embedding_ports(), [4101])
@@ -619,7 +734,8 @@ class InstallerTest(unittest.TestCase):
             self.assertIsNone(installer.index_busy())
             del metrics[4101]
             self.assertIsNone(installer.index_busy())
-        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 127, '', 'no ps')):
+        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 127, '', 'no ps')), \
+                mock.patch.object(installer, 'reindex_running', return_value=False):
             self.assertIsNone(installer.index_busy())
 
     def embedding_servers(self, pages, ports='8792'):
@@ -638,6 +754,7 @@ class InstallerTest(unittest.TestCase):
             return Answer(pages[(int(host.split(':')[1]), '/' + path)])
         with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, '  10     1 openclaw-gateway gateway run', '')), \
                 mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen), \
+                mock.patch.object(installer, 'reindex_running', return_value=False), \
                 mock.patch.dict(os.environ, {'ASSISTANT_EMBEDDING_PORTS': ports}):
             return installer.index_busy(), asked
 
@@ -711,6 +828,10 @@ class InstallerTest(unittest.TestCase):
         self.home, self.bin, self.log = self.tmp / 'home', self.tmp / 'bin', self.tmp / 'calls.log'
         self.home.mkdir()
         self.bin.mkdir()
+        # Never this computer's own OpenClaw: a memory index it is rebuilding would count as running in these tests
+        rebuild = mock.patch.object(installer, 'reindex_running', return_value=False)
+        rebuild.start()
+        self.addCleanup(rebuild.stop)
         for name in ('openclaw', 'systemctl', 'journalctl'):
             path = self.bin / name
             path.write_text(STUB.format(log=self.log, name=name))
@@ -1066,6 +1187,18 @@ exit 0
         self.assertNotIn('systemctl --user restart personal-assistant.service', calls)  # the install stopped there
         config = json.loads(self.config.read_text())
         self.assertIs(config['gateway_restart'], False)  # the choice survives the install
+
+    def test_a_bridge_left_waiting_is_put_in_by_the_run_the_nightly_update_makes(self):
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        self.log.unlink()
+        result = self.install('--if-bridge-waits')  # nothing waits: nothing runs, nothing is said
+        self.assertEqual((result.returncode, result.stdout, self.calls()), (0, '', []), result.stderr)
+        (self.data / 'plugin-waiting').write_text('x\n')
+        self.install('--if-bridge-waits')  # nothing answers the health check here, so its exit code says nothing
+        self.assertIn(f'openclaw plugins install --link --force --accept-capabilities {ROOT}/openclaw-plugin', self.calls())
+        self.assertIn('openclaw plugins reload personal-assistant-bridge --wait', self.calls())
+        self.assertTrue((self.data / 'plugin-installed').exists())
+        self.assertFalse((self.data / 'plugin-waiting').exists())
 
     def test_activation_is_explicit_and_preserves_existing_choices(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
