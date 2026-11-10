@@ -243,11 +243,10 @@ try{
  await page.locator('.side-cards a',{hasText:'Nudge Andrea'}).click();await page.locator('#chat-log .chat-draft.current').waitFor();
  assert.match(await page.locator('#chat-log .chat-draft.current').textContent(),/did you get a chance to try it\?/);
  assert.match(await page.locator('#chat-log .chat-draft.current .chat-draft-foot button.primary').textContent(),/send to Andrea/i);
- // The header: back, the title's first line and ⋯ on one center line (the title's x-height center on the chevron's)
- {const m=await page.evaluate(()=>{const q=s=>document.querySelector(s),R=n=>n.getBoundingClientRect(),c=r=>r.top+r.height/2,h=q('.chat-title'),cs=getComputedStyle(h),cv=document.createElement('canvas').getContext('2d');cv.font=cs.font;
-  const f=cv.measureText('x'),L=parseFloat(cs.lineHeight),base=R(h).top+(L-(f.fontBoundingBoxAscent+f.fontBoundingBoxDescent))/2+f.fontBoundingBoxAscent;
-  return {x:base-f.actualBoundingBoxAscent/2,back:c(R(q('.chat-back path'))),menu:c(R(q('.chat-menu>summary svg')))}});
-  assert.ok(Math.abs(m.x-m.back)<1&&Math.abs(m.back-m.menu)<0.5,JSON.stringify(m))}
+ // The header: back, the title's text and ⋯ on one center line (tests/test_chat_header_center_dashboard.mjs measures it with the real font)
+ {const m=await page.evaluate(()=>{const q=s=>document.querySelector(s),c=r=>r.top+r.height/2,g=document.createRange();g.selectNodeContents(q('.chat-title'));
+  return {title:c(g.getBoundingClientRect()),back:c(q('.chat-back svg').getBoundingClientRect()),menu:c(q('.chat-menu>summary svg').getBoundingClientRect())}});
+  assert.ok(Math.abs(m.title-m.back)<=1&&Math.abs(m.back-m.menu)<0.5,JSON.stringify(m))}
  // A snooze whose time passed is back before the service's wake-up reaches the page; the Browser pill shows only with a browser view
  assert.deepEqual(await page.evaluate(()=>{const st=wakeSnoozed({suggestions:[{status:'snoozed',snoozed_until:new Date(Date.now()-60000).toISOString(),resume_status:'prepared'},{status:'snoozed',snoozed_until:new Date(Date.now()+3600000).toISOString()}]});
   return st.suggestions.map(s=>s.status)}),['prepared','snoozed']);
