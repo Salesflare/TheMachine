@@ -62,6 +62,7 @@ O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.
 - Um fato sobre uma pessoa, organização ou projeto diz sobre quem é e aparece na página dela. Um fato que cita alguém pelo nome completo é vinculado ao ser salvo. **Remover vínculo** tira só o vínculo: o fato continua.
 - A lista nunca enche. Quando cresce, fatos e regras sem uso há três semanas vão para **Deixados de lado**, onde **Trazer de volta** restaura um. O que você editou ou trouxe de volta fica.
 - Uma nota que diz com outras palavras algo já aprendido o substitui, para nada aparecer duas vezes. **Desfazer mesclagem** traz a versão antiga de volta. Suas próprias edições nunca são substituídas.
+- **Traga estes**: já usava o OpenClaw? As linhas das notas dele (`MEMORY.md`, `USER.md`) que valem a pena guardar aparecem no topo, cada uma com o arquivo de onde veio. Marque as que quer manter e escolha **Manter os marcados**: viram fatos ou regras como quaisquer outros. Com **Dispensar o resto**, as outras não voltam. Os arquivos nunca são alterados, e nada aparece se não houver nada que valha a pena guardar.
 - **Alterações**: o que ela aprendeu com suas edições, dispensas e chats, cada uma com **Desfazer**. Veja [Escrita](writing.md#it-keeps-learning).
 - **Decisões**: uma linha do tempo das suas escolhas nas tarefas.
 - **Compartilhado**: aprendizados para compartilhar com a equipe da The Machine, e votos esperando por você. Só aparece quando algo está esperando. Veja [Compartilhar aprendizados](share-learnings.md).

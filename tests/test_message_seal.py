@@ -872,6 +872,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'gbrain_pages.state': 'made, kept or gone (gbrain.py)',
             'learned_fixes.state': 'removed',
             'meet_log.what': 'a step code matched in SQL, like asked_in (meet.py)', 'meet_sessions.state': 'a booking stage', 'meet_sessions.note': 'a reason code: no_machine, keys, failed, no_slot, rounds, no_answer or passed',
+            'bring_in_items.text': 'a line of the owner\'s own OpenClaw notes offered as a fact, learned like a fact (bring_in.py)', 'bring_in_items.status': 'offered, saved or dismissed',
             'missed_audit_items.what': 'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
             'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',

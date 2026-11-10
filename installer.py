@@ -1316,6 +1316,7 @@ TELEGRAM_NO_PREVIEWS = {
 # What the owner states that stays true is saved as a fact in The Machine (under Learning, where they edit, undo or
 # forget it, and where reviews and drafts read it), not in MEMORY.md or USER.md, which nothing of The Machine's reads
 # back as facts. Those two files stay as they are and stay readable. The chats without the tool keep using them.
+# What they already hold is offered to the owner once, line by line, under Learning (Bring these in, bring_in.py).
 MEMORY_RULES_BEGIN, MEMORY_RULES_END = '<!-- the-machine:memory-rules -->', '<!-- /the-machine:memory-rules -->'
 MEMORY_RULES = f"""{MEMORY_RULES_BEGIN}
 ## Daily memory

@@ -62,6 +62,7 @@ Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no 
 - Un dato sobre una persona, organización o proyecto dice de quién trata y aparece en su página. Un dato que nombra a alguien por su nombre completo se vincula al guardarlo. **Quitar vínculo** solo quita el vínculo: el dato se queda.
 - La lista nunca se llena. Cuando crece, los datos y las reglas sin usar en tres semanas pasan a **Apartados**, donde **Recuperar** devuelve uno. Lo que editaste o recuperaste se queda.
 - Una nota que dice con otras palabras algo ya aprendido lo reemplaza, para que nada aparezca dos veces. **Deshacer fusión** devuelve la versión anterior. Tus propias ediciones nunca se reemplazan.
+- **Incorpora esto**: ¿ya usabas OpenClaw? Las líneas de sus notas (`MEMORY.md`, `USER.md`) que vale la pena conservar aparecen arriba, cada una con el archivo del que viene. Marca las que quieras conservar y pulsa **Guardar lo marcado**: pasan a ser datos o reglas como cualquier otro. Con **Descartar el resto**, las demás no vuelven. Los archivos nunca se modifican, y no aparece nada si no contienen nada que valga la pena.
 - **Cambios**: lo que aprendió de tus ediciones, descartes y chats, cada uno con **Deshacer**. Consulta [Redacción](writing.md#it-keeps-learning).
 - **Decisiones**: una cronología de tus decisiones sobre las tareas.
 - **Compartido**: aprendizajes para compartir con el equipo de The Machine, y votos que te esperan. Solo aparece cuando algo espera. Consulta [Compartir aprendizajes](share-learnings.md).

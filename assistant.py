@@ -96,6 +96,7 @@ import team_learnings
 import authorship
 import corrections
 import learning_loop
+import bring_in
 import missed_work
 import person_summary
 import fleet_learnings
@@ -133,6 +134,7 @@ from agents_app import AgentsApp
 from ai_app import AiApp
 from calendar_app import CALENDAR_BACK_DAYS, CalendarApp
 from corrections_app import CorrectionsApp
+from bring_in_app import BringInApp
 from missed_work_app import MissedWorkApp
 from gbrain_app import GBrainApp
 from meet_app import MeetApp

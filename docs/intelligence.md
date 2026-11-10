@@ -812,6 +812,31 @@ nothing, and a log write that fails never fails the prompt.
   sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
   Nothing reads them yet.
 
+<a id="bring-these-in"></a>
+## Bring these in
+
+Someone who used OpenClaw before The Machine has notes in its workspace: `MEMORY.md` and `USER.md`. So does a Machine
+whose chat wrote its durable facts there, as earlier versions told it to. Chat can search
+them, and reviews and preparations read `USER.md` whole, but nothing in `MEMORY.md` reaches a review, a preparation, a
+brief or a connected AI as a fact. Bring these in (`bring_in.py`, `bring_in_app.py`) offers the lines worth keeping on
+Learning, and saves only the ones the owner ticks.
+
+- The two files are only ever read. Nothing in the OpenClaw workspace is written, moved or deleted.
+- Before any model turn, lines that cannot be a fact are dropped in code: the files' own templates and starter text,
+  headings, comments, code, tables, placeholders, and any line that looks like a key, password or token (those never
+  reach the model). A new Machine with empty or template files stops here: no turn, nothing on Learning.
+- One small turn on the background model, within the usage budget like every background turn, at most once a day and
+  only when a file holds lines no pass has read (by content hash, per line). It gets up to 6,000 characters of lines,
+  the facts and rules Learning already has, and what was offered before, and answers with at most eight candidates:
+  a specific, durable fact, preference or rule that would change what the assistant does. From `USER.md`, which
+  reviews already read, only lines about a named person, organization or project. A file longer than one pass is read
+  over the following days.
+- A candidate is saved only by the owner's tick (`bring_in_decide`, the owner's dashboard only). A fact or preference
+  becomes a fact, a rule becomes a rule, with the file as its source (`notes:MEMORY.md`), shown as "From MEMORY.md".
+  It is read and removed like any other, and counts as the owner's own words for connected AIs.
+- Dismissed candidates and lines a pass has read are not offered again. Lines added to the files later go through the
+  same pass and show up the same quiet way: no notification, no badge.
+
 <a id="missed-work-audit"></a>
 ## Missed work
 

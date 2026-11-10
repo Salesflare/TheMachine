@@ -62,6 +62,7 @@ Apprendimento ha una fila di schede. Una scheda ancora vuota non compare.
 - Un fatto su una persona, un’organizzazione o un progetto dice chi riguarda e compare nella loro pagina. Un fatto che ne nomina uno con il nome completo viene collegato al salvataggio. **Rimuovi collegamento** toglie solo il collegamento: il fatto resta.
 - L’elenco non si riempie mai. Quando si allunga, i fatti e le regole non usati da tre settimane vanno in **Messi da parte**, dove **Ripristina** ne riporta uno. Quello che hai modificato o ripristinato resta.
 - Una nota che dice con altre parole qualcosa di già imparato lo sostituisce, così niente compare due volte. **Annulla unione** riporta la versione precedente. Le tue modifiche non vengono mai sostituite.
+- **Da importare**: usavi già OpenClaw? Le righe delle sue note (`MEMORY.md`, `USER.md`) che vale la pena tenere compaiono in alto, ognuna con il file da cui viene. Spunta quelle da tenere, poi **Tieni i selezionati**: diventano fatti o regole come gli altri. Con **Scarta il resto** le altre non tornano. I file non vengono mai modificati, e non compare nulla se non contengono niente da tenere.
 - **Modifiche**: cosa ha ricavato dalle tue modifiche, dai rifiuti e dalle chat, ognuna con **Annulla**. Vedi [Scrittura](writing.md#it-keeps-learning).
 - **Decisioni**: una cronologia delle tue scelte sulle attività.
 - **Condiviso**: apprendimenti da condividere con il team di The Machine e voti che ti aspettano. Compare solo quando qualcosa aspetta. Vedi [Condividi gli apprendimenti](share-learnings.md).

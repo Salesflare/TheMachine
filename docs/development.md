@@ -25,6 +25,7 @@ The sandbox uses three ports: the dashboard on the given port, the Network on po
 | `friends` | `busy`, with two friends, a request in and one out |
 | `family` | `busy`, in a Family Fleet |
 | `expired` | `busy`, with the work Google sign-in expired for Gmail and Calendar |
+| `notes` | `busy`, with made-up OpenClaw notes (`MEMORY.md`, `USER.md`) and Bring these in on Learning. Not part of `all` |
 | `all` | `busy`, `fleet`, `friends` and `family` together |
 
 ### What is real and what isn't

@@ -35,7 +35,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-STATES = ('fresh', 'reviews-off', 'busy', 'fleet', 'friends', 'family', 'expired', 'all')
+STATES = ('fresh', 'reviews-off', 'busy', 'fleet', 'friends', 'family', 'expired', 'notes', 'all')
 HOST = 'machine.sandbox.example'  # the dashboard's host name; run.py's proxy sends it
 EXPIRED = 'google_signin_expired_run_gog_auth_add'
 
@@ -189,6 +189,8 @@ def load(directory, states, port=8870, network_port=8871, fixture_path=HERE / 'f
         load_recurring(store, config, base)
         if not fresh:  # a fresh Machine has no routines yet: the page's empty state
             load_routines(store, base)
+        if 'notes' in states:  # never part of `all`: the site's demo is recorded from `all` and shows no notes to bring in
+            load_notes(store, config, directory)
     return config, config_path
 
 
@@ -496,6 +498,47 @@ def load_learned_facts(store):
         return
     old = store.remember_fact('The Meridian Robotics renewal is for 40 seats.', 'sandbox-note-1', about=[row[0]])
     store.remember_fact('The Meridian Robotics renewal is now for 8 seats.', 'sandbox-note-2', replaces=[old['id']], about=[row[0]])
+
+
+NOTES = {'MEMORY.md': """# MEMORY.md
+
+## People
+
+- Thibault at Meridian Robotics wants every quote as a PDF, never a link.
+- Ilse from the school board only reads messages after 8 pm.
+
+## How we work
+
+- Customer calls are never booked on Friday afternoon.
+- Renewal mails always name the seat count and the renewal date in the first line.
+- Tried the new note app in March, went back after a week.
+
+## Setup
+
+- The backup script lives in ~/bin and runs at night.
+""", 'USER.md': """# About me
+
+- Northwind Freight is our oldest customer: their mails go first.
+"""}
+NOTES_PICKS = [(1, 'Thibault at Meridian Robotics wants every quote as a PDF, never a link.', 'preference'),
+               (2, 'Ilse from the school board only reads messages after 8 pm.', 'fact'),
+               (3, 'Customer calls are never booked on Friday afternoon.', 'preference'),
+               (4, 'Renewal mails name the seat count and the renewal date in the first line.', 'rule'),
+               (7, 'Northwind Freight is our oldest customer: their mails go first.', 'preference')]
+
+
+def load_notes(store, config, directory):
+    """Bring these in (bring_in.py): made-up OpenClaw notes in the sandbox's own workspace, read the way the daily
+    pass reads them, with the judge's answer written out here (the sandbox starts no model)."""
+    import bring_in
+    workspace = Path(directory) / 'workspace'
+    workspace.mkdir(parents=True, exist_ok=True)
+    for name, text in NOTES.items():
+        (workspace / name).write_text(text)
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        state = bring_in.prepare(db, workspace, config)
+        bring_in.conclude(db, state, json.dumps([{'n': n, 'text': text, 'kind': kind} for n, text, kind in NOTES_PICKS]))
 
 
 def load_skills(db, states, fixture, base):
