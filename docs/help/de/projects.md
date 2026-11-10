@@ -82,4 +82,4 @@ Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst
 
 **Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
 
-Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Projekte, die sich ähneln, etwa eine Reihe „Pilot review: …“ oder „… CRM-Evaluierung“, klappen zu einer Zeile zusammen, die sagt, wie viele ähnliche Projekte sie enthält. Tippe darauf, um sie zu öffnen. Nichts davon ändert, was geteilt wird.
+Jedes Projekt hat eine eigene Karte, wie auf deinem eigenen Board, und der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Nichts davon ändert, was geteilt wird.

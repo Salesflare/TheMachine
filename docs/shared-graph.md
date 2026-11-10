@@ -466,8 +466,7 @@ to someone outside the Fleet.
 - **Mine / Needs me / All** filter a shared board from what reached this Machine only. Mine is a shared thread the owner
   is on, a project they own or have in their own Graph, or an open to-do of theirs for it. Needs me is that to-do, or a
   thread whose newest message is to them from someone else.
-- The rest of a stage folds into "Show N more", and look-alike names (three or more with the same last or first two
-  words) into one row.
+- Each project is its own card, as on the owner's own board, and the rest of a stage folds into "Show N more".
 
 Nothing more is shared for any of it (`SharedGraph.team_boards`).
 

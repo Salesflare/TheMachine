@@ -82,4 +82,4 @@ A teammate's board can have fewer projects than they see: a project they kept pr
 
 **Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
 
-The rest of a stage folds into **Show N more**. Projects that look alike, like a run of "Pilot review: …" or "… CRM evaluation" trials, fold into one row that says how many alike projects it holds; tap it to open them. None of this changes what's shared.
+Each project has its own card, as on your own board, and the rest of a stage folds into **Show N more**. None of this changes what's shared.

@@ -3598,7 +3598,6 @@
  "Projects and code": "Projects & code",
  "Projects of one kind show here in stages, as your messages move them.": "Projects of one kind show here in stages, as your messages move them.",
  "Projects opens on this board now.": "Projects opens on this board now.",
- "Projects with alike names, folded into one row. Open it to see each.": "Projects with alike names, folded into one row. Open it to see each.",
  "Projects:": "Projects:",
  "Projects: board view": "Projects: board view",
  "Projects: list view": "Projects: list view",
@@ -6393,7 +6392,6 @@
  "name: what the projects are, a short label like \"Partner listings\"": "name: what the projects are, a short label like \"Partner listings\"",
  "never": "never",
  "new to-do": "new to-do",
- "newest {}": "newest {}",
  "next 7 days": "next 7 days",
  "next meeting {}": "next meeting {}",
  "next: the owner's next step in a few words (up to 120 characters)": "next: the owner's next step in a few words (up to 120 characters)",
@@ -6641,10 +6639,6 @@
  "{} To decide, tap to show or hide": "{} To decide, tap to show or hide",
  "{} accepted {}, changed to: “{}”.": "{} accepted {}, changed to: “{}”.",
  "{} accepted {}.": "{} accepted {}.",
- "{} alike projects": {
-  "one": "{} alike project",
-  "other": "{} alike projects"
- },
  "{} already has connected sources; import into a fresh install, or pass --force to replace it (the current data folder is kept as a copy first)": "{} already has connected sources; import into a fresh install, or pass --force to replace it (the current data folder is kept as a copy first)",
  "{} already has this to-do": "{} already has this to-do",
  "{} already shares {}": "{} already shares {}",
