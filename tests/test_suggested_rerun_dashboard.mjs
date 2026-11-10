@@ -51,16 +51,18 @@ try{
   await card.locator('.more-actions>summary').click();
   assert.deepEqual(await card.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent)),['Edit','Change when']);
   await card.locator('[data-rt-do="edit"]').click();
-  // Edit: its name and words, Save and Cancel; no Try it here
+  // Edit: its name and words, Save and Cancel only (the card's own buttons wait); no Try it here
   const form=card.locator('.rt-form');await form.waitFor();
   assert.equal(await form.locator('.rt-name').inputValue(),'Daily standup');
   assert.equal(await form.locator('textarea').inputValue(),WORDS);
   assert.deepEqual(await form.locator('.rt-form-acts>button').evaluateAll(n=>n.map(x=>x.textContent)),['Save','Cancel']);
+  assert.equal(await card.locator('.actions').isVisible(),false);  // only Save and Cancel while it is open
   await form.locator('textarea').fill(NEW);
   await shot('suggested-editing');
   await form.locator('.primary').click();await form.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_edit'),[{id:SID,words:NEW}]);
   assert.equal((await card.locator('.rt-what').innerText()).trim(),NEW);
+  assert.equal(await card.locator('.actions').isVisible(),true);
   assert.equal(sent('routine_run_now').length,0);  // saving never runs it by itself
   // Run again: one press, one run; the button waits while it runs
   await card.locator('[data-rt-do="now"]').click();
