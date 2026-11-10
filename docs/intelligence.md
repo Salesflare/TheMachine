@@ -747,6 +747,40 @@ between them: the owner's own draft edits, dismissed and snoozed to-dos, and cor
 - A voice the owner wrote is never changed by the loop, and an undo is refused when the owner changed that voice or fact
   since.
 
+## What a prompt reads
+
+Memory comes in kinds, each with its own table and its own picker:
+
+| kind | what it is | picked by |
+|---|---|---|
+| `fact`, `rule` | what was learned, and the draft rules (`facts`) | all of them while they are few (always), the to-do's own, closeness in meaning, else weight |
+| `promise` | open promises (`promises`) | always, in a review |
+| `history` | what the owner did with the last 30 days' to-dos (`decisions`) | recency |
+| `record` | the people and projects on a to-do (`graph_nodes`) | being on the to-do (about) |
+| `signal` | messages: related ones in a preparation, the sources of an Ask (`events`) | closeness, or the search |
+| `skill` | the owner's skills (`skills`) | a match with the to-do, or the short index (always) |
+| `team_learning` | what teammates' Machines learned (`fleet_learn*`) | closeness |
+
+A prompt reads them in one way: `recall(app, purpose, about, budget)` (`machine/app/recall.py`), with a purpose
+(`review`, `preparation`, `ask`; `talk` and `chat` read none yet), what it is about (the to-do, the run, the question)
+and the prompt's character budget. It gives the builder each block's text, which is the picker's text unchanged, and
+keeps what each picker put in as items of one shape (`memory_use.Item`): kind, row id, the text in the prompt, the
+records it is about, where it came from, when, and how it was picked (with its score, for closeness).
+
+Once the run is admitted, the builder logs those items in one insert (`memory_use`: when, purpose, the run and the
+to-do, kind, row id, how, score, characters). The log has ids and numbers, never text. A prompt that wasn't sent logs
+nothing, and a log write that fails never fails the prompt.
+
+- It stays on the Machine: it is in the export (with what was learned) and not in Team Graph sharing or support
+  reports. Removing an account takes its to-dos' rows, deleting a person takes their record's.
+- Rows go after 60 days (30 at the Careful level), in the nightly retention pass.
+- A fact counts as used (`facts.used_at`, which setting aside after 21 unused days reads) when a preparation that
+  picked it for its to-do was sent, not when it was only picked. A review lists every fact, so that is not a use.
+  `memory_use.last_used` gives the last read of any kind, skills and team learnings among them.
+- `memory_use.outcomes(db, to-do)` joins what was in a to-do's prompts with what the owner then did (sent unchanged,
+  sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
+  Nothing reads them yet.
+
 <a id="missed-work-audit"></a>
 ## Missed work
 

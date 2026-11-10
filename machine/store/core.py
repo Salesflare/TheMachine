@@ -37,6 +37,7 @@ from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, tri
 from machine.timing import _REQUEST_TIMING, aside
 import mail_cleanup
 import meet_link
+import memory_use
 import message_seal
 import pacing
 import person_summary
@@ -495,6 +496,7 @@ class StoreCore:
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             routines.ensure(db)  # routines (routines.py): new tables only
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
+            memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
             # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting,
             # graph.slack_names, the to-dos' quality: profile.QUALITY_TABLES, and the Projects board's organizations: graph_boards)
             stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES, *graph_boards.ORG_TABLES,

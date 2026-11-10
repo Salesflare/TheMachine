@@ -20,6 +20,7 @@ import follow_ups
 import github_route
 import i18n
 from machine.app.graph_actions import account_services
+from machine.app.recall import recall
 from machine.browser import (
     browser_lease_script,
     browser_link,
@@ -40,6 +41,7 @@ from machine.sources.connectors import calendar_prompt, doc_write_prompt, meetin
 from machine.store.decisions import owner_area_open, pause_idle_steps
 from machine.store.machine_cards import parked_redo
 from machine.text import encoded
+import memory_use
 import model_budget
 from models import background_model
 import next_actions
@@ -442,6 +444,7 @@ class PreparationApp:
         action='status' if job['status']=='running' else 'start'
         if action=='start' and self.store.machine_fix(job):return  # Do it on a to-do from the computer's logs: its one fix
         request={'action':action,'job_id':job['job_id'],'session_job_id':job.get('session_job_id') or job['job_id']}
+        memory=None  # what this start's prompt read of what was learned (recall.py); logged once it is admitted
         if action=='status' and job.get('started_at'):
             # Old enough that it can't still be waiting in the queue: the runner also checks the run is still in its session.
             request['probe']=(dt.datetime.fromisoformat(now())-dt.datetime.fromisoformat(job['started_at'])).total_seconds()>=PREPARATION_PROBE_SECONDS
@@ -497,11 +500,11 @@ class PreparationApp:
                 try:style=self.store.style_text(job['suggestion_id'])
                 except Exception as error:  # a draft without the owner's voice beats no preparation
                     LOG.error('style context error=%s',type(error).__name__);style=''
-                known=embeddings.settings(self.config)  # what was learned that this card needs, not all of it
-                rules=self.store.facts_for(job['suggestion_id'],'draft',known)
+                memory=recall(self,'preparation',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned that this card needs, not all of it
+                rules=memory.text('rules')
                 try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
                 except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
-                request['message']=preparation_prompt(job,self.store.facts_for(job['suggestion_id'],'fact',known,accounts=self.config.get('accounts',[])),self.config,'' if style else self.store.draft_edits_text(),
+                request['message']=preparation_prompt(job,memory.text('facts'),self.config,'' if style else self.store.draft_edits_text(),
                                                       rules,style,gaps)
                 try:  # how to read the card's own sources (its accounts' notes only)
                     with self.store.connect() as db:
@@ -516,9 +519,7 @@ class PreparationApp:
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('source notes error=%s',type(error).__name__)
                 request['message']+=self.routine_change_lines(job,request['message'])
-                try:
-                    lines=self.graph_lines(job['suggestion_id'])
-                    if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                try:request['message']+=memory.fit('records',len(request['message']),1000)
                 except Exception as error:LOG.error('graph lines error=%s',type(error).__name__)
                 try:  # someone may have answered since: what is already synced, no model call
                     with self.store.connect() as db:
@@ -538,18 +539,13 @@ class PreparationApp:
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
                 try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
-                    lines=self.prep_skill_lines(job['suggestion_id'],rules,PROMPT_LIMIT-1000-len(request['message']))
-                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                    request['message']+=memory.fit('skills',len(request['message']),1000,rules,PROMPT_LIMIT-1000-len(request['message']))
                 except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)
                 if getattr(self, 'fleet', None):
-                    try:
-                        lines=self.fleet.lines(job['suggestion_id'])
-                        if len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                    try:request['message']+=memory.fit('team',len(request['message']),1000)
                     except Exception as error:LOG.error('fleet lines error=%s',type(error).__name__)
                 if embeddings.settings(self.config):
-                    try:
-                        lines=self.related_lines(job['suggestion_id'])
-                        if len(request['message'])+len(lines)<PROMPT_LIMIT-500:request['message']+=lines
+                    try:request['message']+=memory.fit('related',len(request['message']),500)
                     except Exception as error:LOG.error('related error=%s at=%s',type(error).__name__,fault_where(error))
                 if getattr(self,'skills',None) and not job.get('finish'):
                     try:  # "There's a skill for this": an installed one that isn't ready, or one on ClawHub (the agent can search it)
@@ -570,7 +566,10 @@ class PreparationApp:
                 if images:request['attachments']=images
                 request['message']+=lines
             except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
+        if memory:request['_memory']=memory.rows()  # a retry resends its first start, with that start's list
         result=runner(request)
+        if request.get('_memory') and result.get('status')=='admitted':
+            memory_use.record(self.store,'preparation',request['_memory'],job['job_id'],job['suggestion_id'])
         if 'fast' in request and result.get('status')=='admitted':
             with self.store.connect() as db:  # the session's speed as the runner set it (chat_model.fast_ran)
                 if request['fast']:chat_model.fast_ran(db,request['session_job_id'],now())

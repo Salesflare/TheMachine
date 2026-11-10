@@ -9,6 +9,7 @@ import re
 import embeddings
 from machine.config import LOG
 from machine.store.voices import voice_channel
+import memory_use
 from timeutil import now
 import todo_areas
 
@@ -259,6 +260,17 @@ def fact_line(f, ids=False):
     by = ai_fact_by(f)
     text = f['text'].replace('<<<', '‹‹‹').replace('>>>', '›››') if by else f['text']
     return '- ' + (f"[{f['id']}] " if ids else '') + text + (f" ({', '.join(bits)})" if bits else '') + (f' (saved by {by})' if by else '')
+
+
+def note_facts(facts, how, ids=False, scores=None, used=False):
+    """Says which facts a prompt got, for the use log (memory_use.py); nothing outside a recall. how: one word, or
+    a function of the fact. used: picked for this to-do, so they count as used once the run is admitted."""
+    if not memory_use.collecting():
+        return
+    for f in facts:
+        memory_use.note('rule' if f.get('kind') == 'draft' else 'fact', f['id'], fact_line(f, ids), how(f) if callable(how) else how,
+                        source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
+                        score=(scores or {}).get(f['id']), used=used)
 
 
 def close_facts(db, ids):
@@ -560,8 +572,10 @@ class FactsStore:
         for f in facts:
             size += len(cls.fact_line(f, ids)) + 1
             if size > limit:
+                note_facts(out, 'always', ids)
                 return cls.facts_block(out, ids) + '\n…'
             out.append(f)
+        note_facts(out, 'always', ids)
         return cls.facts_block(out, ids)
 
     def facts_for(self, suggestion_id, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR, accounts=None):
@@ -598,7 +612,10 @@ class FactsStore:
             if size + len(line) + 1 > limit:
                 break
             out.append(f); size += len(line) + 1
-        if ranked is not None:  # picked for meaning (not just newest while the embedding server is down): used
+        if memory_use.collecting():  # a prompt's recall: its use log stamps them as used once the run is admitted (memory_use.record)
+            scores = {f['id']: score for score, f in close} if ranked is not None else {}
+            note_facts(out, lambda f: 'own' if f in own else 'closeness' if ranked is not None else 'weight', scores=scores, used=ranked is not None)
+        elif ranked is not None:  # picked for meaning (not just newest while the embedding server is down): used
             try:
                 self.mark_used(f['id'] for f in out)
             except Exception as error:  # a busy database never costs the preparation its facts

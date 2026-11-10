@@ -17,6 +17,7 @@ import fleet_learnings
 import graph
 import learning_loop
 import locale_prefs
+import memory_use
 from machine import stamps
 from machine.store.graph_history import live
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
@@ -550,11 +551,12 @@ class ProfileStore:
         groups = {'Dismissed': ['rejected'], 'Done': ['completed'], 'Accepted or prepared': ['accepted', 'prepared', 'instructions'],
                   'Snoozed (already in the owner\'s list)': ['snoozed'], 'Waiting for the owner\'s decision': ['pending'],
                   'Prepared ahead, waiting for the owner\'s approval': ['ahead']}
-        lines = []
+        lines, shown = [], []  # shown: (line, its to-do), for the use log (memory_use.py)
         for heading, statuses in groups.items():
             items = [r for r in rows if r['status'] in statuses]
             if items:
                 lines.append(f'{heading}:')
+                shown += [(len(lines) + n, r['id']) for n, r in enumerate(items)]
                 lines += ['- ' + r['title'] + ''.join(f' (owner wrote: "{n}")' for n in notes.get(r['id'], [])) for r in items]
         behaviour = self.behaviour_text(days)
         if behaviour:
@@ -562,8 +564,9 @@ class ProfileStore:
         rates = self.quality_text(days)
         if rates:
             # First, so the length limit never cuts it.
-            lines = [rates, ''] + lines
+            lines, shown = [rates, ''] + lines, [(n + 2, i) for n, i in shown]
         text = '\n'.join(lines)
+        memory_use.note_lines('history', lines, shown, limit, 'recency', source='owner')
         return text if len(text) <= limit else text[:limit] + '\n…'
 
     def behaviour(self, days=30, accounts=None):

@@ -18,6 +18,7 @@ import fleet
 import fleet_reviews
 import graph
 import i18n
+import memory_use
 from machine.app.first_look import (
     FIRST_DIG_HOURS,
     first_look_batch,
@@ -30,6 +31,7 @@ from machine.app.first_look import (
 )
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
+from machine.app.recall import recall
 from machine.browser import STEP_NAMES, transcript_tool_calls
 from machine.config import LOG, RULE_FILES
 from machine.prompts.profile import VOICE_TEXT
@@ -492,8 +494,9 @@ class ReviewApp:
         offered_edits = []
         if request['action'] == 'start':
             self.store.note_rule_files(RULE_FILES)
-            request['message'] = review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], self.store.preference_summary(), self.store.facts_text(ids=True),
-                                               self.store.slipped(run['run_id']), self.store.promises_text(),
+            memory = recall(self, 'review', {'run': run['run_id']}, PROMPT_LIMIT)  # what was learned, as one list of what it read
+            request['message'] = review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], memory.text('history'), memory.text('facts'),
+                                               self.store.slipped(run['run_id']), memory.text('promises'),
                                                self.store.unnamed_text(run['run_id']), self.store.role_text(run['run_id']), self.store.notes_to_learn(),
                                                self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
                                                self.store.sort_text(run['run_id']), source_notes(account_services(self.config)) + companies_prompt(self.config),
@@ -566,9 +569,12 @@ class ReviewApp:
         else:
             if request['action'] == 'start':  # what this start offers; a retry resends the first start's, with its own list
                 request['_offered'] = offered_edits
+                request['_memory'] = memory.rows()
             receipt = runner(request)
             offered_edits = request.get('_offered', offered_edits)
         result = receipt.get('status', 'unavailable')
+        if result == 'admitted' and request.get('_memory'):  # what the admitted start read of what was learned
+            memory_use.record(self.store, 'review', request['_memory'], run['run_id'])
         with self.store.connect() as db:
             if result == 'admitted':
                 self.background_started()

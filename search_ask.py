@@ -33,6 +33,7 @@ import threading
 import time
 
 import i18n
+import memory_use
 
 QUESTION_CHARS = 300
 SOURCES = 8                 # messages that go in, best first
@@ -259,6 +260,7 @@ def prompt(question, found, lang='en', scope=None):
             break
         parts.append(line)
         used += len(line)
+        memory_use.note('signal', s['id'], line, 'about' if scope else 'search', source='signal', at=s['at'])
     return '\n'.join(parts) + tail
 
 
