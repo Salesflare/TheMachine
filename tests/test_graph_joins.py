@@ -268,6 +268,39 @@ class Joins(unittest.TestCase):
         self.build()  # new signals: still one
         self.assertEqual(list(self.people()), ['email:jan@client.example'])
 
+    def test_a_merge_shows_one_person_at_once_before_the_rebuild(self):
+        # One record with an address and a role, the other with only a number and a photo: Merge makes them one right
+        # away, not after the graph worker's rebuild (both stayed in People and its search until then)
+        self.add(mail(2, 'Jan Peeters <jan@client.example>', 'sam@acme.example'), chat(1, '00000000021', 'Jan Peeters'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('wa:00000000021','k21','image/jpeg',x'00',?)", (NOW.isoformat(),))
+            db.execute("INSERT INTO person_roles(identifier,role,source,created_at) VALUES('email:jan@client.example','customer','owner',?)", (NOW.isoformat(),))
+        self.build()
+        self.assertEqual(set(self.people()), {'email:jan@client.example', 'wa:00000000021'})
+        with self.store.connect() as db:
+            events = {r[0] for r in db.execute('SELECT event_id FROM graph_events')}
+            graph.merge(db, 'wa:00000000021', 'email:jan@client.example', True, NOW.isoformat(), 'owner')
+        self.assertEqual(self.people(), {'email:jan@client.example': ('Jan Peeters', ['email:jan@client.example', 'wa:00000000021'])})
+        with self.store.connect() as db:
+            view = graph.detail(db, 'wa:00000000021', 20)  # an old link to the merged-away record opens the one that stays
+            self.assertEqual(view['id'], 'email:jan@client.example')
+            self.assertEqual([p['value'] for p in view['phones']], ['+00000000021'])
+            self.assertEqual([e['value'] for e in view['emails']], ['jan@client.example'])
+            self.assertEqual(view['role'], 'customer')
+            self.assertTrue((view['profile'] or {}).get('photo'))
+            self.assertEqual(set(view['event_ids']), events)
+            self.assertEqual([r[0] for r in db.execute("SELECT node_id FROM graph_identifiers WHERE identifier='wa:00000000021'")], ['email:jan@client.example'])
+        self.add(chat(0, '00000000021', 'Jan Peeters'))  # a later sync from the number: still the one record
+        self.build()
+        self.assertEqual({k: v[1] for k, v in self.people().items()}, {'email:jan@client.example': ['email:jan@client.example', 'wa:00000000021']})
+
+    def test_a_merge_of_someone_not_in_the_graph_yet_waits_for_the_rebuild(self):
+        self.add(mail(2, 'Jan Peeters <jan@client.example>', 'sam@acme.example'))
+        self.build()
+        with self.store.connect() as db:
+            self.assertIsNone(graph.merge(db, 'wa:00000000021', 'email:jan@client.example', True, NOW.isoformat(), 'owner'))
+        self.assertEqual(list(self.people()), ['email:jan@client.example'])
+
     def test_not_the_same_is_remembered_and_not_asked_again(self):
         self.add(mail(2, 'Jan Peeters <jan@client.example>', 'sam@acme.example'), chat(1, '00000000021', 'Jan Peeters'))
         self.build()

@@ -151,7 +151,7 @@ def move(db, fact_id, text, kind, value, node, other, run_id, at):
     ids = _ids(db, node, *([other] if other else []))
     before = _edits(db, ids)
     if other:
-        graph.merge(db, node, other, True, at, 'owner')
+        graph.merge(db, node, other, True, at, 'owner', keep=node)  # the detail's record stays the one shown
     added = add(db, node, kind, value, at)
     name = _person(db, node)['name']
     learning_loop.record(db, run_id, KIND, str(fact_id), json.dumps({'node': node, 'name': name, 'other': other, 'merged_at': at if other else None,
