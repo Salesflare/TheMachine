@@ -60,6 +60,9 @@ document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#promis
 // Graph links: #graph/<node id> opens a person, project or organization; the browser's back goes to where you were.
 const GRAPH_KIND_PANE={person:['people','People'],project:['projects','Projects'],org:['orgs','Organizations']};
 const graphHash=id=>'#graph/'+encodeURIComponent(id);
+// A fact that lives on a record's page (a to-do chat's Saved line): that page, with the fact's editor open on Edit
+let knownEdit=null;
+function recordFactShow(node,edit){if(chatId){history.pushState(null,'',location.pathname+location.search);openChatLink()}knownEdit=edit;location.hash=graphHash(node)}
 function graphRoute(){const pm=/^#promise\/(\d+)$/.exec(location.hash),m=/^#graph\/(.+)$/.exec(location.hash);let id=pm?'promise:'+pm[1]:'';try{id=id||(m?decodeURIComponent(m[1]):'')}catch{}
  if(id){if($('#people').hidden){graphNode=id;document.querySelector('nav [data-tab="people"]')?.click()}else if(graphNode!==id)lazyRun('graph',()=>people(id));return}
  if(!$('#people').hidden&&graphNode)lazyRun('graph',()=>people(''))}

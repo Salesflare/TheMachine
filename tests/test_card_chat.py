@@ -250,6 +250,20 @@ class CardChat(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(self.app.card_chat_learned(db, self.sid)[0]['state'], 'removed')
 
+    def test_a_fact_about_a_record_says_which_one_it_went_to(self):
+        """The Saved line names the person, organization or project the fact is about: it lives on that page."""
+        self.store.decide(self.sid, 'other', 'Kim runs the venue bookings now', 'chat-2', 'dashboard')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:kim@venue.example','person','Kim Vale',1,0,'{}')")
+        fact = self.store.remember_fact('Kim Vale runs the venue bookings.', 'chat-2', about=['email:kim@venue.example'])
+        general = self.store.remember_fact('Venue bookings need two weeks of notice.', 'chat-2')
+        with self.store.connect() as db:
+            learned = {i['id']: i.get('about') for i in self.app.card_chat_learned(db, self.sid)}
+        self.assertEqual(learned, {fact['id']: {'id': 'email:kim@venue.example', 'name': 'Kim Vale'}, general['id']: None})
+        self.store.fact_unlink(fact['id'], 'email:kim@venue.example')  # Not about them: a general fact, in Learning
+        with self.store.connect() as db:
+            self.assertNotIn('about', self.app.card_chat_learned(db, self.sid)[0])
+
     def test_only_the_owner_edits_what_was_learned(self):
         self.store.decide(self.sid, 'other', 'we stopped using that tool', 'n1', 'dashboard')
         fact = self.store.remember_fact('The team stopped using the old translation tool.', 'n1')

@@ -373,9 +373,11 @@ the organization's role.
   to-dos with its name). Preparation context adds one "open:" part per person and project.
 - **Summary.** A few short lines on who they are to you, where things stand and what is open both ways
   (`person_summary.py`). See [Summaries](#summaries).
-- **Known about them.** Facts about them, apart from what is open, each with **Not about them** and **Forget**. A fact
-  is about its subject, never about whoever sent the message (`fact_about`, set with `remember_fact` `about`). You are
-  never a node, so a fact about you stays in Learning, What I've learned.
+- **Known about them.** The page is where facts about them live: all of them, apart from what is open, each with
+  **Edit**, **Not about them** (a general fact again) and **Remove**, and **Add** for one in your own words
+  (`graph_fact_add`, tied by you). A fact is about its subject, never about whoever sent the message (`fact_about`, set
+  with `remember_fact` `about`). You are never a node, so a fact about you stays in Learning, Facts, which lists only
+  the general ones and one line with how many live on Graph pages.
 - **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 

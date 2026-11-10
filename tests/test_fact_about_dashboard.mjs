@@ -6,15 +6,18 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Learning: a fact says who it is about, with Remove link (fact_links.py), and the one-time link of the facts
-// already there is one entry under Changes, with Undo. All mocked; SHOTS=dir saves screenshots.
+// Learning, Facts keeps the general ones (about the owner and how they work); a fact about a person, organization or
+// project lives on its Graph page, and one quiet line under Facts says how many, opening to those records, each a link.
+// The one-time link of the facts already there is one entry under Changes, with Undo. All mocked; SHOTS=dir saves
+// screenshots.
 const dashboard=await dashboardPage();
 const t=d=>`2026-10-${String(d).padStart(2,'0')}T09:00:00+00:00`;
 let facts,changes,posts;
 const reset=()=>{posts=[];facts=[
  {id:9,kind:'fact',text:'Ann Example wants invoices as a PDF.',fact_kind:'preference',created_at:t(25),merged:0,about:[{id:'email:ann@example.com',name:'Ann Example'}]},
  {id:8,kind:'fact',text:'Acme Labs closes its books on the 5th.',created_at:t(24),merged:0,about:[{id:'org:acme.example',name:'Acme Labs'}]},
- {id:7,kind:'fact',text:'Vendor newsletters never need a to-do.',created_at:t(23),merged:0,about:[]}];
+ {id:7,kind:'fact',text:'Vendor newsletters never need a to-do.',created_at:t(23),merged:0,about:[]},
+ {id:6,kind:'fact',text:'Ann Example is on leave in December.',fact_kind:'event',valid_until:'2026-12-31',created_at:t(22),merged:0,about:[{id:'email:ann@example.com',name:'Ann Example'}]}];
  changes=[{id:4,at:t(25),kind:'about',channel:null,text:'2',line:['Facts that name one person, organization or project: {}',2],before:null,why:'',undone:false}]};
 reset();
 const server=createServer(async(req,res)=>{
@@ -39,20 +42,22 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await navClick(page.locator('[data-tab="feedback"]').first());
-  const list=page.locator('#facts');await list.locator('#learned-9').waitFor();
-  // who a fact is about, under its text; a fact about no one says nothing
-  assert.match(await list.locator('#learned-9').textContent(),/About Ann Example · Remove link/);
-  assert.match(await list.locator('#learned-8').textContent(),/About Acme Labs · Remove link/);
-  assert.equal(await list.locator('#learned-7 [data-not-about]').count(),0);
-  assert.doesNotMatch(await list.locator('#learned-7').textContent(),/About/);
+  const list=page.locator('#facts');await list.locator('#learned-7').waitFor();
+  // Facts: only the general one, and the heading counts it; the others are on their records' pages
+  const group=list.locator('[data-group="facts"]');
+  assert.equal(await group.locator('.fact-row').count(),1);
+  assert.equal(await group.locator('h3 .count').textContent(),'1');
+  assert.equal(await group.locator('.learn-head p').textContent(),'About you and how you work.');
+  for(const id of [9,8,6])assert.equal(await list.locator('#learned-'+id).count(),0);
+  // one quiet line: how many, folded; open, the records with their counts, most first
+  const pages=group.locator('.learn-pages');
+  assert.equal(await pages.locator('summary').textContent(),'3 facts live on Graph pages');
+  assert.equal(await pages.evaluate(d=>d.open),false);
+  await pages.locator('summary').click();
+  assert.deepEqual(await pages.locator('a').allTextContents(),['Ann Example2','Acme Labs1']);
+  assert.equal(await pages.locator('a').first().getAttribute('href'),'#graph/email%3Aann%40example.com');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
-  if(shots){await page.evaluate(()=>document.fonts.ready);await page.locator('#learn-pane-learned').screenshot({path:`${shots}/about-learned-${width}-${scheme}.png`})}
-  // Remove link takes only the link away: the fact stays
-  await list.locator('#learned-9 [data-not-about]').click();
-  await page.locator('#toast',{hasText:'Link removed. The fact stays.'}).waitFor({state:'attached'});
-  assert.deepEqual(posts.at(-1),{action:'graph_fact_unlink',args:{fact_id:9,node_id:'email:ann@example.com'}});
-  await list.locator('#learned-9 [data-not-about]').waitFor({state:'detached'});
-  assert.match(await list.locator('#learned-9').textContent(),/Ann Example wants invoices as a PDF\./);
+  if(shots){await page.evaluate(()=>document.fonts.ready);await page.locator('#learn-pane-learned').screenshot({path:`${shots}/learning-facts-${width}-${scheme}.png`})}
   // the one-time link: one entry under Changes, and Undo takes every link it made away
   await page.locator('#learn-tab-changes').click();
   const block=page.locator('#learn-changes');await block.locator('.change-row').first().waitFor();
@@ -62,9 +67,11 @@ try{
   await block.locator('[data-learn-undo="4"]').click();
   await block.locator('.change-row.undone').waitFor();
   assert.deepEqual(posts.at(-1),{action:'learning_undo',args:{id:4}});
+  // undone, they are general facts again: all four in the list, no line
   await page.locator('#learn-tab-learned').click();
   await list.locator('#learned-8').waitFor();
-  await list.locator('#learned-8 [data-not-about]').waitFor({state:'detached'});
+  assert.equal(await list.locator('[data-group="facts"] h3 .count').textContent(),'4');
+  assert.equal(await list.locator('.learn-pages').count(),0);
   await context.close();
  }
  assert.deepEqual(errors,[]);

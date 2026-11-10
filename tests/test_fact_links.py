@@ -179,6 +179,39 @@ class FactLinks(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(self.store.link_named(db, fact['id'], 'Ann Example wants invoices as a PDF.'), (None, 'tied'))
 
+    def test_the_record_page_is_where_its_facts_live_add_edit_not_about_them_and_remove(self):
+        app = a.App.__new__(a.App)
+        app.store, app.config = self.store, self.app.config
+        with self.assertRaises(ValueError):  # only the owner, on the dashboard
+            app.action('graph_fact_add', {'node_id': ANN, 'text': 'Ann Example runs the pilot team.'})
+        added = app.action('graph_fact_add', {'node_id': ANN, 'text': '  Ann Example runs   the pilot team. '}, owner_dashboard=True)
+        self.assertEqual(self.about(added['id']), [(added['id'], ANN, 'owner', 0)])
+        with self.store.connect() as db:
+            row = db.execute('SELECT text,kind,kept_at IS NOT NULL kept,source FROM facts WHERE id=?', (added['id'],)).fetchone()
+            self.assertEqual(tuple(row), ('Ann Example runs the pilot team.', 'fact', 1, None))  # their own words: kept, never set aside
+            page = a.graph.detail(db, ANN)['open']['known']
+        self.assertEqual([f['text'] for f in page], ['Ann Example runs the pilot team.'])
+        # the same text again ties the one already learned instead of saving it twice; also to a second record
+        self.assertEqual(app.action('graph_fact_add', {'node_id': GLOBEX, 'text': 'ann example runs the pilot team.'}, owner_dashboard=True),
+                         {'id': added['id'], 'about': [GLOBEX], 'duplicate': True})
+        for bad in ({'node_id': 'email:nobody@nowhere.example', 'text': 'Someone we never met.'}, {'node_id': ANN, 'text': 'Hi'}):
+            with self.assertRaises(ValueError):
+                app.action('graph_fact_add', bad, owner_dashboard=True)
+        # Not about them: while another record holds it, it only leaves this page; off the last one, a general fact again
+        self.assertEqual(self.store.fact_unlink(added['id'], GLOBEX), {'unlinked': True, 'general': False})
+        self.assertEqual(self.store.fact_unlink(added['id'], ANN), {'unlinked': True, 'general': True})
+        general = {f['id']: f['about'] for f in self.store.snapshot([])['facts']}
+        self.assertEqual(general[added['id']], [])
+        # adding it again on the page brings back the link the owner removed: they said so themselves
+        app.action('graph_fact_add', {'node_id': ANN, 'text': 'Ann Example runs the pilot team.'}, owner_dashboard=True)
+        self.assertEqual(self.about(added['id']), [(added['id'], ANN, 'owner', 0), (added['id'], GLOBEX, 'owner', 1)])
+        # a page lists every fact about the record, not just the few a prompt line reads
+        for n in range(8):
+            self.store.fact_add(ANN, f'Ann Example detail number {n}.')
+        with self.store.connect() as db:
+            self.assertEqual(len(a.graph.detail(db, ANN)['open']['known']), 9)
+            self.assertEqual(len(a.graph.open_between(db, ANN)['known']), 6)
+
     def test_the_one_time_pass_ties_the_facts_already_there_and_one_undo_takes_it_back(self):
         self.node('li:lee-park-2', 'Lee Park')
         ann = self.old_fact('Ann Example wants invoices as a PDF.')

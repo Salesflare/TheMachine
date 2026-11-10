@@ -498,7 +498,25 @@ class FactsStore:
             db.executemany("INSERT INTO fact_about(fact_id,node_id,by,created_at,removed_at) VALUES(?,?,'owner',?,?) "
                            "ON CONFLICT(fact_id,node_id) DO UPDATE SET removed_at=excluded.removed_at,by='owner' WHERE removed_at IS NULL",
                            [(int(fact_id), i, now(), now()) for i in ids])
-        return {'unlinked': True}
+            general = not db.execute('SELECT 1 FROM fact_about WHERE fact_id=? AND removed_at IS NULL', (int(fact_id),)).fetchone()
+        return {'unlinked': True, 'general': general}  # general: about no one now, so it is in Learning, Facts
+
+    def fact_add(self, node_id, text):
+        """The owner adds a fact on a person's, organization's or project's page: in their own words (kept, like an
+        edit), tied to that record by them. The same text already learned is tied to it instead of saved twice."""
+        text = ' '.join(str(text or '').split())
+        if not 5 <= len(text) <= 240:
+            raise ValueError('Keep it to one short sentence (5-240 characters)')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind IN ('person','org','project')", (str(node_id),)).fetchone():
+                raise ValueError('Unknown person, organization or project')
+            row = db.execute("SELECT id FROM facts WHERE removed_at IS NULL AND kind='fact' AND lower(text)=lower(?)", (text,)).fetchone()
+            fact_id = row['id'] if row else db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,kept_at) VALUES(?,'owner:graph',NULL,?,'fact',?)",
+                                                       (text, now(), now())).lastrowid
+            db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'owner',?) "
+                       "ON CONFLICT(fact_id,node_id) DO UPDATE SET removed_at=NULL,by='owner'", (fact_id, str(node_id), now()))
+        return {'id': fact_id, 'about': [str(node_id)], **({'duplicate': True} if row else {})}
 
     replaced_facts = staticmethod(replaced_facts)  # a function of db, at the top of this module
 
