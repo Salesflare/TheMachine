@@ -296,7 +296,7 @@ OTHER_WRITERS = {
     'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'machine/app/card_actions.py', 'machine/app/fleet.py',
                      'machine/app/profile.py', 'retention.py', 'skills_app.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
-    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'sandbox/load.py'},  # project_about: only its about_* columns
+    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by
     'promises': {'graph.py', 'machine/app/mail.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
     'push_subscriptions': {'machine/app/notifications.py', 'machine/delivery/push.py', 'machine/export/hold.py'},
     'recap_items': {'machine/app/recap.py'},
