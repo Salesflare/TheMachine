@@ -8,7 +8,9 @@
      birthdate are in the page's data (a JSON script for the first chunk, then a graphql request per chunk; the test
      server answers with what it was sent); its progress bar never goes away, and once the year is through, the page
      shows this month again and keeps growing with nobody new. .../virtual/ drops the pictures scrolled past as it loads more: 30 stay.
-     .../early/ loads every month at once, then keeps growing with nobody new. -->
+     .../early/ loads every month at once, then keeps growing with nobody new. A cold start (a browser just up):
+     .../coldN/ doesn't answer a scroll for its first N ms; .../slowN/ answers its first graphql request after N ms more;
+     .../spread/ has one friend of every month in its first data, so every month is there before anything loads. -->
 <html lang="en">
 <head><meta charset="utf-8"><title>Birthdays</title>
 <style>body{font-family:sans-serif}section{min-height:200px}a{display:inline-block;margin:4px}svg{width:60px;height:60px}.filler{height:600px}</style></head>
@@ -20,7 +22,7 @@
 <script>
 const flags = location.pathname.split('/'), flag = p => { const f = flags.find(f => new RegExp('^' + p + '\\d+$').test(f)); return f ? +f.slice(p.length) : -1; };
 const hover = flags.includes('hover'), data = flags.includes('data'), virtual = flags.includes('virtual'), early = flags.includes('early');
-const skip = flag('skip');
+const skip = flag('skip'), cold = flag('cold'), slow = flag('slow'), spread = flags.includes('spread');
 const NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const FIRST = 'Ada Bram Cleo Dov Esme Finn Gia Hugo Ines Jules Kai Lena Milo Nora Otto Pia Quin Rhea Sami Tove Uma Vito Wren Xavi Yara'.split(' ');
 const LAST = 'Arden Brook Calloway Dunmore Ellery Fairbank Garrow Hollis Ivers Jessup Kestrel Lowell Marsh Northam Orrin Pell Quarry Rook Stroud Thorne'.split(' ');
@@ -69,12 +71,14 @@ function grow() {  // past the year: this month again, then more and more of not
 }
 if (data) {  // the first chunk comes with the page, as data
   const s = document.createElement('script'); s.type = 'application/json';
-  s.textContent = JSON.stringify({require: [[{result: {data: {viewer: {all_friends_by_birthday_month: {edges: people.slice(0, chunk).map((p, i) => ({node: node(p, i)}))}}}}}]]});
+  const firsts = spread ? people.map((p, i) => [p, i]).filter(([p, i]) => i >= chunk && (!i || people[i - 1][0] !== p[0])) : [];
+  const edges = [...people.slice(0, chunk).map((p, i) => [p, i]), ...firsts].map(([p, i]) => ({node: node(p, i)}));
+  s.textContent = JSON.stringify({require: [[{result: {data: {viewer: {all_friends_by_birthday_month: {edges}}}}}]]});
   document.head.append(s);
 }
 more();
 if (data) { const bar = document.createElement('div'); bar.setAttribute('role', 'progressbar'); document.body.append(bar); }  // never goes away
-addEventListener('scroll', () => {
+setTimeout(() => addEventListener('scroll', () => {
   if (loading || innerHeight + scrollY < document.documentElement.scrollHeight - 50) return;
   if (next >= people.length) { if (data || early) grow(); return; }
   loading = true;
@@ -84,11 +88,11 @@ addEventListener('scroll', () => {
     const done = () => { more(); spinner.remove(); loading = false; };
     if (!data) return done();
     const xhr = new XMLHttpRequest(), body = people.slice(next, next + chunk).map((p, i) => ({node: node(p, next + i)}));
-    xhr.open('POST', '/api/graphql/');
+    xhr.open('POST', '/api/graphql/' + (slow > 0 && next === chunk ? 'slow' + slow + '/' : ''));
     xhr.onload = done;
     xhr.send(JSON.stringify({data: {node: {all_friends_by_birthday_month: {edges: body}}}}) + '\n' + JSON.stringify({label: 'deferred', data: {}}));
   }, 300 + (next % 3) * 400);
-});
+}), Math.max(cold, 0));
 </script>
 </body>
 </html>

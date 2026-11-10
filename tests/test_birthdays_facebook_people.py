@@ -212,7 +212,7 @@ class AddPeople(unittest.TestCase):
         sid = self.app.birthdays_facebook_offer({'routine_id': 'r1'}) or 'saved-before'  # offered once: the other one by hand
         with self.store.connect() as db:
             match = fb.match(db, fb.found(self.ITEMS, dt.date(2026, 11, 10)))
-            data = {'found': 6, 'matched': match['matched'], 'new': 1, 'ambiguous': match['ambiguous'], 'unmatched': 4,
+            data = {'found': 4, 'matched': match['matched'], 'new': 1, 'ambiguous': match['ambiguous'], 'unmatched': 4,
                     'capped': False, 'missing': []} if state == 'preview' else {'saved': 1, 'people': [{'id': 'email:sam@mail.example', 'name': 'Sam Rivera'}]}
             fb.put(db, sid, state, data, '2026-11-09T08:00:00+00:00')
         return sid
@@ -232,7 +232,7 @@ class AddPeople(unittest.TestCase):
         self.assertEqual(set(self.people()), {'Sam Rivera', 'Pat Quinn'})  # nothing is added without the tap
         self.assertEqual(self.step(preview, 'add')['added'], 2)  # and Add works on it
         with self.store.connect() as db:
-            self.assertEqual(fb.without_others(db), [])
+            self.assertEqual(fb.to_fill(db), [])
         self.answer = {'items': []}
         self.app.birthdays_facebook_fill_old()  # once only
         self.assertEqual(self.card(preview)['others'], 2)
@@ -243,13 +243,81 @@ class AddPeople(unittest.TestCase):
         with patch.object(a.App, 'birthdays_facebook_base', lambda s: None), patch('birthdays_facebook_app.FILL_WAIT', 0):
             self.app.birthdays_facebook_fill_old()
         with self.store.connect() as db:
-            self.assertEqual(fb.without_others(db), [sid])  # no browser yet: tried again at the next start
+            self.assertEqual(fb.to_fill(db), [sid])  # no browser yet: tried again at the next start
         self.answer = {'error': 'signed-out'}
-        self.app.birthdays_facebook_fill_old()
+        with patch('birthdays_facebook_app.FILL_AGAIN', 0), self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.app.birthdays_facebook_fill_old()
         view = self.card(sid)
         self.assertEqual((view['state'], view['matched'], view['others']), ('preview', 1, 0))
+        self.assertEqual(len(logs.output), fb.FILL_READS)  # signed out: read again a few times, then none; Import again reads anew
+        self.assertIn('short, kept as it is found=0 others=0', logs.output[-1])
         with self.store.connect() as db:
-            self.assertEqual(fb.without_others(db), [])  # signed out: none, not tried again; Import again reads anew
+            self.assertEqual(fb.to_fill(db), [])
+
+    # A fill's read that came back short (cut at its limits, months missing, the page never answering its scrolls, or
+    # clearly fewer than the to-do's own read found) keeps what it found and is read again later, a few times at most.
+
+    def fill(self, *answers):
+        reads = list(answers)
+        p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: reads.pop(0) if len(reads) > 1 else reads[0])
+        with p, patch('birthdays_facebook_app.FILL_AGAIN', 0), self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.app.birthdays_facebook_fill_old()
+        return [line.split(':', 2)[2] for line in logs.output]
+
+    def test_a_short_read_keeps_what_it_found_and_is_read_again_until_it_is_whole(self):
+        sid = self.old('preview')
+        with self.store.connect() as db:  # the to-do's own read found 40 friends: 36 nobody in the Graph has
+            fb.put(db, sid, 'preview', {**fb.get(db, sid)[1], 'found': 40}, '2026-11-09T08:00:00+00:00')
+        whole = {'items': self.ITEMS + [{'name': '%s %s' % (FIRST[k % 25], LAST[k // 25]), 'month': 1 + k % 12, 'day': 3} for k in range(36)],
+                 'capped': False, 'missing': [], 'woke': True, 'rounds': 30, 'ms': 40000}
+        self.app.stop = threading.Event()
+        logs = self.fill({**whole, 'items': whole['items'][:12], 'rounds': 2, 'ms': 3000},  # a cold start: a few, all quiet
+                         {**whole, 'missing': [3, 4]}, whole)
+        self.assertEqual(logs, ['facebook birthdays fill short, read again later found=10 others=8 capped=False missing=0 woke=True rounds=2 ms=3000 try=1',
+                                'facebook birthdays fill short, read again later found=40 others=38 capped=False missing=2 woke=True rounds=30 ms=40000 try=2',
+                                'facebook birthdays fill done found=40 others=38 capped=False missing=0 woke=True rounds=30 ms=40000 try=3'])
+        self.assertEqual(self.card(sid)['others'], 38)
+        with self.store.connect() as db:
+            fill = fb.get(db, sid)[1]['fill']
+            self.assertEqual((fill['found'], fill['capped'], fill['missing'], fill['done']), (40, False, [], True))
+            self.assertEqual(fb.to_fill(db), [])
+        self.step(sid, 'save')
+        with self.store.connect() as db:
+            data = fb.get(db, sid)[1]
+            self.assertEqual((data['found'], data['fill']['found'], len(data['others'])), (40, 40, 38))  # the report stays on Save
+            self.assertEqual(fb.to_fill(db), [])
+
+    def test_reads_that_stay_short_stop_after_a_few_and_keep_the_most_they_found(self):
+        sid = self.old('saved')
+        self.app.stop = threading.Event()
+        logs = self.fill({'items': self.ITEMS, 'capped': True}, {'items': self.ITEMS[:2], 'woke': False}, {'items': self.ITEMS[:3], 'missing': [5]},
+                         {'items': self.ITEMS})
+        self.assertEqual(len(logs), fb.FILL_READS)
+        self.assertTrue(logs[-1].startswith('facebook birthdays fill short, kept as it is found=3 others=2 '), logs[-1])
+        self.assertEqual(self.card(sid)['others'], 2)  # the first read's two, not the later reads' fewer
+        with self.store.connect() as db:
+            self.assertEqual(fb.to_fill(db), [])  # bounded: not at the next start either
+
+    def test_a_todo_filled_short_before_gets_one_more_fill(self):
+        sid, saved = self.old('preview'), self.old('saved')
+        with self.store.connect() as db:  # filled before fills kept their report: one friend of the 3 its read didn't match
+            for todo in (sid, saved):
+                fb.put(db, todo, *fb.get(db, todo)[:1], {**fb.get(db, todo)[1], 'others': [{'name': 'Mira Holt', 'date': '1990-01-05'}], 'added': []},
+                       '2026-11-09T08:00:00+00:00')
+            self.assertEqual(sorted(fb.to_fill(db)), sorted([sid, saved]))  # the Save kept no count: it gets one too
+        self.app.stop = threading.Event()
+        self.assertEqual(len(self.fill({'items': self.ITEMS})), 2)
+        self.assertEqual((self.card(sid)['others'], self.card(saved)['others']), (2, 2))
+        with self.store.connect() as db:
+            self.assertEqual(fb.to_fill(db), [])
+            # one filled before whose others are about all its read didn't match is left as it is
+            whole = {k: v for k, v in fb.get(db, sid)[1].items() if k != 'fill'}
+            fb.put(db, sid, 'preview', {**whole, 'unmatched': 2}, '2026-11-09T08:00:00+00:00')
+            self.assertEqual(fb.to_fill(db), [])
+        self.step(sid, 'read')  # and so is a read of its own (Import again), with its report
+        with self.store.connect() as db:
+            self.assertEqual(fb.get(db, sid)[1]['read'], {'capped': False, 'missing': [], 'woke': True, 'rounds': 0, 'ms': 0})
+            self.assertEqual(fb.to_fill(db), [])
 
 if __name__ == '__main__':
     unittest.main()

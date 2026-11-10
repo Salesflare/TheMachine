@@ -52,6 +52,8 @@ READ_MINUTES = 8  # a read that still says reading after this ended without a wo
 SHOWN = 8  # matched people the preview names; the rest is a count
 AMBIGUOUS_SHOWN = 20
 ADD_MAX = 5000  # friends one Add adds at most
+FILL_READS = 3  # reads an older to-do's fill takes at most, while they come back short
+SHORT = 0.9  # a fill's read that found less than this share of what the to-do's own read found came back short
 PERSONAL = {'side': 'personal'}  # their Type, as the owner sets it on a person's page (person_edits)
 
 # Months as the page may write them, in the languages the app speaks (and their short forms)
@@ -93,12 +95,16 @@ SEPARATORS = ' \t\n,;:·•|()[]-–—'
 # kept as it is scrolled past, so a page that drops what was scrolled past still counts it; without a date in any label,
 # each picture is hovered once and its tooltip read.
 # When it stops: once every month has its section or friends (the current one may sit under Today or Upcoming instead),
-# after SETTLE rounds in a row with nothing new. A page that keeps growing, or keeps a busy part on screen, doesn't hold it
-# up. With months still missing, IDLE ms with nothing new end it: nobody has a birthday then, and the preview names them
-# (missing). The limits (items, ms) are a safety net well above Facebook's 5,000 friends: capped only when one stopped it.
-# Each round waits for the page as long as it needs and no longer: on as soon as it grows, else after PAUSE ms (BUSY ms
-# more while it shows a progress bar or busy part). Reads only; nothing is clicked or typed.
-LIMITS = {'items': 6000, 'ms': 360000, 'idle': 20000, 'settle': 2, 'pause': 800, 'busy': 1200}
+# after SETTLE quiet rounds in a row. With months still missing, IDLE ms of quiet rounds end it: nobody has a birthday
+# then, and the preview names them (missing). A quiet round scrolled to the end and brought nobody new, no new month, and
+# no request for more still on its way (each waits up to NET ms for its answer). A page that keeps growing with nobody new,
+# or keeps a busy part on screen, doesn't hold it up. Neither rule counts before the page has answered a scroll (it grew,
+# or asked for more) with friends on it: a page just opened in a browser just up shows its first friends, every month
+# even, before it loads more, and can't end the read. A page that answers no scroll for WAKE ms is read as it is, and the
+# result says so (woke: false). The limits (items, ms) are a safety net well above Facebook's 5,000 friends: capped only
+# when one stopped it. Each round waits for the page as long as it needs and no longer: on as soon as it grows, else after
+# PAUSE ms (BUSY ms more while it shows a progress bar or busy part). Reads only; nothing is clicked or typed.
+LIMITS = {'items': 6000, 'ms': 360000, 'idle': 20000, 'settle': 2, 'pause': 800, 'busy': 1200, 'net': 30000, 'wake': 45000}
 READ_JS = r'''async function (limits) {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 40 && document.readyState !== 'complete'; i++) await wait(250);
@@ -131,14 +137,25 @@ READ_JS = r'''async function (limits) {
     for (const line of text.split('\n')) if (line.includes('birthdate')) { try { take(JSON.parse(line), 0); } catch (e) {} }  // one answer a line
   };
   for (const s of document.querySelectorAll('script[type="application/json"]')) eat(s.textContent);
+  // The page's requests for more, while they are on their way: a round with one isn't quiet until it is answered
+  const pending = new Set();
+  let asked = 0;
+  const ask = () => { const req = {at: Date.now()}; pending.add(req); asked++; return () => pending.delete(req); };
+  const loading = () => [...pending].some(req => Date.now() - req.at < limits.net);
   const open = XMLHttpRequest.prototype.open, fetched = window.fetch;
   XMLHttpRequest.prototype.open = function (method, url) {
-    if (/graphql/i.test(String(url))) this.addEventListener('load', () => { try { eat(this.responseText); } catch (e) {} });
+    if (/graphql/i.test(String(url))) {
+      const done = ask();
+      this.addEventListener('loadend', () => { done(); try { eat(this.responseText); } catch (e) {} });
+    }
     return open.apply(this, arguments);
   };
-  window.fetch = function () {
+  window.fetch = function (input) {
     const answer = fetched.apply(this, arguments);
-    answer.then(r => { if (/graphql/i.test(String(r.url))) r.clone().text().then(eat, () => {}); }, () => {});
+    if (/graphql/i.test(String(input && input.url || input))) {
+      const done = ask();
+      answer.then(r => r.clone().text()).then(eat, () => {}).finally(done);
+    }
     return answer;
   };
   const missing = () => { const hs = headingsNow().map(h => clean(h.innerText || h.textContent));
@@ -151,28 +168,31 @@ READ_JS = r'''async function (limits) {
     for (const el of pictures()) { const label = labelOf(el); if (!label) continue; const heading = headingOf(el, headings);
       const key = label + '\n' + heading; if (!seen.has(key)) seen.set(key, {label, heading}); } };
   const count = () => people.size + seen.size;
-  const start = Date.now();
-  let capped = false, settled = 0, rounds = 0, extra = 0, last = Date.now(), gaps = missing().length;
+  const start = Date.now(), high = () => document.documentElement.scrollHeight;
+  let capped = false, woke = false, settled = 0, rounds = 0, extra = 0, last = start, gaps = missing().length;
   try {
     collect();
     for (;;) {
-      const done = !gaps;
-      if (done ? settled >= limits.settle : Date.now() - last > limits.idle) break;
+      const done = !gaps, live = woke || Date.now() - start > limits.wake;  // a page not answering yet can't end it
+      if (live && (done ? settled >= limits.settle : Date.now() - last > limits.idle)) break;
       if (count() >= limits.items || Date.now() - start > limits.ms) { capped = true; break; }
-      const before = count(), height = document.documentElement.scrollHeight;
+      const before = count(), height = high(), sent = asked;
       window.scrollBy(0, -400);  // up a little first, so the page sees a scroll to its end even when it didn't grow
       await wait(50);
-      window.scrollTo(0, document.documentElement.scrollHeight);
+      window.scrollTo(0, high());
       rounds++;
       if (done) extra++;
-      const grew = () => count() !== before || document.documentElement.scrollHeight !== height;
-      for (let t = 0; t < limits.pause && !grew(); t += 100) await wait(100);
-      for (let t = 0; t < limits.busy && !grew() && busy(); t += 100) await wait(100);  // loading: a little longer
+      const grew = () => count() !== before || high() !== height;
+      for (let t = 0; t < limits.pause && !grew() && !loading(); t += 100) await wait(100);
+      for (let t = 0; t < limits.busy && !grew() && !loading() && busy(); t += 100) await wait(100);  // loading: a little longer
+      for (let t = 0; t < limits.net && loading(); t += 100) await wait(100);  // asked for more: its answer
       if (grew()) await wait(150);  // what came in, drawn
       collect();
-      const now = missing().length;
-      if (count() !== before || now !== gaps) last = Date.now();
-      settled = count() === before ? settled + 1 : 0;
+      const now = missing().length, fresh = count() !== before || now !== gaps;
+      if (count() && (fresh || high() !== height || asked !== sent)) woke = true;  // the page answered the scroll
+      const quiet = !fresh && !loading();
+      if (!quiet || !live) last = Date.now();
+      settled = quiet && live ? settled + 1 : 0;
       gaps = now;
     }
   } finally {
@@ -193,7 +213,7 @@ READ_JS = r'''async function (limits) {
     if (hovered.length) items = hovered;
   }
   return {items: items.slice(0, limits.items), capped: capped || items.length > limits.items, missing: missing(),
-          rounds, extra, ms: Date.now() - start};
+          woke, rounds, extra, ms: Date.now() - start};
 }'''
 
 
@@ -373,27 +393,65 @@ def put(db, suggestion_id, state, data, stamp):
                'state=excluded.state,data=excluded.data,updated_at=excluded.updated_at', (suggestion_id, state, json.dumps(data or {}), stamp))
 
 
-def without_others(db):
-    """The to-dos read before the friends nobody in the Graph were kept: a preview or Save with no others yet."""
+def report(result):
+    """What a read says about itself, kept on the to-do: {'capped', 'missing', 'woke', 'rounds', 'ms'}. woke: the page
+    answered its scrolls (false: it was read as it first showed)."""
+    result = result if isinstance(result, dict) else {}
+    number = lambda key: int(result.get(key) or 0) if str(result.get(key) or 0).isdigit() else 0  # noqa: E731
+    return {'capped': bool(result.get('capped')), 'missing': sorted({int(m) for m in result.get('missing') or () if str(m).isdigit() and 1 <= int(m) <= 12}),
+            'woke': result.get('woke') is not False, 'rounds': number('rounds'), 'ms': number('ms')}
+
+
+def needs_fill(data):
+    """Whether a to-do's friends nobody in the Graph has still come from a fill: none yet; a fill whose reads came back
+    short, until FILL_READS of them; or, once, one filled before fills kept their read's report whose others fall short of
+    the friends its own read didn't match (or that kept no count of them). Never once the owner added them, nor after a
+    read of its own that kept its report (Import again)."""
+    if data.get('added') or 'read' in data:
+        return False
+    if 'fill' in data:
+        return not data['fill'].get('done')
+    if 'others' not in data:
+        return True
+    unmatched = data.get('unmatched')
+    return not isinstance(unmatched, int) or len(data['others']) < SHORT * unmatched
+
+
+def to_fill(db):
+    """The to-dos whose friends nobody in the Graph has a fill at start reads (needs_fill): a preview or Save."""
     try:
         rows = db.execute("SELECT suggestion_id,data FROM facebook_birthdays WHERE state IN ('preview','saved')").fetchall()
     except Exception:  # noqa: BLE001 - a database before this table
         return []
-    return [row['suggestion_id'] for row in rows if 'others' not in json.loads(row['data'] or '{}')]
+    return [row['suggestion_id'] for row in rows if needs_fill(json.loads(row['data'] or '{}'))]
 
 
-def fill_others(db, suggestion_id, items, today):
-    """An older to-do gains the friends nobody in the Graph has, from a fresh read's items (none when the read failed,
-    so it isn't tried again). Its state, matched people, Save and time stay as they are. Returns how many, or None
-    when it has them by now (Import again, or another fill)."""
+def fill_others(db, suggestion_id, result, today, reads=FILL_READS):
+    """An older to-do gains the friends nobody in the Graph has, from a fresh read (read's result). Kept with the read's
+    report (fill: found, capped, missing, woke, tries, done). A read that was cut short, missed months, never saw the page
+    answer, failed, or found clearly fewer than the to-do's own read (SHORT) came back short: its others are kept when
+    they are more than the to-do had, and it is read again, up to FILL_READS reads. Its state, matched people, Save and
+    time stay as they are. Returns the fill with 'others' (how many it has now), or None when it needs none by now."""
     got = get(db, suggestion_id)
-    if not got or got[0] not in ('preview', 'saved') or 'others' in got[1]:
+    if not got or got[0] not in ('preview', 'saved') or not needs_fill(got[1]):
         return None
     state, data, at = got
-    data['others'] = match(db, found(items or [], today))['others']
+    result = result if isinstance(result, dict) else {}
+    names = {} if result.get('error') else found(result.get('items') or [], today)
+    fill = {'found': len(names), **report(result), 'error': str(result.get('error') or '')[:40]}
+    before = data.get('fill') or {}
+    earlier = max(int(data.get('found') or 0), int(before.get('best') or 0))
+    short = bool(fill['error'] or not names or fill['capped'] or fill['missing'] or not fill['woke'] or len(names) < SHORT * earlier)
+    fill.update(tries=int(before.get('tries') or 0) + 1, best=max(len(names), int(before.get('best') or 0)), complete=not short)
+    fill['done'] = not short or fill['tries'] >= reads
+    others = match(db, names)['others']
+    if not short or len(others) > len(data.get('others') or ()):
+        data['others'] = others  # never fewer from a read that came back short than the to-do had
+    data.setdefault('others', [])
     data.setdefault('added', [])
+    data['fill'] = fill
     put(db, suggestion_id, state, data, at)
-    return len(data['others'])
+    return {**fill, 'others': len(data['others'])}
 
 
 def get(db, suggestion_id):

@@ -10,8 +10,9 @@ Hosted Machines get it too: their browser is the same shared one, seen through t
 Facebook themselves. A browser that isn't signed in is said on the to-do, with Sign in to Facebook (the dashboard's
 sign-in dialog, connect_site_signin), and nothing is read until the owner is in.
 
-A to-do read before the friends nobody in the Graph were kept gets them once, at start (birthdays_facebook_fill_old):
-the same read in the background, and nothing else on it changes."""
+A to-do read before the friends nobody in the Graph were kept gets them at start (birthdays_facebook_fill_old): the same
+read in the background, and nothing else on it changes. A read that comes back short is read again a while later, a
+few times at most (birthdays_facebook.fill_others); each read is one line in the log, with its counts."""
 import datetime as dt
 import logging
 import secrets
@@ -30,7 +31,8 @@ from machine.browser import browser_lease_script
 LOG = logging.getLogger('personal-assistant')
 OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered once (also when the owner said Not needed)
 KIND = 'routine.facebook_birthdays'
-FILL_TRIES, FILL_WAIT = 10, 120  # an older to-do's one fill at start: the browser may come up after the service
+FILL_TRIES, FILL_WAIT = 10, 120  # an older to-do's fill at start: the browser may come up after the service
+FILL_AGAIN = 900  # a fill's read that came back short: the next one after this many seconds (birthdays_facebook.FILL_READS)
 
 
 class BirthdaysFacebookApp:
@@ -108,8 +110,9 @@ class BirthdaysFacebookApp:
                 people = birthdays_facebook.save(db, got[1], stamp)
                 saved = len(people)
                 # the rest read goes with the preview; the friends nobody in the Graph has stay, for the Add button
+                kept = {k: got[1][k] for k in ('found', 'unmatched', 'capped', 'missing', 'read', 'fill') if k in got[1]}  # the read's report
                 birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people, 'others': got[1].get('others') or [],
-                                                          'added': got[1].get('added') or []}, stamp)
+                                                          'added': got[1].get('added') or [], **kept}, stamp)
             elif step in ('add', 'undo_add'):
                 if state not in ('preview', 'saved'):
                     raise ValueError('Import again first')
@@ -165,6 +168,7 @@ class BirthdaysFacebookApp:
                 with self.store.connect() as db:
                     data = birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(),
                                                      result.get('capped'), result.get('missing'))
+                data['read'] = birthdays_facebook.report(result)
                 state = 'preview' if data['found'] else 'failed'
                 data = data if data['found'] else {'empty': True}
         except Exception as error:  # noqa: BLE001 - whatever went wrong, the to-do says it didn't work
@@ -176,25 +180,37 @@ class BirthdaysFacebookApp:
     def birthdays_facebook_fill_old(self):
         """At start: a to-do read before the friends nobody in the Graph were kept gets them, without a tap, from the same
         read as Import again, in the background. Nothing else on it changes. Until the browser and its lease are free it
-        waits; a read that fails (signed out, a broken page) leaves it with none, and it isn't tried again."""
+        waits (the next start tries again). A read that comes back short (birthdays_facebook.fill_others) is read again
+        FILL_AGAIN s later, up to FILL_READS reads, also across starts; the last one's friends stay."""
         with self.store.connect() as db:
-            old = birthdays_facebook.without_others(db)
+            old = birthdays_facebook.to_fill(db)
         if old:
             self.birthdays_facebook_spawn(self.birthdays_facebook_fill, old)
 
     def birthdays_facebook_fill(self, sids, tries=FILL_TRIES):
-        result = None
-        for attempt in range(tries):
-            try:
-                result = self.birthdays_facebook_fetch()
-            except Exception as error:  # noqa: BLE001 - a broken read: none for them
-                LOG.info('facebook birthdays fill failed error=%s', type(error).__name__)
-                result = {}
-            if result is not None or self.stop.wait(FILL_WAIT if attempt < tries - 1 else 0):
-                break
-        if result is None:
-            return  # the browser never came: the next start tries again
-        items = [] if result.get('error') else result.get('items')
-        with self.store.connect() as db:
-            for sid in sids:
-                birthdays_facebook.fill_others(db, sid, items, dt.datetime.now().date())
+        while sids:
+            result = None
+            for attempt in range(tries):
+                try:
+                    result = self.birthdays_facebook_fetch()
+                except Exception as error:  # noqa: BLE001 - a broken read: it came back short
+                    result = {'error': type(error).__name__}
+                if result is not None or self.stop.wait(FILL_WAIT if attempt < tries - 1 else 0):
+                    break
+            if result is None:
+                return  # the browser never came: the next start tries again
+            again = []
+            with self.store.connect() as db:
+                for sid in sids:
+                    fill = birthdays_facebook.fill_others(db, sid, result, dt.datetime.now().date())
+                    if fill is None:
+                        continue
+                    LOG.info('facebook birthdays fill %s found=%s others=%s capped=%s missing=%s woke=%s rounds=%s ms=%s try=%s%s',
+                             'done' if fill['complete'] else 'short, kept as it is' if fill['done'] else 'short, read again later',
+                             fill['found'], fill['others'], fill['capped'], len(fill['missing']), fill['woke'], fill['rounds'],
+                             fill['ms'], fill['tries'], ' error=' + fill['error'] if fill['error'] else '')
+                    if not fill['done']:
+                        again.append(sid)
+            if not again or self.stop.wait(FILL_AGAIN):
+                return
+            sids = again
