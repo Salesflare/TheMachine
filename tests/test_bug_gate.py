@@ -135,9 +135,9 @@ class BugGate(unittest.TestCase):
 
     def test_anything_but_a_bug_fix_that_only_restores_is_parked_for_the_owner(self):
         answers = {
-            'not a bug': ({'verdict': 'not_bug', 'restores_only': False, 'why': 'Archiving is new behavior.'}, 'says it is not a bug fix (Archiving is new behavior)'),
-            'more than a restore': ({'verdict': 'bug', 'restores_only': False, 'why': 'It also adds archiving.'}, 'says the change does more than restore what was intended'),
-            'unsure': ({'verdict': 'unsure', 'restores_only': True}, 'is not sure it is a bug fix'),
+            'not a bug': ({'verdict': 'not_bug', 'restores_only': False, 'why': 'Archiving is new behavior.'}, 'says this is not a bug fix (Archiving is new behavior). Not merged'),
+            'more than a restore': ({'verdict': 'bug', 'restores_only': False, 'why': 'It also adds archiving.'}, 'says the change does more than restore what was intended (It also adds archiving). Not merged'),
+            'unsure': ({'verdict': 'unsure', 'restores_only': True}, 'is not sure this is a bug fix. Not merged'),
             'no clear yes': ({'verdict': 'bug'}, 'says the change does more than restore'),
             'not JSON': ('I think it is fine.', 'could not judge it'),
         }
