@@ -10,6 +10,7 @@ import http.server
 import importlib.util
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -48,6 +49,9 @@ class Page(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):  # the page's graphql request (.../data/): answered with what it sent, as Facebook answers
         body = self.rfile.read(int(self.headers.get('Content-Length') or 0))
+        slow = re.search(r'/slow(\d+)/', self.path)
+        if slow:  # a browser just up: the first answer takes a while
+            time.sleep(int(slow.group(1)) / 1000)
         self.send_response(200)
         self.send_header('Content-Type', 'text/javascript; charset=utf-8')
         self.end_headers()
@@ -170,6 +174,24 @@ class Read(unittest.TestCase):
             self.assertLess(took, 15, path)  # the cap is minutes; it ends in seconds
             self.assertEqual(len(fb.found(result['items'], TODAY)), 501 if 'data' not in path else 500, path)
 
+    def test_a_cold_start_with_every_month_there_already_reads_on_until_the_page_has_loaded(self):
+        # The page answers no scroll for its first seconds and its first request is slow, while its first data has every
+        # month: neither a quiet start nor a request still on its way ends the read.
+        result = fb.read(self.base, self.origin + '/events/birthdays/data/spread/n120/chunk20/cold3000/slow3000/', self.FAST)
+        self.assertEqual((result['capped'], result['missing'], result['woke']), (False, [], True))
+        self.assertEqual(fb.found(result['items'], TODAY), self.friends(120))
+
+    def test_a_cold_start_with_months_still_missing_waits_out_its_quiet_start(self):
+        result = fb.read(self.base, self.origin + '/events/birthdays/data/n120/chunk20/cold4000/slow2500/', {**self.FAST, 'idle': 2000})
+        self.assertEqual((result['capped'], result['missing'], result['woke']), (False, [], True))
+        self.assertEqual(fb.found(result['items'], TODAY), self.friends(120))
+
+    def test_a_page_that_never_answers_its_scrolls_ends_after_a_while_and_says_so(self):
+        result = fb.read(self.base, self.origin + '/events/birthdays/data/n120/chunk20/cold600000/', {**self.FAST, 'idle': 1000, 'wake': 3000})
+        self.assertFalse(result['woke'])
+        self.assertGreaterEqual(result['ms'], 3000)
+        self.assertEqual(len(fb.found(result['items'], TODAY)), 20)  # only its first data
+
     def test_reads_every_friend_from_the_pages_data_on_a_long_page_that_drops_what_it_scrolled_past(self):
         for size, chunk in ((1700, 100), (5000, 250)):  # Facebook allows 5,000 friends
             result = fb.read(self.base, self.origin + '/events/birthdays/data/virtual/n%d/chunk%d/' % (size, chunk), self.FAST)
@@ -263,7 +285,8 @@ class Import(unittest.TestCase):
         self.assertFalse({'email:pat@one.example', 'email:pat@two.example'} & set(facts))
         self.assertIn(('email:sam@mail.example', 'contacts'), on_day)  # the Birthdays run reads it like Google's
         kept = json.loads(row['data'])
-        self.assertEqual((row['state'], set(kept)), ('saved', {'saved', 'people', 'others', 'added'}))  # who was saved; the rest read is gone
+        self.assertEqual((row['state'], set(kept)), ('saved', {'saved', 'people', 'others', 'added', 'found', 'unmatched', 'capped', 'missing', 'read'}))
+        # who was saved, and the read's report (counts only); the rest read (matched and ambiguous names) is gone
         self.assertEqual(([o['name'] for o in kept['others']], kept['added']), (['Lee Okafor'], []))  # but friends nobody in the Graph has, for the Add button
         self.assertEqual({p['id'] for p in kept['people']}, {'email:robin@mail.example', 'email:sam@mail.example'})
         with self.store.connect() as db:
