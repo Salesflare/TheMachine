@@ -65,7 +65,7 @@ function personContact(n){const c=personContacts(n),p=n.profile||{};
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
 // Birthday (person_birthday.py): the one the Birthdays routine reads, with where it came from. Edit sets or corrects it
 // in the row: a month and a day, the year when known. Without one, Fields offers Add birthday, which opens the same row.
-const BDAY_FROM={google:'From Google contacts',facebook:'From Facebook',notes:'From your notes',owner:'Added by you'};
+const BDAY_FROM={google:'From Google contacts',google_calendar:'From Google Calendar',facebook:'From Facebook',notes:'From your notes',owner:'Added by you'};
 const bdayDate=(b,o)=>localeDate(new Date(b.year||2000,b.month-1,b.day,12),DL,{day:'numeric',month:'long',...(b.year?{year:'numeric'}:{}),...o});
 function bdayAge(b){if(!b.year)return null;const now=new Date(),age=now.getFullYear()-b.year-((now.getMonth()+1)*100+now.getDate()<b.month*100+b.day?1:0);return age>=0?age:null}
 const bdayFrom=s=>BDAY_FROM[s]?t(BDAY_FROM[s]):t('From {}',cap(String(s||'')));

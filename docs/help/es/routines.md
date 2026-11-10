@@ -27,7 +27,7 @@ Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuel
 
 **Cumpleaños** crea una tarea para cada contacto cercano que cumple años hoy: personas a las que tú escribes, como amigos, familia y contactos habituales. Cada una trae una felicitación corta redactada donde sueles hablar con ellos, como su chat de WhatsApp o tu hilo de correo, en su idioma. Solo sale cuando tú la envías. Un día sin cumpleaños no crea ninguna tarea.
 
-Los cumpleaños vienen de tus calendarios (los cumpleaños de Google y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si ninguno tiene todavía un cumpleaños, el resultado dice **Aún no hay cumpleaños** y cómo añadirlos.
+Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpleaños de Google, leídos cada mañana aunque no se sincronicen, y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si ninguno tiene todavía un cumpleaños, el resultado dice **Aún no hay cumpleaños** y cómo añadirlos.
 
 **Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
 

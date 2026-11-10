@@ -27,7 +27,7 @@ Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste,
 
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
 
-Verjaardagen komen uit je agenda’s (de verjaardagen van Google en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph. Staat er nog nergens een verjaardag, dan zegt het resultaat **Nog geen verjaardagen bekend** en hoe je ze toevoegt.
+Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen van Google, elke ochtend gelezen, ook als ze niet gesynchroniseerd worden, en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph. Staat er nog nergens een verjaardag, dan zegt het resultaat **Nog geen verjaardagen bekend** en hoe je ze toevoegt.
 
 **Verjaardagen importeren uit Facebook**: zodra Verjaardagen aan staat, biedt een to-do aan om de verjaardagspagina van Facebook te lezen. Tik op **Importeren** en The Machine opent ze in zijn browser, scrolt tot elke maand geladen is en leest de naam en verjaardag van elke vriend. Hij toont hoeveel hij vond en wie overeenkomt met mensen in je Graph. Een naam die meer dan één persoon heeft, wordt overgeslagen en vermeld.
 

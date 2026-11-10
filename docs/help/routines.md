@@ -29,7 +29,7 @@ Nothing changes until you confirm on the to-do. Senders you decided on aren’t 
 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.
 
-Birthdays come from your calendars (Google’s birthday events and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph. When none of them holds a birthday yet, its result says **No birthday info yet** and how to add some.
+Birthdays come from your calendars (Google’s birthday events and Birthdays calendar, read each morning even when they aren’t synced, and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph. When none of them holds a birthday yet, its result says **No birthday info yet** and how to add some.
 
 **Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph. A name that more than one person has is skipped and listed.
 

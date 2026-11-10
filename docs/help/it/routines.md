@@ -27,7 +27,7 @@ Nulla cambia finché non confermi sull’attività. I mittenti già decisi non t
 
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 
-I compleanni vengono dai tuoi calendari (i compleanni di Google e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
+I compleanni vengono dai tuoi calendari (i compleanni e il calendario Compleanni di Google, letti ogni mattina anche se non sono sincronizzati, e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
 
 **Importa i compleanni da Facebook**: con Compleanni attivo, un’attività propone di leggere la pagina dei compleanni di Facebook. Tocca **Importa** e The Machine la apre nel suo browser, scorre finché ogni mese è caricato e legge nome e compleanno di ogni amico. Mostra quanti ne ha trovati e chi corrisponde a persone del tuo Graph. Un nome che ha più di una persona viene saltato ed elencato.
 

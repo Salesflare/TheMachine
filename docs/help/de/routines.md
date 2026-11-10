@@ -29,7 +29,7 @@ Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Abse
 
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
 
-Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph. Steht noch nirgends ein Geburtstag, sagt das Ergebnis **Noch keine Geburtstage bekannt** und wie du welche einträgst.
+Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kalender Geburtstage, jeden Morgen gelesen, auch wenn sie nicht synchronisiert werden, und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph. Steht noch nirgends ein Geburtstag, sagt das Ergebnis **Noch keine Geburtstage bekannt** und wie du welche einträgst.
 
 **Geburtstage aus Facebook importieren**: Sobald Geburtstage an ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook zu lesen. Tippe auf **Importieren**, und The Machine öffnet sie in ihrem Browser, scrollt, bis jeder Monat geladen ist, und liest Name und Geburtstag jedes Freundes. Sie zeigt, wie viele sie gefunden hat und wer zu Personen in deinem Graph passt. Ein Name, den mehr als eine Person trägt, wird übersprungen und aufgelistet.
 

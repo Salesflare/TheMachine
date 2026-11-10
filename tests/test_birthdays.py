@@ -14,6 +14,7 @@ from unittest.mock import patch
 spec = importlib.util.spec_from_file_location('birthdays_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import birthdays  # noqa: E402
+import person_birthday  # noqa: E402
 import enrichment  # noqa: E402
 import graph  # noqa: E402
 import ms_graph  # noqa: E402
@@ -70,6 +71,22 @@ class Sources(unittest.TestCase):
         only_phone = {'phoneNumbers': [{'canonicalForm': '+15550101'}], 'birthdays': [{'date': {'year': 1990, 'month': 3, 'day': 1}}]}
         self.assertEqual(enrichment.google_facts(only_phone), [(['wa:15550101'], {'birthday': '1990-03-01'}, enrichment.RECORD)])
         self.assertNotIn('birthday', enrichment.with_facts({}, [{'birthday': ('--11-09', 1, 'google', '2026-11-09')}]))  # kept, not on the profile
+
+    def test_google_birthdays_read_at_run_time(self):
+        day = dt.date(2026, 11, 9)
+        on_day = {'start': {'date': '2026-11-09'}, 'end': {'date': '2026-11-10'}}
+        main = [{**on_day, 'summary': "Sam Rivera's birthday", 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday', 'contact': 'people/c1'}},
+                {**on_day, 'summary': 'Happy birthday!', 'eventType': 'birthday', 'birthdayProperties': {'type': 'self'}},
+                {**on_day, 'summary': "Kim Park's anniversary", 'eventType': 'birthday', 'birthdayProperties': {'type': 'anniversary'}},
+                {**on_day, 'summary': "Lou Grant's birthday", 'eventType': 'birthday', 'status': 'cancelled'},
+                {'start': {'date': '2026-11-10'}, 'summary': "Ann Lee's birthday", 'eventType': 'birthday'},  # tomorrow
+                {**on_day, 'summary': 'Team offsite', 'eventType': 'default'}]
+        self.assertEqual(birthdays.google_birthdays(main, day), [{'name': 'Sam Rivera', 'emails': [], 'date': '2026-11-09'}])
+        self.assertEqual(len(birthdays.google_birthdays(main)), 2)  # any day: the year ahead
+        contact = lambda kind, **prefs: {**on_day, 'summary': 'x', 'gadget': {'preferences': {'goo.contactsEventType': kind, **prefs}}}
+        book = [contact('BIRTHDAY', **{'goo.contactsFullName': 'Sam  Rivera', 'goo.contactsEmail': 'sam@mail.example'}),
+                contact('ANNIVERSARY', **{'goo.contactsFullName': 'Kim Park'}), contact('SELF', **{'goo.contactsFullName': 'Owner'})]
+        self.assertEqual(birthdays.google_birthdays(book, day, contacts=True), [{'name': 'Sam Rivera', 'emails': ['sam@mail.example'], 'date': '2026-11-09'}])
 
     def test_outlook_birthdays_calendar_is_read_with_calendars_read(self):
         self.assertEqual(ms_graph.READ['calendars.list'], ('GET', '/me/calendars', 'Calendars.Read'))
@@ -219,6 +236,59 @@ class Birthdays(unittest.TestCase):
         self.birthday_event("Jo's birthday")
         todos, run = self.morning()
         self.assertEqual(todos, [])
+
+    def test_google_birthdays_are_read_at_run_time_with_the_calendars_own_scope(self):
+        # The calendar's sync left them out (an excluded title, or the Birthdays calendar isn't connected): read now
+        for x in self.app.config['accounts']:
+            if x['id'] == 'cal':
+                x.update(transport='gog', excluded_title_terms=["'s birthday"])
+        self.app.config['accounts'].append({'id': 'cal2', 'email': 'OWNER@mail.example', 'service': 'calendar', 'transport': 'gog'})  # the same account twice
+        self.person('email:sam@mail.example', 'Sam Rivera', 3.4, events=[self.mail('sam@mail.example', True, 3)])
+        self.person('wa:15550102', 'Kim Park', 2.0, events=[self.chat('15550102', True, 3)])
+        self.person('email:pat@far.example', 'Pat Doe', 0.1, events=[self.mail('pat@far.example', False, 3)])
+        self.person('email:lou@mail.example', 'Lou Grant', 2.0, events=[self.mail('lou@mail.example', True, 3)])
+        self.person('email:ann@mail.example', 'Ann Lee', 2.0, events=[self.mail('ann@mail.example', True, 3)])
+        other = self.today + dt.timedelta(days=40)
+        with self.store.connect() as db:  # the owner set Lou's to another day and removed the one Ann's contact had: those stay
+            person_birthday.set_birthday(db, 'email:lou@mail.example', {'month': other.month, 'day': other.day}, ago(0))
+            enrichment.offer_facts(db, [(['email:ann@mail.example'], {'birthday': f'--{self.today:%m-%d}'}, enrichment.RECORD)], 'google', ago(1))
+            person_birthday.set_birthday(db, 'email:ann@mail.example', {'remove': True}, ago(0))
+        on_day = {'start': {'date': self.today.isoformat()}, 'end': {'date': (self.today + dt.timedelta(days=1)).isoformat()}}
+        calls = []
+
+        def read(config, account, api, version, method, params, scope):
+            calls.append((account['id'], method, params['calendarId'], params.get('eventTypes'), scope))
+            if params['calendarId'] == 'primary':
+                return {'items': [{**on_day, 'summary': "Kim Park's birthday", 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday'}},
+                                  {**on_day, 'summary': "Pat Doe's birthday", 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday'}},
+                                  {**on_day, 'summary': "Lou Grant's birthday", 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday'}},
+                                  {**on_day, 'summary': "Ann Lee's birthday", 'eventType': 'birthday', 'birthdayProperties': {'type': 'birthday'}}]}
+            # the contacts' calendar names Sam by another name, and by the address the owner writes to
+            return {'items': [{**on_day, 'summary': "Sammy R's birthday", 'gadget': {'preferences': {
+                'goo.contactsEventType': 'BIRTHDAY', 'goo.contactsFullName': 'Sammy R', 'goo.contactsEmail': 'Sam@mail.example'}}}]}
+        with patch('birthdays_app.gog_read', read):
+            todos, run = self.morning()
+        self.assertEqual([t['title'] for t in todos], ['Wish Kim Park a happy birthday', 'Wish Sam Rivera a happy birthday'])
+        read_only = 'https://www.googleapis.com/auth/calendar.readonly'
+        self.assertEqual(calls, [('cal', 'calendar.events.list', 'primary', 'birthday', read_only),
+                                 ('cal', 'calendar.events.list', 'addressbook#contacts@group.v.calendar.google.com', None, read_only)])
+        with self.store.connect() as db:  # no calendar event kept; the birthday is, on the person's page
+            self.assertEqual(db.execute("SELECT count(*) FROM events WHERE kind='calendar.event'").fetchone()[0], 0)
+            sam = person_birthday.get(db, 'email:sam@mail.example')
+            self.assertEqual((sam['value'], sam['source']), (f'--{self.today:%m-%d}', 'google_calendar'))
+            self.assertIsNone(person_birthday.get(db, 'email:pat@far.example'))  # not close: not saved
+            self.assertEqual(person_birthday.get(db, 'email:lou@mail.example')['source'], 'owner')  # the owner's day wins
+            self.assertIsNone(person_birthday.get(db, 'email:ann@mail.example'))  # removed stays removed
+            kim = person_birthday.get(db, 'wa:15550102')
+            person_birthday.set_birthday(db, 'wa:15550102', {'month': self.today.month, 'day': self.today.day, 'year': 1990}, ago(0))
+        self.assertEqual(kim['source'], 'google_calendar')
+        with patch('birthdays_app.gog_read', read):  # the next run doesn't save the same day again
+            self.assertEqual(self.app.birthdays_save(self.app.birthdays_google(self.today, local_tz()), '32'), 0)
+
+        def fails(*args):
+            raise a.SourceError('calendar', 403)
+        with patch('birthdays_app.gog_read', fails):  # a read that fails is skipped, the run still ends
+            self.assertEqual(self.app.birthdays_google(self.today, local_tz()), [])
 
     def test_a_contact_birthday_finds_its_person_by_any_address_or_number_never_a_shared_one(self):
         # Sam goes by a second address; Kim's number was added in local form (the owner is in Belgium); Lou's with spaces
