@@ -1099,8 +1099,8 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
     model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
-    One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET first (gateway_idle), and
-    after each step checks that the Gateway can still run models: it never ends, done or failed, with that
+    One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET (gateway_idle) before the swap
+    and again before the reload, and after each step checks that the Gateway can still run models: it never ends, done or failed, with that
     broken and no recovery tried (restore_model_runtime). `restart`: whether that recovery may restart the
     Gateway (may_restart_gateway)."""
     openclaw = facts.get('openclaw')
@@ -1114,7 +1114,7 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     if not gateway_idle('the bridge goes in'):
         if not (restart and onboarding.gateway_units()):
             say(f'  The memory index is still running after {swap_minutes()}. Swapping the bridge in now would leave the Gateway unable to run models,'
-                ' so nothing in OpenClaw was changed.\n  Run ./install.sh again when it is done (openclaw memory status).')
+                ' so nothing in OpenClaw was changed.\n  Run ./install.sh again when it is done: it waits for the index again by itself.')
             return False
         say(f'  The memory index is still running after {swap_minutes()}; going on. If the Gateway does not take the bridge, it is restarted.')
     def kept(after):  # the Gateway can still run models, or could again after the recovery
@@ -1150,6 +1150,14 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         return False
     applied = True
     if reload:
+        # An index can have started since the swap, and a reload fails on a running one the same way: a fresh stretch.
+        if not gateway_idle('reloading the bridge', '  '):
+            if not (restart and onboarding.gateway_units()):
+                say(f'  The memory index is still running after {swap_minutes()}. Reloading the bridge now would leave the Gateway unable to run'
+                    ' models, so the bridge is linked but not reloaded: the Gateway runs the one it had until then.'
+                    '\n  Run ./install.sh again when it is done: it waits for the index again by itself.')
+                return False
+            say(f'  The memory index is still running after {swap_minutes()}; going on. If the Gateway does not take the bridge, it is restarted.')
         result = run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
         if result.returncode != 0:
             # Reload only works in a running Gateway. One that is down (stopped, still starting, or given up by

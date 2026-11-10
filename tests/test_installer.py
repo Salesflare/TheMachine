@@ -489,6 +489,27 @@ class InstallerTest(unittest.TestCase):
         self.assertTrue(ok, said)
         self.assertEqual((calls[:2], slept), (['index?', 'plugins install'], 0))
 
+    def test_an_index_that_starts_between_the_swap_and_the_reload_is_waited_for_too(self):
+        ok, calls, said, stamped, _ = self.swap(busy=[None, True, True])  # nothing to see at the swap, a run by the reload
+        self.assertTrue(ok, said)
+        self.assertTrue(stamped)
+        between = calls[calls.index('plugins enable'):calls.index('plugins reload')]
+        self.assertEqual(between.count('index?'), 2 + 31, calls)  # a full minute after the last busy look
+        self.assertEqual(self.clock[0] - 1000.0, 4 + 60)
+        self.assertEqual(said.count('  OpenClaw is building its memory index; waiting up to 10 min for it before reloading the bridge.'), 1, said)
+        ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0')  # still running at the bound
+        self.assertTrue(ok, said)  # this install may restart the Gateway: it goes on, the check after the reload covers it
+        self.assertIn('going on', said)
+        self.assertIn('plugins reload', calls)
+        ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0', restart=False)
+        self.assertFalse(ok)
+        self.assertFalse(stamped)  # not reloaded is not installed: the next run does it
+        self.assertIn('plugins install', calls)
+        self.assertFalse([c for c in calls if c.startswith(('plugins reload', 'systemctl'))], calls)
+        self.assertIn('linked but not reloaded', said)
+        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertNotIn('openclaw memory status', said)
+
     def test_the_reload_that_brings_models_back_waits_for_the_same_quiet(self):
         # The swap went in during a pause the first check could not see (None), the index went on and the install failed.
         ok, calls, said, _, _ = self.swap(fail=['install'], breaks='install', reload_heals=True, busy=[None, True, True] + [False] * 15 + [True])
@@ -510,7 +531,8 @@ class InstallerTest(unittest.TestCase):
         self.assertFalse(stamped)
         self.assertFalse([c for c in calls if c.startswith(('plugins', 'systemctl'))], calls)
         self.assertIn('nothing in OpenClaw was changed', said)
-        self.assertIn('Run ./install.sh again', said)
+        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertNotIn('openclaw memory status', said)  # that command does not show the run that indexes
 
     def test_a_failed_plugin_install_that_took_the_model_runtime_down_gets_it_back(self):
         ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install')
