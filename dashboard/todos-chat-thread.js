@@ -143,7 +143,9 @@ function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true
 // What a note on this card taught (from what was stored, never from what a reply says): a quiet line that opens it on
 // What I've learned, with Edit and Undo while it is there (a channel's voice has its own 'Saved to How you write' line).
 // A fact about a person, organization or project says so and opens that page, where it lives.
+// A contact detail went on someone's record instead (contact_facts.py): the line opens their page, and Undo puts it back.
 function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,q=i.text?html`<q>${i.text}</q>`:'',node=i.about?html` data-learned-node="${i.about.id}"`:'';
+ if(i.state==='record'){const line=window.t('Added to {}',i.name);return html`<div class="chat-event chat-learned"><span class="learned-acts"><a class="link" href="#graph/${encodeURIComponent(i.record)}">${line}</a>${sep}<button type="button" class="link" data-fixed-undo="${i.change}" aria-label="${window.t('Undo: {}',line)}">${window.t('Undo')}</button></span>${q}</div>`}
  if(i.state==='removed')return html`<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
  const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}"${node}>${i.about?window.t('Saved to {} in the Graph',i.about.name):'Saved to what I’ve learned'}</button>`;
  return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}"${node} aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}

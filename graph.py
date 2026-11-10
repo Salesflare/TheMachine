@@ -5045,6 +5045,11 @@ def merge_all(db, pairs, now):
     return {'merged': done, 'batch': now if done else None}
 
 
+def unmerge(db, a, b, at):
+    """Undo one merge the owner's word made at this time (a contact detail's, contact_facts.py); any other decision stays."""
+    db.execute("DELETE FROM graph_merges WHERE a=? AND b=? AND same=1 AND source='owner' AND created_at=?", (*sorted((a, b)), at))
+
+
 def unmerge_all(db, batch):
     """Undo Merge all: the batch's merges go, so the pairs are separate people and asked again; any other decision stays."""
     return db.execute("DELETE FROM graph_merges WHERE created_at=? AND same=1 AND source='owner'", (str(batch),)).rowcount

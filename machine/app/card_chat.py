@@ -17,6 +17,7 @@ import agent_jobs
 import browser_login
 import chat_files
 import chat_model
+import contact_facts
 import corrections
 import fleet_reviews
 import i18n
@@ -510,7 +511,8 @@ class CardChatApp:
         saved from a note here (a channel voice shows as its own 'Saved to How you write' line). The chat shows them as
         quiet lines that open the learning on What I've learned. A fact says where it stands now: saved, removed
         (Undo), or condensed into another (`into`, that fact's id, or 0 when it went into a voice or a skill). One about a
-        person, organization or project says which (`about`: id and name): it lives on that record's page."""
+        person, organization or project says which (`about`: id and name): it lives on that record's page. A contact
+        detail moved onto someone's record (contact_facts.py) says whose (`record`, `name`), with that move's Undo."""
         out, about = [], {}
         for r in db.execute('SELECT a.fact_id,a.node_id,n.name FROM fact_about a JOIN graph_nodes n ON n.id=a.node_id JOIN facts f ON f.id=a.fact_id '
                             'JOIN decisions d ON d.id=f.decision_id WHERE d.suggestion_id=? AND a.removed_at IS NULL ORDER BY a.created_at,a.node_id', (suggestion_id,)):
@@ -519,6 +521,10 @@ class CardChatApp:
                             "WHERE d.suggestion_id=? AND NOT EXISTS (SELECT 1 FROM facts o WHERE o.merged_into='fact:'||f.id) "
                             "ORDER BY f.created_at,f.id", (suggestion_id,)):
             into = str(r['merged_into'] or '')
+            moved = contact_facts.moved_to(db, r['id']) if into.startswith(contact_facts.MOVED) else None
+            if moved:
+                out.append({'kind': 'learned', 'what': 'fact', 'id': r['id'], 'text': clamp(r['text'], 300), 'state': 'record', **moved, 'at': chat_ms(r['created_at'])})
+                continue
             state = 'merged' if into else 'removed' if r['removed_at'] else 'saved'
             out.append({'kind': 'learned', 'what': 'draft' if r['kind'] == 'draft' else 'fact', 'id': r['id'], 'text': clamp(r['text'], 300),
                         'state': state, **({'into': int(into[5:]) if into.startswith('fact:') and into[5:].isdigit() else 0} if into else {}),

@@ -6,6 +6,7 @@ import json
 import math
 import re
 
+import contact_facts
 import embeddings
 import fact_links
 import learning_loop
@@ -366,8 +367,10 @@ class FactsStore:
         message the owner wrote in their own private chat (decision_id 'telegram-said:<message id>', which the service
         vouches for: remember_fact_action), not one on a to-do. source 'notes:<file>' with decision_id 'notes:<file>:<id>':
         a line of the owner's own OpenClaw notes that they ticked on Learning (bring_in.py); it is the owner's own, kept
-        like a note's fact, and can be a rule."""
+        like a note's fact, and can be a rule. kind contact: how to reach one person (their phone or email), from a note
+        or the owner's chat: it goes on that person's record when contact_facts can tell who for certain, else it is a fact."""
         text = ' '.join(str(text or '').split())
+        contact, kind = kind == contact_facts.KIND, 'fact' if kind == contact_facts.KIND else kind
         notes = source is not None and str(source).startswith('notes:') and str(decision_id).startswith(str(source) + ':') and not replaces
         by_ai = source is not None and not notes
         if by_ai and (not str(source).startswith('ai:') or not str(decision_id).startswith('ai:') or replaces
@@ -401,6 +404,10 @@ class FactsStore:
                 tombstone = next((r for r in removed if ' '.join(r['text'].casefold().split()) == text.casefold()),None)
                 if tombstone:
                     return {'id':tombstone['id'],'suppressed':True}
+                if contact and not by_ai and not notes:  # on the person's record when certain who (contact_facts.py)
+                    moved = self.contact_move(db, text, decision_id, note['suggestion_id'], about)
+                    if moved:
+                        return moved
                 if not by_ai and not about:  # the same thing in other words: the newer wording takes its place
                     said, how = self.said_before(db, storage, text)
                     if said and how == 'less':  # nothing new: that one was said again
@@ -483,6 +490,50 @@ class FactsStore:
         except Exception as error:  # a busy database: the next round tries again
             LOG.error('fact name links error=%s', type(error).__name__)
             return None
+
+    def contact_move(self, db, text, decision_id, suggestion_id, about):
+        """A contact detail on the one person it is certainly for (contact_facts.py): the fact is kept as moved there.
+        None when it can't be told (or it is learned already), so it is saved as a fact."""
+        found = contact_facts.detail(text)
+        if not found or db.execute("SELECT 1 FROM facts WHERE removed_at IS NULL AND kind='fact' AND lower(text)=lower(?)", (text,)).fetchone():
+            return None
+        moved = db.execute('SELECT id FROM facts WHERE merged_into LIKE ? AND lower(text)=lower(?)', (contact_facts.MOVED + '%', text)).fetchone()
+        if moved:  # said again: it is on their record already
+            return {'id': moved['id'], 'duplicate': True}
+        try:
+            about = self.fact_subjects(db, about)
+        except ValueError:  # a name two records share: the words and the number decide
+            about = []
+        who = contact_facts.resolve(db, fact_links.index(db, self.own_config()), text, *found, fact_links.todo_records(db, suggestion_id), about)
+        if not who:
+            return None
+        fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,removed_at,merged_into) VALUES(?,?,?,?,'fact','fact',?,?)",
+                             (text, decision_id, suggestion_id, now(), now(), contact_facts.MOVED + who[0])).lastrowid
+        return {'id': fact_id, **contact_facts.move(db, fact_id, text, *found, *who, 'contact:' + str(decision_id), now())}
+
+    def contacts_once(self):
+        """One time, once there is a graph: the facts already saved that only say how to reach one certain person go on
+        their record (contact_facts.movable), each a change under Learning, Changes with Undo. Its moves, or None."""
+        try:
+            with self.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                moved = learning_loop.run_once(db, contact_facts.ONCE, lambda db: self.contacts_move(db, contact_facts.movable(db, fact_links.index(db, self.own_config()))))
+                if moved:
+                    LOG.info('contact facts moved count=%s', len(moved))
+                return moved
+        except Exception as error:  # a busy database: the next round tries again
+            LOG.error('contact facts move error=%s', type(error).__name__)
+            return None
+
+    @staticmethod
+    def contacts_move(db, found):
+        """Move each (fact id, text, detail, who) contact_facts.movable found; [[fact id, node id]], or None to wait."""
+        if found is None:
+            return None
+        for fact_id, text, detail, who in found:
+            db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', (now(), contact_facts.MOVED + who[0], fact_id))
+            contact_facts.move(db, fact_id, text, *detail, *who, contact_facts.ONCE, now())
+        return [[f[0], f[3][0]] for f in found]
 
     def fact_about(self, fact_id, about):
         """A review says who an existing fact is about."""

@@ -279,6 +279,8 @@ class WorkersApp:
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         self.store.answered_elsewhere()
         self.store.name_links_once()  # one time: facts already learned are tied to the record they name (fact_links.py)
+        if self.store.contacts_once():  # one time: contact details saved as facts go on the person's record (contact_facts.py)
+            self.graph_later()
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
