@@ -2,9 +2,12 @@
 workers, health and what the page needs to draw itself; the agent's compact view of it, sign-in help for a signed-out
 source, and what only the owner can fix (needs_you). Moved out of assistant.py as is. A mixin of assistant.App
 (APP_MIXINS)."""
+import hashlib
 import json
 from pathlib import Path
 import sqlite3
+import threading
+import time
 import urllib.parse
 
 import abilities
@@ -22,6 +25,7 @@ from machine.text import clamp
 import message_seal
 from models import main_model, model_ready
 from sources import gog_signin_command
+from timeutil import now
 
 
 def agent_work_status(job):
@@ -175,13 +179,98 @@ class StatusApp:
             return self.agent_status(str(args.get('suggestion_id') or '').strip() or None)
         # done: how many done to-dos (the dashboard: its Done list's first page, it loads the rest itself); else the last 100
         done = args.get('done')
-        result = self.store.snapshot(self.config['accounts'], **({'done': max(0, min(int(done), 100))} if isinstance(done, int) else {}))
+        return self.status_fresh(self.status_kept(max(0, min(int(done), 100)) if isinstance(done, int) else None))
+
+    def status_mark(self, done, kept):
+        """What the kept status was built from: the database (a count of the commits seen, from SQLite's data_version on
+        a connection of its own, which changes with each commit by any other connection, this process's own included),
+        the config, and the minute (what depends on the time of day, a snoozed to-do coming back). None when the store
+        has no file or can't be read that way: then nothing is kept. Called with kept['lock'] held."""
+        path = getattr(getattr(self, 'store', None), 'path', None)
+        if not path:
+            return None
+        try:
+            if kept.get('watch') is None or kept.get('watch_path') != str(path):
+                kept['watch'] = sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True, timeout=1,
+                                                check_same_thread=False, isolation_level=None)
+                kept['watch_path'], kept['seen'], kept['commits'] = str(path), None, kept.get('commits', 0) + 1
+            seen = kept['watch'].execute('PRAGMA data_version').fetchall()[0][0]  # all of it: no read left open
+        except sqlite3.Error:
+            kept['watch'] = None
+            return None
+        if seen != kept['seen']:
+            kept['seen'], kept['commits'] = seen, kept['commits'] + 1
+        config = hashlib.blake2b(json.dumps(self.config, sort_keys=True, default=str).encode(), digest_size=16).digest()
+        return (done, kept['commits'], config, now()[:16])
+
+    def status_kept(self, done):
+        """The status as built from the database and config (status_built), kept until either changes: the dashboard
+        asks on every load, poll and action, and from each open tab, and built each one in full (half a second quiet, up
+        to half a minute while the Machine was busy). One build at a time: a request that comes while one runs waits for
+        it, and takes it when nothing changed since or when it started after the request came; a change during a build
+        makes the next request build again. Shared by threads; handed out as is, so status_fresh copies what it changes."""
+        kept = self.__dict__.setdefault('_status_kept', {'lock': threading.Condition(), 'busy': False, 'last': None})
+        came = time.monotonic()
+        with kept['lock']:
+            while True:
+                mark, last = self.status_mark(done, kept), kept['last']
+                if last and last['done'] == done and mark is not None and (last['mark'] == mark or last['started'] >= came):
+                    return last['result']
+                if not kept['busy']:
+                    break
+                kept['lock'].wait(30)
+            kept['busy'], started = True, time.monotonic()
+        result = None
+        try:
+            result = self.status_built(done)
+        finally:
+            with kept['lock']:
+                kept['busy'] = False
+                if result is not None and mark is not None:
+                    kept['last'] = {'done': done, 'mark': mark, 'started': started, 'result': result}
+                kept['lock'].notify_all()
+        return result
+
+    def status_fresh(self, built):
+        """The kept status with what changes without the database or config: the workers' and model's state in memory,
+        reviews and checks running, the heartbeat, what only the owner can fix (files outside the database) and the
+        skills and agents in use."""
+        result = dict(built)
+        result['browser_link'] = browser_link(self.config)  # the sign-in dialog's way out to the browser itself
+        result['needs_you'] = needs_you(self.config)
+        result['model_usage'] = getattr(self, 'model_usage', None)
+        result['model_status'] = getattr(self, 'model_status', None)
+        result['chat_model'] = self.chat_model_view()
+        try:  # the limit banner: a usage limit reached, which one and when it resets
+            result['model_pause'] = self.model_pause()
+        except Exception as error:  # noqa: BLE001 - the dashboard shows without it
+            LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
+        result['review_pause'] = self.review_pause()
+        result['check'] = self.check_view()
+        result['mail_check'] = self.mail_check_view()  # "Checked 12 new emails at 16:11 · nothing needs you" on To-dos
+        result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
+        result['review_live'] = self.review_live()
+        result['started_at'] = self.started_at()
+        result['review_health'] = dict(result['review_health'])
+        self.heartbeat_health(result['review_health'])
+        if getattr(self, 'agents', None):
+            try:
+                result['agent_tools'] = self.agents.tools()
+            except (sqlite3.Error, ValueError) as error:
+                LOG.error('agent tools status error=%s', type(error).__name__)
+        return result
+
+    def settings_views(self):
+        """What only Settings shows, for api/settings when Settings opens: not built for every status."""
+        return {'agents_settings': self.agents_view(), 'signatures': self.signature_view(), 'lookups': self.lookups_view(),
+                'own_addresses': self.own_addresses_view()}
+
+    def status_built(self, done):
+        result = self.store.snapshot(self.config['accounts'], **({'done': done} if done is not None else {}))
         # `manage_url`: where this install is set up when that is a web page (a hosted machine); the dashboard links to it.
         manage = str(self.config.get('manage_url') or '')
         result['manage_url'] = manage if manage.startswith('https://') else None
         result['account_url'] = fleet.account_url(self.config)  # the CP Account page, when linked to one (Settings, Account ↗)
-        result['browser_link'] = browser_link(self.config)  # the sign-in dialog's way out to the browser itself
-        result['needs_you'] = needs_you(self.config)
         result['learning_changes'] = self.learning_changes_shown(result.get('learning_changes') or [])
         by_id = {a['id']: a for a in self.config['accounts']}
         from work_or_personal import work_labels
@@ -212,27 +301,13 @@ class StatusApp:
             elif 'microsoft_signin_expired' in (connector.get('error') or '') and by_id.get(connector['id'], {}).get('transport') == 'graph':
                 import onboarding
                 connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
-        result['model_usage'] = getattr(self, 'model_usage', None)
-        result['model_status'] = getattr(self, 'model_status', None)
-        result['chat_model'] = self.chat_model_view()
-        try:  # the limit banner: a usage limit reached, which one and when it resets
-            result['model_pause'] = self.model_pause()
-        except Exception as error:  # noqa: BLE001 - the dashboard shows without it
-            LOG.error('model pause error=%s', type(error).__name__); result['model_pause'] = None
-        result['review_pause'] = self.review_pause()
-        result['check'] = self.check_view()
-        result['mail_check'] = self.mail_check_view()  # "Checked 12 new emails at 16:11 · nothing needs you" on To-dos
-        result['skills'] = self.skills.view() if getattr(self, 'skills', None) else None
-        result['review_live'] = self.review_live()
         result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
         result['reviews_auto'] = reviews_start_by_themselves(self.config)
-        result['started_at'] = self.started_at()
         result['hours'] = self.hours()
         result['locale'] = self.locale_view()
         result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
         result['todo_channels'] = reminder_channels(self.store, self.config, 'todo')  # where a to-do held for later goes (its deliver_after chip)
         result['notify'] = self.notify_view()
-        result['agents_settings'] = self.agents_view()
         result['setup_hints'] = self.setup_hints_view()
         result['phone_app_store'] = phone_app_nudge(self.store)
         try:  # the setup to-do at the top of To-dos (setup_card)
@@ -259,17 +334,12 @@ class StatusApp:
             result['whats_new'] = self.store.whats_new()
         except (sqlite3.Error, ValueError, TypeError) as error:
             LOG.warning('whats new error=%s', type(error).__name__); result['whats_new'] = None
-        result['signatures'] = self.signature_view()
-        result['lookups'] = self.lookups_view()
-        result['own_addresses'] = self.own_addresses_view()
         result['team_learnings'] = self.learnings_view()
         result['security'] = self.security_view()
-        self.heartbeat_health(result['review_health'])
         for suggestion in result.get('suggestions', []):
             suggestion['snooze_choices'] = snooze_choices(self.is_work(suggestion.get('account_ids')))
         if getattr(self, 'agents', None):
             try:
-                result['agent_tools'] = self.agents.tools()
                 with self.store.connect() as db:
                     self.agents.annotate(db, result.get('suggestions', []))
             except (sqlite3.Error, ValueError) as error:

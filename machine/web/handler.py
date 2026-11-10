@@ -305,6 +305,7 @@ def make_handler(app):
             '/approval': 'get_approval',
             '/api/events': 'get_api_events',
             '/api/account': 'get_api_account',
+            '/api/settings': 'get_api_settings',
             '/api/activity': 'get_api_activity',
             '/api/calendar': 'get_api_calendar',
             '/api/routines': 'get_api_routines',
@@ -504,6 +505,10 @@ def make_handler(app):
 
         def get_api_account(self, path):
             self.output(200, app.account_view())
+
+        def get_api_settings(self, path):
+            # what only Settings shows (StatusApp.settings_views), asked when Settings opens: not part of every status
+            self.output(200, app.settings_views())
 
         def get_api_activity(self, path):
             # Settings, Activity: everything The Machine did, a page at a time (activity_log.py)
