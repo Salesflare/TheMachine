@@ -28,7 +28,7 @@ Klick unter Felder bei einer Person, Organisation oder einem Projekt auf einen W
 
 ## Geburtstag
 
-Der Geburtstag einer Person steht unter Kontakt, mit seiner Herkunft: ihr Google-Kontakt, ein Facebook-Import oder du. **Bearbeiten** setzt oder korrigiert ihn: Monat und Tag, und das Jahr, wenn du es kennst (dann steht auch das Alter dabei). Deiner gilt vor jeder Quelle und bleibt. **Entfernen** nimmt ihn weg; ein Kontakt oder ein Import bringt ihn nicht zurück.
+Der Geburtstag einer Person steht unter Kontakt, mit seiner Herkunft: ihr Google-Kontakt, ein Geburtstag in Google Calendar (die Routine Geburtstage speichert ihn für einen engen Kontakt), ein Facebook-Import oder du. **Bearbeiten** setzt oder korrigiert ihn: Monat und Tag, und das Jahr, wenn du es kennst (dann steht auch das Alter dabei). Deiner gilt vor jeder Quelle und bleibt. **Entfernen** nimmt ihn weg; ein Kontakt oder ein Import bringt ihn nicht zurück.
 
 Ohne Geburtstag fügt **Geburtstag hinzufügen** unter Felder ihn hinzu. Die Routine Geburtstage liest denselben Geburtstag, den die Seite zeigt. Ein Geburtstag ist persönlich: Er geht nie an dein Team, auch nicht bei einem geteilten Eintrag.
 

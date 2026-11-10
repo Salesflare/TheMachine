@@ -27,7 +27,7 @@ Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. 
 
 **Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesmo escreve, como amigos, família e contatos frequentes. Cada uma traz uma mensagem curta escrita onde vocês costumam conversar, como o chat do WhatsApp ou sua conversa por e-mail, no idioma da pessoa. Ela só sai quando você envia. Um dia sem aniversários não cria tarefa.
 
-Os aniversários vêm das suas agendas (os aniversários do Google e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph. Se nenhuma delas tiver um aniversário ainda, o resultado diz **Ainda não há aniversários** e como adicionar.
+Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversários do Google, lidos toda manhã mesmo sem sincronizar, e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph. Se nenhuma delas tiver um aniversário ainda, o resultado diz **Ainda não há aniversários** e como adicionar.
 
 Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
 

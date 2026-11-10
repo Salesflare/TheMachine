@@ -27,7 +27,7 @@ Nulla cambia finché non confermi sull’attività. I mittenti già decisi non t
 
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 
-I compleanni vengono dai tuoi calendari (i compleanni di Google e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
+I compleanni vengono dai tuoi calendari (i compleanni e il calendario Compleanni di Google, letti ogni mattina anche se non sono sincronizzati, e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
 
 Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 

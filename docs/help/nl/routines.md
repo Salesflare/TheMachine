@@ -27,7 +27,7 @@ Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste,
 
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
 
-Verjaardagen komen uit je agenda’s (de verjaardagen van Google en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph. Staat er nog nergens een verjaardag, dan zegt het resultaat **Nog geen verjaardagen bekend** en hoe je ze toevoegt.
+Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen van Google, elke ochtend gelezen, ook als ze niet gesynchroniseerd worden, en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph. Staat er nog nergens een verjaardag, dan zegt het resultaat **Nog geen verjaardagen bekend** en hoe je ze toevoegt.
 
 Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 
