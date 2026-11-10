@@ -133,7 +133,7 @@ The installer offers to publish the dashboard on your tailnet (`tailscale serve`
 
 The dashboard installs as a phone app and notifies you of each to-do, result, reminder and the weekly recap. With it, Telegram is optional.
 
-Or get the mobile app: [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android. On a self-hosted Machine it connects with the code in **Settings** → **General** → **Phone app** ([help](help/mobile-app.md)).
+Or get the mobile app: [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android. On a self-hosted Machine it connects with the code in **Settings** → **Apps**, under **Not on the Network?** ([help](help/mobile-app.md)).
 
 - **Android (Chrome):** open the dashboard and tap **Install** on the note at the top of To-dos (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the note, then allow notifications.
 - **iPhone/iPad (iOS 16.4 or newer):** open the dashboard in Safari, tap **Share** → **Add to Home Screen**. Open The Machine from your Home Screen (not a Safari tab: iOS only allows notifications there) and tap **Turn on**.

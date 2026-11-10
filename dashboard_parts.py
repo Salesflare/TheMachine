@@ -39,8 +39,10 @@ KINDS = ('js', 'css', 'html')
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
 LAZY = {
     'calendar': ('calendar-view.css', 'calendar-view.js'),
+    'clearrun': ('todos-clear.css', 'todos-clear-run.js'),
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
+    'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
     'game': ('todos-game.js',),
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-record.js', 'graph-tabs.js',
               'graph-crm.js'),
@@ -50,8 +52,9 @@ LAZY = {
                  'settings-export.js', 'settings-upkeep.js', 'settings-apps.js'),
     'learning': ('learning-bring.js', 'learning-missed.js'),
     'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
+    'recipe': ('todos-recipe.css', 'todos-recipe.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
-    'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js'),
+    'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js', 'todos-facebook-birthdays.js'),
     'talk': ('todos-chat-talk-live.js',),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }

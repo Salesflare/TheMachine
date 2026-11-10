@@ -63,7 +63,7 @@ try{
   assert.match((await card.locator('.person-place').textContent()).trim(),/^Antwerpen, Belgium · \d\d:\d\d their time$/);  // 24h, as their clock differs from the owner's
   assert.equal(await page.evaluate(()=>localTime('America/New_York')),'','no "their time" when it is the owner\'s too');
   assert.equal(await card.locator('.person-bio').textContent(),'Learning, alloys and long walks.');
-  assert.match(await card.locator('.person-rel').textContent(),/^Talk daily · last \w+, \w+ \d+ · next meeting \w+, \w+ \d+$/);
+  assert.match(await card.locator('.person-rel').textContent(),/^Talk daily · last contact yesterday · next meeting \w+, \w+ \d+$/);
   // Sections with headings, in order; no scattered Edit links.
   assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','With you','Fields','People','Projects']);
   assert.equal(await card.locator('[data-role-edit],[data-person-org-edit],.role-form,.person-org-form,.name-form').count(),0);

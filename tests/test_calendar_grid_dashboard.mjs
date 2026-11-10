@@ -73,13 +73,14 @@ try{
  {const {context,page}=await open(1440,900);
   const r=await page.evaluate(()=>[new Date(2026,1,1),new Date(2026,9,1),new Date(2026,10,1),new Date(2026,5,1)].map(m=>{const [a,b]=calMonthDays(m),last=calAdd(b,-1);return [localDay(a),localDay(last),Math.round((b-a)/864e5),b.getHours()]}));
   assert.deepEqual(r,[['2026-01-26','2026-03-01',35,0],['2026-09-28','2026-11-01',35,0],['2026-10-26','2026-12-06',42,0],['2026-06-01','2026-07-05',35,0]]);
-  // A link to February: its grid, the days around it dimmed, the weeks it covers asked once each
+  // A link to February: its grid, the days around it dimmed, the five weeks it covers in one ask, Monday to Monday
   asks=[];await go(page,'#calendar?view=month&date=2026-02-01');await page.locator('.cal-mg').waitFor();
   assert.equal(await range(page),'February 2026');
   const cells=await page.locator('.cal-mday').evaluateAll(c=>c.map(x=>[x.dataset.day,x.classList.contains('out')]));
   assert.equal(cells.length,35);assert.deepEqual(cells[0],['2026-01-26',true]);assert.deepEqual(cells[6],['2026-02-01',false]);assert.deepEqual(cells.at(-1),['2026-03-01',true]);
   assert.equal(cells.filter(c=>c[1]).length,7,'six January days and 1 March step back');
-  assert.ok(['2026-01-26','2026-02-02','2026-02-23'].every(k=>asks.some(([a])=>key(a)===k)),'the month\'s weeks are asked, Monday to Monday');
+  assert.ok(asks.some(([a,b])=>key(a)==='2026-01-26'&&key(b)==='2026-03-02'),'the month\'s weeks in one ask, Monday to Monday: '+JSON.stringify(asks.map(x=>x.map(key))));
+  assert.ok(asks.every(([a,b])=>a.getDay()===1&&b.getDay()===1));
   assert.deepEqual(await page.locator('.cal-mg-head span').allTextContents(),['Mon','Tue','Wed','Thu','Fri','Sat','Sun']);
   // ‹ › move a whole month; a busy day shows three and "+2 more", which opens that day in the agenda
   await page.keyboard.press('ArrowRight');await page.waitForFunction(()=>location.hash==='#calendar?view=month&date=2026-03-01');assert.equal(await range(page),'March 2026');

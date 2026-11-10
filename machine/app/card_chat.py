@@ -23,11 +23,13 @@ import fleet_reviews
 import i18n
 from machine import names as display_names
 from machine.browser import run_tab
-from machine.cards import CHAT_HANDLE
+from machine.cards import CHAT_HANDLE, blocker_questions
 from machine.delivery.push import NOTICE_DECISION
 from machine.chat import (
     AGENT_DO_IT_NOTE,
     AGENT_WORK_NOTE,
+    asked_item,
+    chat_unglued,
     card_chat_handoffs,
     chat_agent_text,
     chat_conversation,
@@ -55,6 +57,7 @@ from machine.store.cards import use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
+import recurring
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
@@ -333,6 +336,9 @@ class CardChatApp:
         about = max(((i['at'], i['from']) for i in owner if i['kind'] == 'source' and not i['mine'] and i['from']), default=(0, ''))[1]  # the latest who wrote
         waiting = False  # with a teammate: Later means back to check in, not a snooze of the owner's
         sent_files = chat_files.listed(db, [r['id'] for r in db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND choice='other' AND source='dashboard'", (suggestion_id,))])
+        # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
+        answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
+        loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
         for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','handled','plan') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
@@ -371,7 +377,11 @@ class CardChatApp:
             if r['choice'] == 'other':
                 attached = sent_files.get(r['id'], [])
                 said = '' if attached and r['feedback'] in CHAT_FILES_ONLY else clamp(r['feedback'], 5000)
+                if answered.get(r['id']):
+                    owner.append(asked_item(answered[r['id']], at))
                 owner.append({'kind': 'you', 'text': said, 'via': r['source'], 'at': at, **({'files': attached} if attached else {})})
+                if r['id'] not in answered and said:
+                    loose.append(owner[-1])
             elif r['choice'] == 'use_sources':  # "Use this email for this to-do" (use_sources): "Added the email to this to-do"
                 used = db.execute('SELECT event_ids,mail FROM card_uses WHERE decision_id=?', (r['id'],)).fetchone()
                 if used:
@@ -405,6 +415,9 @@ class CardChatApp:
         owner.extend(card_chat_handoffs(db, suggestion_id))
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in fleet_reviews.chat_lines(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
+        recipe = recurring.method_item(db, suggestion_id)  # a repeating to-do's way of doing it, saved from here: Edit and Undo
+        if recipe:
+            owner.append({**recipe, 'at': chat_ms(recipe['at'])})
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in corrections.chat_items(db, suggestion_id))  # fixed where it came from
         for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:
@@ -440,7 +453,7 @@ class CardChatApp:
                 owner.append({'kind': 'event', 'text': i18n.t('Saved to How you write: {}', i18n.t('Everywhere') if channel == 'All' else channel),
                               'voice': channel, 'at': chat_ms(r['at'])})
         # Each preparation's own saved results: what it said and the drafts it left, in the order it saved them.
-        results = {}
+        results, asks = {}, []  # asks: (at, question) for each question a run stopped on
         for r in db.execute("SELECT c.job_id,c.params,c.started_at,c.error FROM preparation_calls c JOIN preparation_runs p ON p.job_id=c.job_id "
                             "WHERE p.suggestion_id=? AND c.tool='assistant_signals' ORDER BY c.started_at", (suggestion_id,)):
             try:
@@ -448,6 +461,8 @@ class CardChatApp:
             except (ValueError, TypeError):
                 continue
             args = params.get('args') if isinstance(params, dict) and isinstance(params.get('args'), dict) else {}
+            if not r['error'] and params.get('action') == 'preparation_blocked' and args.get('suggestion_id') == suggestion_id:
+                asks.extend((chat_ms(r['started_at']), q['question']) for q in blocker_questions(args.get('questions')))
             if r['error'] or params.get('action') != 'prepare' or args.get('suggestion_id') != suggestion_id:
                 continue
             actions = args.get('next_actions') if isinstance(args.get('next_actions'), list) else [args.get('next_action')]
@@ -504,6 +519,10 @@ class CardChatApp:
             if r['status'] in ('failed', 'cancelled'):
                 owner.append({'kind': 'event', 'text': f"{name} {'stopped' if r['status'] == 'failed' else 'cancelled'}", 'at': chat_ms(r['finished_at'] or r['updated_at'])})
         owner.extend(talk_live.lines(db, suggestion_id))  # what was said in a live conversation (Talk live)
+        for i in loose if asks else []:
+            i['text'], asked = chat_unglued(i['text'], [q for at, q in asks if at <= i['at']])
+            if asked:
+                owner.append(asked_item(asked, i['at']))
         for i in owner:
             i.pop('choice', None)
         return owner, results

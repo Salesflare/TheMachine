@@ -39,7 +39,7 @@ Rijen staan er alleen waar ze passen: geen telefoon-app in de app zelf, geen ins
 
 Na je eerste dag klapt hij in tot één rustige regel boven **Voor jou**, zoals "Nog 2 stappen · Doorgaan". Tik erop om de to-do te openen, en tik op het pijltje om hem weer in te klappen.
 
-**Ongedaan maken** in het bericht erna haalt hem terug, net als **1 verborgen stap tonen** onderaan de to-do. Is de hele to-do gesloten, dan haalt **Instellingen**, **Algemeen**, **To-do om te starten** hem terug. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen, en **Telefoonapp** daar heeft altijd **App downloaden**.
+**Ongedaan maken** in het bericht erna haalt hem terug, net als **1 verborgen stap tonen** onderaan de to-do. Is de hele to-do gesloten, dan haalt **Instellingen**, **Algemeen**, **To-do om te starten** hem terug. **Instellingen**, **Algemeen**, **Dit apparaat** heeft dezelfde knoppen, en **Instellingen**, **Apps** heeft altijd de telefoonapp.
 
 ## Nieuwe versies
 

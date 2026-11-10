@@ -5,11 +5,15 @@ summary: Aufgaben, die in einem Rhythmus wiederkommen, wie die Gehaltsabrechnung
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## Eine anlegen
 
 Wähle in **Neue Aufgabe** **Wiederholt sich** und einen Rhythmus: **Täglich**, **Werktags**, wöchentlich, monatlich an einem Datum oder an einem Wochentag wie dem ersten Montag, oder jährlich. **Eigene…** nimmt deine eigenen Worte, wie every 2 weeks oder every last Friday.
+
+Auch Werktage gehen: „Rechnungen senden am zweiten Werktag des Monats“ oder „Buchhaltung abschließen am letzten Werktag des Monats“. Ein Werktag ist Montag bis Freitag, ohne die Feiertage deines Landes.
+
+Sind die Worte nicht klar, etwa „every 2nd business day“ (der 2. des Monats oder jeder zweite Tag?), behält die Aufgabe alle deine Worte und wiederholt sich nicht. Wähle **Wiederholt sich**, um es festzulegen.
 
 Oder sag es einfach: „jeden Monat Gehaltsabrechnung machen“ in Neue Aufgabe oder in Sprechen legt eine Aufgabe an, die sich wiederholt.
 
@@ -23,7 +27,11 @@ Eine verpasste wird nicht gestapelt. Sie bleibt offen und zeigt, wie viele Termi
 
 Schlummern verschiebt nur diese. Der Rhythmus bleibt gleich.
 
+Vor ihrem Datum erledigt? Sie zählt für das, was jetzt fällig ist, und das Datum kommt trotzdem für den Zeitraum danach.
+
 Jede wird vorbereitet wie jede Aufgabe, und die Vorbereitung sieht, wie die vorige lief und was in ihrem Chat gesagt wurde.
+
+Sie merkt sich auch, wie es geht: die Schritte, die sie herausgefunden hat, und was du korrigiert hast, damit die nächste sie nicht noch einmal braucht. Im Chat steht **Gespeichert, wie das nächstes Mal geht**, mit **Bearbeiten** und **Rückgängig**. Sie sendet nie etwas von selbst.
 
 ## Ändern oder beenden
 

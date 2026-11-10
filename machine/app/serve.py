@@ -23,20 +23,26 @@ import shared_connectors
 import work_removal
 
 
+PACKED_KEEP = 40  # compressed pages and scripts kept (packed_page): about 0.7 MB for a coding's page and scripts
+
+
 class ServeApp:
     ACTIONS = {'client_error': 'client_error_action'}
 
     def packed_page(self, etag, coding, page):
         """The dashboard page compressed in `coding`, made once per page (its ETag) and coding: the best compression,
-        since it goes to every device opening the app. A few kept (one owner, a host or two, a coding or two)."""
+        since it goes to every device opening the app. Also its main script and each group of parts that loads later
+        (machine/web/serving.py dashboard_files, 15 files): enough kept for all of them in a coding or two, a page or
+        two, so a fresh page's files are never compressed again (with 6, they pushed each other out on every load)."""
         key = (etag, coding)
         with self._packed_lock:
             if key in self._packed:
+                self._packed[key] = self._packed.pop(key)  # the least recently used goes first
                 return coding, self._packed[key]
         data = compress_body(page.encode(), coding, best=True)
         with self._packed_lock:
             self._packed[key] = data
-            while len(self._packed) > 6:
+            while len(self._packed) > PACKED_KEEP:
                 self._packed.pop(next(iter(self._packed)))
         return coding, data
 
@@ -89,6 +95,10 @@ class ServeApp:
         threading.Thread(target=self.whatsapp_photo_worker, name='whatsapp-photos', daemon=True).start()
         threading.Thread(target=self.voice_warm_worker, name='voice-warm', daemon=True).start()
         threading.Thread(target=self.action_worker, daemon=True).start()
+        try:  # an older Import birthdays from Facebook to-do: the friends nobody in the Graph has, read once in the background
+            self.birthdays_facebook_fill_old()
+        except Exception as error:  # noqa: BLE001 - never stops the service; the next start tries again
+            LOG.error('facebook birthdays fill error=%s', type(error).__name__)
         try:  # once: messages whose to-do save failed before the fix of 2026-11-07 go back to the review (review_requeue.py)
             back = review_requeue.requeue(self.store, AGENT_DB, node_bin(self.config))
             if back:

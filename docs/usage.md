@@ -104,7 +104,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 - When the status line is a question for you, or a run stopped to ask you something (not a sign-in), **Answer** leads, also on a to-do a teammate handed back.
 - Answer opens a box under the question. Your answer goes back like a **Change** note, so the work carries on. On Telegram, Answer asks for a reply.
 - A Change or answer after a handoff came back makes the to-do yours again.
-- A run that stops for your input asks short, plain questions, with quick picks for a clear choice that fill the answer box. Small calls with an obvious default it makes itself.
+- A run that stops for your input asks short, plain questions, with quick picks for a clear choice that fill the answer box. The box holds only your answer: the to-do keeps which question it answers, and its chat shows the question as a quiet line above it. Small calls with an obvious default it makes itself.
 - After a Try again that came back asking the same, Try again is no longer offered.
 
 **Reviews off:** the dashboard says so, with the way to turn them on. When to-dos are already there, it says they came from the one-time first look.
@@ -519,8 +519,10 @@ On Linux with systemd, the Machine health source also reads the computer's own l
 | `assistant skills` | Skills your agent follows: yours, proposed and shared ones (edit them in Settings, Skills) |
 | `assistant task-import '<link>'` | Add a task someone sent you by email, from its link (opens your dashboard to confirm) |
 | `assistant raw <action> '<json>'` | Any other non-owner service action |
+| `assistant office-check <files>` | Check that Excel, Word, PowerPoint and PDF files open before they are uploaded or attached: the package, its XML and the namespace prefixes Excel needs. LibreOffice opening a file is not enough; it forgives what Excel refuses |
+| `assistant xlsx-set <from.xlsx> <new.xlsx> B2=2025-03-31 C3=42` | A new Excel file from an earlier one (last month's invoice) with some cells set. Everything else stays byte for byte, a date keeps its format, formulas are never overwritten and recalculate when it opens, and the result is checked before it is kept |
 
-Used by the agent during a preparation, not by hand: `attachment` (an email's attachments, read-only, or one saved for the run), `doc` and `doc-draft` (a doc's text, and a check of a doc draft; see [Doc writes](#doc-writes)), `skills-propose` and `skills-found`.
+Used by the agent during a preparation, not by hand: `attachment` (an email's attachments, read-only, or one saved for the run), `doc` and `doc-draft` (a doc's text, and a check of a doc draft; see [Doc writes](#doc-writes)), `skills-propose` and `skills-found`. `office-check` and `xlsx-set` are for preparations too, and work by hand.
 
 ## Message actions
 

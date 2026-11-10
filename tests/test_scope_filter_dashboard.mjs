@@ -12,7 +12,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // the same list: a filter a browser kept from before goes to the Machine once and the browser forgets it, a change on
 // another device arrives with the next refresh, and a filter that is on says so at the top of the list ("Personal only
 // · Show all", "No personal to-dos · Show all" when it hides everything), in the owner's language. The greeting's counts
-// ("1 for you") read translated too. SHOTS=<folder> saves screenshots at 1440x900 and 390x844, en and nl.
+// ("1 to-do for you", "2 to-dos for you") read translated, with their plural, too. SHOTS=<folder> saves screenshots at 1440x900 and 390x844, en and nl.
 const dashboard=await dashboardPage();
 const cats={};for(const l of ['en','nl'])cats[l]=await readFile(new URL(`../i18n/${l}.json`,import.meta.url),'utf8');
 const now=new Date().toISOString();
@@ -54,13 +54,14 @@ try{
   if(lang==='nl')await page.waitForFunction(()=>document.documentElement.lang==='nl');
   assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?'Alleen privé · Alles tonen':'Personal only · Show all');
   assert.equal(await shown(page),1);
+  if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').innerText(),lang==='nl'?'1 to-do voor jou':'1 to-do for you');
   await shot(page,`${lang}-${width}x${height}-personal`);
   // Another device switches to Work: the next refresh shows it here too.
   locale={...locale,todo_scope:'work'};await page.evaluate(()=>refresh());
   await note(page).getByText(lang==='nl'?'Alleen werk':'Work only',{exact:true}).waitFor();
   assert.equal(await shown(page),2);
   // Greeting counts read in the owner's language.
-  if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').innerText(),lang==='nl'?'2 voor jou':'2 for you');
+  if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').innerText(),lang==='nl'?"2 to-do's voor jou":'2 to-dos for you');
   // Show all: the Machine keeps All, and the line goes.
   assert.deepEqual((await callAfter(page,scopeSaved,()=>note(page).locator('[data-scope="all"]').click())).args,{todo_scope:'all'});
   await note(page).waitFor({state:'detached'});assert.equal(await shown(page),3);

@@ -62,6 +62,9 @@ async function cmSave(kind,which,value){const cur=cmCurrent(kind)||{};
 // The menu: one at a time, a popover above the page and Help's dialog, below the trigger or above it when that has more room;
 // arrows, Home and End move, Enter or a tap picks, Escape or Tab closes, and the focus goes back to the trigger.
 let cmOpen=null;
+// Other pickers open the same menu: cmLists[kind]={label,choices()->[{value,label,name}],value(),pick(value)}, the trigger is
+// cmTrigger(kind,...) and the menu's box is the trigger's parent
+const cmLists={};
 // Below when it fits there or there's fair room (it scrolls); else above, in a dialog under the dialog's title when that
 // leaves fair room; else wherever there's more room
 function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6,h=m.offsetHeight,fair=Math.min(h,160),below=innerHeight-r.bottom-gap-8,above=r.top-gap-8,
@@ -73,20 +76,20 @@ function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6
 const CM_CHECK=html`<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.hidePopover&&m.matches(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
  const b=o.box.querySelector(`[data-cm-pick="${o.which}"]`);b?.setAttribute('aria-expanded','false');if(focus)b?.focus({preventScroll:true})}
-function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,cur=cmCurrent(kind)||{},sel=which==='model'?cur.model:cur.thinking,box=b.closest('#chat-model,#help-model,#model-chats');
+function cmMenuOpen(b,last){const kind=b.dataset.cmKind,which=b.dataset.cmPick,L=cmLists[kind],cur=L?{}:cmCurrent(kind)||{},sel=L?L.value():which==='model'?cur.model:cur.thinking,box=L?b.parentElement:b.closest('#chat-model,#help-model,#model-chats');
  let m=$('#cm-menu');if(!m){m=document.createElement('div');m.id='cm-menu';m.className='fact-menu-list cm-menu';m.setAttribute('role','menu');m.hidden=true;if(m.showPopover)m.popover='manual'}
  // In the trigger's dialog (outside a modal dialog nothing takes the focus), as a popover so the dialog never clips it
- const host=b.closest('dialog[open]')||document.body;if(m.parentNode!==host)host.append(m);m.setAttribute('aria-label',which==='model'?'Model':'Thinking');
+ const host=b.closest('dialog[open]')||document.body;if(m.parentNode!==host)host.append(m);m.setAttribute('aria-label',L?L.label:which==='model'?'Model':'Thinking');
  // A provider's models sit in a group under its heading, so a heading never reads as the line under the model above it
  const item=c=>html`<button type="button" role="menuitemradio" aria-checked="${c.value===sel}" data-cm-value="${c.value}"${c.name?html` translate="no"`:''}>${raw(CM_CHECK)}<span>${c.label}</span>${c.hint?html`<small>${c.hint}</small>`:''}</button>`;
- const groups=[];for(const c of cmChoices(which,cur)){const g=groups.at(-1);if(g&&g.name===c.group)g.items.push(c);else groups.push({name:c.group,items:[c]})}
+ const groups=[];for(const c of L?L.choices():cmChoices(which,cur)){const g=groups.at(-1);if(g&&g.name===c.group)g.items.push(c);else groups.push({name:c.group,items:[c]})}
  setHTML(m,html`${groups.map((g,i)=>g.name?html`<div class="cm-section" role="group" aria-labelledby="cm-g-${i}"><p class="cm-group" id="cm-g-${i}" translate="no">${g.name}</p>${g.items.map(item)}</div>`:g.items.map(item))}${kind==='chat'&&which==='model'?cmFastItem(cur):''}`);
  cmOpen={box,kind,which};b.setAttribute('aria-expanded','true');m.hidden=false;if(m.showPopover&&!m.matches(':popover-open'))m.showPopover();cmPlace(m,b);
  const items=[...m.querySelectorAll('[role=menuitemradio],[role=menuitemcheckbox]')];(last?items.at(-1):items.find(i=>i.getAttribute('aria-checked')==='true')||items[0])?.focus({preventScroll:true})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-cm-pick]');
  if(b){e.preventDefault();const same=cmOpen&&cmOpen.box.contains(b)&&cmOpen.which===b.dataset.cmPick;cmMenuClose(false);if(!same)cmMenuOpen(b);return}
  const f=e.target.closest('#cm-menu [data-cm-fast]');if(f){e.preventDefault();if(f.getAttribute('aria-disabled')==='true')return;const on=f.getAttribute('aria-checked')!=='true';cmMenuClose(true);cmFastSave(on);return}
- const it=e.target.closest('#cm-menu [data-cm-value]');if(it){e.preventDefault();const o=cmOpen,v=it.dataset.cmValue,was=it.getAttribute('aria-checked')==='true';cmMenuClose(true);if(o&&!was)cmSave(o.kind,o.which,v);return}
+ const it=e.target.closest('#cm-menu [data-cm-value]');if(it){e.preventDefault();const o=cmOpen,v=it.dataset.cmValue,was=it.getAttribute('aria-checked')==='true';cmMenuClose(true);if(o&&!was)(cmLists[o.kind]?cmLists[o.kind].pick(v):cmSave(o.kind,o.which,v));return}
  if(cmOpen&&!e.target.closest('#cm-menu'))cmMenuClose(false)});
 document.addEventListener('keydown',e=>{const b=e.target.closest?.('[data-cm-pick]');
  if(b&&(e.key==='ArrowDown'||e.key==='ArrowUp')){e.preventDefault();cmMenuClose(false);cmMenuOpen(b,e.key==='ArrowUp');return}

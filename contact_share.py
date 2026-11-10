@@ -122,7 +122,7 @@ def summary(card):
 class ContactShare:
     """Mixed into fleet.Fleet: sharing a contact with one teammate, friend or Family member, and the ones shared here."""
 
-    graph_build = None  # rebuilds the graph after an Add (assistant.py)
+    graph_build = None  # the Graph follows an Add, in the graph worker (assistant.py: graph_later)
     about_you = None  # the owner's own record, About you (assistant.py)
 
     # -- what can be sent
@@ -289,6 +289,7 @@ class ContactShare:
         if choice not in ('add', 'dismiss'):
             raise ValueError('Choose add or dismiss')
         import graph
+        import graph_show
         stamp = now()
         with self.connect() as db:
             ensure(db)
@@ -324,6 +325,10 @@ class ContactShare:
                         self._merge(db, node_id, card, stamp)
                 db.execute('INSERT OR REPLACE INTO contact_marks(identifier,by_name,group_kind,note,at) VALUES(?,?,?,?,?)',
                            (node_id, row['name'], row['group_kind'], card.get('note'), stamp))
+                if stage == 'added':  # on their own page at once; the rest of the Graph follows in the graph worker
+                    graph_show.show_new_record(db, made, 'person')
+                else:
+                    graph_show.show_person_edit(db, node_id, set())
             db.execute('UPDATE contact_shares SET status=?,node_id=?,decided_at=? WHERE id=?', (stage, node_id, stamp, row['id']))
             self.log(db, 'in', row['fleet'], row['member_id'], row['name'], KIND, question_text(card),
                      {'added': 'added to your Graph', 'merged': 'added to someone in your Graph', 'dismissed': 'dismissed'}[stage])

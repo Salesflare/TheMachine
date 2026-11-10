@@ -421,14 +421,22 @@ class AiApp:
 
     def ai_tool_list_todos(self, connection, args):
         ids, want = self.ai_accounts(connection, args.get('area'))
-        statuses = ('snoozed',) if args.get('status') == 'snoozed' else OPEN
-        if args.get('status') not in (None, '', 'open', 'snoozed'):
-            raise ValueError('status is open or snoozed')
+        status = args.get('status') or 'open'
+        if status not in ('open', 'snoozed', 'done'):
+            raise ValueError('status is open, snoozed or done')
         limit = clamp_int(args.get('limit'), 25, 50)
         stamp = ai_access.stamp()
+        columns = 'id,dedupe_key,title,body,status,due,due_at,account_ids,area,project,created_at,snoozed_until,next_action,deliver_after'
         with self.store.connect() as db:
-            rows = db.execute(f"SELECT id,dedupe_key,title,body,status,due,due_at,account_ids,area,project,created_at,snoozed_until,next_action,deliver_after "
-                              f"FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) ORDER BY created_at DESC LIMIT 600", statuses).fetchall()
+            if status == 'done':  # done in the last 30 days, the latest first (when it was marked done)
+                since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat(timespec='seconds')
+                done_at = "coalesce((SELECT d.created_at FROM decisions d WHERE d.id=s.closed_decision_id),s.created_at)"
+                rows = db.execute(f"SELECT * FROM (SELECT {columns},{done_at} done_at FROM suggestions s WHERE status='completed') "
+                                  'WHERE done_at>=? ORDER BY done_at DESC LIMIT 600', (since,)).fetchall()
+            else:
+                statuses = ('snoozed',) if status == 'snoozed' else OPEN
+                rows = db.execute(f"SELECT {columns} FROM suggestions WHERE status IN ({','.join('?' * len(statuses))}) "
+                                  'ORDER BY created_at DESC LIMIT 600', statuses).fetchall()
         out = []
         for r in rows:
             if r['deliver_after'] and r['deliver_after'] > stamp:

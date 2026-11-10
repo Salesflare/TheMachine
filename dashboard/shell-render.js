@@ -63,7 +63,7 @@ sideCounts={foryou:sideForYou.length,preparing:fuv.preparing.length,later:later.
 {const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[sideForYou,'For you','foryou'],[sideRows(fuv.preparing),'Preparing','preparing'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
-fleetSync();
+fleetSync();graphCountsSet(state.graph_counts);
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (the Done list, Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
 // A link to another tab or part (#settings/notify) draws it all at once, since that part is the one it opens on

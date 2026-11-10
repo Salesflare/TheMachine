@@ -5,7 +5,10 @@ A release is a git tag `release-YYYYMMDD-HHMM` on a commit of main, signed with 
 Machines and `update` below only install a release whose signature checks out against the public key in the code
 that is already installed (deploy/release-signers), so a pushed commit alone never reaches a Machine.
 
-  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key)
+  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key and a
+                                        passed full test run on that commit; --commit SHA cuts an older one of main;
+                                        --full-run starts that run on our CI runner when there is none, waits for it,
+                                        about 12 minutes, and cuts when it passes)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
                                         (a first ./install.sh does this step by itself: first_install)
@@ -16,18 +19,23 @@ The private key is read from $THE_MACHINE_RELEASE_KEY, else ~/.config/the-machin
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as dt
+import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 try:
     from scripts.security_gate import require_release_scan
+    from scripts import ci_runs as ci
 except ModuleNotFoundError:
     from security_gate import require_release_scan
+    import ci_runs as ci
 
 ROOT = Path(__file__).resolve().parent.parent
 SIGNERS = ROOT / 'deploy' / 'release-signers'
@@ -39,6 +47,79 @@ END = b'-----END SSH SIGNATURE-----\n'
 
 class Refused(Exception):
     pass
+
+
+REPO = 'Salesflare/TheMachine'
+# The runs of .github/workflows/ci.yml on main's commits: a push to main, the nightly and weekly runs and a manual one.
+# A pull request's run tests its merge commit, not main's.
+FULL_RUN = ('push', 'schedule', 'workflow_dispatch')
+
+
+def ci_runs(query):
+    """CI's runs of the tests (GitHub's API through gh), newest first."""
+    out = subprocess.run(['gh', 'api', f'repos/{REPO}/actions/workflows/ci.yml/runs?{query}&per_page=30'],
+                         capture_output=True, text=True, timeout=60, check=True).stdout
+    return json.loads(out)['workflow_runs']
+
+
+def _gh_api(path):
+    return json.loads(subprocess.run(['gh', 'api', path], capture_output=True, text=True, timeout=60, check=True).stdout)
+
+
+def proven(run):
+    """Whether a passed run proves its commit: it ran every test on it (scripts/ci_runs.py). A push to main that ran
+    only the tests its changes since the last full run need is not enough for a release: a dependency the selection
+    missed must never reach one."""
+    return ci.tested(run, _gh_api) == 'full'
+
+
+def full_run(sha, poll=30, limit=45 * 60):
+    """Starts the full test run on exactly this commit on our runner (ci.yml, workflow_dispatch with own_runner, from a
+    short-lived branch at the commit), waits for it and raises RuntimeError unless it passed."""
+    branch = f'full-run/{sha[:12]}'
+    git('push', '--quiet', 'origin', f'{sha}:refs/heads/{branch}')
+    started = time.time()
+    try:
+        subprocess.run(['gh', 'workflow', 'run', 'ci.yml', '-R', REPO, '--ref', branch, '-f', 'own_runner=true'],
+                       capture_output=True, text=True, timeout=60, check=True)
+        print(f'Full test run started on {sha[:7]}: waiting for it (about 12 minutes)...', flush=True)
+        while time.time() - started < limit:
+            time.sleep(poll)
+            mine = [r for r in ci_runs(f'head_sha={sha}') if r['event'] == 'workflow_dispatch'
+                    and dt.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).timestamp() >= started - 60]
+            if mine and all(r['status'] == 'completed' for r in mine):
+                break
+        else:
+            raise RuntimeError(f'the full test run on {sha[:7]} did not finish in {limit // 60} minutes')
+    except subprocess.SubprocessError as error:
+        raise RuntimeError(f'the full test run on {sha[:7]} could not be started ({error})') from error
+    finally:
+        git('push', '--quiet', 'origin', '--delete', branch, check=False)
+    require_green_tests(sha)
+
+
+def require_green_tests(sha):
+    """Raises RuntimeError unless every test passed on exactly this commit: a full run passed on it."""
+    try:
+        runs = [r for r in ci_runs(f'head_sha={sha}') if r['event'] in FULL_RUN]
+        if any(r['conclusion'] == 'success' and proven(r) for r in runs):
+            return
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        raise RuntimeError(f"CI's runs on {sha[:7]} could not be read with gh ({error})") from error
+    going = [r for r in runs if r['status'] != 'completed']
+    if going:
+        raise RuntimeError(f'the full test run on {sha[:7]} is not done yet ({going[0]["html_url"]}): cut again when it passes')
+    failed = [r for r in runs if r['conclusion'] not in ('cancelled', 'skipped', 'success')]
+    if failed:
+        raise RuntimeError(f'the full test run on {sha[:7]} {failed[0]["conclusion"]} ({failed[0]["html_url"]})')
+    newest = None
+    try:
+        newest = next((r['head_sha'] for r in ci_runs('branch=main&status=success') if r['event'] in FULL_RUN
+                       and git('merge-base', '--is-ancestor', r['head_sha'], sha, check=False).returncode == 0 and proven(r)), None)
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        pass
+    raise RuntimeError(f'no full test run passed on {sha[:7]} (main tests only what changed; --full-run runs every test on it and cuts when it passes)'
+                       + (f': wait for it, or cut the newest tested commit with --commit {newest[:7]}' if newest else ''))
 
 
 def git(*args, check=True, raw=False):
@@ -85,12 +166,51 @@ def verify(tag=None, signers=None):
     return tag, signed_commit(raw, tag, signers if signers is not None else SIGNERS.read_text())
 
 
+WHATS_NEW = 'machine/store/whats_new.py'
+
+
+def whats_new_entries(source):
+    """The ENTRIES list of a whats_new.py source, read without running it; ValueError when it isn't a plain list."""
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'ENTRIES' for t in node.targets):
+            try:
+                found = ast.literal_eval(node.value)
+            except ValueError:
+                break
+            if isinstance(found, list):
+                return found
+    raise ValueError('ENTRIES is not a plain list')
+
+
+def whats_new_problems(source, before=None):
+    """What's new candidates this release adds (ids not in `before`, the last release's file) that are not valid
+    (machine/store/whats_new.py problems), as 'id: problem' lines. Nothing more is checked."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from machine.store.whats_new import problems
+    try:
+        entries = whats_new_entries(source)
+        known = {e.get('id') for e in whats_new_entries(before) if isinstance(e, dict)} if before else set()
+    except (SyntaxError, ValueError) as error:
+        return [str(error)]
+    ids = [e.get('id') if isinstance(e, dict) else None for e in entries]
+    found = [f'{i}: id used twice' for i in sorted({i for i in ids if i and ids.count(i) > 1})]
+    for entry, i in zip(entries, ids):
+        if i not in known:
+            found += [f'{i}: {p}' for p in problems(entry)]
+    return found
+
+
 def cut(args):
     key = Path(args.key or os.environ.get('THE_MACHINE_RELEASE_KEY') or Path.home() / '.config/the-machine-release/signing-key')
     if not key.exists():
         raise SystemExit(f'No release key at {key}. Only the release key holder can cut a release.')
     git('fetch', '--quiet', '--tags', 'origin', 'main')
     sha = git('rev-parse', 'origin/main^{commit}').stdout.strip()
+    if args.commit:
+        sha = git('rev-parse', f'{args.commit}^{{commit}}').stdout.strip()
+        if git('merge-base', '--is-ancestor', sha, 'origin/main', check=False).returncode:
+            raise SystemExit(f'Not released: {args.commit} is not on origin/main.')
     for name in reversed(releases()):
         if git('rev-parse', f'{name}^{{commit}}').stdout.strip() == sha:
             print(f'origin/main ({sha[:7]}) is already released as {name}.')
@@ -98,7 +218,18 @@ def cut(args):
     tag = 'release-' + dt.datetime.now(dt.timezone.utc).strftime('%Y%m%d-%H%M')
     if git('rev-parse', '-q', '--verify', f'refs/tags/{tag}', check=False).returncode == 0:
         raise SystemExit(f'{tag} exists already: wait a minute and try again.')
+    last = releases()[-1] if releases() else None
+    show = lambda ref: (lambda r: r.stdout if r.returncode == 0 else None)(git('show', f'{ref}:{WHATS_NEW}', check=False))
+    bad = whats_new_problems(show(sha) or 'ENTRIES = []', show(last) if last else None)
+    if bad:
+        raise SystemExit("Not released: What's new candidates to fix first:\n  " + '\n  '.join(bad))
     try:
+        try:
+            require_green_tests(sha)
+        except RuntimeError as missing:
+            if not args.full_run or 'not done yet' in str(missing) or 'no full test run passed' not in str(missing):
+                raise
+            full_run(sha)
         require_release_scan('TheMachine', sha, cwd=ROOT)
     except RuntimeError as error:
         raise SystemExit(f'Not released: {error}') from error
@@ -317,6 +448,8 @@ def main(argv=None):
     c = sub.add_parser('cut', help='sign origin/main as a new release and push it')
     c.add_argument('--key', help='private key file (default: $THE_MACHINE_RELEASE_KEY or ~/.config/the-machine-release/signing-key)')
     c.add_argument('--no-push', action='store_true', help='tag and verify locally only')
+    c.add_argument('--commit', help='a commit of main to sign instead of its newest (one whose full test run passed)')
+    c.add_argument('--full-run', action='store_true', help='no full test run passed on it: start one on our runner, wait, cut when it passes')
     v = sub.add_parser('verify', help='check a release tag against deploy/release-signers')
     v.add_argument('tag', nargs='?')
     u = sub.add_parser('update', help='move this checkout to the newest signed release')

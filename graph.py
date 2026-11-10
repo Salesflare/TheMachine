@@ -142,6 +142,7 @@ FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook
 ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|contact|help|accounts?|finance|jobs|hr|press|legal|security|privacy|feedback)@')
 GENERIC_NAMES = {'you', 'linkedin member', 'x conversation', 'linkedin conversation', 'unknown', 'unknown sender', 'unknown caller'}
 WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
+UNDATED = frozenset({'owner.card'})  # a record the owner made about someone: when it was made is no contact with them
 # A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
 PERSON_ID = re.compile(r'(?:email|wa|tg|slack|li|x|gh|manual):\S+')
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
@@ -1391,6 +1392,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     event_people, direct_people = {}, {}
     next_meeting, accounts = {}, collections.defaultdict(set)
     live_weight, history_events = collections.defaultdict(float), collections.defaultdict(list)
+    last_day = {}
     for event_id, (kind, at, account_id, m, found) in per_event.items():
         people = {}
         for identifier, _, weight, role in found:
@@ -1402,6 +1404,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                 continue
             day = at.astimezone(tz).date()  # the owner's day: a message at 00:17 on Sunday is Sunday
             day_weight[(node, day)] += weight
+            if kind not in UNDATED:  # last contact: what happened with them, never when a record about them was made
+                last_day[node] = max(last_day.get(node, day), day)
             if event_id not in past:
                 live_weight[(node, day)] += weight
                 live_roles[node][role].add(day)
@@ -1420,10 +1424,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     def age(day):
         return (current - dt.datetime.combine(day, dt.time(12), dt.timezone.utc)).total_seconds() / 86400
 
-    strength, last_day, live = collections.defaultdict(float), {}, collections.defaultdict(float)
+    strength, live = collections.defaultdict(float), collections.defaultdict(float)
     for (node, day), weight in day_weight.items():
         strength[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
-        last_day[node] = max(last_day.get(node, day), day)
     for (node, day), weight in live_weight.items():
         live[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
     signal_events = {e: v for e, v in per_event.items() if e not in past}  # projects and unnamed work: signals only
@@ -1608,30 +1611,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         hints = sorted(set().union(*(appears.get(i, ()) for i in group))) + (["an address at the owner's own domain"] if colleague else []) \
             + (["in the owner's Slack"] if any(i.startswith('slack:') for i in group) else []) \
             + (["shares the owner's surname"] if full and surnames & set(full.split()[1:]) else [])
-        person_profile = next((json.loads(looked_up[i]) for i in group if i in looked_up), None)
-        # Only a photo saved on this Machine shows (served by the dashboard), never the service's own link.
-        person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone')}
-        person_profile = enrichment.with_facts(person_profile, [facts[i] for i in group if i in facts])
-        photo_key = next((photos[i] for i in group if i in photos), None)
-        if photo_key:
-            person_profile['photo'] = 'api/person-photo?p=' + photo_key
         edited = {}
         for identifier in sorted((i for i in group if i in person_edits), key=list(person_edits).index):
             edited.update(person_edits[identifier])  # the owner's word wins over the look-up, a later save over an older one
-        if edited.get('photo') == 'none':
-            person_profile.pop('photo', None)  # the owner took the picture off: none, also not a looked-up one
-        elif PICTURE.fullmatch(str(edited.get('photo') or '')):
-            person_profile['photo'] = edited['photo']  # the owner's own picture wins
-        mine = {k: edited[k] for k in ('title', 'location', 'linkedin_url') if edited.get(k)}
-        if mine:
-            person_profile.update(mine)
-            person_profile['sources'] = {**(person_profile.get('sources') or {}), **{k: {'from': 'you', 'own': True} for k in mine}}
-        contacts = shown_contacts(group, edited)
-        stated_phone = ' '.join(str(person_profile.get('phone') or '').split())  # a number a connector read (their Slack profile)
-        gone = {contact_key('phones', v) for v in (edited.get('phones') or {}).get('removed', ())}
-        if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
-            contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
-        person_profile = person_profile or None
+        person_profile, contacts = person_shown(group, edited, looked_up, facts, photos)
         # A person's Type (Work or Personal), the one the Work and Personal lists and sharing with a Work Fleet go by: the
         # owner's word; else someone only in their Family or Friends, or family or a friend to them ("To you": wife,
         # father), is Personal, whatever address they write from; else what The Machine knows of them (auto_side).
@@ -2102,12 +2085,12 @@ DEFAULT_SORT = {'projects': 'last', 'projects_done': 'last'}
 def page(db, name, sort='', cursor=0, limit=30, filters=None):
     """One page of a Graph tab's list in the chosen order (closest, last contact, name, a project's stage, value or
     expected close); the cursor is where the page starts, next the cursor of the page after it, or None at the end.
-    filters (crm.FILTERS: owner, board, stage, organization, value and close date) narrow it, and total counts
-    what is left."""
+    filters (crm.KIND_FILTERS for its kind: a project's board, stage, value and close date; how close a person or
+    organization is, the last contact, an organization's industry, size and country) narrow it, and total counts what is left."""
     import crm
     if name not in PAGED and name != 'warmup':
         raise ValueError('list is one of ' + ', '.join([*PAGED, 'warmup']))
-    filters = crm.clean_filters(filters) if name != 'warmup' else {}
+    filters = crm.clean_filters(filters, crm.kind_of(name)) if name != 'warmup' else {}
     if sort not in crm.SORTS or name == 'warmup':
         sort = sort if sort in SORTS and (sort != 'stage' or name.startswith('projects')) else DEFAULT_SORT.get(name, 'closest')
     by_crm = bool(filters) or sort in crm.SORTS  # filtered, or in a CRM order (value, close date)
@@ -2154,7 +2137,7 @@ def page_ids(db, name, filters):
     if name not in PAGED:
         raise ValueError('list is one of ' + ', '.join(PAGED))
     # The List's own query (crm.page_rows) with no limit (-1): no second place that puts SQL together from the request
-    rows, _ = crm.page_rows(db, name, crm.clean_filters(filters), 'name', -1, 0)
+    rows, _ = crm.page_rows(db, name, crm.clean_filters(filters, crm.kind_of(name)), 'name', -1, 0)
     return {'ids': [r['id'] for r in rows]}
 
 
@@ -2242,7 +2225,7 @@ def detail(db, node_id, events=12):
         view['bio'] = own.get('bio')
         if view.get('org'):
             org = db.execute('SELECT name FROM graph_nodes WHERE id=?', (view['org'],)).fetchone()
-            view['org_name'] = org['name'] if org else None
+            view['org_name'] = org['name'] if org else json.loads(row['info'] or '{}').get('org_name')  # one just named: at the next build
         try:  # the summary on top of their page, each line with its sources (person_summary.py)
             view['summary'] = person_summary.view(db, node_id)
         except (sqlite3.Error, ValueError, KeyError, TypeError):
@@ -3133,9 +3116,8 @@ def create_record(db, kind, args, now, owner=None):
         found = resolve(db, identifier) if email else None
         if found:
             return {'node_id': found['id'], 'name': found['name'], 'existing': True}
-        salt = _salt(db)
-        if salt:  # deleted before, added back by the owner: no longer kept out
-            db.execute('DELETE FROM forgotten_people WHERE digest=?', (forgotten_digest(salt, identifier),))
+        if salt := _salt(db):  # deleted before, added back by the owner: no longer kept out (by name only when it has no address)
+            db.executemany('DELETE FROM forgotten_people WHERE digest=?', [(forgotten_digest(salt, k),) for k in {identifier} | (set() if email else name_keys(name))])
         org_id = None
         if org.startswith('org:'):
             row = db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='org'", (org,)).fetchone()
@@ -3522,6 +3504,30 @@ def person_edit(db, node_id, fields, now):
         else:
             db.execute('DELETE FROM person_edits WHERE identifier=?', (identifier,))
     return {'node_id': node_id, 'edited': sorted(mine)}
+
+
+def person_shown(group, edited, looked_up, facts, photos):
+    """A person's profile and contacts as their page shows them, the owner's own details over all: (profile or None, contacts)."""
+    person_profile = next((json.loads(looked_up[i]) for i in group if i in looked_up), None)
+    # Only a photo saved on this Machine shows (served by the dashboard), never the service's own link.
+    person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone')}
+    person_profile = enrichment.with_facts(person_profile, [facts[i] for i in group if i in facts])
+    if photo_key := next((photos[i] for i in group if i in photos), None):
+        person_profile['photo'] = 'api/person-photo?p=' + photo_key
+    if edited.get('photo') == 'none':
+        person_profile.pop('photo', None)  # the owner took the picture off: none, also not a looked-up one
+    elif PICTURE.fullmatch(str(edited.get('photo') or '')):
+        person_profile['photo'] = edited['photo']  # the owner's own picture wins
+    mine = {k: edited[k] for k in ('title', 'location', 'linkedin_url') if edited.get(k)}
+    if mine:
+        person_profile.update(mine)
+        person_profile['sources'] = {**(person_profile.get('sources') or {}), **{k: {'from': 'you', 'own': True} for k in mine}}
+    contacts = shown_contacts(group, edited)
+    stated_phone = ' '.join(str(person_profile.get('phone') or '').split())  # a number a connector read (their Slack profile)
+    gone = {contact_key('phones', v) for v in (edited.get('phones') or {}).get('removed', ())}
+    if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
+        contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
+    return person_profile or None, contacts
 
 
 def edits_state(db, node_id):
@@ -4992,9 +4998,10 @@ def project_moves(db, node_id, limit=8):
             'board_visibility': row['board_visibility'] or 'team', 'stages': stage_names(board), **({'success': success} if success else {})}
 
 
-def merge(db, a, b, same, now, source='agent'):
+def merge(db, a, b, same, now, source='agent', keep=None):
     """Merge (same) or Not the same. Not the same on a pair that was joined undoes that join for good: the two are never
-    joined again, directly or through others, until someone merges them."""
+    joined again, directly or through others, until someone merges them. A merge makes the two one record at once and
+    answers with the id that stays (keep: that one, when it is one of the two), or None until the rebuild joins them."""
     a, b = sorted((str(a).strip(), str(b).strip()))
     if not all(PERSON_ID.fullmatch(i) for i in (a, b)):
         raise ValueError('Pick two people')
@@ -5013,7 +5020,22 @@ def merge(db, a, b, same, now, source='agent'):
     for node, other in ((a, b), (b, a)):  # their pages stop asking too, before the rebuild that joins them (graph_later)
         db.execute("UPDATE graph_nodes SET info=json_set(info,'$.same',(SELECT json_group_array(json(j.value)) FROM json_each(info,'$.same') j "
                    "WHERE json_extract(j.value,'$.id') IS NOT ?)) WHERE id=? AND json_type(info,'$.same')='array'", (other, node))
+    if same:  # one record at once, before the rebuild (graph_fold.py)
+        import graph_fold
+        return graph_fold.fold(db, a, b, source, keep)
 
+
+def fold_write(db, stays, goes, strength, last, signals, info):
+    """graph_fold.fold's writes: the links and signals of goes move to stays (one it already has keeps its own), goes
+    is gone, and stays is the joined record (its identifiers follow, graph_identifiers)."""
+    for sql in ('INSERT OR IGNORE INTO graph_links(a,b,kind,strength,last_at) SELECT ?,b,kind,strength,last_at FROM graph_links WHERE a=? AND b NOT IN (?,?)',
+                'INSERT OR IGNORE INTO graph_links(a,b,kind,strength,last_at) SELECT a,?,kind,strength,last_at FROM graph_links WHERE b=? AND a NOT IN (?,?)'):
+        db.execute(sql, (stays, goes, stays, goes))
+    db.execute('INSERT OR IGNORE INTO graph_events(node_id,event_id,at,probable,direct) SELECT ?,event_id,at,probable,direct FROM graph_events WHERE node_id=?',
+               (stays, goes))
+    for sql in ('DELETE FROM graph_links WHERE a=?1 OR b=?1', 'DELETE FROM graph_events WHERE node_id=?1', 'DELETE FROM graph_nodes WHERE id=?1'):
+        db.execute(sql, (goes,))
+    db.execute('UPDATE graph_nodes SET strength=?,last_at=?,signals=?,info=? WHERE id=?', (strength, last, signals, json.dumps(info), stays))
 
 def merge_all(db, pairs, now):
     """Merge all: the owner merges every listed Same person? pair at once. Only pairs still asked count, so a pair marked
@@ -5059,6 +5081,11 @@ def _salt(db, create=False):
 
 def forgotten_digest(salt, identifier):
     return hmac.new(bytes.fromhex(salt), ' '.join(str(identifier).split()).casefold().encode(), hashlib.sha256).hexdigest()
+
+
+def name_keys(name):
+    """A deleted person's full name as kept (hashed), folded as name_words folds it: whole, and first and last. Empty for one word."""
+    return {'name:' + ' '.join(w), f'name:{w[0]} {w[-1]}'} if name_match(w := name_words(name), w) == 'same' else set()
 
 
 def anyone_forgotten(db):
@@ -5136,7 +5163,7 @@ def delete_person(db, node_id, config, now):
     full = {n for n in names if n and plain_name(n)}
     needles = sorted(full | set(emails))
     salt = _salt(db, create=True)
-    db.executemany('INSERT OR IGNORE INTO forgotten_people(digest,created_at) VALUES(?,?)', [(forgotten_digest(salt, i), now) for i in ids])
+    db.executemany('INSERT OR IGNORE INTO forgotten_people(digest,created_at) VALUES(?,?)', [(forgotten_digest(salt, i), now) for i in set(ids).union(*map(name_keys, names))])
     gone = forgotten(db)
     owner = Owner(config or {}, db)
     # Messages they sent, or only between them and the owner.
@@ -5164,14 +5191,10 @@ def delete_person(db, node_id, config, now):
                 db.execute('UPDATE analyses SET items=? WHERE id=?', (json.dumps(items), review['id']))
     # The graph: them, their links and scores, aliases, roles, where they work, relations, looked-up details.
     db.execute(f'DELETE FROM graph_nodes WHERE id IN ({marks})', ids)
-    db.execute(f'DELETE FROM graph_links WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
+    for table in ('graph_links', 'graph_merges', 'graph_same', 'graph_relations'):  # all in SCHEMA
+        db.execute(f'DELETE FROM {table} WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
     db.execute(f'DELETE FROM graph_events WHERE node_id IN ({marks})', ids)
-    db.execute(f'DELETE FROM graph_merges WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    if _table(db, 'graph_same'):
-        db.execute(f'DELETE FROM graph_same WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    db.execute(f'DELETE FROM graph_relations WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
-    for table in ('graph_names',):
-        db.execute(f'DELETE FROM {table} WHERE node_id IN ({marks})', ids)
+    db.execute(f'DELETE FROM graph_names WHERE node_id IN ({marks})', ids)
     for table in ('identity_names', 'manual_nodes', 'person_roles', 'person_orgs', 'person_edits', 'graph_role_asks', 'graph_org_asks', 'person_profiles', 'person_photos', 'person_photo_tries', 'contact_photo_links', 'whatsapp_photo_asks', 'telegram_photo_asks', 'person_facts', 'role_corrections'):
         if _table(db, table):
             db.execute(f'DELETE FROM {table} WHERE identifier IN ({marks})', ids)

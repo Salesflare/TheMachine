@@ -22,7 +22,9 @@ Allebei staan standaard aan, en uit bij het beveiligingsniveau Voorzichtig. Zet 
 
 Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als je het aanzet, en wanneer iemand later aansluit. Een match komt met Verbinden, Niet nu of **Nooit voorstellen**. **Het Network verlaten** haalt je eraf.
 
-Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** in het menu ⋯ hetzelfde verzoek als Verbinden.
+Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden (**Toevoegen als familie** staat in het menu ⋯).
+
+Bij iemand zonder Machine staat **Uitnodigen voor The Machine**: dat opent de mail die ze krijgen in **Deze e-mail versturen?**, net als bij elke to-do, om aan te passen. Er gaat niets weg voor **Nu versturen**. Sluit je het, dan wacht de uitnodiging als to-do. Zonder mailbox die kan versturen: **Kopiëren** of **Openen in je mail**.
 
 Telefoonnummers tellen ook: de nummers uit je WhatsApp-chats met mensen aan wie je schreef of die je ontmoette, en de nummers die je met **Bewerken** toevoegde. Je gekoppelde WhatsApp-nummer en de nummers onder Over jou maken je vindbaar, elk met een eigen schakelaar onder **Vindbaar voor**. Een nummer vindt iemand alleen als die jou ook opzocht, of als jullie vrienden zijn, dus niemand kan nummers proberen om te zien wie een Machine heeft.
 

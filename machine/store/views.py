@@ -58,6 +58,7 @@ from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
+import birthdays_facebook
 import mail_cleanup
 import bring_in
 import missed_work
@@ -78,8 +79,8 @@ import whatsapp_images
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
 # CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
 # that). Kept as deep copies: the status changes what it is handed, never the kept copy.
-CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decisions', 'email_bounces',
-               'events', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
+CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'email_bounces',
+               'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
                'promises', 'recap_items', 'recurring_series', 'routine_changes', 'routines', 'skill_clusters', 'skill_task_decided', 'skills',
                'slack_members', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
@@ -453,6 +454,8 @@ class ViewsStore(ConversationStore):
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
         cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows])
         if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
+        facebook=birthdays_facebook.view(db,suggestion['id'])
+        if facebook:extra['facebook_birthdays']=facebook  # Birthdays' import from Facebook: Import, the preview, Save (birthdays_facebook.py)
         proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
         if proposal:
             extra['skill_proposal'] = {'name': proposal['name'], 'body': proposal['body'],
@@ -678,6 +681,9 @@ class ViewsStore(ConversationStore):
                 if prompt:suggestion['change_prompt']=dict(prompt)
                 feedback = suggestion['id'] in with_feedback and db.execute("SELECT id,feedback,choice,created_at,source FROM decisions WHERE suggestion_id=? AND trim(feedback)<>'' AND source IN ('telegram','dashboard') AND id NOT IN (SELECT decision_id FROM decision_annotations) ORDER BY created_at DESC,rowid DESC LIMIT 1", (suggestion['id'],)).fetchone()
                 suggestion['latest_feedback'] = dict(feedback) if feedback else None
+                asked = feedback and db.execute('SELECT questions FROM decision_asks WHERE decision_id=?', (feedback['id'],)).fetchone()
+                if asked:  # it answers the to-do's question(s): `asked` says which, `feedback` is the answer alone
+                    suggestion['latest_feedback']['asked'] = json.loads(asked['questions'])
             for sid, files in chat_files.of_cards(db, [c['id'] for c in cards if c.get('origin') == 'owner']).items():
                 next(c for c in cards if c['id'] == sid)['files'] = files  # what the owner made it with (New to-do)
             for sid, photos in whatsapp_images.of_cards(db, {'database': str(self.path)}, cards).items():

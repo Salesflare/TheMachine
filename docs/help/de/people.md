@@ -5,13 +5,13 @@ summary: Alle, mit denen du in Kontakt bist: ihre Seite, Zusammenfassung und Ver
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 ---
-Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Filter, Felder, Tags und Import funktionieren in allen drei Listen gleich: siehe [Der Graph](graph.md).
+Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Felder, Tags und Import funktionieren in allen drei Listen gleich, und jede Liste hat ihre eigenen Filter: siehe [Der Graph](graph.md).
 
 ## Die Seite einer Person
 
 Sie beginnt mit Foto, Name, Position, Organisation und Ort und einer Zeile dazu, wie ihr in Kontakt seid („Täglicher Austausch · zuletzt Fr, 23. Okt · nächstes Meeting Di, 27. Okt“). Darunter:
 
-- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine, um anzurufen oder zu schreiben, oder **Kopieren**.
+- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine, um anzurufen oder zu schreiben, oder **Kopieren**. Auch der **Geburtstag** steht hier, mit seiner Herkunft (Google-Kontakte, Google Calendar, Facebook oder du): siehe [Der Graph](graph.md#geburtstag).
 - **Mit dir**: was die Person für dich ist, Kontakt aus Arbeit oder Privat, und deine Familie oder Fleet, mit **In Fleet ansehen**.
 - **Auch auf**: die anderen Orte, an denen ihr miteinander sprecht. **Slack** öffnet die Person in Slack, oder deinen neuesten Slack-Thread mit ihr.
 - **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Fallen lassen**) und ihr **Verlauf**.
@@ -70,7 +70,7 @@ Um zwei Personen selbst zusammenzuführen, öffne eine davon, dann **⋯**, **Gl
 
 Öffne auf der Seite das Menü ⋯ und wähle **Endgültig löschen…**, dann **Löschen**. Das entfernt die Person und was deine Machine über sie weiß: ihren Eintrag, Adressen, nachgeschlagene Details, die Nachrichten nur zwischen euch beiden und Notizen über sie.
 
-Aufgaben, an denen sie beteiligt ist, bleiben, ohne ihren Namen. Sie wird nicht wieder hinzugefügt. Das lässt sich nicht rückgängig machen.
+Aufgaben, an denen sie beteiligt ist, bleiben, ohne ihren Namen. Sie wird nicht wieder hinzugefügt, auch nicht durch einen Import oder eine Facebook-Geburtstagsaufgabe mit ihrem Namen oder ihrer Adresse. Das lässt sich nicht rückgängig machen.
 
 ## Zurückgekommen
 

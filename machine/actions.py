@@ -97,6 +97,7 @@ OWNER_ACTIONS = {
     'model_usage_refresh',
     'own_address',
     'own_domain',
+    'person_invite_draft',
     'project_about',
     'project_archive',
     'project_delete',
@@ -213,6 +214,8 @@ CARD_ACTIONS = {
     'card_repeat_skip',
     'card_report_seen',
     'card_use_sources',
+    'recurring_method_edit',
+    'recurring_method_undo',
     'recurring_offer',
     'repeat_read',
 }
@@ -323,6 +326,7 @@ OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
 CRM_ACTIONS = {
+    'graph_birthday',
     'graph_field_delete',
     'graph_field_save',
     'graph_field_set',
@@ -402,6 +406,7 @@ OWNER_ACTIONS |= EXPORT_ACTIONS
 # OpenClaw job off; a to-do's offer to change its routine, saved or kept as is (routine_changes.py). The owner's own, from the
 # dashboard only. A run's own report (routine_result) is the Gateway's, bound to its session by the plugin: never in these sets.
 ROUTINE_ACTIONS = {
+    'birthdays_facebook',
     'routine_accept',
     'routine_change_keep',
     'routine_change_save',
@@ -518,6 +523,7 @@ DASHBOARD_ACTIONS = frozenset({
     'notify_set',
     'own_address',
     'own_domain',
+    'person_invite_draft',
     'project_about',
     'project_archive',
     'project_delete',

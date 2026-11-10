@@ -17,7 +17,8 @@ function chatKeepPlace(fn){const log=$('#chat-log');if(!log)return fn();const l=
  if(end&&chat?.items?.length){chatToEnd();return}if(l)l.scrollTop=keep;const n=at>=0?$('#chat-log').children[at]:null;if(!n)return;
  const d=n.getBoundingClientRect().top-y;if(Math.abs(d)>.5){if(l)l.scrollTop+=d;else scrollBy(0,d)}}
 // Long names fade out at the edge instead of wrapping; the full name is in their tooltip.
-function chatFades(){document.querySelectorAll('.chat-side a,.chat-title,.side-cards a').forEach(n=>{const cut=n.scrollHeight>n.clientHeight+1;n.classList.toggle('fade',n.scrollWidth>n.clientWidth+1||cut);
+function chatFades(){document.querySelectorAll('.chat-side a,.chat-title,.side-cards a').forEach(n=>{const cut=!n.matches('.chat-title')&&n.scrollHeight>n.clientHeight+1;  // the chat's title is one line, its box trimmed to its capitals (todos-chat.css)
+ n.classList.toggle('fade',n.scrollWidth>n.clientWidth+1||cut);
  // A title cut after its second line ends where its last whole word does, often well before the edge: fade out there
  if(!cut||!n.firstChild||n.firstChild.nodeType!==3){n.style.removeProperty('--fade-x');return}
  const box=n.getBoundingClientRect(),r=document.createRange(),txt=n.firstChild;let lo=0,hi=txt.length;
@@ -158,6 +159,7 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const lg=e.target.closest('[data-learned-go],[data-learned-edit]');if(lg?.dataset.learnedNode){e.stopPropagation();recordFactShow(lg.dataset.learnedNode,Number(lg.dataset.learnedEdit)||null);return}if(lg){e.stopPropagation();const v=lg.dataset.learnedGo;lazyRun('learning',()=>lg.dataset.learnedEdit?learnedShow(Number(lg.dataset.learnedEdit),'fact',true):learnedShow(Number(v)||null,lg.dataset.what));return}
  const fu=e.target.closest('[data-fixed-undo]');if(fu){e.stopPropagation();fu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'learning_undo',args:{id:Number(fu.dataset.fixedUndo)}})});toast(window.t('Undone.'));if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);fu.disabled=false;toast(err.message,true)}return}
  const lu=e.target.closest('[data-learned-undo]');if(lu){e.stopPropagation();lu.disabled=true;try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'forget_fact',args:{id:Number(lu.dataset.learnedUndo),undo:true}})});toast('Removed from what I’ve learned.');if(chat)chat.cursor=null;await chatPoll();refresh()}catch(err){errCaught(err);lu.disabled=false;toast(err.message,true)}return}
+ const rc=e.target.closest('[data-recipe-edit],[data-recipe-undo]');if(rc){e.stopPropagation();lazyRun('recipe',()=>recipeAct(rc));return}
  const un=e.target.closest('[data-unclamp]');if(un){e.stopPropagation();const k=un.dataset.unclamp;chatOpenSet.has(k)?chatOpenSet.delete(k):chatOpenSet.add(k);paintChat();return}
  const b=e.target.closest('button');const input=$('#chat-input');
  // A quick pick or a suggestion fills the message box.

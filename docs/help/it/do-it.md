@@ -10,7 +10,7 @@ order: 2
 
 **Fallo** chiede alla tua Machine di preparare l'attività: scrivere la bozza della risposta, cercare informazioni, compilare un modulo. Lavora con i tuoi account e con il suo browser, come faresti tu.
 
-Mentre lavora nel suo browser, l'attività e la sua chat mostrano quella pagina dal vivo. Fai clic sull'immagine per aprire il browser. Nell'attività si apre più grande, con **Ferma**: un tocco la ferma subito.
+Mentre lavora nel suo browser, l'attività e la sua chat mostrano quella pagina dal vivo, anche tra un passo e l'altro, finché non ha finito lì. Fai clic sull'immagine per aprire il browser. Nell'attività si apre più grande, con **Ferma**: un tocco la ferma subito.
 
 Prima di scrivere un sollecito o passare qualcosa a qualcun altro, controlla la conversazione per risposte più recenti, anche di un collega. Se è già fatto, l'attività lo dice. Quando ha creato o modificato un documento o una pagina, l'attività porta dritto lì.
 

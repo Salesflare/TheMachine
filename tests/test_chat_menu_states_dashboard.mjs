@@ -30,6 +30,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
+// A condition the page reaches after a request: checked until it holds, for at most 5 s
+const until=async(ok,ms=5000)=>{for(const end=Date.now()+ms;!ok();){if(Date.now()>end)return;await new Promise(r=>setTimeout(r,50))}};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [1280,390]){
@@ -37,7 +39,9 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForTimeout(500);
+  // The thread comes from its own request after the title: wait for it (bounded) before reading the ⋯, the status or the picks
   const open=async c=>{await page.evaluate(i=>{location.hash='#chat='+i},c.id);await page.locator('h2.chat-title',{hasText:c.title}).waitFor();
+   await page.locator('#chat-log .chat-msg.machine',{hasText:'Done it.'}).first().waitFor({timeout:5000});
    await page.locator('#chat-menu').evaluate(n=>{n.open=false});await page.locator('#chat-menu>summary').click();
    return page.evaluate(()=>({menu:[...document.querySelectorAll('.chat-menu-list>*')].filter(n=>n.getClientRects().length).map(n=>n.textContent.trim()).filter(x=>x!=='All tasks'),
     status:document.querySelector('#chat-status').textContent.trim()}))};
@@ -47,11 +51,12 @@ try{
   assert.deepEqual(done.menu,['Reopen'],'a done to-do: Reopen in the ⋯'+at);assert.equal(done.status,'Done·Reopen','and on the status line'+at);
   for(const c of [cards[2],cards[3]]){const r=await open(c);
    assert.deepEqual(r.menu,done.menu,c.title+': the same ⋯ as a done one'+at);assert.equal(r.status,'Looks done·Reopen',c.title+at);
+   await page.locator('#chat-log .chat-options button').first().waitFor({timeout:5000});
    assert.deepEqual(await page.locator('#chat-log .chat-options button').allTextContents(),['Mark done'],c.title+': Mark done is the one pick'+at)}
   const snoozed=await open(cards[4]);assert.equal(snoozed.menu[0],'Unsnooze','the way back first in the ⋯'+at);
   if(width===1280){
-   await open(cards[2]);await page.locator('.chat-menu-list [data-ld-not]').click();await page.waitForTimeout(400);
-   await open(cards[1]);await page.locator('.chat-menu-list [data-choice="reopen"]').click();await page.waitForTimeout(400);
+   await open(cards[2]);await page.locator('.chat-menu-list [data-ld-not]').click();await until(()=>decided.some(d=>d[0]===id(3)));
+   await open(cards[1]);await page.locator('.chat-menu-list [data-choice="reopen"]').click();await until(()=>decided.some(d=>d[0]===id(2)));
    assert.deepEqual(decided.filter(d=>[id(2),id(3)].includes(d[0])),[[id(3),'not_done'],[id(2),'reopen']],'Reopen from the ⋯: not_done for looks done, reopen for done')}
   await context.close()}
  assert.deepEqual(errors,[]);

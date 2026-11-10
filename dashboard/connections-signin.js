@@ -54,10 +54,11 @@ const saved=page.saved&&(page.username||page.password);$('#signin-saved').hidden
 if(!d.open)d.showModal();(page.username&&!$('#signin-user').value?$('#signin-user'):page.password?$('#signin-pass'):page.code?$('#signin-code'):$('#signin-go')).focus()}
 // `task`: the card waiting on this sign-in; once the page is past it, that task carries on by itself. `page`: its tab.
 let signinTask=null,signinTab=null,signinRun=0,signinArgs=[],signinSite=null,signinApproving=null,signinAfter=null,signinFresh=false;
-const CONNECT_SITES=['linkedin','x'];
+const CONNECT_SITES=['linkedin','x','facebook'];
 // From a hosted setup page (#signin-site=linkedin): that site's sign-in only, and once in, setup connects it by itself.
 // Also ChatGPT and Claude, for Find my skills (Settings > Skills > Import): once in, the list looks there by itself (`signinAfter`).
-const SIGNIN_SITES={linkedin:{name:'LinkedIn',hosts:['linkedin.com']},x:{name:'X',hosts:['x.com']},chatgpt:{name:'ChatGPT',hosts:['chatgpt.com','openai.com']},claude:{name:'Claude',hosts:['claude.ai']}};
+// And Facebook, for the Import birthdays from Facebook to-do: once in, it reads again by itself.
+const SIGNIN_SITES={linkedin:{name:'LinkedIn',hosts:['linkedin.com']},x:{name:'X',hosts:['x.com']},chatgpt:{name:'ChatGPT',hosts:['chatgpt.com','openai.com']},claude:{name:'Claude',hosts:['claude.ai']},facebook:{name:'Facebook',hosts:['facebook.com']}};
 const onSite=(page,s)=>s.hosts.some(h=>page?.site===h||page?.site?.endsWith('.'+h));
 const siteName=page=>signinSite?.name||Object.values(SIGNIN_SITES).find(s=>onSite(page,s))?.name||page?.site||'the site';
 function signinDone(resumed){signinApproving=null;

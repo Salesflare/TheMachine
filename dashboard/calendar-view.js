@@ -2,8 +2,8 @@
 // or tap Earlier days), and on a computer also the calendar week, Monday to Sunday, as seven columns. It holds the
 // meetings from the connected calendars, each with its card if one is about it, cards due or coming back that day,
 // handoff check-ins and promises with a date. Read-only: viewing sends or changes nothing. A row opens its card's chat,
-// the promise's page, or the meeting in its own calendar. Meetings load one calendar week (Monday to Monday) per ask
-// and are kept for a minute. Today, ‹ › and the view switch stay on top; t, ← → (or k j), a and w do the same. The
+// the promise's page, or the meeting in its own calendar. Meetings load by calendar week (Monday to Monday), the weeks on
+// show in one ask, and are kept for a minute. Today, ‹ › and the view switch stay on top; t, ← → (or k j), a and w do the same. The
 // address holds the view and its week (#calendar?view=week&date=2026-10-26), so back and forward work.
 const CAL_BACK=56,CAL_AHEAD=52;  // how many weeks the agenda runs back (a year of history: docs/help/history.md) and ahead of this one
 // calStarts: the first day there are meetings for ({day, joined, history}, api/calendar): a calendar's first read went a week back,
@@ -22,20 +22,54 @@ const calList=()=>calMode==='agenda',calThree=()=>calMode==='week'&&!DESK.matche
 const calMonthDays=m=>[calMonday(m),calAdd(calMonday(new Date(m.getFullYear(),m.getMonth()+1,0)),7)];  // Monday on or before the 1st to the Monday after the last Sunday
 const calRange=()=>calMode==='month'?calMonthDays(calMonth):calMode==='week'?(DESK.matches?[calAt,calAdd(calAt,7)]:[calStart,calAdd(calStart,3)]):[calFrom,calTo];
 const calMondays=(from,to)=>{const out=[];for(let d=calMonday(from);d<to;d=calAdd(d,7))out.push(d);return out};
-function calFetchWeek(mon,force){const k=localDay(mon),w=calWeeks.get(k);if(w?.loading)return w.loading;
- if(w&&!w.failed&&!force&&Date.now()-w.at<60000)return Promise.resolve();
- const q='from='+encodeURIComponent(mon.toISOString())+'&to='+encodeURIComponent(calAdd(mon,7).toISOString());
+// Weeks ask together: one ask from the first Monday to the Monday after the last (at most six, a month's view), each
+// week keeping the meetings that overlap it (one that runs over a Monday in both). A week asked for less than a minute
+// ago, or on its way, is not asked again.
+const calFresh=(w,force)=>w&&!w.failed&&!force&&Date.now()-w.at<60000;
+const calIn=(m,a,b)=>{const [s,e0]=calTimes(m);if(isNaN(s))return true;const e=isNaN(e0)||e0<=s?new Date(s.getTime()+1):e0;return s<b&&e>a};
+function calFetchSpan(mons,force){const busy=[],want=[];
+ for(const mon of mons){const w=calWeeks.get(localDay(mon));if(w?.loading)busy.push(w.loading);else if(!calFresh(w,force))want.push(mon)}
+ if(!want.length)return Promise.all(busy);
+ const first=want[0],end=calAdd(want[want.length-1],7),was=new Map(want.map(mon=>[localDay(mon),calWeeks.get(localDay(mon))]));
+ const q='from='+encodeURIComponent(first.toISOString())+'&to='+encodeURIComponent(end.toISOString());
  // Each week read is kept on the device too (encrypted, like the cards), so the Calendar opens offline with what it had
- const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;if(r&&'starts' in r)calStarts=r.starts?.day?r.starts:null;calWeeks.set(k,{meetings:Array.isArray(r?.meetings)?r.meetings:[],failed:false,at:Date.now()});localCache.put('cal:'+k,r)})
-  .catch(async e=>{if(e?.offline){const mine=w?.meetings&&!w.failed,hit=mine?null:await localCache.read('cal:'+k);
-   if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;if(hit.value?.starts?.day&&!calStarts)calStarts=hit.value.starts;staleMark(hit.at)}
-    calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],failed:false,at:0});return}}
-   calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}).finally(calUnion);
- calWeeks.set(k,{meetings:w?.meetings||null,failed:!!w?.failed,at:w?.at||0,loading});return loading}
+ const loading=request('api/calendar?'+q).then(r=>{if(Array.isArray(r?.calendars))calCals=r.calendars;if(r&&'starts' in r)calStarts=r.starts?.day?r.starts:null;
+   if(r?.checking)calCheckAgain();const all=Array.isArray(r?.meetings)?r.meetings:[];
+   for(const mon of want){const k=localDay(mon),meetings=want.length>1?all.filter(m=>calIn(m,mon,calAdd(mon,7))):all;calWeeks.set(k,{meetings,failed:false,at:Date.now()});localCache.put('cal:'+k,{...r,meetings})}})
+  .catch(async e=>{for(const mon of want){const k=localDay(mon),w=was.get(k);
+   if(e?.offline){const mine=w?.meetings&&!w.failed,hit=mine?null:await localCache.read('cal:'+k);
+    if(mine||hit){if(hit){if(Array.isArray(hit.value?.calendars)&&!calCals?.length)calCals=hit.value.calendars;if(hit.value?.starts?.day&&!calStarts)calStarts=hit.value.starts;staleMark(hit.at)}
+     calWeeks.set(k,{meetings:mine?w.meetings:Array.isArray(hit.value?.meetings)?hit.value.meetings:[],failed:false,at:0});continue}}
+   calWeeks.set(k,{meetings:w?.meetings||[],failed:true,at:Date.now()})}}).finally(calUnion);
+ for(const mon of want){const w=was.get(localDay(mon));calWeeks.set(localDay(mon),{meetings:w?.meetings||null,failed:!!w?.failed,at:w?.at||0,loading})}
+ return Promise.all([...busy,loading])}
+const calFetchWeek=(mon,force)=>calFetchSpan([mon],force);
+// Mondays (sorted) in runs of next weeks, at most six to an ask
+function calRuns(mons){const out=[];for(const d of [...mons].sort((x,y)=>x-y)){const run=out[out.length-1];
+ if(run&&run.length<6&&+calAdd(run[run.length-1],7)===+d)run.push(d);else out.push([d])}return out}
+// The weeks next to the ones on show, and loaded weeks gone stale, come one at a time behind them, never as a burst
+// (2026-11-10: a Calendar open asked for 43 weeks within 3 s). The page draws once when they are all in.
+let calLater=[],calLaterRun=null;
+function calQueue(mons){for(const d of mons)if(!calLater.some(x=>+x===+d))calLater.push(d);
+ if(calLaterRun)return calLaterRun;
+ calLaterRun=(async()=>{let changed=false;while(calLater.length){const d=calLater.shift(),k=localDay(d),before=JSON.stringify(calWeeks.get(k)?.meetings||null);
+   await calFetchSpan([d]).catch(()=>{});if(JSON.stringify(calWeeks.get(k)?.meetings||null)!==before)changed=true}
+  if(changed&&!$('#calendar').hidden&&!calBusy)calRender()})().finally(()=>{calLaterRun=null});return calLaterRun}
+// The first look after a restart can come before the check of which calendars The Machine may change is done: ask
+// once more a moment later, so Edit and New event show without a reload
+let calChecked=false;
+function calCheckAgain(){if(calChecked)return;calChecked=true;setTimeout(()=>calFetch(true).then(()=>{if(!$('#calendar').hidden)calRender()}),3000)}
 // Every loaded week's meetings, each once (one that runs over a Monday comes in both weeks)
 function calUnion(){const seen=new Set(),all=[];let any=false;for(const w of calWeeks.values()){if(!w.meetings)continue;any=true;for(const m of w.meetings)if(!seen.has(m.id)){seen.add(m.id);all.push(m)}}calMeetings=any?all:null}
 const calFailedIn=(a,b)=>calMondays(a,b).some(d=>calWeeks.get(localDay(d))?.failed);
-function calFetch(force){const [a,b]=calRange(),weeks=[...calMondays(a,b)],now=calMonday(new Date());if(!weeks.some(d=>+d===+now))weeks.push(now);return Promise.all(weeks.map(d=>calFetchWeek(d,force)))}
+// What is on show comes first, in one ask: the period's weeks (the agenda: the week at the top and the next one), and
+// any week in it not loaded yet. After it, the other loaded weeks and the weeks either side follow one at a time.
+function calFetch(force){const [a,b]=calRange(),now=calMonday(new Date()),weeks=calMondays(a,b);if(!weeks.some(d=>+d===+now))weeks.push(now);
+ const top=calMonday(calList()?calAt:a),seen=calList()?[top,calAdd(top,7)]:calMondays(a,b),has=(l,d)=>l.some(x=>+x===+d);
+ const first=weeks.filter(d=>has(seen,d)||!calWeeks.get(localDay(d))?.meetings);
+ const shown=Promise.all(calRuns(first).map(r=>calFetchSpan(r,force)));
+ if(!$('#calendar').hidden){const last=seen[seen.length-1],rest=[...weeks.filter(d=>!has(first,d)),calAdd(seen[0],-7),calAdd(last,7)];shown.finally(()=>calQueue(rest))}
+ return shown}
 async function calendarView(force){calRender();await calFetch(force);calRender()}
 // A meeting's [start, end) as Dates. All day: midnight to midnight on its own dates (day, until) here, so it stays on
 // its calendar date in whatever zone the device is in.
@@ -203,14 +237,14 @@ setInterval(()=>{if(!$('#calendar').hidden&&!calList())calRender()},60000);  // 
 // is the way back when a week couldn't load
 async function calMore(dir){if(calBusy)return calBusy;const up=dir==='up',a=up?calMonday(calAdd(calFrom,-1)):calTo,b=up?calFrom:calAdd(calMonday(calTo),7);  // up to a Monday, on to the next
  if(!calMoreRow(dir))return;const btn=$(`#calendar-view [data-cal-more="${dir}"] button`);if(btn){btn.disabled=true;btn.textContent='Loading…'}
- calBusy=(async()=>{await Promise.all(calMondays(a,b).map(d=>calFetchWeek(d)));calMoreFailed[dir]=calFailedIn(a,b);if(!calMoreFailed[dir]){if(up)calFrom=a;else calTo=b}calRender()})().finally(()=>{calBusy=null});return calBusy}
+ calBusy=(async()=>{await Promise.all(calRuns(calMondays(a,b)).map(r=>calFetchSpan(r)));calMoreFailed[dir]=calFailedIn(a,b);if(!calMoreFailed[dir]){if(up)calFrom=a;else calTo=b}calRender()})().finally(()=>{calBusy=null});return calBusy}
 const calIO=window.IntersectionObserver?new IntersectionObserver(es=>{for(const e of es){const dir=e.target.dataset.calMore;if(!e.isIntersecting||calMoreFailed[dir]||dir==='up'&&!calUp)continue;calMore(dir)}},{rootMargin:'300px 0px'}):null;
 function calObserve(box){if(!calIO)return;calIO.disconnect();box.querySelectorAll('[data-cal-more]:not([data-cal-manual])').forEach(el=>calIO.observe(el))}
 const calUpSeen=()=>{const el=$('#calendar-view [data-cal-more="up"]');return el&&el.getBoundingClientRect().bottom>-300};
 // Which way the agenda moves, and its week in the header and the address as it scrolls
 let calScrollTick=0,calUrlTimer=0;
 addEventListener('scroll',()=>{if($('#calendar').hidden||calScrollTick)return;calScrollTick=requestAnimationFrame(()=>{calScrollTick=0;const y=scrollY;calUp=y<calLastY;calLastY=y;if(!calList())return;
- const top=calAnchor($('#calendar-view'));if(!top)return;const mon=calMonday(calOf(top.day));if(+mon===+calAt)return;calAt=mon;pageHead();clearTimeout(calUrlTimer);calUrlTimer=setTimeout(()=>{if(!$('#calendar').hidden)calPush(true)},300)})},{passive:true});
+ const top=calAnchor($('#calendar-view'));if(!top)return;const mon=calMonday(calOf(top.day));if(+mon===+calAt)return;calAt=mon;calQueue([mon,calAdd(mon,7)]);pageHead();clearTimeout(calUrlTimer);calUrlTimer=setTimeout(()=>{if(!$('#calendar').hidden)calPush(true)},300)})},{passive:true});
 // At the very top a page can't scroll up, so a wheel or a pull down there asks for earlier days; on a phone's three
 // days a sideways swipe moves three days on or back
 let calTouch=null;

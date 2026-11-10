@@ -4,7 +4,9 @@
 Each test file runs in its own process with its own HOME, several at once (as many as the computer has cores, at
 most 8; THE_MACHINE_TEST_JOBS=1 runs them one by one). A file's output is printed when it's done, in full when it
 failed. The tests live in tests/ and run from the repository root. Name files to run only those (with or without tests/):
-scripts/test.py test_moving.py tests/test_fleet_dashboard.mjs"""
+scripts/test.py test_moving.py tests/test_fleet_dashboard.mjs
+The biggest files start first; --in-order starts named files in the order given (CI's shards list theirs longest
+first, scripts/test_shards.py)."""
 import concurrent.futures
 import os
 from pathlib import Path
@@ -117,6 +119,42 @@ def execute(command, env, limit, folder):
     return process.returncode == 0, output, usage.ru_utime + usage.ru_stime
 
 
+def changed_tests(args):
+    """scripts/test.py --changed [REF]: the test files this worktree's change needs, against where it left origin/main
+    (or REF): commits, staged and unstaged edits and new files, picked as on a pull request (scripts/test_select.py with
+    the test-impact map from main's CI, fetched with gh; without it, by following imports). None: every file."""
+    import importlib.util
+    ref = args[0] if args else 'origin/main'
+
+    def git(*command):
+        return subprocess.run(['git', *command], cwd=ROOT, capture_output=True, text=True, check=True).stdout
+
+    try:
+        base = git('merge-base', ref, 'HEAD').strip()
+        paths = sorted(set(git('diff', '--name-only', base).split()) | set(git('ls-files', '--others', '--exclude-standard').split()))
+    except (OSError, subprocess.CalledProcessError):
+        print(f'--changed: no {ref} to compare with (git fetch origin first)', file=sys.stderr)
+        sys.exit(2)
+    if not paths:
+        print(f'Nothing changed against {ref}: no tests to run.')
+        return []
+    modules = {}
+    for name in ('test_select', 'test_impact'):
+        spec = importlib.util.spec_from_file_location(name, ROOT / 'scripts' / f'{name}.py')
+        modules[name] = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modules[name])
+    found = modules['test_impact'].fetch()
+    impact = modules['test_select'].load_impact(found) if found else None
+    why = {}
+    picked = modules['test_select'].select(paths, why=why, impact=impact, base=base)
+    how = 'the test-impact map from main' if impact else 'imports (no test-impact map: gh could not fetch it)'
+    if picked is None:
+        print(f'{len(paths)} changed files need every test file ({why.get("*", "most of them are picked")}).', flush=True)
+        return None
+    print(f'{len(picked)} test files for {len(paths)} changed files, picked by {how}.', flush=True)
+    return picked
+
+
 def main():
     node = shutil.which('node')
     if not node:
@@ -137,6 +175,11 @@ def main():
         env.update(HOME=home,PATH=str(Path(node).parent)+os.pathsep+os.environ.get('PATH',''))
         # The suites import the app from the root (their working folder) and their shared helpers from tests/.
         env['PYTHONPATH'] = os.pathsep.join(filter(None, (str(TESTS), os.environ.get('PYTHONPATH'))))
+        if os.environ.get('THE_MACHINE_IMPACT_DIR'):
+            # recording the test-impact map: Node notes which functions of the dashboard's parts each page test runs
+            # (set here: GitHub won't take NODE_OPTIONS from a step's $GITHUB_ENV)
+            hook = '--import=' + (ROOT / 'scripts' / 'test_impact_js.mjs').as_uri()
+            env['NODE_OPTIONS'] = ' '.join(filter(None, (os.environ.get('NODE_OPTIONS'), hook)))
         if os.name == 'nt':
             env['PYTHONUTF8'] = '1'  # the console's code page can't print everything the suites print
         package = os.environ.get('OPENCLAW_PACKAGE_DIR') or openclaw_package(node)
@@ -147,7 +190,14 @@ def main():
             env['CHROMIUM_PATH'] = browser
         env['THE_MACHINE_SEAL_AUDITED'] = ','.join(SEAL_AUDIT)  # test_message_seal: these run audited here already
         chosen = sys.argv[1:]
-        files = [TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
+        in_order = chosen[:1] == ['--in-order']
+        if in_order:
+            chosen = chosen[1:]
+        if chosen[:1] == ['--changed']:
+            chosen = changed_tests(chosen[1:])
+            if chosen == []:
+                return 0
+        files =[TESTS / Path(name).name for name in chosen] if chosen else sorted(TESTS.glob('test_*.py')) + sorted(TESTS.glob('test_*.mjs'))
         jobs = max(1, int(os.environ.get('THE_MACHINE_TEST_JOBS') or min(os.cpu_count() or 2, 8)))
         configured_limit = os.environ.get('THE_MACHINE_TEST_TIMEOUT')
         skips = {file.name: reason for file in files if (reason := skipped(file))}
@@ -164,10 +214,12 @@ def main():
             started = time.monotonic()
             own = Path(home) / file.name
             own.mkdir()
-            audit = {'MESSAGE_SEAL_AUDIT': '1'} if file.stem in SEAL_AUDIT else {}
+            # which test file started a process: scripts/test_impact.py's recorder files what it runs under this name
+            audit = {'THE_MACHINE_IMPACT_TEST': file.name}
+            audit.update({'MESSAGE_SEAL_AUDIT': '1'} if file.stem in SEAL_AUDIT else {})
             # Windows finds the home folder through USERPROFILE, not HOME.
             ok, output, cpu = execute(command, {**env, **audit, 'HOME': str(own), 'USERPROFILE': str(own)}, limit, own)
-            if audit and SEAL_LEAK in output:
+            if 'MESSAGE_SEAL_AUDIT' in audit and SEAL_LEAK in output:
                 ok, output = False, output + f'\nA connector {SEAL_LEAK} (MESSAGE_SEAL_AUDIT)'
             return file.name, ok, output, time.monotonic() - started, cpu
 
@@ -179,7 +231,8 @@ def main():
         print(f'Running {len(files)} test files, {jobs} at a time' + (f' ({len(skips)} skipped on {sys.platform})' if skips else ''), flush=True)
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
             # the biggest files first, so a slow one doesn't start last and keep everyone waiting
-            started = [pool.submit(run, file) for file in sorted(files, key=lambda f: -f.stat().st_size)]
+            order = files if in_order and chosen else sorted(files, key=lambda f: -f.stat().st_size)
+            started = [pool.submit(run, file) for file in order]
             for done in concurrent.futures.as_completed(started):
                 if done.cancelled():
                     continue
@@ -197,8 +250,17 @@ def main():
         wall = time.monotonic() - wall
         if cpu_total:
             # how busy the files kept the computer: about `jobs` here means the workers fit the cores they have
-            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers')
+            # and how busy the whole computer is (other jobs on the same runner too)
+            load = f'; load {os.getloadavg()[1]:.1f} on {os.cpu_count()} cores' if hasattr(os, 'getloadavg') else ''
+            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers{load}')
         print('Slowest: ' + ', '.join(f'{name} {seconds:.0f} s' for seconds, name in sorted(took, reverse=True)[:10]))
+        if record := os.environ.get('THE_MACHINE_IMPACT_DIR'):
+            # the files that passed: only their records go in the test-impact map (scripts/test_impact.py build)
+            passed = sorted(name for _, name in took if name not in failed)
+            Path(record, 'passed').write_text('\n'.join(passed) + '\n', encoding='utf-8')
+            # how long each file took: the next full run splits its shards by these (scripts/test_shards.py)
+            Path(record, 'seconds').write_text(''.join(f'{name}\t{seconds:.1f}\n' for seconds, name in sorted(took, key=lambda t: t[1])),
+                                               encoding='utf-8')
         print('\n'+('Failed: '+', '.join(sorted(failed)) if failed else 'All Python and Node suites passed.'))
         return 1 if failed else 0
 

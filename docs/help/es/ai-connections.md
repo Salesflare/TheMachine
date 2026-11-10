@@ -19,7 +19,7 @@ Un borrador espera en tu Machine hasta que lo leas y pulses **Enviar** tú. Una 
 
 ## Conectar una
 
-Abre **Ajustes**, **Apps**. Debajo de **Las apps de The Machine** están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** están la dirección de la app oficial para todas las Machines, `https://mcp.themachine.computer/mcp`, y tu **Dirección privada (de extremo a extremo)**, `https://<tu nombre>.mcp.themachine.computer/mcp`, cada una con **Copiar**.
+Abre **Ajustes**, **Apps**. Debajo de **Las apps de The Machine** están **Añadir en ChatGPT** y **Añadir en Claude**. En **O añádela con una dirección** están la dirección de la app oficial para todas las Machines, `https://mcp.themachine.computer/mcp`, y **Tu dirección**, `https://<tu nombre>.mcp.themachine.computer/mcp`, cada una con **Copiar**.
 
 En una Machine en tu propio ordenador, pulsa primero **Configurar** en **Obtener tu dirección**. Se abre una página de tu cuenta: comprueba que muestra el mismo código, confirma y elige un nombre. Tu Machine se vincula sola, sin reiniciar. Las dos formas lo necesitan.
 
@@ -37,7 +37,7 @@ Para tu dirección privada, o una Machine sin la Network, añade en ChatGPT un s
 
 Con la app oficial, la IA te pide iniciar sesión con tu cuenta de The Machine. Elige esta Machine si tienes más de una y luego aprueba la IA en la página de tu Machine. Con la dirección privada, la IA llega directamente a tu Machine.
 
-Las IA de un dispositivo en tu tailnet, como Claude Code o Cursor, también pueden usar la dirección de tu panel seguida de `/mcp`. **Desvincular** quita de tu cuenta una Machine en tu propio ordenador.
+Las IA de un dispositivo en tu tailnet, como Claude Code o Cursor, también pueden usar la dirección de tu panel seguida de `/mcp`. **Desvincular esta Machine**, al final de **Ajustes**, **Cuenta**, quita de tu cuenta una Machine en tu propio ordenador.
 
 Tu Machine muestra qué IA es. Una IA que no reconoce muestra la dirección de la que viene: conecta solo si acabas de iniciarlo tú.
 

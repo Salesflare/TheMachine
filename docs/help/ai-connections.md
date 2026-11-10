@@ -19,7 +19,7 @@ A draft waits until you read it and press Send yourself. A connected AI never se
 
 ## Connect one
 
-Open **Settings**, **Apps**. Below **The Machine apps** come **Add in ChatGPT** and **Add in Claude**. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and your **Private address (end-to-end)**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
+Open **Settings**, **Apps**. Below **The Machine apps** come **Add in ChatGPT** and **Add in Claude**. Under **Or add it by address** are the official app's one address for every Machine, `https://mcp.themachine.computer/mcp`, and **Your address**, `https://<your name>.mcp.themachine.computer/mcp`, each with **Copy**.
 
 On a Machine on your own computer, press **Set up** under **Get your address** first. A page on your account opens: check that it shows the same code, confirm and pick a name. Your Machine pairs by itself, no restart. Both ways need this.
 
@@ -37,7 +37,7 @@ For your private address, or a Machine not on the Network, add a custom MCP serv
 
 With the official app, the AI asks you to sign in with your The Machine account. Pick this Machine if you have more than one, then approve it on your Machine's own page. With the private address, the AI comes straight to your Machine.
 
-AIs on a device in your private network (Tailscale), like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair** takes a Machine on your own computer off your account again.
+AIs on a device in your private network (Tailscale), like Claude Code or Cursor, can also use your dashboard's address followed by `/mcp`. **Unpair this Machine**, at the bottom of **Settings**, **Account**, takes a Machine on your own computer off your account again.
 
 Your Machine shows which AI is asking. If it can't tell, it shows where the request came from: connect only if you just started this yourself.
 

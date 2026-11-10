@@ -11,11 +11,11 @@ The mobile app opens your own dashboard, signed in as on the web. Get it on the 
 
 The **Get more out of The Machine** to-do at the top of To-dos suggests it. In a phone's browser, **Get it** opens the store. On a phone set to show desktop sites, it shows both store links. On a computer it shows a QR code to scan with your phone, and links to both stores.
 
-On any phone, [themachine.computer/app](https://themachine.computer/app) opens the right store, and **Settings**, **General**, **Phone app** always has **Get the app**. **Settings**, **Apps** has both stores at the top, or just your phone's store on a phone. On a computer, **Computer** installs the dashboard as an app: see [Install the app](phone-app.md).
+On any phone, [themachine.computer/app](https://themachine.computer/app) opens the right store. **Settings**, **Apps** has both stores at the top, or just your phone's store on a phone. On a computer, **Computer** installs the dashboard as an app: see [Install the app](phone-app.md).
 
 ## Connect it
 
-On a hosted Machine the app signs in with your account. On a self-hosted one, open **Settings**, **General** on a computer: **Phone app** shows a code. Install the app, then scan it with the phone's camera, or type the address shown under it into the app. The app asks before it connects, and your Machine's own sign-in still applies.
+On a hosted Machine the app signs in with your account. On a self-hosted one, open **Settings**, **Apps** on a computer: under the stores, **Not on the Network?** shows a code. Install the app, then scan it with the phone's camera, or type the address shown under it into the app. The app asks before it connects, and your Machine's own sign-in still applies.
 
 ## Notifications
 

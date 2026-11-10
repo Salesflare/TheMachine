@@ -39,7 +39,7 @@ As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app,
 
 Depois do seu primeiro dia, ela vira uma linha discreta acima de **Para você**, como "Faltam 2 etapas · Continuar". Toque nela para abrir a tarefa, e toque na seta para recolhê-la de novo.
 
-**Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e lá o app do celular sempre tem o link para baixar.
+**Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e **Configurações**, **Apps** sempre tem o app do celular.
 
 ## Novas versões
 

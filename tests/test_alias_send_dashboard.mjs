@@ -1,7 +1,8 @@
 // From in the review: a small picker when the mailbox may also send as an alias of the owner's (from_options), starting
 // at the draft's default; the pick travels with Send now as `sender`. A draft without aliases shows From as plain text
-// and sends no `sender`. Also in Dutch and dark, and it fits at 390px. Synthetic data, a local fixture server, nothing
-// sent. SHOTS=<folder> saves screenshots.
+// and sends no `sender`. The picker opens the app's own menu (never the browser's list): a tap or the keyboard (arrows,
+// Enter, Escape) picks, in the dialog's colors, inside the dialog. Also in Dutch and dark, and it fits at 390px.
+// Synthetic data, a local fixture server, nothing sent. SHOTS=<folder> saves screenshots.
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
@@ -39,6 +40,10 @@ const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const fits=page=>page.evaluate(()=>{const d=document.querySelector('#send-dialog').getBoundingClientRect(),s=document.querySelector('#send-from')?.getBoundingClientRect();
  return document.documentElement.scrollWidth<=innerWidth&&(!s||(s.right<=d.right&&s.left>=d.left&&s.height<=40))});
 const open=async(page,id,rev)=>{await page.locator(`#task-${id} [data-smart="${rev}"]`).click();await page.locator('#send-dialog').waitFor({state:'visible'})};
+// The From picker: the address it shows, opening its menu, picking an address from it
+const fromValue=page=>page.locator('#send-from>span').textContent();
+const choose=async(page,address)=>{await page.locator('#send-from').click();await page.locator('#cm-menu').waitFor({state:'visible'});
+ await page.locator(`#cm-menu [data-cm-value="${address}"]`).click();await page.locator('#cm-menu').waitFor({state:'hidden'})};
 const confirmed=async page=>{for(let i=0;i<100&&!calls.some(c=>c.action==='confirm_action');i++)await page.waitForTimeout(20);
  const c=calls.find(c=>c.action==='confirm_action');calls.length=0;return c};
 let browser;
@@ -57,9 +62,9 @@ try{
   await open(page,aliasId,aliasRev);
   const from=page.locator('#send-from');
   await from.waitFor();
-  assert.deepEqual(await from.locator('option').allTextContents(),[mailbox,alias]);
-  assert.equal(await from.inputValue(),alias);
-  assert.equal(await from.getAttribute('aria-label'),language==='nl'?'Versturen vanaf':'Send from');
+  assert.equal(await from.evaluate(e=>e.tagName),'BUTTON','no native select');
+  assert.equal(await from.getAttribute('aria-haspopup'),'menu');
+  assert.equal(await fromValue(page),alias);
   assert.equal(await page.locator('#send-head dt').first().textContent(),language==='nl'?'Van':'From');
   assert.equal(calls.filter(c=>c.action==='confirm_action').length,0);
   assert.equal(await fits(page),true,`fits at ${width}x${height}`);
@@ -79,19 +84,50 @@ try{
   await page.locator('#send-subject').fill(subject);
   if(shots)await page.screenshot({path:`${shots}/from-picker-${language}-${scheme}-${width}x${height}.png`});
   if(shots&&width===390)await page.locator('#send-dialog').screenshot({path:`${shots}/from-picker-dialog-${language}-${scheme}-${width}.png`});
+  // A tap opens the app's menu: both addresses, the current one ticked, in the dialog's own colors and inside the dialog
+  await from.click();
+  const menu=page.locator('#cm-menu');await menu.waitFor({state:'visible'});
+  assert.equal(await from.getAttribute('aria-expanded'),'true');
+  assert.equal(await menu.getAttribute('aria-label'),language==='nl'?'Versturen vanaf':'Send from');
+  assert.deepEqual(await menu.locator('[role=menuitemradio]>span').allTextContents(),[mailbox,alias]);
+  assert.deepEqual(await menu.locator('[role=menuitemradio]').evaluateAll(l=>l.map(i=>i.getAttribute('aria-checked'))),['false','true']);
+  const look=await page.evaluate(()=>{const m=document.querySelector('#cm-menu'),d=document.querySelector('#send-dialog'),r=m.getBoundingClientRect(),b=d.getBoundingClientRect(),
+   probe=document.createElement('div');probe.style.background='var(--surface)';probe.style.color='var(--text)';document.body.append(probe);const want=getComputedStyle(probe);
+   const out={inDialog:r.left>=b.left&&r.right<=b.right&&r.top>=b.top&&r.bottom<=b.bottom,menuBg:getComputedStyle(m).backgroundColor,surface:want.backgroundColor,
+    item:getComputedStyle(m.querySelector('[role=menuitemradio]')).color,text:want.color,radius:getComputedStyle(m).borderRadius,host:m.parentElement.id};probe.remove();return out});
+  assert.equal(look.inDialog,true,`the menu fits in the dialog at ${width}x${height}: `+JSON.stringify(look));
+  assert.equal(look.menuBg,look.surface,JSON.stringify(look));assert.equal(look.item,look.text,JSON.stringify(look));assert.equal(look.host,'send-dialog');
+  if(shots)await page.screenshot({path:`${shots}/from-picker-open-${language}-${scheme}-${width}x${height}.png`});
+  // Escape closes the menu only (the dialog stays), and the focus goes back to the picker
+  await page.keyboard.press('Escape');await menu.waitFor({state:'hidden'});
+  assert.equal(await page.locator('#send-dialog').evaluate(d=>d.open),true);
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'send-from');
+  assert.equal(await from.getAttribute('aria-expanded'),'false');
+  // The keyboard: ArrowDown opens it on the current address, arrows move (and wrap), Enter picks
+  await page.keyboard.press('ArrowDown');await menu.waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>document.activeElement?.dataset.cmValue),alias);
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await page.evaluate(()=>document.activeElement?.dataset.cmValue),mailbox);
+  await page.keyboard.press('Enter');await menu.waitFor({state:'hidden'});
+  assert.equal(await fromValue(page),mailbox);
+  assert.equal(await page.evaluate(()=>document.activeElement?.id),'send-from');
+  // A tap picks too; a tap outside closes it without a change
+  await choose(page,alias);assert.equal(await fromValue(page),alias);
+  await from.click();await menu.waitFor({state:'visible'});await page.locator('#send-title').click();await menu.waitFor({state:'hidden'});
+  assert.equal(await fromValue(page),alias);
   // The pick stays when the rows are drawn again (Edit, ticking recipients) and goes with the approval
-  await from.selectOption(mailbox);
+  await choose(page,mailbox);
   await page.evaluate(()=>sendHeader(false));
-  assert.equal(await page.locator('#send-from').inputValue(),mailbox);
-  await page.locator('#send-from').selectOption(alias);
+  assert.equal(await fromValue(page),mailbox);
+  await choose(page,alias);
   await page.locator('#send-confirm').click();
   let c=await confirmed(page);
   assert.equal(c.args.revision,aliasRev);assert.equal(c.args.sender,alias);
   // Pick the mailbox address instead
   await page.locator('#send-dialog').evaluate(d=>d.open&&d.close());
   await open(page,aliasId,aliasRev);
-  assert.equal(await page.locator('#send-from').inputValue(),alias);  // each review starts at the draft's default
-  await page.locator('#send-from').selectOption(mailbox);
+  assert.equal(await fromValue(page),alias);  // each review starts at the draft's default
+  await choose(page,mailbox);
   await page.locator('#send-confirm').click();
   c=await confirmed(page);assert.equal(c.args.sender,mailbox);
   // No alias to offer: From is plain text and Send now carries no sender
@@ -101,6 +137,10 @@ try{
   assert.equal(await page.locator('#send-head dd').first().textContent(),mailbox);
   await page.locator('#send-confirm').click();
   c=await confirmed(page);assert.equal('sender' in c.args,false);
+  // Native selects elsewhere: their list takes the theme's colors, never light text on the browser's white
+  const native=await page.evaluate(()=>{const s=document.createElement('select');s.style.background='transparent';s.innerHTML='<option>a</option>';document.body.append(s);
+   const o=getComputedStyle(s.options[0]),out={bg:o.backgroundColor,color:o.color};s.remove();return out});
+  assert.notEqual(native.bg,'rgba(0, 0, 0, 0)');assert.notEqual(native.bg,native.color);
   if(process.env.VERBOSE)console.log('ok at',width,height,language,scheme);
   await context.close();
  }

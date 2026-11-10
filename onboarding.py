@@ -2091,7 +2091,7 @@ def offer_phone_skip(config, account, ui):
 SIGNIN_EVERY = 10  # seconds between looks while a connect waits on the owner signing in to the browser
 SIGNIN_LEFT = 120  # a sign-in page that has not moved for this long may have been left there: look then, and as often
 # The site's own sign-in steps (its log-in page, a checkpoint asking for a code, a challenge), per browser site
-SIGNIN_HOSTS = {'linkedin': ('linkedin.com',), 'x': ('x.com', 'twitter.com')}
+SIGNIN_HOSTS = {'linkedin': ('linkedin.com',), 'x': ('x.com', 'twitter.com'), 'facebook': ('facebook.com',)}
 SIGNIN_STEP = re.compile(r'(?i)log-?in|sign-?in|checkpoint|challenge|/uas/|/flow/|/2fa|verif')
 
 

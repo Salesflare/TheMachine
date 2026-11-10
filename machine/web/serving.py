@@ -82,6 +82,7 @@ def _filled(source, token, owner, base):
 
 SCRIPT_NAME = re.compile(r'/(app|lazy-[a-z]+)-[0-9a-f]{16}\.js')  # the main script, a LAZY group's file
 SCRIPT_CACHE = 'private, max-age=31536000, immutable'  # its name changes with every change to it
+BRAND_CACHE = 'private, max-age=86400'  # brand images and typefaces: same names across releases, so a day, then a 304
 
 
 def dashboard_script(page):
@@ -101,7 +102,28 @@ def dashboard_files(token, owner, base):
     """(page, {name: script}): the dashboard as a browser gets it. The page (dashboard_page) without the parts that load
     when first needed (dashboard_parts.LAZY): each group of them is a file of its own, lazy-<group>-<hash>.js, named by
     its contents and named in the page's self.LAZY_FILES, just before its main script, which is a file of its own too
-    (dashboard_script). Like the main script, a group's file holds nothing per owner or request."""
+    (dashboard_script). Like the main script, a group's file holds nothing per owner or request.
+    Made once per release (the source files' mtimes, as dashboard_version) and page: every script a page asks for came
+    here, and assembling and hashing it all again took 40-90 ms each, with a fresh page's parts asked for together."""
+    try:
+        mtime = tuple(path.stat().st_mtime_ns for path in dashboard_parts.files(ROOT))
+    except OSError:
+        mtime = None
+    key = (token, owner, base)
+    if mtime is not None and _DASHBOARD_FILES.get('mtime') == mtime and key in _DASHBOARD_FILES['made']:
+        return _DASHBOARD_FILES['made'][key]
+    made = _dashboard_files(token, owner, base)
+    if mtime is not None:
+        if _DASHBOARD_FILES.get('mtime') != mtime or len(_DASHBOARD_FILES['made']) >= 8:
+            _DASHBOARD_FILES.update(mtime=mtime, made={})
+        _DASHBOARD_FILES['made'][key] = made
+    return made
+
+
+_DASHBOARD_FILES = {}
+
+
+def _dashboard_files(token, owner, base):
     source, lazy = dashboard_parts.assemble_split(ROOT)
     files = {f'lazy-{group}-' + hashlib.sha256(script.encode()).hexdigest()[:16] + '.js': script
              for group, script in lazy.items() if script}

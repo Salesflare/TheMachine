@@ -13,7 +13,10 @@ it passes `family_with` (their Graph node) with the to-do. This module decides w
 - the owner's switch (Settings, Fleet: Suggest inviting family) is on.
 
 Invite opens the account page's existing invite form, prefilled with that one address, where the owner sees the email
-before anything goes out. Nothing is sent from here. Every step is a line in Activity (Fleet)."""
+before anything goes out. Nothing is sent from here. Every step is a line in Activity (Fleet).
+
+A person's page offers it too, when the owner presses Invite to The Machine there (person_invite): for someone the
+Family invite fits, it is one of the ways to invite them."""
 from __future__ import annotations
 
 import datetime as dt
@@ -190,6 +193,35 @@ def act(db, card_id, do, account_url, fleets, now=None):
     db.execute("UPDATE family_invite_offers SET state='invited',at=? WHERE person=?", (now, row['person']))
     log(db, row['person'], row['name'], 'opened', row['card_id'])
     return {'state': 'invited', 'url': invite_url(account_url, found, family_entry(fleets))}
+
+
+def person_invite(db, page, fleets=None, account_url=None, owner_emails=(), own_domains=()):
+    """Invite to The Machine on a person's page (docs/help/friends.md), or None. Only for someone with no Machine the
+    owner knows of: in no Fleet, Family or Friends with them and not found on the Network (page['fleet'], from
+    graph.fleet_marks; someone found gets Add as a friend instead), never the owner. {'name', 'first', 'email' (their
+    first address that is not the owner's or a shared one, else ''), 'family'}: family is the Family invite this
+    module's suggestion opens ({'email', 'name', 'url'}: the account page's form, prefilled, with the email shown before
+    it goes), when the owner can invite to a Family and they are no Work contact, else None. Nothing is sent from here:
+    the dashboard shows the words to copy or open in the owner's own email."""
+    if not isinstance(page, dict) or page.get('kind') != 'person':
+        return None
+    mark = page.get('fleet') if isinstance(page.get('fleet'), dict) else {}
+    if mark.get('in') or mark.get('machine'):
+        return None
+    found = person(db, page.get('id'))
+    if not found:
+        return None
+    if {str(e).strip().lower() for e in owner_emails or ()} & set(found['emails']):
+        return None
+    from graph import ROLE  # a shared address (info@, sales@): not one to invite a person at
+    emails = [e for e in found['emails'] if not ROLE.match(e)]
+    family = None
+    able, entry = can_invite(fleets, account_url)
+    if able and emails and page.get('side') != 'work':
+        them = {**found, 'email': emails[0], 'emails': emails, 'side': page.get('side') or found.get('side')}
+        if not excluded(them, fleets, False, own_domains):
+            family = {'email': emails[0], 'name': found['name'], 'url': invite_url(account_url, them, entry)}
+    return {'name': found['name'], 'first': found['first'], 'email': emails[0] if emails else '', 'family': family}
 
 
 LINES = {'offered': ('Suggested inviting {} to the Family', 'Suggested'),

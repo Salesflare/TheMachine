@@ -488,14 +488,26 @@ def _brief(row):
 
 # ------------------------------------------------------------------ lists: filters and sorts on the Machine
 
-FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting')
+FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting',
+           'closeness', 'last_contact', 'open_project', 'industry', 'size', 'country')
 SORTS = ('value', 'close')
+# Which filters each kind of list has: a project's own facts on Projects; on People and Organizations what is about
+# them (how close, when last in touch, and an organization's industry, size and country), plus one "has an open project".
+KIND_FILTERS = {'project': ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting'),
+                'person': ('owner', 'tag', 'org', 'closeness', 'last_contact', 'open_project'),
+                'org': ('owner', 'tag', 'industry', 'size', 'country', 'last_contact', 'open_project')}
+CLOSENESS = {'close': 'strength>=3', 'regular': 'strength>=1 AND strength<3', 'occasional': 'strength>=0.3 AND strength<1', 'faint': 'strength<0.3'}
+LAST_CONTACT = ('30', '90', 'older')  # in the last 30 days, 30 to 90 days ago, over 90 days ago
+SIZES = {'1-10': (1, 10), '11-50': (11, 50), '51-200': (51, 200), '201-1000': (201, 1000), '1000+': (1001, None)}
+# An organization's head count: the exact number when enrichment has one, else the low end of its range ("11-50").
+HEADCOUNT = "CAST(coalesce(nullif(json_extract(info,'$.profile.employees'),0),json_extract(info,'$.profile.size')) AS INTEGER)"
 
 
-def clean_filters(raw):
-    """The filters a list asks for, checked: {name: value}; unknown and empty ones left out."""
+def clean_filters(raw, kind=None):
+    """The filters a list asks for, checked: {name: value}; unknown and empty ones left out, and so are those its kind
+    of list doesn't have (a People list kept from before still asking for a project's value, say)."""
     out = {}
-    for key in FILTERS:
+    for key in KIND_FILTERS.get(kind, FILTERS):
         value = str((raw or {}).get(key) or '').strip()
         if not value:
             continue
@@ -509,6 +521,23 @@ def clean_filters(raw):
             if value != '1':
                 raise ValueError('No reply in 10+ days: on or off')
             value = 1
+        elif key == 'open_project':
+            if value != '1':
+                raise ValueError('Has an open project: on or off')
+            value = 1
+        elif key == 'closeness':
+            if value not in CLOSENESS:
+                raise ValueError('Closeness: close, regular, occasional or faint')
+        elif key == 'last_contact':
+            if value not in LAST_CONTACT:
+                raise ValueError('Last contact: 30, 90 or older')
+        elif key == 'size':
+            if value not in SIZES:
+                raise ValueError('Size: 1-10, 11-50, 51-200, 201-1000 or 1000+')
+        elif key == 'country':
+            if not re.fullmatch(r'[A-Za-z]{2}', value):
+                raise ValueError('Country: a two-letter code, like BE')
+            value = value.lower()
         elif key == 'board':
             if not value.isdigit():
                 raise ValueError('Board: one of your boards')
@@ -527,6 +556,13 @@ def clean_filters(raw):
             raise ValueError(f'{key.capitalize()}: up to 200 characters')
         out[key] = value
     return out
+
+
+def countries_in_use(db, limit=80):
+    """The countries organizations are in (two-letter codes from enrichment), most first, for the filter sheet."""
+    return [r[0] for r in db.execute(
+        "SELECT lower(json_extract(info,'$.profile.country')) c,count(*) n FROM graph_nodes WHERE kind='org' AND length(c)=2 "
+        'GROUP BY c ORDER BY n DESC,c LIMIT ?', (limit,))]
 
 
 def org_ids(db, said):
@@ -585,10 +621,34 @@ def list_query(db, name, filters, sort):
     projects (board, stage, value, close date, and the value and close sorts) go through a temporary table of what
     matches, so a long list still takes one pass."""
     kind = kind_of(name)
-    facts = any(k in filters for k in ('board', 'stage', 'value_min', 'value_max', 'close_from', 'close_to'))
+    facts = any(k in filters for k in ('board', 'stage', 'value_min', 'value_max', 'close_from', 'close_to', 'open_project'))
     if not filters and sort not in SORTS:
         return None, (), None
     where, args = [], []
+    if 'closeness' in filters:  # graph.closeness's steps
+        where.append(CLOSENESS[filters['closeness']])
+    if 'last_contact' in filters:
+        today = dt.datetime.now(dt.timezone.utc).date()  # last_at is a day or a time; a day compares as text with both
+        day30, day90 = ((today - dt.timedelta(days=d)).isoformat() for d in (30, 90))
+        if filters['last_contact'] == '30':
+            where.append('last_at>=?')
+            args.append(day30)
+        elif filters['last_contact'] == '90':
+            where.append('last_at<? AND last_at>=?')
+            args += [day30, day90]
+        else:
+            where.append('(last_at IS NULL OR last_at<?)')
+            args.append(day90)
+    if 'industry' in filters:
+        where.append("json_extract(info,'$.profile.industry') LIKE ? ESCAPE '\\'")
+        args.append('%' + re.sub(r'([\\%_])', r'\\\1', filters['industry']) + '%')
+    if 'size' in filters:
+        low, high = SIZES[filters['size']]
+        where.append(f'{HEADCOUNT}>=?' + (f' AND {HEADCOUNT}<=?' if high else ''))
+        args += [low, high] if high else [low]
+    if 'country' in filters:
+        where.append("lower(json_extract(info,'$.profile.country'))=?")
+        args.append(filters['country'])
     if 'owner' in filters:
         if filters['owner'] == ME:
             where.append("json_extract(info,'$.owner') IS NULL")

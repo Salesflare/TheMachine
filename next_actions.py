@@ -148,8 +148,8 @@ def store_attachments(paths, config):
         if not data or total > MAX_ATTACHMENT_BYTES:
             raise ValueError('Attachments must be non-empty and at most 18 MB together')
         name = real.name
-        if len(name) > 150 or re.search(r'[\x00-\x1f/\\]', name):
-            raise ValueError('Give attachments a plain file name of at most 150 characters')
+        if (problem := mail_attachments.outgoing_problem(real, data)):  # a plain name, not a working one; it opens
+            raise ValueError(problem)
         digest = hashlib.sha256(data).hexdigest()
         store.mkdir(parents=True, exist_ok=True, mode=0o700)
         mail_attachments.store_copy(config, store / digest, data, mail_attachments.from_email(real, config))

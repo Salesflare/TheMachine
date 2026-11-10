@@ -10,4 +10,5 @@
 .cl-pick button[aria-pressed="true"]{border-color:var(--mint);background:color-mix(in srgb,var(--mint) 16%,transparent);color:var(--text)}
 .cl-end{flex:none;color:var(--c-text-3);font-size:var(--fs-sm)}.cl-end.ok{color:var(--mint)}.cl-end.bad{color:var(--c-orange)}
 .cl-fine{margin:8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
-.cl-acts{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:8px 0 0}
+.cl-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin:8px 0 0}
+.cl-acts .ghost{padding-inline:10px;margin-inline:-11px}

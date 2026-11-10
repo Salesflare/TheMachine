@@ -20,11 +20,16 @@ About the test runner:
   `THE_MACHINE_TEST_JOBS=1` runs them one by one.
 - It returns a failing exit code if any suite fails.
 - Name files to run only those: `python3 scripts/test.py test_moving.py`.
-- To run what a change needs, as CI does on a pull request: `git diff --name-only origin/main > /tmp/changed`, then
-  `python3 scripts/test.py $(python3 scripts/test_select.py /tmp/changed | grep -vx ALL)`. `scripts/test_select.py --why
-  test_x.py /tmp/changed` says why a test was picked. Main and release tags run every test.
+- To run what your change needs, as CI does on a pull request: `python3 scripts/test.py --changed`. It compares the
+  worktree (commits, edits and new files) with where it left `origin/main` and picks the tests that ran the functions
+  you changed, from the test-impact map main's last full run made (`scripts/test_impact.py`, fetched with `gh`). Without
+  the map it picks every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
+  says why a test was picked. A push to main runs the tests every change since the newest commit whose full run
+  passed needs (`scripts/ci_runs.py`); every test runs nightly, and a red nightly run opens an issue. On CI the files
+  are split into shards of about equal time (`scripts/test_shards.py`, by each file's time in main's last full run)
+  that run side by side.
 - `THE_MACHINE_TEST_MAX_FAILURES=5` stops starting files after 5 failed ones. Each file's line shows its CPU time,
-  and the summary how many cores the run kept busy.
+  and the summary how many cores the run kept busy and the computer's load.
 - If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package directory.
   `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
 
@@ -65,16 +70,20 @@ What every pull request needs:
 
 ### What's new
 
-- A bigger feature or improvement, one a person would want to be told about, gets an entry at the top of `ENTRIES` in
-  `machine/store/whats_new.py`, in the pull request that ships it: a new id, the day it merges, a short title, one or
-  two short sentences on what changed and what they can do now, and optionally a button that opens it (a palette
-  command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
+- A feature or improvement a person would want to be told about adds a candidate at the top of `ENTRIES` in
+  `machine/store/whats_new.py`, in the pull request that ships it: a new id, the day it merges, a `weight` (how much a
+  person would care: 3 a new thing most people will use, 2 a clear improvement to something they use, 1 a small change
+  worth a line; set it honestly, it decides what gets shown), a short title, one or two short sentences on what changed
+  and what they can do now, `who: 'team'` when only a Work Fleet can use it, and optionally a button that opens it (a
+  palette command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
 - Give it a picture: a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
   `art`. Draw it as inline SVG on the 440 by 180 canvas with the classes listed there (they use the theme's colors, so
   it is right in light and dark), no words in it, placeholder bars for text. It should read as its feature without
   the title. Check it at 390 and 1440 wide in both themes; `tests/test_whats_new.py` checks the name exists.
-- The dashboard shows it once, in one small dialog, to people who got started before that day
-  ([Code map](docs/code-map.md)). Keep it rare: most pull requests add nothing here.
+- ENTRIES is a pool, not a feed: a release never pushes a notice. Each morning a Machine picks at most five unseen
+  candidates for its person (weight, then the newest; only ones dated after they got started and at most 21 days old),
+  and the dashboard shows that pick once that day ([Code map](docs/code-map.md)). What isn't picked waits for a later
+  morning or expires. `scripts/release.py cut` refuses a release whose new candidates aren't valid.
 
 ### Where code goes
 

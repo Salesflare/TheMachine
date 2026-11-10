@@ -240,7 +240,7 @@ class Calendar(unittest.TestCase):
         self.assertIn("Robin's calendar", a.review_view(trip)['not_owners'])
 
     def test_the_window_is_bounded_and_has_time_zones(self):
-        for start, end in [('2026-10-23T00:00:00', '2026-10-24T00:00:00'), ('2026-10-23T00:00:00Z', '2026-11-23T00:00:00Z'),
+        for start, end in [('2026-10-23T00:00:00', '2026-10-24T00:00:00'), ('2026-10-23T00:00:00Z', '2026-12-23T00:00:00Z'),
                            ('2026-10-24T00:00:00Z', '2026-10-23T00:00:00Z'), ('', ''), ('soon', 'later')]:
             with self.subTest(start=start), self.assertRaises(ValueError):
                 self.store.calendar(['cal'], start, end)
@@ -276,6 +276,7 @@ class Calendar(unittest.TestCase):
         before = self.store.snapshot([ACCOUNT])
         status, body = get('/api/calendar?from=' + self.week[0] + '&to=' + self.week[1])
         self.assertEqual(status, 200)
+        self.assertEqual(get('/api/calendar?from=2026-10-19T00:00:00Z&to=2026-11-30T00:00:00Z')[0], 200)  # a month's six weeks in one ask
         self.assertEqual([m['title'] for m in body['meetings']], ['Late call', 'Pilot review', 'Odd link', 'Team offsite'])
         self.assertEqual(get('/api/calendar?from=2026-10-23T00:00:00Z&to=2027-01-01T00:00:00Z')[0], 400)
         self.assertEqual(get('/api/calendar')[0], 400)

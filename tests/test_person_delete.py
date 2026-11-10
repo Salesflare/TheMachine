@@ -72,7 +72,7 @@ class DeletePermanently(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual({r[0] for r in db.execute('SELECT id FROM events')}, set(self.ids([group['source_id'], ann['source_id']])))
             cards = {r['id']: (r['title'], r['body']) for r in db.execute('SELECT id,title,body FROM suggestions')}
-            self.assertEqual(db.execute('SELECT count(*) FROM forgotten_people').fetchone()[0], 2)  # email:lee@globex.com and li:abc, hashed
+            self.assertEqual(db.execute('SELECT count(*) FROM forgotten_people').fetchone()[0], 3)  # email:lee@globex.com, li:abc and their name, hashed
             self.assertEqual(db.execute("SELECT count(*) FROM facts WHERE text='Ann likes short emails'").fetchone()[0], 1)
         self.assertEqual(cards['c1'], ('Reply to someone', 'Draft: Hi someone, the quote is attached. Write to someone.'))  # the card stays
         self.assertEqual(cards['c2'], ('Plan with Ann', 'Hi Ann, Lee may join.'))  # names someone else only by a first name: left alone

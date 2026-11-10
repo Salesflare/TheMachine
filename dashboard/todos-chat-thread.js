@@ -69,6 +69,11 @@ function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includ
  if(st.status==='sent')return html`<p class="chat-sendstate ok" role="status">${d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who)}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;
  if(chatFailed(st))return html`<p class="chat-sendstate failed" role="alert">${st.retry_ok?st.error:t('Didn’t go out.')+(st.error?' '+st.error:'')}</p>`;
  return ''}
+// A running to-do's live browser in the chat, as on its card: a slot while it runs (empty, so not shown, without a
+// picture), so the picture stays between browser steps and goes only when the run is done with the browser. A click
+// opens the Browser pane; while the run waits on the browser the slot holds Open the browser even before a picture.
+const chatPeek=s=>{const via=s.preparation_browser||{link:state.browser_link||'',page:'',quiet:true};
+ return html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(via)}">${peekHTML(s.id,via)}</div>`};
 function chatParts(s){const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));const card=t.content.querySelector('article');
  // The card's … menu, flat: Hand off…'s sheet gives its choices by their whole names (Hand to Codex, not Codex)
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>button,.more-menu>a,.mm-sub>button:not([data-mm-back]),.mm-sub>a:not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
@@ -95,7 +100,7 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  if(backItem)rest.unshift(backItem);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
- const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${!s.preparation_browser?'':s.preparation_status==='blocked'?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(s.preparation_browser)}">${peekHTML(s.id,s.preparation_browser)}</div>`:''}`;
+ const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
  return {sends,single:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
@@ -136,7 +141,7 @@ const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout
 const chatEventText=i=>String(i.mine&&CHAT_TAPS[i.text]||i.text||'').replace(/^You\s+(\S)/,(m,c)=>c.toUpperCase());
 const chatVia=v=>CHAT_VIA[v]||(v&&v!=='signal'?v[0].toUpperCase()+v.slice(1):'');
 // Whose side an item is on: the owner's messages and taps on the right, the Machine and the people it is about on the left.
-const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'?'mid':'them';
+const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'||i.kind==='recipe'?'mid':'them';
 // A wrong thing fixed where it came from (corrections.py): what is right now and where the wrong one came from, in the
 // owner's words, with Undo while it holds; an undone one stays, marked.
 function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
@@ -151,6 +156,7 @@ function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="tr
  if(i.state==='removed')return html`<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
  const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}"${node}>${i.about?window.t('Saved to {} in the Graph',i.about.name):'Saved to what I’ve learned'}</button>`;
  return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}"${node} aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
+let recipeEdit=null;  // todos-recipe.js
 // A reply that says it left a page open in the browser (a sign-in tab, a form)
 const CHAT_TAB=/\b(?:tab|browser)\b[^.]*\b(?:open|opened|reopened|ready)\b|\b(?:open|opened|reopened)\b[^.]*\b(?:tab|browser)\b|\bis open for\b/i;
 function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading…</p>`;if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';
@@ -224,6 +230,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},html`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
   else if(i.kind==='learned')push(i,chatLearned(i));
   else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
+  else if(i.kind==='recipe')push(i,lazyIn('recipe')?chatRecipe(i):(lazyRun('recipe',paintChat),''));
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
    const att=chatAttHTML(i.files);
    push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}

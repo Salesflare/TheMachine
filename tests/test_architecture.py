@@ -264,9 +264,9 @@ OTHER_WRITERS = {
     'fleet_rules': {'fleet_requests.py'},
     'graph_events': {'graph_publish.py'},  # a build's publish, as the changes only (graph.py is at its line budget)
     'graph_imports': {'crm_import.py'},
-    'graph_links': {'graph_publish.py'},
+    'graph_links': {'graph_publish.py', 'graph_show.py'},  # an edit on its page before the next build (graph.py is at its line budget)
     'graph_names': {'crm.py', 'crm_import.py'},
-    'graph_nodes': {'crm.py', 'crm_fields.py', 'graph_publish.py'},
+    'graph_nodes': {'crm.py', 'crm_fields.py', 'graph_publish.py', 'graph_show.py'},
     'graph_offers': {'assistant.py'},
     'graph_org_asks': {'assistant.py'},
     'graph_role_asks': {'assistant.py'},
@@ -296,7 +296,7 @@ OTHER_WRITERS = {
     'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'machine/app/card_actions.py', 'machine/app/fleet.py',
                      'machine/app/profile.py', 'retention.py', 'skills_app.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
-    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'sandbox/load.py'},  # project_about: only its about_* columns
+    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by
     'promises': {'graph.py', 'machine/app/mail.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
     'push_subscriptions': {'machine/app/notifications.py', 'machine/delivery/push.py', 'machine/export/hold.py'},
     'recap_items': {'machine/app/recap.py'},
@@ -426,6 +426,8 @@ OVER_BUDGET = {}
 # 2026-11-09: main had reached this ceiling (1,423,014, then 1,421,700). Settings' Connected AIs and Apps panels
 # (settings-ai.js, settings-ai.css, settings-apps.js) load when first needed, with Settings' other panels (first load
 # 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
+# 2026-11-10: main was over again (1,423,060). Go through's dialog (todos-clear-run.js and its rules) loads when first
+# needed; the header's Go through and its time stay (first load 1,423,060 -> 1,415,719). The ceiling stays.
 FIRST_LOAD_CEILING = 1_423_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
@@ -433,7 +435,10 @@ FIRST_LOAD_CEILING = 1_423_000
 # graph 344,000 -> 348,000 (2026-11-10): a project's description, its Edit and Keep it updated (about 2.5 KB).
 # graph 348,000 -> 350,000 (2026-11-10): a board's header says who sees it, and the owner's locks (about 1.2 KB).
 # graph 350,000 -> 348,000 (2026-11-10): team boards no longer fold look-alike projects.
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 348_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 12_000}
+# clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
+# recipe 4,000 (2026-11-10): a repeating to-do's kept way, its chat line with Edit and Undo (about 3 KB).
+# fbpeople 4,000 (2026-11-10): Facebook's friends nobody in the Graph has, adding them as personal contacts and its Undo (about 2 KB).
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):

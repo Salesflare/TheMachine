@@ -1,0 +1,4 @@
+/*@lazy*/
+/* The Facebook friends block (todos-facebook-people.js fbOthers), set off from the matched ones above it */
+.fb-sep{margin-top:16px;padding-top:6px;border-top:1px solid var(--c-line)}
+.fb-others .cl-acts+.cl-fine{margin-top:6px}

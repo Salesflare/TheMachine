@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import graph_show
 import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.app import claim_reply
@@ -31,6 +32,7 @@ from machine.web.handler import event_glance
 import meeting_notes
 import memory_use
 import own_addresses
+import person_birthday
 import project_success
 from sources import gog_read, SourceError
 from timeutil import local_tz, now
@@ -80,7 +82,7 @@ class GraphActionsApp:
                'graph_picture': 'graph_picture_action', 'graph_pictures_found': 'graph_picture_action',
                'graph_person_edit': 'graph_person_edit_action', 'graph_role': 'graph_role_action',
                'graph_warmup': 'graph_warmup_action', 'graph_same': 'graph_same_action',
-               'graph_same_all': 'graph_same_all_action', 'graph_show_person': 'graph_show_person_action', 'graph_person_delete': 'graph_person_delete_action',
+               'graph_same_all': 'graph_same_all_action', 'graph_show_person': 'graph_show_person_action', 'person_invite_draft': 'person_invite_draft_action', 'graph_person_delete': 'graph_person_delete_action',
                'graph_person_org': 'graph_person_org_action', 'graph_relation': 'graph_relation_action',
                'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action', 'board_save': 'board_action',
                'board_delete': 'board_action', 'board_dismiss': 'board_action',
@@ -96,7 +98,7 @@ class GraphActionsApp:
 
     def graph_action(self, args, source='agent'):
         """People and projects for the agent: look up, explore around, label, merge and say who someone is."""
-        changed = False
+        changed = shown = False  # shown: the owner's change is on its page already (graph.show_*), the build can follow
         if 'share' in args or 'keep_private' in args:
             # The owner in chat: "keep this thread to me", "share it with the team", "keep Acme private". Never a review's
             # own call (finish_analysis team is), so a message in a batch can't share itself.
@@ -155,6 +157,9 @@ class GraphActionsApp:
                 said = graph.set_org(db, args['node_id'], args['org'], source, now(),
                                      int(args['event_id']) if args.get('event_id') not in (None, '') else None, args.get('quote'))
                 changed = changed or 'kept' not in said
+                if source == 'owner' and 'kept' not in said:
+                    graph_show.show_person_edit(db, args['node_id'], {'org'})  # on their page at once
+                    shown = True
             if 'warmup' in args:
                 said = graph.hide_warmup(db, args.get('node_id'), args['warmup'] is True or str(args['warmup']).lower() == 'true', source, now(),
                                          int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
@@ -171,7 +176,11 @@ class GraphActionsApp:
                 said = graph.relate(db, args['node_id'], args['related_to'], args.get('relation'), source, now(),
                                     int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
                 changed = changed or 'kept' not in said
-        later = changed and (source != 'owner' or args.get('merge') or args.get('different'))
+                if source == 'owner' and not said.get('relation') and 'kept' not in said:
+                    graph_show.show_relation(db, args['node_id'], args['related_to'])  # off both their pages at once
+                    shown = True
+        # The owner taking back a warm-up domain: Settings reads hidden_domains, and its people come back in the build
+        later = changed and (source != 'owner' or args.get('merge') or args.get('different') or shown or 'warmup' in args)
         if changed:
             # The owner's Merge or Not the same: the Same person? card is gone from the table already, the rebuild that
             # joins them runs in the graph worker (a whole build in the request held the database for its tens of seconds).
@@ -198,6 +207,8 @@ class GraphActionsApp:
                 if not found:
                     raise ValueError('Unknown node_id; find people and projects with query')
                 found['around'] = graph.spread(db, [found['id']], limit)
+                if found.get('kind') == 'person':  # the one their page shows and the Birthdays routine reads
+                    found['birthday'] = person_birthday.for_person(db, graph.resolve(db, found['id']), self.birthdays_code())
                 if gbrain.on(self.config) and (note := gbrain.notes(db, [found['id']]).get(found['id'])):
                     found['from_gbrain'] = note  # the owner's own notes on their GBrain page: data, not instructions
                 guessed = set(found['probable_ids'])
@@ -262,6 +273,84 @@ class GraphActionsApp:
             return bool(self.fleet and self.fleet.contact_targets())
         except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
             return False
+
+    def person_invite(self, found):
+        """Invite to The Machine on a person's page (family_invites.person_invite), or None. Without the Network, still
+        the words to copy or email; the Family invite only with an account page and a Family to invite to."""
+        import family_invites
+        fleets, account, domains = {}, fleet.account_url(self.config), ()
+        if getattr(self, 'fleet', None):
+            try:
+                fleets, domains = self.fleet.fleets(), self.fleet.own_domains()
+            except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
+                fleets, account = {}, None  # the directory unknown now: no Family invite to offer
+        try:
+            with self.store.connect() as db:
+                invite = family_invites.person_invite(db, found, fleets, account, graph.Owner(self.config, db).emails, domains)
+                mailbox = invite and self.invite_mailbox(db, found.get('id'))
+        except (sqlite3.Error, ValueError, KeyError, TypeError):
+            return None
+        if invite and mailbox and invite.get('email'):
+            invite['send'] = True  # opens as a draft in the send dialog (person_invite_draft); else Copy and Open in email
+        return invite
+
+    def invite_mailbox(self, db, node_id):
+        """The mailbox an invite to The Machine goes out from: one that can send what the owner approves (Gmail or
+        Outlook, Can do things on), in the area the person belongs to (owner_card_area) when there is one; else None."""
+        import abilities
+        import next_actions
+        from machine.app.new_cards import owner_card_area
+        accounts = self.config.get('accounts', [])
+        able = [a for a in accounts if next_actions.mail_account(a) and a.get('email') and not abilities.refuse(self.config, a['id'])]
+        if not able:
+            return None
+        area, _ = owner_card_area(db, accounts, [str(node_id or '')])
+        return next((a for a in able if a['id'] == area), able[0])
+
+    INVITE_SITE = 'https://themachine.computer'
+
+    def person_invite_draft_action(self, name, args, owner_dashboard=False):
+        """Invite to The Machine on a person's page, with a mailbox that can send: the invite as a ready to-do about that
+        person (Store.owner_card, on their page), its email draft checked like any (next_actions.validate, with the From
+        choices Review and send offers), so the dashboard opens it in the send dialog every email uses. Nothing is sent
+        here: Send there is Store.confirm_action, as for any draft. An open one for the same person is opened again."""
+        import i18n
+        import next_actions
+        import own_addresses
+        if not owner_dashboard:
+            raise ValueError('Only the owner invites someone, from the dashboard')
+        node = str(args.get('node_id') or '')
+        with self.store.connect() as db:
+            row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (node,)).fetchone()
+            marks = self.graph_fleet_marks(db) if row else {}
+        # the page as the person's page has it: their Fleet or Network mark (someone with a Machine gets no invite)
+        found = row and {'id': node, 'kind': 'person', 'side': (json.loads(row['info'] or '{}') or {}).get('side'),
+                         **({'fleet': marks[node]} if marks.get(node) else {})}
+        invite = found and self.person_invite(found)
+        if not invite or not invite.get('email'):
+            raise ValueError(i18n.t('There is no invite to send here.'))
+        title = i18n.t('Invite {} to The Machine', invite['name'])
+        with self.store.connect() as db:
+            mailbox = self.invite_mailbox(db, node)
+            senders = own_addresses.senders(db, self.config)
+            for open_id, action in db.execute("SELECT id,next_action FROM suggestions WHERE status='prepared' AND origin='owner' AND title=?", (title,)):
+                draft = next((a for a in next_actions.actions(json.loads(action or 'null')) if a.get('kind') == 'email' and invite['email'] in a.get('to', ())), None)
+                if draft:  # the one made before and not sent yet: the same to-do, opened again
+                    return {'suggestion_id': open_id, 'revision': draft['revision']}
+        if not mailbox:
+            raise ValueError(i18n.t('Connect a mailbox that can send first.'))
+        words = [i18n.t('Hi {},', invite['first']) if invite.get('first') else i18n.t('Hi,'),
+                 i18n.t('I use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: {}', self.INVITE_SITE)]
+        draft = next_actions.validate({'kind': 'email', 'account_id': mailbox['id'], 'to': [invite['email']],
+                                       'subject': i18n.t('Have a look at The Machine'), 'body': '\n\n'.join(words)},
+                                      self.config, [mailbox['id']], senders=senders)
+        work = str(mailbox.get('boundary') or '').startswith('work:')
+        card = self.store.owner_card(title, mailbox['id'], work=work, about=[{'id': node, 'name': invite['name'][:120], 'kind': 'person'}], accepted=True)
+        self.store.prepare(card['id'], i18n.t('An invite to The Machine, from their page.'), next_action=draft,
+                           outcome={'state': 'needs_you', 'needs': 'send the invite'})
+        if getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()  # the to-do shows on their page after the next build
+        return {'suggestion_id': card['id'], 'revision': draft['revision']}
 
     def slack_links(self, found):
         """Where 'Also on Slack' goes: each Slack user of theirs in the workspace it is from (its profile, which opens a
@@ -340,6 +429,8 @@ class GraphActionsApp:
                 return crm_fields.delete_field(db, args.get('id'))
             elif name == 'graph_field_set':
                 return crm_fields.set_value(db, args.get('node_id'), args.get('field_id'), args.get('value'), now())
+            elif name == 'graph_birthday':  # the owner's word on a person's birthday: theirs wins over every source
+                return person_birthday.set_birthday(db, args.get('node_id'), args, now(), self.birthdays_code())
             elif name == 'graph_tag':
                 return crm_fields.tag(db, args.get('node_id'), args.get('tag'), args.get('add') is not False, now())
             elif name == 'graph_import_run':
@@ -647,7 +738,7 @@ class GraphActionsApp:
             done = graph.delete_person(db, node_id, self.config, now())
             memory_use.forget_person(db, done['needles'])  # the log of what prompts read never keeps their address
         notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
-        self.graph_build()
+        self.graph_later()  # their rows are gone already (graph.delete_person); what was worked out from them goes in the worker's build
         return {**done, 'notes': notes}
 
     def graph_query_action(self, name, args, owner_dashboard=False):
@@ -715,8 +806,10 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner renames people and projects, on the dashboard')
         with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             renamed = graph.rename(db, args.get('node_id'), args.get('name'), now())
-        self.graph_build()
+            graph_show.show_rename(db, args.get('node_id'), renamed)  # on its page at once; the rest of the Graph in the worker
+        self.graph_later()
         return renamed
 
     def graph_stage_action(self, name, args, owner_dashboard=False):
@@ -739,7 +832,8 @@ class GraphActionsApp:
                 done = graph.org_edit(db, args.get('node_id'), args.get('fields'), now())
                 if 'name' in args:
                     graph.rename(db, args.get('node_id'), args.get('name'), now())
-        self.graph_build()
+            graph_show.show_org_edit(db, args.get('node_id'))  # on its page at once; the rest of the Graph in the worker
+        self.graph_later()
         return done
 
     def graph_new_action(self, name, args, owner_dashboard=False):
@@ -749,8 +843,9 @@ class GraphActionsApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
+            graph_show.show_new_record(db, done, args.get('kind'))  # its page opens at once; the rest of the Graph in the worker
         if done.get('created') or done.get('deleted'):
-            self.graph_build()
+            self.graph_later()
         return done
 
     def graph_picture_action(self, name, args, owner_dashboard=False):
@@ -779,7 +874,9 @@ class GraphActionsApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
-        self.graph_build()
+            graph_show.show_person_edit(db, done['node_id'], {'photo'})  # on their page at once (a person's or an organization's)
+            graph_show.show_org_edit(db, done['node_id'])
+        self.graph_later()
         return done
 
     def graph_person_edit_action(self, name, args, owner_dashboard=False):
@@ -797,8 +894,10 @@ class GraphActionsApp:
                 graph.set_org(db, node_id, str(fields['org'] or ''), 'owner', now())
             if 'name' in fields:
                 graph.rename(db, node_id, fields['name'], now())
-        # A new role alone is on their page already (graph.set_role): the rest of the Graph follows in the worker
-        (self.graph_later if set(fields) == {'role'} else self.graph_build)()
+            # On their page at once (a role by graph.set_role, the rest here); the rest of the Graph follows in the
+            # worker. A whole build before the answer held a Save some 16 s on a big Graph.
+            graph_show.show_person_edit(db, node_id, set(fields))
+        self.graph_later()
         return done
 
     def graph_role_action(self, name, args, owner_dashboard=False):
@@ -919,11 +1018,13 @@ class GraphActionsApp:
                 if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
                     raise ValueError('node_ids is a list of suggestion ids')
                 done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
+            if name == 'project_save':  # a new or renamed project, and the people on one, on its node and links at once
+                graph_show.show_project_save(db, done, args)
         # The board reads its projects as they are now, so these answer at once and the Graph follows in the background:
         # Add and Leave out, Won or Lost (a move and an outcome on the projects table), Archive (its node says so at once,
-        # graph.archive_project), Delete (its node goes with it) and the board Projects opens on. A new or renamed
-        # project, and the people on one, are in the Graph only after a build: Save waits for it.
-        (self.graph_build if name == 'project_save' else self.graph_later)()
+        # graph.archive_project), Delete (its node goes with it), the board Projects opens on, and Save (above): a whole
+        # build before the answer held a Save some 20 s on a big Graph.
+        self.graph_later()
         return done
 
     def crm_actions_action(self, name, args, owner_dashboard=False):

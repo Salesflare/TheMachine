@@ -106,7 +106,7 @@ function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[
  for(const p of view.querySelectorAll('.fleet-pane'))p.hidden=p.dataset.pane!==id;
  if(/^shared-/.test(id))sharedLoad(id.slice(7),true)}
 const fleetReveal=el=>{const p=el?.closest('.fleet-pane');if(p&&p.hidden)showFleetPane(p.dataset.pane)};
-async function fleetView(refresh=false,cached=false){const view=$('#fleet-view'),before=fleetSig(),version=++fleetViewVersion;if(!cached||!fleetData)try{const next=await request('api/fleet'+(refresh?'?refresh=1':''));if(version!==fleetViewVersion)return;fleetData=next;fleetAt=Date.now();if(state?.suggestions&&fleetSig()!==before)render()}catch(e){errCaught(e);if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
+async function fleetView(refresh=false,cached=false){const view=$('#fleet-view'),before=fleetSig(),version=++fleetViewVersion;if(!cached||!fleetData)try{const stamp=state?.fleet?.stamp,next=await request('api/fleet'+(refresh?'?refresh=1':''));if(version!==fleetViewVersion)return;fleetData=next;fleetAt=Date.now();fleetStamp=stamp;if(state?.suggestions&&fleetSig()!==before)render()}catch(e){errCaught(e);if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
  // the tab's views load when first needed (dashboard_parts.LAZY): drawn once they're in, an error in place of them offline
  if(!lazyIn('fleet'))try{await lazyPart('fleet');if(version!==fleetViewVersion)return}catch(e){if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
  fleetDraw(view)}

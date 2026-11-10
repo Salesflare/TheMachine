@@ -3,9 +3,9 @@ title: Rutinas
 area: cards
 summary: Trabajo que tu Machine hace sola, con un ritmo, como un resumen del lunes de tus deals abiertos. Solo lee.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Crear una
 
@@ -27,7 +27,13 @@ Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuel
 
 **Cumpleaños** crea una tarea para cada contacto cercano que cumple años hoy: personas a las que tú escribes, como amigos, familia y contactos habituales. Cada una trae una felicitación corta redactada donde sueles hablar con ellos, como su chat de WhatsApp o tu hilo de correo, en su idioma. Solo sale cuando tú la envías. Un día sin cumpleaños no crea ninguna tarea.
 
-Los cumpleaños vienen de tus calendarios (los cumpleaños de Google y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si ninguno tiene todavía un cumpleaños, el resultado dice **Aún no hay cumpleaños** y cómo añadirlos.
+Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpleaños de Google, leídos cada mañana aunque no se sincronicen, y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si ninguno tiene todavía un cumpleaños, el resultado dice **Aún no hay cumpleaños** y cómo añadirlos.
+
+**Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden por nombre y apellido con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
+
+Solo **Guardar** los conserva, y solo el cumpleaños, en la página de cada persona. Un cumpleaños que pusiste ahí se queda. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
+
+Los amigos que nadie en tu Graph tiene se cuentan, con algunos nombres. **Añadir … como contactos personales** los añade todos a la vez, también después de Guardar: cada uno con su nombre y cumpleaños, nunca compartido con una Work Fleet. Un nombre que ya tiene alguien de tu Graph, o que tenía alguien que borraste para siempre, se omite. Los recordatorios de cumpleaños siguen llegando solo para la gente a la que escribes. **Deshacer** en la tarea quita exactamente a esas personas.
 
 Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam usa un turno corto cuando hay correo que leer). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
 

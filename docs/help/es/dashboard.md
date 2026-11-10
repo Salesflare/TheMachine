@@ -39,7 +39,7 @@ Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de l
 
 Después de tu primer día, se reduce a una línea discreta encima de **Para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
 
-**Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
+**Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y **Ajustes**, **Apps** siempre tiene la app del móvil.
 
 ## Versiones nuevas
 

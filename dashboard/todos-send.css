@@ -182,8 +182,11 @@
 #send-dialog:has(#send-editor[hidden]) #send-subject-label,#send-dialog #send-subject-label[hidden]{display:none}.send-top:has(.send-head:empty){display:none}
 #send-dialog #send-subject-label:focus-within{border-bottom-color:var(--c-accent,var(--mint))}
 #send-dialog #send-subject{display:block;width:100%;height:auto;min-height:0;transition:none;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;outline:0;resize:none;overflow:hidden;font:inherit;line-height:inherit;color:var(--text);field-sizing:content}
-#send-dialog #send-from{display:block;width:auto;max-width:100%;min-height:0;margin:0;padding:0 20px 0 0;border:0;border-radius:4px;background-color:transparent;background-position:right 3px center;box-shadow:none;font:inherit;line-height:inherit;color:var(--text);text-overflow:ellipsis;cursor:pointer;field-sizing:content}
-#send-dialog #send-from:focus-visible{box-shadow:var(--ring)}
+#send-dialog #send-from{display:inline-flex;align-items:center;gap:6px;width:auto;max-width:100%;min-height:0;margin:0 0 0 -6px;padding:0 6px;border:0;border-radius:6px;background:none;box-shadow:none;font:inherit;font-weight:400;line-height:inherit;color:var(--text);text-align:left;white-space:nowrap;cursor:pointer;transition:background .15s}
+#send-dialog #send-from>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#send-dialog #send-from svg{color:var(--muted)}
+#send-dialog #send-from:is(:hover,[aria-expanded="true"]){background:var(--c-hover)}
+#send-dialog #send-from:focus-visible{outline:0;box-shadow:var(--ring)}
 .send-body{margin:0 0 10px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--sunken);font-size:.98rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}.send-body .sig{color:var(--faint)}
 .send-body.code{font:.78rem/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;overflow:auto;max-height:55vh}
 #send-dialog #send-editor label{color:var(--faint)}#send-dialog #send-editor :is(input,textarea){background:var(--sunken);border-color:var(--border);border-radius:10px;font-size:.98rem;line-height:1.55;color:var(--text)}
@@ -232,7 +235,7 @@ strong.nb{white-space:nowrap}
 .acct-list>div{gap:10px}.acct-list .grow{min-width:0;overflow-wrap:anywhere}.acct-list strong{font-weight:600}
 .acct-status{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:600;vertical-align:1px;background:color-mix(in srgb,var(--mint) 18%,transparent);color:var(--text)}
 .in-app [data-buy]{display:none!important}
-.phone-url{overflow-wrap:anywhere}.phone-own{margin-top:6px}.phone-own>summary{font-size:.85rem}.phone-own>small{display:block;margin-top:6px}
+.apps-signin{margin-top:10px}.phone-url{overflow-wrap:anywhere}.phone-own{margin-top:6px}.phone-own>summary{font-size:.85rem}.phone-own>small{display:block;margin-top:6px}
 .acct-status.s-trial,.acct-status.s-pending{background:color-mix(in srgb,var(--amber) 18%,transparent)}.acct-status.s-past_due{background:color-mix(in srgb,var(--orange) 18%,transparent)}.acct-status.s-seat,.acct-status.s-cancelled,.acct-status.s-none{background:color-mix(in srgb,var(--muted) 18%,transparent)}
 .settings-list small.upkeep-error{color:var(--orange)}
 .acct-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 0}.acct-foot:empty{display:none}#settings .acct-head{flex-direction:row;align-items:center;justify-content:space-between;gap:12px}.acct-head>div:first-child{display:flex;flex-direction:column;gap:3px;min-width:0}.acct-head p{overflow-wrap:anywhere}#acct-out form{margin:0;display:flex}.acct-danger{margin:40px 0 0;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}.acct-danger form{margin:0;display:flex}.in-app .acct-danger:not(:has(>:not([data-buy]))){display:none}.acct-danger .acct-quiet[data-acct-go="delete"]:hover{color:var(--red,#c0392b)}.addr-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.addr-tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.75rem;line-height:1.5;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent)}.acct-quiet{background:none;border:0;padding:0;font:inherit;font-size:.82rem;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.acct-quiet:hover{color:var(--text)}.acct-foot form{margin:0;display:flex}.acct-foot .acct-end{margin-left:auto}

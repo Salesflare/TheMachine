@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Du travail que votre Machine fait seule, à un rythme, comme un résumé du lundi de vos deals ouverts. Elle ne fait que lire.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## En créer une
 
@@ -27,7 +27,13 @@ Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà d
 
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
 
-Les anniversaires viennent de vos agendas (les anniversaires de Google et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph. Quand aucun ne contient encore d’anniversaire, le résultat dit **Aucun anniversaire connu pour l’instant** et comment en ajouter.
+Les anniversaires viennent de vos agendas (les anniversaires et l’agenda Anniversaires de Google, lus chaque matin même s’ils ne sont pas synchronisés, et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph. Quand aucun ne contient encore d’anniversaire, le résultat dit **Aucun anniversaire connu pour l’instant** et comment en ajouter.
+
+**Importer les anniversaires depuis Facebook** : une fois Anniversaires activé, une tâche propose de lire la page Anniversaires de Facebook. Touchez **Importer** et The Machine l’ouvre dans son navigateur, défile jusqu’à ce que tous les mois soient chargés et lit le nom et l’anniversaire de chaque ami. Elle indique combien elle en a trouvé et qui correspond, par prénom et nom, à des personnes de votre Graph. Un nom que porte plus d’une personne est ignoré et listé.
+
+Seul **Enregistrer** les garde, et seulement l’anniversaire, sur la page de chaque personne. Un anniversaire que vous y avez saisi reste. Elle ne relit jamais d’elle-même : c’est **Importer à nouveau** sur la tâche qui le fait. Le navigateur doit être connecté à Facebook. S’il ne l’est pas, touchez **Se connecter à Facebook** sur la tâche et connectez-vous-y ; ensuite elle lit la page d’elle-même. The Machine ne se connecte jamais à votre place.
+
+Les amis que personne dans votre Graph n’a sont comptés, avec quelques noms. **Ajouter … comme contacts personnels** les ajoute tous d’un coup, même après Enregistrer : chacun avec son nom et son anniversaire, jamais partagé avec une Work Fleet. Un nom qu’une personne de votre Graph a déjà, ou qu’avait une personne supprimée définitivement, est ignoré. Les rappels d’anniversaire ne viennent toujours que pour les personnes à qui vous écrivez. **Annuler** sur la tâche retire exactement ces personnes.
 
 Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam utilise un court passage quand il y a du courrier à lire). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
 

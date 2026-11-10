@@ -18,6 +18,7 @@ import urllib.request
 
 import ai_access
 import browser_viewer
+import calendar_writes
 import chat_files
 import crm
 import crm_fields
@@ -52,6 +53,7 @@ from machine.web.serving import (
     dashboard_status,
     dashboard_version,
     etag_matches,
+    BRAND_CACHE,
     SCRIPT_CACHE,
     SCRIPT_NAME,
     served_file,
@@ -215,7 +217,7 @@ def make_handler(app):
             self.send_response(status)
             self.send_header('Content-Type', content_type if content_type.startswith('image/') or content_type=='application/pdf' else content_type + '; charset=utf-8')
             self.send_header('Cache-Control', cache)
-            if coding or urllib.parse.urlsplit(self.path).path in COMPRESSIBLE:
+            if coding or urllib.parse.urlsplit(self.path).path in COMPRESSIBLE or SCRIPT_NAME.fullmatch(urllib.parse.urlsplit(self.path).path):
                 self.send_header('Vary', 'Accept-Encoding')
             if coding:
                 self.send_header('Content-Encoding', coding)
@@ -305,6 +307,7 @@ def make_handler(app):
             '/approval': 'get_approval',
             '/api/events': 'get_api_events',
             '/api/account': 'get_api_account',
+            '/api/settings': 'get_api_settings',
             '/api/activity': 'get_api_activity',
             '/api/calendar': 'get_api_calendar',
             '/api/routines': 'get_api_routines',
@@ -440,10 +443,20 @@ def make_handler(app):
             self.output(200, {**current, 'here': here} if current else {})
 
         def get_brand_asset(self, path):
+            # Kept by the browser for a day, then asked again with its ETag (a 304 while it's the same): the robot's
+            # blink swaps its image every few seconds and every page start asked for the typefaces (0.2 MB) again.
             asset = BRAND_ASSETS[path.path]
-            self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
-                                                  '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'),
-                        cache='private, max-age=86400' if '/logos/' in path.path else 'no-store')
+            data = asset.read_bytes()
+            etag = '"' + hashlib.sha256(data).hexdigest()[:16] + '"'
+            if etag_matches(self.headers.get('If-None-Match'), etag):
+                self.send_response(304)
+                self.send_header('ETag', etag)
+                self.send_header('Cache-Control', BRAND_CACHE)
+                self.end_headers()
+                return
+            self.etag = etag
+            self.output(200, data, {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
+                                    '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'), cache=BRAND_CACHE)
 
         def get_api_session(self, path):
             # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
@@ -505,6 +518,10 @@ def make_handler(app):
         def get_api_account(self, path):
             self.output(200, app.account_view())
 
+        def get_api_settings(self, path):
+            # what only Settings shows (StatusApp.settings_views), asked when Settings opens: not part of every status
+            self.output(200, app.settings_views())
+
         def get_api_activity(self, path):
             # Settings, Activity: everything The Machine did, a page at a time (activity_log.py)
             args = {k: v[0] for k, v in urllib.parse.parse_qs(path.query).items()}
@@ -518,14 +535,15 @@ def make_handler(app):
             args = urllib.parse.parse_qs(path.query)
             try:
                 owner = app.owner_emails()
-                writable = writable_calendars(app.config)
+                writable = writable_calendars(app.config, wait=False)  # never gog or Graph inside the ask
                 self.output(200, {'meetings': app.store.calendar([a['id'] for a in app.config['accounts']],
                                                                  args.get('from', [''])[0], args.get('to', [''])[0], owner,
                                                                  {c['id'] for c in writable},
                                                                  {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))}),
-                                  'calendars': writable, 'starts': app.calendar_starts()})  # where its meetings begin: the line at the edge
+                                  'calendars': writable, 'starts': app.calendar_starts(),  # where its meetings begin: the line at the edge
+                                  **({'checking': True} if calendar_writes.checking() else {})})  # ask again for the Edit buttons
             except (ValueError, sqlite3.OperationalError):
-                self.output(400, {'error': 'Ask for a window of at most 15 days'})
+                self.output(400, {'error': 'Ask for a window of at most 43 days'})
 
         def get_api_routines(self, path):
             # the Routines page: each routine with its last runs (routines_app.py)
@@ -535,7 +553,7 @@ def make_handler(app):
             # one meeting as the Calendar shows it, opened from anywhere in the dashboard
             args = urllib.parse.parse_qs(path.query)
             try:
-                writable = writable_calendars(app.config)
+                writable = writable_calendars(app.config, wait=False)
                 self.output(200, {'meeting': app.store.meeting([a['id'] for a in app.config['accounts']], int(args.get('event', [''])[0]),
                                                                app.owner_emails(), {c['id'] for c in writable},
                                                                {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))})})
@@ -649,6 +667,8 @@ def make_handler(app):
                 elif node and params.get('part', [''])[0] == 'head':  # the record's head first; its timeline comes with the whole page
                     found = app.graph_action({'node_id': node, 'limit': 10, 'events': 1})
                     found.update(owners=app.owner_choices(), recent=[], head_only=True)
+                    if found.get('kind') == 'person':
+                        found['invite'] = app.person_invite(found)  # Invite to The Machine
                     self.output(200, found)
                 elif node:
                     # a run of chat messages is one row; the event ids only (lines: False), as the timeline below shows them
@@ -659,6 +679,8 @@ def make_handler(app):
                     found['timeline'] = app.graph_timeline(found['id'])
                     found['recent'] = found['timeline'].pop('items')
                     found['slack_links'] = app.slack_links(found)
+                    if found.get('kind') == 'person':
+                        found['invite'] = app.person_invite(found)  # Invite to The Machine (family_invites.person_invite)
                     try:  # Recent changes: what The Machine changed or learned about it, each with its source (record_log.py)
                         with app.store.connect() as db:
                             found['log'] = record_log.recent(db, graph.resolve(db, found['id']))
@@ -701,6 +723,7 @@ def make_handler(app):
                         found['last_import'] = crm_import.last(db)  # "Undo last import"
                         found['crm_fields'] = crm_fields.fields(db)  # the owner's own fields per record type
                         found['tags'] = crm_fields.tags_in_use(db)  # for the filter sheet
+                        found['org_countries'] = crm.countries_in_use(db)  # the Organizations filter's Country
                         found['currency'] = app.currency()  # project values are in it
                         if app.fleet:
                             try:  # contacts teammates, friends and Family shared here, waiting for Add or Dismiss (contact_share.py)

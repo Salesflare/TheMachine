@@ -170,8 +170,12 @@ def seed_ai(app):
                  (cid, 20, 'get_todo', 'ok', '“Send the renewal quote”'),
                  (cid, 15, 'create_draft', 'ok', 'To buyer@client.example: “Renewal quote”'),
                  (chatgpt, 30, 'list_promises', 'ok', '4 promises'), (key, 14, 'list_todos', 'ok', '9 to-dos'), (key, 13, 'create_todo', 'refused', 'Refused: this connection can only read')]
+        # A to-do read links to it in Activity (ai_activity.todo_id): the newest open one here
+        todo = (db.execute("SELECT id FROM suggestions WHERE status IN ('pending','accepted','prepared') ORDER BY created_at DESC LIMIT 1").fetchone() or [None])[0]
+        lines.append((chatgpt, 29, 'get_todo', 'ok', ''))
         for connection, hours, tool, outcome, detail in lines:
-            ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours))
+            read = todo if tool == 'get_todo' else None
+            ai_access.log(db, connection, tool, outcome, detail, at=now - dt.timedelta(hours=hours), todo=read)
         ai_access.used(db, cid, at=now - dt.timedelta(minutes=12))
         ai_access.used(db, key, at=now - dt.timedelta(hours=13))
         ai_access.used(db, chatgpt, at=now - dt.timedelta(hours=30))
