@@ -871,6 +871,14 @@ Learning, and saves only the ones the owner ticks.
   It is read and removed like any other, and counts as the owner's own words for connected AIs.
 - Dismissed candidates and lines a pass has read are not offered again. Lines added to the files later go through the
   same pass and show up the same quiet way: no notification, no badge.
+- Facts kept from notes then go where they belong (`notes_people.py`): after each batch the owner keeps, one small
+  background turn reads the new ones (once, too, for those kept before this). It is given real people only: those whose
+  name shares a telling word with the fact, and family and friends by their role ("To you"). Per fact it picks the one
+  person it is about or none, says it in the owner's words ("Your wife ...", not "The owner's wife ..."), and gives a
+  date of birth when the fact has one. The fact goes on that person's page, and the date becomes their birthday for the
+  Birthdays routine (one kept already stays). Someone not in the Graph is never made up: that fact stays in Facts. A
+  fact about a Personal person stays out of Work prompts and out of the learnings sent to the team, like any fact about
+  them. One entry under Learning, Changes undoes it all.
 
 <a id="missed-work-audit"></a>
 ## Missed work

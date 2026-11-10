@@ -1310,6 +1310,27 @@ def clean_fact(field, value):
     return text or None
 
 
+def add_fact(db, identifier, field, value, rank, source, now):
+    """Keep one fact about someone where none is kept for that field yet, from any source (notes_people.py: a birthday
+    from the owner's own notes). True when kept."""
+    fact_tables(db)
+    value = clean_fact(field, value)
+    if value is None or db.execute('SELECT 1 FROM person_facts WHERE identifier=? AND field=?', (identifier, field)).fetchone():
+        return False
+    db.execute('INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES(?,?,?,?,?,?)', (identifier, field, value, int(rank), source, now))
+    return True
+
+
+def drop_fact(db, identifier, field, source, value):
+    """Take back a fact a source kept, while it is still the one it kept (an undo). True when it went."""
+    fact_tables(db)
+    row = db.execute('SELECT value,source FROM person_facts WHERE identifier=? AND field=?', (identifier, field)).fetchone()
+    if not row or row['source'] != source or row['value'] != value:
+        return False
+    db.execute('DELETE FROM person_facts WHERE identifier=? AND field=?', (identifier, field))
+    return True
+
+
 def offer_facts(db, offers, source, now):
     """Keeps what a connector read about people: offers are (identifiers, {field: value}, rank). A fact of a higher
     rank stays; the same rank or higher replaces it. A field the same source now leaves empty (someone cleared their

@@ -358,6 +358,7 @@ class WorkersApp:
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
             self.fact_ties_step()  # one time, after the name pass: loose facts tied to who they are about (fact_ties.py)
             self.bring_in_step({'model': background_model})  # once a day at most: new lines in the owner's OpenClaw notes worth keeping (bring_in.py)
+            self.notes_people_step({'model': background_model})  # facts kept from those notes: on who they are about, in the owner's words (notes_people.py)
             self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to
                 self.store.learnings_due()
