@@ -91,7 +91,8 @@ try{
   await page.evaluate(()=>scrollTo({top:document.querySelector('.fits-bulk').getBoundingClientRect().top+scrollY-120}));await shot(page,`backfill-picked-${tag}`);
   calls=[];await page.locator('[data-fit-bulk="skip"]').click();await page.locator('.board-fits summary',{hasText:'5 projects could belong here'}).waitFor();
   await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_ids:['org:m0.example','org:m1.example'],add:false}]]);
-  await page.waitForFunction(()=>/Left out 2\./.test(document.querySelector('#toast').textContent));  // the rows go at once, the toast once it is savedawait shot(page,`backfill-undo-${tag}`);
+  await page.waitForFunction(()=>/Left out 2\./.test(document.querySelector('#toast').textContent));  // the rows go at once, the toast once it is saved
+  await shot(page,`backfill-undo-${tag}`);
   calls=[];await page.locator('#toast [data-fit-undo]').click();await page.locator('.board-fits summary',{hasText:'9 projects could belong here'}).waitFor();
   await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,undo:'tok2'}]]);
   // Select all, then Add all of them in one go
