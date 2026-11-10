@@ -95,8 +95,9 @@ class WorkersApp:
     def plain_keys_worker(self):
         """Once after the update: the messages kept before get their routing keys in the clear (machine/store/plain_keys.py),
         in batches beside the service's own work. Waits for the message key when it is not there yet; an error is tried
-        again in ten minutes. Never stops the service."""
-        wait = 0
+        again in ten minutes. Never stops the service. It begins half a minute after the start: the start's own work
+        and the first requests go first."""
+        wait = 30
         while not self.stop.wait(wait):
             wait = 600
             try:

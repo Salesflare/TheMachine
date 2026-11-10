@@ -213,10 +213,10 @@ class ThePass(Base):
         app = type('App', (), {'store': store, 'stop': Stop()})()
         with patch.object(plain_keys, 'PAUSE', 0):
             workers.WorkersApp.plain_keys_worker(app)
-        self.assertEqual(states, [0, 60, 60])  # twice without the key, then it ran and the worker ended
+        self.assertEqual(states, [30, 60, 60])  # twice without the key, then it ran and the worker ended
         self.assertTrue(store.fix_done(plain_keys.NAME))
         workers.WorkersApp.plain_keys_worker(app)  # at the next start: done, nothing to do
-        self.assertEqual(states, [0, 60, 60, 0])
+        self.assertEqual(states, [30, 60, 60, 30])
 
     def test_a_row_that_does_not_open_is_left_as_it_is(self):
         store = self.filled()
