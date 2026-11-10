@@ -173,6 +173,11 @@ def main():
         env.update(HOME=home,PATH=str(Path(node).parent)+os.pathsep+os.environ.get('PATH',''))
         # The suites import the app from the root (their working folder) and their shared helpers from tests/.
         env['PYTHONPATH'] = os.pathsep.join(filter(None, (str(TESTS), os.environ.get('PYTHONPATH'))))
+        if os.environ.get('THE_MACHINE_IMPACT_DIR'):
+            # recording the test-impact map: Node notes which functions of the dashboard's parts each page test runs
+            # (set here: GitHub won't take NODE_OPTIONS from a step's $GITHUB_ENV)
+            hook = '--import=' + (ROOT / 'scripts' / 'test_impact_js.mjs').as_uri()
+            env['NODE_OPTIONS'] = ' '.join(filter(None, (os.environ.get('NODE_OPTIONS'), hook)))
         if os.name == 'nt':
             env['PYTHONUTF8'] = '1'  # the console's code page can't print everything the suites print
         package = os.environ.get('OPENCLAW_PACKAGE_DIR') or openclaw_package(node)

@@ -16,7 +16,9 @@ With the test-impact map (--impact, from scripts/test_impact.py: which tests ran
 and the commit the change is on (--base), it's much narrower (select_mapped): a changed function runs the tests that ran
 it, not every test that imports its file (assistant.py and machine/app/ load nearly everything); a module-level change
 runs the tests of the functions that use the names it defines; a catalog change runs the tests that name a text it
-changed. What the map doesn't know (a test or a file newer than it, a file that doesn't parse) goes the way above.
+changed. A dashboard part (dashboard/*.js) goes the same way by the map's browser half: the page tests that ran the
+functions it touched in Chromium, the ones that run what uses a global it declares, or every page test when it changes
+what runs at load (a top-level call). What the map doesn't know (a test or a file newer than it, a file that doesn't parse) goes the way above.
 
 scripts/test_select.py changed.txt          (changed paths, one per line; - reads them from stdin)
 scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
@@ -362,12 +364,122 @@ class Impact:
         self.mapped = set(self.tests)
         self.known = set(data.get('known') or ())
         self.files = data['files']
+        self.commit = data.get('commit') or ''
+        self.js = data.get('js') or {}
+        self.js_tests = {self.tests[i] for i in data.get('js_tests') or ()}
 
     def ran(self, path, qualname):
         return {self.tests[i] for i in self.files.get(path, {}).get(qualname, ())}
 
     def ran_any(self, path):
         return {self.tests[i] for ids in self.files.get(path, {}).values() for i in ids}
+
+
+def map_text(commit, path):
+    """path as the map's commit had it: a pull request's checkout may not have that commit yet (fetch-depth 2)."""
+    if not commit:
+        return None
+    text = git_text(commit, path)
+    if text is None:
+        subprocess.run(['git', 'fetch', '--quiet', '--depth=1', 'origin', commit], cwd=ROOT, capture_output=True, timeout=120)
+        text = git_text(commit, path)
+    return text
+
+
+def changed_spans(old, new):
+    """Where new differs from old: (start, end, new start, new end) character offsets, in old and in new (start == end:
+    an insertion there)."""
+    import difflib
+    old_lines, new_lines = old.splitlines(keepends=True), new.splitlines(keepends=True)
+    old_at, new_at = [0], [0]
+    for line in old_lines:
+        old_at.append(old_at[-1] + len(line))
+    for line in new_lines:
+        new_at.append(new_at[-1] + len(line))
+    spans = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False).get_opcodes():
+        if tag == 'equal':
+            continue
+        a, b = ''.join(old_lines[i1:i2]), ''.join(new_lines[j1:j2])
+        if len(a) + len(b) > 40000:  # a rewrite: all of it
+            spans.append((old_at[i1], old_at[i2], new_at[j1], new_at[j2]))
+            continue
+        for tag2, k1, k2, l1, l2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+            if tag2 != 'equal':
+                spans.append((old_at[i1] + k1, old_at[i1] + k2, new_at[j1] + l1, new_at[j1] + l2))
+    return spans
+
+
+JS_WORD = r'[A-Za-z_$][\w$]*'
+
+
+def js_blank(text):
+    """text with its strings, comments and bracketed parts blanked: what's left of a statement at the top level."""
+    out, depth, i, quote = [], 0, 0, None
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == '\\':
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+            i += 1
+            continue
+        if c in '\'"`':
+            quote = c
+            out.append(c + c if depth == 0 else '')
+        elif text.startswith('//', i):
+            end = text.find('\n', i)
+            i = len(text) if end < 0 else end
+            continue
+        elif text.startswith('/*', i):
+            end = text.find('*/', i + 2)
+            i = len(text) if end < 0 else end + 2
+            continue
+        elif c in '([{':
+            if depth == 0:
+                out.append(c)
+            depth += 1
+        elif c in ')]}':
+            depth = max(depth - 1, 0)
+            if depth == 0:
+                out.append(c)
+        elif depth == 0:
+            out.append(c)
+        i += 1
+    return ''.join(out)
+
+
+def js_declared(statement):
+    """The names a top-level statement (blanked) only declares, or None when it does more at load (a call, an
+    assignment, new): those run for every page."""
+    text = re.sub(r'(?:async\s*)?(?:\(\)|' + JS_WORD + r')\s*=>\s*(?:\{\}|\(\))?', 'F', statement.strip()).strip(' ;\n\t')
+    if not text or not re.search(r'[\w$]', text) or text == 'F':  # F: a function, whose own change its tests cover
+        return set()
+    match = re.fullmatch(r'(?:export\s+)?(?:async\s+)?function\s*\*?\s*(' + JS_WORD + r')\s*\(\)\s*\{\}', text)
+    if match:
+        return {match[1]}
+    match = re.fullmatch(r'(?:export\s+)?class\s+(' + JS_WORD + r')(?:\s+extends\s+' + JS_WORD + r')?\s*\{\}', text)
+    if match:
+        return {match[1]}
+    match = re.fullmatch(r'(?:export\s+)?(?:const|let|var)\s+(.+)', text, re.S)
+    if not match:
+        return None
+    names = set()
+    for part in match[1].split(','):
+        target, eq, value = part.partition('=')
+        target, value = target.strip(), value.strip()
+        if re.fullmatch(JS_WORD, target):
+            names.add(target)
+        elif target in ('{}', '[]'):
+            return None  # a destructuring: its names are in the blanked part
+        else:
+            return None
+        # a value that runs nothing: a literal, an object or array, a function, another name
+        if eq and not re.fullmatch(r"F|new (?:Map|Set|WeakMap|WeakSet)\(\)|\{\}|\[\]|''|\"\"|``|-?[\d.]+|true|false|null|undefined|" + JS_WORD + r"|(?:async\s+)?function\s*\*?\s*" + JS_WORD + r"?\s*\(\)\s*\{\}", value):
+            return None
+    return names
 
 
 def git_text(base, path):
@@ -611,6 +723,119 @@ def select_mapped(changed, repo, impact, base, why=None):
                 continue
             lines_in(other, lines, f'{other} uses {name} from {path}' if other != path else why_text, depth + 1)
 
+    js_texts, js_seen = {}, set()
+
+    def js_old(part):
+        """part as the map's commit had it, its functions, and its text with every function blanked to F: what runs at
+        the top level."""
+        if part not in js_texts:
+            text = map_text(impact.commit, part)
+            funcs = sorted(impact.js.get(part, {}).get('funcs', []), key=lambda f: (f[0], -f[1]))
+            top = None
+            if text is not None:
+                chars, end = list(text), -1
+                for start, stop, _ in funcs:
+                    if start >= end and 0 <= start < stop <= len(text):  # an outermost one
+                        for i in range(start, stop):
+                            if chars[i] != '\n':
+                                chars[i] = ' '
+                        chars[start] = 'F'
+                        end = stop
+                top = ''.join(chars)
+            js_texts[part] = (text, funcs, top)
+        return js_texts[part]
+
+    def js_ran(ids):
+        return {impact.tests[i] for i in ids}
+
+    def js_statement(text, start, end):
+        """The top-level statements of text around [start, end), blanked: whole lines, and the lines that continue them."""
+        if end > start and text[end - 1] == '\n':
+            end -= 1
+        a = text.rfind('\n', 0, start) + 1
+        b = text.find('\n', end)
+        b = len(text) if b < 0 else b
+        while a > 0:
+            previous = text.rfind('\n', 0, a - 1) + 1
+            if not re.match(r'[\s)\]}.?:,+\-*/&|]', text[a:a + 1]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[previous:a - 1]):
+                break
+            a = previous
+        while b < len(text):
+            following = text.find('\n', b + 1)
+            following = len(text) if following < 0 else following
+            if not re.match(r'[ \t)\]}.?:,+\-*/&|]', text[b + 1:b + 2]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[a:b]):
+                break
+            b = following
+        return [piece for piece in re.split(r';|\n(?=[^\s)\]}.?:,])', js_blank(text[a:b])) if piece.strip()]
+
+    def js_loaders(part, reason):
+        for test in js_ran(impact.js.get(part, {}).get('top', ())):
+            add(test, reason)
+
+    def js_top(part, statements, why_text, depth):
+        """The tests a change to these top-level statements of part reaches: what uses the names they declare, or every
+        test that loads the page when they do more than declare."""
+        for statement in statements:
+            names = js_declared(statement)
+            if names is None:
+                js_loaders(part, f'loads {part}, whose top level changed ({why_text})')
+                return
+            for name in names:
+                js_name(part, name, why_text, depth)
+
+    def js_name(part, name, why_text, depth):
+        """The tests that run code of the dashboard's parts that uses name, a global part declares."""
+        if name in js_seen:
+            return
+        js_seen.add(name)
+        if depth >= 10:
+            js_loaders(part, f'loads {part}, which uses {name} ({why_text})')
+            return
+        word = re.compile(r'(?<![\w$.])' + re.escape(name) + r'(?![\w$])|(?:window|globalThis|self)\.' + re.escape(name) + r'(?![\w$])')
+        for other in sorted(impact.js):
+            if name not in repo.text.get(other, name):
+                continue
+            text, funcs, top = js_old(other)
+            if text is None:
+                continue
+            for found in word.finditer(text):
+                inner = [f for f in funcs if f[0] <= found.start() < f[1]]
+                if inner:
+                    for test in js_ran(min(inner, key=lambda f: f[1] - f[0])[2]):
+                        add(test, f'runs {other} code that uses {name} ({why_text})')
+                else:
+                    js_top(other, js_statement(top, found.start(), found.end()), f'{other} uses {name}', depth + 1)
+        handler = re.compile(r'\bon\w+=[^>]*\b' + re.escape(name) + r'\b')
+        for other in repo.paths:
+            if other.startswith('dashboard/') and not other.endswith('.js') and handler.search(repo.text.get(other, '')):
+                js_loaders(part, f'loads {other}, whose handler uses {name} ({why_text})')
+        named = re.compile(r'\b' + re.escape(name) + r'\b')
+        for test in tests:
+            if named.search(repo.text.get(test, '')):
+                add(test, f'names {name} ({why_text})')
+
+    def js_part(path, new):
+        """A dashboard part's change, by the map's browser half: the tests that ran the functions it touched. False when
+        the map can't place it."""
+        if path not in impact.js or new is None:
+            return False
+        text, funcs, top = js_old(path)
+        if text is None:
+            return False
+        for start, end, new_start, new_end in changed_spans(text, new):
+            inside = [f for f in funcs if (f[0] <= start and end <= f[1]) if start < end or f[0] < start < f[1]]
+            if inside:
+                inner = min(inside, key=lambda f: f[1] - f[0])
+                for test in js_ran(inner[2]):
+                    add(test, f'ran {path}:{inner[0]}-{inner[1]}')
+                continue
+            for f in funcs:
+                if f[0] < end and start < f[1]:
+                    for test in js_ran(f[2]):
+                        add(test, f'ran {path}:{f[0]}-{f[1]}')
+            js_top(path, js_statement(top, start, end) + js_statement(new, new_start, new_end), f'{path} changed', 0)
+        return True
+
     for path in changed:
         if path in FULL:
             if why is not None:
@@ -670,6 +895,9 @@ def select_mapped(changed, repo, impact, base, why=None):
                 elif pattern and pattern.search(text):
                     add(test, f'names a text {path} changed')
         else:
+            # a dashboard part's functions: the tests that ran them in Chromium (scripts/test_impact_js.mjs). What else
+            # names it follows, but past what names the part itself, only for the tests the browser half doesn't know.
+            browser = path.startswith('dashboard/') and path.endswith('.js') and base is not None and js_part(path, new)
             # a data file, a dashboard part, a helper: what names it, as before, but a Python file that reads it reaches
             # the tests of the functions that read it, not every test that imports that file
             pending, visited = [path], {path}
@@ -685,7 +913,8 @@ def select_mapped(changed, repo, impact, base, why=None):
                         continue
                     visited.add(other)
                     if is_test(other):
-                        add(other, f'names {current}')
+                        if not (browser and current != path and Path(other).name in impact.js_tests):
+                            add(other, f'names {current}')
                     elif other in PAGE:
                         for user in repo.importers.get(other, ()):
                             if is_test(user):
