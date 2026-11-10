@@ -98,16 +98,17 @@ Roles your Machine read in your messages, waiting for your word. **✓ Right** c
 
 ## What it knows about someone
 
-Under Known about, each fact has a menu:
+Facts about them live on their page, under **Known about**; Learning keeps the general ones. **Add** keeps one more in your own words. Each fact has a menu:
 
-- **Forget** deletes it everywhere.
-- Not about them only takes it off that page.
+- **Edit** changes it right there.
+- **Not about** them makes it a general fact again, under **Learning**, **Facts**.
+- **Remove** deletes it everywhere.
 
 ## Recent changes
 
 **Recent changes**, folded right above the timeline of a person, organization or project, lists what your Machine changed or learned about them: a role, where they work, how two people are related, a fact, a project's move. Each line has its date and its source; tap the source to read the message.
 
-When a line is wrong, its **⋯** fixes it right there: **Edit**, **Remove**, **Not about** them, **Forget**, or **Undo** to put a project back where it was. Three lines show; **Show more** has the rest.
+When a line is wrong, its **⋯** fixes it right there: **Edit**, **Remove**, **Not about** them, or **Undo** to put a project back where it was. Three lines show; **Show more** has the rest.
 
 ## A to-do about someone
 

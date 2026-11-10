@@ -127,11 +127,13 @@ button.node:hover{text-decoration:underline;background:none}
 .graph-crumbs a{color:var(--muted);text-decoration:none}.graph-crumbs a:hover{color:var(--text);text-decoration:underline}
 .graph-crumbs [aria-current]{color:var(--text);font-weight:var(--fw-medium);min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /*@lazy*/
-/* Known about them: plain lines, each with a small menu (Not about them, Forget). */
-#people-view .graph-known-head h2{font-size:var(--fs-lg);color:var(--muted)}
+/* Known about them: plain lines, each with a small menu (Edit, Not about them, Remove), and Add in the head. */
 .graph-known{list-style:none;margin:0;padding:0}
-.graph-known li{display:flex;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-2) 0;border-top:1px solid var(--border);color:var(--muted);font-size:var(--fs-sm);line-height:1.45}
+.graph-known li{display:flex;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-2) 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.45}
 .graph-known .fact-meta{display:block;color:var(--faint);font-size:var(--fs-xs);margin-top:2px}.graph-known li:first-child{border-top:0}.graph-known li>span{flex:1;min-width:0;overflow-wrap:anywhere;padding-top:4px}
+.graph-known-head .known-add{margin-left:auto;min-height:0;padding:2px 8px;font-size:var(--fs-sm)}
+.known-form{display:grid;gap:8px;width:100%;margin:0 0 var(--sp-2)}.known-form textarea,.known-form textarea:focus,.known-form textarea.filled{width:100%;height:auto;min-height:64px;field-sizing:content;max-height:200px;resize:vertical;transition:none;font:inherit;font-size:var(--fs-sm);line-height:1.45}
+.known-acts{display:flex;gap:6px;justify-content:flex-end}.graph-known li>.known-form{margin:0}
 /*@eager*/
 .fact-menu{position:relative;flex:none}
 .fact-menu>summary{list-style:none;cursor:pointer;width:32px;height:28px;display:grid;place-items:center;border-radius:var(--r-sm);color:var(--faint);font-size:1.1rem;line-height:1;user-select:none}

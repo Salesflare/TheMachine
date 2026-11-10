@@ -98,16 +98,17 @@ Rollen, die deine Machine in deinen Nachrichten gelesen hat und die auf dein Wor
 
 ## Was sie über jemanden weiß
 
-Unter Bekannt über hat jeder Fakt ein Menü:
+Fakten über jemanden stehen auf seiner Seite, unter **Bekannt über**; Lernen behält die allgemeinen. **Hinzufügen** hält einen weiteren in deinen eigenen Worten fest. Jeder Fakt hat ein Menü:
 
-- **Vergessen** löscht ihn überall.
-- Nicht über die Person nimmt ihn nur von dieser Seite.
+- **Bearbeiten** ändert ihn direkt dort.
+- **Nicht über** die Person macht ihn wieder zu einem allgemeinen Fakt, unter **Lernen**, **Fakten**.
+- **Entfernen** löscht ihn überall.
 
 ## Letzte Änderungen
 
 **Letzte Änderungen**, eingeklappt direkt über dem Verlauf einer Person, Organisation oder eines Projekts, zeigt, was deine Machine dazu geändert oder gelernt hat: eine Rolle, wo jemand arbeitet, wie zwei Personen zusammenhängen, einen Fakt, einen verschobenen Projektstand. Jede Zeile hat ihr Datum und ihre Quelle; tippe auf die Quelle, um die Nachricht zu lesen.
 
-Ist eine Zeile falsch, korrigiert ihr **⋯** sie direkt dort: **Bearbeiten**, **Entfernen**, **Nicht über** die Person, **Vergessen** oder **Rückgängig**, um ein Projekt zurückzusetzen. Drei Zeilen sind sichtbar; **Mehr anzeigen** zeigt den Rest.
+Ist eine Zeile falsch, korrigiert ihr **⋯** sie direkt dort: **Bearbeiten**, **Entfernen**, **Nicht über** die Person oder **Rückgängig**, um ein Projekt zurückzusetzen. Drei Zeilen sind sichtbar; **Mehr anzeigen** zeigt den Rest.
 
 ## Eine Aufgabe zu jemandem
 

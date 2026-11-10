@@ -2230,7 +2230,7 @@ def detail(db, node_id, events=12):
                           f"WHERE l.b=? AND l.kind='member' GROUP BY g.event_id {order}", (node_id, current, current, events)).fetchall()
     view['event_ids'] = [r[0] for r in rows]
     view['probable_ids'] = [r[0] for r in rows if r[1]]
-    view['open'] = open_between(db, node_id)
+    view['open'] = open_between(db, node_id, known=KNOWN_ON_PAGE)
     said = db.execute('SELECT quote,event_id,created_at FROM person_roles WHERE identifier=?', (view.get('role_id') or node_id,)).fetchone()
     if said and view.get('role'):
         view.update(role_quote=said['quote'], role_event_id=said['event_id'], role_set_at=said['created_at'][:10])
@@ -2686,10 +2686,14 @@ def with_fleet(db, result, marks):
     return result
 
 
-def open_between(db, node_id, limit=6, skip_card=None, promises_only=False):
+KNOWN_ON_PAGE = 200  # facts a record's page lists
+
+
+def open_between(db, node_id, limit=6, skip_card=None, promises_only=False, known=None):
     """What is open between the owner and this person or project: promises both ways and (unless promises_only) open cards, read
     from the signals each sits on. Apart from that, under known: the facts the owner told that are about them (fact_about).
-    A fact is about its subject, never about whoever sent the message it came up in: one about the owner is on no page."""
+    A fact is about its subject, never about whoever sent the message it came up in: one about the owner is on no page.
+    known: how many facts, when not limit (the record's own page lists them all: it is where they live)."""
     out = {'you_promised': [], 'they_promised': [], 'cards': [], 'known': []}
     row = db.execute("SELECT kind,name,info FROM graph_nodes WHERE id=?", (node_id,)).fetchone()
     project = row if row and row['kind'] == 'project' else None
@@ -2722,10 +2726,10 @@ def open_between(db, node_id, limit=6, skip_card=None, promises_only=False):
             "AND (f.valid_until IS NULL OR f.valid_until>=?) "
             f"AND EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NULL AND a.node_id IN ({marks})) "
             f"AND NOT EXISTS (SELECT 1 FROM fact_about a WHERE a.fact_id=f.id AND a.removed_at IS NOT NULL AND a.node_id IN ({marks})) "
-            "ORDER BY f.created_at DESC LIMIT ?", (dt.datetime.now(dt.timezone.utc).date().isoformat(), *ids, *ids, limit))]
+            "ORDER BY f.created_at DESC LIMIT ?", (dt.datetime.now(dt.timezone.utc).date().isoformat(), *ids, *ids, known or limit))]
     except sqlite3.OperationalError:
         pass  # a bare graph without the assistant's tables
-    return {k: v[:limit] for k, v in out.items() if v}  # cards and known already stop at limit
+    return {k: v if k == 'known' else v[:limit] for k, v in out.items() if v}  # known stops at its own count
 
 
 def open_line(items, skip=()):

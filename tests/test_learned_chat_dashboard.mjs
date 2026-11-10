@@ -8,7 +8,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // A card's chat says what a note there taught, from what was stored (the service's `learned` items), never from what
 // the reply says: a quiet centered line "Saved to what I’ve learned · Edit · Undo" with what was saved under it. The link
 // opens that learning on What I've learned (its block unfolded, the row lit), Edit opens it there in its editor, Undo
-// removes it and the line then says so. No line starts with "You".
+// removes it and the line then says so. A fact about a person, organization or project says where it went ("Saved to
+// Sam Lee in the Graph") and opens that record's page, where it lives. No line starts with "You".
 // All mocked; LEARNED_CHAT_SHOTS=dir saves phone and desktop screenshots.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-60000;
@@ -24,6 +25,7 @@ const items=()=>[
  {kind:'steps',steps:['Checking the page'],at:t0+1000},
  {kind:'reply',text:'Yes, it went through: the confirmation page said so.',at:t0+2000},
  {kind:'learned',what:'draft',id:31,text:rule,state:removed.has(31)?'removed':'saved',at:t0+2000},
+ {kind:'learned',what:'fact',id:40,text:'Sam Lee signs contracts for Contract Admin.',state:'saved',about:{id:'email:sam@example.com',name:'Sam Lee'},at:t0+2000},
  // A wrong thing fixed where it came from (corrections.py): what is right now, and where the wrong one came from.
  {kind:'fixed',id:9,line:['{}’s role is {}','Sam Lee','Head of Sales'],from:'an old email signature',undone:fixedUndone,at:t0+2000}];
 const posts=[];
@@ -105,6 +107,11 @@ try{
    await page.waitForFunction(()=>document.activeElement===document.querySelector('#learned-31 textarea'));
    assert.equal(await page.evaluate(()=>document.activeElement?.tagName),'TEXTAREA');
    if(shots)await page.screenshot({path:`${shots}/learned-edit-from-chat-${width}.png`});
+   // A fact about someone: the line names their record and opens its page
+   await page.goBack();const rec=log.locator('.chat-learned').nth(1);await rec.waitFor();
+   assert.equal((await rec.locator('.learned-acts').innerText()).replace(/\s+/g,' ').trim(),'Saved to Sam Lee in the Graph · Edit · Undo');
+   await rec.getByRole('button',{name:'Saved to Sam Lee in the Graph'}).click();
+   await page.waitForFunction(()=>location.hash==='#graph/email%3Asam%40example.com');
   }
   await context.close();
  }

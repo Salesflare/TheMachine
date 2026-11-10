@@ -235,10 +235,15 @@ const openBetween=n=>{const o=n.open||{},row=(label,p)=>html`<div class="promise
  const rows=[...(o.you_promised||[]).map(p=>row('You promised',p)),...(o.they_promised||[]).map(p=>row(n.kind==='person'?'They promised':p.who+' promised',p)),
   ...(o.cards||[]).map(c=>html`<div class="promise"><span class="grow">To-do: <a href="#card=${c.id}" translate="no">${c.title}</a>${c.due?html`<small>due ${day(c.due)}</small>`:''}</span></div>`)];
  return rows.length?html`<div class="section-head"><h2>Open between you</h2><span class="count">${rows.length}</span></div><article class="graph-open">${rows}</article>`:''};
-// What the owner told that is about them (a fact's subject, never who sent the message it came up in), quietly, each
-// with a menu: Not about them takes only this link away, Forget deletes the fact everywhere.
+// What is known about them: the facts about this person, organization or project live on its page (a fact's subject,
+// never who sent the message it came up in). Each has a menu: Edit in place, Not about them (it is a general fact again,
+// in Learning, Facts), Remove (deletes it everywhere). Add keeps one more in the owner's own words.
 const shortName=n=>n.kind==='person'?String(n.name||'').split(/\s+/)[0]||n.name:n.name;
-const knownAbout=n=>{const k=n.open?.known||[],who=shortName(n);return k.length?html`<div class="section-head graph-known-head"><h2>Known about ${who}</h2></div><ul class="graph-known">${k.map(f=>html`<li><span>${f.text}${factMeta(f)}</span><details class="fact-menu"><summary aria-label="Options for this fact" title="Options">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-fact-unlink="${f.id}">Not about ${who}<small>Only takes it off this page</small></button><button type="button" role="menuitem" class="danger" data-fact-forget="${f.id}" data-who="${who}">Forget<small>Deletes it everywhere</small></button></div></details></li>`)}</ul>`:''};
+let knownAdd='';  // the record whose Add form is open
+const knownForm=(attr,who,text='')=>html`<form class="known-form" ${attr}><textarea name="text" maxlength="240" rows="2" required aria-label="${t('What you know about {}',who)}" placeholder="${text?'':t('What you know about {}',who)}">${text}</textarea><span class="known-acts"><button type="button" class="quiet" data-known-cancel>${t('Cancel')}</button><button class="primary">${t('Save')}</button></span></form>`;
+const knownAbout=n=>{const k=n.open?.known||[],who=shortName(n),adding=knownAdd===n.id;
+ const row=f=>knownEdit===f.id?html`<li>${knownForm(html`data-known-save="${f.id}"`,who,f.text)}</li>`:html`<li><span>${f.text}${factMeta(f)}</span><details class="fact-menu"><summary aria-label="${t('Options for this fact')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu"><button type="button" role="menuitem" data-known-edit="${f.id}">${t('Edit')}</button><button type="button" role="menuitem" data-fact-unlink="${f.id}">${t('Not about {}',who)}<small>${t('Keeps it as a general fact')}</small></button><button type="button" role="menuitem" class="danger" data-fact-forget="${f.id}" data-who="${who}">${t('Remove')}<small>${t('Deletes it everywhere')}</small></button></div></details></li>`;
+ return html`<div class="section-head graph-known-head"><h2>${t('Known about {}',who)}</h2>${k.length?html`<span class="count">${k.length}</span>`:''}${adding?'':html`<button type="button" class="quiet known-add" data-known-add aria-label="${t('Add something you know about {}',who)}">${t('Add')}</button>`}</div>${adding?knownForm('data-known-new',who):''}${k.length?html`<ul class="graph-known">${k.map(row)}</ul>`:''}`};
 // Recent changes (record_log.py), folded above the Timeline; each ⋯ has the page's own fix. rcOpen keeps it open on redraws.
 let rcOpen='';
 const RC_SHOWN=3;
@@ -264,7 +269,7 @@ function rcSource(s){if(!s)return'';
  if(s.type==='quote')return html`<span translate="no">“${s.text}”</span>`;
  return s.via==='LinkedIn headline'?t('Their LinkedIn headline'):''}
 function rcMenu(n,x){const a=x.act||{},who=shortName(n),items=[];
- if(x.kind==='fact')items.push(html`<button type="button" role="menuitem" data-fact-unlink="${x.fact}">${t('Not about {}',who)}<small>${t('Only takes it off this page')}</small></button>`,html`<button type="button" role="menuitem" class="danger" data-fact-forget="${x.fact}" data-who="${who}">${t('Forget')}<small>${t('Deletes it everywhere')}</small></button>`);
+ if(x.kind==='fact')items.push(html`<button type="button" role="menuitem" data-fact-unlink="${x.fact}">${t('Not about {}',who)}<small>${t('Keeps it as a general fact')}</small></button>`,html`<button type="button" role="menuitem" class="danger" data-fact-forget="${x.fact}" data-who="${who}">${t('Remove')}<small>${t('Deletes it everywhere')}</small></button>`);
  if(a.edit)items.push(html`<button type="button" role="menuitem" data-org-edit>${t('Edit')}</button>`);
  if(a.unrelate)items.push(html`<button type="button" role="menuitem" data-unrelate="${a.unrelate[0]}" data-related-to="${a.unrelate[1]}">${t('Remove')}</button>`);
  if(a.split)items.push(html`<button type="button" role="menuitem" data-same="0" data-a="${a.split[0]}" data-b="${a.split[1]}" data-split>${t('Undo')}<small>${t('Splits them for good')}</small></button>`);

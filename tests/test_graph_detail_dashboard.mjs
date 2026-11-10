@@ -7,7 +7,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A person's page in the Graph keeps the dashboard's header and tabs, with a breadcrumb back; it has its own link and
-// the browser's back button works. Facts about them sit apart from what is open, each with Not about them and Forget.
+// the browser's back button works. Facts about them live under Known about them, apart from what is open: each with
+// Edit, Not about them and Remove, and Add for one more.
 // Events come by day, each row with its source, who wrote it and the start of the text.
 const dashboard=await dashboardPage();
 // The page's clock is today at noon whatever the hour the test runs at, so a run of messages minutes apart a day ago
@@ -52,7 +53,9 @@ const server=createServer(async(req,res)=>{
   const at=id=>person().recent.find(r=>r.id===id).occurred_at;
   res.end(JSON.stringify({originals:ids.map((id,i)=>({kind:'whatsapp',from:[50,56].includes(id)?'You':'Ann Example',occurred_at:at(id),body:'message '+id,event_id:id,url:i===ids.length-1&&id===56?'https://wa.example/chat':null}))}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
-  if(call.action==='graph_fact_unlink'||call.action==='forget_fact')known=known.filter(f=>f.id!==(call.args.fact_id??call.args.id));res.end('{}');return}
+  if(call.action==='graph_fact_unlink'||call.action==='forget_fact')known=known.filter(f=>f.id!==(call.args.fact_id??call.args.id));
+  if(call.action==='edit_fact')known=known.map(f=>f.id===call.args.id?{...f,text:call.args.text}:f);
+  if(call.action==='graph_fact_add')known=[...known,{id:8,text:call.args.text}];res.end('{}');return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
  res.end('{}');
 });
@@ -170,22 +173,42 @@ try{
  assert.equal(await page.locator('.graph-event[aria-label^="Intercom"] .icon svg path').count(),1);
  const sizes=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(sizes.page<=sizes.viewport,'overflow at 390');
- // Not about Ann takes only this link away.
+ const posted=async n=>{for(let i=0;i<100&&calls.length<n;i++)await page.waitForTimeout(20)};
+ // Edit in place: the menu's Edit opens the fact's text, Save keeps the owner's words.
  await page.locator('.graph-known li').first().locator('summary').click();
- assert.equal(await page.locator('[data-fact-unlink="5"]').textContent(),'Not about AnnOnly takes it off this page');
+ assert.deepEqual(await page.locator('.graph-known li').first().locator('[role=menuitem]').allTextContents(),['Edit','Not about AnnKeeps it as a general fact','RemoveDeletes it everywhere']);
+ await page.locator('[data-known-edit="5"]').click();
+ const box=page.locator('.graph-known .known-form textarea');await box.waitFor();
+ assert.equal(await box.inputValue(),'Ann prefers calls before 10.');
+ await box.fill('Ann prefers calls before 11.');await page.locator('.graph-known .known-form .primary').click();
+ await page.locator('.graph-known li',{hasText:'before 11'}).waitFor();
+ assert.deepEqual(calls.at(-1),{action:'edit_fact',args:{id:5,text:'Ann prefers calls before 11.'}});
+ // Add keeps one more in the owner's words, tied to Ann; Escape closes it without saving.
+ await page.locator('[data-known-add]').click();
+ const add=page.locator('.graph-known-head+.known-form textarea');await add.waitFor();
+ assert.equal(await add.getAttribute('placeholder'),'What you know about Ann');
+ await add.press('Escape');await add.waitFor({state:'detached'});
+ await page.locator('[data-known-add]').click();await add.waitFor();
+ await add.fill('Ann runs the school board.');await page.locator('.graph-known-head+.known-form .primary').click();
+ await page.locator('.graph-known li',{hasText:'school board'}).waitFor();
+ assert.deepEqual(calls.at(-1),{action:'graph_fact_add',args:{node_id:'wa:3247000001',text:'Ann runs the school board.'}});
+ assert.equal(await page.locator('.graph-known-head .count').textContent(),'3');
+ // Not about Ann takes only this link away.
+ const n=calls.length;
+ await page.locator('.graph-known li').first().locator('summary').click();
  await page.locator('[data-fact-unlink="5"]').click();
- for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
- assert.deepEqual(calls[0],{action:'graph_fact_unlink',args:{fact_id:5,node_id:'wa:3247000001'}});
+ await posted(n+1);
+ assert.deepEqual(calls[n],{action:'graph_fact_unlink',args:{fact_id:5,node_id:'wa:3247000001'}});
  await page.locator('.graph-known li').first().filter({hasText:'allergic'}).waitFor();
- // Forget asks first, plainly, and says it goes everywhere; cancel keeps it.
- await page.locator('.graph-known li summary').click();
+ // Remove asks first, plainly, and says it goes for good; cancel keeps it.
+ await page.locator('.graph-known li',{hasText:'allergic'}).locator('summary').click();
  await page.locator('[data-fact-forget="6"]').click();
- assert.match(dialogs[0],/Forget this everywhere\?/);assert.match(dialogs[0],/from everything your Machine has learned/);assert.match(dialogs[0],/Not about Ann/);
- assert.equal(calls.length,1);
+ assert.match(dialogs[0],/Remove this everywhere\?/);assert.match(dialogs[0],/deleted for good/);assert.match(dialogs[0],/Not about Ann/);
+ assert.equal(calls.length,n+1);
  await page.locator('[data-fact-forget="6"]').click();
- for(let i=0;i<100&&calls.length<2;i++)await page.waitForTimeout(20);
- assert.deepEqual(calls[1],{action:'forget_fact',args:{id:6}});
- await page.waitForFunction(()=>!document.querySelector('.graph-known'));
+ await posted(n+2);
+ assert.deepEqual(calls[n+1],{action:'forget_fact',args:{id:6}});
+ await page.waitForFunction(()=>document.querySelectorAll('.graph-known li').length===1);
  // The breadcrumb goes back to the list; the browser's back button returns to Ann, forward to the list again.
  await page.locator('.graph-crumbs [data-crumb="people"]').click();
  await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();

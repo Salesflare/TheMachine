@@ -142,10 +142,11 @@ function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true
  return html`<div class="chat-event chat-learned chat-fixed${i.undone?html` gone`:''}"><span class="learned-acts"><span>${line}</span><span class="fixed-act">${sep}${i.undone?html`<span>${window.t('Undone')}</span>`:html`<button type="button" class="link" data-fixed-undo="${i.id}" aria-label="${window.t('Undo: {}',line)}">${window.t('Undo')}</button>`}</span></span></div>`}
 // What a note on this card taught (from what was stored, never from what a reply says): a quiet line that opens it on
 // What I've learned, with Edit and Undo while it is there (a channel's voice has its own 'Saved to How you write' line).
-function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,q=i.text?html`<q>${i.text}</q>`:'';
+// A fact about a person, organization or project says so and opens that page, where it lives.
+function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,q=i.text?html`<q>${i.text}</q>`:'',node=i.about?html` data-learned-node="${i.about.id}"`:'';
  if(i.state==='removed')return html`<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
- const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}">Saved to what I’ve learned</button>`;
- return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}" aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
+ const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}"${node}>${i.about?window.t('Saved to {} in the Graph',i.about.name):'Saved to what I’ve learned'}</button>`;
+ return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}"${node} aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
 // A reply that says it left a page open in the browser (a sign-in tab, a form)
 const CHAT_TAB=/\b(?:tab|browser)\b[^.]*\b(?:open|opened|reopened|ready)\b|\b(?:open|opened|reopened)\b[^.]*\b(?:tab|browser)\b|\bis open for\b/i;
 function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading…</p>`;if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';

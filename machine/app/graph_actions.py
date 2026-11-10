@@ -73,7 +73,7 @@ class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
                'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action',
-               'graph_fact_unlink': 'graph_fact_unlink_action', 'unmerge_fact': 'unmerge_fact_action',
+               'graph_fact_unlink': 'graph_fact_unlink_action', 'graph_fact_add': 'graph_fact_add_action', 'unmerge_fact': 'unmerge_fact_action',
                'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
                'graph_org_edit': 'graph_org_edit_action', 'graph_org_wrong': 'graph_org_edit_action',
                'graph_new': 'graph_new_action', 'graph_org_delete': 'graph_new_action',
@@ -679,6 +679,11 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner says who a fact is not about, on the dashboard')
         return self.store.fact_unlink(args.get('fact_id'), args.get('node_id'))
+
+    def graph_fact_add_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner adds a fact on a page, on the dashboard; reviews use remember_fact with about')
+        return self.store.fact_add(args.get('node_id'), args.get('text'))
 
     def unmerge_fact_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:
