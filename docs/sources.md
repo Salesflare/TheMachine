@@ -318,7 +318,7 @@ off), with the sign-ins the connections already have: no new scopes (`machine/ap
 
 ### Watching it work
 
-While a Do it run is on the browser, its Preparing to-do shows that tab live: a small picture every few seconds, right of its steps (below them on a phone), larger on a click, gone when the run moves on. The to-do's chat shows the same picture where its **Open the browser** link was; a click there opens the browser, as that link does.
+While a Do it run is on the browser, its Preparing to-do shows that tab live: a small picture every few seconds, right of its steps (below them on a phone), larger on a click, gone when the run moves on. The larger view has **Stop**, the same stop as the Browser pane's (below). The to-do's chat shows the same picture where its **Open the browser** link was; a click there opens the browser, as that link does.
 
 - It is only ever a tab that task opened itself (by the target ID its own `open` step answered with): that run's, or one an earlier run of the same task left open and this run carries on in (after a sign-in, a retry or a Change). Never another task's tab or yours.
 - It comes from the browser `browser_cdp_url` points at (127.0.0.1 only), over DevTools, without bringing anything to the front. A tab in the background shows no new picture until the run brings it forward.

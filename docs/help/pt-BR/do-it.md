@@ -10,7 +10,7 @@ order: 2
 
 **Fazer** pede para sua Machine preparar a tarefa: escrever o rascunho da resposta, buscar informações, preencher um formulário. Ela usa suas próprias contas e o próprio navegador dela, como você faria.
 
-Enquanto ela trabalha no navegador, a tarefa e o chat dela mostram essa página ao vivo. Clique na imagem para abrir o navegador.
+Enquanto ela trabalha no navegador, a tarefa e o chat dela mostram essa página ao vivo. Clique na imagem para abrir o navegador. Na tarefa ela abre maior, com **Parar**: um toque para tudo na hora.
 
 Antes de escrever um follow-up ou passar algo adiante, ela confere a conversa em busca de respostas mais novas, inclusive de um colega. Se já foi resolvido, a tarefa diz isso. Quando ela criou ou mudou um documento ou página, a tarefa leva direto até ele.
 

@@ -10,7 +10,7 @@ order: 2
 
 **Do it** asks your Machine to prepare the to-do: draft the reply, look things up, fill in a form. It uses your own accounts and its own browser, as you would.
 
-While it works in its browser, the to-do shows that page live. Click the picture to open it.
+While it works in its browser, the to-do shows that page live. Click the picture to see it larger, with **Stop**: one press ends that run at once.
 
 Before a follow-up or handoff, it checks for newer replies, also from a teammate. If it's already handled, the to-do says so. When it changed a document or page, the to-do links to it.
 

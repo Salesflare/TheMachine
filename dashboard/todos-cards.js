@@ -612,9 +612,21 @@ function paintPeek(id){const p=peeks.get(id);for(const slot of document.querySel
  const h=html`${peekHTML(id,'peekVia' in slot.dataset?JSON.parse(slot.dataset.peekVia||'{}'):null)}`;if(slot.innerHTML===String(h))continue;
  if(slot.closest('.chat-main'))chatKeepPlace(()=>setHTML(slot,h));else setHTML(slot,h)}
  const d=$('#peek-dialog');if(d.open&&d.dataset.task===id){if(p?.on&&p.image)$('#peek-image').src=p.image;else d.close()}}
+// Stop in the larger view: the Browser view's own stop (chat_stop, via the browser) for the to-do whose run it shows,
+// with no question first. Only while that run is on the browser; once pressed it goes, and the view with it. The
+// close keeps the focus when the view opens (autofocus), so Enter never stops a run.
+function peekStopPaint(){const d=$('#peek-dialog'),b=$('#peek-stop'),id=d.dataset.task,s=(state.suggestions||[]).find(x=>x.id===id),on=!!(d.open&&id&&peeks.get(id)?.on);
+ b.hidden=!on;b.disabled=false;const label=s?.title?t('Stop “{}”',s.title):t('Stop');b.title=label;b.setAttribute('aria-label',label)}
+$('#peek-stop').onclick=async()=>{const d=$('#peek-dialog'),b=$('#peek-stop'),id=d.dataset.task,title=(state.suggestions||[]).find(x=>x.id===id)?.title||'';if(b.hidden||!id)return;b.disabled=true;
+ try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_stop',args:{suggestion_id:id,via:'browser'}})});
+  b.hidden=true;const p=peeks.get(id);if(p)p.on=false;paintPeek(id);toast(r?.stopped?t('Stopped “{}”',title):t('“{}” had already finished.',title))}
+ catch(err){errCaught(err);toast(err.message,true);b.disabled=false;return}
+ // The to-do, as it waits now (Stopped, Try again), is brought into view and takes the focus the closed view gave up
+ try{await refresh()}catch{}const el=document.getElementById('task-'+id);if(el){el.scrollIntoView({block:'center'});kbFocus(el,false)}};
+$('#peek-dialog').addEventListener('close',()=>{$('#peek-stop').hidden=true});
 setInterval(async()=>{if(document.hidden)return;for(const [id,p] of peeks){if(!p.on)continue;if(!document.getElementById('task-'+id)){peeks.delete(id);continue}
  try{const r=await request('api/peek?id='+encodeURIComponent(id));p.on=r.on;if(r.image)p.image=r.image;paintPeek(id)}catch{}}},2500);
-document.addEventListener('click',e=>{const b=e.target.closest('[data-peek-open]');if(!b)return;const id=b.dataset.peekOpen,p=peeks.get(id);if(!p?.image)return;const d=$('#peek-dialog');d.dataset.task=id;$('#peek-image').src=p.image;d.showModal()});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-peek-open]');if(!b)return;const id=b.dataset.peekOpen,p=peeks.get(id);if(!p?.image)return;const d=$('#peek-dialog');d.dataset.task=id;$('#peek-image').src=p.image;d.showModal();peekStopPaint()});
 // Just done: to-dos the owner confirmed a final step on ("On it. I'll report back.") that the step closed by itself
 // (assistant.py report_done). They show at the top with what happened until Got it, for at most a day, then only in Done.
 const REPORT_MS=864e5;
