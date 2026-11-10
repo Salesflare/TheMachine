@@ -11,7 +11,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // /_machine/account-hop in this same tab, which opens that part of the account signed in, as a focused step that leads
 // back here (a hosted Machine has no account dashboard besides this tab). Self-hosted and paired, this
 // Machine asks (api/account) and the buttons are links. Sign out stays (hosted). Not linked: no Account tab, and General
-// keeps "Join the Network". Made-up data only. Set SHOTS=<dir> for screenshots.
+// keeps "Join the Network". Self-hosted and paired, Unpair this Machine is the first quiet way out (ai_unpair; it was a
+// section of its own in Settings, Apps). Made-up data only. Set SHOTS=<dir> for screenshots.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC'};
 const CP='https://account.example';
@@ -31,7 +32,7 @@ const pairedSummary={on:true,email:'sam@example.org',hop:false,plan:null,next_in
  network:{on:true,status:'active',until:null,price:'€4/month, excl. VAT'},
  links:{account:APP+'/account',fleet:APP+'/account?tab=fleet&focus=1',security:APP+'/account?tab=security&focus=1',
   friends:APP+'/account?tab=friends&focus=1',delete:APP+'/account?tab=data&focus=1#wipe',network:APP+'/account?tab=billing&focus=1#network-sub'}};
-let mode='hosted',fail=false;const hops=[],posts=[],asked=[];
+let mode='hosted',fail=false;const hops=[],posts=[],asked=[],actions=[];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');
  if(url.pathname==='/_machine/logout'){posts.push(req.method);res.writeHead(303,{Location:'/bye'});res.end();return}
@@ -41,6 +42,8 @@ const server=createServer(async(req,res)=>{
  res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/_machine/account'){asked.push('cp');if(fail){res.writeHead(401);res.end('{"error":"signed out"}');return}res.end(JSON.stringify(hostedSummary));return}
+ if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action}=JSON.parse(body);actions.push(action);
+  if(action==='ai_unpair')mode='none';res.end(JSON.stringify({connections:[],areas:['work'],reach:{hosted:false,paired:false}}));return}
  if(url.pathname==='/api/account'){asked.push('machine');res.end(JSON.stringify(mode==='paired'?pairedSummary:{on:false}));return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],hours,
   skills:{skills:[],waiting:0,targets:[],folder:'skills/the-machine'},model_usage:[],model_status:{model:'openai/example-model',provider:'openai',windows:[],checked_at:new Date().toISOString()},
@@ -83,6 +86,7 @@ try{
   assert.equal(await page.locator('#acct-out form[action="/_machine/logout"]').count(),1);
   assert.equal(await page.locator('#acct-danger .acct-quiet[data-acct-go="cancel"]').count(),1);
   assert.equal(await page.locator('#acct-danger .acct-quiet[data-acct-go="delete"]').count(),1);
+  assert.equal(await page.locator('#settings [data-acct-unpair]').count(),0);  // a hosted Machine stays on the account
   assert.equal(await page.locator('#settings-acct-end').isVisible(),true);
   assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#settings>:not([hidden])')].filter(x=>x.dataset.stab==='account').at(-1).id),'settings-acct-end');
   assert.equal(await page.locator('#settings [data-acct-report]').count(),0);
@@ -126,12 +130,22 @@ try{
    // Delete account is the quiet way out at the very end, a link too (the Machine on this computer stays)
    assert.deepEqual(await page.locator('#acct-danger a[data-acct-go]').evaluateAll(as=>as.map(a=>[a.dataset.acctGo,a.getAttribute('href'),a.target])),
     [['delete',APP+'/account?tab=data&focus=1#wipe','_blank']]);
-   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-paired-${width}-${scheme}.png`,fullPage:true});
+   // Unpair this Machine: the first quiet way out, a button here (it works without the account); asks first, then the
+   // Machine is off the account and General offers Join the Network again
+   assert.deepEqual(await page.locator('#acct-danger>*').evaluateAll(xs=>xs.map(x=>x.dataset.acctUnpair!==undefined?'unpair':x.dataset.acctGo)),['unpair','delete']);
+   const unpair=page.locator('#acct-danger button.acct-quiet[data-acct-unpair]');assert.equal(await unpair.innerText(),'Unpair this Machine');
+   page.once('dialog',d=>d.dismiss());await unpair.click();await page.waitForTimeout(100);assert.ok(!actions.includes('ai_unpair'),'nothing without OK');
+   page.once('dialog',d=>{assert.match(d.message(),/^Unpair this Machine\?/);d.accept()});await unpair.click();
+   await page.locator('#settings-cloud:not([hidden])',{hasText:'Join the Network'}).waitFor();assert.deepEqual(actions.filter(a=>a==='ai_unpair'),['ai_unpair']);
    // Not linked: no Account tab; General keeps the Network card
    mode='none';await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-cloud:not([hidden])').waitFor();
    assert.equal(await page.locator('#settings-tabs [data-settings-tab="account"]').isHidden(),true);
    assert.equal(await page.locator('#settings-tabs [aria-selected="true"]').innerText(),'General');
   }
+  // Self-hosted and paired, at every size: Unpair this Machine fits next to Delete account
+  mode='paired';await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#acct-danger [data-acct-unpair]').waitFor();
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll('#acct-danger>*')].every(b=>{const x=b.getBoundingClientRect();return x.right<=innerWidth&&x.left>=0})),`${width}: fits`);
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/account-paired-${width}-${scheme}.png`,fullPage:true});
   await context.close();
  }
  assert.deepEqual(errors,[]);
