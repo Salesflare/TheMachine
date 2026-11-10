@@ -6,7 +6,9 @@ Machines and `update` below only install a release whose signature checks out ag
 that is already installed (deploy/release-signers), so a pushed commit alone never reaches a Machine.
 
   python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key and a
-                                        passed full test run on that commit; --commit SHA cuts an older one of main)
+                                        passed full test run on that commit; --commit SHA cuts an older one of main;
+                                        --full-run starts that run on our CI runner when there is none, waits for it,
+                                        about 12 minutes, and cuts when it passes)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
                                         (a first ./install.sh does this step by itself: first_install)
@@ -24,6 +26,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 try:
@@ -63,15 +66,39 @@ def _gh_api(path):
 
 
 def proven(run):
-    """Whether a passed run proves its commit (scripts/ci_runs.py): it ran every test, or the tests every change
-    since a commit whose full run passed can break."""
-    what = ci.tested(run, _gh_api)
-    return what == 'full' or ci.passed_full(what, _gh_api)
+    """Whether a passed run proves its commit: it ran every test on it (scripts/ci_runs.py). A push to main that ran
+    only the tests its changes since the last full run need is not enough for a release: a dependency the selection
+    missed must never reach one."""
+    return ci.tested(run, _gh_api) == 'full'
+
+
+def full_run(sha, poll=30, limit=45 * 60):
+    """Starts the full test run on exactly this commit on our runner (ci.yml, workflow_dispatch with own_runner, from a
+    short-lived branch at the commit), waits for it and raises RuntimeError unless it passed."""
+    branch = f'full-run/{sha[:12]}'
+    git('push', '--quiet', 'origin', f'{sha}:refs/heads/{branch}')
+    started = time.time()
+    try:
+        subprocess.run(['gh', 'workflow', 'run', 'ci.yml', '-R', REPO, '--ref', branch, '-f', 'own_runner=true'],
+                       capture_output=True, text=True, timeout=60, check=True)
+        print(f'Full test run started on {sha[:7]}: waiting for it (about 12 minutes)...', flush=True)
+        while time.time() - started < limit:
+            time.sleep(poll)
+            mine = [r for r in ci_runs(f'head_sha={sha}') if r['event'] == 'workflow_dispatch'
+                    and dt.datetime.fromisoformat(r['created_at'].replace('Z', '+00:00')).timestamp() >= started - 60]
+            if mine and all(r['status'] == 'completed' for r in mine):
+                break
+        else:
+            raise RuntimeError(f'the full test run on {sha[:7]} did not finish in {limit // 60} minutes')
+    except subprocess.SubprocessError as error:
+        raise RuntimeError(f'the full test run on {sha[:7]} could not be started ({error})') from error
+    finally:
+        git('push', '--quiet', 'origin', '--delete', branch, check=False)
+    require_green_tests(sha)
 
 
 def require_green_tests(sha):
-    """Raises RuntimeError unless every test passed on exactly this commit: a full run passed on it, or a run that
-    passed on it ran every test the changes since a commit with a passed full run can break (scripts/ci_runs.py)."""
+    """Raises RuntimeError unless every test passed on exactly this commit: a full run passed on it."""
     try:
         runs = [r for r in ci_runs(f'head_sha={sha}') if r['event'] in FULL_RUN]
         if any(r['conclusion'] == 'success' and proven(r) for r in runs):
@@ -90,7 +117,7 @@ def require_green_tests(sha):
                        and git('merge-base', '--is-ancestor', r['head_sha'], sha, check=False).returncode == 0 and proven(r)), None)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         pass
-    raise RuntimeError(f'no test run proved {sha[:7]} (main tests its newest commit; a full run passed on it, or one on what changed since a full run)'
+    raise RuntimeError(f'no full test run passed on {sha[:7]} (main tests only what changed; --full-run runs every test on it and cuts when it passes)'
                        + (f': wait for it, or cut the newest tested commit with --commit {newest[:7]}' if newest else ''))
 
 
@@ -156,7 +183,12 @@ def cut(args):
     if git('rev-parse', '-q', '--verify', f'refs/tags/{tag}', check=False).returncode == 0:
         raise SystemExit(f'{tag} exists already: wait a minute and try again.')
     try:
-        require_green_tests(sha)
+        try:
+            require_green_tests(sha)
+        except RuntimeError as missing:
+            if not args.full_run or 'not done yet' in str(missing) or 'no full test run passed' not in str(missing):
+                raise
+            full_run(sha)
         require_release_scan('TheMachine', sha, cwd=ROOT)
     except RuntimeError as error:
         raise SystemExit(f'Not released: {error}') from error
@@ -376,6 +408,7 @@ def main(argv=None):
     c.add_argument('--key', help='private key file (default: $THE_MACHINE_RELEASE_KEY or ~/.config/the-machine-release/signing-key)')
     c.add_argument('--no-push', action='store_true', help='tag and verify locally only')
     c.add_argument('--commit', help='a commit of main to sign instead of its newest (one whose full test run passed)')
+    c.add_argument('--full-run', action='store_true', help='no full test run passed on it: start one on our runner, wait, cut when it passes')
     v = sub.add_parser('verify', help='check a release tag against deploy/release-signers')
     v.add_argument('tag', nargs='?')
     u = sub.add_parser('update', help='move this checkout to the newest signed release')

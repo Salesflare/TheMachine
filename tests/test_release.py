@@ -351,6 +351,20 @@ class Releases(unittest.TestCase):
         self.assertEqual(release.releases(), [])
         self.gate.assert_not_called()
 
+    def test_full_run_runs_every_test_on_the_commit_and_cuts_when_it_passes(self):
+        sha = self.commit('two')
+        self.green.side_effect = RuntimeError(f'no full test run passed on {sha[:7]}')
+        with mock.patch.object(release, 'full_run') as started:
+            release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        started.assert_called_once_with(sha)
+        self.assertEqual(len(release.releases()), 1)
+        self.gate.assert_called_once()
+        run('git', 'tag', '-d', release.releases()[0], cwd=self.app)  # the next cut may fall in the same minute
+        with mock.patch.object(release, 'full_run', side_effect=RuntimeError(f'the full test run on {sha[:7]} failure')):
+            with self.assertRaisesRegex(SystemExit, 'Not released: the full test run on .* failure'):
+                release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        self.assertEqual(release.releases(), [])
+
     def test_cut_an_older_tested_commit_of_main(self):
         older = self.commit('two')
         self.commit('three')
@@ -380,12 +394,13 @@ class Releases(unittest.TestCase):
         for found, marker, full_on_base, error in (
                 ([run_of('push', 'completed', 'success')], None, False, None),
                 ([run_of('push', 'completed', 'success')], 'tested-full', False, None),
-                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, None),
-                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no test run proved'),
-                ([run_of('pull_request', 'completed', 'success')], None, False, 'no test run proved'),
+                # a push to main that ran only what changed since a passed full run never proves a release
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, 'no full test run passed'),
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no full test run passed'),
+                ([run_of('pull_request', 'completed', 'success')], None, False, 'no full test run passed'),
                 ([run_of('push', 'in_progress', None)], None, False, 'not done yet'),
                 ([run_of('push', 'completed', 'failure')], None, False, 'failure'),
-                ([run_of('push', 'completed', 'cancelled')], None, False, 'no test run proved')):
+                ([run_of('push', 'completed', 'cancelled')], None, False, 'no full test run passed')):
             self.marker = marker
             with self.subTest(found=found, marker=marker, full_on_base=full_on_base), runs(*found), gh(full_on_base):
                 if error is None:

@@ -26,8 +26,8 @@ permissions:
 
 # A new push to a pull request or main cancels the run still going: only the newest commit can be merged, and on main
 # the next run tests everything changed since the last full run that passed, so a canceled run leaves nothing
-# unproven (scripts/release.py cuts only a commit a passed run proves). The nightly, weekly and manual runs have their
-# own groups and are never canceled: a full run is what the next pushes build on.
+# untested. The nightly, weekly and manual runs have their own groups and are never canceled: a full run is what the
+# next pushes build on, and what scripts/release.py needs on the commit it cuts (release.py cut --full-run starts one).
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && format('-{0}', github.event.schedule || 'manual') || '' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && github.ref == 'refs/heads/main' }}

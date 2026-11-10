@@ -9,9 +9,10 @@ everything run every test. The plan job of each such run names an artifact after
   tested-since-<sha>   the files scripts/test_select.py picks for everything changed since <sha>, a commit whose
                        full run passed
 
-A run that passed with tested-since-<sha> therefore proves its exact commit as well as a full run would: every test
-passed on <sha>, and every test the changes since then can break passed on this one. A run from before these names
-ran every test, so a run without one counts as full.
+A passed tested-since-<sha> run is main's green or red signal: every test passed on <sha>, and every test the
+selection says the changes since then can break passed on this one. A release needs more (scripts/release.py): a
+passed tested-full run on its exact commit, since a dependency the selection missed must never reach one. A run from
+before these names ran every test, so a run without one counts as full.
 
 scripts/ci_runs.py base SHA   the newest commit under SHA (or SHA itself) whose full run passed; nothing when none"""
 from __future__ import annotations
