@@ -904,14 +904,14 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             continue
         ok, last = work(row['id'])
         # A project on a board the team sees goes with its board record (stage, why, next, organization) even before a
-        # thread of it is shared; its threads and timeline still only when shared. Never one of the owner's own life.
+        # thread of it is shared; its threads and timeline still only when shared. Never one with a personal conversation.
         on_team_board = bool(row['board']) and (row['bid'] in team_boards or row['id'] in scope.granted_projects) and not any(
             views.get(r[0]) == 'personal' for r in db.execute('SELECT event_id FROM graph_events WHERE node_id=? AND probable=0', (row['id'],)))
         if not ok and not on_team_board:
             continue
         linked = [l['a'] if l['b'] == row['id'] else l['b'] for l in db.execute('SELECT a,b FROM graph_links WHERE (a=? OR b=?) AND kind=?',
                                                                                   (row['id'], row['id'], 'project'))]
-        if any(p in scope.private for p in linked):
+        if any(p in (scope.kept if on_team_board else scope.private) for p in linked):  # on a shared board, only kept by hand holds it
             continue
         r = rid(row['id'])
         tile = tiles.get(row['id']) or {}
@@ -919,7 +919,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         # Its organization goes by name only when the organization could go itself: one with a website, outside the
         # owner's team, not personal mail and not kept private. Linking one never adds threads or people.
         if domain and (domain.startswith('named:') or graph.personal_mail(db, domain) or not outside('x@' + domain, scope.internal)
-                       or 'org:' + domain in scope.private or scope.private_address('x@' + domain) or not scope.shareable('org:' + domain)):
+                       or 'org:' + domain in scope.private or scope.private_address('x@' + domain) or not scope.shareable('org:' + domain) or scope.life_domain(db, linked, domain)):
             domain = None
         org = graph.org_card(db, domain) if domain else None
         records[r] = {'r': r, 't': 'project', 'name': row['name'], 'score': round(row['strength'], 3), 'last': (last or '')[:10],

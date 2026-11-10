@@ -36,7 +36,7 @@ Un admin peut exiger l’**E-mail pro** et l’**Agenda pro** de chacun sur le d
 - Les e-mails automatiques : reçus, factures, alertes, newsletters, et les factures de votre entreprise avec ses fournisseurs.
 - Les fils internes (entre collègues uniquement), les e-mails perso et tout ce qui vient d’un compte perso. Le perso ne part jamais, même si vous appuyez sur Équipe.
 - Tout ce que vous avez marqué **Garder privé**, ainsi que les tableaux et projets réglés sur Vous seul.
-- Les projets avec une personne Perso pour vous, comme votre famille ou vos amis. Votre tableau les marque d’un cadenas et dit combien restent chez vous.
+- Une personne Perso pour vous, comme votre famille ou vos amis, et ses e-mails. Un projet où elle figure part quand même avec son tableau, sans elle.
 
 Chaque fil est jugé séparément, selon son sujet. Le classement peut se tromper ; vérifiez ce qui partirait et utilisez Garder privé pour corriger. Votre choix explicite Équipe ou un partage avec des collègues nommés peut passer outre un classement sensible ; vérifiez les destinataires avant de partager.
 

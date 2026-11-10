@@ -78,7 +78,7 @@ In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, di
 
 Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, oder seine letzte Verschiebung, wenn die später kam. Der Name des Inhabers erscheint, wenn eine Phase Projekte von mehr als einem Teammitglied hat.
 
-Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst sieht: Ein Projekt, das sie privat hält oder bei dem jemand dabei ist, der für sie Privat ist (ihre Familie oder Freunde), verlässt ihre Machine nie. Auf deinem eigenen Board sagt die Kopfzeile „Mit dem Team geteilt“ und wie viele bei dir bleiben, und diese Projekte haben ein Schloss.
+Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst sieht: Ein Projekt, das sie privat hält oder zu dem ein privates Gespräch gehört, verlässt ihre Machine nie. Jemand, der für sie Privat ist, bleibt aus den geteilten Projekten draußen. Auf deinem eigenen Board sagt die Kopfzeile „Mit dem Team geteilt“ und wie viele bei dir bleiben, und diese Projekte haben ein Schloss.
 
 **Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
 

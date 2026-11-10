@@ -106,6 +106,17 @@ def automated_message(metadata):
 class Kept:
     """What a Scope reads from the messages themselves: mixed into shared_graph.Scope."""
 
+    def life_domain(self, db, people, domain):
+        """Whether a project's organization is where someone of the owner's own life on it is (their mail's domain or their
+        organization). A project on a shared board goes without them, and without an organization that would tell who."""
+        for p in [p for p in people if p in self.private]:
+            row = db.execute('SELECT info FROM graph_nodes WHERE id=?', (p,)).fetchone()
+            info = json.loads(row[0] or '{}') if row else {}
+            ids = [p, *info.get('identifiers', [])]
+            if info.get('org') == 'org:' + domain or any(str(i).lower().endswith('@' + domain) for i in ids if str(i).startswith('email:')):
+                return True
+        return False
+
     def hand(self, thread, kind, metadata):
         """The owner's choice for a thread: its own, else Only you when they chose that for the conversation it is in
         (kept_conversations), so a message that arrives there later stays with them too."""
