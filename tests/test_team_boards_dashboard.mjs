@@ -29,7 +29,7 @@ const teamBoards=[
   projects:[team(30,'Buyer talks: Northfund','Contacted'),team(31,'Buyer talks: Globex','Interested')]}];
 const teamDetail={id:'team:project:'+'3'.padStart(32,'0'),kind:'project',name:'Buyer talks: Northfund',role:null,team_only:true,links:[],recent:[],probable_ids:[],last_at:day(2),
  strength:1,closeness:'regular',signals:0,org_name:'Northfund',org:'team:org:'+'9'.repeat(32),state:'active',stage:'Contacted',board:'Acquisition talks',next:null,team_fields:[],tags:[],
- team:{via:'via Ada',people:[{fleet:FL,member:'m_ada',name:'Ada',score:1,left:false}],timeline:[{at:day(2),line:'Email: Re: Terms',via:'Ada'}],threads:[{id:FL+':m_ada:'+'e'.repeat(32),subject:'Re: Terms',at:day(2),messages:2,via:'Ada'}],fields:[],tags:[]}};
+ team:{via:'via Ada',people:[{fleet:FL,member:'m_ada',name:'Ada',score:1,left:false}],timeline:[{at:day(2),line:'Bo agreed to the terms',via:'Ada'}],threads:[{id:FL+':m_ada:'+'e'.repeat(32),subject:'Re: Terms',at:day(2),messages:2,via:'Ada',from:'Bo Lind',preview:'Here are the terms.'}],fields:[],tags:[]}};
 const locale={locale:'en-BE',region:'BE',language:LANG,language_set:true,clock:'auto',hour12:false,auto_hour12:false,date_locale:LANG==='en'?'en-GB':LANG+'-BE',languages:{en:'English',nl:'Nederlands'},saveable:true};
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -85,8 +85,9 @@ try{
   assert.equal(await page.locator('.team-block').count(),0);assert.equal(await page.locator('.graph-detail .team-ask').count(),1);
   const tl=page.locator('.graph-timeline');assert.equal(await tl.locator('.ge-whose button').count(),2);
   assert.equal(await tl.locator('.ge-whose [aria-pressed="true"]').getAttribute('data-tl-whose'),'team');
-  assert.match(await tl.locator('.ge-team.ge-change').innerText(),LANG==='en'?/Email: Re: Terms\s+\d\d:\d\d · via Ada/:/via Ada/);
+  assert.match(await tl.locator('.ge-team.ge-change').innerText(),LANG==='en'?/Bo agreed to the terms\s+\d\d:\d\d · via Ada/:/via Ada/);
   assert.match(await tl.locator('[data-team-thread]').innerText(),LANG==='en'?/Re: Terms\s+2 messages · \d\d:\d\d · via Ada/:/2 berichten · .* · via Ada/);
+  assert.match(await tl.locator('[data-team-thread] .ge-preview').innerText(),/^Bo: Here are the terms\.$/);  // a preview like own mail
   await fits(page,w+' project');await page.mouse.move(0,0);await shot(page,`teammate-project-${w}-${scheme}`);
   await tl.locator('[data-team-thread]').click();await page.locator('#email-dialog[open] .email-text',{hasText:'Here are the terms.'}).waitFor();
   if(scheme==='light')await shot(page,`teammate-thread-${w}-${scheme}`);

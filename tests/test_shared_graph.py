@@ -2663,6 +2663,23 @@ class SharedGraph(unittest.TestCase):
             section = self.mem.team_section(db, entry)
         self.assertEqual(len(section['timeline']), 1)  # the same fact from two teammates, once
 
+    def test_a_line_about_a_thread_the_timeline_shows_is_left_to_the_thread_which_has_its_newest_message_start(self):
+        self.add(self.own, mail('work', 1, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Rescheduling', 'Can we move it?', 3, 't-r'),
+                 mail('work', 2, '"Lee Park" <lee@client.example>', 'own1@acme.example', 'Re: Rescheduling', 'November 25\n\n  works.', 2, 't-r'))
+        self.judge(self.own, ('work-1', 'client', 'Olive and Lee agreed to reschedule'), ('work-2', 'client', 'Olive and Lee agreed to reschedule'))
+        self.rounds()
+        person = next(json.loads(r['body']) for r in self.team(self.mem) if r['kind'] == 'person')
+        self.assertEqual(person['timeline'][0]['tag'], person['threads'][0])  # the line says which shared thread it is about
+        with self.mem.store.connect() as db:
+            entry = next(e for e in self.mem.team_graph(db) if e['kind'] == 'person')
+            section = self.mem.team_section(db, entry)
+            self.assertEqual(section['timeline'], [])  # the thread shows; its line doesn't, too
+            self.assertEqual((section['threads'][0]['from'], section['threads'][0]['preview']), ('Lee Park', 'November 25 works.'))
+            # A line from a Machine from before (no thread on it) about a thread shown: its subject still tells
+            old = {**entry, 'sources': [{**src, 'record': {**src['record'], 'timeline': [{'at': ago(2), 'line': 'Email: Re: Rescheduling'},
+                                                                                            {'at': ago(1), 'line': 'Lee signed.'}]}} for src in entry['sources']]}
+            self.assertEqual([x['line'] for x in self.mem.team_section(db, old)['timeline']], ['Lee signed.'])
+
     # -- team learnings from team conversations (fleet_learnings.py), and asks answered from what the Team Graph shares
     CLIENTS = [('Lee Park', 'lee', 'client.example'), ('Ana Ruiz', 'ana', 'buyer.example'), ('Tom Berg', 'tom', 'shop.example'),
                ('Kim Ito', 'kim', 'store.example')]

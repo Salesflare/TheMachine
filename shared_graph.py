@@ -819,14 +819,14 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                     tags.append(tag)
         return tags[:40]
 
+    thread_tag = lambda e: {'tag': t} if e in by_thread and (t := keyed(secret, 'thread|' + by_thread[e])) in out_threads else {}  # a line's thread
+
     def timeline(node_id, limit=TIMELINE):
         found = []
         for (event_id, at) in db.execute('SELECT event_id,at FROM graph_events WHERE node_id=? AND probable=0 ORDER BY at DESC LIMIT 400', (node_id,)):
             view = views.get(event_id)
-            if view == 'team' and lines.get(event_id):
-                found.append({'at': at, 'line': lines[event_id]})
-            elif view == 'team' and event_id in titles:
-                found.append({'at': at, 'line': titles[event_id]})  # its whole timeline, also what has no line
+            if view == 'team' and (lines.get(event_id) or event_id in titles):  # a title: its whole timeline, also what has no line
+                found.append({'at': at, 'line': lines.get(event_id) or titles[event_id], **thread_tag(event_id)})
             found = unique_lines(found)  # one line per fact: the review writes a thread's line on each of its messages
             if len(found) >= limit:
                 break
@@ -2752,8 +2752,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         for group in self._kept_groups():
             for chain in (self.meta('graph_chains:' + group['id'], {}) or {}).values():
                 went |= set((chain or {}).get('hashes') or ())
-        secret = self.graph_secret()
-        return {n for n in nodes if keyed(secret, 'record|' + n) in went} if went else None
+        return {n for n in nodes if keyed(secret, 'record|' + n) in went} if went and (secret := self.graph_secret()) else None
 
     def sharing(self):
         """Per Work Fleet: confirmed or waiting, whether this Machine's sharing is on, asked off or off, and this week's
@@ -2926,8 +2925,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                                                          'projects': [], 'stuck': 0, 'team': True}
             for src in e['sources']:  # whose board it is, and whether it is the whole team's or shared with chosen teammates
                 if not board.get('yours') and str(src['record'].get('board') or '').casefold() == board_name.casefold():
-                    who = _first_name(names.get((src['fleet'], src['member']), ''))
-                    if who and who not in board.setdefault('by', []):
+                    if (who := _first_name(names.get((src['fleet'], src['member']), ''))) and who not in board.setdefault('by', []):
                         board['by'].append(who)
                     if (seen := src['record'].get('board_seen')) == 'people' or (seen == 'team' and not board.get('seen')):
                         board['seen'] = seen
@@ -2976,13 +2974,15 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                     if on_thread(body, mine):
                         echoes += 1
                         continue
-                    found.append({'id': f"{s['fleet']}:{s['member']}:{tag}", 'subject': body.get('subject'), 'at': body.get('at'),
-                                  'messages': len(body.get('messages') or []), 'via': who, 'kind': body.get('kind') or 'email'})
+                    found.append({'id': f"{s['fleet']}:{s['member']}:{tag}", 'subject': body.get('subject'), 'at': body.get('at'), 'tag': tag,
+                                  'messages': len(body.get('messages') or []), 'via': who, 'kind': body.get('kind') or 'email',
+                                  'from': re.sub(r'\s*<[^>]*>\s*$', '', str((last := (body.get('messages') or [{}])[-1]).get('from') or '')).strip('" '), 'preview': ' '.join(str(last.get('body') or '').split())[:200]})
             if echoes and not found:
                 continue  # all this teammate has of it is the owner's own mail
             sources.append(s)
             threads += found
-            lines += [{**x, 'via': who} for x in s['record'].get('timeline') or []]
+            lines += [{**x, 'via': who} for x in s['record'].get('timeline') or [] if x.get('tag') not in {f['tag'] for f in found}  # a thread shown: not its line
+                      and not any(str(x.get('line') or '').casefold().endswith(': ' + str(f['subject']).casefold()) for f in found if f['subject'])]
         lines.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         threads.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         people = [{'member': s['member'], 'fleet': s['fleet'], 'name': _first_name(s['name']), 'left': s['left'],
