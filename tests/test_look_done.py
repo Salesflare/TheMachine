@@ -155,10 +155,15 @@ class LookDone(unittest.TestCase):
         with patch_everywhere(a, 'now', return_value='2026-11-11T12:00:00+00:00'):  # the morning before the deadline has come
             self.store.wake_snoozed()
         row = self.row()
-        self.assertEqual((row['status'], row.get('outcome'), row['due']), ('pending', None, '2026-11-12'))
+        self.assertEqual((row['status'], row['due']), ('pending', '2026-11-12'))
+        self.assertEqual(a.card(row).splitlines()[-1], 'Still waiting on: Sam to answer the scope question.')  # why it is back
         with self.store.connect() as db:
             self.assertEqual(a.waiting_count(db), 1)
             self.assertEqual(tuple(db.execute('SELECT status,reminder FROM deliveries').fetchone()), ('queued', 1))
+        # Their answer after all: the to-do is about that now
+        self.store.commit_page('work', {}, [ux.event(source='three', body='Scope stays the same.')])
+        self.store.suggest('answered', 'Answer Sam on the renewal', 'Sam says the scope stays.', [3], card_id=self.sid, match=True)
+        self.assertEqual((self.row()['status'], self.row().get('outcome')), ('pending', None))
 
     def test_waiting_without_a_deadline_returns_after_a_week_and_too_late_stays_a_to_do(self):
         self.assertEqual(wait_until(None, current=a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00'))[:10], '2026-11-16')

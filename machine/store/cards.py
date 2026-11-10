@@ -144,14 +144,18 @@ def wait_until(due, digest_at='08:30', current=None):
 
 def return_waiting(db):
     """To-dos the review left waiting on someone else (CardsStore.wait_on_others) whose time to chase has come: back as
-    open to-dos, with one notification each. Those waiting after a run (no `until`) stay. Returns how many."""
+    open to-dos that say whom they still wait on (outcome still_waiting, until a new message or a run), with one
+    notification each. Those waiting after a run (no `until`) stay. Returns how many."""
     stamp = now()
-    rows = db.execute("SELECT id,outcome FROM suggestions WHERE status='prepared' AND handled_hint IS NULL AND json_extract(outcome,'$.state')='waiting' "
-                      "AND json_extract(outcome,'$.until')<=?", (stamp,)).fetchall()
+    # `until` is read here, not in SQL: on a sealed Machine only the outcome's state is in the clear
+    rows = [row for row in db.execute("SELECT id,outcome FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
+                                      "AND json_extract(outcome,'$.state')='waiting'").fetchall()
+            if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp]
     for row in rows:
-        db.execute("UPDATE suggestions SET status='pending',outcome=NULL WHERE id=?", (row['id'],))
+        who = str(json.loads(row['outcome']).get('waiting_on') or '')[:200]
+        db.execute("UPDATE suggestions SET status='pending',outcome=? WHERE id=?", (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
-                   ('update:' + uuid.uuid4().hex, row['id'], 'update', 'Brought back: still waiting on ' + str(json.loads(row['outcome']).get('waiting_on') or '')[:200],
+                   ('update:' + uuid.uuid4().hex, row['id'], 'update', 'Brought back: still waiting on ' + who,
                     'assistant', stamp))
         db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'queued',?) ON CONFLICT(suggestion_id) DO UPDATE SET "
                    "status=CASE WHEN status IN ('sending') THEN status ELSE 'queued' END,reminder=1,error=NULL,"
@@ -610,7 +614,8 @@ class CardsStore:
         # A title the owner gave (a rename) stays: the review's goes to title_suggested. On their own card, their due date stays.
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
-                   'early=?,outcome=CASE WHEN status=? THEN outcome ELSE NULL END,snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
+                   "early=?,outcome=CASE WHEN status=? AND coalesce(json_extract(outcome,'$.state'),'')!='still_waiting' THEN outcome ELSE NULL END,"
+                   'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
                    'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
                    (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
                     deliver_after, int(urgent or bool(card['urgent'])), due, status, int(bool(ahead)), status, sid))

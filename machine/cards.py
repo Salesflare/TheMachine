@@ -291,6 +291,13 @@ def card(row):
     # One status line: where it stands and what's left for the owner. A later sign that it's
     # handled replaces the result's own line; a result that found it already done needs no hint.
     outcome = {}
+    if row['status'] == 'pending' and row.get('outcome'):  # back by itself after waiting on someone (return_waiting)
+        try:
+            still = json.loads(row['outcome'])
+            if still.get('state') == 'still_waiting' and still.get('waiting_on'):
+                status = t('Still waiting on: {}', sentence(still['waiting_on']))
+        except (ValueError, TypeError, AttributeError):
+            pass
     if row['status'] == 'prepared' and row.get('outcome'):
         try:
             outcome = json.loads(row['outcome'])
