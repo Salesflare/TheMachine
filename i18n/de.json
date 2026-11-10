@@ -146,7 +146,6 @@
  "A teammate": "Ein Teammitglied",
  "A teammate uses it too": "Ein Teammitglied nutzt sie auch",
  "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.": "Die Machine eines Teammitglieds zeigt ihre Schlüssel in The Machine Network nicht mehr; nichts wurde gesendet. Versuch es später erneut.",
- "A template’s words stay as they are": "Die Worte einer Vorlage bleiben, wie sie sind",
  "A to-do can carry up to {} files.": "Eine Aufgabe kann bis zu {} Dateien enthalten.",
  "A tool connection failed.": "Eine Tool-Verbindung ist fehlgeschlagen.",
  "A transcript can be up to {} characters": "Ein Transkript kann bis zu {} Zeichen lang sein",
@@ -557,6 +556,7 @@
  "Back to the rule for everyone": "Zurück zur Regel für alle",
  "Back to the rule for everyone.": "Zurück zur Regel für alle.",
  "Back to the suggested title": "Zurück zum vorgeschlagenen Titel",
+ "Back to the template": "Zurück zur Vorlage",
  "Back to the to-do": "Zurück zur Aufgabe",
  "Back to {}": "Zurück zu {}",
  "Back {}": "Zurück {}",
@@ -1423,9 +1423,12 @@
  "Find a person, company or project": "Person, Firma oder Projekt finden",
  "Find a skill": "Skill finden",
  "Find a to-do": "Aufgabe finden",
+ "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.": "Finde eindeutigen Spam von unbekannten Absendern seit dem letzten Lauf: kalte Verkaufsangebote, Betrug, Phishing und gefälschte Rechnungen. Lass Newsletter, die ich abonniert habe, Belege und echte Menschen weg. Lege sie in eine Aufgabe, in der ich für jede Spam oder Kein Spam wähle.",
  "Find in sent mail": "In gesendeter Mail suchen",
+ "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.": "Finde meine engen Kontakte, die heute Geburtstag haben. Schreib für jede Person einen kurzen Glückwunsch in ihrer Sprache, dort, wo ich meist mit ihr schreibe, zum Senden durch mich.",
  "Find my skills": "Meine Skills finden",
  "Find someone or a project": "Person oder Projekt finden",
+ "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.": "Finde die Newsletter und Mails von Mailinglisten, die seit dem letzten Lauf gekommen sind, einen pro Absender. Lege sie in eine Aufgabe, in der ich für jeden Behalten oder Abmelden wähle.",
  "Findable by": "Auffindbar für",
  "Finding the accounts with recent emails and meetings…": "Accounts mit aktuellen E-Mails und Meetings werden gesucht…",
  "Finding your most active conversations: {} of {} checked": "Deine aktivsten Unterhaltungen werden gesucht: {} von {} geprüft",
@@ -1543,6 +1546,10 @@
  "Found in your Outlook sent mail": "In deinen gesendeten Outlook-Mails gefunden",
  "Found in your mail. Whose is each one?": "In deinen Mails gefunden. Wem gehört welche?",
  "Found {} at {}": "{} gefunden in {}",
+ "Found {} newsletters.": {
+  "one": "{} Newsletter gefunden.",
+  "other": "{} Newsletter gefunden."
+ },
  "Found {} to-dos. Reading on.": {
   "one": "{} Aufgabe gefunden. Ich lese weiter.",
   "other": "{} Aufgaben gefunden. Ich lese weiter."
@@ -4911,6 +4918,7 @@
  "That reset was already used.": "Dieser Reset wurde schon verwendet.",
  "That result changed. Use its current buttons.": "Dieses Ergebnis hat sich geändert. Nutze seine aktuellen Schaltflächen.",
  "That routine is gone": "Diese Routine gibt es nicht mehr",
+ "That routine isn’t from a template": "Diese Routine stammt nicht aus einer Vorlage",
  "That sample couldn’t play.": "Die Hörprobe ließ sich nicht abspielen.",
  "That screenshot can’t be sent. Try a smaller PNG or JPEG.": "Dieser Screenshot kann nicht gesendet werden. Versuch ein kleineres PNG oder JPEG.",
  "That setup has ended; start it again": "Diese Einrichtung ist beendet; starte sie erneut",

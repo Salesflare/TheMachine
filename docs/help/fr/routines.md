@@ -15,7 +15,7 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 ## Modèles
 
-Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30. Ses mots restent tels quels.
+Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30. Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
 
 **Tri des newsletters** crée une tâche avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
 
@@ -26,6 +26,10 @@ Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà d
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
 
 Les anniversaires viennent de vos agendas (les anniversaires de Google et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph.
+
+Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam utilise un court passage quand il y a du courrier à lire). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
+
+Tri des newsletters et Tri du spam finissent toujours par la même tâche avec un choix par e-mail. Des Anniversaires modifiés donnent leur résultat et au plus un brouillon, pas une tâche par personne. **Revenir au modèle** dans **Modifier** remet ses mots.
 
 ## Ce que fait une routine
 

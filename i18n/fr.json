@@ -146,7 +146,6 @@
  "A teammate": "Un coéquipier",
  "A teammate uses it too": "Un coéquipier l’utilise aussi",
  "A teammate's Machine stopped showing its keys on The Machine Network; nothing was sent. Try again later.": "La Machine d’un coéquipier n’affiche plus ses clés sur The Machine Network ; rien n’a été envoyé. Réessayez plus tard.",
- "A template’s words stay as they are": "Les mots d’un modèle restent tels quels",
  "A to-do can carry up to {} files.": "Une tâche peut contenir jusqu’à {} fichiers.",
  "A tool connection failed.": "Une connexion d’outil a échoué.",
  "A transcript can be up to {} characters": "Une transcription peut compter jusqu’à {} caractères",
@@ -557,6 +556,7 @@
  "Back to the rule for everyone": "Retour à la règle pour tout le monde",
  "Back to the rule for everyone.": "Retour à la règle pour tous.",
  "Back to the suggested title": "Retour au titre proposé",
+ "Back to the template": "Revenir au modèle",
  "Back to the to-do": "Retour à la tâche",
  "Back to {}": "Retour à {}",
  "Back {}": "Retour {}",
@@ -1423,9 +1423,12 @@
  "Find a person, company or project": "Trouver une personne, une entreprise ou un projet",
  "Find a skill": "Trouver une compétence",
  "Find a to-do": "Trouver une tâche",
+ "Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where I pick Spam or Not spam for each.": "Trouve le spam évident d’expéditeurs inconnus depuis le dernier passage : démarchages commerciaux, arnaques, hameçonnage et fausses factures. Laisse de côté les newsletters auxquelles je suis abonné, les reçus et les vraies personnes. Mets-les dans une tâche où je choisis Spam ou Pas du spam pour chacun.",
  "Find in sent mail": "Chercher dans les e-mails envoyés",
+ "Find my close contacts who have a birthday today. For each one, write a short greeting in their language, where I usually talk with them, for me to send.": "Trouve mes proches qui fêtent leur anniversaire aujourd’hui. Pour chacun, prépare un court message dans sa langue, là où je lui écris d’habitude, que j’enverrai moi-même.",
  "Find my skills": "Trouver mes compétences",
  "Find someone or a project": "Trouver une personne ou un projet",
+ "Find the newsletters and mailing list emails that came in since the last run, one per sender. Put them in one to-do where I pick Keep or Unsubscribe for each.": "Trouve les newsletters et les e-mails de listes de diffusion arrivés depuis le dernier passage, un par expéditeur. Mets-les dans une tâche où je choisis Garder ou Se désabonner pour chacun.",
  "Findable by": "Trouvable par",
  "Finding the accounts with recent emails and meetings…": "Recherche des comptes avec des e-mails et réunions récents…",
  "Finding your most active conversations: {} of {} checked": "Recherche de vos conversations les plus actives : {} sur {} vérifiées",
@@ -1543,6 +1546,10 @@
  "Found in your Outlook sent mail": "Trouvée dans vos e-mails envoyés Outlook",
  "Found in your mail. Whose is each one?": "Trouvées dans vos e-mails. À qui est chacune ?",
  "Found {} at {}": "{} trouvé dans {}",
+ "Found {} newsletters.": {
+  "one": "{} newsletter trouvée.",
+  "other": "{} newsletters trouvées."
+ },
  "Found {} to-dos. Reading on.": {
   "one": "{} tâche trouvée. Je continue à lire.",
   "other": "{} tâches trouvées. Je continue à lire."
@@ -4911,6 +4918,7 @@
  "That reset was already used.": "Cette réinitialisation a déjà été utilisée.",
  "That result changed. Use its current buttons.": "Ce résultat a changé. Utilisez ses boutons actuels.",
  "That routine is gone": "Cette routine n’existe plus",
+ "That routine isn’t from a template": "Cette routine ne vient pas d’un modèle",
  "That sample couldn’t play.": "Impossible de lire cet extrait.",
  "That screenshot can’t be sent. Try a smaller PNG or JPEG.": "Cette capture d’écran ne peut pas être envoyée. Essayez un PNG ou JPEG plus petit.",
  "That setup has ended; start it again": "Cette configuration est terminée ; recommencez-la",

@@ -13,11 +13,11 @@ keywords: routine, automation, scheduled, every week, every morning, report, sug
 
 Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ihr erster Lauf gibt ihr einen kurzen Namen.
 
-**Hinzufügen** macht zuerst einen Testlauf, damit du siehst, was sie liefert, bevor du sie behältst. Nichts wird gesendet oder gespeichert. Dann behält **Hinzufügen** sie in ihrem Rhythmus, **Ändern** probiert andere Worte und **Abbrechen** verwirft sie.
+**Hinzufügen** macht zuerst einen Testlauf, damit du siehst, was sie liefert, bevor du sie behältst. Nichts wird gesendet oder gespeichert. Dann behält **Hinzufügen** sie in ihrem Rhythmus, **Ändern** probiert andere Worte oder einen neuen Namen und **Abbrechen** verwirft sie.
 
 ## Vorlagen
 
-Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30. Ihre Worte bleiben, wie sie sind.
+Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30. Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
 
 **Newsletter aufräumen** macht ein To-do mit den Newslettern des letzten Tages, jeweils mit **Behalten** oder **Abmelden**. Abmelden nutzt den Ein-Klick-Link der Liste oder ihre Abmelde-Mail von deiner Adresse, wenn Senden an ist. Sonst zeigt es **Abmeldeseite öffnen**.
 
@@ -28,6 +28,10 @@ Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Abse
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
 
 Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph.
+
+Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
+
+Newsletter aufräumen und Spam aufräumen enden weiter im selben To-do mit einer Wahl pro Mail. Geänderte Geburtstage geben ihr Ergebnis und höchstens einen Entwurf, kein To-do pro Person. **Zurück zur Vorlage** in **Bearbeiten** setzt ihre Worte zurück.
 
 ## Was eine Routine tut
 

@@ -274,6 +274,27 @@ class Runs(unittest.TestCase):
         with self.store.connect() as db:
             self.assertFalse(rt.needs_name(rt.get(db, rid)))
 
+    def test_change_names_a_new_one_on_trial_and_its_words_never_rename_it(self):
+        tr = lambda **args: self.app.action('routine_try', args, owner_dashboard=True)  # noqa: E731 (act's own name)
+        rid = tr(words='every Monday at 9, sum up my open deals')['made']
+
+        def done():  # its test run ended: the next Change may run
+            with self.store.connect() as db:
+                db.execute("UPDATE routine_runs SET state='ready',result='x'")
+        done()
+        tr(id=rid, words='Sum up my open deals', name='  Deals   digest ')
+        done()
+        r = self.app.routines_view()['trying'][0]
+        self.assertEqual(r['name'], 'Deals digest')
+        tr(id=rid, words='Sum up my won deals')  # new words keep the owner's name
+        done()
+        with self.store.connect() as db:
+            row = rt.get(db, rid, ('trying',))
+            self.assertEqual(row['name'], 'Deals digest')
+            self.assertFalse(rt.needs_name(row))
+        with self.assertRaisesRegex(ValueError, 'Give it a name'):
+            tr(id=rid, words='Sum up my won deals', name=' ')
+
     def tables(self):
         """Every row outside the routines' own tables: a test run must leave them as they were. data_stamps only counts
         writes to tables the to-dos' views read (routines among them), for their cache."""
