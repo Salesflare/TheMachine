@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import graph_show
 import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.app import claim_reply
@@ -804,7 +805,7 @@ class GraphActionsApp:
                 graph.rename(db, node_id, fields['name'], now())
             # On their page at once (a role by graph.set_role, the rest here); the rest of the Graph follows in the
             # worker. A whole build before the answer held a Save some 16 s on a big Graph.
-            graph.show_person_edit(db, node_id, set(fields))
+            graph_show.show_person_edit(db, node_id, set(fields))
         self.graph_later()
         return done
 

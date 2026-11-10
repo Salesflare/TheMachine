@@ -264,9 +264,9 @@ OTHER_WRITERS = {
     'fleet_rules': {'fleet_requests.py'},
     'graph_events': {'graph_publish.py'},  # a build's publish, as the changes only (graph.py is at its line budget)
     'graph_imports': {'crm_import.py'},
-    'graph_links': {'graph_publish.py'},
+    'graph_links': {'graph_publish.py', 'graph_show.py'},  # an edit on its page before the next build (graph.py is at its line budget)
     'graph_names': {'crm.py', 'crm_import.py'},
-    'graph_nodes': {'crm.py', 'crm_fields.py', 'graph_publish.py'},
+    'graph_nodes': {'crm.py', 'crm_fields.py', 'graph_publish.py', 'graph_show.py'},
     'graph_offers': {'assistant.py'},
     'graph_org_asks': {'assistant.py'},
     'graph_role_asks': {'assistant.py'},
