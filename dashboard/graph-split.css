@@ -3,7 +3,7 @@
 #split-form{display:flex;flex-direction:column;gap:14px}#split-form .snooze-heading{margin:0}#split-form>.ed-note{margin:-6px 0 0}
 @media(max-width:560px){#split-dialog{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}}
 /*@lazy*/
-/* Split up (graph-split.js spDraw): each proposed project a box with its name, its line and its items, each item with where it goes */
+/* Split up (graph-split.js splDraw): each proposed project a box with its name, its line and its items, each item with where it goes */
 .psplit-parts{display:flex;flex-direction:column;gap:12px}
 .psplit-part{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:0;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-align:left}
 .psplit-part .ed-field{display:grid;gap:4px;margin:0}.psplit-part .ed-field input{width:100%;box-sizing:border-box;font-weight:var(--fw-medium,500)}

@@ -50,7 +50,7 @@ try{
   // one at a time: the next is asked for once the one before is in (it's held, so none other comes)
   for(const until=Date.now()+20000;!asked.length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
   await new Promise(r=>setTimeout(r,1500));assert.equal(asked.length,1,'one part at a time');
-  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof spOpen),'undefined'.repeat(7));
+  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof splOpen),'undefined'.repeat(7));
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
   await p.locator('#suggestions .all-clear .poke').click();

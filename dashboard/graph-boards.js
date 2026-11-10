@@ -350,6 +350,4 @@ document.addEventListener('click',async e=>{const t=e.target.closest('[data-proj
  catch(err){errCaught(err);t.disabled=false;toast(err.message,true)}},true);
 // A tile from the keyboard: Enter opens it, E edits it
 $('#people-view').addEventListener('keydown',e=>{const t=e.target.closest?.('.proj-board .tile:not(.team)');if(t&&e.target===t&&(e.key==='e'||e.key==='E')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();pjOpen({node:t.dataset.node})}});
-// Split up's dialog loads when first used (graph-split.js, dashboard_parts.LAZY 'split')
-document.addEventListener('click',e=>{const b=e.target.closest('[data-split-undo]');if(b){e.preventDefault();lazyRun('split',()=>spUndo(b,b.dataset.splitUndo));return}
- const o=e.target.closest('[data-proj-split]');if(!o)return;e.preventDefault();o.closest('details')?.removeAttribute('open');const name=$('#people-view .graph-detail h3')?.textContent||'';lazyRun('split',()=>spOpen(o.dataset.projSplit,name))});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-proj-split]');if(b)lazyRun('split',()=>splOpen(b))});
