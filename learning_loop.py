@@ -313,6 +313,14 @@ def apply(db, run_id, voice_check, link=None):
 
 
 NAMED = 'facts_named'  # learning_state: the one-time pass that ties facts to the record they name ran
+ABOUT_LINES = {NAMED: 'Facts that name one person, organization or project: {}',  # Recent changes, per one-time pass
+               'facts_tied': 'Facts tied to who they are about: {}'}  # fact_ties.py
+
+
+def state_set(db, key, value):
+    """Keep one value in learning_state (fact_ties.py: its one-time pass ran, or how often it failed)."""
+    ensure(db)
+    db.execute('INSERT INTO learning_state(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', (key, value))
 
 
 def named_done(db):
@@ -347,7 +355,7 @@ def undo(db, change_id, unlink=None):
     if row['kind'] == 'source':  # a fix where the wrong thing came from (corrections.py)
         import corrections
         done.update(corrections.undo(db, row))
-    elif row['kind'] == 'about':  # the one-time pass that tied facts to the record they name: those links go
+    elif row['kind'] == 'about':  # a one-time pass that tied facts to records (by name, or fact_ties.py): those links go
         unlink(db, json.loads(row['target']))
     elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
         import first_learned
@@ -403,5 +411,5 @@ def recent(db, limit=RECENT):
         out.append({'id': r['id'], 'at': r['at'], 'kind': r['kind'], 'channel': r['target'] if r['kind'] == 'voice' else None,
                     'text': r['after'], 'before': (before or {}).get('text'), 'why': r['why'], 'undone': r['status'] == 'undone',
                     **({'line': json.loads(r['target']).get('line')} if r['kind'] == 'source' else {}),
-                    **({'line': ['Facts that name one person, organization or project: {}', int(r['after'])]} if r['kind'] == 'about' else {})})
+                    **({'line': [ABOUT_LINES.get(r['run_id'], ABOUT_LINES[NAMED]), int(r['after'])]} if r['kind'] == 'about' else {})})
     return out

@@ -4,12 +4,15 @@ start and the restart that waits for it, and stopping them all. Moved out of ass
 assistant.App (APP_MIXINS)."""
 import datetime as dt
 import json
+import threading
 import time
 
 import chat_files
 import embeddings
 import enrichment
 import error_feed
+import fact_ties
+import help_chat
 import help_topics
 import linkedin_connections
 from machine.config import LOG
@@ -229,6 +232,47 @@ class WorkersApp:
             LOG.warning('error reports error=%s', type(error).__name__)
             return 0
 
+    def fact_ties_step(self):
+        """Start the one-time pass that ties loose facts to who they are about, when it is due and the budget allows; it
+        runs in its own thread. True when started."""
+        running = getattr(self, 'fact_ties_thread', None)
+        if running and running.is_alive():
+            return False
+        with self.store.connect() as db:
+            if not fact_ties.due(db):
+                return False
+        if self.background_pause(job='fact-ties') or not self.background_spaced():
+            return False
+        self.background_started()
+        self.fact_ties_thread = threading.Thread(target=self.fact_ties_run, daemon=True, name='fact-ties')
+        self.fact_ties_thread.start()
+        return True
+
+    def fact_ties_run(self, ask=None):
+        """The pass: what to ask in one short read, one small turn per batch outside any connection, then written together."""
+        ask = ask or getattr(self, 'fact_ties_model', None)  # tests and the sandbox: (prompt) -> reply
+        try:
+            with self.store.connect() as db:
+                state = fact_ties.prepare(db, self.store.own_config())
+            model = None if ask else background_model(self.config)
+            replies = []
+            for batch in state['batches']:
+                try:
+                    replies.append(ask(batch['prompt']) if ask else help_chat.openclaw_model_run(
+                        self.config, batch['prompt'], '/'.join(model) if model else None, timeout=fact_ties.TIMEOUT))
+                except help_chat.Unavailable:
+                    replies.append(None)
+                if replies[-1] is None:
+                    break
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                found = fact_ties.conclude(db, state, replies)
+        except Exception as error:  # noqa: BLE001 - a pass that fails is tried again later; nothing depends on it
+            LOG.info('fact ties error=%s', type(error).__name__)
+            return {'error': type(error).__name__}
+        LOG.info('fact ties status=%s asked=%s linked=%s', found.get('error') or 'ok', state['asked'], found.get('linked', 0))
+        return found
+
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
         answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
@@ -238,6 +282,7 @@ class WorkersApp:
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)
+            self.fact_ties_step()  # one time, after the name pass: loose facts tied to who they are about (fact_ties.py)
             self.bring_in_step({'model': background_model})  # once a day at most: new lines in the owner's OpenClaw notes worth keeping (bring_in.py)
             self.missed_work_step({'owned': calendar_owned, 'bulk': bulk_kind, 'model': background_model})  # once a week: how many reviewed signals without a to-do needed one (missed_work.py)
             if self.fleet:  # learnings go to the team over the Network: without it there is nobody to offer them to

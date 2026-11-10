@@ -1377,6 +1377,7 @@
  "Facts": "Fatti",
  "Facts linked": "Fatti collegati",
  "Facts that name one person, organization or project: {}": "Fatti che nominano una persona, un’organizzazione o un progetto: {}",
+ "Facts tied to who they are about: {}": "Fatti collegati a chi riguardano: {}",
  "Failed": "Non riuscito",
  "Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.": "Pagamenti non riusciti, contestazioni, disdette e nuovi abbonamenti. Solo lettura, non cambia mai nulla in Stripe.",
  "Failed payments, disputes, churn and big new subscriptions.": "Pagamenti non riusciti, contestazioni, abbandoni e grandi nuovi abbonamenti.",

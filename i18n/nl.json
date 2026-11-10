@@ -1377,6 +1377,7 @@
  "Facts": "Feiten",
  "Facts linked": "Feiten gekoppeld",
  "Facts that name one person, organization or project: {}": "Feiten die één persoon, organisatie of project noemen: {}",
+ "Facts tied to who they are about: {}": "Feiten gekoppeld aan over wie ze gaan: {}",
  "Failed": "Mislukt",
  "Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.": "Mislukte betalingen, geschillen, opzeggingen en nieuwe abonnementen. Leest alleen, verandert nooit iets in Stripe.",
  "Failed payments, disputes, churn and big new subscriptions.": "Mislukte betalingen, geschillen, opzeggingen en grote nieuwe abonnementen.",
