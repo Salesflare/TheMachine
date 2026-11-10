@@ -15,6 +15,7 @@ import browser_viewer
 import codex_signin
 import fleet
 import gbrain
+import locale_prefs
 from machine.browser import browser_link
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
@@ -125,13 +126,14 @@ class ConnectApp:
                     tabs = []
                 under_way = [t for t in tabs if any(browser_login.site(at(t).hostname) == h or browser_login.site(at(t).hostname).endswith('.' + h) for h in hosts)
                              and onboarding.SIGNIN_STEP.search(at(t).path)]
+                url = signin_url(site, self.config)
                 if under_way and args.get('fresh') is True:  # Try again after the site stopped it: its sign-in page afresh
-                    browser_login.browser_cdp.navigate(base, under_way[0]['id'], CONNECT_SIGNIN[site], timeout=20)
-                tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, CONNECT_SIGNIN[site])
+                    browser_login.browser_cdp.navigate(base, under_way[0]['id'], url, timeout=20)
+                tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, url)
             except (browser_login.browser_cdp.CdpError, OSError, IndexError, TypeError, AttributeError, KeyError):
                 raise ValueError('I couldn’t open the sign-in page in the browser') from None
             try:
-                browser_viewer.focus(CONNECT_SIGNIN[site], base, target=tab)
+                browser_viewer.focus(url, base, target=tab)
             except (ValueError, OSError):
                 pass
             return {'opened': True, 'view': browser_link(self.config)}
@@ -311,6 +313,17 @@ class ConnectApp:
 
 # LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
 CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
+# LinkedIn's sign-in page follows the server's country (a server abroad showed it, and its captcha, in that country's
+# language), not the browser's languages. Its `_l` parameter sets the page's language; it is undocumented, and LinkedIn
+# ignores a value it does not know. Only locales checked to change the page; English needs none.
+LINKEDIN_LOCALES = {'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR'}
+
+
+def signin_url(site, config=None):
+    """The site's sign-in page, in the owner's language where the site takes it from the address."""
+    url = CONNECT_SIGNIN[site]
+    locale = LINKEDIN_LOCALES.get(locale_prefs.language_of(config).lower()) if site == 'linkedin' else None
+    return f'{url}?_l={locale}' if locale else url
 
 
 CONNECT_SIGNIN_WAIT = 600

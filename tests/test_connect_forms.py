@@ -264,6 +264,24 @@ class FormTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.app.action('connect_site_signin', {'site': 'linkedin'})  # not from the dashboard
 
+    def test_linkedins_sign_in_page_opens_in_the_owners_language(self):
+        # LinkedIn picks its sign-in page's language from the server's country; its _l parameter sets the owner's
+        from machine.app import connect
+        for language, locale, expected in (('nl', None, '?_l=nl_NL'), ('de', None, '?_l=de_DE'), ('fr', None, '?_l=fr_FR'),
+                                           ('es', None, '?_l=es_ES'), ('it', None, '?_l=it_IT'), ('pt-BR', None, '?_l=pt_BR'),
+                                           ('en', None, ''), (None, None, ''), (None, 'nl-BE', '?_l=nl_NL'),  # signup's guess
+                                           ('en', 'nl-BE', ''), ('xx', None, '')):
+            config = {k: v for k, v in (('language', language), ('locale', locale)) if v}
+            self.assertEqual(connect.signin_url('linkedin', config), 'https://www.linkedin.com/login' + expected, (language, locale))
+            self.assertEqual(connect.signin_url('x', config), 'https://x.com/i/flow/login')  # X's page has no such address
+        self.app.config['language'] = 'nl'
+        cdp = assistant.browser_login.browser_cdp
+        with patch.object(cdp, '_http', return_value=[]), patch.object(cdp, 'open_tab', return_value='t1') as tab, \
+                patch.object(assistant.browser_viewer, 'focus') as focus:
+            self.act('connect_site_signin', {'site': 'linkedin'})
+        self.assertEqual(tab.call_args.args[1], 'https://www.linkedin.com/login?_l=nl_NL')
+        self.assertEqual(focus.call_args.args[0], 'https://www.linkedin.com/login?_l=nl_NL')
+
     def test_a_sign_in_under_way_is_brought_back_not_started_over(self):
         # Pressing Sign in again while LinkedIn waits for the code it emailed: that tab, as it is. Try again after
         # LinkedIn stopped it (fresh): its sign-in page again, in that same tab.
