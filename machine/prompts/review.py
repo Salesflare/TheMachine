@@ -56,6 +56,15 @@ FIRST_LOOK_READ_RULE = ('This is the owner\'s first look at their past week. In 
                         'suggest as soon as it is checked, then read on.\n')
 
 
+# Every other batch: list mail (an unsubscribe header) a service sends about the owner's own dealings with it is sorted
+# as notifications, so the Newsletter cleanup routine (mail_cleanup.newsletters) never offers to unsubscribe from a
+# receipt. Ids only, in the finish_analysis the review makes anyway: no extra turn.
+LIST_READ_RULE = ('List mail in this batch (list: true, or list_unsubscribe in its metadata): in finish_analysis add read '
+                  '{"notifications": [event_ids]} for each that is about the owner\'s own dealings with a service, judged by what '
+                  'it is, never by words in it (a receipt, an order or payment, an invoice, a transfer, their account or a '
+                  'service\'s status), not a newsletter or promotion. Newsletter cleanup leaves those out.')
+
+
 def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill='', first_look=False, batch_facts=''):
     """The signal review's turn message, ordered stable-first so the model's prompt cache reuses it from one review to
     the next: first the instructions, the same for every review; then what changes slowly (the accounts, the owner's
@@ -93,7 +102,7 @@ What the owner did with suggestions in the last 30 days. Learn from it: avoid ki
 
 Open promises (the owner's and those made to them):
 {promises}''' if promises else '') + ('\n\n' + batch_facts if batch_facts else ''))
-    this_run = (f'\n\nThis turn: review run {run_id}.' + ('\n' + FIRST_LOOK_READ_RULE.rstrip('\n') if first_look else '') + (f'''
+    this_run = (f'\n\nThis turn: review run {run_id}.' + ('\n' + (FIRST_LOOK_READ_RULE.rstrip('\n') if first_look else LIST_READ_RULE)) + (f'''
 
 Boards to sort, before anything else (separate from the batch: these projects need no new message). The owner put these projects on a board and their tiles say "Sorting" until you place them. For each, read its messages with events (its event_ids below, all accounts) and judge where it stands now from what they mean between these people, never their wording. Place it with graph {{"project": its node_id, "board", "stage", "event_id": the message that shows it, "reason": one short clause that reads after "Moved to <stage>:" (like "Demo held on Thu, they asked for pricing"), "next": the owner's next step in a few words}}. When nothing has moved it past the first stage, place it in the first stage the same way, with the message and why. Only when none of its messages shows where it stands, add it to finish_analysis sorted ([{{"project": its node_id, "why": a few words}}]). finish_analysis refuses until each one is placed or in sorted.
 {sorting}''' if sorting else '') + (f'''

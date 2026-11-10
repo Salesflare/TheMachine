@@ -14,7 +14,9 @@ routine_cleanup is the owner's confirm on that to-do: their picks, all at once. 
 of its own, each item with what this Machine may already do and never with more permission:
 - unsubscribe: the list's one-click link (RFC 8058: an HTTPS POST to a public address, pinned, no redirects), else its
   unsubscribe address from the owner's mailbox when sending is on for it (a send whose outcome is unknown is never sent
-  again), else the list's page for the owner to open;
+  again), else the list's page for the owner to open. Mail a list relayed (a Google Group like info@) uses only its
+  original sender's own ways, never the list's: that would take the owner, or the team, off the list
+  (mail_cleanup.relay_ways);
 - spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify. Spam cleanup is only
   offered, and only reads mail, in accounts it may do that in (cleanup_mark_accounts): hosted Gmail reads only, so it
   gets none, never a row the owner would have to mark elsewhere.
@@ -44,7 +46,8 @@ from machine.sources.gmail import Gmail
 from sources import credential, gog_read
 
 LOG = logging.getLogger('personal-assistant')
-HEADERS = ['List-Unsubscribe', 'List-Unsubscribe-Post']
+# The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group) is never unsubscribed from
+HEADERS = ['List-Unsubscribe', 'List-Unsubscribe-Post', 'From', 'Reply-To', 'List-Id', 'X-Original-From', 'X-Original-Sender']
 POST_TIMEOUT = 15
 MARK_KEEP_S = 600  # how long the Routines page keeps which accounts may move mail to spam
 
@@ -272,6 +275,8 @@ class MailCleanupApp:
             except Exception as error:
                 LOG.info('newsletter headers unread error=%s', type(error).__name__)
                 continue
+            if item.get('via'):  # came through a list: only its original sender's own ways, never the list's
+                ways = mail_cleanup.relay_ways(ways, item['address'], item['via'])
             if 'mailto' in ways and account['id'] not in sends:
                 sends[account['id']] = self.cleanup_can_send(account)
             how = 'one_click' if 'one_click' in ways else 'mailto' if 'mailto' in ways and sends.get(account['id']) else 'page' if 'link' in ways else None
@@ -282,7 +287,7 @@ class MailCleanupApp:
     def cleanup_headers(self, account, message_id):
         msg = Gmail(self.config, account).get('messages/' + str(message_id), {'format': 'metadata', 'metadataHeaders': HEADERS})
         headers = {str(h.get('name') or '').lower(): str(h.get('value') or '') for h in (msg.get('payload') or {}).get('headers') or ()}
-        return mail_cleanup.unsubscribe_ways(headers.get('list-unsubscribe'), headers.get('list-unsubscribe-post'))
+        return mail_cleanup.unsubscribe_ways_of(headers)
 
     def cleanup_can_send(self, account):
         try:
@@ -416,6 +421,8 @@ class MailCleanupApp:
     def cleanup_unsubscribe(self, account, item):
         """(state, how, link): one-click, else an unsubscribe email when sending is on, else the page for the owner."""
         ways = self.cleanup_headers(account, item['message'])
+        if item.get('via'):  # came through a list (a Google Group): never the list's own unsubscribe
+            ways = mail_cleanup.relay_ways(ways, item['address'], item['via'])
         if ways.get('one_click') and one_click(ways['one_click']):
             return 'done', 'one_click', None
         if ways.get('mailto') and self.cleanup_can_send(account):

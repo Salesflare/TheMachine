@@ -137,6 +137,8 @@ def title_view(row, metadata):
             'occurred_at': row['occurred_at'], 'title': clamp(row['title']), 'from': clamp(str(metadata.get('from') or ''), 200),
             'snippet': clamp(re.sub(r'\s+', ' ', row.get('body') or '').strip(), BRIEF_SNIPPET_CHARS),
             'title_only': 'bulk mail: judge it from this line; read it with events when it may matter'}
+    if metadata.get('list_unsubscribe') or metadata.get('list_id'):
+        view['list'] = True  # list mail: the review sorts it (LIST_READ_RULE)
     if 'version' in row:
         view['version'] = row['version']
     return view
