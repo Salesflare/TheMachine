@@ -18,6 +18,7 @@ import urllib.request
 
 import ai_access
 import browser_viewer
+import calendar_writes
 import chat_files
 import crm
 import crm_fields
@@ -534,14 +535,15 @@ def make_handler(app):
             args = urllib.parse.parse_qs(path.query)
             try:
                 owner = app.owner_emails()
-                writable = writable_calendars(app.config)
+                writable = writable_calendars(app.config, wait=False)  # never gog or Graph inside the ask
                 self.output(200, {'meetings': app.store.calendar([a['id'] for a in app.config['accounts']],
                                                                  args.get('from', [''])[0], args.get('to', [''])[0], owner,
                                                                  {c['id'] for c in writable},
                                                                  {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))}),
-                                  'calendars': writable, 'starts': app.calendar_starts()})  # where its meetings begin: the line at the edge
+                                  'calendars': writable, 'starts': app.calendar_starts(),  # where its meetings begin: the line at the edge
+                                  **({'checking': True} if calendar_writes.checking() else {})})  # ask again for the Edit buttons
             except (ValueError, sqlite3.OperationalError):
-                self.output(400, {'error': 'Ask for a window of at most 15 days'})
+                self.output(400, {'error': 'Ask for a window of at most 43 days'})
 
         def get_api_routines(self, path):
             # the Routines page: each routine with its last runs (routines_app.py)
@@ -551,7 +553,7 @@ def make_handler(app):
             # one meeting as the Calendar shows it, opened from anywhere in the dashboard
             args = urllib.parse.parse_qs(path.query)
             try:
-                writable = writable_calendars(app.config)
+                writable = writable_calendars(app.config, wait=False)
                 self.output(200, {'meeting': app.store.meeting([a['id'] for a in app.config['accounts']], int(args.get('event', [''])[0]),
                                                                app.owner_emails(), {c['id'] for c in writable},
                                                                {a['id']: n for a in app.config['accounts'] if (n := calendar_account_owner(a))})})

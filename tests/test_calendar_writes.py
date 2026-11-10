@@ -93,6 +93,55 @@ class WhichCalendars(unittest.TestCase):
             cw.GRANTS.clear()
             self.assertEqual([c['id'] for c in a.writable_calendars(CONFIG)], ['kid-cal'])
 
+    def test_the_calendar_page_never_checks_inside_its_ask(self):
+        # 2026-11-10 speed audit: each week's ask ran gog auth list (or the Graph check) inline, 43 asks at once, and
+        # again every minute after a failed check. Now the page answers from the last check; one runs in the background.
+        cw.GRANTS.clear();self.addCleanup(cw.GRANTS.clear)
+        asks, later, t = [], [], [0]
+        def scopes(config, credential, account):
+            asks.append(account['id'])
+            return {'https://www.googleapis.com/auth/calendar'}
+        page = lambda: [c['id'] for c in cw.calendars(CONFIG, lambda account: cw.may_write(CONFIG, None, account, scopes, clock=lambda: t[0], wait=False))]
+        with patch.object(cw, '_later', later.append):
+            for _ in range(43):
+                self.assertEqual(page(), [], 'no answer yet: no change offered, and nothing asked inline')
+            self.assertEqual(asks, [])
+            self.assertEqual(len(later), 2, 'one background check per sign-in, however many asks')
+            self.assertTrue(cw.checking())
+            for work in later:
+                work()
+            self.assertFalse(cw.checking())
+            self.assertEqual(sorted(asks), ['cal', 'kid-cal'])
+            self.assertEqual(page(), ['cal', 'kid-cal'])
+            self.assertEqual((len(asks), len(later)), (2, 2), 'the cached answer, no new check')
+            t[0] = 601  # gone stale: the old answer still shows while one new check runs behind it
+            self.assertEqual(page(), ['cal', 'kid-cal']);page()
+            self.assertEqual((len(asks), len(later)), (2, 4))
+            for work in later[2:]:
+                work()
+            self.assertEqual((len(asks), cw.checking()), (4, False))
+        def down(*x):
+            raise ValueError('no keyring')
+        cw.GRANTS.clear();later.clear()
+        with patch.object(cw, '_later', later.append):
+            cw.calendars(CONFIG, lambda account: cw.may_write(CONFIG, None, account, down, wait=False))
+            for work in later:
+                work()
+            self.assertEqual(cw.calendars(CONFIG, lambda account: cw.may_write(CONFIG, None, account, down, clock=lambda: 0, wait=False)), [])
+
+    def test_the_calendar_route_answers_without_the_check(self):
+        # The handler asks writable_calendars with wait=False: granted_scopes (gog, Graph) never runs in the request
+        import machine.web.handler as h
+        src = Path(h.__file__).read_text()
+        route = src[src.index('def get_api_calendar'):src.index('def get_api_routines')]
+        self.assertIn('writable_calendars(app.config, wait=False)', route)
+        self.assertNotIn('writable_calendars(app.config)', route)
+        cw.GRANTS.clear();self.addCleanup(cw.GRANTS.clear)
+        slow = []
+        with patch.object(a.next_actions, 'granted_scopes', lambda *x: slow.append(1) or set()), patch.object(cw, '_later', lambda work: None):
+            self.assertEqual(a.writable_calendars(CONFIG, wait=False), [])
+        self.assertEqual(slow, [])
+
     def test_a_read_only_shared_calendar_is_refused_before_anything(self):
         with self.assertRaisesRegex(ValueError, 'can’t be changed'):
             cw.validate({**NEW, 'calendar': 'partner-cal'}, CONFIG)
