@@ -18,7 +18,7 @@ const cards=[
   people:who,project_node:project,project:project.name,source_line:'Source: email from Robin Example · Wed 28 Oct (+1 more)',source_url:'https://mail.example/x',
   outcome:JSON.stringify({state:'needs_you',needs:'check the reply and send it'}),
   next_actions:[{kind:'email',revision:'e1',label:'Send reply',to:['robin@example.com'],subject:'Re: listing',body:'Hi Robin,\n\nBoth listings are live.\n\nAlex',reply:true}]},
- {id:'b1b1b1b1b1b1b1b1',title:'Sam wants a call about the renewal',body:'Sam asks for a 30-minute call next week about the renewal terms and a bigger team plan. Their contract ends on November 15, so the call should be before then.',status:'pending',scope:'personal',created_at:ago(26),event_ids:[2],
+ {id:'b1b1b1b1b1b1b1b1',title:'Sam wants a call about the renewal',body:'Sam asks for a 30-minute call next week about the renewal terms and a bigger team plan. Their contract ends on November 15, so the call should be before then. They also want to know whether the onboarding sessions carry over to the bigger plan.',status:'pending',scope:'personal',created_at:ago(26),event_ids:[2],
   source_line:'Source: email from Sam · Tue 27 Oct'},
  {id:'c1c1c1c1c1c1c1c1',title:'Compare the three quotes',body:'Reading the quotes now.',status:'accepted',scope:'personal',origin:'owner',created_at:ago(1),event_ids:[4],preparation_status:'running'},
  {id:'d1d1d1d1d1d1d1d1',title:'Both listings are live; reply to Robin',body:'Both listings are live. The reply to Robin shares the guide, where the listing appears before the others in the comparison table.',status:'completed',scope:'work',created_at:ago(72),closed_at:ago(2),event_ids:[3],
@@ -69,7 +69,7 @@ try{
   assert.ok(await open.locator(':scope>.card-source .read-original').isVisible());assert.equal(await open.locator('.card-details .read-original').count(),0);
   await open.locator('.card-foot [data-details]').click();
   assert.equal(await open.locator('.card-foot [data-details]').getAttribute('aria-expanded'),'true');
-  // A long open body shows two lines and Show more
+  // A long open body shows two lines and Show more (test_clamp_fit_dashboard.mjs: only when it is really cut off)
   assert.equal(await pending.locator('.body').evaluate(e=>e.classList.contains('clamp')&&getComputedStyle(e).getPropertyValue('--lines').trim()),'2');
   assert.equal(await pending.locator('span.chip.scope').innerText(),'Personal');
   // Done: compact. State as a word with a dot, one line of body, the outcome in sight; the agent result, its files, your note

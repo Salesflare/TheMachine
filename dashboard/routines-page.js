@@ -18,7 +18,7 @@ const rtStepLine=r=>['get','check'].map(k=>r.steps?.[k]?html`<p class="rt-step">
 // Long ones fold like a to-do's text (todos-cards.js): a short preview, Show more for the rest
 const rtRows=s=>String(s||'').split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/56):1),0);
 function rtBody(r,inner,rows,always){const key='rt-'+r.id,fold=always||rows>3,open=expandedBodies.has(key);
- return html`<div class="rt-body${fold&&!open?html` clamp`:''}">${inner}</div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${t(open?'Show less':'Show more')}</button>`:''}`}
+ return html`<div class="rt-body${fold&&!open?html` clamp`:''}"${always?'':html` data-clamp="${key}"`}>${inner}</div>${fold?html`<button type="button" class="more" data-more="${key}" aria-expanded="${open}">${t(open?'Show less':'Show more')}</button>`:''}`}
 function rtCard(r){const [last,...older]=r.runs,paused=r.state==='paused',what=r.instructions!==r.name&&r.instructions;
  return html`<article class="rt${paused?html` paused`:''}" data-rt="${r.id}"><h3>${r.name}</h3><p class="rt-when">${rtWhen(r)}</p>${what?html`<p class="rt-what rt-short">${what}</p>`:''}${rtStepLine(r)}${rtBody(r,html`${last?rtRun(last):html`<p class="rt-why">${t('No result yet.')}</p>`}${older.length?html`<details class="rt-earlier"><summary>${t('Earlier')}</summary>${older.map(x=>rtRun(x))}</details>`:''}`,last?1+rtRows(last.result||last.why):1,paused&&rtRows(last?.result||last?.why)>1)}
   ${r.old_job?html`<div class="rt-old"><p>${t('Turn off the old OpenClaw job?')}</p><button type="button" class="ghost" data-rt-old="off">${t('Turn it off')}</button><button type="button" class="quiet" data-rt-old="keep">${t('Keep it')}</button></div>`:''}

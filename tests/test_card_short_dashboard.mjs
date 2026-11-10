@@ -13,7 +13,7 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const letter=['Hi Robin,','','For 25 seats on annual billing it is 29 a seat a month, so 8,700 for the year. Moving to 40 seats later keeps the same price per seat.','',
  'Onboarding is included from 10 seats: two live sessions for your team and a call with your admin.','','Would Thursday or Friday suit for a short call to walk through it?','','Best,','Alex'].join('\n');
-const summary='They want annual pricing for 25 seats, maybe 40 next year, and whether onboarding is included. They decide this month, and they asked twice already, so a short clear answer helps.';
+const summary='They want annual pricing for 25 seats, maybe 40 next year, and whether onboarding is included. They decide this month, and they asked twice already, so a short clear answer helps. Their finance team signs off on the first of the month, and the admin wants the onboarding dates before then.';
 const mail=(id,body)=>({kind:'email',revision:'r-'+id,label:'Send',to:['robin@example.invalid'],to_name:'Robin',subject:'Re: Pricing',body});
 const cards=[
  {id:'long1',title:'Reply to Robin about pricing',body:summary,status:'prepared',scope:'work',created_at:now,event_ids:[1],next_actions:[mail('long1',letter)]},
