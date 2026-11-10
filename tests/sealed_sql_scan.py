@@ -12,6 +12,8 @@ other strings of the same statement to tell which table a column belongs to. Wha
 import ast
 import re
 
+import message_seal
+
 SLOT = '\x00'  # where an f-string puts a value in
 JSON_CALL = re.compile(r'\bjson_(?:extract|each|tree|type|array_length)\s*\(', re.I)
 DIRECT = r'^\s*(?:(?:COALESCE|IFNULL|NULLIF)\s*\(\s*)?(?:(\w+)\.|\x00\.?)?(%s)\b(?!\s*\()'  # the column itself, not a call that already read a key of it
@@ -107,6 +109,8 @@ def reads(text, context, columns, tables):
         if not found:
             return 'key ?'
         name = found[2] or found[3]
+        if name == message_seal.SEALED_KEY:  # the sealed member itself: SQL sees that it is there (a row with hidden keys)
+            return None
         return None if name in columns[column][1] else f'key {name}' if name else 'whole'
 
     for call in JSON_CALL.finditer(text):

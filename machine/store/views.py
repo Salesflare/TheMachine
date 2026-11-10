@@ -830,11 +830,14 @@ class ViewsStore(ConversationStore):
                 if account.get('service') == 'docs':  # Google or Microsoft, and whether an approved reply can be posted
                     channel_health = docs_health(self.config, account, state)
                 if account.get('service') in CALENDAR_SERVICES:  # its card counts events coming up, not mail (Next 7 days)
-                    # status is read from the rows: with message protection on it is sealed (message_seal.PLAIN_METADATA)
-                    channel_health = {'upcoming_7d': sum(
-                        (json.loads(m or '{}').get('status') or '') != 'cancelled' for (m,) in db.execute(
-                            'SELECT metadata FROM events WHERE account_id=? AND deleted=0 AND occurred_at>=? AND occurred_at<?',
-                            (account['id'], now(), (dt.datetime.fromisoformat(now()) + dt.timedelta(days=7)).isoformat())))}
+                    # status is counted in SQL (a plain key, message_seal.ROUTING_KEYS). A row sealed before it was one shows
+                    # no status beside its sealed member until machine/store/plain_keys.py has been over it: those are read
+                    week = (account['id'], now(), (dt.datetime.fromisoformat(now()) + dt.timedelta(days=7)).isoformat())
+                    coming = 'FROM events WHERE account_id=? AND deleted=0 AND occurred_at>=? AND occurred_at<? AND '
+                    unseen = "json_extract(metadata,'$.status') IS NULL AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL"
+                    channel_health = {'upcoming_7d': db.execute(
+                        f"SELECT count(*) {coming} COALESCE(json_extract(metadata,'$.status'),'')!='cancelled' AND NOT ({unseen})", week).fetchone()[0] + sum(
+                        (json.loads(m or '{}').get('status') or '') != 'cancelled' for (m,) in db.execute(f'SELECT metadata {coming} {unseen}', week))}
                 activity = [dict(r) for r in db.execute('SELECT at,status,signals,error,retry_at FROM sync_activity WHERE account_id=? ORDER BY at DESC,rowid DESC LIMIT 12',(account['id'],))]
                 last_failure = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' ORDER BY at DESC,rowid DESC LIMIT 1",(account['id'],)).fetchone()
                 failures_24h = db.execute("SELECT count(*) FROM sync_activity WHERE account_id=? AND status='failed' AND at>=?",(account['id'],cutoff)).fetchone()[0]

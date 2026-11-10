@@ -19,7 +19,7 @@ writes it; other modules call the owner's functions.
 | domain | modules | tables (owner) |
 |---|---|---|
 | service core | `assistant.py` (the entry, `main()`), `machine/main.py` (`Store`, `App` and its mixins) | `events` (sealed, the only writer), `suggestions` (to-dos), `decisions`, `deliveries`, `preparations`, `action_jobs`, `analyses`, `profile_runs`, `facts`, `promises`, `voices`, `checkpoints`, `faults` and the rest of its 45 |
-| message sealing | `message_seal`, `message_keyring`, `network_crypto` | `event_search` |
+| message sealing | `message_seal`, `message_keyring`, `network_crypto`, `machine/store/plain_keys.py` (once: the routing keys that became plain, in the messages kept before) | `event_search`, `plain_key_pass` |
 | graph and CRM | `graph`, `graph_joins` (which identities a name may join, no table), `crm`, `crm_fields`, `crm_import`, `crm_fixes`, `enrichment`, `own_addresses`, `bounces`, `places`, `signatures`, `person_summary`, `project_success` (a project's done-when, its proof and blocker), `knowledge` (what every surface asks about a record, no table), `record_log` (a record's Recent changes, no table) | `graph_*`, `projects`, `boards`, `board_*`, `person_*`, `org_*` (graph); `record_*`, `org_aliases` (crm); `crm_fields`, `crm_tags`, `crm_values`; `person_facts`, `enrich_prefs`, photo and logo tries (enrichment); `own_*`; `email_bounce*`; `person_summar*` (person_summary); `project_success` |
 | follow-ups | `follow_ups`, `task_invites`, `task_pages` | `follow_up_*`, `task_pages` |
 | recurring to-dos | `recurring`, `recurring_app` | `recurring_series`, `recurring_cards`, `recurring_offers` |

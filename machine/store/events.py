@@ -448,13 +448,16 @@ class EventsStore:
         with self.connect() as db:
             # by the meetings' own index (events_kind_calendar_event), not each account's events: +account_id keeps SQLite
             # off events_account_time, which walked every message of every account up to the week's end (some 80 ms)
-            # Only the start (occurred_at) is matched in SQL: with message protection on, end_at is sealed
-            # (message_seal.PLAIN_METADATA). The ones that began before the window, up to CALENDAR_RUNNING_DAYS back, are
-            # read to see whether they still run into it.
+            # The ones that began before the window, up to CALENDAR_RUNNING_DAYS back, and still run into it: end_at is
+            # matched in SQL (a plain key, message_seal.ROUTING_KEYS). A row sealed before it was one shows no end_at
+            # beside its sealed member until machine/store/plain_keys.py has been over it: those are read as well
+            # and all are checked once opened.
             sql = ("SELECT id,account_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
                    'AND +account_id IN (' + ','.join('?' for _ in account_ids) + ') AND occurred_at>? AND occurred_at<%s? ORDER BY occurred_at,id')
             back = (dt.datetime.fromisoformat(start) - dt.timedelta(days=CALENDAR_RUNNING_DAYS)).isoformat()
-            rows = [r for r in db.execute(sql % '=', (*account_ids, back, start)) if str(json.loads(r['metadata'] or '{}').get('end_at') or '') > start]
+            running = (sql % '=').replace(' ORDER BY', " AND (CAST(json_extract(metadata,'$.end_at') AS TEXT)>? OR (json_extract(metadata,'$.end_at') IS NULL "
+                                          "AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL)) ORDER BY")
+            rows = [r for r in db.execute(running, (*account_ids, back, start, start)) if str(json.loads(r['metadata'] or '{}').get('end_at') or '') > start]
             rows = (rows + db.execute((sql % '') + ' LIMIT 300', (*account_ids, start, end)).fetchall())[:300]
         owner = {str(e).lower() for e in owner if e}
         rooms, kept, room_names = calendar_rooms(self.connect)

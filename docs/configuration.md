@@ -109,6 +109,12 @@ the messages a profile or roles run reads) and the sign-ins saved with **Save fo
 database, readable only by the service user. The dashboard, search, embeddings and reviews work as before: search
 uses a keyed hash of each word.
 
+What the database needs to find a message stays unencrypted: its source, kind and time, its thread or chat id,
+sender, recipients and labels, and four routing values: when a calendar event or meeting ends, a calendar event's
+status (confirmed, tentative, cancelled), the id of the series it repeats in, and whether a chat is one to one or
+a group. Names, places, attendees and everything written stay encrypted. An update that adds such a value goes
+over the messages already kept once, in the background, after a copy of the database.
+
 **Back up the key with the database.** A backup of the data folder (or your home folder) holds both. Without the
 key, the messages in the database and its copies can't be read by anyone, you included. `assistant doctor` and the
 dashboard say when the key is missing or readable by others.
