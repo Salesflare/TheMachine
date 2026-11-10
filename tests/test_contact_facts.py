@@ -16,6 +16,7 @@ a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 graph = a.graph
 import contact_facts  # noqa: E402
 import fact_links  # noqa: E402
+import fact_ties  # noqa: E402
 import learning_loop  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 9, 12, tzinfo=dt.timezone.utc)
@@ -135,6 +136,8 @@ class ContactFacts(unittest.TestCase):
         self.assertIsNone(self.store.contacts_once())  # one time
         self.assertEqual(len(self.current_facts()), 2)
         self.assertEqual([c['kind'] for c in self.store_changes()], ['contact'])
+        with self.store.connect() as db:  # it runs before fact_ties' pass, which then leaves the moved one alone
+            self.assertNotIn(1, [r['id'] for r in fact_ties.loose(db)])
 
     def test_a_detail_is_one_number_or_one_address(self):
         self.assertEqual(contact_facts.detail('Her number is +32 470 12 34 56.'), ('phones', '+32 470 12 34 56'))
