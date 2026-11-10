@@ -42,22 +42,22 @@ def journal(*calls):
 
 
 class PeekTabTest(unittest.TestCase):
-    def test_only_a_tab_the_run_opened_while_it_is_on_the_browser(self):
+    def test_only_a_tab_the_run_opened_until_it_closes_it(self):
         mine = ('browser', {'action': 'open', 'url': 'https://example.org/'}, opened(TAB, 'bills'))
-        self.assertEqual(assistant.peek_tab(journal(mine), 'job'), (TAB, 18800))
-        self.assertEqual(assistant.peek_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'bills'}, None)), 'job'), (TAB, 18800))
-        self.assertEqual(assistant.peek_tab(journal(mine, ('browser', {'action': 'snapshot'}, None)), 'job'), (TAB, 18800))
+        self.assertEqual(assistant.run_tab(journal(mine), 'job'), (TAB, 18800))
+        self.assertEqual(assistant.run_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'bills'}, None)), 'job'), (TAB, 18800))
+        self.assertEqual(assistant.run_tab(journal(mine, ('browser', {'action': 'snapshot'}, None)), 'job'), (TAB, 18800))
         # Another tab (one an earlier task opened, or the owner's): no look at all.
-        self.assertIsNone(assistant.peek_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'someone-else'}, None)), 'job'))
-        # Off the browser, or the tab closed.
-        self.assertIsNone(assistant.peek_tab(journal(mine, ('exec', {'command': 'ls'}, None)), 'job'))
-        self.assertIsNone(assistant.peek_tab(journal(mine, ('browser', {'action': 'close', 'targetId': 'bills'}, None)), 'job'))
+        self.assertIsNone(assistant.run_tab(journal(mine, ('browser', {'action': 'act', 'targetId': 'someone-else'}, None)), 'job'))
+        # Between browser steps (a command, the model thinking) it stays on that tab; closed, it is gone.
+        self.assertEqual(assistant.run_tab(journal(mine, ('exec', {'command': 'ls'}, None)), 'job'), (TAB, 18800))
+        self.assertIsNone(assistant.run_tab(journal(mine, ('browser', {'action': 'close', 'targetId': 'bills'}, None)), 'job'))
         # A tab list names every tab: it never makes one this run's own.
         listing = ('browser', {'action': 'tabs'}, opened(OTHER, 'theirs'))
-        self.assertIsNone(assistant.peek_tab(journal(listing, ('browser', {'action': 'act', 'targetId': 'theirs'}, None)), 'job'))
+        self.assertIsNone(assistant.run_tab(journal(listing, ('browser', {'action': 'act', 'targetId': 'theirs'}, None)), 'job'))
         # Only a browser on this computer.
         far = ('browser', {'action': 'open'}, opened(TAB, 'bills').replace('127.0.0.1', '10.0.0.5'))
-        self.assertIsNone(assistant.peek_tab(journal(far), 'job'))
+        self.assertIsNone(assistant.run_tab(journal(far), 'job'))
 
     def test_a_tab_an_earlier_run_of_the_same_task_opened(self):
         db = journal(('browser', {'action': 'act', 'targetId': 'bills'}, None))
@@ -70,15 +70,15 @@ class PeekTabTest(unittest.TestCase):
                 db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
                            (job, f'{job}{i}', 'browser', json.dumps({'action': action}), result, at))
         # A follow-up run (after a sign-in or a Change) carries on in the tab the first run opened: the look follows it.
-        self.assertEqual(assistant.peek_tab(db, 'job'), (TAB, 18800))
+        self.assertEqual(assistant.run_tab(db, 'job'), (TAB, 18800))
         # Never another task's tab, even one its run opened.
         db.execute("UPDATE preparation_calls SET params=? WHERE job_id='job'", (json.dumps({'action': 'act', 'targetId': 'theirs'}),))
-        self.assertIsNone(assistant.peek_tab(db, 'job'))
+        self.assertIsNone(assistant.run_tab(db, 'job'))
         # Nor a tab the earlier run closed again.
         db.execute("UPDATE preparation_calls SET params=? WHERE job_id='job'", (json.dumps({'action': 'act', 'targetId': 'bills'}),))
         db.execute("INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES('first','close','browser',?,NULL,'2026-01-01T10:01:00+00:00')",
                    (json.dumps({'action': 'close', 'targetId': 'bills'}),))
-        self.assertIsNone(assistant.peek_tab(db, 'job'))
+        self.assertIsNone(assistant.run_tab(db, 'job'))
 
     def test_the_picture_comes_from_that_tab_only_when_it_is_in_front(self):
         store_dir = tempfile.TemporaryDirectory()
@@ -138,6 +138,67 @@ class PeekTabTest(unittest.TestCase):
                 db.execute("UPDATE preparations SET status='prepared'")
             self.assertEqual(app.preparation_peek('s1'), {'on': False})
             self.assertEqual(app.peeks, {})  # gone with the run
+
+    def test_the_picture_stays_between_browser_steps_until_the_run_is_done(self):
+        store_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(store_dir.cleanup)
+        store = assistant.Store(Path(store_dir.name) / 'events.sqlite')
+        app = object.__new__(assistant.App)
+        app.store, app.config = store, {'accounts': [], 'browser_cdp_url': 'http://127.0.0.1:18800'}
+        n = [0]
+
+        def step(tool, params, result=None):
+            n[0] += 1
+            at = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=n[0])).isoformat()
+            with store.connect() as db:
+                db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,result,started_at) VALUES(?,?,?,?,?,?)',
+                           ('job', str(n[0]), tool, json.dumps(params), result, at))
+
+        class Tab:
+            def __init__(self, *a, **k):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                pass
+
+            def call(self, method, params=None):
+                return {'Runtime.evaluate': {'result': {'value': 'visible'}}, 'Page.captureScreenshot': {'data': 'AAAA'},
+                        'Page.getLayoutMetrics': {'cssVisualViewport': {'pageX': 0, 'pageY': 0, 'clientWidth': 1600, 'clientHeight': 900}}}[method]
+
+        def seen():
+            app.__dict__.pop('peeks', None)
+            return app.preparation_progress('s1')['peek'], app.preparation_peek('s1').get('on')
+        cdp = assistant.browser_login.browser_cdp
+        with store.connect() as db:
+            db.execute("INSERT INTO preparations(suggestion_id,decision_id,job_id,status,created_at,updated_at) VALUES('s1','d1','job','running',?,?)",
+                       (assistant.now(), assistant.now()))
+        with patch.object(cdp, 'Session', Tab), patch.object(cdp, '_http', return_value=[{'id': TAB, 'type': 'page'}]):
+            self.assertEqual(seen(), (False, False))  # no browser yet: nothing to show
+            step('browser', {'action': 'open', 'url': 'https://example.org/'}, opened(TAB, 'bills'))
+            self.assertEqual(seen(), (True, True))
+            # The gaps between browser steps: a command, writing notes, the model thinking. The picture stays.
+            step('exec', {'command': 'ls'})
+            self.assertEqual(seen(), (True, True))
+            step('write', {'path': 'notes.md'})
+            self.assertEqual(seen(), (True, True))
+            step('browser', {'action': 'act', 'targetId': 'bills'})
+            self.assertEqual(seen(), (True, True))
+            step('exec', {'command': 'ls'})
+            self.assertEqual(seen(), (True, True))
+            # Ready for review, waiting on the owner or stopped: gone.
+            for status in ('prepared', 'blocked', 'stopped'):
+                with store.connect() as db:
+                    db.execute('UPDATE preparations SET status=?', (status,))
+                self.assertEqual(seen(), (False, False), status)
+            # Running again but done with the browser (it closed its tab): gone too.
+            with store.connect() as db:
+                db.execute("UPDATE preparations SET status='running'")
+            step('browser', {'action': 'close', 'targetId': 'bills'})
+            step('exec', {'command': 'ls'})
+            self.assertEqual(seen(), (False, False))
 
 
 class MessageCacheTest(unittest.TestCase):
@@ -368,11 +429,12 @@ class ReconnectDisconnectTest(unittest.TestCase):
         self.app.config, self.app.config_path = json.loads(self.path.read_text()), self.path
 
     def finish(self, view):
+        session = view['session']  # only the start names it; a poll's view does not (the dashboard keeps it, too)
         for _ in range(200):
             if view['state'] != 'running':
                 return view
             time.sleep(0.02)
-            view = self.app.action('connect_poll', {'session': view['session']}, owner_dashboard=True)
+            view = self.app.action('connect_poll', {'session': session}, owner_dashboard=True)
         self.fail('still running')
 
     def test_the_dashboard_names_the_source_since_its_requests_carry_their_own(self):

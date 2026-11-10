@@ -14,7 +14,7 @@ Su tarjeta dice hasta dónde llega: **Historial: hasta** un mes, cuando ya está
 
 ## Qué aporta a tu Graph
 
-Tu [Graph](graph.md) lo cuenta: qué tan cerca estás de cada persona, cuándo hablaron por última vez, quién conoce a quién, y las personas y organizaciones mismas. Las respuestas de tu Fleet a "quién conoce a alguien" lo usan desde cuentas de trabajo, con las mismas [reglas para compartir](sharing-rules.md) que el correo nuevo.
+Tu [Graph](graph.md) lo cuenta: qué tan cerca estás de cada persona, cuándo hablaron por última vez, quién conoce a quién, y las personas y organizaciones mismas. La Cronología de una persona u organización también lo muestra, así su último contacto siempre está ahí. Las respuestas de tu Fleet a "quién conoce a alguien" lo usan desde cuentas de trabajo, con las mismas [reglas para compartir](sharing-rules.md) que el correo nuevo.
 
 ## Qué nunca hace
 

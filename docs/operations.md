@@ -244,7 +244,7 @@ A running service after a reboot is not enough: verify the checkpoint resumed, m
 
 ## Releases
 
-Hosted Machines install only signed releases, and self-hosted installs should too. A commit pushed to main reaches no one until it is released. To cut one, the release key holder runs `python3 scripts/release.py cut`: it signs origin/main with the release key, checks the signature against `deploy/release-signers` and pushes the tag. The private key is never in this repository or in CI. The hosted service gives each release to its own Machines first and to everyone else a few hours later.
+Hosted Machines install only signed releases, and self-hosted installs should too. A commit pushed to main reaches no one until it is released. To cut one, the release key holder runs `python3 scripts/release.py cut`: it refuses a commit without a passed full test run on it (main's CI runs every test nightly; a push to main runs only what changed since the last full run), then signs origin/main with the release key, checks the signature against `deploy/release-signers` and pushes the tag. `--commit SHA` cuts an older commit of main that passed. `--full-run` starts the full run on the commit on our CI runner when it has none, waits for it (about 12 minutes) and cuts when it passes. The private key is never in this repository or in CI. The hosted service gives each release to its own Machines first and to everyone else a few hours later.
 
 ## Disable one feature
 

@@ -12,9 +12,9 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
-from machine.browser import (browser_lease_script, browser_link, browser_wait, peek_tab, preparation_steps, run_tab,
+from machine.browser import (browser_lease_script, browser_link, browser_wait, preparation_steps, run_tab,
                              same_site, signin_address, signin_handoff, signin_kind, signin_name, SIGNIN_WATCH,
-                             task_page)
+                             site_language, task_page)
 from machine.config import BROWSER_LEASE, LOG
 import mail_attachments
 import next_actions
@@ -116,10 +116,11 @@ class BrowserApp:
         return done
 
     def peek_target(self, job_id):
-        """(DevTools address, target ID) of the tab a running preparation is on now (peek_tab), in the browser this
-        install's DevTools address points at (loopback only); None when it uses another browser or none."""
+        """(DevTools address, target ID) of the tab a running preparation works in (run_tab: also between its browser
+        steps, so its card and chat keep the picture until it is done with the browser), in the browser this install's
+        DevTools address points at (loopback only); None when it uses another browser or none."""
         with self.store.connect() as db:
-            tab = peek_tab(db, job_id)
+            tab = run_tab(db, job_id)
         base = (browser_login.endpoints(self.config) or [None])[0]
         if not tab or not base or urllib.parse.urlsplit(base).port != tab[1]:
             return None
@@ -232,11 +233,12 @@ class BrowserApp:
         if mine:  # followed from here on, also through an identity provider on another host
             state, url, opened[suggestion_id] = 'open', mine[0]['url'], mine[0]['id']
         else:
+            url = site_language(page, self.config)  # LinkedIn's in the owner's language
             try:
-                opened[suggestion_id] = browser_login.browser_cdp.open_tab(browser_login.endpoints(self.config)[0], page)
+                opened[suggestion_id] = browser_login.browser_cdp.open_tab(browser_login.endpoints(self.config)[0], url)
             except (browser_login.browser_cdp.CdpError, OSError):
                 raise ValueError('I couldn’t open the sign-in page in the browser') from None
-            state, url = 'opened', page
+            state = 'opened'
         try:
             browser_viewer.focus(url, browser_login.endpoints(self.config)[0])
         except (ValueError, OSError):
@@ -264,7 +266,8 @@ class BrowserApp:
         opened = False
         if not tab:  # the tab is gone: the same address again, in the Machine's browser
             try:
-                tab = {'id': browser_login.browser_cdp.open_tab(base, page['url']), 'url': page['url']}
+                url = site_language(page['url'], self.config)
+                tab = {'id': browser_login.browser_cdp.open_tab(base, url), 'url': url}
             except (browser_login.browser_cdp.CdpError, OSError):
                 return {'shown': False, 'site': site, 'view': view, 'error': 'I couldn’t open that page in the browser'}
             opened = True

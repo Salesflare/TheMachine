@@ -17,10 +17,38 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
+import locale_prefs
 import next_actions
 import preparation_state
 from machine.cards import HANDOFF
 from machine.config import ROOT
+
+
+# LinkedIn's sign-in page takes its language from the server's country (a Machine on a server abroad showed it, and its
+# captcha, in that country's language), not from the browser's languages, and keeps it for that browser. Its `_l`
+# parameter sets it (undocumented; a value it does not know is ignored). Every sign-in page the Machine opens carries
+# one, English too: without it, LinkedIn falls back to the server's country. Each locale here was checked to work.
+LINKEDIN_LOCALES = {'en': 'en_US', 'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR'}
+LINKEDIN_SIGNIN_PATH = re.compile(r'(?i)/(?:login|uas/login)/?')
+
+
+def linkedin_locale(config=None):
+    """The owner's app language (else what signup guessed) as a LinkedIn locale; US English for anything else."""
+    return LINKEDIN_LOCALES.get(locale_prefs.language_of(config).lower(), 'en_US')
+
+
+def site_language(url, config=None):
+    """`url` with the owner's language for the site where it takes one from the address: LinkedIn's sign-in page
+    (its own `_l` replaced). Any other address comes back as it is."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+    except (TypeError, ValueError):
+        return url
+    host = (parts.hostname or '').removeprefix('www.')
+    if parts.scheme != 'https' or host != 'linkedin.com' or not LINKEDIN_SIGNIN_PATH.fullmatch(parts.path):
+        return url
+    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query, keep_blank_values=True) if k != '_l']
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode([*query, ('_l', linkedin_locale(config))])))
 
 
 def browser_lease_script(config=None):
@@ -256,32 +284,13 @@ def browser_result(call):
     return found if isinstance(found, dict) else {}
 
 
-def peek_tab(db, job_id):
-    """The tab a running preparation is on now, as (DevTools target ID, DevTools port), for the dashboard's live
-    look at it: only while its latest step is a browser step, and only a tab this task opened itself (by the target
-    ID its own `open` step answered with): this run's, or, when this run carries on in a tab an earlier run of the same
-    task opened and left open (a retry, after a sign-in or a Change), that run's. None otherwise, never another task's
-    tab or one the owner uses."""
-    try:
-        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                           (job_id,)).fetchall()
-    except sqlite3.OperationalError:
-        return None
-    if not calls or calls[0]['tool'] != 'browser':
-        return None
-    try:
-        last = json.loads(calls[0]['params'] or '{}')
-    except ValueError:
-        return None
-    if not isinstance(last, dict) or last.get('action') == 'close':
-        return None
-    return own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
-
-
 def run_tab(db, job_id):
-    """The tab a running preparation last worked in, as (DevTools target ID, port), also between its browser steps
-    (peek_tab only while it is on one): the tab of its latest browser step, when this task opened it itself (own_tab).
-    None otherwise."""
+    """The tab a running preparation last worked in, as (DevTools target ID, port): the tab of its latest browser step,
+    also between its browser steps (while it thinks, or runs a command in between), so the dashboard's live look at it
+    stays put until the run closes that tab or ends. Only a tab this task opened itself (by the target ID its own
+    `open` step answered with): this run's, or, when this run carries on in a tab an earlier run of the same task opened
+    and left open (a retry, after a sign-in or a Change), that run's (own_tab). None otherwise, never another task's tab
+    or one the owner uses."""
     try:
         calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
                            (job_id,)).fetchall()

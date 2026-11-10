@@ -281,7 +281,8 @@ def load_history(db, base):
 
 
 def load_recurring(store, config, base):
-    """A to-do that repeats (recurring.py): the weekly numbers, every Monday, made the way New to-do makes one."""
+    """A to-do that repeats (recurring.py): the weekly numbers, every Monday, made the way New to-do makes one, with the way
+    it is done kept for the next one."""
     import recurring
     account = next((a['id'] for a in config['accounts'] if str(a.get('boundary') or '').startswith('work:')), None)
     if not account:
@@ -292,6 +293,9 @@ def load_recurring(store, config, base):
     with store.connect() as db:
         card = db.execute('SELECT * FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
         recurring.start(db, card, {'unit': 'week', 'n': 1}, monday, card['owner_words'] or card['title'], base.isoformat(), work=True)
+        # how it's done, kept from an earlier week for the next one (recurring.save_method): its chat shows Edit and Undo
+        recurring.save_method(db, card['id'], '1. Take signups, revenue and churn for last Monday to Sunday from the metrics board.\n'
+                              '2. Compare each with the week before.\n3. Draft one short Slack message to the team channel; you send it.', base.isoformat())
 
 
 def sandbox_jobs(monday, today):
@@ -450,7 +454,7 @@ def load_logins(directory, fixture):
 
 
 def load_roles(db, base):
-    """Graph > Who's who: roles a review read for the four closest people, waiting for the owner to confirm."""
+    """Roles a review read for the four closest people, on their pages and in their Recent changes."""
     import graph
     roles = [('head of operations', 'I run operations here, so send the rollout plan my way.'), ('finance lead', 'Looping in finance; I sign off on the invoice.'),
              ('product manager', 'As PM for the mobile app I own the beta list.'), ('customer success', 'I look after your account from our side.')]
@@ -613,12 +617,25 @@ def load_cards(db, fixture, ids, base):
         assistant.Store.still_needed_ask(db, (base - dt.timedelta(days=days)).isoformat())
 
 
+# What the company look-up would say of each made-up company: industry, size and country (the Organizations filter).
+COMPANY_FACTS = {'Northwind Analytics': ('Computer Software', '51-200', 'us'), 'Brightpath Logistics': ('Logistics and Supply Chain', '201-500', 'nl'),
+                 'Cobalt & Finch': ('Design', '2-10', 'gb'), 'Harborline Health': ('Hospital and Health Care', '1001-5000', 'us'),
+                 'Quarry Lane Studios': ('Media Production', '11-50', 'gb'), 'Tidewater Foods': ('Food Production', '501-1000', 'be'),
+                 'Meridian Robotics': ('Machinery', '51-200', 'de'), 'Pinecrest Legal': ('Law Practice', '11-50', 'us'),
+                 'Saltmarsh Media': ('Online Media', '11-50', 'gb'), 'Vantage Rail': ('Railroad Manufacture', '1001-5000', 'de'),
+                 'Orchard Street Bakery': ('Food and Beverages', '2-10', 'be'), 'Kestrel Energy': ('Renewables and Environment', '201-500', 'nl'),
+                 'Glasswing Apps': ('Computer Software', '2-10', 'be'), 'Fernhill Schools': ('Education Management', '51-200', 'gb'),
+                 'Ironbark Outdoor': ('Sporting Goods', '11-50', 'ca')}
+
+
 def load_companies(db, fixture, base):
     """Every made-up company by its own name ("Saltmarsh Media"), as the company look-up would give it on a real
     Machine; without one the Graph would spell it from its domain ("Saltmarshmedia")."""
     for c in fixture.get('companies') or ():
+        industry, size, country = COMPANY_FACTS.get(c['name'], (None, None, None))
+        profile = {'name': c['name'], **({'industry': industry, 'size': size, 'country': country} if industry else {})}
         db.execute("INSERT OR IGNORE INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,'found',?,?)",
-                   (c['domain'], json.dumps({'name': c['name']}), base.isoformat()))
+                   (c['domain'], json.dumps(profile), base.isoformat()))
 
 
 def load_boards(db, fixture, ids, base):

@@ -17,7 +17,7 @@ Em **Promessas**, na página Tarefas:
 
 Cada uma tem um menu **⋯**:
 
-- **Fazer** nas suas: ela vira tarefa agora, e sua Machine a prepara. **Lembrar** nas dos outros: sua Machine escreve um breve rascunho de lembrete onde prometeram. Nada é enviado até você enviar. Se já é tarefa, essa tarefa abre.
+- **Fazer** nas suas: ela vira tarefa agora, e sua Machine a prepara. **Lembrar** nas dos outros: sua Machine escreve um breve rascunho de lembrete onde prometeram, e você continua na lista. Um aviso curto confirma, com **Abrir tarefa**. Nada é enviado até você enviar. Se já é tarefa, essa tarefa abre.
 - **Marcar como feita**: foi cumprida.
 - **Não vai acontecer**: não vai rolar, então sua Machine para de acompanhar, sem tarefa.
 

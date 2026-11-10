@@ -10,7 +10,7 @@ order: 4
 
 - **Tarefas**: suas tarefas e promessas. Veja [Tarefas](cards.md).
 - **Calendário**: a semana que vem, com suas reuniões, tarefas com prazo e promessas. Veja [Calendário](calendar.md).
-- **Graph**: as pessoas, organizações e projetos nas suas mensagens, e **Quem é quem** quando há papéis esperando sua confirmação. Veja [Graph](graph.md).
+- **Graph**: as pessoas, organizações e projetos nas suas mensagens. Veja [Graph](graph.md).
 - **Fleet**: sua equipe, família e amigos na The Machine Network, quando você tiver um. Veja [Fleet](fleet.md).
 - **Aprendizado**: como as tarefas estão indo e o que ela aprendeu.
 - **Conexões**: suas fontes e como elas estão. Veja [Conexões](connections.md).
@@ -39,7 +39,7 @@ As linhas só aparecem onde fazem sentido: nada de app do celular dentro do app,
 
 Depois do seu primeiro dia, ela vira uma linha discreta acima de **Para você**, como "Faltam 2 etapas · Continuar". Toque nela para abrir a tarefa, e toque na seta para recolhê-la de novo.
 
-**Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e lá o app do celular sempre tem o link para baixar.
+**Desfazer** na mensagem que aparece depois a traz de volta, assim como **Mostrar 1 etapa oculta** no fim da tarefa. Se você fechou a tarefa inteira, **Configurações**, **Geral**, **Tarefa de configuração** a traz de volta. **Configurações**, **Geral**, **Este aparelho** tem os mesmos controles, e **Configurações**, **Apps** sempre tem o app do celular.
 
 ## Novas versões
 

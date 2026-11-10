@@ -17,7 +17,7 @@ En **Promesas**, en la página Tareas:
 
 Cada una tiene un menú **⋯**:
 
-- **Hazlo** en las tuyas: se convierte en tarea ahora, y tu Machine la prepara. **Recordar** en las de otros: tu Machine escribe un breve borrador de seguimiento donde lo prometieron. No se envía nada hasta que lo envíes tú. Si ya es tarea, se abre esa tarea.
+- **Hazlo** en las tuyas: se convierte en tarea ahora, y tu Machine la prepara. **Recordar** en las de otros: tu Machine escribe un breve borrador de seguimiento donde lo prometieron, y tú sigues en la lista. Un aviso breve lo confirma, con **Abrir tarea**. No se envía nada hasta que lo envíes tú. Si ya es tarea, se abre esa tarea.
 - **Marcar como hecha**: se cumplió.
 - **No va a pasar**: no ocurrirá, así que tu Machine deja de seguirla, sin tarea.
 

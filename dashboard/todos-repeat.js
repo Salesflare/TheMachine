@@ -5,6 +5,9 @@
 const REPEAT_ICON=html`<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3.5l3 3-3 3M20 6.5H8.5A4.5 4.5 0 0 0 4 11v.5M7 20.5l-3-3 3-3M4 17.5h11.5A4.5 4.5 0 0 0 20 13v-.5"/></svg>`;
 const REPEAT_NTH={1:'Repeats monthly on the first {}',2:'Repeats monthly on the second {}',3:'Repeats monthly on the third {}',4:'Repeats monthly on the fourth {}','-1':'Repeats monthly on the last {}'};
 const REPEAT_NTH_OPTION={1:'Monthly on the first {}',2:'Monthly on the second {}',3:'Monthly on the third {}',4:'Monthly on the fourth {}','-1':'Monthly on the last {}'};
+// The Nth or last workday of the month (Monday to Friday, without the owner's public holidays; recurring.py)
+const REPEAT_WORKDAY={1:'Repeats on the 1st workday of the month',2:'Repeats on the 2nd workday of the month',3:'Repeats on the 3rd workday of the month',4:'Repeats on the 4th workday of the month',5:'Repeats on the 5th workday of the month','-1':'Repeats on the last workday of the month'};
+const REPEAT_WORKDAY_OPTION={1:'Monthly on the 1st workday',2:'Monthly on the 2nd workday',3:'Monthly on the 3rd workday',4:'Monthly on the 4th workday',5:'Monthly on the 5th workday','-1':'Monthly on the last workday'};
 const rpDate=iso=>new Date(String(iso).slice(0,10)+'T12:00');
 const rpWeekday=d=>localeDate(d,DL,{weekday:'long'});
 const rpMonthDay=d=>localeDate(d,DL,{day:'numeric',month:'long'});
@@ -16,12 +19,13 @@ function repeatText(rule,anchor){if(!rule)return '';const d=rpDate(anchor),n=rul
  if(rule.unit==='week')return n===1?t('Repeats weekly on {}',wd):t('Repeats every {} weeks on {}',n,wd);
  if(rule.unit==='year')return t('Repeats yearly on {}',rpMonthDay(d));
  if(n>1)return t('Repeats every {} months',n);
+ if(rule.workday!=null)return REPEAT_WORKDAY[rule.workday]?t(REPEAT_WORKDAY[rule.workday]):t('Repeats on workday {} of the month',rule.workday);
  return rule.nth!=null?t(REPEAT_NTH[rule.nth],wd):t('Repeats monthly on day {}',d.getDate())}
 // The choices, from the date the to-do is for (its due date, else today): the weekday, day and date come from it
 function repeatOptions(base){const d=rpDate(base),wd=rpWeekday(d),nth=rpNth(d);
  return [[{unit:'day',n:1},t('Daily')],[{unit:'weekday',n:1},t('Weekdays')],[{unit:'week',n:1},t('Weekly on {}',wd)],
   [{unit:'month',n:1},t('Monthly on day {}',d.getDate())],[{unit:'month',n:1,nth},t(REPEAT_NTH_OPTION[nth],wd)],[{unit:'year',n:1},t('Yearly on {}',rpMonthDay(d))]]}
-const rpSame=(a,b)=>!!a&&!!b&&a.unit===b.unit&&(a.n||1)===(b.n||1)&&(a.nth??null)===(b.nth??null);
+const rpSame=(a,b)=>!!a&&!!b&&a.unit===b.unit&&(a.n||1)===(b.n||1)&&(a.nth??null)===(b.nth??null)&&(a.workday??null)===(b.workday??null);
 // The to-do's one line: a quiet chip that opens Repeat
 const repeatChip=s=>{const r=s.repeats;if(!r||closed(s))return '';const text=repeatText(r.rule,r.anchor)+(r.missed?' · '+t('missed {}',r.missed):'');
  return html`<button type="button" class="chip scope repeat${r.missed?html` missed`:''}" data-repeat="${s.id}" title="${t('Change how it repeats')}">${raw(REPEAT_ICON)}<span>${text}</span></button>`};

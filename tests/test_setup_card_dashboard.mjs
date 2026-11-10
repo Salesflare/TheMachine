@@ -270,9 +270,9 @@ try{
   await shot(page,`restore-toast-${width}-${scheme}`);
   await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
   await page.evaluate(()=>showSettings('general'));await page.locator('#settings-setup:not([hidden])').waitFor();
-  const set=await page.evaluate(()=>{const r=document.querySelector('#settings-setup');return {text:r.innerText.replace(/\s+/g,' ').trim(),phone:document.querySelector('#device-phone')?.innerText.replace(/\s+/g,' ').trim(),get:document.querySelector('#device-phone a.phone-get')?.href}});
+  const set=await page.evaluate(()=>{const r=document.querySelector('#settings-setup');return {text:r.innerText.replace(/\s+/g,' ').trim(),phone:!!document.querySelector('#device-phone'),general:document.querySelector('#settings').innerText.includes('Get the app')}});
   assert.deepEqual(set,{text:'Setup to-do Get more out of The Machine Bring back the steps you closed, at the top of To-dos. Show again',
-   phone:'Phone app iPhone and Android. Get the app',get:'https://themachine.computer/app'},'the phone app is always reachable from Settings');
+   phone:false,general:false},'the phone app is in Settings, Apps only, not General');
   await shot(page,`restore-settings-${width}-${scheme}`,'#settings-setup');
   await page.locator('#settings-setup [data-setup-restore="all"]').click();await page.waitForFunction(()=>document.querySelector('#settings-setup').hidden);
   await sent(restores,['phone','all','all']);

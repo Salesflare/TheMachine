@@ -1,11 +1,8 @@
 // What someone (or an organization) is to you: said by you, or read by a review in a message, shown with the line it came from.
-// ✓ makes a review's role yours; Edit sets it in your words.
+// It applies as read; Edit sets it in your words.
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
 // The review's quote is markup (html``), never a plain string, so its Read button shows as a button.
-const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role');
-const roleDone=(id,role)=>rolesDone.get(id)?.role===role;
-const rolesLeft=items=>(items||[]).filter(w=>!roleDone(w.id,w.role));
-const confirmButton=(id,role)=>roleDone(id,role)?'':html`<button class="ghost" data-role-confirm="${id}" data-role="${role}" aria-label="Right: ${role}">✓ Right</button>`;
+const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,'','kv-role');
 // Where someone works: from their work email, or as a source stated it (their LinkedIn headline, a signature, their own words), with that line.
 const orgSaid=n=>n.org_by==='email'?'from their work email':n.org_by==='owner'?'you set it':n.org_by==='review'?`from ${n.org_via==='LinkedIn headline'?'their LinkedIn headline':'their '+(n.org_via||'message')}${n.org_at?', '+day(n.org_at):''}`:'';
 // The owner's own details for an organization: they win over the service's, and "Wrong company" drops a bad match for good.
@@ -50,7 +47,10 @@ const personJob=n=>{if(n.kind!=='person')return'';const p=n.profile||{},org=n.or
  const title=p.title||(!org&&n.headline)||'',job=orEmpty(html`${[title,org].filter(Boolean).map((x,i)=>html`${i?' · ':''}${x}`)}`),place=[personPlace(n),localTime(p.timezone)].filter(Boolean).join(' · '),from=FACT_FROM(p);
  return html`${job?html`<p class="person-job">${job}</p>`:''}${place?html`<p class="person-place"${from?html` title="${from}"`:''}>${place}</p>`:''}`};
 const talkEvery=g=>{const d=Math.round(g);return d<=1?'Talk daily':d<=4?'Talk every few days':d<=10?'Talk weekly':d<=20?'Talk every couple of weeks':d<=45?'Talk monthly':'Talk now and then'};
-const relLine=n=>cap([n.quiet?'Gone quiet':n.usual_gap_days?talkEvery(n.usual_gap_days):'',n.last_at?(n.seen_only?'seen ':'last ')+day(n.last_at):'',n.next_meeting?'next meeting '+day(n.next_meeting):''].filter(Boolean).join(' · '));
+// How you're in touch: the last contact as a <time> whose hover has its exact date; capitalized when it comes first
+const lastLine=(n,first)=>htmlT(n.seen_only?(first?'Last seen {}':'last seen {}'):first?'Last contact {}':'last contact {}',sinceTime(n.last_at));
+const relLine=n=>{const gap=n.quiet?'Gone quiet':n.usual_gap_days?talkEvery(n.usual_gap_days):'',parts=[gap,n.last_at?lastLine(n,!gap):'',n.next_meeting?(gap||n.last_at?String:cap)('next meeting '+day(n.next_meeting)):''].filter(Boolean);
+ return parts.length?html`${parts.map((x,i)=>html`${i?' · ':''}${x}`)}`:''};
 // Phones and emails as the server lists them (the messages', less what the owner took off, plus what they added).
 const personContacts=n=>({phones:n.phones||(n.ids||[]).filter(i=>/^\+\d/.test(i)).map(value=>({value,by:'messages'})),emails:n.emails||(n.ids||[]).filter(i=>i.includes('@')).map(value=>({value,by:'messages'}))});
 const breakable=t=>html`${String(t).split('@').map((x,i)=>i?html`@<wbr>${x}`:x)}`;
@@ -63,13 +63,51 @@ function personContact(n){const c=personContacts(n),p=n.profile||{};
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  if(/^[A-Za-z0-9_]{1,15}$/.test(p.x||''))rows.push(kv('X',html`<a href="https://x.com/${p.x}" target="_blank" rel="noreferrer">@${p.x} ↗</a>`));
  if(/^https?:\/\/[^\s]+$/.test(p.website||''))rows.push(kv('Website',html`<a href="${safeHref(p.website)}" target="_blank" rel="noreferrer">${breakable(liShort(p.website))} ↗</a>`));
+ if(n.birthday&&!n.team_only)rows.push(bdayRow(n));
  const also=[...new Set((n.ids||[]).filter(i=>!i.includes('@')&&!/^\+\d/.test(i)&&!(p.x&&i==='@'+p.x)))];const slack=n.slack_links||[];if(also.length)rows.push(kv('Also on',html`${also.map((a,i)=>html`${i?' · ':''}${a==='Slack'&&slack.length?slack.map((l,j)=>html`${j?' · ':''}<a href="${safeHref(l.url)}" target="_blank" rel="noreferrer" title="Open in Slack">${l.label} ↗</a>`):a}`)}`));
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
+// Birthday (person_birthday.py): the one the Birthdays routine reads, with where it came from. Edit sets or corrects it
+// in the row: a month and a day, the year when known. Without one, Fields offers Add birthday, which opens the same row.
+const BDAY_FROM={google:'From Google contacts',google_calendar:'From Google Calendar',facebook:'From Facebook',notes:'From your notes',owner:'Added by you'};
+const bdayDate=(b,o)=>localeDate(new Date(b.year||2000,b.month-1,b.day,12),DL,{day:'numeric',month:'long',...(b.year?{year:'numeric'}:{}),...o});
+function bdayAge(b){if(!b.year)return null;const now=new Date(),age=now.getFullYear()-b.year-((now.getMonth()+1)*100+now.getDate()<b.month*100+b.day?1:0);return age>=0?age:null}
+const bdayFrom=s=>BDAY_FROM[s]?t(BDAY_FROM[s]):t('From {}',cap(String(s||'')));
+function bdayRow(n){const b=n.birthday,age=bdayAge(b);return kv(t('Birthday'),html`<span class="bday">${bdayDate(b)}${age!=null?html` · <span class="bday-age">${t('age {}',age)}</span>`:''}</span><span class="sub">${bdayFrom(b.source)}</span>`,html`<button type="button" class="ghost" data-bday-edit="${n.id}" data-bday="${b.value}">${t('Edit')}</button>`,'bday-row')}
+const bdayDayFirst=()=>{try{const p=new Intl.DateTimeFormat(DL,{day:'numeric',month:'long'}).formatToParts(new Date(2000,11,9));return p.findIndex(x=>x.type==='day')<p.findIndex(x=>x.type==='month')}catch{return true}};
+function bdayEditor(node,value){const m=/^(\d{4}|-)-(\d\d)-(\d\d)$/.exec(value||''),month=m?+m[2]:0,day=m?+m[3]:'',year=m&&m[1]!=='-'?m[1]:'';
+ const d=html`<input name="day" inputmode="numeric" maxlength="2" value="${day}" placeholder="${t('Day')}" aria-label="${t('Day')}" autocomplete="off">`,
+  mo=html`<select name="month" aria-label="${t('Month')}"><option value=""${month?'':html` selected`}>${t('Month')}</option>${Array.from({length:12},(_,i)=>html`<option value="${i+1}"${month===i+1?html` selected`:''}>${localeDate(new Date(2000,i,1,12),DL,{month:'long'})}</option>`)}</select>`;
+ return html`<span class="bday-edit" data-bday-node="${node}"><span class="bday-fields">${bdayDayFirst()?html`${d}${mo}`:html`${mo}${d}`}<input name="year" inputmode="numeric" maxlength="4" value="${year}" placeholder="${t('Year (optional)')}" aria-label="${t('Year (optional)')}" autocomplete="off"></span><small class="field-error" role="alert"></small><span class="bday-btns"><button type="button" class="primary" data-bday-save>${t('Save')}</button><button type="button" class="ghost" data-bday-cancel>${t('Cancel')}</button>${m?html`<button type="button" class="ghost" data-bday-remove>${t('Remove')}</button>`:''}</span></span>`}
+function bdayOpen(node,value){const view=$('#people-view .person-view');if(!view)return;let row=view.querySelector('.bday-row');
+ if(!row){let sec=view.querySelector('.person-contact');if(!sec){sec=htmlNodes(html`<section class="detail-section person-contact"><h4>${t('Contact')}</h4></section>`).firstElementChild;const at=view.querySelector('.person-about');at?at.before(sec):view.append(sec)}
+  row=htmlNodes(kv(t('Birthday'),'','','bday-row')).firstElementChild;const also=[...sec.querySelectorAll('.kv')].find(k=>k.querySelector('.k')?.textContent===t('Also on'));also?also.before(row):sec.append(row)}
+ for(const b of view.querySelectorAll('[data-bday-add]'))b.hidden=true;row.querySelector('.acts')?.remove();setHTML(row.querySelector('.v'),bdayEditor(node,value));row.classList.add('editing');(row.querySelector('select[name=month]').value?row.querySelector('input[name=day]'):row.querySelector('select,input')).focus()}
+function bdayCheck(w){const v=k=>String(w.querySelector(`[name=${k}]`).value||'').trim(),month=+v('month'),day=+v('day'),year=v('year');
+ if(!month||!/^\d{1,2}$/.test(v('day')))return[t('Pick a month and a day'),month?'day':'month'];
+ if(year&&!/^\d{4}$/.test(year))return[t('Year: four digits, like 1990'),'year'];
+ if(new Date(+year||2000,month-1,day).getDate()!==day)return[t('That day isn’t in that month'),'day'];
+ if(year&&(+year<1900||+year>new Date().getFullYear()))return[t('Year: not in the future, from 1900'),'year'];
+ return[null,{month,day,year}]}
+async function bdaySave(w,remove){if(w.dataset.busy)return;const say=m=>{w.querySelector('.field-error').textContent=m||''};let args={remove:true};
+ if(!remove){const [err,got]=bdayCheck(w);if(err){say(err);const i=w.querySelector(`[name=${got}]`);i.setAttribute('aria-invalid','true');i.focus();return}args=got}
+ w.dataset.busy='1';w.querySelectorAll('button,input,select').forEach(x=>x.disabled=true);
+ try{await graphPost('graph_birthday',{node_id:w.dataset.bdayNode,...args});toast(remove?t('Removed.'):t('Saved.'));await people(graphNode,true)}
+ catch(x){errCaught(x);delete w.dataset.busy;w.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);say(x.message)}}
+document.addEventListener('click',e=>{const open=e.target.closest('[data-bday-edit],[data-bday-add]');if(open){e.preventDefault();return bdayOpen(open.dataset.bdayEdit||open.dataset.bdayAdd,open.dataset.bday||'')}
+ const w=e.target.closest('.bday-edit');if(!w)return;
+ if(e.target.closest('[data-bday-save]'))return bdaySave(w,false);
+ if(e.target.closest('[data-bday-remove]'))return bdaySave(w,true);
+ if(e.target.closest('[data-bday-cancel]'))return people(graphNode,true)});
+document.addEventListener('input',e=>{const w=e.target.closest?.('.bday-edit');if(w){w.querySelector('.field-error').textContent='';w.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'))}});
+document.addEventListener('keydown',e=>{const w=e.target.closest?.('.bday-edit');if(!w||e.isComposing)return;
+ if(e.key==='Enter'&&e.target.matches('input,select')){e.preventDefault();bdaySave(w,false)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();people(graphNode,true)}},true);
 function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='work');
  rows.push(roleKv(n));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));
  if(f?.in?.length)rows.push(kv('Network',html`<span class="fleet-mark">${[...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · ')}</span>`,html`<button type="button" class="ghost" data-fleet-member="${f.in[0].member_id}">See in Fleet</button>${work?html`<button type="button" class="ghost" data-fleet-free="${work.fleet}">Ask your Fleet</button>`:''}`));
- else if(f?.machine)rows.push(kv('Network',html`<span class="fleet-mark">${[t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · ')}</span>`));  // found on the Network, in no Fleet together
+ else if(f?.machine)rows.push(kv('Network',html`<span class="fleet-mark">${[t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · ')}</span>`,
+  f.network?.can_add?html`<button type="button" class="ghost" data-person-friend="${f.network.hint==='colleague'?'colleague':'friend'}" data-net-email="${f.network.email}">${t('Add as a friend')}</button>`:'','kv-under'));  // found on the Network, in no Fleet together
+ else if(n.invite)rows.push(kv('Network',html`<span class="fleet-mark">${t('No Machine found')}</span>${n.invite.family?html`<span class="sub mi-family">${inviteFamilyGo(n.invite.family)}</span>`:''}`,html`<button type="button" class="ghost" data-machine-invite="${JSON.stringify({...n.invite,node:n.id})}">${t('Invite to The Machine')}</button>`,'kv-under'));  // no Machine the owner knows of
  if(f?.named)rows.push(kv('Name',html`<span class="fleet-named">From your ${work?'Fleet':f.in[0].kind==='family'?'Family':'Friends'}. Your messages say “${n.name_from_messages||''}”.</span>`,html`<button type="button" class="ghost" data-fleet-keep="${n.name}">Keep</button>`));
  if(graphOwners.length)rows.push(ownerRow(n));
  return html`<section class="detail-section person-about"><h4>With you</h4>${rows}</section>`}
@@ -140,13 +178,12 @@ function orgContact(n){const p=n.profile||{},site=orgSite(n),rows=[];
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
 const orgAbout=n=>html`<section class="detail-section person-about"><h4>With you</h4>${roleKv(n)}${graphOwners.length?ownerRow(n):''}</section>`;
-const orgRel=n=>[n.signals?t(['{} person','{} people'],n.signals):'',n.last_at?t('last contact {}',day(n.last_at)):''].filter(Boolean).join(' · ');
-function orgPage(n,group){const p=n.profile||{};return html`<article class="graph-detail person-page org-page"><div class="name-row">${picEdit(n,orgPic(n,true))}<div class="person-head"><h3 title="${n.name}">${n.name}</h3>${n.about?html`<p class="person-job">${n.about}</p>`:''}</div>${orgActions(n)}</div>${orgForm(n)}<div class="person-view">${p.about?html`<p class="graph-sub person-bio org-about">${p.about}</p>`:''}${orgRel(n)?html`<p class="person-rel detail-sub">${cap(orgRel(n))}</p>`:''}${orgWrongRow(n)}${orgDoubleAsk(n)}${notesSection(n.profile?.notes)}${orgContact(n)}${orgSites(n)}${orgAbout(n)}${orgProjects(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}</div></article>`}
+const orgRel=n=>{const parts=[n.signals?t(['{} person','{} people'],n.signals):'',n.last_at?lastLine(n,!n.signals):''].filter(Boolean);return parts.length?html`${parts.map((x,i)=>html`${i?' · ':''}${x}`)}`:''};
+function orgPage(n,group){const p=n.profile||{};return html`<article class="graph-detail person-page org-page"><div class="name-row">${picEdit(n,orgPic(n,true))}<div class="person-head"><h3 title="${n.name}">${n.name}</h3>${n.about?html`<p class="person-job">${n.about}</p>`:''}</div>${orgActions(n)}</div>${orgForm(n)}<div class="person-view">${p.about?html`<p class="graph-sub person-bio org-about">${p.about}</p>`:''}${orgRel(n)?html`<p class="person-rel detail-sub">${orgRel(n)}</p>`:''}${orgWrongRow(n)}${orgDoubleAsk(n)}${notesSection(n.profile?.notes)}${orgContact(n)}${orgSites(n)}${orgAbout(n)}${orgProjects(n)}${crmFieldsSection(n)}${detailGroups(n,group)}${fleetAskRow(n)}</div></article>`}
 // An organization's projects, open ones first, each with where it stands
 const orgProjects=n=>n.projects?.length?html`<section class="detail-section org-projects"><h4>Projects</h4><ul>${n.projects.map(p=>html`<li${p.open?'':html` class="done"`}><button type="button" class="inline-node" data-node="${p.id}" title="${p.name}">${p.name}</button><small class="muted">${p.outcome==='won'?'Won':p.outcome==='lost'?'Lost':p.archived?'Archived':p.stage?p.stage+(p.board?' on '+p.board:''):'No board'}</small></li>`)}</ul></section>`:'';
 const deleteRow=n=>n.kind!=='person'?'':html`<div class="person-delete"><div class="person-delete-confirm" hidden><p>Delete ${n.name} and everything The Machine knows about them? This can’t be undone.</p><p class="muted">Won’t be added again.</p><div class="row"><button class="danger-solid" data-person-delete-yes>Delete</button><button class="ghost" data-person-delete-no>Cancel</button></div></div></div>`;
 const orgWrongRow=n=>n.wrong?html`<p class="graph-sub role-row"><span class="muted">Looked-up details cleared: they were another company’s.</span><button class="ghost" data-org-lookup>Look it up again</button></p>`:'';
-const whosWho=(items,total)=>items?.length?html`<div class="section-head"><h2>Who’s who</h2><span class="count">${total||items.length}</span><p>Roles your Machine picked up. Confirm or edit; it learns from your edits.</p></div>${items.length>1?html`<p class="role-all"><button class="ghost" data-role-all>✓ All ${items.length} are right</button></p>`:''}<div class="graph-list">${items.map(w=>html`<article class="whos" data-whos="${w.id}"><div class="graph-row">${nodeButton(w)}<span class="chip role-chip" style="--c:var(--lavender)"><span class="ell">${w.role}</span></span></div>${w.quote?html`<p class="graph-sub">${quoteLine(w.id,w.quote,w.event_id)}</p>`:''}<p class="graph-sub role-row">${confirmButton(w.id,w.role)}<button class="ghost" data-role-edit-for="${w.id}">Edit</button></p></article>`)}</div>`:'';
 // Same person? The graph joins identities only on strong evidence (the same name on one message, the same LinkedIn
 // profile, their number in their own mail); a likely match is a quiet question here and in People: Merge or Not the
 // same, which is remembered. Joined identities list why, each with Undo (it splits them for good).
@@ -209,16 +246,39 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-contact-sh
 // On a person's page: Share contact… in ⋯ when someone can get it, and "Shared by" when a share made or joined them.
 function contactMarks(view,n){const list=view.querySelector('.person-page .person-menu .fact-menu-list');if(list&&n.can_share&&!list.querySelector('[data-contact-share]')){const item=document.createElement('button');item.type='button';item.setAttribute('role','menuitem');item.dataset.contactShare=n.id;item.textContent='Share contact…';list.prepend(item)}const m=n.shared_by,pv=view.querySelector('.person-page .person-view');
  if(m&&pv&&!pv.querySelector('.person-shared'))pv.prepend(htmlNodes(html`<p class="graph-sub person-shared">${m.kind==='work'?'Shared by':'Suggested by'} ${m.by}${m.note?`: “${m.note}”`:''}</p>`))}
-// On a person's page: Add as friend in ⋯ for someone found on the Network, in no Fleet, Family or Friends with the owner and
-// with no open request (graph.network_marks). It sends what the Suggestions card's Connect sends, Friend or Family the same.
-function friendMarks(view,n){const net=n.fleet?.network,list=view.querySelector('.person-page .person-menu .fact-menu-list');if(!net?.can_add||!list||list.querySelector('[data-person-friend]'))return;
- const item=(rel,label)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.personFriend=rel;b.dataset.netEmail=net.email;b.textContent=label;return b};
- list.prepend(...(net.hint==='colleague'?[item('colleague',t('Add as friend'))]:[item('friend',t('Add as friend')),item('family',t('Add as family'))]))}
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-person-friend]');if(!b)return;const list=b.closest('.fact-menu-list');b.closest('details')?.removeAttribute('open');
- list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=true);
- try{await fleetPost('fleet_network',{do:'connect',email:b.dataset.netEmail,relation:b.dataset.personFriend});list.querySelectorAll('[data-person-friend]').forEach(x=>x.remove());
-  const mark=b.ownerDocument.querySelector('.person-page .person-about .fleet-mark');if(mark)mark.textContent=t('Has a Machine')+' · '+t('Friend request sent');
-  toast(t('Friend request sent'));refresh()}catch(err){errCaught(err);list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=false);toast(err.message,true)}});
+// On a person's page, for someone found on the Network, in no Fleet, Family or Friends with the owner and with no open
+// request (graph.network_marks): Add as a friend next to "Has a Machine", and Add as family in ⋯. Each sends what the
+// Suggestions card's Connect sends: an ordinary friend request, nothing connects until they accept.
+function friendMarks(view,n){const net=n.fleet?.network,list=view.querySelector('.person-page .person-menu .fact-menu-list');if(!net?.can_add||net.hint==='colleague'||!list||list.querySelector('[data-person-friend]'))return;
+ const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.personFriend='family';b.dataset.netEmail=net.email;b.textContent=t('Add as family');list.prepend(b)}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-person-friend]');if(!b)return;const page=b.closest('.person-page')||document;b.closest('details')?.removeAttribute('open');
+ const all=()=>page.querySelectorAll('[data-person-friend]');all().forEach(x=>x.disabled=true);
+ try{await fleetPost('fleet_network',{do:'connect',email:b.dataset.netEmail,relation:b.dataset.personFriend});all().forEach(x=>x.remove());
+  const mark=page.querySelector('.person-about .fleet-mark');if(mark)mark.textContent=t('Has a Machine')+' · '+t('Friend request sent');
+  toast(t('Friend request sent'));refresh()}catch(err){errCaught(err);all().forEach(x=>x.disabled=false);toast(err.message,true)}});
+// Invite to The Machine, for someone with no Machine the owner knows of (family_invites.person_invite). With a mailbox
+// that can send, the invite is a ready to-do on their page (person_invite_draft) and opens in the send dialog every
+// email uses (openSend): nothing goes out until Send there. Without one: the words, to Copy or Open in email in the
+// owner's own email app. Invite to your Family (when it fits) is on the page, under No Machine found.
+const INVITE_SITE='https://themachine.computer';
+const inviteWords=v=>({subject:t('Have a look at The Machine'),body:[v.first?t('Hi {},',v.first):t('Hi,'),t('I use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: {}',INVITE_SITE)].join('\n\n')});
+function inviteFamilyGo(f){if(!state.manage_url)return html`<a class="link" href="${safeHref(f.url)}" target="_blank" rel="noopener">${t('Invite to your Family')}</a>`;
+ return html`<form method="post" action="/_machine/account-hop" class="inline"><input type="hidden" name="to" value="family_invite"><input type="hidden" name="email" value="${f.email}"><input type="hidden" name="name" value="${f.name||''}"><button class="link">${t('Invite to your Family')}</button></form>`}
+let machineInvite=null;
+function machineInviteOpen(v){machineInvite=v;const w=inviteWords(v),d=$('#machine-invite'),mail=v.email?'mailto:'+encodeURIComponent(v.email)+'?subject='+encodeURIComponent(w.subject)+'&body='+encodeURIComponent(w.body):'';
+ setHTML(d,html`<div class="snooze-heading"><h2 id="machine-invite-title">${t('Invite {} to The Machine',v.first||v.name||t('them'))}</h2><button type="button" data-mi-close aria-label="Close">×</button></div>
+ <p class="fleet-fine">${t('What they get. Nothing is sent from here.')}</p>
+ <div class="mi-preview">${v.email?html`<p class="muted">${t('To: {}',v.email)}</p>`:''}<p class="muted">${t('Subject: {}',w.subject)}</p>${w.body.split('\n\n').map(p=>html`<p>${p}</p>`)}</div>
+ <p class="fleet-fine">${t('Once they have a Machine, Add as a friend shows here.')}</p>
+ <div class="ed-actions"><span class="grow"></span><button type="button" class="${mail?'ghost':'primary'}" data-mi-copy>${t('Copy')}</button>${mail?html`<button type="button" class="primary" data-mi-mail="${mail}">${t('Open in email')}</button>`:''}</div>`);
+ if(!d.open)d.showModal();d.querySelector(mail?'[data-mi-mail]':'[data-mi-copy]')?.focus()}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-machine-invite]');if(!b)return;let v;try{v=JSON.parse(b.dataset.machineInvite)}catch{return}
+ if(!v.send){machineInviteOpen(v);return}
+ b.disabled=true;try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'person_invite_draft',args:{node_id:v.node}})});
+  await refresh();openSend(r.suggestion_id,r.revision)}catch(err){errCaught(err);toast(err.message,true)}finally{b.disabled=false}});
+$('#machine-invite').addEventListener('click',async e=>{const d=$('#machine-invite');if(e.target===d||e.target.closest('[data-mi-close]')){d.close();return}
+ const m=e.target.closest('[data-mi-mail]');if(m){location.href=m.dataset.miMail;d.close();return}
+ if(e.target.closest('[data-mi-copy]')&&machineInvite){try{await navigator.clipboard.writeText(inviteWords(machineInvite).body);toast(t('Copied.'))}catch(err){errCaught(err);toast(t('Couldn’t copy automatically. Select the text to copy it.'),true)}}});
 // Shared with you: at the top of People, until Add or Dismiss.
 const contactsInList=()=>graphContactsIn.length?html`<div class="section-head"><h2>Shared with you</h2><span class="count">${graphContactsIn.length}</span><p>Contacts sent to you. Add them to your Graph or dismiss them.</p></div><div class="graph-list contacts-in">${graphContactsIn.map(c=>html`<article class="contact-in"><div class="graph-row">${personPic({name:c.card.name})}<strong>${c.card.name}</strong></div><p class="graph-sub">${c.kind==='work'?`Shared by ${c.from}`:`${c.from} suggests you add ${c.card.own?'them':'this contact'}`}${c.card.own?' · their own contact':''} · ${c.where}</p><p class="graph-sub muted">${c.rows.filter(r=>!['Name','Note'].includes(r.label)).map(r=>r.value).join(' · ')||'Name only'}</p>${c.card.note?html`<p class="graph-sub">“${c.card.note}”</p>`:''}${c.existing?html`<p class="graph-sub muted">You have ${c.existing.name}. Add puts what’s new on their page.</p>`:''}<p class="graph-sub role-row"><button data-contact-in="add" data-id="${c.id}">Add</button><button class="ghost" data-contact-in="dismiss" data-id="${c.id}">Dismiss</button></p></article>`)}</div>`:'';
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-contact-in]');if(!b)return;b.disabled=true;try{const r=await graphPost('fleet_contact_decide',{id:b.dataset.id,choice:b.dataset.contactIn});
@@ -373,7 +433,7 @@ const askForm=(p,about)=>html`<details class="team-ask"><summary>Ask ${p.name||'
 const teamAsks=n=>{const people=(n.team?.people||[]).filter(p=>!p.left);return people.length?html`<div class="team-asks">${people.slice(0,3).map(p=>askForm(p,n.name))}</div>`:''};
 const teamDetail=n=>{const [paneId,paneName]=GRAPH_KIND_PANE[n.kind]||GRAPH_KIND_PANE.person;
  const org=n.org_name&&n.org?html`<button class="node" data-node="${n.org}" title="${n.org_name}">${n.org_name}</button>`:n.org_name;  /* its organization's page, when this Machine has it */
- const sub=[n.role&&t(cap(n.role)),org,n.kind==='project'&&n.stage?n.board+': '+t(n.stage):'',n.last_at?t('last contact {}',day(n.last_at)):''].filter(Boolean).flatMap((x,i)=>i?[' · ',x]:[x]);
+ const sub=[n.role&&t(cap(n.role)),org,n.kind==='project'&&n.stage?n.board+': '+t(n.stage):'',n.last_at?htmlT('last contact {}',sinceTime(n.last_at)):''].filter(Boolean).flatMap((x,i)=>i?[' · ',x]:[x]);
  return html`<div class="graph-crumbs" role="navigation" aria-label="Breadcrumb"><a href="#graph" data-crumb="">Graph</a><span aria-hidden="true">›</span><a href="#graph=${paneId}" data-crumb="${paneId}">${paneName}</a><span aria-hidden="true">›</span><span aria-current="page">${n.name}</span></div><article class="graph-detail"><div class="name-row"><h3>${n.name}</h3></div><p class="graph-sub">${sub}</p>${projAbout(n)}${n.next?html`<p class="graph-sub">Next: ${n.next}</p>`:''}${crmFieldsSection(n)}${teamAsks(n)}</article>${graphEvents(n)}`};
 const heldPane=items=>items?.length?html`<div class="section-head"><h2>Held back this week</h2><span class="count">${items.length}</span><p>Your team sees only that these exist, or nothing.</p></div><div class="graph-list">${items.map(x=>html`<article class="held-row"><div class="graph-row"><span class="ell" title="${x.title}">${x.title||'(no subject)'}</span>${shareChip({id:x.event_id,share:{share:'only_you',fixed:false,why:x.why}})}</div><p class="graph-sub">${[x.with,shortDay(x.at),x.why].filter(Boolean).join(' · ')}</p></article>`)}</div>`:html`<div class="empty all-clear"><div><strong>Nothing held back this week.</strong>Work went to your team as usual.</div></div>`;
 $('#people-view').addEventListener('click',async e=>{

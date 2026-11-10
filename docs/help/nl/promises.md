@@ -17,7 +17,7 @@ Onder **Beloftes** op de pagina To-do's:
 
 Elke belofte heeft een menu **⋯**:
 
-- **Doe het** bij die van jou: ze wordt nu een to-do, en je Machine bereidt die voor. **Herinneren** bij die van anderen: je Machine schrijft een kort opvolgbericht als concept, waar ze het beloofden. Er gaat niets weg tot jij het verstuurt. Is ze al een to-do, dan opent die to-do.
+- **Doe het** bij die van jou: ze wordt nu een to-do, en je Machine bereidt die voor. **Herinneren** bij die van anderen: je Machine schrijft een kort opvolgbericht als concept, waar ze het beloofden, terwijl jij op de lijst blijft. Een korte melding zegt dat het eraan komt, met **Open to-do**, en de belofte toont "nu een to-do". Er gaat niets weg tot jij het verstuurt. Is ze al een to-do, dan opent die to-do.
 - **Markeer als gedaan**: ze is nagekomen.
 - **Gaat niet door**: ze gebeurt niet, dus je Machine volgt ze niet meer op, zonder to-do.
 

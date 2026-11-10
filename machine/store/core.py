@@ -241,6 +241,10 @@ class StoreCore:
             # a JSON list of up to two short lines, shown as taps over its message box
             if 'chat_asks' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN chat_asks TEXT')
+            # The organization the to-do is about, in the review's word (CardsStore.suggest org): its graph node id, ''
+            # when the review said it is about none, NULL when no review said (an older to-do)
+            if 'org' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN org TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')
@@ -504,7 +508,10 @@ class StoreCore:
             routines.ensure(db)  # routines (routines.py): new tables only
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
-            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting,
+            # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
+            db.execute('CREATE TABLE IF NOT EXISTS decision_asks(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,'
+                       'questions TEXT NOT NULL,created_at TEXT NOT NULL)')
+            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py:
             # graph.slack_names, the to-dos' quality: profile.QUALITY_TABLES, and the Projects board's organizations: graph_boards)
             stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES, *graph_boards.ORG_TABLES,
                               *CARD_TABLES))  # and the to-dos' views (views.CARDS)

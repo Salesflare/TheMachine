@@ -133,7 +133,7 @@ The installer offers to publish the dashboard on your tailnet (`tailscale serve`
 
 The dashboard installs as a phone app and notifies you of each to-do, result, reminder and the weekly recap. With it, Telegram is optional.
 
-Or get the mobile app: [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android. On a self-hosted Machine it connects with the code in **Settings** → **General** → **Phone app** ([help](help/mobile-app.md)).
+Or get the mobile app: [App Store](https://apps.apple.com/app/id6829875215) for iPhone and iPad, [Google Play](https://play.google.com/store/apps/details?id=computer.themachine.app) for Android. On a self-hosted Machine it connects with the code in **Settings** → **Apps**, under **Not on the Network?** ([help](help/mobile-app.md)).
 
 - **Android (Chrome):** open the dashboard and tap **Install** on the note at the top of To-dos (or ⋮ → **Install app**). Open The Machine from your home screen and tap **Turn on** on the note, then allow notifications.
 - **iPhone/iPad (iOS 16.4 or newer):** open the dashboard in Safari, tap **Share** → **Add to Home Screen**. Open The Machine from your Home Screen (not a Safari tab: iOS only allows notifications there) and tap **Turn on**.
@@ -154,7 +154,7 @@ Then it offers to fill in the rest from what you actually write. Your agent read
 
 You see the draft first. It's saved only if you say yes, and it never overwrites what you wrote. Redo it later with `assistant profile`, or edit `USER.md` yourself. Check: `USER.md` has an "Observed from my messages" section.
 
-It also reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier"), where the messages show it, each with the line it read it in. Confirm them with ✓ (or all at once with **All N are right**), or change them in the Graph's Who's who; reviews learn from your changes. `assistant roles` runs that step again later.
+It also reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier"), where the messages show it, each with the line it read it in. They show on each page right away; fix a wrong one with **Edit** on that page, and reviews learn from your changes. `assistant roles` runs that step again later.
 
 ## 5. Preview, then turn it on
 

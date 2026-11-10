@@ -19,7 +19,7 @@ Een concept wacht in je Machine tot je het leest en zelf op **Versturen** drukt.
 
 ## Er een koppelen
 
-Open **Instellingen**, **Apps**. Onder **De apps van The Machine** komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en je **Privéadres (end-to-end)**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
+Open **Instellingen**, **Apps**. Onder **De apps van The Machine** komen **Toevoegen in ChatGPT** en **Toevoegen in Claude**. Onder **Of voeg hem toe met een adres** staan het ene adres van de officiële app voor elke Machine, `https://mcp.themachine.computer/mcp`, en **Je adres**, `https://<jouw naam>.mcp.themachine.computer/mcp`, elk met **Kopiëren**.
 
 Op een Machine op je eigen computer druk je eerst op **Instellen** onder **Krijg je adres**. Er opent een pagina in je account: controleer of die dezelfde code toont, bevestig en kies een naam. Je Machine koppelt zichzelf, zonder herstart. Beide manieren hebben dit nodig.
 
@@ -37,7 +37,7 @@ Voor je privéadres, of een Machine zonder het Network, voeg je in ChatGPT lieve
 
 Met de officiële app vraagt de AI je in te loggen met je The Machine-account. Kies deze Machine als je er meer hebt en keur de AI dan goed op de eigen pagina van je Machine. Met het privéadres komt de AI rechtstreeks naar je Machine.
 
-AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het adres van je dashboard plus `/mcp` gebruiken. **Ontkoppelen** haalt een Machine op je eigen computer weer van je account.
+AI's op een apparaat in je tailnet, zoals Claude Code of Cursor, kunnen ook het adres van je dashboard plus `/mcp` gebruiken. **Deze Machine ontkoppelen**, onderaan **Instellingen**, **Account**, haalt een Machine op je eigen computer weer van je account.
 
 Je Machine toont welke AI het is. Een AI die hij niet herkent, toont het adres waar hij vandaan komt: koppel alleen als je dit net zelf hebt gestart.
 

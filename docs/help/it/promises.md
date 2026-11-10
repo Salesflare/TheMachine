@@ -17,7 +17,7 @@ Sotto **Promesse** nella pagina Attività:
 
 Ogni promessa ha un menu **⋯**:
 
-- **Fallo** sulle tue: diventa subito un’attività, e la tua Machine la prepara. **Sollecita** su quelle degli altri: la tua Machine scrive una breve bozza di sollecito dove l’hanno promesso. Non parte nulla finché non lo invii tu. Se è già un’attività, si apre quella.
+- **Fallo** sulle tue: diventa subito un’attività, e la tua Machine la prepara. **Sollecita** su quelle degli altri: la tua Machine scrive una breve bozza di sollecito dove l’hanno promesso, e tu resti nell’elenco. Un breve avviso lo conferma, con **Apri attività**. Non parte nulla finché non lo invii tu. Se è già un’attività, si apre quella.
 - **Segna come fatto**: è stata mantenuta.
 - **Non succederà**: non accadrà, quindi la tua Machine smette di seguirla, senza attività.
 

@@ -3,9 +3,9 @@ title: Rotinas
 area: cards
 summary: Trabalho que sua Machine faz sozinha, num ritmo, como um resumo de segunda-feira dos seus deals abertos. Ela só lê.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Criar uma
 
@@ -27,7 +27,13 @@ Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. 
 
 **Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesmo escreve, como amigos, família e contatos frequentes. Cada uma traz uma mensagem curta escrita onde vocês costumam conversar, como o chat do WhatsApp ou sua conversa por e-mail, no idioma da pessoa. Ela só sai quando você envia. Um dia sem aniversários não cria tarefa.
 
-Os aniversários vêm das suas agendas (os aniversários do Google e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph. Se nenhuma delas tiver um aniversário ainda, o resultado diz **Ainda não há aniversários** e como adicionar.
+Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversários do Google, lidos toda manhã mesmo sem sincronizar, e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph. Se nenhuma delas tiver um aniversário ainda, o resultado diz **Ainda não há aniversários** e como adicionar.
+
+**Importar aniversários do Facebook**: com Aniversários ligado, uma tarefa oferece ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine a abre no navegador dela, rola até todos os meses carregarem e lê o nome e o aniversário de cada amigo. Ela mostra quantos encontrou e quem corresponde por nome e sobrenome a pessoas do seu Graph. Um nome que mais de uma pessoa tem é ignorado e listado.
+
+Só **Salvar** os guarda, e só o aniversário, na página de cada pessoa. Um aniversário que você informou lá continua. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
+
+Amigos que ninguém no seu Graph tem são contados, com alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, também depois de Salvar: cada um com nome e aniversário, nunca compartilhado com uma Work Fleet. Um nome que alguém do seu Graph já tem, ou que tinha alguém que você excluiu de vez, é pulado. Os lembretes de aniversário continuam vindo só para pessoas para quem você escreve. **Desfazer** na tarefa remove exatamente essas pessoas.
 
 Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
 

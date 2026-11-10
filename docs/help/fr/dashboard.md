@@ -10,7 +10,7 @@ order: 4
 
 - **Tâches** : vos tâches et vos promesses. Voir [Tâches](cards.md).
 - **Agenda** : la semaine à venir avec vos réunions, vos tâches à échéance et vos promesses. Voir [Agenda](calendar.md).
-- **Graph** : les personnes, organisations et projets de vos messages, et **Qui est qui** quand des rôles attendent votre avis. Voir [Graph](graph.md).
+- **Graph** : les personnes, organisations et projets de vos messages. Voir [Graph](graph.md).
 - **Fleet** : votre équipe, votre famille et vos amis sur The Machine Network, une fois que vous en avez une. Voir [Fleet](fleet.md).
 - **Apprentissage** : comment se passent les tâches, et ce qu’elle a appris.
 - **Connexions** : vos sources et leur état. Voir [Connexions](connections.md).
@@ -39,7 +39,7 @@ Les lignes n’apparaissent que là où elles ont du sens : pas d’app de tél�
 
 Après votre premier jour, elle se replie en une ligne discrète au-dessus de **Pour vous**, comme « Encore 2 étapes · Continuer ». Touchez-la pour ouvrir la tâche, et touchez la flèche pour la replier.
 
-**Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **App mobile** y propose toujours de télécharger l’app.
+**Annuler** dans le message qui suit la fait revenir, tout comme **Afficher 1 étape masquée** en bas de la tâche. Une fois toute la tâche fermée, **Paramètres**, **Général**, **Tâche de démarrage** la fait revenir. **Paramètres**, **Général**, **Cet appareil** garde les mêmes réglages, et **Paramètres**, **Applis** propose toujours l’app mobile.
 
 ## Nouvelles versions
 

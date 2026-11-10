@@ -13,6 +13,7 @@ import uuid
 import chat_files
 import graph
 import i18n
+import todo_org
 import locale_prefs
 import meeting_mail
 from machine.cards import current_title, delivery_time, group_sender
@@ -354,7 +355,7 @@ class CardsStore:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None, personal=False, waiting_on=None):
+                company=None, personal=False, waiting_on=None, org=None):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         waiting_on: the review's word that the owner did their part of that open card and the next step is someone
@@ -367,13 +368,16 @@ class CardsStore:
         on (todo_areas.owner_companies): the to-do gets that company's accounts and stays there, as after a move.
         personal: the review's word that the matter is the owner's own life (family, friends, home), also on a work
         mailbox; so is evidence whose people are all from the owner's own life (own_life_evidence). The to-do is
-        Personal from the start (todo_areas.personal_accounts), never a Work Fleet's."""
+        Personal from the start (todo_areas.personal_accounts), never a Work Fleet's.
+        org: the review's word on which organization the matter is about (graph.card_org: its node id, domain or name;
+        '' for none). Only the matter decides it, never who is on it; None leaves it as it was (not said)."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
-                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on)
+                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on,
+                                    org=org)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if waiting_on is not None:
@@ -391,6 +395,8 @@ class CardsStore:
         with contextlib.nullcontext(_db) as db:
             if company is None and (personal is True or own_life_evidence(db, event_ids)):
                 company, placed = todo_areas.PERSONAL, todo_areas.personal_accounts(getattr(self, 'accounts', None) or [])
+            if org is not None:
+                org = todo_org.card_org(db, org)
             existing = db.execute('SELECT * FROM suggestions WHERE dedupe_key=? OR id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=?)',
                                   (dedupe_key, dedupe_key)).fetchone()
             if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
@@ -467,6 +473,8 @@ class CardsStore:
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))
                 if expiry and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, target['id']))
+                if org is not None and not saved.get('attached'):  # the review's latest word on what it is about
+                    db.execute('UPDATE suggestions SET org=? WHERE id=?', (org, target['id']))
                 return saved
             if due:
                 # A deadline within three days goes out now; one that the
@@ -495,6 +503,8 @@ class CardsStore:
                         int(bool(owner_step))))
             if expiry:
                 db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
+            if org is not None:
+                db.execute('UPDATE suggestions SET org=? WHERE id=?', (org, suggestion_id))
             if company:  # pinned there, as a move is: a later signal on another company's mailbox doesn't pull it back
                 db.execute('UPDATE suggestions SET area=? WHERE id=?', (company, suggestion_id))
             db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)',
@@ -753,7 +763,7 @@ class CardsStore:
             return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
     def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None, area_open=False,
-                   file_texts=None):
+                   file_texts=None, accepted=False):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
         their words as its first evidence: a signal of kind owner.card, left for the next review to fill in. Nothing is
         sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card.
@@ -761,7 +771,9 @@ class CardsStore:
         area_open: the owner's area ids when they gave none and nothing on it points to one (owner_card_area): the review
         places it by what it is about (company or personal), or the message it follows up on does (fill_owner_card).
         With files, the words may be empty (a PDF shared from the phone): the first file's name is its title until the
-        review fills it in from file_texts ({file id: text}, chat_files.texts), kept sealed with the event's metadata."""
+        review fills it in from file_texts ({file id: text}, chat_files.texts), kept sealed with the event's metadata.
+        accepted: the owner's step is already written (an invite from a person's page, App.person_invite_draft): no
+        review reads their words, and the to-do takes its draft at once (Store.prepare)."""
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
         if not words and not (files and files[1]):
@@ -783,8 +795,8 @@ class CardsStore:
                 title = owner_title(' '.join(re.sub(r'\.[A-Za-z0-9]{1,5}$', '', names[0]).replace('_', ' ').split()) or names[0])
                 body = ', '.join(names)
             cursor = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                                "VALUES(?,?,'owner.card',?,?,?,?,0,?,1,0,?)",
-                                (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256((words or title).encode()).hexdigest(), stamp))
+                                "VALUES(?,?,'owner.card',?,?,?,?,0,?,1,?,?)",
+                                (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256((words or title).encode()).hexdigest(), int(accepted), stamp))
             saved = self.suggest('owner:' + sid, title, clamp(body, 699), [cursor.lastrowid, *[i for i in attach if i != cursor.lastrowid]], when='now',
                                  work=work, due=due, project=project, _db=db, suggestion_id=sid)
             kept = chat_files.adopt(db, files[0], sid, files[1]) if files else []
@@ -794,6 +806,8 @@ class CardsStore:
                     {'name': f['name'], 'type': f['type'], **({'text': read[f['id']]} if read.get(f['id']) else {})} for f in kept]}), cursor.lastrowid))
             db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL,due_at=? WHERE id=?', ('owner', words, due_at, sid))
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
+            if accepted:
+                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (sid,))
         return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
     def report_seen(self, ids):

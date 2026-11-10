@@ -21,8 +21,8 @@ const PAGE_TITLES={calendar:'Calendar',routines:'Routines',events:'Messages',peo
 // The Graph's title is the pane on screen, with Graph as a quiet crumb and the same count as its row in the sidebar
 // A page's section, as its breadcrumb says: an organization opened from a project is under Organizations
 const graphNodePane=id=>id==='me'?'people':/^(team:)?org:/.test(id)?'orgs':/^(team:)?project:/.test(id)?'projects':'people';  /* team:…: a record only teammates have */
-function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project,roles:rolesWaiting}[graphShown];
- const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects'],roles:['{} role to confirm','{} roles to confirm']}[graphShown];
+function graphHead(){if(/^promise:/.test(graphDrawn||''))return html`<div><p class="page-crumb">Graph</p><h2 class="page-title">Promise</h2></div>`;const name=GRAPH_SUBS[graphDrawn?graphNodePane(graphDrawn):graphShown];if(!name)return html`<h2 class="page-title">Graph</h2>`;const c=graphCounts||{},n={people:c.person,orgs:c.org,projects:c.project}[graphShown];
+ const words={people:['{} person','{} people'],orgs:['{} organization','{} organizations'],projects:['{} open project','{} open projects']}[graphShown];
  const mode=graphShown==='projects'&&!graphDrawn&&graphBoards.length?html`<div class="view-mode" role="group" aria-label="View">${[['list','List'],['board','Board']].map(([v,t])=>html`<button type="button" data-proj-view="${v}" aria-pressed="${projView()===v}">${t}</button>`)}</div>`:'';
  const team=!graphDrawn&&['people','orgs','projects'].includes(graphShown)&&teamOn()?html`<div class="view-mode" role="group" aria-label="Whose">${[['mine','Mine'],['team','Team']].map(([v,t])=>html`<button type="button" data-graph-team="${v}" aria-pressed="${(v==='team')===graphTeam}">${t}</button>`)}</div>`:'';
  const made={people:['person','New person'],orgs:['org','New organization'],projects:['project','New project']}[graphShown];  /* a board has its own + New project */
@@ -41,7 +41,7 @@ function helloLine(g){const d=g?.line&&new Date(g.line.since);if(!d||isNaN(d))re
 function pageHead(){const h=$('#page-head'),tab=[...document.querySelectorAll('main>section')].find(x=>!x.hidden)?.id||'inbox';helpLink(tab);docTitle(tab);needsYouPlace();
  if(tab==='inbox'&&chatId){h.hidden=true;return}
  // A Graph page (person, org, project, promise) keeps the section's head; its breadcrumb under it leads back to the list
- const c=sideCounts,busy=[[c.foryou,'{} for you'],[c.preparing,'{} preparing']].filter(([k])=>k).map(([k,key])=>t(key,k)),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known||!busy.length&&scopeFilter!=='all'?'':busy.join(' · ');  // with nothing open the sections below carry the counts
+ const c=sideCounts,busy=[[c.foryou,['{} to-do for you','{} to-dos for you']],[c.preparing,'{} preparing']].filter(([k])=>k).map(([k,key])=>t(key,k)),known=!!state.suggestions&&!(shownCached&&!busy.length),sub=!known||!busy.length&&scopeFilter!=='all'?'':busy.join(' · ');  // with nothing open the sections below carry the counts
  const g=tab==='inbox'&&state.greeting,hi=g?.name?t('Hi {}',g.name):'',line=g?helloLine(g):'';
  const head=tab==='inbox'?html`<img class="page-avatar" src="brand/avatar.png" data-blink="brand/avatar-blink.png" alt="" width="40" height="40"><div><h2 class="page-title">${hi||$('#tagline').textContent}</h2>${line?html`<p class="page-hello"><a href="#card=${g.line.card}">${line}</a></p>`:''}${sub?html`<p class="page-sub">${sub}</p>`:''}</div>${checkHead()}`:tab==='people'?(()=>{try{return graphHead()}catch{return html`<h2 class="page-title">Graph</h2>`}})():tab==='calendar'&&lazyIn('calendar')?calHead():tab==='events'?html`<div><h2 class="page-title">${t('Messages')}</h2><p class="page-sub">${t('Everything I read, found by meaning or by words.')}</p></div>`:html`<h2 class="page-title">${PAGE_TITLES[tab]||''}</h2>`;
  h.classList.toggle('greet',tab==='inbox');h.classList.toggle('hello',!!(hi||line));h.classList.toggle('busy',tab==='inbox'&&busy.length>0);
@@ -112,8 +112,10 @@ if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.cho
 if(choice==='send'){openSend(id);return}
 if(choice==='pick'){const s=state.suggestions.find(x=>x.id===id),q=s?.preparation_questions?.[+b.dataset.q];if(!q)return;
  if(!changing.has(id)){changing.add(id);dismissing.delete(id);render()}
- const t=$('#feedback-'+id);if(!t)return;const head=sentence(q.question)+' ';
- t.value=[...t.value.split('\n').filter(l=>l.trim()&&!l.startsWith(head)),head+b.dataset.pick].join('\n');t.classList.add('filled');
+ // Only the answer goes in the box (the Machine keeps which question it answers): a pick for the same question replaces that question's earlier pick
+ const t=$('#feedback-'+id);if(!t)return;const picked=askPicks.get(id)||{},lines=t.value.split('\n').filter(l=>l.trim()),was=lines.indexOf(picked[b.dataset.q]);
+ if(was>=0)lines.splice(was,1,b.dataset.pick);else lines.push(b.dataset.pick);askPicks.set(id,{...picked,[b.dataset.q]:b.dataset.pick});
+ t.value=lines.join('\n');t.classList.add('filled');
  for(const x of document.querySelectorAll(`#task-${CSS.escape(id)} .pick[data-q="${b.dataset.q}"]`))x.setAttribute('aria-pressed',String(x.dataset.pick===b.dataset.pick));t.focus();return}
 if(choice==='change'||choice==='answer'){changing.add(id);dismissing.delete(id);render();$('#feedback-'+id)?.focus();return}
 if(choice==='cancel-change'){changing.delete(id);render();return}

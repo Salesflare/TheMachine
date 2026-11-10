@@ -107,6 +107,8 @@ def ensure(db):
         db.execute('ALTER TABLE skills ADD COLUMN related TEXT')
     if 'task' not in have:  # a proposal made by a to-do's run: that to-do's id, so its card offers Create skill
         db.execute('ALTER TABLE skills ADD COLUMN task TEXT')
+    if 'asked' not in have:  # a to-do's proposal the owner asked for in that run's message (skills-propose --asked)
+        db.execute('ALTER TABLE skills ADD COLUMN asked INTEGER NOT NULL DEFAULT 0')
 
 
 def one_line(value, chars):
@@ -345,6 +347,17 @@ def for_task(db, task):
         target = db.execute("SELECT * FROM skills WHERE id=? AND status IN ('on','off')", (row['replaces'],)).fetchone()
         out['update'] = update_view(row['id'], dict(target), row['body'], row['base_sha']) if target else None
     return out
+
+
+def drop_task_proposal(db, task):
+    """A to-do that keeps its own way of doing it (a repeating one's method, recurring.py) offers no Create skill for the
+    same work: a new skill its run proposed for it on its own, still waiting, goes. One the owner asked for in that run's
+    message (asked), and an update to one of the owner's skills, stay."""
+    try:
+        db.execute("DELETE FROM skills WHERE task=? AND status='proposed' AND origin='proposed' AND (replaces IS NULL OR replaces='') "
+                   'AND NOT asked', (str(task),))
+    except sqlite3.OperationalError:  # before the task column: nothing was proposed from a to-do yet
+        pass
 
 
 def task_of(db, skill_id):
@@ -636,12 +649,13 @@ class Skills:
         """Every skill kept here (on or off), a teammate's included: what a proposal is checked against."""
         return [dict(r) for r in db.execute("SELECT id,name,slug,description,origin,body,sha FROM skills WHERE status IN ('on','off') ORDER BY name")]
 
-    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None, task=None):
+    def propose(self, name, description, body, why='', update=None, related=None, relation=None, new=False, base=None, task=None, asked=False):
         """The agent noticed repeated work: a skill for the owner to approve, checked first against the skills here
         (check_against): an update to one of the owner's own, a new one related to another, or a new one. Never on, and
         no skill changed, before the owner's Approve (an update's after the before and after: Update skill).
         task: the to-do whose run proposes it (the owner asked for this skill there). Its card then offers Create skill or
-        Update skill, and a newer proposal from that to-do replaces its earlier one (a corrected name, say)."""
+        Update skill, and a newer proposal from that to-do replaces its earlier one (a corrected name, say). asked: the
+        owner asked for it in the message that started that run (checked by the caller)."""
         name, description, body = validate(name if not update else name or 'Update', description if not update else description or 'An update to a skill.', body)
         with self.connect() as db:
             ensure(db)
@@ -665,11 +679,11 @@ class Skills:
                     return {'ok': True, 'duplicate': True}
             stamp, sha = now(), digest(name, description, body)
             skill_id = 'sk_' + secrets.token_hex(8)
-            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,task,created_at,updated_at) "
-                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?,?)",
+            db.execute("INSERT INTO skills(id,slug,name,description,body,status,origin,sha,note,replaces,base_sha,related,task,asked,created_at,updated_at) "
+                       "VALUES(?,?,?,?,?,'proposed','proposed',?,?,?,?,?,?,?,?,?)",
                        (skill_id, slug_of(name), name, description, body, sha, one_line(why, NOTE_CHARS) or None, target and target['id'],
                         target and target['sha'], json.dumps({'id': linked['id'], 'name': linked['name'], 'relation': relation}) if linked else None,
-                        task or None, stamp, stamp))
+                        task or None, 1 if task and asked else 0, stamp, stamp))
         return {'ok': True, 'id': skill_id, **({'update': target['name']} if target else {})}
 
     # -- shared over the Network
@@ -942,6 +956,38 @@ class Catalog:
         self.fetch = fetch or self._fetch
         self.lock = threading.Lock()
         self.raw, self.at, self.error, self.searches = None, 0.0, '', {}
+        self.loading = False
+        # The last good list, kept next to the database: after a restart the page shows it at once while OpenClaw is
+        # asked again in the background (that read took 8-16 s right after a restart, 2026-11-10).
+        self.saved = Path(config['database']).parent / 'skills-catalog.json' if config.get('database') else None
+        self.stale = False
+        self._restore()
+
+    def _restore(self):
+        if not self.saved:
+            return
+        try:
+            data = json.loads(self.saved.read_text())
+            found, at = data.get('skills'), float(data.get('at') or 0)
+        except (OSError, ValueError, AttributeError, TypeError):
+            return
+        if isinstance(found, list) and at > 0:
+            self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
+            self.at, self.stale = at, True  # shown at once, read again soon
+
+    def _save(self, raw, at):
+        if not self.saved:
+            return
+        temporary = self.saved.with_name(f'.{self.saved.name}.{os.getpid()}.{threading.get_ident()}')
+        try:
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, 'w') as stream:
+                json.dump({'at': at, 'skills': raw}, stream)
+            os.replace(temporary, self.saved)
+        except (OSError, TypeError, ValueError) as error:
+            LOG.warning('skills catalog save error=%s', type(error).__name__)
+            with contextlib.suppress(OSError):
+                temporary.unlink()
 
     def _cli(self, args, timeout=60):
         # No terminal and no colors: OpenClaw's own notices stay plain, and nothing waits on input
@@ -996,11 +1042,13 @@ class Catalog:
                 raise ValueError('The answer could not be read. Try again.')
             with self.lock:
                 self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
-                self.at, self.error = self.clock(), ''
+                self.at, self.error, self.stale = self.clock(), '', False
+                raw, at = self.raw, self.at
+            self._save(raw, at)
         except ValueError as error:
             LOG.warning('skills catalog error=%s', error)
             with self.lock:
-                self.at, self.error = self.clock(), str(error)
+                self.at, self.error, self.stale = self.clock(), str(error), False  # tried: asked again in half an hour
         return self.raw
 
     def peek(self):
@@ -1012,7 +1060,7 @@ class Catalog:
         if stop.wait(60):
             return
         while True:
-            if self.clock() - self.at >= CATALOG_SECONDS - 5:
+            if self.stale or self.clock() - self.at >= CATALOG_SECONDS - 5:
                 self.load()
             if stop.wait(60):
                 return
@@ -1028,7 +1076,7 @@ class Catalog:
     def load_soon(self):
         """load() in the background, one at a time."""
         with self.lock:
-            if getattr(self, 'loading', False):
+            if self.loading:
                 return
             self.loading = True
 
@@ -1043,14 +1091,24 @@ class Catalog:
         if not wait and not refresh and self.raw is None:
             # Not read yet since the start (the worker reads it a minute in): read in the background and answer now; the
             # page asks again. A view that waited on OpenClaw took 15 s right after a restart (2026-11-10).
-            tried = bool(self.at) and not getattr(self, 'loading', False)
+            tried = bool(self.at) and not self.loading
             self.load_soon()
             return {'installed': [], 'checked_at': None, 'error': self.error if tried else '', **({} if tried else {'loading': True})}
-        items = [installed_item(r, mine) for r in self.installed(refresh)]
+        updating = False
+        if not wait and not refresh:
+            # A list kept from before a restart, or older than half an hour: shown now, read again in the background
+            # (updating: the page asks once more). Never a wait on OpenClaw here.
+            if self.stale or self.clock() - self.at > CATALOG_SECONDS:
+                self.load_soon()
+            updating = self.loading
+            raw = self.raw or []
+        else:
+            raw = self.installed(refresh)
+        items = [installed_item(r, mine) for r in raw]
         order = {'yours': 0, 'workspace': 1, 'bundled': 2, 'other': 3}
         items.sort(key=lambda i: (order[i['group']], i['name'].lower()))
         return {'installed': items, 'checked_at': dt.datetime.fromtimestamp(self.at, dt.timezone.utc).isoformat(timespec='seconds') if self.at else None,
-                'error': self.error}
+                'error': self.error, **({'updating': True} if updating else {})}
 
     def read(self, name):
         """One installed skill's SKILL.md, to read. Only read; nothing is written."""

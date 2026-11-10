@@ -76,10 +76,11 @@ try{
   new MutationObserver(look).observe(document,{subtree:true,childList:true,characterData:true,attributes:true})});
  const tab=await context.newPage();tab.on('pageerror',e=>errors.push(e.message));
 
- // 1. A slow first status, with the Graph's counts in before it (what used to put "All clear" under the tagline)
+ // 1. A slow first status, past when the Graph's counts used to come in before it (what used to put "All clear" under
+ // the tagline; they come with the status now)
  let release;
  holdStatus=new Promise(r=>release=r);await tab.goto(base);
- await until(tab,()=>document.querySelector('#count-people')?.textContent,null,'graph counts before the status');
+ await tab.waitForTimeout(2500);
  assert.ok(await tab.locator('#suggestions .skeleton').isVisible(),'the loading outline shows while the first status loads');
  assert.equal(await tab.locator('#suggestions').getAttribute('aria-busy'),'true');
  assert.ok(!/All clear/.test(await tab.locator('main').innerText()));
@@ -88,7 +89,7 @@ try{
  assert.equal(await tab.evaluate(()=>__outline),true,'the outline is in the page from its first paint');
  assert.deepEqual(await tab.evaluate(()=>__before),[],'never "All clear" before the first data');
  assert.equal(await tab.locator('#suggestions').getAttribute('aria-busy'),null);
- assert.match(await tab.locator('#page-head').innerText(),/2 for you/);
+ assert.match(await tab.locator('#page-head').innerText(),/2 to-dos for you/);
 
  // 2. Kept on the device: encrypted, a non-extractable AES-GCM key, for this owner, no tokens
  await until(tab,async()=>(await indexedDB.databases()).some(d=>d.name==='tm-cache'),null,'the device cache');

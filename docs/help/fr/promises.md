@@ -17,7 +17,7 @@ Sous **Promesses**, sur la page Tâches :
 
 Chaque promesse a un menu **⋯** :
 
-- **Faire** sur les vôtres : elle devient une tâche maintenant, et votre Machine la prépare. **Relancer** sur celles des autres : votre Machine rédige un court brouillon de relance, là où la promesse a été faite. Rien ne part avant que vous l’envoyiez. Une promesse déjà devenue tâche ouvre cette tâche.
+- **Faire** sur les vôtres : elle devient une tâche maintenant, et votre Machine la prépare. **Relancer** sur celles des autres : votre Machine rédige un court brouillon de relance, là où la promesse a été faite, et vous restez sur la liste. Un court message le confirme, avec **Ouvrir la tâche**. Rien ne part avant que vous l’envoyiez. Une promesse déjà devenue tâche ouvre cette tâche.
 - **Marquer comme fait** : elle a été tenue.
 - **N’aura pas lieu** : elle ne se fera pas, donc votre Machine ne la suit plus, sans tâche.
 

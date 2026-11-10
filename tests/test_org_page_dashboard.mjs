@@ -48,7 +48,8 @@ try{
   // Header: its fact line; then the description and one plain line.
   assert.equal((await card.locator('.person-job').textContent()).trim(),'Accounting, 11-50 people, Ghent, founded 2009',tag);
   assert.equal(await card.locator('.org-about').textContent(),'Lumen keeps the books for small companies and their founders.');
-  assert.match(await card.locator('.person-rel').textContent(),/^4 people · last contact \w+, \w+ \d+$/);
+  assert.equal(await card.locator('.person-rel').textContent(),'4 people · last contact 2 days ago');
+  assert.match(await card.locator('.person-rel time').getAttribute('title'),/^\w+day, \w+ \d+, \d{4}, \d\d:\d\d$/);  // the exact date on hover
   // Sections with headings, in order, as on a person's page.
   assert.deepEqual(await card.locator('.detail-section>h4').allTextContents(),['Contact','With you','Fields','People','Projects']);
   assert.deepEqual(await card.locator('.person-contact .kv .k').allTextContents(),['Website','LinkedIn']);
@@ -56,7 +57,7 @@ try{
   assert.equal(await card.locator('.person-contact a[href="https://www.lumen.example/en/home"]').count(),1);
   const about=await card.locator('.person-about').textContent();
   assert.ok(about.includes('Accounting firm')&&about.includes('“Lumen does our books”'),about);
-  assert.equal(await card.locator('.person-about [data-role-confirm="org:lumen.example"]').count(),1);
+  assert.equal(await card.locator('.person-about [data-role-confirm]').count(),0);  // a review's role applies as read: nothing to confirm
   assert.equal(await card.locator('[data-role-edit],.role-form,.name-form').count(),0);
   assert.equal(await card.locator('.person-view > .detail-fleet-ask [data-fleet-ask]').textContent(),'Ask the Fleet who knows Lumen');  // a quiet row in the card, after Related
   assert.equal(await page.locator('#people-view [data-fleet-ask]').count(),1);

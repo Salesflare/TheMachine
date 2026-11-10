@@ -435,9 +435,13 @@ def _rows(db, sql, args=()):
 
 
 def _owner_facts(db):
-    """Only what the owner taught: a fact a connected AI saved (source 'ai:…') is that AI's claim, not how they work."""
+    """Only what the owner taught: a fact a connected AI saved (source 'ai:…') is that AI's claim, not how they work.
+    And nothing about a Personal person (family, friends, the owner's own life): that never goes to the team."""
     has = 'source' in {r[1] for r in db.execute('PRAGMA table_info(facts)')}
-    return "AND coalesce(source,'') NOT LIKE 'ai:%'" if has else ''
+    tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('fact_about','graph_nodes')")}
+    personal = ("AND id NOT IN (SELECT a.fact_id FROM fact_about a JOIN graph_nodes n ON n.id=a.node_id WHERE a.removed_at IS NULL "
+                "AND n.kind='person' AND json_extract(n.info,'$.side')='personal')") if len(tables) == 2 else ''
+    return ("AND coalesce(source,'') NOT LIKE 'ai:%' " if has else '') + personal
 
 
 def personal_cards(db, ids, accounts):

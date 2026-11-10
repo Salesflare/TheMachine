@@ -11,7 +11,8 @@ links between people. info.history counts its history rows, and info.live is the
 what the reviews, summaries, lookups and the Network pick people by (live()), so history never makes one of those. A
 history row goes to graph_history_events, never to graph_events, so nothing that reads a node's signals (reviews,
 preparations, to-dos, the Team Graph) reads history; only Fleet's "who knows someone" reads both
-(fleet._work_last), under the same work-account and Team Graph rules as signals."""
+(fleet._work_last), under the same work-account and Team Graph rules as signals, and the owner's own page Timeline
+(graph.timeline history=True) shows them, as its last contact counts them."""
 import hashlib
 import threading
 

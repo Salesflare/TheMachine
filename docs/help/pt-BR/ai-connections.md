@@ -19,7 +19,7 @@ Um rascunho espera na sua Machine até você ler e tocar em **Enviar**. Uma IA c
 
 ## Conectar uma
 
-Abra **Configurações**, **Apps**. Abaixo de **Os apps da The Machine** vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e seu **Endereço privado (ponta a ponta)**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
+Abra **Configurações**, **Apps**. Abaixo de **Os apps da The Machine** vêm **Adicionar no ChatGPT** e **Adicionar no Claude**. Em **Ou adicione por endereço** ficam o endereço do app oficial para todas as Machines, `https://mcp.themachine.computer/mcp`, e **Seu endereço**, `https://<seu nome>.mcp.themachine.computer/mcp`, cada um com **Copiar**.
 
 Numa Machine no seu próprio computador, toque antes em **Configurar** em **Obter seu endereço**. Abre uma página da sua conta: confira se ela mostra o mesmo código, confirme e escolha um nome. Sua Machine se pareia sozinha, sem reiniciar. Os dois jeitos precisam disso.
 
@@ -37,7 +37,7 @@ Para seu endereço privado, ou uma Machine sem a Network, adicione no ChatGPT um
 
 Com o app oficial, a IA pede que você entre com sua conta The Machine. Escolha esta Machine se tiver mais de uma e depois aprove a IA na página da sua Machine. Com o endereço privado, a IA vai direto para sua Machine.
 
-IAs num dispositivo da sua tailnet, como Claude Code ou Cursor, também podem usar o endereço do seu painel seguido de `/mcp`. **Desfazer pareamento** tira da sua conta uma Machine no seu próprio computador.
+IAs num dispositivo da sua tailnet, como Claude Code ou Cursor, também podem usar o endereço do seu painel seguido de `/mcp`. **Desfazer o pareamento desta Machine**, no fim de **Configurações**, **Conta**, tira da sua conta uma Machine no seu próprio computador.
 
 Sua Machine mostra qual IA é. Uma IA que ela não reconhece mostra o endereço de onde vem: conecte só se você acabou de iniciar isso.
 

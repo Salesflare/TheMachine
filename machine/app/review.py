@@ -17,6 +17,7 @@ import error_feed
 import fleet
 import fleet_reviews
 import graph
+import project_org_checks
 import i18n
 import memory_use
 from machine.app import claim_reply
@@ -503,7 +504,7 @@ class ReviewApp:
                                                self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
                                                self.store.sort_text(run['run_id']), source_notes(account_services(self.config)) + companies_prompt(self.config),
                                                self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']), self.store.first_look_run(run['run_id']),
-                                               batch_facts=memory.text('batch_facts'))
+                                               batch_facts=memory.text('batch_facts'), orgs=self.store.org_check_text(run['run_id']))
             try:  # drafts the owner rewrote, or answered themselves instead: lasting habits go into that channel's voice
                 lines = self.store.edits_to_learn()
                 if lines:
@@ -781,6 +782,7 @@ class ReviewApp:
                 graph.sort_answer(db, args['_review_run'], args.get('sorted'))
                 graph.fit_answer(db, args['_review_run'], args.get('fits'))
                 graph.backfill_answer(db, args['_review_run'], args.get('fits'))
+                project_org_checks.org_check_answer(db, args['_review_run'], args.get('orgs'))  # "Project organizations to check"
         return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
                                          args.get('stages'), args.get('team'), args.get('replies'), args.get('read'), args.get('no_todo'))
 

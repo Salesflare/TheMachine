@@ -10,7 +10,7 @@ order: 4
 
 - **Tareas**: tus tareas y promesas. Consulta [Tareas](cards.md).
 - **Calendario**: la semana que viene con tus reuniones, las tareas que vencen y las promesas. Consulta [Calendario](calendar.md).
-- **Graph**: las personas, organizaciones y proyectos de tus mensajes, y **Quién es quién** cuando hay roles esperando tu confirmación. Consulta [Graph](graph.md).
+- **Graph**: las personas, organizaciones y proyectos de tus mensajes. Consulta [Graph](graph.md).
 - **Fleet**: tu equipo, tu familia y tus amigos en The Machine Network, cuando tengas uno. Consulta [Fleet](fleet.md).
 - **Aprendizaje**: cómo van las tareas y qué ha aprendido.
 - **Conexiones**: tus fuentes y cómo van. Consulta [Conexiones](connections.md).
@@ -39,7 +39,7 @@ Las filas solo aparecen donde tienen sentido: nada de app del móvil dentro de l
 
 Después de tu primer día, se reduce a una línea discreta encima de **Para ti**, como «Faltan 2 pasos · Continuar». Tócala para abrir la tarea, y toca la flecha para plegarla otra vez.
 
-**Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y ahí la app del móvil siempre tiene su enlace de descarga.
+**Deshacer** en el mensaje que sale después la recupera, igual que **Mostrar 1 paso oculto** al final de la tarea. Si cerraste toda la tarea, **Ajustes**, **General**, **Tarea de configuración** la recupera. **Ajustes**, **General**, **Este dispositivo** tiene los mismos controles, y **Ajustes**, **Apps** siempre tiene la app del móvil.
 
 ## Versiones nuevas
 

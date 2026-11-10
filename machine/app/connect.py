@@ -15,7 +15,7 @@ import browser_viewer
 import codex_signin
 import fleet
 import gbrain
-from machine.browser import browser_link
+from machine.browser import LINKEDIN_SIGNIN_PATH, browser_link, site_language
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import restart_self
 from machine.sources.connectors import HOSTED_SIGNINS, ON_DASHBOARD, hosted_docs_sources, reconnect_help
@@ -107,7 +107,8 @@ class ConnectApp:
             except fleet.SigninUnavailable:
                 return {'state': 'unavailable'}  # no tab: the dashboard opens the other way
         if name == 'connect_site_signin':
-            # LinkedIn or X while its connect waits for the owner to sign in there: the site's sign-in page in front
+            # LinkedIn or X while its connect waits for the owner to sign in there (or Facebook for its birthdays
+            # to-do): the site's sign-in page in front
             # in the Machine's browser, for the dashboard's sign-in dialog. One already under way (the code it emailed)
             # is brought to the front as it is; `fresh` (Try again after the site stopped it) starts it over in that
             # tab. Nothing is typed here.
@@ -125,13 +126,22 @@ class ConnectApp:
                     tabs = []
                 under_way = [t for t in tabs if any(browser_login.site(at(t).hostname) == h or browser_login.site(at(t).hostname).endswith('.' + h) for h in hosts)
                              and onboarding.SIGNIN_STEP.search(at(t).path)]
-                if under_way and args.get('fresh') is True:  # Try again after the site stopped it: its sign-in page afresh
-                    browser_login.browser_cdp.navigate(base, under_way[0]['id'], CONNECT_SIGNIN[site], timeout=20)
-                tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, CONNECT_SIGNIN[site])
+                url = signin_url(site, self.config)
+                # the tabs this opened at the owner's language (a sign-in page loaded before, in the server country's
+                # language, is loaded again once in theirs: nothing is under way on it yet, unlike a code it emailed)
+                localized = self.__dict__.setdefault('signin_localized', {})
+                stale = (under_way and url != CONNECT_SIGNIN[site] and localized.get(under_way[0]['id']) != url
+                         and LINKEDIN_SIGNIN_PATH.fullmatch(at(under_way[0]).path)
+                         and urllib.parse.urlsplit(url).query not in at(under_way[0]).query.split('&'))
+                if under_way and (args.get('fresh') is True or stale):  # Try again after the site stopped it: afresh
+                    browser_login.browser_cdp.navigate(base, under_way[0]['id'], url, timeout=20)
+                tab = under_way[0]['id'] if under_way else browser_login.browser_cdp.open_tab(base, url)
+                if not under_way or args.get('fresh') is True or stale:
+                    localized[tab] = url
             except (browser_login.browser_cdp.CdpError, OSError, IndexError, TypeError, AttributeError, KeyError):
                 raise ValueError('I couldn’t open the sign-in page in the browser') from None
             try:
-                browser_viewer.focus(CONNECT_SIGNIN[site], base, target=tab)
+                browser_viewer.focus(url, base, target=tab)
             except (ValueError, OSError):
                 pass
             return {'opened': True, 'view': browser_link(self.config)}
@@ -309,8 +319,15 @@ class ConnectApp:
         return self.connect_action(name, args)
 
 
-# LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
-CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
+# LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long.
+# Facebook for the Import birthdays from Facebook to-do (birthdays_facebook_app.py), which reads again once it's in.
+CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login',
+                  'facebook': 'https://www.facebook.com/login/'}
+
+
+def signin_url(site, config=None):
+    """The site's sign-in page, in the owner's language where the site takes it from the address (site_language)."""
+    return site_language(CONNECT_SIGNIN[site], config)
 
 
 CONNECT_SIGNIN_WAIT = 600

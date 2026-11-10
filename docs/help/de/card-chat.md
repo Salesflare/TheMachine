@@ -18,6 +18,8 @@ Jede E-Mail zeigt nur, was neu darin ist. Die früheren Nachrichten, die sie zit
 
 Jeder Lauf steht als eine ruhige Zeile da, etwa „12 Sachen geprüft“. Öffne sie, um jede Art von Schritt einmal zu sehen, mit der Anzahl: „Hat den Browser auf example.com benutzt · 7“. Sie nennt die Website, nie die Adresse, einen Befehl oder eine Datei.
 
+Hat sie angehalten, um dich etwas zu fragen, steht die Frage ebenfalls als ruhige Zeile da, etwa „Gefragt: Heute senden oder am Montag?“, und deine Nachricht darunter zeigt nur deine Antwort.
+
 ## Was du fragen kannst
 
 Bevor du schreibst, bietet der Chat vielleicht bis zu drei Vorschläge aus dieser Aufgabe an, etwa „Stattdessen Dienstag 10:00 anbieten“. Ein Tipp setzt ihn ins Nachrichtenfeld, zum Senden oder Ändern. Passt nichts Bestimmtes, gibt es keine.

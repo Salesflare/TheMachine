@@ -15,6 +15,9 @@ spec.loader.exec_module(release)
 WHO = ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
 
 
+REQUIRE_GREEN = release.require_green_tests  # the tests below patch it out; one calls it itself
+
+
 def run(*args, cwd):
     return subprocess.run(args, cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 
@@ -41,6 +44,9 @@ class Releases(unittest.TestCase):
         gate = mock.patch.object(release, 'require_release_scan', return_value={'gate_passed': True})
         self.gate = gate.start()
         self.addCleanup(gate.stop)
+        green = mock.patch.object(release, 'require_green_tests', return_value=None)
+        self.green = green.start()
+        self.addCleanup(green.stop)
 
     def commit(self, text):
         (self.origin / 'app.py').write_text(text)
@@ -335,6 +341,73 @@ class Releases(unittest.TestCase):
             release.main(['cut', '--key', str(self.key)])
         self.assertEqual(release.releases(), [])
         self.assertEqual(run('git', 'tag', '--list', cwd=self.origin), '')
+
+    def test_cut_needs_a_passed_full_test_run_on_the_commit(self):
+        sha = self.commit('two')
+        self.green.side_effect = RuntimeError(f'no full test run passed on {sha[:7]}')
+        with self.assertRaisesRegex(SystemExit, f'Not released: no full test run passed on {sha[:7]}'):
+            release.main(['cut', '--key', str(self.key)])
+        self.green.assert_called_once_with(sha)
+        self.assertEqual(release.releases(), [])
+        self.gate.assert_not_called()
+
+    def test_full_run_runs_every_test_on_the_commit_and_cuts_when_it_passes(self):
+        sha = self.commit('two')
+        self.green.side_effect = RuntimeError(f'no full test run passed on {sha[:7]}')
+        with mock.patch.object(release, 'full_run') as started:
+            release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        started.assert_called_once_with(sha)
+        self.assertEqual(len(release.releases()), 1)
+        self.gate.assert_called_once()
+        run('git', 'tag', '-d', release.releases()[0], cwd=self.app)  # the next cut may fall in the same minute
+        with mock.patch.object(release, 'full_run', side_effect=RuntimeError(f'the full test run on {sha[:7]} failure')):
+            with self.assertRaisesRegex(SystemExit, 'Not released: the full test run on .* failure'):
+                release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        self.assertEqual(release.releases(), [])
+
+    def test_cut_an_older_tested_commit_of_main(self):
+        older = self.commit('two')
+        self.commit('three')
+        release.main(['cut', '--key', str(self.key), '--no-push', '--commit', older])
+        self.green.assert_called_once_with(older)
+        self.assertEqual(release.verify(release.releases()[0])[1], older)
+        run('git', *WHO, 'commit', '--allow-empty', '-qm', 'only here', cwd=self.app)
+        with self.assertRaisesRegex(SystemExit, 'not on origin/main'):
+            release.main(['cut', '--key', str(self.key), '--no-push', '--commit', run('git', 'rev-parse', 'HEAD', cwd=self.app)])
+
+    def test_which_full_runs_count(self):
+        sha, base = 'a' * 40, 'b' * 40
+        def runs(*found):
+            return mock.patch.object(release, 'ci_runs', side_effect=lambda query: list(found) if 'head_sha' in query else [])
+        run_of = lambda event, status, conclusion, marker=None: {
+            'id': 1, 'event': event, 'status': status, 'conclusion': conclusion, 'html_url': 'https://example.invalid/run',
+            'head_sha': sha, 'marker': marker}
+
+        def gh(full_on_base):
+            # the run's artifacts name what it tested (scripts/ci_runs.py); the base's runs say whether a full one passed
+            def api(path):
+                if '/artifacts' in path:
+                    return {'artifacts': [{'name': self.marker}] if self.marker else []}
+                return {'workflow_runs': [{'id': 2, 'event': 'schedule', 'conclusion': 'success', 'head_sha': base}] if full_on_base else []}
+            return mock.patch.object(release, '_gh_api', side_effect=lambda path: (
+                {'artifacts': []} if '/runs/2/' in path else api(path)))
+        for found, marker, full_on_base, error in (
+                ([run_of('push', 'completed', 'success')], None, False, None),
+                ([run_of('push', 'completed', 'success')], 'tested-full', False, None),
+                # a push to main that ran only what changed since a passed full run never proves a release
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, 'no full test run passed'),
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no full test run passed'),
+                ([run_of('pull_request', 'completed', 'success')], None, False, 'no full test run passed'),
+                ([run_of('push', 'in_progress', None)], None, False, 'not done yet'),
+                ([run_of('push', 'completed', 'failure')], None, False, 'failure'),
+                ([run_of('push', 'completed', 'cancelled')], None, False, 'no full test run passed')):
+            self.marker = marker
+            with self.subTest(found=found, marker=marker, full_on_base=full_on_base), runs(*found), gh(full_on_base):
+                if error is None:
+                    REQUIRE_GREEN(sha)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, error):
+                        REQUIRE_GREEN(sha)
 
     def test_cut_with_a_key_that_is_not_pinned_tags_nothing(self):
         self.commit('two')

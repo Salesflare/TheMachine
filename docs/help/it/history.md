@@ -14,7 +14,7 @@ La sua scheda dice fin dove arriva: **Cronologia: fino a** un mese, quando è ar
 
 ## Cosa aggiunge al tuo Graph
 
-Il tuo [Graph](graph.md) la conta: quanto sei vicino alle persone, quando vi siete sentiti l'ultima volta, chi conosce chi, e le persone e le organizzazioni stesse. Le risposte della tua Fleet a "chi conosce qualcuno" la usano dagli account di lavoro, con le stesse [regole di condivisione](sharing-rules.md) delle email nuove.
+Il tuo [Graph](graph.md) la conta: quanto sei vicino alle persone, quando vi siete sentiti l'ultima volta, chi conosce chi, e le persone e le organizzazioni stesse. Anche la Cronologia di una persona o di un'organizzazione la mostra, così il suo ultimo contatto è sempre lì. Le risposte della tua Fleet a "chi conosce qualcuno" la usano dagli account di lavoro, con le stesse [regole di condivisione](sharing-rules.md) delle email nuove.
 
 ## Cosa non fa mai
 

@@ -5,11 +5,15 @@ summary: Des tâches qui reviennent à un rythme, comme la paie le premier lundi
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## En créer une
 
 Dans **Nouvelle tâche**, choisissez **Répéter** et un rythme : **Quotidienne**, **En semaine**, chaque semaine, chaque mois à une date ou un jour comme le premier lundi, ou chaque année. **Personnalisé…** accepte vos propres mots, comme every 2 weeks ou every last Friday.
+
+Les jours ouvrés aussi : « envoyer les factures le deuxième jour ouvré du mois » ou « clôturer les comptes le dernier jour ouvré du mois ». Un jour ouvré va du lundi au vendredi, sans les jours fériés de votre pays.
+
+Si les mots ne sont pas clairs, comme « every 2nd business day » (le 2 du mois, ou un jour sur deux ?), la tâche garde tous vos mots et ne se répète pas. Choisissez **Répéter** pour la régler.
 
 Ou dites-le simplement : « chaque mois faire la paie » dans Nouvelle tâche ou dans Parler crée une tâche qui se répète.
 
@@ -23,7 +27,11 @@ Une tâche manquée ne s'empile pas. Elle reste ouverte et indique combien de da
 
 Reporter ne déplace que celle-ci. Le rythme reste le même.
 
+Faite avant sa date ? Elle compte pour ce qui est dû maintenant, et cette date arrive quand même pour la période suivante.
+
 Chacune est préparée comme toute tâche, et la préparation voit comment s'est passée la précédente et ce qui a été dit dans sa discussion.
+
+Elle garde aussi la façon de faire : les étapes trouvées et ce que vous avez corrigé, pour que la suivante n'en ait plus besoin. Sa discussion affiche **Enregistré comment faire la prochaine fois**, avec **Modifier** et **Annuler**. Elle n'envoie jamais rien d'elle-même.
 
 ## La modifier ou l'arrêter
 

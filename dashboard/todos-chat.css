@@ -42,13 +42,18 @@
 .chat-side a.fade,.chat-title.fade{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
 .chat-side a:hover{background:var(--c-hover);color:var(--text)}.chat-side a[aria-current]{background:color-mix(in srgb,var(--text) 8%,transparent);color:var(--text);font-weight:500}
 .chat-main{display:flex;flex-direction:column;min-height:calc(100dvh - 40px);font-size:var(--chat-body);line-height:1.6}
-.chat-head{position:sticky;top:0;z-index:6;display:flex;align-items:flex-start;gap:4px;box-sizing:border-box;min-height:44px;padding:6px 0;background:var(--bg)}
+.chat-head{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:4px;box-sizing:border-box;min-height:44px;padding:6px 0;background:var(--bg)}
 @media(min-width:861px){.chat-head{align-self:center;width:min(100%,calc(var(--chat-col) + 21px));margin:0 -9px 0 -12px}}
 /* A soft edge under the header, so what scrolls under it fades instead of looking cut */
 .chat-head::after{content:'';position:absolute;left:0;right:0;top:100%;z-index:1;height:14px;background:linear-gradient(var(--bg) 30%,color-mix(in srgb,var(--bg) 0%,transparent));pointer-events:none}
-/* Back and ⋯ share one 32px box; the title's first line is centered on it (its x-height on the chevron), on one line or two */.chat-back,.chat-menu>summary{display:grid;place-items:center;flex:none;width:32px;height:32px;margin:0;border-radius:50%;color:var(--text);text-decoration:none;cursor:pointer}
+/* Back and ⋯ share one 32px box, centered with the title. The title's box is trimmed to its capitals (cap height to baseline),
+   so what is centered is the ink of its capitals, whatever the browser rounds the font's ascent and descent to; the padding
+   gives the letters above and below the capitals their room. Its x-height on the chevron, or its line box, left the chevron
+   1 to 2px low next to the capitals. */
+.chat-back,.chat-menu>summary{display:grid;place-items:center;flex:none;width:32px;height:32px;margin:0;border-radius:50%;color:var(--text);text-decoration:none;cursor:pointer}
 @media(hover:hover) and (pointer:fine){.chat-back:hover,.chat-menu>summary:hover{background:var(--c-hover)}}.chat-menu[open]>summary{background:var(--c-hover)}.chat-back svg{width:22px;height:22px}.chat-menu>summary svg{width:20px;height:20px}
-.chat-title{flex:1;min-width:0;margin:calc((32px - 1.35em)/2 - .09em) 0 0;font:600 1rem/1.35 var(--sans);white-space:nowrap;overflow:hidden}
+.chat-title{flex:1;min-width:0;margin:0;font:600 1rem/32px var(--sans);white-space:nowrap;overflow:hidden}
+@supports(text-box:trim-both cap alphabetic){.chat-title{text-box:trim-both cap alphabetic;padding:8px 0}}
 /* The chat's title is one line at every width, fading out at the right edge; its full text is in the title attribute. */
 :is(.chat-menu,.graph-sort){position:relative;flex:none;margin:0}:is(.chat-menu,.graph-sort)>summary{list-style:none}:is(.chat-menu,.graph-sort)>summary::-webkit-details-marker{display:none}:is(.chat-menu,.graph-sort)>summary::before,:is(.chat-menu,.graph-sort)>summary::after{content:none}
 :is(.chat-menu-list,.graph-sort-list){position:absolute;right:0;top:calc(100% + 4px);z-index:7;display:flex;flex-direction:column;min-width:190px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 12px 30px #0004}
@@ -57,7 +62,7 @@
 /* Nothing behind the ⋯ while the sidebar has the list (Not needed, its Undo gone): no ⋯ that opens an empty box */.chat-menu[data-empty]{visibility:hidden}
 /* What you're doing now (a handoff, a merge, a change) sits under the thread, just above the message box: the thread
    keeps its place at the bottom and no gap opens between the two */
-.chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty{display:none}.chat-main>.chat-compose{order:2}
+.chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty,.chat-panel:has(>.chat-peek:only-child:empty){display:none}.chat-main>.chat-compose{order:2}
 /* The thread: one readable column, centered in the pane, with room between turns */
 .chat-log{display:flex;flex-direction:column;padding:20px max(2px,calc((100% - var(--chat-col))/2)) 28px;flex:1}.chat-log>:first-child{margin-top:auto}
 .chat-log>*{margin-top:26px}.chat-log>.cont{margin-top:8px}.chat-log>.chat-options{margin-top:10px}
@@ -167,8 +172,8 @@
 .chat-model .model-pick:is(:hover,[aria-expanded="true"]){color:var(--text);background:var(--c-hover)}
 .chat-model .model-pick:focus-visible{outline:0;color:var(--text);background:var(--c-hover);box-shadow:inset 0 0 0 1px var(--border-strong)}
 .model-pick>span{overflow:hidden;text-overflow:ellipsis}
-:is(.model-pick,.select-like) svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-:is(.model-pick,.select-like)[aria-expanded="true"] svg{transform:rotate(180deg)}
+:is(.model-pick,.select-like,.from-pick) svg{flex:none;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+:is(.model-pick,.select-like,.from-pick)[aria-expanded="true"] svg{transform:rotate(180deg)}
 #model-chats .grow{min-width:0}
 /* Settings' pickers look like a select and open the same menu */
 .select-like{flex:none;display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:200px;max-width:100%;min-height:0;margin:0;border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px 8px 14px;white-space:nowrap;cursor:pointer;background:var(--surface-2);box-shadow:none;color:var(--text);font:inherit;text-align:left}

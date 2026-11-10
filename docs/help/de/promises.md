@@ -17,7 +17,7 @@ Unter **Versprechen** auf der Seite Aufgaben:
 
 Jedes hat ein Menü **⋯**:
 
-- **Ausführen** bei deinen: Es wird jetzt zur Aufgabe, und deine Machine bereitet sie vor. **Erinnern** bei denen anderer: Deine Machine schreibt einen kurzen Entwurf zum Nachfassen, dort, wo es versprochen wurde. Nichts geht raus, bis du es sendest. Ist es schon eine Aufgabe, öffnet sich diese.
+- **Ausführen** bei deinen: Es wird jetzt zur Aufgabe, und deine Machine bereitet sie vor. **Erinnern** bei denen anderer: Deine Machine schreibt einen kurzen Entwurf zum Nachfassen, dort, wo es versprochen wurde, und du bleibst in der Liste. Eine kurze Meldung bestätigt es, mit **Aufgabe öffnen**. Nichts geht raus, bis du es sendest. Ist es schon eine Aufgabe, öffnet sich diese.
 - **Als erledigt markieren**: Es wurde eingehalten.
 - **Findet nicht statt**: Es passiert nicht, also verfolgt deine Machine es nicht mehr, ohne Aufgabe.
 

@@ -11,12 +11,12 @@ const quietTagline=async(page,label)=>{const q=await page.evaluate(()=>{const t=
  assert.ok(q.size<=18,'the tagline is about body size '+label+': '+q.size);assert.equal(q.lines,1,'the tagline is one line '+label);assert.ok(q.muted,'the tagline is muted '+label);
  assert.ok(q.sub>=13&&q.below,'the count is readable under it '+label)};
 
-// Graph folded shows its count in the same column as the other rows' counts, and its chevron is a toggle of its own,
-// right after the label with clear space on both sides; open, the rows under it carry the counts
+// Graph folded has no count of its own (nothing there waits for the owner), and its chevron is a toggle of its own,
+// right after the label with clear space after it; open, the rows under it carry the counts
 const foldedRow=async(page,label,tap)=>{const g=await page.evaluate(()=>{const r=q=>document.querySelector(q).getBoundingClientRect();
    return {lab:r('[data-tab="people"] .nl'),fold:r('#graph-fold'),chev:r('#graph-fold svg'),count:r('#badge-people'),other:r('#badge-inbox'),text:document.querySelector('#badge-people').textContent}});
- assert.equal(g.text,'1','the Graph count shows '+label);assert.ok(Math.abs(g.count.right-g.other.right)<=1,'the Graph count is in the rows\' column '+label+': '+g.count.right+' vs '+g.other.right);
- assert.ok(g.chev.left-g.lab.right>=5&&g.count.left-g.chev.right>=24,'the chevron sits apart from the label and the count '+label+': '+JSON.stringify(g));
+ assert.equal(g.text,'','no Graph count '+label);
+ assert.ok(g.chev.left-g.lab.right>=5,'the chevron sits apart from the label '+label+': '+JSON.stringify(g));
  assert.ok(g.fold.width>=tap[0]&&g.fold.height>=tap[1],'the chevron has a tap target '+label+': '+g.fold.width+'x'+g.fold.height);
  assert.ok(Math.abs((g.chev.left+g.chev.right)/2-(g.fold.left+g.fold.right)/2)<=1&&Math.abs((g.chev.top+g.chev.bottom)/2-(g.fold.top+g.fold.bottom)/2)<=1,'the chevron is centered in its box (and its hover) '+label+': '+JSON.stringify([g.chev,g.fold]));
  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#graph-fold')).opacity==='1')};  // folded, the chevron shows (its fade can take a while on a busy computer)
@@ -32,13 +32,13 @@ const now=new Date().toISOString();
 const card=(n,status,scope,extra={})=>({id:(n+'').padStart(2,'0').repeat(8),title:'Card number '+n+' with a long title that does not fit the sidebar',body:'Some text for card '+n+'.',status,scope,created_at:now,event_ids:[n+1],...extra});
 const cards=[...Array.from({length:12},(_,n)=>card(n,n%3?'pending':'prepared',n%2?'work':'personal')),...Array.from({length:12},(_,n)=>card(20+n,'completed','work'))];
 let emptyOn=false;const promises=Array.from({length:3},(_,i)=>({id:i+1,direction:'mine',who:'Sam Lee',what:'send the notes '+i,due:null,state:'open',made_at:now,check_at:now}));
-const state=()=>({agents_settings:{claude_session:'session_01Example',device:'Desk',codex_env:'env_1',codex_branch:'',connector:'https://machine.example/mcp',saveable:true,on_network:true},suggestions:emptyOn?cards.filter(c=>c.status==='completed'):cards,promises:emptyOn?promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:fleetOn?{on:true,waiting:0}:{on:false,fleets:[]}});let fleetOn=false;
+const state=()=>({graph_counts:{person:214,org:38,project:9},agents_settings:{claude_session:'session_01Example',device:'Desk',codex_env:'env_1',codex_branch:'',connector:'https://machine.example/mcp',saveable:true,on_network:true},suggestions:emptyOn?cards.filter(c=>c.status==='completed'):cards,promises:emptyOn?promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:fleetOn?{on:true,waiting:0}:{on:false,fleets:[]}});let fleetOn=false;
 const history={session:true,status:'ok',active:false,cursor:'k1',items:Array.from({length:30},(_,n)=>({kind:'reply',text:'Reply '+n,at:Date.now()-100000+n*1000}))};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/graph'){const n=(kind,name,i)=>({id:kind+':'+i,kind,name,strength:2-i/10,last_at:now,signals:9,ids:[]});
-  res.end(JSON.stringify({counts:{person:214,org:38,project:9},people:[n('person','Robin Example',1),n('person','Alex Example',2)],quiet:[],new:[],projects:[n('project','Garden plan',3)],orgs:[n('org','Example Ltd',4)],whos_who:[],waiting:1}));return}
+  res.end(JSON.stringify({counts:{person:214,org:38,project:9},people:[n('person','Robin Example',1),n('person','Alex Example',2)],quiet:[],new:[],projects:[n('project','Garden plan',3)],orgs:[n('org','Example Ltd',4)]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);res.end(JSON.stringify(r.action==='card_chat'?history:{}));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -184,7 +184,7 @@ try{
   await page.locator('nav [data-tab="people"]').click();await page.waitForFunction(()=>location.hash==='#graph=people');assert.equal(await lit(),'people');
   await page.locator('#graph-fold').click();assert.ok(!(await page.locator('#graph-sub').isVisible()));assert.equal(await page.locator('#graph-fold').getAttribute('aria-expanded'),'false');
   await page.reload();await page.locator('#task-'+cards[0].id).waitFor({state:'attached'});assert.ok(!(await page.locator('#graph-sub').isVisible()),'the fold is remembered');
-  await page.mouse.move(800,500);await page.locator('#badge-people:text("1")').waitFor();await foldedRow(page,'at 1440',[26,26]);
+  await page.mouse.move(800,500);await foldedRow(page,'at 1440',[26,26]);
   await page.locator('#graph-fold').click();assert.ok(await page.locator('#graph-sub').isVisible());
   await page.locator('#side-toggle').click();assert.equal(await page.locator('.side-sub a[data-graph-sub="people"]').getAttribute('aria-label'),'People · 214');
   assert.ok(await page.locator('.side-sub .sq').first().isVisible());assert.ok(!(await page.locator('.side-sub .nl').first().isVisible()));

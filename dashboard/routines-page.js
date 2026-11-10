@@ -11,7 +11,7 @@ const RT_STATE={ready:'Ready',nothing:'Nothing new',failed:'Didn’t work',runni
 const rtTime=at=>localeTime(new Date('2000-01-01T'+at),DL,{hour:'numeric',minute:'2-digit'});
 const rtDay=v=>localeDate(v,DL,{weekday:'short',day:'numeric',month:'short'});
 function rtRhythm(r){const u=r.rule.unit,d=rpDate(r.anchor),wd=rpWeekday(d);if((r.rule.n||1)>1)return repeatText(r.rule,r.anchor);
- return u==='day'?t('Daily'):u==='weekday'?t('Weekdays'):u==='week'?t('Weekly on {}',wd):u==='year'?t('Yearly on {}',rpMonthDay(d)):r.rule.nth!=null?t(REPEAT_NTH_OPTION[r.rule.nth],wd):t('Monthly on day {}',d.getDate())}
+ return u==='day'?t('Daily'):u==='weekday'?t('Weekdays'):u==='week'?t('Weekly on {}',wd):u==='year'?t('Yearly on {}',rpMonthDay(d)):r.rule.workday!=null?(REPEAT_WORKDAY_OPTION[r.rule.workday]?t(REPEAT_WORKDAY_OPTION[r.rule.workday]):t('Monthly on workday {}',r.rule.workday)):r.rule.nth!=null?t(REPEAT_NTH_OPTION[r.rule.nth],wd):t('Monthly on day {}',d.getDate())}
 const rtWhen=r=>[rtRhythm(r),rtTime(r.at),r.state==='paused'?t('Paused'):r.next_due?t('Next {}',rtDay(rpDate(r.next_due))):''].filter(Boolean).join(' · ');
 // A test run wears its own chip and says nothing was sent or saved; a result is Markdown, as in the chat (lists, bold, headings), its ISO dates as the owner reads dates; Used: the owner's skills it followed
 const rtDates=v=>String(v||'').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g,(m,y,mo,d)=>localeDate(new Date(+y,mo-1,+d),DL,{day:'numeric',month:'short'}));
@@ -59,7 +59,7 @@ function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sugg=routin
   on.length||!off.length?rtSection('mine',t('Your routines'),on.length?on.map(slot(rtCard)):html`<p class="rt-empty">${t('No routines yet')}</p>`):''}${off.length?rtSection('paused',t('Paused'),off.map(slot(rtCard))):''}${tpl.length?rtSection('templates',t('Templates'),tpl.map(rtTemplate)):''}`;
  // The same page around the cards, the same cards on it: only a card whose own markup changed is drawn again. With a form
  // open (form: its card, patched by rtPatch) only the cards under it, so the form never moves: the rest wait for it to close.
- const was=rtShown,olds=new Map([...box.querySelectorAll('article[data-rt]')].map(a=>[a.dataset.rt,a])),same=frame.s===rtFrame&&olds.size===cards.size&&[...cards.keys()].every(id=>olds.has(id)),drawn=[];
+ const was=rtShown,olds=new Map([...box.querySelectorAll('article[data-rt]')].map(a=>[a.dataset.rt,a])),held=new Map([...olds].map(([id,a])=>[id,heldTake(a)]).filter(([,h])=>h)),same=frame.s===rtFrame&&olds.size===cards.size&&[...cards.keys()].every(id=>olds.has(id)),drawn=[];
  if(form&&!same)return;if(!form)rtStale=false;
  const at=form&&olds.get(form),later=id=>!at||!!(at.compareDocumentPosition(olds.get(id))&Node.DOCUMENT_POSITION_FOLLOWING);
  rtFrame=frame.s;rtShown=new Map([...cards].map(([id,[h,redo]])=>[id,later(id)?{s:h.s,redo}:was.get(id)]));
@@ -67,6 +67,7 @@ function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sugg=routin
  else{setHTML(box,frame);for(const s of box.querySelectorAll('[data-rt-slot]'))s.replaceWith(htmlNodes(cards.get(s.dataset.rtSlot)[0]));drawn.push(box);
   const w=Object.assign($('#rt-words'),{value:typed});rtGrow(w);if(typing){w.focus({preventScroll:true});w.setSelectionRange(...typing)}}
  for(const el of drawn)for(const d of el.querySelectorAll('details'))if(rtDetails.has(rtDetailKey(d)))d.open=true;
+ for(const [id,h] of held)heldPut(box.querySelector(`article[data-rt="${id}"]`),h);  // a card drawn again keeps its focused button and menu
  const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(!card)rtForm=null;else if(!card.querySelector('.rt-form'))rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true))}
 const rtDetailKey=d=>d.closest('[data-rt]')?.dataset.rt+' '+d.className;
 // The open form's card, in place: its test run and Try it; false when the cards themselves changed (a rebuild then)

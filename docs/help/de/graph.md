@@ -14,7 +14,9 @@ Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus
 
 ## Filtern und sortieren
 
-**Filtern**, neben den Tabs, grenzt die Liste ein nach Inhaber, Tag, Board, Phase, Organisation, Wert, erwartetem Abschlussdatum und **Keine Antwort seit 10+ Tagen**. Personen und Organisationen passen über ihre offenen Projekte. Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
+**Filtern**, neben den Tabs, grenzt die Liste ein. Jede Liste hat ihre eigenen Filter. Personen: Nähe, letzter Kontakt, Organisation, Inhaber, Tag und **Hat ein offenes Projekt**. Organisationen: Branche, Größe, Land, letzter Kontakt, Inhaber, Tag und **Hat ein offenes Projekt**. Projekte: Inhaber, Board, Phase, Tag, Organisation, Wert, erwartetes Abschlussdatum und **Keine Antwort seit 10+ Tagen**.
+
+Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
 
 Das Sortiermenü sortiert die Liste, auch nach **Wert** und **Abschlussdatum**. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle.
 
@@ -25,6 +27,12 @@ Klick unter Felder bei einer Person, Organisation oder einem Projekt auf einen W
 **Felder verwalten** fügt Felder für alle Einträge dieser Art hinzu oder entfernt sie. **Neues Feld** fügt eins hinzu: Text, Zahl, Datum oder eine Auswahl aus einer Liste.
 
 **+ Tag** fügt einen Tag hinzu, etwa VIP oder Partner. **×** nimmt ihn wieder ab. Tags erscheinen in den Listen und **Filtern** findet sie.
+
+## Geburtstag
+
+Der Geburtstag einer Person steht unter Kontakt, mit seiner Herkunft: ihr Google-Kontakt, ein Geburtstag in Google Calendar (die Routine Geburtstage speichert ihn für einen engen Kontakt), ein Facebook-Import oder du. **Bearbeiten** setzt oder korrigiert ihn: Monat und Tag, und das Jahr, wenn du es kennst (dann steht auch das Alter dabei). Deiner gilt vor jeder Quelle und bleibt. **Entfernen** nimmt ihn weg; ein Kontakt oder ein Import bringt ihn nicht zurück.
+
+Ohne Geburtstag fügt **Geburtstag hinzufügen** unter Felder ihn hinzu. Die Routine Geburtstage liest denselben Geburtstag, den die Seite zeigt. Ein Geburtstag ist persönlich: Er geht nie an dein Team, auch nicht bei einem geteilten Eintrag.
 
 ## Eine Tabelle importieren
 

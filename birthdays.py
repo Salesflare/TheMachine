@@ -4,9 +4,13 @@ for the Birthdays template's morning to-dos (birthdays_app.py). Plain code, no m
 Where a birthday comes from, with the reads each Machine already has (never a wider scope):
 - the owner's calendars: Google's birthday events (eventType birthday, a contact's birthday on the main calendar, or the
   Birthdays calendar when it is connected) and an all-day event named like one ("Sam Lee's birthday");
+- Google's birthday events and its contacts' Birthdays calendar, read by the app each run with calendar.readonly
+  (birthdays_app.py), also when the calendar's sync leaves them out (google_birthdays here); one that is a close
+  person's (google_people) is saved as their Birthday (person_birthday.offer, source google_calendar), so their page
+  shows it, and never over the owner's;
 - Outlook's Birthdays calendar, read by the app at run time with Calendars.Read (birthdays_app.py), its titles here;
-- a person's facts: the birthday on their Google contact (self-hosted sign-ins that read contacts, enrichment.py);
-- a date field the owner named Birthday on a person in the Graph (crm_fields.py).
+- the Birthday on a person's page (person_birthday.py): their Google contact's, an import's, or the one the owner set
+  there, which wins. The routine reads exactly what the page shows.
 
 Each comes down to a person in the Graph, once, however many sources name them. A name alone counts only when it is one
 close person's full name. Only people the owner is close to count (CLOSE): someone they wrote to themselves, and who is
@@ -36,6 +40,7 @@ CHANNEL_DAYS = 365
 CALENDAR_NAMES = {'birthdays', 'birthday calendar', 'verjaardagen', 'geburtstage', 'anniversaires', 'cumpleaños', 'compleanni',
                   'aniversários', 'aniversarios'}
 GOOGLE_BIRTHDAYS = '#contacts@group.v.calendar.google.com'
+CONTACTS_CALENDAR = 'addressbook' + GOOGLE_BIRTHDAYS  # Google's Birthdays calendar, made from the contacts
 # "Sam Lee's birthday", "Birthday of Sam Lee", "Verjaardag van Sam Lee", "Geburtstag von Sam Lee", "Sam Lee hat Geburtstag",
 # "Anniversaire de Sam Lee", "Cumpleaños de Sam Lee", "Compleanno di Sam Lee", "Aniversário de Sam Lee"
 TITLE = [re.compile(p, re.I) for p in (
@@ -189,6 +194,48 @@ def calendar_names(db, day, tz):
     return out
 
 
+def google_birthdays(items, day=None, contacts=False):
+    """[{name, emails, date}] from events Google's calendar API returned: its birthday events on the main calendar
+    (eventType birthday), or with contacts the contacts' Birthdays calendar (it names the contact and their address).
+    The owner's own, anniversaries and other special days are left out; with day, so is any event not on that date."""
+    out = []
+    for item in items or ():
+        if not isinstance(item, dict) or item.get('status') == 'cancelled':
+            continue
+        date = (item.get('start') or {}).get('date')
+        if not date or (day and date != day.isoformat()):
+            continue
+        if contacts:
+            prefs = (item.get('gadget') or {}).get('preferences') or {}
+            kind = str(prefs.get('goo.contactsEventType') or '').upper()
+            if kind and kind != 'BIRTHDAY':
+                continue
+            name = ' '.join(str(prefs.get('goo.contactsFullName') or '').split()) or name_in_title(item.get('summary'), kind == 'BIRTHDAY')
+            emails = [e for e in re.split(r'[\s,;]+', str(prefs.get('goo.contactsEmail') or '')) if '@' in e]
+        else:
+            if item.get('eventType') != 'birthday' or (item.get('birthdayProperties') or {}).get('type', 'birthday') != 'birthday':
+                continue
+            name, emails = name_in_title(item.get('summary'), True), []
+        if name or emails:
+            out.append({'name': name, 'emails': emails, 'date': str(date)})
+    return out
+
+
+def google_people(db, people, google, code=None):
+    """{node id: month and day as kept (--MM-DD)} for the close people (close_people) these Google birthdays are: by the
+    contact's address first (by_identifier: never one more than one person goes by), else by their full name (by_name)."""
+    google = list(google)
+    mails = [['email:' + e.strip().lower() for e in g.get('emails') or ()] for g in google]
+    nodes = by_identifier(db, people, {m for found in mails for m in found}, code)
+    out = {}
+    for entry, found in zip(google, mails):
+        node = next((nodes[m] for m in found if m in nodes), None) or by_name(people, entry.get('name'))
+        value = birthday_value(str(entry.get('date') or '')[:10])
+        if node and value:
+            out[node] = f'--{value[0]:02d}-{value[1]:02d}'
+    return out
+
+
 def outlook_names(subjects):
     """[(name, source)] from the events on an Outlook Birthdays calendar today (birthdays_app reads them)."""
     return [(name, 'outlook') for name in (name_in_title(s, True) for s in subjects) if name]
@@ -255,11 +302,10 @@ def today(db, day, tz, outlook=(), code=None):
         node = by_name(people, name)
         if node:
             found.setdefault(node, set()).add(source)
-    ids = fact_ids(db, day) + field_ids(db, day)
-    nodes = by_identifier(db, people, {i for i, _ in ids}, code)
-    for identifier, source in ids:
-        if identifier in nodes:
-            found.setdefault(nodes[identifier], set()).add(source)
+    import person_birthday  # the one birthday each person's page shows (a contact's, an import's or the owner's)
+    for node, born in person_birthday.known(db, people, code).items():
+        if on(day, (born['month'], born['day'])):
+            found.setdefault(node, set()).add('contacts' if born['source'] != person_birthday.SOURCE else 'graph')
     rows = {r['id']: r['strength'] for r in db.execute('SELECT id,strength FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))',
                                                        (json.dumps(sorted(found)),))}
     picked = sorted(found, key=lambda n: -rows.get(n, 0))[:MAX_A_DAY]

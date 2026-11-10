@@ -142,6 +142,7 @@ from recurring_app import RecurringApp
 from routines_app import RoutinesApp
 from mail_cleanup_app import MailCleanupApp  # noqa: F401  (composed in machine/main.py)
 from birthdays_app import BirthdaysApp  # noqa: F401  (composed in machine/main.py)
+from birthdays_facebook_app import BirthdaysFacebookApp  # noqa: F401  (composed in machine/main.py)
 from shared_graph_app import SharedGraphApp
 from skills_app import SkillsApp
 from whatsapp_images_app import WhatsAppImagesApp
@@ -352,7 +353,6 @@ from machine.browser import (
     browser_view_link,
     browser_wait,
     own_tab,
-    peek_tab,
     preparation_steps,
     recover_browser,
     run_page,

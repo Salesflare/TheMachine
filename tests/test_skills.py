@@ -353,6 +353,116 @@ class OpenClawSkills(unittest.TestCase):
         self.assertIn('trello', {i['name'] for i in view['installed']})
         self.assertEqual(self.oc.calls.count(['skills', 'list', '--json']), 1)
 
+    def catalog(self, run=None):
+        """A Catalog as the service makes it after a (re)start: its config names the database, the list is kept next to it."""
+        return skills.Catalog({'openclaw': '/bin/openclaw', 'database': str(Path(self.temp.name) / 'events.sqlite')},
+                              run=run or self.oc.run, fetch=self.oc.fetch)
+
+    def settled(self, catalog):
+        for _ in range(300):
+            if not catalog.loading:
+                return
+            skills.time.sleep(0.01)
+        self.fail('the background read never finished')
+
+    def test_after_a_restart_the_list_kept_on_disk_shows_at_once_and_is_read_again_in_the_background(self):
+        # Settings > Skills right after a restart ran OpenClaw inside the request (8-16 s, 2026-11-10). The last good
+        # list is kept next to the database: the next start answers from it with no CLI call in the request, reads
+        # OpenClaw once in the background, and the page's next ask has the fresh list.
+        first = self.catalog()
+        first.load()
+        kept = Path(self.temp.name) / 'skills-catalog.json'
+        self.assertTrue(kept.is_file())
+        self.assertEqual(kept.stat().st_mode & 0o777, 0o600)
+        self.oc.listed['skills'].append({'name': 'fresh-one', 'description': 'New since', 'eligible': True, 'source': 'openclaw-workspace', 'missing': {}})
+        calls, release, ran_in = [], skills.threading.Event(), []
+
+        def slow(argv, **kw):  # OpenClaw right after a restart: slow, and never on the request's own thread
+            ran_in.append(skills.threading.current_thread() is request)
+            release.wait(5)
+            calls.append(argv)
+            return self.oc.run(argv, **kw)
+        request = skills.threading.current_thread()
+        restarted = self.catalog(run=slow)
+        self.keeper.catalog = restarted
+        started = skills.time.monotonic()
+        view = self.keeper.installed(wait=False)
+        self.assertLess(skills.time.monotonic() - started, 1)
+        names = {i['name'] for i in view['installed']}
+        self.assertIn('trello', names)
+        self.assertNotIn('fresh-one', names)
+        self.assertTrue(view['updating'])
+        self.assertNotIn('loading', view)
+        self.assertIsNotNone(view['checked_at'])
+        self.keeper.installed(wait=False)  # asked again while it reads: still one read
+        release.set()
+        self.settled(restarted)
+        self.assertEqual(ran_in, [False])  # one CLI call, in the background
+        view = self.keeper.installed(wait=False)
+        self.assertIn('fresh-one', {i['name'] for i in view['installed']})
+        self.assertNotIn('updating', view)
+        self.assertEqual(len(calls), 1)
+        # ...and the fresh list is what the next start shows
+        self.assertIn('fresh-one', {r['name'] for r in self.catalog().raw})
+
+    def test_with_nothing_kept_yet_the_request_says_loading_and_never_runs_openclaw_itself(self):
+        ran_in, release = [], skills.threading.Event()
+        request = skills.threading.current_thread()
+
+        def slow(argv, **kw):
+            ran_in.append(skills.threading.current_thread() is request)
+            release.wait(5)
+            return self.oc.run(argv, **kw)
+        self.keeper.catalog = self.catalog(run=slow)
+        self.assertTrue(self.keeper.installed(wait=False)['loading'])
+        release.set()
+        self.settled(self.keeper.catalog)
+        self.assertEqual(ran_in, [False])
+        self.assertTrue((Path(self.temp.name) / 'skills-catalog.json').is_file())
+
+    def test_a_list_older_than_half_an_hour_shows_while_it_is_read_again(self):
+        now = [1_000_000.0]
+        catalog = self.catalog()
+        catalog.clock = lambda: now[0]
+        catalog.load()
+        self.keeper.catalog = catalog
+        now[0] += skills.CATALOG_SECONDS + 60
+        ran_in, release = [], skills.threading.Event()
+        request = skills.threading.current_thread()
+
+        def slow(argv, **kw):
+            ran_in.append(skills.threading.current_thread() is request)
+            release.wait(5)
+            return self.oc.run(argv, **kw)
+        catalog.run = slow
+        view = self.keeper.installed(wait=False)
+        self.assertTrue(view['updating'])
+        self.assertIn('trello', {i['name'] for i in view['installed']})
+        release.set()
+        self.settled(catalog)
+        self.assertEqual(ran_in, [False])
+
+    def test_a_failed_read_after_a_restart_keeps_the_kept_list_and_doesnt_ask_again_and_again(self):
+        self.catalog().load()
+        self.oc.fail[('skills', 'list')] = 1
+        self.oc.fail[('gateway', 'call')] = 1
+        restarted = self.catalog()
+        self.keeper.catalog = restarted
+        self.keeper.installed(wait=False)
+        self.settled(restarted)
+        view = self.keeper.installed(wait=False)
+        self.assertIn('trello', {i['name'] for i in view['installed']})
+        self.assertNotIn('updating', view)
+        self.assertTrue(view['error'])
+        before = len(self.oc.calls)
+        self.keeper.installed(wait=False)
+        self.settled(restarted)
+        self.assertEqual(len(self.oc.calls), before)
+
+    def test_an_unreadable_kept_list_is_like_none(self):
+        (Path(self.temp.name) / 'skills-catalog.json').write_text('{not json')
+        self.assertIsNone(self.catalog().raw)
+
     def test_a_notice_openclaw_prints_around_the_list_doesnt_hide_it(self):
         # A hosted Machine's OpenClaw printed a line before the JSON: the list still shows, and a really unreadable
         # answer says so (and logs only its shape).

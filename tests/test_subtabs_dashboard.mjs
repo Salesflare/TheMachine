@@ -6,27 +6,25 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Graph and Connections have sub-tabs like Fleet: a pill row over panes. Links open the right one (#graph=roles,
+// Graph and Connections have sub-tabs like Fleet: a pill row over panes. Links open the right one (#graph=orgs,
 // #connections=chat, and the old #people and #health), a source that needs attention shows on its sub-tab, section
-// heads keep their heading on one line, and every tab has the same column width. Graph's tab counts the roles to review;
+// heads keep their heading on one line, and every tab has the same column width. Graph's tab has no count (no Who's who);
 // a tab shows a number only when something needs the owner (Sign-ins never). At 390px the row scrolls with a fade.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),day=now.slice(0,10);
 const person=(n,i)=>({id:'email:p'+i+'@example.org',kind:'person',name:n,strength:3-i/10,closeness:'regular',last_at:day,signals:4,ids:['p'+i+'@example.org']});
 let graph={people:['Ann Example','Bo Sample','Cy Test'].map(person),quiet:[],new:[],
  projects:[{id:'project:1',kind:'project',name:'Renewal',state:'active',last_at:day,signals:3,people:['Ann Example']}],
- orgs:[{id:'org:example.org',kind:'org',name:'Example Org',signals:2,last_at:day}],warmup:[],
- whos_who:[{...person('Ann Example',0),role:'head of operations',quote:'I run operations here.',event_id:1},{...person('Bo Sample',1),role:'finance lead',quote:null,event_id:null}]};
+ orgs:[{id:'org:example.org',kind:'org',name:'Example Org',signals:2,last_at:day}],warmup:[]};
 const conn=(id,service,extra={})=>({id,service,display_name:id,email:'owner@example.org',boundary:'work',last_success:now,state:'{}',...extra});
 const connectors=[conn('mail','gmail'),conn('cal','calendar'),conn('team-chat','slack',{error:'slack_auth_failed'}),conn('wa','whatsapp'),conn('phone','android'),conn('crm','salesflare')];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({graph_waiting:graph.whos_who.length,suggestions:[],promises:[],connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify(graph));return}
  if(url.pathname==='/api/events'){res.end('[]');return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
-  if(action==='graph_role'){graph={...graph,whos_who:graph.whos_who.filter(w=>w.id!==JSON.parse(body).args.node_id)};res.end('{}');return}
   if(action==='browser_logins'){res.end(JSON.stringify({logins:[{site:'crm.example.org',username:'owner'}]}));return}}
  res.end('{}');
 });
@@ -43,29 +41,22 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base);
- // Graph: its panes are rows in the sidebar (no pills on the page): People, Organizations, Projects, and Who's who with
- // its count last. The Graph row counts it too while the rows are folded away.
- await page.locator('#badge-people',{hasText:/^2$/}).waitFor({state:'attached'});
+ // Graph: its panes are rows in the sidebar (no pills on the page): People, Organizations, Projects. No Who's who row, and
+ // nothing counted on the Graph row.
  await navClick(page.locator('nav [data-tab="people"]'));
  await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();assert.equal(await page.locator('#people-view [data-graph-pane]').count(),0);
- assert.deepEqual((await rows(page)).map(r=>r.replace(/\n\d+$/,m=>m)),['People','Organizations','Projects','Who’s who\n2']);
+ assert.deepEqual(await rows(page),['People','Organizations','Projects']);
+ assert.equal(await page.locator('.side-sub a[data-graph-sub="roles"]').count(),0);
+ assert.equal(await page.locator('#badge-people').textContent(),'');
  assert.equal(await lit(page),'People');assert.equal(await page.locator('#page-head .page-title').textContent(),'People');
- assert.equal(await page.locator('#people-view .whos').first().isVisible(),false);
- await navClick(page.locator('.side-sub a[data-graph-sub="roles"]'));
- await page.locator('#people-view .whos').first().waitFor();
+ await navClick(page.locator('.side-sub a[data-graph-sub="orgs"]'));
+ await page.locator('[data-graph-panel="orgs"]:not([hidden])').waitFor();
  assert.equal(await page.locator('#people-view [data-graph-panel="people"]').isHidden(),true);
- // The Who's who head: heading and count pill on one line, the short explainer on its own line below.
- const head=await page.locator('[data-graph-panel="roles"] .section-head').evaluate(e=>{const h=e.querySelector('h2'),c=e.querySelector('.count'),p=e.querySelector('p'),hr=h.getBoundingClientRect(),cr=c.getBoundingClientRect(),pr=p.getBoundingClientRect();
-  return {lines:Math.round(hr.height/parseFloat(getComputedStyle(h).lineHeight)),inline:cr.top<hr.bottom&&cr.left>hr.left,below:pr.top>=hr.bottom-1,text:p.textContent}});
- assert.deepEqual(head,{lines:1,inline:true,below:true,text:'Roles your Machine picked up. Confirm or edit; it learns from your edits.'});
- // The choice is kept; a link picks one.
- await page.goto(base);await navClick(page.locator('nav [data-tab="people"]'));await page.locator('[data-graph-panel="roles"]:not([hidden])').waitFor();
- assert.equal(await lit(page),'Who’s who');assert.equal(await page.locator('#page-head .page-sub').textContent(),'2 roles to confirm');
+ // The choice is kept; a link picks one; the old Who's who link opens People.
+ await page.goto(base);await navClick(page.locator('nav [data-tab="people"]'));await page.locator('[data-graph-panel="orgs"]:not([hidden])').waitFor();
+ assert.equal(await lit(page),'Organizations');
  await page.goto(base+'/#graph=people');await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
- await page.goto(base+'/#graph=roles');await page.locator('[data-graph-panel="roles"]:not([hidden])').waitFor();
- // Confirming one drops both counts.
- page.once('dialog',d=>d.accept());await page.locator('[data-graph-panel="roles"] [data-role-confirm]').first().click();
- await page.locator('#badge-people',{hasText:/^1$/}).waitFor({state:'attached'});await page.locator('#count-roles',{hasText:/^1$/}).waitFor({state:'attached'});
+ await page.goto(base+'/#graph=roles');await page.locator('#people:not([hidden])').waitFor();
  await page.goto(base+'/#graph=projects');await page.locator('[data-graph-panel="projects"]:not([hidden])').waitFor();
  assert.equal(await page.locator('#people').isVisible(),true);assert.equal(await page.evaluate(()=>location.hash),'#graph=projects');  // the pane stays in the address
  await page.goto(base+'/#people');await page.locator('#people:not([hidden])').waitFor();

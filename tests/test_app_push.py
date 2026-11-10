@@ -700,15 +700,18 @@ class PhoneApp(unittest.TestCase):
             self.assertIn('qr', a.phone_app(config))
 
     def test_the_dashboard_shows_it_and_the_network_line_once(self):
-        source = (Path(a.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
-        body = re.search(r'^function phoneAppRender\(\).*?(?=^\S)', source, re.M | re.S)[0]
-        self.assertIn('qrSvg(p.qr)', body)
+        apps = (Path(a.ROOT) / 'dashboard' / 'settings-apps.js').read_text(encoding='utf-8')
+        body = re.search(r'^function appsSignIn\(.*?(?=^\S)', apps, re.M | re.S)[0]
+        self.assertIn('qrSvg(p.qr)', body)  # in Settings, Apps, under the stores (not General: one place for the app)
         self.assertIn("t('Install the app, then scan this with the phone’s camera.')", body)
         self.assertIn("t('The app signs in with your account.')", body)
         self.assertIn("t('Not on the Network?')", body)  # the code only folded, for a Machine not on the Network
         self.assertLess(body.index("<details class=\"connect-alt phone-own\">"), body.index('qrSvg(p.qr)'))
+        device = (Path(a.ROOT) / 'dashboard' / 'settings-device.js').read_text(encoding='utf-8')
+        body = re.search(r'^function phoneAppRender\(\).*?(?=^\S)', device, re.M | re.S)[0]
         self.assertIn("devStore.set('app-push-network',1)", body)  # remembered: said once
         self.assertIn("t('Notifications in the app need The Machine Network. The app works without them.')", body)
+        self.assertNotIn('device-phone', device)  # General, This device has no Phone app row
 
 
 class Share(unittest.TestCase):

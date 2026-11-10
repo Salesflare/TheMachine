@@ -5,13 +5,13 @@ summary: Everyone you're in touch with: their page, summary and timeline, and ho
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 ---
-Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Filters, fields, tags and import work the same on all three lists: see [The Graph](graph.md).
+Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Fields, tags and import work the same on all three lists, and each list has its own filters: see [The Graph](graph.md).
 
 ## Someone's page
 
-It starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last Fri, Oct 23 · next meeting Tue, Oct 27"). Below that:
+It starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last contact yesterday · next meeting Tue, Oct 27"). Recent contact reads like "just now", "3 hours ago", "yesterday" or "3 days ago", and older contact as a date; hover it for the exact date. Below that:
 
-- **Contact**: their phones and emails. Tap one to call or write, or **Copy** it.
+- **Contact**: their phones and emails. Tap one to call or write, or **Copy** it. Their **Birthday** shows here too, with where it came from (Google contacts, Google Calendar, Facebook, or you): see [The Graph](graph.md#birthday).
 - **With you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
 - **Also on**: the other places you talk with them. **Slack** opens them in Slack, or your newest Slack thread with them.
 - **People** and **Projects** they're part of, **Open between you** (promises both ways, with **Mark done** and **Drop**), and their **Timeline**.
@@ -70,7 +70,7 @@ To join two people yourself, open one of them, then **⋯**, **Same person as…
 
 On their page, open the ⋯ menu and pick **Delete permanently…**, then **Delete**. It removes them and what your Machine knows about them: their entry, addresses, looked-up details, the messages only between the two of you, and notes about them.
 
-To-dos that involve them stay, with their name taken out. They won't be added again. It can't be undone.
+To-dos that involve them stay, with their name taken out. They won't be added again, also not by an import or a Facebook birthdays to-do with their name or address. It can't be undone.
 
 ## Bounced
 
@@ -92,9 +92,9 @@ Your own addresses and numbers, aliases too, are always you, never someone in yo
 
 About you lists your addresses with where each came from; change them in **Settings**, under Account. To send your own contact to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
 
-## Who's who
+## What they are to you
 
-Roles your Machine read in your messages, waiting for your word. **✓ Right** confirms one; **Edit** opens their page in Edit. It learns from your edits. This shows only when roles are waiting.
+Roles your Machine reads in your messages show on their page under **To you**, with the line it read. Nothing waits for your word. Wrong? **Edit** on their page fixes it, or **⋯** on its line in **Recent changes**. It learns from your edits.
 
 ## What it knows about someone
 

@@ -1,5 +1,4 @@
-// The Graph as a CRM (crm.py, crm_import.py). Filter by each list (owner, board, stage, organization, value,
-// close date; done on the Machine, a page at a time), an owner from the Work Fleet on each record, one organization
+// The Graph as a CRM (crm.py, crm_import.py). Filter each list by its own fields (crm.KIND_FILTERS; done on the Machine), an owner from the Work Fleet on each record, one organization
 // with several websites (Same organization as…, Add a website…, Split off, Same organization?), and a CSV import with
 // a preview and Undo. Filters are kept per list on this device.
 var graphOwners=[],graphLastImport=null,crmFilters=(()=>{try{return JSON.parse(localStorage.getItem('graph-filters')||'{}')||{}}catch{return{}}})();
@@ -7,7 +6,9 @@ const crmPaneOf=list=>String(list).startsWith('projects')?'projects':list==='org
 // The Team lists come whole, so their filters (who shared it, organization, state) work here, kept apart from Mine's.
 var teamFilters=(()=>{try{return JSON.parse(localStorage.getItem('graph-team-filters')||'{}')||{}}catch{return{}}})();
 const crmTeam=()=>!!(graphLocal&&graphListsTeam);
-const crmF=pane=>(crmTeam()?teamFilters:crmFilters)[pane]||{};
+// a filter its list no longer has (saved before) is left out
+const CRM_KEYS={people:['owner','tag','org','closeness','last_contact','open_project'],orgs:['owner','tag','industry','size','country','last_contact','open_project']};
+const crmF=pane=>{const f=(crmTeam()?teamFilters:crmFilters)[pane]||{},ok=!crmTeam()&&CRM_KEYS[pane];return ok?Object.fromEntries(Object.entries(f).filter(([k])=>ok.includes(k))):f};
 const viaNames=n=>String(n.via||'').replace(/^via\s+/i,'').split(/,\s*|\s+and\s+/).map(x=>x.trim()).filter(Boolean);
 const teamSharers=()=>[...new Set(['people','orgs','projects','projects_done'].flatMap(k=>(graphLocal?.[k]||[]).flatMap(viaNames)))].sort((a,b)=>a.localeCompare(b));
 function teamKept(list){const items=graphLocal?.[list]||[];if(!crmTeam()||list==='warmup')return items;const f=crmF(crmPaneOf(list)),v=list==='projects'?teamPickOf(items):'all';
@@ -22,9 +23,12 @@ const ownerName=id=>id==='me'?'you':graphOwners.find(m=>m.id===id)?.name||'a tea
 // Mine, Needs me and All, the same choice on the List and the Board.
 const crmFilterButton=(pane,cls='')=>{const n=crmCount(pane);return html`<button type="button"${cls?html` class="${cls}"`:''} data-crm-filter="${pane}" aria-haspopup="dialog" aria-label="Filter"><svg class="crm-funnel" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/></svg><span class="crm-word">Filter</span>${n?html` <span class="badge">${n}</span>`:''}</button>`};
 const crmTools=(pane,tab)=>html`<div class="graph-tools">${pane==='projects'&&tab==='projects'&&crmTeam()&&(graphLocal?.projects||[]).length?teamSeg(graphLocal.projects):''}${crmFilterButton(pane)}</div>`;
+const CRM_LAST={'30':'In the last 30 days','90':'30 to 90 days ago',older:'Over 90 days ago'},CRM_SIZE={'1-10':'1 to 10','11-50':'11 to 50','51-200':'51 to 200','201-1000':'201 to 1,000','1000+':'Over 1,000'};
+const countryName=c=>{try{return new Intl.DisplayNames([I18N.lang||'en'],{type:'region'}).of(String(c).toUpperCase())||c}catch{return c}};
 const CRM_STATE={'heating up':'Busier lately',active:'Steady',cooling:'Quieter lately',dormant:'Quiet'};
 const CRM_LABEL={waiting:()=>t('No reply in 10+ days'),by:v=>t('Shared by {}',v),state:v=>t('State: {}',t(CRM_STATE[v]||v)),owner:v=>t('Owner: {}',ownerName(v)),tag:v=>t('Tag: {}',v),board:v=>t('Board: {}',crmBoards().find(b=>String(b.id)===String(v))?.name||v),stage:v=>t('Stage: {}',v),org:v=>t('Organization: {}',v),
- value_min:v=>t('Value from {}',money(+v)),value_max:v=>t('Value up to {}',money(+v)),close_from:v=>t('Closes from {}',closeDay(v)),close_to:v=>t('Closes by {}',closeDay(v))};
+ value_min:v=>t('Value from {}',money(+v)),value_max:v=>t('Value up to {}',money(+v)),close_from:v=>t('Closes from {}',closeDay(v)),close_to:v=>t('Closes by {}',closeDay(v)),
+ closeness:v=>t('Closeness: {}',t(CLOSENESS_UI[v]||v)),last_contact:v=>t('Last contact: {}',i18nLower(t(CRM_LAST[v]||v))),open_project:()=>t('Has an open project'),industry:v=>t('Industry: {}',v),size:v=>t('Size: {}',t(CRM_SIZE[v]||v)),country:v=>t('Country: {}',countryName(v))};
 const crmChips=pane=>html`${Object.entries(crmF(pane)).filter(([k,v])=>CRM_LABEL[k]&&v!=='').map(([k,v])=>html`<span class="chip">${CRM_LABEL[k](v)}</span>`)}`;
 const crmActive=pane=>{const on=orEmpty(crmChips(pane));return on?html`<p class="graph-active">${on}<button type="button" class="link" data-crm-clear="${pane}">Clear</button></p>`:''};
 const ownerRow=n=>kv('Owner',html`<label class="owner-pick"><select data-owner-pick="${n.id}" aria-label="Owner of ${n.name}"><option value="me"${n.owner?'':html` selected`}>You</option>${graphOwners.map(m=>html`<option value="${m.id}"${n.owner===m.id?html` selected`:''}>${m.name}</option>`)}${n.owner&&!graphOwners.some(m=>m.id===n.owner)?html`<option value="${n.owner}" selected>${n.owner_name||'Not in your Fleet now'}</option>`:''}</select></label>`);
@@ -45,9 +49,19 @@ const crmShow=(wide,tall)=>{const d=$('#crm-dialog');d.classList.toggle('wide',!
 const crmSay=t=>{const er=$('#crm-form [data-crm-error]');if(er){er.textContent=t;er.hidden=!t}};
 const opt=(v,t,on)=>html`<option value="${v}"${on?html` selected`:''}>${t}</option>`;
 function crmStages(board,current){const bs=crmBoards(),pick=bs.find(b=>String(b.id)===String(board)),names=[...new Set((pick?[pick]:bs).flatMap(b=>(b.stages||[]).map(s=>s.name)))];return html`${opt('','Any stage',!current)}${names.map(s=>opt(s,s,s===current))}`}
-function crmFilterOpen(pane){const f=crmF(pane);crm={mode:'filter',pane};const by=pane!=='projects';
+function crmFilterOpen(pane){const f=crmF(pane);crm={mode:'filter',pane};
  if(crmTeam()){setHTML($('#crm-form'),html`${crmHead(t('Filter the team’s {}',i18nLower(t(GRAPH_TABS[pane].label))))}<label class="ed-field">Shared by<select name="by">${opt('','Anyone',!f.by)}${teamSharers().map(m=>opt(m,m,f.by===m))}</select></label>${pane==='people'?html`<label class="ed-field">Organization<input name="org" value="${f.org||''}" placeholder="Name or website" autocomplete="off"></label>`:''}${pane==='projects'?html`<label class="ed-field">State<select name="state">${opt('','Any state',!f.state)}${Object.entries(CRM_STATE).map(([k,t])=>opt(k,t,f.state===k))}</select></label>`:''}${crmFoot('Show results',html`<button type="button" class="ghost" data-crm-clear-all>Clear all</button>`)}`);return crmShow()}
- setHTML($('#crm-form'),html`${crmHead(t('Filter {}',i18nLower(t(GRAPH_TABS[pane].label))))}${graphOwners.length?html`<label class="ed-field">Owner<select name="owner">${opt('','Anyone',!f.owner)}${opt('me','You',f.owner==='me')}${graphOwners.map(m=>opt(m.id,m.name,f.owner===m.id))}</select></label>`:''}${crmBoards().length?html`<div class="ed-row3"><label class="ed-field">Board<select name="board">${opt('','Any board',!f.board)}${crmBoards().map(b=>opt(b.id,b.name,String(f.board)===String(b.id)))}</select></label><label class="ed-field">Stage<select name="stage">${crmStages(f.board,f.stage)}</select></label></div>`:''}${graphTags.length?html`<label class="ed-field">Tag<select name="tag">${opt('','Any tag',!f.tag)}${graphTags.map(t=>opt(t.tag,t.tag,(f.tag||'').toLowerCase()===t.tag.toLowerCase()))}</select></label>`:''}${pane==='orgs'?'':html`<label class="ed-field">Organization<input name="org" value="${f.org||''}" placeholder="Name or website" autocomplete="off"></label>`}<div class="ed-row3"><label class="ed-field">Value from<input name="value_min" inputmode="decimal" value="${f.value_min??''}" placeholder="Any" autocomplete="off"></label><label class="ed-field">Value up to<input name="value_max" inputmode="decimal" value="${f.value_max??''}" placeholder="Any" autocomplete="off"></label></div><div class="ed-row3"><label class="ed-field">Closes from<input name="close_from" type="date" value="${f.close_from||''}"></label><label class="ed-field">Closes by<input name="close_to" type="date" value="${f.close_to||''}"></label></div>${pane==='projects'?html`<label class="ed-check"><input type="checkbox" name="waiting" value="1"${f.waiting?html` checked`:''}> No reply in 10+ days</label>`:''}${by?html`<p class="ed-note">Board, stage, value and close date go by their open projects.</p>`:''}${crmFoot('Show results',html`<button type="button" class="ghost" data-crm-clear-all>Clear all</button>`)}`);
+ const pick=(name,label,choices,any='Any')=>html`<label class="ed-field">${label}<select name="${name}">${opt('',any,!f[name])}${choices.map(([v,l])=>opt(v,l,String(f[name]??'').toLowerCase()===String(v).toLowerCase()))}</select></label>`,
+  box=(name,label,ph,x='')=>html`<label class="ed-field">${label}<input name="${name}" value="${f[name]??''}" placeholder="${ph}" autocomplete="off"${x}></label>`,
+  owner=graphOwners.length?pick('owner','Owner',[['me','You'],...graphOwners.map(m=>[m.id,m.name])],'Anyone'):'',
+  tag=graphTags.length?pick('tag','Tag',graphTags.map(x=>[x.tag,x.tag]),'Any tag'):'',
+  org=box('org','Organization','Name or website'),
+  last=pick('last_contact','Last contact',Object.entries(CRM_LAST).map(([v,l])=>[v,t(l)])),
+  open=html`<label class="ed-check"><input type="checkbox" name="open_project" value="1"${f.open_project?html` checked`:''}> Has an open project</label>`,
+  fields=pane==='people'?html`<div class="ed-row3">${pick('closeness','Closeness',Object.entries(CLOSENESS_UI).map(([v,l])=>[v,t(l)]))}${last}</div>${org}${owner}${tag}${open}`
+  :pane==='orgs'?html`${box('industry','Industry','Any industry',html` maxlength="200"`)}<div class="ed-row3">${pick('size','Size',Object.entries(CRM_SIZE).map(([v,l])=>[v,t(l)]))}${last}</div>${graphCountries.length?pick('country','Country',graphCountries.map(c=>[c,countryName(c)]).sort((a,b)=>a[1].localeCompare(b[1]))):''}${owner}${tag}${open}`
+  :html`${owner}${crmBoards().length?html`<div class="ed-row3">${pick('board','Board',crmBoards().map(b=>[b.id,b.name]),'Any board')}<label class="ed-field">Stage<select name="stage">${crmStages(f.board,f.stage)}</select></label></div>`:''}${tag}${org}<div class="ed-row3">${box('value_min','Value from','Any',html` inputmode="decimal"`)}${box('value_max','Value up to','Any',html` inputmode="decimal"`)}</div><div class="ed-row3"><label class="ed-field">Closes from<input name="close_from" type="date" value="${f.close_from||''}"></label><label class="ed-field">Closes by<input name="close_to" type="date" value="${f.close_to||''}"></label></div><label class="ed-check"><input type="checkbox" name="waiting" value="1"${f.waiting?html` checked`:''}> No reply in 10+ days</label>`;
+ setHTML($('#crm-form'),html`${crmHead(t('Filter {}',i18nLower(t(GRAPH_TABS[pane].label))))}${fields}${crmFoot('Show results',html`<button type="button" class="ghost" data-crm-clear-all>Clear all</button>`)}`);
  crmShow()}
 async function crmImportOpen(pane){crm={mode:'import',kind:pane==='projects'?'project':pane==='orgs'?'org':'person',text:'',name:'',mapping:null,seen:null,check:null,own:false,typeOff:new Set(),fixOff:new Set(),fixOpen:false};crmImportDraw()}
 const CRM_FIX_TYPES=['spaces','case','split','email','phone','website','date','value','tags','stage','merge'];
@@ -97,7 +111,8 @@ $('#crm-form').addEventListener('submit',async e=>{e.preventDefault();const c=cr
  if(c.mode==='picture')return;
  if(c.mode==='board-stages'){const on=[...f.querySelectorAll('input[name=stage]:checked')].map(x=>x.value);if(!on.length)return crmSay('Pick at least one stage.');const all=f.querySelectorAll('input[name=stage]').length;$('#crm-dialog').close();return boardStagesSet(c.board,on.length===all?null:on)}
  if(c.mode==='fields'){btn.disabled=true;try{await crmFieldsSave(c)}catch(x){errCaught(x);crmSay(x.message)}finally{btn.disabled=false}return}
- if(c.mode==='filter'){const next=Object.fromEntries(['by','state','owner','tag','board','stage','org','value_min','value_max','close_from','close_to'].map(k=>[k,v(k)]));next.waiting=f.elements.waiting?.checked?'1':'';
+ if(c.mode==='filter'){const next=Object.fromEntries([...f.elements].filter(x=>x.name&&x.type!=='checkbox').map(x=>[x.name,x.value.trim()]));
+  for(const k of ['waiting','open_project'])next[k]=f.elements[k]?.checked?'1':'';
   for(const k of ['value_min','value_max'])if(next[k]&&!/^\d+([.,]\d+)?$/.test(next[k].replace(/[\s€$£]/g,'')))return crmSay('Value: a number, like 12000.');
   crmSet(c.pane,next);$('#crm-dialog').close();return}
  btn.disabled=true;
@@ -151,7 +166,7 @@ function pipeline(b){if(!b.projects.some(p=>p.value!=null))return '';
 document.addEventListener('click',e=>{const d=e.target.closest?.('.pipeline>summary')?.parentElement;if(d)sideStore.set('board-pipeline',d.open?'0':'1')});  /* the owner's pick, not a redraw's */
 
 // Fields and tags (crm_fields.py): the owner's own fields per record type (text, number, date, a choice) and tags.
-var graphFields=[],graphTags=[];
+var graphFields=[],graphTags=[],graphCountries=[];
 const FIELD_KIND={person:'people',org:'organizations',project:'projects'};
 const fieldShow=f=>f.value==null||f.value===''?html`<span class="muted">Not set</span>`:f.type==='number'?new Intl.NumberFormat().format(+f.value):f.type==='date'?closeDay(f.value):f.value;
 const tagMini=n=>n.tags?.length?html`<span class="tag-mini">${n.tags.slice(0,3).map(t=>html`<span class="chip tag-chip">${t}</span>`)}${n.tags.length>3?html`<span class="muted">+${n.tags.length-3}</span>`:''}</span>`:'';
@@ -160,7 +175,7 @@ const tagsPaint=()=>{const l=$('#crm-tag-list');if(l)setHTML(l,html`${graphTags.
 function crmFieldsSection(n){if(n.team_only)return (n.team_fields?.length||n.tags?.length)?html`<section class="detail-section crm-fields"><h4>Fields</h4>${(n.team_fields||[]).map(f=>kv(f.name,fieldShow(f)))}${n.tags?.length?kv('Tags',html`<span class="tag-list">${tagChips(n.tags)}</span>`):''}</section>`:'';
  const fs=n.fields||[],mine=new Set(fs.filter(f=>f.value!=null).map(f=>f.name.toLowerCase())),team=(n.team?.fields||[]).filter(f=>!mine.has(String(f.name).toLowerCase()));
  fieldsOf.set(n.id,fs);
- return html`<section class="detail-section crm-fields"><h4>Fields</h4>${fs.map(f=>kv(f.name,html`<button type="button" class="field-val" data-field-edit="${f.id}" data-field-node="${n.id}" title="Change ${f.name}">${fieldShow(f)}</button>`))}${team.map(f=>kv(f.name,html`${fieldShow(f)}<span class="sub">From your team</span>`))}${kv('Tags',html`<span class="tag-list">${tagChips(n.tags,n.id)}<span class="tag-add" data-tag-node="${n.id}"><input name="tag" list="crm-tag-list" placeholder="+ Tag" maxlength="40" aria-label="Add a tag" enterkeyhint="done" autocomplete="off"></span></span>`)}<p class="graph-sub"><button type="button" class="link" data-fields-edit="${n.id}">${fs.length?'Manage fields':'Add a field'}</button></p></section>`}
+ return html`<section class="detail-section crm-fields"><h4>Fields</h4>${fs.map(f=>kv(f.name,html`<button type="button" class="field-val" data-field-edit="${f.id}" data-field-node="${n.id}" title="Change ${f.name}">${fieldShow(f)}</button>`))}${team.map(f=>kv(f.name,html`${fieldShow(f)}<span class="sub">From your team</span>`))}${kv('Tags',html`<span class="tag-list">${tagChips(n.tags,n.id)}<span class="tag-add" data-tag-node="${n.id}"><input name="tag" list="crm-tag-list" placeholder="+ Tag" maxlength="40" aria-label="Add a tag" enterkeyhint="done" autocomplete="off"></span></span>`)}<p class="graph-sub fields-foot">${n.kind==='person'&&!n.birthday?html`<button type="button" class="link" data-bday-add="${n.id}">${t('Add birthday')}</button>`:''}<button type="button" class="link" data-fields-edit="${n.id}">${fs.length?'Manage fields':'Add a field'}</button></p></section>`}
 const fieldInput=(f,v)=>f.type==='choice'?html`<select name="f${f.id}">${opt('','Not set',v==null||v==='')}${(f.choices||[]).map(c=>opt(c,c,c===v))}</select>`
  :f.type==='date'?html`<input name="f${f.id}" type="date" value="${v||''}">`
  :f.type==='number'?html`<input name="f${f.id}" inputmode="decimal" value="${v??''}" autocomplete="off">`
@@ -220,16 +235,6 @@ document.addEventListener('keydown',async e=>{const i=e.target.closest?.('.tag-a
  try{await graphPost('graph_tag',{node_id:f.dataset.tagNode,tag:t,add:true});if(!graphTags.some(x=>x.tag.toLowerCase()===t.toLowerCase())){graphTags.push({tag:t,count:1});tagsPaint()}pagerDrop('graph');await people(graphNode,true)}catch(err){errCaught(err);toast(err.message,true);i.disabled=false}},true);
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-tag-remove],[data-fields-edit]');if(!t)return;e.preventDefault();e.stopPropagation();
  try{if(t.dataset.fieldsEdit)return await crmFieldsOpen(t.dataset.fieldsEdit);t.disabled=true;await graphPost('graph_tag',{node_id:t.dataset.tagNode,tag:t.dataset.tagRemove,add:false});pagerDrop('graph');await people(graphNode,true)}catch(err){errCaught(err);toast(err.message,true);t.disabled=false}},true);
-// Who's who and its counts again from the list on screen without the roles marked right: at the tap, not after the save
-function rolesPaint(){const view=$('#people-view');for(const b of view.querySelectorAll('[data-role-confirm]'))b.hidden=roleDone(b.dataset.roleConfirm,b.dataset.role);
- if(!whosLast)return;const items=whosLast.items||[],left=rolesLeft(items),n=Math.max(0,(whosLast.waiting??items.length)-(items.length-left.length));
- $('#badge-people').textContent=n||'';rolesRow(left.length>0,n);const pane=view.querySelector('[data-graph-panel="roles"]');if(pane){setHTML(pane,whosWho(left,n));if(!left.length)people(graphNode,true)}}  // the last one: the Graph without Who's who
-// ✓ Right (or All are right): gone at once, saved after; a failed save brings them back with what went wrong
-async function rolesConfirm(pairs,all){for(const [id,role] of pairs)rolesDone.set(id,{role,saved:false});rolesPaint();
- toast(all?`Confirmed ${pairs.length} roles.`:t('Confirmed: {}.',pairs[0][1]));let done=0;
- try{for(const [id,role] of pairs){await graphPost('graph_role',{node_id:id,role});const r=rolesDone.get(id);if(r)r.saved=true;done++}}
- catch(err){errCaught(err);for(const [id] of pairs.slice(done))rolesDone.delete(id);rolesPaint();toast(all?(done?`Confirmed ${done}, then: `:'')+err.message:err.message,true)}
- people(graphNode,true)}
 $('#people-view').onclick=async e=>{const tab=e.target.closest('[data-graph-pane]');if(tab){showGraphPane(tab.dataset.graphPane);return}if(e.target.closest('[data-ge-more]')){const n=graphTl.page,box=e.target.closest('.graph-timeline'),hidden=box?box.querySelectorAll('.graph-events .graph-event[hidden]').length:0;
   if(n?.timeline&&box){if(n.timeline.next&&hidden<30)graphTlLoad(n.timeline.source||'',true);else{n.timeline.shown=(n.timeline.shown||GRAPH_ROWS)+30;graphTlDraw()}}
   else{for(const x of $('#people-view').querySelectorAll('.graph-events [hidden]'))x.hidden=false;e.target.closest('[data-ge-more]').remove()}return}
@@ -237,11 +242,8 @@ $('#people-view').onclick=async e=>{const tab=e.target.closest('[data-graph-pane
  const tlChip=e.target.closest('[data-tl-source]');if(tlChip){graphTlLoad(tlChip.dataset.tlSource,false);return}if(openEventFrom(e))return;
  const q=e.target.closest('[data-quote-event]');if(q){openEvent(q.dataset.quoteEvent,'');return}
  const qs=e.target.closest('[data-quote-events]');if(qs){openSources(qs.dataset.quoteEvents,qs.textContent);return}
- const all=e.target.closest('[data-role-all]');if(all){const each=[...document.querySelectorAll('.whos [data-role-confirm]')];if(!each.length||!confirm(`Mark all ${each.length} roles as right?`))return;rolesConfirm(each.map(b=>[b.dataset.roleConfirm,b.dataset.role]),true);return}
  const shown=e.target.closest('[data-show-person]');if(shown){shown.disabled=true;try{await graphPost('graph_show_person',{identifier:shown.dataset.showPerson});setHTML(shown.parentNode,html`<span class="muted hs-said">Shown as a person.</span>`)}catch(err){errCaught(err);shown.disabled=false;toast(err.message,true)}return}  /* the row stays until the list loads again: the rebuild adds them */
  const undo=e.target.closest('[data-warmup-undo]');if(undo){undo.disabled=true;try{await graphPost('graph_warmup',{domain:undo.dataset.warmupUndo,warmup:false});toast(t('Back in your Graph: {}.',undo.dataset.warmupUndo));await people(graphNode,true)}catch(err){errCaught(err);undo.disabled=false;toast(err.message,true)}return}
- const ok=e.target.closest('[data-role-confirm]');if(ok){rolesConfirm([[ok.dataset.roleConfirm,ok.dataset.role]],false);return}
- const ed=e.target.closest('[data-role-edit-for]');if(ed){editRole=ed.dataset.roleEditFor;graphOpen(ed.dataset.roleEditFor);return}
  const sameAll=e.target.closest('[data-same-all]');if(sameAll){const pairs=JSON.parse(sameAll.dataset.sameAll);if(!confirm(`Merge ${pairs.length} pairs?`))return;sameAll.disabled=true;
   try{const said=await graphPost('graph_same_all',{pairs});toastUnmerge(said.merged===1?'Merged 1 pair.':`Merged ${said.merged} pairs.`,said.batch);await people(graphNode,true)}catch(err){errCaught(err);sameAll.disabled=false;toast(err.message,true)}return}
  const same=e.target.closest('[data-same]');if(same){const yes=same.dataset.same==='1',box=same.closest('.same-pair,.same-ask');same.disabled=true;

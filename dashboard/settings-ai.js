@@ -22,8 +22,7 @@ function aiConnection(c){const both=(aiView.areas||[]).length>1,lines=aiLines[c.
 // After an Undo in an AI's own activity: its lines read again
 async function aiActivityReload(){const id=aiOpen;if(!id)return;try{aiLines[id]=(await request('api/activity?kind=ai&actor='+encodeURIComponent(id))).items||[]}catch(err){errCaught(err)}renderAi()}
 function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=aiView,list=v.connections||[],both=(v.areas||[]).length>1;
- const r=v.reach||{},own=r.address&&r.paired&&!r.hosted;$('#ai-official').innerHTML=aiOfficial(r);const listed=aiAddresses(r);$('#ai-addresses').innerHTML=listed;$('#ai-addresses').hidden=!listed;$('#ai-private-note').hidden=!r.address;
- $('#ai-private').hidden=!own;$('#ai-address').innerHTML=own?aiPaired():'';
+ const r=v.reach||{};$('#ai-official').innerHTML=aiOfficial(r);const listed=aiAddresses(r);$('#ai-addresses').innerHTML=listed;$('#ai-addresses').hidden=!listed;$('#ai-private-note').hidden=!r.address;
  $('#ai-list').innerHTML=list.length?list.map(aiConnection).join(''):'<div><span class="grow"><small>No AI connected yet.</small></span></div>';
  $('#ai-key-area').hidden=!both;if(!both)$('#ai-key-area').value='both';
  const made=$('#ai-made');made.hidden=!aiMade;made.innerHTML=aiMade?`<span class="grow"><strong>Your new key</strong><small>Copy it now. It won’t show again.</small><code class="ai-url" translate="no">${esc(aiMade)}</code></span><button type="button" class="ghost" data-copy-command="${esc(aiMade)}">Copy</button>`:''}
@@ -31,8 +30,9 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
 // Claude (ChatGPT's plugins and Claude's connector directory, both on the shared address: the account signs in and routes
 // to a hosted Machine or a paired self-hosted one). They need this Machine on the account with a name and, self-hosted,
 // its certificate (r.shared): until then one muted row names both, with one line, above Get your address (aiAddress) or the
-// address's state. Folded under Or add it by address (aiAddresses): the shared address and this Machine's private one
-// (end to end), each with Copy, and the steps to add one by hand.
+// address's state. Folded under Or add it by address (aiAddresses): the shared address and this Machine's own one
+// (end to end, docs/ai-connections.md), each with Copy, and the steps to add one by hand. Unpair is in Settings, General,
+// Account (settings-general.js), next to Open your account: the official apps just work, so pairing has no section here.
 const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 function aiApps(ready){
@@ -45,23 +45,21 @@ function aiOfficial(r){
  return aiApps(false)+`<div><span class="grow"><strong>Official app</strong>${r.other?'<small>Set it up on your hosted Machine.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':'<small>Getting this address ready. It takes a few minutes.</small>'}</span></div>`}
 function aiAddresses(r){
  return (r.shared?`<div><span class="grow"><strong>Official app</strong><code class="ai-url" translate="no">${esc(r.shared)}</code></span><button type="button" class="ghost" data-copy-command="${esc(r.shared)}">Copy</button></div>`:'')
-  +(r.address?aiAddress(r,true):'')}
-// The private address: https://<name>.mcp.themachine.computer/mcp with Copy; on a self-hosted Machine not paired, or
-// whose account has no name yet, Get your address instead (pairing.py: one page on the account, then the Fleet starts
-// here by itself); Unpair on a paired self-hosted one. The same button pairs from Connections.
-function aiAddress(r,fold){const p=r.pairing;
+  +(r.address?aiAddress(r):'')}
+// This Machine's own address: https://<name>.mcp.themachine.computer/mcp with Copy (folded); on a self-hosted Machine not
+// paired, or whose account has no name yet, Get your address instead (pairing.py: one page on the account, then the
+// Fleet starts here by itself). The same button pairs from Connections.
+function aiAddress(r){const p=r.pairing;
  if(p&&p.state==='waiting')return `<div><span class="grow"><strong>Confirm on your account</strong><small>${esc(t('Check that the page in the new tab shows {}.',p.code||''))}</small></span>${p.url?`<a class="btn-link ghost" href="${esc(p.url)}" target="_blank" rel="noopener">Open it again</a>`:''}</div>`;
- if(r.address)return `<div><span class="grow"><strong>${fold?'Private address (end-to-end)':'Your address'}</strong><code class="ai-url" translate="no">${esc(r.address)}</code>${r.other?'<small>Your hosted Machine answers at this address.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='getting'?'<small>Getting this address ready. It takes a few minutes.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':''}</span><button type="button" class="ghost" data-copy-command="${esc(r.address)}">Copy</button></div>`+(!fold&&r.paired&&!r.hosted?aiPaired():'');
+ if(r.address)return `<div><span class="grow"><strong>Your address</strong><code class="ai-url" translate="no">${esc(r.address)}</code>${r.other?'<small>Your hosted Machine answers at this address.</small>':r.tls==='missing'?'<small class="alert">Install the cryptography package to use this address.</small>':r.tls==='getting'?'<small>Getting this address ready. It takes a few minutes.</small>':r.tls==='failed'?'<small class="alert">This address isn’t ready yet. The Machine tries again within the hour.</small>':''}</span><button type="button" class="ghost" data-copy-command="${esc(r.address)}">Copy</button></div>`;
  if(r.hosted)return '<div><span class="grow"><small>This Machine has no name yet.</small></span></div>';
  const gone=p&&p.state==='gone'?'<small class="alert">That didn’t finish. Try again.</small>':'';
- if(r.paired&&r.away)return `<div><span class="grow"><strong>Your address</strong><small>Your account didn’t answer. Try again in a minute.</small></span><button type="button" class="ghost" data-ai-retry>Try again</button></div>`+aiPaired();
- if(r.paired)return `<div><span class="grow"><strong>Pick a name for your address</strong><small>Your account has no name yet. Pick one there.</small>${gone}</span><button type="button" class="primary" data-ai-get>Set up</button></div>`+aiPaired();
+ if(r.paired&&r.away)return `<div><span class="grow"><strong>Your address</strong><small>Your account didn’t answer. Try again in a minute.</small></span><button type="button" class="ghost" data-ai-retry>Try again</button></div>`;
+ if(r.paired)return `<div><span class="grow"><strong>Pick a name for your address</strong><small>Your account has no name yet. Pick one there.</small>${gone}</span><button type="button" class="primary" data-ai-get>Set up</button></div>`;
  return `<div><span class="grow"><strong>Get your address</strong><small>Pair this Machine with your account and pick a name. It takes a minute.</small>${gone}</span><button type="button" class="primary" data-ai-get>Set up</button></div>`}
-const aiPaired=()=>'<div><span class="grow"><strong>Paired with your account</strong><small>Unpair to stop your account and AIs from reaching this Machine.</small></span><button type="button" class="ghost" data-ai-unpair>Unpair</button></div>';
-for(const box of ['#ai-official','#ai-address'])$(box).addEventListener('click',async e=>{
+$('#ai-official').addEventListener('click',async e=>{
  if(e.target.closest('[data-ai-get]'))aiPairGo();
- else if(e.target.closest('[data-ai-retry]'))try{const r=await aiPost('ai_pair_state',{fresh:true});aiView.reach=r.reach;renderAi()}catch(err){errCaught(err);notice(err.message,true)}
- else if(e.target.closest('[data-ai-unpair]')){if(confirm(t('Unpair this Machine? Your Fleet and sign-ins through your account stop until you pair it again.')))aiDo('ai_unpair',{},'Unpaired')}});
+ else if(e.target.closest('[data-ai-retry]'))try{const r=await aiPost('ai_pair_state',{fresh:true});aiView.reach=r.reach;renderAi()}catch(err){errCaught(err);notice(err.message,true)}});
 async function aiDo(action,args,done){try{const r=await aiPost(action,args);if(r.connections){aiView=r}else await aiLoad();renderAi();if(done)notice(t(done))}catch(e){errCaught(e);notice(e.message,true)}}
 $('#ai-list').addEventListener('change',e=>{const row=e.target.closest('[data-ai]');if(!row)return;const id=row.dataset.ai;
  if(e.target.matches('[data-ai-level]'))aiDo('ai_change',{id,level:e.target.value},'Saved');

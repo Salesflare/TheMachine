@@ -10,7 +10,7 @@ order: 4
 
 - **To-dos**: your to-dos and promises. See [To-dos](cards.md).
 - **Calendar**: the week ahead with your meetings, due to-dos and promises. See [Calendar](calendar.md).
-- **Graph**: the people, organizations and projects in your messages, and **Who's who** when roles wait for your word. See [Graph](graph.md).
+- **Graph**: the people, organizations and projects in your messages. See [Graph](graph.md).
 - **Fleet**: your team, family and friends on The Machine Network, once you have one. See [Fleet](fleet.md).
 - **Learning**: how the to-dos are doing, and what it learned.
 - **Connections**: your sources and how they're doing. See [Connections](connections.md).
@@ -41,7 +41,7 @@ Rows show only where they make sense. The × on a row closes it on every device.
 
 After your first day, it folds into one quiet line above **For you**, like "2 steps left · Continue". Tap it to open the to-do, and tap the arrow to fold it again.
 
-**Undo** or **Show 1 hidden** brings a row back. To bring back the whole to-do, use **Settings**, **General**, **Setup to-do**. **Settings**, **General**, **This device** has the same controls, including **Get the app**.
+**Undo** or **Show 1 hidden** brings a row back. To bring back the whole to-do, use **Settings**, **General**, **Setup to-do**. **Settings**, **General**, **This device** has the same controls, and **Settings**, **Apps** always has the phone app.
 
 ## New versions
 
@@ -67,7 +67,7 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
 - A phone number or email address you give for someone goes on their page in the Graph, not into facts. When the number is already on one record and one other record has the same name, the two are merged. The to-do's chat says **Added to** and their name, with **Undo**. When it isn't clear who it is for, it stays a fact.
 - The list never fills up. When it gets long, facts and rules it hasn't used in three weeks move to **Set aside**, where **Bring back** restores one. One you edited or brought back stays.
 - A note that says something already learned in other words replaces it, so nothing is listed twice. **Undo merge** brings the old wording back. Your own edits are never replaced.
-- **Bring these in**: used OpenClaw before? Lines from its notes (`MEMORY.md`, `USER.md`) worth keeping show on top, each with the file it came from. Tick the ones to keep, then **Keep ticked**: they become facts or rules like any other. **Dismiss the rest** and they don't come back. The files are never changed, and nothing shows when they hold nothing worth keeping.
+- **Bring these in**: used OpenClaw before? Lines from its notes (`MEMORY.md`, `USER.md`) worth keeping show on top, each with the file it came from. Tick the ones to keep, then **Keep ticked**: they become facts or rules like any other. A fact about someone in your Graph moves to their page (a birthday also reaches the Birthdays routine); one about you stays in Facts. **Dismiss the rest** and they don't come back. The files are never changed, and nothing shows when they hold nothing worth keeping.
 - **Changes**: what it picked up from your edits, dismissals and chats, each with **Undo**. See [Writing](writing.md#it-keeps-learning).
 - **Decisions**: a timeline of your choices on to-dos.
 - **Shared**: learnings to share with The Machine team, and votes waiting for you, when there are any. See [Share learnings](share-learnings.md).

@@ -129,6 +129,14 @@ try{
    await callAfter(page,'whats_new_seen',()=>page.locator('#whats-new [data-wn-run]').click());
    await page.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsTab==='general');
    await context.close()}
+  // A morning's pick of five (the most it holds): five dots, inside the screen, Done on the fifth; a sixth is never shown
+  news={entries:[ROUTINES,PLAIN,SEARCH,{...PLAIN,id:'p4',title:'Four'},{...PLAIN,id:'p5',title:'Five'},{...PLAIN,id:'p6',title:'Six'}]};
+  {const {context,page}=await open(width);await dialog(page).waitFor();
+   assert.equal(await page.locator('#whats-new .wn-dots button').count(),5);
+   const box=await dialog(page).boundingBox();assert.ok(box.x>=16&&box.x+box.width<=width-16&&box.y>=0&&box.y+box.height<=800,JSON.stringify(box));
+   await page.locator('#whats-new .wn-dots button').last().click();assert.equal(await shown(page),'Five');assert.deepEqual(await acts(page),['Back','Done']);
+   await callAfter(page,'whats_new_seen',()=>page.locator('#whats-new .wn-acts .primary').click());
+   await context.close()}
   // No picture and no button: text, × and Done only
   news={entries:[PLAIN]};
   {const {context,page}=await open(width);await dialog(page).waitFor();

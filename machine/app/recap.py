@@ -127,8 +127,6 @@ def recap_graph_lines(store, since=None):
             out.append('• ' + t('New projects: {}', ', '.join(fresh)))
     if view['quiet']:
         out.append('• ' + t('Gone quiet: {}', ', '.join(who(p) for p in view['quiet'])))
-    if view['whos_who']:
-        out.append('• ' + t("{} roles to confirm in the Graph tab's Who's who", len(view['whos_who'])))
     return out
 
 

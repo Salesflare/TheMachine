@@ -21,7 +21,9 @@ class Fields(unittest.TestCase):
         seats = self.act('graph_field_save', kind='org', name='Seats', type='number')
         plan = self.act('graph_field_save', kind='org', name='Plan', type='choice', choices='Starter\nPro\nPro')
         self.assertEqual(plan['choices'], ['Starter', 'Pro'])  # the same one once
-        self.act('graph_field_save', kind='person', name='Birthday', type='date')
+        self.act('graph_field_save', kind='person', name='Start date', type='date')
+        with self.assertRaisesRegex(ValueError, 'built in'):  # a person's birthday is on their page (person_birthday.py)
+            self.act('graph_field_save', kind='person', name='Date of birth', type='date')
         with self.assertRaisesRegex(ValueError, 'already'):
             self.act('graph_field_save', kind='org', name='seats', type='text')
         with self.assertRaisesRegex(ValueError, 'two choices'):
@@ -36,8 +38,8 @@ class Fields(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, error):
                 self.act('graph_field_set', node_id=org, field_id=field['id'], value=value)
         with self.assertRaisesRegex(ValueError, 'gone'):  # a person's field on an organization
-            birthday = next(f for f in self.fields('person'))
-            self.act('graph_field_set', node_id=org, field_id=birthday['id'], value='2000-01-01')
+            start = next(f for f in self.fields('person'))
+            self.act('graph_field_set', node_id=org, field_id=start['id'], value='2000-01-01')
         self.build()  # values stay through a rebuild
         with self.store.connect() as db:
             view = graph.detail(db, org)

@@ -26,7 +26,7 @@ Se più persone hanno quel nome, dice di quale si tratta. Gli altri messaggi let
 
 Premi `?` per **Scorciatoie da tastiera**, l'elenco completo per il tuo computer.
 
-- Vai a una pagina: `G` poi `T` Attività, `C` Calendario, `P` Persone, `O` Organizzazioni, `J` Progetti, `W` Chi è chi (quando compare), `F` Fleet, `L` Apprendimento, `N` Connessioni, `,` Impostazioni. `G` poi `E` apre i risultati della ricerca tra i messaggi. I vecchi `G` poi `S` e `G` poi `B` funzionano ancora.
+- Vai a una pagina: `G` poi `T` Attività, `C` Calendario, `P` Persone, `O` Organizzazioni, `J` Progetti, `F` Fleet, `L` Apprendimento, `N` Connessioni, `,` Impostazioni. `G` poi `E` apre i risultati della ricerca tra i messaggi. I vecchi `G` poi `S` e `G` poi `B` funzionano ancora.
 - `N` aggiunge una nuova attività. `T` avvia Parla, o lo chiude mentre è in corso. `J` e `K` (o `↓` e `↑`) si muovono in un elenco, Invio apre.
 - Su un'attività: `E` la rinomina, `S` la posticipa, `D` la segna come fatta, `R` scrive nella sua chat.
 - Nel Calendario: `T` va a oggi, `J` e `K` (o `→` e `←`) alla settimana o al mese successivo o precedente. `A`, `W` e `M` passano ad Agenda, Settimana e Mese.

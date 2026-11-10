@@ -23,7 +23,8 @@ let installed=[
  {name:'apple-notes',description:'Apple Notes via the memo command',group:'bundled',state:'setup',on:true,needs:'macOS only',toggle:false,source:'Bundled with The Machine',emoji:''},
  {name:'gateway-checks-with-a-really-long-name-that-goes-on-and-on-for-testing',description:'Learned checks',group:'other',state:'ready',on:true,needs:'',toggle:true,source:'Learned by The Machine',emoji:''}];
 const first=installed;
-const view=()=>({installed,checked_at:new Date().toISOString(),error:''});
+let kept=0;  // > 0: the list kept from before a restart answers that many asks (updating) before the fresh one
+const view=()=>kept-->0?{installed:first.slice(0,2),checked_at:new Date(Date.now()-3600e3).toISOString(),error:'',updating:true}:({installed,checked_at:new Date().toISOString(),error:''});
 const card={id:'s1',title:'Prepare Thursday’s client meeting',body:'Acme meets you Thursday. I can prepare a briefing.',status:'pending',event_ids:[1],scope:'work',created_at:new Date().toISOString()};
 const calls=[];
 const server=createServer((req,res)=>{
@@ -125,6 +126,23 @@ try{
   assert.ok(await fits(page));
   await context.close();
  }
+ // Right after a restart: the list kept from before shows at once (no "Loading…"), and the page asks again for the
+ // fresh one (2026-11-10: the first read took 8-16 s).
+ {installed=first;calls.length=0;kept=1;
+  const context=await browser.newContext({viewport:{width:1280,height:900}}),page=await context.newPage();
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:'+server.address().port);
+  await page.locator('#skills-installed [data-installed="client-meeting-prep"]').waitFor({state:'attached'});  // read with the page
+  assert.equal(await page.locator('#skills-installed [data-installed="trello"]').count(),0);
+  await page.locator('#skills-installed [data-installed="trello"]').waitFor({state:'attached',timeout:8000});
+  await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="skills"]').click();
+  await page.locator('details[data-group="bundled"] summary').click();
+  await page.locator('#skills-installed [data-installed="trello"]').waitFor();
+  assert.equal(calls.filter(c=>c.action==='skill_installed').length,2);
+  await page.waitForTimeout(3500);  // fresh: no more asks
+  assert.equal(calls.filter(c=>c.action==='skill_installed').length,2);
+  await context.close()}
  assert.deepEqual(errors,[]);
  console.log('skills catalog dashboard ok');
 }finally{await browser?.close();server.close()}

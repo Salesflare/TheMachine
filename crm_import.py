@@ -2,7 +2,8 @@
 
 The owner uploads a file on the dashboard; nothing of it leaves the Machine. The columns are guessed from their
 headers (and can be changed), and a preview shows each row as new, matching one already in the Graph (to update), or
-skipped with why: no name, an address that isn't one, the same row twice in the file. A match is the same email for a
+skipped with why: no name, an address that isn't one, the same row twice in the file, someone the owner deleted
+permanently (by address or number, by name for a row with neither). A match is the same email for a
 person (else the same name at the same organization), the same website for an organization (any of its websites, else
 the same name), and the same name for a project.
 
@@ -207,6 +208,15 @@ def match(db, kind, rec):
 
 
 YOURS = 'That’s you: kept in About you'
+DELETED = 'Deleted earlier: not added again'
+
+
+def deleted(rec, gone):
+    """Whether a person row is someone the owner deleted permanently: by its address or number when it has one (a
+    namesake with another address is someone else), else by name (graph.name_keys)."""
+    phone = re.sub(r'\D', '', rec.get('phone') or '')
+    known = (['email:' + rec['email']] if rec.get('email') else []) + (['wa:' + phone] if phone else [])
+    return any(map(gone, known)) if known else any(gone(k) for k in graph.name_keys(rec.get('name')))
 
 
 def check(kind, rec):
@@ -339,6 +349,7 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
     out, seen = [], {}
     owner = graph.Owner({}, db)  # the owner's own addresses and numbers: About you, never a person
     owner.emails |= {str(e).lower() for e in owner_emails or ()}
+    gone = graph.forgotten(db)  # people the owner deleted permanently: a new row never brings them back (deleted)
     for n, row in enumerate(rows, start=2):
         rec = record(kind, row, mapping, kept.get(n))
         why = check(kind, rec) or (YOURS if kind == 'person' and (owner.has('email:' + (rec.get('email') or '')) or (
@@ -365,6 +376,9 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
                 out.append({'line': n, 'status': 'skip', 'why': 'Twice in the file', 'record': rec})
             continue
         node_id, how = match(db, kind, rec)
+        if kind == 'person' and not node_id and deleted(rec, gone):
+            out.append({'line': n, 'status': 'skip', 'why': DELETED, 'record': rec})
+            continue
         item = {'line': n, 'status': 'match' if node_id else 'new', 'node_id': node_id, 'why': how, 'record': rec}
         seen[key] = item
         out.append(item)
@@ -451,12 +465,11 @@ def _person(db, rec, node_id, now, undo):
         if made.get('existing'):
             return node_id, False
         undo['made'].append(node_id)
-        # the graph has no node for it until the rebuild: its details go on its identity directly
         if fields:
             fields.pop('phones', None)
             if rec.get('phone') and graph.PHONE.fullmatch(rec['phone']):
                 fields['phones'] = {'added': [rec['phone']], 'removed': []}
-            db.execute('INSERT OR REPLACE INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)', (node_id, json.dumps(fields), now))
+            details_made(db, [node_id], fields, now)
         return node_id, True
     row = graph.resolve(db, node_id)
     group = crm.group_of(row)
@@ -474,6 +487,12 @@ def _person(db, rec, node_id, now, undo):
         if not current or current['name'].casefold() != rec['org'].casefold():
             graph.set_org(db, node_id, rec['org'], 'owner', now)
     return node_id, False
+
+
+def details_made(db, ids, fields, now):
+    """The owner's details (person_edits fields) on people just made (graph.create_record): the graph has no node for
+    them until the rebuild, so they go on their identity directly. For an import, and Facebook's Add button."""
+    db.executemany('INSERT OR REPLACE INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)', [(i, json.dumps(fields), now) for i in ids])
 
 
 def _org(db, rec, node_id, now, undo):
@@ -668,12 +687,18 @@ def undo(db, import_id, now):
             except ValueError:
                 pass
             continue
-        db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
-        db.execute('DELETE FROM person_edits WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM person_orgs WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM record_owners WHERE node_id=?', (node_id,))
-        if node_id.startswith('org:'):
-            db.execute('DELETE FROM org_edits WHERE domain=?', (node_id if node_id.startswith('org:named:') else node_id[4:],))
+        drop_made(db, node_id)
     db.execute('UPDATE graph_imports SET undone_at=?,undo=NULL WHERE id=?', (now, row['id']))
     return {'undone': row['id'], 'kind': row['kind'], **json.loads(row['counts'] or '{}')}
+
+
+def drop_made(db, node_id):
+    """A person or organization added as if by hand (graph.create_record) goes again: what made it and the details kept
+    on it. For an import's Undo, and Facebook's Add's (birthdays_facebook.remove). The caller rebuilds."""
+    db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
+    db.execute('DELETE FROM person_edits WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM person_orgs WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM record_owners WHERE node_id=?', (node_id,))
+    if node_id.startswith('org:'):
+        db.execute('DELETE FROM org_edits WHERE domain=?', (node_id if node_id.startswith('org:named:') else node_id[4:],))

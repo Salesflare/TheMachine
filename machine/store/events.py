@@ -488,8 +488,8 @@ class EventsStore:
         person's first name (shared); one on both calendars shows once, as the owner's. One on a calendar the owner
         can change (`writable` account ids) without other people on it carries `edit`: its times for the form."""
         start, end = (dt.datetime.fromisoformat(str(v).replace('Z', '+00:00')) for v in (start, end))
-        if start.tzinfo is None or end.tzinfo is None or not dt.timedelta(0) < end - start <= dt.timedelta(days=15):
-            raise ValueError('Use a window of at most 15 days, with time zones')
+        if start.tzinfo is None or end.tzinfo is None or not dt.timedelta(0) < end - start <= dt.timedelta(days=43):
+            raise ValueError('Use a window of at most 43 days, with time zones')  # a month's view (six weeks) in one ask
         start, end = start.astimezone(dt.timezone.utc).isoformat(), end.astimezone(dt.timezone.utc).isoformat()
         if not account_ids:
             return []

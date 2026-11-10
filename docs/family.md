@@ -31,6 +31,10 @@ prefilled with their address, where you see the email before it goes; **Not now*
   already in your Family, or someone with an open invite. Only where you can invite to a Family Fleet (its owner or an
   admin, or by starting one).
 - Each suggestion and tap is a line in Activity. Turn it off in Settings, Fleet: **Suggest inviting family**.
+- A person's page offers the same invite by hand: **Invite to The Machine** (for someone with no Machine you know of)
+  opens the email in the same send dialog as any to-do (`person_invite_draft`: a prepared to-do about them, through the
+  normal send path), or offers copy or open in your email without a mailbox that can send, and **Invite to your Family** when the same checks
+  pass (`family_invites.person_invite`).
 
 
 Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind for all of them, with exceptions per person
