@@ -6,7 +6,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // An empty list is the robot and one line in its voice, and they are the check's status (state.check, todos-check.js
-// checkNow), so they never disagree with it: asleep with "Snooped around. Nothing needs you." (the wording changes per
+// checkNow), so they never disagree with it: asleep with "All caught up." (the wording changes per
 // day, not per render); awake and looking while a check or a review runs, also one the button didn't start; back
 // asleep once it ends. No count line over it and no check line or Check now in the head: a small Check now shows under
 // the line only when the line asks for it (the first check, a failed or a late one) or after a tap on the line, with
@@ -48,7 +48,7 @@ const quiet=async(page,why)=>{
  assert.equal(await page.locator('#page-head .page-sub').count(),0,why+': no count line over the robot');
  assert.equal(await page.locator('#page-head .check-now').count(),0,why+': nothing about the check in the head');
  assert.ok(!/Checked|next by|Checking/.test(await page.locator('#page-head').innerText()),why)};
-const OK=['Snooped around. Nothing needs you.','Peeked at everything. Nothing needs you.','All quiet. Back to my nap.'],BUSY=['Snooping around your messages…','Rummaging through the new stuff…'];
+const OK=['All caught up.','All quiet. Back to my nap.','Clean slate. Time for a nap.'],BUSY=['Snooping around your messages…','Rummaging through the new stuff…'];
 const done=(m=52)=>({reviewed:new Date(DAY-m*60000).toISOString(),waiting:0,reviewing:false,reading:false,phase:null});
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -63,6 +63,7 @@ try{
  for(let d=0;d<3;d++){
   check={...done(),reviewed:new Date(DAY+d*864e5-52*60000).toISOString()};[context,page]=await open({time:DAY+d*864e5});
   const text=await line(page);assert.ok(OK.includes(text),text);await quiet(page,'asleep');
+  assert.ok(!/nothing needs you|check|peek|snoop/i.test(text),'never repeats the mail check line: '+text);
   assert.equal(await pose(page),'brand/sleepy.webp');assert.equal(await page.locator('#suggestions .all-clear .check-row').count(),0,'no Check now by default');
   await page.evaluate(()=>refresh());assert.equal(await line(page),text,'same wording within a day');
   seen.add(text);await context.close();
@@ -75,7 +76,7 @@ try{
  await page.locator('#suggestions .all-clear [data-check-details]').click();await page.locator('#health').waitFor();
  assert.equal(await page.evaluate(()=>healthPane),'reviews');
  await context.close();
- // A review running that the button didn't start (the usual rhythm): awake, and the line says so, not "Snooped around"
+ // A review running that the button didn't start (the usual rhythm): awake, and the line says so, not "All caught up."
  check={...done(0),reviewing:true};[context,page]=await open();
  assert.ok(BUSY.includes(await line(page)),await line(page));assert.equal(await pose(page),'brand/wave-look.webp');await quiet(page,'checking');
  assert.equal(await page.locator('#suggestions .all-clear .check-row').count(),0,'nothing to press while it runs');
@@ -117,7 +118,7 @@ try{
  // Dutch.
  language='nl';check=done();
  [context,page]=await open();
- assert.ok(['Rondgesnuffeld. Er is niets voor jou.','Overal even gekeken. Er is niets voor jou.','Alles rustig. Terug naar mijn dutje.'].includes(await line(page)),await line(page));
+ assert.ok(['Helemaal bij.','Alles rustig. Terug naar mijn dutje.','Schone lei. Tijd voor een dutje.'].includes(await line(page)),await line(page));
  await context.close();
  // Nothing connected yet (a new Machine): the line says so, never that a check found nothing, and Check now has
  // nothing to read; while a check runs it still says that. In every size and theme.
