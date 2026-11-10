@@ -3,7 +3,9 @@ one to-do each run makes with a choice per item, and what is remembered of the o
 
 A run finds the items (newsletters: plain code, from the List-Unsubscribe and List-Id headers, as review_wait.mail_wait
 tells them apart; spam: the run's turn picks them from mail by unknown senders) and makes one to-do with them, quietly
-(no buzz or push: it waits in the list and the morning summary). No items, no to-do.
+(no buzz or push: it waits in the list and the morning summary). No items, no to-do. A receipt, an order or a
+payment the review sorted as a notification is no newsletter (notifications). Mail a list relayed (a Google Group like
+info@) counts under its original sender and is never unsubscribed through the list (relay_ways).
 
 Nothing changes until the owner picks Keep or Unsubscribe (Not spam or Spam) per item and confirms on the to-do. Then
 each item is done with what this Machine may already do, never with more permission (mail_cleanup_app.py):
@@ -70,6 +72,90 @@ def sender(m):
     return ' '.join(str(name or '').split())[:80], str(address or '').lower()
 
 
+# --- mail a mailing list relayed (a Google Group like info@, Mailman) ---------------------------------------------------
+# A list that relays mail rewrites From to its own address ("'Ann' via info@acme.example readers" <info@acme.example>)
+# and adds its own List-Id and List-Unsubscribe. That unsubscribe leaves the list (the owner's, or the team's, info@),
+# never the original sender's mailing: it is never used. The original sender is in X-Original-From or
+# X-Original-Sender, else in Reply-To.
+
+def _address_of(value):
+    found = graph.addresses(value)[:1]
+    return (' '.join(str(found[0][0] or '').split())[:80], found[0][1]) if found else ('', '')
+
+
+def _domain(address):
+    return str(address or '').rpartition('@')[2].lower().strip('.')
+
+
+def relay_of(m):
+    """The list address that relayed this mail (its From is the list's own), or ''. m: a mail's metadata, or
+    header_meta of its headers."""
+    name, address = _address_of(m.get('from'))
+    if not address:
+        return ''
+    _, original = _address_of(m.get('original_from'))
+    if original and original != address:
+        return address
+    # "'Ann' via info@acme.example readers", or "Ann via Info" from the list whose id is its address with a dot (RFC
+    # 2919: <info.acme.example>). A list that sends its own mail (an announcement list) has no "via": its unsubscribe is right.
+    local, _, domain = address.partition('@')
+    own_id = str(m.get('list_id') or '').strip().strip('<>').strip().lower() == f'{local}.{domain}'
+    if ' via ' in name.lower() and (f' via {address}' in name.lower() or own_id):
+        return address
+    return ''
+
+
+def original_sender(m):
+    """(name, address) of who wrote a relayed mail: X-Original-From (or -Sender), else Reply-To when it is someone
+    else; the address is '' when the relay kept none."""
+    relay = relay_of(m)
+    for key in ('original_from', 'reply-to'):
+        name, address = _address_of(m.get(key))
+        if address and address != relay:
+            return name or address, address
+    name = _address_of(m.get('from'))[0]
+    via = name.lower().find(' via ')
+    return (name[:via].strip(' \'"') if via > 0 else name), ''
+
+
+def header_meta(headers):
+    """The keys relay_of and original_sender read, from a mail's headers (lowercased names)."""
+    return {'from': headers.get('from', ''), 'reply-to': headers.get('reply-to', ''), 'list_id': headers.get('list-id', ''),
+            'original_from': headers.get('x-original-from') or headers.get('x-original-sender') or ''}
+
+
+def _site(domain):
+    """A domain's site: its last two labels, three under a country's second level (shop.example.co.uk: example.co.uk)."""
+    labels = [x for x in str(domain or '').lower().split('.') if x]
+    keep = 3 if len(labels) >= 3 and len(labels[-1]) == 2 and labels[-2] in ('co', 'com', 'org', 'net', 'ac', 'gov', 'edu') else 2
+    return '.'.join(labels[-keep:]) if len(labels) >= 2 else ''
+
+
+def _under(domain, site):
+    return bool(site) and (domain == site or domain.endswith('.' + site))
+
+
+def relay_ways(ways, original, relay):
+    """Of a relayed mail's unsubscribe ways, only those of its original sender: at the original sender's site and not at
+    the relay's. With no original address, none: the list's own unsubscribe is never used."""
+    theirs, list_site = _site(_domain(original)), _site(_domain(relay))
+    out = {}
+    for key, way in ways.items():
+        target = _domain(way['to']) if key == 'mailto' else (urllib.parse.urlsplit(way).hostname or '').lower()
+        if _under(target, theirs) and not _under(target, list_site):
+            out[key] = way
+    return out
+
+
+def unsubscribe_ways_of(headers, via=''):
+    """unsubscribe_ways from a mail's headers (lowercased names). Mail a list relayed (or an item that came through
+    one: via) keeps only its original sender's ways (relay_ways)."""
+    ways = unsubscribe_ways(headers.get('list-unsubscribe'), headers.get('list-unsubscribe-post'))
+    m = header_meta(headers)
+    relay = relay_of(m) or via
+    return relay_ways(ways, original_sender(m)[1], relay) if relay else ways
+
+
 def asked(db, kind):
     """Senders not to ask about: the owner's earlier picks, and those on an item still open on another to-do."""
     out = {r[0] for r in db.execute('SELECT address FROM mail_cleanup_senders WHERE kind=?', (kind,))}
@@ -78,25 +164,46 @@ def asked(db, kind):
     return out
 
 
-def _item(r, m, name, address, count=1):
+def _item(r, m, name, address, count=1, via=''):
     return {'account': r['account_id'], 'event': r['id'], 'message': r['source_id'], 'thread': m.get('thread_id') or '',
             'mail': r['kind'], 'from': name or address, 'address': address, 'title': ' '.join(str(r['title'] or '').split())[:120],
-            'count': count}
+            'count': count, **({'via': via} if via else {})}
+
+
+def notifications(db, since):
+    """Event ids the review sorted as notifications since then (finish_analysis read): a receipt, an order summary, an
+    invoice, a payment notice, a service's status, judged by what the mail is. Not a newsletter, even with an
+    unsubscribe header."""
+    found = set()
+    for (items,) in db.execute("SELECT items FROM analyses WHERE status='complete' AND started_at>=?", (since,)):
+        try:
+            found |= {int(i['id']) for i in json.loads(items or '[]') if isinstance(i, dict) and i.get('read') == 'notifications'}
+        except (TypeError, ValueError, KeyError):
+            continue
+    return found
 
 
 def newsletters(db, accounts, since):
     """Newsletters and list mail since then, one item per sender (its newest mail, with how many came), newest first.
     A newsletter is what review_wait.mail_wait calls 'list' (List-Unsubscribe or List-Id), never someone the owner
-    knows; senders asked before are left out."""
-    people, skip, found = People(db), asked(db, 'newsletters'), {}
+    knows and never what the review sorted as a notification (a receipt, an order or a payment); senders asked before
+    are left out. Mail a list relayed (a Google Group) counts under its original sender, with the list as via; when
+    the list kept no original address there is nothing to unsubscribe from but the list, and it is left out."""
+    people, skip, found, receipts = People(db), asked(db, 'newsletters'), {}, notifications(db, since)
     for r, m in _rows(db, accounts, since):
         name, address = sender(m)
-        if not address or address in skip or mail_wait(m, r['title'] or '', people) != 'list':
+        if not address or r['id'] in receipts or mail_wait(m, r['title'] or '', people) != 'list':
+            continue
+        via = relay_of(m)
+        if via:
+            name, address = original_sender(m)
+            address = address.lower()
+        if not address or address in skip:
             continue
         if address in found:
             found[address]['count'] += 1
         elif len(found) < MAX_ITEMS:
-            found[address] = _item(r, m, name, address)
+            found[address] = _item(r, m, name, address, via=via)
     return list(found.values())
 
 

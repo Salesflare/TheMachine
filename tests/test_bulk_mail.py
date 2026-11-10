@@ -56,6 +56,10 @@ class BulkMail(unittest.TestCase):
         self.assertIs(replied['auto_submitted'], True)  # an out-of-office reply: a program sent it
         said_no = a.message_event(WORK, raw('s', 'Sam <sam@example.org>', headers=[('Auto-Submitted', 'no')]))['metadata']
         self.assertNotIn('auto_submitted', said_no)
+        # a Google Group relayed it: who wrote it is kept, for Newsletter cleanup (mail_cleanup.relay_of)
+        relayed = a.message_event(WORK, raw('g', "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>",
+                                            headers=[('X-Original-From', 'Pat Shop <orders@shop.example>'), ('List-Id', '<hello.team.example>')]))['metadata']
+        self.assertEqual(relayed['original_from'], 'Pat Shop <orders@shop.example>')
 
     def test_bulk_mail_reaches_the_review_as_a_title_line_with_a_snippet(self):
         rows = self.ingest(raw('promo', 'Shop <deals@shop.example>', 'Autumn sale', labels=['CATEGORY_PROMOTIONS', 'INBOX'], body='Forty percent off ' * 100),

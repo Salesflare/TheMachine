@@ -47,6 +47,51 @@ class Headers(unittest.TestCase):
         self.assertFalse(mail_cleanup_app.one_click('http://news.example/u'))
 
 
+# A Google Group (made-up names): it rewrites From to the group's address and puts its own List-Id and List-Unsubscribe
+# on the mail. That unsubscribe takes the owner, or the team, off the group: it is never used.
+GROUP = {'from': "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>",
+         'x-original-from': 'Pat Shop <orders@shop.example>', 'x-original-sender': 'orders@shop.example',
+         'reply-to': 'Pat Shop <orders@shop.example>', 'list-id': '<hello.team.example>',
+         'list-unsubscribe': '<mailto:hello+unsubscribe@groups.example>, <https://groups.example/g/hello/unsubscribe>',
+         'list-unsubscribe-post': 'List-Unsubscribe=One-Click'}
+
+
+class Relayed(unittest.TestCase):
+    def test_a_relayed_mail_is_its_original_senders(self):
+        m = {'from': GROUP['from'], 'reply-to': GROUP['reply-to'], 'list_id': GROUP['list-id']}
+        self.assertEqual(mc.relay_of(m), 'hello@team.example')  # mail stored before X-Original-From was kept
+        self.assertEqual(mc.original_sender(m), ('Pat Shop', 'orders@shop.example'))
+        self.assertEqual(mc.original_sender({'from': GROUP['from'], 'original_from': 'Pat Shop <orders@shop.example>'}), ('Pat Shop', 'orders@shop.example'))
+        self.assertEqual(mc.original_sender({'from': GROUP['from']}), ('Pat Shop', ''))  # no address kept: nothing to unsubscribe from
+        # not relayed: a newsletter, an announcement list sending its own mail, a site's "via" in a name
+        for plain in ({'from': 'Weekly Digest <digest@blog.example>', 'list_id': '<digest.blog.example>'},
+                      {'from': 'Jo via Network <invites@network.example>'},
+                      {'from': 'Shop <news@shop.example>', 'reply-to': 'help@shop.example', 'list_id': '<abc.list-id.mailer.example>'}):
+            self.assertEqual(mc.relay_of(plain), '', plain)
+
+    def test_a_groups_own_unsubscribe_is_never_chosen(self):
+        self.assertEqual(mc.unsubscribe_ways_of(GROUP), {})
+        # every way a relay shows itself, alone, with only the group's unsubscribe: still none
+        shapes = [{'from': GROUP['from']},
+                  {'from': 'Hello <hello@team.example>', 'x-original-from': 'Pat Shop <orders@shop.example>'},
+                  {'from': 'Hello <hello@team.example>', 'x-original-sender': 'orders@shop.example'},
+                  {'from': "'Pat Shop' via Hello <hello@team.example>", 'list-id': '<hello.team.example>', 'reply-to': 'orders@shop.example'}]
+        for shape in shapes:
+            ways = mc.unsubscribe_ways_of({**shape, 'list-unsubscribe': GROUP['list-unsubscribe'], 'list-unsubscribe-post': GROUP['list-unsubscribe-post']})
+            self.assertEqual(ways, {}, shape)
+        # an item that came through the group: its ways are filtered by it, whatever the headers read now say
+        group_ways = mc.unsubscribe_ways(GROUP['list-unsubscribe'], GROUP['list-unsubscribe-post'])
+        self.assertEqual(set(group_ways), {'one_click', 'link', 'mailto'})
+        self.assertEqual(mc.relay_ways(group_ways, 'orders@shop.example', 'hello@team.example'), {})
+        self.assertEqual(mc.unsubscribe_ways_of({'list-unsubscribe': GROUP['list-unsubscribe']}, via='hello@team.example'), {})
+        # the original sender's own unsubscribe, when the relayed mail carries it, is kept
+        own = mc.unsubscribe_ways_of({**GROUP, 'list-unsubscribe': '<https://mail.shop.example/u/1>, <mailto:hello+unsubscribe@groups.example>'})
+        self.assertEqual(own, {'one_click': 'https://mail.shop.example/u/1', 'link': 'https://mail.shop.example/u/1'})
+        # mail the group did not relay keeps its list's ways
+        self.assertEqual(mc.unsubscribe_ways_of({'from': 'Weekly Digest <digest@blog.example>', 'list-id': '<digest.blog.example>',
+                                                 'list-unsubscribe': '<mailto:leave@blog.example>'})['mailto']['to'], 'leave@blog.example')
+
+
 class Cleanup(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -154,6 +199,59 @@ class Cleanup(unittest.TestCase):
         self.mail('Page Only <hello@pageonly.example>', 'Summer news', hours_ago=1, list_unsubscribe=True)
         with self.store.connect() as db:
             self.assertEqual({i['address'] for i in mc.newsletters(db, ['w'], stamp(5))}, {'digest@blog.example'})  # never asked: still found
+
+
+    def test_mail_through_a_group_is_its_original_senders_and_never_unsubscribes_the_group(self):
+        group = "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>"
+        for n, title in enumerate(('Order summary 1', 'Order summary 2')):
+            self.mail(group, title, hours_ago=3 - n, list_unsubscribe=True, list_id='<hello.team.example>', precedence='list',
+                      **{'reply-to': 'Pat Shop <orders@shop.example>'})
+        self.mail("\"'Lee Lamps' via hello@team.example readers\" <hello@team.example>", 'Lamp news', hours_ago=1, list_unsubscribe=True,
+                  list_id='<hello.team.example>', original_from='Lee Lamps <news@lamps.example>')
+        self.mail("\"'Someone' via hello@team.example readers\" <hello@team.example>", 'Hi all', hours_ago=1, list_unsubscribe=True,
+                  list_id='<hello.team.example>')  # the group kept no address of theirs: nothing to unsubscribe but the group
+        with self.store.connect() as db:
+            found = mc.newsletters(db, ['w'], stamp(5))
+        self.assertEqual([(i['from'], i['address'], i['count'], i['via']) for i in found],
+                         [('Lee Lamps', 'news@lamps.example', 1, 'hello@team.example'), ('Pat Shop', 'orders@shop.example', 2, 'hello@team.example')])
+        # the headers read now are the group's own: no way left, so no row offers Unsubscribe
+        self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways_of(GROUP)
+        sends = []
+        with patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
+            self.assertEqual(self.app.cleanup_ways(found), [])
+            # even if the group's ways got through the header read, an item that came through it never uses them
+            self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways(GROUP['list-unsubscribe'], GROUP['list-unsubscribe-post'])
+            self.assertEqual(self.app.cleanup_ways(found), [])
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[1]), ('failed', None, None))
+        self.assertEqual((self.clicked, sends), ([], []))
+
+    def test_a_todo_made_before_still_never_unsubscribes_the_group(self):
+        # a row from before this fix: the group's address, the group's mailto planned; the confirm reads the headers again
+        with patch.object(mail_cleanup_app.Gmail, 'get', lambda s, resource, params=None: {'payload': {'headers': [
+                {'name': k.title(), 'value': v} for k, v in GROUP.items()]}}), \
+                patch.object(a.App, 'cleanup_headers', mail_cleanup_app.MailCleanupApp.cleanup_headers), \
+                patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: self.fail('the group was asked to unsubscribe')):
+            old = {'account': 'w', 'message': 'm9', 'address': 'hello@team.example', 'from': "'Pat Shop' via hello@team.example readers"}
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
+        self.assertEqual(self.clicked, [])
+
+    def test_what_the_review_sorted_as_a_notification_is_no_newsletter(self):
+        self.mail('Payments <noreply@pay.example>', 'Money received', list_unsubscribe=True)
+        self.mail('Weekly Digest <digest@blog.example>', 'Ten links', list_unsubscribe=True)
+        self.mail('Payments <noreply@pay.example>', 'Spring offers', hours_ago=4, list_unsubscribe=True)
+        claim = self.store.begin_analysis(['w'], 40)
+        with self.store.connect() as db:
+            ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
+        self.assertTrue(next(v for v in claim['events'] if v['id'] == ids['m1']).get('list'))  # the review sees it is list mail
+        self.store.finish_analysis(claim['analysis_id'], 'ok', reviewed_ids=list(ids.values()), read={'notifications': [ids['m1']]})
+        with self.store.connect() as db:
+            found = mc.newsletters(db, ['w'], stamp(5))
+        # the receipt is left out; the same sender's promotion still counts, as its own newest mail
+        self.assertEqual([(i['address'], i['title'], i['count']) for i in found],
+                         [('digest@blog.example', 'Ten links', 1), ('noreply@pay.example', 'Spring offers', 1)])
+        self.assertIn('{"notifications": [event_ids]}', a.review_prompt('r1', ['w']))  # asked of every batch, in the finish it makes anyway
 
     def test_a_page_only_unsubscribe_is_left_for_the_owner(self):
         self.mail('Page Only <hello@pageonly.example>', 'Spring news', list_unsubscribe=True)
