@@ -31,7 +31,7 @@ Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversário
 
 **Importar aniversários do Facebook**: com Aniversários ligado, uma tarefa oferece ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine a abre no navegador dela, rola até todos os meses carregarem e lê o nome e o aniversário de cada amigo. Ela mostra quantos encontrou e quem corresponde a pessoas do seu Graph. Um nome que mais de uma pessoa tem é ignorado e listado.
 
-Só **Salvar** os guarda, e só o aniversário, na página de cada pessoa. Um aniversário que você informou lá continua. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook; numa Machine hospedada, entre por **Abrir o navegador**. A The Machine nunca entra por você.
+Só **Salvar** os guarda, e só o aniversário, na página de cada pessoa. Um aniversário que você informou lá continua. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
 
 Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
 

@@ -31,7 +31,7 @@ I compleanni vengono dai tuoi calendari (i compleanni e il calendario Compleanni
 
 **Importa i compleanni da Facebook**: con Compleanni attivo, un’attività propone di leggere la pagina dei compleanni di Facebook. Tocca **Importa** e The Machine la apre nel suo browser, scorre finché ogni mese è caricato e legge nome e compleanno di ogni amico. Mostra quanti ne ha trovati e chi corrisponde a persone del tuo Graph. Un nome che ha più di una persona viene saltato ed elencato.
 
-Solo **Salva** li conserva, e solo il compleanno, sulla pagina di ogni persona. Un compleanno che hai inserito lì resta. Non rilegge mai da sola: lo fa **Importa di nuovo** sull’attività. Il browser deve avere l’accesso a Facebook; su una Machine ospitata, accedi da **Apri il browser**. The Machine non accede mai al posto tuo.
+Solo **Salva** li conserva, e solo il compleanno, sulla pagina di ogni persona. Un compleanno che hai inserito lì resta. Non rilegge mai da sola: lo fa **Importa di nuovo** sull’attività. Il browser deve avere l’accesso a Facebook. Se non ce l’ha, tocca **Accedi a Facebook** sull’attività e accedi lì; poi legge la pagina da sola. The Machine non accede mai al posto tuo.
 
 Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 

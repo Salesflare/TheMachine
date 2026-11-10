@@ -253,6 +253,16 @@ class Import(unittest.TestCase):
         self.answer = {'error': 'signed-out'}
         self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'read'}, owner_dashboard=True)
         self.assertEqual(self.card(sid), {'state': 'signed_out'})
+        # Sign in to Facebook on the to-do: Facebook's sign-in page in the Machine's browser, for the dashboard's
+        # sign-in dialog, the way LinkedIn and X sign in. Only from the dashboard, and nothing is read by it.
+        cdp = a.browser_login.browser_cdp
+        with patch.object(cdp, '_http', return_value=[]), patch.object(cdp, 'open_tab', return_value='t1') as opened, \
+                patch.object(a.browser_viewer, 'focus') as focus:
+            self.assertTrue(self.app.action('connect_site_signin', {'site': 'facebook'}, owner_dashboard=True)['opened'])
+            with self.assertRaises(ValueError):
+                self.app.action('connect_site_signin', {'site': 'facebook'}, owner_dashboard=False)
+        self.assertEqual((opened.call_args.args[1], focus.call_args.kwargs['target']), ('https://www.facebook.com/login/', 't1'))
+        self.assertEqual((self.card(sid), len(self.reads)), ({'state': 'signed_out'}, 1))
         self.answer = {'items': []}
         self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'read'}, owner_dashboard=True)
         self.assertEqual(self.card(sid), {'state': 'failed', 'empty': True})

@@ -108,7 +108,8 @@ class ConnectApp:
             except fleet.SigninUnavailable:
                 return {'state': 'unavailable'}  # no tab: the dashboard opens the other way
         if name == 'connect_site_signin':
-            # LinkedIn or X while its connect waits for the owner to sign in there: the site's sign-in page in front
+            # LinkedIn or X while its connect waits for the owner to sign in there (or Facebook for its birthdays
+            # to-do): the site's sign-in page in front
             # in the Machine's browser, for the dashboard's sign-in dialog. One already under way (the code it emailed)
             # is brought to the front as it is; `fresh` (Try again after the site stopped it) starts it over in that
             # tab. Nothing is typed here.
@@ -311,8 +312,10 @@ class ConnectApp:
         return self.connect_action(name, args)
 
 
-# LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long
-CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login'}
+# LinkedIn and X sign in in the Machine's browser while their connect waits (onboarding.wait_signed_in), up to this long.
+# Facebook for the Import birthdays from Facebook to-do (birthdays_facebook_app.py), which reads again once it's in.
+CONNECT_SIGNIN = {'linkedin': 'https://www.linkedin.com/login', 'x': 'https://x.com/i/flow/login',
+                  'facebook': 'https://www.facebook.com/login/'}
 # LinkedIn's sign-in page follows the server's country (a server abroad showed it, and its captcha, in that country's
 # language), not the browser's languages. Its `_l` parameter sets the page's language; it is undocumented, and LinkedIn
 # ignores a value it does not know. Only locales checked to change the page; English needs none.

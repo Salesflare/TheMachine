@@ -31,7 +31,7 @@ Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen 
 
 **Verjaardagen importeren uit Facebook**: zodra Verjaardagen aan staat, biedt een to-do aan om de verjaardagspagina van Facebook te lezen. Tik op **Importeren** en The Machine opent ze in zijn browser, scrolt tot elke maand geladen is en leest de naam en verjaardag van elke vriend. Hij toont hoeveel hij vond en wie overeenkomt met mensen in je Graph. Een naam die meer dan één persoon heeft, wordt overgeslagen en vermeld.
 
-Alleen **Bewaren** houdt ze bij, en alleen de verjaardag, op de pagina van elke persoon. Een verjaardag die je daar zelf invulde, blijft. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook; op een gehoste Machine meld je je aan via **Browser openen**. The Machine meldt zich nooit voor je aan.
+Alleen **Bewaren** houdt ze bij, en alleen de verjaardag, op de pagina van elke persoon. Een verjaardag die je daar zelf invulde, blijft. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook. Is hij dat niet, tik dan op **Inloggen bij Facebook** op de to-do en log daar in; daarna leest hij de pagina vanzelf. The Machine meldt zich nooit voor je aan.
 
 Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 
