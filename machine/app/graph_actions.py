@@ -271,7 +271,7 @@ class GraphActionsApp:
         the words to copy or email; the Family invite only with an account page and a Family to invite to."""
         import family_invites
         fleets, account, domains = {}, fleet.account_url(self.config), ()
-        if self.fleet:
+        if getattr(self, 'fleet', None):
             try:
                 fleets, domains = self.fleet.fleets(), self.fleet.own_domains()
             except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
@@ -329,10 +329,7 @@ class GraphActionsApp:
                                        'subject': str(args.get('subject') or ''), 'body': str(args.get('body') or '')}, self.config, [mailbox['id']])
         work = str(mailbox.get('boundary') or '').startswith('work:')
         card = self.store.owner_card(i18n.t('Invite {} to The Machine', invite['name']), mailbox['id'], work=work,
-                                     about=[{'id': node, 'name': invite['name'][:120], 'kind': 'person'}])
-        with self.store.connect() as db:  # the owner's own words, not left for a review to read; theirs, so accepted
-            db.execute('UPDATE events SET analyzed_version=version WHERE id=?', (card['event_id'],))
-            db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (card['id'],))
+                                     about=[{'id': node, 'name': invite['name'][:120], 'kind': 'person'}], accepted=True)
         self.store.prepare(card['id'], i18n.t('An invite to The Machine, from their page.'), next_action=draft,
                            outcome={'state': 'needs_you', 'needs': 'send the invite'})
         sent = self.store.confirm_action(card['id'], draft['revision'], args['approval_id'], 'dashboard')
