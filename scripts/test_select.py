@@ -12,12 +12,24 @@ The tests that look over the whole repository (ALWAYS) run on every change. Anyt
 a changed file nothing names that isn't plainly inert, a change to the test machinery (FULL), or more files than it
 helps to pick from. Prints the test file names, one per line, or ALL.
 
+With the test-impact map (--impact, from scripts/test_impact.py: which tests ran each function on main's last full run)
+and the commit the change is on (--base), it's much narrower (select_mapped): a changed function runs the tests that ran
+it, not every test that imports its file (assistant.py and machine/app/ load nearly everything); a module-level change
+runs the tests of the functions that use the names it defines; a catalog change runs the tests that name a text it
+changed. What the map doesn't know (a test or a file newer than it, a file that doesn't parse) goes the way above.
+
 scripts/test_select.py changed.txt          (changed paths, one per line; - reads them from stdin)
+scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
 scripts/test_select.py --why tests/test_x.py changed.txt   (why that test was picked, or not)"""
+import ast
+import gzip
+import io
+import json
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tokenize
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -209,13 +221,16 @@ class Repo:
         return found
 
 
-def select(changed, repo=None, why=None):
-    """The test files (names in tests/) the changed paths need, or None for all of them."""
+def select(changed, repo=None, why=None, impact=None, base=None):
+    """The test files (names in tests/) the changed paths need, or None for all of them. With the test-impact map
+    (impact) and the commit the change is on (base), a Python change runs the tests that ran what it changed."""
     changed = [c.strip().removeprefix('./') for c in changed if c.strip()]
     if not changed:
         return None
     if repo is None:
         repo = Repo(tracked(), extra_modules=[c for c in changed if c.endswith('.py')])
+    if impact is not None and base:
+        return select_mapped(changed, repo, impact, base, why)
     reasons = {}
 
     def add(path, reason):
@@ -274,14 +289,471 @@ def select(changed, repo=None, why=None):
     return sorted(picked)
 
 
+class Scopes:
+    """Where each line of a Python file sits: in a function (its qualified name, as Python's co_qualname; its decorators
+    and signature count as the function), or in a statement at module or class level (the names it defines)."""
+
+    def __init__(self, text):
+        self.funcs, self.stmts = [], []
+        self._walk(ast.parse(text).body, '', None)
+
+    def _walk(self, body, prefix, owner):
+        for stmt in body:
+            start = min([stmt.lineno] + [d.lineno for d in getattr(stmt, 'decorator_list', [])])
+            if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                qual = prefix + stmt.name
+                # its decorators and signature too: what they set (a default, a wrapper) shows when it runs
+                self.funcs.append((start, stmt.end_lineno, qual))
+                self._walk(stmt.body, qual + '.<locals>.', ('func', qual))
+            elif isinstance(stmt, ast.ClassDef) and owner is not None and owner[0] == 'func':
+                # a class made inside a function: its methods are that function's '<locals>.Class.method'; the rest of
+                # its body runs with the function
+                self._walk(stmt.body, prefix + stmt.name + '.', ('func', owner[1]))
+            elif isinstance(stmt, ast.ClassDef) and (owner is None or owner[0] == 'class'):
+                names = {stmt.name} | (owner[1] if owner else set())
+                first = stmt.body[0].lineno
+                self.stmts.append((start, first - 1, names))
+                self._walk(stmt.body, prefix + stmt.name + '.', ('class', names))
+            elif owner is None or owner[0] == 'class':
+                if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Constant) and isinstance(stmt.value.value, str):
+                    continue  # a docstring
+                # an import defines its names for this file alone (what else reads them imports them itself)
+                self.stmts.append((start, stmt.end_lineno, defined(stmt), isinstance(stmt, (ast.Import, ast.ImportFrom))))
+            else:
+                self._walk([s for s in ast.iter_child_nodes(stmt) if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))],
+                           prefix, owner)
+
+    def at(self, line):
+        """('func', qualname), ('names', {names}) (empty: a statement that defines nothing, as a call at import), or None."""
+        inner = None
+        for start, end, qual in self.funcs:
+            if start <= line <= end and (inner is None or start >= inner[0]):
+                inner = (start, end, qual)
+        if inner:
+            return 'func', inner[2]
+        for start, end, names, *local in self.stmts:
+            if start <= line <= end:
+                return ('local' if local and local[0] else 'names'), names
+        return None
+
+
+def defined(stmt):
+    """The names a module- or class-level statement defines."""
+    if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+        return {stmt.name}
+    names = set()
+    for node in ast.walk(stmt):
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            names.add(node.id)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            names.add(node.name)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            names.update((alias.asname or alias.name).split('.')[0] for alias in node.names if alias.name != '*')
+        elif isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store):
+            names.add(node.attr)
+    return names
+
+
+class Impact:
+    """The test-impact map (scripts/test_impact.py): which test files ran each function, from main's last full run."""
+
+    def __init__(self, data):
+        self.tests = data['tests']
+        self.mapped = set(self.tests)
+        self.known = set(data.get('known') or ())
+        self.files = data['files']
+
+    def ran(self, path, qualname):
+        return {self.tests[i] for i in self.files.get(path, {}).get(qualname, ())}
+
+    def ran_any(self, path):
+        return {self.tests[i] for ids in self.files.get(path, {}).values() for i in ids}
+
+
+def git_text(base, path):
+    try:
+        return subprocess.run(['git', 'show', f'{base}:{path}'], cwd=ROOT, capture_output=True, text=True,
+                              errors='replace', check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def diff_lines(base, path):
+    """(new lines, old lines) a change touched in path, from git diff -U0 between base and the working tree."""
+    out = subprocess.run(['git', 'diff', '-U0', '--no-color', '--no-ext-diff', base, '--', path], cwd=ROOT,
+                         capture_output=True, text=True, errors='replace', check=True).stdout
+    new, old = set(), set()
+    for match in re.finditer(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', out, re.M):
+        a, b, c, d = int(match[1]), int(match[2] or 1), int(match[3]), int(match[4] or 1)
+        old.update(range(a, a + b))
+        new.update(range(c, c + d))
+    return new, old
+
+
+def catalog_strings(old, new):
+    """The keys and texts a catalog change added, removed or changed (the keys are the English text)."""
+    old, new = json.loads(old or '{}'), json.loads(new or '{}')
+    if not (isinstance(old, dict) and isinstance(new, dict)):
+        raise ValueError('not a catalog')
+    found = set()
+    for key in set(old) | set(new):
+        if old.get(key) != new.get(key):
+            found.add(key)
+            found.update(v for v in (old.get(key), new.get(key)) if isinstance(v, str))
+    return found
+
+
+def text_pattern(strings):
+    """A pattern for any of these texts, or their longest piece around {slots}, as whole words."""
+    pieces = set()
+    for text in strings:
+        parts = [p.strip() for p in re.split(r'\{[^}]*\}', text) if p.strip()]
+        piece = max(parts, key=len) if parts else ''
+        if len(piece) >= 2:
+            pieces.add(piece)
+    if not pieces:
+        return None
+    return re.compile('|'.join((r'\b' if p[0].isalnum() else '') + re.escape(p) + (r'\b' if p[-1].isalnum() else '')
+                               for p in sorted(pieces, key=len, reverse=True)))
+
+
+def folder_named(text, folder, rest):
+    """The folder named as the way to this file: 'docs/' + name, f'docs/{x}', ROOT / 'docs', ROOT / 'docs' / 'help' (for
+    a file in docs/help), but not 'docs/development.md' or ROOT / 'docs' / 'brand' (another file in it)."""
+    at = text.find(folder)
+    while at >= 0:
+        prev, after = text[at - 1:at], text[at + len(folder):at + len(folder) + 80]
+        if not (prev and (prev.isalnum() or prev in '_.-')):
+            if after.startswith('/'):
+                nxt = re.match(r'[\w.-]*', after[1:]).group()
+                if not nxt or rest and nxt == rest[0]:
+                    return True
+            elif prev in ('"', "'") and after[:1] == prev and text[max(0, at - 40):at - 1].rstrip().endswith(('/', 'joinpath(')):
+                deeper = re.match(r'''\s*/\s*['"]([\w.-]+)['"]''', after[1:])
+                if not deeper or rest and deeper.group(1) == rest[0]:
+                    return True
+        at = text.find(folder, at + 1)
+    return False
+
+
+def names_exactly(text, path):
+    """text names path: its path, its file name, a dashboard part's name, or (folder_named) its folder."""
+    name = Path(path).name
+    if path in text or name in text and mentions(text, name, '.-', '-'):
+        return True
+    stem = Path(path).stem if path.startswith('dashboard/') and Path(path).suffix in ('.js', '.css', '.html') else None
+    if stem and stem in text and mentions(text, stem, '-', '-'):
+        return True
+    parts = path.split('/')
+    folders = [('/'.join(parts[:n]), parts[n:]) for n in range(1, len(parts)) if '/'.join(parts[:n]) != 'tests']
+    if any(folder in text and folder_named(text, folder, rest) for folder, rest in folders):
+        return True
+    return any(form in text for folder, rest in folders if '/' in folder for form in ("' / '".join(folder.split('/')), '" / "'.join(folder.split('/'))))
+
+
+def mention_lines(text, path):
+    """The lines of a file that name another one (names_exactly), or import it when it's Python."""
+    stem = Path(path).stem if path.endswith('.py') else None
+    found = []
+    for number, line in enumerate(text.split('\n'), 1):
+        if names_exactly(line, path) or stem and stem in line and re.search(r'\b(?:import|from)\b[^\n]*\b' + re.escape(stem) + r'\b', line):
+            found.append(number)
+    return found
+
+
+# The tests that check the catalogs themselves (keys, slots, every language). With the map, a catalog change runs these
+# and the tests that name a text it changed; a test that only serves a catalog to the page shows what it asserts.
+CATALOG_CHECKS = re.compile(r'^test_(?:i18n|locale)')
+# A script that looks over files in bulk (a glob, git ls-files).
+WALKS = re.compile(r"""\.r?glob\(|['"]ls-files['"]""")
+_NAMES = {}
+
+
+def code_names(path, text):
+    """(name -> lines where it's used bare, name -> lines where it's used after a dot or as a string that is just the name,
+    as getattr(x, 'name')). Not in comments or other text ('it timed out' doesn't use timed)."""
+    if path not in _NAMES:
+        bare, dotted, after_dot = {}, {}, False
+        try:
+            for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+                if tok.type == tokenize.NAME:
+                    (dotted if after_dot else bare).setdefault(tok.string, set()).add(tok.start[0])
+                elif tok.type == tokenize.STRING:
+                    inner = tok.string.lstrip('rbuRBU').strip('\'"')
+                    if inner.isidentifier():
+                        dotted.setdefault(inner, set()).add(tok.start[0])
+                if tok.type not in (tokenize.NL, tokenize.NEWLINE, tokenize.COMMENT):
+                    after_dot = tok.type == tokenize.OP and tok.string == '.'
+        except (tokenize.TokenError, SyntaxError, IndentationError):
+            for number, line in enumerate(text.split('\n'), 1):
+                for word in re.findall(r'\w+', line):
+                    bare.setdefault(word, set()).add(number)
+                    dotted.setdefault(word, set()).add(number)
+        _NAMES[path] = bare, dotted
+    return _NAMES[path]
+
+
+def imported_names(repo, path, source):
+    """The names path takes from source with from ... import (as it calls them)."""
+    found = set()
+    try:
+        tree = ast.parse(repo.text.get(path, ''))
+    except (SyntaxError, ValueError):
+        return found
+    package = module_name(path).rsplit('.', 1)[0] if '/' in path else ''
+    if path.endswith('__init__.py'):
+        package = module_name(path)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            module = node.module or ''
+            if node.level:
+                base = package.split('.') if package else []
+                base = base[:len(base) - (node.level - 1)] if node.level > 1 else base
+                module = '.'.join(base + ([module] if module else []))
+            if source in repo._resolve(module, path):
+                found.update((alias.name, alias.asname or alias.name) for alias in node.names)
+    return found
+
+
+def select_mapped(changed, repo, impact, base, why=None):
+    """select() with the test-impact map: a change to a function runs the tests that ran it; a change at module level
+    runs the tests of the functions that use what it defines; a catalog change runs the tests that name a text it
+    changed. Files the map doesn't know, and tests it doesn't know, are picked by following imports, as before."""
+    reasons, fallback, scopes, seen = {}, set(), {}, set()
+    tests = {p for p in repo.paths if is_test(p)}
+
+    def add(test, reason):
+        name = Path(test).name
+        if name not in reasons:
+            reasons[name] = reason
+
+    def scope_of(path, text):
+        if path not in scopes:
+            try:
+                scopes[path] = Scopes(text)
+            except (SyntaxError, ValueError):
+                scopes[path] = None
+        return scopes[path]
+
+    def users(path):
+        """Python files that can see what path defines: itself, what imports it, what names it."""
+        return {path} | repo.importers.get(path, set()) | {p for p in repo.named_by(path) if p.endswith('.py')}
+
+    def lines_in(path, lines, why_text, depth=0, text=None, key=None):
+        """The tests the given lines of a Python file reach."""
+        if is_test(path):
+            add(path, why_text)
+            return
+        if path not in impact.known:
+            fallback.add(path)
+            return
+        text = text if text is not None else repo.text.get(path)
+        found = scope_of(key or path, text) if text is not None else None
+        if found is None:
+            fallback.add(path)
+            return
+        for line in lines:
+            plain = text.split('\n')[line - 1].strip() if 0 < line <= text.count('\n') + 1 else ''
+            if not plain or plain.startswith('#'):
+                continue
+            where = found.at(line)
+            if where is None:
+                continue
+            if where[0] == 'func':
+                ran = impact.ran(path, where[1])
+                if not ran and impact.files.get(path) is not None and where[1] not in old_functions(path):
+                    # a new function: what calls it
+                    for name in {where[1].split('.<locals>.')[0].split('.')[-1]}:
+                        names_in(path, name, why_text, depth)
+                for test in ran:
+                    add(test, f'ran {path}:{where[1]} ({why_text})')
+            elif where[1]:
+                for name in where[1]:
+                    names_in(path, name, why_text, depth, local=where[0] == 'local')
+            else:
+                for test in impact.ran_any(path):
+                    add(test, f'ran {path}, which runs code at import ({why_text})')
+
+    def old_functions(path):
+        key = ('old', path)
+        if key not in scopes:
+            old = git_text(base, path) if base else None
+            try:
+                scopes[key] = {q for _, _, q in Scopes(old).funcs} if old else set()
+            except (SyntaxError, ValueError):
+                scopes[key] = set()
+        return scopes[key]
+
+    def names_in(path, name, why_text, depth, local=False):
+        """The tests that run what uses name, defined at module or class level in path."""
+        if (path, name) in seen:
+            return
+        seen.add((path, name))
+        word = re.compile(r'\b' + re.escape(name) + r'\b')
+        for other in ({path} if local else users(path)):
+            text = repo.text.get(other)
+            if text is None or name not in text:
+                continue
+            if is_test(other):
+                lines = [1] if word.search(text) else []
+            else:
+                bare, dotted = code_names(other, text)
+                # in another file the name is this one only after a dot (module.name, self.name) or imported by name
+                used = set(dotted.get(name, ()))
+                for local in ([name] if other == path else [a for n, a in imported_names(repo, other, path) if n == name]):
+                    used |= bare.get(local, set())
+                lines = sorted(used)
+            if not lines:
+                continue
+            if depth >= 10 and not is_test(other):  # a chain this long: every test that ran that file
+                for test in impact.ran_any(other):
+                    add(test, f'ran {other}, which uses {name} ({why_text})')
+                continue
+            lines_in(other, lines, f'{other} uses {name} from {path}' if other != path else why_text, depth + 1)
+
+    for path in changed:
+        if path in FULL:
+            if why is not None:
+                why['*'] = f'{path} is test machinery'
+            return None
+    for path in changed:
+        new = (ROOT / path).read_text(encoding='utf-8', errors='replace') if (ROOT / path).is_file() else None
+        if is_test(path):
+            add(path, 'changed')
+        elif path.endswith('.py'):
+            old = git_text(base, path) if base else None
+            if old is None and new is not None and path not in impact.known:
+                # a new module: what it changes is where it's loaded
+                for test in repo.named_by(path) & tests:
+                    add(test, f'names {path}')
+                for other in repo.importers.get(path, set()) | repo.named_by(path):
+                    if other.endswith('.py') and other not in changed and other in repo.text:
+                        lines_in(other, mention_lines(repo.text[other], path) or [1], f'loads {path}')
+                    elif not other.endswith('.py') and other not in changed:
+                        fallback.add(path)
+                continue
+            if path not in impact.known or base is None:
+                fallback.add(path)
+                continue
+            try:
+                new_lines, old_lines = diff_lines(base, path)
+            except (OSError, subprocess.CalledProcessError):
+                fallback.add(path)
+                continue
+            if new is not None:
+                lines_in(path, sorted(new_lines), 'changed', text=new)
+            if old is not None and old_lines:
+                lines_in(path, sorted(old_lines), 'changed', text=old, key=('was', path))
+            # a test that names the file other than to load it (spec_from_file_location, import) and runs none of it
+            # reads it as text: it runs. One that loads it is covered by the functions it ran.
+            loads = re.compile(r'(?:spec_from_file_location|load_module|module_from_spec)\([^\n]*' + re.escape(Path(path).name) + r'''|(?:import|from)\s+'''
+                               + re.escape(module_name(path)) + r'\b')
+            for test in {p for p in repo.named_by(path) if is_test(p)}:
+                text = repo.text.get(test, '')
+                if Path(test).name in impact.ran_any(path):
+                    continue
+                if Path(test).name not in impact.mapped or text.count(Path(path).name) > len(loads.findall(text)):
+                    add(test, f'names {path}')
+        elif path.startswith('i18n/') and path.endswith('.json') and base:
+            try:
+                strings = catalog_strings(git_text(base, path), new)
+            except ValueError:
+                fallback.add(path)
+                continue
+            pattern = text_pattern(strings)
+            for test in sorted(tests):
+                text = repo.text.get(test)
+                if text is None:
+                    continue
+                if CATALOG_CHECKS.search(Path(test).name) and names_exactly(text, path):
+                    add(test, f'checks the catalogs ({path})')
+                elif pattern and pattern.search(text):
+                    add(test, f'names a text {path} changed')
+        else:
+            # a data file, a dashboard part, a helper: what names it, as before, but a Python file that reads it reaches
+            # the tests of the functions that read it, not every test that imports that file
+            pending, visited = [path], {path}
+            while pending:
+                current = pending.pop()
+                named = {o for o in repo.named_by(current) if names_exactly(repo.views.get(o, ''), current)}
+                if not named and current == path and not (path.startswith(INERT) or path in INERT_FILES):
+                    if why is not None:
+                        why['*'] = f'nothing names {path}'
+                    return None
+                for other in named:
+                    if other in visited:
+                        continue
+                    visited.add(other)
+                    if is_test(other):
+                        add(other, f'names {current}')
+                    elif other in PAGE:
+                        for user in repo.importers.get(other, ()):
+                            if is_test(user):
+                                add(user, f'imports {other}, which names {current}')
+                    elif other.endswith('.py'):
+                        lines_in(other, mention_lines(repo.text.get(other, ''), current) or [1], f'{other} reads {current}')
+                    elif not other.startswith('dashboard/'):
+                        pending.append(other)
+    # a check script that walks the repository (i18n_extract: every source file's English; help_check: every article)
+    # can fail on any file without running it: the tests that run those scripts go with every change but a test's own
+    if any(not is_test(path) for path in changed):
+        for script in (p for p in repo.paths if p.startswith('scripts/') and p.endswith('.py')):
+            if WALKS.search(repo.text.get(script, '')):
+                for test in impact.ran_any(script):
+                    add(test, f'runs {script}, which reads every file')
+    picked = set(reasons) | set(ALWAYS)
+    if fallback:
+        # the old way, for what the map can't place; a test it knows is kept only where the map can't speak for it
+        old_why = {}
+        old = select(sorted(fallback), repo=repo, why=old_why)
+        if old is None:
+            if why is not None:
+                why['*'] = old_why.get('*', 'the import chain runs everything')
+            return None
+        for name in old:
+            reasons.setdefault(name, old_why.get(name, 'import chain'))
+        picked = set(reasons) | set(ALWAYS)
+    # tests the map doesn't know (new since main's last full run): the import chain for the whole change
+    unknown = {Path(t).name for t in tests} - impact.mapped
+    if unknown:
+        old_why = {}
+        old = select(changed, repo=repo, why=old_why)
+        for name in (unknown if old is None else set(old) & unknown):
+            reasons.setdefault(name, old_why.get(name, 'new test, not in the map yet'))
+        picked = set(reasons) | set(ALWAYS)
+    picked = {name for name in picked if (ROOT / 'tests' / name).exists()}
+    if why is not None:
+        why.update(reasons)
+    if len(picked) >= ENOUGH * len(tests):
+        return None
+    return sorted(picked)
+
+
+def load_impact(path):
+    """The map at path (gzipped JSON from scripts/test_impact.py), or None."""
+    try:
+        with gzip.open(path, 'rt', encoding='utf-8') as source:
+            data = json.load(source)
+        return Impact(data) if isinstance(data, dict) and data.get('tests') else None
+    except (OSError, ValueError, EOFError, KeyError):
+        return None
+
+
 def main(argv):
-    show = None
-    if argv[:1] == ['--why']:
-        show, argv = Path(argv[1]).name, argv[2:]
+    show = impact = base = None
+    while argv[:1] and argv[0].startswith('--'):
+        if argv[0] == '--why':
+            show, argv = Path(argv[1]).name, argv[2:]
+        elif argv[0] == '--impact':
+            impact, argv = load_impact(argv[1]), argv[2:]
+        elif argv[0] == '--base':
+            base, argv = argv[1], argv[2:]
+        else:
+            break
     source = argv[0] if argv else '-'
     lines = (sys.stdin if source == '-' else open(source, encoding='utf-8')).read().splitlines()
     why = {}
-    picked = select(lines, why=why)
+    picked = select(lines, why=why, impact=impact, base=base)
     if show:
         print(f'{show}: ' + (why.get(show) or ('always' if show in ALWAYS else 'not picked')) + (' (all run)' if picked is None else ''))
         return 0

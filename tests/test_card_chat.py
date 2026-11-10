@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
 
-from machine.chat import CHAT_STEP_GROUPS  # noqa: E402
+from machine.chat import CHAT_STEP_GROUPS, chat_unglued  # noqa: E402
 
 spec = importlib.util.spec_from_file_location('card_chat_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
@@ -568,6 +568,82 @@ class CardChat(unittest.TestCase):
         calls.clear()
         self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
         self.assertNotIn('wrote to you in the chat', next(c['message'] for c in calls if c.get('message')))
+
+    def blocked_on(self, questions):
+        self.store.decide(self.sid, 'accept', '', 'd-accept', 'dashboard')
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='running'")
+        job = self.job()['job_id']
+        self.store.preparation_blocked(self.sid, job, 'Which month to invoice decides the rest.', None, None, questions)
+        return job
+
+    def test_an_answer_shows_alone_under_the_question_it_answers(self):
+        """A run stopped on "Should I invoice October now, or November on December 2?"; the owner picked "October now".
+        Their message is the answer alone; the question is its own small line before it, and the run reads it as its
+        own question (latest_feedback.asked), never glued into the owner's words."""
+        question = 'Should I invoice October now, or November on December 2?'
+        self.blocked_on([{'question': question, 'options': ['October now', 'November later']}])
+        self.store.decide(self.sid, 'other', 'October now', 'd-answer', 'dashboard')
+        with self.store.connect() as db:
+            self.assertEqual(json.loads(db.execute("SELECT questions FROM decision_asks WHERE decision_id='d-answer'").fetchone()[0]), [question])
+            owner, results = self.app.card_chat_service(db, self.sid)
+        card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
+        self.assertEqual((card['latest_feedback']['feedback'], card['latest_feedback']['asked']), ('October now', [question]))
+        items = a.chat_items([], owner, results)
+        said = [(i['kind'], i['text']) for i in items if i['kind'] in ('you', 'event') and i['text'] != 'Do it']
+        self.assertEqual(said, [('event', 'Asked: ' + question), ('you', 'October now')])
+        self.assertFalse(next(i for i in items if i['text'].startswith('Asked')).get('mine'), 'The Machine asked, not the owner')
+        # The next note asks nothing: no question line, and the run reads it as a plain note
+        with self.store.connect() as db:
+            db.execute("UPDATE preparations SET status='done'")
+            db.execute("UPDATE suggestions SET status='prepared'")
+        self.store.decide(self.sid, 'other', 'Put the PDFs in Drive too', 'd-note', 'dashboard')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM decision_asks WHERE decision_id='d-note'").fetchone())
+            owner, _ = self.app.card_chat_service(db, self.sid)
+        self.assertEqual([i['text'] for i in owner if i['kind'] == 'event' and i['text'].startswith('Asked')], ['Asked: ' + question])
+        card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
+        self.assertNotIn('asked', card['latest_feedback'])
+        self.assertIn('When latest_feedback has asked', a.chat_prompt({'job_id': 'j', 'suggestion_id': self.sid}))
+
+    def test_a_result_that_asks_keeps_its_question_beside_the_answer(self):
+        """A result whose Needs you line is a question (nothing to send) takes the answer the same way."""
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?",
+                       (json.dumps({'state': 'needs_you', 'needs': 'Which day suits the venue, Tuesday or Thursday?'}), self.sid))
+        self.store.decide(self.sid, 'other', 'Tuesday', 'd-day', 'telegram')
+        with self.store.connect() as db:
+            owner, _ = self.app.card_chat_service(db, self.sid)
+        self.assertEqual([(i['kind'], i['text']) for i in owner if i['kind'] in ('you', 'event')],
+                         [('event', 'Asked: Which day suits the venue, Tuesday or Thursday?'), ('you', 'Tuesday')])
+
+    def test_an_older_answer_glued_to_its_question_comes_apart(self):
+        """Saved before the question was kept beside it: a quick pick wrote "<question> <pick>" into the answer. Only a
+        line starting with the run's own question, exactly, comes apart; anything else stays the owner's words."""
+        question = 'Should I invoice October now, or November on December 2?'
+        job = self.blocked_on([{'question': question, 'options': ['October now', 'November later']}])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'ok',?)", (job, self.sid, job, '2026-01-05T10:00:00+00:00'))
+            db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', (job, 'c1', 'assistant_signals', json.dumps(
+                {'action': 'preparation_blocked', 'args': {'suggestion_id': self.sid, 'reason': 'Which month', 'questions': [{'question': question, 'options': ['October now']}]}}),
+                '2026-01-05T10:01:00+00:00'))
+            for n, text in enumerate((question + ' October now', 'Should I invoice both? No', question + '\nOctober now')):
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,'other',?,'dashboard',?)",
+                           (f'old{n}', self.sid, text, f'2026-01-05T10:0{n + 2}:00+00:00'))
+            # one from before the run asked: never taken apart
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('older',?,'other',?,'dashboard','2026-01-05T09:00:00+00:00')",
+                       (self.sid, question + ' Maybe'))
+            owner, results = self.app.card_chat_service(db, self.sid)
+        items = a.chat_items([], owner, results)
+        said = [(i['kind'], i['text']) for i in items if i['kind'] == 'you' or i['text'].startswith('Asked')]
+        self.assertEqual(said, [('you', question + ' Maybe'), ('event', 'Asked: ' + question), ('you', 'October now'),
+                                ('you', 'Should I invoice both? No'), ('you', question + '\nOctober now')])
+
+    def test_answer_lines_split_only_on_the_runs_own_questions(self):
+        one, two = 'Which month?', 'Send it today'
+        self.assertEqual(chat_unglued('Which month? October\nSend it today. Yes', [one, two]), ('October\nYes', ['Which month?', 'Send it today.']))
+        self.assertEqual(chat_unglued('Which month?', [one]), ('Which month?', []))
+        self.assertEqual(chat_unglued('Which month is it? October', [one]), ('Which month is it? October', []))
 
 
 class ChatHandleTest(unittest.TestCase):
