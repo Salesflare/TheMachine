@@ -19,6 +19,7 @@ import json
 import re
 import subprocess
 import tempfile
+import threading
 import time
 
 import locale_prefs
@@ -60,21 +61,54 @@ def calendars(config, allowed=None):
 
 
 GRANTS = {}
+_CHECKING = set()  # sign-ins whose check runs in the background now
+_LOCK = threading.Lock()
 
 
-def may_write(config, credential, account, scopes, ttl=600, clock=time.monotonic):
+def _later(work):
+    threading.Thread(target=work, name='calendar-grant-check', daemon=True).start()
+
+
+def may_write(config, credential, account, scopes, ttl=600, clock=time.monotonic, wait=True):
     """Whether this account's sign-in has calendar write access, asked at most every ttl seconds (a failed check:
-    no, for a minute). The write itself checks again."""
+    no, for a minute). The write itself checks again.
+    wait=False (the Calendar page): never asks inside the request. It answers from the last check (no before the
+    first) and starts one in the background when that is missing or old, one per sign-in at a time, so a page that
+    asks for several weeks at once never runs gog auth list or the Graph check once per ask (2026-11-10 speed audit:
+    43 asks in 3 s, each waiting 5 to 8 s)."""
     key = (account.get('id'), account.get('email'), account.get('client'), account.get('transport'))
     hit, now = GRANTS.get(key), clock()
     if hit and now - hit[0] < hit[2]:
         return hit[1]
-    try:
-        ok, life = bool(set(scopes(config, credential, account)) & WRITE_SCOPES), ttl
-    except Exception:  # noqa: BLE001 - any failure to check means no change offered
-        ok, life = False, 60
-    GRANTS[key] = (now, ok, life)
-    return ok
+
+    def check():
+        try:
+            ok, life = bool(set(scopes(config, credential, account)) & WRITE_SCOPES), ttl
+        except Exception:  # noqa: BLE001 - any failure to check means no change offered
+            ok, life = False, 60
+        GRANTS[key] = (clock(), ok, life)
+        return ok
+
+    if wait:
+        return check()
+    with _LOCK:
+        if key in _CHECKING:
+            return bool(hit and hit[1])
+        _CHECKING.add(key)
+
+    def run():
+        try:
+            check()
+        finally:
+            with _LOCK:
+                _CHECKING.discard(key)
+    _later(run)
+    return bool(hit and hit[1])
+
+
+def checking():
+    """Whether a background check of calendar write access still runs: the Calendar asks again once it is done."""
+    return bool(_CHECKING)
 
 
 def account_for(config, account_id):

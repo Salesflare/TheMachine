@@ -441,10 +441,11 @@ def read_window(account, at=None):
     return {'hours': [start, end], 'reads_again_at': utc(opens)}
 
 
-def writable_calendars(config):
-    """The owner's calendars The Machine may change: own or marked writable, on a sign-in with calendar write access."""
+def writable_calendars(config, wait=True):
+    """The owner's calendars The Machine may change: own or marked writable, on a sign-in with calendar write access.
+    wait=False answers from the last check and refreshes it in the background (calendar_writes.may_write)."""
     return calendar_writes.calendars(config or {}, lambda account: abilities.actions_on(account) and calendar_writes.may_write(
-        config, credential, account, next_actions.granted_scopes))
+        config, credential, account, next_actions.granted_scopes, wait=wait))
 
 
 def calendar_prompt(config):

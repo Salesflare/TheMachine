@@ -49,14 +49,14 @@ const promises=[
  {id:4,direction:'theirs',who:'alex morgan',what:'Send the  Q3 deck',due:day(4),state:'open',made_at:now,check_at:now},  // the same plan, seen from both sides
  {id:5,direction:'mine',who:'Evelien Smit',what:'pick up the pram after swimming',due:day(5),state:'open',made_at:now,check_at:now},  // the same thing as that day's meeting
  {id:3,direction:'theirs',who:'Kim',what:'On a card already',due:day(0),state:'card',made_at:now,check_at:now}];
-let calls=[],calendarAsks=[],calendarDown=false,failFrom=null,empty=false,clock12=false;
+let calls=[],calendarAsks=[],calendarBusy=0,calendarMostAtOnce=0,calendarDown=false,failFrom=null,empty=false,clock12=false;
 const state=()=>({...(clock12?{locale:{date_locale:'en-US',hour12:true}}:{}),suggestions:empty?[]:cards,promises:empty?[]:promises,connectors:[{id:'cal',email:'owner@example.com',service:'calendar',status:'ok'}],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(brand[url.pathname]){res.setHeader('Content-Type',url.pathname.endsWith('.png')?'image/png':'font/woff2');res.end(await readFile(new URL('../'+brand[url.pathname],import.meta.url)));return}
  if(req.method!=='GET')calls.push(url.pathname+' '+body);
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
- if(url.pathname==='/api/calendar'){await new Promise(r=>setTimeout(r,150));calendarAsks.push(Object.fromEntries(url.searchParams));if(calendarDown||failFrom&&new Date(url.searchParams.get('from'))>=failFrom){res.statusCode=500;res.end('{"error":"down"}');return}res.end(JSON.stringify({meetings:empty?[]:meetings}));return}
+ if(url.pathname==='/api/calendar'){calendarMostAtOnce=Math.max(calendarMostAtOnce,++calendarBusy);await new Promise(r=>setTimeout(r,150));calendarBusy--;calendarAsks.push(Object.fromEntries(url.searchParams));if(calendarDown||failFrom&&new Date(url.searchParams.get('from'))>=failFrom){res.statusCode=500;res.end('{"error":"down"}');return}res.end(JSON.stringify({meetings:empty?[]:meetings}));return}
  if(url.pathname==='/api/promise'){const p=promises.find(p=>String(p.id)===url.searchParams.get('id'));res.end(JSON.stringify({...p,links:[],history:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');res.end(JSON.stringify(r.action==='card_chat'?{session:true,status:'ok',active:false,items:[]}:{}));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -85,10 +85,25 @@ try{
   await page.locator('nav [data-tab="calendar"]').click();await showCal(page);
   assert.equal(await page.locator('#page-head .page-title').textContent(),'Calendar');
   assert.match(await page.locator('#page-head .cal-range').textContent(),/^\w{3} \d{1,2} – (\w{3} )?\d{1,2}, \d{4}$/,'US English: Oct 19 – 25, 2026');
-  // Meetings come a calendar week per ask, Monday midnight to Monday midnight with time zones, this week and the next
+  // Meetings come by calendar week, Monday midnight to Monday midnight with time zones: the weeks on show (this week and
+  // the next) in one ask, then the week before and the week after, one at a time. Never a burst (2026-11-10: 43 at once).
   const monday=n=>{const d=at(0,0);d.setDate(d.getDate()-(d.getDay()+6)%7+7*n);return d.getTime()};
+  await page.waitForFunction(()=>!calLaterRun&&![...calWeeks.values()].some(w=>w.loading));
   for(const ask of calendarAsks){const a=new Date(ask.from),b=new Date(ask.to);assert.equal(a.getHours()+a.getMinutes()+b.getHours()+b.getMinutes(),0);assert.equal(a.getDay(),1);assert.equal(b.getDay(),1)}
-  assert.ok(calendarAsks.some(a=>new Date(a.from).getTime()===monday(0))&&calendarAsks.some(a=>new Date(a.from).getTime()===monday(1)));
+  const spans=calendarAsks.map(a=>[(new Date(a.from).getTime()-monday(0))/6048e5,(new Date(a.to).getTime()-monday(0))/6048e5].map(Math.round));
+  // (opened twice here: the nav click and showTab, each asking again for the weeks on show, never for the neighbours)
+  assert.deepEqual(spans.filter(x=>x+''!=='0,2'),[[-1,0],[2,3]],'one ask for the weeks on show, then each neighbour: '+JSON.stringify(spans));
+  assert.ok(spans[0]+''==='0,2'&&spans.length<=4,JSON.stringify(spans));
+  assert.ok(calendarMostAtOnce<=2,'the weeks on show and at most one behind them: '+calendarMostAtOnce);
+  // An agenda scrolled 20 weeks on, opened again a minute later: the weeks on show in one ask, the stale ones behind
+  // them one at a time (before: one ask per week, all at once)
+  calendarAsks=[];calendarMostAtOnce=0;
+  await page.evaluate(async()=>{const now=calMonday(new Date());calTo=calAdd(now,7*21);for(let i=0;i<21;i++){const w=calWeeks.get(localDay(calAdd(now,7*i)));calWeeks.set(localDay(calAdd(now,7*i)),{meetings:w?.meetings||[],failed:false,at:0})}
+   await calendarView(true)});
+  assert.equal(calendarAsks.length,1,'the agenda shows after one ask: '+calendarAsks.length);
+  await page.waitForFunction(()=>!calLaterRun&&![...calWeeks.values()].some(w=>w.loading));
+  assert.equal(calendarMostAtOnce,1,'never more than one ask at a time');assert.ok(calendarAsks.length>=20&&calendarAsks.slice(1).every(a=>new Date(a.to)-new Date(a.from)<=8*864e5),'the rest one week each');
+  await page.evaluate(()=>{calFrom=calDay(0);calTo=calDay(7)});
   const b=(await blocks(page)).slice(0,8),names=b.map(x=>x.day);
   assert.deepEqual(names.slice(0,3),['Overdue','Today','Tomorrow']);assert.equal(names.length,8);
   assert.deepEqual(b[0].rows,[await page.evaluate(d=>calShort(d),day(-1))+' | Renew the shop domain | ']);assert.match(b[0].rows[0],/^\w{3} \d{1,2} \|/);
