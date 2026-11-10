@@ -4,6 +4,8 @@ review names it on suggest (org), or its project is with one the owner or a revi
 where someone on it works: their employer, or a project organization the Machine filled in from its people."""
 import unittest
 
+import todo_org
+
 import test_graph as tg
 from test_graph import NOW, graph, mail
 
@@ -69,10 +71,10 @@ class TodoOrg(unittest.TestCase):
         self.build()
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT org,org_by FROM projects WHERE id=?', (pid,)).fetchone()[:], ('brushworks.example', 'backfill'))
-            self.assertEqual(graph.card_project_view(db, 'Hallway painting'), {'node_id': f'project:{pid}', 'name': 'Hallway painting'})
+            self.assertEqual(todo_org.project_org_view(db, graph.card_project_view(db, 'Hallway painting')), None)
             graph.save_project(db, {'node_id': f'project:{pid}', 'org': None}, T)
             graph.save_project(db, {'node_id': f'project:{pid}', 'org': 'org:brushworks.example'}, T)  # the owner's pick
-            self.assertEqual(graph.card_project_view(db, 'Hallway painting')['org']['id'], 'org:brushworks.example')
+            self.assertEqual(todo_org.project_org_view(db, graph.card_project_view(db, 'Hallway painting'))['id'], 'org:brushworks.example')
 
 
 if __name__ == '__main__':

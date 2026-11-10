@@ -5356,48 +5356,11 @@ def put_back_card_project(db, card_id, project, project_by):
 
 
 def card_project_view(db, name):
-    """{'node_id', 'name'} of a to-do's project, or None (a project deleted since shows as none). With 'org' ({'id',
-    'name'}) when the project's organization is one the owner or a review set: the to-do is then about it too. One the
-    Machine filled in from the project's people (fill_orgs) is no reason: that is only where they work."""
+    """{'node_id', 'name'} of a to-do's project, or None (a project deleted since shows as none)."""
     if not name:
         return None
-    row = db.execute('SELECT id,name,org,org_by FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()
-    if not row:
-        return None
-    org = project_org(db, row['org']) if row['org'] and row['org_by'] in ('owner', 'review') else None
-    return {'node_id': 'project:' + str(row['id']), 'name': row['name'],
-            **({'org': {'id': org['id'], 'name': org['name']}} if org and org.get('id') and org.get('name') else {})}
-
-
-def card_org(db, value):
-    """The organization a to-do is about, from the review's word on suggest (org): its graph node id ("org:acme.com"),
-    its web domain or its exact name in the Graph. '' when the review named none, or one the Graph doesn't know. Who is
-    on the to-do never decides it: a person's employer is no reason to show their organization."""
-    text = ' '.join(str(value or '').split())
-    if not text:
-        return ''
-    import crm
-    if text.lower().startswith('org:'):
-        ids = ['org:' + text[4:].lower()]
-    else:
-        domain = re.sub(r'^(?:https?://)?(?:www\.)?', '', text.lower()).split('/')[0]
-        ids = ['org:' + domain] if ORG_DOMAIN.fullmatch(domain) else []
-        named = [r[0] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='org' AND name=? COLLATE NOCASE LIMIT 2", (text,))]
-        ids += named if len(named) == 1 else []
-    for node in ids:
-        node = crm.canonical(db, node)
-        if db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind='org'", (node,)).fetchone():
-            return node
-    return ''
-
-
-def card_org_view(db, node_id):
-    """{'id', 'name'} of the organization a to-do is about (card_org), for its chip; None when it is gone since."""
-    if not node_id:
-        return None
-    import crm
-    row = db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='org'", (crm.canonical(db, node_id),)).fetchone()
-    return {'id': row['id'], 'name': row['name']} if row and row['name'] else None
+    row = db.execute('SELECT id,name FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone()
+    return {'node_id': 'project:' + str(row['id']), 'name': row['name']} if row else None
 
 
 def _project_cards_where(prefix='s.'):

@@ -13,6 +13,7 @@ import uuid
 import chat_files
 import graph
 import i18n
+import todo_org
 import locale_prefs
 import meeting_mail
 from machine.cards import current_title, delivery_time, group_sender
@@ -395,7 +396,7 @@ class CardsStore:
             if company is None and (personal is True or own_life_evidence(db, event_ids)):
                 company, placed = todo_areas.PERSONAL, todo_areas.personal_accounts(getattr(self, 'accounts', None) or [])
             if org is not None:
-                org = graph.card_org(db, org)
+                org = todo_org.card_org(db, org)
             existing = db.execute('SELECT * FROM suggestions WHERE dedupe_key=? OR id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=?)',
                                   (dedupe_key, dedupe_key)).fetchone()
             if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
