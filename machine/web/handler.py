@@ -52,6 +52,7 @@ from machine.web.serving import (
     dashboard_status,
     dashboard_version,
     etag_matches,
+    BRAND_CACHE,
     SCRIPT_CACHE,
     SCRIPT_NAME,
     served_file,
@@ -215,7 +216,7 @@ def make_handler(app):
             self.send_response(status)
             self.send_header('Content-Type', content_type if content_type.startswith('image/') or content_type=='application/pdf' else content_type + '; charset=utf-8')
             self.send_header('Cache-Control', cache)
-            if coding or urllib.parse.urlsplit(self.path).path in COMPRESSIBLE:
+            if coding or urllib.parse.urlsplit(self.path).path in COMPRESSIBLE or SCRIPT_NAME.fullmatch(urllib.parse.urlsplit(self.path).path):
                 self.send_header('Vary', 'Accept-Encoding')
             if coding:
                 self.send_header('Content-Encoding', coding)
@@ -440,10 +441,20 @@ def make_handler(app):
             self.output(200, {**current, 'here': here} if current else {})
 
         def get_brand_asset(self, path):
+            # Kept by the browser for a day, then asked again with its ETag (a 304 while it's the same): the robot's
+            # blink swaps its image every few seconds and every page start asked for the typefaces (0.2 MB) again.
             asset = BRAND_ASSETS[path.path]
-            self.output(200, asset.read_bytes(), {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
-                                                  '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'),
-                        cache='private, max-age=86400' if '/logos/' in path.path else 'no-store')
+            data = asset.read_bytes()
+            etag = '"' + hashlib.sha256(data).hexdigest()[:16] + '"'
+            if etag_matches(self.headers.get('If-None-Match'), etag):
+                self.send_response(304)
+                self.send_header('ETag', etag)
+                self.send_header('Cache-Control', BRAND_CACHE)
+                self.end_headers()
+                return
+            self.etag = etag
+            self.output(200, data, {'.webp': 'image/webp', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg',
+                                    '.svg': 'image/svg+xml'}.get(asset.suffix, 'image/png'), cache=BRAND_CACHE)
 
         def get_api_session(self, path):
             # Asked once by a page: the CSRF token (a page started from the app's on-device copy has none, that
