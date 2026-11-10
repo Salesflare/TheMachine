@@ -1,8 +1,6 @@
-// A lazy part (dashboard_parts.LAZY 'routinetodos', with todos-cleanup.js): todos-cards.js draws the Birthdays template's
-// Import birthdays from Facebook to-do through lazyIn('routinetodos'). Its to-do has no Do it, Ask for changes or
-// Mark done: Import, then Save (which marks it done), is its main button. Import reads the page once (birthdays_facebook_app.py);
-// the preview links who it matched, and only Save keeps their birthdays. While it reads, the to-dos poll.
-// Signed out: Sign in to Facebook is the sign-in dialog (connections-signin.js) on Facebook's page; once in, it reads again.
+// Lazy part 'routinetodos' (dashboard_parts.LAZY): the Import birthdays from Facebook to-do (birthdays_facebook_app.py).
+// No Do it, Ask for changes or Mark done: Import, then Save (marks it done). Only Save keeps birthdays; while it reads,
+// the to-dos poll. Signed out: the sign-in dialog (connections-signin.js), then it reads again.
 const fbDay=v=>{const m=/^(?:(\d{4})|-)-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return v||'';const d=new Date(Date.UTC(+(m[1]||2000),+m[2]-1,+m[3]));
  return new Intl.DateTimeFormat(DL,{month:'long',day:'numeric',...(m[1]?{year:'numeric'}:{}),timeZone:'UTC'}).format(d)};
 const fbMonth=m=>new Date(2000,m-1,9).toLocaleString(DL,{month:'long'});
