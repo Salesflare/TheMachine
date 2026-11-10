@@ -73,6 +73,8 @@ Se prima avevi creato job pianificati in OpenClaw, la tua Machine li legge (non 
 
 Tiene le tue correzioni al job e lascia fuori ciò che inviava o pubblicava. Un job che eseguiva uno script, o leggeva ciò che raccoglieva un job di script, lo porta come Recupera dati. **Aggiungi** ne fa una routine, **No, grazie** non chiede mai più di quel job. Un job che ti ricordava di fare qualcosa arriva invece come offerta di attività ricorrente in Attività.
 
+Prima di aggiungere un suggerimento, **Modifica** e **Cambia quando** nel suo menu ⋯ lo cambiano come qualsiasi routine. **Esegui di nuovo** lo esegue ora con le sue parole attuali, per vedere risultati più recenti, per esempio dopo un fine settimana tranquillo. Legge soltanto, gira una volta per tocco e il nuovo risultato sostituisce quello vecchio.
+
 Aspettano al massimo tre suggerimenti alla volta. Dopo una settimana di buone esecuzioni, la routine chiede **Disattivare il vecchio job di OpenClaw?** Si disattiva solo quando tocchi **Disattiva**, e puoi riattivarlo in OpenClaw.
 
 ## Da quello che fai

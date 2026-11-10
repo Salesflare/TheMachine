@@ -128,7 +128,7 @@ class RoutinesApp:
             raise ValueError('Say when it should run, like every Monday at 9 or every weekday morning')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = routines.get(db, args.get('id'))
+            row = routines.get(db, args.get('id'), routines.OWN)
             routines.change_when(db, row['id'], got['rule'], got['anchor'], at or row['at'], now, self.routines_stamp())
         return self.routines_view(row['id'])
 
@@ -136,12 +136,13 @@ class RoutinesApp:
         """Edit: what it does, in new words, its script steps (steps; left out: as they are) and its name (name; left
         out: as it is). When it runs and what it found so far stay. A template's routine (routine_templates.py) saved
         with the words it showed keeps them as the template's own, so its own code still runs it; back: Back to the
-        template, its words again and no script steps (its name stays)."""
+        template, its words again and no script steps (its name stays). A suggestion edits before Add: its result stays
+        until Run again."""
         if not owner_dashboard:
             raise ValueError('Routines are changed by the owner, on the dashboard')
         with self.routines_lock(), self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = routines.get(db, args.get('id'))
+            row = routines.get(db, args.get('id'), routines.OWN)
             key = routine_templates.key_of(row['origin'])
             words, steps = args.get('words'), args.get('steps') if 'steps' in args else False
             if args.get('back'):
@@ -151,7 +152,8 @@ class RoutinesApp:
             elif key and routine_templates.is_own(key, words):
                 words = routine_templates.TEMPLATES[key]['words']  # as shown, in the owner's language: still the template's
             routines.change_instructions(db, row['id'], words, self.routines_stamp(), steps, args.get('name') if 'name' in args else None)
-            routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
+            if row['state'] != 'suggested':
+                routines.keep_test(db, row['id'], routines.get(db, row['id']))  # Try it of what was saved: its result
         return self.routines_view(row['id'])
 
     def routine_change_action(self, name, args, owner_dashboard):

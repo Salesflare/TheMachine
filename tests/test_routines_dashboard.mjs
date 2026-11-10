@@ -6,7 +6,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // The Routines page (dashboard/routines-page.js): one short line when there are none, Run now in sight and the rest in the
 // ⋯ menu, Stop only on a second tap (the menu stays open for it), and a result that is text, never markup. A suggestion
-// from an old OpenClaw job shows its preview, folded, with Add and No thanks; Turn off the old job? asks before anything happens.
+// from an old OpenClaw job shows its preview, folded, with Add, Run again and No thanks; Turn off the old job? asks before anything happens.
 // A new one is tried first (a test run, nothing sent or kept): its result shows when it is ready, then Add, Change or Cancel.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[],ID='c3'.repeat(16);
@@ -176,7 +176,7 @@ try{
   assert.equal(await s.locator('.rt-body').getAttribute('class'),'rt-body clamp');
   await s.locator('[data-more]').click();assert.equal(await s.locator('.rt-body').getAttribute('class'),'rt-body');assert.equal(await s.locator('[data-more]').innerText(),'Show less');
   assert.equal(await s.locator('.rt-result strong').innerText(),'Halyard');
-  assert.deepEqual(await s.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Add','No thanks']);
+  assert.deepEqual(await s.locator('.actions>button').evaluateAll(n=>n.map(x=>x.textContent)),['Add','Run again','No thanks']);
   await s.locator('[data-rt-do="no"]').click();await s.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_state').at(-1),{action:'routine_state',id:SID,to:'stop'});
   // Suggested first, then Your routines, then Paused (only when there are paused ones, with Resume in sight)

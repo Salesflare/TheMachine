@@ -195,6 +195,42 @@ class Sorting(unittest.TestCase):
         self.assertEqual(s['steps']['get']['command'], f'python3 {script}')
         self.assertEqual(s['instructions'], '')
 
+    def test_a_suggestion_edits_and_runs_again_before_add(self):
+        self.answer_run(kind='routine', name='Thing one', instructions='Sum up thing one from my mail', nothing=True, why='Quiet on a Sunday')
+        self.app._routines_jobs_at = float('inf')  # no next job to sort in this test
+        sid = self.app.routines_view()['suggested'][0]['id']
+        for name, args in (('routine_run_now', {'id': sid}), ('routine_edit', {'id': sid, 'words': 'Sum up all of it'})):
+            with self.assertRaises(ValueError):
+                self.act(name, owner=False, **args)
+        # Edit and Change when: still a suggestion, its preview stays until Run again
+        self.act('routine_edit', id=sid, words='Sum up thing one and thing two from my mail', name='Things')
+        self.act('routine_when', id=sid, words='every weekday at 7')
+        s = self.app.routines_view()['suggested'][0]
+        self.assertEqual((s['state'], s['name'], s['instructions'], s['rule']['unit'], s['at'], s['runs'][0]['state'], s['test']),
+                         ('suggested', 'Things', 'Sum up thing one and thing two from my mail', 'weekday', '07:00', 'nothing', None))
+        # Run again: one dry run of the edited words, one at a time
+        self.sent.clear()
+        self.act('routine_run_now', id=sid)
+        with self.assertRaisesRegex(ValueError, 'running already'):
+            self.act('routine_run_now', id=sid)
+        self.assertEqual(self.app.routines_view()['suggested'][0]['test']['state'], 'running')
+        self.app.routines_step()
+        start = [x for x in self.sent if x['action'] == 'start']
+        self.assertEqual(len(start), 1)
+        self.assertIn('thing one and thing two', start[0]['message'])
+        self.assertIn('nothing goes out', start[0]['message'])
+        self.act('routine_result', owner=False, _routine_session=SESSION + self.running(), text='**Thing two** moved.', name='Other')
+        s = self.app.routines_view()['suggested'][0]
+        self.assertEqual((s['test']['state'], s['test']['result'], s['name']), ('ready', '**Thing two** moved.', 'Things'))
+        # Another press replaces it; Add keeps the newest as its first result
+        self.act('routine_run_now', id=sid); self.app.routines_step()
+        self.act('routine_result', owner=False, _routine_session=SESSION + self.running(), text='Newest')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM routine_runs WHERE period LIKE 'test:%'").fetchone()[0], 1)
+        self.act('routine_accept', id=sid)
+        mine = self.app.routines_view()['routines'][0]
+        self.assertEqual((mine['state'], mine['name'], mine['runs'][0]['result'], mine['test']), ('on', 'Things', 'Newest', None))
+
     def test_three_suggestions_wait_at_most_and_a_job_is_sorted_once(self):
         for i in range(3):
             self.app._routines_jobs_at = 0

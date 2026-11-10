@@ -83,6 +83,8 @@ If you made scheduled jobs in OpenClaw before, your Machine reads them (it never
 
 It keeps your corrections to the job and leaves out what it sent or posted. A job that ran a script, or read what a script job collected, brings it along as Get data. **Add** makes it a routine, **No thanks** never asks about that job again. A job that reminded you to do something comes as a recurring to-do offer on To-dos instead.
 
+Before you add a suggestion, **Edit** and **Change when** in its ⋯ menu change it like any routine. **Run again** runs it now with its current words, to see newer results, say after a quiet weekend. It only reads, runs once per tap, and its new result replaces the old one.
+
 At most three suggestions wait at a time. After a week of good runs, the routine asks **Turn off the old OpenClaw job?** It only turns off when you tap **Turn it off**, and you can turn it back on in OpenClaw.
 
 ## From what you do

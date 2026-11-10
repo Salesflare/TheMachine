@@ -73,6 +73,8 @@ Se você criou jobs agendados no OpenClaw antes, sua Machine os lê (ela nunca o
 
 Ela mantém suas correções no job e deixa de fora o que ele enviava ou publicava. Um job que rodava um script, ou lia o que um job de script coletava, traz isso como Buscar dados. **Adicionar** transforma em rotina, **Não, obrigado** nunca mais pergunta sobre esse job. Um job que lembrava você de fazer algo chega como oferta de tarefa recorrente em Tarefas.
 
+Antes de adicionar uma sugestão, **Editar** e **Mudar quando** no menu ⋯ dela a mudam como qualquer rotina. **Rodar de novo** a executa agora com as palavras atuais, para ver resultados mais novos, por exemplo depois de um fim de semana tranquilo. Ela só lê, roda uma vez por toque e o novo resultado substitui o anterior.
+
 No máximo três sugestões esperam ao mesmo tempo. Depois de uma semana de boas execuções, a rotina pergunta **Desativar o antigo job do OpenClaw?** Ele só é desativado quando você toca em **Desativar**, e você pode reativá-lo no OpenClaw.
 
 ## Do que você faz
