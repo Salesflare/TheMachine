@@ -2745,18 +2745,15 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         return bool(db.execute("SELECT 1 FROM share_out WHERE kind='record' AND key=? LIMIT 1", (keyed(self.graph_secret(), 'record|' + node_id),)).fetchone())
 
     def projects_went(self, db, nodes):
-        """Of these project nodes, the ones whose record went to a Work Fleet: to the whole team, or to the teammates a
-        board was shared with by name. None while nothing went yet (sharing not started). What a board's tiles mark as
-        staying with the owner (kept private, or with someone of their own life), so a teammate's board differing is no riddle."""
+        """Of these project nodes, the ones whose record went to a Work Fleet (the whole team, or teammates by name); None
+        while nothing went yet. A board's tiles mark the rest as staying with the owner."""
         ensure(db)
         went = {r[0] for r in db.execute("SELECT key FROM share_out WHERE kind='record'")}
         for group in self._kept_groups():
             for chain in (self.meta('graph_chains:' + group['id'], {}) or {}).values():
                 went |= set((chain or {}).get('hashes') or ())
-        if not went:
-            return None
         secret = self.graph_secret()
-        return {n for n in nodes if keyed(secret, 'record|' + n) in went}
+        return {n for n in nodes if keyed(secret, 'record|' + n) in went} if went else None
 
     def sharing(self):
         """Per Work Fleet: confirmed or waiting, whether this Machine's sharing is on, asked off or off, and this week's
@@ -2932,8 +2929,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                     who = _first_name(names.get((src['fleet'], src['member']), ''))
                     if who and who not in board.setdefault('by', []):
                         board['by'].append(who)
-                    seen = src['record'].get('board_seen')
-                    if seen == 'people' or (seen == 'team' and not board.get('seen')):
+                    if (seen := src['record'].get('board_seen')) == 'people' or (seen == 'team' and not board.get('seen')):
                         board['seen'] = seen
             names_ok = [x['name'] for x in board['stages']]
             stage = rec.get('stage') if rec.get('stage') in names_ok else names_ok[0]
@@ -3018,17 +3014,12 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                 **({'about': {'text': rec['about'], 'by': 'team'}} if entry['kind'] == 'project' and rec.get('about') else {})}
 
     def _org_here(self, db, entry):
-        """The page of a teammate's record's organization on this Machine: the owner's own (by its hashed domain), else
-        the one teammates shared. None when neither is here: only what this Machine has already, nothing more."""
+        """A teammate's record's organization's page here: the owner's own (by hashed domain), else the team's, else None."""
         domains = {h for s in entry['sources'] for h in ((s['record'].get('org') or {}).get('d') or [])}
-        if not domains:
-            return None
-        index = self.hash_index(db)
+        index = self.hash_index(db) if domains else {}
         local = next((index[h] for h in sorted(domains) if str(index.get(h) or '').startswith('org:')), None)
-        if local:
-            return local
-        return next((e['local'] or e['key'] for e in self.team_graph(db) if e['kind'] == 'org'
-                     and any(domains & set(s['record'].get('d') or []) for s in e['sources'])), None)
+        return local or next((e['local'] or e['key'] for e in (self.team_graph(db) if domains else []) if e['kind'] == 'org'
+                              and any(domains & set(s['record'].get('d') or []) for s in e['sources'])), None)
 
     def team_thread(self, db, thread_id):
         """A client thread a teammate shared, in full: subject, messages with their text and their attachments (each one
@@ -3184,8 +3175,7 @@ def _clean_record(r):
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
                    stage_hand=r.get('stage_hand') is True, stage_at=text('stage_at', 25), why=text('why', 160), next=text('next', 120),
                    about=text('about', project_about.OWNER_CHARS), people=hashes(r.get('people')))
-        if r.get('board_seen') in ('team', 'people'):  # its board is the whole team's, or shared with chosen teammates by name
-            out['board_seen'] = r['board_seen']
+        out.update({'board_seen': r['board_seen']} if r.get('board_seen') in ('team', 'people') else {})  # the whole team's, or by name
     return out
 
 

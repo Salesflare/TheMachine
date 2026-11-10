@@ -18,12 +18,12 @@ const FL='fl_'+'c'.repeat(16),day=n=>new Date(Date.now()-n*864e5).toISOString();
 const sharing=[{fleet:FL,name:'Acme',admin:false,confirmed:true,prompts:[],off:null,waiting:0,week:null,teammates:2,started:true,paused:null,require:[],connections:[],people:[],new_devices:[]}];
 const stages=[{name:'Invited'},{name:'Trying it'},{name:'Feedback'},{name:'Up and running'},{name:'Stalled or declined',side:true}];
 const proj=(i,name,stage,extra={})=>({id:'project:'+i,name,stage,reason:'they said yes to a trial',by:'review',at:day(3),event_id:100+i,next:null,first:false,days:3,no_reply_days:0,org:null,...extra});
-const mine=[{id:1,name:'Pilot programme',visibility:'team',stages,stuck:0,maybes:[],held:2,shared_with:[],
+const mine=[{id:1,name:'Pilot program',visibility:'team',stages,stuck:0,maybes:[],held:2,shared_with:[],
  projects:[proj(1,'Pilot review: Paperkite','Invited'),proj(2,'Pilot review: Bramblebox','Invited',{held:true}),proj(3,'Pilot review: Quillfeather','Trying it'),proj(4,'Pilot review: Fernwave','Up and running',{held:true})]}];
 const team=(i,name,stage,extra={})=>({id:'team:project:'+String(i).padStart(32,'0'),name,stage,reason:'they said yes to a trial',by:'review',at:day(5),first:false,days:5,org:null,team_only:true,owner_name:'Ada',fleet:FL,via:'via Ada',yours:false,needs_you:false,...extra});
 const pilots=['Paperkite','Bramblebox','Quillfeather','Otterly Mail','Fernwave','Copperleaf'];
 const teamBoards=[
- {name:'Pilot programme',stages,team:true,stuck:0,by:['Ada'],seen:'team',projects:[...pilots.map((n,i)=>team(i+1,'Pilot review: '+n,'Invited',{line:'Email: Re: Pilot for '+n,line_at:day(6+i)})),
+ {name:'Pilot program',stages,team:true,stuck:0,by:['Ada'],seen:'team',projects:[...pilots.map((n,i)=>team(i+1,'Pilot review: '+n,'Invited',{line:'Email: Re: Pilot for '+n,line_at:day(6+i)})),
   team(20,'Lanternfish','Trying it',{at:day(2),line:'Moved to Invited: agreed to try it',line_at:day(9)}),team(21,'Mossgate','Feedback',{org:{name:'Mossgate',logo:null}})]},
  {name:'Acquisition talks',stages:[{name:'Contacted'},{name:'Interested'},{name:'Stalled or declined',side:true}],team:true,stuck:0,by:['Ada'],seen:'people',
   projects:[team(30,'Buyer talks: Northfund','Contacted'),team(31,'Buyer talks: Globex','Interested')]}];
