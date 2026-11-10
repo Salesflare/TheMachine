@@ -220,8 +220,11 @@ class Crm(unittest.TestCase):
             self.assertEqual(names('projects', org='Umber'), ['Umber deal'])  # a name: one in the Graph
             self.assertEqual(names('projects', org='Nobody'), [])
             self.assertEqual(names('projects', org='umber.example'), ['Umber deal'])
-            self.assertEqual(names('people', sort='value')[:2], ['Ivy', 'Bo'])
-            self.assertEqual([i['id'] for i in graph.page(db, 'orgs', 'close')['items']][:2], ['org:globex.example', 'org:umber.example'])
+            # People and Organizations have no project orders: one kept from before falls back to Closest
+            for name in ('people', 'orgs'):
+                for sort in ('value', 'close', 'stage'):
+                    self.assertEqual(names(name, sort=sort), names(name))
+            self.assertEqual(names('projects', sort='size'), names('projects'))
             # People and Organizations have no project filters: one kept from before is left out, never a hidden filter
             kept = graph.page(db, 'people', filters={'value_min': '5000', 'board': '1', 'close_to': '2026-12-31'})
             self.assertEqual((kept.get('filters'), len(kept['items'])), (None, len(graph.page(db, 'people')['items'])))
@@ -269,6 +272,14 @@ class Crm(unittest.TestCase):
             self.assertEqual(orgs(last_contact='older'), ['org:umber.example'])
             self.assertEqual(orgs(open_project='1'), ['org:globex.example'])
             self.assertEqual(crm.countries_in_use(db), ['be', 'us'])
+            # their own orders: last contact either way, and an organization's size (the head count first, unknown last)
+            order = lambda name, sort, ids: [i['id'] for i in graph.page(db, name, sort)['items'] if i['id'] in ids]
+            them = ('email:ivy@globex.example', 'email:jo@globex.io', 'email:bo@umber.example')
+            self.assertEqual(order('people', 'last', them), list(them))
+            self.assertEqual(order('people', 'last_old', them), list(them)[::-1])
+            self.assertEqual(order('orgs', 'size', ('org:globex.example', 'org:umber.example')), ['org:umber.example', 'org:globex.example'])
+            self.assertEqual(order('orgs', 'last_old', ('org:globex.example', 'org:umber.example')), ['org:umber.example', 'org:globex.example'])
+            self.assertEqual(graph.page(db, 'orgs', 'size', filters={'country': 'be'})['items'][0]['id'], 'org:globex.example')
             self.assertEqual(graph.page(db, 'projects', filters={'closeness': 'close', 'country': 'be'}).get('filters'), None)  # not a project's
             with self.assertRaisesRegex(ValueError, 'Size'):
                 graph.page(db, 'orgs', filters={'size': 'huge'})

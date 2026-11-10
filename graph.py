@@ -2078,22 +2078,22 @@ def _paged_where(db, name):
 
 
 STAGE = "CASE WHEN strength<0.3 THEN 3 WHEN trend IS NOT NULL AND trend<0.8 THEN 2 WHEN trend IS NULL OR trend>1.3 THEN 0 ELSE 1 END"
-SORTS = {'closest': 'strength DESC', 'last': 'last_at DESC', 'name': 'name COLLATE NOCASE', 'stage': STAGE + ',strength DESC'}
+SORTS = {'closest': 'strength DESC', 'last': 'last_at DESC', 'last_old': 'last_at IS NULL,last_at', 'name': 'name COLLATE NOCASE', 'stage': STAGE + ',strength DESC'}
 DEFAULT_SORT = {'projects': 'last', 'projects_done': 'last'}
 
 
 def page(db, name, sort='', cursor=0, limit=30, filters=None):
-    """One page of a Graph tab's list in the chosen order (closest, last contact, name, a project's stage, value or
-    expected close); the cursor is where the page starts, next the cursor of the page after it, or None at the end.
+    """One page of a Graph tab's list in the chosen order (crm.KIND_SORTS: closest, last contact either way, name, an
+    organization's size, a project's stage, value or expected close); the cursor is where the page starts, next the cursor of the page after it, or None at the end.
     filters (crm.KIND_FILTERS for its kind: a project's board, stage, value and close date; how close a person or
     organization is, the last contact, an organization's industry, size and country) narrow it, and total counts what is left."""
     import crm
     if name not in PAGED and name != 'warmup':
         raise ValueError('list is one of ' + ', '.join([*PAGED, 'warmup']))
     filters = crm.clean_filters(filters, crm.kind_of(name)) if name != 'warmup' else {}
-    if sort not in crm.SORTS or name == 'warmup':
-        sort = sort if sort in SORTS and (sort != 'stage' or name.startswith('projects')) else DEFAULT_SORT.get(name, 'closest')
-    by_crm = bool(filters) or sort in crm.SORTS  # filtered, or in a CRM order (value, close date)
+    if name != 'warmup' and sort not in crm.KIND_SORTS[crm.kind_of(name)]:  # one saved before that its list no longer has
+        sort = DEFAULT_SORT.get(name, 'closest')
+    by_crm = bool(filters) or sort in crm.SORTS  # filtered, or in a CRM order (value, close date, size)
     offset, limit = max(0, int(cursor or 0)), max(1, min(int(limit), 50))
     if name == 'warmup':
         order = 'coalesce(name,domain) COLLATE NOCASE,domain' if sort == 'name' else 'created_at DESC,domain'
