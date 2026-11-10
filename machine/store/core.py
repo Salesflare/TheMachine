@@ -468,6 +468,13 @@ class StoreCore:
             # Scope.automated_only), and bounces and replies look up a thread's messages, without a pass over all mail
             db.execute("CREATE INDEX IF NOT EXISTS events_thread_id ON events(json_extract(metadata,'$.thread_id'))")
             db.execute("CREATE INDEX IF NOT EXISTS events_conversation ON events(json_extract(metadata,'$.conversation_id'))")
+            # A channel's or a chat's messages by its id (plain with message protection on): sharing asks, for the threads on
+            # a page, whether someone kept private is in the conversation (shared_graph_private.Kept._unit_rows), without a
+            # pass over every message. Only the rows that have the id: a second or so to make on half a million signals
+            db.execute("CREATE INDEX IF NOT EXISTS events_channel ON events(json_extract(metadata,'$.channel_id')) "
+                       "WHERE json_extract(metadata,'$.channel_id') IS NOT NULL")
+            db.execute("CREATE INDEX IF NOT EXISTS events_chat ON events(json_extract(metadata,'$.chat_id')) "
+                       "WHERE json_extract(metadata,'$.chat_id') IS NOT NULL")
             # The few kinds a record's timeline reads in full on each page open (graph.timeline: the owner's to-dos, Zoom
             # summaries, Intercom conversations, notes and transcripts added to meetings), each a pass over all events
             # without these. One partial index per kind, never one on kind itself: SQLite would then pick it over the

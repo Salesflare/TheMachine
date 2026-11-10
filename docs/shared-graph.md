@@ -102,6 +102,8 @@ Work records are shared by default:
 - **Keep private** on a person, organization or project shares nothing about it: no record, no timeline, none of their
   threads. It needs nobody's OK. Someone kept private on any message of a conversation keeps all of it with the owner,
   also the replies they are no longer on. A reply that went before this rule is taken back at the next share.
+  Who is on a message is read from the message as opened, never from what SQLite sees of a sealed one (cc, a
+  meeting's guests and the kind of chat are sealed), so this holds with message protection on.
 - **Held back:** colleagues (people at the Fleet's own domains) are never shared as records, and neither is a person
   whose reviewed threads are all sensitive.
 

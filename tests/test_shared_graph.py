@@ -133,6 +133,8 @@ def mail(account, n, sender, to, title, body, days, thread, cc=''):
 
 
 class SharedGraph(unittest.TestCase):
+    PROTECT = None  # Sealed (below) runs the rules that read the messages themselves on a store with message protection on
+
     def machine(self, me, device=''):
         root = Path(self.temp.name) / (me + device)
         root.mkdir(parents=True, exist_ok=True)
@@ -141,7 +143,7 @@ class SharedGraph(unittest.TestCase):
                   'fleet': {'url': 'https://cp.example/api/fleet'},
                   'accounts': [{'id': 'work', 'email': email, 'service': 'gmail', 'boundary': 'work:Acme'},
                                {'id': 'home', 'email': me + '@home.example', 'service': 'gmail', 'boundary': 'personal:Home'}]}
-        store = a.Store(root / 'events.sqlite')
+        store = a.Store(root / 'events.sqlite', protect=self.PROTECT)
         box = fleet.Fleet(kept_connections(store, self.addCleanup), config, lambda: 'token', relay=FakeRelay(self.net, me))
         box.member_id, box.store, box.email = me, store, email
         return box
@@ -482,16 +484,22 @@ class SharedGraph(unittest.TestCase):
                                                        'metadata': {'from': 'lee@client.example', 'to': 'own1@acme.example', 'thread_id': 't-mixed'}}), 'team')
 
     def test_the_messages_read_for_someone_kept_private_give_what_reading_every_message_gives(self):
-        """Only the messages they can be on are read (Scope._candidates). The same threads as checking every message,
-        however they are on one: in cc on an old imported message, by Slack member id, as a meeting's guest, by link."""
+        """Only the messages they can be on are opened and checked (Scope._read). The same threads as opening every
+        message, however they are on one: in cc on an old imported message, by Slack member id, in a Teams chat, as a
+        guest of one meeting of a series, by link. On a sealed store SQLite sees none of cc, guests or kinds of chat."""
         self.olive_mail()
         self.kickoff()
         self.own.config['accounts'] += [{'id': 'sl', 'email': 'own1@acme.example', 'service': 'slack', 'boundary': 'work:Acme',
                                          'team_id': 'T0ACME0001', 'user_id': 'U0OLIVE001'},
                                         {'id': 'cal', 'email': 'own1@acme.example', 'service': 'calendar', 'boundary': 'work:Acme'}]
-        meet = lambda n, who: {'account_id': 'cal', 'source_id': f'cal-{n}', 'kind': 'calendar.event', 'occurred_at': ago(1), 'title': 'Review',
-                               'body': 'Agenda', 'deleted': False, 'metadata': {'organizer': {'email': 'own1@acme.example'}, 'attendees': [{'email': who}]}}
+        meet = lambda n, who, series=None: {
+            'account_id': 'cal', 'source_id': f'cal-{n}', 'kind': 'calendar.event', 'occurred_at': ago(1), 'title': 'Review', 'body': 'Agenda', 'deleted': False,
+            'metadata': {'organizer': {'email': 'own1@acme.example'}, 'attendees': [{'email': who}], **({'recurring_event_id': series} if series else {})}}
+        teams = lambda n, chat, who: {'account_id': 'tm', 'source_id': f'teams:{n}', 'kind': 'teams.message', 'occurred_at': ago(0, n), 'deleted': False,
+                                      'title': 'Chat: hello', 'body': 'hello', 'metadata': {'chat_id': chat, 'chat_kind': 'oneOnOne', 'message_id': str(n),
+                                                                                           'from': 'Olive Owner', 'from_me': True, 'to': [who]}}
         with self.own.store.connect() as db:
+            self.assertEqual(bool(db.execute("SELECT count(*) FROM events WHERE instr(metadata,'mc1_sealed')>0").fetchone()[0]), bool(self.PROTECT))
             db.executemany('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
                            [('slack:U0VERA0001', 'Vera Stone', 'vera@secret.example', a.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now())])
         self.add(self.own,
@@ -503,36 +511,66 @@ class SharedGraph(unittest.TestCase):
                  self.slack(8, 'D0VERA0001', 'DM U0VERA0001', 'U0VERA0001', 'Written by her'),
                  self.slack(9, 'C0TEAM0001', 'general', 'U0VERA0001', 'By her in a channel'),
                  self.lee_dm(10, 'Lee, without her'),
-                 meet(1, 'vera@secret.example'), meet(2, 'lee@client.example'))
+                 self.slack(11, 'D0VERA0002', 'DM U0VERA0001', 'U0OLIVE001', 'To her, in a chat she never wrote in'),
+                 teams(1, '19:vera', 'vera@secret.example'), teams(2, '19:lee', 'lee@client.example'),
+                 meet(1, 'vera@secret.example'), meet(2, 'lee@client.example'),
+                 meet(3, 'vera@secret.example', 'weekly'), meet(4, 'lee@client.example', 'weekly'), meet(5, 'lee@client.example', 'monthly'))
         with self.own.store.connect() as db:
             db.execute("UPDATE events SET history=1 WHERE source_id='work-40'")
             db.execute('INSERT OR REPLACE INTO graph_events(node_id,event_id,at,probable) VALUES(?,?,?,0)',
                        ('email:vera@secret.example', self.event_id(self.own, 'work-43'), a.now()))
-            row = lambda source: db.execute('SELECT kind,metadata,id FROM events WHERE source_id=?', (source,)).fetchone()
+            row = lambda source: db.execute('SELECT * FROM events WHERE source_id=?', (source,)).fetchone()
             unit = lambda source: sg.unit_of(row(source)['kind'], json.loads(row(source)['metadata']), row(source)['id'])
-            scope = lambda: sg.Scope(db, ['work', 'sl', 'cal'], {'acme.example'}, {'own1@acme.example'})
-            narrow = scope().private_units
-            self.assertEqual(narrow, scope()._private_full())
+            scope = lambda: sg.Scope(db, ['work', 'sl', 'cal', 'tm'], {'acme.example'}, {'own1@acme.example'})
+            db.execute('DELETE FROM graph_events WHERE event_id=?', (row('D0VERA0002:11.000100')['id'],))  # as before the Graph linked it to her
+            checked, mark = [], sg.Scope._mark
+            with patch.object(sg.Scope, '_mark', lambda scope, e, *rest: checked.append(e['id']) or mark(scope, e, *rest)):
+                narrow = scope().private_units
+            full = scope()._private_full()
+            # a direct message to her in a chat she never wrote in has her in a sealed part only: visibility reads it from
+            # the message itself, as for every message it decides on
+            alone = unit('D0VERA0002:11.000100')
+            self.assertEqual(tuple(f - n for f, n in zip(full, narrow)), ({alone}, {alone}, set()))
+            self.assertEqual(tuple(n - f for f, n in zip(full, narrow)), (set(), set(), set()))
+            self.assertEqual(sg.visibility(db, scope(), {**dict(row('D0VERA0002:11.000100')), 'metadata': json.loads(row('D0VERA0002:11.000100')['metadata'])}), 'private')
             plain, items, linked = narrow
-            for source in ('work-30', 'work-40', 'D0VERA0001:7.000100', 'D0VERA0001:8.000100', 'C0TEAM0001:9.000100'):
+            for source in ('work-30', 'work-40', 'D0VERA0001:7.000100', 'D0VERA0001:8.000100', 'C0TEAM0001:9.000100', 'teams:1'):
                 self.assertIn(unit(source), plain)
             self.assertEqual(unit('work-41'), unit('work-40'))  # the reply without her: the thread of the old message she is on
+            self.assertEqual(unit('teams:1'), 'teams:19:vera')
             self.assertIn(unit('cal-1'), items - plain)
+            self.assertEqual(unit('cal-4'), unit('cal-3'))  # the week she was not a guest: the series she is a guest of
+            self.assertIn('cal:weekly', items - plain)
             self.assertIn(unit('work-43'), linked)
-            for source in ('work-1', 'work-42', 'D0LEE00001:10.000100', 'cal-2'):
+            for source in ('work-1', 'work-42', 'D0LEE00001:10.000100', 'cal-2', 'cal-5', 'teams:2'):
                 self.assertNotIn(unit(source), plain | items)
+            read = {r[0] for r in db.execute('SELECT source_id FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(checked),))}
+            self.assertFalse(read & {'work-1', 'cal-2', 'cal-5', 'D0LEE00001:10.000100', 'D0VERA0002:11.000100', 'teams:2'})
             # a page's lookup (labels) gives the same; a message that is its own thread is read by visibility itself
             asked = {unit(r[0]) for r in db.execute('SELECT source_id FROM events')}
             asked = {u for u in asked if not u.startswith('ev:')}
-            self.assertEqual(tuple(part & asked for part in scope().private_among(asked, {'work', 'sl', 'cal'})), tuple(part & asked for part in narrow))
-            read = [r[0] for r in db.execute('SELECT source_id FROM events WHERE ' + scope()._candidates()[0], scope()._candidates()[1])]
-            self.assertNotIn('work-1', read)
-            self.assertNotIn('cal-2', read)
-            with patch.object(sg.shared_graph_private, 'NEEDLES', 0):  # many people kept private: any message with an address
-                self.assertEqual(scope().private_units, narrow)
+            self.assertEqual(tuple(part & asked for part in scope().private_among(asked, {'work', 'sl', 'cal', 'tm'})), tuple(part & asked for part in narrow))
+            self.assertEqual(scope().private_among({'cal:monthly', unit('teams:2')}, {'tm'}), (set(), set(), set()))
+            # a channel's and a chat's messages come from their own index, not from a pass over every message
+            asks, looked = [], scope()
+            real = looked._db
+
+            class Watch:
+                def execute(self, sql, args=()):
+                    asks.append((sql, args))
+                    return real.execute(sql, args)
+            looked._db = Watch()
+            looked.private_among({unit('C0TEAM0001:9.000100'), unit('teams:1')}, {'sl', 'tm'})
+            plans = ' '.join(r[3] for sql, args in asks for r in db.execute('EXPLAIN QUERY PLAN ' + sql, args))
+            self.assertIn('events_channel', plans)
+            self.assertIn('events_chat', plans)
             sg.keep_private(db, 'org:client.example')  # a whole organization, by its domain
-            self.assertEqual(scope().private_units, scope()._private_full())
-            self.assertIn(unit('work-1'), scope().private_units[0])
+            narrow, full = scope().private_units, scope()._private_full()
+            self.assertEqual(tuple(f - n for f, n in zip(full, narrow)), ({alone}, {alone}, set()))
+            for source in ('work-1', 'D0LEE00001:10.000100', 'teams:2', 'cal-5'):
+                self.assertIn(unit(source), narrow[1])
+        labels = self.labels(self.own)
+        self.assertEqual(labels['D0VERA0002:11.000100']['why'], 'Only you: kept private')
 
     def test_a_reply_that_went_before_is_taken_back_once_its_thread_has_someone_kept_private(self):
         """A Machine from before this rule shared the replies Vera wasn't on. After the update they leave the team's
@@ -2778,6 +2816,22 @@ class AutomatedOnly(unittest.TestCase):
             self.assertEqual(scope().automated_only(threads), full & threads)
         self.assertEqual(sorted(full & threads), sorted(['gm:t-auto', 'gm:t-promo', 'gm:t-gone', 'sf:123', 'ic:456',
                                                          'ev:' + str(next(r['id'] for r in rows if 'thread_id' not in json.loads(r['metadata']) and r['kind'] == 'gmail.message'))]))
+
+
+class Sealed(SharedGraph):
+    """The rules that read the messages themselves, on a store with message protection on: SQLite sees only the plain
+    keys of a message there (message_seal.PLAIN_METADATA), so what they read in SQL has to be among those."""
+    PROTECT = True
+
+
+for _name in dir(SharedGraph):
+    if _name.startswith('test_') and _name not in (
+            'test_someone_kept_private_on_one_message_keeps_the_whole_thread_also_what_arrives_later',
+            'test_the_messages_read_for_someone_kept_private_give_what_reading_every_message_gives',
+            'test_a_reply_that_went_before_is_taken_back_once_its_thread_has_someone_kept_private',
+            'test_only_you_on_a_direct_message_holds_for_what_arrives_in_it_later'):
+        setattr(Sealed, _name, None)
+
 
 if __name__ == '__main__':
     unittest.main()

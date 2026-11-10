@@ -2679,7 +2679,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                 metadata = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
                 hand = db.execute('SELECT hand FROM share_threads WHERE thread=?', (thread_of(r['kind'], metadata, r['id']),)).fetchone()
                 hand = (hand and hand['hand']) or scope.hand(thread_of(r['kind'], metadata, r['id']), r['kind'], metadata)
-                kept = view == 'private' and (any(scope.private_address(a) for a in addresses(metadata))
+                kept = view == 'private' and (any(scope.private_address(a) for a in addresses(metadata) + scope.slack_people(metadata))
                                               or scope.private_on(unit_of(r['kind'], metadata, r['id']), True))
                 out[r['id']] = {'share': label(view) or 'only_you', 'fixed': view in ('internal', 'personal'), 'view': view,
                                 'why': why(view, hand, scope.company(metadata), kept)}

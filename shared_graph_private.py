@@ -15,9 +15,14 @@ MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message', 'salesflar
 ITEM_KINDS = ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript', 'intercom.conversation', 'whatsapp.message', 'slack.message', 'teams.message',
               'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', *graph.DOC_KINDS)
 MAIL, ITEMS = frozenset(MAIL_KINDS), frozenset(ITEM_KINDS)
-NEEDLES = 64  # at most this many private addresses and domains are looked for by name in SQL; more: every row with an address
-PLAIN = re.compile(r'[ !#-.0-\[\]-~]+')  # an address JSON text holds as it is: ASCII, no quote, slash or backslash
-# The domain of every address in a message's metadata as stored (JSON text, lowercased): what follows an @ up to where
+# Where a message's people are, for what SQLite can see of a sealed message (message_seal.PLAIN_METADATA: from, to, the
+# member who wrote it, and the thread, chat and channel it is in; cc, a meeting's guests and what kind of chat it is are
+# sealed). A chat's people are its sender and recipients, a Slack message's the member who wrote it (and, in a direct
+# message, the other one: sealed, so visibility reads that from the message itself); everything else can have someone
+# in a sealed part and is opened.
+CHATS = frozenset({'whatsapp.message', 'telegram.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention'})
+CHATS_SQL = '(' + ','.join(f"'{k}'" for k in sorted(CHATS)) + ')'
+# The domain of every address in a message's metadata (JSON text, lowercased): what follows an @ up to where
 # ADDRESS stops. ESCAPED: text that may hold one in another form (an escaped ASCII character, a Kelvin sign).
 FEW = 8  # up to this many private domains are looked for one by one, which is faster than finding every domain
 DOMAIN = re.compile(r'@([^@\s<>",;\\]+)')
@@ -48,16 +53,21 @@ def unit_of(kind, metadata, event_id):
 
 
 def _kept_conversations(db):
-    """The conversations (conversation_of) the owner chose Only you in: what arrives in them afterwards stays too."""
+    """The conversations (conversation_of) the owner chose Only you in: what arrives in them afterwards stays too.
+    Decided from the chosen messages themselves as read (a sealed message keeps what kind of chat it is sealed)."""
     found = set()
-    for kind, key in db.execute(
-            "SELECT DISTINCT e.kind, CASE e.kind WHEN 'slack.message' THEN json_extract(e.metadata,'$.channel_id') "
-            "ELSE json_extract(e.metadata,'$.chat_id') END FROM share_threads s JOIN events e ON e.id=s.event_id "
-            "WHERE s.hand='private' AND e.deleted=0 AND ((e.kind='slack.message' AND json_extract(e.metadata,'$.conversation_type')='dm') "
-            "OR (e.kind='teams.message' AND json_extract(e.metadata,'$.chat_kind') IN ('oneOnOne','channel')))"):
-        if key:
-            found.add(('sl:' if kind == 'slack.message' else 'teams:') + str(key))
-    return found
+    for e in db.execute("SELECT e.kind,e.metadata FROM share_threads s JOIN events e ON e.id=s.event_id "
+                        "WHERE s.hand='private' AND e.deleted=0 AND e.kind IN ('slack.message','teams.message')"):
+        found.add(conversation_of(e[0], _metadata(e[1])))
+    return found - {None}
+
+
+def _metadata(text):
+    try:
+        value = json.loads(text or '{}')
+    except ValueError:
+        return {}
+    return value if isinstance(value, dict) else {}
 
 
 def addresses(metadata):
@@ -144,28 +154,22 @@ class Kept:
     def _anyone_private(self):
         return bool(self.accounts and (self.private_ids or self.private_events))
 
-    def _candidates(self):
-        """(SQL, arguments): the messages someone kept private can be on, found by SQLite so only those are read and
-        checked (_mark keeps the exact ones; the same answer as checking every message, _private_full). The ones
-        linked to them; a Slack message with their member id in it; and any message whose metadata has one of their
-        addresses or domains in it. With many of those (NEEDLES), or one JSON may hold in another form, any message
-        with an address at all (any Slack message, for many member ids). One with an escaped character or a Kelvin
-        sign (it lowercases to k) is always read: its text is not what SQL sees."""
-        parts, args = ['id IN (SELECT value FROM json_each(?))', 'instr(metadata,?)>0', 'instr(metadata,?)>0'], [
-            json.dumps(sorted(self.private_events)), '\\u', '\u212a']
-        members = sorted(u for u, mail in self.slack_email.items() if self.private_address(mail))
-        if len(members) > NEEDLES:
-            parts.append("kind='slack.message'")
-        elif members:
-            parts.append("(kind='slack.message' AND (" + ' OR '.join(['instr(metadata,?)>0'] * len(members)) + '))')
-            args += members
-        needles = sorted(self.private_ids)
-        if len(needles) <= NEEDLES and all(PLAIN.fullmatch(n) for n in needles):
-            parts += ['metadata LIKE ?'] * len(needles)  # ASCII, any case; _ and % only find more
-            args += ['%' + n + '%' for n in needles]
-        else:
-            parts.append("instr(metadata,'@')>0")
-        return '(' + ' OR '.join(parts) + ')', args
+    def _members(self):
+        """The Slack members kept private, as a JSON list."""
+        return json.dumps(sorted(u for u, mail in self.slack_email.items() if self.private_address(mail)))
+
+    def _chat_maybe(self, e, memo):
+        """Whether someone kept private can be on a chat message, from its sender and recipients as SQLite gave them
+        (plain keys, so nothing is opened for the many they are not on). Never no for one they are on: _mark decides."""
+        for text in (e['sender'], e['recipients']):
+            if type(text) is not str or ('@' not in text and '\\' not in text):
+                continue
+            hit = memo.get(text)
+            if hit is None:  # a list comes as JSON text: an escaped character in it could be anything
+                hit = memo[text] = '\\' in text or any(self.private_address(x.lower()) for x in ADDRESS.findall(text))
+            if hit:
+                return True
+        return False
 
     def _domains(self):
         """The domains of everyone kept private, to tell from a message's stored metadata that none of them is on it
@@ -191,37 +195,43 @@ class Kept:
         return not domains.isdisjoint(DOMAIN.findall(low))
 
     def _in_accounts(self, accounts):
-        """The SQL for "in these accounts" (a JSON list, the next argument). When they hold a good part of all messages,
+        """The SQL for "in these accounts" (a JSON list, argument ?1). When they hold a good part of all messages,
         as the accounts a Machine shares do, reading the table through is a few times faster than going account by
         account through the index: the + keeps SQLite off it. The same rows either way."""
         most = self._db.execute('SELECT (SELECT count(*) FROM events WHERE account_id IN (SELECT value FROM json_each(?)))*4 >= (SELECT count(*) FROM events)',
                                 (accounts,)).fetchone()[0]
-        return ('+' if most else '') + 'account_id IN (SELECT value FROM json_each(?))'
+        return ('+' if most else '') + 'account_id IN (SELECT value FROM json_each(?1))'
 
     def _read(self):
-        """automated and private_units in one read of the accounts' messages (whichever is still asked for): all mail
-        for the first, as before; for the second, of the rest only the messages someone kept private can be on
-        (_candidates), and each is checked only when its stored metadata has one of their domains (_maybe). A year of
-        history is most of what a Machine holds, and collect reads only the signals, so a second read of everything
-        doubled a share round."""
+        """automated and private_units in one read of the accounts' messages (whichever is still asked for). All mail
+        is opened, as before: it decides both (someone kept private can be in cc, which is sealed). Of the rest, for
+        private_units: a chat message only when its sender or recipients can be one of them (_chat_maybe), a Slack
+        message only when one of them wrote it or it is linked to them, and every other one (a meeting's guests are
+        sealed). Opening a message is what costs, and a year of history is most of what a Machine holds."""
         units = self._private_found.get('units')
         auto, private = self._automated is None, units is None and self._anyone_private()
-        found, spoken, marks, memo = set(), set(), (set(), set(), set()), {}
+        found, spoken, marks, memo, seen, later = set(), set(), (set(), set(), set()), {}, {}, []
         if self.accounts and (auto or private):
-            wanted, args = [], [json.dumps(sorted(self.accounts))]
-            if auto:
-                wanted.append('kind IN (SELECT value FROM json_each(?))')
-                args.append(json.dumps(sorted(MAIL_KINDS)))
+            mine = json.dumps(sorted(self.accounts))
             if private:
-                sql, more = self._candidates()
-                wanted.append(sql)
-                args += more
                 domains, linked = self._domains(), self.private_events
-            for e in self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND ' + self._in_accounts(args[0]) +
-                                      ' AND (' + ' OR '.join(wanted) + ')', args):
-                kind, raw = e['kind'], e['metadata'] or '{}'
+                rows = self._db.execute(
+                    f'SELECT id,kind,CASE WHEN kind IN {CHATS_SQL} AND id NOT IN (SELECT value FROM json_each(?2)) THEN NULL ELSE metadata END AS metadata,'
+                    f"CASE WHEN kind IN {CHATS_SQL} THEN json_extract(metadata,'$.from') END AS sender,"
+                    f"CASE WHEN kind IN {CHATS_SQL} THEN json_extract(metadata,'$.to') END AS recipients "
+                    'FROM events WHERE deleted=0 AND ' + self._in_accounts(mine) + " AND (kind<>'slack.message' OR id IN (SELECT value FROM json_each(?2)) "
+                    "OR json_extract(metadata,'$.user_id') IN (SELECT value FROM json_each(?3)))", (mine, json.dumps(sorted(linked)), self._members()))
+            else:
+                rows = self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND ' + self._in_accounts(mine) +
+                                        ' AND kind IN (SELECT value FROM json_each(?2))', (mine, json.dumps(sorted(MAIL_KINDS))))
+            for e in rows:
+                kind, raw = e['kind'], e['metadata']
+                if raw is None:
+                    if private and kind in CHATS and self._chat_maybe(e, seen):
+                        later.append(e['id'])
+                    continue
                 mail = auto and kind in MAIL
-                maybe = private and (e['id'] in linked or kind == 'slack.message' or self._maybe(raw, domains))
+                maybe = private and (kind == 'slack.message' or e['id'] in linked or self._maybe(raw, domains))
                 if not (mail or maybe):
                     continue
                 metadata = json.loads(raw)
@@ -235,13 +245,20 @@ class Kept:
                             found.add(thread)
                 if maybe:
                     self._mark(e, metadata, marks, memo)
+            if later:
+                self._private_marks(self._opened(later), marks)
         if auto:
             self._automated = found
         if units is None:
             self._private_found['units'] = marks
 
+    def _opened(self, ids):
+        return self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(ids)),)).fetchall()
+
     def _private_full(self):
-        """private_units by checking every message: what _read's narrower one must equal (tests, measurements)."""
+        """private_units by opening and checking every message: what _read's narrower one is measured against (tests,
+        measurements). They differ only where a message keeps people where its kind never has them (cc on a chat), and
+        for a Slack direct message with someone who never wrote in it: visibility reads that one from the message."""
         found = (set(), set(), set())
         if self._anyone_private():
             self._private_marks(self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND account_id IN (SELECT value FROM json_each(?))',
@@ -267,7 +284,7 @@ class Kept:
         wanted = asked - set(memo) if memo is not None else asked
         found = (set(), set(), set())
         if wanted and self.accounts and (self.private_ids or self.private_events):
-            self._private_marks(self._unit_rows(wanted, accounts), found)
+            found = tuple(part & wanted for part in self._private_marks(self._unit_rows(wanted, accounts), found))
         if memo is not None:
             memo.update((u, tuple(u in part for part in found)) for u in wanted)
             found = tuple({u for u in asked if (memo.get(u) or (0, 0, 0))[i]} for i in range(3))
@@ -275,10 +292,11 @@ class Kept:
         return found
 
     def _unit_rows(self, wanted, accounts=()):
-        """Every message whose unit can be one of these, by the plain keys graph.thread_key and conversation_of read (a
-        superset: _private_marks keeps the exact ones). Mail and Intercom by their own index; a recurring meeting by the
-        calendar's; a chat or channel by a pass over the accounts it is in only. A message that is its own thread
-        (ev:) is read by visibility itself."""
+        """Every message whose unit can be one of these and that someone kept private can be on, opened (a superset:
+        _private_marks keeps the exact ones), found by the plain keys graph.thread_key and conversation_of read. A mail
+        thread and a conversation by their own index, all of it; a chat or a channel by its id, and of it what _read
+        opens; a recurring meeting from the calendar's meetings (which one it repeats is sealed). A message that is
+        its own thread (ev:) is read by visibility itself."""
         rest = collections.defaultdict(set)
         for unit in wanted:
             prefix, _, value = unit.partition(':')
@@ -288,29 +306,36 @@ class Kept:
                   'teams': 'chat', 'cal': 'meeting'}.get(prefix, prefix)].add(value.split(':')[0] if prefix == 'sl' else value)
         # a key is asked as text and as a number, as json_extract gives either
         both = lambda name: json.dumps(sorted({v for x in rest.get(name, ()) for v in ((x, int(x)) if x.isdigit() else (x,))}, key=str))
-        mine = json.dumps(sorted(self.accounts))
-        ids = set()
+        mine, linked = json.dumps(sorted(self.accounts)), json.dumps(sorted(self.private_events))
+        ids, rows = set(), []
         if rest.get('thread'):
             ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE json_extract(metadata,'$.thread_id') IN (SELECT value FROM json_each(?)) "
                                                    "AND +kind IN ('gmail.message','salesflare.email')", (both('thread'),))}
         if rest.get('conversation'):
             ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE json_extract(metadata,'$.conversation_id') IN (SELECT value FROM json_each(?))",
                                                    (both('conversation'),))}
-        if rest.get('meeting'):
-            ids |= {r[0] for r in self._db.execute("SELECT id FROM events WHERE kind='calendar.event' AND json_extract(metadata,'$.recurring_event_id') "
-                                                   'IN (SELECT value FROM json_each(?))', (both('meeting'),))}
         if rest.get('channel') or rest.get('chat'):
             where = json.dumps(sorted(set(accounts) & self.accounts or self.accounts))
-            # no index by channel or chat: of the accounts' messages, only those someone kept private can be on are opened
-            sql, args = self._candidates()
+        if rest.get('channel'):
             ids |= {r[0] for r in self._db.execute(
-                'SELECT id FROM events WHERE ' + self._in_accounts(where) + " AND kind IN ('slack.message','whatsapp.message','telegram.message','teams.message') "
-                'AND ' + sql + " AND ((kind='slack.message' AND json_extract(metadata,'$.channel_id') IN (SELECT value FROM json_each(?))) OR "
-                "(kind<>'slack.message' AND json_extract(metadata,'$.chat_id') IN (SELECT value FROM json_each(?))))", (where, *args, both('channel'), both('chat')))}
-        if not ids:
-            return []
-        return self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND account_id IN (SELECT value FROM json_each(?)) '
-                                'AND id IN (SELECT value FROM json_each(?))', (mine, json.dumps(sorted(ids)))).fetchall()
+                "SELECT id FROM events WHERE kind='slack.message' AND json_extract(metadata,'$.channel_id') IN (SELECT value FROM json_each(?2)) AND "
+                + self._in_accounts(where) + " AND (id IN (SELECT value FROM json_each(?3)) OR json_extract(metadata,'$.user_id') IN (SELECT value FROM json_each(?4)))",
+                (where, both('channel'), linked, self._members()))}
+        if rest.get('chat'):
+            seen = {}
+            for e in self._db.execute(
+                    "SELECT id,id IN (SELECT value FROM json_each(?3)) AS tied,json_extract(metadata,'$.from') AS sender,json_extract(metadata,'$.to') AS recipients "
+                    "FROM events WHERE kind IN ('whatsapp.message','telegram.message','teams.message') AND json_extract(metadata,'$.chat_id') IN (SELECT value FROM json_each(?2)) "
+                    'AND ' + self._in_accounts(where), (where, both('chat'), linked)):
+                if e['tied'] or self._chat_maybe(e, seen):
+                    ids.add(e['id'])
+        if rest.get('meeting'):
+            rows += self._db.execute("SELECT id,kind,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND +account_id IN (SELECT value FROM json_each(?))",
+                                     (mine,)).fetchall()
+        if ids:
+            rows += self._db.execute('SELECT id,kind,metadata FROM events WHERE deleted=0 AND account_id IN (SELECT value FROM json_each(?)) '
+                                     'AND id IN (SELECT value FROM json_each(?))', (mine, json.dumps(sorted(ids)))).fetchall()
+        return rows
 
     def private_on(self, unit, item=False):
         """Whether someone kept private is on any message of this thread or conversation (item: read as a board's
