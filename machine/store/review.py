@@ -12,6 +12,7 @@ import uuid
 import bounces
 import chat_files
 import graph
+import project_org_checks
 from machine.config import LOG
 import meeting_mail
 from machine.store.graph_history import live
@@ -386,6 +387,11 @@ def fit_text(db, run_id):
 def sort_text(db, run_id):
     """Projects the owner put on a board and no review placed yet, for this review to sort first (graph.sort_brief)."""
     return graph.sort_brief(db, run_id)
+
+
+def org_check_text(db, run_id):
+    """Project organizations the Machine filled in from people, for this review to keep or drop (graph.org_check_brief)."""
+    return project_org_checks.org_check_brief(db, run_id)
 
 
 def org_context(db, node_id):
@@ -883,6 +889,10 @@ class ReviewStore:
     def sort_text(self, run_id):
         with self.connect() as db:
             return sort_text(db, run_id)
+
+    def org_check_text(self, run_id):
+        with self.connect() as db:
+            return org_check_text(db, run_id)
 
     def boards_text(self, run_id, every_hours=24, limit=300, per=12):
         """Open projects on no board (and in no open suggestion), for one review a day to look over for board

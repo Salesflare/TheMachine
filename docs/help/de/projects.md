@@ -48,6 +48,8 @@ Jedes Projekt kann mit einer Organisation verknüpft sein. Seine Seite, die List
 
 Wenn niemand eine gewählt hat, setzt deine Machine sie anhand der Personen im Projekt und seiner Nachrichten, ohne deine Kolleginnen und Kollegen. Das macht sie nur, wenn eindeutig eine Organisation die Gegenseite ist: Private E-Mail wie Gmail zählt nie, und ein Projekt mit mehreren Firmen bleibt ohne. Das Projektformular sagt dann „Aus seinen Personen“.
 
+Eine Prüfung schaut danach, worum es im Projekt geht: Ist die Organisation nur der Arbeitgeber von jemandem darin (die Firma eines Freundes bei einem Konzert), fällt sie weg.
+
 Deine Wahl in **Bearbeiten** bleibt immer, auch wenn du sie entfernst. **Gleiche Organisation wie…** nimmt die Projekte einer Organisation mit, und **Abtrennen** verschiebt sie zurück.
 
 ## Boards

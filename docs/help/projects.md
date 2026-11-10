@@ -48,6 +48,8 @@ Each project can be linked to one organization. Its page, the list and the board
 
 When nobody picked one, your Machine sets it from the people on the project and its messages, leaving out your colleagues. It only does that when one organization is clearly the other side: personal email like Gmail never counts, and a project with several companies stays without one. The project form then says "From its people".
 
+A review then checks it against what the project is about: one that is only where someone on it works (a friend's employer on a concert) comes off.
+
 Your pick in **Edit** always stays, also when you take it off. **Same organization as…** moves an organization's projects along, and **Split off** moves them back.
 
 ## Boards
