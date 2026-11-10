@@ -90,7 +90,11 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('data',), 'team_blobs': ('dk',), 'share_lines': ('line',),
            'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),
            'ai_activity': ('detail',),  # what a connected AI asked for and got, in short (ai_access.py)
-           'ai_writes': ('changes',)}  # a connected AI's Graph change, before and after, for its Undo (ai_access.py)
+           'ai_writes': ('changes',),  # a connected AI's Graph change, before and after, for its Undo (ai_access.py)
+           # a to-do's title while its push, email line or handoff email waits to go, and the line a woken phone shows (notify.py)
+           'notify_queue': ('title', 'payload'), 'notify_app_lines': ('line', 'body'),
+           'contact_marks': ('note',),  # the note a teammate wrote on a contact they shared (contact_share.py)
+           'gbrain_notes': ('text',)}  # the owner's own notes on a GBrain page (gbrain.py)
 DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('suggestions', 'next_action', frozenset({'kind'})),
                 ('suggestions', 'outcome', frozenset({'state'})))
 # The phone's notifications reach the app through android_inbox, written by the Gateway's plugin
