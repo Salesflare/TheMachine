@@ -82,11 +82,19 @@ class Selection(unittest.TestCase):
         self.assertRuns(['i18n/de.json'], needed)
 
     def test_a_help_article_runs_the_help_tests(self):
-        needed = [test for test, text in SOURCE.items() if 'docs/help' in text or "'help'" in text and "'docs'" in text]
+        needed = [test for test, text in SOURCE.items() if 'docs/help' in text or re.search(r"""['"]docs['"]\s*/\s*['"]help['"]""", text)]
         self.assertTrue(needed)
         got = picked('docs/help/weekly-recap.md')
         self.assertIsNotNone(got, 'a help article alone runs only what reads help articles')
         self.assertRuns(['docs/help/weekly-recap.md'], needed)
+
+    def test_a_doc_runs_the_tests_of_what_reads_its_folder_not_all_that_loads_those(self):
+        # assistant.py reads docs/ for its own reasons: a doc reaches its tests, not every test that imports it
+        for path in ('docs/code-map.md', 'docs/help/routines.md'):
+            got = picked(path)
+            self.assertIsNotNone(got)
+            self.assertLess(len(got), 150, path)
+            self.assertIn('test_help.py', got)
 
     def test_a_deleted_module_runs_its_importers(self):
         repo = select.Repo(REPO.paths, extra_modules=['qr.py'])
@@ -215,6 +223,132 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(sorted(set(got) - allowed), [])
         self.assertIn('test_i18n.py', got)
 
+    def test_a_short_piece_of_a_text_is_found_only_with_the_rest(self):
+        pattern = select.text_pattern({'{} and {} more'})
+        self.assertTrue(pattern.search("toContain('Ann and 2 more')"))
+        self.assertFalse(pattern.search("// a Show more button"))
+        self.assertFalse(pattern.search("expect(more).toBe(true)"))
+        self.assertTrue(select.text_pattern({'Matched to people in your Graph: {}'}).search('Matched to people in your Graph: 3'))
+        self.assertEqual(select.without_comments("a\n  # more\n// more\nb"), 'a\n\n\nb')
+
+    def test_a_plural_text_counts_with_its_forms(self):
+        changes = select.catalog_changes('{"Keep": "Hou"}', '{"Keep": "Hou", "Add {} people": {"one": "Add {} person", "other": "Add {} people"}}')
+        self.assertEqual(changes, {'Add {} people': {'Add {} people', 'Add {} person'}})
+
+    def catalog_key(self):
+        """A key of the English catalog quoted in just one Python file the map knows, in a function."""
+        import json
+        catalog = json.loads((ROOT / 'i18n' / 'en.json').read_text(encoding='utf-8'))
+        python = {p: REPO.text[p] for p in REPO.paths if p.endswith('.py') and not p.startswith(('tests/', 'scripts/')) and p in REPO.text}
+        for key in sorted(catalog)[::7]:
+            if len(key) < 25 or not isinstance(catalog[key], str):
+                continue
+            forms = [q + key + q for q in '\'"`']
+            if any(key in t for p, t in REPO.text.items() if not p.endswith('.py') and not select.is_test(p)):
+                continue
+            where = [p for p, t in python.items() if any(f in t for f in forms)]
+            if len(where) != 1:
+                continue
+            text = python[where[0]]
+            line = text.count('\n', 0, min(text.find(f) for f in forms if f in text)) + 1
+            scope = select.Scopes(text).at(line)
+            if scope and scope[0] == 'func':
+                return catalog, key, where[0], scope[1]
+        self.skipTest('no key quoted in one function only')
+
+    def test_a_catalog_text_runs_the_tests_that_draw_it_and_assert_it(self):
+        import json
+        catalog, key, path, qualname = self.catalog_key()
+        before = dict(catalog, **{key: catalog[key] + ' (before)'})
+        select.git_text = lambda base, p: json.dumps(before) if p == 'i18n/en.json' else None
+        current = REPO.text[path]
+        select.map_text = lambda commit, p: current if p == path else None
+        pattern = select.text_pattern({key, before[key]})
+        asserts = {Path(t).name for t in TESTS if pattern.search(select.without_comments(SOURCE[t]))}
+        drawer = sorted(asserts - select.ALWAYS)[:1] or ['test_moving.py']
+        got = select.select(['i18n/en.json'], repo=REPO, impact=self.impact({(path, qualname): drawer}), base='HEAD')
+        named = {Path(t).name for t in TESTS if any(q + key + q in SOURCE[t] for q in '\'"`')}
+        allowed = select.ALWAYS | named | set(drawer) | {Path(t).name for t in TESTS if select.CATALOG_CHECKS.search(Path(t).name)}
+        self.assertEqual(sorted(set(got) - allowed), [])
+        self.assertIn('test_i18n.py', got)
+        # where the map can't place it (the file changed since the map), every test that asserts the text runs
+        select.map_text = lambda commit, p: None
+        got = select.select(['i18n/en.json'], repo=REPO, impact=self.impact({(path, qualname): drawer}), base='HEAD')
+        self.assertLessEqual(asserts, set(got))
+
+    def test_css_rules_and_the_names_they_need(self):
+        css = '/* x{} */\n.a{b:1}\n@media (max-width:5px){.c .d,#e:not(.f){g:2}}\n@keyframes k{from{o:0}to{o:1}}\n'
+        rules = select.css_rules(css)
+        self.assertEqual([r[2] for r in rules], ['.a', '.c .d,#e:not(.f)', '@keyframes k'])
+        self.assertEqual(rules[1][3], [(css.index('\n@media'), css.index('{.c') + 1)])
+        self.assertEqual(select.css_tokens('.c .d,#e:not(.f)'), [{'c', 'd'}, {'e'}])
+        self.assertEqual(select.css_tokens('.x button[aria-pressed="true"]'), [{'x', 'aria-pressed'}])
+        self.assertIsNone(select.css_tokens('.x,button:hover'))
+        self.assertIsNone(select.css_tokens(':root'))
+        self.assertIsNone(select.css_tokens('@keyframes k'))
+        self.assertIsNone(select.css_rules('.a{'))
+        self.assertTrue(select.token_word('data-mail-check').search('b.dataset.mailCheck'))
+
+    def page_map(self, part, ran):
+        """A map whose browser half knows part as it is now: one function, all of it, that the test ran ran; every page
+        test loaded it."""
+        text = (ROOT / part).read_text(encoding='utf-8')
+        pages = sorted(Path(t).name for t in TESTS if t.endswith('_dashboard.mjs'))
+        impact = self.impact({})
+        at = {name: i for i, name in enumerate(impact.tests)}
+        impact.commit = 'map'
+        impact.js = {part: {'top': [at[t] for t in pages], 'funcs': [[0, len(text), [at[ran]]]]}}
+        impact.js_tests = set(pages)
+        select.map_text = lambda commit, p: text if p == part else None
+        idle = next(t for t in pages if t != ran and not re.search(r'mail-check|mc-line|mailCheck', SOURCE['tests/' + t]))
+        return impact, idle
+
+    def test_a_stylesheet_change_runs_the_page_tests_that_draw_what_it_styles(self):
+        css, part = 'dashboard/todos-mail-check.css', 'dashboard/todos-mail-check.js'
+        ran = 'test_mail_check_dashboard.mjs'
+        impact, idle = self.page_map(part, ran)
+        text = (ROOT / css).read_text(encoding='utf-8')
+        rule = text.index('.mail-check .mc-line{')
+        old = text[:rule] + text[rule:].replace('gap:6px', 'gap:5px', 1)
+        select.git_text = lambda base, p: old if p == css else None
+        got = select.select([css], repo=REPO, impact=impact, base='HEAD')
+        self.assertIn(ran, got)
+        self.assertNotIn(idle, got)
+        self.assertLess(len(got), 60)
+        # a rule no class finds (:root, button) styles every page: every page test
+        tokens = 'dashboard/base-tokens.css'
+        text = (ROOT / tokens).read_text(encoding='utf-8')
+        select.git_text = lambda base, p: text.replace(':root{', ':root{--x:1;', 1) if p == tokens else None
+        got = select.select([tokens], repo=REPO, impact=impact, base='HEAD')
+        self.assertTrue(got is None or idle in got)
+
+    def test_a_new_part_runs_what_uses_it_unless_it_does_more_at_load(self):
+        part = 'dashboard/todos-mail-check.js'
+        impact, idle = self.page_map('dashboard/shell-core.js', 'test_mail_check_dashboard.mjs')
+        select.git_text = lambda base, p: None  # new: not in the map, not in the base
+        got = select.select([part], repo=REPO, impact=impact, base='HEAD')
+        self.assertIsNotNone(got)
+        self.assertNotIn(idle, got)  # its declarations and its click listener on [data-mail-check]
+        statements = select.js_split("const a=1;\nfunction f(x){return x}\ndocument.addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(!b)return;go(b)})\nstart()\n")
+        self.assertEqual(len(statements), 4)
+        self.assertEqual(select.DELEGATED.match(statements[2])[3], '[data-q]')
+        self.assertIsNone(select.DELEGATED.match("document.addEventListener('click',e=>{go(e)})"))
+
+    def test_include_lines_of_parts_the_change_adds_reach_only_those_parts(self):
+        page, part = 'dashboard.html', 'dashboard/todos-mail-check.js'
+        text = (ROOT / page).read_text(encoding='utf-8')
+        line = '/*@include dashboard/todos-mail-check.js*/\n'
+        old = text.replace(line, '', 1)
+        select.git_text = lambda base, p: old if p == page else None
+        at = text[:text.index(line)].count('\n') + 1
+        select.diff_lines = lambda base, p: ({at}, set()) if p == page else (set(), set())
+        impact, idle = self.page_map('dashboard/shell-core.js', 'test_mail_check_dashboard.mjs')
+        got = select.select([page, part], repo=REPO, impact=impact, base='HEAD')
+        self.assertIsNotNone(got)
+        self.assertNotIn(idle, got)
+        got = select.select([page], repo=REPO, impact=impact, base='HEAD')  # the part itself unchanged: it moved
+        self.assertTrue(got is None or idle in got)
+
     def test_a_folder_names_the_files_on_the_way_to_it(self):
         self.assertTrue(select.names_exactly("HELP = ROOT / 'docs' / 'help'", 'docs/help/history.md'))
         self.assertTrue(select.names_exactly("open('docs/help/' + name)", 'docs/help/history.md'))
@@ -272,6 +406,9 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(declared('function go(a){return a()}'), {'go'})
         self.assertEqual(declared('const f=async(a,b)=>{await a(b)}'), {'f'})
         self.assertEqual(declared('const seen=new Map()'), {'seen'})
+        self.assertEqual(declared('const fbN=n=>(+n||0).toLocaleString(DL)'), {'fbN'})  # an expression body runs later
+        self.assertEqual(declared("const a=x=>x.y,b=()=>go(1)"), {'a', 'b'})
+        self.assertIsNone(declared('const a=x=>x.y,b=go()'))
         self.assertEqual(declared('// a comment'), set())
         self.assertIsNone(declared("document.addEventListener('click',e=>{go(e)})"))
         self.assertIsNone(declared('const width=measure()'))

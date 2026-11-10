@@ -42,13 +42,26 @@ def _default_api(path):
     return json.loads(module._api(path, os.environ.get('GITHUB_TOKEN') or os.environ.get('GH_TOKEN')))
 
 
-def tested(run, api=_default_api):
-    """'full' or the base commit's sha: what a run tested, from its artifacts' names."""
+def marker(run, api=_default_api):
+    """'full', the base commit's sha, or None: what a run names in its artifacts that it tests. A run still going has
+    none until its plan job is done."""
     names = [a.get('name', '') for a in api(f'repos/{REPO}/actions/runs/{run["id"]}/artifacts?per_page=100').get('artifacts', [])]
     for name in names:
         if found := SINCE.fullmatch(name):
             return found.group(1)
-    return 'full'
+        if name == FULL:
+            return 'full'
+    return None
+
+
+def tested(run, api=_default_api):
+    """'full' or the base commit's sha: what a finished run tested, from its artifacts' names."""
+    return marker(run, api) or 'full'
+
+
+def testing_full(run, api=_default_api):
+    """Whether a run still going tests every file: the nightly and manual runs do, a push says so in its marker."""
+    return run['event'] in ('schedule', 'workflow_dispatch') or marker(run, api) == 'full'
 
 
 def passed_full(sha, api=_default_api):

@@ -269,6 +269,16 @@ def select(changed, repo=None, why=None, impact=None, base=None):
                     why['*'] = f'nothing names {path}'
                 return None  # nothing names it, and it isn't plainly inert: not clear what it touches
             for other in users:
+                if path.startswith('docs/') and is_test(other):
+                    add(other, f'names {path}')  # it reads the doc: it runs, what imports it doesn't change
+                    continue
+                if path.startswith('docs/') and not names_file(python_strings(other, repo.text.get(other, '')), path):
+                    # it reads the folder (every help article, every doc): its own tests, not all that loads it; an
+                    # article's own words are checked by the tests that name it
+                    for user in repo.importers.get(other, set()) | repo.named_by(other):
+                        if is_test(user):
+                            add(user, f'{"imports" if user in repo.importers.get(other, ()) else "names"} {other}, which reads {Path(path).parent}/')
+                    continue
                 if not add(other, f'names {path}'):
                     continue
                 if other in PAGE:
@@ -451,10 +461,54 @@ def js_blank(text):
     return ''.join(out)
 
 
+def js_split(text):
+    """text's top-level statements, as written: split at a ; or a line start outside strings, comments and brackets,
+    where the line before doesn't go on."""
+    out, depth, i, quote, start = [], 0, 0, None, 0
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == '\\':
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in '\'"`':
+            quote = c
+        elif text.startswith('//', i):
+            end = text.find('\n', i)
+            i = len(text) if end < 0 else end
+            continue
+        elif text.startswith('/*', i):
+            end = text.find('*/', i + 2)
+            i = len(text) if end < 0 else end + 2
+            continue
+        elif c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth = max(depth - 1, 0)
+        elif depth == 0 and (c == ';' or c == '\n' and not re.match(r'[\s)\]}.?:,]', text[i + 1:i + 2])
+                             and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', js_blank(text[start:i]))):
+            if text[start:i + (c == ';')].strip():
+                out.append(text[start:i + (c == ';')])
+            start = i + 1
+        i += 1
+    if text[start:].strip():
+        out.append(text[start:])
+    return out
+
+
+# A listener for clicks anywhere that does nothing unless the click is on what a selector finds:
+# document.addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;...})
+DELEGATED = re.compile(r"""\s*document\.addEventListener\(\s*'(?:click|change|input|submit|keydown)'\s*,\s*(?:async\s*)?(\w+)\s*=>\s*\{\s*"""
+                       r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*!\2\s*\)\s*return\s*[;}]""")
+
+
 def js_declared(statement):
     """The names a top-level statement (blanked) only declares, or None when it does more at load (a call, an
     assignment, new): those run for every page."""
-    text = re.sub(r'(?:async\s*)?(?:\(\)|' + JS_WORD + r')\s*=>\s*(?:\{\}|\(\))?', 'F', statement.strip()).strip(' ;\n\t')
+    # an arrow function, its body too: a block, or an expression up to the next declaration (x=>(+x||0).toFixed(1))
+    text = re.sub(r'(?:async\s*)?(?:\(\)|' + JS_WORD + r')\s*=>[^,;]*', 'F', statement.strip()).strip(' ;\n\t')
     if not text or not re.search(r'[\w$]', text) or text == 'F':  # F: a function, whose own change its tests cover
         return set()
     match = re.fullmatch(r'(?:export\s+)?(?:async\s+)?function\s*\*?\s*(' + JS_WORD + r')\s*\(\)\s*\{\}', text)
@@ -502,31 +556,125 @@ def diff_lines(base, path):
     return new, old
 
 
-def catalog_strings(old, new):
-    """The keys and texts a catalog change added, removed or changed (the keys are the English text)."""
+def catalog_changes(old, new):
+    """key -> the texts a catalog change added, removed or changed for it (the key is the English text; a plural's
+    forms count as its texts)."""
     old, new = json.loads(old or '{}'), json.loads(new or '{}')
     if not (isinstance(old, dict) and isinstance(new, dict)):
         raise ValueError('not a catalog')
-    found = set()
+    found = {}
     for key in set(old) | set(new):
         if old.get(key) != new.get(key):
-            found.add(key)
-            found.update(v for v in (old.get(key), new.get(key)) if isinstance(v, str))
+            texts = found.setdefault(key, {key})
+            for value in (old.get(key), new.get(key)):
+                if isinstance(value, str):
+                    texts.add(value)
+                elif isinstance(value, dict):
+                    texts.update(v for v in value.values() if isinstance(v, str))
     return found
 
 
+def catalog_strings(old, new):
+    """The keys and texts a catalog change added, removed or changed (the keys are the English text)."""
+    return set().union(*catalog_changes(old, new).values())
+
+
 def text_pattern(strings):
-    """A pattern for any of these texts, or their longest piece around {slots}, as whole words."""
-    pieces = set()
+    """A pattern for any of these texts, or their longest piece around {slots}, as whole words. When that piece is short
+    ('{} and {} more': more), all the pieces in their order, each slot filled with a short run of text ('Ann and 2
+    more')."""
+    found = set()
     for text in strings:
-        parts = [p.strip() for p in re.split(r'\{[^}]*\}', text) if p.strip()]
+        raw = re.split(r'\{[^}]*\}', text)
+        parts = [p.strip() for p in raw if p.strip()]
         piece = max(parts, key=len) if parts else ''
-        if len(piece) >= 2:
-            pieces.add(piece)
-    if not pieces:
+        if len(piece) < 2:
+            continue
+        if len(parts) > 1 and len(piece) < SHORT_PIECE:
+            inner = list(raw)
+            while not inner[0].strip():
+                inner.pop(0)
+            while not inner[-1].strip():
+                inner.pop()
+            inner[0], inner[-1] = inner[0].lstrip(), inner[-1].rstrip()
+            body = SLOT.join(re.escape(p) for p in inner)
+            found.add((len(piece), (r'\b' if inner[0][0].isalnum() else '') + body + (r'\b' if inner[-1][-1].isalnum() else '')))
+        else:
+            found.add((len(piece), (r'\b' if piece[0].isalnum() else '') + re.escape(piece) + (r'\b' if piece[-1].isalnum() else '')))
+    if not found:
         return None
-    return re.compile('|'.join((r'\b' if p[0].isalnum() else '') + re.escape(p) + (r'\b' if p[-1].isalnum() else '')
-                               for p in sorted(pieces, key=len, reverse=True)))
+    return re.compile('|'.join(p for _, p in sorted(found, reverse=True)))
+
+
+# A piece of a catalog text shorter than this ('more', 'Saved') is found only with the other pieces around its slots.
+SHORT_PIECE = 12
+SLOT = r"""[^\n'"`<>]{1,40}?"""
+
+
+def without_comments(text):
+    """text without its whole-line comments (# or //): a test names a text where it asserts it, not where it says why."""
+    return '\n'.join('' if line.lstrip().startswith(('#', '//')) else line for line in text.split('\n'))
+
+
+def token_word(token):
+    """A class, id or attribute name as code uses it: whole, and a data-x attribute as dataset.x too."""
+    forms = [r'(?<![\w-])' + re.escape(token) + r'(?![\w-])']
+    if token.startswith('data-') and len(token) > 5:
+        key = re.sub(r'-([a-z])', lambda m: m[1].upper(), token[5:])
+        forms.append(r'\bdataset(?:\.' + re.escape(key) + r'\b|\[\s*[\'"]' + re.escape(key) + r'[\'"])')
+    return re.compile('|'.join(forms))
+
+
+def css_rules(text):
+    """The style rules of a stylesheet: (start, end, selector, groups), from the rule's start (just after what came
+    before it) to after its }, and the (start, end) of each @media, @supports or @container block it sits in, up to its
+    {, so a change to the condition reaches every rule in it. @keyframes, @font-face and the like are one rule whose
+    selector starts with @; a rule nested in another is part of it. None when the braces don't add up."""
+    clean = re.sub(r'/\*.*?\*/', lambda m: re.sub(r'[^\n]', ' ', m[0]), text, flags=re.S)
+    rules, stack, start = [], [], 0
+    for i, c in enumerate(clean):
+        if c == '{':
+            prelude = clean[start:i].strip()
+            if stack and stack[-1][0] in ('rule', 'inner'):
+                kind = 'inner'
+            elif re.match(r'@(?:media|supports|container|layer|scope)\b', prelude):
+                kind = 'group'
+            else:
+                kind = 'rule'
+            stack.append((kind, start, i + 1, prelude))
+            start = i + 1
+        elif c == '}':
+            if not stack:
+                return None
+            kind, at, brace, prelude = stack.pop()
+            if kind == 'rule':
+                rules.append((at, i + 1, prelude, [(g[1], g[2]) for g in stack if g[0] == 'group']))
+            start = i + 1
+        elif c == ';' and not (stack and stack[-1][0] in ('rule', 'inner')):
+            start = i + 1
+    return None if stack else rules
+
+
+def css_tokens(selector):
+    """For each selector in a list, the classes, ids and attribute names an element it styles has (not the ones in
+    :not(), :is() and the like, which it may lack); None when one of them names none (button, :root, @keyframes):
+    those style what no name finds."""
+    if selector.startswith('@'):
+        return None
+    out, depth, piece = [], 0, ''
+    for c in selector + ',':
+        if c == ',' and depth == 0:
+            plain = re.sub(r':[\w-]+\((?:[^()]|\([^()]*\))*\)', ' ', piece)
+            names = set(re.findall(r'[.#](-?[A-Za-z_][\w-]*)', plain)) | set(re.findall(r'\[\s*([A-Za-z_][\w-]*)', plain))
+            if not names:
+                return None
+            out.append(names)
+            piece = ''
+            continue
+        depth += c == '('
+        depth -= c == ')'
+        piece += c
+    return out
 
 
 def folder_named(text, folder, rest):
@@ -561,6 +709,25 @@ def names_exactly(text, path):
     if any(folder in text and folder_named(text, folder, rest) for folder, rest in folders):
         return True
     return any(form in text for folder, rest in folders if '/' in folder for form in ("' / '".join(folder.split('/')), '" / "'.join(folder.split('/'))))
+
+
+def names_file(text, path):
+    """text names this file itself (its path or file name), not only a folder it's in."""
+    name = Path(path).name
+    return path in text or name in text and mentions(text, name, '.-', '-')
+
+
+def python_strings(path, text):
+    """A Python file's strings but its docstrings ('see docs/code-map.md' reads nothing); other files as they are."""
+    if not path.endswith('.py'):
+        return text
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return text
+    docs = {id(node.value) for node in ast.walk(tree) if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)}
+    return '\n'.join(node.value for node in ast.walk(tree)
+                     if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs)
 
 
 def mention_lines(text, path):
@@ -724,6 +891,59 @@ def select_mapped(changed, repo, impact, base, why=None):
             lines_in(other, lines, f'{other} uses {name} from {path}' if other != path else why_text, depth + 1)
 
     js_texts, js_seen = {}, set()
+    plain_tests, drawn_keys = {}, {}
+
+    def plain_test(test, text):
+        if test not in plain_tests:
+            plain_tests[test] = without_comments(text)
+        return plain_tests[test]
+
+    def key_drawn(key):
+        """The tests that ran code that has key quoted (a call to t()), or None when the map can't place each place
+        that has it: a file it doesn't know, one this change or one since the map's commit changed, or no place at all
+        (the key is put together, or gone)."""
+        if key not in drawn_keys:
+            drawn_keys[key] = key_places(key)
+        return drawn_keys[key]
+
+    def key_places(key):
+        forms = [q + key + q for q in '\'"`']
+        found, places = set(), 0
+        for other in repo.paths:
+            if is_test(other) or other.startswith(NOT_CODE):
+                continue
+            text = repo.text.get(other)
+            if not text or key not in text:
+                continue
+            at = [m.start() for form in forms for m in re.finditer(re.escape(form), text)]
+            if not at:
+                continue
+            places += 1
+            if other in changed:
+                return None
+            if other.endswith('.py') and other in impact.known:
+                found_scopes = scope_of(other, text)
+                if found_scopes is None or (map_text(impact.commit, other) or '') != text:
+                    return None
+                for start in at:
+                    where = found_scopes.at(text.count('\n', 0, start) + 1)
+                    found |= impact.ran(other, where[1]) if where and where[0] == 'func' else impact.ran_any(other)
+            elif other.startswith('dashboard/') and other.endswith('.js') and other in impact.js:
+                old_text, funcs, _ = js_old(other)
+                if old_text is None:
+                    return None
+                old_at = [m.start() for form in forms for m in re.finditer(re.escape(form), old_text)]
+                if len(old_at) != len(at):
+                    return None
+                for start in old_at:
+                    inner = [f for f in funcs if f[0] <= start < f[1]]
+                    if inner:
+                        found |= js_ran(min(inner, key=lambda f: f[1] - f[0])[2])
+                    else:  # at load: what loads the part, and what runs any of it
+                        found |= js_ran(impact.js[other].get('top', ())) | {t for f in funcs for t in js_ran(f[2])}
+            else:
+                return None
+        return found if places else None
 
     def js_old(part):
         """part as the map's commit had it, its functions, and its text with every function blanked to F: what runs at
@@ -768,9 +988,37 @@ def select_mapped(changed, repo, impact, base, why=None):
             b = following
         return [piece for piece in re.split(r';|\n(?=[^\s)\]}.?:,])', js_blank(text[a:b])) if piece.strip()]
 
+    page_wide = set()  # changed files whose change reaches every page test after all: the walk as without the map
+
     def js_loaders(part, reason):
+        if part not in impact.js:  # a part the map doesn't know (a new one): every page test loads it
+            page_wide.add(part)
+            return
         for test in js_ran(impact.js.get(part, {}).get('top', ())):
             add(test, reason)
+
+    def js_place(other, start, end, name, why_text, depth):
+        """The tests that run what's at [start, end) of part other, as the map's commit had it: the innermost function
+        there, or what uses what the top-level statement there declares."""
+        text, funcs, top = js_old(other)
+        inner = [f for f in funcs if f[0] <= start < f[1]]
+        if inner:
+            for test in js_ran(min(inner, key=lambda f: f[1] - f[0])[2]):
+                add(test, f'runs {other} code that uses {name} ({why_text})')
+        else:
+            js_top(other, js_statement(top, start, end), f'{other} uses {name}', depth + 1)
+
+    blanks = {}
+
+    def js_clash(part, name):
+        """Another part declares name at its top level too: the page stops at load."""
+        for other in repo.paths:
+            if other != part and other.startswith('dashboard/') and other.endswith('.js'):
+                if other not in blanks:
+                    blanks[other] = js_blank(repo.text.get(other, ''))
+                if re.search(r'(?:\b(?:const|let|var|function\*?|class)\s+|,\s*)' + re.escape(name) + r'(?![\w$])\s*[=({;,\n]', blanks[other]):
+                    return other
+        return None
 
     def js_top(part, statements, why_text, depth):
         """The tests a change to these top-level statements of part reaches: what uses the names they declare, or every
@@ -781,6 +1029,10 @@ def select_mapped(changed, repo, impact, base, why=None):
                 js_loaders(part, f'loads {part}, whose top level changed ({why_text})')
                 return
             for name in names:
+                clash = js_clash(part, name)
+                if clash:
+                    js_loaders(part, f'loads {part}, which declares {name} as {clash} does ({why_text})')
+                    return
                 js_name(part, name, why_text, depth)
 
     def js_name(part, name, why_text, depth):
@@ -799,12 +1051,7 @@ def select_mapped(changed, repo, impact, base, why=None):
             if text is None:
                 continue
             for found in word.finditer(text):
-                inner = [f for f in funcs if f[0] <= found.start() < f[1]]
-                if inner:
-                    for test in js_ran(min(inner, key=lambda f: f[1] - f[0])[2]):
-                        add(test, f'runs {other} code that uses {name} ({why_text})')
-                else:
-                    js_top(other, js_statement(top, found.start(), found.end()), f'{other} uses {name}', depth + 1)
+                js_place(other, found.start(), found.end(), name, why_text, depth)
         handler = re.compile(r'\bon\w+=[^>]*\b' + re.escape(name) + r'\b')
         for other in repo.paths:
             if other.startswith('dashboard/') and not other.endswith('.js') and handler.search(repo.text.get(other, '')):
@@ -817,8 +1064,23 @@ def select_mapped(changed, repo, impact, base, why=None):
     def js_part(path, new):
         """A dashboard part's change, by the map's browser half: the tests that ran the functions it touched. False when
         the map can't place it."""
-        if path not in impact.js or new is None:
+        if new is None:
             return False
+        if path not in impact.js:
+            if git_text(base, path) is not None:
+                return False
+            # a new part: what uses what it declares (a new name: the parts that call it changed too); a statement that
+            # does more at load, or a name another part declares, runs every page test
+            for statement in js_split(new):
+                listener = DELEGATED.match(statement)
+                if listener and js_declared(js_blank(statement)) is None:
+                    # a click on what has data-x: the tests that draw such elements (the change that draws them in
+                    # this part runs its own)
+                    if not drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
+                        return False
+                    continue
+                js_top(path, [js_blank(statement)], f'{path} is new', 0)
+            return path not in page_wide
         text, funcs, top = js_old(path)
         if text is None:
             return False
@@ -834,6 +1096,108 @@ def select_mapped(changed, repo, impact, base, why=None):
                     for test in js_ran(f[2]):
                         add(test, f'ran {path}:{f[0]}-{f[1]}')
             js_top(path, js_statement(top, start, end) + js_statement(new, new_start, new_end), f'{path} changed', 0)
+        return True
+
+    def css_token_sites(token):
+        """Where a class, id or attribute name is used outside stylesheets: (files, dynamic). dynamic: some code puts it
+        together ('cl-' + kind, `fb-${x}`), so a file that has it whole isn't every one that makes it."""
+        word = token_word(token)
+        # data-x and aria-x name what follows: a data-${key} elsewhere doesn't make every data- name
+        cuts = [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
+        built = [re.compile(r'(?<![\w-])' + re.escape(token[:i + 1]) + r"""(?:\$\{|['"`]\s*\+)""") for i in cuts]
+        built += [re.compile(r"""(?:\}|\+\s*['"`])""" + re.escape(token[i:]) + r'(?![\w-])') for i in cuts]
+        files, dynamic = [], False
+        for other in repo.paths:
+            if Path(other).suffix not in ('.js', '.mjs', '.ts', '.html', '.py') or other.startswith(NOT_CODE):
+                continue
+            text = repo.text.get(other)
+            if not text or token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text:
+                continue
+            if word.search(text):
+                files.append(other)
+            if any(b.search(text) for b in built):
+                dynamic = True
+        return files, dynamic
+
+    def css_part(path, new):
+        """A stylesheet part's change: the tests that run the code that draws what the changed rules style, found by a
+        class, id or attribute name each of their selectors needs (the one used in the fewest places). False when that
+        isn't clear: a rule no such name finds (button, :root, @keyframes), a name nothing uses or some code puts
+        together, or markup in the page itself."""
+        old = git_text(base, path) if base else None
+        if new is None:
+            return False
+        old_rules, new_rules = css_rules(old or ''), css_rules(new)
+        if old_rules is None or new_rules is None:
+            return False
+        spans = changed_spans(old or '', new)
+        selectors = set()
+        for rules, ends in ((old_rules, [(s, e) for s, e, _, _ in spans]), (new_rules, [(s, e) for _, _, s, e in spans])):
+            for a, b in ends:
+                for start, end, selector, groups in rules:
+                    if any(x < max(b, a + 1) and a < y for x, y in [(start, end), *groups]):
+                        selectors.add(selector)
+        for selector in sorted(selectors):
+            if not drawn_by(css_tokens(selector), f'{path} styles it'):
+                return False
+        return True
+
+    def drawn_by(needs, why_text):
+        """The tests that run the code that draws elements that have, for each set in needs, one of its names (the
+        one used in the fewest places): False when that isn't clear (see css_part)."""
+        if needs is None:
+            return False
+        for names in needs:
+            best = None
+            for token in sorted(names):
+                files, dynamic = css_token_sites(token)
+                # only tests name it: the code that draws it puts it together some other way
+                if any(not is_test(f) for f in files) and not dynamic and (best is None or len(files) < len(best[1])):
+                    best = (token, files)
+            if best is None:
+                return False
+            token, files = best
+            word = token_word(token)
+            for other in files:
+                text = repo.text.get(other, '')
+                if is_test(other):
+                    add(other, f'names {token} ({why_text})')
+                elif other.endswith('.js') and other.startswith('dashboard/'):
+                    if other in changed:
+                        continue  # its own change's tests: what it draws with the name, whole
+                    if other not in impact.js:
+                        return False
+                    old_text = js_old(other)[0]
+                    if old_text is None or len(word.findall(old_text)) < len(word.findall(text)):
+                        js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
+                        continue
+                    for found in word.finditer(old_text):
+                        js_place(other, found.start(), found.end(), token, why_text, 0)
+                elif other.endswith('.py') and not other.startswith('tests/'):
+                    lines = [n for n, line in enumerate(text.split('\n'), 1) if word.search(line)]
+                    lines_in(other, lines, f'{other} uses {token} ({why_text})')
+                else:
+                    return False  # the page's own markup, or code elsewhere that draws it
+        return True
+
+    def includes_only(path):
+        """A change to dashboard.html that only adds or removes include lines of parts this change adds or removes too:
+        those parts' own changes say what it reaches."""
+        if base is None:
+            return False
+        try:
+            new_lines, old_lines = diff_lines(base, path)
+        except (OSError, subprocess.CalledProcessError):
+            return False
+        new_text = (ROOT / path).read_text(encoding='utf-8', errors='replace').split('\n')
+        old_text = (git_text(base, path) or '').split('\n')
+        marker = re.compile(r'^(?:/\*@include (dashboard/[a-z0-9-]+\.(?:js|css))\*/|<!--@include (dashboard/[a-z0-9-]+\.html)-->)$')
+        for lines, text in ((new_lines, new_text), (old_lines, old_text)):
+            for n in lines:
+                found = marker.match(text[n - 1].strip() if 0 < n <= len(text) else '')
+                part = found and (found[1] or found[2])
+                if not part or part not in changed or (ROOT / part).is_file() == (git_text(base, part) is not None):
+                    return False
         return True
 
     for path in changed:
@@ -881,23 +1245,37 @@ def select_mapped(changed, repo, impact, base, why=None):
                     add(test, f'names {path}')
         elif path.startswith('i18n/') and path.endswith('.json') and base:
             try:
-                strings = catalog_strings(git_text(base, path), new)
+                keys = catalog_changes(git_text(base, path), new)
             except ValueError:
                 fallback.add(path)
                 continue
-            pattern = text_pattern(strings)
             for test in sorted(tests):
                 text = repo.text.get(test)
-                if text is None:
-                    continue
-                if CATALOG_CHECKS.search(Path(test).name) and names_exactly(text, path):
+                if text is not None and CATALOG_CHECKS.search(Path(test).name) and names_exactly(text, path):
                     add(test, f'checks the catalogs ({path})')
-                elif pattern and pattern.search(text):
-                    add(test, f'names a text {path} changed')
+            for key, strings in sorted(keys.items()):
+                # a test that asserts a text and runs code that draws that key; where the map can't say what draws
+                # it (new code, a part it doesn't know), any test that asserts the text
+                pattern, drawn = text_pattern(strings), key_drawn(key)
+                literal = [q + key + q for q in '\'"`']
+                for test in sorted(tests):
+                    text = repo.text.get(test)
+                    if text is None:
+                        continue
+                    name = Path(test).name
+                    if any(form in text for form in literal):
+                        add(test, f'names {key!r} ({path})')
+                    elif pattern and (drawn is None or name in drawn or name not in impact.mapped) and pattern.search(plain_test(test, text)):
+                        add(test, f'names a text {path} changed ({key!r})')
         else:
             # a dashboard part's functions: the tests that ran them in Chromium (scripts/test_impact_js.mjs). What else
             # names it follows, but past what names the part itself, only for the tests the browser half doesn't know.
             browser = path.startswith('dashboard/') and path.endswith('.js') and base is not None and js_part(path, new)
+            if path.startswith('dashboard/') and path.endswith('.css') and base is not None:
+                browser = css_part(path, new)
+            elif path == 'dashboard.html':
+                browser = includes_only(path)
+            browser = browser and path not in page_wide
             # a data file, a dashboard part, a helper: what names it, as before, but a Python file that reads it reaches
             # the tests of the functions that read it, not every test that imports that file
             pending, visited = [path], {path}

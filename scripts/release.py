@@ -7,8 +7,8 @@ that is already installed (deploy/release-signers), so a pushed commit alone nev
 
   python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key and a
                                         passed full test run on that commit; --commit SHA cuts an older one of main;
-                                        --full-run starts that run on our CI runner when there is none, waits for it,
-                                        about 12 minutes, and cuts when it passes)
+                                        --full-run waits for that run when one is going, or starts it on our CI
+                                        runner when there is none, about 12 minutes, and cuts when it passes)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
                                         (a first ./install.sh does this step by itself: first_install)
@@ -73,6 +73,28 @@ def proven(run):
     return ci.tested(run, _gh_api) == 'full'
 
 
+class Going(RuntimeError):
+    """A full test run on the commit is still going (run: GitHub's run)."""
+
+    def __init__(self, message, run):
+        super().__init__(message)
+        self.run = run
+
+
+def wait_for(run, poll=30, limit=45 * 60):
+    """Waits until a run of CI is done."""
+    started = time.time()
+    print(f'A full test run is going on {run["head_sha"][:7]} ({run["html_url"]}): waiting for it...', flush=True)
+    while time.time() - started < limit:
+        try:
+            if _gh_api(f'repos/{REPO}/actions/runs/{run["id"]}').get('status') == 'completed':
+                return
+        except (OSError, ValueError, subprocess.SubprocessError):
+            pass
+        time.sleep(poll)
+    raise RuntimeError(f'the full test run on {run["head_sha"][:7]} did not finish in {limit // 60} minutes')
+
+
 def full_run(sha, poll=30, limit=45 * 60):
     """Starts the full test run on exactly this commit on our runner (ci.yml, workflow_dispatch with own_runner, from a
     short-lived branch at the commit), waits for it and raises RuntimeError unless it passed."""
@@ -106,10 +128,16 @@ def require_green_tests(sha):
             return
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         raise RuntimeError(f"CI's runs on {sha[:7]} could not be read with gh ({error})") from error
-    going = [r for r in runs if r['status'] != 'completed']
+    # a run still going that tests every file: wait for it; one that tests only what changed since a full run is no
+    # proof when it passes
+    try:
+        going = [r for r in runs if r['status'] != 'completed' and ci.testing_full(r, _gh_api)]
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        raise RuntimeError(f"CI's runs on {sha[:7]} could not be read with gh ({error})") from error
     if going:
-        raise RuntimeError(f'the full test run on {sha[:7]} is not done yet ({going[0]["html_url"]}): cut again when it passes')
-    failed = [r for r in runs if r['conclusion'] not in ('cancelled', 'skipped', 'success')]
+        raise Going(f'the full test run on {sha[:7]} is not done yet ({going[0]["html_url"]}): cut again when it passes, '
+                    'or with --full-run, which waits for it', going[0])
+    failed = [r for r in runs if r['status'] == 'completed' and r['conclusion'] not in ('cancelled', 'skipped', 'success')]
     if failed:
         raise RuntimeError(f'the full test run on {sha[:7]} {failed[0]["conclusion"]} ({failed[0]["html_url"]})')
     newest = None
@@ -226,8 +254,13 @@ def cut(args):
     try:
         try:
             require_green_tests(sha)
+        except Going as going:
+            if not args.full_run:
+                raise
+            wait_for(going.run)  # the one going already, then the same check
+            require_green_tests(sha)
         except RuntimeError as missing:
-            if not args.full_run or 'not done yet' in str(missing) or 'no full test run passed' not in str(missing):
+            if not args.full_run or 'no full test run passed' not in str(missing):
                 raise
             full_run(sha)
         require_release_scan('TheMachine', sha, cwd=ROOT)

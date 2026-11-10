@@ -365,6 +365,38 @@ class Releases(unittest.TestCase):
                 release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
         self.assertEqual(release.releases(), [])
 
+    def test_full_run_waits_for_a_full_run_going_on_the_commit_and_cuts_when_it_passes(self):
+        sha = self.commit('two')
+        going = {'id': 7, 'head_sha': sha, 'html_url': 'https://example.invalid/run'}
+        self.green.side_effect = [release.Going(f'the full test run on {sha[:7]} is not done yet', going), None]
+        with mock.patch.object(release, 'full_run') as started, mock.patch.object(release, 'wait_for') as waited:
+            release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        waited.assert_called_once_with(going)
+        started.assert_not_called()  # no second run
+        self.assertEqual(self.green.call_count, 2)
+        self.assertEqual(len(release.releases()), 1)
+        run('git', 'tag', '-d', release.releases()[0], cwd=self.app)
+        # it failed: nothing is cut
+        self.green.side_effect = [release.Going('not done yet', going), RuntimeError(f'the full test run on {sha[:7]} failure')]
+        with mock.patch.object(release, 'full_run'), mock.patch.object(release, 'wait_for'):
+            with self.assertRaisesRegex(SystemExit, 'Not released: the full test run on .* failure'):
+                release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        self.assertEqual(release.releases(), [])
+        # without --full-run it says so and cuts nothing
+        self.green.side_effect = release.Going('the full test run is not done yet', going)
+        with mock.patch.object(release, 'wait_for') as waited:
+            with self.assertRaisesRegex(SystemExit, 'not done yet'):
+                release.main(['cut', '--key', str(self.key), '--no-push'])
+        waited.assert_not_called()
+
+    def test_waiting_for_a_run_polls_until_it_is_done(self):
+        states = iter([{'status': 'in_progress'}, {'status': 'completed'}])
+        with mock.patch.object(release, '_gh_api', side_effect=lambda path: next(states)), mock.patch.object(release.time, 'sleep'):
+            release.wait_for({'id': 7, 'head_sha': 'a' * 40, 'html_url': 'https://example.invalid/run'})
+        with mock.patch.object(release, '_gh_api', return_value={'status': 'queued'}), mock.patch.object(release.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'did not finish'):
+                release.wait_for({'id': 7, 'head_sha': 'a' * 40, 'html_url': 'https://example.invalid/run'}, limit=0)
+
     def test_cut_an_older_tested_commit_of_main(self):
         older = self.commit('two')
         self.commit('three')
@@ -398,7 +430,12 @@ class Releases(unittest.TestCase):
                 ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, 'no full test run passed'),
                 ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no full test run passed'),
                 ([run_of('pull_request', 'completed', 'success')], None, False, 'no full test run passed'),
-                ([run_of('push', 'in_progress', None)], None, False, 'not done yet'),
+                # still going: a full run is waited for; a run of only what changed (or one whose plan isn't done) isn't
+                ([run_of('push', 'in_progress', None)], 'tested-full', False, 'not done yet'),
+                ([run_of('workflow_dispatch', 'in_progress', None)], None, False, 'not done yet'),
+                ([run_of('schedule', 'queued', None)], None, False, 'not done yet'),
+                ([run_of('push', 'in_progress', None)], f'tested-since-{base}', True, 'no full test run passed'),
+                ([run_of('push', 'in_progress', None)], None, False, 'no full test run passed'),
                 ([run_of('push', 'completed', 'failure')], None, False, 'failure'),
                 ([run_of('push', 'completed', 'cancelled')], None, False, 'no full test run passed')):
             self.marker = marker
