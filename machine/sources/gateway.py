@@ -91,6 +91,11 @@ def gateway_event(account, source_id, bucket):
             'deleted': False}
 
 
+def hosted(config):
+    """A Machine we host: its config has the control plane's https manage address."""
+    return str(config.get('manage_url') or '').startswith('https://')
+
+
 def sync_gateway(store, config, account, source=None, scan_logs=None):
     if source is None:  # the real journal: the computer's own logs too (a test passes its own source and scan)
         source, scan_logs = GatewayJournal(account), scan_logs or system_logs.scan
@@ -128,10 +133,12 @@ def sync_gateway(store, config, account, source=None, scan_logs=None):
         faults = store.unreported_faults()
         events += [fault_event(account, row, config) for row in faults]
     # The computer's own logs (machine/system_logs.py): read at most every half hour, quietly, through the first Gateway
-    # source as with the service's own errors; off with "computer_logs": false.
+    # source as with the service's own errors; off with "computer_logs": false. Not on a hosted Machine: its server and
+    # every service on it are The Machine team's to keep running, and its own agent reports their trouble to the team
+    # (2026-11-10: a Gateway out of memory brought its owner two to-dos about a service they cannot reach).
     found = []
     last_scan = state.get('computer_logs_at')
-    if scan_logs and carries_faults and config.get('computer_logs', True) is not False and (
+    if scan_logs and carries_faults and config.get('computer_logs', True) is not False and not hosted(config) and (
             not last_scan or dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(last_scan) >= system_logs.EVERY):
         state['computer_logs_at'] = now()
         try:

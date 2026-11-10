@@ -37,6 +37,8 @@ Un mismo problema trae como mucho una tarea cada dos semanas, y nunca mientras s
 
 En macOS, Windows y equipos sin systemd no lee nada y lo dice en `assistant doctor`.
 
+En una Machine alojada, mantener el servidor en marcha es cosa nuestra: sus problemas llegan al equipo de The Machine, no a ti como tareas.
+
 ## Desactivarlo
 
 Pon `"computer_logs": false` en config.json y reinicia el servicio.

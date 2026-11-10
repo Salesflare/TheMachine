@@ -467,6 +467,7 @@ On Linux with systemd, the Machine health source also reads the computer's own l
 - **Do it:** when a finding has a safe, known fix, its to-do offers Do it, which runs only that command once and saves how it went as the to-do's result, in its chat: `systemctl --user restart <unit>` for a failed unit of the owner's own (never The Machine's own units or the OpenClaw Gateway), or Omarchy's `omarchy-restart-shell` for a bar crash. Its output is never read. A chat message on the to-do is an ordinary AI turn. One that didn't work offers Do it again.
 - **Quiet:** the same problem comes back at most once in 14 days and never while its to-do is open; at most 2 new ones a day. `assistant doctor` lists the same findings, scrubbed like learnings, since bug reports carry its output.
 - **Elsewhere:** macOS, Windows, WSL without systemd and other systems without journald read nothing; `assistant doctor` says why.
+- **Hosted Machines:** no scan and no to-dos. The server and its services are The Machine team's to keep running; the server's own agent reports a service that keeps restarting or runs out of memory to the team.
 - **Off:** `"computer_logs": false` in config.json.
 
 ## Command line

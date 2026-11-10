@@ -37,6 +37,8 @@ O mesmo problema gera no máximo uma tarefa a cada duas semanas, e nunca enquant
 
 No macOS, no Windows e em computadores sem systemd ela não lê nada e diz isso no `assistant doctor`.
 
+Em uma Machine hospedada, manter o servidor funcionando é com a gente: os problemas dele vão para a equipe da The Machine, não para você como tarefas.
+
 ## Desativar
 
 Coloque `"computer_logs": false` no config.json e reinicie o serviço.

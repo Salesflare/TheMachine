@@ -338,6 +338,18 @@ class ToDos(unittest.TestCase):
             a.sync_gateway(self.store, self.config, GATEWAY, NoJournal())  # a test's own source: never the real logs
         self.assertEqual(len(scans), 1)
 
+    def test_a_hosted_machine_brings_no_todos_about_its_server(self):
+        # the server and its services are ours to keep running: its own agent tells the team, not the owner
+        class NoJournal:
+            def read(self, cursor=None, since=None):
+                return []
+        scans = []
+        scan = lambda: scans.append(1) or {'findings': [self.finding(kind='crash_loop', name='openclaw-gateway', unit='openclaw-gateway.service')]}
+        with mock.patch('machine.sources.gateway.GatewayJournal', return_value=NoJournal()):
+            a.sync_gateway(self.store, {**self.config, 'manage_url': 'https://app.themachine.computer/m/abc'}, GATEWAY, scan_logs=scan)
+        self.assertEqual(scans, [])
+        self.assertEqual(self.todos(), [])
+
     def test_doctor_lines_are_scrubbed_like_learnings(self):
         lines = s.doctor_lines({'supported': True, 'omarchy': False, 'findings': [self.finding(name='mail-sam@example.com', unit='mail-sam@example.com.service')]})
         self.assertEqual(len(lines), 1)
