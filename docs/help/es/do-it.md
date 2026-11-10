@@ -17,6 +17,7 @@ Antes de redactar un seguimiento o pasar algo a otra persona, revisa la conversa
 ## No sale nada antes de tu sí
 
 - Una respuesta vuelve como borrador. **Revisar y enviar** lo abre listo para editar; solo sale cuando pulsas **Enviar ahora**.
+- Dos correos o más en una tarea: en su chat, un solo botón los revisa todos. Cada uno aparece por turno con **Siguiente**, y el último paso los envía todos. Cada uno aparece como enviado solo cuando de verdad salió.
 - Un correo se abre tal como se verá, con su negrita, listas y enlaces. Un mensaje de Slack o de chat es sin formato: un enlace se ve como sus palabras con la dirección entre corchetes, y vuelve a salir como enlace.
 - **Pedir cambios** en la misma ventana: di qué cambiar y tu Machine rehace el borrador.
 - Una respuesta contesta al correo más reciente de su hilo, y la fuente de la tarea abre ese correo.

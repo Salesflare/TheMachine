@@ -17,6 +17,7 @@ Antes de escrever um follow-up ou passar algo adiante, ela confere a conversa em
 ## Nada sai antes do seu sim
 
 - Uma resposta volta como rascunho. **Revisar e enviar** abre o rascunho pronto para editar. Ele só sai quando você clica em **Enviar agora**.
+- Dois e-mails ou mais em uma tarefa: no chat, um só botão revisa todos. Cada um aparece por vez com **Próximo**, e o último passo envia todos. Cada um aparece como enviado só quando saiu de verdade.
 - Um e-mail abre como vai ficar, com negrito, listas e links. Uma mensagem do Slack ou de chat é texto simples: um link aparece como as palavras dele, com o endereço entre colchetes, e sai como link de novo.
 - **Pedir mudanças** na mesma janela: diga o que mudar e sua Machine refaz o rascunho.
 - Uma resposta responde ao e-mail mais recente da conversa, e a fonte da tarefa abre esse e-mail.

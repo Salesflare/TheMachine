@@ -17,6 +17,7 @@ Avant de rédiger une relance ou de passer la main, elle vérifie la conversatio
 ## Rien ne part sans votre accord
 
 - Une réponse revient sous forme de brouillon. **Vérifier et envoyer** l’ouvre, prête à modifier ; elle ne part que quand vous appuyez sur **Envoyer maintenant**.
+- Deux e-mails ou plus sur une tâche : dans sa discussion, un seul bouton les fait tous vérifier. Chacun s’affiche à son tour avec **Suivant**, et la dernière étape les envoie tous. Chacun n’apparaît comme envoyé qu’une fois vraiment parti.
 - Un e-mail s’ouvre tel qu’il sera, avec son gras, ses listes et ses liens. Un message Slack ou de chat est du texte brut : un lien apparaît avec ses mots et l’adresse entre crochets, et repart comme un lien.
 - **Demander des modifications** dans la même fenêtre : dites ce qu’il faut changer et votre Machine refait le brouillon.
 - Une réponse répond au dernier e-mail du fil, et la source de la tâche ouvre cet e-mail.
