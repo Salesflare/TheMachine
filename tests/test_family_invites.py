@@ -153,3 +153,98 @@ class FamilyInvites(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'dashboard'):  # the owner's own taps, never the agent's
             app.action('family_invite', {'suggestion_id': saved['id'], 'do': 'open'})
         self.assertEqual(app.action('family_invite_setting', {'on': False}, owner_dashboard=True), {'on': False})
+
+
+class PersonInvite(unittest.TestCase):
+    """Invite to The Machine on a person's page (family_invites.person_invite): only for someone with no Machine the owner
+    knows of, never the owner; the Family invite as one way for someone it fits. Nothing is sent from here."""
+    setUp, use = FamilyInvites.setUp, FamilyInvites.use
+
+    def invite(self, node, mark=None, side=None, config=HOSTED, owner=('owner@gmail.com',)):
+        app = object.__new__(a.App)
+        app.store, app.config, app.fleet = self.store, {**config, 'owner_emails': list(owner)}, self.fleet
+        page = {'id': node, 'kind': 'person', **({'fleet': mark} if mark else {}), **({'side': side} if side else {})}
+        return app.person_invite(page)
+
+    def test_someone_with_no_machine_gets_the_words_and_the_family_invite(self):
+        before = list(self.relay.calls)
+        found = self.invite('p_sasha', side='personal')
+        self.assertEqual({k: found[k] for k in ('name', 'first', 'email')}, {'name': 'Sasha Lane', 'first': 'Sasha', 'email': 'sasha@mail.example'})
+        url = urllib.parse.urlsplit(found['family']['url'])
+        self.assertEqual((url.path, url.fragment), ('/account', f'invites-{FAM}'))
+        self.assertEqual(urllib.parse.parse_qs(url.query)['to'], ['sasha@mail.example'])
+        self.assertEqual(self.relay.calls, before)  # nothing sent, nothing asked of the Network
+
+    def test_no_family_invite_for_work_contacts_or_without_an_account_page(self):
+        self.assertIsNone(self.invite('p_lee', side='work')['family'])  # still Invite to The Machine, not to the Family
+        self.assertIsNone(self.invite('p_sasha', config=CONFIG)['family'])
+        self.use(Relay(role='member'))
+        self.assertIsNone(self.invite('p_sasha')['family'])
+
+    def test_nothing_for_someone_with_a_machine_or_the_owner(self):
+        self.assertIsNone(self.invite('p_robin', mark={'machine': True, 'in': [{'kind': 'family'}]}))  # Family already
+        self.assertIsNone(self.invite('p_sasha', mark={'machine': True, 'in': [], 'network': {'can_add': True}}))  # found: Add as a friend
+        self.assertIsNone(self.invite('p_sasha', owner=('sasha@mail.example',)))  # the owner's own address
+        self.assertIsNone(self.invite('nobody'))
+        with self.store.connect() as db:
+            self.assertIsNone(family_invites.person_invite(db, {'id': 'p_sasha', 'kind': 'org'}))
+
+    def test_a_shared_address_is_not_one_to_invite_at(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('p_desk','person','Desk',1,1,?)",
+                       (json.dumps({'identifiers': ['email:info@shop.example']}),))
+        found = self.invite('p_desk')
+        self.assertEqual((found['email'], found['family']), ('', None))  # Copy only
+
+
+class PersonInviteSend(unittest.TestCase):
+    """Send on Invite to The Machine (App.person_invite_send_action): the words the owner saw, from their own mailbox, as
+    an approved draft on a to-do about that person; only queued here (Store.confirm_action), never sent by a test."""
+    setUp, use = FamilyInvites.setUp, FamilyInvites.use
+
+    def app(self, transport='gog'):
+        app = object.__new__(a.App)
+        accounts = [{**x, **({'transport': transport} if transport else {})} for x in CONFIG['accounts']]
+        app.store, app.config, app.fleet = self.store, {**HOSTED, 'accounts': accounts, 'owner_emails': ['owner@gmail.com']}, self.fleet
+        return app
+
+    def send(self, app, node='p_sasha', approval='ok-1', **words):
+        args = {'node_id': node, 'to': 'sasha@mail.example', 'subject': 'Have a look at The Machine', 'body': 'Hi Sasha,\n\nTry it.', 'approval_id': approval, **words}
+        return app.person_invite_send_action('person_invite_send', args, owner_dashboard=True)
+
+    def jobs(self):
+        with self.store.connect() as db:
+            return [(r['suggestion_id'], r['status'], json.loads(r['payload'])) for r in db.execute('SELECT * FROM action_jobs')]
+
+    def test_send_queues_the_words_the_owner_saw_from_their_mailbox(self):
+        app = self.app()
+        self.assertEqual(app.person_invite({'id': 'p_sasha', 'kind': 'person', 'side': 'personal'})['from'], 'owner@gmail.com')
+        before = list(self.relay.calls)
+        done = self.send(app, body='Hi Sasha,\n\nMy own words.')
+        [(card, status, payload)] = self.jobs()
+        self.assertEqual((card, status), (done['suggestion_id'], 'queued'))
+        self.assertEqual((payload['from'], payload['to'], payload['subject'], payload['body']),
+                         ('owner@gmail.com', ['sasha@mail.example'], 'Have a look at The Machine', 'Hi Sasha,\n\nMy own words.'))
+        with self.store.connect() as db:
+            title, origin = db.execute('SELECT title,origin FROM suggestions WHERE id=?', (card,)).fetchone()
+            about = json.loads(db.execute("SELECT metadata FROM events WHERE kind='owner.card'").fetchone()[0])['about']
+            decided = db.execute('SELECT choice,source FROM decisions WHERE id=?', ('ok-1',)).fetchone()
+        self.assertEqual((title, origin, [x['id'] for x in about], tuple(decided)), ('Invite Sasha Lane to The Machine', 'owner', ['p_sasha'], ('send', 'dashboard')))
+        self.assertEqual(self.send(app)['duplicate'], True)  # a repeated tap is that same send
+        self.assertEqual(len(self.jobs()), 1)
+        self.assertEqual(self.relay.calls, before)
+
+    def test_refused_without_the_owner_a_mailbox_or_an_invite(self):
+        app = self.app()
+        with self.assertRaises(ValueError):
+            app.person_invite_send_action('person_invite_send', {'node_id': 'p_sasha', 'approval_id': 'x'})  # not the dashboard
+        with self.assertRaisesRegex(ValueError, 'mailbox'):
+            self.send(self.app(transport=None))
+        self.assertNotIn('from', self.app(transport=None).person_invite({'id': 'p_sasha', 'kind': 'person'}))  # Copy and Open in email
+        with self.assertRaisesRegex(ValueError, 'no invite'):
+            self.send(app, node='nobody')
+        with self.assertRaisesRegex(ValueError, 'no invite'):
+            self.send(app, node='p_robin')  # in the Family: has a Machine
+        with self.assertRaises(ValueError):
+            self.send(app, to='not an address')
+        self.assertEqual(self.jobs(), [])

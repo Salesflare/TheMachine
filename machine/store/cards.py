@@ -763,7 +763,7 @@ class CardsStore:
             return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
     def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None, area_open=False,
-                   file_texts=None):
+                   file_texts=None, accepted=False):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with
         their words as its first evidence: a signal of kind owner.card, left for the next review to fill in. Nothing is
         sent: the card is already on their screen (delivery not_sent) and its buttons need their tap as on any card.
@@ -771,7 +771,9 @@ class CardsStore:
         area_open: the owner's area ids when they gave none and nothing on it points to one (owner_card_area): the review
         places it by what it is about (company or personal), or the message it follows up on does (fill_owner_card).
         With files, the words may be empty (a PDF shared from the phone): the first file's name is its title until the
-        review fills it in from file_texts ({file id: text}, chat_files.texts), kept sealed with the event's metadata."""
+        review fills it in from file_texts ({file id: text}, chat_files.texts), kept sealed with the event's metadata.
+        accepted: the owner's step is already written (an invite from a person's page, App.person_invite_send): no
+        review reads their words, and the to-do takes its draft at once (Store.prepare)."""
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
         if not words and not (files and files[1]):
@@ -793,8 +795,8 @@ class CardsStore:
                 title = owner_title(' '.join(re.sub(r'\.[A-Za-z0-9]{1,5}$', '', names[0]).replace('_', ' ').split()) or names[0])
                 body = ', '.join(names)
             cursor = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
-                                "VALUES(?,?,'owner.card',?,?,?,?,0,?,1,0,?)",
-                                (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256((words or title).encode()).hexdigest(), stamp))
+                                "VALUES(?,?,'owner.card',?,?,?,?,0,?,1,?,?)",
+                                (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256((words or title).encode()).hexdigest(), int(accepted), stamp))
             saved = self.suggest('owner:' + sid, title, clamp(body, 699), [cursor.lastrowid, *[i for i in attach if i != cursor.lastrowid]], when='now',
                                  work=work, due=due, project=project, _db=db, suggestion_id=sid)
             kept = chat_files.adopt(db, files[0], sid, files[1]) if files else []
@@ -804,6 +806,8 @@ class CardsStore:
                     {'name': f['name'], 'type': f['type'], **({'text': read[f['id']]} if read.get(f['id']) else {})} for f in kept]}), cursor.lastrowid))
             db.execute('UPDATE suggestions SET origin=?,owner_words=?,deliver_after=NULL,due_at=? WHERE id=?', ('owner', words, due_at, sid))
             db.execute("UPDATE deliveries SET status='not_sent',updated_at=? WHERE suggestion_id=?", (stamp, sid))
+            if accepted:
+                db.execute("UPDATE suggestions SET status='accepted' WHERE id=? AND status='pending'", (sid,))
         return {'id': sid, 'status': saved['status'], 'title': title, 'event_id': cursor.lastrowid, **({'files': kept} if kept else {})}
 
     def report_seen(self, ids):

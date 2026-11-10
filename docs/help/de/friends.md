@@ -22,7 +22,9 @@ Beide sind standardmäßig an, bei der Sicherheitsstufe Vorsichtig aus. Du kanns
 
 Bekannte, die im Network sind, werden sofort vorgeschlagen, wenn du das einschaltest, und auch, wenn später jemand beitritt. Deine Machine prüft alle 15 Minuten auf neue Kontakte und Personen, die gerade beigetreten sind, und geht einmal am Tag alle deine Kontakte durch. Ein Treffer kommt mit Verbinden, Nicht jetzt oder **Nie vorschlagen**. **Network verlassen** nimmt dich heraus.
 
-Gefundene Personen zeigen in deiner Liste Personen **Hat eine Machine**. Geprüft werden die Adressen aus deinen Nachrichten und die, die du einer Person mit **Bearbeiten** hinzugefügt hast: Hat sich jemand mit einer anderen Adresse angemeldet, füge sie der Person hinzu. Auf der Seite einer gefundenen Person sendet **Als Freund hinzufügen** im Menü ⋯ dieselbe Anfrage wie Verbinden.
+Gefundene Personen zeigen in deiner Liste Personen **Hat eine Machine**. Geprüft werden die Adressen aus deinen Nachrichten und die, die du einer Person mit **Bearbeiten** hinzugefügt hast: Hat sich jemand mit einer anderen Adresse angemeldet, füge sie der Person hinzu. Auf der Seite einer gefundenen Person sendet **Als Freund hinzufügen** dieselbe Anfrage wie Verbinden (**Als Familie hinzufügen** steht im Menü ⋯).
+
+Bei jemandem ohne Machine zeigt **Zu The Machine einladen** die Mail, die die Person bekommt, zum Ändern und **Senden** aus deinem eigenen Postfach, als Aufgabe auf ihrer Seite. Vor Senden geht nichts raus. Ohne Postfach, das senden kann: **Kopieren** oder **Im Mailprogramm öffnen**.
 
 Telefonnummern zählen auch: die Nummern aus deinen WhatsApp-Chats mit Leuten, denen du geschrieben oder die du getroffen hast, und die, die du mit **Bearbeiten** hinzugefügt hast. Deine verknüpfte WhatsApp-Nummer und die Nummern unter Über dich machen dich auffindbar, jede mit eigenem Schalter unter **Auffindbar für**. Eine Nummer findet jemanden nur, wenn diese Person dich auch gesucht hat oder ihr befreundet seid. So kann niemand Nummern durchprobieren, um zu sehen, wer eine Machine hat.
 
