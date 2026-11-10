@@ -46,7 +46,8 @@ try{
    return {draft:c.querySelector('.draft').classList.contains('clamp'),body:c.querySelector('.body').classList.contains('clamp'),more:[...c.querySelectorAll('button.more')].map(b=>b.textContent),
     lines:Math.round(db.clientHeight/lh),blank:[...db.children].filter(d=>d.matches(':has(>br:only-child)')).every(d=>getComputedStyle(d).display==='none')}});
   let l=await look();
-  assert.deepEqual({...l,lines:l.lines<=3},{draft:true,body:true,more:['Show more'],lines:true,blank:true},why);
+  // (the summary fills 2 lines at 1440 and shows whole there; on a phone it is cut too: test_clamp_fit_dashboard.mjs)
+  assert.deepEqual({...l,lines:l.lines<=3},{draft:true,body:mobile,more:['Show more'],lines:true,blank:true},why);
   assert.equal(await card.locator('.card-foot>button.more:first-child').count(),1,why+': Show more leads the row under the draft');
   const h=Math.round((await card.boundingBox()).height);
   assert.ok(mobile?h<=height/1.4:h<=(height-60)/2,`${why}: short enough, ${h}px`);
@@ -57,7 +58,7 @@ try{
   await card.locator('button.more').click();
   l=await look();assert.equal(l.draft,false,why);assert.equal(l.body,false,why);assert.deepEqual(l.more,['Show less']);assert.ok(l.lines>3,why+': the whole draft');
   await card.locator('button.more').click();
-  l=await look();assert.equal(l.draft,true);assert.equal(l.body,true);
+  l=await look();assert.equal(l.draft,true);assert.equal(l.body,mobile);
   // A draft of a few lines shows whole, with no Show more
   assert.equal(await page.locator('#task-brief .draft.clamp').count(),0,why);
   assert.equal(await page.locator('#task-brief button.more').count(),0,why);

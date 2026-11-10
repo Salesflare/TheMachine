@@ -5,9 +5,10 @@ if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().star
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;
 const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
 // Short by default: the status line says where it stands; the rest folds behind Show more. A ready draft's card has one
-// Show more, under the draft, that opens both (cardDrafted).
-const lines=2,per=innerWidth<600?38:72,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/per):.6),0);
-if(closed(s)||rows<=lines+.5)return html`<div class="body" translate="no">${body}</div>${proposal}`;const open=expandedBodies.has(s.id),shared=section!=='Chat'&&cardDrafted(s);
+// Show more, under the draft, that opens both (cardDrafted). The length only rules out a text too short to ever need it;
+// whether it is really cut off is measured once drawn (clampKey).
+const lines=2,rows=named.plain(text).split('\n').reduce((n,l)=>n+(l.trim()?Math.ceil(l.length/30):.6),0);
+if(closed(s)||rows<=lines)return html`<div class="body" translate="no">${body}</div>${proposal}`;const open=expandedBodies.has(s.id),shared=section!=='Chat'&&cardDrafted(s);
 return html`<div class="body${open?'':html` clamp`}" style="--lines:${lines}" data-clamp="${s.id}" translate="no">${body}</div>${shared?'':html`<button type="button" class="more" data-more="${s.id}" aria-expanded="${open}">${open?'Show less':'Show more'}</button>`}${proposal}`}
 // Said once, in the For you header, when a prepared to-do is under it: nothing goes out before the owner's OK.
 const sectionNote=(key,items)=>key==='foryou'&&items.some(s=>s?.status==='prepared')?html`<p class="section-note">${t('Nothing goes out until you approve it.')}</p>`:'';
@@ -366,6 +367,24 @@ const actionsSome=()=>{actionsQueued=0;const rows=[...actionsTouched];actionsTou
 // (once a frame at most, still before it is painted: a streaming chat changes the page many times a second)
 new MutationObserver(records=>{for(const m of records){const n=m.target.nodeType===1?m.target:m.target.parentElement,a=n?.closest('.card .actions[data-fit]');if(a)actionsTouched.add(a)}
  if(!actionsQueued)actionsQueued=requestAnimationFrame(actionsSome)}).observe(document.body,{childList:true,subtree:true,characterData:true});document.fonts?.ready.then(actionsAll);
+// A folding text (data-clamp, its Show more data-more with the same key) shows Show more and the fade over its last line
+// only when some of it is really cut off. Measured once drawn, before it is painted, and again when its width or the font
+// changes and after Show more or Show less: where its text ends against the bottom of its box, so a text that fills its
+// lines exactly stays whole at any display scaling (fractional pixels) and line height. A box out of sight keeps what it has.
+const clampBox=el=>[el,...el.querySelectorAll(':scope>.db')].find(x=>getComputedStyle(x).maxHeight!=='none')||el;
+function clampCut(el){if(!el.getClientRects().length)return null;const had=el.classList.contains('clamp');el.classList.add('clamp');
+ const box=clampBox(el),r=document.createRange();r.selectNodeContents(box);const end=r.getBoundingClientRect().bottom,b=box.getBoundingClientRect(),cs=getComputedStyle(box);
+ const cut=end>b.bottom-parseFloat(cs.paddingBottom)-parseFloat(cs.borderBottomWidth)+1;if(!had)el.classList.remove('clamp');return cut}
+function clampKey(key){if(key==null)return;const k=CSS.escape(key),els=document.querySelectorAll(`[data-clamp="${k}"]`),btns=document.querySelectorAll(`button.more[data-more="${k}"]`);
+ if(!els.length||!btns.length)return;const open=btns[0].getAttribute('aria-expanded')==='true';let any=false;
+ for(const el of els){const cut=clampCut(el);if(cut==null){any=true;continue}any||=cut;el.classList.toggle('clamp',cut&&!open)}
+ for(const b of btns)b.hidden=!any}
+const clampSeen=new ResizeObserver(rows=>{const keys=new Set();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){e._fitW=r.width;keys.add(e.dataset.clamp)}keys.forEach(clampKey)});
+let clampQueued=0;const clampNew=()=>{clampQueued=0;for(const e of document.querySelectorAll('[data-clamp]:not([data-cfit])')){e.dataset.cfit='';clampSeen.observe(e)}};
+new MutationObserver(()=>{if(!clampQueued)clampQueued=requestAnimationFrame(clampNew)}).observe(document.body,{childList:true,subtree:true});
+const clampAll=()=>new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)).forEach(clampKey);
+document.fonts?.ready.then(clampAll);document.fonts?.addEventListener('loadingdone',clampAll);
+document.addEventListener('click',e=>{const m=e.target.closest?.('button.more[data-more]');if(m)clampKey(m.dataset.more)});  // after the list's own handler folded or opened it
 // The … menu's Hand off… opens its sheet in place (Back returns); a click outside, Escape or a choice closes the menu.
 document.addEventListener('click',e=>{const o=e.target.closest('.more-menu [data-mm-open],.more-menu [data-mm-back]');if(!o)return;e.preventDefault();const m=o.closest('.more-menu'),sub=m.querySelector('.mm-sub'),go=o.dataset.mmOpen!=null;
  m.classList.toggle('mm-in',go);if(sub)sub.hidden=!go;(go?sub?.querySelector('button:not([data-mm-back])'):m.querySelector('[data-mm-open]'))?.focus()});
