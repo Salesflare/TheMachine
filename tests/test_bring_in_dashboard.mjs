@@ -48,7 +48,7 @@ try{
   const bring=page.locator('#facts [data-group="bring"]');await bring.waitFor();
   assert.equal(await page.locator('#facts .learn-group').first().getAttribute('data-group'),'bring');  // on top
   assert.match(await bring.locator('h3').textContent(),/Bring these in\s*4/);
-  assert.match(await bring.locator('.learn-head p').textContent(),/From your earlier notes\. Only what you tick is kept\./);
+  assert.match(await bring.locator('.learn-head p').textContent(),/From your OpenClaw notes\. Only what you tick is kept\./);
   assert.equal(await bring.locator('[data-bring]').count(),4);
   assert.match(await bring.locator('.list>div').first().textContent(),/Mira at Lumenfold.*From MEMORY\.md/);
   assert.match(await bring.locator('.list>div').nth(3).textContent(),/From USER\.md/);

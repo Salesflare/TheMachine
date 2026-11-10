@@ -123,6 +123,8 @@ class CatalogTest(unittest.TestCase):
             # Routines: only shown to an owner who made scheduled jobs in OpenClaw themselves (routine_imports.py)
             'From your OpenClaw jobs. Each one ran once to show you.',
             'Turn off the old OpenClaw job?',
+            # Learning, Bring these in: only shown when OpenClaw's own notes (MEMORY.md, USER.md) hold something to keep (bring_in.py)
+            'From your OpenClaw notes. Only what you tick is kept.',
             # Terminal: `assistant` setup errors and commands to type
             'No OpenClaw Gateway systemd unit found',
             'OpenClaw could not remove the Telegram bot: {}',

@@ -4,7 +4,7 @@
 const bringTicked=new Set();
 function bringSection(){const items=state?.bring_in||[];if(!items.length)return '';
  for(const id of [...bringTicked])if(!items.some(i=>i.id===id))bringTicked.delete(id);
- return html`<section class="learn-group" data-group="bring" aria-labelledby="learn-bring"><div class="learn-head"><h3 id="learn-bring">Bring these in <span class="count">${items.length}</span></h3><p>From your earlier notes. Only what you tick is kept.</p></div><div class="list">${
+ return html`<section class="learn-group" data-group="bring" aria-labelledby="learn-bring"><div class="learn-head"><h3 id="learn-bring">Bring these in <span class="count">${items.length}</span></h3><p>From your OpenClaw notes. Only what you tick is kept.</p></div><div class="list">${
   items.map(i=>html`<div><label class="fleet-option grow"><input type="checkbox" data-bring="${i.id}"${bringTicked.has(i.id)?html` checked`:''}><span class="grow">${i.text}<small>${t('From {}',i.file)}</small></span></label></div>`)
   }<div><span class="learn-acts"><button type="button" class="quiet" data-bring-dismiss>Dismiss the rest</button><button type="button" class="primary" data-bring-keep${bringTicked.size?'':html` disabled`}>Keep ticked</button></span></div></div></section>`}
 $('#facts').addEventListener('change',e=>{const box=e.target.closest('[data-bring]');if(!box)return;const id=Number(box.dataset.bring);box.checked?bringTicked.add(id):bringTicked.delete(id);
