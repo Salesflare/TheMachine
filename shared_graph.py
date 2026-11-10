@@ -44,6 +44,7 @@ from shared_graph_private import (ADDRESS, AUTOMATED_LABELS, ITEM_KINDS, MAIL_KI
 from machine.timing import _REQUEST_TIMING
 import network_crypto as nc
 import own_addresses
+import person_birthday
 import project_about
 import security_levels
 import shared_graph_kept
@@ -3156,8 +3157,9 @@ def _clean_record(r):
     fields = [f for f in (r.get('fields') or [])[:crm_fields.MAX_FIELDS] if isinstance(f, dict)] if isinstance(r.get('fields'), list) else []
     fields = [{'name': _clean_text(f.get('name'), 40), 'type': f.get('type') if f.get('type') in crm_fields.TYPES else 'text',
                'value': _clean_text(f.get('value'), crm_fields.MAX_TEXT)} for f in fields]
-    if any(f['name'] and f['value'] for f in fields):
-        out['fields'] = [f for f in fields if f['name'] and f['value']]
+    fields = [f for f in fields if f['name'] and f['value'] and not person_birthday.is_name(f['name'])]  # personal, never the team's
+    if fields:
+        out['fields'] = fields
     tags = [_clean_text(t, 40) for t in (r.get('tags') or [])[:crm_fields.MAX_TAGS]] if isinstance(r.get('tags'), list) else []
     if any(tags):
         out['tags'] = [t for t in tags if t]

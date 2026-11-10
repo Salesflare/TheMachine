@@ -11,7 +11,7 @@ Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten u
 
 Sie beginnt mit Foto, Name, Position, Organisation und Ort und einer Zeile dazu, wie ihr in Kontakt seid („Täglicher Austausch · zuletzt Fr, 23. Okt · nächstes Meeting Di, 27. Okt“). Darunter:
 
-- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine, um anzurufen oder zu schreiben, oder **Kopieren**.
+- **Kontakt**: Telefonnummern und E-Mail-Adressen. Tippe auf eine, um anzurufen oder zu schreiben, oder **Kopieren**. Auch der **Geburtstag** steht hier, mit seiner Herkunft (Google-Kontakte, Facebook oder du): siehe [Der Graph](graph.md#geburtstag).
 - **Mit dir**: was die Person für dich ist, Kontakt aus Arbeit oder Privat, und deine Familie oder Fleet, mit **In Fleet ansehen**.
 - **Auch auf**: die anderen Orte, an denen ihr miteinander sprecht. **Slack** öffnet die Person in Slack, oder deinen neuesten Slack-Thread mit ihr.
 - **Personen** und **Projekte**, zu denen sie gehört, **Offen zwischen euch** (Versprechen in beide Richtungen, mit **Als erledigt markieren** und **Fallen lassen**) und ihr **Verlauf**.

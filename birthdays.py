@@ -5,8 +5,8 @@ Where a birthday comes from, with the reads each Machine already has (never a wi
 - the owner's calendars: Google's birthday events (eventType birthday, a contact's birthday on the main calendar, or the
   Birthdays calendar when it is connected) and an all-day event named like one ("Sam Lee's birthday");
 - Outlook's Birthdays calendar, read by the app at run time with Calendars.Read (birthdays_app.py), its titles here;
-- a person's facts: the birthday on their Google contact (self-hosted sign-ins that read contacts, enrichment.py);
-- a date field the owner named Birthday on a person in the Graph (crm_fields.py).
+- the Birthday on a person's page (person_birthday.py): their Google contact's, an import's, or the one the owner set
+  there, which wins. The routine reads exactly what the page shows.
 
 Each comes down to a person in the Graph, once, however many sources name them. A name alone counts only when it is one
 close person's full name. Only people the owner is close to count (CLOSE): someone they wrote to themselves, and who is
@@ -255,11 +255,10 @@ def today(db, day, tz, outlook=(), code=None):
         node = by_name(people, name)
         if node:
             found.setdefault(node, set()).add(source)
-    ids = fact_ids(db, day) + field_ids(db, day)
-    nodes = by_identifier(db, people, {i for i, _ in ids}, code)
-    for identifier, source in ids:
-        if identifier in nodes:
-            found.setdefault(nodes[identifier], set()).add(source)
+    import person_birthday  # the one birthday each person's page shows (a contact's, an import's or the owner's)
+    for node, born in person_birthday.known(db, people, code).items():
+        if on(day, (born['month'], born['day'])):
+            found.setdefault(node, set()).add('contacts' if born['source'] != person_birthday.SOURCE else 'graph')
     rows = {r['id']: r['strength'] for r in db.execute('SELECT id,strength FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))',
                                                        (json.dumps(sorted(found)),))}
     picked = sorted(found, key=lambda n: -rows.get(n, 0))[:MAX_A_DAY]

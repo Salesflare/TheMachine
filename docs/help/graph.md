@@ -26,6 +26,12 @@ Under Fields on a person, organization or project, click a value to change it: *
 
 **+ Tag** adds a tag, like VIP or partner; **×** takes it off. Tags show in the lists and **Filter** finds them.
 
+## Birthday
+
+A person's birthday shows under Contact, with where it came from: their Google contact, a Facebook import, or you. **Edit** sets or corrects it: a month and a day, and the year if you know it (then their age shows too). Yours wins over every source and stays. **Remove** takes it off; a contact doesn't bring it back.
+
+Without one, **Add birthday** under Fields adds it. The Birthdays routine reads the same birthday the page shows. A birthday is personal: it never goes to your team, also on a shared record.
+
 ## Import a spreadsheet
 
 **Import CSV…**, under the order menu of People, Organizations or Projects, adds a spreadsheet saved as CSV.

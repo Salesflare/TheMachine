@@ -63,8 +63,44 @@ function personContact(n){const c=personContacts(n),p=n.profile||{};
  if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
  if(/^[A-Za-z0-9_]{1,15}$/.test(p.x||''))rows.push(kv('X',html`<a href="https://x.com/${p.x}" target="_blank" rel="noreferrer">@${p.x} ↗</a>`));
  if(/^https?:\/\/[^\s]+$/.test(p.website||''))rows.push(kv('Website',html`<a href="${safeHref(p.website)}" target="_blank" rel="noreferrer">${breakable(liShort(p.website))} ↗</a>`));
+ if(n.birthday&&!n.team_only)rows.push(bdayRow(n));
  const also=[...new Set((n.ids||[]).filter(i=>!i.includes('@')&&!/^\+\d/.test(i)&&!(p.x&&i==='@'+p.x)))];const slack=n.slack_links||[];if(also.length)rows.push(kv('Also on',html`${also.map((a,i)=>html`${i?' · ':''}${a==='Slack'&&slack.length?slack.map((l,j)=>html`${j?' · ':''}<a href="${safeHref(l.url)}" target="_blank" rel="noreferrer" title="Open in Slack">${l.label} ↗</a>`):a}`)}`));
  return rows.length?html`<section class="detail-section person-contact"><h4>Contact</h4>${rows}</section>`:''}
+// Birthday (person_birthday.py): the one the Birthdays routine reads, with where it came from. Edit sets or corrects it
+// in the row: a month and a day, the year when known. Without one, Fields offers Add birthday, which opens the same row.
+const BDAY_FROM={google:'From Google contacts',facebook:'From Facebook',notes:'From your notes',owner:'Added by you'};
+const bdayDate=(b,o)=>localeDate(new Date(b.year||2000,b.month-1,b.day,12),DL,{day:'numeric',month:'long',...(b.year?{year:'numeric'}:{}),...o});
+function bdayAge(b){if(!b.year)return null;const now=new Date(),age=now.getFullYear()-b.year-((now.getMonth()+1)*100+now.getDate()<b.month*100+b.day?1:0);return age>=0?age:null}
+const bdayFrom=s=>BDAY_FROM[s]?t(BDAY_FROM[s]):t('From {}',cap(String(s||'')));
+function bdayRow(n){const b=n.birthday,age=bdayAge(b);return kv(t('Birthday'),html`<span class="bday">${bdayDate(b)}${age!=null?html` · <span class="bday-age">${t('age {}',age)}</span>`:''}</span><span class="sub">${bdayFrom(b.source)}</span>`,html`<button type="button" class="ghost" data-bday-edit="${n.id}" data-bday="${b.value}">${t('Edit')}</button>`,'bday-row')}
+const bdayDayFirst=()=>{try{const p=new Intl.DateTimeFormat(DL,{day:'numeric',month:'long'}).formatToParts(new Date(2000,11,9));return p.findIndex(x=>x.type==='day')<p.findIndex(x=>x.type==='month')}catch{return true}};
+function bdayEditor(node,value){const m=/^(\d{4}|-)-(\d\d)-(\d\d)$/.exec(value||''),month=m?+m[2]:0,day=m?+m[3]:'',year=m&&m[1]!=='-'?m[1]:'';
+ const d=html`<input name="day" inputmode="numeric" maxlength="2" value="${day}" placeholder="${t('Day')}" aria-label="${t('Day')}" autocomplete="off">`,
+  mo=html`<select name="month" aria-label="${t('Month')}"><option value=""${month?'':html` selected`}>${t('Month')}</option>${Array.from({length:12},(_,i)=>html`<option value="${i+1}"${month===i+1?html` selected`:''}>${localeDate(new Date(2000,i,1,12),DL,{month:'long'})}</option>`)}</select>`;
+ return html`<span class="bday-edit" data-bday-node="${node}"><span class="bday-fields">${bdayDayFirst()?html`${d}${mo}`:html`${mo}${d}`}<input name="year" inputmode="numeric" maxlength="4" value="${year}" placeholder="${t('Year (optional)')}" aria-label="${t('Year (optional)')}" autocomplete="off"></span><small class="field-error" role="alert"></small><span class="bday-btns"><button type="button" class="primary" data-bday-save>${t('Save')}</button><button type="button" class="ghost" data-bday-cancel>${t('Cancel')}</button>${m?html`<button type="button" class="ghost" data-bday-remove>${t('Remove')}</button>`:''}</span></span>`}
+function bdayOpen(node,value){const view=$('#people-view .person-view');if(!view)return;let row=view.querySelector('.bday-row');
+ if(!row){let sec=view.querySelector('.person-contact');if(!sec){sec=htmlNodes(html`<section class="detail-section person-contact"><h4>${t('Contact')}</h4></section>`).firstElementChild;const at=view.querySelector('.person-about');at?at.before(sec):view.append(sec)}
+  row=htmlNodes(kv(t('Birthday'),'','','bday-row')).firstElementChild;const also=[...sec.querySelectorAll('.kv')].find(k=>k.querySelector('.k')?.textContent===t('Also on'));also?also.before(row):sec.append(row)}
+ for(const b of view.querySelectorAll('[data-bday-add]'))b.hidden=true;row.querySelector('.acts')?.remove();setHTML(row.querySelector('.v'),bdayEditor(node,value));row.classList.add('editing');(row.querySelector('select[name=month]').value?row.querySelector('input[name=day]'):row.querySelector('select,input')).focus()}
+function bdayCheck(w){const v=k=>String(w.querySelector(`[name=${k}]`).value||'').trim(),month=+v('month'),day=+v('day'),year=v('year');
+ if(!month||!/^\d{1,2}$/.test(v('day')))return[t('Pick a month and a day'),month?'day':'month'];
+ if(year&&!/^\d{4}$/.test(year))return[t('Year: four digits, like 1990'),'year'];
+ if(new Date(+year||2000,month-1,day).getDate()!==day)return[t('That day isn’t in that month'),'day'];
+ if(year&&(+year<1900||+year>new Date().getFullYear()))return[t('Year: not in the future, from 1900'),'year'];
+ return[null,{month,day,year}]}
+async function bdaySave(w,remove){if(w.dataset.busy)return;const say=m=>{w.querySelector('.field-error').textContent=m||''};let args={remove:true};
+ if(!remove){const [err,got]=bdayCheck(w);if(err){say(err);const i=w.querySelector(`[name=${got}]`);i.setAttribute('aria-invalid','true');i.focus();return}args=got}
+ w.dataset.busy='1';w.querySelectorAll('button,input,select').forEach(x=>x.disabled=true);
+ try{await graphPost('graph_birthday',{node_id:w.dataset.bdayNode,...args});toast(remove?t('Removed.'):t('Saved.'));await people(graphNode,true)}
+ catch(x){errCaught(x);delete w.dataset.busy;w.querySelectorAll('button,input,select').forEach(x=>x.disabled=false);say(x.message)}}
+document.addEventListener('click',e=>{const open=e.target.closest('[data-bday-edit],[data-bday-add]');if(open){e.preventDefault();return bdayOpen(open.dataset.bdayEdit||open.dataset.bdayAdd,open.dataset.bday||'')}
+ const w=e.target.closest('.bday-edit');if(!w)return;
+ if(e.target.closest('[data-bday-save]'))return bdaySave(w,false);
+ if(e.target.closest('[data-bday-remove]'))return bdaySave(w,true);
+ if(e.target.closest('[data-bday-cancel]'))return people(graphNode,true)});
+document.addEventListener('input',e=>{const w=e.target.closest?.('.bday-edit');if(w){w.querySelector('.field-error').textContent='';w.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'))}});
+document.addEventListener('keydown',e=>{const w=e.target.closest?.('.bday-edit');if(!w||e.isComposing)return;
+ if(e.key==='Enter'&&e.target.matches('input,select')){e.preventDefault();bdaySave(w,false)}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();people(graphNode,true)}},true);
 function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='work');
  rows.push(roleKv(n));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));

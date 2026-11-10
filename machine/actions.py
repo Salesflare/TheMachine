@@ -323,6 +323,7 @@ OWNER_ACTIONS |= LEARNING_ACTIONS
 # The Graph as a CRM (crm.py, crm_import.py): who owns a record, one organization with several websites, and a
 # spreadsheet imported; the owner's own, from their dashboard only.
 CRM_ACTIONS = {
+    'graph_birthday',
     'graph_field_delete',
     'graph_field_save',
     'graph_field_set',

@@ -24,7 +24,10 @@
 .ed-actions .danger{color:var(--orange)}
 /*@lazy*/
 .field-val{margin:0;padding:2px 6px;margin-left:-6px;min-height:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:inherit;font:inherit;text-align:left;cursor:text}.field-val:hover,.field-val:focus-visible{background:var(--tile)}
-.field-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.field-inline input,.field-inline select{flex:1 1 10em;min-width:8em;height:32px;min-height:32px;padding:0 8px;font-size:var(--fs-sm)}.field-inline button{min-height:32px;padding:0 10px;font-size:var(--fs-sm)}
+.fields-foot{display:flex;flex-wrap:wrap;gap:4px 16px}.bday-age{white-space:nowrap}.bday-row.editing{grid-template-columns:5.2rem minmax(0,1fr)}.kv .bday-edit{flex-direction:column;align-items:stretch;max-width:24rem}.bday-fields,.bday-btns{display:flex;gap:6px;align-items:center}
+.bday-edit .bday-fields>*{min-width:0}.bday-edit [name=month]{flex:1 1 7em}.bday-edit [name=day]{flex:0 0 3.6em}.bday-edit [name=year]{flex:0 1 9em}.bday-edit .field-error{color:var(--c-red,#b3261e);font-size:var(--fs-sm)}.bday-edit .field-error:empty{display:none}
+@media (max-width:480px){.bday-row.editing>.v{grid-column:1/-1}}
+.field-inline,.bday-edit{display:flex;flex-wrap:wrap;gap:6px;align-items:center}:is(.field-inline,.bday-edit) :is(input,select){flex:1 1 10em;min-width:8em;height:32px;min-height:32px;padding:0 8px;font-size:var(--fs-sm)}:is(.field-inline,.bday-edit) button{min-height:32px;padding:0 10px;font-size:var(--fs-sm)}
 @media (min-width:700px){.person-page>:not(.name-row){margin-left:52px}}
 /* A person’s page: a calm header, then Contact, With you and Related as labeled rows and sections */
 .person-page .person-job .node{display:inline;padding:0;margin:0;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px}.person-page .person-job .node:hover{text-decoration-color:currentColor}
