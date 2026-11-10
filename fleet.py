@@ -3678,11 +3678,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def learnings_view(self, ref):
         """Team learnings from team conversations in this Work Fleet (fleet_learnings.py): what the Fleet tab shows."""
-        try:
-            with self.connect() as db:
-                return {'on': fleet_learnings.on(db), 'items': fleet_learnings.view(db, ref, {m['member_id']: label(m) for m in self.teammates(ref)})}
-        except Exception:  # noqa: BLE001 - a Machine without Team Graph tables yet
-            return {'on': False, 'items': []}
+        return fleet_learnings.tab(self.connect, ref, lambda: {m['member_id']: label(m) for m in self.teammates(ref)})
 
     def remove_learning(self, fleet, fp):
         """The owner removes a team learning, theirs or a teammate's: gone for the whole Fleet on the next Team Graph round."""

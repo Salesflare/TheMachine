@@ -83,6 +83,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
   it for the service user ([configuration](docs/configuration.md#message-protection)). It protects copies of the
   database and tools without the key, not against root on the machine.
 - Back the key up with the database: without it the messages are lost. `"message_protection": false` turns it off.
+- What was learned from messages is encrypted the same way: a Work Fleet's team learnings, what a learned change
+  replaced and why, and a Fleet's log lines. Feedback, facts and rules stay readable.
 - Email attachments a Do-it run saves are encrypted on disk with the same key. The run reads a private copy that is
   removed when it ends. Files a run makes itself are not encrypted.
 - WhatsApp photos read with Read photos (off by default) are kept in `whatsapp-photos/` next to the database, sealed

@@ -340,6 +340,9 @@ In a Standard Work Fleet, your Machine writes a few learnings about how the team
 to the Fleet as a `learning` record in this Machine's Team Graph, sealed like the rest. It is logged in Activity on both
 sides.
 
+**How it is kept.** With [message protection](configuration.md#message-protection) on, the sentence is encrypted in
+the database, also a removed one and the Fleet's log lines. The turn's draft is dropped once it is checked.
+
 **Removing one.** Any member can remove one. Every Machine keeps the removal, so it is never shown, shared or made
 again.
 

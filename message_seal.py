@@ -74,7 +74,8 @@ PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_k
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what
 # and the note closing one), and the messages a profile, roles or skills run was given. JSON columns keep the named
 # keys in the clear. Not here, on purpose: columns the app matches in SQL, and what the Machine learned (facts, rules,
-# feedback, skills, profile, voices, roles), which support may read (docs/configuration.md).
+# feedback, skills, profile, voices, roles), which support may read (docs/configuration.md). The words around a
+# learning are here: a Fleet's team learnings, what a learned change replaced and why, and the Fleet's log lines.
 DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks'), 'feedback_prompts': ('title',),
            'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note'), 'profile_runs': ('evidence',),
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
@@ -101,7 +102,12 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            # a to-do's title while its push, email line or handoff email waits to go, and the line a woken phone shows (notify.py)
            'notify_queue': ('title', 'payload'), 'notify_app_lines': ('line', 'body'),
            'contact_marks': ('note',),  # the note a teammate wrote on a contact they shared (contact_share.py)
-           'gbrain_notes': ('text',)}  # the owner's own notes on a GBrain page (gbrain.py)
+           'gbrain_notes': ('text',),  # the owner's own notes on a GBrain page (gbrain.py)
+           # a Work Fleet's team learnings, also a removed one kept so it is not learned again (fleet_learnings.py)
+           'fleet_learnings': ('text',), 'fleet_learn_removed': ('text',),
+           'learned_fixes': ('text',),  # what the first look's summary said of someone, left off it (first_learned.py)
+           'learning_changes': ('before', 'after', 'why'),  # a learned change, what it replaced and why (learning_loop.py)
+           'fleet_log': ('what',)}  # what was asked, answered or learned in a Fleet, a line each (fleet.py)
 DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('suggestions', 'next_action', frozenset({'kind'})),
                 ('suggestions', 'outcome', frozenset({'state'})))
 # The phone's notifications reach the app through android_inbox, written by the Gateway's plugin

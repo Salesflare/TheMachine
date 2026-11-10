@@ -23,6 +23,9 @@ import moving
 from seams import patch_everywhere  # noqa: E402
 
 CANARY = 'Zanzibarquill'  # in every message's text; never in a sealed database's files
+# Two team learnings as a pass may keep them: general, one sentence, no capitalized word mid-sentence
+LEARNED = f'Refund requests are answered from the support inbox with the {CANARY.lower()} template.'
+LEARNED_TOO = f'Renewal quotes are made in the {CANARY.lower()} billing tool before a call.'
 SOURCES = ['gmail.message', 'outlook.message', 'imap.message', 'slack.message', 'whatsapp.message', 'telegram.message',
            'signal.message', 'linkedin.message', 'x.dm', 'teams.message', 'sms.message', 'android.notification',
            'intercom.conversation', 'github.comment', 'zoom.transcript', 'calendar.event', 'brand_new_connector.thing']
@@ -245,6 +248,99 @@ class Protected(unittest.TestCase):
             self.assertEqual(raw.execute('SELECT typeof(line),typeof(body) FROM notify_app_lines').fetchone(), ('blob', 'blob'))
             with self.assertRaises(sqlite3.OperationalError):  # no key: a plain write fails, it is never stored
                 raw.execute("INSERT INTO notify_queue(channel,kind,title,created,due) VALUES('email','todo','plain',1,1)")
+
+    def learn(self, db, run_id='run1'):
+        """A finished team learnings pass with two learnings, one dropped: kept as the app keeps them."""
+        import fleet
+        import fleet_learnings
+        evidence = {'fleet_learn': True, 'fleet': 'f1', 'companies': {'1': 'a' * 16, '2': 'b' * 16}, 'read': ['t1']}
+        draft = {'learnings': [{'kind': 'process', 'text': LEARNED, 'confidence': 0.9, 'threads': [1, 2]},
+                               {'kind': 'tool', 'text': LEARNED_TOO, 'confidence': 0.8, 'threads': [1, 2]},
+                               {'kind': 'personal', 'text': f'Someone at {CANARY} is moving house soon.', 'confidence': 0.9, 'threads': [1, 2]}]}
+        db.execute("INSERT INTO profile_runs(run_id,status,started_at,updated_at,evidence,kind,draft) VALUES(?,'ok','2026-11-01','2026-11-01',?,'fleet_learn',?)",
+                   (run_id, json.dumps(evidence), json.dumps(draft)))
+        return fleet_learnings.finish(db, run_id, [], log=lambda *args: fleet.Fleet.log(None, *args))
+
+    def test_team_learnings_learned_changes_and_the_fleet_log_are_sealed_and_read_as_before(self):
+        import first_learned
+        import fleet
+        import fleet_learnings
+        import learning_loop
+        store = assistant.Store(self.path, protect=True)
+        with store.connect() as db:  # the tables a Fleet and the first look make, at their first use
+            for statement in fleet.SCHEMA.split(';'):
+                if statement.strip():
+                    db.execute(statement)
+            fleet_learnings.ensure(db)
+            db.execute(first_learned.SCHEMA)
+        with store.connect() as db:
+            self.assertEqual([k['text'] for k in self.learn(db)], [LEARNED, LEARNED_TOO])
+            self.assertEqual(fleet_learnings.remove(db, 'f1', fleet_learnings.fingerprint(LEARNED_TOO)), LEARNED_TOO)
+            learning_loop.record(db, 'run2', 'fact', '7', json.dumps({'id': 6, 'text': f'Old {CANARY} fact'}), f'New {CANARY} fact', f'Corrected the {CANARY} to-do.')
+            first_learned.leave_off(db, 'hours', f'Works {CANARY} hours')
+        for word in (CANARY.encode(), CANARY.lower().encode()):
+            self.assertNotIn(word, files(self.path))  # nor in the pass's draft, which keeps only a count
+        with sqlite3.connect(self.path) as raw:
+            for table, columns in (('fleet_learnings', 'text'), ('fleet_learn_removed', 'text'), ('learned_fixes', 'text'), ('fleet_log', 'what'),
+                                   ('learning_changes', 'after'), ('learning_changes', 'why')):
+                self.assertEqual({r[0] for r in raw.execute(f'SELECT typeof({columns}) FROM {table}')}, {'blob'}, table)
+            self.assertEqual({r[0] for r in raw.execute('SELECT typeof(before) FROM learning_changes')}, {'blob', 'null'})
+            self.assertEqual(raw.execute("SELECT draft FROM profile_runs WHERE run_id='run1'").fetchone()[0], '{"drafted": 3}')
+            # what SQL filters, sorts and joins on stays plain
+            self.assertEqual(raw.execute('SELECT fleet,fp,kind,confidence,run_id FROM fleet_learnings').fetchall(),
+                             [('f1', fleet_learnings.fingerprint(LEARNED), 'process', 0.9, 'run1'), ('f1', fleet_learnings.fingerprint(LEARNED_TOO), 'tool', 0.8, 'run1')])
+            self.assertEqual(raw.execute('SELECT key,state FROM learned_fixes').fetchall(), [('hours', 'removed')])
+            self.assertEqual(raw.execute("SELECT kind,target,status FROM learning_changes WHERE run_id='run2'").fetchall(), [('fact', '7', 'applied')])
+        with store.connect() as db:
+            self.assertEqual([(i['text'], i['mine']) for i in fleet_learnings.view(db, 'f1', {})], [(LEARNED, True)])
+            self.assertEqual(fleet_learnings.removed(db, 'f1'), {fleet_learnings.fingerprint(LEARNED_TOO): LEARNED_TOO})
+            self.assertEqual([i['text'] for i in fleet_learnings.pick(db, 'f1', 'Refund request', 'A customer asks for a refund via the support inbox.')], [LEARNED])
+            # what goes to teammates is the opened text, for the Team Graph to seal for them as it does the rest
+            sent = fleet_learnings.records(db, 'f1', lambda local: local)
+            self.assertEqual(sorted((r['t'], r.get('text')) for r in sent.values()), [('learning', LEARNED), ('unlearn', None)])
+            self.assertEqual(fleet_learnings.finish(db, 'run1', []), [])  # the same pass again: nothing twice
+            changes = {c['kind']: c for c in learning_loop.recent(db)}
+            self.assertEqual((changes['fact']['text'], changes['fact']['before'], changes['fact']['why']),
+                             (f'New {CANARY} fact', f'Old {CANARY} fact', f'Corrected the {CANARY} to-do.'))
+            self.assertEqual(changes['learned']['text'], f'Works {CANARY} hours')
+            self.assertEqual(learning_loop.undo(db, changes['learned']['id'])['undone'], changes['learned']['id'])
+            self.assertEqual([r['what'] for r in db.execute('SELECT what FROM fleet_log ORDER BY id')], [LEARNED, LEARNED_TOO])
+
+    def test_an_update_seals_the_learnings_a_sealed_machine_already_kept_plain(self):
+        import first_learned
+        import fleet
+        import fleet_learnings
+        import learning_loop
+        store = assistant.Store(self.path, protect=True)
+        kept = {'fleet_learnings': ('text', LEARNED), 'fleet_learn_removed': ('text', LEARNED_TOO), 'learned_fixes': ('text', f'Works {CANARY} hours'),
+                'fleet_log': ('what', LEARNED)}
+        with sqlite3.connect(self.path) as raw:  # as the version before left it: the tables there, without guards, the rows plain
+            for statement in (fleet.SCHEMA + ';' + fleet_learnings.SCHEMA + ';' + first_learned.SCHEMA).split(';'):
+                if statement.strip():
+                    raw.execute(statement)
+            for name in [r[0] for r in raw.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'mc_learning_changes_%'")]:
+                raw.execute(f'DROP TRIGGER {name}')
+            raw.execute("INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES('f1','a','process',?,0.9,'r','2026-11-01')", (LEARNED,))
+            raw.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES('f1','b',?,'me','2026-11-01')", (LEARNED_TOO,))
+            raw.execute("INSERT INTO learned_fixes(key,state,text,at) VALUES('hours','removed',?,'2026-11-01')", (kept['learned_fixes'][1],))
+            raw.execute("INSERT INTO fleet_log(at,direction,fleet,kind,what,outcome) VALUES('2026-11-01','out','f1','learning',?,'shared')", (LEARNED,))
+            raw.execute("INSERT INTO learning_changes(run_id,at,kind,target,before,after,why,status) VALUES('r','2026-11-01','fact','7',?,?,?,'applied')",
+                        (json.dumps({'id': 6, 'text': CANARY}), CANARY, f'Corrected the {CANARY} to-do.'))
+        self.assertIn(CANARY.lower().encode(), files(self.path))
+        store = assistant.Store(self.path)  # the updated app starts
+        with store.connect() as db:
+            for table, (column, text) in kept.items():
+                self.assertEqual(db.execute(f'SELECT {column} FROM {table}').fetchone()[0], text, table)
+            self.assertEqual(learning_loop.recent(db)[0] | {'at': None, 'id': None},
+                             {'id': None, 'at': None, 'kind': 'fact', 'channel': None, 'text': CANARY, 'before': CANARY, 'why': f'Corrected the {CANARY} to-do.', 'undone': False})
+        with sqlite3.connect(self.path) as raw:
+            for table, (column, _) in kept.items():
+                self.assertEqual(raw.execute(f'SELECT typeof({column}) FROM {table}').fetchone()[0], 'blob', table)
+            self.assertEqual(raw.execute('SELECT typeof(before),typeof(after),typeof(why) FROM learning_changes').fetchone(), ('blob', 'blob', 'blob'))
+            with self.assertRaises(sqlite3.OperationalError):  # no key: a plain write fails, it is never stored
+                raw.execute("INSERT INTO fleet_log(at,direction,fleet,kind,what,outcome) VALUES('2026-11-01','out','f1','learning','plain','shared')")
+        for word in (CANARY.encode(), CANARY.lower().encode()):
+            self.assertNotIn(word, files(self.path))
 
     def test_project_sort_note_is_sealed_and_legacy_notes_are_migrated(self):
         store = assistant.Store(self.path, protect=True)
@@ -751,7 +847,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'preparations.reason': 'a reason code', 'activity_blocks.reason': 'why a check stopped a send (the outbox job error line)', 'preparations.questions': 'what a stopped run asks the owner',
             'android_inbox.payload': "its text sealed by the Gateway's plugin (message_seal.INBOX); deleted once read",
             'network_outbox.body': 'matched in SQL until sent; sealed end to end in transit (network_crypto)',
-            'fleet_log.what': "a log of what was shared, by kind", 'fleet_out.context': 'matched in SQL: an id',
+            'fleet_out.context': 'matched in SQL: an id',
             'fleet_rules.rule': 'a sharing rule', 'fleet_handled.state': 'done or settled', 'fleet_briefs.view': 'counts and dates (fleet brief)',
             'fleet_notices.view': 'a Fleet notice', 'fleet_notices.reason': 'a reason code', 'fleet_splits.title': 'a meeting title',
             'graph_nodes.info': 'people and organizations', 'network_people.reasons': 'why someone is suggested',
@@ -773,10 +869,8 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'follow_up_cards.state': 'open, sent, skipped, stopped, handled or detached',
             'agent_jobs.draft_revision': "a draft's revision id (agent_jobs.draft_revision)",
             'family_invite_log.what': 'offered, later or opened (family_invites.py)', 'family_invite_offers.state': 'offered, later or invited',
-            'fleet_learnings.text': 'a general learning for the team, learned like a fact, names checked out (fleet_learnings.check)',
-            'fleet_learn_removed.text': 'the same team learning, kept so it is not learned again',
             'gbrain_pages.state': 'made, kept or gone (gbrain.py)',
-            'learned_fixes.state': 'removed', 'learned_fixes.text': "what the first look's summary said of someone or the hours left off it, learned like a fact (also in learning_changes)",
+            'learned_fixes.state': 'removed',
             'meet_log.what': 'a step code matched in SQL, like asked_in (meet.py)', 'meet_sessions.state': 'a booking stage', 'meet_sessions.note': 'a reason code: no_machine, keys, failed, no_slot, rounds, no_answer or passed',
             'missed_audit_items.what': 'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
             'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
