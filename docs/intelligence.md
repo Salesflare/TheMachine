@@ -202,6 +202,13 @@ Projects of one kind in stages (partner listings, onboarding, support escalation
 Board is the default view and List is one click away, remembered on that device. The board only shows: it never sends
 anything.
 
+**What a review sees of them.** A claim (`begin_analysis` `boards`) carries each board's name, stages and about, and of
+its projects only the ones the claim touches (its signals, their mail threads, their people and those people's organization, so a reply the
+Graph has not linked yet still brings its project), with their stage and done-when; `others` counts the rest. A
+whole board is one lookup: `graph` `{"board": name}` (`{"boards": true}` lists the boards). The claim reply as a whole
+stays under the review page size (48,000 characters), so OpenClaw never cuts it: the signals come first, and when
+something next to them did not fit, `left_out` says what and how to get it (`machine/app/claim_reply.py`).
+
 **Making a board.** Only the owner makes one: from scratch (the board's ⋯ menu, New board) or by saving a suggestion.
 
 - **Suggestions.** When at least three open projects on no board are clearly of one kind, a review suggests a board for

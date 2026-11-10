@@ -19,6 +19,7 @@ import fleet_reviews
 import graph
 import i18n
 import memory_use
+from machine.app import claim_reply
 from machine.app.first_look import (
     FIRST_DIG_HOURS,
     first_look_batch,
@@ -885,7 +886,7 @@ class ReviewApp:
             if isinstance(result, dict) and result.get('analysis_id'):
                 with self.store.connect() as db:
                     result['projects'] = graph.active_projects(db)  # reuse these names in finish_analysis and suggest
-                    result['boards'] = graph.boards_brief(db)  # projects of one kind in stages, moved with finish_analysis stages
+                    result['boards'] = claim_reply.boards(db, result['analysis_id'], self.config)  # the boards, and where this claim's projects stand
                 team = self.team_accounts()
                 if team:  # Work messages the Shared Graph needs a call on (finish_analysis team)
                     with self.store.connect() as db:
@@ -896,6 +897,7 @@ class ReviewApp:
                         if result['team']:  # the groups unsure threads already have: reuse a name for the same kind of thread
                             shared_graph.ensure(db)
                             result['share_groups'] = shared_graph.groups(db)
+                claim_reply.fit(result)  # never past the cut: the signals first, what was left out said plainly; the senders below fit after it
                 try:  # who wrote the batch, as far as the Graph knows them: only while the reply has room for it
                     memory = recall(self, 'review', {'run': args.get('_review_run'), 'analysis': result['analysis_id']}, REPLY_CUT)
                     senders = memory.fit('sender', len(encoded(result)), REPLY_RESERVE)
