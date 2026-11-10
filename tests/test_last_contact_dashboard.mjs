@@ -14,8 +14,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const dashboard=await dashboardPage();
 const person=(n,name,last_at,extra={})=>({id:'email:p'+n+'@example.test',kind:'person',name,strength:3-n/4,closeness:'regular',last_at,signals:5,ids:['p'+n+'@example.test'],
  usual_gap_days:7,quiet:false,role:null,profile:null,links:[],recent:[],around:[],open:{},...extra});
-const people=[person(1,'Ada Lovelace','2026-11-10T14:59:30+01:00',{role:'customer'}),person(2,'Grace Hopper','2026-11-10T12:10:00+01:00'),person(3,'Alan Turing','2026-11-10'),
- person(4,'Edsger Dijkstra','2026-11-09'),person(5,'Barbara Liskov','2026-11-07T09:00:00Z',{closeness:'occasional'}),person(6,'Donald Knuth','2026-10-29'),person(7,'Frances Allen','2025-12-24')];
+const people=[person(1,'Robin Vale','2026-11-10T14:59:30+01:00',{role:'customer'}),person(2,'Sam Ortiz','2026-11-10T12:10:00+01:00'),person(3,'Noa Brandt','2026-11-10'),
+ person(4,'Jules Moreau','2026-11-09'),person(5,'Kit Halvorsen','2026-11-07T09:00:00Z',{closeness:'occasional'}),person(6,'Ari Lindqvist','2026-10-29'),person(7,'Remy Okafor','2025-12-24')];
 const orgs=[{id:'org:lumen.example',kind:'org',name:'Lumen',strength:3,last_at:'2026-11-09T16:00:00+01:00',signals:4},{id:'org:north.example',kind:'org',name:'North',strength:2,last_at:'2026-10-02',signals:2}];
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
