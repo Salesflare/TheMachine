@@ -113,7 +113,7 @@ class ContactFacts(unittest.TestCase):
         again = self.save(f"Robin Vale's WhatsApp number is {NUMBER}.")
         self.assertEqual((again['id'], again.get('duplicate'), 'record' in again), (done['id'], True, False))
         with self.store.connect() as db:
-            self.assertEqual(contact_facts.move_all(db, fact_links.index(db, CONFIG), NOW.isoformat()), [])  # a fact the owner brought back
+            self.assertEqual(contact_facts.movable(db, fact_links.index(db, CONFIG)), [])  # a fact the owner brought back
 
     def test_what_the_owner_said_on_the_record_holds(self):
         with self.store.connect() as db:  # they took the number off Robin, and said the two Robins are not the same

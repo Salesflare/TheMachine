@@ -19,8 +19,8 @@ that holds a number, not a contact detail. Then plain code checks it (no model):
 The fact is kept, set aside as moved (facts.merged_into 'record:<node id>'), so the to-do's chat says where it went.
 The move is one change under Learning, Changes (learning_changes kind 'contact', its before and after sealed like the
 rest of that table) with Undo: the merge and the added detail go, and the fact is back as a fact. The facts saved
-before this existed are moved once (moved_once), only the ones that say nothing else: a plain fact (not an event,
-commitment or preference, no end day) of a few words besides the name and the detail, with no other number."""
+before this existed are moved once (FactsStore.contacts_once), only the ones that say nothing else: a plain fact (not
+an event, commitment or preference, no end day) of a few words besides the name and the detail, with no other number."""
 from __future__ import annotations
 
 import json
@@ -28,6 +28,7 @@ import re
 
 import fact_links
 import graph
+import learning_loop
 
 KIND = 'contact'           # learning_changes.kind of a move
 MOVED = 'record:'          # facts.merged_into of a moved fact, then the record's id
@@ -61,6 +62,37 @@ def plain(text, name, value):
     return len(words) <= REST_WORDS and not any(c.isdigit() for w in words for c in w)
 
 
+def _contacts_now(db, node_id, kind):
+    """(what a person's page shows for phones or emails, the keys of those the owner took off), as person_edit sees them."""
+    row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (str(node_id),)).fetchone()
+    if not row or kind not in graph.PERSON_LISTS:
+        return None, None
+    info = json.loads(row['info'] or '{}')
+    group = set(info.get('identifiers') or ()) | {str(node_id)}
+    kept = graph.person_edits_for(db, group).get(kind) or {}
+    found = graph.found_contacts(group)[kind]
+    stated = ' '.join(str((info.get('profile') or {}).get('phone') or '').split())
+    if kind == 'phones' and graph.PHONE.fullmatch(stated):
+        found.append(stated)
+    gone = {graph.contact_key(kind, v) for v in kept.get('removed', ())}
+    return [v for v in found if graph.contact_key(kind, v) not in gone] + list(kept.get('added', ())), gone
+
+
+def taken_off(db, node_id, kind, value):
+    """Whether the owner took this phone or email off the person's page."""
+    return graph.contact_key(kind, value) in (_contacts_now(db, node_id, kind)[1] or ())
+
+
+def add(db, node_id, kind, value, now):
+    """Add one phone or email to a person as the owner's own, the way Edit on their page saves it (person_edit with
+    the list as shown, plus this one). False when it is on their page already, or the owner took it off before."""
+    shown, gone = _contacts_now(db, node_id, kind)
+    if shown is None or graph.contact_key(kind, value) in gone | {graph.contact_key(kind, v) for v in shown}:
+        return False
+    graph.person_edit(db, node_id, {kind: shown + [value]}, now)
+    return True
+
+
 def _person(db, node_id):
     return db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='person'", (str(node_id),)).fetchone()
 
@@ -76,7 +108,7 @@ def resolve(db, names, text, kind, value, near=(), about=()):
     if not holders:
         node, why = fact_links.named(names, text, near)
         node = said[0] if said and (why == 'none' or node == said[0]) else node if why == 'one' and not said else None
-        return (node, None) if node and _person(db, node) and not graph.contact_taken_off(db, node, kind, value) else None
+        return (node, None) if node and _person(db, node) and not taken_off(db, node, kind, value) else None
     holder = _person(db, holders[0])
     key = fact_links.name_key('person', holder['name']) if holder else None
     same = names.get(key) or {}
@@ -87,7 +119,7 @@ def resolve(db, names, text, kind, value, near=(), about=()):
     rest = re.sub(r'(?<!\w)' + r'\s+'.join(re.escape(w) for w in key.split()) + r'(?!\w)', ' . ', text)
     if fact_links.named(names, rest, near)[1] != 'none':
         return None  # it names someone else too
-    if graph.contact_taken_off(db, holder['id'], kind, value):
+    if taken_off(db, holder['id'], kind, value):
         return None  # the owner took it off their page
     others = [i for i in same if i != holder['id']]
     if not others:
@@ -114,34 +146,30 @@ def _edits(db, ids):
 
 
 def move(db, fact_id, text, kind, value, node, other, run_id, at):
-    """Put the detail on the record (merging other into it first) and set the fact aside as moved, kept as one change
-    with Undo. {'record': node id, 'name', 'merged': bool, 'added': bool}."""
+    """Put the detail on the record (merging other into it first), kept as one change with Undo; the Store sets the
+    fact aside as moved (MOVED). {'record': node id, 'name', 'merged': bool, 'added': bool}."""
     ids = _ids(db, node, *([other] if other else []))
     before = _edits(db, ids)
     if other:
         graph.merge(db, node, other, True, at, 'owner')
-    added = graph.add_contact(db, node, kind, value, at)
+    added = add(db, node, kind, value, at)
     name = _person(db, node)['name']
-    db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', (at, MOVED + node, fact_id))
-    db.execute("INSERT INTO learning_changes(run_id,at,kind,target,before,after,why,status) VALUES(?,?,?,?,?,?,'','applied')",
-               (run_id, at, KIND, str(fact_id), json.dumps({'node': node, 'name': name, 'other': other, 'merged_at': at if other else None,
-                                                            'ids': ids, 'edits': before, 'edits_after': _edits(db, ids)}), text))
+    learning_loop.record(db, run_id, KIND, str(fact_id), json.dumps({'node': node, 'name': name, 'other': other, 'merged_at': at if other else None,
+                                                                    'ids': ids, 'edits': before, 'edits_after': _edits(db, ids)}), text, '')
     return {'record': node, 'name': name, 'merged': bool(other), 'added': added}
 
 
 def undo(db, row):
-    """Put a move back (learning_loop.undo, kind 'contact'): the merge and the added detail go, the fact is a fact
-    again. Refused when the owner changed that person's details or the fact since."""
+    """Put a move back (learning_loop.undo, kind 'contact', which makes the fact a fact again): the merge and the added
+    detail go. Refused when the owner changed that person's details or the fact since."""
     before = json.loads(row['before'])
     fact = db.execute('SELECT merged_into FROM facts WHERE id=?', (int(row['target']),)).fetchone()
     if not fact or fact['merged_into'] != MOVED + before['node'] or _edits(db, before['ids']) != before['edits_after']:
         raise ValueError('That changed since. Change it where it is now')
     graph.edits_restore(db, {'kind': 'person', 'ids': before['ids'], 'rows': before['edits']})
     if before.get('other'):
-        a, b = sorted((before['node'], before['other']))
-        db.execute("DELETE FROM graph_merges WHERE a=? AND b=? AND same=1 AND source='owner' AND created_at=?", (a, b, before['merged_at']))
-    db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE id=?', (int(row['target']),))
-    return {'graph': True}
+        graph.unmerge(db, before['node'], before['other'], before['merged_at'])
+    return {'graph': True, 'fact': int(row['target'])}
 
 
 def moved_to(db, fact_id):
@@ -154,9 +182,9 @@ def moved_to(db, fact_id):
     return {'change': row['id'], 'record': before['node'], 'name': before['name']}
 
 
-def move_all(db, names, at):
-    """The one-time pass: each fact already saved that only says how to reach one certain person is moved. Its moves,
-    as [fact id, node id]; None while there is no graph yet."""
+def movable(db, names):
+    """The one-time pass: the facts already saved that only say how to reach one certain person, as [(fact id, text,
+    (kind, value), (node, other))]; None while there is no graph yet. The Store moves them (contacts_once)."""
     if not db.execute('SELECT 1 FROM graph_nodes LIMIT 1').fetchone():
         return None
     out = []
@@ -167,6 +195,5 @@ def move_all(db, names, at):
         about = [r[0] for r in db.execute("SELECT node_id FROM fact_about WHERE fact_id=? AND removed_at IS NULL AND by!=?", (f['id'], fact_links.BY))]
         who = found and resolve(db, names, f['text'], *found, fact_links.todo_records(db, f['suggestion_id']), about)
         if who and plain(f['text'], _person(db, who[0])['name'], found[1]):
-            move(db, f['id'], f['text'], *found, *who, ONCE, at)
-            out.append([f['id'], who[0]])
+            out.append((f['id'], f['text'], found, who))
     return out

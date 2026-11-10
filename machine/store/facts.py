@@ -507,26 +507,33 @@ class FactsStore:
         who = contact_facts.resolve(db, fact_links.index(db, self.own_config()), text, *found, fact_links.todo_records(db, suggestion_id), about)
         if not who:
             return None
-        fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind) VALUES(?,?,?,?,'fact','fact')",
-                             (text, decision_id, suggestion_id, now())).lastrowid
+        fact_id = db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,removed_at,merged_into) VALUES(?,?,?,?,'fact','fact',?,?)",
+                             (text, decision_id, suggestion_id, now(), now(), contact_facts.MOVED + who[0])).lastrowid
         return {'id': fact_id, **contact_facts.move(db, fact_id, text, *found, *who, 'contact:' + str(decision_id), now())}
 
     def contacts_once(self):
         """One time, once there is a graph: the facts already saved that only say how to reach one certain person go on
-        their record (contact_facts.move_all), each a change under Learning, Changes with Undo. Its moves, or None."""
+        their record (contact_facts.movable), each a change under Learning, Changes with Undo. Its moves, or None."""
         try:
             with self.connect() as db:
-                if db.execute('SELECT 1 FROM learning_state WHERE key=?', (contact_facts.ONCE,)).fetchone():
-                    return None
                 db.execute('BEGIN IMMEDIATE')
-                moved = contact_facts.move_all(db, fact_links.index(db, self.own_config()), now())
-                if moved is not None:
-                    db.execute('INSERT INTO learning_state(key,value) VALUES(?,?)', (contact_facts.ONCE, json.dumps({'at': now(), 'moved': len(moved)})))
+                moved = learning_loop.run_once(db, contact_facts.ONCE, lambda db: self.contacts_move(db, contact_facts.movable(db, fact_links.index(db, self.own_config()))))
+                if moved:
                     LOG.info('contact facts moved count=%s', len(moved))
                 return moved
         except Exception as error:  # a busy database: the next round tries again
             LOG.error('contact facts move error=%s', type(error).__name__)
             return None
+
+    @staticmethod
+    def contacts_move(db, found):
+        """Move each (fact id, text, detail, who) contact_facts.movable found; [[fact id, node id]], or None to wait."""
+        if found is None:
+            return None
+        for fact_id, text, detail, who in found:
+            db.execute('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', (now(), contact_facts.MOVED + who[0], fact_id))
+            contact_facts.move(db, fact_id, text, *detail, *who, contact_facts.ONCE, now())
+        return [[f[0], f[3][0]] for f in found]
 
     def fact_about(self, fact_id, about):
         """A review says who an existing fact is about."""

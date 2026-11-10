@@ -3538,37 +3538,6 @@ def person_edit(db, node_id, fields, now):
     return {'node_id': node_id, 'edited': sorted(mine)}
 
 
-def _contacts_now(db, node_id, kind):
-    """(what a person's page shows for phones or emails, the keys of those the owner took off), as person_edit sees them."""
-    row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (str(node_id),)).fetchone()
-    if not row or kind not in PERSON_LISTS:
-        return None, None
-    info = json.loads(row['info'] or '{}')
-    group = set(info.get('identifiers') or ()) | {str(node_id)}
-    kept = person_edits_for(db, group).get(kind) or {}
-    found = found_contacts(group)[kind]
-    stated = ' '.join(str((info.get('profile') or {}).get('phone') or '').split())
-    if kind == 'phones' and PHONE.fullmatch(stated):
-        found.append(stated)
-    gone = {contact_key(kind, v) for v in kept.get('removed', ())}
-    return [v for v in found if contact_key(kind, v) not in gone] + list(kept.get('added', ())), gone
-
-
-def contact_taken_off(db, node_id, kind, value):
-    """Whether the owner took this phone or email off the person's page."""
-    return contact_key(kind, value) in (_contacts_now(db, node_id, kind)[1] or ())
-
-
-def add_contact(db, node_id, kind, value, now):
-    """Add one phone or email to a person as the owner's own, the way Edit on their page saves it (person_edit with
-    the list as shown, plus this one). False when it is on their page already, or the owner took it off before."""
-    shown, gone = _contacts_now(db, node_id, kind)
-    if shown is None or contact_key(kind, value) in gone | {contact_key(kind, v) for v in shown}:
-        return False
-    person_edit(db, node_id, {kind: shown + [value]}, now)
-    return True
-
-
 def edits_state(db, node_id):
     """The owner's own details on a person or organization as kept now (person_edits over the person's identities, or
     the organization's org_edits row), for an exact Undo of a connected AI's change (ai_app.py): edits_restore puts
@@ -5074,6 +5043,11 @@ def merge_all(db, pairs, now):
         merge(db, a, b, True, now, 'owner')
         done += 1
     return {'merged': done, 'batch': now if done else None}
+
+
+def unmerge(db, a, b, at):
+    """Undo one merge the owner's word made at this time (a contact detail's, contact_facts.py); any other decision stays."""
+    db.execute("DELETE FROM graph_merges WHERE a=? AND b=? AND same=1 AND source='owner' AND created_at=?", (*sorted((a, b)), at))
 
 
 def unmerge_all(db, batch):

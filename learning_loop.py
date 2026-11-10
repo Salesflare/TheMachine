@@ -343,6 +343,18 @@ def name_links(db, link_all):
     return found
 
 
+def run_once(db, key, step):
+    """A one-time pass over what was learned before (contact_facts.py): step(db) runs until it answers other than None
+    (None: it waits, for a graph), then never again. Its answer."""
+    ensure(db)
+    if db.execute('SELECT 1 FROM learning_state WHERE key=?', (key,)).fetchone():
+        return None
+    done = step(db)
+    if done is not None:
+        db.execute('INSERT INTO learning_state(key,value) VALUES(?,?)', (key, json.dumps({'at': now(), 'count': len(done)})))
+    return done
+
+
 def undo(db, change_id, unlink=None):
     """Put one change back. Refused when what it changed was changed again since (the owner's edit wins). unlink: the
     Store's unlink_named, for the one-time pass that tied facts to the record they name."""
@@ -355,6 +367,7 @@ def undo(db, change_id, unlink=None):
     if row['kind'] == 'contact':  # a contact detail moved onto someone's record (contact_facts.py)
         import contact_facts
         done.update(contact_facts.undo(db, row))
+        db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE id=?', (done.pop('fact'),))  # a fact again
     elif row['kind'] == 'source':  # a fix where the wrong thing came from (corrections.py)
         import corrections
         done.update(corrections.undo(db, row))
