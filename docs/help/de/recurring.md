@@ -23,6 +23,8 @@ Eine verpasste wird nicht gestapelt. Sie bleibt offen und zeigt, wie viele Termi
 
 Schlummern verschiebt nur diese. Der Rhythmus bleibt gleich.
 
+Vor ihrem Datum erledigt? Sie zählt für das, was jetzt fällig ist, und das Datum kommt trotzdem für den Zeitraum danach.
+
 Jede wird vorbereitet wie jede Aufgabe, und die Vorbereitung sieht, wie die vorige lief und was in ihrem Chat gesagt wurde.
 
 ## Ändern oder beenden
