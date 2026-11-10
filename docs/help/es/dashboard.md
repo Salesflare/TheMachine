@@ -45,7 +45,7 @@ Después de tu primer día, se reduce a una línea discreta encima de **Para ti*
 
 Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras haya algo escrito sin guardar ni enviar, o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.
 
-Cuando llega una función o mejora más grande, una pequeña nota **Novedades** te lo cuenta, como mucho una vez al día. **Cerrar** la quita, o usa su botón para abrir la función. Nunca aparece encima de lo que estás haciendo, y una vez cerrada desaparece en todos tus dispositivos. Solo ves lo que llegó después de que empezaste.
+Cuando llega una función o mejora más grande, una pequeña nota **Novedades** te lo cuenta, como mucho una vez al día. Pasa de una a otra con **Atrás** y **Siguiente**, o desliza. El botón de cada novedad abre la función. **Hecho** o **×** la cierra. Nunca aparece encima de lo que estás haciendo, y una vez cerrada desaparece en todos tus dispositivos. Solo ves lo que llegó después de que empezaste.
 
 ## Mensajes
 

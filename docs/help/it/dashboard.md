@@ -45,7 +45,7 @@ Dopo il tuo primo giorno, si riduce a una riga discreta sopra **Per te**, come �
 
 Quando è pronta una nuova versione della dashboard, non si ricarica mai mentre la usi. Aprire o ricaricare l’app carica la versione più recente. Una finestra aperta la carica quando la finestra passa in secondo piano, o dopo qualche minuto senza input, e mai mentre c'è qualcosa di scritto non ancora salvato o inviato, o una finestra di dialogo aperta. **Aggiornamento pronto**, in alto, la carica subito. Un riavvio della tua Machine si limita a riconnettersi.
 
-Quando arriva una funzione o un miglioramento più grande, una piccola nota **Novità** te lo dice, al massimo una volta al giorno. **Chiudi** la toglie, oppure usa il suo pulsante per aprire la funzione. Non compare mai sopra quello che stai facendo, e una volta chiusa sparisce su ogni dispositivo. Vedi solo ciò che è arrivato dopo che hai iniziato.
+Quando arriva una funzione o un miglioramento più grande, una piccola nota **Novità** te lo dice, al massimo una volta al giorno. Scorri con **Indietro** e **Successivo**, o con uno swipe. Il pulsante di ogni novità apre la funzione. **Fatto** o **×** la chiude. Non compare mai sopra quello che stai facendo, e una volta chiusa sparisce su ogni dispositivo. Vedi solo ciò che è arrivato dopo che hai iniziato.
 
 ## Messaggi
 

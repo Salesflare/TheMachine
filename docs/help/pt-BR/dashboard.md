@@ -45,7 +45,7 @@ Depois do seu primeiro dia, ela vira uma linha discreta acima de **Para você**,
 
 Quando uma nova versão do painel fica pronta, ele nunca recarrega enquanto você está usando. Abrir ou recarregar o app carrega a versão mais nova. Uma janela aberta carrega a nova versão quando a janela vai para segundo plano, ou depois de alguns minutos sem uso, e nunca enquanto há algo digitado e ainda não salvo ou enviado, ou uma caixa de diálogo aberta. **Atualização pronta**, no topo, carrega na hora. Reiniciar a sua Machine só reconecta.
 
-Quando chega um recurso ou uma melhoria maior, uma pequena nota **Novidades** avisa você, no máximo uma vez por dia. **Fechar** tira a nota, ou use o botão dela para abrir o recurso. Ela nunca aparece por cima do que você está fazendo e, depois de fechada, some em todos os dispositivos. Você só vê o que chegou depois que começou.
+Quando chega um recurso ou uma melhoria maior, uma pequena nota **Novidades** avisa você, no máximo uma vez por dia. Passe de uma para outra com **Voltar** e **Próximo**, ou deslize. O botão de cada novidade abre o recurso. **Feito** ou **×** fecha a nota. Ela nunca aparece por cima do que você está fazendo e, depois de fechada, some em todos os dispositivos. Você só vê o que chegou depois que começou.
 
 ## Mensagens
 

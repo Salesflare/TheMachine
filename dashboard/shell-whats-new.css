@@ -25,8 +25,13 @@
 #whats-new .wn-dots button:focus-visible{box-shadow:var(--ring)}
 #whats-new h2{margin:0 0 8px;overflow-wrap:anywhere}
 #whats-new p{margin:0;line-height:1.5;color:var(--muted)}
-#whats-new .wn-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:20px}
-#whats-new .wn-acts:has([data-wn-go]) .ghost{margin-right:auto;padding-inline:10px}  /* Close apart from the way on */
+#whats-new .wn-x{position:absolute;top:10px;right:10px;z-index:1;min-height:0;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--muted);font-size:1.3rem}
+#whats-new .wn-x.on-art{background:color-mix(in srgb,var(--c-surface) 80%,transparent)}
+#whats-new .wn-x:not(.on-art)~.wn-views h2{padding-right:32px}
+#whats-new .wn-run{margin-top:14px}
+#whats-new .wn-acts{display:flex;align-items:center;gap:8px;margin-top:20px}
+#whats-new .wn-acts .ghost{padding-inline:10px}
+#whats-new .wn-acts .primary{margin-left:auto;min-width:96px}
 /* Between views: a short fade and slide (transitions, not keyframes: the lazy run holds only this group's rules) */
 @media(prefers-reduced-motion:no-preference){
   #whats-new .wn-art{transition:opacity .2s var(--ease)}

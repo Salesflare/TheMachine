@@ -47,7 +47,7 @@ After your first day, it folds into one quiet line above **For you**, like "2 st
 
 A new version of the dashboard never reloads while you're using it. It loads when you open the app, or when the window has been in the background or idle for a few minutes. It never interrupts unsaved text or an open dialog. **Update ready**, at the top, loads it right away.
 
-When a bigger feature or improvement ships, a small **What’s new** note tells you about it, at most once a day. **Close** it, or use its button to open the feature. It never shows over something you’re doing, and once closed it’s gone on every device. You only see what shipped after you got started.
+When a bigger feature or improvement ships, a small **What’s new** note tells you about it, at most once a day. Step through it with **Back** and **Next**, or swipe. A note’s own button opens the feature. **Done** or **×** closes it. It never shows over something you’re doing, and once closed it’s gone on every device. You only see what shipped after you got started.
 
 ## Messages
 

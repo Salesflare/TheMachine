@@ -1,14 +1,9 @@
-// What's new (state.whats_new, machine/store/whats_new.py): one small dialog when a bigger feature or improvement
-// shipped since this person got started. One entry per view: its picture on top, its title, its text, and its button
-// that opens it. Several (at most three): the same view for each, newest first, with dots under the picture and Next
-// as the main button until the last one (the entry's own button stays beside it; the arrow keys and the dots step too).
-// Close, Esc, a tap beside it and the entry's button all close it, on any view, and closing marks everything in it as
-// seen on the Machine (whats_new_seen), so it is gone on every device. A lazy part (dashboard_parts.LAZY):
-// shell-tabs.js whatsNewMaybe loads it only when there is something to tell.
-// The pictures: an entry names one ('art'). Drawn here, 440 by 180, in the dashboard's own look and without words
-// (nothing to translate): c a card, f the accent's tint with an accent edge, b a line of text, s a title, m and t the
-// accent and its tint, e an edge inside a card, l an accent line, k a line on the accent, q a quiet line (shell-whats-new.css). `new` stands in
-// for an entry without one when others in the same notice have one.
+// What's new (state.whats_new, machine/store/whats_new.py): a small dialog about features shipped since this person
+// got started, at most three, one per view: picture, title, text and the entry's button. Back and Next stay in one
+// place, Done on the last; dots, arrow keys and a swipe step too. Closing it any way marks all seen (whats_new_seen).
+// Lazy (dashboard_parts.LAZY), loaded by shell-tabs.js whatsNewMaybe.
+// Pictures ('art'), 440 by 180, no words: c card, f accent tint with accent edge, b text line, s title, m/t accent and
+// its tint, e edge in a card, l accent line, k line on the accent, q quiet line. `new` stands in for a missing one.
 const wnBar=(x,y,w,c='b',h=6)=>`<rect class="${c}" x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}"/>`;
 const wnTick=(x,y,r=10)=>`<circle class="m" cx="${x}" cy="${y}" r="${r}"/><path class="k" d="M${x-4.5} ${y+.5}l3.2 3.2 6-6.6"/>`;
 const wnFile=(x,y,w,turn=0)=>`<g transform="rotate(${turn} ${x+24} ${y+28})"><path class="c" d="M${x+4} ${y}h28l12 12v40a4 4 0 0 1-4 4h-36a4 4 0 0 1-4-4v-48a4 4 0 0 1 4-4z"/><path class="q" d="M${x+32} ${y}v12h12"/>`+w.map((n,i)=>wnBar(x+8,y+23+i*9,n,'b',4)).join('')+'</g>';
@@ -32,24 +27,24 @@ function whatsNewSeen(){if(!state?.whats_new)return;state.whats_new=null;
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'whats_new_seen',args:{}})}).catch(()=>{})}
 // An entry's button: a command of the palette by its id (shell-keys.js ACTIONS), or Search itself
 function whatsNewRun(run){if(run==='search')return palOpen();const ctx=kbCtx(),a=actsFor(ctx).find(x=>x.id===run);if(a)actRun(a,ctx)}
-// One view of it: its picture, its dot and its text come up, and the buttons are this view's: Close, the entry's own
-// button and Next; on the last view the entry's button is the main one (or Close, when it has none)
-function whatsNewGo(i){const d=$('#whats-new'),n=wn.list.length;if(!(i>=0&&i<n))return;const was=wn.i;wn.i=i;const e=wn.list[i],last=i===n-1,acts=d.querySelector('.wn-acts'),held=acts.contains(document.activeElement);
+// One view: its picture, dot and text; Back (not on the first) left, Next right, Done in Next's place on the last
+function whatsNewGo(i){const d=$('#whats-new'),n=wn.list.length;if(!(i>=0&&i<n))return;const was=wn.i;wn.i=i;const last=i===n-1,acts=d.querySelector('.wn-acts'),a=document.activeElement,held=acts.contains(a)&&(a.classList.contains('primary')?'.primary':'.ghost');
  d.classList.toggle('wn-back',i<was);void d.offsetWidth;  // the way in is set before the view comes up
  for(const sel of ['.wn-art','.wn-view','.wn-dots button'])d.querySelectorAll(sel).forEach((x,j)=>x.classList.toggle('on',j===i));
  d.querySelectorAll('.wn-dots button').forEach((b,j)=>b.toggleAttribute('aria-current',j===i));
  d.querySelectorAll('.wn-view h2').forEach((h,j)=>{if(j===i)h.id='wn-title';else h.removeAttribute('id')});
- const run=e.action?html`<button type="button" class="${last?'primary':''}" data-wn-run="${e.action.run}" translate="no">${e.action.label}</button>`:'';
- setHTML(acts,last?(run?html`<button type="button" class="ghost" data-wn-close>Close</button>${run}`:html`<button type="button" class="primary" data-wn-close>Close</button>`)
-  :html`<button type="button" class="ghost" data-wn-close>Close</button>${run}<button type="button" class="primary" data-wn-go="${i+1}">Next</button>`);
- if(held)acts.querySelector('.primary').focus()}  // Enter on Next keeps going; otherwise focus stays where it was
+ setHTML(acts,html`${i?html`<button type="button" class="ghost" data-wn-go="${i-1}">Back</button>`:''}${last?html`<button type="button" class="primary" data-wn-close>Done</button>`:html`<button type="button" class="primary" data-wn-go="${i+1}">Next</button>`}`);
+ if(held)(acts.querySelector(held)||acts.querySelector('.primary')).focus()}  // Enter keeps going
 function whatsNewOpen(n){const list=(n?.entries||[]).slice(0,3);if(!list.length||document.querySelector('dialog[open]'))return;
  let d=$('#whats-new');
  if(!d){d=document.createElement('dialog');d.id='whats-new';d.tabIndex=-1;d.setAttribute('aria-labelledby','wn-title');document.body.append(d);
   d.addEventListener('close',whatsNewSeen);
   d.addEventListener('keydown',e=>{const by={ArrowRight:1,ArrowLeft:-1}[e.key];if(by&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();whatsNewGo(wn.i+by)}});
+  let sw=null;
+  d.addEventListener('touchstart',e=>{const t=e.touches[0];sw=e.touches.length===1?{x:t.clientX,y:t.clientY}:null},{passive:true});
+  d.addEventListener('touchend',e=>{const t=e.changedTouches[0],dx=t.clientX-sw?.x;if(sw&&Math.abs(dx)>48&&Math.abs(dx)>1.5*Math.abs(t.clientY-sw.y))whatsNewGo(wn.i+(dx<0?1:-1));sw=null},{passive:true});
   d.addEventListener('click',e=>{const b=e.target.closest('[data-wn-run]'),go=e.target.closest('[data-wn-go]');
    if(b){d.close();whatsNewRun(b.dataset.wnRun)}else if(go)whatsNewGo(+go.dataset.wnGo);else if(e.target.closest('[data-wn-close]')||e.target===d&&wnBeside(d,e))d.close()})}
  const many=list.length>1,drawn=list.some(e=>WN_ART[e.art]),art=e=>(WN_ART[e.art]||WN_ART.new)();wn={list,i:0};
- setHTML(d,html`${drawn?html`<div class="wn-arts" aria-hidden="true">${list.map(e=>html`<div class="wn-art"><svg viewBox="0 0 440 180">${raw(art(e))}</svg></div>`)}</div>`:''}${many?html`<div class="wn-dots">${list.map((e,i)=>html`<button type="button" data-wn-go="${i}" aria-label="${e.title}" translate="no"></button>`)}</div>`:''}<div class="wn-views">${list.map(e=>html`<div class="wn-view"><h2 translate="no">${e.title}</h2><p translate="no">${e.text}</p></div>`)}</div><div class="wn-acts"></div>`);
+ setHTML(d,html`<button type="button" class="wn-x${drawn?' on-art':''}" data-wn-close aria-label="Close" title="Close">×</button>${drawn?html`<div class="wn-arts" aria-hidden="true">${list.map(e=>html`<div class="wn-art"><svg viewBox="0 0 440 180">${raw(art(e))}</svg></div>`)}</div>`:''}${many?html`<div class="wn-dots">${list.map((e,i)=>html`<button type="button" data-wn-go="${i}" aria-label="${e.title}" translate="no"></button>`)}</div>`:''}<div class="wn-views">${list.map(e=>html`<div class="wn-view"><h2 translate="no">${e.title}</h2><p translate="no">${e.text}</p>${e.action?html`<button type="button" class="wn-run" data-wn-run="${e.action.run}" translate="no">${e.action.label}</button>`:''}</div>`)}</div><div class="wn-acts"></div>`);
  whatsNewGo(0);d.showModal();d.focus()}  // no button lit up: Tab reaches them, Esc closes

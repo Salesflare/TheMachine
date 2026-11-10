@@ -45,7 +45,7 @@ Après votre premier jour, elle se replie en une ligne discrète au-dessus de **
 
 Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.
 
-Quand une fonction ou une amélioration plus importante arrive, une petite note **Quoi de neuf** vous le dit, au plus une fois par jour. **Fermer** la fait disparaître, ou utilisez son bouton pour ouvrir la fonction. Elle ne s’affiche jamais par-dessus ce que vous faites, et une fois fermée elle disparaît sur tous vos appareils. Vous ne voyez que ce qui est arrivé après vos débuts.
+Quand une fonction ou une amélioration plus importante arrive, une petite note **Quoi de neuf** vous le dit, au plus une fois par jour. Passez de l’une à l’autre avec **Retour** et **Suivant**, ou glissez. Le bouton de chaque nouveauté ouvre la fonction. **Fait** ou **×** la ferme. Elle ne s’affiche jamais par-dessus ce que vous faites, et une fois fermée elle disparaît sur tous vos appareils. Vous ne voyez que ce qui est arrivé après vos débuts.
 
 ## Messages
 
