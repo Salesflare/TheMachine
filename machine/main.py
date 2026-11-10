@@ -182,7 +182,7 @@ class App(*APP_MIXINS):
                                            ) if agent_jobs.settings(config) is not None else None
         if self.fleet:
             self.fleet.skills = self.skills
-            self.fleet.graph_build = self.graph_build  # a shared contact the owner adds (contact_share.py)
+            self.fleet.graph_build = self.graph_later  # a shared contact the owner adds (contact_share.py): on its page at once
             self.fleet.about_you = self.about_you  # Share my contact: the owner's own addresses and numbers
 
     MESSAGE_CACHE = 40  # source emails kept in memory for the dashboard, newest used last

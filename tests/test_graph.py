@@ -1193,8 +1193,8 @@ class Boards(unittest.TestCase):
     def test_a_move_by_hand_and_other_project_edits_answer_before_the_graph_is_built_again(self):
         """With the graph worker running (the service), a drag on the board, its Undo, Won or Lost, who sees a project,
         the board Projects opens on, Archive and Delete answer at once and hand the rebuild to it: the board, the
-        project's page and its moves read the projects table. A whole build held a drag some 19 s on a big Graph. Save
-        still builds first (a new or renamed project is in the Graph only after one), and so does everything without the worker."""
+        project's page and its moves read the projects table. A whole build held a drag some 19 s on a big Graph. Save too:
+        a new project is on its page and in the list at once (graph.show_project_save). Without the worker it all builds first."""
         asked, agreed, _ = self.mails()
         with self.store.connect() as db:
             node = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', reason='asked for a listing', event_id=asked)['node_id']
@@ -1229,11 +1229,13 @@ class Boards(unittest.TestCase):
         with self.store.connect() as db:
             self.assertIsNone(graph.detail(db, other))  # its node went with it
         self.assertEqual(builds, [])
-        self.app.action('project_save', {'name': 'Quillfeather'}, owner_dashboard=True)
-        self.assertEqual(builds, [1])
+        made = self.app.action('project_save', {'name': 'Quillfeather', 'board_id': board_id}, owner_dashboard=True)  # a new project: its page at once
+        with self.store.connect() as db:
+            self.assertEqual((graph.detail(db, made['node_id'])['name'], builds), ('Quillfeather', []))
+            self.assertIn(made['node_id'], [p['id'] for p in graph.page(db, 'projects')['items']])
         del self.app.graph_worker_on  # a command or a test without the worker: built before it answers
         self.app.action('graph_stage', {'node_id': node, 'stage': 'Agreed'}, owner_dashboard=True)
-        self.assertEqual(builds, [1, 1])
+        self.assertEqual(builds, [1])
 
     def test_a_suggested_board_is_nothing_until_the_owner_saves_it(self):
         self.mails()

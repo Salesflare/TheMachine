@@ -98,7 +98,7 @@ class GraphActionsApp:
 
     def graph_action(self, args, source='agent'):
         """People and projects for the agent: look up, explore around, label, merge and say who someone is."""
-        changed = False
+        changed = shown = False  # shown: the owner's change is on its page already (graph.show_*), the build can follow
         if 'share' in args or 'keep_private' in args:
             # The owner in chat: "keep this thread to me", "share it with the team", "keep Acme private". Never a review's
             # own call (finish_analysis team is), so a message in a batch can't share itself.
@@ -157,6 +157,9 @@ class GraphActionsApp:
                 said = graph.set_org(db, args['node_id'], args['org'], source, now(),
                                      int(args['event_id']) if args.get('event_id') not in (None, '') else None, args.get('quote'))
                 changed = changed or 'kept' not in said
+                if source == 'owner' and 'kept' not in said:
+                    graph_show.show_person_edit(db, args['node_id'], {'org'})  # on their page at once
+                    shown = True
             if 'warmup' in args:
                 said = graph.hide_warmup(db, args.get('node_id'), args['warmup'] is True or str(args['warmup']).lower() == 'true', source, now(),
                                          int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
@@ -173,7 +176,11 @@ class GraphActionsApp:
                 said = graph.relate(db, args['node_id'], args['related_to'], args.get('relation'), source, now(),
                                     int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
                 changed = changed or 'kept' not in said
-        later = changed and (source != 'owner' or args.get('merge') or args.get('different'))
+                if source == 'owner' and not said.get('relation') and 'kept' not in said:
+                    graph_show.show_relation(db, args['node_id'], args['related_to'])  # off both their pages at once
+                    shown = True
+        # The owner taking back a warm-up domain: Settings reads hidden_domains, and its people come back in the build
+        later = changed and (source != 'owner' or args.get('merge') or args.get('different') or shown or 'warmup' in args)
         if changed:
             # The owner's Merge or Not the same: the Same person? card is gone from the table already, the rebuild that
             # joins them runs in the graph worker (a whole build in the request held the database for its tens of seconds).
@@ -653,7 +660,7 @@ class GraphActionsApp:
             done = graph.delete_person(db, node_id, self.config, now())
             memory_use.forget_person(db, done['needles'])  # the log of what prompts read never keeps their address
         notes = forget_in_notes((workspace or WORKSPACE) / 'memory', done.pop('needles'))
-        self.graph_build()
+        self.graph_later()  # their rows are gone already (graph.delete_person); what was worked out from them goes in the worker's build
         return {**done, 'notes': notes}
 
     def graph_query_action(self, name, args, owner_dashboard=False):
@@ -721,8 +728,10 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner renames people and projects, on the dashboard')
         with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
             renamed = graph.rename(db, args.get('node_id'), args.get('name'), now())
-        self.graph_build()
+            graph_show.show_rename(db, args.get('node_id'), renamed)  # on its page at once; the rest of the Graph in the worker
+        self.graph_later()
         return renamed
 
     def graph_stage_action(self, name, args, owner_dashboard=False):
@@ -745,7 +754,8 @@ class GraphActionsApp:
                 done = graph.org_edit(db, args.get('node_id'), args.get('fields'), now())
                 if 'name' in args:
                     graph.rename(db, args.get('node_id'), args.get('name'), now())
-        self.graph_build()
+            graph_show.show_org_edit(db, args.get('node_id'))  # on its page at once; the rest of the Graph in the worker
+        self.graph_later()
         return done
 
     def graph_new_action(self, name, args, owner_dashboard=False):
@@ -755,8 +765,9 @@ class GraphActionsApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.create_record(db, args.get('kind'), args, now(), graph.Owner(self.config, db)) if name == 'graph_new' else graph.delete_org(db, args.get('node_id'))
+            graph_show.show_new_record(db, done, args.get('kind'))  # its page opens at once; the rest of the Graph in the worker
         if done.get('created') or done.get('deleted'):
-            self.graph_build()
+            self.graph_later()
         return done
 
     def graph_picture_action(self, name, args, owner_dashboard=False):
@@ -785,7 +796,9 @@ class GraphActionsApp:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             done = graph.set_picture(db, args.get('node_id'), data, now(), reset=bool(args.get('reset')))
-        self.graph_build()
+            graph_show.show_person_edit(db, done['node_id'], {'photo'})  # on their page at once (a person's or an organization's)
+            graph_show.show_org_edit(db, done['node_id'])
+        self.graph_later()
         return done
 
     def graph_person_edit_action(self, name, args, owner_dashboard=False):
@@ -927,11 +940,13 @@ class GraphActionsApp:
                 if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
                     raise ValueError('node_ids is a list of suggestion ids')
                 done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
+            if name == 'project_save':  # a new or renamed project, and the people on one, on its node and links at once
+                graph_show.show_project_save(db, done, args)
         # The board reads its projects as they are now, so these answer at once and the Graph follows in the background:
         # Add and Leave out, Won or Lost (a move and an outcome on the projects table), Archive (its node says so at once,
-        # graph.archive_project), Delete (its node goes with it) and the board Projects opens on. A new or renamed
-        # project, and the people on one, are in the Graph only after a build: Save waits for it.
-        (self.graph_build if name == 'project_save' else self.graph_later)()
+        # graph.archive_project), Delete (its node goes with it), the board Projects opens on, and Save (above): a whole
+        # build before the answer held a Save some 20 s on a big Graph.
+        self.graph_later()
         return done
 
     def crm_actions_action(self, name, args, owner_dashboard=False):
