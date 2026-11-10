@@ -17,6 +17,7 @@ Bevor sie eine Nachfrage entwirft oder etwas übergibt, prüft sie den Verlauf a
 ## Nichts geht raus vor deinem Ja
 
 - Eine Antwort kommt als Entwurf zurück. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten. Er geht erst raus, wenn du auf **Jetzt senden** tippst.
+- Zwei E-Mails oder mehr bei einer Aufgabe: Im Chat prüfst du sie mit einem Button alle. Jede kommt mit **Weiter** dran, und der letzte Schritt sendet alle. Jede steht erst als gesendet da, wenn sie wirklich raus ist.
 - Eine E-Mail öffnet sich so, wie sie aussehen wird, mit Fettdruck, Listen und Links. Eine Slack- oder Chat-Nachricht ist reiner Text: Ein Link erscheint als seine Wörter mit der Adresse in Klammern und geht wieder als Link raus.
 - **Änderungen anfragen** im selben Fenster: Sag, was anders sein soll, und deine Machine macht den Entwurf neu.
 - Eine Antwort antwortet auf die neueste E-Mail des Verlaufs, und die Quelle der Aufgabe öffnet diese E-Mail.

@@ -132,6 +132,8 @@ const icon=s=>html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24
 const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','telegram.message':'telegram','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway','machine.system_log':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
 const changing=new Set(),dismissing=new Set(),askPicks=new Map();  // askPicks: each question's quick pick in the answer box, by to-do
 const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','handoff','calendar','doc_write'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
+// Messages to send: several go out together (openSendAll)
+const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
 // Who its messages go (or went) to, names and addresses: a search finds a to-do by recipient too (assistant.card_recipients)
 const cardWho=s=>{const a=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);
  return (Array.isArray(a)?a:[]).flatMap(x=>[x?.to_name,x?.to_email,...[x?.to,x?.cc].flatMap(v=>Array.isArray(v)?v:[v])]).filter(v=>typeof v==='string'&&v).join(' ')};

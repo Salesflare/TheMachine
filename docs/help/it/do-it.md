@@ -17,6 +17,7 @@ Prima di scrivere un sollecito o passare qualcosa a qualcun altro, controlla la 
 ## Niente parte prima del tuo sì
 
 - Una risposta torna come bozza. **Rivedi e invia** la apre pronta da modificare; parte solo quando premi **Invia ora**.
+- Due email o più su un’attività: nella sua chat, un solo pulsante le fa rivedere tutte. Ognuna arriva a turno con **Successivo**, e l’ultimo passo le invia tutte. Ognuna risulta inviata solo quando è davvero partita.
 - Un’email si apre come apparirà, con grassetto, elenchi e link. Un messaggio Slack o di chat è testo semplice: un link appare come le sue parole con l'indirizzo tra parentesi, e parte di nuovo come link.
 - **Chiedi modifiche** nella stessa finestra: di' cosa cambiare e la tua Machine rifà la bozza.
 - Una risposta risponde all'email più recente della sua conversazione, e la fonte dell'attività apre quell'email.

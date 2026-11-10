@@ -23,14 +23,19 @@ $('#result-copy').onclick=()=>copyResult(resultId).catch(e=>toast(e.message,true
 function openResultLink(){const match=/^#result=([a-f0-9]{16})$/.exec(location.hash);if(match&&state.suggestions){history.replaceState(null,'',location.pathname+location.search+'#chat='+match[1]);openChatLink()}}
 // A link the installed app caught while it was open (launch_handler focus-existing): go where it points.
 {const first=location.href;if('launchQueue' in window)launchQueue.setConsumer(p=>{const u=p.targetURL&&new URL(p.targetURL);if(u&&u.href!==first&&u.hash&&u.hash!==location.hash)location.hash=u.hash})}
-let sendTask=null,sendRevision=null,sendDraft=null,sendHeader=null;
+let sendTask=null,sendRevision=null,sendDraft=null,sendHeader=null,sendBatch=null;
 // Review and send opens on the draft itself, ready to edit, with Ask for changes (an instruction I redo the draft from) beside Send.
-const SEND_EDITABLE=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
+const SEND_CHATS=['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'],SEND_EDITABLE=['email',...SEND_CHATS];
 function sendShow(){const edit=SEND_EDITABLE.includes(sendDraft?.kind);$('#send-ask').hidden=true;$('#send-act').hidden=false;$('#send-ask-text').value='';$('#send-ask-open').hidden=!edit;
- $('#send-dialog').showModal();if(edit)editSend(matchMedia('(pointer:fine)').matches)}
-function openSend(id,revision){$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
+ sendStep();if(!$('#send-dialog').open)$('#send-dialog').showModal();$('#send-dialog').scrollTop=0;if(edit)editSend(matchMedia('(pointer:fine)').matches)}
+// Several ready: each shows in turn, the last Send sends all
+function openSendAll(id){const ready=sendReady(state.suggestions.find(s=>s.id===id));if(ready.length<2){openSend(id,ready[0]?.revision);return}
+ sendBatch={id,list:ready.map(a=>a.revision),mail:ready.every(a=>a.kind==='email'),at:0,done:[]};openSend(id,ready[0].revision,1)}
+function sendStep(){const b=sendBatch;$('#send-step').hidden=!b;if(!b)return;const n=b.list.length;
+ $('#send-step').textContent=t('{} of {}',b.at+1,n);$('#send-confirm').textContent=b.at<n-1?t('Next'):t(b.mail?'Send {} emails':'Send all {}',n)}
+function openSend(id,revision,step){if(!step)sendBatch=null;$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
 const task=state.suggestions.find(s=>s.id===id),smart=taskActions(task),draft=revision?smart.find(a=>a.revision===revision):smart.find(a=>a.kind==='email');
-if(!task||task.status!=='prepared'||!['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','calendar','doc_write'].includes(draft?.kind)||(revision&&draft.revision!==revision)){toast('That draft changed. Review the current result.',true);return}
+if(!task||task.status!=='prepared'||!SEND_KINDS.includes(draft?.kind)||(revision&&draft.revision!==revision)){toast('That draft changed. Review the current result.',true);return}
 // A new doc or a doc edit: all of it, before and after (todos-docwrite.js)
 if(draft.kind==='doc_write'){openDocWrite(id,draft);return}
 // A calendar change: exactly what it adds, changes or deletes; the tap here makes it, and nobody hears about it.
@@ -49,10 +54,10 @@ if(draft.kind==='finish'){sendTask=id;sendRevision=draft.revision;sendDraft=draf
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;setHTML($('#send-files'),draftFileLinks(id,files));
 sendHeader=()=>sendRows([...(draft.url?[['Page',draft.url]]:[]),...(githubWay(draft)?[[t('How'),githubWay(draft)]]:[]),...(draft.message&&draft.to_name?[['To',draft.to_name]]:[]),...(draft.message?[['What',draft.preview]]:[]),...(draft.message&&!files.length?[['Files','None']]:[])]);sendHeader();sendBody(draftText(draft));
 sendFine(draft.message?`Confirm types exactly this text on the page (replacing an earlier draft there), ${files.length?`attaches ${files.length>1?'these '+files.length+' files':'this file'}`:'attaches no file'}, submits it, checks that it went through and reports back.`:files.length?`Confirm does only this last step with ${files.length>1?'these files':'this file'}, checks that it went through and reports back.`:'Confirm does only this last step, checks that it went through and reports back.');$('#send-dialog').showModal();return}
-sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=draft.kind==='email_demo';$('#send-subject-label').hidden=['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(draft.kind);
+sendTask=id;sendRevision=draft.revision;sendDraft=draft;$('#send-editor').hidden=true;$('#send-preview').hidden=false;$('#send-edit').hidden=draft.kind==='email_demo';$('#send-subject-label').hidden=SEND_CHATS.includes(draft.kind);
 // Handing it to someone: the card then waits for their reply.
 const waits=draft.delegate?`After sending, this to-do waits ${draft.wait_days} day${draft.wait_days>1?'s':''} for ${draft.to_name?draft.to_name+'’s':'a'} reply; it closes when they answer.`:'';
-if(['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(draft.kind)){$('#send-title').textContent=draft.kind==='doc_reply'?'Post this reply in the doc?':draft.kind==='x'?(draft.reply_to?'Reply on X?':'Send this X message?'):draft.kind==='slack'?'Send this Slack message?':draft.kind==='whatsapp'?'Send this WhatsApp message?':draft.kind==='telegram'?'Send this Telegram message?':draft.kind==='intercom'?'Send this reply in Intercom?':'Send this LinkedIn message?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
+if(SEND_CHATS.includes(draft.kind)){$('#send-title').textContent=draft.kind==='doc_reply'?'Post this reply in the doc?':draft.kind==='x'?(draft.reply_to?'Reply on X?':'Send this X message?'):draft.kind==='slack'?'Send this Slack message?':draft.kind==='whatsapp'?'Send this WhatsApp message?':draft.kind==='telegram'?'Send this Telegram message?':draft.kind==='intercom'?'Send this reply in Intercom?':'Send this LinkedIn message?';$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-cancel').textContent='Cancel';$('#send-recipients').hidden=true;$('#send-files').hidden=true;$('#send-error').textContent='';
 sendHeader=()=>sendRows(draft.kind==='doc_reply'?[['To',draft.to_name],['On',draft.doc_title]]:draft.kind==='intercom'?[['To',draft.to_name],['As',draft.as_name+' in Intercom']]:draft.kind==='x'?[['As','@'+draft.handle],draft.reply_to?['Replying to','@'+draft.to_screen_name+(draft.to_text?': “'+draft.to_text+'”':'')]:['To',draft.to_name]]:[['To',draft.to_name+(draft.profile?' (linkedin.com/in/'+draft.profile+')':draft.to_email?' ('+draft.to_email+')':'')],...(replyWhere(draft)?[['Where',replyWhere(draft)]]:[])]);
 sendHeader();sendBody(draft.body);sendFine(waits);sendShow();return}
 const demo=draft.kind==='email_demo';$('#send-title').textContent=demo?'Demo email preview':INTERCOM_WHY[draft.intercom_fallback]?'Send by email instead?':'Send this email?';$('#send-confirm').hidden=demo;$('#send-cancel').textContent=demo?'Back':'Cancel';
@@ -189,7 +194,7 @@ $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.the
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 // A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
-$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').replaceChildren();$('#send-error').textContent=''});
+$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;sendBatch=null;$('#send-step').hidden=true;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').replaceChildren();$('#send-error').textContent=''});
 // The subject wraps as it grows (field-sizing, or its height here where that's missing) but stays one line of text:
 // Enter adds no line break and a pasted one becomes a space.
 const subjectFit=()=>{const x=$('#send-subject');if(CSS.supports?.('field-sizing','content')||!x.offsetParent)return;x.style.height='auto';x.style.height=x.scrollHeight+'px'};
@@ -203,7 +208,13 @@ if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await reque
  // The saved text is what goes out. When saving changed it (a blank line before the name), it shows first and Send waits.
  if(r.body!=null){sendDraft={...sendDraft,revision:r.revision,...(subject===undefined?{}:{subject}),...(sendDraft.kind==='finish'?{[sendDraft.message?'message':'preview']:r.body}:{body:r.body})};
   if(r.body.trim()!==body.trim()){if(mail)mailLoad(r.body);else $('#send-body').value=plainDraft(r.body);$('#send-error').textContent=t('Saved with a small change. Check the message, then send.');b.disabled=false;return}}}}
-await sendConfirmed(sendTask,sendRevision,sendDraft.kind,{...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})});
+const extra={...($('#send-recipients').hidden?{}:{recipients:sendRecipients()}),...(sendDraft.kind==='email'&&sendDraft.from_options?.length>1&&sendFrom?{sender:sendFrom}:{})};
+// Several: Next keeps this one, the last Send sends each in order
+if(sendBatch){const sb=sendBatch,n=sb.list.length;sb.done[sb.at]={...sb.done[sb.at],revision:sendRevision,kind:sendDraft.kind,extra};
+ if(sb.at<n-1){sb.at++;openSend(sb.id,sb.list[sb.at],1);if(sendRevision!==sb.list[sb.at]){sendBatch=null;$('#send-dialog').close()}return}
+ let went=0;for(const x of sb.done){try{await sendConfirmed(sb.id,x.revision,x.kind,x.extra)}catch(e){if(went)e.message=t('Sent {} of {}. {}',went,n,e.message);throw e}went++}
+ sendBatch=null;$('#send-dialog').close();toast(t('Sending your {} approved drafts…',n));await refresh();return}
+await sendConfirmed(sendTask,sendRevision,sendDraft.kind,extra);
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?'Writing the doc…':'Sending your approved draft…');await refresh();
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
 // The one way a draft goes out from the dashboard: the send dialog's Send and Go through's (todos-clear.js), for exactly

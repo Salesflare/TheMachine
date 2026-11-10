@@ -90,6 +90,8 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  let lead=back&&!ld||going?null:acts.find(n=>n.classList.contains('primary'))||(withTeammate(s)?acts.find(n=>n.dataset.choice==='complete'):null)||null;
  if(went&&!going&&!back&&!lead?.dataset.smart)lead=acts.find(n=>n.dataset.choice==='complete')||lead;
  if(lead?.dataset.smart&&chatFailed(sends.find(x=>String(x.a.revision)===lead.dataset.smart)?.st))lead.textContent='Try again';
+ const ready=sendReady(s);
+ if(lead?.dataset.smart&&ready.length>1&&ready.some(a=>a.revision==lead.dataset.smart)){lead.dataset.smart=ready[0].revision;lead.dataset.sendAll=1;lead.textContent=window.t(ready.every(a=>a.kind==='email')?'Review and send {} emails':'Review and send all {}',ready.length)}
  // On the card the title, project and area change with a tap on each; here they are in the menu too.
  const edits=document.createElement('template');setHTML(edits,closed(s)||ld?'':html`<button type="button" class="ghost" data-rename="${s.id}">${window.t('Rename')}</button>${s.project_node?html`<button type="button" class="ghost" data-card-project="${s.id}">${window.t('Change project')}</button>`:''}${moveTargets(s).length?html`<button type="button" class="ghost" data-card-area="${s.id}">${window.t('Change area')}</button>`:''}`);
  // Looks done: Done's menu (Reopen), and Mark done to say it is
@@ -100,7 +102,7 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
  const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
- return {sends,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
+ return {sends,single:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
   links:orEmpty(nodeHTML(...card?.querySelector('.foot-links')?.childNodes||[])),panel:orEmpty(panel)}}
 // What the card asks of the owner, in one plain line, when its text doesn't already ask: the question its run wrote,
@@ -175,8 +177,8 @@ function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading
  const outcome=new Map();{const open=[];for(const i of items){if(i.kind==='reply')open.push(...(i.drafts||[]));if(i.kind!=='event')continue;
   const sent=i.sent?.trim(),d=sent?open.findLast(x=>!outcome.has(x)&&x.body.trim()===sent):/^(Send canceled|Didn’t go out)/.test(i.text||'')?open.findLast(x=>!outcome.has(x)):null;if(d)outcome.set(d,sent?'sent':'not')}}
  const drafts=items.flatMap(i=>i.kind==='reply'?(i.drafts||[]):[]),newest=drafts.at(-1);let prev=null;
- // The card's live send of a draft: the one with its text, else the newest when the card has one send
- const liveOf=d=>p.sends?.find(x=>typeof x.a.body==='string'&&x.a.body.trim()===d.body.trim())||(d===newest&&p.sends?.length===1?p.sends[0]:null);
+ // The card's live send of a draft: the one with its text, else the newest when it is the only one
+ const liveOf=d=>p.sends?.find(x=>typeof x.a.body==='string'&&x.a.body.trim()===d.body.trim())||(d===newest&&p.single&&p.sends?.length===1?p.sends[0]:null);
  for(const d of drafts)if(liveOf(d)?.st.status==='sent')sent.add(d.body.trim());
  // The decision buttons go on the Machine's latest message when the card is waiting on one (a Send goes on its draft)
  const open=s&&!closed(s)&&s.status!=='snoozed'&&!chat.active&&!['queued','starting','running'].includes(s.preparation_status);
@@ -249,7 +251,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     const body=text==null?html`<div data-preview="${key}"><p class="chat-note">Loading the draft…</p></div>`:df.body?html`<div class="chat-draft-text chat-clamp${chatOpenSet.has(fk)?html` open`:''}">${chatMarkdown(df.body)}</div>${chatLong(df.body,4)?html`<button type="button" class="link chat-more" data-unclamp="${fk}">${chatOpenSet.has(fk)?'Less':'Show all'}</button>`:''}`:'';
     push(i,result(n,i,html`<div class="chat-result-head"><span class="chat-result-title">${title}</span><button type="button" class="link" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">Open</button></div>${body}<p class="chat-why">${COPY_WHY}</p>${options(n,false)}`));return}
    const parts=html`${ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),liveSent=ls?.st.status==='sent',went=outcome.get(d)==='sent'||liveSent,last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
-    const before=prev&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
+    const before=prev&&!ds.includes(prev)&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
     const to=d.to.length?' to '+d.to.join(', '):'',what=d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':d.kind==='telegram'?'Telegram':'Message';
     const links=orEmpty(html`${[chatLong(d.body,quiet?2:4)?html`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?html`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean)}`);
     return html`<div class="chat-draft${went||not?html` went`:''}${last?html` current`:''}"><div class="chat-draft-head"><span>${what}${to}</span>${went?(liveSent?'':html`<span class="went-tag">Sent</span>`):not?html`<span class="went-tag not">Not sent</span>`:last||!quiet?'':html`<span>Earlier draft</span>`}</div>${d.subject&&!d.reply?html`<div class="chat-draft-subject">${d.subject}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?html` open`:''}${d.kind==='email'||d.kind==='email_demo'?html` mail-text`:''}">${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>

@@ -17,6 +17,7 @@ Before a follow-up or handoff, it checks for newer replies, also from a teammate
 ## Nothing goes out before your yes
 
 - A reply comes back as a draft. **Review and send** opens it ready to edit; it only goes out when you press **Send now**.
+- Two emails or more on one to-do: in its chat, one button reviews them all. Each shows in turn with **Next**, and the last step sends them all. Each one shows as sent only once it went out.
 - An email shows as it will look, with its bold, lists and links. A Slack or chat message is plain text.
 - **Ask for changes** in the same window: say what to change and your Machine redoes the draft.
 - A reply answers the newest email of its thread, and the to-do's source opens that email.

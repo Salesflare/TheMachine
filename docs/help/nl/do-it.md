@@ -17,6 +17,7 @@ Voor hij een opvolging schrijft of iets doorgeeft, kijkt hij in het gesprek of e
 ## Niets gaat weg voor je ja zegt
 
 - Een antwoord komt terug als concept. **Nakijken en versturen** opent het, klaar om te bewerken; het gaat pas weg als je op **Nu versturen** drukt.
+- Twee e-mails of meer bij één to-do: in de chat kijk je ze met één knop allemaal na. Elke e-mail komt aan de beurt met **Volgende**, en de laatste stap verstuurt ze allemaal. Elke e-mail staat pas als verstuurd als hij echt weg is.
 - Een e-mail opent zoals hij eruit zal zien, met vet, lijsten en links. Een Slack- of chatbericht is platte tekst: een link staat er als zijn woorden met het adres tussen haakjes, en gaat weer als link weg.
 - **Wijzigingen vragen** in hetzelfde venster: zeg wat er anders moet en je Machine maakt het concept opnieuw.
 - Een antwoord reageert op de nieuwste e-mail van de thread, en de bron van de to-do opent die e-mail.
