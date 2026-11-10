@@ -69,7 +69,7 @@ def resealed(sealer, kind, stored):
         return None  # nothing, or not an object (sealed whole): no keys to keep in the clear
     sealed = message_seal.is_sealed_json(stored)
     if sealed and not sealer:
-        raise message_seal.SealError('No message key')
+        raise message_seal.SealError  # no message key: the row is left as it is (step), never shown
     try:
         seen = json.loads(stored)
         before = json.loads(sealer.open_json(stored)) if sealed else seen

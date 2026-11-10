@@ -111,7 +111,7 @@ uses a keyed hash of each word.
 
 What the database needs to find a message stays unencrypted: its source, kind and time, its thread or chat id,
 sender, recipients and labels, and four routing values: when a calendar event or meeting ends, a calendar event's
-status (confirmed, tentative, cancelled), the id of the series it repeats in, and whether a chat is one to one or
+status (confirmed, tentative, canceled), the id of the series it repeats in, and whether a chat is one to one or
 a group. Names, places, attendees and everything written stay encrypted. An update that adds such a value goes
 over the messages already kept once, in the background, after a copy of the database.
 
