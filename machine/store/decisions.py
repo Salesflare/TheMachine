@@ -11,6 +11,7 @@ import uuid
 
 import abilities
 import agent_jobs
+import bug_gate
 import chat_files
 import doc_writes
 import fleet
@@ -1114,8 +1115,9 @@ class DecisionsStore:
         return queued
 
     def auto_merge(self, suggestion_id, config):
-        """Queue a fix to The Machine's own error for merging without the owner's tap, when it is small
-        and safe (next_actions.unsafe_merge) and no other merge happened in the last day. Returns why
+        """Queue a fix to The Machine's own error for merging without the owner's tap, when it is small, safe and shown
+        to fix a bug (next_actions.unsafe_merge, bug_gate.unsafe) and no other merge happened in the last day; a second bug check runs
+        before it merges (bug_gate.second_check). Returns why
         not, or None once queued; Merge now still works if the checks stop it."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -1128,7 +1130,7 @@ class DecisionsStore:
             fault=fault_info.get('fingerprint') if fault_info else None
             if not fault:return 'it does not fix one of The Machine’s recorded errors'
             if fault_info.get('outside'):return 'the error came from an outside service, not The Machine’s code'
-            reason=next_actions.unsafe_merge(action,config)
+            reason=next_actions.unsafe_merge(action,config) or bug_gate.unsafe(action)  # small and safe, and shown to fix a bug
             if reason:return reason
             since=(dt.datetime.fromisoformat(now())-UNDO_MERGE).isoformat()
             if db.execute("SELECT 1 FROM action_jobs WHERE json_extract(payload,'$.kind')='merge' AND (status IN ('queued','sending','uncertain','undoing') OR (status='sent' AND updated_at>=?))",(since,)).fetchone():
@@ -1137,7 +1139,7 @@ class DecisionsStore:
                 return 'this fix was already handled'
             job_id=uuid.uuid4().hex;stamp=now()
             db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) VALUES(?,?,?,?,'queued',?,?,?,'auto','')",
-                       (job_id,suggestion_id,action['revision'],encoded({**action,'auto':True,'fault':fault,'fault_kind':fault_info.get('fault_kind'),'fault_frames':fault_info.get('frames',[])}),stamp,stamp,'auto-merge:'+job_id))
+                       (job_id,suggestion_id,action['revision'],encoded({**action,'auto':True,'problem':row['title'],'fault':fault,'fault_kind':fault_info.get('fault_kind'),'fault_frames':fault_info.get('frames',[])}),stamp,stamp,'auto-merge:'+job_id))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=?',(suggestion_id,))
         return None
 

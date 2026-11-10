@@ -143,7 +143,7 @@ class MergeRecovery(unittest.TestCase):
                 row=db.execute('SELECT status,payload FROM action_jobs').fetchone()
                 seen.append((row[0],bool(json.loads(row[1]).get('proof')),db.execute("SELECT status FROM merge_effects WHERE operation='merge'").fetchone()[0]))
             return True
-        self.app.action_step(sf.n.ActionTransport(None,None,merge=sf.n.MergeTransport(self.config,restart)))
+        self.app.action_step(sf.n.ActionTransport(None,None,merge=sf.n.MergeTransport(self.config,restart,self.judge)))
         self.assertEqual(seen,[('sent',True,'done')])
 
     def test_unrelated_import_failure_does_not_prove_the_recorded_bug(self):
@@ -169,7 +169,7 @@ class MergeRecovery(unittest.TestCase):
         clone=self.fix()
         (clone/'large.py').write_text('long_text='+repr('x'*70000)+'\n')
         sf.git(clone,'add','.');sf.git(clone,'commit','-qm','Large change')
-        action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Large reviewed change.'},self.config,[])
+        action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Large reviewed change.','bug':sf.BUG},self.config,[])
         original=sf.git(clone,'diff',action['base'],action['head'])+'\n'
         self.assertTrue(action['diff_clipped']);self.assertEqual(sf.n.full_merge_diff(action),original)
         (clone/'large.py').write_text('newer=1\n');sf.git(clone,'commit','-qam','Moved clone')
@@ -177,13 +177,13 @@ class MergeRecovery(unittest.TestCase):
 
     def test_tracked_edit_during_tests_blocks_activation(self):
         (self.app_dir/'settings.py').write_text('enabled=True\n');sf.git(self.app_dir,'add','.');sf.git(self.app_dir,'commit','-qm','Settings')
-        clone=self.fix();action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Fix missing keys.'},self.config,[])
+        clone=self.fix();action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Fix missing keys.','bug':sf.BUG},self.config,[])
         self.config['self_test']=[sys.executable,'-c','from pathlib import Path;import sys;Path(sys.argv[1]).write_text("enabled=False\\n")',str(self.app_dir/'settings.py')]
         with self.assertRaisesRegex(ValueError,'uncommitted'):self.transport().preflight(action)
         self.assertEqual(sf.git(self.app_dir,'rev-parse','HEAD'),action['base']);self.assertEqual(self.restarts,[])
 
     def test_clone_or_app_edits_after_tests_block_merge(self):
-        clone=self.fix();action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Fix missing keys.'},self.config,[])
+        clone=self.fix();action=sf.n.validate({'kind':'merge','clone':str(clone),'summary':'Fix missing keys.','bug':sf.BUG},self.config,[])
         transport=self.transport();transport.preflight(action)
         (clone/'graph.py').write_text('changed after tests\n')
         self.assertTrue(transport.send(action,{'id':'job'}).get('rejected'))
