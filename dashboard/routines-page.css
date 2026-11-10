@@ -3,7 +3,7 @@
 /*@lazy*/
 .rt-new{display:flex;gap:8px}.rt-new input{flex:1;min-width:0}
 #rt-words{flex:1}
-.rt-grow,.rt-grow:focus{min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:auto;overflow-wrap:anywhere}
+.rt-grow,.rt-grow:focus{min-width:0;height:auto;min-height:0;margin:0;resize:none;transition:none;line-height:1.4;max-height:calc(8.4em + 18px);overflow-y:hidden;overflow-wrap:anywhere}
 #routines-view>.rt-new{align-items:flex-end}
 @media (max-width:600px){#routines-view>.rt-new{flex-direction:column}#rt-words{flex:none;width:100%}}
 /* Edit and Change when: the field, then Save and Cancel */

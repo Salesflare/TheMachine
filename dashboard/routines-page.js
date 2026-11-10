@@ -66,8 +66,10 @@ function rtKeep(box,rebuild){const cards=[...box.querySelectorAll('article[data-
  box.style.minHeight=box.offsetHeight+'px';try{rebuild()}finally{box.style.minHeight=''}
  const now=id&&box.querySelector(`[data-rt="${id}"]`),d=now?now.getBoundingClientRect().top-top:0;if(d)(rtScroller(box)||window).scrollBy(0,d)}
 function rtScroller(box){for(let e=box.parentElement;e&&e!==document.body;e=e.parentElement){const o=getComputedStyle(e).overflowY;if((o==='auto'||o==='scroll')&&e.scrollHeight>e.clientHeight)return e}return null}
-// Grows with its words, up to six lines (routines-page.css)
-function rtGrow(x){const p=x.parentElement;p.style.minHeight=p.offsetHeight+'px';x.style.height='';x.style.height=x.scrollHeight+x.offsetHeight-x.clientHeight+'px';p.style.minHeight=''}
+// Grows with its words, up to six lines (routines-page.css). It scrolls only once it is at its tallest: a height a fraction
+// of a pixel short of its text (150% display scaling) showed a classic scrollbar (Windows) in an empty field.
+function rtGrow(x){const p=x.parentElement;p.style.minHeight=p.offsetHeight+'px';x.style.height='';x.style.overflowY='';const want=x.scrollHeight+x.offsetHeight-x.clientHeight;
+ x.style.height=want+'px';if(want>parseFloat(getComputedStyle(x).maxHeight)+1)x.style.overflowY='auto';p.style.minHeight=''}
 async function routinesLoad(force){if(!force&&Date.now()-routinesAt<20000&&routinesData){routinesRender();return}
  try{routinesData=await request('api/routines');routinesAt=Date.now();rtMissed=0;routinesRender()}
  catch(e){errCaught(e);if(force&&routinesData)rtLook(Math.min(3e4,4e3*2**++rtMissed));else toast(e.message,true)}}
