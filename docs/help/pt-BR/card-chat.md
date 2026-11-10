@@ -18,6 +18,8 @@ Cada e-mail mostra só o que há de novo nele. As mensagens anteriores que ele c
 
 Cada execução aparece como uma linha discreta, como "12 itens verificados". Abra para ver cada tipo de passo uma vez, com quantas vezes: "Usou o navegador em example.com · 7". Ela cita o site, nunca o endereço, um comando ou um arquivo.
 
+Se ela parou para perguntar algo, a pergunta também aparece como uma linha discreta, como "Perguntou: Envio hoje ou na segunda?", e sua mensagem abaixo mostra só a sua resposta.
+
 ## O que perguntar
 
 Antes de você escrever, o chat pode oferecer até três sugestões feitas a partir desta tarefa, como "Ofereça terça às 10:00". Tocar em uma coloca o texto na caixa de mensagem, para enviar ou mudar. Quando nada específico se encaixa, não aparece nenhuma.
