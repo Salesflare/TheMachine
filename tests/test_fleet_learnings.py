@@ -1,17 +1,22 @@
 """Team learnings from team conversations (fleet_learnings.py): what a pass may keep. The way through the Team Graph,
 the switch and removals are in test_shared_graph.py. No network, no model."""
+import base64
 import datetime as dt
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+import unittest.mock
 
 spec = importlib.util.spec_from_file_location('fleet_learn_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+import fleet
 import fleet_learnings as fl
+import message_seal
 
 EVIDENCE = {'companies': {'1': 'a' * 16, '2': 'b' * 16, '3': 'a' * 16}}
 NAMES = [('Lee Park', 'person'), ('Lee', 'person'), ('Globex', 'org')]
@@ -145,7 +150,63 @@ class Pass(unittest.TestCase):
             kept = fl.finish(db, run_id, [], log=self.app.fleet.log)
             self.assertEqual([k['text'] for k in kept], [GOOD['text']])
             self.assertEqual([r['text'] for r in fl.own(db, 'fl_team')], [GOOD['text']])
+            # the turn's draft goes once it is read: only how many it drafted stays on the run, also for a dropped one
+            self.assertEqual(db.execute('SELECT draft FROM profile_runs WHERE run_id=?', (run_id,)).fetchone()[0], '{"drafted": 2}')
+            self.assertEqual(fl.finish(db, run_id, [], log=self.app.fleet.log), [])
         self.assertEqual(self.app.fleet.logged[0][3:], ('your Fleet', 'learning', GOOD['text'], 'shared with the team, from team conversations'))
+
+
+class Locked(unittest.TestCase):
+    """A sealed Machine whose message key is missing or is another one: its team learnings cannot be read, and that is
+    an error everywhere, never an empty list that looks like a team that learned nothing."""
+    def setUp(self):
+        patcher = unittest.mock.patch.dict(os.environ)  # sealed here, whatever the suite runs as
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop('MESSAGE_PROTECTION_TEST', None)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / 'events.sqlite'
+        store = a.Store(self.path, protect=True)
+        with store.connect() as db:
+            fl.ensure(db)
+        with store.connect() as db:
+            db.execute("INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES('f1',?,'process',?,0.9,'r','2026-11-01')",
+                       (fl.fingerprint(GOOD['text']), GOOD['text']))
+            db.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES('f1',?,'A removed team learning about refunds.','me','2026-11-01')", ('b' * 32,))
+            self.assertEqual([r['text'] for r in fl.own(db, 'f1')], [GOOD['text']])
+        self.key = message_seal.key_path(self.path)
+
+    def readers(self, db):
+        return {'own': lambda: fl.own(db, 'f1'), 'removed': lambda: fl.removed(db, 'f1'), 'view': lambda: fl.view(db, 'f1', {}),
+                'usable': lambda: fl.usable(db, 'f1'), 'pick': lambda: fl.pick(db, 'f1', 'Refund request', 'A refund via the support inbox.'),
+                'records': lambda: fl.records(db, 'f1', lambda local: local),
+                'remove': lambda: fl.remove(db, 'f1', fl.fingerprint(GOOD['text']))}
+
+    def test_without_the_key_the_app_does_not_start_and_a_reader_gets_an_error_not_an_empty_list(self):
+        self.key.unlink()
+        with self.assertRaises(message_seal.SealError) as stopped:
+            a.Store(self.path)
+        self.assertIn('message-content.key is missing', str(stopped.exception))
+        self.assertEqual([p[0] for p in message_seal.problems(self.path)], ['message-key-missing'])  # what Needs you and doctor say
+        with sqlite3.connect(self.path) as db:  # a tool that opens the file without the key
+            db.row_factory = sqlite3.Row
+            for name, read in self.readers(db).items():
+                with self.subTest(reader=name), self.assertRaises(message_seal.SealError):
+                    read()
+
+    def test_with_another_key_the_fleet_tab_and_the_team_graph_round_fail_rather_than_show_or_send_nothing(self):
+        self.key.write_bytes(base64.b64encode(os.urandom(32)) + b'\n')
+        store = a.Store(self.path)
+        with store.connect() as db:
+            for name, read in self.readers(db).items():
+                with self.subTest(reader=name), self.assertRaises(message_seal.SealError):
+                    read()
+        tab = type('Tab', (), {'connect': store.connect, 'teammates': lambda self, ref: []})()
+        with self.assertRaises(message_seal.SealError):
+            fleet.Fleet.learnings_view(tab, 'f1')
+        with sqlite3.connect(self.path) as raw:  # nothing was changed by the failed reads
+            self.assertEqual(raw.execute('SELECT count(*),typeof(text) FROM fleet_learnings').fetchone(), (1, 'blob'))
 
 
 if __name__ == '__main__':

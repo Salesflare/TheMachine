@@ -156,6 +156,11 @@ Feedback, facts and rules, skills, profile and notes, to-do states and times, er
 readable, for support and to improve The Machine. `python3 learnings.py --database ... --workspace ...` exports
 exactly that, without the key.
 
+The words of what was learned from messages are encrypted: a Work Fleet's team learnings (also a removed one), what
+a learned change replaced and why, what the first look said of someone and you took off, and the lines of a Fleet's
+log. Their kind, Fleet, confidence, state and times stay readable. Without the key they are an error, never an
+empty list.
+
 ### Turning it on or off
 
 - It is on by default. To opt out, set `"message_protection": false`. Installs from before it was the default are

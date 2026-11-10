@@ -43,6 +43,7 @@ import json
 import re
 
 import memory_use
+import message_seal
 import security_levels
 import team_learnings as tl
 
@@ -121,17 +122,29 @@ def similar(a, b):
     return bool(x and y) and len(x & y) / len(x | y) >= SIMILAR
 
 
+def _opened(rows):
+    """Rows as read, or SealError when one still holds a sealed value: a connection without the message key. A
+    learning that cannot be read is never shown, shared or used as if it were text."""
+    if any(message_seal.is_sealed(v) for r in rows for v in r.values()):
+        raise message_seal.SealError
+    return rows
+
+
 def _rows(db, sql, args=()):
     try:
-        return [dict(r) for r in db.execute(sql, args)]
+        rows = [dict(r) for r in db.execute(sql, args)]
+    except message_seal.SealError:  # sealed and not opening (another key): never the same as no learnings
+        raise
     except Exception:  # noqa: BLE001 - a table from a later version
         return []
+    return _opened(rows)
 
 
 def removed(db, fleet):
     """{fp: text} removed in this Fleet, by the owner or a teammate: never shown, shared or made again."""
     ensure(db)
-    return {r['fp']: r['text'] or '' for r in db.execute('SELECT fp,text FROM fleet_learn_removed WHERE fleet=?', (fleet,))}
+    rows = _opened([dict(r) for r in db.execute('SELECT fp,text FROM fleet_learn_removed WHERE fleet=?', (fleet,))])
+    return {r['fp']: r['text'] or '' for r in rows}
 
 
 def own(db, fleet):
@@ -263,6 +276,10 @@ def finish(db, run_id, names, log=None):
         return []
     evidence = json.loads(run['evidence'] or '{}')
     fleet = evidence.get('fleet')
+    drafted = json.loads(run['draft']).get('learnings') or []
+    # the draft is read here once, then only its count stays on the run: what was kept is sealed in fleet_learnings,
+    # and what was dropped (it may name someone) is not kept at all. profile_runs.draft itself stays readable.
+    db.execute('UPDATE profile_runs SET draft=? WHERE run_id=?', (json.dumps({'drafted': len(drafted)}), run_id))
     ensure(db)
     if not fleet or db.execute('SELECT 1 FROM fleet_learnings WHERE run_id=?', (run_id,)).fetchone():
         return []
@@ -274,7 +291,7 @@ def finish(db, run_id, names, log=None):
         db, "SELECT body FROM team_records WHERE fleet=? AND kind='learning'", (fleet,))]  # a teammate's: not twice
     gone = [t for t in removed(db, fleet).values() if t]
     kept = []
-    for raw in (json.loads(run['draft']).get('learnings') or []):
+    for raw in drafted:
         item, _ = check(raw, evidence, names, known + [k['text'] for k in kept], gone)
         if item and len(kept) < MAX_NEW:
             kept.append(item)
@@ -354,6 +371,18 @@ def view(db, fleet, names):
         seen.add(body['fp'])
         out.append({**{k: body.get(k) for k in ('fp', 'kind', 'text', 'confidence', 'source', 'at')}, 'mine': False, 'from': names.get(r['member'])})
     return sorted(out, key=lambda x: x.get('at') or '', reverse=True)
+
+
+def tab(connect, fleet, names):
+    """What the Fleet tab shows: whether team learnings are on, and view(). Empty on a Machine without Team Graph tables
+    yet. Learnings that are sealed and do not open are an error, never shown as a team that learned nothing."""
+    try:
+        with connect() as db:
+            return {'on': on(db), 'items': view(db, fleet, names())}
+    except message_seal.SealError:
+        raise
+    except Exception:  # noqa: BLE001 - a Machine without Team Graph tables yet
+        return {'on': False, 'items': []}
 
 
 def remove(db, fleet, fp):
