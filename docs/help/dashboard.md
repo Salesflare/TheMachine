@@ -64,6 +64,7 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
 - A fact about one person, organization or project says who it is about, and shows on their page. A fact that names one by their full name is linked when it is saved. **Remove link** takes only the link away: the fact stays.
 - The list never fills up. When it gets long, facts and rules it hasn't used in three weeks move to **Set aside**, where **Bring back** restores one. One you edited or brought back stays.
 - A note that says something already learned in other words replaces it, so nothing is listed twice. **Undo merge** brings the old wording back. Your own edits are never replaced.
+- **Bring these in**: used OpenClaw before? Lines from its notes (`MEMORY.md`, `USER.md`) worth keeping show on top, each with the file it came from. Tick the ones to keep, then **Keep ticked**: they become facts or rules like any other. **Dismiss the rest** and they don't come back. The files are never changed, and nothing shows when they hold nothing worth keeping.
 - **Changes**: what it picked up from your edits, dismissals and chats, each with **Undo**. See [Writing](writing.md#it-keeps-learning).
 - **Decisions**: a timeline of your choices on to-dos.
 - **Shared**: learnings to share with The Machine team, and votes waiting for you, when there are any. See [Share learnings](share-learnings.md).

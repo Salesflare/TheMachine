@@ -303,6 +303,7 @@ OWNER_ACTIONS |= AGENT_ACTIONS
 # own, from their dashboard only. Nothing is sent without their Send on exactly what they saw, or their choice to send
 # automatically from now on; withdrawing a sent one is theirs too.
 LEARNING_ACTIONS = {
+    'bring_in_decide',
     'learnings_later',
     'learnings_never',
     'learnings_share',

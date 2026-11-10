@@ -161,6 +161,10 @@ a learned change replaced and why, what the first look said of someone and you t
 log. Their kind, Fleet, confidence, state and times stay readable. Without the key they are an error, never an
 empty list.
 
+So are the lines of your OpenClaw notes that [Bring these in](intelligence.md#bring-these-in) offers, also a
+dismissed one. Their file, kind and state stay readable. A line you tick becomes a fact, readable like every fact.
+Without the key the section is not shown, and nothing is read or saved.
+
 ### Turning it on or off
 
 - It is on by default. To opt out, set `"message_protection": false`. Installs from before it was the default are

@@ -64,7 +64,7 @@ _BY_PART = {
         follow_up_sends merge_effects edits_offered'''),
     'decisions': _names('decisions decision_annotations tool_approval_proposals'),
     'promises': _names('promises promise_log'),
-    'memories': _names('''facts fact_about person_summaries person_summary_runs gbrain_meta gbrain_notes gbrain_pages
+    'memories': _names('''facts fact_about bring_in_items bring_in_lines bring_in_state person_summaries person_summary_runs gbrain_meta gbrain_notes gbrain_pages
         note_kinds memory_use'''),
     'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
         pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs

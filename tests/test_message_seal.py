@@ -342,6 +342,55 @@ class Protected(unittest.TestCase):
         for word in (CANARY.encode(), CANARY.lower().encode()):
             self.assertNotIn(word, files(self.path))
 
+    def test_bring_in_candidates_are_sealed_and_read_as_before(self):
+        import bring_in
+        store = assistant.Store(self.path, protect=True)
+        workspace = Path(self.temp.name) / 'workspace'
+        workspace.mkdir()
+        notes = [f'Mira at {CANARY} wants every quote as a PDF, never a link.', f'The {CANARY} school board only reads messages after 8 pm.']
+        (workspace / 'MEMORY.md').write_text('# MEMORY.md\n\n' + ''.join(f'- {n}\n' for n in notes))
+        with store.connect() as db:  # the tables the first pass makes, at its first use
+            bring_in.ensure(db)
+        with store.connect() as db:
+            state = bring_in.prepare(db, workspace, {})
+            reply = json.dumps([{'n': 1, 'text': notes[0], 'kind': 'preference'}, {'n': 2, 'text': notes[1], 'kind': 'fact'}])
+            self.assertEqual(bring_in.conclude(db, state, reply), {'offered': 2})
+        for word in (CANARY.encode(), CANARY.lower().encode()):
+            self.assertNotIn(word, files(self.path))  # nor in the lines a pass has read, which are kept as a hash
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual({r[0] for r in raw.execute('SELECT typeof(text) FROM bring_in_items')}, {'blob'})
+            # what SQL filters and matches on stays plain
+            self.assertEqual(raw.execute('SELECT file,kind,status,key FROM bring_in_items ORDER BY id').fetchall(),
+                             [('MEMORY.md', 'preference', 'offered', bring_in._key(notes[0])), ('MEMORY.md', 'fact', 'offered', bring_in._key(notes[1]))])
+        with store.connect() as db:
+            items = bring_in.offered(db)
+            self.assertEqual([(i['text'], i['kind'], i['file']) for i in items], [(notes[0], 'preference', 'MEMORY.md'), (notes[1], 'fact', 'MEMORY.md')])
+        self.assertEqual(bring_in.status(store.connect), items)
+        # a ticked one becomes a fact like any other; the other stays dismissed, sealed
+        self.assertEqual(bring_in.decide(store, keep=[items[0]['id']], dismiss=[items[1]['id']]), {'saved': 1, 'dismissed': 1})
+        self.assertEqual([(f['text'], f['source']) for f in store.snapshot([])['facts']], [(notes[0], 'notes:MEMORY.md')])
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual(raw.execute('SELECT status,typeof(text) FROM bring_in_items ORDER BY id').fetchall(), [('saved', 'blob'), ('dismissed', 'blob')])
+
+    def test_an_update_seals_the_bring_in_candidates_a_sealed_machine_already_kept_plain(self):
+        import bring_in
+        store = assistant.Store(self.path, protect=True)
+        line = f'Mira at {CANARY} wants every quote as a PDF, never a link.'
+        with sqlite3.connect(self.path) as raw:  # as the version before left it: the tables there, without guards, the rows plain
+            bring_in.ensure(raw)
+            raw.execute("INSERT INTO bring_in_items(file,key,text,kind,created_at) VALUES('MEMORY.md','k1',?,'preference','2026-11-01')", (line,))
+            raw.execute("INSERT INTO bring_in_items(file,key,text,kind,status,created_at) VALUES('USER.md','k2',?,'fact','dismissed','2026-11-01')", (f'{CANARY} gone',))
+        self.assertIn(CANARY.encode(), files(self.path))
+        store = assistant.Store(self.path)  # the updated app starts
+        with store.connect() as db:
+            self.assertEqual([(i['text'], i['kind'], i['file']) for i in bring_in.offered(db)], [(line, 'preference', 'MEMORY.md')])
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual(raw.execute('SELECT status,typeof(text) FROM bring_in_items ORDER BY id').fetchall(), [('offered', 'blob'), ('dismissed', 'blob')])
+            with self.assertRaises(sqlite3.OperationalError):  # no key: a plain write fails, it is never stored
+                raw.execute("INSERT INTO bring_in_items(file,key,text,kind,created_at) VALUES('MEMORY.md','k3','plain','fact','2026-11-01')")
+        for word in (CANARY.encode(), CANARY.lower().encode()):
+            self.assertNotIn(word, files(self.path))
+
     def test_project_sort_note_is_sealed_and_legacy_notes_are_migrated(self):
         store = assistant.Store(self.path, protect=True)
         import graph
@@ -872,6 +921,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'gbrain_pages.state': 'made, kept or gone (gbrain.py)',
             'learned_fixes.state': 'removed',
             'meet_log.what': 'a step code matched in SQL, like asked_in (meet.py)', 'meet_sessions.state': 'a booking stage', 'meet_sessions.note': 'a reason code: no_machine, keys, failed, no_slot, rounds, no_answer or passed',
+            'bring_in_items.status': 'offered, saved or dismissed',
             'missed_audit_items.what': 'one of missed_work.WHAT, a kind of work', 'missed_audits.result': 'counts and rates (missed_work.summarize)',
             'team_wants.body': 'times and counts of what a teammate\'s Machine misses (shared_graph.py)',
             'own_addresses.state': 'yours, maybe or shared', 'own_addresses.reason': 'one of own_addresses.classify\'s fixed reasons',

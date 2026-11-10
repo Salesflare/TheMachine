@@ -356,12 +356,16 @@ class FactsStore:
         ('ai:<name>', ai_app.py) instead of a note: decision_id is then 'ai:<connection id>', it is about someone, and it
         neither condenses nor makes a rule. side: its area, work or personal (an AI's fact only). said: the note is a
         message the owner wrote in their own private chat (decision_id 'telegram-said:<message id>', which the service
-        vouches for: remember_fact_action), not one on a to-do."""
+        vouches for: remember_fact_action), not one on a to-do. source 'notes:<file>' with decision_id 'notes:<file>:<id>':
+        a line of the owner's own OpenClaw notes that they ticked on Learning (bring_in.py); it is the owner's own, kept
+        like a note's fact, and can be a rule."""
         text = ' '.join(str(text or '').split())
-        if source is not None and (not str(source).startswith('ai:') or not str(decision_id).startswith('ai:') or replaces
+        notes = source is not None and str(source).startswith('notes:') and str(decision_id).startswith(str(source) + ':') and not replaces
+        by_ai = source is not None and not notes
+        if by_ai and (not str(source).startswith('ai:') or not str(decision_id).startswith('ai:') or replaces
                                    or kind == 'draft' or not about or side not in ('work', 'personal')):
             raise ValueError('A fact from a connected AI is about someone, and is not a rule or a condense')
-        if source is None and side is not None:
+        if not by_ai and side is not None:
             raise ValueError('Only a fact from a connected AI has an area')
         if not 5 <= len(text) <= 240:
             raise ValueError('A fact is one short sentence (5-240 characters)')
@@ -378,7 +382,7 @@ class FactsStore:
             if originals:  # condensing: the merged fact comes from the newest note behind them
                 decision_id = originals[-1]['decision_id']
                 note = {'suggestion_id': originals[-1]['suggestion_id']}
-            elif source is not None or (said is True and str(decision_id).startswith('telegram-said:')):
+            elif by_ai or notes or (said is True and str(decision_id).startswith('telegram-said:')):
                 note = {'suggestion_id': None}
             else:
                 note = db.execute("SELECT suggestion_id,feedback FROM decisions WHERE id=? AND source IN ('telegram','dashboard') AND feedback!='' AND id NOT IN (SELECT decision_id FROM decision_annotations)", (decision_id,)).fetchone()
@@ -389,7 +393,7 @@ class FactsStore:
                 tombstone = next((r for r in removed if ' '.join(r['text'].casefold().split()) == text.casefold()),None)
                 if tombstone:
                     return {'id':tombstone['id'],'suppressed':True}
-                if source is None and not about:  # the same thing in other words: the newer wording takes its place
+                if not by_ai and not about:  # the same thing in other words: the newer wording takes its place
                     said, how = self.said_before(db, storage, text)
                     if said and how == 'less':  # nothing new: that one was said again
                         db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), said['id']))
@@ -407,7 +411,7 @@ class FactsStore:
             subjects = self.fact_subjects(db, about) if storage == 'fact' else []
             existing = next((r for r in db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)) if r['id'] not in merging), None)
             if existing and not originals:
-                self.link_fact(db, existing['id'], subjects, 'ai' if source else 'review')
+                self.link_fact(db, existing['id'], subjects, 'ai' if by_ai else 'review')
                 db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), existing['id']))  # said again: its decay starts over
                 return {'id': existing['id'], 'duplicate': True}
             general = lambda ids: db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id IN (' + ','.join('?' for _ in ids) + ') '
@@ -415,7 +419,7 @@ class FactsStore:
             carried = [r[0] for r in db.execute('SELECT DISTINCT node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (' +
                                                 ','.join('?' for _ in merging) + ')', sorted(merging))] if merging and storage == 'fact' else []
             named = []  # no one said who it is about: the one record its own words name (fact_links.py)
-            if storage == 'fact' and source is None and not existing and not (subjects or carried):
+            if storage == 'fact' and not by_ai and not existing and not (subjects or carried):
                 node, _ = fact_links.named(fact_links.index(db, self.own_config()), text, fact_links.todo_records(db, note['suggestion_id']))
                 named = [node] if node else []
             if not existing and not (subjects or carried or named):  # full: one not used lately makes room, never an error
@@ -432,7 +436,7 @@ class FactsStore:
                 if storage == 'draft':
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
             if storage == 'fact':
-                self.link_fact(db, fact_id, subjects + carried, 'ai' if source else 'review')
+                self.link_fact(db, fact_id, subjects + carried, 'ai' if by_ai else 'review')
                 self.link_fact(db, fact_id, named, fact_links.BY)
             if originals:
                 self.merge_originals(db, originals, 'fact:' + str(fact_id), text)

@@ -59,6 +59,7 @@ from machine.store.facts import suggestion_scope
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
 import mail_cleanup
+import bring_in
 import missed_work
 import next_actions
 import own_addresses
@@ -747,7 +748,7 @@ class ViewsStore(ConversationStore):
             for r in db.execute('SELECT a.fact_id,a.node_id,n.name FROM fact_about a JOIN graph_nodes n ON n.id=a.node_id WHERE a.removed_at IS NULL ORDER BY a.created_at,a.node_id'):
                 about.setdefault(r['fact_id'], []).append({'id': r['node_id'], 'name': r['name']})
             result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0), 'about': about.get(r['id'], [])} for r in
-                               db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until FROM facts WHERE removed_at IS NULL '
+                               db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until,source FROM facts WHERE removed_at IS NULL '
                                           'ORDER BY created_at DESC,id DESC')]
             # Facts that ended (past their end day) in the last 30 days, each the owner can bring back; and those set aside
             # as not used lately to make room (facts.py set_aside), the last 90 days, same Bring back.
@@ -881,4 +882,7 @@ class ViewsStore(ConversationStore):
             return result
         result['quality'] = self.quality_report()
         result['missed_work'] = missed_work.status(self.connect)  # the weekly missed-work audit (missed_work.py)
+        notes = bring_in.status(self.connect)  # lines of the owner's OpenClaw notes worth keeping (bring_in.py)
+        if notes:  # nothing to bring in: nothing in the status, so nothing on the page
+            result['bring_in'] = notes
         return result
