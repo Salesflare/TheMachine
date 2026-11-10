@@ -71,6 +71,7 @@ from sources import CALENDAR_SERVICES, MAIL_SERVICES
 import still_needed
 from timeutil import local_tz, now
 import todo_areas
+import todo_org
 import whatsapp_images
 
 WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
@@ -656,6 +657,20 @@ class ViewsStore(ConversationStore):
                         if suggestion['project'] not in projects:
                             projects[suggestion['project']] = graph.card_project_view(db, suggestion['project'])
                         suggestion['project_node'] = projects[suggestion['project']]
+                        org = todo_org.project_org_view(db, suggestion['project_node'])  # one the owner or a review set
+                        if org:
+                            suggestion['project_node'] = {**suggestion['project_node'], 'org': org}
+                    except sqlite3.Error:
+                        pass
+                # The organization it is about, in the review's word (CardsStore.suggest org), for its chip; org_said: a review
+                # gave that word, also "none". Else the project's organization the owner or a review set (project_node org); never a
+                # person's employer.
+                suggestion['org_said'] = suggestion.get('org') is not None
+                if suggestion.get('org'):
+                    try:
+                        found = todo_org.card_org_view(db, suggestion['org'])
+                        if found:
+                            suggestion['org_node'] = found
                     except sqlite3.Error:
                         pass
                 if suggestion.get('next_action'):

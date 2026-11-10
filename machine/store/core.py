@@ -241,6 +241,10 @@ class StoreCore:
             # a JSON list of up to two short lines, shown as taps over its message box
             if 'chat_asks' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN chat_asks TEXT')
+            # The organization the to-do is about, in the review's word (CardsStore.suggest org): its graph node id, ''
+            # when the review said it is about none, NULL when no review said (an older to-do)
+            if 'org' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN org TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')
