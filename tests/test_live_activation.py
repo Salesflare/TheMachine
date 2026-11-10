@@ -49,6 +49,68 @@ class LiveActivation(unittest.TestCase):
         self.assertFalse(self.app.follow_config())
         self.assertEqual(self.app.config['review_worker'], {'enabled': False})
 
+    def started(self):
+        """Collectors the app starts, recorded instead of run."""
+        self.app.stop = a.threading.Event()
+        self.app.store.exclusions, self.app.store.owner_user_ids = {}, set()
+        self.app.store.accounts = self.app.config['accounts']
+        begun = []
+        self.app.collector = lambda account: begun.append(account['id'])
+        self.app.ability_checker = lambda account: begun.append('check:' + account['id'])
+        return begun
+
+    def test_a_new_account_starts_syncing_without_a_restart(self):
+        # The account page connected Intercom and the restart after it left the Connections page on "Can't reach your
+        # Machine" (2026-11-10). A new account now joins the running app: its settings, its collector, no restart.
+        begun = self.started()
+        self.app.config['credentials'] = {'api-token': '/keys/api'}
+        intercom = {'id': 'work-intercom', 'service': 'intercom', 'transport': 'api', 'credential': 'intercom', 'boundary': 'work:Acme'}
+        self.write(accounts=[*self.config['accounts'], intercom], credentials={'api-token': '/keys/api', 'intercom': '/keys/intercom'},
+                   intercom_replies={'work-intercom': True})
+        with self.assertLogs(a.LOG, 'INFO'):
+            answer = self.app.action('accounts_follow', {})
+        self.assertEqual(answer, {'accounts': ['work', 'work-intercom'], 'taken': True})
+        for _ in range(100):
+            if begun:
+                break
+            a.time.sleep(0.01)
+        self.assertEqual(begun, ['work-intercom'])
+        self.assertIs(self.app.store.accounts, self.app.config['accounts'])
+        self.assertEqual(self.app.config['credentials'], {'api-token': '/keys/api', 'intercom': '/keys/intercom'})
+        self.assertEqual(self.app.config['intercom_replies'], {'work-intercom': True})
+        self.assertEqual(self.app.action('accounts_follow', {}), {'accounts': ['work', 'work-intercom'], 'taken': True})
+        a.time.sleep(0.05)
+        self.assertEqual(begun, ['work-intercom'])  # once
+
+    def test_anything_but_a_plain_addition_still_restarts(self):
+        begun = self.started()
+        self.app.config['credentials'] = {'api-token': '/keys/api'}
+        for change in ({'accounts': [{'id': 'work', 'service': 'gmail', 'boundary': 'personal'}]},  # an account edited
+                       {'accounts': []},  # removed
+                       {'accounts': [*self.config['accounts'], {'id': 'chat', 'service': 'whatsapp'}]},  # its own process
+                       {'accounts': [*self.config['accounts'], {'id': 'new', 'service': 'rss'}], 'port': 9999},  # a setting changed
+                       {'accounts': [*self.config['accounts'], {'id': 'new', 'service': 'rss'}], 'credentials': {'api-token': '/keys/other'}}):
+            with self.subTest(change=change):
+                self.path.write_text(json.dumps({**self.config, 'credentials': {'api-token': '/keys/api'}}))
+                self.write(**change)
+                answer = self.app.action('accounts_follow', {})
+                self.assertFalse(answer['taken'])
+                self.assertEqual(answer['accounts'], ['work'])
+        self.assertEqual(begun, [])
+        self.assertEqual(self.app.config['port'], 8787)
+
+    def test_a_file_being_written_is_read_again(self):
+        self.started()
+        self.path.write_text('{"accounts": [')
+        stamp = self.path.stat().st_mtime_ns + 1_000_000
+        os.utime(self.path, ns=(stamp, stamp))
+        self.assertFalse(self.app.follow_config())
+        self.path.write_text(json.dumps({**self.config, 'accounts': [*self.config['accounts'], {'id': 'feed', 'service': 'rss'}]}))
+        os.utime(self.path, ns=(stamp, stamp))  # the same time stamp, now whole
+        with self.assertLogs(a.LOG, 'INFO'):
+            self.assertTrue(self.app.follow_config())
+        self.assertEqual([x['id'] for x in self.app.config['accounts']], ['work', 'feed'])
+
     def test_a_new_install_is_looked_at_often_while_its_first_mail_comes_in(self):
         self.app.config['accounts'] = []
         self.assertEqual(self.app.review_tick(), a.REVIEW_TICK_SECONDS)  # nothing connected yet

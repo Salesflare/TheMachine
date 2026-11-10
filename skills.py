@@ -442,10 +442,10 @@ class Skills:
             return {r[0] for r in db.execute("SELECT slug FROM skills WHERE status='on'")}
 
     # -- everything OpenClaw has (read-only, see Catalog)
-    def installed(self, refresh=False):
+    def installed(self, refresh=False, wait=True):
         if not self.catalog:
             return {'installed': [], 'checked_at': None, 'error': 'Skills aren\'t available on this Machine'}
-        return self.catalog.view(self.mine(), refresh)
+        return self.catalog.view(self.mine(), refresh, wait)
 
     def installed_get(self, name):
         if not self.catalog:
@@ -1025,7 +1025,27 @@ class Catalog:
     def find(self, name):
         return next((r for r in self.installed() if r.get('name') == name), None)
 
-    def view(self, mine, refresh=False):
+    def load_soon(self):
+        """load() in the background, one at a time."""
+        with self.lock:
+            if getattr(self, 'loading', False):
+                return
+            self.loading = True
+
+        def load():
+            try:
+                self.load()
+            finally:
+                self.loading = False
+        threading.Thread(target=load, name='skills-catalog', daemon=True).start()
+
+    def view(self, mine, refresh=False, wait=True):
+        if not wait and not refresh and self.raw is None:
+            # Not read yet since the start (the worker reads it a minute in): read in the background and answer now; the
+            # page asks again. A view that waited on OpenClaw took 15 s right after a restart (2026-11-10).
+            tried = bool(self.at) and not getattr(self, 'loading', False)
+            self.load_soon()
+            return {'installed': [], 'checked_at': None, 'error': self.error if tried else '', **({} if tried else {'loading': True})}
         items = [installed_item(r, mine) for r in self.installed(refresh)]
         order = {'yours': 0, 'workspace': 1, 'bundled': 2, 'other': 3}
         items.sort(key=lambda i: (order[i['group']], i['name'].lower()))

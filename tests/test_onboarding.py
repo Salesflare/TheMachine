@@ -835,6 +835,43 @@ if "is-active" in args: print("active")
 elif "show" in args: print('"ASSISTANT_CONFIG={self.path}" HOME=/elsewhere')''')
         self.assertTrue(onboarding.service_active(self.path))
 
+    def test_a_new_account_the_running_service_took_needs_no_restart(self):
+        # The account page's connect restarted the service and the dashboard came back to "Can't reach your Machine"
+        # (2026-11-10): the running service takes a new account itself (accounts_follow), and only else it restarts.
+        token = self.tmp / 'api-token'
+        token.write_text('t' * 32)
+        config, asked = {'port': 1, 'credentials': {'api-token': str(token)}}, []
+
+        class Answer(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+        def answering(body):
+            def urlopen(request, timeout=0):
+                asked.append((request.full_url, json.loads(request.data), request.get_header('Authorization'), request.get_header('X-assistant-client')))
+                if body is None:
+                    raise OSError('connection refused')
+                return Answer(json.dumps(body).encode())
+            return urlopen
+        restart = mock.Mock(return_value=mock.Mock(returncode=0))
+        with mock.patch.object(onboarding, 'service_active', return_value=True), mock.patch.object(onboarding.service, 'restart', restart), \
+                mock.patch.object(onboarding, 'healthy', return_value=True), mock.patch.object(onboarding, 'first_sync', return_value=True) as first:
+            for body, restarts in (({'accounts': ['work', 'intercom'], 'taken': True}, 0),
+                                   ({'accounts': ['work', 'intercom'], 'taken': False}, 1),  # something else changed too
+                                   ({'accounts': ['work'], 'taken': True}, 1),  # not taken
+                                   ({'error': 'Unknown operation'}, 1),  # an older service
+                                   (None, 1)):  # not answering
+                with self.subTest(body=body):
+                    restart.reset_mock()
+                    with mock.patch.object(onboarding.urllib.request, 'urlopen', answering(body)):
+                        self.assertTrue(onboarding.restart_and_sync(config, ['intercom'], FakeUI(), config_path=self.path))
+                    self.assertEqual(restart.call_count, restarts)
+            self.assertEqual(first.call_count, 5)
+        self.assertEqual(asked[0], ('http://127.0.0.1:1/api/action', {'action': 'accounts_follow', 'args': {}}, 'Bearer ' + 't' * 32, 'local-cli'))
+
     def test_dashboard_is_found_in_tailscale_serve(self):
         status = {'TCP': {'443': {'HTTPS': True}}, 'Web': {'box.example.ts.net:443': {'Handlers': {'/assistant': {'Proxy': 'http://127.0.0.1:8787'}}}}}
         self.stub('tailscale', f'print(json.dumps({status!r}))')

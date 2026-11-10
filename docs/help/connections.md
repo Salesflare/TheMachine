@@ -24,7 +24,7 @@ A source you already connected says so in the list, with its account. Pick it to
 
 Fill in what it needs (a key, an address), pick **Work** with its company or **Personal** (mail and calendars ask only when their address doesn't say), and press **Connect**. A site like LinkedIn or X opens its sign-in in your Machine's browser and goes on by itself once you're in. GitHub, WhatsApp and Codex show a code to enter, and Telegram chats a QR code to scan.
 
-**Cancel** stops adding it. Left before it finished? Open **Connections** again, on any device, and it picks up at the same step. Once connected, your Machine restarts to start reading it, then shows how its first sync goes.
+**Cancel** stops adding it. Left before it finished? Open **Connections** again, on any device, and it picks up at the same step. Once connected, your Machine starts reading it right away and shows how its first sync goes.
 
 On a hosted Machine, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe and Intercom sign in right here: pick **Work** or **Personal** and press **Sign in**. You come back to this form, which shows how it went. GitHub, WhatsApp, Codex, Telegram chats and your Android phone show their code here too.
 

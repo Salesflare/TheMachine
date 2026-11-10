@@ -2601,11 +2601,33 @@ def restart_and_sync(config, account_ids, ui, wait=90, config_path=None):
                if config_path and service_active() else f'  Start syncing with: {service.hint("restart")}')
         return False
     since = now()
+    if taken_live(config, account_ids):
+        return first_sync(config, account_ids, since, ui, wait)
     result = service.restart(UNIT_NAME, run=run)
     if result.returncode or not healthy(config, 30):
         ui.say(f'  The service did not come back; see: {service.hint("logs")}')
         return False
     return first_sync(config, account_ids, since, ui, wait)
+
+
+def taken_live(config, account_ids):
+    """Whether the running service took these new accounts from config.json without a restart (App.follow_config): a
+    restart leaves the dashboard waiting, and the account page's connect came back to "Can't reach your Machine"
+    (2026-11-10). An older service, an edit or anything else it cannot take live: False, and it restarts as before."""
+    if not account_ids:
+        return False
+    try:
+        token = Path(config['credentials']['api-token']).expanduser().read_text().strip()
+        request = urllib.request.Request(f"http://127.0.0.1:{config.get('port', 8787)}/api/action",
+                                         data=json.dumps({'action': 'accounts_follow', 'args': {}}).encode(),
+                                         headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json',
+                                                  'X-Assistant-Client': 'local-cli'})
+        with urllib.request.urlopen(request, timeout=10) as response:
+            answer = json.loads(response.read())
+        live = answer.get('accounts')
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+    return answer.get('taken') is True and isinstance(live, list) and set(account_ids) <= set(live)
 
 
 def database(config):

@@ -31,6 +31,7 @@ async function connectResume(){if(connectPicking)return false;try{const r=await 
  connectRun=r;connectSignin=null;connectForm=null;connectGbrain=null;$('#connect-add').dataset.sig='';connectPoll();return true}catch{return false}}
 async function connectAddNow(force){if(connectRun)return;if(!force&&connectList&&Date.now()-connectListAt<60000)return;connectListAt=Date.now();
  const n=++connectAddSeq;  // before the wait: a later call (a forced one from a sign-in's way back) wins over this one
+ const box=$('#connect-add');if(!box.childElementCount)setHTML(box,html`<p class="muted">Loading…</p>`);  // a restart's few seconds: not an empty box
  if(await connectResume()){renderConnectRun();return}
  if(n!==connectAddSeq)return;
  const load=connectPost('connect_sources');connectAddLast=load.catch(()=>{});
@@ -324,14 +325,14 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.questio
    :q.kind==='choose'?html`<div class="connect-choices">${order.map(i=>html`<button type="button"${i===lead?html` class="primary"`:''} data-connect-pick="${i}">${q.options[i]}</button>`)}</div>`:q.kind==='yes'?html`<div class="actions"><button type="button" class="primary" data-connect-pick="yes">Yes</button><button type="button" data-connect-pick="no">No</button></div>`:html`<form class="connect-form" data-connect-form><label for="connect-answer">${q.prompt}</label><input id="connect-answer" ${q.kind==='secret'?html`type="password" autocomplete="off"`:html`type="text"`} value="${q.kind==='secret'?'':q.default||''}" spellcheck="false"${q.resend?html` inputmode="numeric" autocomplete="one-time-code"`:''}><div class="actions"><button class="primary">Continue</button>${q.resend?html`<button type="button" data-connect-resend>${t('Send the code again')}</button>`:''}</div></form>`;
   body=html`${q.kind==='choose'||q.kind==='yes'?html`<p class="connect-q">${q.prompt}</p>`:''}${field}`}
  else if(r.state==='running')body=html`<p class="muted">Working…</p>`;
- else if(r.state==='done'){const c=connectCard(r),line=!r.restarting?'Restart the service to start reading it.':c?'Running again. Its card shows how far it is.':r.follow==='slow'?'Taking longer than usual. Its card shows up here once it runs again.':'Restarting to start reading it…';
+ else if(r.state==='done'){const c=connectCard(r),line=r.live?(c?'Reading it now. Its card shows how far it is.':'Starting to read it…'):!r.restarting?'Restart the service to start reading it.':c?'Running again. Its card shows how far it is.':r.follow==='slow'?'Taking longer than usual. Its card shows up here once it runs again.':'Restarting to start reading it…';
   const guess=r.guessed?html`<p class="fine connect-guess">${t('Set to {} from its address.',scopeLabel(r.guessed))}${c?html` <button type="button" class="link" data-connect-scope="${c.id}">${t('Change')}</button>`:''}</p>`:'';
   body=html`<p class="note sent-ok"><span>${r.reconnect?'Signed in again.':'Connected.'}</span> <span>${line}</span></p>${guess}<div class="actions">${c?html`<button type="button" class="primary" data-connect-card="${c.id}">Open its card</button>`:''}<button type="button" data-connect-back>${r.reconnect?'Back':'Add another'}</button></div>`}
  else{const cmd=!state.manage_url&&/(?:^|: )((?:assistant|wacli|gog|gh|openclaw)\b[^;]*)/.exec(r.fix||'');body=html`<p class="alert">${r.error||'Stopped'}${r.fix?'. '+r.fix[0].toUpperCase()+r.fix.slice(1)+'.':''}</p>${cmd?html`<pre class="signin-command">${cmd[1].trim()}</pre><button type="button" class="browser-link" data-copy-command="${cmd[1].trim()}">Copy command</button> `:''}<div class="actions"><button type="button" data-connect="${r.source}"${r.reconnect?html` data-connect-account="${r.reconnect}"`:''}>Try again</button><button type="button" data-connect-back>Back</button></div>`}
  const panel=html`${head}${body}${r.state==='running'?html`<div class="actions"><button type="button" class="ghost" data-connect-stop>Cancel</button></div>`:''}</div>`;
  // A question being answered keeps what was typed: only redraw when something changed.
  const sig=JSON.stringify([r.state,r.lines,q&&q.id,r.error,r.follow,!!connectCard(r),r.signin,r.code]);if(box.dataset.sig===sig)return;box.dataset.sig=sig;connectDraw(box,'run',panel);box.querySelector('#connect-answer')?.focus()}
-// After a source is added the service restarts to start reading it: wait until it answers again with the new account,
+// After a source is added the running service reads it at once (live), or restarts to: wait until it answers with the new account,
 // then move to that account's card, which shows how its first sync goes (the + Add pane says so until then).
 const connectCard=r=>r?.account&&(state.connectors||[]).find(c=>c.id===r.account)||null;
 function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if(!c)return;showHealthPane(healthGroup(c.service));
@@ -339,12 +340,12 @@ function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if
  if(flash){el.classList.add('conn-new');setTimeout(()=>el.classList.remove('conn-new'),4000)}}
 // Change on a guessed Work or Personal: its card, with Details open on the choice
 function scopeOpen(id){cardShow(id,false);const d=document.getElementById('sync-details-'+id);if(d)d.open=true;setTimeout(()=>document.querySelector(`select[data-scope="${CSS.escape(id)}"]`)?.focus(),300)}
-async function connectFollow(run){const start=Date.now();await new Promise(r=>setTimeout(r,6000));
+async function connectFollow(run){const start=Date.now();await new Promise(r=>setTimeout(r,run.live?800:6000));
  while(connectRun===run&&Date.now()-start<180000){connectList=null;if(await refresh().catch(()=>false)!==false&&connectCard(run)){renderConnectRun();
    if(healthPane==='add'&&!$('#health').hidden){cardShow(run.account,true);if(run.guessed)scopeOpen(run.account)}return}
   if(Date.now()-start>60000&&run.follow!=='slow'){run.follow='slow';renderConnectRun()}await new Promise(r=>setTimeout(r,2500))}}
 // Done, however it got there (a poll, or the last answer finishing it at once): follow the restart once
-function connectPoll(){clearTimeout(connectTimer);if(connectRun?.state==='done'&&connectRun.restarting&&!connectRun.followed){connectRun.followed=true;restartSoon();connectFollow(connectRun);return}
+function connectPoll(){clearTimeout(connectTimer);if(connectRun?.state==='done'&&(connectRun.restarting||connectRun.live)&&!connectRun.followed){connectRun.followed=true;if(connectRun.restarting)restartSoon();connectFollow(connectRun);return}
  if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun()}
  catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
 function connectCodeHTML(c){if(c.kind==='qr'&&Array.isArray(c.matrix))return html`<p class="connect-q">${t('In Telegram on your phone: Settings, Devices, Link Desktop Device. Then scan this code:')}</p>${qrSvg(c.matrix.filter(r=>/^[01]+$/.test(r)))}<p class="muted">${t('The code refreshes by itself.')}</p>`;

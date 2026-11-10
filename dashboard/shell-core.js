@@ -139,8 +139,9 @@ const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not ye
 // lazyRun(group,fn): fn now when the group is there, else once it is (opening its tab loads it at once).
 const lazyLoads={},lazyDone={};let lazyAllRun=null,lazySoonRun=false;
 function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[group])return Promise.resolve();
- return lazyLoads[group]??=new Promise((ok,fail)=>{const s=document.createElement('script');s.src=file;s.onload=()=>{lazyDone[group]=true;ok()};
-  s.onerror=()=>{delete lazyLoads[group];s.remove();fail(new Error(t('Offline.')))};document.head.append(s)})}
+ // a load that fails while the Machine restarts (seconds) is tried again for a while before it says Offline
+ return lazyLoads[group]??=new Promise((ok,fail)=>{const until=Date.now()+45000,load=()=>{const s=document.createElement('script');s.src=file;s.onload=()=>{lazyDone[group]=true;ok()};
+  s.onerror=()=>{s.remove();if(navigator.onLine!==false&&Date.now()<until)setTimeout(load,3000);else{delete lazyLoads[group];fail(new Error(t('Offline.')))}};document.head.append(s)};load()})}
 const lazyAll=()=>lazyAllRun??=Promise.allSettled(Object.keys(self.LAZY_FILES||{}).map(lazyPart));
 function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let gone=false;
  const go=()=>{if(gone)return;gone=true;self.requestIdleCallback?requestIdleCallback(()=>lazyAll(),{timeout:2000}):setTimeout(lazyAll,200)};
