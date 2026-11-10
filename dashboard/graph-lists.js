@@ -1,3 +1,16 @@
+// When something last happened, as people say it (last contact, last signal; with ago()'s relativeFmt): just now, 5 minutes ago, 3 hours ago (the
+// same day), yesterday, 3 days ago, then a short date (Oct 29 or 29 Oct, with the year when it isn't this one), in the
+// owner's date locale. A day without a time of day (2026-11-10) never claims hours: today. sinceTime is the same as a
+// <time> whose hover has the exact date.
+const sinceAt=v=>{const s=String(v||''),only=s.length<=10,d=new Date(only?s+'T12:00':s);return !v||isNaN(d)?null:{d,only}};
+const sinceWhen=v=>{const p=sinceAt(v);if(!p)return v?String(v):t('never');const {d,only}=p,now=new Date(),f=relativeFmt(DL),s=(now-d)/1000,
+  days=Math.round((new Date(localDay(now)+'T12:00')-new Date(localDay(d)+'T12:00'))/864e5);
+ if(!only&&s>-60&&s<3600)return s<60?t('just now'):f.format(-Math.floor(s/60),'minute');
+ if(!only&&days===0&&s>0)return f.format(-Math.floor(s/3600),'hour');
+ if(days>=0&&days<7)return f.format(-days||0,'day');  // today, yesterday, 3 days ago
+ return localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==now.getFullYear()?{year:'numeric'}:{})})};
+const sinceTitle=v=>{const p=sinceAt(v);if(!p)return '';const o={weekday:'long',day:'numeric',month:'long',year:'numeric'};return p.only?localeDate(p.d,DL,o):fmtDHM(p.d,o)};
+const sinceTime=v=>sinceAt(v)?html`<time datetime="${v}" title="${sinceTitle(v)}">${sinceWhen(v)}</time>`:sinceWhen(v);
 $('#people-view').addEventListener('click',async e=>{const b=e.target.closest('[data-fleet-ask]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_ask',{kind:'relationships',question:{about:b.dataset.fleetAsk}});toast('Asked your Fleet. The answers show in the Fleet tab.')}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 // Graph and Fleet tab link to each other: a member's person in the Graph, a person's place in the Fleet tab.

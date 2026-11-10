@@ -6,7 +6,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 import {navClick} from './nav-click.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Last contact (and last signal) reads as people say it (sinceWhen, settings-models.js): just now, 5 minutes ago,
+// Last contact (and last signal) reads as people say it (sinceWhen, graph-lists.js): just now, 5 minutes ago,
 // 3 hours ago on the same day, yesterday, 3 days ago up to a week, then a short date in the owner's date order, the
 // year only when it isn't this one. A day without a time of day never claims hours: today. Every language through
 // Intl, and the exact date in the hover (sinceTitle). On People and Organizations rows and a person's page.
