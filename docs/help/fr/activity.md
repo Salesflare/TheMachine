@@ -14,6 +14,7 @@ Ouvrez **Paramètres**, **Activité**. Chaque ligne est une chose que The Machin
 - ce qu’elle a fait, et comment cela s’est terminé : envoyé, refusé, échoué ou annulé
 - quand, le compte ou l’app utilisé, et qui l’a lancé : vous, votre accord, votre voix ou la Machine d’elle-même
 - un lien vers sa tâche, quand il y en a une
+- pour une IA que vous avez connectée, comme ChatGPT ou Claude : son nom avec **(IA connectée)**, pour la distinguer de The Machine
 
 Elle liste les messages et réponses, les modifications de documents et d’agenda, les étapes sur le web, les corrections qu’elle a fusionnées, les agents de code, les questions et réponses de Fleet, les apprentissages envoyés à l’équipe de The Machine, les compétences, les imports dans le Graph, les connexions ajoutées ou retirées, et chaque consultation de notre équipe via l’[Accès du support](get-support.md#support-access), refusées comprises.
 

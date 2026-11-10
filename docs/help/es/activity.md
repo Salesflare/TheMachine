@@ -14,6 +14,7 @@ Abre **Ajustes**, **Actividad**. Cada línea es algo que hizo The Machine, lo m�
 - qué hizo y cómo terminó: enviado, rechazado, fallido o deshecho
 - cuándo, la cuenta o app que usó y quién lo inició: tú, tu OK, tu voz o la Machine por sí sola
 - un enlace a su tarea, cuando la hay
+- para una IA que conectaste, como ChatGPT o Claude: su nombre con **(IA conectada)**, para distinguirla de The Machine
 
 Incluye mensajes y respuestas, cambios en documentos y en el calendario, pasos en la web, correcciones que fusionó, agentes de código, preguntas y respuestas de Fleet, aprendizajes enviados al equipo de The Machine, habilidades, importaciones al Graph, conexiones añadidas o quitadas, y cada revisión de nuestro equipo con el [Acceso de soporte](get-support.md#support-access), también las rechazadas.
 

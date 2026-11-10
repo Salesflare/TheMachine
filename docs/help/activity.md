@@ -14,6 +14,7 @@ Open **Settings**, **Activity**. Each line is one thing The Machine did, newest 
 - what it did, and how it ended: sent, refused, failed or undone
 - when, the account or app it used, and who started it: you, your OK, your voice or the Machine by itself
 - a link to its to-do, when there is one
+- for an AI you connected, like ChatGPT or Claude: its name with **(connected AI)**, so you can tell it from The Machine itself
 
 It lists messages and replies, doc and calendar changes, steps on the web, fixes it merged, coding agents, Fleet questions and answers, learnings sent to The Machine team, skills, Graph imports, connections added or removed, and each look by our team under [Support access](get-support.md#support-access), refused ones included.
 

@@ -14,6 +14,7 @@ keywords: log, history, audit, what did it do, sent, refused, blocked
 - was sie getan hat und wie es ausging: gesendet, abgelehnt, fehlgeschlagen oder rückgängig gemacht
 - wann, welches Konto oder welche App sie genutzt hat und wer es angestoßen hat: du, dein OK, deine Stimme oder die Machine von selbst
 - ein Link zu ihrer Aufgabe, wenn es eine gibt
+- bei einer KI, die du verbunden hast, etwa ChatGPT oder Claude: ihr Name mit **(verbundene KI)**, damit du sie von The Machine selbst unterscheidest
 
 Sie zeigt Nachrichten und Antworten, Änderungen an Dokumenten und im Kalender, Schritte im Web, Korrekturen, die sie zusammengeführt hat, Coding-Agents, Fleet-Fragen und -Antworten, Erkenntnisse an das Team von The Machine, Skills, Graph-Importe, hinzugefügte oder entfernte Verbindungen und jeden Blick unseres Teams über den [Support-Zugriff](get-support.md#support-access), abgelehnte eingeschlossen.
 
