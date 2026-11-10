@@ -220,16 +220,6 @@ document.addEventListener('keydown',async e=>{const i=e.target.closest?.('.tag-a
  try{await graphPost('graph_tag',{node_id:f.dataset.tagNode,tag:t,add:true});if(!graphTags.some(x=>x.tag.toLowerCase()===t.toLowerCase())){graphTags.push({tag:t,count:1});tagsPaint()}pagerDrop('graph');await people(graphNode,true)}catch(err){errCaught(err);toast(err.message,true);i.disabled=false}},true);
 document.addEventListener('click',async e=>{const t=e.target.closest('[data-tag-remove],[data-fields-edit]');if(!t)return;e.preventDefault();e.stopPropagation();
  try{if(t.dataset.fieldsEdit)return await crmFieldsOpen(t.dataset.fieldsEdit);t.disabled=true;await graphPost('graph_tag',{node_id:t.dataset.tagNode,tag:t.dataset.tagRemove,add:false});pagerDrop('graph');await people(graphNode,true)}catch(err){errCaught(err);toast(err.message,true);t.disabled=false}},true);
-// Who's who and its counts again from the list on screen without the roles marked right: at the tap, not after the save
-function rolesPaint(){const view=$('#people-view');for(const b of view.querySelectorAll('[data-role-confirm]'))b.hidden=roleDone(b.dataset.roleConfirm,b.dataset.role);
- if(!whosLast)return;const items=whosLast.items||[],left=rolesLeft(items),n=Math.max(0,(whosLast.waiting??items.length)-(items.length-left.length));
- $('#badge-people').textContent=n||'';rolesRow(left.length>0,n);const pane=view.querySelector('[data-graph-panel="roles"]');if(pane){setHTML(pane,whosWho(left,n));if(!left.length)people(graphNode,true)}}  // the last one: the Graph without Who's who
-// ✓ Right (or All are right): gone at once, saved after; a failed save brings them back with what went wrong
-async function rolesConfirm(pairs,all){for(const [id,role] of pairs)rolesDone.set(id,{role,saved:false});rolesPaint();
- toast(all?`Confirmed ${pairs.length} roles.`:t('Confirmed: {}.',pairs[0][1]));let done=0;
- try{for(const [id,role] of pairs){await graphPost('graph_role',{node_id:id,role});const r=rolesDone.get(id);if(r)r.saved=true;done++}}
- catch(err){errCaught(err);for(const [id] of pairs.slice(done))rolesDone.delete(id);rolesPaint();toast(all?(done?`Confirmed ${done}, then: `:'')+err.message:err.message,true)}
- people(graphNode,true)}
 $('#people-view').onclick=async e=>{const tab=e.target.closest('[data-graph-pane]');if(tab){showGraphPane(tab.dataset.graphPane);return}if(e.target.closest('[data-ge-more]')){const n=graphTl.page,box=e.target.closest('.graph-timeline'),hidden=box?box.querySelectorAll('.graph-events .graph-event[hidden]').length:0;
   if(n?.timeline&&box){if(n.timeline.next&&hidden<30)graphTlLoad(n.timeline.source||'',true);else{n.timeline.shown=(n.timeline.shown||GRAPH_ROWS)+30;graphTlDraw()}}
   else{for(const x of $('#people-view').querySelectorAll('.graph-events [hidden]'))x.hidden=false;e.target.closest('[data-ge-more]').remove()}return}
@@ -237,11 +227,8 @@ $('#people-view').onclick=async e=>{const tab=e.target.closest('[data-graph-pane
  const tlChip=e.target.closest('[data-tl-source]');if(tlChip){graphTlLoad(tlChip.dataset.tlSource,false);return}if(openEventFrom(e))return;
  const q=e.target.closest('[data-quote-event]');if(q){openEvent(q.dataset.quoteEvent,'');return}
  const qs=e.target.closest('[data-quote-events]');if(qs){openSources(qs.dataset.quoteEvents,qs.textContent);return}
- const all=e.target.closest('[data-role-all]');if(all){const each=[...document.querySelectorAll('.whos [data-role-confirm]')];if(!each.length||!confirm(`Mark all ${each.length} roles as right?`))return;rolesConfirm(each.map(b=>[b.dataset.roleConfirm,b.dataset.role]),true);return}
  const shown=e.target.closest('[data-show-person]');if(shown){shown.disabled=true;try{await graphPost('graph_show_person',{identifier:shown.dataset.showPerson});setHTML(shown.parentNode,html`<span class="muted hs-said">Shown as a person.</span>`)}catch(err){errCaught(err);shown.disabled=false;toast(err.message,true)}return}  /* the row stays until the list loads again: the rebuild adds them */
  const undo=e.target.closest('[data-warmup-undo]');if(undo){undo.disabled=true;try{await graphPost('graph_warmup',{domain:undo.dataset.warmupUndo,warmup:false});toast(t('Back in your Graph: {}.',undo.dataset.warmupUndo));await people(graphNode,true)}catch(err){errCaught(err);undo.disabled=false;toast(err.message,true)}return}
- const ok=e.target.closest('[data-role-confirm]');if(ok){rolesConfirm([[ok.dataset.roleConfirm,ok.dataset.role]],false);return}
- const ed=e.target.closest('[data-role-edit-for]');if(ed){editRole=ed.dataset.roleEditFor;graphOpen(ed.dataset.roleEditFor);return}
  const sameAll=e.target.closest('[data-same-all]');if(sameAll){const pairs=JSON.parse(sameAll.dataset.sameAll);if(!confirm(`Merge ${pairs.length} pairs?`))return;sameAll.disabled=true;
   try{const said=await graphPost('graph_same_all',{pairs});toastUnmerge(said.merged===1?'Merged 1 pair.':`Merged ${said.merged} pairs.`,said.batch);await people(graphNode,true)}catch(err){errCaught(err);sameAll.disabled=false;toast(err.message,true)}return}
  const same=e.target.closest('[data-same]');if(same){const yes=same.dataset.same==='1',box=same.closest('.same-pair,.same-ask');same.disabled=true;

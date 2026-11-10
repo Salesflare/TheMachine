@@ -62,7 +62,6 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
   view.dataset.mode='node';graphKept=null;docTitle();$('#people').classList.add('graph-on-node');if(location.hash!==graphHash(n.id)&&!$('#people').hidden)history.replaceState(null,'',graphHash(n.id));
   for(const p of view.querySelectorAll('.ge-preview'))p.classList.toggle('fade',p.scrollHeight>p.clientHeight+1);
   if(n.kind==='person'){contactMarks(view,n);friendMarks(view,n)}
-  if(editRole===node&&!head){editRole=false;const pf=view.querySelector('#org-form');if(pf?.elements.role){orgOpen(pf,true);pf.elements.role.focus({preventScroll:true});pf.elements.role.select();pf.elements.role.scrollIntoView({block:'center'})}}
   if(!quiet&&!again)scrollTo({top:0})}
  try{
  if(node&&/^promise:\d+$/.test(node)){const body=await promisePage(node.slice(8));draw(body,'node');if(version!==graphRequest)return;graphKept=null;$('#people').classList.add('graph-on-node');pageHead();if(!quiet)scrollTo({top:0});return}
@@ -80,7 +79,7 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
  const forTeam=graphTeam;let g=await cachedGet(graphTeam||graphPane==='held'?'api/graph?view=team':'api/graph',graphFresh);graphSharing=g.sharing||graphSharing;graphTeammates=g.teammates||graphTeammates;if(g.team&&!teamOn())g=await request('api/graph');
  if(forTeam!==graphTeam)return;  // Mine or Team changed while this loaded: the newer load draws
  if(!g.team)graphContactsIn=g.contacts_in||[];
- const team=!!g.team&&(graphTeam||graphPane==='held'),whos=rolesLeft(g.whos_who),waiting=Math.max(0,(g.waiting??g.whos_who?.length??0)-((g.whos_who?.length||0)-whos.length));whosLast={items:g.whos_who,waiting:g.waiting};$('#badge-people').textContent=waiting||'';const start=team?shareNote(g.sharing):'';
+ const team=!!g.team&&(graphTeam||graphPane==='held');const start=team?shareNote(g.sharing):'';
  if(!team){graphOwners=g.owners||[];graphLastImport=g.last_import||null;graphFields=g.crm_fields||[];graphTags=g.tags||[];if(g.currency)graphCurrency=g.currency;tagsPaint()}
  const back=graphScroll;  /* back from a person: a quiet refresh that wins the race restores it too */const lc=!team&&g.list_counts||Object.fromEntries(['people','quiet','new','orgs','warmup','projects','projects_done'].map(k=>[k,(g[k]||[]).length]));graphLocal=!team&&g.list_counts?null:g;  /* the team's lists come whole */
  const had=quiet&&new Map([...pagers].filter(([k,p])=>k.startsWith('graph:')&&p.items.length).map(([k,p])=>[k,p.items.length]));
@@ -88,17 +87,15 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
  const panes=team?[{id:'people',label:'People',html:html`${start}${graphTabs('people')||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing from the team yet.</strong></div></div>`}`},
   {id:'projects',label:'Projects',html:projectsPane(g)},
   {id:'orgs',label:'Organizations',html:graphTabs('orgs')||graphEmpty('orgs',true)},
-  {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(whos,waiting)},
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
  :[{id:'people',label:'People',html:html`${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}${hiddenSenders(g.hidden_senders)}`},
   {id:'projects',label:'Projects',html:projectsPane(g)},
-  {id:'orgs',label:'Organizations',html:html`${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`},
-  {id:'roles',label:'Who’s who',badge:waiting,html:whosWho(whos,waiting)}].filter(p=>p.html);
+  {id:'orgs',label:'Organizations',html:html`${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`}].filter(p=>p.html);
  const current=(panes.find(p=>p.id===graphPane)||panes.find(p=>p.id==='people')||panes[0])?.id;graphCountsSet(g.counts);if(version===graphRequest){graphShown=current||'';graphHashSync();graphSubSync()}
  // A refresh that starts the lists over loads as many rows as were there before it draws, so the page keeps its height
  if(had)for(const [k,n] of had){const p=pagers.get(k);if(!p||p.items.length||p.busy)continue;for(let i=0;i<10&&p.items.length<n&&p.next!=null&&!p.failed;i++){p.pending=pagerLoad(k,p,false);await p.pending}}
  if(version!==graphRequest)return;
- rolesRow(panes.some(p=>p.id==='roles'),waiting);draw((panes.length?html`${panes.map(p=>html`<div class="sub-pane" role="tabpanel" data-graph-panel="${p.id}"${p.id===current?'':html` hidden`}>${p.html}</div>`)}`:'')
+ draw((panes.length?html`${panes.map(p=>html`<div class="sub-pane" role="tabpanel" data-graph-panel="${p.id}"${p.id===current?'':html` hidden`}>${p.html}</div>`)}`:'')
   ||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing mapped yet.</strong>People appear as messages and meetings come in.</div></div>`);
  if(version===graphRequest&&!team&&graphBoards.length&&!graphBoards.some(b=>'follow_ups'in b))fuLoad(version);
  if(version===graphRequest){graphAt=Date.now();pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;scrollTo(0,back)}}if(!quiet)notice('')}catch(e){errCaught(e);if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}

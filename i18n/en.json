@@ -959,11 +959,8 @@
  "Confirm {}’s Machine?": "Confirm {}’s Machine?",
  "Confirmed Machines in": "Confirmed Machines in",
  "Confirmed Machines in {}. The Network can't read it.": "Confirmed Machines in {}. The Network can't read it.",
- "Confirmed {} roles.": "Confirmed {} roles.",
- "Confirmed {}, then:": "Confirmed {}, then:",
  "Confirmed. Their Machine is starting.": "Confirmed. Their Machine is starting.",
  "Confirmed:": "Confirmed:",
- "Confirmed: {}.": "Confirmed: {}.",
  "Confirm…": "Confirm…",
  "Connect": "Connect",
  "Connect GBrain": "Connect GBrain",
@@ -2359,7 +2356,6 @@
  "Manage on your account": "Manage on your account",
  "Mar": "Mar",
  "Mark all as spam": "Mark all as spam",
- "Mark all {} roles as right?": "Mark all {} roles as right?",
  "Mark done": "Mark done",
  "Mark done (D)": "Mark done (D)",
  "Mark done only an open item": "Mark done only an open item",
@@ -3971,12 +3967,10 @@
  "Reviews": "Reviews",
  "Rewrite": "Rewrite",
  "Rewriting…": "Rewriting…",
- "Right: {}": "Right: {}",
  "Role": "Role",
  "Role for {}": "Role for {}",
  "Role: {}": "Role: {}",
  "Role: {}, corrected from {}": "Role: {}, corrected from {}",
- "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Roles your Machine picked up. Confirm or edit; it learns from your edits.",
  "Routine added": "Routine added",
  "Routine stopped": "Routine stopped",
  "Routines": "Routines",
@@ -5911,9 +5905,6 @@
  "Whose": "Whose",
  "Whose is it? Change it any time.": "Whose is it? Change it any time.",
  "Whose is {}?": "Whose is {}?",
- "Who’s who": "Who’s who",
- "Who’s who (G then W)": "Who’s who (G then W)",
- "Who’s who · {}": "Who’s who · {}",
  "Why": "Why",
  "Why isn’t this needed?": "Why isn’t this needed?",
  "Why isn’t this needed? Reply here, or send “cancel” to keep it.": "Why isn’t this needed? Reply here, or send “cancel” to keep it.",
@@ -7135,12 +7126,6 @@
  "{} requires your {}.": "{} requires your {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} requires your {}. They belong to the company. Threads you keep private stay private.",
  "{} result": "{} result",
- "{} role to confirm": "{} role to confirm",
- "{} roles to confirm": "{} roles to confirm",
- "{} roles to confirm in the Graph tab's Who's who": {
-  "one": "{} role to confirm in the Graph tab's Who's who",
-  "other": "{} roles to confirm in the Graph tab's Who's who"
- },
  "{} rows": {
   "one": "{} row",
   "other": "{} rows"
@@ -7421,7 +7406,5 @@
  "• +{} more": "• +{} more",
  "…and {} more in the Fleet tab.": "…and {} more in the Fleet tab.",
  "€{} a month": "€{} a month",
- "▶ Play a mini game": "▶ Play a mini game",
- "✓ All {} are right": "✓ All {} are right",
- "✓ Right": "✓ Right"
+ "▶ Play a mini game": "▶ Play a mini game"
 }

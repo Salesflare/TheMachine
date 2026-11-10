@@ -80,10 +80,6 @@ a.btn-link:hover{border-color:var(--mint);color:var(--cream)}
 a.btn-link[hidden]{display:none}
 @media(max-width:560px){#settings-account>div{flex-wrap:wrap}#settings-account #settings-more{flex:1 1 100%}#settings-account .btn-link{margin-top:4px}}
 .alpha{margin-left:6px;padding:1px 7px;border-radius:999px;font:600 .68rem/1.5 var(--mono);letter-spacing:.04em;text-transform:uppercase;background:#eca45b33;color:var(--amber);vertical-align:middle}
-.role-all{margin:-4px 0 12px}
-/* Who's who: a long role stays in its pill on one row with the name, cut with … (the full role on hover) */
-.whos .graph-row{flex-wrap:nowrap;min-width:0}.whos .graph-row>button.node{flex:none;max-width:60%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.whos .role-chip{flex:0 1 auto;min-width:4.5em;max-width:100%;overflow:hidden}.whos .role-chip::before{flex:none}
 .lead{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.9rem;margin:0 0 14px}
 .summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 14px}
 .summary-row .lead{margin:0}

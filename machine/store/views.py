@@ -74,7 +74,6 @@ import todo_areas
 import todo_org
 import whatsapp_images
 
-WAITING = stamps.Kept(4)  # the Who's who count (snapshot)
 # What card_views adds to the to-dos, kept between status polls (each 30 s) while none of the tables it reads changed (on
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
 # CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
@@ -814,11 +813,6 @@ class ViewsStore(ConversationStore):
             result['clear_pace'] = clear_pace.seconds(db)  # seconds per action, the owner's own: To-dos' time to clear
             result['suggestion_counts'] = {r['status']: r['count'] for r in db.execute('SELECT status,count(*) count FROM suggestions GROUP BY status')}
             result['areas'] = todo_areas.areas(accounts)  # where a to-do can move (More, Move to)
-            try:  # roles waiting in Graph, Who's who: the Graph tab's badge
-                # the Who's who count reads every person: kept until a role or a person changes (stamps.py)
-                result['graph_waiting'] = WAITING.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: graph.waiting(db))
-            except sqlite3.Error:
-                result['graph_waiting'] = 0
             try:  # Connections, Disconnected lately (mail_grants.py receipts): confirmed or pending, with no token
                 import mail_grants
                 result['disconnected'] = mail_grants.receipts(self.config) if self.config.get('database') else []

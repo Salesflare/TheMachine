@@ -450,7 +450,7 @@ def load_logins(directory, fixture):
 
 
 def load_roles(db, base):
-    """Graph > Who's who: roles a review read for the four closest people, waiting for the owner to confirm."""
+    """Roles a review read for the four closest people, on their pages and in their Recent changes."""
     import graph
     roles = [('head of operations', 'I run operations here, so send the rollout plan my way.'), ('finance lead', 'Looping in finance; I sign off on the invoice.'),
              ('product manager', 'As PM for the mobile app I own the beta list.'), ('customer success', 'I look after your account from our side.')]

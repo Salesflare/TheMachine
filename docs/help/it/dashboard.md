@@ -10,7 +10,7 @@ order: 4
 
 - **Attività**: le tue attività e promesse. Vedi [Attività](cards.md).
 - **Calendario**: la settimana che ti aspetta con le tue riunioni, le attività in scadenza e le promesse. Vedi [Calendario](calendar.md).
-- **Graph**: le persone, le organizzazioni e i progetti nei tuoi messaggi, e **Chi è chi** quando ci sono ruoli in attesa della tua conferma. Vedi [Graph](graph.md).
+- **Graph**: le persone, le organizzazioni e i progetti nei tuoi messaggi. Vedi [Graph](graph.md).
 - **Fleet**: il tuo team, la famiglia e gli amici su The Machine Network, quando ne hai uno. Vedi [Fleet](fleet.md).
 - **Apprendimento**: come vanno le attività e cosa ha imparato.
 - **Connessioni**: le tue fonti e come stanno andando. Vedi [Connessioni](connections.md).

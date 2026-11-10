@@ -154,7 +154,7 @@ Then it offers to fill in the rest from what you actually write. Your agent read
 
 You see the draft first. It's saved only if you say yes, and it never overwrites what you wrote. Redo it later with `assistant profile`, or edit `USER.md` yourself. Check: `USER.md` has an "Observed from my messages" section.
 
-It also reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier"), where the messages show it, each with the line it read it in. Confirm them with ✓ (or all at once with **All N are right**), or change them in the Graph's Who's who; reviews learn from your changes. `assistant roles` runs that step again later.
+It also reads your first and latest messages with your closest people and notes what each is to you ("cofounder", "accountant", "customer at Globex") and what their organizations are ("customer", "supplier"), where the messages show it, each with the line it read it in. They show on each page right away; fix a wrong one with **Edit** on that page, and reviews learn from your changes. `assistant roles` runs that step again later.
 
 ## 5. Preview, then turn it on
 

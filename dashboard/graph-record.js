@@ -1,11 +1,8 @@
 // What someone (or an organization) is to you: said by you, or read by a review in a message, shown with the line it came from.
-// ✓ makes a review's role yours; Edit sets it in your words.
+// It applies as read; Edit sets it in your words.
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
 // The review's quote is markup (html``), never a plain string, so its Read button shows as a button.
-const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,n.role_by==='review'?confirmButton(n.id,n.role):'','kv-role');
-const roleDone=(id,role)=>rolesDone.get(id)?.role===role;
-const rolesLeft=items=>(items||[]).filter(w=>!roleDone(w.id,w.role));
-const confirmButton=(id,role)=>roleDone(id,role)?'':html`<button class="ghost" data-role-confirm="${id}" data-role="${role}" aria-label="Right: ${role}">✓ Right</button>`;
+const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,'','kv-role');
 // Where someone works: from their work email, or as a source stated it (their LinkedIn headline, a signature, their own words), with that line.
 const orgSaid=n=>n.org_by==='email'?'from their work email':n.org_by==='owner'?'you set it':n.org_by==='review'?`from ${n.org_via==='LinkedIn headline'?'their LinkedIn headline':'their '+(n.org_via||'message')}${n.org_at?', '+day(n.org_at):''}`:'';
 // The owner's own details for an organization: they win over the service's, and "Wrong company" drops a bad match for good.
@@ -146,7 +143,6 @@ function orgPage(n,group){const p=n.profile||{};return html`<article class="grap
 const orgProjects=n=>n.projects?.length?html`<section class="detail-section org-projects"><h4>Projects</h4><ul>${n.projects.map(p=>html`<li${p.open?'':html` class="done"`}><button type="button" class="inline-node" data-node="${p.id}" title="${p.name}">${p.name}</button><small class="muted">${p.outcome==='won'?'Won':p.outcome==='lost'?'Lost':p.archived?'Archived':p.stage?p.stage+(p.board?' on '+p.board:''):'No board'}</small></li>`)}</ul></section>`:'';
 const deleteRow=n=>n.kind!=='person'?'':html`<div class="person-delete"><div class="person-delete-confirm" hidden><p>Delete ${n.name} and everything The Machine knows about them? This can’t be undone.</p><p class="muted">Won’t be added again.</p><div class="row"><button class="danger-solid" data-person-delete-yes>Delete</button><button class="ghost" data-person-delete-no>Cancel</button></div></div></div>`;
 const orgWrongRow=n=>n.wrong?html`<p class="graph-sub role-row"><span class="muted">Looked-up details cleared: they were another company’s.</span><button class="ghost" data-org-lookup>Look it up again</button></p>`:'';
-const whosWho=(items,total)=>items?.length?html`<div class="section-head"><h2>Who’s who</h2><span class="count">${total||items.length}</span><p>Roles your Machine picked up. Confirm or edit; it learns from your edits.</p></div>${items.length>1?html`<p class="role-all"><button class="ghost" data-role-all>✓ All ${items.length} are right</button></p>`:''}<div class="graph-list">${items.map(w=>html`<article class="whos" data-whos="${w.id}"><div class="graph-row">${nodeButton(w)}<span class="chip role-chip" style="--c:var(--lavender)"><span class="ell">${w.role}</span></span></div>${w.quote?html`<p class="graph-sub">${quoteLine(w.id,w.quote,w.event_id)}</p>`:''}<p class="graph-sub role-row">${confirmButton(w.id,w.role)}<button class="ghost" data-role-edit-for="${w.id}">Edit</button></p></article>`)}</div>`:'';
 // Same person? The graph joins identities only on strong evidence (the same name on one message, the same LinkedIn
 // profile, their number in their own mail); a likely match is a quiet question here and in People: Merge or Not the
 // same, which is remembered. Joined identities list why, each with Undo (it splits them for good).

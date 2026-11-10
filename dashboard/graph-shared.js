@@ -27,10 +27,6 @@ const namesLine=n=>n.length<3?n.join(' and '):n.slice(0,-1).join(', ')+' and '+n
 // A move by hand stands until a newer message moves it. Reviews also add projects that fit a board; the ones they're
 // unsure about wait under the board header ("2 projects could belong here") for Add or Leave out.
 let graphMineBoards=null,graphPeopleNames=[],pj=null;
-// A role marked right here is gone from Who's who at the tap and stays gone while it saves, also when a refresh that
-// started before the save draws the old list; a failed save brings it back (rolesConfirm).
-const rolesDone=new Map();let whosLast=null;  // node id -> {role, saved}; the Who's who list last loaded, with its count
-const rolesSaving=()=>[...rolesDone.values()].filter(r=>!r.saved).length;
 // A phone number grouped for reading: the country code (ITU zones), then the national number in short groups. One that
 // already has spaces is shown as written. Tap and Copy use the number as stored.
 const PHONE_CC2=/^(2[07]|3[0-469]|4[013-9]|5[1-8]|6[0-6]|8[1246]|9[0-58])/;
@@ -77,9 +73,9 @@ $('nav').addEventListener('click',e=>{const t=e.target.closest('button');if(t?.d
 // Graph again on the Machine, and doing that on every poll kept it busy, so a Merge or a save waited behind it. The
 // owner's own changes redraw it at once (people() or refresh() after each), and opening a record or list always loads it.
 const GRAPH_POLL_MS=60000;let graphLoadedAt=0;
-let graphSkip=false,graphAt=0,graphScroll=null,graphShown='',graphNode='',graphDrawn='',graphRequest=0,editRole=false,graphPane=localStorage.getItem('graph-pane')||'';
+let graphSkip=false,graphAt=0,graphScroll=null,graphShown='',graphNode='',graphDrawn='',graphRequest=0,graphPane=localStorage.getItem('graph-pane')||'';
 // Sub-tabs, as in Fleet: a pill row over panes that are all drawn at once and shown one at a time. A badge only
-// counts what needs the owner (a source with a problem, roles to confirm, friend requests), never a total.
+// counts what needs the owner (a source with a problem, friend requests), never a total.
 const subTabs=(label,attr,panes,current)=>html`<div class="sub-tabs" role="tablist" aria-label="${label}">${panes.map(p=>html`<button type="button" role="tab" ${attr}="${p.id}" aria-selected="${p.id===current}"><span class="ell">${p.label}</span>${p.badge?html` <span class="badge${p.warn?html` warn`:''}">${p.badge}</span>`:''}</button>`)}</div>`;
 function tabsFade(row){const max=row.scrollWidth-row.clientWidth;row.classList.toggle('more-left',row.scrollLeft>2);row.classList.toggle('more-right',row.scrollLeft<max-2)}
 function tabsShow(row){if(!row)return;const t=row.querySelector('[aria-selected="true"]');if(t&&row.scrollWidth>row.clientWidth)row.scrollLeft=Math.max(0,t.offsetLeft-row.offsetLeft-(row.clientWidth-t.offsetWidth)/2);tabsFade(row)}
@@ -88,6 +84,6 @@ document.addEventListener('scroll',e=>{if(e.target.matches?.('.fleet-tabs,.sub-t
 new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]),.sub-tabs:not([data-faded])').forEach(r=>{r.dataset.faded='';tabsShow(r)})).observe(document.querySelector('main'),{childList:true,subtree:true});
 // people() lives in the Graph's own part: callers outside it that await the redraw go through here.
 const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()=>people(...a));
-// Graph: People (closest, gone quiet, new), Who's who (roles to confirm), Projects and Organizations.
-const GRAPH_PANES=['people','roles','projects','orgs'];
+// Graph: People (closest, gone quiet, new), Projects and Organizations.
+const GRAPH_PANES=['people','projects','orgs'];
 const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}));  // an edit: the board's follow-ups are asked again

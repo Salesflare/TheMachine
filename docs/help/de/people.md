@@ -92,9 +92,9 @@ Deine eigenen Adressen und Nummern, auch Aliasse, sind immer du, nie jemand in d
 
 Über dich listet deine Adressen mit ihrer Herkunft auf; ändern kannst du sie in **Einstellungen** unter Konto. Um deinen eigenen Kontakt an ein Teammitglied oder einen Freund zu schicken, wähle **Meinen Kontakt teilen**. Siehe [Einen Kontakt teilen](share-contact.md).
 
-## Wer ist wer
+## Was sie für dich sind
 
-Rollen, die deine Machine in deinen Nachrichten gelesen hat und die auf dein Wort warten. **✓ Stimmt** bestätigt eine. **Bearbeiten** öffnet die Seite der Person im Bearbeitungsmodus. Sie lernt aus deinen Änderungen. Das erscheint nur, wenn Rollen warten.
+Rollen, die deine Machine in deinen Nachrichten liest, stehen auf der Seite der Person unter **Für dich**, mit der Zeile, aus der sie sie hat. Nichts wartet auf dein Wort. Falsch? **Bearbeiten** auf der Seite korrigiert sie, oder **⋯** an ihrer Zeile unter **Letzte Änderungen**. Sie lernt aus deinen Änderungen.
 
 ## Was sie über jemanden weiß
 

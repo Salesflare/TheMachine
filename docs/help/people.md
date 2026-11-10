@@ -92,9 +92,9 @@ Your own addresses and numbers, aliases too, are always you, never someone in yo
 
 About you lists your addresses with where each came from; change them in **Settings**, under Account. To send your own contact to a teammate or friend, pick **Share my contact**. See [Share a contact](share-contact.md).
 
-## Who's who
+## What they are to you
 
-Roles your Machine read in your messages, waiting for your word. **✓ Right** confirms one; **Edit** opens their page in Edit. It learns from your edits. This shows only when roles are waiting.
+Roles your Machine reads in your messages show on their page under **To you**, with the line it read. Nothing waits for your word. Wrong? **Edit** on their page fixes it, or **⋯** on its line in **Recent changes**. It learns from your edits.
 
 ## What it knows about someone
 

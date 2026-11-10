@@ -26,7 +26,7 @@ If several people have that name, it says which one it means. The other messages
 
 Press `?` for **Keyboard shortcuts**, the full list for your computer.
 
-- Go to a page: `G` then `T` To-dos, `C` Calendar, `P` People, `O` Organizations, `J` Projects, `W` Who's who (once it shows), `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results.
+- Go to a page: `G` then `T` To-dos, `C` Calendar, `P` People, `O` Organizations, `J` Projects, `F` Fleet, `L` Learning, `N` Connections, `,` Settings. `G` then `E` opens the message search results.
 - `N` adds a new to-do. `T` starts Talk, or ends it while it's live. `J` and `K` (or `↓` and `↑`) move through a list, Enter opens.
 - On a to-do: `E` renames it, `S` snoozes it, `D` marks it done, `R` writes in its chat.
 - On the Calendar: `T` goes to today, `J` and `K` (or `→` and `←`) to the next or previous week or month. `A`, `W` and `M` switch to Agenda, Week and Month.
