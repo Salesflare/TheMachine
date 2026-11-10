@@ -98,6 +98,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/app/review_facts.py` (`ReviewFacts`): which facts a review gets once they no longer all fit its cap: the
     standing ones first, then the closest to the waiting signals (stored vectors), and a turn for the one a review saw
     longest ago.
+  - `machine/app/claim_reply.py`: what a claim (`begin_analysis`) carries next to its signals: the boards with only
+    the claim's own projects (`boards`), one whole board on request (`lookup`, `graph` `board`), and `fit`, which
+    keeps the whole reply under the review page size and says in `left_out` what it dropped.
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
     personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
     reads the other side at view time (`annotate`), so no Fleet sees it.

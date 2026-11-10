@@ -21,6 +21,7 @@ import gbrain
 import graph
 import mail_senders
 from machine.actions import CRM_ACTIONS
+from machine.app import claim_reply
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
@@ -179,6 +180,8 @@ class GraphActionsApp:
         limit = min(int(args.get('limit') or 12), 30)
         with self.store.connect() as db:
             marks = self.graph_fleet_marks(db)
+            if args.get('boards') or (args.get('board') and not args.get('project')):  # what a claim's boards leave out
+                return claim_reply.lookup(db, args.get('board'))
             if args.get('node_id'):
                 found = graph.detail(db, str(args['node_id']), max(1, min(int(args.get('events') or 12), 120)))
                 if not found:
