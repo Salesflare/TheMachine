@@ -410,6 +410,7 @@ class InstallerTest(unittest.TestCase):
         with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer.time, 'sleep', side_effect=sleep) as slept, \
                 mock.patch.object(installer.time, 'monotonic', side_effect=lambda: clock[0]), \
                 mock.patch.object(installer, 'say', side_effect=said.append), mock.patch.object(installer, 'index_busy', side_effect=index_busy), \
+                mock.patch.object(installer, 'gateway_started', return_value=None), \
                 mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
                 mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60', 'ASSISTANT_SWAP_WAIT': wait, 'ASSISTANT_PLUGIN_RETRY_WAIT': '0'}):
             ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp, restart=restart)
@@ -648,6 +649,90 @@ class InstallerTest(unittest.TestCase):
             self.assertIn(['plugins', 'reload'], calls)
             self.assertNotIn(['plugins', 'inspect'], calls)
 
+    def old_stamp_install(self, stamp_text, started, case=None):
+        """install_plugin over a stamp written as `stamp_text` (None: no stamp), with plugin-waiting set, on a Gateway
+        that started `started` seconds after the bridge's files last changed (negative: before)."""
+        facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}
+        run, calls, settings = self.openclaw_has(**(case or {}))
+        tmp = Path(tempfile.mkdtemp(prefix='machine-stamp-'))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        stamp, waiting = tmp / 'plugin-installed', tmp / installer.BRIDGE_WAITING
+        if stamp_text is not None:
+            stamp.write_text(stamp_text)
+        waiting.write_text(installer.plugin_fingerprint(facts) + '\n')
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer, 'say') as say, \
+                mock.patch.object(installer, 'index_busy', return_value=None), mock.patch.object(installer.time, 'sleep'), \
+                mock.patch.object(installer.onboarding, 'openclaw_settings', return_value=settings), \
+                mock.patch.object(installer, 'bridge_changed_at', return_value=5000.0), \
+                mock.patch.object(installer, 'gateway_started', return_value=5000.0 + started):
+            self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+        return calls, stamp, waiting.exists(), ' '.join(c[0][0] for c in say.call_args_list), facts
+
+    def test_an_old_stamp_over_a_bridge_the_gateway_already_runs_needs_no_swap(self):
+        # A real Machine, 2026-11-10: a one-line stamp from before the bridge last changed, a Gateway that had the
+        # current files loaded, and four live swaps that failed during drain and took model calls down.
+        for text in ('0' * 64 + '\n', None):  # a one-line stamp that does not match, and no stamp at all
+            with self.subTest(stamp=text):
+                calls, stamp, waiting, said, facts = self.old_stamp_install(text, started=60)
+                self.assertNotIn(['plugins', 'install'], calls)
+                self.assertNotIn(['plugins', 'reload'], calls)
+                self.assertIn(['plugins', 'inspect'], calls)
+                self.assertEqual(installer.read_stamp(stamp), (installer.plugin_fingerprint(facts), installer.bridge_parts(facts)))
+                self.assertFalse(waiting)  # the nightly update has nothing left to do
+                self.assertIn('already loaded as it is by the running Gateway', said)
+
+    def test_an_old_stamp_over_changed_files_still_swaps(self):
+        # The files changed after the Gateway started: what it runs is older than the folder, whatever inspect says.
+        calls, stamp, waiting, said, facts = self.old_stamp_install('0' * 64 + '\n', started=-60)
+        self.assertIn(['plugins', 'install'], calls)
+        self.assertIn(['plugins', 'reload'], calls)
+        self.assertNotIn(['plugins', 'inspect'], calls)
+        self.assertEqual(installer.read_stamp(stamp)[1], installer.bridge_parts(facts))
+        self.assertFalse(waiting)
+        for case in ({'loaded': False}, {'plugin': {'status': 'error'}}, {'record': {'sourcePath': '/somewhere/else'}}, {'hooks': False}):
+            with self.subTest(case=case):  # a Gateway newer than the files that does not have this bridge in: swap
+                calls, *_ = self.old_stamp_install('0' * 64 + '\n', started=60, case=case)
+                self.assertIn(['plugins', 'install'], calls)
+        with mock.patch.object(installer, 'bridge_changed_at', return_value=5000.0), \
+                mock.patch.object(installer, 'gateway_started', return_value=None), mock.patch.object(installer, 'bridge_in_openclaw') as inspect:
+            self.assertFalse(installer.gateway_runs_these_files('openclaw'))  # no Gateway process found: no proof
+        inspect.assert_not_called()
+
+    def test_the_gateway_start_comes_from_the_process_list(self):
+        listing = ('    1-02:03:04 /usr/bin/node /usr/lib/node_modules/openclaw/dist/index.js gateway --port 18789\n'
+                   '         00:03 openclaw gateway health --json\n'
+                   '      10:00:00 /usr/bin/python3 assistant.py\n')
+        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, listing, '')), \
+                mock.patch.object(installer.time, 'time', return_value=1_000_000.0):
+            self.assertEqual(installer.gateway_started(), 1_000_000.0 - (86400 + 2 * 3600 + 3 * 60 + 4))  # the oldest one
+        for stdout in ('      10:00:00 /usr/bin/python3 assistant.py\n', '  soon /x/openclaw gateway\n'):
+            with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, stdout, '')):
+                self.assertIsNone(installer.gateway_started())
+        self.assertEqual([installer.elapsed_seconds(t) for t in ('00:07', '01:00:07', '2-00:00:07', 'x', '1:2:3:4')], [7, 3607, 172807, None, None])
+
+    def test_a_failed_swap_whose_recovery_reload_loaded_the_bridge_counts_as_in(self):
+        # The reload that brings models back reads the linked folder: the bridge is in, and the nightly run would only
+        # repeat the swap that failed.
+        run, calls, settings = self.openclaw_has()
+        def failing(command, **kwargs):
+            if command[1:3] == ['plugins', 'install']:
+                calls.append(command[1:3])
+                return subprocess.CompletedProcess(command, 1, '', 'Plugin operation failed during drain')
+            if command[1:4] == ['gateway', 'call', 'models.list']:
+                calls.append(command[1:3])
+                return subprocess.CompletedProcess(command, 1 if ['plugins', 'reload'] not in calls else 0, '', '')
+            return run(command, **kwargs)
+        facts = {'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'run', side_effect=failing), mock.patch.object(installer, 'say'), \
+                mock.patch.object(installer, 'index_busy', return_value=None), mock.patch.object(installer.time, 'sleep'), \
+                mock.patch.object(installer, 'gateway_started', return_value=None), \
+                mock.patch.object(installer.onboarding, 'openclaw_settings', return_value=settings):
+            stamp = Path(tmp) / 'plugin-installed'
+            self.assertTrue(installer.install_plugin(facts, stamp=stamp))
+            self.assertEqual(installer.read_stamp(stamp)[1], installer.bridge_parts(facts))
+            self.assertFalse((Path(tmp) / installer.BRIDGE_WAITING).exists())
+            self.assertEqual(calls.count(['plugins', 'install']), 1)
+
     def test_a_failed_plugin_install_that_took_the_model_runtime_down_gets_it_back(self):
         ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install')
         self.assertFalse(ok)  # the bridge did not go in: still a failed install, tried again next time
@@ -655,7 +740,7 @@ class InstallerTest(unittest.TestCase):
         after = calls[calls.index('plugins install'):]
         self.assertLess(after.index('plugins reload'), after.index(self.RESTART), calls)  # one reload first, then the restart
         self.assertEqual(after.count('plugins reload'), 1)
-        self.assertEqual(calls[-1], 'gateway call', calls)  # checked again after the restart
+        self.assertEqual(calls[-2:], ['gateway call', 'plugins inspect'], calls)  # checked again after the restart, then whether it is in
         self.assertIn('cannot run models', said)
         self.assertIn('Model calls work again', said)
         self.assertIn('run ./install.sh again', said)
@@ -1199,6 +1284,35 @@ exit 0
         self.assertIn('openclaw plugins reload personal-assistant-bridge --wait', self.calls())
         self.assertTrue((self.data / 'plugin-installed').exists())
         self.assertFalse((self.data / 'plugin-waiting').exists())
+
+    def test_the_nightly_run_leaves_a_bridge_the_gateway_already_runs_alone(self):
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        stamp = self.data / 'plugin-installed'
+        stamp.write_text('0' * 64 + '\n')  # a one-line stamp from before the bridge last changed
+        (self.data / 'plugin-waiting').write_text('x\n')
+        root = str(ROOT / 'openclaw-plugin')
+        found = {'plugin': {'rootDir': root, 'enabled': True, 'status': 'loaded'}, 'install': {'source': 'path', 'sourcePath': root}}
+        (self.bin / 'openclaw').write_text(f'''#!/bin/sh
+echo "openclaw $*" >> "{self.log}"
+case "$*" in
+  --version) echo "OpenClaw 2026.11.2 (test)";;
+  "plugins inspect"*) echo '{json.dumps(found)}';;
+  "gateway health"*) echo '{{"ok": true, "plugins": {{"loaded": ["{installer.PLUGIN_ID}"]}}}}';;
+esac
+exit 0
+''')
+        # A Gateway that started a moment ago, well after this checkout's bridge files were written
+        (self.bin / 'ps').write_text('#!/bin/sh\necho "  00:01 /usr/bin/node /usr/lib/node_modules/openclaw/dist/index.js gateway --port 18789"\n')
+        (self.bin / 'ps').chmod(0o755)
+        (self.home / '.openclaw').mkdir(exist_ok=True)
+        (self.home / '.openclaw/openclaw.json').write_text(json.dumps(
+            {'plugins': {'entries': {installer.PLUGIN_ID: {'enabled': True, 'hooks': {'allowConversationAccess': True}}}}}))
+        self.log.unlink()
+        result = self.install('--if-bridge-waits')
+        self.assertIn('already loaded as it is by the running Gateway', result.stdout, result.stdout + result.stderr)
+        self.assertFalse([c for c in self.calls() if c.startswith(('openclaw plugins install', 'openclaw plugins reload'))], self.calls())
+        self.assertFalse((self.data / 'plugin-waiting').exists())
+        self.assertEqual(len(stamp.read_text().splitlines()), 2)
 
     def test_activation_is_explicit_and_preserves_existing_choices(self):
         self.assertEqual(self.install('--no-start').returncode, 0)
