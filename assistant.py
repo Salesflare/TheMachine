@@ -353,7 +353,6 @@ from machine.browser import (
     browser_view_link,
     browser_wait,
     own_tab,
-    peek_tab,
     preparation_steps,
     recover_browser,
     run_page,

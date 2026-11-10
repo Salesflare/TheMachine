@@ -69,6 +69,11 @@ function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includ
  if(st.status==='sent')return html`<p class="chat-sendstate ok" role="status">${d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who)}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;
  if(chatFailed(st))return html`<p class="chat-sendstate failed" role="alert">${st.retry_ok?st.error:t('Didn’t go out.')+(st.error?' '+st.error:'')}</p>`;
  return ''}
+// A running to-do's live browser in the chat, as on its card: a slot while it runs (empty, so not shown, without a
+// picture), so the picture stays between browser steps and goes only when the run is done with the browser. A click
+// opens the Browser pane; while the run waits on the browser the slot holds Open the browser even before a picture.
+const chatPeek=s=>{const via=s.preparation_browser||{link:state.browser_link||'',page:'',quiet:true};
+ return html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(via)}">${peekHTML(s.id,via)}</div>`};
 function chatParts(s){const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));const card=t.content.querySelector('article');
  // The card's … menu, flat: Hand off…'s sheet gives its choices by their whole names (Hand to Codex, not Codex)
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>button,.more-menu>a,.mm-sub>button:not([data-mm-back]),.mm-sub>a:not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
@@ -93,7 +98,7 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  if(backItem)rest.unshift(backItem);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
- const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${!s.preparation_browser?'':s.preparation_status==='blocked'?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:['running','starting'].includes(s.preparation_status)?html`<div class="note peek chat-peek" data-peek="${s.id}" data-peek-via="${JSON.stringify(s.preparation_browser)}">${peekHTML(s.id,s.preparation_browser)}</div>`:''}`;
+ const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
  return {sends,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),

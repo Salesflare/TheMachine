@@ -57,7 +57,7 @@
 /* Nothing behind the ⋯ while the sidebar has the list (Not needed, its Undo gone): no ⋯ that opens an empty box */.chat-menu[data-empty]{visibility:hidden}
 /* What you're doing now (a handoff, a merge, a change) sits under the thread, just above the message box: the thread
    keeps its place at the bottom and no gap opens between the two */
-.chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty{display:none}.chat-main>.chat-compose{order:2}
+.chat-panel{order:1;margin:0 auto 12px;width:min(100%,var(--chat-col));padding:0;background:none;box-shadow:none;border:0}.chat-panel:empty,.chat-panel:has(>.chat-peek:only-child:empty){display:none}.chat-main>.chat-compose{order:2}
 /* The thread: one readable column, centered in the pane, with room between turns */
 .chat-log{display:flex;flex-direction:column;padding:20px max(2px,calc((100% - var(--chat-col))/2)) 28px;flex:1}.chat-log>:first-child{margin-top:auto}
 .chat-log>*{margin-top:26px}.chat-log>.cont{margin-top:8px}.chat-log>.chat-options{margin-top:10px}
