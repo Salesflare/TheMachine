@@ -501,7 +501,8 @@ class ReviewApp:
                                                self.store.unnamed_text(run['run_id']), self.store.role_text(run['run_id']), self.store.notes_to_learn(),
                                                self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
                                                self.store.sort_text(run['run_id']), source_notes(account_services(self.config)) + companies_prompt(self.config),
-                                               self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']), self.store.first_look_run(run['run_id']))
+                                               self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']), self.store.first_look_run(run['run_id']),
+                                               batch_facts=memory.text('batch_facts'))
             try:  # drafts the owner rewrote, or answered themselves instead: lasting habits go into that channel's voice
                 lines = self.store.edits_to_learn()
                 if lines:

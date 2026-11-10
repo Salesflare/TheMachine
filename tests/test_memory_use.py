@@ -45,7 +45,7 @@ class Before:
         store, todo, known = app.store, (about or {}).get('todo'), a.embeddings.settings(app.config)
         self.budget = budget
         self.pickers = {
-            'history': lambda: store.preference_summary(), 'promises': lambda: store.promises_text(),
+            'history': lambda: store.preference_summary(), 'promises': lambda: store.promises_text(), 'batch_facts': lambda: '',
             'facts': (lambda: store.facts_text(ids=True)) if purpose == 'review' else
                      (lambda: store.facts_for(todo, 'fact', known, accounts=app.config.get('accounts', []))),
             'rules': lambda: store.facts_for(todo, 'draft', known), 'records': lambda: app.graph_lines(todo),

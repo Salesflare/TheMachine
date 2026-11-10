@@ -93,6 +93,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     put in (`memory_use.note`), and the builder logs that once its run is admitted (`memory_use.record`). A new reader
     of memory is a block there, not another call in a builder. `machine/app/senders.py` is the review's `sender`
     block: one line per sender of the claimed batch the Graph knows something specific about.
+  - `machine/app/review_facts.py` (`ReviewFacts`): which facts a review gets once they no longer all fit its cap: the
+    standing ones first, then the closest to the waiting signals (stored vectors), and a turn for the one a review saw
+    longest ago.
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
     personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
     reads the other side at view time (`annotate`), so no Fleet sees it.

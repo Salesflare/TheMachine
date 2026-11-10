@@ -55,11 +55,12 @@ FIRST_LOOK_READ_RULE = ('This is the owner\'s first look at their past week. In 
                         'suggest as soon as it is checked, then read on.\n')
 
 
-def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill='', first_look=False):
+def review_prompt(run_id, accounts, preferences='', facts='', slipped='', promises='', unnamed='', roles='', notes='', handoffs='', splits='', boards='', sorting='', sources='', fitting='', backfill='', first_look=False, batch_facts=''):
     """The signal review's turn message, ordered stable-first so the model's prompt cache reuses it from one review to
     the next: first the instructions, the same for every review; then what changes slowly (the accounts, the owner's
-    language, sources, facts, what they did with suggestions, open promises); last this run's own lines (its id, the
-    tasks for this batch, what is shown once). Nothing that differs per run (an id, a time, a count) goes before that
+    language, sources, facts, what they did with suggestions, open promises, and the facts picked for this batch when
+    they no longer all fit: batch_facts, with its own heading, differs per batch, so it comes after the rest); last
+    this run's own lines (its id, the tasks for this batch, what is shown once). Nothing that differs per run (an id, a time, a count) goes before that
     last part: a cached prefix ends at the first byte that differs (tests/test_review_cache_prefix.py)."""
     stable = f'''This is a signal review started by the personal-assistant service. It is not a chat with the owner and not a preparation task.
 The assistant instructions (tools/personal-assistant/AGENTS.md) and the owner's profile (USER.md) are included in this turn's context; follow the "Reviewing signals" section. Don't re-read those files.
@@ -90,7 +91,7 @@ What the owner did with suggestions in the last 30 days. Learn from it: avoid ki
 {preferences}''' if preferences else '') + (f'''
 
 Open promises (the owner's and those made to them):
-{promises}''' if promises else ''))
+{promises}''' if promises else '') + ('\n\n' + batch_facts if batch_facts else ''))
     this_run = (f'\n\nThis turn: review run {run_id}.' + ('\n' + FIRST_LOOK_READ_RULE.rstrip('\n') if first_look else '') + (f'''
 
 Boards to sort, before anything else (separate from the batch: these projects need no new message). The owner put these projects on a board and their tiles say "Sorting" until you place them. For each, read its messages with events (its event_ids below, all accounts) and judge where it stands now from what they mean between these people, never their wording. Place it with graph {{"project": its node_id, "board", "stage", "event_id": the message that shows it, "reason": one short clause that reads after "Moved to <stage>:" (like "Demo held on Thu, they asked for pricing"), "next": the owner's next step in a few words}}. When nothing has moved it past the first stage, place it in the first stage the same way, with the message and why. Only when none of its messages shows where it stands, add it to finish_analysis sorted ([{{"project": its node_id, "why": a few words}}]). finish_analysis refuses until each one is placed or in sorted.
