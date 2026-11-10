@@ -57,6 +57,9 @@ button.quiet{background:transparent;border-color:transparent;color:var(--muted)}
 button.quiet:hover{color:var(--orange);border-color:#eca45b55}
 button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 input::placeholder,textarea::placeholder{color:var(--faint)}
+/* A native select's list takes its colors from the options, so one with a transparent background (Chrome draws the list
+   white then) never shows light text on white in dark */
+option,optgroup{background-color:var(--surface);color:var(--text)}
 select{appearance:none;padding-right:34px;background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23a7aaa4' stroke-width='1.8'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center}
 
 /* Notice */

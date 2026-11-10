@@ -61,10 +61,12 @@ const options=draft.to_options||[];$('#send-recipients').hidden=!options.length;
 const pre=Math.max(0,options.findIndex(x=>!draft.bounced?.[x.toLowerCase()]));  /* a working address is preselected */
 setHTML($('#send-recipients div'),html`${options.map((x,i)=>html`<label><input type="checkbox" value="${x}" ${i===pre?html`checked`:''}>${x}${bounceNote(draft.bounced?.[x.toLowerCase()])}</label>`)}`);
 // Like the site's send preview: From/To/Subject rows, then the message in its own box.
-// From: a small picker when this mailbox may also send as an alias of theirs (only ones Gmail confirms; own_addresses.senders).
+// From: a small picker when this mailbox may also send as an alias of theirs (only ones Gmail confirms; own_addresses.senders);
+// it opens the app's own menu (cmMenu), never the browser's list.
 const froms=draft.from_options||[];sendFrom=draft.from;
 const header=(subject=true)=>{const to=options.length?sendRecipients():draft.to;sendBounced(to,draft);const rows=[['From',sendFrom],['To',to.length===1&&draft.to_name&&!options.length?draft.to_name+' <'+to[0]+'>':to.join(', ')||'(choose above)']];for(const key of ['cc','bcc'])if(draft[key]?.length)rows.push([key[0].toUpperCase()+key.slice(1),draft[key].join(', ')]);if(subject)rows.push(['Subject',draft.subject]);$('#send-confirm').disabled=!to.length;sendRows(rows);
- if(froms.length>1){setHTML($('#send-head dd'),html`<select id="send-from" aria-label="Send from">${froms.map(a=>html`<option value="${a}"${a===sendFrom?html` selected`:''}>${a}</option>`)}</select>`);$('#send-from').onchange=e=>{sendFrom=e.target.value}}};
+ if(froms.length>1){cmLists.from={label:'Send from',choices:()=>froms.map(a=>({value:a,label:a,name:true})),value:()=>sendFrom,pick:v=>{sendFrom=v;const s=$('#send-from>span');if(s)s.textContent=v}};
+  setHTML($('#send-head dd'),cmTrigger('from','from',sendFrom,'from-pick',html` id="send-from" translate="no"`))}};
 sendHeader=header;$('#send-recipients').onchange=()=>header($('#send-editor').hidden);
 header();sendBody(draft.body,draft.signature);sendFine([INTERCOM_WHY[draft.intercom_fallback]||'',replyElsewhere(draft),draft.snooze_days?t(['Leaves your inbox for {} day after sending, or until a reply.','Leaves your inbox for {} days after sending, or until a reply.'],draft.snooze_days):'',waits].filter(Boolean).join(' '));
 const files=draft.attachments||[];$('#send-files').hidden=!files.length;
