@@ -171,12 +171,23 @@ class GraphActionsApp:
                 said = graph.relate(db, args['node_id'], args['related_to'], args.get('relation'), source, now(),
                                     int(args['event_id']) if args.get('event_id') not in (None, '') and 'role' not in args and 'org' not in args else None)
                 changed = changed or 'kept' not in said
+        later = changed and (source != 'owner' or args.get('merge') or args.get('different'))
         if changed:
             # The owner's Merge or Not the same: the Same person? card is gone from the table already, the rebuild that
-            # joins them runs in the graph worker (a whole build in the request held the database for its tens of seconds)
-            (self.graph_later if source == 'owner' and (args.get('merge') or args.get('different')) else self.graph_build)()
+            # joins them runs in the graph worker (a whole build in the request held the database for its tens of seconds).
+            # A review's or the chat's own change too: each role, organization or label it set waited 8 to 22 s for a
+            # whole build, one after another, and slowed every other request meanwhile. What it set is saved; it reads
+            # on in the Graph as it was, and the worker's rebuild shows the change within a minute.
+            (self.graph_later if later else self.graph_build)()
         if args.get('split'):
             return {'split': split, 'changed': True}
+        found = self.graph_read(args, changed)
+        if later and source != 'owner' and self.__dict__.get('graph_worker_on') and isinstance(found, dict):  # read by the review or the chat, never shown to the owner
+            found['saved'] = 'Saved. What graph shows here is from before it; the Graph shows the change after its next rebuild, within a minute.'
+        return found
+
+    def graph_read(self, args, changed=False):
+        """What graph answers with: a node, a search, the nodes on some signals, what a claim's boards leave out, or the overview."""
         limit = min(int(args.get('limit') or 12), 30)
         with self.store.connect() as db:
             marks = self.graph_fleet_marks(db)
@@ -703,7 +714,9 @@ class GraphActionsApp:
             raise ValueError('Only the owner moves a project by hand, on the dashboard; reviews use finish_analysis stages')
         with self.store.connect() as db:
             moved = graph.set_stage(db, str(args.get('node_id') or ''), args.get('stage'), 'owner', now())
-        self.graph_build()
+        # The board, the project's page and its moves read the projects table, so the move shows at once; the rest of
+        # the Graph follows in the worker. A whole build here held a drag on the board some 19 s.
+        self.graph_later()
         return moved
 
     def graph_org_edit_action(self, name, args, owner_dashboard=False):
@@ -869,7 +882,7 @@ class GraphActionsApp:
             raise ValueError('Only the owner sets who sees a project, on the dashboard')
         with self.store.connect() as db:
             done = graph.set_project_visibility(db, args.get('node_id'), args.get('visibility'))
-        self.graph_build()
+        self.graph_later()  # who sees it is read from the projects table: no build needed before the answer
         return done
 
     def project_action(self, name, args, owner_dashboard=False):
@@ -896,10 +909,11 @@ class GraphActionsApp:
                 if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
                     raise ValueError('node_ids is a list of suggestion ids')
                 done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
-        if name == 'board_fit':  # the board reads its projects as they are now: the Graph follows in the background
-            self.graph_later()
-        else:
-            self.graph_build()
+        # The board reads its projects as they are now, so these answer at once and the Graph follows in the background:
+        # Add and Leave out, Won or Lost (a move and an outcome on the projects table), Archive (its node says so at once,
+        # graph.archive_project), Delete (its node goes with it) and the board Projects opens on. A new or renamed
+        # project, and the people on one, are in the Graph only after a build: Save waits for it.
+        (self.graph_build if name == 'project_save' else self.graph_later)()
         return done
 
     def crm_actions_action(self, name, args, owner_dashboard=False):

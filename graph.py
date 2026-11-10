@@ -4364,6 +4364,8 @@ def archive_project(db, node_id, archived, now):
     """Archived: off the boards and lists of open work, with its history; a new message about it brings it back."""
     row = project_row(db, node_id)
     db.execute('UPDATE projects SET closed_at=? WHERE id=?', (now if archived else None, row['id']))
+    # Its node says so at once (what a build writes there), so the lists and its page need no whole build first
+    db.execute("UPDATE graph_nodes SET info=json_set(coalesce(info,'{}'),'$.closed_at',?) WHERE id=?", (now if archived else None, 'project:' + str(row['id'])))
     return {'node_id': 'project:' + str(row['id']), 'archived': bool(archived)}
 
 

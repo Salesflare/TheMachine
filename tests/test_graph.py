@@ -587,6 +587,34 @@ class Graph(unittest.TestCase):
         self.assertIsNotNone(self.node('org:warmup-pool.example'))
         self.assertEqual(self.app.graph_action({})['warmup'], [])
 
+    def test_a_reviews_changes_answer_without_a_whole_build_while_the_graph_worker_runs(self):
+        """A review sets roles, organizations and labels one graph call after another: each waited 8 to 22 s for a whole
+        build on a big Graph, with the database held. With the graph worker running, what it set is saved and the
+        worker rebuilds; the answer says the Graph shows it after that. Without the worker it builds first, as before."""
+        pat = mail(3, 'Pat Doe <pat@client.com>', 'sam@acme.com', title='Intro')
+        pat['body'] = 'Hi Sam,\nAs the CFO at Client Ltd I look after the renewal.\nPat'
+        self.add(pat, mail(2, 'Sam <sam@acme.com>', 'Pat Doe <pat@client.com>', ('SENT',)))
+        self.build()
+        pat_id, = self.ids([pat['source_id']])
+        builds = []
+        self.app.graph_build = lambda *a, **k: builds.append(1)
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
+        said = self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'CFO at Client Ltd', 'event_id': pat_id, 'quote': 'the CFO at Client Ltd'})
+        self.assertEqual((builds, self.app.graph_dirty.is_set()), ([], True))
+        self.assertEqual((said['id'], said['role'], said['role_by']), ('email:pat@client.com', 'CFO at Client Ltd', 'review'))  # on their page at once
+        self.assertIn('after its next rebuild', said['saved'])
+        said = self.app.graph_action({'node_id': 'email:pat@client.com', 'org': 'Client Ltd', 'event_id': pat_id, 'quote': 'CFO at Client Ltd'})
+        self.assertIn('saved', said)
+        said = self.app.graph_action({'project': 'Client renewal', 'event_ids': [pat_id]})
+        self.assertEqual((builds, said['changed']), ([], True))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT org FROM person_orgs WHERE identifier=?', ('email:pat@client.com',)).fetchone()[0], 'Client Ltd')
+            self.assertEqual(db.execute('SELECT count(*) FROM event_projects').fetchone()[0], 1)
+        self.assertNotIn('saved', self.app.graph_action({'node_id': 'email:pat@client.com'}))  # a read changes nothing
+        del self.app.graph_worker_on  # a command or a test without the worker: built before it answers
+        said = self.app.graph_action({'node_id': 'email:pat@client.com', 'role': 'finance lead', 'event_id': pat_id, 'quote': 'look after the renewal'})
+        self.assertEqual((builds, 'saved' in said), ([1], False))
+
     def test_roles_keep_their_evidence_the_owner_confirms_and_corrects_and_reviews_learn(self):
         pat = mail(3, 'Pat Doe <pat@client.com>', 'sam@acme.com', title='Intro')
         pat['body'] = 'Hi Sam,\nAs the CFO at Client Ltd I look after the renewal.\nPat'
@@ -1162,6 +1190,51 @@ class Boards(unittest.TestCase):
         moved = self.app.action('graph_stage', {'node_id': node, 'stage': 'Live'}, owner_dashboard=True)
         self.assertEqual(moved['stage'], 'Live')
         self.assertIn('graph_stage', a.OWNER_ACTIONS)
+
+    def test_a_move_by_hand_and_other_project_edits_answer_before_the_graph_is_built_again(self):
+        """With the graph worker running (the service), a drag on the board, its Undo, Won or Lost, who sees a project,
+        the board Projects opens on, Archive and Delete answer at once and hand the rebuild to it: the board, the
+        project's page and its moves read the projects table. A whole build held a drag some 19 s on a big Graph. Save
+        still builds first (a new or renamed project is in the Graph only after one), and so does everything without the worker."""
+        asked, agreed, _ = self.mails()
+        with self.store.connect() as db:
+            node = graph.set_stage(db, 'Paperkite', 'Contacted', 'review', NOW.isoformat(), board='Listings', reason='asked for a listing', event_id=asked)['node_id']
+            other = graph.set_stage(db, 'Bramblebox', 'Agreed', 'review', NOW.isoformat(), board='Listings', reason='said yes', event_id=agreed)['node_id']
+            board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
+        self.build()
+        builds = []
+        self.app.graph_build = lambda *a, **k: builds.append(1)
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
+        moved = self.app.action('graph_stage', {'node_id': node, 'stage': 'Live'}, owner_dashboard=True)
+        self.assertEqual((moved['stage'], builds, self.app.graph_dirty.is_set()), ('Live', [], True))
+
+        def where(n):
+            with self.store.connect() as db:
+                tile = next(p for p in graph.boards(db, NOW.isoformat())[0]['projects'] if p['id'] == n)
+                return tile['stage'], tile['by'], graph.detail(db, n)['board']['stage'], [(m['stage'], m['source']) for m in graph.project_moves(db, n)['moves']]
+        self.assertEqual(where(node), ('Live', 'owner', 'Live', [('Live', 'owner'), ('Contacted', 'review')]))  # the board and its page at once
+        self.app.action('graph_stage', {'node_id': node, 'stage': 'Contacted'}, owner_dashboard=True)  # Undo on its page: back, as the owner's move
+        self.assertEqual(where(node), ('Contacted', 'owner', 'Contacted', [('Contacted', 'owner'), ('Live', 'owner'), ('Contacted', 'review')]))
+        self.assertEqual(self.app.action('project_outcome', {'node_id': node, 'outcome': 'won', 'reason': 'Signed'}, owner_dashboard=True)['stage'], 'Live')
+        self.assertEqual(where(node)[0], 'Live')
+        self.app.action('project_visibility', {'node_id': node, 'visibility': 'only_you'}, owner_dashboard=True)
+        self.app.action('board_default', {'board_id': board_id}, owner_dashboard=True)
+        self.app.action('project_archive', {'node_id': other, 'archived': True}, owner_dashboard=True)
+        with self.store.connect() as db:  # archived: in the done list and on its page at once
+            self.assertEqual(([p['id'] for p in graph.page(db, 'projects')['items']], [p['id'] for p in graph.page(db, 'projects_done')['items']]), ([node], [other]))
+            self.assertTrue(graph.detail(db, other)['closed'])
+        self.app.action('project_archive', {'node_id': other, 'archived': False}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertEqual(sorted(p['id'] for p in graph.page(db, 'projects')['items']), sorted([node, other]))
+        self.app.action('project_delete', {'node_id': other}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertIsNone(graph.detail(db, other))  # its node went with it
+        self.assertEqual(builds, [])
+        self.app.action('project_save', {'name': 'Quillfeather'}, owner_dashboard=True)
+        self.assertEqual(builds, [1])
+        del self.app.graph_worker_on  # a command or a test without the worker: built before it answers
+        self.app.action('graph_stage', {'node_id': node, 'stage': 'Agreed'}, owner_dashboard=True)
+        self.assertEqual(builds, [1, 1])
 
     def test_a_suggested_board_is_nothing_until_the_owner_saves_it(self):
         self.mails()
