@@ -23,13 +23,13 @@ const boards=[
 const list=[{id:'project:1',kind:'project',name:'Paperkite',strength:1,last_at:day(2),signals:3}];
 const detail={id:'project:1',kind:'project',name:'Paperkite',strength:1,last_at:day(2),signals:3,ids:[],links:[],recent:[],around:[],open:{},
  board:{board:'Partner listings',stage:'Contacted',next:'Wait for their reply',visibility:null,board_visibility:'team',moves:[{stage:'Contacted',reason:'they asked for a listing',source:'review',at:day(2),event_id:101}]}};
-let calls=[],nodeAsks=[];
+let calls=[],nodeAsks=[],stageHold=null;
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');if(n)nodeAsks.push(n);res.end(JSON.stringify(n?detail:{projects:list,people:[],quiet:[],new:[],orgs:[],boards}));return}
  if(req.method!=='GET'&&!url.pathname.startsWith('/brand/'))calls.push(JSON.parse(body||'{}'));
- if(url.pathname==='/api/action'){const c=JSON.parse(body||'{}');if(c.action==='graph_stage'){const p=boards[0].projects.find(x=>x.id===c.args.node_id);Object.assign(p,{stage:c.args.stage,by:'owner',event_id:null,days:0})}res.end('{}');return}
+ if(url.pathname==='/api/action'){const c=JSON.parse(body||'{}');if(c.action==='graph_stage'){if(stageHold)await stageHold;const p=boards[0].projects.find(x=>x.id===c.args.node_id);Object.assign(p,{stage:c.args.stage,by:'owner',event_id:null,days:0})}res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
@@ -100,6 +100,18 @@ try{
   calls=[];await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
   await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Live']]);
+  // The tile is in its new lane before the Machine answers: the board never waits for the move (a whole Graph build
+  // there held a drag some 19 s), and the refresh after the answer keeps it there
+  let release;stageHold=new Promise(r=>release=r);calls=[];
+  await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Partly live"]'));
+  await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').waitFor();
+  assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Partly live']]);
+  assert.equal(await page.locator('#toast',{hasText:'Moved to Partly live.'}).count(),0,'the move was not answered yet');
+  release();stageHold=null;await page.locator('#toast',{hasText:'Moved to Partly live.'}).waitFor();
+  await page.evaluate(()=>window.lastBoardMove);await page.evaluate(()=>people('',true));
+  assert.equal(await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').count(),1);
+  await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
+  await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
   // Clicking a tile opens the project page, with its stage and moves
   calls=[];await page.locator('.tile[data-node="project:1"] .tile-next').click();await page.locator('.graph-stage').waitFor();
   assert.ok(nodeAsks.includes('project:1'));assert.match(await page.locator('.graph-stage').textContent(),/Contacted on Partner listings/);
