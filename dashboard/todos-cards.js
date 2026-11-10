@@ -487,8 +487,8 @@ function cardAreaPick(id,anchor){const s=(state.suggestions||[]).find(x=>x.id===
 document.addEventListener('click',e=>{const m=e.target.closest('[data-card-move]');if(m){e.preventDefault();m.closest('details.more-actions,details.chat-menu')?.removeAttribute('open');cardMove(m.dataset.cardMove,m.dataset.area,m);return}
  const p=e.target.closest('[data-card-area]');if(p){e.preventDefault();cardAreaPick(p.dataset.cardArea,p);return}
  const u=e.target.closest('[data-move-undo]');if(u){e.preventDefault();$('#toast').classList.remove('show');cardMove(u.dataset.id,null,null,u.dataset.moveUndo)}});
-// A project's to-dos on its page: open ones, then the latest done (graph.project_todos).
-const projectTodos=n=>n.kind==='project'&&n.todos?.length?html`<div class="section-head"><h2>To-dos</h2><span class="count">${n.todos.filter(c=>!c.done).length||''}</span></div><article class="graph-open project-todos">${n.todos.map(c=>html`<div class="promise${c.done?html` done`:''}"><span class="grow"><a href="#card=${c.id}" translate="no">${c.title}</a>${c.done?html`<small>done</small>`:c.due?html`<small>due ${day(c.due)}</small>`:''}</span></div>`)}</article>`:'';
+// A project's to-dos on its page: open ones, then the latest done (graph.project_todos). The count is the open ones; none open: no count.
+const projectTodos=n=>n.kind==='project'&&n.todos?.length?html`<div class="section-head"><h2>To-dos</h2>${n.todos.some(c=>!c.done)?html`<span class="count">${n.todos.filter(c=>!c.done).length}</span>`:''}</div><article class="graph-open project-todos">${n.todos.map(c=>html`<div class="promise${c.done?html` done`:''}"><span class="grow"><a href="#card=${c.id}" translate="no">${c.title}</a>${c.done?html`<small>done</small>`:c.due?html`<small>due ${day(c.due)}</small>`:''}</span></div>`)}</article>`:'';
 // First-use tips (Store.first_tips): on a new person's first to-dos, one short line under the buttons of the to-do it is
 // about, one at a time. 'send' on the first ready draft (nothing goes out until Send), else 'change' on the first open
 // to-do (Ask for changes and Not needed, named as their buttons and working like them). A tip goes
