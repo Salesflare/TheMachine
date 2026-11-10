@@ -519,6 +519,7 @@
  "Asked. It shows as accepted once they take it.": "Chiesto. Risulta accettato quando la prende.",
  "Asked. Their busy times show here.": "Chiesto. I loro orari occupati compaiono qui.",
  "Asked. This tab shows how it goes.": "Chiesto. Questa scheda mostra come va.",
+ "Asked: {}": "Ha chiesto: {}",
  "Asking to join": "Chiedono di entrare",
  "Asking {}’s Machine for a time that suits you both.": "Chiedo alla Machine di {} un orario che vada bene a entrambi.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Chiede una Machine {}, pagata dalla Fleet: {}.",

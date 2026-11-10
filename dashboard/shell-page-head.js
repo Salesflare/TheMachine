@@ -112,8 +112,10 @@ if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.cho
 if(choice==='send'){openSend(id);return}
 if(choice==='pick'){const s=state.suggestions.find(x=>x.id===id),q=s?.preparation_questions?.[+b.dataset.q];if(!q)return;
  if(!changing.has(id)){changing.add(id);dismissing.delete(id);render()}
- const t=$('#feedback-'+id);if(!t)return;const head=sentence(q.question)+' ';
- t.value=[...t.value.split('\n').filter(l=>l.trim()&&!l.startsWith(head)),head+b.dataset.pick].join('\n');t.classList.add('filled');
+ // Only the answer goes in the box (the Machine keeps which question it answers): a pick for the same question replaces that question's earlier pick
+ const t=$('#feedback-'+id);if(!t)return;const picked=askPicks.get(id)||{},lines=t.value.split('\n').filter(l=>l.trim()),was=lines.indexOf(picked[b.dataset.q]);
+ if(was>=0)lines.splice(was,1,b.dataset.pick);else lines.push(b.dataset.pick);askPicks.set(id,{...picked,[b.dataset.q]:b.dataset.pick});
+ t.value=lines.join('\n');t.classList.add('filled');
  for(const x of document.querySelectorAll(`#task-${CSS.escape(id)} .pick[data-q="${b.dataset.q}"]`))x.setAttribute('aria-pressed',String(x.dataset.pick===b.dataset.pick));t.focus();return}
 if(choice==='change'||choice==='answer'){changing.add(id);dismissing.delete(id);render();$('#feedback-'+id)?.focus();return}
 if(choice==='cancel-change'){changing.delete(id);render();return}

@@ -109,7 +109,8 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'learning_changes': ('before', 'after', 'why'),  # a learned change, what it replaced and why (learning_loop.py)
            'fleet_log': ('what',),  # what was asked, answered or learned in a Fleet, a line each (fleet.py)
            # a line of the owner's OpenClaw notes offered as a fact, kept also once dismissed (bring_in.py)
-           'bring_in_items': ('text',)}
+           'bring_in_items': ('text',),
+           'decision_asks': ('questions',)}  # the question a note of the owner's answered, beside it (decisions.waiting_questions)
 DERIVED_JSON = (('action_jobs', 'payload', frozenset({'kind'})), ('suggestions', 'next_action', frozenset({'kind'})),
                 ('suggestions', 'outcome', frozenset({'state'})))
 # The phone's notifications reach the app through android_inbox, written by the Gateway's plugin
