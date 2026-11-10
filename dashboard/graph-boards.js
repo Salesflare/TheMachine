@@ -1,5 +1,5 @@
 const boardNow=()=>{const fb=graphBoards[0]&&!graphBoards[0].team&&crmF('projects').board;return (fb&&graphBoards.find(b=>String(b.id)===String(fb)))||graphBoards.find(b=>b.name===boardShown)||graphBoards[0]};
-const tileWhy=(p,side)=>{const last=p.last_at?html` · ${p.last_event_id?html`<button type="button" class="link" data-quote-event="${p.last_event_id}" title="Read its latest message">${shortDay(p.last_at)}</button>`:shortDay(p.last_at)}`:'';
+const tileWhy=(p,side)=>{const last=p.last_at?html` · ${p.last_event_id?html`<button type="button" class="link" data-quote-event="${p.last_event_id}" title="Read its latest message">${sinceWhen(p.last_at)}</button>`:sinceTime(p.last_at)}`:'';
  if(p.sort_failed)return html`<p class="tile-why failed">${p.sort_failed}${last}</p>`;
  if(p.sort_note)return html`<p class="tile-why">Not sorted: ${p.sort_note}${last}</p>`;
  if(p.outcome)return html`<p class="tile-why ${p.outcome}">${p.outcome==='won'?'Won':'Lost'}${p.reason?': '+p.reason:''}${p.at?' · '+shortDay(p.at):''}</p>`;
