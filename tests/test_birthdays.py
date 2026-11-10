@@ -177,9 +177,39 @@ class Birthdays(unittest.TestCase):
     def test_a_day_without_birthdays_makes_nothing(self):
         self.person('wa:15550100', 'Sam Rivera', 3.4, events=[self.chat('15550100', True, 3)])
         self.birthday_event('Team offsite')
+        with self.store.connect() as db:  # someone's birthday is known, just not today's
+            other = (self.today + dt.timedelta(days=40)).strftime('--%m-%d')
+            enrichment.offer_facts(db, [(['wa:15550199'], {'birthday': other}, enrichment.RECORD)], 'google', ago(0))
         todos, run = self.morning()
         self.assertEqual(todos, [])
-        self.assertEqual(run['state'], 'nothing')
+        self.assertEqual((run['state'], run['why']), ('nothing', 'No birthdays today'))
+
+    def test_no_birthday_info_at_all_says_so_and_what_adds_some(self):
+        self.person('wa:15550100', 'Sam Rivera', 3.4, events=[self.chat('15550100', True, 3)])
+        self.birthday_event('Team offsite')
+        self.outlook = []
+        todos, run = self.morning()
+        self.assertEqual(todos, [])
+        self.assertEqual((run['state'], run['why']), ('nothing', 'No birthday info yet. Add birthdays to your contacts.'))
+        app, why = self.app, lambda: app.birthdays_none(self.today, local_tz())
+        app.config['accounts'] = [{**x, 'transport': 'broker'} if x['id'] == 'cal' else x for x in ACCOUNTS if x['id'] != 'o365']
+        self.assertEqual(why(), 'No birthday info yet. Add birthdays to your Google contacts.')  # hosted too: Google shows them on the calendar
+        app.config['accounts'] = [x for x in ACCOUNTS if x['id'] in ('home', 'wa')]
+        self.assertEqual(why(), 'No birthday info yet. Connect your calendar, or add a Birthday field to people in the Graph.')
+        app.config['accounts'] = [x for x in ACCOUNTS if x['id'] in ('home', 'o365')]
+        self.assertEqual(why(), 'No birthday info yet. Add birthdays to your Outlook contacts.')
+        self.outlook = ["Ann Lee's birthday"]  # one later in the year on Outlook's Birthdays calendar: known
+        self.assertEqual(why(), 'No birthdays today')
+        self.outlook = []
+        for found in ('calendar', 'field'):
+            with self.store.connect() as db:
+                if found == 'calendar':  # a birthday event on another day is info too
+                    self.event('cal', 'calendar.event', 'Sam Rivera', {'all_day': True, 'event_type': 'birthday', 'birthday': {'type': 'birthday'}}, at=ago(4))
+                else:
+                    db.execute('DELETE FROM events WHERE kind=?', ('calendar.event',))
+                    field = db.execute("INSERT INTO crm_fields(kind,name,type,created_at) VALUES('person','Verjaardag','date',?)", (ago(0),)).lastrowid
+                    db.execute('INSERT INTO crm_values(node_id,field_id,value,set_at) VALUES(?,?,?,?)', ('wa:15550100', field, '1990-01-01', ago(0)))
+            self.assertEqual(why(), 'No birthdays today', found)
 
     def test_a_first_name_alone_or_two_people_with_the_name_is_nobody(self):
         self.person('wa:15550100', 'Sam Rivera', 3.4, events=[self.chat('15550100', True, 3)])

@@ -27,7 +27,7 @@ Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà d
 
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
 
-Les anniversaires viennent de vos agendas (les anniversaires de Google et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph.
+Les anniversaires viennent de vos agendas (les anniversaires de Google et l’agenda Anniversaires d’Outlook), de vos contacts Google sur une Machine auto-hébergée et d’un champ date nommé Anniversaire sur une personne du Graph. Quand aucun ne contient encore d’anniversaire, le résultat dit **Aucun anniversaire connu pour l’instant** et comment en ajouter.
 
 Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam utilise un court passage quand il y a du courrier à lire). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
 

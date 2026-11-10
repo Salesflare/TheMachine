@@ -29,7 +29,7 @@ Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Abse
 
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
 
-Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph.
+Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und der Outlook-Kalender Geburtstage), deinen Google-Kontakten auf einer selbst gehosteten Machine und einem Datumsfeld namens Geburtstag bei einer Person im Graph. Steht noch nirgends ein Geburtstag, sagt das Ergebnis **Noch keine Geburtstage bekannt** und wie du welche einträgst.
 
 Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 
