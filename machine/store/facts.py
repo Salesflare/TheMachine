@@ -234,6 +234,15 @@ def unlink_named(db, pairs):
                    [(now(), int(p[0]), str(p[1]), str(p[2]) if len(p) > 2 else fact_links.BY) for p in pairs])
 
 
+def reword_fact(db, fact_id, old, new):
+    """A fact in other words with the same meaning (notes_people.py, and its undo), only while it still reads old: an
+    edit since stays. Its vector goes, to be embedded again. True when changed."""
+    if not db.execute('UPDATE facts SET text=? WHERE id=? AND text=?', (new, int(fact_id), old)).rowcount:
+        return False
+    db.execute('DELETE FROM fact_vectors WHERE fact_id=?', (int(fact_id),))
+    return True
+
+
 def owner_fact(db, text, decision_id, about=(), replaces=None):
     """A fact in the owner's own words (Here's what I've learned, first_learned.py), tied to who it is about, in place
     of an older one (replaces: its id). Returns the new fact's id."""

@@ -314,7 +314,8 @@ def apply(db, run_id, voice_check, link=None):
 
 NAMED = 'facts_named'  # learning_state: the one-time pass that ties facts to the record they name ran
 ABOUT_LINES = {NAMED: 'Facts that name one person, organization or project: {}',  # Recent changes, per one-time pass
-               'facts_tied': 'Facts tied to who they are about: {}'}  # fact_ties.py
+               'facts_tied': 'Facts tied to who they are about: {}',  # fact_ties.py
+               'notes_people': 'Facts from your notes put on who they are about: {}'}  # notes_people.py
 
 
 def state_set(db, key, value):
@@ -373,6 +374,9 @@ def undo(db, change_id, unlink=None):
         done.update(corrections.undo(db, row))
     elif row['kind'] == 'about':  # a one-time pass that tied facts to records (by name, or fact_ties.py): those links go
         unlink(db, json.loads(row['target']))
+        if row['run_id'] == 'notes_people':  # facts from notes: their old words come back, the birthdays set go
+            import notes_people
+            notes_people.undo(db, before)
     elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
         import first_learned
         done.update(first_learned.undo(db, row))
