@@ -2,7 +2,7 @@
 
 Repeats in New to-do (card_new with repeat, or a rhythm in the words), More > Repeat on a to-do (card_repeat), Skip
 this one (card_repeat_skip), a custom rhythm read from words (repeat_read), the one-time "Make this a recurring
-to-do?" (recurring_offer), and the worker that brings each series' next to-do on its date (recurring.py)."""
+to-do?" (recurring_offer), Edit and Undo on the chat line of its way of doing it (recurring_method_*), and the worker that brings each series' next to-do on its date (recurring.py)."""
 import datetime as dt
 import json
 import logging
@@ -22,6 +22,8 @@ class RecurringApp:
     ACTIONS = {
         'card_repeat': 'card_repeat_action',
         'card_repeat_skip': 'card_repeat_skip_action',
+        'recurring_method_edit': 'recurring_method_action',
+        'recurring_method_undo': 'recurring_method_action',
         'recurring_offer': 'recurring_offer_action',
         'repeat_read': 'repeat_read_action',
     }
@@ -144,6 +146,22 @@ class RecurringApp:
         with self.store.connect() as db:
             row = db.execute('SELECT next_due FROM recurring_series WHERE id=?', (series['id'],)).fetchone()
         return {'id': sid, 'next': row['next_due'] if row else None}
+
+    def recurring_method_action(self, name, args, owner_dashboard):
+        """Edit or Undo on a repeating to-do's chat line "Saved how to do this next time" (recurring.save_method)."""
+        if not owner_dashboard:
+            raise ValueError('Repeats are set by the owner, on the dashboard')
+        sid, stamp = str(args.get('suggestion_id') or ''), self.recurring_stamp()
+        with self.recurring_lock(), self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if name == 'recurring_method_undo':
+                recurring.undo_method(db, sid, stamp)
+            else:
+                s = recurring.series_of(db, sid)
+                if not s or s['method_card'] != sid:
+                    raise ValueError('Nothing to edit.')
+                recurring.save_method(db, sid, args.get('text'), stamp)
+            return {'id': sid, 'method': recurring.method_item(db, sid)}
 
     def repeat_read_action(self, name, args, owner_dashboard):
         """Custom… in Repeats: the rhythm in the owner's words, read as a rule (nothing is saved)."""

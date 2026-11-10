@@ -57,6 +57,7 @@ from machine.store.cards import use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
+import recurring
 import talk_live
 from timeutil import local_tz, now
 import todo_areas
@@ -414,6 +415,9 @@ class CardChatApp:
         owner.extend(card_chat_handoffs(db, suggestion_id))
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in fleet_reviews.chat_lines(db, suggestion_id))
         owner.extend(self.card_chat_learned(db, suggestion_id))
+        recipe = recurring.method_item(db, suggestion_id)  # a repeating to-do's way of doing it, saved from here: Edit and Undo
+        if recipe:
+            owner.append({**recipe, 'at': chat_ms(recipe['at'])})
         owner.extend({**x, 'at': chat_ms(x['at'])} for x in corrections.chat_items(db, suggestion_id))  # fixed where it came from
         for r in db.execute('SELECT payload,status,source,created_at,approval_id,retry_at FROM action_jobs WHERE suggestion_id=? ORDER BY created_at', (suggestion_id,)):
             try:

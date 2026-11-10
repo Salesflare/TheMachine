@@ -27,6 +27,8 @@ Feita antes da data? Ela conta para o que vence agora, e essa data ainda chega p
 
 Cada uma é preparada como qualquer tarefa, e a preparação vê como foi a anterior e o que foi dito no chat dela.
 
+Ela também guarda como fazer: os passos que descobriu e o que você corrigiu, para a próxima não precisar deles de novo. O chat dela mostra **Salvo como fazer isso da próxima vez**, com **Editar** e **Desfazer**. Ela nunca envia nada sozinha.
+
 ## Mudar ou parar
 
 Toque na linha "Repete" da tarefa: escolha outro ritmo, **Pular esta** (fecha esta e traz a próxima na data dela) ou **Parar de repetir**. "Stop repeating" no chat dela também funciona. Parar mantém a tarefa aberta; só as próximas deixam de vir.

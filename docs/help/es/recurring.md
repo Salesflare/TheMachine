@@ -27,6 +27,8 @@ Posponer mueve solo esta. El ritmo sigue igual.
 
 Cada una se prepara como cualquier tarea, y la preparación ve cómo fue la anterior y lo que se dijo en su chat.
 
+También guarda cómo se hace: los pasos que encontró y lo que corregiste, para que la siguiente no los necesite otra vez. Su chat dice **Guardado cómo hacerlo la próxima vez**, con **Editar** y **Deshacer**. Nunca envía nada por sí sola.
+
 ## Cambiarla o pararla
 
 Toca la línea "Se repite" de la tarea: elige otro ritmo, **Saltar esta** (cierra esta y trae la siguiente en su fecha) o **Dejar de repetir**. "Stop repeating" en su chat también funciona. Parar mantiene la tarea abierta; solo dejan de llegar las siguientes.

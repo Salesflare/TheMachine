@@ -27,6 +27,8 @@ Vor ihrem Datum erledigt? Sie zählt für das, was jetzt fällig ist, und das Da
 
 Jede wird vorbereitet wie jede Aufgabe, und die Vorbereitung sieht, wie die vorige lief und was in ihrem Chat gesagt wurde.
 
+Sie merkt sich auch, wie es geht: die Schritte, die sie herausgefunden hat, und was du korrigiert hast, damit die nächste sie nicht noch einmal braucht. Im Chat steht **Gespeichert, wie das nächstes Mal geht**, mit **Bearbeiten** und **Rückgängig**. Sie sendet nie etwas von selbst.
+
 ## Ändern oder beenden
 
 Tippe bei der Aufgabe auf die Zeile „Wiederholt sich“: Wähl einen anderen Rhythmus, **Diese überspringen** (das schließt diese und bringt die nächste an ihrem Datum) oder **Nicht mehr wiederholen**. „Stop repeating“ in ihrem Chat geht auch. Beenden behält die offene Aufgabe; nur die nächsten kommen nicht mehr.

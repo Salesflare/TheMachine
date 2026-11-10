@@ -29,7 +29,9 @@ import mail_cleanup
 from models import model_ready
 import next_actions
 import own_addresses
+import recurring
 import routine_changes
+import skills
 import task_invites
 from timeutil import local_tz, now
 
@@ -327,6 +329,10 @@ class CardActionsApp:
                 raise ValueError("follow_up:'stop' still comes with the draft: write the follow-up, the owner decides")
         if args.get('based_on') is not None:
             with self.store.connect() as db:self.store.based_on_check(db,args['based_on'])
+        if args.get('method') is not None:  # a repeating to-do's way of doing it, for the next one (recurring.method_lines)
+            method=recurring.clean_method(args['method'])
+            with self.store.connect() as db:
+                if not recurring.method_series(db,args['suggestion_id']):raise ValueError('method is only for a to-do that repeats; leave it out')
         if args.get('routine_change') is not None:  # a lasting change to the to-do's routine, from the owner's note: offered, not saved
             with self.store.connect() as db:routine_change=routine_changes.check(db,args['suggestion_id'],args.get('job_id'),args['routine_change'])
         if not turn and args.get('send_now') is not True and args.get('do_now') is not True and (outcome or {}).get('state')!='already_done':
@@ -337,6 +343,12 @@ class CardActionsApp:
         saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
         if args.get('routine_change') is not None and not saved.get('replayed'):
             with self.store.connect() as db:routine_changes.offer(db,args['suggestion_id'],routine_change)
+        if args.get('method') is not None and not saved.get('replayed'):
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                recurring.save_method(db,args['suggestion_id'],method,now())
+                skills.drop_task_proposal(db,args['suggestion_id'])  # its way of working is kept here: no Create skill for it as well
+            saved={**saved,'method':'saved: the to-do shows it with Edit and Undo, and the next one follows it'}
         if (outcome or {}).get('state')=='already_done' and not saved.get('replayed') and self.handled_close(args['suggestion_id'],args.get('job_id'),args['body']):
             saved={**saved,'status':'completed','note':'Done already, as those messages show: the to-do closed by itself (Undo for a day).'}
         if saved.get('reported'):  # its confirmed step went through while nobody watched: say so on the phone

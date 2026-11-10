@@ -214,6 +214,8 @@ CARD_ACTIONS = {
     'card_repeat_skip',
     'card_report_seen',
     'card_use_sources',
+    'recurring_method_edit',
+    'recurring_method_undo',
     'recurring_offer',
     'repeat_read',
 }

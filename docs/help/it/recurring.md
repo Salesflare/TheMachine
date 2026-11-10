@@ -27,6 +27,8 @@ Fatta prima della sua data? Conta per ciò che è dovuto ora, e quella data arri
 
 Ognuna viene preparata come ogni attività, e la preparazione vede com'è andata la precedente e cosa si è detto nella sua chat.
 
+Tiene anche il modo di farla: i passaggi trovati e quello che hai corretto, così la prossima non ne ha più bisogno. La sua chat dice **Salvato come farlo la prossima volta**, con **Modifica** e **Annulla**. Non invia mai nulla da sola.
+
 ## Cambiarla o fermarla
 
 Tocca la riga "Si ripete" sull'attività: scegli un altro ritmo, **Salta questa** (chiude questa e porta la successiva nella sua data) o **Smetti di ripetere**. Anche "Stop repeating" nella sua chat funziona. Fermarla tiene l'attività aperta; solo le successive non arrivano più.
