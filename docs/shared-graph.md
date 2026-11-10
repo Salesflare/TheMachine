@@ -128,6 +128,9 @@ are judged.
 - Its organization (`projects.org`) goes as a name and hashed domain only when that organization could go itself: one
   with a website, outside the Fleet's domains, not personal mail and not kept private. Linking a project to an
   organization never adds people, threads or timeline lines.
+- An organization's logo goes with its record (and a project's organization) only when it is a LinkedIn company logo
+  (`media.licdn.com`), where lookups find them. A teammate's dashboard shows it, or its own logo when it knows the
+  organization, and drops any other address (`shared_graph.team_logo`).
 
 ## Shared by name
 
@@ -356,8 +359,8 @@ A record (JSON, inside a blob):
 
 ```
 person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, score, last, timeline: [{at, line}]}
-org:     {r, t: org, name, role, role_hand, d, score, last}
-project: {r, t: project, name, board, stages, stage, stage_hand, stage_at, why, next, org, people: [hash], score, last, timeline}
+org:     {r, t: org, name, role, role_hand, d, logo, score, last}
+project: {r, t: project, name, board, stages, stage, stage_hand, stage_at, why, next, org: {name, d, logo}, people: [hash], score, last, timeline}
 mail:    {tag, subject, messages: [{at, from, to, cc, body, attachments: [{name, size, mime, file | too_large}]}]}
 file:    {name, mime, data}                                   (one attachment; `file` above is its tag)
 ask:     {off, asked}                                         (a member asks to stop sharing, or not any more)

@@ -844,6 +844,32 @@ class SharedGraph(unittest.TestCase):
             self.assertEqual(tiles[name]['state'], 'active')
         self.assertEqual(json.dumps(self.team(self.mem)), sent)  # what was shared stays as it was
 
+    def test_a_teammates_board_tile_and_organization_show_its_logo(self):
+        """A teammate's tile and organization show the logo the sharing Machine shows: a LinkedIn company logo goes with
+        the record, any other address never does."""
+        logo = 'https://media.licdn.com/dms/image/v2/C4D0BAQ/company-logo_200_200/0/1/client_logo?e=2147483647&v=beta&t=Ab_c-1'
+        self.olive_mail()
+        with self.own.store.connect() as db:
+            db.execute("INSERT OR REPLACE INTO org_profiles(domain,status,profile,fetched_at) VALUES('client.example','found',?,?)",
+                       (json.dumps({'name': 'Client Co', 'logo': logo}), a.now()))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1']})
+        with self.own.store.connect() as db:
+            db.execute("UPDATE projects SET org='client.example' WHERE name='Renewal: Lee'")
+        self.rounds()
+        self.assertEqual(self.projects_of(self.mem)['Renewal: Lee']['org']['logo'], logo)
+        with self.mem.store.connect() as db:
+            view = self.mem.team_overview(db, {})
+        tile = next(p for b in view['boards'] for p in b['projects'] if p['name'] == 'Renewal: Lee')
+        self.assertEqual(tile['org']['logo'], logo)
+        self.assertEqual(next(o for o in view['orgs'] if o.get('team_only'))['profile']['logo'], logo)
+        # Only a LinkedIn company logo: a teammate's Machine never loads another address a teammate sent
+        for bad in ('https://track.example/p.png', 'http://media.licdn.com/dms/image/x', 'https://media.licdn.com.evil.example/dms/image/x',
+                    'https://static.licdn.com/aero-v1/sc/h/ghost', 'https://media.licdn.com/dms/image/x"onerror="y'):
+            self.assertIsNone(sg.team_logo(bad), bad)
+            cleaned = sg._clean_record({'r': 'a' * 32, 't': 'project', 'name': 'P', 'org': {'name': 'Client Co', 'd': 'b' * 32, 'logo': bad}})
+            self.assertNotIn('logo', cleaned['org'])
+            self.assertNotIn('logo', sg._clean_record({'r': 'a' * 32, 't': 'org', 'name': 'Client Co', 'd': ['b' * 32], 'logo': bad}))
+
     def test_a_project_on_a_team_board_goes_with_its_board_record_before_any_thread_of_it_is_shared(self):
         self.olive_mail()
         self.board(self.own, 'Hiring', 'team', {'Hire: Ada': ['work-4']}, stage='Screening')  # only colleagues on it

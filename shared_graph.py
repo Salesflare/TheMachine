@@ -108,6 +108,15 @@ FLEET_DELETE = {
     'fleet_learn_removed': 'DELETE FROM fleet_learn_removed WHERE fleet=?',
 }
 MEMBER_ID = re.compile(r'[A-Za-z0-9_.:@-]{1,80}')  # a Fleet member's id, as crm.MEMBER
+# An organization's logo goes with its record only as a LinkedIn company logo (where lookups find them): a public
+# picture of a name that is shared anyway, and a teammate's dashboard loads no other address a teammate sent.
+TEAM_LOGO = re.compile(r'https://media\.licdn\.com/dms/image/[A-Za-z0-9_./%?=&~+-]{1,400}')
+
+
+def team_logo(url):
+    return url if isinstance(url, str) and TEAM_LOGO.fullmatch(url) else None
+
+
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS share_threads(thread TEXT PRIMARY KEY,verdict TEXT,hand TEXT,hand_at TEXT,event_id INTEGER,at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS share_lines(event_id INTEGER PRIMARY KEY,thread TEXT,line TEXT NOT NULL,at TEXT NOT NULL);
@@ -883,6 +892,8 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         records[r] = {'r': r, 't': 'org', 'name': row['name'], 'name_hand': 'name' in (info.get('edited') or []), 'role': info.get('role'),
                       'role_hand': info.get('role_by') == 'owner', 'd': every('domain:' + domain), 'score': round(row['strength'], 3),
                       'last': (row['last_at'] or '')[:10], **owner_pick(info), **crm_fields.shared(db, row)}
+        if logo := team_logo(graph.org_card(db, domain)['logo']):
+            records[r]['logo'] = logo
     tiles = {t['id']: t for b in graph.boards(db, today.isoformat()) for t in b['projects']}
     team_boards = graph.team_board_ids(db)
     for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.stage_event_id,p.next_step,p.next_step_event_id,p.org porg,b.name board,b.stages stages,b.side side "
@@ -914,7 +925,8 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                       'board': row['board'], 'stages': graph.stage_names(row) if row['board'] else None,
                       'stage': row['stage'] if row['board'] else None, 'stage_hand': row['stage_by'] == 'owner', 'stage_at': row['stage_at'],
                       **_why(db, row, views),
-                      'org': {'name': org['name'], 'd': keyed(key, 'domain:' + domain)} if org else None,
+                      'org': {'name': org['name'], 'd': keyed(key, 'domain:' + domain),
+                              **({'logo': team_logo(org['logo'])} if team_logo(org['logo']) else {})} if org else None,
                       'people': sorted({h for p in linked for h in people.get(p, [])}), 'timeline': project_story(row), 'threads': thread_tags(row['id']),
                       **owner_pick(json.loads(row['info'] or '{}')), **crm_fields.shared(db, row)}
     held_private = {r['thread'] for r in db.execute("SELECT thread FROM share_threads WHERE hand='private' AND hand_at>=?", (week,))}
@@ -2801,6 +2813,10 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                             'signals': 0, 'team_only': True, 'role': rec['role'], 'closeness': graph.closeness(rec['score'])}
             if e['kind'] == 'project' and not view:
                 item.update(state='active', people=[])
+            if e['kind'] == 'org' and not view:  # the closest teammate's logo for it
+                logo = next((s['record']['logo'] for s in sorted(e['sources'], key=lambda s: -(s['record'].get('score') or 0)) if s['record'].get('logo')), None)
+                if logo:
+                    item['profile'] = {'logo': logo}
             if e['kind'] == 'person' and not view and rec.get('org'):
                 item['org_name'] = rec['org'].get('name')
             if view and '@' in str(item.get('name') or '') and rec.get('name') and '@' not in rec['name']:
@@ -2899,7 +2915,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             tile = {'id': e['local'] or e['key'], 'name': rec['name'], 'stage': stage, 'reason': rec.get('why') or best.get('why'),
                     'by': 'owner' if rec.get('stage_hand') else 'review', 'mover': _first_name(mover) if rec.get('stage_by') else None,
                     'at': rec.get('stage_at'), 'event_id': None, 'next': rec.get('next'), 'first': False, 'days': days, 'closed': False,
-                    'no_reply_days': None, 'org': {'name': (rec.get('org') or {}).get('name'), 'logo': None} if rec.get('org') else None, 'card': None,
+                    'no_reply_days': None, 'org': {'name': rec['org'].get('name'), 'logo': self._org_logo(db, rec['org'])} if rec.get('org') else None, 'card': None,
                     'owner': rec.get('owner'), 'owner_name': rec.get('owner_name'), 'fleet': e['sources'][0]['fleet'], 'via': via(e['sources']),
                     'team_only': not e['local'], 'owner_hand': bool(rec.get('owner_hand')), **self._last_line(e)}
             if mine_tile:
@@ -2909,6 +2925,13 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                 board['projects'].append(tile)
         out = [b for b in boards.values() if b['projects']]
         return sorted(out, key=lambda b: -sum(1 for p in b['projects'] if p.get('yours')))  # stable: otherwise as before
+
+    def _org_logo(self, db, org):
+        """A teammate's project's organization's logo: this Machine's own one when it knows the organization, else the
+        one the teammate sent (team_logo)."""
+        index = self.hash_index(db)
+        local = next((index[h] for h in org.get('d') or () if str(index.get(h, '')).startswith('org:')), None)
+        return (local and graph.org_card(db, local[4:])['logo']) or team_logo(org.get('logo'))
 
     def team_section(self, db, entry):
         """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is.
@@ -3095,7 +3118,8 @@ def _clean_record(r):
                          **({'tag': x['tag']} if HEX.fullmatch(str(x.get('tag'))) else {})}
                         for x in (r.get('timeline') or [])[:TIMELINE_PROJECT if r.get('t') == 'project' else TIMELINE] if isinstance(x, dict) and _clean_text(x.get('line'), 160)]}
     if org:
-        out['org'] = {'name': _clean_text(org.get('name'), 100), **({'d': hashes(org['d'] if isinstance(org.get('d'), list) else [org.get('d')])} if org.get('d') else {})}
+        out['org'] = {'name': _clean_text(org.get('name'), 100), **({'d': hashes(org['d'] if isinstance(org.get('d'), list) else [org.get('d')])} if org.get('d') else {}),
+                      **({'logo': org['logo']} if team_logo(org.get('logo')) else {})}
         out['org_hand'] = r.get('org_hand') is True
     out['threads'] = hashes(r.get('threads'))[:40] if r['t'] != 'org' else []
     fields = [f for f in (r.get('fields') or [])[:crm_fields.MAX_FIELDS] if isinstance(f, dict)] if isinstance(r.get('fields'), list) else []
@@ -3110,6 +3134,8 @@ def _clean_record(r):
         out.update(ids=hashes(r.get('ids')), d=hashes(r.get('d')))
     elif r['t'] == 'org':
         out['d'] = hashes(r.get('d'))
+        if team_logo(r.get('logo')):
+            out['logo'] = r['logo']
     else:
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
