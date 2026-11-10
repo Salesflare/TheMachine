@@ -374,6 +374,61 @@ class OwnerBoundary(unittest.TestCase):
             self.assertEqual(get('/' + file, {'Host': 'machine.example:8443'})[0].status, 403)
         self.assertEqual(get('/lazy-nothing-' + '0' * 16 + '.js', owner)[0].status, 404)
 
+    def test_a_fresh_page_assembles_and_compresses_its_files_once(self):
+        # Speed (a fresh load asks for the page, its main script and 14 parts at once): the dashboard is assembled once
+        # per release, not again for each file asked for, and each file is compressed once and kept, all of them, so
+        # the next page's files come from what's kept. A changed source file is a new release: assembled again.
+        import gzip, re
+        from machine.web import serving
+        port = self.serve()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com', 'Accept-Encoding': 'gzip'}
+        def get(path):
+            conn = http.client.HTTPConnection('127.0.0.1', port)
+            conn.request('GET', path, headers=owner); r = conn.getresponse(); body = r.read(); conn.close(); return r, body
+        def load():
+            page = gzip.decompress(get('/')[1]).decode()
+            names = [re.search(r'<script src="(app-[0-9a-f]{16}\.js)"></script></html>$', page)[1],
+                     *json.loads(re.search(r'<script>self\.LAZY_FILES=(\{[^<]*\})</script>', page)[1]).values()]
+            for name in names:
+                r, body = get('/' + name)
+                self.assertEqual((r.status, r.getheader('Content-Encoding'), r.getheader('Vary')), (200, 'gzip', 'Accept-Encoding'))
+            return names
+        serving._DASHBOARD_FILES.clear()
+        with patch.object(dashboard_parts, 'assemble_split', wraps=dashboard_parts.assemble_split) as assembled, \
+                patch_everywhere(serving, 'compress_body', wraps=serving.compress_body) as packed:
+            names = load()
+            self.assertEqual(len(names), len(dashboard_parts.LAZY) + 1)
+            self.assertEqual(assembled.call_count, 1)  # was once per file: 16 for a page and its 15 files
+            self.assertEqual(packed.call_count, len(names) + 1)  # the page and each file, once
+            load()
+            self.assertEqual((assembled.call_count, packed.call_count), (1, len(names) + 1))  # was 16 and 32 again
+            with patch.object(serving.dashboard_parts, 'files', return_value=[]):  # another release's sources
+                get('/')
+            self.assertEqual(assembled.call_count, 2)
+        # The main script goes compressed to well under half its size, kept a year under its name
+        r, body = get('/' + names[0])
+        self.assertLess(len(body), len(gzip.decompress(body)) / 2)
+        self.assertEqual(r.getheader('Cache-Control'), 'private, max-age=31536000, immutable')
+
+    def test_brand_images_and_typefaces_are_kept_by_the_browser(self):
+        # The robot's blink swaps its image every few seconds and each start asked for the typefaces again: they're
+        # kept for a day now, then asked again with their ETag, a 304 while they're the same. Only for the owner.
+        port = self.serve()
+        owner = {'Host': 'machine.example:8443', 'Tailscale-User-Login': 'owner@example.com'}
+        def get(path, headers=None):
+            conn = http.client.HTTPConnection('127.0.0.1', port)
+            conn.request('GET', path, headers={**owner, **(headers or {})}); r = conn.getresponse(); body = r.read(); conn.close(); return r, body
+        for path in ('/brand/avatar.png', '/brand/avatar-blink.png', '/brand/favicon-32.png', '/brand/sleepy.webp', '/brand/sans.woff2', '/brand/serif.woff2'):
+            r, body = get(path)
+            self.assertEqual((r.status, r.getheader('Cache-Control')), (200, 'private, max-age=86400'), path)
+            self.assertTrue(body)
+            etag = r.getheader('ETag'); self.assertRegex(etag, r'^"[0-9a-f]{16}"$')
+            r, empty = get(path, {'If-None-Match': etag})
+            self.assertEqual((r.status, empty, r.getheader('ETag'), r.getheader('Cache-Control')), (304, b'', etag, 'private, max-age=86400'))
+            self.assertEqual(get(path, {'If-None-Match': '"' + '0' * 16 + '"'})[0].status, 200)
+            conn = http.client.HTTPConnection('127.0.0.1', port)
+            conn.request('GET', path, headers={'Host': 'machine.example:8443'}); self.assertEqual(conn.getresponse().status, 403); conn.close()
+
     def test_compressed_answers(self):
         # The page and the other secret-free answers go compressed when the client takes it (best coding it accepts,
         # q=0 refused), with Vary and an ETag per coding that still gives a 304; api/session (the CSRF token) never.
