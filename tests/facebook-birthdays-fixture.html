@@ -1,36 +1,45 @@
 <!doctype html>
 <!-- A made-up stand-in for Facebook's birthdays page (tests/test_birthdays_facebook.py): made-up people only. Like the
-     real page, it groups friends by month, from this month on, and loads more of them in small chunks, with a progress
-     bar, as it is scrolled to the end. Each friend is a profile picture whose label (or, with .../hover/, the tooltip
-     shown on hover) says their name and birthday. 500 friends over 12 months, 20 per chunk; .../small/ has one a
-     month, .../skipN/ leaves out the month N months from now (nobody's birthday then). -->
+     real page, it groups friends by month, from this month on, and loads more of them in chunks, with a progress bar,
+     as it is scrolled to the end. Each friend is a profile picture whose label (or, with .../hover/, the tooltip shown on
+     hover) says their name and birthday. 500 friends over 12 months, 20 per chunk; .../small/ has one a month,
+     .../skipN/ leaves out the month N months from now (nobody's birthday then), .../nN/ has N friends, .../chunkN/ loads
+     N at a time. .../data/ is the way Facebook's page works: the pictures say only a name, and each friend's name and
+     birthdate are in the page's data (a JSON script for the first chunk, then a graphql request per chunk; the test
+     server answers with what it was sent); its progress bar never goes away, and once the year is through, the page
+     shows this month again and keeps growing with nobody new. .../virtual/ drops the pictures scrolled past as it loads more: 30 stay.
+     .../early/ loads every month at once, then keeps growing with nobody new. -->
 <html lang="en">
 <head><meta charset="utf-8"><title>Birthdays</title>
-<style>body{font-family:sans-serif}section{min-height:200px}a{display:inline-block;margin:4px}svg{width:60px;height:60px}</style></head>
+<style>body{font-family:sans-serif}section{min-height:200px}a{display:inline-block;margin:4px}svg{width:60px;height:60px}.filler{height:600px}</style></head>
 <body>
 <div role="navigation"><a aria-label="Settings" href="#settings">Settings</a></div>
 <h2>Today's birthdays</h2>
 <section id="today"></section>
 <div id="months"></div>
 <script>
-const flags = location.pathname.split('/'), skipped = flags.find(f => /^skip\d+$/.test(f));
-const hover = flags.includes('hover'), skip = skipped ? +skipped.slice(4) : -1;
+const flags = location.pathname.split('/'), flag = p => { const f = flags.find(f => new RegExp('^' + p + '\\d+$').test(f)); return f ? +f.slice(p.length) : -1; };
+const hover = flags.includes('hover'), data = flags.includes('data'), virtual = flags.includes('virtual'), early = flags.includes('early');
+const skip = flag('skip');
 const NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const FIRST = 'Ada Bram Cleo Dov Esme Finn Gia Hugo Ines Jules Kai Lena Milo Nora Otto Pia Quin Rhea Sami Tove Uma Vito Wren Xavi Yara'.split(' ');
 const LAST = 'Arden Brook Calloway Dunmore Ellery Fairbank Garrow Hollis Ivers Jessup Kestrel Lowell Marsh Northam Orrin Pell Quarry Rook Stroud Thorne'.split(' ');
-// The friends in page order: month by month from this one, each as [month offset, name, label day]
+const MORE = 'Vane Wilde Yates Ziegler Abbott Bexley Corran Dace Eldred Fenwick'.split(' ');  // past 500: a double last name
+// The friends in page order: month by month from this one, each as [month offset, name, label day, month, day, year]
 const first = new Date().getMonth(), people = [];
-const total = flags.includes('small') ? 12 : FIRST.length * LAST.length;
+const total = flag('n') > 0 ? flag('n') : flags.includes('small') ? 12 : FIRST.length * LAST.length;
+const chunk = early ? total + 1 : flag('chunk') > 0 ? flag('chunk') : 20;
 for (let k = 0; k < total; k++) {
   const offset = Math.floor(k * 12 / total), month = (first + offset) % 12;
   if (offset === skip) continue;
-  const name = FIRST[k % FIRST.length] + ' ' + LAST[Math.floor(k / FIRST.length) % LAST.length];
-  people.push([offset, name, NAMES[month] + ' ' + (1 + (k * 7) % 28) + (k % 50 === 0 ? ', 1988' : '')]);
+  const extra = k >= 500 ? '-' + MORE[Math.floor(k / 500) % MORE.length] : '';
+  const name = FIRST[k % FIRST.length] + ' ' + LAST[Math.floor(k / FIRST.length) % LAST.length] + extra, day = 1 + (k * 7) % 28;
+  people.push([offset, name, NAMES[month] + ' ' + day + (k % 50 === 0 ? ', 1988' : ''), month + 1, day, k % 50 === 0 ? 1988 : null]);
 }
 function avatar(name, day) {
   const a = document.createElement('a');
   a.href = '#profile';
-  a.setAttribute('aria-label', hover || !day ? name : name + ' (' + day + ')');
+  a.setAttribute('aria-label', hover || data || !day ? name : name + ' (' + day + ')');
   a.innerHTML = '<svg viewBox="0 0 60 60"><image width="60" height="60" href="data:image/gif;base64,R0lGODlhAQABAAAAACw="></image></svg>';
   if (hover && day) {
     a.addEventListener('mouseover', () => { const tip = document.createElement('div'); tip.setAttribute('role', 'tooltip'); tip.innerText = name + '\n' + day; document.body.append(tip); });
@@ -38,10 +47,12 @@ function avatar(name, day) {
   }
   return a;
 }
+const node = ([offset, name, label, month, day, year], k) => ({__typename: 'User', id: 'u' + k, name, birthdate: {day, month, year}, profile_picture: {uri: ''}});
 document.getElementById('today').append(avatar('Robin Vale', null));
-let next = 0, section = null, shown = -1, loading = false;
+let next = 0, section = null, shown = -1, loading = false, wrapped = false;
 function more() {
-  for (const [offset, name, day] of people.slice(next, next + 20)) {
+  if (virtual) [...document.querySelectorAll('#months a')].slice(0, -30).forEach(a => a.remove());  // what was scrolled past
+  for (const [offset, name, day] of people.slice(next, next + chunk)) {
     if (offset !== shown) {
       const h = document.createElement('h3'); h.textContent = NAMES[(first + offset) % 12];
       section = document.createElement('section');
@@ -50,15 +61,33 @@ function more() {
     }
     section.append(avatar(name, day));
   }
-  next += 20;
+  next += chunk;
+}
+function grow() {  // past the year: this month again, then more and more of nothing new
+  if (!wrapped) { const h = document.createElement('h3'); h.textContent = NAMES[first]; document.getElementById('months').append(h); wrapped = true; }
+  const div = document.createElement('div'); div.className = 'filler'; document.getElementById('months').append(div);
+}
+if (data) {  // the first chunk comes with the page, as data
+  const s = document.createElement('script'); s.type = 'application/json';
+  s.textContent = JSON.stringify({require: [[{result: {data: {viewer: {all_friends_by_birthday_month: {edges: people.slice(0, chunk).map((p, i) => ({node: node(p, i)}))}}}}}]]});
+  document.head.append(s);
 }
 more();
+if (data) { const bar = document.createElement('div'); bar.setAttribute('role', 'progressbar'); document.body.append(bar); }  // never goes away
 addEventListener('scroll', () => {
-  if (loading || next >= people.length || innerHeight + scrollY < document.documentElement.scrollHeight - 50) return;
+  if (loading || innerHeight + scrollY < document.documentElement.scrollHeight - 50) return;
+  if (next >= people.length) { if (data || early) grow(); return; }
   loading = true;
   const spinner = document.createElement('div'); spinner.setAttribute('role', 'progressbar'); spinner.textContent = 'Loading…';
   document.body.append(spinner);
-  setTimeout(() => { more(); spinner.remove(); loading = false; }, 300 + (next % 3) * 400);
+  setTimeout(() => {
+    const done = () => { more(); spinner.remove(); loading = false; };
+    if (!data) return done();
+    const xhr = new XMLHttpRequest(), body = people.slice(next, next + chunk).map((p, i) => ({node: node(p, next + i)}));
+    xhr.open('POST', '/api/graphql/');
+    xhr.onload = done;
+    xhr.send(JSON.stringify({data: {node: {all_friends_by_birthday_month: {edges: body}}}}) + '\n' + JSON.stringify({label: 'deferred', data: {}}));
+  }, 300 + (next % 3) * 400);
 });
 </script>
 </body>

@@ -4,7 +4,7 @@ Facebook's birthdays page in The Machine's own browser, matched to people in the
 Only on the owner's tap, on the Birthdays template's one to-do (birthdays_facebook_app.py): never in the background,
 never on a schedule. A new import is their tap again. Read through the browser the other readers already use (LinkedIn,
 X: the shared browser at browser_cdp_url, under the shared browser lease), the way the owner would: open the page in a
-tab of its own, scroll it to the end, read the names and dates its profile pictures are labeled with, close the tab. No
+tab of its own, scroll it to the end, read each friend's name and birthday as the page has them, close the tab. No
 sign-in is handled here: a browser that isn't signed in to Facebook is told to the owner, and the read stops.
 
 What is kept: only each matched person's birthday (month and day, the year when the page shows it), as the one
@@ -13,8 +13,9 @@ or removed on the person's page stays. Nothing else from Facebook is kept: no li
 for matching, and live only in the preview until the owner saves or reads again; a name nobody in the Graph has is only
 counted. After Save the to-do keeps who was saved (their Graph id and name), to link to their pages.
 
-Matching never makes a new person: the same full name as exactly one person in the Graph. Two people with that name is
-ambiguous: skipped, and named in the preview so the owner can add it themselves.
+Matching never makes a new person: the same full name as exactly one person in the Graph (else the same first and last
+name, one with a middle name the other doesn't have). Two people with that name is ambiguous: skipped, and named in the
+preview so the owner can add it themselves.
 
 Table (this module owns it): facebook_birthdays, one row per to-do: its state and, while it waits on the owner, the
 preview."""
@@ -74,20 +75,26 @@ DATES = (
 SEPARATORS = ' \t\n,;:·•|()[]-–—'
 
 # Run in the page (browser_cdp.Session.run, with LIMITS and the months): whether Facebook shows its sign-in instead; then
-# scrolled down round by round, as the page loads more months, until every month has its section (the current one may
-# sit under Today or Upcoming instead) and the last has finished loading: QUIET rounds in a row with nothing new and
-# nothing loading (a progress bar or busy part). A page that stays quiet for PATIENCE rounds with months still missing
-# has none for them. The limits stop it early (capped). Returns the months it never saw (missing), so the preview can
-# name them. Each round keeps every profile picture's label (aria-label, title, its image's alt) with the heading above
-# it, so a page that drops what was scrolled past still counts it. Without a date in any label, each picture is hovered
-# once and its tooltip read. Reads only; nothing is clicked or typed.
-LIMITS = {'items': 3000, 'ms': 180000, 'quiet': 4, 'patience': 20, 'pause': 800}
+# scrolled down round by round, as the page loads more months, keeping every friend it shows on the way.
+# Each friend is read from the page's own data where it has some (each friend's name and birthdate, in the data the page
+# came with and in what it loads as it is scrolled: Facebook's page works this way, and the pictures under its months say
+# only a name). Else from each profile picture's label (aria-label, title, its image's alt) with the heading above it,
+# kept as it is scrolled past, so a page that drops what was scrolled past still counts it; without a date in any label,
+# each picture is hovered once and its tooltip read.
+# When it stops: once every month has its section or friends (the current one may sit under Today or Upcoming instead),
+# after SETTLE rounds in a row with nothing new. A page that keeps growing, or keeps a busy part on screen, doesn't hold it
+# up. With months still missing, IDLE ms with nothing new end it: nobody has a birthday then, and the preview names them
+# (missing). The limits (items, ms) are a safety net well above Facebook's 5,000 friends: capped only when one stopped it.
+# Each round waits for the page as long as it needs and no longer: on as soon as it grows, else after PAUSE ms (BUSY ms
+# more while it shows a progress bar or busy part). Reads only; nothing is clicked or typed.
+LIMITS = {'items': 6000, 'ms': 360000, 'idle': 20000, 'settle': 2, 'pause': 800, 'busy': 1200}
 READ_JS = r'''async function (limits) {
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; i < 40 && document.readyState !== 'complete'; i++) await wait(250);
   const signin = () => /^\/(login|checkpoint)/.test(location.pathname) || !!document.querySelector('input[name="pass"], form#login_form, form[action*="/login"]');
   if (signin()) return {error: 'signed-out'};
   const clean = t => String(t || '').replace(/\s+/g, ' ').trim();
+  const headingsNow = () => [...document.querySelectorAll('h1, h2, h3, h4, [role=heading]')];
   const headingOf = (el, headings) => { let found = ''; for (const h of headings) { if (h.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) found = clean(h.innerText || h.textContent); else break; } return found.slice(0, 60); };
   const pictures = () => [...document.querySelectorAll('a, [role=link], [role=button], [aria-label], [title]')]
     .filter(el => el.querySelector('img, image, svg image') || /^(img|image)$/i.test(el.tagName));
@@ -95,32 +102,75 @@ READ_JS = r'''async function (limits) {
   const busy = () => !!document.querySelector('[role=progressbar], [aria-busy=true]');
   const fold = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const monthOf = t => { const m = [...new Set((fold(t).match(/\p{L}{3,10}/gu) || []).map(w => limits.months[w]).filter(Boolean))]; return m.length === 1 ? m[0] : 0; };
-  const missing = () => { const hs = [...document.querySelectorAll('h1, h2, h3, h4, [role=heading]')].map(h => clean(h.innerText || h.textContent));
+  // The page's own data: every object with a name and a birthdate (month, day, maybe year), once per friend
+  const people = new Map();
+  const take = (o, depth) => {
+    if (!o || typeof o !== 'object' || depth > 100) return;
+    const b = o.birthdate;
+    if (b && typeof b === 'object' && typeof o.name === 'string' && +b.month && +b.day) {
+      const key = String(o.id || o.name), had = people.get(key);
+      if (!had || (+b.year && !had.year)) people.set(key, {name: clean(o.name).slice(0, 160), month: +b.month, day: +b.day, year: +b.year || null});
+    }
+    for (const v of Array.isArray(o) ? o : Object.values(o)) if (v && typeof v === 'object') take(v, depth + 1);
+  };
+  const eat = text => {
+    text = String(text || '').replace(/^\s*for\s*\(;;\);/, '');
+    if (!text.includes('birthdate')) return;
+    try { take(JSON.parse(text), 0); return; } catch (e) {}
+    for (const line of text.split('\n')) if (line.includes('birthdate')) { try { take(JSON.parse(line), 0); } catch (e) {} }  // one answer a line
+  };
+  for (const s of document.querySelectorAll('script[type="application/json"]')) eat(s.textContent);
+  const open = XMLHttpRequest.prototype.open, fetched = window.fetch;
+  XMLHttpRequest.prototype.open = function (method, url) {
+    if (/graphql/i.test(String(url))) this.addEventListener('load', () => { try { eat(this.responseText); } catch (e) {} });
+    return open.apply(this, arguments);
+  };
+  window.fetch = function () {
+    const answer = fetched.apply(this, arguments);
+    answer.then(r => { if (/graphql/i.test(String(r.url))) r.clone().text().then(eat, () => {}); }, () => {});
+    return answer;
+  };
+  const missing = () => { const hs = headingsNow().map(h => clean(h.innerText || h.textContent));
     const have = new Set(hs.map(monthOf)), other = hs.some(h => h && !monthOf(h));
+    for (const p of people.values()) have.add(p.month);
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(m => !have.has(m) && !(m === limits.month && other)); };
   const seen = new Map();
-  const collect = () => { const headings = [...document.querySelectorAll('h1, h2, h3, h4, [role=heading]')];
+  const collect = () => { if (people.size) return;  // the data has them: no labels needed
+    const headings = headingsNow();
     for (const el of pictures()) { const label = labelOf(el); if (!label) continue; const heading = headingOf(el, headings);
       const key = label + '\n' + heading; if (!seen.has(key)) seen.set(key, {label, heading}); } };
+  const count = () => people.size + seen.size;
   const start = Date.now();
-  let quiet = 0, height = 0, capped = false;
-  collect();
-  while (missing().length ? quiet < limits.patience : quiet < limits.quiet) {
-    if (seen.size >= limits.items || Date.now() - start > limits.ms) { capped = true; break; }
-    const before = seen.size;
-    window.scrollBy(0, -400);  // up a little first, so the page sees a scroll to its end even when it didn't grow
-    await wait(50);
-    window.scrollTo(0, document.documentElement.scrollHeight);
-    await wait(limits.pause);
-    for (let i = 0; i < 20 && busy(); i++) await wait(250);  // still loading: give it time, it isn't quiet yet
+  let capped = false, settled = 0, rounds = 0, extra = 0, last = Date.now(), gaps = missing().length;
+  try {
     collect();
-    const now = document.documentElement.scrollHeight;
-    quiet = seen.size === before && now === height && !busy() ? quiet + 1 : 0;
-    height = now;
+    for (;;) {
+      const done = !gaps;
+      if (done ? settled >= limits.settle : Date.now() - last > limits.idle) break;
+      if (count() >= limits.items || Date.now() - start > limits.ms) { capped = true; break; }
+      const before = count(), height = document.documentElement.scrollHeight;
+      window.scrollBy(0, -400);  // up a little first, so the page sees a scroll to its end even when it didn't grow
+      await wait(50);
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      rounds++;
+      if (done) extra++;
+      const grew = () => count() !== before || document.documentElement.scrollHeight !== height;
+      for (let t = 0; t < limits.pause && !grew(); t += 100) await wait(100);
+      for (let t = 0; t < limits.busy && !grew() && busy(); t += 100) await wait(100);  // loading: a little longer
+      if (grew()) await wait(150);  // what came in, drawn
+      collect();
+      const now = missing().length;
+      if (count() !== before || now !== gaps) last = Date.now();
+      settled = count() === before ? settled + 1 : 0;
+      gaps = now;
+    }
+  } finally {
+    XMLHttpRequest.prototype.open = open;
+    window.fetch = fetched;
   }
-  let items = [...seen.values()];
-  if (!items.some(i => /\d/.test(i.label))) {
-    const hovered = [], headings = [...document.querySelectorAll('h1, h2, h3, h4, [role=heading]')];
+  let items = people.size ? [...people.values()] : [...seen.values()];
+  if (!people.size && !items.some(i => /\d/.test(i.label))) {
+    const hovered = [], headings = headingsNow();
     for (const el of pictures().slice(0, limits.items)) {
       if (Date.now() - start > limits.ms * 1.5) { capped = true; break; }
       for (const type of ['pointerover', 'mouseover', 'mouseenter']) el.dispatchEvent(new MouseEvent(type, {bubbles: type !== 'mouseenter', view: window}));
@@ -131,7 +181,8 @@ READ_JS = r'''async function (limits) {
     }
     if (hovered.length) items = hovered;
   }
-  return {items: items.slice(0, limits.items), capped: capped || items.length > limits.items, missing: missing()};
+  return {items: items.slice(0, limits.items), capped: capped || items.length > limits.items, missing: missing(),
+          rounds, extra, ms: Date.now() - start};
 }'''
 
 
@@ -204,13 +255,27 @@ def parse(label, heading='', today=None):
     return name, (f'{year:04d}-{month:02d}-{day:02d}' if year and 1900 <= year <= (today or dt.date.today()).year else f'--{month:02d}-{day:02d}')
 
 
+def from_data(item, today=None):
+    """(name, 'YYYY-MM-DD' or '--MM-DD') from one friend in the page's own data ({name, month, day, year}), or None."""
+    try:
+        month, day = int(item.get('month')), int(item.get('day'))
+        year = int(item.get('year') or 0)
+    except (TypeError, ValueError):
+        return None
+    name = graph.person_name(' '.join(str(item.get('name') or '').split())[:160])
+    if not _valid(month, day) or len(graph.name_words(name)) < 2:
+        return None
+    return name, (f'{year:04d}-{month:02d}-{day:02d}' if 1900 <= year <= (today or dt.date.today()).year else f'--{month:02d}-{day:02d}')
+
+
 def found(items, today=None):
-    """{name: value} of the birthdays on the page, once per name. A name shown with two different days is left out."""
+    """{name: value} of the birthdays on the page, once per name. A name shown with two different days is left out.
+    Each item is a friend from the page's data ({name, month, day, year}) or a picture's label ({label, heading})."""
     out, clash = {}, set()
     for item in items or ():
         if not isinstance(item, dict):
             continue
-        got = parse(item.get('label'), item.get('heading') or '', today)
+        got = from_data(item, today) if 'month' in item else parse(item.get('label'), item.get('heading') or '', today)
         if not got:
             continue
         name, value = got
@@ -223,17 +288,22 @@ def found(items, today=None):
 
 def match(db, names):
     """The page's names against the Graph's people: {'matched': [{id, name, date}], 'ambiguous': [name], 'unmatched': n}.
-    Matched: exactly one person with the same full name. Someone deleted permanently is nobody."""
+    Matched: exactly one person with the same full name, else with the same first and last name (a middle name on one side
+    only). Someone deleted permanently is nobody."""
     gone = graph.forgotten(db)
-    people = {}
+    people, ends = {}, {}
     for row in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'"):
         words = graph.name_words(row['name'])
         if len(words) >= 2 and not gone(row['id']):
             people.setdefault(' '.join(words), []).append((row['id'], graph.person_name(row['name'])))
+            ends.setdefault((words[0], words[-1]), []).append((row['id'], graph.person_name(row['name'])))
     matched, ambiguous, unmatched = [], [], 0
     for name, value in sorted(names.items()):
         words = graph.name_words(name)
-        hits = people.get(' '.join(words), []) if graph.name_match(words, words) == 'same' else []  # 'same': a full name
+        full = graph.name_match(words, words) == 'same'  # a full name
+        hits = people.get(' '.join(words), []) if full else []
+        if full and not hits:  # with or without a middle name ("Ann Marie Lee", "Ann Lee"): the same first and last name
+            hits = ends.get((words[0], words[-1]), [])
         if len(hits) == 1:
             matched.append({'id': hits[0][0], 'name': hits[0][1], 'date': value})
         elif hits:

@@ -31,7 +31,7 @@ Nothing changes until you confirm on the to-do. Senders you decided on aren’t 
 
 Birthdays come from your calendars (Google’s birthday events and Birthdays calendar, read each morning even when they aren’t synced, and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph. When none of them holds a birthday yet, its result says **No birthday info yet** and how to add some.
 
-**Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph. A name that more than one person has is skipped and listed.
+**Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph by first and last name. A name that more than one person has is skipped and listed.
 
 Only **Save** keeps them, and only the birthday, on each person’s page. A birthday you set there stays. It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook. If it isn’t, tap **Sign in to Facebook** on the to-do and sign in there; once you’re in, it reads the page by itself. The Machine never signs in for you.
 

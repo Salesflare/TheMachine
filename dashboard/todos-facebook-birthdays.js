@@ -1,8 +1,6 @@
-// A lazy part (dashboard_parts.LAZY 'routinetodos', with todos-cleanup.js): todos-cards.js draws the Birthdays template's
-// Import birthdays from Facebook to-do through lazyIn('routinetodos'). Its to-do has no Do it, Ask for changes or
-// Mark done: Import, then Save (which marks it done), is its main button. Import reads the page once (birthdays_facebook_app.py);
-// the preview links who it matched, and only Save keeps their birthdays. While it reads, the to-dos poll.
-// Signed out: Sign in to Facebook is the sign-in dialog (connections-signin.js) on Facebook's page; once in, it reads again.
+// Lazy part 'routinetodos' (dashboard_parts.LAZY): the Import birthdays from Facebook to-do (birthdays_facebook_app.py).
+// No Do it, Ask for changes or Mark done: Import, then Save (marks it done). Only Save keeps birthdays; while it reads,
+// the to-dos poll. Signed out: the sign-in dialog (connections-signin.js), then it reads again.
 const fbDay=v=>{const m=/^(?:(\d{4})|-)-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return v||'';const d=new Date(Date.UTC(+(m[1]||2000),+m[2]-1,+m[3]));
  return new Intl.DateTimeFormat(DL,{month:'long',day:'numeric',...(m[1]?{year:'numeric'}:{}),timeZone:'UTC'}).format(d)};
 const fbMonth=m=>new Date(2000,m-1,9).toLocaleString(DL,{month:'long'});
@@ -16,8 +14,8 @@ function fbBirthdaysBox(s){const f=s.facebook_birthdays,open=!closed(s);
  if(f.state==='preview'){const list=f.shown.map(m=>html`<li class="cl-row"><div class="cl-what"><b>${m.id?fbPerson(m):m.name}</b></div><span class="cl-end">${fbDay(m.date)}</span></li>`);
   return html`<p class="cl-lead">${t(['Found {} birthday on Facebook.','Found {} birthdays on Facebook.'],f.found)}</p>${fbFine(t('Matched to people in your Graph: {}',f.matched))}${list.length?html`<ul class="cl-list">${list}</ul>`:''}${f.more?fbFine(t('And {} more.',f.more)):''}
   ${f.capped?fbFine(t('The page was very long, so the import stopped before the end.')):''}${f.missing?.length?fbFine(t('These months didn’t load: {}.',f.missing.map(fbMonth).join(', '))):''}
-  ${f.ambiguous.length?fbFine(t('Skipped, more than one person with this name: {}.',f.ambiguous.join(', '))):''}${f.unmatched?fbFine(t(['{} isn’t in your Graph, so it isn’t saved.','{} aren’t in your Graph, so they aren’t saved.'],f.unmatched)):''}
-  ${open?fbActs(html`${f.new?fbBtn(s,'save',t(['Save {} birthday','Save {} birthdays'],f.new),true):html`<span class="cl-end">${t('Nothing new to save.')}</span>`}${fbBtn(s,'read',t('Import again'))}`):''}`}
+  ${f.ambiguous.length?fbFine(t('Skipped, more than one person with this name: {}.',f.ambiguous.join(', '))):''}${f.unmatched&&f.matched?fbFine(t(['{} isn’t in your Graph, so it isn’t saved.','{} aren’t in your Graph, so they aren’t saved.'],f.unmatched)):''}
+  ${open?fbActs(html`${f.new?fbBtn(s,'save',t(['Save {} birthday','Save {} birthdays'],f.new),true):html`<span class="cl-end">${f.matched?t('Your Graph already has these birthdays.'):t('None of them are in your Graph yet, so there’s nothing to save.')}</span>`}${fbBtn(s,'read',t('Import again'))}`):''}`}
  if(f.state==='saved')return html`<p class="cl-lead">${fbSaved(f.saved)}</p>${f.people?.length?fbFine(f.people.map((p,i)=>html`${i?', ':''}${fbPerson(p)}`)):''}${f.more?fbFine(t('And {} more.',f.more)):''}${open?fbActs(html`${fbBtn(s,'read',t('Import again'))}`):''}`;
  if(f.state==='signed_out')return html`<p class="cl-lead">${t('The Machine’s browser isn’t signed in to Facebook.')}</p>${open?fbActs(html`${fbBtn(s,'signin',t('Sign in to {}','Facebook'),true)}${fbBtn(s,'read',t('Try again'))}`):''}`;
  if(f.state==='failed')return html`<p class="cl-lead">${f.empty?t('No birthdays found on the page.'):t('Couldn’t read the page.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Try again'),true)}`):''}`;
