@@ -41,7 +41,7 @@ Zeilen erscheinen nur, wo sie passen: keine Handy-App in der App selbst, kein In
 
 Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Für dich**, etwa „Noch 2 Schritte · Weiter“. Tippe darauf, um die Aufgabe zu öffnen, und auf den Pfeil, um sie wieder einzuklappen.
 
-**Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und dort führt die Handy-App immer zum Download.
+**Rückgängig** in der Meldung danach holt sie zurück, ebenso **1 ausgeblendeten Schritt zeigen** unten in der Aufgabe. Ist die ganze Aufgabe geschlossen, holt **Einstellungen**, **Allgemein**, **Einrichtungs-Aufgabe** sie zurück. **Einstellungen**, **Allgemein**, **Dieses Gerät** hat dieselben Schalter, und **Einstellungen**, **Apps** hat immer die Handy-App.
 
 ## Neue Versionen
 

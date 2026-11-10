@@ -100,10 +100,6 @@ function deviceSettings(){const {app}=deviceRows,small=app.querySelector('small'
  const text=!pushOK?(iosTab?'On iPhone and iPad, add it to your Home Screen first: Share, then Add to Home Screen.':'This browser can’t show notifications.'):blocked?t('Blocked in this browser.')+' '+blockedHint():on?'On for this device. One per to-do, even without Telegram.':'One per to-do, even without Telegram.';
  set(note,html`${text}${DEVICE_HELP}`);note.classList.toggle('device-blocked',blocked)}
 function deviceRender(){appPushFirst();const k=nudgeKind()||'',el=nudgeBox,h=k&&k+phonePush;if(el.dataset.h!==h){el.dataset.h=h;el.dataset.kind=k;setHTML(el,k?nudgeHTML():html``);el.hidden=!k}deviceSettings();renderNotify();phoneAppRender();setupRender();if(lazyIn('settings'))appsRender()}
-// Settings, General, Phone app: how the mobile app finds this Machine (phone_app in assistant.py). Hosted or on The
-// Machine Network: it signs in with the account. Self-hosted and not on the Network: the same line, and folded under
-// "Not on the Network?" a QR code of the app's connect link and the address to type in. Not shown in the app itself,
-// which says once when its notifications can't work (off The Machine Network).
 // The mobile app's push on this phone: {id} once the app handed the Machine its token (www/inject.js), {id:null}
 // before that, null outside the app
 // In the app: whether the phone will still ask about notifications (machinePhone, mobile/www/inject.js); checked again
@@ -112,18 +108,10 @@ let phonePush='';
 async function phonePushCheck(){const p=window.machinePhone;if(!p)return;let s='';try{s=await p.state('push')}catch{}if(s!==phonePush){phonePush=s;deviceRender()}}
 function phoneAppPush(){if(!document.documentElement.classList.contains('in-app'))return null;
  try{const k=JSON.parse(localStorage.getItem('machine-app-push')||'null');return {id:typeof k?.id==='string'?k.id:null}}catch{return {id:null}}}
-// Outside the app it is always there, with Get the app: themachine.computer/app opens the phone's store (or, on a
-// computer, the help article with both), also once the setup to-do's row is closed.
-const PHONE_APP_GET='https://themachine.computer/app';
-function phoneAppRender(){const p=state?.notify?.phone_app,inApp=document.documentElement.classList.contains('in-app');let row=$('#device-phone');
- if(inApp&&state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}
- const get=html`<a class="btn-link phone-get" href="${PHONE_APP_GET}" target="_blank" rel="noopener">Get the app</a>`;
- const h=inApp?'':p?.hosted?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account.')}</small></span>${get}`:
-  p?.url?html`<span class="grow"><strong>Phone app</strong><small>${t('The app signs in with your account on The Machine Network.')}</small><details class="connect-alt phone-own"><summary>${t('Not on the Network?')}</summary>${onPhone()?'':html`<small>${t('Install the app, then scan this with the phone’s camera.')}</small>${p.qr?.length?qrSvg(p.qr):''}`}<small>${htmlT('Or enter this address in the app: {}',html`<code class="phone-url">${p.url}</code>`)}</small></details></span>${get}`:
-  html`<span class="grow"><strong>Phone app</strong><small>iPhone and Android.</small></span>${get}`;
- if(!h){row?.remove();return}  // not inside the app itself
- if(!row){row=document.createElement('div');row.id='device-phone';deviceRows.app.after(row)}
- putHTML(row,h)}
+// In the mobile app: says once when its notifications can't work (off The Machine Network). How the app finds this
+// Machine (sign-in, or a code off the Network) is in Settings, Apps (appsSignIn in settings-apps.js).
+function phoneAppRender(){if(!document.documentElement.classList.contains('in-app'))return;
+ if(state?.notify&&!state.notify.app_push_ready&&!devStore.get('app-push-network')){devStore.set('app-push-network',1);toast(t('Notifications in the app need The Machine Network. The app works without them.'))}}
 deviceRows.app.onclick=e=>{const b=e.target.closest('[data-device]');if(b)deviceRun(b.dataset.device)};
 $('#push-toggle').onclick=async()=>{const b=$('#push-toggle');if(!pushOK){toast(iosHint);return}b.disabled=true;try{if(pushOn())await pushDisable();else await pushEnable()}finally{b.disabled=false}};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){pushCheck();phonePushCheck()}});
