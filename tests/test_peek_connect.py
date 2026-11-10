@@ -429,11 +429,12 @@ class ReconnectDisconnectTest(unittest.TestCase):
         self.app.config, self.app.config_path = json.loads(self.path.read_text()), self.path
 
     def finish(self, view):
+        session = view['session']  # only the start names it; a poll's view does not (the dashboard keeps it, too)
         for _ in range(200):
             if view['state'] != 'running':
                 return view
             time.sleep(0.02)
-            view = self.app.action('connect_poll', {'session': view['session']}, owner_dashboard=True)
+            view = self.app.action('connect_poll', {'session': session}, owner_dashboard=True)
         self.fail('still running')
 
     def test_the_dashboard_names_the_source_since_its_requests_carry_their_own(self):
