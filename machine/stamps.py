@@ -6,6 +6,7 @@ transaction as the change, so a kept answer is never older than a committed chan
 ensure (watch, from Store, graph.ensure or shared_graph.ensure), never on a request's read path; a table without its
 triggers has no stamp, and what reads it is worked out each time, as before."""
 import collections
+import datetime
 import os
 import re
 import sqlite3
@@ -62,6 +63,50 @@ def watch_graph_who(db):
     db.execute("INSERT OR IGNORE INTO data_stamps(name,n) VALUES('graph_who',0)")
     for sql in GRAPH_WHO:
         db.execute(sql)
+
+
+# fleet_view: one counter for what the Fleet's view (fleet.Fleet.view, shared_view: api/fleet) reads, the fleet_ and
+# network_ tables. The dashboard fetches api/fleet for the Fleet's to-dos only once the status says this changed, not every
+# 20 seconds. Not counted: fleet_claims (the to-dos' claims, which the status itself carries), and fleet_meta's Team Graph
+# round bookkeeping (graph_*) and answer receipts, which change every few minutes and are never shown.
+FLEET_VIEW_QUIET_META = "NOT (new.key LIKE 'graph\\_%' ESCAPE '\\' OR new.key LIKE 'answer\\_receipt:%' ESCAPE '\\')"
+
+
+def watch_fleet_view(db):
+    """fleet_view's counter and its triggers on the fleet_ and network_ tables there are, once each."""
+    db.execute('CREATE TABLE IF NOT EXISTS data_stamps(name TEXT PRIMARY KEY,n INTEGER NOT NULL)')
+    db.execute("INSERT OR IGNORE INTO data_stamps(name,n) VALUES('fleet_view',0)")
+    made = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'stamp\\_fleetview\\_%' ESCAPE '\\'")}
+    tables = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE 'fleet\\_%' ESCAPE '\\' "
+                                       "OR name LIKE 'network\\_%' ESCAPE '\\') AND name<>'fleet_claims'")]
+    for table in tables:
+        if not IDENTIFIER.fullmatch(table):
+            continue
+        for op in ('insert', 'update', 'delete'):
+            name = f'stamp_fleetview_{table}_{op}'
+            if name in made:
+                continue
+            row = 'old' if op == 'delete' else 'new'
+            when = (' WHEN ' + FLEET_VIEW_QUIET_META.replace('new.', row + '.')) if table == 'fleet_meta' else ''
+            db.execute(f"CREATE TRIGGER {name} AFTER {op.upper()} ON {table}{when} BEGIN "
+                       "UPDATE data_stamps SET n=n+1 WHERE name='fleet_view'; END")
+
+
+def counter(db, name):
+    """One counter of data_stamps (fleet_view, graph_who), or None when it isn't kept here."""
+    try:
+        row = db.execute('SELECT n FROM data_stamps WHERE name=?', (name,)).fetchone()
+    except sqlite3.Error:
+        return None
+    return row[0] if row else None
+
+
+def fleet_view_stamp(db):
+    """A small marker that changes whenever the Fleet's view (api/fleet) could: the fleet_view counter and the hour, for
+    what only time changes (a free question's "no answer", a split's last day). The dashboard fetches api/fleet for the
+    Fleet's to-dos when it changes. None when the counter isn't kept: the dashboard then fetches as before."""
+    n = counter(db, 'fleet_view')
+    return None if n is None else f"{n}.{datetime.datetime.now(datetime.timezone.utc):%Y%m%d%H}"
 
 
 def stamp(db, tables):
