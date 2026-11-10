@@ -351,6 +351,20 @@ class Releases(unittest.TestCase):
         self.assertEqual(release.releases(), [])
         self.gate.assert_not_called()
 
+    def test_full_run_runs_every_test_on_the_commit_and_cuts_when_it_passes(self):
+        sha = self.commit('two')
+        self.green.side_effect = RuntimeError(f'no full test run passed on {sha[:7]}')
+        with mock.patch.object(release, 'full_run') as started:
+            release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        started.assert_called_once_with(sha)
+        self.assertEqual(len(release.releases()), 1)
+        self.gate.assert_called_once()
+        run('git', 'tag', '-d', release.releases()[0], cwd=self.app)  # the next cut may fall in the same minute
+        with mock.patch.object(release, 'full_run', side_effect=RuntimeError(f'the full test run on {sha[:7]} failure')):
+            with self.assertRaisesRegex(SystemExit, 'Not released: the full test run on .* failure'):
+                release.main(['cut', '--key', str(self.key), '--no-push', '--full-run'])
+        self.assertEqual(release.releases(), [])
+
     def test_cut_an_older_tested_commit_of_main(self):
         older = self.commit('two')
         self.commit('three')
@@ -362,18 +376,33 @@ class Releases(unittest.TestCase):
             release.main(['cut', '--key', str(self.key), '--no-push', '--commit', run('git', 'rev-parse', 'HEAD', cwd=self.app)])
 
     def test_which_full_runs_count(self):
-        sha = 'a' * 40
+        sha, base = 'a' * 40, 'b' * 40
         def runs(*found):
             return mock.patch.object(release, 'ci_runs', side_effect=lambda query: list(found) if 'head_sha' in query else [])
-        run_of = lambda event, status, conclusion: {'event': event, 'status': status, 'conclusion': conclusion,
-                                                   'html_url': 'https://example.invalid/run', 'head_sha': sha}
-        for found, error in (
-                ([run_of('push', 'completed', 'success')], None),
-                ([run_of('pull_request', 'completed', 'success')], 'no full test run passed'),
-                ([run_of('push', 'in_progress', None)], 'not done yet'),
-                ([run_of('push', 'completed', 'failure')], 'failure'),
-                ([run_of('push', 'completed', 'cancelled')], 'no full test run passed')):
-            with self.subTest(found=found), runs(*found):
+        run_of = lambda event, status, conclusion, marker=None: {
+            'id': 1, 'event': event, 'status': status, 'conclusion': conclusion, 'html_url': 'https://example.invalid/run',
+            'head_sha': sha, 'marker': marker}
+
+        def gh(full_on_base):
+            # the run's artifacts name what it tested (scripts/ci_runs.py); the base's runs say whether a full one passed
+            def api(path):
+                if '/artifacts' in path:
+                    return {'artifacts': [{'name': self.marker}] if self.marker else []}
+                return {'workflow_runs': [{'id': 2, 'event': 'schedule', 'conclusion': 'success', 'head_sha': base}] if full_on_base else []}
+            return mock.patch.object(release, '_gh_api', side_effect=lambda path: (
+                {'artifacts': []} if '/runs/2/' in path else api(path)))
+        for found, marker, full_on_base, error in (
+                ([run_of('push', 'completed', 'success')], None, False, None),
+                ([run_of('push', 'completed', 'success')], 'tested-full', False, None),
+                # a push to main that ran only what changed since a passed full run never proves a release
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, 'no full test run passed'),
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no full test run passed'),
+                ([run_of('pull_request', 'completed', 'success')], None, False, 'no full test run passed'),
+                ([run_of('push', 'in_progress', None)], None, False, 'not done yet'),
+                ([run_of('push', 'completed', 'failure')], None, False, 'failure'),
+                ([run_of('push', 'completed', 'cancelled')], None, False, 'no full test run passed')):
+            self.marker = marker
+            with self.subTest(found=found, marker=marker, full_on_base=full_on_base), runs(*found), gh(full_on_base):
                 if error is None:
                     REQUIRE_GREEN(sha)
                 else:

@@ -14,6 +14,8 @@ scripts/test_impact.py install DIR        record into DIR from now on (a .pth fi
                                           loads scripts/test_impact_js.mjs into Node when THE_MACHINE_IMPACT_DIR is set)
 scripts/test_impact.py remove             stop recording
 scripts/test_impact.py build DIR OUT      the map from DIR's records (DIR/passed lists the files that passed), gzipped JSON
+                                          (with DIR/seconds, how long each file took, for scripts/test_shards.py)
+scripts/test_impact.py merge OUT MAP...   one map from the maps of a full run's shards
 scripts/test_impact.py fetch [OUT]        the newest map main's CI made (needs gh), for scripts/test.py --changed"""
 import gzip
 import io
@@ -158,7 +160,15 @@ def build(records, out):
                                            check=True).stdout.split('\n') if p]
     except (OSError, subprocess.CalledProcessError):
         commit, known = '', []
-    data = {'commit': commit, 'tests': tests, 'known': known,
+    seconds = {}
+    if (records / 'seconds').exists():
+        for line in (records / 'seconds').read_text(encoding='utf-8').splitlines():
+            name, _, took = line.partition('\t')
+            try:
+                seconds[name] = round(float(took), 1)
+            except ValueError:
+                pass
+    data = {'commit': commit, 'tests': tests, 'known': known, 'seconds': dict(sorted(seconds.items())),
             'files': {path: {q: sorted(ids) for q, ids in sorted(funcs.items())} for path, funcs in sorted(files.items())},
             'js_tests': sorted(js_tests),
             'js': {part: {'top': sorted(found['top']), 'funcs': [[a, b, sorted(ids)] for (a, b), ids in sorted(found['funcs'].items())]}
@@ -167,6 +177,42 @@ def build(records, out):
         json.dump(data, sink, separators=(',', ':'))
     print(f'{len(tests)} test files, {sum(len(f) for f in files.values())} functions in {len(files)} files, '
           f'{sum(len(p["funcs"]) for p in js.values())} in {len(js)} dashboard parts ({len(js_tests)} browser tests) -> {out}')
+
+
+def merge(out, parts):
+    """One map from several (a full run's shards, each with its own test files): the tests of all of them, each
+    function and dashboard part with the tests that ran it in any."""
+    maps = []
+    for part in parts:
+        with gzip.open(part, 'rt', encoding='utf-8') as source:
+            maps.append(json.load(source))
+    tests = sorted({name for data in maps for name in data.get('tests') or ()})
+    index = {name: i for i, name in enumerate(tests)}
+    files, js, js_tests, seconds, known = {}, {}, set(), {}, set()
+    for data in maps:
+        mine = data.get('tests') or []
+        ids = lambda found: {index[mine[i]] for i in found}
+        known.update(data.get('known') or ())
+        seconds.update(data.get('seconds') or {})
+        js_tests.update(ids(data.get('js_tests') or ()))
+        for path, funcs in (data.get('files') or {}).items():
+            for qualname, found in funcs.items():
+                files.setdefault(path, {}).setdefault(qualname, set()).update(ids(found))
+        for name, found in (data.get('js') or {}).items():
+            part = js.setdefault(name, {'top': set(), 'funcs': {}})
+            part['top'].update(ids(found.get('top') or ()))
+            for start, end, ran in found.get('funcs') or ():
+                part['funcs'].setdefault((start, end), set()).update(ids(ran))
+    commits = {data.get('commit') or '' for data in maps}
+    merged = {'commit': commits.pop() if len(commits) == 1 else '', 'tests': tests, 'known': sorted(known),
+              'seconds': dict(sorted(seconds.items())),
+              'files': {path: {q: sorted(found) for q, found in sorted(funcs.items())} for path, funcs in sorted(files.items())},
+              'js_tests': sorted(js_tests),
+              'js': {name: {'top': sorted(found['top']), 'funcs': [[a, b, sorted(ran)] for (a, b), ran in sorted(found['funcs'].items())]}
+                     for name, found in sorted(js.items())}}
+    with gzip.open(out, 'wt', encoding='utf-8') as sink:
+        json.dump(merged, sink, separators=(',', ':'))
+    print(f'{len(tests)} test files from {len(maps)} shards -> {out}')
 
 
 class _Stay(urllib.request.HTTPRedirectHandler):
@@ -221,6 +267,8 @@ def main(argv):
         remove()
     elif argv[:1] == ['build'] and len(argv) == 3:
         build(argv[1], argv[2])
+    elif argv[:1] == ['merge'] and len(argv) >= 3:
+        merge(argv[1], argv[2:])
     elif argv[:1] == ['fetch']:
         got = fetch(*argv[1:2])
         print(got or 'no map: the selection follows imports')

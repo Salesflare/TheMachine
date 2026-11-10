@@ -24,9 +24,12 @@ About the test runner:
   worktree (commits, edits and new files) with where it left `origin/main` and picks the tests that ran the functions
   you changed, from the test-impact map main's last full run made (`scripts/test_impact.py`, fetched with `gh`). Without
   the map it picks every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
-  says why a test was picked. Main and release tags run every test.
+  says why a test was picked. A push to main runs the tests every change since the newest commit whose full run
+  passed needs (`scripts/ci_runs.py`); every test runs nightly, and a red nightly run opens an issue. On CI the files
+  are split into shards of about equal time (`scripts/test_shards.py`, by each file's time in main's last full run)
+  that run side by side.
 - `THE_MACHINE_TEST_MAX_FAILURES=5` stops starting files after 5 failed ones. Each file's line shows its CPU time,
-  and the summary how many cores the run kept busy.
+  and the summary how many cores the run kept busy and the computer's load.
 - If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package directory.
   `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
 

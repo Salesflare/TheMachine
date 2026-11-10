@@ -2,57 +2,147 @@ name: Tests and privacy checks
 
 on:
   # GitHub Actions minutes cost money (macOS 10x, Windows 2x Linux). So a pull request gets one Linux run of the pinned
-  # versions, of the tests its change needs (scripts/test_select.py). Main and release tags run every test, on our own
-  # runner too, so anything the selection missed shows up right after the merge. The full matrix, Windows and macOS run
-  # weekly and on demand.
+  # versions, of the tests its change needs (scripts/test_select.py). A push to main runs the tests every change since
+  # the newest commit whose full run passed needs (scripts/ci_runs.py), so it repeats nothing already proven; every test
+  # runs nightly, on our runner, so anything the selection missed shows up by the next morning (a failed nightly run
+  # opens an issue). The full matrix, Windows and macOS run weekly and on demand.
   pull_request:
   push:
     branches: [main]
     tags: ['release-*']
   workflow_dispatch:
+    inputs:
+      own_runner:
+        # main's full run on any branch (a change to how CI runs, say), at no Actions minutes
+        description: Like a push to main (our runner, the pinned versions, no macOS or Windows)
+        type: boolean
+        default: false
   schedule:
     - cron: '17 5 * * 1'  # weekly, so a new OpenClaw release that breaks something shows up here
+    - cron: '23 1 * * *'  # nightly: every test on main, on our runner (the expressions below name this cron)
 
 permissions:
   contents: read
 
-# A new push to a pull request cancels its run still going: only the newest commit can be merged anyway.
-# Main is never canceled: a run goes on while the next merge waits (GitHub keeps only the newest one waiting).
+# A new push to a pull request or main cancels the run still going: only the newest commit can be merged, and on main
+# the next run tests everything changed since the last full run that passed, so a canceled run leaves nothing
+# untested. The nightly, weekly and manual runs have their own groups and are never canceled: a full run is what the
+# next pushes build on, and what scripts/release.py needs on the commit it cuts (release.py cut --full-run starts one).
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && format('-{0}', github.event.schedule || 'manual') || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-# Pull requests and pushes to main run on our own runner (Hetzner servers, one fresh runner per job; the themachine-cloud
-# repo's docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
+# Pull requests, pushes to main and the nightly run run on our own runner (Hetzner servers, one fresh runner per job;
+# the themachine-cloud repo's docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual
+# runs stay on GitHub's (a manual run with own_runner on ours).
 # To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
 # (with the quotes); unset it to go back.
 # A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud from its contributions fork)
 # is model-written code nobody reviewed yet: after its fork approval it runs on GitHub's runners, never ours.
 jobs:
-  tests:
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
-    # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes, and a run cut at 30 with
-    # no failure has to start over, which costs more than the extra minutes.
-    timeout-minutes: 45
+  plan:
+    # Which test files run, in how many jobs. A pull request runs the tests its change needs (scripts/test_select.py):
+    # with the test-impact map from main's last full run, the tests that ran each function it changes; without it,
+    # what imports or names each changed file. All of them when that isn't clear. A push to main or a release tag runs
+    # the tests for everything changed since the newest commit under it whose full run passed (scripts/ci_runs.py
+    # base; nothing when that is the commit itself, every test when there is none). The nightly, weekly and manual runs
+    # run every one. On our runner the files are split into shards of about equal time (scripts/test_shards.py, by each
+    # file's time in main's last full run; about 5 minutes of files each, at most CI_SHARDS, a repository variable, 4
+    # when unset), side by side on our runner's slots. GitHub's runners use one job.
+    # Each run on main's commits names what it tested in an artifact (tested-full, tested-since-<sha>): what
+    # scripts/ci_runs.py and scripts/release.py read.
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 5
     permissions:
       contents: read
       actions: read  # the test-impact map from main's last full run (scripts/test_impact.py fetch)
+    outputs:
+      full: ${{ steps.split.outputs.full }}
+      shards: ${{ steps.split.outputs.shards }}
+      files: ${{ steps.split.outputs.files }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # a pull request: its merge commit and main under it; main: its history, back to the last full run
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
+          persist-credentials: false
+      - name: Choose the tests and split them into shards
+        id: split
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          SHARDS: ${{ runner.environment == 'self-hosted' && (vars.CI_SHARDS || '4') || '1' }}
+        run: |
+          changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz" split="$RUNNER_TEMP/shards.json"
+          python3 scripts/test_impact.py fetch "$map" || true
+          echo ALL > "$picked"
+          marker=tested-full
+          # anything that goes wrong here runs every test
+          if [ "$EVENT" = pull_request ]; then
+            git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base HEAD^1 "$changed" > "$picked" || echo ALL > "$picked"
+          elif [ "$EVENT" = push ]; then
+            base="$(python3 scripts/ci_runs.py base HEAD)" || base=
+            if [ "$base" = "$(git rev-parse HEAD)" ]; then
+              echo "A full run passed on this commit already"
+              : > "$picked"
+              marker="tested-since-$base"
+            elif [ -n "$base" ] && git diff --name-only "$base" HEAD > "$changed" && [ -s "$changed" ] \
+                && python3 scripts/test_select.py --impact "$map" --base "$base" "$changed" > "$picked"; then
+              echo "Since $base, the newest commit under this one whose full run passed:"
+              [ "$(head -n1 "$picked")" = ALL ] || marker="tested-since-$base"
+            else
+              echo ALL > "$picked"
+            fi
+          fi
+          if [ "$(head -n1 "$picked")" = ALL ]; then
+            echo "Every test file"
+            echo "full=true" >> "$GITHUB_OUTPUT"
+            marker=tested-full
+          else
+            echo "$(wc -l < "$picked") test files for:" && { cat "$changed" 2>/dev/null || true; }
+            echo "full=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "$marker" > "$RUNNER_TEMP/tested"
+          echo "marker=$marker" >> "$GITHUB_OUTPUT"
+          python3 scripts/test_shards.py --shards "$SHARDS" --target 1800 --impact "$map" "$picked" > "$split"
+          echo "files=$(cat "$split")" >> "$GITHUB_OUTPUT"
+          echo "shards=$(python3 -c 'import json, sys; print(json.dumps(list(json.load(open(sys.argv[1])))))' "$split")" >> "$GITHUB_OUTPUT"
+          python3 -c 'import json, sys; [print(f"shard {k}: {len(v.split())} files") for k, v in json.load(open(sys.argv[1])).items()]' "$split"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's run proves no commit of main
+        if: github.event_name != 'pull_request'
+        with:
+          name: ${{ steps.split.outputs.marker }}
+          path: ${{ runner.temp }}/tested
+          retention-days: 90
+          if-no-files-found: error
+
+  tests:
+    needs: plan
+    if: needs.plan.outputs.shards != '[]'
+    name: tests (${{ matrix.versions.python }}, ${{ matrix.versions.node }}, ${{ matrix.versions.openclaw }}, shard ${{ matrix.shard }})
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes (a pull request's that needs
+    # every test is one job), and a run cut at 30 with no failure has to start over, which costs more than the extra minutes.
+    timeout-minutes: 45
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         # A pull request and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        include: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        versions: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push' || inputs.own_runner || github.event.schedule == '23 1 * * *') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 2  # a pull request's merge commit and main under it, for the tests the change needs
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.versions.python }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.versions.node }}
           cache: npm  # our runner wipes a slot's home after every job: npm's downloads come from GitHub's cache instead
           cache-dependency-path: package-lock.json
       - name: Keep Chromium between runs
@@ -63,8 +153,8 @@ jobs:
       - name: Install OpenClaw and browser
         run: |
           # the runner's npm cache can predate a new pin (ETARGET offline): then ask the registry
-          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.openclaw }} \
-            || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.openclaw }}
+          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} \
+            || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }}
           # our runner has Chromium's system libraries already, and a job there has no sudo
           npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
@@ -75,29 +165,9 @@ jobs:
           node --input-type=module -e 'const {chromium}=await import(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs"); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
       - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
         run: python -m pip install --quiet cryptography==46.0.3
-      - name: Choose the tests
-        # A pull request runs the tests its change needs (scripts/test_select.py): with the test-impact map from main's
-        # last full run, the tests that ran each function it changes; without it, what imports or names each changed file.
-        # All of them when that isn't clear. Main, release tags and the weekly run run every one.
-        id: pick
-        if: github.event_name == 'pull_request'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz"
-          python3 scripts/test_impact.py fetch "$map" || true
-          # anything that goes wrong here runs every test
-          git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base HEAD^1 "$changed" > "$picked" || echo ALL > "$picked"
-          if [ "$(head -n1 "$picked")" = ALL ]; then
-            echo "Every test file"
-            echo "files=" >> "$GITHUB_OUTPUT"
-          else
-            echo "$(wc -l < "$picked") test files for:" && cat "$changed"
-            echo "files=$(tr '\n' ' ' < "$picked")" >> "$GITHUB_OUTPUT"
-          fi
       - name: Record which functions each test runs
         # A full run records the test-impact map the pull requests pick their tests with (scripts/test_impact.py).
-        if: steps.pick.outputs.files == '' && matrix.openclaw != 'latest'
+        if: needs.plan.outputs.full == 'true' && matrix.versions.openclaw != 'latest'
         run: |
           python3 scripts/test_impact.py install "$RUNNER_TEMP/impact"
           echo "THE_MACHINE_IMPACT_DIR=$RUNNER_TEMP/impact" >> "$GITHUB_ENV"
@@ -109,31 +179,130 @@ jobs:
           THE_MACHINE_TEST_JOBS: ${{ runner.environment == 'self-hosted' && '6' || '' }}
           # a pull request stops starting files after 5 failed ones: the slot goes to the next pull request
           THE_MACHINE_TEST_MAX_FAILURES: ${{ github.event_name == 'pull_request' && '5' || '' }}
-          FILES: ${{ steps.pick.outputs.files }}
-        run: python3 scripts/test.py $FILES
-      - name: Keep the test-impact map
+          # this shard's files, longest first (the plan job)
+          FILES: ${{ fromJSON(needs.plan.outputs.files)[matrix.shard] }}
+        run: python3 scripts/test.py --in-order $FILES
+      - name: Keep this shard's part of the test-impact map
         id: impact
         if: always() && env.THE_MACHINE_IMPACT_DIR != ''
         run: |
           python3 scripts/test_impact.py remove
           if [ -s "$THE_MACHINE_IMPACT_DIR/passed" ]; then
-            python3 scripts/test_impact.py build "$THE_MACHINE_IMPACT_DIR" "$RUNNER_TEMP/test-impact.json.gz"
+            mkdir -p "$RUNNER_TEMP/impact-part"
+            python3 scripts/test_impact.py build "$THE_MACHINE_IMPACT_DIR" "$RUNNER_TEMP/impact-part/part-${{ matrix.shard }}.json.gz"
           fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        # public repository: the artifact storage is free; the newest main one is all the pull requests read
         if: always() && steps.impact.outcome == 'success'
+        with:
+          name: test-impact-part-${{ matrix.shard }}
+          path: ${{ runner.temp }}/impact-part/
+          retention-days: 1
+          if-no-files-found: ignore
+      - name: Check whitespace
+        run: git diff --check
+
+  gate:
+    # The check main's rules require, under the name it had before the shards: green only when the plan and every
+    # shard passed (scripts/ci_runs.py gate). No shards, as when the plan picked no tests, passes; a failed or canceled
+    # plan doesn't.
+    needs: [plan, tests]
+    if: always()
+    name: tests (3.12, 24.22.1, 2026.11.2)
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ci_runs.py
+          sparse-checkout-cone-mode: false
+      - name: Every shard passed
+        env:
+          PLAN: ${{ needs.plan.result }}
+          TESTS: ${{ needs.tests.result }}
+          SHARDS: ${{ needs.plan.outputs.shards }}
+        run: python3 scripts/ci_runs.py gate "$PLAN" "$TESTS" "$SHARDS"
+
+  impact:
+    # The shards' parts in one test-impact map, the one the pull requests read (scripts/test_impact.py fetch). A map
+    # that can't be made leaves the pull requests on the one before, so it never turns a run red.
+    needs: [plan, tests]
+    if: always() && needs.plan.outputs.full == 'true'
+    continue-on-error: true
+    permissions:
+      contents: read
+      actions: read  # the shards' parts in this run
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: test-impact-part-*
+          path: ${{ runner.temp }}/parts
+          merge-multiple: true
+      - name: One map from the shards' parts
+        id: merge
+        run: |
+          set -- "$RUNNER_TEMP"/parts/part-*.json.gz
+          if [ -e "$1" ]; then python3 scripts/test_impact.py merge "$RUNNER_TEMP/test-impact.json.gz" "$@"; else echo "No parts: no shard passed a file"; fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        # public repository: the artifact storage is free; the newest main one is all the pull requests read
         with:
           name: test-impact
           path: ${{ runner.temp }}/test-impact.json.gz
           retention-days: 3
           if-no-files-found: ignore
-      - name: Check whitespace
-        run: git diff --check
+
+  nightly-alert:
+    # A red nightly run opens an issue (or adds to the open one), so a test the selection missed is seen that morning;
+    # the next green nightly run closes it.
+    needs: [plan, tests, help, secrets]
+    if: always() && github.event.schedule == '23 1 * * *'
+    runs-on: ${{ fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') }}
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or close the nightly issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+          title = 'Nightly full test run failed'
+          def api(path, body=None, method=None):
+              request = urllib.request.Request(f'https://api.github.com/repos/{os.environ["REPO"]}/{path}', method=method,
+                                               data=json.dumps(body).encode() if body is not None else None,
+                                               headers={'Authorization': f'Bearer {os.environ["GITHUB_TOKEN"]}',
+                                                        'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          found = [i for i in api('issues?state=open&per_page=100') if i['title'] == title and 'pull_request' not in i]
+          red, run = os.environ['RED'] == 'true', os.environ['RUN']
+          if red and found:
+              api(f'issues/{found[0]["number"]}/comments', {'body': f'Failed again: {run}'})
+          elif red:
+              api('issues', {'title': title, 'body': f'Every test runs nightly on main; this run failed: {run}\n\n'
+                             'A test the selection on pull requests and pushes to main missed, or a flaky one. Until a full '
+                             'run passes again, main tests everything changed since the last one that did.'})
+          for issue in found if not red else ():
+              api(f'issues/{issue["number"]}/comments', {'body': f'Green again: {run}'})
+              api(f'issues/{issue["number"]}', {'state': 'closed'}, method='PATCH')
+          print('red' if red else 'green', len(found))
+          EOF
 
   help:
     # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
     # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -149,7 +318,7 @@ jobs:
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.
     # Weekly and on demand only: these runners cost 2x (Windows) and 10x (macOS) a Linux minute, so not on each push to main.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '17 5 * * 1' || github.event_name == 'workflow_dispatch' && !inputs.own_runner
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -199,7 +368,7 @@ jobs:
         run: ./install.ps1 -DryRun
 
   secrets:
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/')) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
