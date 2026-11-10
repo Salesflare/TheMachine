@@ -125,7 +125,7 @@ class FleetApp:
         if getattr(self, 'skills', None):
             self.skills.fleet = self.fleet
             self.fleet.skills = self.skills
-        self.fleet.graph_build = self.graph_build
+        self.fleet.graph_build = self.graph_later
         self.fleet.about_you = self.about_you
         if getattr(self, 'agents', None) is not None:
             self.agents._network = lambda body: self.fleet.relay.call('POST', '/agent-results', body)
