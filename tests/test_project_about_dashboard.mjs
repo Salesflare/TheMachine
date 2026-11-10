@@ -93,6 +93,16 @@ try{
   assert.equal(await ta.inputValue(),'');
   assert.equal(await ta.getAttribute('placeholder'),'What it is and where it stands');
   await shot(page,`project-about-new-${tag}`);
+  await dialog.locator('[data-pj-close]').first().click();await dialog.waitFor({state:'hidden'});
+  // The To-dos heading counts the open ones; only done ones: no count at all (never an empty pill)
+  const head=page.locator('.section-head:has(h2:text-is("To-dos"))');
+  node={...fresh(),todos:[{id:'s1',title:'Send the order form',status:'completed',done:true}]};await page.evaluate(()=>people(graphNode,true));
+  await head.waitFor();assert.equal(await head.locator('.count').count(),0,'no count when none is open');
+  await shot(page,`project-todos-done-${tag}`);
+  node={...fresh(),todos:[{id:'s2',title:'Book the plant visit',status:'pending',done:false},{id:'s1',title:'Send the order form',status:'completed',done:true}]};
+  await page.evaluate(()=>people(graphNode,true));await head.locator('.count').waitFor();
+  assert.equal(await head.locator('.count').textContent(),'1');
+  await shot(page,`project-todos-open-${tag}`);
   assert.deepEqual(errors,[]);await context.close();
  }
  console.log('project about dashboard ok');
