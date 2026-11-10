@@ -17,10 +17,38 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
+import locale_prefs
 import next_actions
 import preparation_state
 from machine.cards import HANDOFF
 from machine.config import ROOT
+
+
+# LinkedIn's sign-in page takes its language from the server's country (a Machine on a server abroad showed it, and its
+# captcha, in that country's language), not from the browser's languages, and keeps it for that browser. Its `_l`
+# parameter sets it (undocumented; a value it does not know is ignored). Every sign-in page the Machine opens carries
+# one, English too: without it, LinkedIn falls back to the server's country. Each locale here was checked to work.
+LINKEDIN_LOCALES = {'en': 'en_US', 'nl': 'nl_NL', 'de': 'de_DE', 'fr': 'fr_FR', 'es': 'es_ES', 'it': 'it_IT', 'pt-br': 'pt_BR'}
+LINKEDIN_SIGNIN_PATH = re.compile(r'(?i)/(?:login|uas/login)/?')
+
+
+def linkedin_locale(config=None):
+    """The owner's app language (else what signup guessed) as a LinkedIn locale; US English for anything else."""
+    return LINKEDIN_LOCALES.get(locale_prefs.language_of(config).lower(), 'en_US')
+
+
+def site_language(url, config=None):
+    """`url` with the owner's language for the site where it takes one from the address: LinkedIn's sign-in page
+    (its own `_l` replaced). Any other address comes back as it is."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+    except (TypeError, ValueError):
+        return url
+    host = (parts.hostname or '').removeprefix('www.')
+    if parts.scheme != 'https' or host != 'linkedin.com' or not LINKEDIN_SIGNIN_PATH.fullmatch(parts.path):
+        return url
+    query = [(k, v) for k, v in urllib.parse.parse_qsl(parts.query, keep_blank_values=True) if k != '_l']
+    return urllib.parse.urlunsplit(parts._replace(query=urllib.parse.urlencode([*query, ('_l', linkedin_locale(config))])))
 
 
 def browser_lease_script(config=None):

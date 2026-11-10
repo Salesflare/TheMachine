@@ -408,6 +408,14 @@ class SigninDialogOpens(unittest.TestCase):
         self.assertEqual((shown['state'], shown['site']), ('opened', 'example.com'))
         self.assertEqual(self.app.signin_opened[self.sid], 'new-tab')
 
+    def test_a_closed_linkedin_sign_in_reopens_in_the_owners_language(self):
+        # LinkedIn takes the language from the server's country unless its sign-in address says otherwise
+        self.app.config['language'] = 'de'
+        self.block('https://www.linkedin.com/login', HANDOFF)
+        shown, open_tab, focus = self.open([{'id': 'x', 'url': 'https://other.invalid/'}])
+        self.assertEqual(open_tab.call_args[0][1], 'https://www.linkedin.com/login?_l=de_DE')
+        self.assertEqual(focus.call_args[0][0], 'https://www.linkedin.com/login?_l=de_DE')
+
     def test_an_open_tab_is_brought_up_rather_than_a_second_one(self):
         self.block('https://www.example.com/login', HANDOFF)
         shown, open_tab, focus = self.open([{'id': 'mine', 'url': 'https://www.example.com/login?next=1'}])
