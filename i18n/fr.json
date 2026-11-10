@@ -3605,7 +3605,6 @@
  "Projects and code": "Projets et code",
  "Projects of one kind show here in stages, as your messages move them.": "Les projets d’un même type s’affichent ici par étapes, au fil de vos messages.",
  "Projects opens on this board now.": "Projets s’ouvre maintenant sur ce tableau.",
- "Projects with alike names, folded into one row. Open it to see each.": "Projets aux noms semblables, regroupés en une ligne. Ouvrez-la pour voir chacun.",
  "Projects:": "Projets :",
  "Projects: board view": "Projets : vue tableau",
  "Projects: list view": "Projets : vue liste",
@@ -6400,7 +6399,6 @@
  "name: what the projects are, a short label like \"Partner listings\"": "name : ce que sont les projets, un libellé court comme \"Partner listings\"",
  "never": "jamais",
  "new to-do": "nouvelle tâche",
- "newest {}": "le plus récent : {}",
  "next 7 days": "7 prochains jours",
  "next meeting {}": "prochaine réunion {}",
  "next: the owner's next step in a few words (up to 120 characters)": "next : la prochaine étape du propriétaire en quelques mots (120 caractères au plus)",
@@ -6648,10 +6646,6 @@
  "{} To decide, tap to show or hide": "{} À décider, touchez pour afficher ou masquer",
  "{} accepted {}, changed to: “{}”.": "{} a accepté {}, modifié en : « {} ».",
  "{} accepted {}.": "{} a accepté {}.",
- "{} alike projects": {
-  "one": "{} projet semblable",
-  "other": "{} projets semblables"
- },
  "{} already has connected sources; import into a fresh install, or pass --force to replace it (the current data folder is kept as a copy first)": "{} a déjà des sources connectées ; importez dans une installation neuve, ou passez --force pour la remplacer (le dossier de données actuel est d’abord gardé en copie)",
  "{} already has this to-do": "{} a déjà cette tâche",
  "{} already shares {}": "{} partage déjà {}",

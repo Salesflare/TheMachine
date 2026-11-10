@@ -6,9 +6,9 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Who sees a board, on its header (shared_graph.team_boards, graph.boards): the owner's own board says Shared with the
-// team and how many of its projects stay with them (kept private, or someone on them is Personal), each with a lock; a
-// teammate's says whose it is and whether the whole team has it or only chosen teammates. Look-alike projects of a
-// teammate fold into one row that reads as a group ("Pilot review: …", 5 alike projects). A tile's newest line never
+// team and how many of its projects stay with them, each with a lock; a teammate's says whose it is and whether the
+// whole team has it or only chosen teammates. Each of a teammate's projects is its own card, as on the owner's board,
+// and a long stage shows the same number and "Show N more" (8, 6 on a phone). A tile's newest line never
 // says an older stage than the one it is in. A teammate's project opens under Projects with its organization linked.
 // TEAM_BOARDS_SHOT=<dir> writes screenshots (TEAM_BOARDS_LANG=nl for Dutch).
 const dashboard=await dashboardPage();
@@ -21,7 +21,7 @@ const proj=(i,name,stage,extra={})=>({id:'project:'+i,name,stage,reason:'they sa
 const mine=[{id:1,name:'Pilot program',visibility:'team',stages,stuck:0,maybes:[],held:2,shared_with:[],
  projects:[proj(1,'Pilot review: Paperkite','Invited'),proj(2,'Pilot review: Bramblebox','Invited',{held:true}),proj(3,'Pilot review: Quillfeather','Trying it'),proj(4,'Pilot review: Fernwave','Up and running',{held:true})]}];
 const team=(i,name,stage,extra={})=>({id:'team:project:'+String(i).padStart(32,'0'),name,stage,reason:'they said yes to a trial',by:'review',at:day(5),first:false,days:5,org:null,team_only:true,owner_name:'Ada',fleet:FL,via:'via Ada',yours:false,needs_you:false,...extra});
-const pilots=['Paperkite','Bramblebox','Quillfeather','Otterly Mail','Fernwave','Copperleaf'];
+const pilots=['Paperkite','Bramblebox','Quillfeather','Otterly Mail','Fernwave','Copperleaf','Driftwood','Halcyon','Juniper'];
 const teamBoards=[
  {name:'Pilot program',stages,team:true,stuck:0,by:['Ada'],seen:'team',projects:[...pilots.map((n,i)=>team(i+1,'Pilot review: '+n,'Invited',{line:'Email: Re: Pilot for '+n,line_at:day(6+i)})),
   team(20,'Lanternfish','Trying it',{at:day(2),line:'Moved to Invited: agreed to try it',line_at:day(9)}),team(21,'Mossgate','Feedback',{org:{name:'Mossgate',logo:null}})]},
@@ -61,13 +61,14 @@ try{
   if(LANG==='en'){assert.match(sub,/^Shared with the team · 2 stay with you · 4 projects · a check moves them as your messages come in$/);
    assert.equal(await page.locator('.tile .tile-held').count(),2)}
   await fits(page,w+' mine');await shot(page,`owner-board-${w}-${scheme}`);
-  // A teammate's board: whose it is and that the team has it; look-alikes fold into one row that says it is a group
+  // A teammate's board: whose it is and that the team has it; each project its own card, a long stage cut like the owner's
   await toTeam(page);
   const tsub=await page.locator('.board-sub').textContent();
-  if(LANG==='en'){assert.match(tsub,/^Ada's board, shared with the team · 8 projects · a check moves them as the team's messages come in$/);
-   const group=page.locator('.lane[data-lane="Invited"] .tile-group');
-   assert.equal((await group.locator('summary .tile-name').textContent()).trim(),'Pilot review: …');
-   assert.match(await group.locator('summary .tile-why').textContent(),/^6 alike projects · newest Paperkite, /);
+  const invited=page.locator('.lane[data-lane="Invited"]'),rows=w>560?8:6;
+  assert.equal(await page.locator('.tile-group').count(),0);assert.equal(await invited.locator('.tile').count(),rows);
+  if(LANG==='en'){assert.match(tsub,/^Ada's board, shared with the team · 11 projects · a check moves them as the team's messages come in$/);
+   assert.equal((await invited.locator('.lane-more').textContent()).trim(),`Show ${9-rows} more`);
+   assert.equal((await invited.locator('.tile .tile-name').first().textContent()).trim(),'Pilot review: Paperkite');
    // A move newer than the newest line: the tile says the move, not the older stage
    assert.match(await page.locator('.tile[data-node$="020"] .tile-why').textContent(),/^Moved to Trying it: they said yes to a trial · /)}
   else assert.match(tsub,/^Bord van Ada, gedeeld met het team · .* · een check verplaatst ze naarmate er berichten van het team binnenkomen$/);

@@ -27,27 +27,16 @@ const moneyFull=v=>moneyFormat(v,{maximumFractionDigits:0});
 const LANE_ROWS=()=>matchMedia('(max-width:560px)').matches?6:8;
 // A shared board (the Team view) shows Mine, Needs me or All: Mine is what this Machine's owner is on (a thread, owner,
 // in their own Graph or a to-do of theirs), Needs me what waits on them (an open to-do, or a thread's newest message is to
-// them). It opens on Mine when the board has some of theirs. The rest of a stage folds into "Show N more". Look-alike
-// projects of one kind ("Acme CRM evaluation", "Bolt CRM evaluation": three or more alike in a stage) fold into one row.
-let boardTeamPick=sideStore.get('board-team-pick')||'',groupOpen=new Set();
+// them). It opens on Mine when the board has some of theirs. Each stage shows the same cards and "Show N more" as the
+// owner's own board.
+let boardTeamPick=sideStore.get('board-team-pick')||'';
 const teamPickOf=items=>{const v=boardTeamPick||(items.some(p=>p.yours)?'mine':'all');return v==='needs'||v==='mine'?v:'all'};
 const teamPick=b=>teamPickOf(b.projects);
 const teamHit=(p,v)=>v==='all'||(v==='mine'?p.yours:p.needs_you);
-// Alike: the same words before a colon ("Pilot review: …"), else the same last two words ("… CRM evaluation"), else the
-// same first two, on three or more. Each with how its row names it, so it reads as a group, not as one project.
-const alikeKeys=n=>{const name=String(n||'').trim(),w=name.split(/\s+/),colon=name.match(/^([^:]{3,60}):\s+\S/);
- return [...(colon?[{key:colon[1],label:colon[1]+': …'}]:[]),...(w.length>2?[{key:w.slice(-2).join(' '),label:'… '+w.slice(-2).join(' ')},{key:w.slice(0,2).join(' ').replace(/[:\-–]+$/,''),label:w.slice(0,2).join(' ').replace(/[:\-–]+$/,'')+' …'}]:[])]};
-const alikeRest=(name,key)=>{const n=String(name||'').trim(),k=key.toLowerCase();return n.toLowerCase().startsWith(k)?n.slice(k.length).replace(/^[\s:\-–]+/,'')||n:n.toLowerCase().endsWith(k)?n.slice(0,-k.length).trim()||n:n};
-function teamRows(list){const count={},keys=p=>p.yours?[]:alikeKeys(p.name);for(const p of list)for(const {key} of keys(p))count[key.toLowerCase()]=(count[key.toLowerCase()]||0)+1;
- const rows=[],at={};for(const p of list){const k=keys(p).find(k=>count[k.key.toLowerCase()]>=3),id=k?.key.toLowerCase();if(k){if(at[id]==null){at[id]=rows.length;rows.push({group:k.key,label:k.label,items:[]})}rows[at[id]].items.push(p)}else rows.push(p)}
- return rows}
-const rowSize=r=>r.group?r.items.length:1;
-const groupRow=(b,s,r,oneOwner)=>{const key=b.name+'|'+s.name+'|'+r.group.toLowerCase(),last=r.items.map(p=>({p,at:p.line?p.line_at:p.at})).filter(x=>x.at).sort((x,y)=>String(y.at).localeCompare(String(x.at)))[0];
- return html`<details class="tile-group" data-group="${key}"${groupOpen.has(key)?html` open`:''}><summary title="${t('Projects with alike names, folded into one row. Open it to see each.')}"><span class="tile-name">${r.label||r.group}</span><span class="tile-fold" aria-hidden="true"></span><span class="tile-why">${t(['{} alike project','{} alike projects'],r.items.length)}${last?html` · ${t('newest {}',alikeRest(last.p.name,r.group))}, ${shortDay(last.at)}`:''}</span></summary><div class="tiles">${r.items.map(p=>tile(p,b,oneOwner))}</div></details>`};
 const lane=(b,s,items,on)=>{const key=b.name+'|'+s.name,oneOwner=items.length>1&&items.every(p=>(p.owner_name||'')===(items[0].owner_name||''));
  if(b.team){const v=teamPick(b),open=boardOpen.has(key),first=[...items.filter(p=>p.yours),...items.filter(p=>!p.yours)],hit=first.filter(p=>teamHit(p,v)),list=v==='all'||open?[...hit,...first.filter(p=>!teamHit(p,v))]:hit;
-  const rows=teamRows(list),wide=s.side&&!matchMedia('(max-width:560px)').matches,cut=v==='all'&&!open&&!wide?LANE_ROWS():rows.length,shown=rows.slice(0,cut),more=items.length-shown.reduce((n,r)=>n+rowSize(r),0);
-  return html`<section class="lane${s.side?html` side`:''}${on?html` on`:''}" data-lane="${s.name}" aria-label="${s.name}"><div class="lane-h"><h4>${s.name}</h4><span>${v==='all'?items.length:`${hit.length}/${items.length}`}</span></div><div class="tiles">${shown.length?shown.map(r=>r.group?groupRow(b,s,r,oneOwner):tile(r,b,oneOwner)):more>0?'':html`<p class="lane-empty">Nothing here yet</p>`}</div>${more>0?html`<button type="button" class="lane-more" data-lane-more="${key}">Show ${more} more</button>`:''}</section>`}
+  const wide=s.side&&!matchMedia('(max-width:560px)').matches,shown=open||wide?list:list.slice(0,LANE_ROWS()),more=items.length-shown.length;
+  return html`<section class="lane${s.side?html` side`:''}${on?html` on`:''}" data-lane="${s.name}" aria-label="${s.name}"><div class="lane-h"><h4>${s.name}</h4><span>${v==='all'?items.length:`${hit.length}/${items.length}`}</span></div><div class="tiles">${shown.length?shown.map(p=>tile(p,b,oneOwner)):more>0?'':html`<p class="lane-empty">Nothing here yet</p>`}</div>${more>0?html`<button type="button" class="lane-more" data-lane-more="${key}">Show ${more} more</button>`:''}</section>`}
  const all=boardOpen.has(key)||s.side&&!matchMedia('(max-width:560px)').matches,shown=all?items:items.slice(0,LANE_ROWS()),stuck=items.filter(stuckDays).length;
  return html`<section class="lane${s.side?html` side`:''}${on?html` on`:''}" data-lane="${s.name}" aria-label="${s.name}"><div class="lane-h"><h4>${s.name}</h4><span>${items.length}</span>${items.some(p=>p.value!=null)?html`<span class="lane-total" title="Total value">${money(items.reduce((t,p)=>t+(p.value||0),0))}</span>`:''}</div>${s.hint?html`<p class="lane-hint">${s.hint}</p>`:''}${stuck?html`<p class="lane-sum"><button type="button" class="link" data-crm-waiting aria-pressed="${!!crmF('projects').waiting}" title="${crmF('projects').waiting?'Show all':'Show only these'}">${stuck} with no reply in 10+ days</button>${fuNudge(b,s)}</p>`:''}<div class="tiles">${items.length?shown.map(p=>tile(p,b,oneOwner)):html`<p class="lane-empty">Nothing here yet</p>`}</div>${items.length>shown.length?html`<button type="button" class="lane-more" data-lane-more="${key}">Show ${items.length-shown.length} more</button>`:''}${b.team||s.side?'':html`<button type="button" class="lane-add" data-proj-new data-proj-stage="${s.name}" aria-label="Add a project to ${s.name}">+ Add</button>`}</section>`};
 // A new board looks through the history once: "Looking through your history…", then what it found (graph.backfill_view)
@@ -157,7 +146,6 @@ $('#people-view').addEventListener('click',e=>{if(!e.target.closest('.proj-board
 $('#people-view').addEventListener('change',e=>{if(!e.target.matches?.('.board-pick'))return;boardPick(e.target.value)});
 function boardPick(name){boardShown=name;sideStore.set(boardKey(),boardShown);const f=crmF('projects'),to=graphBoards.find(b=>b.name===name);
  if(f.board&&to&&!to.team){const next={...f,board:String(to.id)};delete next.stage;return crmSet('projects',next)}boardRedraw()}  /* a Board filter follows the board picked; its Stage was another board's */
-document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contains('tile-group'))d.open?groupOpen.add(d.dataset.group):groupOpen.delete(d.dataset.group)},true);
 $('#people-view').addEventListener('keydown',e=>{const t=e.target.closest?.('.tile');if(t&&e.target===t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();graphOpen(t.dataset.node)}});
 // Boards the owner makes. A review suggests one for a group of projects of one kind ("Start a board for Hiring?"): Save,
 // Edit or Not now; nothing is a board until it's saved. The same editor makes a new board and edits one from its ⋯

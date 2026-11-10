@@ -3605,7 +3605,6 @@
  "Projects and code": "Projekte und Code",
  "Projects of one kind show here in stages, as your messages move them.": "Projekte einer Art erscheinen hier in Phasen, während deine Nachrichten sie weiterbewegen.",
  "Projects opens on this board now.": "Projekte öffnet jetzt auf diesem Board.",
- "Projects with alike names, folded into one row. Open it to see each.": "Projekte mit ähnlichen Namen, in einer Zeile zusammengefasst. Öffne sie, um jedes zu sehen.",
  "Projects:": "Projekte:",
  "Projects: board view": "Projekte: Board-Ansicht",
  "Projects: list view": "Projekte: Listenansicht",
@@ -6400,7 +6399,6 @@
  "name: what the projects are, a short label like \"Partner listings\"": "name: was die Projekte sind, ein kurzes Label wie \"Partner listings\"",
  "never": "nie",
  "new to-do": "neue Aufgabe",
- "newest {}": "neuestes: {}",
  "next 7 days": "nächste 7 Tage",
  "next meeting {}": "nächstes Meeting {}",
  "next: the owner's next step in a few words (up to 120 characters)": "next: der nächste Schritt des Besitzers in ein paar Wörtern (bis zu 120 Zeichen)",
@@ -6648,10 +6646,6 @@
  "{} To decide, tap to show or hide": "{} Zu entscheiden, tippen zum Ein- oder Ausblenden",
  "{} accepted {}, changed to: “{}”.": "{} hat {} angenommen, geändert in: „{}“.",
  "{} accepted {}.": "{} hat {} angenommen.",
- "{} alike projects": {
-  "one": "{} ähnliches Projekt",
-  "other": "{} ähnliche Projekte"
- },
  "{} already has connected sources; import into a fresh install, or pass --force to replace it (the current data folder is kept as a copy first)": "{} hat schon verbundene Quellen; importiere in eine frische Installation oder nutze --force, um sie zu ersetzen (der aktuelle Datenordner wird vorher als Kopie behalten)",
  "{} already has this to-do": "{} hat diese Aufgabe schon",
  "{} already shares {}": "{} teilt schon {}",
