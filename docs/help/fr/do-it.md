@@ -38,6 +38,6 @@ Ce qu’elle peut envoyer dépend de la source : un e-mail, un message direct Sl
 
 - « Ceci ne peut pas être envoyé d’ici. » veut dire que vous copiez le brouillon avec **Copier le brouillon** et l’envoyez vous-même.
 - **Attend votre aide** veut dire qu’elle vous pose une question : **Répondre**. **Bloqué** veut dire qu’elle s’est arrêtée sans question, ou qu’elle a tourné trop longtemps et a été arrêtée ; la tâche dit pourquoi.
-- Il lui manque une information qui est chez vous ? Elle rédige quand même ce qui peut partir maintenant, comme une réponse qui confirme une date, et vous demande le reste.
+- Il lui manque quelque chose que vous seul avez ? Elle vous le demande et ne rédige que ce qui peut partir sans, comme une réponse qui confirme une date. Elle ne rédige pas de réponse qui dit seulement que cela arrive.
 - **Réessayer** la relance une fois. **Demander des modifications** demande autre chose. Sur une tâche bloquée, **Réessayer** passe en premier et **Détails** montre ce qu’elle a essayé.
 - Un code envoyé sur votre téléphone, ou une autorisation qui manque, l’arrête. La tâche dit en une ligne ce qu’il faut, comme le code dans son navigateur ou l’accès à un fichier, puis **Continuer** ou **Réessayer**. Une source qui n’est pas connectée, comme Slack : **Connecter Slack** passe en premier sur la tâche, et elle reprend d’elle-même dès que Slack est connecté.

@@ -394,11 +394,25 @@ class Preparation(unittest.TestCase):
         # A run prepared ahead that lacks something only the owner has (the original proposal, a price) used to stop at a
         # bare blocker, while Do it drafted the reply the other side waited for and asked for the rest (2026-11-08)
         self.accept();job={**self.job(),'ahead':True};prompt=a.preparation_prompt(job)
-        self.assertIn("still draft the step that can go now",prompt)
+        self.assertIn("Draft only a step that can go without it",prompt)
         self.assertIn("outcome:'needs_you' with needs:<what you need from them, as a question>",prompt)
         self.assertIn("who is on a thread or meeting doesn't show that",prompt)  # no guessed recipient for the ask
-        self.assertIn("Record a blocker only when nothing useful can be drafted",prompt)
-        self.assertNotIn("still draft the step that can go now",a.preparation_prompt(self.job()))  # Do it: the rules already say it
+        self.assertIn("Record a blocker only when you could not look at all",prompt)
+        self.assertNotIn("Draft only a step that can go without it",a.preparation_prompt(self.job()))  # Do it: the rules already say it
+
+    def test_prepared_ahead_saves_no_holding_reply_for_what_only_the_owner_has(self):
+        # Receipts only the owner had: the run asked for them (needs_you) and still left "I'm still locating the
+        # receipts" ready to send, because the ahead limits told it to draft the reply the other side waits for (2026-11-10)
+        self.accept();prompt=a.preparation_prompt({**self.job(),'ahead':True})
+        self.assertIn("a reply that only acknowledges or says it will follow is not that step: save no draft unless the owner asked for one",prompt)
+        self.assertIn("say plainly what is missing",prompt)
+        self.assertNotIn("still draft the step that can go now",prompt)
+        rules=(a.ROOT/'PREPARATION.md').read_text()
+        line=next(x for x in rules.splitlines() if x.startswith('- When what is owed is something you could not find or make'))
+        self.assertIn("a reply that only acknowledges or says it will follow delivers nothing: don't draft one",line)
+        self.assertIn("outcome:'needs_you' with needs:<exactly that, as a question> and no next action",line)
+        self.assertIn("the owner asked for one, or the other side asked for a date or confirmation the evidence gives",line)  # the honest short reply stays
+        self.assertLessEqual(len(rules),30000)  # the plugin's limit for these rules
 
     def test_owner_requested_service_setting_is_not_a_blanket_security_refusal(self):
         self.accept();job=self.job();prompt=a.preparation_prompt(job)
