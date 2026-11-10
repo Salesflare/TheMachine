@@ -9,7 +9,8 @@ are capped (MAX_ENTRIES over WINDOW, short timeouts) and the service reads at mo
 
 Owner decision (October 10, 2026), kept here as for the Gateway source: routine restarts and noise stay silent. Only
 real problems surface (detect): a unit that keeps restarting (LOOP_RESTARTS within an hour), one systemd gave up on
-(start-limit-hit), one that ran out of memory, one that failed REPEAT_FAILURES times in a day, one that stays failed,
+(start-limit-hit), one that ran out of memory, one that failed REPEAT_FAILURES times in a day and has not run well since
+(a unit whose failed runs were followed by a run that finished well is fine again: recovered), one that stays failed,
 and a program that crashed: all its crash dumps over WINDOW make one finding with their count and time span. A
 browser's helper processes and browsers a program drives (headless, Playwright, Puppeteer, CI, remote debugging with a
 throwaway profile) are not the owner's programs and stay quiet (automated). So does anything that ended while a service
@@ -53,7 +54,12 @@ RESULT = 'd9b373ed55a64feb8242e02dbe79a49c'
 COREDUMP = 'fc2e22bc6ee647b6b90729ab34a250b1'
 STOPPING = 'de5b426a63be47a7b6ac3eaac82e2f6f'  # a unit is being stopped (a stop or the first half of a restart)
 STOPPED = '9d1aaa27d60140bd96365438aad20286'
-FIELDS = ('MESSAGE_ID', 'USER_UNIT', 'UNIT_RESULT', 'COREDUMP_COMM', 'COREDUMP_EXE', 'COREDUMP_SIGNAL', 'COREDUMP_SIGNAL_NAME',
+# A start job that ended: done (JOB_RESULT=done: a oneshot's run finished well, a service is up) or failed. A user
+# session logs no other record of a run that ended well. Read only for units that failed (read_journal).
+STARTED = '39f53479d3a045ac8e11786248231fbf'
+START_FAILED = 'be02cf6855d2428ba40df7e9d022f03d'
+MAX_UNITS = 40  # units whose starts are read at most
+FIELDS = ('MESSAGE_ID', 'USER_UNIT', 'UNIT_RESULT', 'JOB_RESULT', 'COREDUMP_COMM', 'COREDUMP_EXE', 'COREDUMP_SIGNAL', 'COREDUMP_SIGNAL_NAME',
           'COREDUMP_PID', 'COREDUMP_UID', 'COREDUMP_CMDLINE', 'COREDUMP_USER_UNIT', 'COREDUMP_TIMESTAMP')
 STOP_SETTLE = dt.timedelta(minutes=2)  # a crash dump is written a little after the stop that caused it
 STOP_LONGEST = dt.timedelta(minutes=15)  # a stop with no end on record counts this long
@@ -133,6 +139,23 @@ def read_journal(hours=WINDOW, run=run_quiet, limit=MAX_ENTRIES):
                      f'MESSAGE_ID={STOPPED}'])
     if code != 0:
         return None
+    rows = _rows(out)
+    # how the starts of the units that failed ended, so one that ran well since is told apart (recovered): only theirs
+    count = {}
+    for row in rows:
+        if row.get('MESSAGE_ID') == RESULT and row.get('UNIT_RESULT') in FAILURES and row.get('USER_UNIT', '').endswith('.service'):
+            count[row['USER_UNIT']] = count.get(row['USER_UNIT'], 0) + 1
+    units = sorted(unit for unit, n in count.items() if n >= REPEAT_FAILURES and not TRANSIENT.match(unit))[:MAX_UNITS]
+    if units:
+        code, out = run(['journalctl', '--user', '--no-pager', '-q', '-o', 'json', f'--since=-{int(hours.total_seconds() // 60)}min',
+                         '-n', str(limit), '--output-fields=' + ','.join(FIELDS), f'MESSAGE_ID={STARTED}', f'MESSAGE_ID={START_FAILED}',
+                         *(f'USER_UNIT={unit}' for unit in units)])
+        if code == 0:
+            rows += [row for row in _rows(out) if row.get('MESSAGE_ID') in (STARTED, START_FAILED)]
+    return rows
+
+
+def _rows(out):
     rows = []
     for line in out.splitlines():
         try:
@@ -252,6 +275,16 @@ def _crash_time(row):
         return row['at']
 
 
+def recovered(failures, started, start_failed):
+    """Whether a unit that failed is fine again: its last failure was a start that failed (a oneshot's run that ended
+    in an error, a service that didn't come up) and a later start ended well. A service that started and failed later
+    proves nothing by starting again, so it never counts."""
+    last = max(failures, default=None)
+    if last is None or not any(at >= last for at in start_failed):
+        return False
+    return any(at > max(start_failed) for at in started)
+
+
 def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=None):
     """The real problems in these records, as findings: [{key, kind, name, unit, count, last_at, ...}], clearest first.
     Pure: everything it reads is passed in."""
@@ -259,6 +292,7 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
     uid = str(os.getuid() if uid is None else uid)
     units = {}
     crashes = {}
+    starts = {}  # {unit: ([started well], [start failed])}
     windows = stop_windows(rows)
     for row in rows:
         mid = row.get('MESSAGE_ID')
@@ -281,6 +315,10 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
         unit = row.get('USER_UNIT') or ''
         if not unit or TRANSIENT.match(unit):
             continue
+        if mid in (STARTED, START_FAILED):
+            if mid == START_FAILED or row.get('JOB_RESULT') == 'done':
+                starts.setdefault(unit, ([], []))[mid == START_FAILED].append(row['at'])
+            continue
         entry = units.setdefault(unit, {'restarts': [], 'failures': [], 'results': set()})
         if mid == RESTARTED:
             entry['restarts'].append(row['at'])
@@ -302,7 +340,7 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
             burst = max((sum(1 for t in times[i:] if t - start <= LOOP_WINDOW) for i, start in enumerate(times)), default=0)
             if burst >= LOOP_RESTARTS:
                 kinds['crash_loop'] = burst
-            if len(entry['failures']) >= REPEAT_FAILURES:
+            if len(entry['failures']) >= REPEAT_FAILURES and not recovered(entry['failures'], *starts.get(unit, ((), ()))):
                 kinds['repeated_failures'] = len(entry['failures'])
             last = max(entry['failures'], default=None)
             if unit in failed and last and now - last >= FAILED_FOR:

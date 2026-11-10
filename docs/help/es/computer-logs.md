@@ -17,7 +17,7 @@ Lee qué servicio se detuvo, cómo terminó y qué programa falló. Nunca lo que
 
 Un servicio que se reinicia una y otra vez, uno que falló varias veces en un día o sigue caído, uno que se quedó sin memoria y un programa que se cerró de golpe. En Omarchy también un fallo de Hyprland o de la barra, y errores en tu configuración de Hyprland.
 
-Un solo reinicio o una sola ejecución fallida es normal y no avisa.
+Un solo reinicio o una sola ejecución fallida es normal y no avisa. Tampoco un servicio que falló unas veces y luego volvió a ir bien.
 
 Los navegadores que manejan las pruebas y los agentes (headless, Playwright, Puppeteer, CI) no avisan, y tampoco un programa que se cierra mientras su servicio se detiene o se reinicia. Un programa que falla una y otra vez da una sola tarea, que dice cuántas veces y cuándo.
 
