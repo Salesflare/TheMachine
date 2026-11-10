@@ -94,47 +94,10 @@ def merge_covered(accounts, store):
     moved = {}
     if not pairs:
         return moved
-    with store.connect() as db:
-        db.execute('BEGIN IMMEDIATE')
-        tables = {r[0]: {c[1] for c in db.execute(f'PRAGMA table_info("{r[0]}")')}
-                  for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%' "
-                                      "AND name NOT LIKE 'event_search%' AND name NOT LIKE 'sqlite_%'")}
-        for shared_id, own_id in pairs:
-            count = db.execute('SELECT count(*) FROM events WHERE account_id=?', (shared_id,)).fetchone()[0]
-            if not count:
-                continue
-            twins = {o: s for s, o in db.execute('SELECT s.id,o.id FROM events s JOIN events o ON o.account_id=? AND o.source_id=s.source_id '
-                                                 'WHERE s.account_id=?', (own_id, shared_id))}
-            if twins:
-                for row in db.execute('SELECT id,event_ids FROM suggestions').fetchall():
-                    try:
-                        ids = json.loads(row['event_ids'] or '[]')
-                    except ValueError:
-                        continue
-                    if isinstance(ids, list) and any(i in twins for i in ids):
-                        kept = list(dict.fromkeys(twins.get(i, i) for i in ids))
-                        db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps(kept), row['id']))
-                marks = ','.join('?' * len(twins))
-                for table in sorted(tables):
-                    if table != 'events' and 'event_id' in tables[table]:
-                        # table: a name sqlite_master lists, quoted as an identifier; the column is fixed
-                        db.execute(f'DELETE FROM "{table.replace(chr(34), chr(34) * 2)}" WHERE event_id IN ({marks})', list(twins))
-                db.execute(f'DELETE FROM events WHERE id IN ({marks})', list(twins))
-            db.execute('UPDATE events SET account_id=? WHERE account_id=?', (own_id, shared_id))
-            for table in sorted(tables):
-                if table not in ('events', *OWN_HISTORY) and 'account_id' in tables[table]:
-                    db.execute(f'UPDATE OR IGNORE "{table.replace(chr(34), chr(34) * 2)}" SET account_id=? WHERE account_id=?', (own_id, shared_id))
-            for row in db.execute('SELECT id,account_ids FROM suggestions WHERE account_ids LIKE ?', (f'%"{shared_id}"%',)).fetchall():
-                try:
-                    ids = json.loads(row['account_ids'] or '[]')
-                except ValueError:
-                    continue
-                if isinstance(ids, list):
-                    db.execute('UPDATE suggestions SET account_ids=? WHERE id=?',
-                               (json.dumps(list(dict.fromkeys(own_id if i == shared_id else i for i in ids))), row['id']))
-            moved[shared_id] = count
-            LOG.info('shared connector merged account=%s into=%s events=%d twins=%d', shared_id, own_id, count, len(twins))
-        db.execute('COMMIT')
+    for shared_id, own_id in pairs:
+        count = store.merge_account(shared_id, own_id, OWN_HISTORY)
+        if count:
+            moved[shared_id] = count  # logged by the Store
     return moved
 
 
