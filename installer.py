@@ -1277,7 +1277,7 @@ def restore_model_runtime(openclaw, restart, after, restarted=False):
         if service.model_runtime(openclaw, run) is not False:
             say('  Reloaded the bridge: model calls work again.')
             return RELOADED if result.returncode == 0 else True
-    if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart) and service.model_runtime(openclaw, run) is not False:
+    if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart, recovery=True) and service.model_runtime(openclaw, run) is not False:
         say('  Model calls work again.')
         return RELOADED
     say('  NOT FIXED: the OpenClaw Gateway cannot run models, so no chat, check or to-do run works until it restarts.'
@@ -1397,7 +1397,8 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         if result.returncode != 0:
             # Reload only works in a running Gateway. One that is down (stopped, still starting, or given up by
             # systemd after failed starts) has the bridge saved and loads it as it starts: start it and check.
-            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip(), restart)
+            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip(), restart,
+                                      recovery=lambda: service.model_runtime(openclaw, run) is False)  # asked only during a rebuild
             if applied is False:
                 if service.model_runtime(openclaw, run) is False:
                     restore_model_runtime(openclaw, restart, 'the failed plugin reload', restarted=True)
@@ -1657,12 +1658,14 @@ def gateway_health(openclaw):
     return found if isinstance(found, dict) and found.get('ok') else None
 
 
-def load_in_gateway(openclaw, reload_error='', restart=True):
+def load_in_gateway(openclaw, reload_error='', restart=True, recovery=False):
     """After a failed reload: True once the Gateway runs with the bridge loaded, None when no Gateway service runs
     here at all (the bridge is saved and loads when the owner starts one), False with the reason said otherwise.
     `restart` False (may_restart_gateway): the owner restarts this Gateway themself, so it says the command instead.
-    Never during a rebuild on local embeddings (local_rebuild): it waits for that first, like a swap, and leaves the
-    Gateway as it is when the rebuild outlasts the wait."""
+    During a rebuild on local embeddings (local_rebuild) it waits for that first, like a swap. A planned restart (to
+    load the bridge) leaves the Gateway as it is when the rebuild outlasts the wait. A `recovery` one (the Gateway
+    cannot run models; True, or a call that says it) restarts anyway: no models is worse than a stop that waits for
+    the rebuild."""
     unit = (onboarding.gateway_units() or [None])[0]
     if not unit:
         if gateway_health(openclaw) is None:
@@ -1675,10 +1678,14 @@ def load_in_gateway(openclaw, reload_error='', restart=True):
             f' ("gateway_restart": false in config.json).\n  Restart it: systemctl --user restart {unit}')
         return False
     if local_rebuild() and not gateway_idle(f'restarting {unit}', '  '):
-        say(f'  Not restarting {unit}: OpenClaw is still rebuilding its memory index after {swap_minutes(True)}, and a Gateway stop'
-            ' waits for that rebuild until systemd kills it. The bridge goes in when the rebuild is done: the next nightly update tries'
-            f' again by itself, and so does ./install.sh.\n  Or restart it yourself once the rebuild is done: systemctl --user restart {unit}')
-        return False
+        if recovery() if callable(recovery) else recovery:
+            say(f'  OpenClaw is still rebuilding its memory index after {swap_minutes(True)}, but the Gateway cannot run models:'
+                f' restarting {unit} anyway (its stop may wait for the rebuild).')
+        else:
+            say(f'  Not restarting {unit}: OpenClaw is still rebuilding its memory index after {swap_minutes(True)}, and a Gateway stop'
+                ' waits for that rebuild until systemd kills it. The bridge goes in when the rebuild is done: the next nightly update tries'
+                f' again by itself, and so does ./install.sh.\n  Or restart it yourself once the rebuild is done: systemctl --user restart {unit}')
+            return False
     say(f'  The OpenClaw Gateway did not take the bridge live; (re)starting {unit} so it loads it.')
     run(['systemctl', '--user', 'reset-failed', unit], timeout=30)  # after repeated failed starts systemd stops trying
     result = run(['systemctl', '--user', 'restart', unit], timeout=300)

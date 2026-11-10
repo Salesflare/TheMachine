@@ -678,6 +678,30 @@ class InstallerTest(unittest.TestCase):
             idle.return_value = True  # the rebuild ended within the wait: the restart goes on
             self.assertTrue(installer.load_in_gateway('openclaw', 'reload failed'))
             self.assertIn('systemctl --user restart', calls)
+            calls.clear()
+            idle.return_value = False
+            for recovery in (True, lambda: True):  # no models: still running at the cap, restarted anyway
+                self.assertTrue(installer.load_in_gateway('openclaw', 'the Gateway cannot run models', recovery=recovery))
+                self.assertEqual(calls.count('systemctl --user restart'), 1, calls)
+                calls.clear()
+            self.assertIn('restarting openclaw-gateway.service anyway', '\n'.join(said))
+            self.assertFalse(installer.load_in_gateway('openclaw', 'reload failed', recovery=lambda: False))  # models work: planned
+            self.assertNotIn('systemctl --user restart', calls)
+
+    def test_a_failed_swap_during_a_rebuild_still_gets_its_recovery_restart(self):
+        # The swap went in during a pause nothing could see (None); the rebuild went on, the install failed and took the
+        # models with it. The reload cannot go in during the rebuild; the restart that brings models back must.
+        self.addCleanup(setattr, installer, 'REBUILD_OUTLASTED', False)
+        rebuild = iter([False] + [True] * 200)  # nothing at the first look, a rebuild from then on
+        with mock.patch.object(installer, 'local_rebuild', side_effect=lambda: next(rebuild, True)), \
+                mock.patch.dict(os.environ, {'ASSISTANT_REBUILD_WAIT': '0'}):
+            ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install', busy=[None] + [True] * 50, wait='0')
+        self.assertFalse(ok)
+        self.assertNotIn('plugins reload', calls)  # no reload into the rebuild
+        self.assertIn(self.RESTART, calls)  # but the recovery restart happens
+        self.assertIn('restarting openclaw-gateway.service anyway', said)
+        self.assertIn('Model calls work again', said)
+        self.assertNotIn('NOT FIXED', said)
 
     def openclaw_has(self, record=None, plugin=None, loaded=True, hooks=True, inspect_code=0):
         """A fake OpenClaw whose own record of the bridge is `record` and `plugin` over a good one. Returns (run, calls)."""
