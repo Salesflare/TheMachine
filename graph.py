@@ -2332,9 +2332,7 @@ def _timeline_people(db, row):
 def timeline(db, node_id, source='', cursor=0, limit=40, now=None, history=False):
     """One page of a person's, organization's or project's timeline: {'items', 'next', 'sources'}. An item is a signal
     ({'type': 'event', 'id': event id}), a card, a promise or a project's move, each with 'at' and its 'source' group
-    (email, meetings, intercom, chats, cards, projects, other). source narrows it to one group; sources counts them all.
-    history: a person's or organization's history rows too (graph_history_events), as their last contact counts them:
-    only for the owner's own page, never for what a model reads (recent_messages)."""
+    (email, meetings, intercom, chats, cards, projects, other). source narrows it to one group; sources counts them all."""
     row = resolve(db, node_id)
     if not row:
         return None
@@ -2355,7 +2353,7 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None, history=False
         for r in db.execute(f"SELECT g.event_id,MAX(g.at) at,MIN(g.probable) probable,e.kind FROM graph_events g JOIN events e ON e.id=g.event_id "
                             f"WHERE g.node_id IN ({','.join('?' * len(chunk))}) AND e.deleted=0 GROUP BY g.event_id", chunk):
             add(r['event_id'], r['at'], r['kind'], r['probable'])
-        if history and kind != 'project':  # older mail and meetings: last contact counts them, so the page shows them
+        if history and kind != 'project':  # history rows, as last contact counts them: the owner's page, never a model's read
             for r in db.execute(f"SELECT h.event_id,MAX(h.at) at,e.kind FROM graph_history_events h JOIN events e ON e.id=h.event_id "
                                 f"WHERE h.node_id IN ({','.join('?' * len(chunk))}) AND e.deleted=0 GROUP BY h.event_id", chunk):
                 add(r['event_id'], r['at'], r['kind'])
