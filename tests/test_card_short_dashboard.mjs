@@ -13,7 +13,7 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const letter=['Hi Robin,','','For 25 seats on annual billing it is 29 a seat a month, so 8,700 for the year. Moving to 40 seats later keeps the same price per seat.','',
  'Onboarding is included from 10 seats: two live sessions for your team and a call with your admin.','','Would Thursday or Friday suit for a short call to walk through it?','','Best,','Alex'].join('\n');
-const summary='They want annual pricing for 25 seats, maybe 40 next year, and whether onboarding is included. They decide this month, and they asked twice already, so a short clear answer helps.';
+const summary='They want annual pricing for 25 seats, maybe 40 next year, and whether onboarding is included. They decide this month, and they asked twice already, so a short clear answer helps. Their finance team signs off on the first of the month, and the admin wants the onboarding dates before then.';
 const mail=(id,body)=>({kind:'email',revision:'r-'+id,label:'Send',to:['robin@example.invalid'],to_name:'Robin',subject:'Re: Pricing',body});
 const cards=[
  {id:'long1',title:'Reply to Robin about pricing',body:summary,status:'prepared',scope:'work',created_at:now,event_ids:[1],next_actions:[mail('long1',letter)]},
@@ -46,8 +46,7 @@ try{
    return {draft:c.querySelector('.draft').classList.contains('clamp'),body:c.querySelector('.body').classList.contains('clamp'),more:[...c.querySelectorAll('button.more')].map(b=>b.textContent),
     lines:Math.round(db.clientHeight/lh),blank:[...db.children].filter(d=>d.matches(':has(>br:only-child)')).every(d=>getComputedStyle(d).display==='none')}});
   let l=await look();
-  // (the summary fills 2 lines at 1440 and shows whole there; on a phone it is cut too: test_clamp_fit_dashboard.mjs)
-  assert.deepEqual({...l,lines:l.lines<=3},{draft:true,body:mobile,more:['Show more'],lines:true,blank:true},why);
+  assert.deepEqual({...l,lines:l.lines<=3},{draft:true,body:true,more:['Show more'],lines:true,blank:true},why);
   assert.equal(await card.locator('.card-foot>button.more:first-child').count(),1,why+': Show more leads the row under the draft');
   const h=Math.round((await card.boundingBox()).height);
   assert.ok(mobile?h<=height/1.4:h<=(height-60)/2,`${why}: short enough, ${h}px`);
@@ -58,7 +57,7 @@ try{
   await card.locator('button.more').click();
   l=await look();assert.equal(l.draft,false,why);assert.equal(l.body,false,why);assert.deepEqual(l.more,['Show less']);assert.ok(l.lines>3,why+': the whole draft');
   await card.locator('button.more').click();
-  l=await look();assert.equal(l.draft,true);assert.equal(l.body,mobile);
+  l=await look();assert.equal(l.draft,true);assert.equal(l.body,true);
   // A draft of a few lines shows whole, with no Show more
   assert.equal(await page.locator('#task-brief .draft.clamp').count(),0,why);
   assert.equal(await page.locator('#task-brief button.more').count(),0,why);
