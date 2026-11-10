@@ -38,9 +38,12 @@ function acctParts(d){const rows=[],sec=d.security,fr=d.friends,ex=d.export;
  return rows}
 // The tab reads top to bottom: the account with Sign out at its head, then Your addresses and the company's domains,
 // and last, after a line, the quiet ways out (Cancel plan, Delete account). Reporting a problem lives in Help.
+// A self-hosted Machine paired with the account also has Unpair this Machine there (ai_unpair, pairing.py): it works
+// without the account, so it shows while the account loads or can't be reached too.
 function renderAccount(){const d=acct.data,list=$('#acct-list'),foot=$('#acct-foot'),end=$('#acct-danger');
+ const unpair=state.account_url&&!state.manage_url?`<button type="button" class="acct-quiet" data-acct-unpair>${esc(t('Unpair this Machine'))}</button>`:'';
  $('#acct-out').innerHTML=state.manage_url?'<form method="post" action="/_machine/logout"><button class="head-link">Sign out</button></form>':'';
- if(!d||d.error){$('#acct-email').textContent='';list.innerHTML=`<div><span class="grow">${d?esc(d.error):'Loading…'}</span></div>`;foot.innerHTML=d&&state.account_url&&!state.manage_url?`<a class="head-link" href="${esc(state.account_url)}" target="_blank" rel="noopener">Open account ↗</a>`:'';end.innerHTML='';end.parentElement.hidden=true;return}
+ if(!d||d.error){$('#acct-email').textContent='';list.innerHTML=`<div><span class="grow">${d?esc(d.error):'Loading…'}</span></div>`;foot.innerHTML=d&&state.account_url&&!state.manage_url?`<a class="head-link" href="${esc(state.account_url)}" target="_blank" rel="noopener">Open account ↗</a>`:'';end.innerHTML=unpair;end.parentElement.hidden=!unpair;return}
  $('#acct-email').textContent=d.email||'';const rows=[],p=d.plan,n=d.next_invoice,srv=d.server;
  if(p)rows.push(`<div><span class="grow"><strong>${esc(p.name)}</strong><span class="acct-status s-${esc(p.status)}">${esc(p.status_text)}</span>${p.price?`<small data-buy>${esc(p.price)}</small>`:''}</span>${acctGo(d,'plan')}${n?'':acctGo(d,'portal')||acctGo(d,'billing')}</div>`);
  if(n)rows.push(`<div data-buy><span class="grow">Next invoice<small>${esc(acctDay(n.date))}${n.amount?' · '+esc(n.amount):''}</small></span>${acctGo(d,'portal')}</div>`);
@@ -56,7 +59,12 @@ function renderAccount(){const d=acct.data,list=$('#acct-list'),foot=$('#acct-fo
  list.innerHTML=rows.join('');
  // Hosted: no account dashboard to open (this is it), only the quiet ways out; self-hosted keeps Open account, the whole of it
  const quiet=(d.hop?['cancel','withdraw','delete']:['cancel','delete']).map(k=>acctGo(d,k,'acct-quiet')).filter(Boolean);
+ if(unpair)quiet.unshift(unpair);
  foot.innerHTML=d.hop?'':acctGo(d,'account');end.innerHTML=quiet.join('');end.parentElement.hidden=!quiet.length;if(typeof upkeepRender==='function')upkeepRender()}
+$('#acct-danger').addEventListener('click',async e=>{const b=e.target.closest('[data-acct-unpair]');if(!b||typeof aiPost!=='function')return;
+ if(!confirm(t('Unpair this Machine? Your Fleet and sign-ins through your account stop until you pair it again.')))return;b.disabled=true;
+ try{const r=await aiPost('ai_unpair');if(r?.connections&&typeof renderAi==='function'){aiView=r;renderAi()}acct.data=null;notice(t('Unpaired'));refresh()}
+ catch(err){errCaught(err);notice(err.message,true);b.disabled=false}});
 function renderHours(){if(typeof upkeepRender==='function')upkeepRender();const account=$('#settings-account-block'),linked=!!state.account_url;$('#settings-acct').hidden=!linked;account.hidden=linked;$('#manage').hidden=$('#sign-out').hidden=true;$('#settings-fleet').hidden=!state.fleet?.on;familyInviteSwitch();$('#settings-shared-row').hidden=!state.fleet?.on;$('#settings-take-line').setAttribute('aria-checked',String(state.fleet?.take_line!==false));if(linked){if(!acct.data)renderAccount()}else{const cli=`More settings live on this Machine. <a href="${HELP}settings#on-this-machine" target="_blank" rel="noopener">Learn more</a>`,paired=!!state.fleet;$('#settings-more').innerHTML=paired?`<strong>Your Fleet account</strong><small>Paired with your Fleet. Seats, invites and billing are in your account.</small>${state.fleet.app_address?'<small>Shares its Tailscale address with your account, for the phone app.</small>':''}<small>${cli}</small>`:`<strong>The Machine Network</strong><span class="alpha">Beta</span><small data-buy>Connect with friends for free, or with teammates in a Fleet. One click pairs this Machine with your account.</small><small>${cli}</small>`;const b=$('#settings-cloud');b.href=CLOUD+(paired?'/account':'/start');b.textContent=paired?'Open your account':'Join the Network';b.toggleAttribute('data-buy',!paired);b.toggleAttribute('data-network-pair',!paired);b.hidden=false}const h=state.hours,form=$('#hours');if(!h){form.hidden=true;return}form.hidden=false;if(hoursDirty)return;
  $('#hours-days').innerHTML=DAYS.map((d,i)=>`<button type="button" data-day="${i+1}" aria-pressed="${h.days.includes(i+1)}" aria-label="${['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][i]}">${d}</button>`).join('');
  $('#hours-start').value=h.start;$('#hours-end').value=h.end;$('#hours-morning').value=h.morning;$('#hours-digest').value=h.digest_at;

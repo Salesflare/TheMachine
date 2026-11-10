@@ -305,7 +305,7 @@ A self-hosted Machine that isn't paired yet shows **Get your address** (`pairing
    fleet-pair` does, which keeps working), and starts the Fleet at once (`App.fleet_live`), no restart.
    `GET /api/fleet/ai-reach` then gives the name for the address.
 
-The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair** in Settings, Apps removes the
+The same button pairs from Connections, where a sign-in needs a paired Machine. **Unpair this Machine** in Settings, Account removes the
 credential and its file, stops the Fleet and the dial-back, and drops the certificate. The account keeps the device
 until it is disconnected there.
 

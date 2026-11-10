@@ -9,6 +9,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // The Machine's listings in ChatGPT's plugins and Claude's connector directory (one click, nothing to paste) in a new
 // tab, on a hosted Machine and a paired self-hosted one alike. Folded under Or add it by address: both addresses with Copy
 // and the custom MCP server and connector steps. Not ready yet: both muted without a button, one line, Get your address.
+// No pairing section and no Unpair here (that is Settings, Account): the official apps just work.
 // SHOTS=<folder> saves screenshots.
 const DIRECTORY='https://claude.ai/directory/the-machine',SHARED='https://mcp.themachine.computer/mcp';
 const CHATGPT='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
@@ -30,7 +31,7 @@ const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
- for(const scheme of ['light','dark'])for(const [width,height] of [[1280,800],[390,844]]){
+ for(const scheme of ['light','dark'])for(const [width,height] of [[1440,900],[390,844]]){
   const context=await browser.newContext({viewport:{width,height},colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
@@ -57,21 +58,24 @@ try{
   const folded=await fold.textContent();
   for(const want of [SHARED,'https://pat.mcp.themachine.computer/mcp','Add custom MCP server','Add custom connector','Business and Enterprise'])assert.ok(folded.includes(want),want);
   assert.equal(await page.locator('#ai-fold [data-copy-command]').count(),2);
-  assert.ok(await page.locator('#ai-private').isHidden(),'hosted: no private section');
+  assert.equal(await page.locator('#ai-fold strong',{hasText:'Your address'}).count(),1);
+  assert.equal(await page.locator('#ai-private, #ai-address').count(),0,'no pairing section');
+  assert.ok(!/end-to-end|Private address|routes requests/i.test(await page.locator('#settings-ai').textContent()),'no jargon');
   assert.ok(!(await page.locator('#settings-ai').innerText()).includes('—'),'no em dashes');
   // Fits: the buttons inside the screen, no sideways scroll
   for(const [button,name] of [[add,'Add in Claude'],[chatgpt,'Add in ChatGPT']]){const box=await button.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width,`${width}: ${name} inside the screen`)}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: no sideways scroll`);
   if(shots){await page.locator('#settings-ai').screenshot({path:`${shots}/ai-hosted-${width}-${scheme}.png`});
    await fold.locator('summary').click();await page.locator('#settings-ai').screenshot({path:`${shots}/ai-hosted-${width}-${scheme}-open.png`})}
-  // A paired self-hosted Machine with its address: the same two buttons (the official app reaches it too), Unpair below
+  // A paired self-hosted Machine with its address: the same two buttons (the official app reaches it too), nothing below
+  // about pairing
   reach={hosted:false,paired:true,name:'pat',address:'https://pat.mcp.themachine.computer/mcp',tls:'ready',shared:SHARED};
   await page.reload();await page.locator('#ai-official [data-ai-chatgpt]').waitFor();
   assert.equal(await page.locator('#ai-official [data-ai-claude]').count(),1);
   assert.equal(await page.locator('#ai-official>div').count(),2);
-  assert.ok(await page.locator('#ai-private').isVisible());
-  assert.equal(await page.locator('#ai-address [data-ai-unpair]').count(),1);
-  assert.equal(await page.locator('#ai-address [data-copy-command]').count(),0);
+  assert.equal(await page.locator('#settings-ai [data-ai-unpair], #settings-ai [data-acct-unpair]').count(),0);
+  assert.ok(!/Unpair|Paired with|end-to-end/i.test(await page.locator('#settings-ai').textContent()),'no pairing in Apps');
+  assert.equal(await page.locator('#ai-fold [data-copy-command]').count(),2);
   if(shots)await page.locator('#settings-ai').screenshot({path:`${shots}/ai-selfhosted-${width}-${scheme}.png`});
   // Not ready yet (self-hosted, not paired): ChatGPT and Claude muted, no buttons, one line; Get your address is the action
   reach={hosted:false,paired:false,address:null,shared:null};
@@ -87,7 +91,7 @@ try{
   const setup=page.locator('#ai-official [data-ai-get]');assert.equal(await setup.innerText(),'Set up');
   const sb=await setup.boundingBox(),lh=await setup.evaluate(b=>parseFloat(getComputedStyle(b).lineHeight)||20);
   assert.ok(sb.height<lh*2,`${width}: Set up on one line (${sb.height}px)`);assert.ok(sb.x+sb.width<=width,`${width}: Set up inside the screen`);
-  assert.ok(await page.locator('#ai-private').isHidden());
+  assert.equal(await page.locator('#settings-ai [data-ai-unpair]').count(),0);
   if(shots)await page.locator('#settings-ai').screenshot({path:`${shots}/ai-unpaired-${width}-${scheme}.png`});
   await context.close();
  }

@@ -19,7 +19,7 @@ Un brouillon attend dans votre Machine jusqu’à ce que vous le lisiez et appuy
 
 ## En connecter une
 
-Ouvrez **Paramètres**, **Applis**. Sous **Les applis The Machine** viennent **Ajouter dans ChatGPT** et **Ajouter dans Claude**. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et votre **Adresse privée (de bout en bout)**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
+Ouvrez **Paramètres**, **Applis**. Sous **Les applis The Machine** viennent **Ajouter dans ChatGPT** et **Ajouter dans Claude**. Sous **Ou ajoutez-la avec une adresse** se trouvent l’adresse de l’app officielle pour toutes les Machines, `https://mcp.themachine.computer/mcp`, et **Votre adresse**, `https://<votre nom>.mcp.themachine.computer/mcp`, chacune avec **Copier**.
 
 Sur une Machine installée sur votre ordinateur, appuyez d’abord sur **Configurer** sous **Obtenir votre adresse**. Une page de votre compte s’ouvre : vérifiez qu’elle affiche le même code, confirmez et choisissez un nom. Votre Machine s’associe d’elle-même, sans redémarrage. Les deux façons en ont besoin.
 
@@ -37,7 +37,7 @@ Pour votre adresse privée, ou une Machine sans le Network, ajoutez plutôt un s
 
 Avec l’app officielle, l’IA vous demande de vous connecter avec votre compte The Machine. Choisissez cette Machine si vous en avez plusieurs, puis approuvez l’IA sur la page de votre Machine. Avec l’adresse privée, l’IA vient directement à votre Machine.
 
-Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord suivie de `/mcp`. **Dissocier** retire de votre compte une Machine installée sur votre ordinateur.
+Les IA d’un appareil de votre tailnet, comme Claude Code ou Cursor, peuvent aussi utiliser l’adresse de votre tableau de bord suivie de `/mcp`. **Dissocier cette Machine**, en bas de **Paramètres**, **Compte**, retire de votre compte une Machine installée sur votre ordinateur.
 
 Votre Machine montre de quelle IA il s’agit. Une IA qu’elle ne reconnaît pas montre l’adresse d’où elle vient : connectez seulement si vous venez de lancer cela vous-même.
 

@@ -19,7 +19,7 @@ Una bozza aspetta nella tua Machine finché non la leggi e premi tu **Invia**. U
 
 ## Collegarne una
 
-Apri **Impostazioni**, **App**. Sotto **Le app di The Machine** ci sono **Aggiungi in ChatGPT** e **Aggiungi in Claude**. Sotto **Oppure aggiungila con un indirizzo** ci sono l’indirizzo dell’app ufficiale per ogni Machine, `https://mcp.themachine.computer/mcp`, e il tuo **Indirizzo privato (end-to-end)**, `https://<il tuo nome>.mcp.themachine.computer/mcp`, ognuno con **Copia**.
+Apri **Impostazioni**, **App**. Sotto **Le app di The Machine** ci sono **Aggiungi in ChatGPT** e **Aggiungi in Claude**. Sotto **Oppure aggiungila con un indirizzo** ci sono l’indirizzo dell’app ufficiale per ogni Machine, `https://mcp.themachine.computer/mcp`, e **Il tuo indirizzo**, `https://<il tuo nome>.mcp.themachine.computer/mcp`, ognuno con **Copia**.
 
 Su una Machine sul tuo computer, premi prima **Configura** sotto **Ottieni il tuo indirizzo**. Si apre una pagina del tuo account: controlla che mostri lo stesso codice, conferma e scegli un nome. La tua Machine si abbina da sola, senza riavvio. Entrambi i modi ne hanno bisogno.
 
@@ -37,7 +37,7 @@ Per il tuo indirizzo privato, o una Machine senza il Network, aggiungi invece un
 
 Con l’app ufficiale, l’IA ti chiede di accedere con il tuo account The Machine. Scegli questa Machine se ne hai più di una, poi approva l’IA sulla pagina della tua Machine. Con l’indirizzo privato, l’IA arriva direttamente alla tua Machine.
 
-Le IA su un dispositivo nella tua tailnet, come Claude Code o Cursor, possono usare anche l’indirizzo della tua dashboard seguito da `/mcp`. **Scollega** toglie dal tuo account una Machine sul tuo computer.
+Le IA su un dispositivo nella tua tailnet, come Claude Code o Cursor, possono usare anche l’indirizzo della tua dashboard seguito da `/mcp`. **Scollega questa Machine**, in fondo a **Impostazioni**, **Account**, toglie dal tuo account una Machine sul tuo computer.
 
 La tua Machine mostra quale IA è. Un’IA che non riconosce mostra l’indirizzo da cui arriva: collega solo se l’hai appena avviato tu.
 
