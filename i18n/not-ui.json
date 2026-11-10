@@ -416,7 +416,7 @@
  "s pick, not a redraw",
  "saved user",
  "short upload",
- "status is open or snoozed",
+ "status is open, snoozed or done",
  "step is read or save",
  "suggest needs {}: a short title and a body of about three sentences.{}",
  "support@themachine.computer",

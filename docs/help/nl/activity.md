@@ -14,6 +14,7 @@ Open **Instellingen**, **Activiteit**. Elke regel is iets wat The Machine deed, 
 - wat hij deed, en hoe het afliep: verstuurd, geweigerd, mislukt of ongedaan gemaakt
 - wanneer, het account of de app die hij gebruikte, en wie het startte: jij, je OK, je stem of de Machine vanzelf
 - een link naar de to-do, als die er is
+- bij een AI die je koppelde, zoals ChatGPT of Claude: de naam met **(gekoppelde AI)**, zodat je ze onderscheidt van The Machine zelf
 
 Je ziet berichten en antwoorden, wijzigingen in documenten en de agenda, stappen op het web, oplossingen die hij samenvoegde, codeeragents, Fleet-vragen en -antwoorden, inzichten verstuurd naar het team van The Machine, skills, Graph-imports, toegevoegde of verwijderde koppelingen, en elke blik van ons team via [Toegang voor support](get-support.md#support-access), ook geweigerde.
 

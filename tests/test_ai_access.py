@@ -491,7 +491,37 @@ class Calls(Base):
         with self.db() as db:  # its own activity is Settings, Activity filtered to it (activity_log.py)
             shown = a.activity_log.page(db, self.app.config, kind='ai', actor=cid)['items']
         self.assertEqual([x['outcome'] for x in shown[:3]], ['refused', 'failed', 'done'])
-        self.assertEqual((shown[0]['what'], shown[0]['where'], shown[0]['actor']), ('Asked to add an email draft', 'Claude', cid))
+        self.assertEqual((shown[0]['what'], shown[0]['where'], shown[0]['actor']), ('Asked to add an email draft', 'Claude (connected AI)', cid))
+
+    def test_a_to_do_read_links_to_it_and_names_the_ai(self):
+        # A connected AI's line names it as one (never The Machine's own model or a to-do's chat) and links to the to-do it read
+        _, tokens = self.signed_in()
+        self.assertFalse(self.tool(tokens['access_token'], 'get_todo', id=self.work_card)[0])
+        self.assertTrue(self.tool(tokens['access_token'], 'get_todo', id='not-on-this-machine')[0])
+        with self.db() as db:
+            failed, read = a.activity_log.page(db, self.app.config, kind='ai')['items'][:2]
+        self.assertEqual((read['what'], read['where'], read['outcome'], read['status']), ('Read a to-do', 'Claude (connected AI)', 'done', ''))
+        self.assertEqual(read['todo'], {'id': self.work_card, 'title': 'Send the contract'})
+        self.assertEqual((failed['outcome'], failed['status'], failed['todo']), ('failed', 'No such to-do here', None))
+        self.store.decide(self.work_card, 'reject', '', 'gone-1', 'dashboard')  # a dismissed to-do: no link, its title as before
+        with self.db() as db:
+            read = a.activity_log.page(db, self.app.config, kind='ai')['items'][1]
+        self.assertEqual((read['todo'], read['status']), (None, '“Send the contract”'))
+
+    def test_list_todos_takes_every_status_it_offers(self):
+        # The tool's schema offers open, snoozed and done: each one answers, anything else says what it takes
+        _, tokens = self.signed_in()
+        self.store.decide(self.home_card, 'complete', '', 'done-1', 'dashboard')
+        offered = ai_access.TOOLS['list_todos'][2]['properties']['status']['enum']
+        for status in offered:
+            error, out = self.tool(tokens['access_token'], 'list_todos', status=status)
+            self.assertFalse(error, (status, out))
+        error, out = self.tool(tokens['access_token'], 'list_todos', status='done')
+        self.assertEqual([(t['id'], t['status']) for t in out['todos']], [(self.home_card, 'completed')])
+        error, out = self.tool(tokens['access_token'], 'list_todos')
+        self.assertEqual([t['id'] for t in out['todos']], [self.work_card])
+        error, text = self.tool(tokens['access_token'], 'list_todos', status='all')
+        self.assertEqual((error, text), (True, 'status is open, snoozed or done'))
 
     def test_settings_tags_the_official_apps_connections(self):
         self.connect(uri=ai_access.OFFICIAL_CALLBACK + 'chatgpt')
@@ -636,7 +666,7 @@ class GraphWrites(Base):
             about = [r[0] for r in db.execute('SELECT node_id FROM fact_about WHERE fact_id=?', (out['id'],))]
         self.assertEqual((fact['source'], fact['fact_kind'], about), ('ai:Claude', 'preference', [WORK_PERSON]))
         line = self.line()
-        self.assertEqual((line['what'], line['where'], line['undo']['action']), ('Saved a fact', 'Claude', 'ai_undo'))
+        self.assertEqual((line['what'], line['where'], line['undo']['action']), ('Saved a fact', 'Claude (connected AI)', 'ai_undo'))
         self.assertEqual(self.undo(line['undo']['id']), {'undone': True})
         with self.db() as db:
             self.assertIsNone(db.execute('SELECT 1 FROM facts WHERE id=?', (out['id'],)).fetchone())

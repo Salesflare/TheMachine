@@ -23,6 +23,7 @@ import ipaddress
 import json
 import re
 import secrets
+import sqlite3
 import threading
 import time
 import urllib.parse
@@ -85,8 +86,10 @@ CREATE TABLE IF NOT EXISTS ai_folded(id INTEGER PRIMARY KEY,at TEXT NOT NULL,con
   saved TEXT NOT NULL);
 """
 # Added after the tables first shipped: (table, column, its definition)
-COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_writes', 'waiting', 'INTEGER NOT NULL DEFAULT 0'))
+COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_writes', 'waiting', 'INTEGER NOT NULL DEFAULT 0'),
+           ('ai_activity', 'todo_id', 'TEXT'))
 # ai_writes.waiting: 0 applied (Undo in Activity), 1 waits for the owner's OK (Apply or Dismiss), -1 dismissed
+# ai_activity.todo_id: the to-do a call read or added (TODO_TOOLS), so its line in Activity links to it
 
 # The tools: name -> (level it needs, description, input schema). The App answers them (ai_app.AiApp.ai_tool).
 _AREA = {'type': 'string', 'enum': ['work', 'personal'], 'description': 'Only Work or only Personal; left out: whatever this connection may see.'}
@@ -628,20 +631,29 @@ OUTCOMES = {'ok': 'done', 'refused': 'refused', 'error': 'failed'}
 # A Graph change that waited for the owner's OK (Messages on), until it is applied
 ASKED_WORDS = {'save_fact': 'Asked to save a fact', 'update_record': 'Asked to change a Graph record',
                'add_summary_line': 'Asked to add a summary line'}
+# The calls that read or add one to-do: their result's id is the to-do, kept with the line (ai_activity.todo_id)
+TODO_TOOLS = ('get_todo', 'create_todo', 'create_draft')
 
 
 def activity_lines(db, limit):
     """Every call of every connected AI, refused ones too, newest first, as lines of Settings, Activity (activity_log.py,
     kind 'ai', actor the connection: an AI connection's own activity is that list filtered to it). A Graph change carries
-    its Undo (the line's 'undo': the dashboard action ai_undo with its write's id); an undone one says so."""
-    rows = db.execute('SELECT a.id,a.connection_id,a.at,a.tool,a.outcome,a.detail,c.name,w.id write_id,w.undone_at,w.waiting FROM ai_activity a '
+    its Undo (the line's 'undo': the dashboard action ai_undo with its write's id); an undone one says so.
+
+    where names the connected AI as such ("ChatGPT (connected AI)"), so a line is never mistaken for The Machine's own
+    model or for a to-do's chat. A call that read or added one to-do links to it while the to-do is still there."""
+    rows = db.execute('SELECT a.id,a.connection_id,a.at,a.tool,a.outcome,a.detail,a.todo_id,c.name,w.id write_id,w.undone_at,w.waiting FROM ai_activity a '
                       'LEFT JOIN ai_connections c ON c.id=a.connection_id LEFT JOIN ai_writes w ON w.activity_id=a.id '
-                      'ORDER BY a.at DESC, a.id DESC LIMIT ?', (int(limit),))
+                      'ORDER BY a.at DESC, a.id DESC LIMIT ?', (int(limit),)).fetchall()
+    todos = _todo_titles(db, {r['todo_id'] for r in rows if r['todo_id']})
     for r in rows:
         said = TOOL_WORDS.get(r['tool'])
+        title = todos.get(r['todo_id'])
         line = {'id': f"ai:{r['id']}", 'kind': 'ai', 'at': r['at'], 'what': i18n.t(said) if said else r['tool'],
-                'where': r['name'] or i18n.t('A removed AI'), 'outcome': OUTCOMES.get(r['outcome'], 'done'),
-                'status': r['detail'] or '', 'by': None, 'actor': r['connection_id'], 'todo': None, 'detail': None}
+                'where': i18n.t('{} (connected AI)', r['name']) if r['name'] else i18n.t('A removed AI'),
+                'outcome': OUTCOMES.get(r['outcome'], 'done'),
+                'status': '' if title is not None else r['detail'] or '', 'by': None, 'actor': r['connection_id'],
+                'todo': {'id': r['todo_id'], 'title': title} if title is not None else None, 'detail': None}
         if r['write_id'] and r['waiting'] == 1:  # a change that waits for the owner's OK: Apply or Dismiss
             line.update(outcome='pending', status=i18n.t('Waiting for your OK'), what=i18n.t(ASKED_WORDS.get(r['tool'], said or r['tool'])),
                         detail=r['detail'] or None, decide={'apply': 'ai_apply', 'dismiss': 'ai_dismiss', 'id': r['write_id']})
@@ -653,6 +665,18 @@ def activity_lines(db, limit):
         elif r['write_id']:
             line['undo'] = {'action': 'ai_undo', 'id': r['write_id']}
         yield line
+
+
+def _todo_titles(db, ids):
+    """{to-do id: its title} of the ones still on this Machine (not dismissed); none when there are no to-dos here."""
+    if not ids:
+        return {}
+    try:
+        rows = db.execute("SELECT id,title FROM suggestions WHERE status!='rejected' AND id IN (SELECT value FROM json_each(?))",
+                          (json.dumps(sorted(ids)),)).fetchall()
+    except sqlite3.OperationalError:
+        return {}
+    return {r['id']: r['title'] or '' for r in rows}
 
 
 activity_log.register('ai', activity_lines)
@@ -726,11 +750,12 @@ def new_key(db, name, level, area, expiry):
     return {'id': cid, 'key': key}
 
 
-def log(db, connection_id, tool, outcome, detail='', at=None, write=None, size=200):
+def log(db, connection_id, tool, outcome, detail='', at=None, write=None, size=200, todo=None):
     """One line of a connection's activity; write: the Graph change (note_write) this call made, for its Undo. size:
-    the detail's length (a message read lists its threads: READ_DETAIL)."""
-    line = db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail) VALUES(?,?,?,?,?)',
-                      (connection_id, stamp(at), str(tool)[:40], outcome, str(detail or '')[:size])).lastrowid
+    the detail's length (a message read lists its threads: READ_DETAIL). todo: the to-do it read or added."""
+    line = db.execute('INSERT INTO ai_activity(connection_id,at,tool,outcome,detail,todo_id) VALUES(?,?,?,?,?,?)',
+                      (connection_id, stamp(at), str(tool)[:40], outcome, str(detail or '')[:size],
+                       str(todo)[:64] if todo else None)).lastrowid
     if write:
         db.execute('UPDATE ai_writes SET activity_id=? WHERE id=?', (line, write))
     return line
@@ -947,8 +972,10 @@ def handle(db_open, message, connection, why, answer, limiter):
         result, summary, said, outcome = None, str(error)[:200], error.said, 'refused'
     except ValueError as error:
         result, summary, outcome = None, str(error)[:200], 'error'
+    todo = result.get('id') if outcome == 'ok' and name in TODO_TOOLS and isinstance(result, dict) else None
     with db_open() as db:
-        log(db, connection['id'], name, outcome, said or summary, write=write_id, size=READ_DETAIL if name in MESSAGE_TOOLS else 200)
+        log(db, connection['id'], name, outcome, said or summary, write=write_id, size=READ_DETAIL if name in MESSAGE_TOOLS else 200,
+            todo=todo)
         used(db, connection['id'])
     if outcome != 'ok':
         return _ok(ident, {'content': [{'type': 'text', 'text': summary}], 'isError': True})

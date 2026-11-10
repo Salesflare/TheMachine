@@ -48,6 +48,8 @@ later changes `action_jobs` as before and never that, so the line stays **Blocke
   one opens through `GET /api/cards/done?id=`.
 - **What I've learned, Recent changes** stays: it is what The Machine learned, not something it did.
 - **An AI connection's own activity** (Settings, Connected AIs) is this list with `actor=<connection id>`.
+- **A connected AI's line** names it as one (`where`: "ChatGPT (connected AI)"), never like The Machine's own model, and
+  a call that read or added one to-do (`get_todo`, `create_todo`, `create_draft`) links to it (`ai_activity.todo_id`).
 
 ## The line
 
