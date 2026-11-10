@@ -60,6 +60,7 @@ import ms_graph
 from i18n import t
 import fleet_requests
 import fleet_reviews
+import fleet_rounds
 import family
 import family_done
 import contact_share
@@ -1729,7 +1730,7 @@ def brief_text(view, today=None, hidden=()):
 
 # ---------------------------------------------------------------- the Fleet on this Machine
 
-class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
+class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
             shared_graph.SharedGraph, meet.Meet, meet_link.MeetLink):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
@@ -1785,10 +1786,14 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         # The directory read once per dashboard request, and every key once per GET: the Fleet tab asked for the
         # directory some 400 times, a connection each (most of a 10 s answer), and a person's page its graph keys and
         # settings dozens of times. Kept as its text, so each caller still gets its own copy; set_meta drops it.
+        # A background round (round_reads) keeps the directory too: claims and handled asked for it some 3,000 times
+        # a round, a connection each, about 20 s of a core every two minutes on a busy Machine (2026-11-10).
         timing = getattr(_REQUEST_TIMING, 'value', None)
         if timing is not None and key != 'directory' and not timing.get('read'):
             timing = None  # an action can write a key straight in fleet_meta and read it back: only a GET keeps the rest
         memo = timing.setdefault('fleet_meta', {}) if timing is not None else None
+        if memo is None and key == 'directory':
+            memo = self._round_memo()
         if memo is not None and (id(self), key) in memo:
             text = memo[(id(self), key)]
         else:
@@ -1805,6 +1810,8 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             timing.get('fleet_meta', {}).pop((id(self), key), None)
         with self.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', (key, json.dumps(value)))
+        if key == 'directory':
+            self._directory_gen = getattr(self, '_directory_gen', 0) + 1  # every thread's round reads it again
         self._sharing = (0, {})  # whether the Team Graph is shared is read again (team_sharing)
 
     def keep_meta(self, key, kept, value):
@@ -1883,33 +1890,6 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
 
     def member(self, fleet, member_id):
         return next((m for m in self.teammates(fleet) if m['member_id'] == member_id), None)
-
-    def my_emails(self):
-        """The owner's addresses: theirs in the directory, their accounts', and the ones found as theirs here (aliases,
-        their calendar; own_addresses.py). The last stay on this Machine: the directory only hears account_emails."""
-        import sqlite3
-        import own_addresses
-        mine = {e for ref in self.work_fleets() for m in self.fleets()[ref].get('members', []) if m.get('me') for e in m.get('emails', [])}
-        found = set()
-        if self.connect:
-            try:
-                with self.connect() as db:
-                    found = own_addresses.yours(db, self.config)
-            except sqlite3.Error:
-                pass
-        return mine | found | {str(a.get('email') or '').lower() for a in self.config.get('accounts', []) if a.get('email')}
-
-    def own_domains(self):
-        """The domains the owner added as their company's too (own_addresses.domains): never a client's."""
-        import sqlite3
-        import own_addresses
-        if not self.connect:
-            return set()
-        try:
-            with self.connect() as db:
-                return own_addresses.domains(db)
-        except sqlite3.Error:
-            return set()
 
     def rule(self, db, fleet, member_id, kind, raw=False):
         """A teammate's rule for a kind of question: their exception if they have one, else the Fleet's rule (member ALL).
@@ -3102,11 +3082,11 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         if time.monotonic() - self.last.get('shared', 0.0) > SHARED_EVERY or not wait:
             self.last['shared'] = time.monotonic()
             try:
-                self.shared_round()  # shared connectors (shared_connectors.py): send, ask the owner, drop what stopped
+                self.timed('shared', self.shared_round)  # shared connectors (shared_connectors.py): send, ask the owner, drop what stopped
             except (ValueError, OSError, KeyError, TypeError, Off) as error:  # Off: a Network from before, without shared connectors
                 LOG.error('shared connectors error=%s', type(error).__name__)
             try:
-                self.graph_round()  # the Shared Graph (shared_graph.py): confirm members, keys, publish and take, at most every 5 minutes
+                self.timed('graph', self.graph_round)  # the Shared Graph (shared_graph.py): confirm members, keys, publish and take, at most every 5 minutes
             except (ValueError, OSError, KeyError, TypeError, Off) as error:
                 LOG.error('shared graph error=%s', type(error).__name__)
         with self.connect() as db:  # a question still to tell the owner about: come back sooner
@@ -3201,18 +3181,18 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         stamp = time.monotonic()
         if stamp - self.last['claims'] > CLAIMS_EVERY or not wait:
             self.last['claims'] = stamp
-            self.claims_round()
-            self.handled_round()
+            self.timed('claims', self.claims_round)
+            self.timed('handled', self.handled_round)
         if stamp - self.last['meetings'] > MEETINGS_EVERY or not wait:
             self.last['meetings'] = stamp
-            self.meeting_round()
+            self.timed('meetings', self.meeting_round)
             if self.meetings_on():
-                self.friends_meeting_round()
+                self.timed('friends meetings', self.friends_meeting_round)
         if stamp - self.last.get('requests', 0.0) > MEETINGS_EVERY or not wait:
             self.last['requests'] = stamp
-            self.requests_round()
-            self.followup_round()
-            self.family_reminders()
+            self.timed('requests', self.requests_round)
+            self.timed('follow-ups', self.followup_round)
+            self.timed('family reminders', self.family_reminders)
             if self.task_pages:  # answers from task pages (task_pages.py)
                 try:
                     self.task_pages()
@@ -3224,10 +3204,10 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
             LOG.error('meet round error=%s', type(error).__name__)
         if stamp - self.last.get('network', 0.0) > MEETINGS_EVERY or not wait:
             self.last['network'] = stamp
-            self.discovery_step()
+            self.timed('discovery', self.discovery_step)
         if stamp - self.last['briefs'] > 60 or not wait:
             self.last['briefs'] = stamp
-            self.brief_round()
+            self.timed('briefs', self.brief_round)
         if sealing and (stamp - self.last.get('delivery', 0.0) > DELIVERY_EVERY or not wait):
             self.last['delivery'] = stamp
             self.delivery_round()
@@ -3560,23 +3540,28 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         backoff = away = 0
         while not stop.is_set():
             try:
-                self.fixed_round()
+                with self.round_reads():
+                    self.timed('fixed', self.fixed_round)
             except Exception as error:  # noqa: BLE001 - never stops the Fleet
                 LOG.error('fixed round error=%s', type(error).__name__)
             try:
-                self.removals_round()
+                with self.round_reads():
+                    self.timed('removals', self.removals_round)
             except Exception as error:  # noqa: BLE001 - never stops the Fleet
                 LOG.error('work removal round error=%s', type(error).__name__)
             try:
-                self.connects_round()
+                with self.round_reads():
+                    self.timed('connects', self.connects_round)
             except Exception as error:  # noqa: BLE001 - never stops the Fleet
                 LOG.error('connect round error=%s', type(error).__name__)
             try:
-                self.support_round()
+                with self.round_reads():
+                    self.timed('support', self.support_round)
             except Exception as error:  # noqa: BLE001 - never stops the Fleet
                 LOG.error('support round error=%s', type(error).__name__)
             try:
-                self.step()
+                with self.round_reads():
+                    self.step()
                 self.off, backoff, away = False, 0, 0
             except Off:
                 self.off = True
