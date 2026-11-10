@@ -5,7 +5,8 @@ A release is a git tag `release-YYYYMMDD-HHMM` on a commit of main, signed with 
 Machines and `update` below only install a release whose signature checks out against the public key in the code
 that is already installed (deploy/release-signers), so a pushed commit alone never reaches a Machine.
 
-  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key)
+  python3 scripts/release.py cut       sign origin/main as a new release and push the tag (needs the private key and a
+                                        passed full test run on that commit; --commit SHA cuts an older one of main)
   python3 scripts/release.py verify    check a release tag (default: the newest) against deploy/release-signers
   python3 scripts/release.py update    self-hosted: move this checkout to the newest signed release, then ./install.sh
                                         (a first ./install.sh does this step by itself: first_install)
@@ -17,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import os
 import re
 import subprocess
@@ -39,6 +41,43 @@ END = b'-----END SSH SIGNATURE-----\n'
 
 class Refused(Exception):
     pass
+
+
+REPO = 'Salesflare/TheMachine'
+# The runs of .github/workflows/ci.yml that run every test: a push to main, the weekly run and a manual one. A pull
+# request runs only the tests its change needs (scripts/test_select.py).
+FULL_RUN = ('push', 'schedule', 'workflow_dispatch')
+
+
+def ci_runs(query):
+    """CI's runs of the tests (GitHub's API through gh), newest first."""
+    out = subprocess.run(['gh', 'api', f'repos/{REPO}/actions/workflows/ci.yml/runs?{query}&per_page=30'],
+                         capture_output=True, text=True, timeout=60, check=True).stdout
+    return json.loads(out)['workflow_runs']
+
+
+def require_green_tests(sha):
+    """Raises RuntimeError unless a full test run passed on exactly this commit."""
+    try:
+        runs = [r for r in ci_runs(f'head_sha={sha}') if r['event'] in FULL_RUN]
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        raise RuntimeError(f"CI's runs on {sha[:7]} could not be read with gh ({error})") from error
+    if any(r['conclusion'] == 'success' for r in runs):
+        return
+    going = [r for r in runs if r['status'] != 'completed']
+    if going:
+        raise RuntimeError(f'the full test run on {sha[:7]} is not done yet ({going[0]["html_url"]}): cut again when it passes')
+    failed = [r for r in runs if r['conclusion'] not in ('cancelled', 'skipped')]
+    if failed:
+        raise RuntimeError(f'the full test run on {sha[:7]} {failed[0]["conclusion"]} ({failed[0]["html_url"]})')
+    newest = None
+    try:
+        newest = next((r['head_sha'] for r in ci_runs('branch=main&status=success') if r['event'] in FULL_RUN
+                       and git('merge-base', '--is-ancestor', r['head_sha'], sha, check=False).returncode == 0), None)
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        pass
+    raise RuntimeError(f'no full test run passed on {sha[:7]} (main runs the newest commit once the run going now ends)'
+                       + (f': wait for it, or cut the newest tested commit with --commit {newest[:7]}' if newest else ''))
 
 
 def git(*args, check=True, raw=False):
@@ -91,6 +130,10 @@ def cut(args):
         raise SystemExit(f'No release key at {key}. Only the release key holder can cut a release.')
     git('fetch', '--quiet', '--tags', 'origin', 'main')
     sha = git('rev-parse', 'origin/main^{commit}').stdout.strip()
+    if args.commit:
+        sha = git('rev-parse', f'{args.commit}^{{commit}}').stdout.strip()
+        if git('merge-base', '--is-ancestor', sha, 'origin/main', check=False).returncode:
+            raise SystemExit(f'Not released: {args.commit} is not on origin/main.')
     for name in reversed(releases()):
         if git('rev-parse', f'{name}^{{commit}}').stdout.strip() == sha:
             print(f'origin/main ({sha[:7]}) is already released as {name}.')
@@ -99,6 +142,7 @@ def cut(args):
     if git('rev-parse', '-q', '--verify', f'refs/tags/{tag}', check=False).returncode == 0:
         raise SystemExit(f'{tag} exists already: wait a minute and try again.')
     try:
+        require_green_tests(sha)
         require_release_scan('TheMachine', sha, cwd=ROOT)
     except RuntimeError as error:
         raise SystemExit(f'Not released: {error}') from error
@@ -317,6 +361,7 @@ def main(argv=None):
     c = sub.add_parser('cut', help='sign origin/main as a new release and push it')
     c.add_argument('--key', help='private key file (default: $THE_MACHINE_RELEASE_KEY or ~/.config/the-machine-release/signing-key)')
     c.add_argument('--no-push', action='store_true', help='tag and verify locally only')
+    c.add_argument('--commit', help='a commit of main to sign instead of its newest (one whose full test run passed)')
     v = sub.add_parser('verify', help='check a release tag against deploy/release-signers')
     v.add_argument('tag', nargs='?')
     u = sub.add_parser('update', help='move this checkout to the newest signed release')

@@ -15,6 +15,9 @@ spec.loader.exec_module(release)
 WHO = ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
 
 
+REQUIRE_GREEN = release.require_green_tests  # the tests below patch it out; one calls it itself
+
+
 def run(*args, cwd):
     return subprocess.run(args, cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
 
@@ -41,6 +44,9 @@ class Releases(unittest.TestCase):
         gate = mock.patch.object(release, 'require_release_scan', return_value={'gate_passed': True})
         self.gate = gate.start()
         self.addCleanup(gate.stop)
+        green = mock.patch.object(release, 'require_green_tests', return_value=None)
+        self.green = green.start()
+        self.addCleanup(green.stop)
 
     def commit(self, text):
         (self.origin / 'app.py').write_text(text)
@@ -335,6 +341,44 @@ class Releases(unittest.TestCase):
             release.main(['cut', '--key', str(self.key)])
         self.assertEqual(release.releases(), [])
         self.assertEqual(run('git', 'tag', '--list', cwd=self.origin), '')
+
+    def test_cut_needs_a_passed_full_test_run_on_the_commit(self):
+        sha = self.commit('two')
+        self.green.side_effect = RuntimeError(f'no full test run passed on {sha[:7]}')
+        with self.assertRaisesRegex(SystemExit, f'Not released: no full test run passed on {sha[:7]}'):
+            release.main(['cut', '--key', str(self.key)])
+        self.green.assert_called_once_with(sha)
+        self.assertEqual(release.releases(), [])
+        self.gate.assert_not_called()
+
+    def test_cut_an_older_tested_commit_of_main(self):
+        older = self.commit('two')
+        self.commit('three')
+        release.main(['cut', '--key', str(self.key), '--no-push', '--commit', older])
+        self.green.assert_called_once_with(older)
+        self.assertEqual(release.verify(release.releases()[0])[1], older)
+        run('git', *WHO, 'commit', '--allow-empty', '-qm', 'only here', cwd=self.app)
+        with self.assertRaisesRegex(SystemExit, 'not on origin/main'):
+            release.main(['cut', '--key', str(self.key), '--no-push', '--commit', run('git', 'rev-parse', 'HEAD', cwd=self.app)])
+
+    def test_which_full_runs_count(self):
+        sha = 'a' * 40
+        def runs(*found):
+            return mock.patch.object(release, 'ci_runs', side_effect=lambda query: list(found) if 'head_sha' in query else [])
+        run_of = lambda event, status, conclusion: {'event': event, 'status': status, 'conclusion': conclusion,
+                                                   'html_url': 'https://example.invalid/run', 'head_sha': sha}
+        for found, error in (
+                ([run_of('push', 'completed', 'success')], None),
+                ([run_of('pull_request', 'completed', 'success')], 'no full test run passed'),
+                ([run_of('push', 'in_progress', None)], 'not done yet'),
+                ([run_of('push', 'completed', 'failure')], 'failure'),
+                ([run_of('push', 'completed', 'cancelled')], 'no full test run passed')):
+            with self.subTest(found=found), runs(*found):
+                if error is None:
+                    REQUIRE_GREEN(sha)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, error):
+                        REQUIRE_GREEN(sha)
 
     def test_cut_with_a_key_that_is_not_pinned_tags_nothing(self):
         self.commit('two')
