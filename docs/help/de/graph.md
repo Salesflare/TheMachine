@@ -3,7 +3,7 @@ title: Der Graph
 area: graph
 summary: Die Personen, Organisationen und Projekte in deinen Nachrichten, die sich von selbst aktuell halten.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
+code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
 ---
 Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus deinen Nachrichten, Meetings und Entscheidungen. Nichts einzurichten, und alles bleibt auf deiner Machine.
@@ -11,6 +11,10 @@ Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus
 - [Personen](people.md): alle, mit denen du in Kontakt bist, jeweils mit Zusammenfassung und Verlauf.
 - [Organisationen](organizations.md): die Firmen, in denen sie arbeiten, mit ihren Personen und Projekten.
 - [Projekte](projects.md): was los ist, auf Boards mit Phasen, wie Deals in einem CRM.
+
+## Heute aktualisiert
+
+Eine ruhige Zeile über jeder Liste sagt, was deine Machine heute aktualisiert hat, etwa **4 Personen heute aktualisiert**. Tippe darauf, um zu sehen, wer und was sich geändert hat; ein Name öffnet die Seite mit offenen **Letzte Änderungen**. Ein kleiner Punkt markiert jede Zeile und jede Board-Kachel, die sie heute geändert hat. Es zählen nur die eigenen Änderungen deiner Machine, ab Mitternacht.
 
 ## Filtern und sortieren
 

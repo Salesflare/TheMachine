@@ -20,6 +20,7 @@ import gap_note
 import gbrain
 import graph
 import graph_show
+import graph_updates
 import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.app import claim_reply
@@ -379,7 +380,16 @@ class GraphActionsApp:
         with self.store.connect() as db:
             if name == 'hidden_senders':  # mailings the Graph left out (mail_senders.py)
                 return mail_senders.hidden_page(db, cursor, limit)
-            return graph.with_fleet(db, graph.page(db, name, sort, cursor, limit, filters), self.graph_fleet_marks(db))
+            found = graph.with_fleet(db, graph.page(db, name, sort, cursor, limit, filters), self.graph_fleet_marks(db))
+            if name in graph.PAGED:  # a row The Machine updated today has a quiet mark (graph_updates.py)
+                try:
+                    marked = graph_updates.updated(db)
+                except (sqlite3.Error, ValueError):
+                    marked = {}
+                for item in found.get('items') or ():
+                    if item.get('id') in marked:
+                        item['updated_at'] = marked[item['id']]['at']
+            return found
 
     def graph_list_ids(self, name, filters):
         with self.store.connect() as db:

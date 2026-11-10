@@ -5750,7 +5750,20 @@
  "Updated the draft below. Send it when it reads right.": "Updated the draft below. Send it when it reads right.",
  "Updated the job title in {} to {}": "Updated the job title in {} to {}",
  "Updated the phone in {} to {}": "Updated the phone in {} to {}",
+ "Updated today": "Updated today",
  "Updated {}": "Updated {}",
+ "Updated {} organizations today": {
+  "one": "Updated {} organization today",
+  "other": "Updated {} organizations today"
+ },
+ "Updated {} people today": {
+  "one": "Updated {} person today",
+  "other": "Updated {} people today"
+ },
+ "Updated {} projects today": {
+  "one": "Updated {} project today",
+  "other": "Updated {} projects today"
+ },
  "Updated: {}": "Updated: {}",
  "Updates contact details in Salesforce.": "Updates contact details in Salesforce.",
  "Updates install by themselves.": "Updates install by themselves.",

@@ -110,6 +110,8 @@ Fakten über jemanden stehen auf seiner Seite, unter **Bekannt über**; Lernen b
 
 Ist eine Zeile falsch, korrigiert ihr **⋯** sie direkt dort: **Bearbeiten**, **Entfernen**, **Nicht über** die Person oder **Rückgängig**, um ein Projekt zurückzusetzen. Drei Zeilen sind sichtbar; **Mehr anzeigen** zeigt den Rest.
 
+Wen deine Machine heute aktualisiert hat, markiert ein kleiner Punkt in der Personenliste, und **4 Personen heute aktualisiert** über der Liste nennt sie. Siehe [Der Graph](graph.md).
+
 ## Eine Aufgabe zu jemandem
 
 **Neue Aufgabe** im Menü **⋯** einer Person, Organisation oder eines Projekts startet eine Aufgabe dazu.

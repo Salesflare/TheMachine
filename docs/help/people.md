@@ -110,6 +110,8 @@ Facts about them live on their page, under **Known about**; Learning keeps the g
 
 When a line is wrong, its **⋯** fixes it right there: **Edit**, **Remove**, **Not about** them, or **Undo** to put a project back where it was. Three lines show; **Show more** has the rest.
 
+Someone your Machine updated today has a small dot in the People list, and **Updated 4 people today** on top of the list names them. See [The Graph](graph.md).
+
 ## A to-do about someone
 
 **New to-do** in the **⋯** menu of a person, organization or project starts a to-do about them.

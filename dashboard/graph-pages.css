@@ -368,3 +368,11 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 #share-people{width:min(440px,calc(100vw - 24px))}#contact-share,#machine-invite{width:min(480px,calc(100vw - 24px));padding:18px 18px 16px}
 #board-dialog h2,#project-dialog h2,#record-dialog h2,#crm-dialog h2,#share-people h2{margin:0;color:var(--text);font-size:1.2rem}
 :is(#project-form,#record-form,#crm-form){display:flex;flex-direction:column;gap:14px}:is(#project-form,#record-form,#crm-form) .snooze-heading{margin:0}
+/*@lazy*/
+/* What The Machine updated today (graph_updates.py): a still dot on a row it changed, one quiet line that opens the list */
+.today-mark{flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint);align-self:center}.tile-row .today-mark{align-self:flex-start;margin-top:8px}
+.graph-today{margin:0 0 var(--sp-4);font-size:.88rem;color:var(--muted)}.graph-today>summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;border-radius:var(--r-sm);font-weight:400;color:var(--muted)}
+.graph-today>summary::-webkit-details-marker{display:none}.graph-today>summary::before{content:none}.graph-today>summary:hover,.graph-today[open]>summary{color:var(--text)}
+.today-list{list-style:none;margin:var(--sp-2) 0 0;padding:0 0 0 14px;display:grid;gap:4px}.today-list li{display:flex;gap:8px;min-width:0;align-items:baseline}
+.today-list button{flex:none;min-height:0;height:auto;margin:0;padding:0;border:0;background:none;box-shadow:none;font:inherit;font-weight:600;color:var(--text);cursor:pointer}.today-list button:hover{text-decoration:underline;text-underline-offset:3px}.today-what{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/*@eager*/
