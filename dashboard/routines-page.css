@@ -34,7 +34,7 @@
 /*@eager*/
 .rt .actions{display:flex;align-items:center;gap:2px;margin:8px 0 -6px -10px}.rt .actions .ghost{padding-inline:10px}
 /* ⋯: the to-do menu (todos-send.css) */
-.rt .actions button{flex:0 0 auto}.rt .more-actions{position:relative;margin-left:auto}.rt .more-actions>summary{justify-content:center;min-width:40px;min-height:40px;border-radius:var(--r-sm);color:var(--c-text-3)}
+.rt .actions button{flex:0 0 auto}.rt .actions>.more-actions{margin-left:auto}.rt .more-actions>summary{justify-content:center;min-width:40px;min-height:40px;border-radius:var(--r-sm);color:var(--c-text-3)}
 .rt .more-actions>summary::before{content:none}.rt .more-actions>summary:hover,.rt .more-actions[open]>summary{background:var(--c-hover);color:var(--c-text)}.rt .more-menu .danger{color:var(--c-orange)}
 /*@lazy*/
 .rt-empty{margin:0;color:var(--c-text-2)}

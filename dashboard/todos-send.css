@@ -50,8 +50,9 @@
 .card .change-editor{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--border)}
 /* A Change or Answer box opens on purpose: it stays open, so its button doesn't jump away when the box loses focus. */
 .card .change-editor:not(.dismiss-editor) textarea{height:84px}
-/* More: the rarer actions, in a small menu under the last tile. */
-.card .actions>.more-actions{position:relative;display:flex;align-self:stretch;margin:0}.card .more-actions>summary::before{content:none}
+/* More: the rarer actions, in a small menu under the last tile. A to-do's and a routine's ⋯ alike: the row's full
+   height, so it shares the buttons' center line (no details{margin-top} from todos-cards.css) */
+:is(.card,.rt) .actions>.more-actions{position:relative;display:flex;align-self:stretch;margin:0}.card .more-actions>summary::before{content:none}
 .card .more-actions>summary{list-style:none;flex:1;height:100%;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 16px;border-radius:12px;background:var(--tile);color:var(--muted);font-size:.92rem;font-weight:500;cursor:pointer;user-select:none}
 .card .more-actions>summary::-webkit-details-marker{display:none}.card .more-actions>summary::after{content:'';width:6px;height:6px;border:solid currentColor;border-width:0 1.6px 1.6px 0;transform:translateY(-2px) rotate(45deg)}
 .card .more-actions>summary:hover,.card .more-actions[open]>summary{background:var(--tile-hover);color:var(--text)}
