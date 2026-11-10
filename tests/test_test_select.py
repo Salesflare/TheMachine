@@ -155,7 +155,8 @@ class WithTheMap(unittest.TestCase):
         scopes = select.Scopes(MODULE)
         line = {text.strip(): n for n, text in enumerate(MODULE.split('\n'), 1)}
         self.assertEqual(scopes.at(line['return x']), ('func', 'helper'))
-        self.assertEqual(scopes.at(line['@register']), ('names', {'helper'}))
+        self.assertEqual(scopes.at(line['@register']), ('func', 'helper'))
+        self.assertEqual(scopes.at(line['def helper(x=LIMIT):']), ('func', 'helper'))
         self.assertEqual(scopes.at(line['LIMIT = 3']), ('names', {'LIMIT'}))
         self.assertEqual(scopes.at(line['import json']), ('local', {'json'}))
         self.assertEqual(scopes.at(line['size = 2']), ('names', {'size'}))
@@ -191,6 +192,20 @@ class WithTheMap(unittest.TestCase):
         pattern = select.text_pattern({'Snoozed {what} until {when}'})
         self.assertTrue(pattern.search("expect(text).toContain('Snoozed the to-do until')"))
         self.assertFalse(select.text_pattern({'OK'}).search('BROKEN'))
+
+    def test_a_catalog_alone_runs_the_catalog_checks_and_the_tests_that_name_its_text(self):
+        import json
+        catalog = json.loads((ROOT / 'i18n' / 'en.json').read_text(encoding='utf-8'))
+        key = sorted(catalog)[len(catalog) // 2]
+        before = dict(catalog, **{key: catalog[key] + ' (before)'})
+        select.git_text = lambda base, p: json.dumps(before) if p == 'i18n/en.json' else None
+        got = select.select(['i18n/en.json'], repo=REPO, impact=self.impact({}), base='HEAD')
+        self.assertIsNotNone(got)
+        pattern = select.text_pattern({key, catalog[key], before[key]})
+        allowed = select.ALWAYS | {Path(t).name for t in TESTS if select.CATALOG_CHECKS.search(Path(t).name)
+                                   or pattern.search(SOURCE[t])}
+        self.assertEqual(sorted(set(got) - allowed), [])
+        self.assertIn('test_i18n.py', got)
 
     def test_a_folder_names_the_files_on_the_way_to_it(self):
         self.assertTrue(select.names_exactly("HELP = ROOT / 'docs' / 'help'", 'docs/help/history.md'))

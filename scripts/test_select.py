@@ -23,11 +23,13 @@ scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
 scripts/test_select.py --why tests/test_x.py changed.txt   (why that test was picked, or not)"""
 import ast
 import gzip
+import io
 import json
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tokenize
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -288,9 +290,8 @@ def select(changed, repo=None, why=None, impact=None, base=None):
 
 
 class Scopes:
-    """Where each line of a Python file sits: in a function's body (its qualified name, as Python's co_qualname), or in a
-    statement at module or class level (the names it defines). A function's decorators and signature run where it's
-    defined, so they count as that level."""
+    """Where each line of a Python file sits: in a function (its qualified name, as Python's co_qualname; its decorators
+    and signature count as the function), or in a statement at module or class level (the names it defines)."""
 
     def __init__(self, text):
         self.funcs, self.stmts = [], []
@@ -301,11 +302,8 @@ class Scopes:
             start = min([stmt.lineno] + [d.lineno for d in getattr(stmt, 'decorator_list', [])])
             if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 qual = prefix + stmt.name
-                self.funcs.append((stmt.body[0].lineno, stmt.end_lineno, qual))
-                if owner is None or owner[0] == 'class':
-                    self.stmts.append((start, stmt.body[0].lineno - 1, defined(stmt)))
-                else:
-                    self.funcs.append((start, stmt.body[0].lineno - 1, owner[1]))
+                # its decorators and signature too: what they set (a default, a wrapper) shows when it runs
+                self.funcs.append((start, stmt.end_lineno, qual))
                 self._walk(stmt.body, qual + '.<locals>.', ('func', qual))
             elif isinstance(stmt, ast.ClassDef) and (owner is None or owner[0] == 'class'):
                 names = {stmt.name} | (owner[1] if owner else set())
@@ -391,6 +389,8 @@ def diff_lines(base, path):
 def catalog_strings(old, new):
     """The keys and texts a catalog change added, removed or changed (the keys are the English text)."""
     old, new = json.loads(old or '{}'), json.loads(new or '{}')
+    if not (isinstance(old, dict) and isinstance(new, dict)):
+        raise ValueError('not a catalog')
     found = set()
     for key in set(old) | set(new):
         if old.get(key) != new.get(key):
@@ -454,6 +454,58 @@ def mention_lines(text, path):
     for number, line in enumerate(text.split('\n'), 1):
         if names_exactly(line, path) or stem and stem in line and re.search(r'\b(?:import|from)\b[^\n]*\b' + re.escape(stem) + r'\b', line):
             found.append(number)
+    return found
+
+
+# The tests that check the catalogs themselves (keys, slots, every language). With the map, a catalog change runs these
+# and the tests that name a text it changed; a test that only serves a catalog to the page shows what it asserts.
+CATALOG_CHECKS = re.compile(r'^test_(?:i18n|locale)')
+_NAMES = {}
+
+
+def code_names(path, text):
+    """(name -> lines where it's used bare, name -> lines where it's used after a dot or as a string that is just the name,
+    as getattr(x, 'name')). Not in comments or other text ('it timed out' doesn't use timed)."""
+    if path not in _NAMES:
+        bare, dotted, after_dot = {}, {}, False
+        try:
+            for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+                if tok.type == tokenize.NAME:
+                    (dotted if after_dot else bare).setdefault(tok.string, set()).add(tok.start[0])
+                elif tok.type == tokenize.STRING:
+                    inner = tok.string.lstrip('rbuRBU').strip('\'"')
+                    if inner.isidentifier():
+                        dotted.setdefault(inner, set()).add(tok.start[0])
+                if tok.type not in (tokenize.NL, tokenize.NEWLINE, tokenize.COMMENT):
+                    after_dot = tok.type == tokenize.OP and tok.string == '.'
+        except (tokenize.TokenError, SyntaxError, IndentationError):
+            for number, line in enumerate(text.split('\n'), 1):
+                for word in re.findall(r'\w+', line):
+                    bare.setdefault(word, set()).add(number)
+                    dotted.setdefault(word, set()).add(number)
+        _NAMES[path] = bare, dotted
+    return _NAMES[path]
+
+
+def imported_names(repo, path, source):
+    """The names path takes from source with from ... import (as it calls them)."""
+    found = set()
+    try:
+        tree = ast.parse(repo.text.get(path, ''))
+    except (SyntaxError, ValueError):
+        return found
+    package = module_name(path).rsplit('.', 1)[0] if '/' in path else ''
+    if path.endswith('__init__.py'):
+        package = module_name(path)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            module = node.module or ''
+            if node.level:
+                base = package.split('.') if package else []
+                base = base[:len(base) - (node.level - 1)] if node.level > 1 else base
+                module = '.'.join(base + ([module] if module else []))
+            if source in repo._resolve(module, path):
+                found.update((alias.name, alias.asname or alias.name) for alias in node.names)
     return found
 
 
@@ -536,10 +588,18 @@ def select_mapped(changed, repo, impact, base, why=None):
             text = repo.text.get(other)
             if text is None or name not in text:
                 continue
-            lines = sorted({text.count('\n', 0, m.start()) + 1 for m in word.finditer(text)})
+            if is_test(other):
+                lines = [1] if word.search(text) else []
+            else:
+                bare, dotted = code_names(other, text)
+                # in another file the name is this one only after a dot (module.name, self.name) or imported by name
+                used = set(dotted.get(name, ()))
+                for local in ([name] if other == path else [a for n, a in imported_names(repo, other, path) if n == name]):
+                    used |= bare.get(local, set())
+                lines = sorted(used)
             if not lines:
                 continue
-            if depth >= 4 and not is_test(other):
+            if depth >= 10 and not is_test(other):  # a chain this long: every test that ran that file
                 for test in impact.ran_any(other):
                     add(test, f'ran {other}, which uses {name} ({why_text})')
                 continue
@@ -578,9 +638,15 @@ def select_mapped(changed, repo, impact, base, why=None):
                 lines_in(path, sorted(new_lines), 'changed', text=new)
             if old is not None and old_lines:
                 lines_in(path, sorted(old_lines), 'changed', text=old, key=('was', path))
-            # a test that names the file but runs none of it reads it as text
+            # a test that names the file other than to load it (spec_from_file_location, import) and runs none of it
+            # reads it as text: it runs. One that loads it is covered by the functions it ran.
+            loads = re.compile(r'(?:spec_from_file_location|load_module|module_from_spec)\([^\n]*' + re.escape(Path(path).name) + r'''|(?:import|from)\s+'''
+                               + re.escape(module_name(path)) + r'\b')
             for test in {p for p in repo.named_by(path) if is_test(p)}:
-                if Path(test).name not in impact.mapped or not (impact.ran_any(path) & {Path(test).name}):
+                text = repo.text.get(test, '')
+                if Path(test).name in impact.ran_any(path):
+                    continue
+                if Path(test).name not in impact.mapped or text.count(Path(path).name) > len(loads.findall(text)):
                     add(test, f'names {path}')
         elif path.startswith('i18n/') and path.endswith('.json') and base:
             try:
@@ -593,8 +659,8 @@ def select_mapped(changed, repo, impact, base, why=None):
                 text = repo.text.get(test)
                 if text is None:
                     continue
-                if names_exactly(text, path):
-                    add(test, f'reads the catalogs ({path})')
+                if CATALOG_CHECKS.search(Path(test).name) and names_exactly(text, path):
+                    add(test, f'checks the catalogs ({path})')
                 elif pattern and pattern.search(text):
                     add(test, f'names a text {path} changed')
         else:
