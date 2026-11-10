@@ -713,6 +713,13 @@ def make_handler(app):
                                 for b in found['boards']:  # who a board is shared with by name (Share board…)
                                     b['shared_with'] = [{'fleet': f, 'member': m, 'name': names.get((f, m), 'A teammate')}
                                                         for f, m in shared_graph.shared_with(db, 'board', b['id'])] if b['visibility'] == 'people' else []
+                                went = app.fleet.projects_went(db, [p['id'] for b in found['boards'] if b['visibility'] in ('team', 'people') for p in b['projects']])
+                                for b in found['boards']:  # what stays with the owner on a board the team sees: kept private, or someone of their own life
+                                    if went is not None and b['visibility'] in ('team', 'people'):
+                                        for p in b['projects']:
+                                            if p['id'] not in went:
+                                                p['held'] = True
+                                        b['held'] = sum(1 for p in b['projects'] if p.get('held'))
                                 found['teammates'] = [{'fleet': f, 'member': m, 'name': name} for (f, m), name in
                                                       sorted(app.fleet.graph_teammates().items(), key=lambda x: x[1].lower())]
                             except (sqlite3.Error, ValueError, KeyError, TypeError):

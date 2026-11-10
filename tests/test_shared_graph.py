@@ -870,6 +870,35 @@ class SharedGraph(unittest.TestCase):
             self.assertNotIn('logo', cleaned['org'])
             self.assertNotIn('logo', sg._clean_record({'r': 'a' * 32, 't': 'org', 'name': 'Client Co', 'd': ['b' * 32], 'logo': bad}))
 
+    def test_a_board_says_whose_it_is_and_who_sees_it_and_its_owner_sees_what_stays_with_them(self):
+        """A teammate's board says whose it is and whether the whole team has it or it was shared with them by name; the
+        owner's says which of its projects never went (kept private here), so a teammate's board having fewer is no riddle."""
+        deals = self.deal_board()
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1'], 'Hire: Ada': ['work-4']})
+        with self.own.store.connect() as db:
+            renewals = db.execute("SELECT id FROM boards WHERE name='Renewals'").fetchone()[0]
+            kept = db.execute("SELECT id FROM projects WHERE name='Hire: Ada'").fetchone()[0]
+            sg.keep_private(db, 'project:%d' % kept)
+            self.assertIsNone(self.own.projects_went(db, ['project:%d' % kept]))  # nothing went yet: no project stays back
+        self.own.graph_board_share(deals, [{'fleet': FLEET, 'member': 'mem3'}])
+        self.rounds()
+        with self.mem.store.connect() as db:
+            boards = {b['name']: b for b in self.mem.team_overview(db, {})['boards']}
+        self.assertEqual((boards['Renewals']['by'], boards['Renewals']['seen']), (['Olive'], 'team'))
+        self.assertEqual((boards['Acquisition conversations']['by'], boards['Acquisition conversations']['seen']), (['Olive'], 'people'))
+        self.assertNotIn('Hire: Ada', [p['name'] for p in boards['Renewals']['projects']])
+        with self.mem.store.connect() as db:  # its organization links to the page this Machine has of it
+            lee = next(p for p in boards['Renewals']['projects'] if p['name'] == 'Renewal: Lee')
+            detail = self.mem.team_detail(db, lee['id'])
+            self.assertEqual(detail['org_name'], 'Client')
+            self.assertEqual(self.mem.team_detail(db, detail['org'])['name'], 'Client')
+        with self.adm.store.connect() as db:
+            self.assertNotIn('Acquisition conversations', [b['name'] for b in self.adm.team_overview(db, {})['boards']])  # Ada isn't on it
+        with self.own.store.connect() as db:
+            nodes = ['project:' + str(r[0]) for r in db.execute('SELECT id FROM projects WHERE board_id IN (?,?)', (renewals, deals))]
+            went = self.own.projects_went(db, nodes)
+        self.assertEqual(set(nodes) - went, {'project:%d' % kept})  # the deal went to Mo by name; Ada's hire stays with Olive
+
     def test_a_project_on_a_team_board_goes_with_its_board_record_before_any_thread_of_it_is_shared(self):
         self.olive_mail()
         self.board(self.own, 'Hiring', 'team', {'Hire: Ada': ['work-4']}, stage='Screening')  # only colleagues on it

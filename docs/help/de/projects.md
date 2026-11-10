@@ -74,8 +74,12 @@ Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestell
 
 ## Das Board eines Teammitglieds
 
-In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, sonst seine letzte Verschiebung. Der Name des Inhabers erscheint, wenn eine Phase Projekte von mehr als einem Teammitglied hat. Gehört einer Person das ganze Board, sagt das die Kopfzeile.
+In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Die Kopfzeile sagt, wessen Board es ist und wer es hat: das ganze Team („Board von Ada, mit dem Team geteilt“) oder nur die Teammitglieder, die die Person gewählt hat („Ada hat dieses Board mit dir geteilt“).
+
+Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, oder seine letzte Verschiebung, wenn die später kam. Der Name des Inhabers erscheint, wenn eine Phase Projekte von mehr als einem Teammitglied hat.
+
+Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst sieht: Ein Projekt, das sie privat hält oder bei dem jemand dabei ist, der für sie Privat ist (ihre Familie oder Freunde), verlässt ihre Machine nie. Auf deinem eigenen Board sagt die Kopfzeile „Mit dem Team geteilt“ und wie viele bei dir bleiben, und diese Projekte haben ein Schloss.
 
 **Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
 
-Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Projekte, die sich ähneln, etwa eine Reihe von Tests „… CRM-Evaluierung“, klappen zu einer Zeile mit Anzahl zusammen. Tippe darauf, um sie zu öffnen. Nichts davon ändert, was geteilt wird.
+Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Projekte, die sich ähneln, etwa eine Reihe „Pilot review: …“ oder „… CRM-Evaluierung“, klappen zu einer Zeile zusammen, die sagt, wie viele ähnliche Projekte sie enthält. Tippe darauf, um sie zu öffnen. Nichts davon ändert, was geteilt wird.

@@ -36,6 +36,7 @@ Un admin può rendere obbligatorie per tutti l'**Email di lavoro** e il **Calend
 - Posta automatica: ricevute, fatture, avvisi, newsletter e le fatture della tua azienda con i suoi fornitori.
 - Conversazioni interne (solo tra colleghi), posta personale e tutto ciò che arriva da un account personale. Ciò che è personale non viene mai condiviso, nemmeno se tocchi Team.
 - Tutto ciò che hai segnato con **Mantieni privato**, e le bacheche e i progetti impostati su Solo tu.
+- I progetti con qualcuno che per te è Personale, come la tua famiglia o i tuoi amici. La tua bacheca li segna con un lucchetto e dice quanti restano a te.
 
 Ogni conversazione viene valutata da sola, in base al suo argomento. La classificazione può sbagliare; controlla cosa verrebbe condiviso e usa Mantieni privato per correggerla. La tua scelta esplicita di Team o una condivisione con colleghi specifici può prevalere su una classificazione sensibile; controlla i destinatari prima di condividere.
 

@@ -92,7 +92,7 @@ const editorFlow=async(page,w)=>{
  await edit();calls=[];await page.locator('#board-form [value="team"]').check();assert.equal(await page.locator('.ed-people').count(),0);
  await page.locator('#board-form button.primary').click();await saved();
  assert.deepEqual(calls.map(c=>c.action),['graph_board_share','board_save']);assert.deepEqual(calls[0].args,{board_id:4,people:[]});assert.equal(calls[1].args.visibility,'team');
- await page.waitForFunction(()=>/^4 projects/.test(document.querySelector('.board-sub')?.textContent||''));
+ await page.waitForFunction(()=>/^Shared with the team · 4 projects/.test(document.querySelector('.board-sub')?.textContent||''));
  board=fresh()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
