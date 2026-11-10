@@ -16,7 +16,6 @@ import hashlib
 import google_api
 import mail_attachments
 import ms_graph
-import office_files
 import signatures
 import html
 import i18n
@@ -117,8 +116,6 @@ _WORKSPACE = Path(os.environ.get('OPENCLAW_WORKSPACE') or Path.home() / '.opencl
 ATTACHMENT_SOURCES = (str(_WORKSPACE / 'data/assistant-attachments'), str(_WORKSPACE / 'memory/assistant'))
 ATTACHMENT_STORE = str(Path.home() / '.local/share/personal-assistant/attachments')
 MAX_ATTACHMENT_BYTES = 18 * 1024 * 1024  # Gmail's 25 MB limit applies after base64 encoding.
-# memory/assistant/ notes are named yymmdd-… (AGENTS.md): that name is the Machine's own, never the one a recipient sees.
-WORKING_NAME = re.compile(r'^[0-9]{6}-')
 
 
 def attachment_store(config):
@@ -151,16 +148,8 @@ def store_attachments(paths, config):
         if not data or total > MAX_ATTACHMENT_BYTES:
             raise ValueError('Attachments must be non-empty and at most 18 MB together')
         name = real.name
-        if len(name) > 150 or re.search(r'[\x00-\x1f/\\]', name):
-            raise ValueError('Give attachments a plain file name of at most 150 characters')
-        if WORKING_NAME.match(name) and real.parent.name == 'assistant' and real.parent.parent.name == 'memory':
-            raise ValueError(f'{name} is a working name. Save the file in this job\'s attachments folder under the name the recipient should see: '
-                             'the source file\'s own name, or the name the earlier ones had (in Drive, or on the last email).')
-        # An Office file is checked: an edit through an XML library breaks it for Excel and Word alone (office_files.py).
-        # A PDF is not: one from someone else's email may be a little off and still open (office-check looks deeper).
-        if real.suffix.lower() in office_files.OOXML and (found := office_files.problems(real, data)):
-            raise ValueError(f'{name} would not open: {"; ".join(found)}. Make it again from the original with assistant xlsx-set (Excel), '
-                             'check it with assistant office-check, then attach it.')
+        if (problem := mail_attachments.outgoing_problem(real, data)):  # a plain name, not a working one; it opens
+            raise ValueError(problem)
         digest = hashlib.sha256(data).hexdigest()
         store.mkdir(parents=True, exist_ok=True, mode=0o700)
         mail_attachments.store_copy(config, store / digest, data, mail_attachments.from_email(real, config))

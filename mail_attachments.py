@@ -30,6 +30,7 @@ from contextlib import closing
 from pathlib import Path
 
 import message_seal
+import office_files
 
 OPEN_NAME = 'the-machine-open-attachments'
 FETCHES = ('gmail attachment', 'mail_attachment', 'assistant attachment')  # a tool call that takes a file from an email
@@ -37,6 +38,8 @@ FETCHES = ('gmail attachment', 'mail_attachment', 'assistant attachment')  # a t
 # JSON once or twice over (a clipped tool result), so the tab, newline and quotes can come escaped.
 GOG_PATH = re.compile(r'(?:^|\\+n|\n|")path(?:\t|\\+t)(.+?)(?=\\+n|\n|\\*"|$)')
 SAVED = re.compile(r'\\*"saved\\*"\s*:\s*\\*"(.+?)\\*"')
+# memory/assistant/ notes are named yymmdd-… (AGENTS.md): that name is the Machine's own, never the one a recipient sees.
+WORKING_NAME = re.compile(r'^[0-9]{6}-')
 LONG_RUN = dt.timedelta(hours=2)  # a run still not finished after this has ended without saying so (runs stop at 35 min)
 
 
@@ -188,6 +191,22 @@ def open_copy(config, path, job):
     copy.mkdir(mode=0o700, exist_ok=True)
     _write(copy / real.name, read(real, config))
     return {'saved': str(copy / real.name), 'sealed': str(real)}
+
+
+def outgoing_problem(real, data):
+    """Why the file at `real` (its bytes `data`) can't go out as an email attachment (next_actions.store_attachments), or None."""
+    name = real.name
+    if len(name) > 150 or re.search(r'[\x00-\x1f/\\]', name):
+        return 'Give attachments a plain file name of at most 150 characters'
+    if WORKING_NAME.match(name) and real.parent.name == 'assistant' and real.parent.parent.name == 'memory':
+        return (f'{name} is a working name. Save the file in this job\'s attachments folder under the name the recipient should see: '
+                'the source file\'s own name, or the name the earlier ones had (in Drive, or on the last email).')
+    # An Office file is checked: an edit through an XML library breaks it for Excel and Word alone (office_files.py).
+    # A PDF is not: one from someone else's email may be a little off and still open (office-check looks deeper).
+    if real.suffix.lower() in office_files.OOXML and (found := office_files.problems(real, data)):
+        return (f'{name} would not open: {"; ".join(found)}. Make it again from the original with assistant xlsx-set (Excel), '
+                'check it with assistant office-check, then attach it.')
+    return None
 
 
 def store_copy(config, path, data, from_mail):
