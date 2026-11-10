@@ -60,6 +60,84 @@ def shareable(account):
     return isinstance(account, dict) and account.get('service') in SHAREABLE and (account.get('transport') or 'api') in TRANSPORTS
 
 
+def _received(account):
+    shared = account.get('shared')
+    return bool(shared) and not (isinstance(shared, dict) and shared.get('origin'))
+
+
+def covered_by(accounts, account):
+    """The id of the owner's own connection that reads the same workspace (Intercom) or Stripe account as this one from a
+    Fleet share, else None. A covered share rests: no sync of its own, so one workspace never comes in twice (double
+    signals, double to-dos), and what it brought in moves to that own connection (merge_covered), which can also reply."""
+    if not isinstance(account, dict) or account.get('service') not in SHAREABLE or not _received(account):
+        return None
+    key = SHAREABLE[account['service']]['identity']
+    identity = str(account.get(key) or '')
+    if not identity:
+        return None
+    return next((a['id'] for a in accounts or [] if isinstance(a, dict) and a.get('id') and a.get('id') != account.get('id')
+                 and a.get('service') == account['service'] and not _received(a) and not a.get('retired')
+                 and a.get('signals') is not False and str(a.get(key) or '') == identity), None)
+
+
+# Rows that keep a connection's history of its own reads: they stay with the share (it may read again one day)
+OWN_HISTORY = ('checkpoints', 'sync_activity', 'sync_daily', 'activity_accounts', 'history_backfill')
+
+
+def merge_covered(accounts, store):
+    """What a covered share (covered_by) brought in becomes the owner's own connection's, at each start (nothing is left
+    to move after the first). A conversation both read is kept once: the share's copy, which to-dos, promises and the
+    graph point at already, under the own connection's id; the own connection's later copy of it goes, with what was
+    derived from it (search vectors, graph links), and a to-do made from it points at the kept copy instead. Nothing the
+    owner wrote or decided is deleted. Returns {share id: messages moved}."""
+    pairs = [(a['id'], own) for a in accounts or [] if isinstance(a, dict) and (own := covered_by(accounts, a))]
+    moved = {}
+    if not pairs:
+        return moved
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        tables = {r[0]: {c[1] for c in db.execute(f'PRAGMA table_info("{r[0]}")')}
+                  for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' AND sql NOT LIKE 'CREATE VIRTUAL%' "
+                                      "AND name NOT LIKE 'event_search%' AND name NOT LIKE 'sqlite_%'")}
+        for shared_id, own_id in pairs:
+            count = db.execute('SELECT count(*) FROM events WHERE account_id=?', (shared_id,)).fetchone()[0]
+            if not count:
+                continue
+            twins = {o: s for s, o in db.execute('SELECT s.id,o.id FROM events s JOIN events o ON o.account_id=? AND o.source_id=s.source_id '
+                                                 'WHERE s.account_id=?', (own_id, shared_id))}
+            if twins:
+                for row in db.execute('SELECT id,event_ids FROM suggestions').fetchall():
+                    try:
+                        ids = json.loads(row['event_ids'] or '[]')
+                    except ValueError:
+                        continue
+                    if isinstance(ids, list) and any(i in twins for i in ids):
+                        kept = list(dict.fromkeys(twins.get(i, i) for i in ids))
+                        db.execute('UPDATE suggestions SET event_ids=? WHERE id=?', (json.dumps(kept), row['id']))
+                marks = ','.join('?' * len(twins))
+                for table in sorted(tables):
+                    if table != 'events' and 'event_id' in tables[table]:
+                        # table: a name sqlite_master lists, quoted as an identifier; the column is fixed
+                        db.execute(f'DELETE FROM "{table.replace(chr(34), chr(34) * 2)}" WHERE event_id IN ({marks})', list(twins))
+                db.execute(f'DELETE FROM events WHERE id IN ({marks})', list(twins))
+            db.execute('UPDATE events SET account_id=? WHERE account_id=?', (own_id, shared_id))
+            for table in sorted(tables):
+                if table not in ('events', *OWN_HISTORY) and 'account_id' in tables[table]:
+                    db.execute(f'UPDATE OR IGNORE "{table.replace(chr(34), chr(34) * 2)}" SET account_id=? WHERE account_id=?', (own_id, shared_id))
+            for row in db.execute('SELECT id,account_ids FROM suggestions WHERE account_ids LIKE ?', (f'%"{shared_id}"%',)).fetchall():
+                try:
+                    ids = json.loads(row['account_ids'] or '[]')
+                except ValueError:
+                    continue
+                if isinstance(ids, list):
+                    db.execute('UPDATE suggestions SET account_ids=? WHERE id=?',
+                               (json.dumps(list(dict.fromkeys(own_id if i == shared_id else i for i in ids))), row['id']))
+            moved[shared_id] = count
+            LOG.info('shared connector merged account=%s into=%s events=%d twins=%d', shared_id, own_id, count, len(twins))
+        db.execute('COMMIT')
+    return moved
+
+
 def _now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 

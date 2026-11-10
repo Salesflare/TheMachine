@@ -15,6 +15,7 @@ from machine.browser import browser_link
 from machine.cards import snooze_choices
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
+from machine import names as display_names
 from machine.sources.connectors import (connector_says, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
@@ -111,7 +112,7 @@ def needs_you(config):
     for account in config.get('accounts', []):
         try:
             why = onboarding.missing(config, account)
-            name = account.get('display_name') or account.get('email') or onboarding.label(account.get('service', 'gmail'))
+            name = display_names.account_name(account, config.get('accounts', []), onboarding.label(account.get('service', 'gmail')))
         except Exception:
             continue
         if why:

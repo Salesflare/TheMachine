@@ -323,6 +323,7 @@ class PreparationApp:
         runner=runner or self.preparation_gateway
         self.stop_stale_runs(runner)
         self.store.resume_connected()  # a run stopped for Slack (say) carries on once Slack is connected
+        self.store.redraft_intercom_emails()  # an email drafted because Intercom couldn't reply: a reply there, now it can
         # Seed previously accepted cards once; never fabricate new decisions.
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')

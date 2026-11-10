@@ -20,7 +20,9 @@ Uma tarefa de uma conversa do Intercom mostra de onde veio: **Ler mensagem** abr
 
 Só as conversas atribuídas a você, ou ainda a ninguém, viram tarefas, inclusive as de uma caixa de equipe sem ninguém atribuído. Quando alguém da equipe assume uma conversa no Intercom, a tarefa aberta fecha sozinha, com **Desfazer**. Em um Intercom compartilhado com você, suas conversas são as atribuídas ao admin com que você escreve.
 
-Quando o Intercom não consegue responder pela sua Machine (compartilhado com você só para leitura, respostas não ativadas ou não conectado), o rascunho vai por e-mail. A tarefa diz por quê, e a revisão pergunta **Enviar por e-mail em vez disso?** Para responder você mesmo no Intercom, toque em **Conecte seu próprio Intercom** na tarefa e entre. Nada sai antes de você enviar.
+Quando o Intercom não consegue responder pela sua Machine (compartilhado com você só para leitura, respostas não ativadas ou não conectado), o rascunho vai por e-mail. A tarefa diz por quê, e a revisão pergunta **Enviar por e-mail em vez disso?** Para responder você mesmo no Intercom, toque em **Conecte seu próprio Intercom** na tarefa e entre. Depois a tarefa é reescrita como resposta no Intercom. Nada sai antes de você enviar.
+
+Seu próprio Intercom e um compartilhado com você do mesmo workspace não leem os dois: o compartilhado fica em pausa e as conversas dele passam para o seu, cada uma uma vez.
 
 ## Conectar
 

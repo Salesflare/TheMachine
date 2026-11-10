@@ -19,6 +19,7 @@ from machine.store import review_requeue
 from machine.faults import watch_faults
 from machine.web.handler import make_handler
 from machine.web.serving import compress_body
+import shared_connectors
 import work_removal
 
 
@@ -73,7 +74,13 @@ class ServeApp:
             work_removal.prune(self.config)
         except Exception as error:  # noqa: BLE001 - never stops the service
             LOG.error('work removal settle error=%s', type(error).__name__)
+        try:  # a Fleet-shared Intercom or Stripe the owner also connected themselves: one reader, its messages kept once
+            shared_connectors.merge_covered(self.config['accounts'], self.store)
+        except Exception as error:  # noqa: BLE001 - never stops the service; the next start tries again
+            LOG.error('shared connector merge error=%s', type(error).__name__)
         for account in self.config['accounts']:
+            if shared_connectors.covered_by(self.config['accounts'], account):
+                continue  # it rests while the owner's own connection reads that workspace (its card says so)
             # Brings in signals off (abilities.py): no sync; a Docs connection still checks what it may do, now and then
             threading.Thread(target=self.collector if abilities.signals_on(account) else self.ability_checker, args=(account,),
                              daemon=True).start()
