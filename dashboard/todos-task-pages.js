@@ -36,7 +36,7 @@ $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[
 // Check in now: the to-do's chat, to ask the teammate how it goes (nothing is sent from here)
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-handoff-checkin]');if(!b)return;e.preventDefault();location.hash='chat='+b.dataset.handoffCheckin});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-take-back]');if(!b)return;b.disabled=true;
- try{await fleetPost('fleet_handoff_take_back',{suggestion_id:b.dataset.handoffTakeBack});toast('Taken back. It’s yours again.');await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+ try{await fleetPost('fleet_handoff_take_back',{suggestion_id:b.dataset.handoffTakeBack});toast('Taken back. It’s yours again.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}finally{b.disabled=false}});  // a redraw may keep this button: it is free again either way
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-mine]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_handoff_mine',{suggestion_id:b.dataset.handoffMine});toast('It’s yours. The to-do keeps its usual buttons.');await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-fleet-take]');if(!b)return;b.disabled=true;
