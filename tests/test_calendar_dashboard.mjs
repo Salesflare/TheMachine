@@ -91,8 +91,8 @@ try{
   await page.waitForFunction(()=>!calLaterRun&&![...calWeeks.values()].some(w=>w.loading));
   for(const ask of calendarAsks){const a=new Date(ask.from),b=new Date(ask.to);assert.equal(a.getHours()+a.getMinutes()+b.getHours()+b.getMinutes(),0);assert.equal(a.getDay(),1);assert.equal(b.getDay(),1)}
   const spans=calendarAsks.map(a=>[(new Date(a.from).getTime()-monday(0))/6048e5,(new Date(a.to).getTime()-monday(0))/6048e5].map(Math.round));
-  // (opened twice here: the nav click and showTab, each asking again for the weeks on show, never for the neighbours)
-  assert.deepEqual(spans.filter(x=>x+''!=='0,2'),[[-1,0],[2,3]],'one ask for the weeks on show, then each neighbour: '+JSON.stringify(spans));
+  // (opened twice here: the nav click and showTab, each asking again for the weeks on show, never for the neighbors)
+  assert.deepEqual(spans.filter(x=>x+''!=='0,2'),[[-1,0],[2,3]],'one ask for the weeks on show, then each neighbor: '+JSON.stringify(spans));
   assert.ok(spans[0]+''==='0,2'&&spans.length<=4,JSON.stringify(spans));
   assert.ok(calendarMostAtOnce<=2,'the weeks on show and at most one behind them: '+calendarMostAtOnce);
   // An agenda scrolled 20 weeks on, opened again a minute later: the weeks on show in one ask, the stale ones behind
