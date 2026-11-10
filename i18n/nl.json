@@ -265,6 +265,10 @@
  "Add stage": "Fase toevoegen",
  "Add the error log": "Het foutenlogboek toevoegen",
  "Add the to-do": "To-do toevoegen",
+ "Add them as people": {
+  "one": "Voeg toe als persoon",
+  "other": "Voeg toe als personen"
+ },
  "Add to": "Toevoegen aan",
  "Add to Home Screen": "Zet op beginscherm",
  "Add to calendar": "Toevoegen aan agenda",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Toegevoegd aan {} om {}.",
  "Added to {}, invited {}.": "Toegevoegd aan {}, {} uitgenodigd.",
  "Added to {}.": "Toegevoegd aan {}.",
+ "Added {} people to your Graph.": {
+  "one": "{} persoon toegevoegd aan je Graph.",
+  "other": "{} personen toegevoegd aan je Graph."
+ },
  "Added {} projects.": "{} projecten toegevoegd.",
  "Added {}.": "{} toegevoegd.",
  "Added {}’s task to your to-dos.": "To-do van {} toegevoegd aan je to-do's.",
@@ -5318,6 +5326,7 @@
  "They see those email addresses.": "Ze zien die e-mailadressen.",
  "They see your note.": "Ze zien je notitie.",
  "They share busy times only, never what, under their rules for you.": "Ze delen alleen wanneer ze bezet zijn, nooit waarmee, volgens hun regels voor jou.",
+ "They were added already": "Die zijn al toegevoegd",
  "They wrote again": "Ze schreven opnieuw",
  "Things I keep in mind about your work.": "Dingen die ik onthoud over je werk.",
  "Thinking": "Denkwerk",
@@ -6735,16 +6744,13 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} en de organisatie die je kiest worden één, met hun personen, projecten en notities. Afsplitsen maakt het ongedaan.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} en de persoon die je kiest worden één, met al hun berichten. Ongedaan maken staat onder Samengevoegd op de pagina.",
  "{} and {}": "{} en {}",
+ "{} and {} more": "{} en nog {}",
  "{} approved": "{} keurde goed",
  "{} approved it": "{} keurde het goed",
  "{} approved “{}”": "{} keurde “{}” goed",
  "{} approved “{}”: “{}”": "{} keurde “{}” goed: “{}”",
  "{} are all in touch with {}": "{} hebben allemaal contact met {}",
  "{} are both in touch with {}": "{} hebben allebei contact met {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} staat niet in je Graph en wordt niet bewaard.",
-  "other": "{} staan niet in je Graph en worden niet bewaard."
- },
  "{} asked for your review": "{} vroeg je om een review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} vroeg via je Fleet om een intro bij iemand van {}. Jij kent {} daar het best. Het concept vraagt eerst of die persoon de intro wil; er gaat niets weg tot jij het verstuurt.",
  "{} asked to slow down": "{} vroeg om trager te gaan",
@@ -7125,6 +7131,10 @@
  "{} other signals": {
   "one": "{} ander signaal",
   "other": "{} andere signalen"
+ },
+ "{} others aren’t in your Graph.": {
+  "one": "{} andere staat niet in je Graph.",
+  "other": "{} anderen staan niet in je Graph."
  },
  "{} owns it.": "{} is eigenaar.",
  "{} pages": {

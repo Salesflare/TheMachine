@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
@@ -34,6 +34,8 @@ Birthdays come from your calendars (Google’s birthday events and Birthdays cal
 **Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph by first and last name. A name that more than one person has is skipped and listed.
 
 Only **Save** keeps them, and only the birthday, on each person’s page. A birthday you set there stays. It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook. If it isn’t, tap **Sign in to Facebook** on the to-do and sign in there; once you’re in, it reads the page by itself. The Machine never signs in for you.
+
+Friends nobody in your Graph has are counted, with a few names. **Add them as people** adds them all at once, also after Save: each as a Personal contact with their name and birthday, never shared with a Work Fleet. A name someone in your Graph already has is skipped. **Undo** on the to-do takes exactly those people away again.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

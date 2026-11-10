@@ -265,6 +265,10 @@
  "Add stage": "Add stage",
  "Add the error log": "Add the error log",
  "Add the to-do": "Add the to-do",
+ "Add them as people": {
+  "one": "Add them as a person",
+  "other": "Add them as people"
+ },
  "Add to": "Add to",
  "Add to Home Screen": "Add to Home Screen",
  "Add to calendar": "Add to calendar",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Added to {} at {}.",
  "Added to {}, invited {}.": "Added to {}, invited {}.",
  "Added to {}.": "Added to {}.",
+ "Added {} people to your Graph.": {
+  "one": "Added {} person to your Graph.",
+  "other": "Added {} people to your Graph."
+ },
  "Added {} projects.": "Added {} projects.",
  "Added {}.": "Added {}.",
  "Added {}’s task to your to-dos.": "Added {}’s task to your to-dos.",
@@ -5318,6 +5326,7 @@
  "They see those email addresses.": "They see those email addresses.",
  "They see your note.": "They see your note.",
  "They share busy times only, never what, under their rules for you.": "They share busy times only, never what, under their rules for you.",
+ "They were added already": "They were added already",
  "They wrote again": "They wrote again",
  "Things I keep in mind about your work.": "Things I keep in mind about your work.",
  "Thinking": "Thinking",
@@ -6735,16 +6744,13 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.",
  "{} and {}": "{} and {}",
+ "{} and {} more": "{} and {} more",
  "{} approved": "{} approved",
  "{} approved it": "{} approved it",
  "{} approved “{}”": "{} approved “{}”",
  "{} approved “{}”: “{}”": "{} approved “{}”: “{}”",
  "{} are all in touch with {}": "{} are all in touch with {}",
  "{} are both in touch with {}": "{} are both in touch with {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} isn’t in your Graph, so it isn’t saved.",
-  "other": "{} aren’t in your Graph, so they aren’t saved."
- },
  "{} asked for your review": "{} asked for your review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.",
  "{} asked to slow down": "{} asked to slow down",
@@ -7125,6 +7131,10 @@
  "{} other signals": {
   "one": "{} other signal",
   "other": "{} other signals"
+ },
+ "{} others aren’t in your Graph.": {
+  "one": "{} other isn’t in your Graph.",
+  "other": "{} others aren’t in your Graph."
  },
  "{} owns it.": "{} owns it.",
  "{} pages": {

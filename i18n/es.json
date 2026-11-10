@@ -265,6 +265,10 @@
  "Add stage": "Añadir etapa",
  "Add the error log": "Añadir el registro de errores",
  "Add the to-do": "Añadir la tarea",
+ "Add them as people": {
+  "one": "Añadir como persona",
+  "other": "Añadir como personas"
+ },
  "Add to": "Añadir a",
  "Add to Home Screen": "Añadir a pantalla de inicio",
  "Add to calendar": "Añadir al calendario",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Añadido a {} a las {}.",
  "Added to {}, invited {}.": "Añadido a {}, invitado {}.",
  "Added to {}.": "Añadido a {}.",
+ "Added {} people to your Graph.": {
+  "one": "{} persona añadida a tu Graph.",
+  "other": "{} personas añadidas a tu Graph."
+ },
  "Added {} projects.": "Se añadieron {} proyectos.",
  "Added {}.": "Se añadió {}.",
  "Added {}’s task to your to-dos.": "Se añadió la tarea de {} a tus tareas.",
@@ -5318,6 +5326,7 @@
  "They see those email addresses.": "Ven esas direcciones de correo.",
  "They see your note.": "Ven tu nota.",
  "They share busy times only, never what, under their rules for you.": "Solo comparten las horas ocupadas, nunca qué, según sus reglas para ti.",
+ "They were added already": "Ya se añadieron",
  "They wrote again": "Volvieron a escribir",
  "Things I keep in mind about your work.": "Cosas que tengo en cuenta sobre tu trabajo.",
  "Thinking": "Razonamiento",
@@ -6735,16 +6744,13 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} y la que elijas pasan a ser una sola organización, con sus personas, proyectos y notas. Separar lo deshace.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} y la persona que elijas pasan a ser una sola, con todos sus mensajes. Puedes deshacerlo en Unido, en la página.",
  "{} and {}": "{} y {}",
+ "{} and {} more": "{} y {} más",
  "{} approved": "{} aprobó",
  "{} approved it": "{} lo aprobó",
  "{} approved “{}”": "{} aprobó “{}”",
  "{} approved “{}”: “{}”": "{} aprobó “{}”: “{}”",
  "{} are all in touch with {}": "{} están todos en contacto con {}",
  "{} are both in touch with {}": "{} están ambos en contacto con {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} no está en tu Graph, así que no se guarda.",
-  "other": "{} no están en tu Graph, así que no se guardan."
- },
  "{} asked for your review": "{} te pidió una revisión",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} pidió a través de tu Fleet una presentación a alguien en {}. Allí, a quien mejor conoces es a {}. El borrador le pregunta primero si quiere la presentación; no sale nada hasta que lo envíes.",
  "{} asked to slow down": "{} pidió ir más despacio",
@@ -7125,6 +7131,10 @@
  "{} other signals": {
   "one": "{} otra señal",
   "other": "{} otras señales"
+ },
+ "{} others aren’t in your Graph.": {
+  "one": "{} persona más no está en tu Graph.",
+  "other": "{} personas más no están en tu Graph."
  },
  "{} owns it.": "Es de {}.",
  "{} pages": {

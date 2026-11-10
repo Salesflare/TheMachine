@@ -78,6 +78,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `birthdays_facebook_app.py` (`BirthdaysFacebookApp`): the Birthdays template's one Import birthdays from Facebook
     to-do: reads Facebook's birthdays page once in the shared browser on the owner's tap (`birthdays_facebook.py`),
     shows who matched and keeps their birthdays only on Save, through `person_birthday.offer` (the owner's own stays).
+    Add them as people adds the friends nobody in the Graph has as Personal people with their birthday, in one
+    transaction and one build, with Undo (`birthdays_facebook.add`, `remove`).
   - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
     one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
     folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).

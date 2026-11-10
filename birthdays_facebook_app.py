@@ -81,7 +81,8 @@ class BirthdaysFacebookApp:
         threading.Thread(target=target, args=args, daemon=True, name='birthdays-facebook').start()
 
     def birthdays_facebook_action(self, name, args, owner_dashboard):
-        """The owner's tap on the to-do: step read (Import, Try again, Import again) or save (Save on the preview)."""
+        """The owner's tap on the to-do: step read (Import, Try again, Import again), save (Save on the preview), add (Add
+        them as people: the friends nobody in the Graph has, also after Save) or undo_add (its Undo)."""
         if not owner_dashboard:
             raise ValueError('Only the owner imports birthdays, on the dashboard')
         sid, step = str(args.get('suggestion_id') or ''), args.get('step')
@@ -102,12 +103,31 @@ class BirthdaysFacebookApp:
                     raise ValueError('Import again first')
                 people = birthdays_facebook.save(db, got[1], stamp)
                 saved = len(people)
-                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people}, stamp)  # the rest read goes with the preview
+                # the rest read goes with the preview; the friends nobody in the Graph has stay, for Add them as people
+                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people, 'others': got[1].get('others') or [],
+                                                          'added': got[1].get('added') or []}, stamp)
+            elif step in ('add', 'undo_add'):
+                if state not in ('preview', 'saved'):
+                    raise ValueError('Import again first')
+                data = got[1]
+                if step == 'add':
+                    if data.get('added'):
+                        raise ValueError('They were added already')
+                    data['added'] = [p['node_id'] for p in birthdays_facebook.add(db, data, stamp)]
+                    done = {'added': len(data['added'])}
+                else:
+                    if not data.get('added'):
+                        raise ValueError('Nothing to undo.')
+                    done = {'undone': birthdays_facebook.remove(db, data.pop('added'))}
+                birthdays_facebook.put(db, sid, state, data, stamp)
             else:
-                raise ValueError('step is read or save')
+                raise ValueError('step is read, save, add or undo_add')
         if step == 'read':
             self.birthdays_facebook_spawn(self.birthdays_facebook_read, sid)
             return {'state': 'reading'}
+        if step in ('add', 'undo_add'):
+            self.graph_later()  # their pages show already; the rest of the Graph follows in one build, in the worker
+            return {'state': state, **done}
         if row['status'] not in ('completed', 'rejected'):
             self.store.decide(sid, 'complete', '', 'facebook-birthdays-saved:' + sid + ':' + stamp, 'dashboard')
         return {'state': 'saved', 'saved': saved, 'people': people[:birthdays_facebook.SHOWN]}

@@ -3,7 +3,7 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
@@ -34,6 +34,8 @@ Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kal
 **Geburtstage aus Facebook importieren**: Sobald Geburtstage an ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook zu lesen. Tippe auf **Importieren**, und The Machine öffnet sie in ihrem Browser, scrollt, bis jeder Monat geladen ist, und liest Name und Geburtstag jedes Freundes. Sie zeigt, wie viele sie gefunden hat und wer nach Vor- und Nachname zu Personen in deinem Graph passt. Ein Name, den mehr als eine Person trägt, wird übersprungen und aufgelistet.
 
 Nur **Speichern** behält sie, und nur den Geburtstag, auf der Seite der Person. Einen Geburtstag, den du dort eingetragen hast, behält sie. Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
+
+Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **Als Personen hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede als persönlicher Kontakt mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat, überspringt sie. **Rückgängig** in der Aufgabe entfernt genau diese Personen wieder.
 
 Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 

@@ -9,14 +9,14 @@ const fbFine=x=>html`<p class="fine cl-fine">${x}</p>`;
 const fbActs=x=>html`<p class="cl-acts">${x}</p>`;
 const fbSaved=n=>t(['Saved {} birthday.','Saved {} birthdays.'],n);
 const fbBtn=(s,step,label,primary)=>html`<button type="button" class="${primary?'primary':'ghost'}" data-fb-step="${step}" data-fb-id="${s.id}">${label}</button>`;
-function fbBirthdaysBox(s){const f=s.facebook_birthdays,open=!closed(s);
+function fbBirthdaysBox(s){const f=s.facebook_birthdays,open=!closed(s),o=f.others||f.added?lazyIn('fbpeople')?fbOthers(s,f,!f.new):(lazyRun('fbpeople',render),{}):{};  // friends nobody in the Graph has: todos-facebook-people.js
  if(f.state==='reading'){fbPoll();return html`<p class="cl-lead">${t('Reading Facebook’s birthdays page…')}</p><div class="send-progress" aria-hidden="true"><i></i></div>`}
  if(f.state==='preview'){const list=f.shown.map(m=>html`<li class="cl-row"><div class="cl-what"><b>${m.id?fbPerson(m):m.name}</b></div><span class="cl-end">${fbDay(m.date)}</span></li>`);
   return html`<p class="cl-lead">${t(['Found {} birthday on Facebook.','Found {} birthdays on Facebook.'],f.found)}</p>${fbFine(t('Matched to people in your Graph: {}',f.matched))}${list.length?html`<ul class="cl-list">${list}</ul>`:''}${f.more?fbFine(t('And {} more.',f.more)):''}
   ${f.capped?fbFine(t('The page was very long, so the import stopped before the end.')):''}${f.missing?.length?fbFine(t('These months didn’t load: {}.',f.missing.map(fbMonth).join(', '))):''}
-  ${f.ambiguous.length?fbFine(t('Skipped, more than one person with this name: {}.',f.ambiguous.join(', '))):''}${f.unmatched&&f.matched?fbFine(t(['{} isn’t in your Graph, so it isn’t saved.','{} aren’t in your Graph, so they aren’t saved.'],f.unmatched)):''}
-  ${open?fbActs(html`${f.new?fbBtn(s,'save',t(['Save {} birthday','Save {} birthdays'],f.new),true):html`<span class="cl-end">${f.matched?t('Your Graph already has these birthdays.'):t('None of them are in your Graph yet, so there’s nothing to save.')}</span>`}${fbBtn(s,'read',t('Import again'))}`):''}`}
- if(f.state==='saved')return html`<p class="cl-lead">${fbSaved(f.saved)}</p>${f.people?.length?fbFine(f.people.map((p,i)=>html`${i?', ':''}${fbPerson(p)}`)):''}${f.more?fbFine(t('And {} more.',f.more)):''}${open?fbActs(html`${fbBtn(s,'read',t('Import again'))}`):''}`;
+  ${f.ambiguous.length?fbFine(t('Skipped, more than one person with this name: {}.',f.ambiguous.join(', '))):''}${o.line||''}
+  ${open?fbActs(html`${f.new?fbBtn(s,'save',t(['Save {} birthday','Save {} birthdays'],f.new),true):html`<span class="cl-end">${f.matched?t('Your Graph already has these birthdays.'):t('None of them are in your Graph yet, so there’s nothing to save.')}</span>`}${o.btn||''}${fbBtn(s,'read',t('Import again'))}`):''}`}
+ if(f.state==='saved')return html`<p class="cl-lead">${fbSaved(f.saved)}</p>${f.people?.length?fbFine(f.people.map((p,i)=>html`${i?', ':''}${fbPerson(p)}`)):''}${f.more?fbFine(t('And {} more.',f.more)):''}${o.line||''}${open||o.btn?fbActs(html`${o.btn||''}${open?fbBtn(s,'read',t('Import again')):''}`):''}`;
  if(f.state==='signed_out')return html`<p class="cl-lead">${t('The Machine’s browser isn’t signed in to Facebook.')}</p>${open?fbActs(html`${fbBtn(s,'signin',t('Sign in to {}','Facebook'),true)}${fbBtn(s,'read',t('Try again'))}`):''}`;
  if(f.state==='failed')return html`<p class="cl-lead">${f.empty?t('No birthdays found on the page.'):t('Couldn’t read the page.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Try again'),true)}`):''}`;
  return html`<p class="cl-lead">${t('Reads the birthdays on Facebook’s birthdays page once, in The Machine’s browser. Nothing is saved before you say so.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Import'),true)}`):''}`}

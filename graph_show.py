@@ -106,6 +106,32 @@ def show_rename(db, node_id, done):
         show_name(db, node_id)
 
 
+NEW_PERSON = 'INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,?,?,?,NULL,0,NULL,0,NULL,?)'
+
+
+def new_person_info(node_id):
+    """A person added by hand, before any message from them, as a build writes them."""
+    return {'ids': [] if node_id.startswith('manual:') else [graph.shown_id(node_id, {})], 'org': None, 'org_by': None, 'has_headline': False,
+            'wrote': 0, 'heard': 0, 'met': 0, 'accounts': [], 'next_meeting': None, 'colleague': False, 'role': None, 'role_by': None,
+            'role_id': None, 'identifiers': [node_id], 'hints': [], 'seen_only': True, 'profile': None, 'edited': [], 'side': None,
+            'side_by': None, 'side_why': None, 'manual': True, 'notes': None, 'emails': [], 'phones': []}
+
+
+def show_new_people(db, made, edited):
+    """Many people the owner added by hand at once, by name only (graph.create_record, no address or organization), each
+    with the same details of the owner's (edited, as person_edits keeps them: a Type): on their own pages at once, in one
+    write, as show_new_record and show_person_edit put one there. Facebook's Add them as people adds thousands."""
+    rows = []
+    for done in made:
+        info = new_person_info(done['node_id'])
+        profile, contacts = graph.person_shown([done['node_id']], edited, {}, {}, {})
+        info.update(profile=profile, edited=sorted(edited), notes=edited.get('notes'), **contacts)
+        if edited.get('side'):
+            info.update(side=edited['side'], side_by='owner', side_why='owner')
+        rows.append((done['node_id'], 'person', done['name'][:200], graph.FLOOR, json.dumps(info)))
+    db.executemany(NEW_PERSON, rows)
+
+
 def show_new_record(db, done, kind):
     """A person or organization the owner just added (graph.create_record) on its own page at once, as a build adds
     one with no messages yet: their name, address and organization, or its website."""
@@ -120,12 +146,7 @@ def show_new_record(db, done, kind):
                    (node_id, 'org', name[:200], 0, json.dumps(info)))
         show_org_edit(db, node_id)
         return
-    info = {'ids': [] if node_id.startswith('manual:') else [graph.shown_id(node_id, {})], 'org': None, 'org_by': None, 'has_headline': False,
-            'wrote': 0, 'heard': 0, 'met': 0, 'accounts': [], 'next_meeting': None, 'colleague': False, 'role': None, 'role_by': None,
-            'role_id': None, 'identifiers': [node_id], 'hints': [], 'seen_only': True, 'profile': None, 'edited': [], 'side': None,
-            'side_by': None, 'side_why': None, 'manual': True, 'notes': None, 'emails': [], 'phones': []}
-    db.execute('INSERT OR REPLACE INTO graph_nodes(id,kind,name,strength,last_at,signals,gap_days,quiet,trend,info) VALUES(?,?,?,?,NULL,0,NULL,0,NULL,?)',
-               (node_id, 'person', name[:200], graph.FLOOR, json.dumps(info)))
+    db.execute(NEW_PERSON, (node_id, 'person', name[:200], graph.FLOOR, json.dumps(new_person_info(node_id))))
     if db.execute('SELECT 1 FROM person_orgs WHERE identifier=?', (node_id,)).fetchone():
         show_person_edit(db, node_id, {'org'})
     else:
@@ -134,6 +155,13 @@ def show_new_record(db, done, kind):
         if domain and db.execute("SELECT 1 FROM graph_nodes WHERE id=? AND kind='org'", ('org:' + domain,)).fetchone():  # their work address says it
             db.execute("INSERT OR REPLACE INTO graph_links(a,b,kind,strength,last_at) VALUES(?,?,'member',?,NULL)", (node_id, 'org:' + domain, graph.FLOOR))
             db.execute("UPDATE graph_nodes SET info=json_set(info,'$.org',?,'$.org_by','email') WHERE id=?", ('org:' + domain, node_id))
+
+
+def drop_people(db, ids):
+    """People added by hand that went again (an Undo): off the Graph at once, with their links, as the next build has it."""
+    ids = json.dumps(sorted(ids))
+    db.execute('DELETE FROM graph_links WHERE a IN (SELECT value FROM json_each(?)) OR b IN (SELECT value FROM json_each(?))', (ids, ids))
+    db.execute("DELETE FROM graph_nodes WHERE kind='person' AND id IN (SELECT value FROM json_each(?))", (ids,))
 
 
 def show_relation(db, a, b):

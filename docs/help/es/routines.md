@@ -3,7 +3,7 @@ title: Rutinas
 area: cards
 summary: Trabajo que tu Machine hace sola, con un ritmo, como un resumen del lunes de tus deals abiertos. Solo lee.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
@@ -32,6 +32,8 @@ Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpl
 **Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden por nombre y apellido con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
 
 Solo **Guardar** los conserva, y solo el cumpleaños, en la página de cada persona. Un cumpleaños que pusiste ahí se queda. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
+
+Los amigos que nadie en tu Graph tiene se cuentan, con algunos nombres. **Añadir como personas** los añade todos a la vez, también después de Guardar: cada uno como contacto personal con su nombre y cumpleaños, nunca compartido con una Work Fleet. Un nombre que ya tiene alguien de tu Graph se omite. **Deshacer** en la tarea quita exactamente a esas personas.
 
 Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam usa un turno corto cuando hay correo que leer). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
 
