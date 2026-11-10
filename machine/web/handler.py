@@ -63,6 +63,7 @@ import notify
 import places
 import record_log
 import shared_graph
+import shared_graph_logos
 from sources import SourceError
 from timeutil import now
 import voice_input
@@ -765,9 +766,11 @@ def make_handler(app):
             except (BrokenPipeError, ConnectionResetError):self.close_connection = True
 
         def get_api_person_photo(self, path):
-            # a looked-up photo, saved on this Machine (enrichment.photos_step)
+            # a looked-up photo, saved on this Machine (enrichment.photos_step), or a teammate's organization logo thumbnail,
+            # checked and drawn again here when it came (shared_graph_logos.photo)
+            key = urllib.parse.parse_qs(path.query).get('p', [''])[0]
             with app.store.connect() as db:
-                found = enrichment.photo(db, urllib.parse.parse_qs(path.query).get('p', [''])[0])
+                found = enrichment.photo(db, key) or shared_graph_logos.photo(db, key)
             if not found:
                 self.output(404, {'error': 'Not available'})
                 return

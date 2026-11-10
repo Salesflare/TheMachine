@@ -312,6 +312,9 @@ try{
    assert.equal(await pane.locator('[data-graph-switch]').isDisabled(),true);
    await shot(st,(process.env.SHOTS||'/tmp')+'/shared-member-off-1440.png');
    Object.assign(sharing[0],{paused:null,admin:true,people:[{member:'m_kim',name:'Kim Lee',state:'not_started'}]})}
+  // a teammate's project tile shows its organization's logo: one this Machine serves (a teammate's picture of the site's logo) or a LinkedIn one
+  const tileHtml=await page.evaluate(l=>String(tile({team_only:true,id:'team:p',name:'Renewal',stage:'Talks',org:{name:'Client Co',logo:l}},{},true)),'api/person-photo?p='+'a'.repeat(32));
+  assert.match(tileHtml,/<img src="api\/person-photo\?p=a{32}"/);
   sharing[0].started=false;sharing[0].require=['mail'];sharing[0].connections.find(c=>c.id==='side').on=false;
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   assert.deepEqual(errors,[]);

@@ -2,12 +2,15 @@
 records, timelines and a client thread, sealed for this Machine, once this Machine's admin key reached them. All of it is
 invented, like the rest of the fixture; nothing leaves this machine."""
 import datetime as dt
+import hashlib
+import math
 import secrets
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import logo_image  # noqa: E402
 import network_crypto as nc  # noqa: E402
 import shared_graph as sg  # noqa: E402
 
@@ -26,6 +29,22 @@ def project(key, rid, name, board, stages, stage, days, why, next_step, org, dom
     return {'r': rid, 't': 'project', 'name': name, 'board': board, 'stages': stages, 'stage': stage, 'stage_hand': hand, 'stage_at': ago(days),
             'why': why, 'next': next_step, 'org': {'name': org, 'd': sg.keyed(key, 'domain:' + domain)}, 'people': [], 'score': score,
             'last': ago(days)[:10], 'timeline': [{'at': ago(d), 'line': line} for d, line in lines], 'threads': []}
+
+
+def marigold_logo():
+    """A made-up flower logo for Marigold Travel, as a teammate's Machine sends a logo it took from an organization's own
+    site (shared_graph_logos.py): a 64 pixel PNG of pixels only."""
+    rgba = bytearray()
+    for y in range(64):
+        for x in range(64):
+            dx, dy = x - 31.5, y - 31.5
+            r, angle = math.hypot(dx, dy), math.atan2(dy, dx)
+            edge = 22 + 7 * math.cos(8 * angle)
+            color = (180, 83, 9) if r < 9 else (245, 158, 11)
+            alpha = max(0.0, min(1.0, edge - r + 0.5))
+            rgba += bytes((*color, round(alpha * 255)))
+    png = logo_image.encode_png(64, 64, bytes(rgba))
+    return {'logo_h': hashlib.sha256(png).hexdigest()[:32], 'logo_img': nc.b64(png)}
 
 
 PARTNERS = ['Contacted', 'Agreed', 'In review', 'Partly live', 'Live', 'Stalled or declined']
@@ -52,7 +71,7 @@ def shared(key):
         person(key, rid(), 'Rosalind Achterberg', 'rosalind@marigoldtravel.example', 'Founder', 'Marigold Travel', 'marigoldtravel.example',
                2.4, 2, [(2, 'Rosalind wants a demo for her team next week'), (6, 'Rosalind found us through the partner page')]),
         {'r': rid(), 't': 'org', 'name': 'Marigold Travel', 'role': 'Prospect', 'd': sg.keyed(key, 'domain:marigoldtravel.example'), 'score': 2.4,
-         'last': ago(2)[:10]},
+         'last': ago(2)[:10], **marigold_logo()},
         project(key, rid(), 'Lanternfish', 'Partner listings', PARTNERS, 'Agreed', 2, 'Lanternfish said yes to a listing swap', 'Send them our listing copy',
                 'Lanternfish', 'lanternfish.example', 1.8, [(2, 'Lanternfish said yes to a listing swap')]),
         project(key, rid(), 'Marigold Travel', 'Enterprise pipeline', PIPELINE, 'Qualified', 2, 'Rosalind asked for a demo', 'Book the demo',

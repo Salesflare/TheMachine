@@ -20,6 +20,7 @@ fleet, graph = a.fleet, a.graph
 import fleet_trust as ft
 import network_crypto as nc
 import shared_graph as sg
+import shared_graph_logos as sgl
 from kept_connections import kept_connections
 
 FLEET = 'fl_' + '3' * 16
@@ -898,6 +899,99 @@ class SharedGraph(unittest.TestCase):
             nodes = ['project:' + str(r[0]) for r in db.execute('SELECT id FROM projects WHERE board_id IN (?,?)', (renewals, deals))]
             went = self.own.projects_went(db, nodes)
         self.assertEqual(set(nodes) - went, {'project:%d' % kept})  # the deal went to Mo by name; Ada's hire stays with Olive
+
+    def site_logo(self, box, domain, data):
+        """A logo saved from an organization's own site (enrichment.site_logos_step), then the Graph built again."""
+        with box.store.connect() as db:
+            db.execute('INSERT OR REPLACE INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
+                       ('logo:' + domain, a.enrichment.photo_key('logo:' + domain), 'image/png', data, a.now()))
+        self.add(box)
+
+    def test_a_logo_from_an_organizations_own_site_goes_as_a_small_picture_once_and_again_only_when_it_changes(self):
+        """A teammate sees the organization's own site's logo: a new PNG of its pixels only, at most 64 pixels, with
+        the organization's record; never the site's address. It goes once, not in each round or daily snapshot, and
+        again when it changes. The receiving Machine shows it from its own address."""
+        import logo_image
+        from test_logo_image import chunk, png
+        self.olive_mail()
+        source = png(160, 160, extra=chunk(b'tEXt', b'Source\x00https://www.client.example/apple-touch-icon.png'))
+        self.site_logo(self.own, 'client.example', source)
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1']})
+        with self.own.store.connect() as db:
+            db.execute("UPDATE projects SET org='client.example' WHERE name='Renewal: Lee'")
+        bodies = []
+        put = self.own._put
+        spy = lambda group, me, kind, body, to, **kw: (bodies.append((kind, json.dumps(body))), put(group, me, kind, body, to, **kw))[1]
+        with patch.object(self.own, '_put', side_effect=spy):
+            self.rounds(3)
+            with_picture = [b for k, b in bodies if '"logo_img"' in b]
+            self.assertEqual(len(with_picture), 1, 'once, not each round')
+            records = ''.join(b for k, b in bodies if k in ('snapshot', 'delta'))
+            self.assertNotIn('client.example', records)  # neither the site's address nor its domain (a shared thread's mail has its own)
+            self.assertNotIn('apple-touch-icon', records)
+            org = next(r for k, b in bodies if k in ('snapshot', 'delta') for r in json.loads(b)['records'] if r.get('logo_img'))
+            self.assertLessEqual(len(org['logo_img']), logo_image.MAX_BYTES * 4 // 3 + 4)
+            self.assertEqual(org['t'], 'org')
+            # the daily snapshot: the record again, its picture not
+            state = self.own.meta('graph_out:' + FLEET)
+            self.own.set_meta('graph_out:' + FLEET, {**state, 'snapshot_at': 0})
+            went = len(bodies)
+            self.rounds()
+            self.assertIn('snapshot', [k for k, _ in bodies[went:]])
+            self.assertEqual(len([b for k, b in bodies if '"logo_img"' in b]), 1)
+        with self.mem.store.connect() as db:
+            view = self.mem.team_overview(db, {})
+            tile = next(p for b in view['boards'] for p in b['projects'] if p['name'] == 'Renewal: Lee')
+            logo = tile['org']['logo']
+            self.assertRegex(logo, r'^api/person-photo\?p=[0-9a-f]{32}$')
+            self.assertEqual(next(o for o in view['orgs'] if o.get('team_only'))['profile']['logo'], logo)
+            served, kind = sgl.photo(db, logo[-32:])
+        self.assertEqual(kind, 'image/png')
+        self.assertEqual(logo_image.decode_png(served, max_side=64, strict=True)[:2], (64, 64))
+        self.assertNotIn(b'client.example', served)
+        # a new logo on the site: the picture goes again, once
+        bodies.clear()
+        self.site_logo(self.own, 'client.example', png(48, 48, rgba=bytes((10, 20, 30, 255)) * 48 * 48))
+        with patch.object(self.own, '_put', side_effect=spy):
+            self.rounds(3)
+        self.assertEqual(len([b for k, b in bodies if '"logo_img"' in b]), 1)
+        with self.mem.store.connect() as db:
+            view = self.mem.team_overview(db, {})
+            logo = next(o for o in view['orgs'] if o.get('team_only'))['profile']['logo']
+            self.assertEqual(logo_image.decode_png(sgl.photo(db, logo[-32:])[0], strict=True)[:3],
+                             (48, 48, bytes((10, 20, 30, 255)) * 48 * 48))
+        # the Machine that knows the organization itself shows its own logo first
+        own_logo = 'https://media.licdn.com/dms/image/v2/C4D/company-logo_200_200/0/1/own?e=1&v=beta&t=x'
+        self.add(self.mem, mail('work', 9, 'Lee Park <lee@client.example>', 'mem3@acme.example', 'Hello', 'Hi Mo', 1, 't-mo'))
+        with self.mem.store.connect() as db:
+            db.execute("INSERT OR REPLACE INTO org_profiles(domain,status,profile,fetched_at) VALUES('client.example','found',?,?)",
+                       (json.dumps({'name': 'Client Co', 'logo': own_logo}), a.now()))
+        self.add(self.mem)
+        with self.mem.store.connect() as db:
+            view = self.mem.team_overview(db, {})
+        self.assertEqual(next(p for b in view['boards'] for p in b['projects'] if p['name'] == 'Renewal: Lee')['org']['logo'], own_logo)
+
+    def test_a_teammates_logo_picture_is_checked_and_drawn_again_and_a_picture_the_owner_set_never_goes(self):
+        import logo_image
+        from test_logo_image import chunk, png
+        good = logo_image.thumbnail(png(64, 64), 'image/png')
+        record = lambda img: sg._clean_record({'r': 'a' * 32, 't': 'org', 'name': 'Client Co', 'd': ['b' * 32], 'logo_h': 'c' * 32, 'logo_img': img})
+        cleaned = record(nc.b64(good))
+        self.assertEqual(logo_image.decode_png(nc.unb64(cleaned['logo_img']), strict=True), logo_image.decode_png(good, strict=True))
+        self.assertRegex(cleaned['logo_key'], '^[0-9a-f]{32}$')
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+        for why, img in {'oversized': nc.b64(good + b'\x00' * 9000), 'svg with script': nc.b64(svg), 'polyglot': nc.b64(good + b'<script>alert(1)</script>'),
+                         'jpeg': nc.b64(b'\xff\xd8\xff\xe0' + b'\x00' * 100), 'too big': nc.b64(png(200, 200)),
+                         'text chunk': nc.b64(png(8, 8, extra=chunk(b'tEXt', b'a\x00b'))), 'not base64': '<img src=x onerror=alert(1)>', 'not text': 5}.items():
+            cleaned = record(img)
+            self.assertNotIn('logo_img', cleaned, why)
+            self.assertNotIn('logo_key', cleaned, why)
+        self.assertNotIn('logo_h', sg._clean_record({'r': 'a' * 32, 't': 'org', 'name': 'C', 'd': [], 'logo_h': 'x"><script>'}))
+        # Only a logo saved from the organization's own site: a picture the owner set is never read for it
+        with self.own.store.connect() as db:
+            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('pic:x',?,'image/png',?,?)", ('d' * 32, png(8, 8), a.now()))
+            self.assertIsNone(sgl.site_logo_thumb(db, 'api/person-photo?p=' + 'd' * 32))
+            self.assertIsNone(sgl.site_logo_thumb(db, 'https://client.example/logo.png'))
 
     def test_a_project_on_a_team_board_goes_with_its_board_record_before_any_thread_of_it_is_shared(self):
         self.olive_mail()

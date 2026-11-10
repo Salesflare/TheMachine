@@ -47,6 +47,7 @@ import own_addresses
 import project_about
 import security_levels
 import shared_graph_kept
+import shared_graph_logos as logos
 import shared_graph_takeback
 
 LOG = logging.getLogger('personal-assistant')
@@ -893,8 +894,11 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         records[r] = {'r': r, 't': 'org', 'name': row['name'], 'name_hand': 'name' in (info.get('edited') or []), 'role': info.get('role'),
                       'role_hand': info.get('role_by') == 'owner', 'd': every('domain:' + domain), 'score': round(row['strength'], 3),
                       'last': (row['last_at'] or '')[:10], **owner_pick(info), **crm_fields.shared(db, row)}
-        if logo := team_logo(graph.org_card(db, domain)['logo']):
+        card_logo = graph.org_card(db, domain)['logo']
+        if logo := team_logo(card_logo):
             records[r]['logo'] = logo
+        elif thumb := logos.site_logo_thumb(db, card_logo):  # its own site's logo: a picture of pixels only, never the site
+            records[r]['logo_h'] = thumb[0]
     tiles = {t['id']: t for b in graph.boards(db, today.isoformat()) for t in b['projects']}
     team_boards = graph.team_board_ids(db)
     for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.stage_event_id,p.next_step,p.next_step_event_id,p.org porg,b.name board,b.stages stages,b.side side "
@@ -2104,20 +2108,22 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                     or any(kept[c].get('to') != chains[c]['to'] or kept[c].get('kv') != kv or daily(kept[c])
                            or kept[c].get('snapshot_at', 0) < state.get('snapshot_at', 0) for c in chains))
         # One snapshot for all chains at once, the whole team's first: a teammate catching up gets the newest one for them
-        if snapshot:
-            header = self._put(group, me, 'snapshot', {'kv': kv, 'records': list(records.values()), 'threads': listed}, base_to, kv=kv) if base_to else None
+        if snapshot:  # organization logo pictures go with records only once (shared_graph_logos.py)
+            out_records, logo_state = logos.snapshot_records(records, state, base_to, kv)
+            header = self._put(group, me, 'snapshot', {'kv': kv, 'records': out_records, 'threads': listed}, base_to, kv=kv) if base_to else None
             if base_to and not header:
                 return
-            state.update(snapshot_at=time.time(), to=base_to, kv=kv, last=header and header['seq'])
+            state.update(snapshot_at=time.time(), to=base_to, kv=kv, last=header and header['seq'], **logo_state)
         else:
             changed = [rid for rid, h in hashes.items() if before.get(('record', rid)) != h]
             removed = [k for (kind, k) in before if kind == 'record' and k not in hashes]
-            if base_to and (changed or removed or set(listed) != set(state.get('threads') or [])):
-                header = self._put(group, me, 'delta', {'kv': kv, 'prev': state.get('last'), 'records': [records[r] for r in changed],
+            out_records, more, logo_state = logos.delta_records(records, changed, state)
+            if base_to and (changed or removed or more or set(listed) != set(state.get('threads') or [])):
+                header = self._put(group, me, 'delta', {'kv': kv, 'prev': state.get('last'), 'records': out_records,
                                                          'removed': removed, 'threads': listed}, base_to, kv=kv)
                 if not header:
                     return
-                state['last'] = header['seq']
+                state.update(last=header['seq'], **logo_state)
         state['threads'] = listed
         with self.connect() as db:
             went_records(db, fleet, hashes)
@@ -2128,20 +2134,22 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             c_hashes = {rid: hashlib.sha256(canon(r)).hexdigest() for rid, r in c['records'].items()}
             st = kept.get(chain) or {}
             if snapshot:
-                header = self._put(group, me, 'snapshot', {'kv': kv, 'records': list(c['records'].values()), 'threads': c_listed}, c['to'],
+                c_out, logo_state = logos.snapshot_records(c['records'], st, c['to'], kv)
+                header = self._put(group, me, 'snapshot', {'kv': kv, 'records': c_out, 'threads': c_listed}, c['to'],
                                    kv=kv, only=True, tag=chain)
                 if not header:
                     continue
-                st = {'to': c['to'], 'kv': kv, 'snapshot_at': time.time(), 'last': header['seq']}
+                st = {'to': c['to'], 'kv': kv, 'snapshot_at': time.time(), 'last': header['seq'], **logo_state}
             else:
                 changed = [rid for rid, h in c_hashes.items() if (st.get('hashes') or {}).get(rid) != h]
                 removed = [rid for rid in st.get('hashes') or {} if rid not in c_hashes]
-                if changed or removed or c_listed != st.get('threads'):
-                    header = self._put(group, me, 'delta', {'kv': kv, 'prev': st.get('last'), 'records': [c['records'][r] for r in changed],
+                c_out, more, logo_state = logos.delta_records(c['records'], changed, st)
+                if changed or removed or more or c_listed != st.get('threads'):
+                    header = self._put(group, me, 'delta', {'kv': kv, 'prev': st.get('last'), 'records': c_out,
                                                              'removed': removed, 'threads': c_listed}, c['to'], kv=kv, only=True, tag=chain)
                     if not header:
                         continue
-                    st['last'] = header['seq']
+                    st.update(last=header['seq'], **logo_state)
             out[chain] = {**st, 'threads': c_listed, 'hashes': c_hashes}
         self.set_meta('graph_chains:' + fleet, out)
         budget = self._budget()
@@ -2377,8 +2385,9 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             if kind == 'snapshot':
                 if seq <= row['snapshot']:
                     raise Had('an older snapshot')
+                had = logos.had(db, fleet, sender)
                 db.execute('DELETE FROM team_records WHERE fleet=? AND member=?', (fleet, sender))
-                self._records(db, fleet, sender, body.get('records'), header)
+                self._records(db, fleet, sender, body.get('records'), header, had)
                 db.execute('UPDATE team_sources SET snapshot=?,seq=?,threads=?,at=? WHERE fleet=? AND member=?',
                            (seq, seq, json.dumps(self._tags(body)), now(), fleet, sender))
                 db.execute('DELETE FROM team_mail WHERE fleet=? AND member=? AND tag NOT IN (SELECT value FROM json_each(?))',
@@ -2396,7 +2405,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                     raise Had('a delta it has already')
                 if body.get('prev') != row['seq']:
                     raise ValueError('a delta out of order: waits for the next snapshot')
-                self._records(db, fleet, sender, body.get('records'), header)
+                self._records(db, fleet, sender, body.get('records'), header, logos.had(db, fleet, sender))
                 for rid in body.get('removed') or []:
                     db.execute('DELETE FROM team_records WHERE fleet=? AND member=? AND rid=?', (fleet, sender, str(rid)))
                 db.execute('UPDATE team_sources SET seq=?,threads=?,at=? WHERE fleet=? AND member=?', (seq, json.dumps(self._tags(body)), now(), fleet, sender))
@@ -2464,7 +2473,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
     def _tags(body):
         return [t for t in body.get('threads') or [] if isinstance(t, str) and HEX.fullmatch(t)][:MAX_THREADS]
 
-    def _records(self, db, fleet, sender, records, header):
+    def _records(self, db, fleet, sender, records, header, had=None):
         for r in (records or [])[:MAX_RECORDS + fleet_learnings.MAX_ACTIVE + 200]:
             if not isinstance(r, dict) or not HEX.fullmatch(str(r.get('r'))):
                 continue
@@ -2479,7 +2488,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                 continue
             r['kv'] = header.get('kv')
             db.execute('INSERT OR REPLACE INTO team_records(fleet,member,rid,kind,body,at) VALUES(?,?,?,?,?,?)',
-                       (fleet, sender, r['r'], r['t'], json.dumps(_clean_record(r)), header['at']))
+                       (fleet, sender, r['r'], r['t'], json.dumps(logos.carry(_clean_record(r), had)), header['at']))
 
     def _learning_taken(self, db, fleet, sender, learned):
         """A teammate's team learning, or their removal of one: logged once in Activity; a removal holds here too."""
@@ -2626,7 +2635,8 @@ class SharedGraph(shared_graph_takeback.TakeBack):
     def team_items(self, db, kind):
         """Teammates' records of one kind, as [(fleet, member, record)]."""
         ensure(db)
-        return [(r['fleet'], r['member'], json.loads(r['body'])) for r in db.execute('SELECT * FROM team_records WHERE kind=?', (kind,))]
+        items = [(r['fleet'], r['member'], json.loads(r['body'])) for r in db.execute('SELECT * FROM team_records WHERE kind=?', (kind,))]
+        return [(f, m, {k: v for k, v in body.items() if k != 'logo_img'}) for f, m, body in items]  # a picture: logos.photo serves it
 
     def hash_index(self, db):
         """{hash: local node id} for this Machine's own people (by address) and organizations (by domain), with every
@@ -2822,7 +2832,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         for r in db.execute('SELECT * FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))',
                             (json.dumps(sorted(shared | {e['local'] for e in entries if e['local']})),)):
             local[r['id']] = graph.node_view(r)
-        people, orgs, projects, seen = [], [], [], set()
+        people, orgs, projects, seen, pictures = [], [], [], set(), logos.pictures(db)
         for e in entries:
             view = dict(local.get(e['local']) or {})
             rec = resolve(e, None)
@@ -2830,10 +2840,12 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                             'signals': 0, 'team_only': True, 'role': rec['role'], 'closeness': graph.closeness(rec['score'])}
             if e['kind'] == 'project' and not view:
                 item.update(state='active', people=[])
-            if e['kind'] == 'org' and not view:  # the closest teammate's logo for it
-                logo = next((s['record']['logo'] for s in sorted(e['sources'], key=lambda s: -(s['record'].get('score') or 0)) if s['record'].get('logo')), None)
+            if e['kind'] == 'org' and not (view.get('profile') or {}).get('logo'):  # its own logo first, else the closest teammate's
+                closest = sorted(e['sources'], key=lambda s: -(s['record'].get('score') or 0))
+                logo = next((s['record']['logo'] for s in closest if team_logo(s['record'].get('logo'))), None) or next(
+                    (logos.url(s['record']['logo_key']) for s in closest if s['record'].get('logo_key') in pictures['png']), None)
                 if logo:
-                    item['profile'] = {'logo': logo}
+                    item['profile'] = {**(item.get('profile') or {}), 'logo': logo}
             if e['kind'] == 'person' and not view and rec.get('org'):
                 item['org_name'] = rec['org'].get('name')
             if view and '@' in str(item.get('name') or '') and rec.get('name') and '@' not in rec['name']:
@@ -2953,10 +2965,11 @@ class SharedGraph(shared_graph_takeback.TakeBack):
 
     def _org_logo(self, db, org):
         """A teammate's project's organization's logo: this Machine's own one when it knows the organization, else the
-        one the teammate sent (team_logo)."""
-        index = self.hash_index(db)
+        LinkedIn one the teammate sent (team_logo), else the picture of its own site's logo a teammate sent with it."""
+        index, by_d = self.hash_index(db), logos.pictures(db)['by_d']
         local = next((index[h] for h in org.get('d') or () if str(index.get(h, '')).startswith('org:')), None)
-        return (local and graph.org_card(db, local[4:])['logo']) or team_logo(org.get('logo'))
+        picture = next((by_d[h] for h in org.get('d') or () if h in by_d), None)
+        return (local and graph.org_card(db, local[4:])['logo']) or team_logo(org.get('logo')) or (picture and logos.url(picture))
 
     def team_section(self, db, entry):
         """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is.
@@ -3170,6 +3183,8 @@ def _clean_record(r):
         out['d'] = hashes(r.get('d'))
         if team_logo(r.get('logo')):
             out['logo'] = r['logo']
+        else:
+            logos.clean(r, out)  # its own site's logo, a picture checked and drawn again here
     else:
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
