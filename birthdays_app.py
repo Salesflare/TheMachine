@@ -36,12 +36,32 @@ class BirthdaysApp:
             if wished:
                 routines.report(db, run['id'], text=i18n.t('Birthdays today: {}.', ', '.join(wished)), stamp=self.routines_stamp())
             else:
-                routines.report(db, run['id'], nothing=True, why=i18n.t('No birthdays today'), stamp=self.routines_stamp())
+                routines.report(db, run['id'], nothing=True, why=self.birthdays_none(today, tz), stamp=self.routines_stamp())
         return True
 
-    def birthdays_outlook(self, day, tz):
-        """The titles on the owner's Outlook Birthdays calendars today. An account that can't be read is skipped."""
-        start, end = birthdays.window(day, tz)
+    def birthdays_none(self, day, tz):
+        """Why a run found nobody: no birthdays today, or no birthday info on this Machine at all, with what would add
+        some given the calendars it reads (Google and Outlook show contacts' birthdays on them)."""
+        with self.store.connect() as db:
+            if birthdays.known(db):
+                return i18n.t('No birthdays today')
+        if self.birthdays_outlook(day, tz, days=366):
+            return i18n.t('No birthdays today')
+        own = [a for a in self.config.get('accounts', []) if not a.get('shared') and a.get('calendar_id', 'primary') == 'primary']
+        google = any(a.get('service') == 'calendar' for a in own)
+        outlook = any(a.get('service') == 'outlook_calendar' for a in own)
+        if google and outlook:
+            return i18n.t('No birthday info yet. Add birthdays to your contacts.')
+        if google:
+            return i18n.t('No birthday info yet. Add birthdays to your Google contacts.')
+        if outlook:
+            return i18n.t('No birthday info yet. Add birthdays to your Outlook contacts.')
+        return i18n.t('No birthday info yet. Connect your calendar, or add a Birthday field to people in the Graph.')
+
+    def birthdays_outlook(self, day, tz, days=1):
+        """The titles on the owner's Outlook Birthdays calendars today (or in the days from it). An account that can't
+        be read is skipped."""
+        start, end = birthdays.window(day, tz, days)
         titles = []
         for account in self.config.get('accounts', []):
             if account.get('service') != 'outlook_calendar' or account.get('shared') or account.get('calendar_id', 'primary') != 'primary':

@@ -92,10 +92,10 @@ def on(day, value):
     return (day.month, day.day) == value
 
 
-def window(day, tz):
-    """The day's start and end in UTC as stored (occurred_at)."""
+def window(day, tz, days=1):
+    """The day's start and end in UTC as stored (occurred_at); with days, the end of that many days from it."""
     start = dt.datetime.combine(day, dt.time(), tz).astimezone(dt.timezone.utc)
-    return start.isoformat(), (start + dt.timedelta(days=1)).isoformat()
+    return start.isoformat(), (start + dt.timedelta(days=days)).isoformat()
 
 
 # --- the people who count ----------------------------------------------------------------------------------------------
@@ -192,6 +192,34 @@ def calendar_names(db, day, tz):
 def outlook_names(subjects):
     """[(name, source)] from the events on an Outlook Birthdays calendar today (birthdays_app reads them)."""
     return [(name, 'outlook') for name in (name_in_title(s, True) for s in subjects) if name]
+
+
+def known(db):
+    """Whether any source on this Machine holds a birthday at all, on any day: a contact's kept birthday, a Birthday
+    field with a date, or a birthday event on a calendar. A quiet day without one says so (birthdays_app)."""
+    try:
+        if db.execute("SELECT 1 FROM person_facts WHERE field='birthday' LIMIT 1").fetchone():
+            return True
+    except Exception:  # noqa: BLE001 - no facts yet
+        pass
+    try:
+        fields = [r['id'] for r in db.execute("SELECT id,name FROM crm_fields WHERE kind='person' AND type='date'") if fold(r['name']) in FIELD_NAMES]
+        if fields and db.execute("SELECT 1 FROM crm_values WHERE field_id IN (SELECT value FROM json_each(?)) AND value<>'' LIMIT 1",
+                                 (json.dumps(fields),)).fetchone():
+            return True
+    except Exception:  # noqa: BLE001 - no fields yet
+        pass
+    for row in db.execute("SELECT title,metadata FROM events WHERE kind='calendar.event' AND deleted=0"):
+        try:
+            meta = json.loads(row['metadata'] or '{}')
+        except ValueError:
+            continue
+        if not meta.get('all_day'):
+            continue
+        birthday = meta.get('event_type') == 'birthday' or GOOGLE_BIRTHDAYS in str(meta.get('calendar_id') or '')
+        if (birthday and (meta.get('birthday') or {}).get('type', 'birthday') == 'birthday') or name_in_title(row['title']):
+            return True
+    return False
 
 
 def fact_ids(db, day):

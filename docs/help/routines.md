@@ -29,7 +29,7 @@ Nothing changes until you confirm on the to-do. Senders you decided on aren’t 
 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.
 
-Birthdays come from your calendars (Google’s birthday events and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph.
+Birthdays come from your calendars (Google’s birthday events and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph. When none of them holds a birthday yet, its result says **No birthday info yet** and how to add some.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
 
