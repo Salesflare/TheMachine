@@ -369,6 +369,159 @@ class InstallerTest(unittest.TestCase):
             ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp)
         return ok, calls, '\n'.join(said), stamp.exists()
 
+    def swap(self, fail=(), breaks=None, reload_heals=False, busy=(), unit='openclaw-gateway.service', restart=True, wait='600'):
+        """install_plugin against a fake Gateway with a model runtime: the plugin step `breaks` unpublishes it (as a
+        swap OpenClaw could neither finish nor roll back does), a Gateway restart brings it back, a second reload only
+        with `reload_heals`. `fail`: the plugin steps that fail. `busy`: what the memory index says in turn, then idle."""
+        calls, state, looks = [], {'models': True, 'reloads': 0}, iter(busy)
+        loaded = {'ok': True, 'plugins': {'loaded': [installer.PLUGIN_ID], 'errors': []}}
+        def run(command, **kwargs):
+            calls.append(' '.join(command[:1] + command[1:4]) if command[0] != 'openclaw' else ' '.join(command[1:3]))
+            step = command[2] if command[1:2] == ['plugins'] else None
+            code = 0
+            if step == 'reload':
+                state['reloads'] += 1
+                if reload_heals and not state['models']:
+                    state['models'] = True
+                    return subprocess.CompletedProcess(command, 0, '', '')
+            if step and step == breaks and (step != 'reload' or state['reloads'] == 1):
+                state['models'] = False
+            if step in fail:
+                code = 1
+            if command[1:4] == ['gateway', 'call', 'models.list']:
+                code = 0 if state['models'] else 1
+            if command[1:3] == ['gateway', 'health']:
+                return subprocess.CompletedProcess(command, 0, json.dumps(loaded), '')
+            if command[:3] == ['systemctl', '--user', 'restart']:
+                state['models'] = True
+            return subprocess.CompletedProcess(command, code, '', 'UNAVAILABLE: runtime owner was not published for main' if code else '')
+        def index_busy():
+            calls.append('index?')
+            return next(looks, None)
+        said = []
+        tmp = Path(tempfile.mkdtemp(prefix='machine-swap-'))
+        self.addCleanup(shutil.rmtree, tmp, True)
+        stamp = tmp / 'plugin-installed'
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer.time, 'sleep') as slept, \
+                mock.patch.object(installer, 'say', side_effect=said.append), mock.patch.object(installer, 'index_busy', side_effect=index_busy), \
+                mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
+                mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60', 'ASSISTANT_SWAP_WAIT': wait, 'ASSISTANT_PLUGIN_RETRY_WAIT': '0'}):
+            ok = installer.install_plugin({'openclaw': 'openclaw', 'openclaw_version': '2026.11.2'}, stamp=stamp, restart=restart)
+        return ok, calls, '\n'.join(said), stamp.exists(), slept.call_count
+
+    RESTART = 'systemctl --user restart openclaw-gateway.service'
+
+    def test_the_bridge_goes_in_only_once_the_memory_index_has_stopped(self):
+        ok, calls, said, stamped, slept = self.swap(busy=[True, True, False, True, False, False, False])
+        self.assertTrue(ok, said)
+        self.assertTrue(stamped)
+        self.assertEqual(calls[:8], ['index?'] * 7 + ['plugins install'], calls)  # one quiet look between batches is not idle
+        self.assertGreaterEqual(slept, 6)
+        self.assertEqual(said.count('waiting up to 10 min'), 1, said)
+        self.assertNotIn(self.RESTART, calls)
+        ok, calls, said, _, slept = self.swap()  # nothing here can tell (no local embedding server): no wait
+        self.assertTrue(ok, said)
+        self.assertEqual((calls[:2], slept), (['index?', 'plugins install'], 0))
+
+    def test_an_index_that_never_stops_is_waited_for_only_so_long(self):
+        ok, calls, said, stamped, _ = self.swap(busy=[True] * 50, wait='0')
+        self.assertTrue(ok, said)  # this install may restart the Gateway: it goes on, the checks after each step cover it
+        self.assertIn('going on', said)
+        self.assertIn('plugins install', calls)
+        ok, calls, said, stamped, _ = self.swap(busy=[True] * 50, wait='0', restart=False)
+        self.assertFalse(ok)
+        self.assertFalse(stamped)
+        self.assertFalse([c for c in calls if c.startswith(('plugins', 'systemctl'))], calls)
+        self.assertIn('nothing in OpenClaw was changed', said)
+        self.assertIn('Run ./install.sh again', said)
+
+    def test_a_failed_plugin_install_that_took_the_model_runtime_down_gets_it_back(self):
+        ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install')
+        self.assertFalse(ok)  # the bridge did not go in: still a failed install, tried again next time
+        self.assertFalse(stamped)
+        after = calls[calls.index('plugins install'):]
+        self.assertLess(after.index('plugins reload'), after.index(self.RESTART), calls)  # one reload first, then the restart
+        self.assertEqual(after.count('plugins reload'), 1)
+        self.assertEqual(calls[-1], 'gateway call', calls)  # checked again after the restart
+        self.assertIn('cannot run models', said)
+        self.assertIn('Model calls work again', said)
+        self.assertIn('run ./install.sh again', said)
+        self.assertNotIn('plugins enable', calls)
+        ok, calls, said, _, _ = self.swap(fail=['install'], breaks='install', reload_heals=True)
+        self.assertFalse(ok)
+        self.assertNotIn(self.RESTART, calls)  # the reload was enough
+        self.assertIn('Reloaded the bridge: model calls work again', said)
+
+    def test_the_model_runtime_is_checked_after_every_plugin_step(self):
+        for step in ('install', 'enable', 'reload'):
+            with self.subTest(step=step):
+                ok, calls, said, stamped, _ = self.swap(breaks=step)  # the step itself reports success
+                self.assertIn(self.RESTART, calls)
+                self.assertIn(f'After the plugin {step}, the OpenClaw Gateway cannot run models', said)
+                self.assertTrue(ok, said)
+                self.assertTrue(stamped)
+        ok, calls, said, stamped, _ = self.swap()
+        self.assertEqual([c for c in calls if c.startswith(('plugins', 'gateway call'))],
+                         ['plugins install', 'gateway call', 'plugins enable', 'gateway call', 'plugins reload', 'gateway call'], calls)
+        self.assertNotIn(self.RESTART, calls)
+
+    def test_where_the_owner_restarts_the_gateway_themself_it_ends_with_the_one_command(self):
+        for case in ({'fail': ['install'], 'breaks': 'install'}, {'breaks': 'reload'}, {'fail': ['reload']}):
+            with self.subTest(case=case):
+                ok, calls, said, stamped, _ = self.swap(restart=False, **case)
+                self.assertFalse(ok)
+                self.assertFalse(stamped)  # nothing recorded as installed
+                self.assertFalse([c for c in calls if c.startswith('systemctl')], calls)
+                self.assertIn('Restart it: systemctl --user restart openclaw-gateway.service', said)
+                if case.get('breaks'):
+                    self.assertIn('NOT FIXED: the OpenClaw Gateway cannot run models', said)
+
+    def test_without_a_gateway_service_a_lost_model_runtime_ends_with_the_openclaw_command(self):
+        ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install', unit=None)
+        self.assertFalse(ok)
+        self.assertIn('NOT FIXED', said)
+        self.assertIn('Restart it: openclaw gateway restart', said)
+
+    def test_gateway_restarts_are_the_owners_when_the_config_says_so(self):
+        config = self.tmp / 'config.json'
+        paths = mock.Mock(config=config)
+        self.assertTrue(installer.may_restart_gateway(paths))  # no config yet
+        config.write_text('{"port": 1}')
+        self.assertTrue(installer.may_restart_gateway(paths))
+        config.write_text('{"gateway_restart": false}')
+        self.assertFalse(installer.may_restart_gateway(paths))
+
+    def test_the_memory_index_is_read_from_the_gateways_own_embedding_server(self):
+        ps = '\n'.join(('  10     1 openclaw-gateway gateway run',
+                        '  20    10 /opt/llama/llama-server --models-preset /x/preset.ini --port 4100',
+                        '  21    20 /opt/llama/llama-server --embeddings --host 127.0.0.1 --metrics --port 4101 -m /x/e.gguf',
+                        '  30     1 /opt/llama/llama-server --embeddings --host 127.0.0.1 --metrics --port 4999',  # someone else's
+                        '  31    10 /opt/llama/llama-server --host 127.0.0.1 --metrics --port 4102'))  # a chat model
+        metrics = {4101: '# HELP llamacpp:requests_processing Number of requests processing.\nllamacpp:requests_processing 1\n'
+                         'llamacpp:requests_deferred 3\nllamacpp:prompt_tokens_total 9\n'}
+        class Answer:
+            def __init__(self, text): self.text = text
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n=-1): return self.text.encode()
+        def urlopen(url, timeout=None):
+            port = int(url.split(':')[2].split('/')[0])
+            if port not in metrics:
+                raise OSError('refused')
+            return Answer(metrics[port])
+        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, ps, '')), \
+                mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen):
+            self.assertEqual(installer.gateway_embedding_ports(), [4101])
+            self.assertIs(installer.index_busy(), True)
+            metrics[4101] = 'llamacpp:requests_processing 0\nllamacpp:requests_deferred 0\n'
+            self.assertIs(installer.index_busy(), False)
+            metrics[4101] = 'something else\n'
+            self.assertIsNone(installer.index_busy())
+            del metrics[4101]
+            self.assertIsNone(installer.index_busy())
+        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 127, '', 'no ps')):
+            self.assertIsNone(installer.index_busy())
+
     def test_a_reload_without_a_running_gateway_starts_it_and_checks_the_bridge_loaded(self):
         loaded = {'ok': True, 'plugins': {'loaded': ['telegram', installer.PLUGIN_ID], 'errors': []}}
         ok, calls, said, stamped = self.gateway(health=[None, {'ok': True, 'plugins': {'loaded': ['telegram']}}, loaded])
@@ -738,6 +891,35 @@ class InstallerTest(unittest.TestCase):
                 self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         result = self.install('--no-start', ASSISTANT_TEST_FAIL='--user daemon-reload')
         self.assertEqual(result.returncode, 1, result.stdout)
+
+    def test_an_install_that_may_not_restart_the_gateway_fails_plainly_and_records_nothing(self):
+        first = self.install()  # nothing answers the health check here, so its exit code says nothing
+        stamp = self.data / 'plugin-installed'
+        self.assertTrue(stamp.exists(), first.stdout + first.stderr)
+        stamp.unlink()  # as after an update that changed the bridge
+        self.config.write_text(json.dumps({**json.loads(self.config.read_text()), 'gateway_restart': False}))
+        self.log.unlink()
+        (self.bin / 'openclaw').write_text(f'''#!/bin/sh
+echo "openclaw $*" >> "{self.log}"
+case "$*" in
+  --version) echo "OpenClaw 2026.11.2 (test)";;
+  "plugins install"*) echo "Plugin replacement failed and its previous instance could not be restored" >&2; exit 1;;
+  "gateway call models.list"*) echo "UNAVAILABLE: runtime owner was not published for main" >&2; exit 1;;
+  "gateway health"*) echo '{{"ok": true, "plugins": {{"loaded": []}}}}';;
+esac
+exit 0
+''')
+        result = self.install()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('NOT FIXED: the OpenClaw Gateway cannot run models', result.stdout)
+        self.assertIn('Restart it: systemctl --user restart openclaw-gateway.service', result.stdout)
+        self.assertFalse(stamp.exists())
+        calls = self.calls()
+        self.assertIn('openclaw plugins reload personal-assistant-bridge --wait', calls)  # the one retry
+        self.assertFalse([c for c in calls if c.startswith('systemctl') and 'openclaw-gateway' in c and ' restart ' in c], calls)
+        self.assertNotIn('systemctl --user restart personal-assistant.service', calls)  # the install stopped there
+        config = json.loads(self.config.read_text())
+        self.assertIs(config['gateway_restart'], False)  # the choice survives the install
 
     def test_activation_is_explicit_and_preserves_existing_choices(self):
         self.assertEqual(self.install('--no-start').returncode, 0)

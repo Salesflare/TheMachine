@@ -5,6 +5,7 @@ to ~/Library/Logs/TheMachine. Windows: The Machine runs inside WSL2, which is Li
 ASSISTANT_SERVICE_MANAGER=systemd|launchd|none overrides the choice.
 
 Every command here takes the caller's `run`, so the caller's own tests see the exact commands."""
+import json
 import os
 import plistlib
 import re
@@ -12,6 +13,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 UNIT_NAME = 'personal-assistant.service'
@@ -295,3 +297,29 @@ def trim_log(unit=UNIT_NAME, keep=1024 * 1024):
             handle.truncate()
     except OSError:
         pass
+
+
+def gateway_restart_hint(units):
+    """The one command that restarts the OpenClaw Gateway here; `units`: its systemd user units, when it has any."""
+    return f'systemctl --user restart {units[0]}' if units else 'openclaw gateway restart'
+
+
+def model_runtime(openclaw, run=default_run, tries=2):
+    """Whether the running OpenClaw Gateway can run models: True; None when no Gateway answers (nothing to judge);
+    False when it answers but cannot list its models. OpenClaw 2026.11.2 is left like that by a plugin swap it could
+    neither finish nor roll back: `models.list` and every model call answer UNAVAILABLE ("runtime owner was not
+    published") until the plugin reloads cleanly or the Gateway restarts. One CLI call, no model turn."""
+    for attempt in range(tries):
+        result = run([openclaw, 'gateway', 'call', 'models.list', '--json', '--timeout', '30000', '--params', '{"view":"configured"}'], timeout=60)
+        if result.returncode == 0:
+            return True
+        health = run([openclaw, 'gateway', 'health', '--json', '--timeout', '20000'], timeout=60)
+        try:
+            live = json.loads(health.stdout or '{}')
+        except ValueError:
+            live = None
+        if not (isinstance(live, dict) and live.get('ok')):
+            return None
+        if attempt + 1 < tries:  # a Gateway still applying a plugin step refuses calls for a moment
+            time.sleep(float(os.environ.get('ASSISTANT_PLUGIN_RETRY_WAIT', 5)))
+    return False

@@ -27,6 +27,7 @@
 | `self_test`, `self_test_seconds`, `self_fix_push` | `scripts/test.py`, `1200`, `true` | The test command Merge now runs in the fix (a list), its time limit, and whether a merged fix is pushed |
 | `self_fix_auto`, `self_fix_auto_push` | `true`, `false` | Small proven fixes to its own errors [merge by themselves](usage.md#the-machine-fixes-itself), with Undo merge for 24 hours; whether those are also pushed upstream |
 | `computer_logs` | `true` | Linux with systemd: read the computer's own logs for real problems and bring each as a to-do ([The computer's own logs](usage.md#the-computers-own-logs)) |
+| `gateway_restart` | `true` | Whether `./install.sh` may restart the OpenClaw Gateway when it does not take a changed bridge live or can no longer run models after the swap. `false`: it never does, and ends with the command for you to run ([Install](operations.md)) |
 | `auto_update` | `true` | Linux installs from git: install each new signed release nightly when nothing runs ([Update and rollback](operations.md#update-and-rollback)). Rerun `./install.sh` after changing it |
 | `openclaw`, `node` | `openclaw` / next to it | CLI paths for the Node helpers |
 | `openclaw_package_dir` | `<node prefix>/lib/node_modules/openclaw` | Installed OpenClaw package (Gateway SDK) |
