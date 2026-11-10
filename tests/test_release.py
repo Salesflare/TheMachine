@@ -302,6 +302,20 @@ class Releases(unittest.TestCase):
             release.main(['update', '--install'])
         self.assertEqual(run('git', 'rev-parse', 'HEAD', cwd=self.app), sha)
         self.assertEqual(installs, [['--non-interactive']])
+        # A night with no new release: only a bridge that still waits for OpenClaw's memory index goes in (the
+        # installer does nothing when none does), and only when nothing runs.
+        with mock.patch.object(release, 'busy', return_value=True), mock.patch.object(release.subprocess, 'run', fake):
+            release.main(['update', '--install'])
+        self.assertEqual(len(installs), 1)
+        with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', fake):
+            release.main(['update', '--install'])
+            release.main(['update'])  # by hand, without --install: never runs the installer
+        self.assertEqual(installs[1:], [['--non-interactive', '--if-bridge-waits']])
+        def failing(args, **kwargs):
+            return subprocess.CompletedProcess(args, 1) if str(args[0]).endswith('install.sh') else real(args, **kwargs)
+        with mock.patch.object(release, 'busy', return_value=False), mock.patch.object(release.subprocess, 'run', failing), \
+                self.assertRaisesRegex(SystemExit, 'still not in OpenClaw'):
+            release.main(['update', '--install'])
 
     def test_cut_signs_origin_main_with_the_key_and_verifies_it(self):
         sha = self.commit('two')

@@ -950,6 +950,62 @@ def plugin_fingerprint(facts):
     return digest.hexdigest()
 
 
+def bridge_parts(facts):
+    """The same, part by part, so a later run can tell what changed: only the OpenClaw around a bridge whose files
+    and folder stayed the same needs no swap (bridge_in_openclaw)."""
+    digest = hashlib.sha256()
+    root = ROOT / 'openclaw-plugin'
+    for path in sorted(p for p in root.rglob('*') if p.is_file() and 'node_modules' not in p.parts):
+        digest.update(str(path.relative_to(root)).encode() + b'\0' + path.read_bytes() + b'\0')
+    return {'files': digest.hexdigest(), 'root': str(root), 'openclaw': str(facts.get('openclaw')), 'version': str(facts.get('openclaw_version'))}
+
+
+def read_stamp(stamp):
+    """(the fingerprint, its parts) the last finished swap left; parts None in a stamp from before they were kept."""
+    try:
+        lines = stamp.read_text().splitlines()
+    except (OSError, ValueError):
+        return None, None
+    try:
+        parts = json.loads(lines[1]) if len(lines) > 1 else None
+    except ValueError:
+        parts = None
+    return (lines[0].strip() if lines else None), (parts if isinstance(parts, dict) else None)
+
+
+def write_stamp(stamp, facts):
+    stamp.parent.mkdir(parents=True, exist_ok=True)
+    stamp.write_text(plugin_fingerprint(facts) + '\n' + json.dumps(bridge_parts(facts), sort_keys=True) + '\n')
+    stamp.with_name(BRIDGE_WAITING).unlink(missing_ok=True)
+
+
+def bridge_in_openclaw(openclaw):
+    """Whether OpenClaw already has this bridge: its install record is a link to this folder, it is enabled, loads
+    from here, may run its conversation hooks, and the running Gateway lists it as loaded. Anything less, or anything
+    that cannot be read, is False: the bridge then goes in the usual way."""
+    result = run([openclaw, 'plugins', 'inspect', PLUGIN_ID, '--json'], timeout=120)
+    try:
+        found = json.loads(result.stdout or '') if result.returncode == 0 else None
+    except ValueError:
+        found = None
+    plugin, install = ((found.get('plugin'), found.get('install')) if isinstance(found, dict) else (None, None))
+    if not (isinstance(plugin, dict) and isinstance(install, dict)):
+        return False
+    root = (ROOT / 'openclaw-plugin').resolve()
+    def here(value):
+        try:
+            return isinstance(value, str) and bool(value) and Path(value).resolve() == root
+        except (OSError, ValueError, RuntimeError):
+            return False
+    if not (install.get('source') == 'path' and here(install.get('sourcePath')) and here(plugin.get('rootDir'))
+            and plugin.get('enabled') is True and plugin.get('status') == 'loaded'):
+        return False
+    if not onboarding.hooks_allowed(onboarding.openclaw_settings()):
+        return False
+    live = gateway_health(openclaw)
+    return PLUGIN_ID in (((live or {}).get('plugins') or {}).get('loaded') or [])
+
+
 def may_restart_gateway(paths):
     """Whether this install may restart the OpenClaw Gateway to get the bridge or the model runtime back: yes, unless
     config.json says "gateway_restart": false (a Gateway with live chats and a browser its owner restarts themself)."""
@@ -967,6 +1023,14 @@ def may_restart_gateway(paths):
 # are working. A run does not keep those above zero from start to end: it pauses between batches, for longer than a
 # few looks, and goes on. So idle is one unbroken quiet stretch (SWAP_QUIET), not a quiet look. An index on a remote
 # embedding provider cannot be seen; the checks after each step cover that.
+# A quiet embedding server is not the whole answer either: a full rebuild goes on for minutes without embedding
+# anything (most likely texts it embedded before, taken from its cache) and still cannot be stopped in OpenClaw's 5 seconds. What
+# shows a rebuild is the database it builds next to the real one, <state dir>/agents/<agent>/agent/
+# <name>.sqlite.memory-reindex-<uuid> (with -wal and -shm), which OpenClaw removes when the rebuild ends or is cut
+# off. One written in the last REINDEX_FRESH seconds is a rebuild that runs; an older one was left by a Gateway that
+# stopped mid-rebuild. Measured on a real Machine: up to 51 seconds between two writes while it ran.
+REINDEX_FRESH = 120  # seconds since the last write to a rebuild's database within which the rebuild counts as running
+BRIDGE_WAITING = 'plugin-waiting'  # in the data folder, next to the stamp: a changed bridge that is not in OpenClaw yet
 SWAP_WAIT = 600  # seconds an update waits for a running index before the bridge goes in
 SWAP_QUIET = 60  # seconds the embedding server has to stay quiet, without a break, before the index counts as stopped
 EMBEDDING_COUNTS = re.compile(r'^llamacpp:requests_(?:processing|deferred)\s+([0-9.]+(?:[eE][+-]?[0-9]+)?)\s*$', re.M)
@@ -1027,9 +1091,27 @@ def embedding_requests(port):
     return sum(1 for one in working if one) if working else None
 
 
+def reindex_running():
+    """Whether OpenClaw is rebuilding a memory index right now: a rebuild database written in the last REINDEX_FRESH
+    seconds. Only looks at file times, never inside."""
+    newest = 0.0
+    try:
+        for path in (onboarding.openclaw_dir() / 'agents').glob('*/agent/*.memory-reindex-*'):
+            try:
+                newest = max(newest, path.stat().st_mtime)
+            except OSError:
+                pass  # removed between the listing and the look: that rebuild just ended
+    except OSError:
+        return False
+    return bool(newest) and time.time() - newest < float(os.environ.get('ASSISTANT_REINDEX_FRESH', REINDEX_FRESH))
+
+
 def index_busy():
-    """Whether OpenClaw's memory index is embedding right now; None when nothing here can tell (no Gateway embedding
-    server and none named in ASSISTANT_EMBEDDING_PORTS, or one that does not say)."""
+    """Whether OpenClaw's memory index is running right now: rebuilding (reindex_running) or embedding. None when
+    nothing here can tell (no rebuild, no Gateway embedding server and none named in ASSISTANT_EMBEDDING_PORTS, or one
+    that does not say)."""
+    if reindex_running():
+        return True
     ports = sorted({*gateway_embedding_ports(), *extra_embedding_ports()})
     counts = [n for n in map(embedding_requests, ports) if n is not None]
     return any(counts) if counts else None
@@ -1095,6 +1177,9 @@ def restore_model_runtime(openclaw, restart, after, restarted=False):
     return False
 
 
+WAITING = 'waiting'  # install_plugin: the bridge waits for the memory index; the rest of the install goes on
+
+
 def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
@@ -1102,20 +1187,41 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET (gateway_idle) before the swap
     and again before the reload, and after each step checks that the Gateway can still run models: it never ends, done or failed, with that
     broken and no recovery tried (restore_model_runtime). `restart`: whether that recovery may restart the
-    Gateway (may_restart_gateway)."""
+    Gateway (may_restart_gateway).
+    Returns True when the bridge is in, False when it failed, and WAITING (true as well: the install goes on) when
+    the index was still running at the bound on a Gateway this install may not restart: nothing is forced, the
+    stamp stays as it was and BRIDGE_WAITING stays next to it, so the next install or nightly update tries again."""
     openclaw = facts.get('openclaw')
     if not openclaw:
         return False
     fingerprint = plugin_fingerprint(facts)
-    if stamp and reload and stamp.exists() and stamp.read_text().strip() == fingerprint:
-        say(f'OpenClaw plugin {PLUGIN_ID}: unchanged, left as it is')
-        return True
+    if stamp and reload:
+        had, parts = read_stamp(stamp)
+        if had == fingerprint:
+            if parts is None:
+                write_stamp(stamp, facts)  # a stamp from before the parts were kept: the same bridge, now with them
+            stamp.with_name(BRIDGE_WAITING).unlink(missing_ok=True)
+            say(f'OpenClaw plugin {PLUGIN_ID}: unchanged, left as it is')
+            return True
+        now = bridge_parts(facts)
+        if parts and (parts.get('files'), parts.get('root')) == (now['files'], now['root']) and bridge_in_openclaw(openclaw):
+            # Only the OpenClaw around it changed. The bridge is a link to this folder, not a copy: the new OpenClaw
+            # loaded these same files when its Gateway started, so there is nothing to swap.
+            write_stamp(stamp, facts)
+            say(f'OpenClaw plugin {PLUGIN_ID}: unchanged and already loaded by this OpenClaw, left as it is')
+            return True
+        try:
+            stamp.parent.mkdir(parents=True, exist_ok=True)
+            stamp.with_name(BRIDGE_WAITING).write_text(fingerprint + '\n')  # until write_stamp: a nightly update tries again
+        except OSError:
+            pass
     plugin = str(ROOT / 'openclaw-plugin')
     if not gateway_idle('the bridge goes in'):
         if not (restart and onboarding.gateway_units()):
-            say(f'  The memory index is still running after {swap_minutes()}. Swapping the bridge in now would leave the Gateway unable to run models,'
-                ' so nothing in OpenClaw was changed.\n  Run ./install.sh again when it is done: it waits for the index again by itself.')
-            return False
+            say(f'OpenClaw plugin {PLUGIN_ID}: not swapped in yet. The memory index is still running after {swap_minutes()} and a swap now would'
+                ' leave the Gateway unable to run models, so nothing in OpenClaw was changed.\n  Everything else is updated. The bridge goes in'
+                ' when the index is done: the next nightly update tries again by itself, and so does ./install.sh.')
+            return WAITING
         say(f'  The memory index is still running after {swap_minutes()}; going on. If the Gateway does not take the bridge, it is restarted.')
     def kept(after):  # the Gateway can still run models, or could again after the recovery
         return service.model_runtime(openclaw, run) is not False or restore_model_runtime(openclaw, restart, after)
@@ -1153,10 +1259,11 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         # An index can have started since the swap, and a reload fails on a running one the same way: a fresh stretch.
         if not gateway_idle('reloading the bridge', '  '):
             if not (restart and onboarding.gateway_units()):
-                say(f'  The memory index is still running after {swap_minutes()}. Reloading the bridge now would leave the Gateway unable to run'
-                    ' models, so the bridge is linked but not reloaded: the Gateway runs the one it had until then.'
-                    '\n  Run ./install.sh again when it is done: it waits for the index again by itself.')
-                return False
+                say(f'OpenClaw plugin {PLUGIN_ID}: not reloaded yet. The memory index is still running after {swap_minutes()} and a reload now'
+                    ' would leave the Gateway unable to run models, so the bridge is linked but not reloaded: the Gateway runs the one it had'
+                    ' until then.\n  Everything else is updated. The bridge goes in when the index is done: the next nightly update tries'
+                    ' again by itself, and so does ./install.sh.')
+                return WAITING
             say(f'  The memory index is still running after {swap_minutes()}; going on. If the Gateway does not take the bridge, it is restarted.')
         result = run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
         if result.returncode != 0:
@@ -1173,8 +1280,7 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         elif not kept('the plugin reload'):
             return False
     if stamp and reload and applied:
-        stamp.parent.mkdir(parents=True, exist_ok=True)
-        stamp.write_text(fingerprint + '\n')
+        write_stamp(stamp, facts)
     say(f'OpenClaw plugin {PLUGIN_ID}: linked and enabled'
         + ('' if reload else ' (not reloaded: --no-start)')
         + (' (loads when the Gateway starts)' if applied is None else ''))
@@ -1693,11 +1799,14 @@ def main(argv=None):
     parser.add_argument('--preview', action='store_true', help='existing install: one check of the last 7 days, shown only (assistant preview)')
     parser.add_argument('--browser-viewer', action='store_true', help='existing install: a browser of its own on a virtual display, viewed in yours (127.0.0.1 only)')
     parser.add_argument('--dry-run', action='store_true', help='check prerequisites and show what would be written; changes nothing')
+    parser.add_argument('--if-bridge-waits', action='store_true', help='do nothing unless a changed bridge still waits to go into OpenClaw (the nightly update uses this)')
     parser.add_argument('--from-main', action='store_true', help='first install: this checkout as it is, not the newest signed release')
     parser.add_argument('--health-timeout', type=float, default=30)
     args = parser.parse_args(argv)
     interactive = not args.non_interactive and sys.stdin.isatty()
     paths = Paths()
+    if args.if_bridge_waits and not (paths.data / BRIDGE_WAITING).exists():
+        return 0
     if args.dry_run:
         return dry_run(paths)
     if os.name == 'nt':
