@@ -7,6 +7,7 @@ import threading
 import unittest
 from unittest import mock
 
+import fleet_rounds
 import test_fleet
 
 fleet = test_fleet.fleet
@@ -62,7 +63,7 @@ class RoundReads(unittest.TestCase):
         self.assertTrue(before)
 
     def test_a_slow_part_is_logged_by_name_only(self):
-        with mock.patch.object(fleet, 'ROUND_LOG_SECONDS', 0.0), mock.patch.object(fleet.LOG, 'info') as info:
+        with mock.patch.object(fleet_rounds, 'ROUND_LOG_SECONDS', 0.0), mock.patch.object(fleet.LOG, 'info') as info:
             self.assertEqual(self.fleet.timed('claims', lambda: 'answer'), 'answer')
         line = info.call_args[0]
         self.assertTrue(line[0].startswith('fleet round slow part=%s took=%.1fs read=%s'))
