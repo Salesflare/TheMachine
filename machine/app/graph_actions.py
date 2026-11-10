@@ -82,7 +82,7 @@ class GraphActionsApp:
                'graph_picture': 'graph_picture_action', 'graph_pictures_found': 'graph_picture_action',
                'graph_person_edit': 'graph_person_edit_action', 'graph_role': 'graph_role_action',
                'graph_warmup': 'graph_warmup_action', 'graph_same': 'graph_same_action',
-               'graph_same_all': 'graph_same_all_action', 'graph_show_person': 'graph_show_person_action', 'person_invite_send': 'person_invite_send_action', 'graph_person_delete': 'graph_person_delete_action',
+               'graph_same_all': 'graph_same_all_action', 'graph_show_person': 'graph_show_person_action', 'person_invite_draft': 'person_invite_draft_action', 'graph_person_delete': 'graph_person_delete_action',
                'graph_person_org': 'graph_person_org_action', 'graph_relation': 'graph_relation_action',
                'forget_fact': 'forget_fact_action', 'edit_fact': 'edit_fact_action', 'board_save': 'board_action',
                'board_delete': 'board_action', 'board_dismiss': 'board_action',
@@ -290,8 +290,8 @@ class GraphActionsApp:
                 mailbox = invite and self.invite_mailbox(db, found.get('id'))
         except (sqlite3.Error, ValueError, KeyError, TypeError):
             return None
-        if invite and mailbox:
-            invite['from'] = mailbox['email']  # Send goes out from it; without one, Copy and Open in email
+        if invite and mailbox and invite.get('email'):
+            invite['send'] = True  # opens as a draft in the send dialog (person_invite_draft); else Copy and Open in email
         return invite
 
     def invite_mailbox(self, db, node_id):
@@ -307,43 +307,50 @@ class GraphActionsApp:
         area, _ = owner_card_area(db, accounts, [str(node_id or '')])
         return next((a for a in able if a['id'] == area), able[0])
 
-    def person_invite_send_action(self, name, args, owner_dashboard=False):
-        """Send on a person's Invite to The Machine: the words the owner saw and maybe changed, from their own mailbox,
-        through the path every approved draft takes. A to-do of theirs about that person carries it (Store.owner_card,
-        on their Graph page), its draft is checked like any (next_actions.validate) and Store.confirm_action queues it,
-        so Can do things, the outbox and Activity apply as for Review and send. Nothing else is made or sent."""
+    INVITE_SITE = 'https://themachine.computer'
+
+    def person_invite_draft_action(self, name, args, owner_dashboard=False):
+        """Invite to The Machine on a person's page, with a mailbox that can send: the invite as a ready to-do about that
+        person (Store.owner_card, on their page), its email draft checked like any (next_actions.validate, with the From
+        choices Review and send offers), so the dashboard opens it in the send dialog every email uses. Nothing is sent
+        here: Send there is Store.confirm_action, as for any draft. An open one for the same person is opened again."""
         import i18n
         import next_actions
-        if not owner_dashboard or not re.fullmatch(r'[A-Za-z0-9_.:-]{1,200}', str(args.get('approval_id', ''))):
-            raise ValueError('Sending approval must come from the owner’s controls')
+        import own_addresses
+        if not owner_dashboard:
+            raise ValueError('Only the owner invites someone, from the dashboard')
         node = str(args.get('node_id') or '')
         with self.store.connect() as db:
-            done = db.execute('SELECT suggestion_id FROM decisions WHERE id=?', (args['approval_id'],)).fetchone()
             row = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='person'", (node,)).fetchone()
-            marks = self.graph_fleet_marks(db) if row and not done else {}
-        if done:  # a repeated tap is that same send
-            return {'status': 'queued', 'duplicate': True, 'suggestion_id': done[0]}
+            marks = self.graph_fleet_marks(db) if row else {}
         # the page as the person's page has it: their Fleet or Network mark (someone with a Machine gets no invite)
         found = row and {'id': node, 'kind': 'person', 'side': (json.loads(row['info'] or '{}') or {}).get('side'),
                          **({'fleet': marks[node]} if marks.get(node) else {})}
         invite = found and self.person_invite(found)
-        if not invite:
+        if not invite or not invite.get('email'):
             raise ValueError(i18n.t('There is no invite to send here.'))
+        title = i18n.t('Invite {} to The Machine', invite['name'])
         with self.store.connect() as db:
             mailbox = self.invite_mailbox(db, node)
+            senders = own_addresses.senders(db, self.config)
+            for open_id, action in db.execute("SELECT id,next_action FROM suggestions WHERE status='prepared' AND origin='owner' AND title=?", (title,)):
+                draft = next((a for a in next_actions.actions(json.loads(action or 'null')) if a.get('kind') == 'email' and invite['email'] in a.get('to', ())), None)
+                if draft:  # the one made before and not sent yet: the same to-do, opened again
+                    return {'suggestion_id': open_id, 'revision': draft['revision']}
         if not mailbox:
             raise ValueError(i18n.t('Connect a mailbox that can send first.'))
-        draft = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': mailbox['id'], 'to': [str(args.get('to') or '').strip()],
-                                       'subject': str(args.get('subject') or ''), 'body': str(args.get('body') or '')}, self.config, [mailbox['id']])
+        words = [i18n.t('Hi {},', invite['first']) if invite.get('first') else i18n.t('Hi,'),
+                 i18n.t('I use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: {}', self.INVITE_SITE)]
+        draft = next_actions.validate({'kind': 'email', 'account_id': mailbox['id'], 'to': [invite['email']],
+                                       'subject': i18n.t('Have a look at The Machine'), 'body': '\n\n'.join(words)},
+                                      self.config, [mailbox['id']], senders=senders)
         work = str(mailbox.get('boundary') or '').startswith('work:')
-        card = self.store.owner_card(i18n.t('Invite {} to The Machine', invite['name']), mailbox['id'], work=work,
-                                     about=[{'id': node, 'name': invite['name'][:120], 'kind': 'person'}], accepted=True)
+        card = self.store.owner_card(title, mailbox['id'], work=work, about=[{'id': node, 'name': invite['name'][:120], 'kind': 'person'}], accepted=True)
         self.store.prepare(card['id'], i18n.t('An invite to The Machine, from their page.'), next_action=draft,
                            outcome={'state': 'needs_you', 'needs': 'send the invite'})
-        sent = self.store.confirm_action(card['id'], draft['revision'], args['approval_id'], 'dashboard')
         if getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the to-do shows on their page after the next build
-        return {**sent, 'suggestion_id': card['id']}
+        return {'suggestion_id': card['id'], 'revision': draft['revision']}
 
     def slack_links(self, found):
         """Where 'Also on Slack' goes: each Slack user of theirs in the workspace it is from (its profile, which opens a

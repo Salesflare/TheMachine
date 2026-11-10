@@ -97,11 +97,13 @@ try{
   assert.deepEqual(await primary('p1'),['Answer']);assert.equal(await page.locator('#task-p1 [data-choice="retry"]').count(),1);
   assert.equal(await page.locator('#task-p1 [data-choice="accept"]').count(),0);
   if(process.env.SHOTS_DIR)await page.locator('#task-p1').screenshot({path:`${process.env.SHOTS_DIR}/prepared-ahead-blocker-${width}.png`});
-  // A pick fills the answer box; another pick for the same question replaces it; the box takes the rest
+  // A pick fills the answer box with the answer alone (the Machine keeps which question it answers); another pick for
+  // the same question replaces it; what was typed stays
   await page.locator('#task-o1 .pick[data-pick="4.0"]').click();
-  assert.equal(await page.locator('#feedback-o1').inputValue(),'Which score fills the gap? 4.0');
+  assert.equal(await page.locator('#feedback-o1').inputValue(),'4.0');
+  await page.locator('#feedback-o1').fill('It was slow to load\n4.0');
   await page.locator('#task-o1 .pick[data-pick="3.9"]').click();
-  assert.equal(await page.locator('#feedback-o1').inputValue(),'Which score fills the gap? 3.9');
+  assert.equal(await page.locator('#feedback-o1').inputValue(),'It was slow to load\n3.9');
   assert.equal(await page.locator('#task-o1 .pick[data-pick="3.9"]').getAttribute('aria-pressed'),'true');
   await page.locator('#task-o1 [data-choice="cancel-change"]').click();
   // The button row fits the card on a phone

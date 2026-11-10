@@ -18,6 +18,8 @@ Ogni email mostra solo ciò che contiene di nuovo. I messaggi precedenti che cit
 
 Ogni esecuzione è una riga discreta, come «12 cose controllate». Aprila per vedere ogni tipo di passaggio una volta, con quante volte: «Ha usato il browser su example.com · 7». Indica il sito, mai l’indirizzo, un comando o un file.
 
+Se si è fermata per chiederti qualcosa, anche la domanda è una riga discreta, come «Ha chiesto: Lo invio oggi o lunedì?», e il tuo messaggio sotto mostra solo la tua risposta.
+
 ## Cosa chiedere
 
 Prima che tu scriva, la chat può offrire fino a tre suggerimenti presi da questa attività, come «Proponi martedì alle 10:00». Toccandone uno finisce nella casella del messaggio, da inviare o cambiare. Se non c'è niente di specifico, non ne mostra.
