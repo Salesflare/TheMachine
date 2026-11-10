@@ -722,11 +722,12 @@ class ReviewStore:
         emails = own_addresses.yours(db, self.config) | {str(a.get('email') or '').lower() for a in self.accounts
                                                          if '@' in str(a.get('email') or '') and not a.get('shared')}
         ids = {str(account.get('reply_admin_id') or '')} | ({str(account.get('admin_id') or '')} if not received else set())
-        for (found,) in db.execute("SELECT json_extract(metadata,'$.admin_emails') FROM events WHERE kind='intercom.conversation' AND account_id=? "
-                                   "AND json_extract(metadata,'$.admin_emails') IS NOT NULL ORDER BY occurred_at DESC LIMIT 500", (account_id,)):
+        # admin_emails is read from the rows: with message protection on it is sealed (message_seal.PLAIN_METADATA)
+        for (metadata,) in db.execute("SELECT metadata FROM events WHERE kind='intercom.conversation' AND account_id=? "
+                                      "ORDER BY occurred_at DESC LIMIT 500", (account_id,)):
             try:
-                ids |= {k for k, v in json.loads(found).items() if str(v).lower() in emails}
-            except (ValueError, AttributeError):
+                ids |= {k for k, v in (json.loads(metadata).get('admin_emails') or {}).items() if str(v).lower() in emails}
+            except (ValueError, AttributeError, TypeError):
                 continue
         return {i for i in ids if i}, emails
 

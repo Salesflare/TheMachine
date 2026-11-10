@@ -18,6 +18,8 @@ Typ een vraag, zoals “wat zei Kim over de pilot?”, en boven de resultaten ve
 
 Vraag je naar iemand en een tijd, zoals “wat zei Kim vorige week?”, dan leest het alleen de berichten van of met die persoon op die dagen, in jouw tijdzone. Stuurde die toen niets, dan zegt het dat en geeft het hun laatste bericht met de datum.
 
+Het leest ook wat de Machine al over de vraag bijhoudt: beloftes die open zijn of in de laatste 30 dagen zijn afgesloten, wat het leerde, de samenvatting van de persoon, het project of de organisatie waar je naar vraagt, en vergadernotities. Alles wat het antwoord gebruikte staat eronder, benoemd als wat het is (Belofte, Geleerd, Samenvatting, Vergadernotities), en opent waar het thuishoort. Alleen wat bij de vraag past wordt gelezen, en alleen uit het gebied dat je bekijkt.
+
 Hebben meerdere mensen die naam, dan zegt het wie het bedoelt. De andere berichten die het las staan onder Berichten. De vraag die een lege zoekopdracht voorstelt, is altijd een waar berichten voor zijn.
 
 ## Sneltoetsen

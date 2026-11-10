@@ -11,6 +11,8 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // keywords get nothing; it asks for the area in view; a failure says so in one line; without a model it stops asking.
 // The question to try is only one the Machine said it can answer (search_ask_examples), and picking it asks at once
 // with its person and days; while it works, three dots; a question about someone lists their messages under it.
+// What the answer used besides messages (a promise, a fact, a summary, meeting notes) shows under it, each named as
+// what it is and opening where it lives.
 // SEARCH_ASK_SHOTS=dir saves shots at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const now=new Date(),ago=d=>new Date(now-d*864e5).toISOString();
@@ -19,6 +21,8 @@ const MSGS=[
  {id:41,account_id:'work',kind:'gmail.message',title:'Pilot timing',occurred_at:ago(2),body:'The pilot moves to March.',metadata:{from:'Kim Vale <kim@initech.example>'}},
  {id:42,account_id:'work',kind:'slack.message',title:'#pilot',occurred_at:ago(1),body:'Budget stays as it is.',metadata:{channel_name:'pilot',sender_display:'Lee Park'}}];
 const ANSWER='Kim said the pilot moves to March, and Lee confirmed the budget stays the same. Nothing changes for the kickoff on the 4th.';
+const MEMORY=[{type:'promise',id:7,title:'send the new pilot plan',from:'Kim Vale',at:ago(2),state:'open'},{type:'fact',id:3,title:'Initech renews for eight seats in January.',from:'',at:ago(9)},
+ {type:'person',id:'p1',title:'Kim Vale',from:'',at:''},{type:'meeting',id:44,kind:'meeting.notes',title:'Pilot review',from:'',at:ago(4)}];
 let asks,mode,release,examples;
 const reset=()=>{asks=[];mode='answer';release=null;examples=[]};reset();
 const LAST={from:'2026-10-26',to:'2026-11-01'};
@@ -39,7 +43,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    const q=r.args.query;
    res.end(JSON.stringify(mode==='off'?{off:true}:mode==='error'?{error:true}:/^(what|did|how|wat)\b/i.test(q)?{answer:ANSWER,sources:[
     {id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at},{id:42,kind:'slack.message',title:'#pilot',from:'Lee Park',at:MSGS[1].occurred_at}],
-    ...(mode==='scoped'?{sources:[{id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at}],messages:[{id:43,kind:'gmail.message',title:'Kickoff date',from:'Kim Vale',at:ago(3)}]}:{})}:{none:true}));return}
+    ...(mode==='scoped'?{sources:[{id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at}],messages:[{id:43,kind:'gmail.message',title:'Kickoff date',from:'Kim Vale',at:ago(3)}]}:mode==='memory'?{sources:[{id:41,kind:'gmail.message',title:'Pilot timing',from:'Kim Vale',at:MSGS[0].occurred_at}],memory:MEMORY}:{})}:{none:true}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -110,6 +114,22 @@ try{
   await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
   {const l=await labels(page);assert.deepEqual(l.slice(0,2),['Pilot timing','Kickoff date']);assert.ok(!l.includes('#pilot'),'no keyword hit');}
   mode='answer';await page.keyboard.press('Escape');
+  // What it used besides messages: under the answer after its messages, each named as what it is, opening where it lives
+  mode='memory';await palOpenNow(page,1440);await page.locator('#pal-q').fill('what is open with kim?');
+  await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
+  assert.deepEqual((await labels(page)).slice(0,5),['Pilot timing','send the new pilot plan','Initech renews for eight seats in January.','Kim Vale','Pilot review']);
+  {const subs=await page.locator('#pal-list .pal-item').evaluateAll(xs=>xs.slice(0,5).map(x=>x.textContent));
+   for(const [n,word] of [[1,'Promise · Kim Vale'],[2,'Learned'],[3,'Summary'],[4,'Meeting notes']])assert.ok(subs[n].includes(word),word+': '+subs[n]);
+   assert.ok(!subs[0].includes('Promise'),'a message stays a message')}
+  await page.locator('#pal-list .pal-item',{hasText:'send the new pilot plan'}).click();
+  await page.waitForFunction(()=>location.hash==='#promise/7');assert.ok(!(await page.locator('#palette').evaluate(d=>d.open)),'the palette closes');
+  await palOpenNow(page,1440);await page.locator('#pal-q').fill('what is open with kim then?');
+  await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
+  await page.locator('#pal-list .pal-item',{hasText:'Initech renews'}).click();await page.waitForFunction(()=>!document.querySelector('#feedback').hidden);  // Learning, on What I've learned
+  await palOpenNow(page,1440);await page.locator('#pal-q').fill('what is open with kim now?');
+  await page.waitForFunction(t=>document.querySelector('#pal-answer')?.textContent===t,ANSWER);
+  await page.locator('#pal-list .pal-item',{hasText:'Summary'}).click();await page.waitForFunction(()=>location.hash==='#graph/p1');
+  await page.evaluate(()=>{location.hash='#todos'});mode='answer';
   // The area in view goes with it
   await page.evaluate(()=>{scopeFilter='work'});await palOpenNow(page,1440);await page.keyboard.type('what about the pilot budget');
   await settled(()=>asks.at(-1)?.query==='what about the pilot budget',true,'asked');assert.equal(asks.at(-1).area,'work');
@@ -142,6 +162,10 @@ try{
    return {bg:getComputedStyle(d).backgroundColor,gap:d.getBoundingClientRect().bottom-last.getBoundingClientRect().bottom}});
   assert.ok(!/rgba\(.*, 0(\.\d+)?\)$/.test(edge.bg)&&edge.bg!=='transparent','opaque '+edge.bg);assert.ok(edge.gap>=8,'room under the last row at '+w+': '+edge.gap);
   if(shots)await page.screenshot({path:`${shots}/search-ask-${w}-${colorScheme}.png`});
+  mode='memory';await page.locator('#pal-q').fill('what is open with kim?');
+  await page.locator('#pal-list .pal-item',{hasText:'Meeting notes'}).waitFor();
+  {const over=await page.locator('#pal-list .pal-item').evaluateAll((xs,w)=>xs.filter(x=>{const b=x.getBoundingClientRect();return b.left<0||b.right>w}).length,w);assert.equal(over,0,'its rows fit '+w)}
+  if(shots)await page.screenshot({path:`${shots}/search-ask-memory-${w}-${colorScheme}.png`});
   await context.close()}
  // Reduced motion: the dots stand still
  {const {context,page}=await open(1440,900,'light','reduce');release=new Promise(()=>{});await palOpenNow(page,1440);

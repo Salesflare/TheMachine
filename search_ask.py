@@ -16,6 +16,11 @@ Always only on the connections of the area the owner is looking at (All, Work or
 thread judged to be about their own life. Nothing from the Fleet or a teammate's shared threads goes in: those are not
 messages here.
 
+Besides messages, the answer reads what the Machine already keeps on the question (machine/app/ask_memory.py): matching
+promises, facts, the summary of the person, project or organization asked about, and meeting notes, each fitted to a
+small share of the same prompt (never a larger one) and cited as what it is ([P1], [F1], [S1], [M1]), never as a
+message. Nothing matches: the prompt is the one without them.
+
 Cheap by design, like Help (help_chat.py): one-shot turns on the Machine's own lighter model through OpenClaw, no tools
 and no workspace files, so it can answer and change nothing: it never sends, drafts or makes a to-do. What goes in is
 capped (SOURCES messages, SCOPED_SOURCES for one person's or one time's, of at most SOURCE_CHARS each, PROMPT_CHARS in
@@ -47,7 +52,7 @@ PLAN_TIMEOUT = 25           # seconds the first, small turn may take
 PER_HOUR = 40
 SAID_BY = ('person', 'owner', 'both')
 NONE = re.compile(r'^\W*NONE\W*$')
-CITE = re.compile(r'\[(\d{1,2})\]')
+CITE = re.compile(r'\[([PFSM]?)(\d{1,2})\]')  # [2] a message; [P1] a promise, [F1] learned, [S1] a summary, [M1] meeting notes
 DAY = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 _lock = threading.Lock()
 _asked = []
@@ -226,10 +231,12 @@ def _scope_lines(scope):
     return lines
 
 
-def prompt(question, found, lang='en', scope=None):
+def prompt(question, found, lang='en', scope=None, memory=''):
     """The answer's turn: the question, the messages numbered, and how to answer. Message text is between <<< and >>>:
     other people wrote it, so it is data, never instructions. scope: who and when the messages are already narrowed to
-    (the first turn's plan), or None for the search's best matches."""
+    (the first turn's plan), or None for the search's best matches. memory: what the Machine keeps that matches the
+    question (machine/app/ask_memory.py: promises, facts, a summary, meeting notes, each line with its own tag), after
+    the messages; they fit in what it leaves of PROMPT_CHARS. '' and the prompt is the one without it."""
     head = [
         "Someone typed this into the search box of their assistant, The Machine. Below are messages from their own "
         "mail and chats" + (", found for it." if scope else " that the search found for it, best match first.")]
@@ -250,7 +257,7 @@ def prompt(question, found, lang='en', scope=None):
         'Plain text only: no headings, lists or markdown.',
         '']
     head = '\n'.join(head)
-    tail = '\nQuestion: <<<' + _data(question) + '>>>'
+    tail = (memory + '\n' if memory else '') + '\nQuestion: <<<' + _data(question) + '>>>'
     parts, used = [head], len(head) + len(tail)
     tz = scope['tz'] if scope else dt.timezone.utc
     for n, s in enumerate(found, 1):
@@ -264,24 +271,31 @@ def prompt(question, found, lang='en', scope=None):
     return '\n'.join(parts) + tail
 
 
-def parse(answer, found):
+def parse(answer, found, memory=None):
     """{'answer', 'sources'} from the model's reply: the numbers taken out of the text and kept as links to the
-    messages it cited, and only those: a message it didn't use is no source of the answer. None for NONE or an empty
-    reply."""
+    messages it cited, and only those: a message it didn't use is no source of the answer. memory: {tag: entry} of
+    the promises, facts, summaries and meeting notes its prompt had; the ones it cited come back as 'memory', each as
+    what it is ({'type', 'id', 'title', 'from', 'at'}), never among the messages. None for NONE or an empty reply."""
     text = str(answer or '').strip()
     if not text or NONE.match(text):
         return None
-    cited = []
+    cited, kept = [], []
     for m in CITE.finditer(text):
-        n = int(m[1])
-        if 1 <= n <= len(found) and n not in cited:
+        n, tag = int(m[2]), m[1] + str(int(m[2]))
+        if m[1]:
+            if tag in (memory or {}) and tag not in kept:
+                kept.append(tag)
+        elif 1 <= n <= len(found) and n not in cited:
             cited.append(n)
-    shown = re.sub(r'[ \t]?\[\d{1,2}\](?:\s*\[\d{1,2}\])*', '', text)
+    shown = re.sub(r'[ \t]?\[[PFSM]?\d{1,2}\](?:\s*\[[PFSM]?\d{1,2}\])*', '', text)
     shown = re.sub(r'[*_#`]+', '', shown).strip()
     if len(shown) > ANSWER_CHARS:
         shown = shown[:ANSWER_CHARS].rsplit(' ', 1)[0] + '…'
     picked = [found[n - 1] for n in cited]
-    return {'answer': shown, 'sources': [{k: s[k] for k in ('id', 'kind', 'title', 'from', 'at')} for s in picked]}
+    out = {'answer': shown, 'sources': [{k: s[k] for k in ('id', 'kind', 'title', 'from', 'at')} for s in picked]}
+    if kept:
+        out['memory'] = [{k: v for k, v in memory[tag].items() if k != 'tag'} for tag in kept]
+    return out
 
 
 def plan(question, run, today, lang='en'):
@@ -293,16 +307,18 @@ def plan(question, run, today, lang='en'):
     return parse_plan(run(plan_prompt(question, today, lang)), today)
 
 
-def ask(question, rows, run, lang='en', body=lambda text: text, scope=None, counted=False, mine=None):
+def ask(question, rows, run, lang='en', body=lambda text: text, scope=None, counted=False, mine=None, memory='', kept=None):
     """{'answer', 'sources'} for a question over the found message rows (Store.events rows, best first), or None when
     it isn't a question or nothing was found. run(prompt) makes the model turn and returns its text. scope: who and
-    when the rows are narrowed to (prompt); counted: the question already counted against the hour's limit (plan)."""
+    when the rows are narrowed to (prompt); counted: the question already counted against the hour's limit (plan).
+    memory, kept: what the Machine keeps that matches it, as text and by tag (prompt, parse); with those, a question
+    no message answers is still answered, and the answer has 'memory' for the ones it cited."""
     question = clean_question(question)
     found = sources(rows, body, SCOPED_SOURCES if scope else SOURCES, mine)
-    if len(question) < 3 or not found:
+    if len(question) < 3 or not (found or memory):
         return None
     if not counted and limited():
         raise Unavailable('limit')
     if scope:
         found.sort(key=lambda s: s['at'])  # oldest first: what was said, in order
-    return parse(run(prompt(question, found, lang, scope)), found)
+    return parse(run(prompt(question, found, lang, scope, memory)), found, kept)

@@ -18,6 +18,8 @@ Digite uma pergunta, como “o que a Kim disse sobre o piloto?”, e uma respost
 
 Se você perguntar sobre uma pessoa e um período, como “o que a Kim disse na semana passada?”, ela lê só as mensagens dessa pessoa ou com ela nesses dias, no seu fuso horário. Se ela não enviou nada nesse período, a resposta diz isso e mostra a última mensagem dela com a data.
 
+Ela também lê o que a Machine já guarda sobre a pergunta: promessas abertas ou encerradas nos últimos 30 dias, o que aprendeu, o resumo da pessoa, do projeto ou da organização sobre a qual você pergunta e notas de reuniões. Cada item usado pela resposta aparece abaixo dela, com o nome do que é (Promessa, Aprendido, Resumo, Notas de reuniões), e abre onde fica. Só é lido o que combina com a pergunta, e só da área que você está vendo.
+
 Se várias pessoas têm esse nome, diz de qual se trata. As outras mensagens lidas aparecem em Mensagens. A pergunta que uma busca vazia sugere é sempre uma para a qual há mensagens.
 
 ## Atalhos

@@ -41,6 +41,8 @@ CREATE INDEX IF NOT EXISTS email_bounce_events_address ON email_bounce_events(ad
 CREATE TABLE IF NOT EXISTS email_bounces(address TEXT PRIMARY KEY,kind TEXT NOT NULL,status TEXT,bounced_at TEXT NOT NULL,event_id INTEGER,
   original_id TEXT,thread_id TEXT,account_id TEXT,cleared_at TEXT,cleared_by TEXT,cleared_event INTEGER,updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS email_bounce_scan(id INTEGER PRIMARY KEY CHECK(id=1),last_event INTEGER NOT NULL,backfilled_at TEXT);
+CREATE TABLE IF NOT EXISTS email_bounce_cc(address TEXT NOT NULL,event_id INTEGER NOT NULL,PRIMARY KEY(address,event_id));
+CREATE TABLE IF NOT EXISTS email_bounce_cc_scan(id INTEGER PRIMARY KEY CHECK(id=1),last_event INTEGER NOT NULL,flagged TEXT NOT NULL);
 '''
 SOFT_TIMES = 3           # soft bounces of one address that make it count
 SOFT_DAYS = 7            # ...spread over at least this many days
@@ -313,20 +315,48 @@ def _one(db, row, own):
     return [(row['id'], address, kind) for address, kind in record(db, dict(row), found, own)]
 
 
+def copied(db, own=(), limit=PER_PASS):
+    """Keeps which sent mails copied (cc) a flagged address, in email_bounce_cc: with message protection on, cc is
+    sealed, so SQL cannot find them (message_seal.PLAIN_METADATA) and the rows are read here instead. Each pass reads
+    only the mail collected since the last one; a newly flagged address starts it over, from the oldest open flag (a
+    cleared one does not)."""
+    open_flags = db.execute('SELECT address,bounced_at FROM email_bounces WHERE cleared_at IS NULL ORDER BY address').fetchall()
+    flagged = '\n'.join(r['address'] for r in open_flags)  # as in email_bounces: nothing new is kept in the clear
+    state = db.execute('SELECT last_event,flagged FROM email_bounce_cc_scan WHERE id=1').fetchone()
+    last = state['last_event'] if state and {r['address'] for r in open_flags} <= set(state['flagged'].split('\n')) else 0
+    if open_flags:
+        since = {r['address']: r['bounced_at'] for r in open_flags}
+        own = sorted({str(o).lower() for o in own if o})
+        mine = ''.join(" OR instr(lower(json_extract(metadata,'$.from')),?)>0" for _ in own)
+        rows = db.execute("SELECT id,occurred_at,metadata FROM events WHERE id>? AND kind='gmail.message' AND deleted=0 AND occurred_at>? "
+                          f"AND (instr(metadata,'\"SENT\"')>0{mine}) ORDER BY id LIMIT ?", (last, min(since.values()), *own, limit)).fetchall()
+        for r in rows:
+            m = json.loads(r['metadata']) if isinstance(r['metadata'], str) else r['metadata'] or {}
+            for address in set(addresses_in(m.get('cc'))) & set(since):
+                if r['occurred_at'] > since[address]:
+                    db.execute('INSERT OR IGNORE INTO email_bounce_cc(address,event_id) VALUES(?,?)', (address, r['id']))
+        last = rows[-1]['id'] if rows else last
+    db.execute('INSERT INTO email_bounce_cc_scan(id,last_event,flagged) VALUES(1,?,?) ON CONFLICT(id) DO UPDATE SET last_event=excluded.last_event,'
+               'flagged=excluded.flagged', (last, flagged))
+
+
 def clear(db, now, own=()):
     """Clears a flag when the address works again: a later message from it, or a later send to it with no bounce of it
     within CLEAR_HOURS. Returns [(address, how)]."""
     if not _table(db):
         return []
+    ensure(db)
+    copied(db, own)
     cleared = []
     settled = (parse_time(now) - dt.timedelta(hours=CLEAR_HOURS)).isoformat()
     for b in db.execute('SELECT * FROM email_bounces WHERE cleared_at IS NULL').fetchall():
         address = b['address']
         bounce_ids = {r[0] for r in db.execute('SELECT event_id FROM email_bounce_events WHERE address=?', (address,))}
         how = None
+        # from and to are kept in the clear; a mail that only copied the address comes from email_bounce_cc (copied)
         for r in db.execute("SELECT id,occurred_at,metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND occurred_at>? "
                             "AND (instr(lower(json_extract(metadata,'$.from')),?)>0 OR instr(lower(json_extract(metadata,'$.to')),?)>0 "
-                            "OR instr(lower(json_extract(metadata,'$.cc')),?)>0) ORDER BY occurred_at", (b['bounced_at'], address, address, address)):
+                            "OR id IN (SELECT event_id FROM email_bounce_cc WHERE address=?)) ORDER BY occurred_at", (b['bounced_at'], address, address, address)):
             if r['id'] in bounce_ids:
                 continue
             m = json.loads(r['metadata']) if isinstance(r['metadata'], str) else r['metadata']

@@ -1202,23 +1202,45 @@ def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PE
 # the store. Nothing is sent to them.
 TELEGRAM_USER = re.compile(r'[0-9]{1,20}')
 TELEGRAM_SCAN = 5000  # group messages read to find someone met only in groups
+TELEGRAM_READ = 4 * TELEGRAM_SCAN  # Telegram messages read at most to find those: a chat's kind is told from the row
+
+
+def _telegram_metadata(metadata):
+    try:
+        found = json.loads(metadata) if isinstance(metadata, str) else metadata
+    except ValueError:
+        return {}
+    return found if isinstance(found, dict) else {}
 
 
 def telegram_addresses(db, wanted, accounts):
     """{'tg:<id>': (account id, user id)} for the wanted people: their private chat first, else a group message they
-    sent (newest first)."""
+    sent (newest first).
+
+    Only chat_id is matched in SQL: with message protection on, chat_kind and sender_id are sealed
+    (message_seal.PLAIN_METADATA), so those are read from the rows, which open as they are read."""
     found = {}
     marks = ','.join('?' * len(accounts))
-    for chat, kind, account in db.execute(f"SELECT DISTINCT json_extract(metadata,'$.chat_id'),json_extract(metadata,'$.chat_kind'),account_id FROM events "
-                                          f"WHERE kind='telegram.message' AND account_id IN ({marks})", list(accounts)):
+    for chat, account in db.execute(f"SELECT DISTINCT json_extract(metadata,'$.chat_id'),account_id FROM events "
+                                    f"WHERE kind='telegram.message' AND account_id IN ({marks})", list(accounts)).fetchall():
         chat = str(chat or '')
-        if kind != 'group' and TELEGRAM_USER.fullmatch(chat) and 'tg:' + chat in wanted:
-            found.setdefault('tg:' + chat, (account, chat))
+        if not TELEGRAM_USER.fullmatch(chat) or 'tg:' + chat not in wanted or 'tg:' + chat in found:
+            continue
+        one = db.execute("SELECT metadata FROM events WHERE kind='telegram.message' AND account_id=? AND json_extract(metadata,'$.chat_id')=? LIMIT 1",
+                         (account, chat)).fetchone()
+        if one and _telegram_metadata(one[0]).get('chat_kind') != 'group':
+            found['tg:' + chat] = (account, chat)
     if len(found) < len(wanted):
-        rows = db.execute(f"SELECT json_extract(metadata,'$.sender_id'),account_id FROM events WHERE kind='telegram.message' AND account_id IN ({marks}) "
-                          f"AND json_extract(metadata,'$.chat_kind')='group' ORDER BY occurred_at DESC LIMIT ?", [*accounts, TELEGRAM_SCAN])
-        for sender, account in rows:
-            sender = str(sender or '')
+        groups = 0
+        for metadata, account in db.execute(f"SELECT metadata,account_id FROM events WHERE kind='telegram.message' AND account_id IN ({marks}) "
+                                            "ORDER BY occurred_at DESC LIMIT ?", [*accounts, TELEGRAM_READ]):
+            m = _telegram_metadata(metadata)
+            if m.get('chat_kind') != 'group':
+                continue
+            groups += 1
+            if groups > TELEGRAM_SCAN:
+                break
+            sender = str(m.get('sender_id') or '')
             if TELEGRAM_USER.fullmatch(sender) and 'tg:' + sender in wanted:
                 found.setdefault('tg:' + sender, (account, sender))
                 if len(found) == len(wanted):

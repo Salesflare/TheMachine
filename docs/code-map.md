@@ -88,11 +88,19 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
+  - `machine/app/ask_memory.py`: what Ask reads besides messages, as four blocks on the `ask` recall: promises, facts,
+    the asked-about record's summary and meeting notes that match the question, cited as what they are.
   - `machine/app/recall.py` (`recall(app, purpose, about, budget)`): the one way a prompt reads memory. The review,
     preparation and Ask builders ask it for each block's text; the pickers behind it are unchanged and say what they
     put in (`memory_use.note`), and the builder logs that once its run is admitted (`memory_use.record`). A new reader
     of memory is a block there, not another call in a builder. `machine/app/senders.py` is the review's `sender`
     block: one line per sender of the claimed batch the Graph knows something specific about.
+  - `machine/app/review_facts.py` (`ReviewFacts`): which facts a review gets once they no longer all fit its cap: the
+    standing ones first, then the closest to the waiting signals (stored vectors), and a turn for the one a review saw
+    longest ago.
+  - `machine/app/claim_reply.py`: what a claim (`begin_analysis`) carries next to its signals: the boards with only
+    the claim's own projects (`boards`), one whole board on request (`lookup`, `graph` `board`), and `fit`, which
+    keeps the whole reply under the review page size and says in `left_out` what it dropped.
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
     personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
     reads the other side at view time (`annotate`), so no Fleet sees it.
