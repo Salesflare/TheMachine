@@ -190,6 +190,31 @@ class Birthdays(unittest.TestCase):
         todos, run = self.morning()
         self.assertEqual(todos, [])
 
+    def test_a_contact_birthday_finds_its_person_by_any_address_or_number_never_a_shared_one(self):
+        # Sam goes by a second address; Kim's number was added in local form (the owner is in Belgium); Lou's with spaces
+        self.person('email:sam@mail.example', 'Sam Rivera', 3.4, events=[self.mail('sam@mail.example', True, 3)],
+                    emails=[{'value': 'sam@mail.example', 'by': 'mail'}, {'value': 'Sam.Rivera@Home.example', 'by': 'you'}])
+        self.person('email:kim@mail.example', 'Kim Park', 2.4, events=[self.mail('kim@mail.example', True, 3)],
+                    phones=[{'value': '0475 12 34 56', 'by': 'you'}])
+        self.person('email:lou@mail.example', 'Lou Grant', 2.4, events=[self.mail('lou@mail.example', True, 3)],
+                    phones=[{'value': '+1 (555) 010-0105', 'by': 'you'}])
+        # Jo and Pat share a family number: whose birthday it is can't be told, so it is nobody's
+        self.person('email:jo@mail.example', 'Jo Lane', 2.4, events=[self.mail('jo@mail.example', True, 3)], phones=[{'value': '+3225550100', 'by': 'you'}])
+        self.person('email:pat@mail.example', 'Pat Lane', 0.1, phones=[{'value': '02 555 01 00', 'by': 'you'}])
+        day = f'--{self.today:%m-%d}'
+        with self.store.connect() as db:
+            enrichment.offer_facts(db, [(['email:sam.rivera@home.example'], {'birthday': day}, enrichment.RECORD),
+                                        (['wa:32475123456'], {'birthday': day}, enrichment.RECORD),
+                                        (['wa:15550100105'], {'birthday': day}, enrichment.RECORD),
+                                        (['wa:3225550100'], {'birthday': day}, enrichment.RECORD)], 'google', ago(0))
+            found = birthdays.today(db, self.today, local_tz(), code='32')
+            self.assertEqual(sorted(p['name'] for p in found), ['Kim Park', 'Lou Grant', 'Sam Rivera'])
+            self.assertEqual(birthdays.person_ids('email:kim@mail.example', {'phones': [{'value': '0475 12 34 56'}]}),
+                             {'email:kim@mail.example'})  # without the owner's region a local number is no one's
+        self.assertEqual(self.app.birthdays_code(), '32')
+        todos, run = self.morning()
+        self.assertEqual(sorted(t['title'] for t in todos), ['Wish Kim Park a happy birthday', 'Wish Lou Grant a happy birthday', 'Wish Sam Rivera a happy birthday'])
+
     def test_offered_as_a_template(self):
         self.assertIn('birthdays', routine_templates.TEMPLATES)
         with self.store.connect() as db:

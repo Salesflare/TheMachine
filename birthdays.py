@@ -23,6 +23,7 @@ import json
 import re
 import unicodedata
 
+import crm_fixes
 import graph
 from mail_senders import addresses
 
@@ -121,14 +122,47 @@ def by_name(people, name):
     return found[0]['id'] if len(found) == 1 else None
 
 
-def by_identifier(people, identifiers):
-    """{identifier: node id} for the close people these identifiers are theirs."""
-    out = {}
-    for node_id, info in ((p['id'], p['info']) for p in people.values()):
-        for identifier in set(info.get('identifiers') or ()) | {node_id}:
-            if identifier in identifiers:
-                out[identifier] = node_id
-    return out
+def same_form(identifier):
+    """An identifier the way a kept birthday has it: an email address in lower case, a number as 'wa:' and its E.164
+    digits."""
+    kind, _, value = str(identifier or '').partition(':')
+    if kind == 'email':
+        return 'email:' + value.strip().lower()
+    if kind == 'wa':
+        digits = re.sub(r'\D', '', value.split('@')[0])
+        return 'wa:' + digits if 7 <= len(digits) <= 15 else identifier
+    return identifier
+
+
+def person_ids(node_id, info, code=None):
+    """Every identifier a person in the Graph goes by: their own, every email address on them (aliases and ones the
+    owner added, not only the first) and every phone number in E.164, read in the owner's region (code) when it has no
+    country code."""
+    ids = {same_form(i) for i in set(info.get('identifiers') or ()) | {node_id}}
+    for item in info.get('emails') or ():
+        value = str((item.get('value') if isinstance(item, dict) else item) or '').strip()
+        if '@' in value:
+            ids.add(same_form('email:' + value))
+    for item in info.get('phones') or ():
+        value = str((item.get('value') if isinstance(item, dict) else item) or '').strip()
+        found = crm_fixes.phone(value, code) if value else None
+        if found and re.fullmatch(r'\+[1-9]\d{6,14}', found):
+            ids.add('wa:' + found[1:])
+    return ids
+
+
+def by_identifier(db, people, identifiers, code=None):
+    """{identifier: node id} for the close people these identifiers are theirs. An identifier more than one person in
+    the Graph goes by (a shared number, a team address) is nobody's: never a guess."""
+    wanted = {same_form(i): i for i in identifiers}
+    if not wanted:
+        return {}
+    owners = {}
+    for row in db.execute("SELECT id,info FROM graph_nodes WHERE kind='person'"):
+        info = people[row['id']]['info'] if row['id'] in people else json.loads(row['info'] or '{}')
+        for identifier in person_ids(row['id'], info, code) & set(wanted):
+            owners.setdefault(identifier, set()).add(row['id'])
+    return {wanted[i]: next(iter(nodes)) for i, nodes in owners.items() if len(nodes) == 1 and next(iter(nodes)) in people}
 
 
 # --- the sources -------------------------------------------------------------------------------------------------------
@@ -181,9 +215,10 @@ def field_ids(db, day):
     return [(r['node_id'], 'graph') for r in rows if on(day, birthday_value(str(r['value'] or '')[:10]))]
 
 
-def today(db, day, tz, outlook=()):
+def today(db, day, tz, outlook=(), code=None):
     """[{id, name, sources}] whose birthday it is on this day among the close people, once each, at most MAX_A_DAY (the
-    closest first). outlook: the titles on Outlook Birthdays calendars today."""
+    closest first). outlook: the titles on Outlook Birthdays calendars today; code: the owner's calling code, for a
+    number kept without its own."""
     people = close_people(db)
     if not people:
         return []
@@ -193,7 +228,7 @@ def today(db, day, tz, outlook=()):
         if node:
             found.setdefault(node, set()).add(source)
     ids = fact_ids(db, day) + field_ids(db, day)
-    nodes = by_identifier(people, {i for i, _ in ids})
+    nodes = by_identifier(db, people, {i for i, _ in ids}, code)
     for identifier, source in ids:
         if identifier in nodes:
             found.setdefault(nodes[identifier], set()).add(source)
