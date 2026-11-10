@@ -191,24 +191,24 @@ def link_fact(db, fact_id, node_ids, by):
                    [(fact_id, n, by, now()) for n in dict.fromkeys(node_ids)])
 
 
-def link_named(db, fact_id, text, suggestion_id=None, names=None):
+def link_named(db, fact_id, text, suggestion_id=None, names=None, config=None):
     """Tie a fact about no one to the one record its own words name (fact_links.named). (that record's id or None,
     why). One tied already, or that the owner said isn't about someone, is left alone."""
     if db.execute('SELECT 1 FROM fact_about WHERE fact_id=?', (fact_id,)).fetchone():
         return None, 'tied'
-    node, why = fact_links.named(fact_links.index(db) if names is None else names, text, fact_links.todo_records(db, suggestion_id))
+    node, why = fact_links.named(fact_links.index(db, config or {}) if names is None else names, text, fact_links.todo_records(db, suggestion_id))
     if node:
         link_fact(db, fact_id, [node], fact_links.BY)
     return node, why
 
 
-def link_named_all(db):
+def link_named_all(db, config=None):
     """The one-time pass over the facts already learned (learning_loop.name_links): each about no one that names one
     record is tied to it. {'pairs': [[fact id, record id]], 'shared': n, 'several': n} (shared: a name several records
     have; several: more than one record named; both left alone), or None while there is no graph to name."""
     if not db.execute('SELECT 1 FROM graph_nodes LIMIT 1').fetchone():
         return None
-    names, out = fact_links.index(db), {'pairs': [], 'shared': 0, 'several': 0}
+    names, out = fact_links.index(db, config or {}), {'pairs': [], 'shared': 0, 'several': 0}
     for f in db.execute("SELECT id,text,suggestion_id FROM facts WHERE removed_at IS NULL AND kind='fact' AND source IS NULL ORDER BY id").fetchall():
         node, why = link_named(db, f['id'], f['text'], f['suggestion_id'], names)
         if node:
@@ -416,7 +416,7 @@ class FactsStore:
                                                 ','.join('?' for _ in merging) + ')', sorted(merging))] if merging and storage == 'fact' else []
             named = []  # no one said who it is about: the one record its own words name (fact_links.py)
             if storage == 'fact' and source is None and not existing and not (subjects or carried):
-                node, _ = fact_links.named(fact_links.index(db), text, fact_links.todo_records(db, note['suggestion_id']))
+                node, _ = fact_links.named(fact_links.index(db, self.own_config()), text, fact_links.todo_records(db, note['suggestion_id']))
                 named = [node] if node else []
             if not existing and not (subjects or carried or named):  # full: one not used lately makes room, never an error
                 count = self.general_count(db) - general(merging)
@@ -447,7 +447,13 @@ class FactsStore:
 
     link_fact = staticmethod(link_fact)  # a function of db, at the top of this module
 
-    link_named = staticmethod(link_named)  # a function of db, at the top of this module
+    def own_config(self):
+        """The config fact_links reads the owner's own records from: the service's, or just the accounts."""
+        return self.config if self.config.get('accounts') else {**self.config, 'accounts': self.accounts}
+
+    def link_named(self, db, fact_id, text):
+        return link_named(db, fact_id, text, config=self.own_config())
+
 
     unlink_named = staticmethod(unlink_named)  # a function of db, at the top of this module
 
@@ -459,7 +465,7 @@ class FactsStore:
                 if learning_loop.named_done(db):
                     return None
                 db.execute('BEGIN IMMEDIATE')
-                return learning_loop.name_links(db, link_named_all)
+                return learning_loop.name_links(db, lambda db: link_named_all(db, self.own_config()))
         except Exception as error:  # a busy database: the next round tries again
             LOG.error('fact name links error=%s', type(error).__name__)
             return None

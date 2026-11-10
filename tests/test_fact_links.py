@@ -70,19 +70,74 @@ class FactLinks(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES(?,?,?,1,0,?)', (node_id, kind, name, json.dumps(info)))
 
-    def named(self, text, near=()):
+    def named(self, text, near=(), config=None):
         with self.store.connect() as db:
-            return fact_links.named(fact_links.index(db), text, near)
+            return fact_links.named(fact_links.index(db, config), text, near)
 
     def test_a_text_names_a_record_by_its_own_name_and_only_one(self):
         self.assertEqual(self.named('Ann Example wants invoices as a PDF.'), (ANN, 'one'))
         self.assertEqual(self.named("Send Ann Example's invoices to finance."), (ANN, 'one'))  # a possessive is still their name
-        self.assertEqual(self.named('We pay Globex within 30 days.'), (GLOBEX, 'one'))
+        self.assertEqual(self.named('We pay Globex within 30 days.', {GLOBEX}), (GLOBEX, 'one'))
+        self.assertEqual(self.named('We pay Globex within 30 days.'), (None, 'none'))  # one word, and not on its to-do: too weak
+        self.assertEqual(self.named('Ann Example introduced us to Globex.'), (None, 'several'))
         self.assertEqual(self.named('Ann wants invoices as a PDF.'), (None, 'none'))  # a first name alone names no one
         self.assertEqual(self.named('ann example wants a pdf, and globex too.'), (None, 'none'))  # not their name as written
         self.assertEqual(self.named('Globexit is a word of its own.'), (None, 'none'))  # whole words only
         self.assertEqual(self.named('Ann Example and Lee Park both want a PDF.'), (None, 'several'))
         self.assertEqual(self.named('Replies stay under five sentences.'), (None, 'none'))
+
+    def test_one_word_at_a_sentence_start_names_nothing(self):
+        self.node('org:close.example', 'Close', 'org')
+        self.node('org:monday.example', 'Monday', 'org')
+        self.node('org:closelabs.example', 'Close Labs', 'org')
+        for text in ('Close the deal by Friday.', 'Monday is my no-meeting day.', 'Send the offer first. Close wants it by Friday.',
+                     'Two things: Monday is for planning.', 'Globex pays within 30 days.'):
+            self.assertEqual(self.named(text), (None, 'none'), text)  # every sentence starts with a capital: no evidence
+        self.assertEqual(self.named('We moved the pipeline to Close last year.', {'org:close.example'}), ('org:close.example', 'one'))
+        self.assertEqual(self.named('Close the deal by Friday.', {'org:close.example'}), (None, 'none'))  # also on its own to-do
+        self.assertEqual(self.named('Close Labs pays within 30 days.'), ('org:closelabs.example', 'one'))  # several words: a name
+        self.assertEqual(self.named('Ann Example wants invoices as a PDF.'), (ANN, 'one'))
+        self.assertIsNone(self.store.remember_fact('Close the deal by Friday when a client asks.', 'owner-note').get('about'))
+
+    def test_a_name_the_machine_works_with_is_the_tool_not_the_company(self):
+        self.assertIn('slack', fact_links.tools())  # from the product's own lists of sources, connectors and channels
+        self.assertTrue({'gmail', 'whatsapp', 'telegram', 'outlook', 'linkedin', 'zoom', 'teams', 'stripe', 'salesflare'} <= fact_links.tools())
+        self.assertNotIn('globex', fact_links.tools())
+        self.node('org:slack.example', 'Slack', 'org')
+        self.node('org:salesflare.example', 'Salesflare', 'org')
+        self.node('org:teams.example', 'Microsoft Teams', 'org')
+        self.assertEqual(self.named('Never message me on Slack after 8.', config=CONFIG), (None, 'none'))
+        self.assertEqual(self.named('The pipeline lives in Salesflare for now.', config=CONFIG), (None, 'none'))
+        self.assertEqual(self.named('Calls with clients go over Microsoft Teams only.', config=CONFIG), (None, 'none'))
+        self.assertEqual(self.named('We pay Globex within 30 days.', {GLOBEX}, CONFIG), (GLOBEX, 'one'))
+        self.assertEqual(self.named('Never message me on Slack after 8.', {'org:slack.example'}, CONFIG), (None, 'none'))
+        self.store.config = CONFIG
+        self.assertIsNone(self.store.remember_fact('Never message me on Slack after 8.', 'owner-note').get('about'))
+        with self.store.connect() as db:
+            old = db.execute("INSERT INTO facts(text,decision_id,created_at,kind) VALUES('Send files over Slack, not by mail.','owner-note',?,'fact')", (NOW.isoformat(),)).lastrowid
+        self.assertEqual(self.store.name_links_once()['pairs'], [])  # the one-time pass holds the same rule
+        self.assertEqual(self.about(old), [])
+        # the model saying who by name is its own call: the company can still be told
+        self.assertEqual(self.store.remember_fact('Their sales team answers within a day.', 'owner-note', about=['Slack'])['about'], ['org:slack.example'])
+
+    def test_the_owners_own_person_and_organization_are_never_what_a_fact_is_about(self):
+        config = {**CONFIG, 'owner_name': 'Sam Owner'}
+        self.node('email:sam@acme.example', 'Sam Owner')          # their own address
+        self.node('li:sam-owner', 'Sam Owner')                    # their name on another network
+        self.node('org:acme.example', 'Acme', 'org')              # their mail domain's organization
+        self.node('org:acmegroup.example', 'Acme Group', 'org')   # where a colleague is
+        self.node('email:kim@acmegroup.example', 'Kim Mate', colleague=True, org='org:acmegroup.example')
+        for text in ('Lee asked whether Sam Owner signs the contracts.', 'Invoices from Acme go out on the 5th.', 'At Acme Group the books close on the 5th.'):
+            self.assertEqual(self.named(text, config=config), (None, 'none'), text)
+        self.assertEqual(self.named('Kim Mate signs the contracts.', config=config), ('email:kim@acmegroup.example', 'one'))  # a colleague is a person
+        self.assertEqual(self.named('We pay Globex within 30 days.', {GLOBEX}, config), (GLOBEX, 'one'))
+        self.assertEqual(self.named('Invoices from Acme go out on the 5th.', {'org:acme.example'}, config), (None, 'none'))
+        with self.store.connect() as db:
+            db.execute("UPDATE graph_nodes SET id='crm:77' WHERE id='org:acme.example'")  # their company under another id
+        self.assertEqual(self.named('Invoices from Acme go out on the 5th.', {'crm:77'}, config), (None, 'none'))
+        self.store.config = config
+        self.assertIsNone(self.store.remember_fact('Invoices from Acme go out on the 5th.', 'owner-note').get('about'))
+        self.assertIsNone(self.store.remember_fact('Lee asked whether Sam Owner signs the contracts.', 'owner-note').get('about'))
 
     def test_a_name_two_records_share_links_nothing_unless_one_is_on_the_facts_own_to_do(self):
         self.node('li:ann-example-2', 'Ann Example')

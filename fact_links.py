@@ -7,14 +7,23 @@ it by record. named() finds the one person, organization or project a fact's tex
 - the record's own name, whole words, same capitals ("Acme" is not "acme");
 - a person by their full name only: a first name alone names no one;
 - one record: a name two records share links nothing, unless exactly one of them is on the fact's own to-do; a text
-  that names two different records links nothing.
+  that names two different records links nothing;
+- a one-word name that starts a sentence names nothing: every sentence starts with a capital ("Close the deal");
+- a one-word name is weak by itself (many organizations are called like a common word): it links only when that
+  record is on the fact's own to-do. Elsewhere it links nothing, and it still counts as a second record named;
+- a name the Machine itself works with is the tool, not the company: what its sources, connectors and channels are
+  called (tools(), read from the product's own lists), so "not on Slack after 8" is about the owner;
+- never the owner: their own person record, and their own organization (their mail domain's, or their
+  colleagues'), are not what a fact is "about". Facts about them are the owner's own memory.
+
+A wrong link costs more than a missing one: a linked fact leaves the general facts every review reads.
 
 This module only reads. machine/store/facts.py writes the links (by 'name'): link_named when a fact is saved, and
 link_named_all one time for the facts already there, which leaves one entry under Learning, Changes, with Undo
 (learning_loop.name_links). A link the owner removed stays removed (fact_about keeps it with removed_at), also for a
 later save of the same fact."""
+import functools
 import json
-import re
 
 BY = 'name'            # fact_about.by for a link read from the fact's words
 EDGE = '.,;:!?()[]{}"“”‘’\'«»'
@@ -47,9 +56,56 @@ def name_key(kind, name):
     return key if len(key) >= 3 else None
 
 
-def index(db):
+@functools.lru_cache(maxsize=1)
+def tools():
+    """What the Machine's own sources, connectors and channels are called, lowercase: each label whole and each of
+    its capitalized words ("Salesflare CRM": salesflare crm, salesflare, crm). Read from the product's own lists
+    (onboarding's labels and every connector's, and the channels a voice can have), never written out here."""
+    import onboarding
+    from machine.store import voices
+    labels = {*onboarding.LABELS.values(), *voices.VOICE_CHANNELS, *voices.OWN_KINDS.values()}
+    for service in onboarding.sources():
+        try:
+            labels.add(str(onboarding.label(onboarding.SERVICES.get(service, service)) or ''))
+        except Exception:  # a connector that doesn't load names nothing
+            continue
+    out = set()
+    for label in labels:
+        parts = [w for w, _ in words(label)]
+        out.add(' '.join(parts).casefold())
+        out.update(w.casefold() for w in parts if w[:1].isupper())
+    return frozenset(out - {''})
+
+
+def own(db, config, rows):
+    """The ids among rows (graph_nodes) that are the owner's own: a person record at one of their addresses or under
+    their name, and their own organization (their mail domain's, the one their colleagues are at, and an
+    organization or project called like their own domain: "Acme" for acme.example, whatever id it has)."""
+    import graph
+    owner = graph.Owner(config or {}, db)
+    name = graph.plain_name((config or {}).get('owner_name'))
+    orgs, identifiers = graph.colleagues(db)  # as graph.own_domain tells the owner's own company
+    theirs = {str(o) for o in orgs if o} | {'org:' + d for d in owner.domains} | {'org:' + i.rsplit('@', 1)[1].lower() for i in identifiers if '@' in i}
+    labels = {d.split('.')[0].casefold() for d in owner.domains} - {''}
+    out = set()
+    for r in rows:
+        if r['kind'] == 'person':
+            try:
+                ids = [r['id'], *(str(i) for i in json.loads(r['info'] or '{}').get('identifiers') or ())]
+            except (ValueError, AttributeError):
+                ids = [r['id']]
+            if any(owner.has(i) for i in ids) or (name and graph.plain_name(r['name']) == name):
+                out.add(r['id'])
+        elif r['id'] in theirs or ' '.join(str(r['name'] or '').split()).casefold() in labels:
+            out.add(r['id'])
+    return out
+
+
+def index(db, config=None):
     """{name: {record id: kind}} of the people, organizations and projects a text can name. A record known under
-    several ids (info.identifiers) is one record."""
+    several ids (info.identifiers) is one record. config (the service's, with its accounts): then only what a fact's
+    own words may name, so without the owner's own records and without the names of the Machine's tools; without it,
+    every record, for an about= that says who by name."""
     rows = db.execute("SELECT id,kind,name,info FROM graph_nodes WHERE kind IN ('person','org','project')").fetchall()
     alias = {}
     for r in rows:
@@ -58,10 +114,11 @@ def index(db):
                 alias.setdefault(str(other), r['id'])
         except (ValueError, AttributeError):
             continue
+    skip, tool = (own(db, config, rows), tools()) if config is not None else (set(), frozenset())
     names = {}
     for r in rows:
         key = name_key(r['kind'], r['name'])
-        if key:
+        if key and r['id'] not in skip and key.casefold() not in tool:
             names.setdefault(key, {})[alias.get(r['id'], r['id'])] = r['kind']
     return names
 
@@ -69,19 +126,22 @@ def index(db):
 def named(names, text, near=()):
     """(record id or None, why): the one record text names. why: 'one', 'none' (it names no record), 'shared' (a
     name several records have) or 'several' (it names more than one record). near: the records on the fact's own
-    to-do, which settle a shared name when exactly one of them has it."""
+    to-do, which settle a shared name when exactly one of them has it, and which a one-word name needs."""
     parts = words(text)
-    found, shared, taken = {}, False, set()
+    found, shared, loose, taken = {}, False, False, set()
     for size in range(min(MAX_WORDS, len(parts)), 0, -1):  # the longest name first: "Acme Labs" before "Acme"
         for at in range(len(parts) - size + 1):
             span = range(at, at + size)
-            if taken.intersection(span):
+            if taken.intersection(span) or (size == 1 and parts[at][1]):  # one word at a sentence's start: no name
                 continue
             have = names.get(' '.join(parts[i][0] for i in span))
             if not have:
                 continue
             taken.update(span)
             ids = list(have)
+            if size == 1 and len([i for i in ids if i in near]) != 1:
+                loose = True  # one word, and nothing on the to-do says it is that record
+                continue
             if len(ids) > 1:
                 close = [i for i in ids if i in near]
                 if len(close) != 1:
@@ -91,7 +151,7 @@ def named(names, text, near=()):
             found[ids[0]] = have[ids[0]]
     if shared:
         return None, 'shared'
-    if len(found) != 1:
+    if len(found) != 1 or loose:
         return None, 'several' if found else 'none'
     return next(iter(found)), 'one'
 
@@ -136,7 +196,8 @@ def unnamed(text, about, who):
 
 
 def todo_records(db, suggestion_id):
-    """The ids of the records on a to-do's signals, each with the other ids it is known under."""
+    """The ids of the records on a to-do's signals, each with the other ids it is known under and, for a person,
+    their organization."""
     row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone() if suggestion_id else None
     try:
         ids = [int(i) for i in json.loads(row['event_ids'] or '[]')] if row else []
@@ -149,7 +210,9 @@ def todo_records(db, suggestion_id):
                         + ','.join('?' for _ in ids) + ')', ids):
         out.add(r['id'])
         try:
-            out.update(str(i) for i in json.loads(r['info'] or '{}').get('identifiers') or ())
+            info = json.loads(r['info'] or '{}')
+            out.update(str(i) for i in info.get('identifiers') or ())
+            out.update([str(info['org'])] if info.get('org') else [])
         except (ValueError, AttributeError):
             continue
     return out
