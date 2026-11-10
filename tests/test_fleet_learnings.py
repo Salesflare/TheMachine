@@ -14,8 +14,10 @@ import unittest.mock
 spec = importlib.util.spec_from_file_location('fleet_learn_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+import activity_log
 import fleet
 import fleet_learnings as fl
+import learning_loop
 import message_seal
 
 EVIDENCE = {'companies': {'1': 'a' * 16, '2': 'b' * 16, '3': 'a' * 16}}
@@ -153,6 +155,7 @@ class Pass(unittest.TestCase):
             # the turn's draft goes once it is read: only how many it drafted stays on the run, also for a dropped one
             self.assertEqual(db.execute('SELECT draft FROM profile_runs WHERE run_id=?', (run_id,)).fetchone()[0], '{"drafted": 2}')
             self.assertEqual(fl.finish(db, run_id, [], log=self.app.fleet.log), [])
+            self.assertEqual(db.execute('SELECT draft FROM profile_runs WHERE run_id=?', (run_id,)).fetchone()[0], '{"drafted": 2}')  # the count stays
         self.assertEqual(self.app.fleet.logged[0][3:], ('your Fleet', 'learning', GOOD['text'], 'shared with the team, from team conversations'))
 
 
@@ -170,7 +173,13 @@ class Locked(unittest.TestCase):
         store = a.Store(self.path, protect=True)
         with store.connect() as db:
             fl.ensure(db)
+            learning_loop.ensure(db)
+            for statement in fleet.SCHEMA.split(';'):
+                db.execute(statement)
         with store.connect() as db:
+            db.execute("INSERT INTO fleet_log(at,direction,fleet,kind,what,outcome) VALUES('2026-11-01','out','f1','learning',?,'shared')", (GOOD['text'],))
+            db.execute("INSERT INTO learning_changes(run_id,at,kind,target,before,after,why,status) VALUES('r','2026-11-01','fact','7',?,'Replies go out before noon.',"
+                       "'Corrected on a to-do.','applied')", (json.dumps({'id': 6, 'text': 'Replies go out in the evening.'}),))
             db.execute("INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES('f1',?,'process',?,0.9,'r','2026-11-01')",
                        (fl.fingerprint(GOOD['text']), GOOD['text']))
             db.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES('f1',?,'A removed team learning about refunds.','me','2026-11-01')", ('b' * 32,))
@@ -182,6 +191,13 @@ class Locked(unittest.TestCase):
                 'usable': lambda: fl.usable(db, 'f1'), 'pick': lambda: fl.pick(db, 'f1', 'Refund request', 'A refund via the support inbox.'),
                 'records': lambda: fl.records(db, 'f1', lambda local: local),
                 'remove': lambda: fl.remove(db, 'f1', fl.fingerprint(GOOD['text']))}
+
+    def others(self, db):
+        """The readers of the other sealed learning text: learned changes (the Learning page, Undo) and the Fleet's log
+        (the Fleet tab, Activity). Nothing reads learned_fixes.text back: only its key and state are."""
+        return {'recent': lambda: learning_loop.recent(db), 'undo': lambda: learning_loop.undo(db, 1),
+                'fleet tab log': lambda: db.execute('SELECT at,direction,fleet,name,kind,what,outcome FROM fleet_log ORDER BY id DESC LIMIT 100').fetchall(),
+                'activity': lambda: list(activity_log._fleet(db, 10, {'fleet_log'}))}
 
     def test_without_the_key_the_app_does_not_start_and_a_reader_gets_an_error_not_an_empty_list(self):
         self.key.unlink()
@@ -199,7 +215,7 @@ class Locked(unittest.TestCase):
         self.key.write_bytes(base64.b64encode(os.urandom(32)) + b'\n')
         store = a.Store(self.path)
         with store.connect() as db:
-            for name, read in self.readers(db).items():
+            for name, read in (self.readers(db) | self.others(db)).items():
                 with self.subTest(reader=name), self.assertRaises(message_seal.SealError):
                     read()
         tab = type('Tab', (), {'connect': store.connect, 'teammates': lambda self, ref: []})()
@@ -207,6 +223,7 @@ class Locked(unittest.TestCase):
             fleet.Fleet.learnings_view(tab, 'f1')
         with sqlite3.connect(self.path) as raw:  # nothing was changed by the failed reads
             self.assertEqual(raw.execute('SELECT count(*),typeof(text) FROM fleet_learnings').fetchone(), (1, 'blob'))
+            self.assertEqual(raw.execute('SELECT status,typeof(why) FROM learning_changes').fetchone(), ('applied', 'blob'))
 
 
 if __name__ == '__main__':

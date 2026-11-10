@@ -276,10 +276,12 @@ def finish(db, run_id, names, log=None):
         return []
     evidence = json.loads(run['evidence'] or '{}')
     fleet = evidence.get('fleet')
-    drafted = json.loads(run['draft']).get('learnings') or []
+    draft = json.loads(run['draft'])
+    drafted = draft.get('learnings') or []
     # the draft is read here once, then only its count stays on the run: what was kept is sealed in fleet_learnings,
     # and what was dropped (it may name someone) is not kept at all. profile_runs.draft itself stays readable.
-    db.execute('UPDATE profile_runs SET draft=? WHERE run_id=?', (json.dumps({'drafted': len(drafted)}), run_id))
+    if 'learnings' in draft:  # not again on a second call: the count stays
+        db.execute('UPDATE profile_runs SET draft=? WHERE run_id=?', (json.dumps({'drafted': len(drafted)}), run_id))
     ensure(db)
     if not fleet or db.execute('SELECT 1 FROM fleet_learnings WHERE run_id=?', (run_id,)).fetchone():
         return []
