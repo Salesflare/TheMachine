@@ -84,6 +84,22 @@ for(const type of ['pointerup','pointercancel','keyup','dragend'])addEventListen
 addEventListener('blur',e=>{if(e.target===window)pressLetGo()});
 const pressedIn=(node,again)=>{if(!pressedNode||!node.contains?.(pressedNode))return false;pressedAgain=again;return true};
 function drawKept(box,h,again){if(h==='')h=html``;keptKids(box,htmlNodes(h),again)}
+// A <details> list drawn new: its rows are marked as drawn too, so the next redraw keeps the ones that stayed the same
+function drawnMark(n,src){drawnHTML.set(n,src);if(n.tagName==='DETAILS')for(const c of n.children)drawnMark(c,c.outerHTML)}
+// What someone has open or in hand in a node a redraw swaps goes over to the new one: its open menus, where they opened,
+// and the focused control. Each is found again in the new node as the same thing (its kind, its label or its words, the
+// how-many-th of those), so a chip or line that came or went next to it doesn't matter. Focus in a menu stays on its item.
+const MENUS='details.fact-menu,details.more-actions,details.tile-menu,details.board-menu,details.graph-sort';
+const MENUS_OPEN=MENUS.split(',').map(m=>m+'[open]').join(',');
+const keptSig=x=>x.tagName+'.'+x.className+'|'+(x.matches('details')?x.querySelector(':scope>summary')?.getAttribute('aria-label'):x.textContent.trim());
+const keptAll=(n,x)=>{const sig=keptSig(x),all=[...n.querySelectorAll(x.tagName)];if(n.tagName===x.tagName)all.unshift(n);return all.filter(y=>keptSig(y)===sig)};  // its kind in n, in order
+// withMenus=false: only the focus, and not on an item in a menu (a page drawn again after a menu's action: that menu is done)
+function heldTake(o,withMenus=true){if(o?.nodeType!==1)return null;const f=document.activeElement,menus=withMenus?[...o.querySelectorAll(MENUS_OPEN)]:[];if(withMenus&&o.matches(MENUS_OPEN))menus.unshift(o);
+ const focus=f&&f!==o&&o.contains(f)&&(withMenus||f.matches('summary')||!f.closest(MENUS))?f:null;if(!menus.length&&!focus)return null;
+ return {menus:menus.map(d=>({d,nth:keptAll(o,d).indexOf(d),style:d.querySelector(':scope>:not(summary)')?.getAttribute('style')})),focus,fnth:focus&&keptAll(o,focus).indexOf(focus)}}
+function heldPut(n,h){if(!h||n?.nodeType!==1)return;
+ for(const m of h.menus){const d=keptAll(n,m.d)[m.nth];if(!d)continue;const l=d.querySelector(':scope>:not(summary)');if(l&&m.style)l.setAttribute('style',m.style);d.open=true}
+ const x=h.focus&&keptAll(n,h.focus)[h.fnth];if(x)x.focus({preventScroll:true})}
 function keptKids(box,from,again){const kids=[...from.childNodes],ids=new Set(kids.map(n=>n.id).filter(Boolean)),byId=new Map(),used=new Set();
  for(const o of box.children)if(o.id&&!byId.has(o.id))byId.set(o.id,o);
  const stays=o=>!o.id||ids.has(o.id)&&byId.get(o.id)===o&&!used.has(o);  // a node with an id the new markup doesn't have goes: never moved around
@@ -99,8 +115,8 @@ function keptKids(box,from,again){const kids=[...from.childNodes],ids=new Set(ki
     drawnHTML.set(o,src);keptKids(o,n,again);put=o}
    else if(typedKept(o,n,src))put=o
    else if(pressedIn(o,again))put=o}  // swapped once it's let go
-  if(put===n&&el)drawnHTML.set(n,src);
-  if(o&&put===n){o.replaceWith(n);if(at===o)at=n}  // swapped where it stood, so nothing after it moves
+  if(put===n&&el)drawnMark(n,src);
+  if(o&&put===n){const h=heldTake(o);o.replaceWith(n);heldPut(n,h);if(at===o)at=n}  // swapped where it stood, so nothing after it moves
   used.add(put);if(put===at)at=at.nextSibling;else box.insertBefore(put,at)}
  for(const o of [...box.childNodes])if(!used.has(o)&&!pressedIn(o,again))o.remove()}
 // The field someone is typing in is never swapped for a copy, even when what's around it changed (a status line, a
