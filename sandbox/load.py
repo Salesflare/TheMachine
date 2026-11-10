@@ -281,7 +281,8 @@ def load_history(db, base):
 
 
 def load_recurring(store, config, base):
-    """A to-do that repeats (recurring.py): the weekly numbers, every Monday, made the way New to-do makes one."""
+    """A to-do that repeats (recurring.py): the weekly numbers, every Monday, made the way New to-do makes one, with the way
+    it is done kept for the next one."""
     import recurring
     account = next((a['id'] for a in config['accounts'] if str(a.get('boundary') or '').startswith('work:')), None)
     if not account:
@@ -292,6 +293,9 @@ def load_recurring(store, config, base):
     with store.connect() as db:
         card = db.execute('SELECT * FROM suggestions WHERE id=?', (saved['id'],)).fetchone()
         recurring.start(db, card, {'unit': 'week', 'n': 1}, monday, card['owner_words'] or card['title'], base.isoformat(), work=True)
+        # how it's done, kept from an earlier week for the next one (recurring.save_method): its chat shows Edit and Undo
+        recurring.save_method(db, card['id'], '1. Take signups, revenue and churn for last Monday to Sunday from the metrics board.\n'
+                              '2. Compare each with the week before.\n3. Draft one short Slack message to the team channel; you send it.', base.isoformat())
 
 
 def sandbox_jobs(monday, today):

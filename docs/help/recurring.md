@@ -27,6 +27,8 @@ Done before its date? It counts for what's due now, and that date still comes fo
 
 Each one is prepared like any to-do, knowing how the last one went.
 
+It also keeps how it's done: the steps it worked out and what you corrected, so the next one doesn't need them again. Its chat says **Saved how to do this next time**, with **Edit** and **Undo**. It never sends anything by itself.
+
 ## Change or stop it
 
 Tap the "Repeats" line on the to-do: pick another rhythm, **Skip this one** (it closes this one and brings the next on its date) or **Stop repeating**. "Stop repeating" in its chat works too. Stopping keeps the open to-do; only the next ones don't come.

@@ -539,6 +539,10 @@ class PreparationApp:
                     with self.store.connect() as db:lines=recurring.prep_lines(db,job['suggestion_id'],today=getattr(self,'recurring_today',lambda:None)())
                     if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
                 except Exception as error:LOG.error('recurring lines error=%s',type(error).__name__)
+                try:  # a recurring to-do: its way of doing it, kept from earlier runs (recurring.method_lines)
+                    with self.store.connect() as db:lines=recurring.method_lines(db,job['suggestion_id'])
+                    if lines and len(request['message'])+len(lines)<PROMPT_LIMIT-1000:request['message']+=lines
+                except Exception as error:LOG.error('recurring method error=%s',type(error).__name__)
                 try:  # the owner's skill that fits this to-do (or follow-up): its instructions, ranked above the defaults
                     request['message']+=memory.fit('skills',len(request['message']),1000,rules,PROMPT_LIMIT-1000-len(request['message']))
                 except Exception as error:LOG.error('skill lines error=%s',type(error).__name__)

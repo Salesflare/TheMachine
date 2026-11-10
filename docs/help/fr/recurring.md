@@ -27,6 +27,8 @@ Faite avant sa date ? Elle compte pour ce qui est dû maintenant, et cette date 
 
 Chacune est préparée comme toute tâche, et la préparation voit comment s'est passée la précédente et ce qui a été dit dans sa discussion.
 
+Elle garde aussi la façon de faire : les étapes trouvées et ce que vous avez corrigé, pour que la suivante n'en ait plus besoin. Sa discussion affiche **Enregistré comment faire la prochaine fois**, avec **Modifier** et **Annuler**. Elle n'envoie jamais rien d'elle-même.
+
 ## La modifier ou l'arrêter
 
 Appuyez sur la ligne « Répéter » de la tâche : choisissez un autre rythme, **Passer celle-ci** (elle ferme celle-ci et amène la suivante à sa date) ou **Arrêter de répéter**. « Stop repeating » dans sa discussion fonctionne aussi. Arrêter garde la tâche ouverte ; seules les suivantes ne viennent plus.

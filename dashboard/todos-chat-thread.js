@@ -139,7 +139,7 @@ const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout
 const chatEventText=i=>String(i.mine&&CHAT_TAPS[i.text]||i.text||'').replace(/^You\s+(\S)/,(m,c)=>c.toUpperCase());
 const chatVia=v=>CHAT_VIA[v]||(v&&v!=='signal'?v[0].toUpperCase()+v.slice(1):'');
 // Whose side an item is on: the owner's messages and taps on the right, the Machine and the people it is about on the left.
-const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'?'mid':'them';
+const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'||i.kind==='recipe'?'mid':'them';
 // A wrong thing fixed where it came from (corrections.py): what is right now and where the wrong one came from, in the
 // owner's words, with Undo while it holds; an undone one stays, marked.
 function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
@@ -154,6 +154,13 @@ function chatLearned(i){const sep=html`<span class="learned-sep" aria-hidden="tr
  if(i.state==='removed')return html`<div class="chat-event chat-learned gone"><span class="learned-acts">Removed from what I’ve learned</span>${q}</div>`;
  const id=i.state==='merged'?i.into:i.id,go=html`<button type="button" class="link" data-learned-go="${id||''}" data-what="${i.what}"${node}>${i.about?window.t('Saved to {} in the Graph',i.about.name):'Saved to what I’ve learned'}</button>`;
  return html`<div class="chat-event chat-learned"><span class="learned-acts">${go}${i.state==='saved'?html`${sep}<button type="button" class="link" data-learned-edit="${i.id}"${node} aria-label="Edit what was learned">Edit</button>${sep}<button type="button" class="link" data-learned-undo="${i.id}" aria-label="Undo: remove from what I’ve learned">Undo</button>`:''}</span>${q}</div>`}
+// A repeating to-do's way of doing it, saved from this chat for the next one (recurring.py): one quiet line with Edit,
+// in place, and Undo (the next one goes back to the way it had before).
+let recipeEdit=null;
+function chatRecipe(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,line=window.t('Saved how to do this next time');
+ if(i.state==='undone')return html`<div class="chat-event chat-learned chat-fixed gone"><span class="learned-acts"><span>${line}</span><span class="fixed-act">${sep}<span>${window.t('Undone')}</span></span></span></div>`;
+ if(recipeEdit===chatId)return html`<form class="chat-event chat-recipe-edit" data-recipe-form><label for="recipe-text">${window.t('How to do this next time')}</label><textarea id="recipe-text" name="text" rows="8" maxlength="4000">${i.text}</textarea><span class="recipe-acts"><button type="button" class="ghost" data-recipe-cancel>${window.t('Cancel')}</button><button type="submit" class="primary">${window.t('Save')}</button></span></form>`;
+ return html`<div class="chat-event chat-learned chat-fixed chat-recipe"><span class="learned-acts"><span>${line}</span><span class="fixed-act">${sep}<button type="button" class="link" data-recipe-edit aria-label="${window.t('Edit how to do this next time')}">${window.t('Edit')}</button>${sep}<button type="button" class="link" data-recipe-undo aria-label="${window.t('Undo: {}',line)}">${window.t('Undo')}</button></span></span></div>`}
 // A reply that says it left a page open in the browser (a sign-in tab, a form)
 const CHAT_TAB=/\b(?:tab|browser)\b[^.]*\b(?:open|opened|reopened|ready)\b|\b(?:open|opened|reopened)\b[^.]*\b(?:tab|browser)\b|\bis open for\b/i;
 function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading…</p>`;if(s)chatFoldsNow(s.id);const p=s?chatParts(s):{},out=[];let day='',side='';
@@ -226,7 +233,8 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
    if(i.handoff&&n===lastMachine&&s&&withTeammate(s))push({kind:'event',mine:i.mine},html`<div class="chat-event chat-handoff-wait">${window.t('No answer from {} yet',String(s.fleet_handoff.name||window.t('your teammate')).split(' ')[0])}</div>`);
    if(i.handoff&&n===lastMachine&&options(n,false))push({kind:'event',mine:false},html`<div class="chat-msg machine chat-handoff-options">${options(n,false)}</div>`)}
   else if(i.kind==='learned')push(i,chatLearned(i));
-  else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
+  else if(i.kind==='fixed')push(i,chatFixed(i));
+  else if(i.kind==='recipe')push(i,chatRecipe(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
    const att=chatAttHTML(i.files);
    push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}

@@ -27,6 +27,8 @@ Gedaan vóór de datum? Ze telt voor wat nu moet, en die datum komt toch voor de
 
 Elke to-do wordt voorbereid zoals elke andere, en de voorbereiding ziet hoe de vorige liep en wat er in haar chat gezegd werd.
 
+Hij onthoudt ook hoe het moet: de stappen die hij uitzocht en wat jij verbeterde, zodat de volgende ze niet opnieuw nodig heeft. In de chat staat **Opgeslagen hoe dit de volgende keer moet**, met **Bewerken** en **Ongedaan maken**. Hij verstuurt nooit iets uit zichzelf.
+
 ## Wijzigen of stoppen
 
 Tik op de regel "Herhaalt" op de to-do: kies een ander ritme, **Deze overslaan** (die sluit deze en brengt de volgende op haar datum) of **Stop met herhalen**. "Stop repeating" in de chat werkt ook. Stoppen houdt de open to-do; alleen de volgende komen niet meer.

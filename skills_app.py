@@ -21,6 +21,7 @@ from machine.config import LOG
 from machine.prompts.profile import SKILLS_LEASE, SKILLS_PAGES, SKILLS_READ, SKILLS_SIGNIN, SKILLS_SITES
 from machine.store.decisions import skill_update_after
 from machine.store.voices import sentences
+import recurring
 import skills as skills_module
 import skills
 from timeutil import now
@@ -92,9 +93,16 @@ class SkillsApp:
     def skill_action(self, name, args):
         keeper = self.skills
         if name == 'skill_propose':  # from the agent: waits for the owner's Approve
+            task = self.skill_job_task(args.get('job_id'))
+            if task and not args.get('update'):
+                with self.store.connect() as db:
+                    kept = (recurring.method_series(db, task) or {'method': None})['method']
+                if kept:  # a repeating to-do keeps its own way of doing it: no Create skill for the same work as well
+                    raise ValueError('This to-do repeats and keeps its own way of doing it, which the next one follows: give the '
+                                     'steps as method on prepare instead of proposing a skill')
             return keeper.propose(args.get('name'), args.get('description'), args.get('body'), args.get('why') or '', args.get('update'),
                                   args.get('related'), args.get('relation'), args.get('new') is True, args.get('base'),
-                                  task=self.skill_job_task(args.get('job_id')))
+                                  task=task)
         if name == 'skill_save':  # id: an existing skill; body may be a whole pasted SKILL.md
             return keeper.save(str(args.get('id') or ''), args.get('name') or '', args.get('description') or '', args.get('body') or '')
         if name == 'skill_get':

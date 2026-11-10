@@ -347,6 +347,15 @@ def for_task(db, task):
     return out
 
 
+def drop_task_proposal(db, task):
+    """A to-do that keeps its own way of doing it (a repeating one's method, recurring.py) offers no Create skill for the
+    same work: a new skill its run proposed for it, still waiting, goes. An update to one of the owner's skills stays."""
+    try:
+        db.execute("DELETE FROM skills WHERE task=? AND status='proposed' AND origin='proposed' AND (replaces IS NULL OR replaces='')", (str(task),))
+    except sqlite3.OperationalError:  # before the task column: nothing was proposed from a to-do yet
+        pass
+
+
 def task_of(db, skill_id):
     """The to-do whose run proposed this skill, if any."""
     try:
