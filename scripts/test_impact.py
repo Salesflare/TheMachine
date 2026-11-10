@@ -6,9 +6,11 @@ A full run on main records it: every Python process the tests start (a test, a s
 each function of this checkout it runs, once (sys.monitoring, Python 3.12 and newer: one callback per function, then
 it's switched off, so the tests barely slow down). A process that cleared its environment still counts for its test:
 the hook finds the test in its parents' environment on Linux. Only the files that passed go in the map; a test the map
-doesn't know is picked the old way.
+doesn't know is picked the old way. Every Node process loads scripts/test_impact_js.mjs too (NODE_OPTIONS): a page a test
+opens in Chromium notes the functions of the dashboard's parts (dashboard/*.js) that ran, from V8's coverage.
 
-scripts/test_impact.py install DIR        record into DIR from now on (a .pth file in site-packages)
+scripts/test_impact.py install DIR        record into DIR from now on (a .pth file in site-packages; Node needs
+                                          NODE_OPTIONS=--import=./scripts/test_impact_js.mjs too)
 scripts/test_impact.py remove             stop recording
 scripts/test_impact.py build DIR OUT      the map from DIR's records (DIR/passed lists the files that passed), gzipped JSON
 scripts/test_impact.py fetch [OUT]        the newest map main's CI made (needs gh), for scripts/test.py --changed"""
@@ -132,6 +134,23 @@ def build(records, out):
             path, _, qualname = line.partition('\t')
             if qualname:
                 files.setdefault(path, {}).setdefault(qualname, set()).add(index[test])
+    # the browser half (scripts/test_impact_js.mjs): per dashboard part, its functions by offsets, with the tests that
+    # ran each (none for one no test ran), and the tests that loaded it ('top')
+    js, js_tests = {}, set()
+    for rec in records.glob('*.jsrec'):
+        test = rec.name.rsplit('.', 2)[0]
+        if test not in index:
+            continue
+        js_tests.add(index[test])
+        for line in rec.read_text(encoding='utf-8', errors='replace').splitlines():
+            fields = line.split('\t')
+            if len(fields) != 4 or not fields[0].startswith('dashboard/'):
+                continue
+            part = js.setdefault(fields[0], {'top': set(), 'funcs': {}})
+            span = (int(fields[1]), int(fields[2]))
+            ids = part['top'] if span[0] < 0 else part['funcs'].setdefault(span, set())
+            if fields[3] == '1':
+                ids.add(index[test])
     try:
         commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
         known = [p for p in subprocess.run(['git', 'ls-files', '*.py'], cwd=ROOT, capture_output=True, text=True,
@@ -139,10 +158,14 @@ def build(records, out):
     except (OSError, subprocess.CalledProcessError):
         commit, known = '', []
     data = {'commit': commit, 'tests': tests, 'known': known,
-            'files': {path: {q: sorted(ids) for q, ids in sorted(funcs.items())} for path, funcs in sorted(files.items())}}
+            'files': {path: {q: sorted(ids) for q, ids in sorted(funcs.items())} for path, funcs in sorted(files.items())},
+            'js_tests': sorted(js_tests),
+            'js': {part: {'top': sorted(found['top']), 'funcs': [[a, b, sorted(ids)] for (a, b), ids in sorted(found['funcs'].items())]}
+                   for part, found in sorted(js.items())}}
     with gzip.open(out, 'wt', encoding='utf-8') as sink:
         json.dump(data, sink, separators=(',', ':'))
-    print(f'{len(tests)} test files, {sum(len(f) for f in files.values())} functions in {len(files)} files -> {out}')
+    print(f'{len(tests)} test files, {sum(len(f) for f in files.values())} functions in {len(files)} files, '
+          f'{sum(len(p["funcs"]) for p in js.values())} in {len(js)} dashboard parts ({len(js_tests)} browser tests) -> {out}')
 
 
 class _Stay(urllib.request.HTTPRedirectHandler):

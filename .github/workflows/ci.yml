@@ -101,6 +101,8 @@ jobs:
         run: |
           python3 scripts/test_impact.py install "$RUNNER_TEMP/impact"
           echo "THE_MACHINE_IMPACT_DIR=$RUNNER_TEMP/impact" >> "$GITHUB_ENV"
+          # and in Node: which functions of the dashboard's parts each test runs in Chromium
+          echo "NODE_OPTIONS=--import=$GITHUB_WORKSPACE/scripts/test_impact_js.mjs" >> "$GITHUB_ENV"
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
           # 6 at a time on our runner: 8 browser tests each starved it into flaky timeouts. When every slot is busy the
@@ -116,6 +118,7 @@ jobs:
         if: always() && env.THE_MACHINE_IMPACT_DIR != ''
         run: |
           python3 scripts/test_impact.py remove
+          echo "NODE_OPTIONS=" >> "$GITHUB_ENV"
           if [ -s "$THE_MACHINE_IMPACT_DIR/passed" ]; then
             python3 scripts/test_impact.py build "$THE_MACHINE_IMPACT_DIR" "$RUNNER_TEMP/test-impact.json.gz"
           fi

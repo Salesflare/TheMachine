@@ -139,7 +139,7 @@ class WithTheMap(unittest.TestCase):
     """With the test-impact map, a change runs the tests that ran what it changed."""
 
     def setUp(self):
-        self.patched = {name: getattr(select, name) for name in ('diff_lines', 'git_text')}
+        self.patched = {name: getattr(select, name) for name in ('diff_lines', 'git_text', 'map_text')}
 
     def tearDown(self):
         for name, value in self.patched.items():
@@ -220,6 +220,68 @@ class WithTheMap(unittest.TestCase):
         self.assertTrue(select.names_exactly("open('docs/help/' + name)", 'docs/help/history.md'))
         self.assertFalse(select.names_exactly('See docs/development.md.', 'docs/code-map.md'))
         self.assertFalse(select.names_exactly("ROOT / 'docs' / 'brand'", 'docs/help/history.md'))
+
+    def browser(self, old):
+        """A map whose browser half knows dashboard/shell-core.js as old: localeFmt ran in one page test, applyLocale in
+        another, a third only loaded the page; every other line is a function no test ran, but line 3 (let DL=...)."""
+        part = 'dashboard/shell-core.js'
+        pages = [Path(t).name for t in TESTS if t.endswith('_dashboard.mjs')]
+        quiet = [t for t in pages if not re.search(r'\b(DL|H12|applyLocale|localeFmt|start)\b|shell-core',
+                                                    (ROOT / 'tests' / t).read_text(encoding='utf-8'))]
+        fmt, arrow, idle = quiet[:3]
+        impact = self.impact({})
+        at = {name: i for i, name in enumerate(impact.tests)}
+        start = old.index('function localeFmt(')
+        end = old.index('\n', old.index('return f.format(d)}', start))
+        funcs, offset = [[start, end, [at[fmt]]]], 0
+        for n, line in enumerate(old.split('\n'), 1):
+            if n != 3 and line and not line.startswith('//') and not start <= offset <= end:
+                funcs.append([offset, offset + len(line), [at[arrow]] if line.startswith('const applyLocale=') else []])
+            offset += len(line) + 1
+        impact.commit = 'map'
+        impact.js = {part: {'top': [at[t] for t in pages], 'funcs': funcs}}
+        impact.js_tests = set(pages)
+        select.map_text = lambda commit, p: old if p == part else None
+        return part, impact, fmt, arrow, idle
+
+    def test_a_dashboard_function_runs_the_page_tests_that_ran_it(self):
+        text = (ROOT / 'dashboard/shell-core.js').read_text(encoding='utf-8')
+        part, impact, fmt, arrow, idle = self.browser(text.replace('LOCALE_FMT.size>500', 'LOCALE_FMT.size>400', 1))
+        got = select.select([part], repo=REPO, impact=impact, base='HEAD')
+        self.assertIn(fmt, got)
+        self.assertNotIn(arrow, got)
+        self.assertNotIn(idle, got)
+        self.assertLess(len(got), 100)
+
+    def test_a_dashboard_global_runs_what_uses_it(self):
+        text = (ROOT / 'dashboard/shell-core.js').read_text(encoding='utf-8')
+        part, impact, fmt, arrow, idle = self.browser(text.replace("let DL='en-US'", "let DL='en-GB'", 1))
+        got = select.select([part], repo=REPO, impact=impact, base='HEAD')
+        self.assertIn(arrow, got)  # applyLocale sets DL
+        self.assertNotIn(idle, got)
+
+    def test_dashboard_code_that_runs_at_load_runs_every_page_test(self):
+        text = (ROOT / 'dashboard/shell-core.js').read_text(encoding='utf-8')
+        part, impact, fmt, arrow, idle = self.browser(text.replace("let DL='en-US',H12=false;", "let DL='en-US',H12=false;start();", 1))
+        got = select.select([part], repo=REPO, impact=impact, base='HEAD')
+        self.assertIn(idle, got)
+
+    def test_what_a_top_level_statement_does(self):
+        declared = lambda text: select.js_declared(select.js_blank(text))
+        self.assertEqual(declared("let DL='en-US',H12=false;"), {'DL', 'H12'})
+        self.assertEqual(declared('function go(a){return a()}'), {'go'})
+        self.assertEqual(declared('const f=async(a,b)=>{await a(b)}'), {'f'})
+        self.assertEqual(declared('const seen=new Map()'), {'seen'})
+        self.assertEqual(declared('// a comment'), set())
+        self.assertIsNone(declared("document.addEventListener('click',e=>{go(e)})"))
+        self.assertIsNone(declared('const width=measure()'))
+        self.assertIsNone(declared('const {a,b}=state'))
+        self.assertIsNone(declared('LIMIT=4'))
+
+    def test_changed_spans_are_offsets_in_the_old_text(self):
+        old, new = 'let a=1;\nfunction f(){return 2}\n', 'let a=1;\nfunction f(){return 3}\ngo();\n'
+        spans = select.changed_spans(old, new)
+        self.assertEqual([(old[s:e], new[ns:ne]) for s, e, ns, ne in spans], [('2', '3'), ('', 'go();\n')])
 
 
 if __name__ == '__main__':
