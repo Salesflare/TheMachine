@@ -128,6 +128,13 @@ $('#settings-dictation').addEventListener('click',e=>{const b=e.target.closest('
  try{talkSample?.pause()}catch{}talkSample=new Audio('brand/voices/'+name+'.mp3');talkSample.play().catch(()=>toast(t('That sample couldn’t play.'),true))});
 $('#settings-dictation').addEventListener('change',e=>{if(e.target.id==='talk-voice')$('[data-talk-sample]')?.click()});  // hear the one just picked
 $('#settings-dictation').addEventListener('click',async e=>{if(!e.target.closest('[data-dictation-retry]'))return;try{state.dictation=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'voice_prepare',args:{}})})}catch(err){errCaught(err);notice(err.message)}renderDictation()});
+// What only Settings shows (SETTINGS_ONLY: Model's agents, Writing's signatures, the people lookup, Account's addresses)
+// comes from api/settings while Settings is open, at most every 15 seconds, not with every status. A status that still
+// carries them (an older Machine) wins. A failed fetch leaves Settings as it is; the next one tries again.
+var setViews={at:0,busy:false};  // var: settingsSync may run before this line
+async function loadSettingsViews(){if(setViews.busy||Date.now()-setViews.at<15000)return;setViews.busy=true;
+ try{const v=await request('api/settings');for(const k of SETTINGS_ONLY)if(v&&k in v&&!(k in(statusRaw||{})))state[k]=v[k]}catch{}finally{setViews.busy=false;setViews.at=Date.now()}
+ renderAgents();renderSignatures();renderLookups();renderAddresses()}
 // Codex and Claude Code (Settings, Model; agent_remote.py): where Hand to Codex and Hand to Claude Code send a to-do.
 // Only what this Machine needs is asked: Codex on the owner's computer is one line (chosen on the setup page); Codex
 // cloud asks its environment ID, and its branch once that is in; Claude Code asks a session link, and once one is in,
