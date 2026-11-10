@@ -10,7 +10,7 @@ const scopeUrl = () => new URL(self.registration.scope);
 // Every brand image and font the page can show (assistant.py BRAND_ASSETS), kept up front, so the app offline looks the
 // same as online: the robot, its moods and the typefaces, also ones this device hasn't shown yet.
 const BRAND = ['avatar.png', 'avatar-blink.png', 'favicon-32.png', 'favicon-512.png', 'sleepy.webp', 'sad.webp', 'thinking.webp', 'wave.webp',
-  'wave-blink.webp', 'wave-look.webp', 'wave-hand.webp', 'laugh.webp', 'party.webp', 'app-icon-192.png', 'app-icon-maskable-192.png', 'app-icon-maskable-512.png', 'app-icon-badge-96.png', 'serif.woff2', 'sans.woff2'];
+  'wave-blink.webp', 'wave-look.webp', 'wave-hand.webp', 'laugh.webp', 'party.webp', 'party-512.webp', 'app-icon-192.png', 'app-icon-maskable-192.png', 'app-icon-maskable-512.png', 'app-icon-badge-96.png', 'serif.woff2', 'sans.woff2'];
 const brandOk = r => r.status === 200 && r.type === 'basic' && /^(image|font)\//.test(r.headers.get('Content-Type') || '');
 async function warm() {
   const cache = await caches.open(ASSETS);

@@ -151,6 +151,8 @@ class DashboardParts(unittest.TestCase):
                     for prelude in re.findall(r'([^{}]+)\{', run):
                         if prelude.strip().startswith('@'):
                             continue
+                        if re.fullmatch(r'\s*(?:from|to|[\d.]+%)(?:\s*,\s*(?:from|to|[\d.]+%))*\s*', prelude):
+                            continue  # a step of an @keyframes: it styles nothing on the page by itself
                         for selector in re.split(r',(?![^()]*\))', prelude):  # not the commas in :is(a,b)
                             tokens = re.findall(r'[.#]([a-zA-Z_][\w-]*)|\[(data-[\w-]+)', selector)
                             with self.subTest(part=name, selector=selector.strip()):

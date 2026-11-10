@@ -159,7 +159,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   `ProfileStore` and `FirstLookStore` mixins), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
   pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`) and what a
   person saw; its dialog is
-  `dashboard/shell-whats-new.js`), `machine/store/machine_cards.py` (the `MachineCardsStore` mixin: The
+  `dashboard/shell-whats-new.js`), `machine/store/done_milestones.py` (the `DoneMilestonesStore` mixin and
+  `LEVELS`: the milestone on done to-dos due on To-dos, shown once; its card and share image are
+  `dashboard/todos-milestone.js`), `machine/store/machine_cards.py` (the `MachineCardsStore` mixin: The
   Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF,
   compression, ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`),
   `machine/web/handler.py` (`make_handler(app)`: the dashboard's HTTP `Handler`, out of `App.serve`),

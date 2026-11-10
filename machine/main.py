@@ -69,6 +69,7 @@ from machine.sources.whatsapp import WhatsApp, whatsapp_event
 from machine.store.cards import CardsStore
 from machine.store.core import StoreCore
 from machine.store.decisions import DecisionsStore
+from machine.store.done_milestones import DoneMilestonesStore
 from machine.store.events import EventsStore
 from machine.store.facts import FactsStore
 from machine.store.faults import FaultsStore
@@ -99,8 +100,8 @@ from timeutil import now, set_timezone, set_work_hours
 from whatsapp_images_app import WhatsAppImagesApp
 
 
-class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, FirstLookStore, ProfileStore,
-            PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore, WhatsNewStore):
+class Store(CardsStore, DecisionsStore, DoneMilestonesStore, EventsStore, FactsStore, FaultsStore, FirstLookStore,
+            ProfileStore, PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore, WhatsNewStore):
     """The service's database: every table, through the Store mixins it is made of (machine/store/*)."""
 
 

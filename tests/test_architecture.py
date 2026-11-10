@@ -341,6 +341,7 @@ def sql_strings(found):
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py', 'machine/store/whats_new.py',
+               'machine/store/done_milestones.py',
                'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 
@@ -435,10 +436,11 @@ FIRST_LOAD_CEILING = 1_423_000
 # graph 344,000 -> 348,000 (2026-11-10): a project's description, its Edit and Keep it updated (about 2.5 KB).
 # graph 348,000 -> 350,000 (2026-11-10): a board's header says who sees it, and the owner's locks (about 1.2 KB).
 # graph 350,000 -> 348,000 (2026-11-10): team boards no longer fold look-alike projects.
+# milestone 20,000 (2026-11-10): the milestone card on done to-dos, its share dialog and the image it draws.
 # clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
 # recipe 4,000 (2026-11-10): a repeating to-do's kept way, its chat line with Edit and Undo (about 3 KB).
 # fbpeople 4,000 (2026-11-10): Facebook's friends nobody in the Graph has, adding them as personal contacts and its Undo (about 2 KB).
-LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):

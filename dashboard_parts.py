@@ -52,6 +52,7 @@ LAZY = {
                  'settings-export.js', 'settings-upkeep.js', 'settings-apps.js'),
     'learning': ('learning-bring.js', 'learning-missed.js'),
     'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
+    'milestone': ('todos-milestone.css', 'todos-milestone.js'),
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
     'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js', 'todos-facebook-birthdays.js'),
