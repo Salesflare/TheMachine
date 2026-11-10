@@ -133,7 +133,30 @@ are judged.
   organization never adds people, threads or timeline lines.
 - An organization's logo goes with its record (and a project's organization) only when it is a LinkedIn company logo
   (`media.licdn.com`), where lookups find them. A teammate's dashboard shows it, or its own logo when it knows the
-  organization, and drops any other address (`shared_graph.team_logo`).
+  organization, and drops any other address (`shared_graph_logos.team_logo`).
+- A logo the Machine took from the organization's own website (a file on it, never an address) goes with the
+  organization's record as a small picture instead ([Logos from an organization's own site](#logos-from-an-organizations-own-site)).
+
+### Logos from an organization's own site
+
+Only for an organization record that goes anyway, by the rules above (`shared_graph_logos.py`, `logo_image.py`).
+
+- **Pixels only.** The saved logo (PNG, or an `.ico` with PNG or BMP pictures) is decoded and drawn again as a new PNG of
+  at most 64 by 64 pixels and 8 KB, so no metadata, text or anything hidden in the file goes. JPEG and WebP logos (no
+  decoder in the standard library) and SVG (can hold script) never go. A picture the owner set never goes.
+- **No address.** The record carries the picture's hash (`logo_h`), never the site's address or domain; the domain
+  stays hashed as before.
+- **Once.** The picture itself (`logo_img`) goes only in the blob that first brings it to the recipients, or after it
+  changed; the record's hash leaves it out, so a picture alone never makes a delta. All go again when the recipients or
+  the key change, and weekly, so a teammate who caught up from a later snapshot gets them. At most 200 KB of pictures go
+  in a blob; the rest go in the next rounds. A typical one is 0.5 to 6 KB.
+- **Checked on arrival.** The receiving Machine accepts only an 8-bit RGB or RGBA PNG of at most 64 by 64 pixels and 8 KB
+  with nothing but its image chunks and nothing after its end, within an exact amount of image data, and draws it again
+  from its pixels before it keeps it in the teammate's record (sealed at rest, gone with the record). A record that comes
+  again without its picture keeps the one the Machine has.
+- **Served from the Machine.** The dashboard loads it from the Machine's own address (`api/person-photo`), never from
+  anywhere else. Its own logo for an organization it knows comes first, then a teammate's LinkedIn logo, then this
+  picture.
 
 ## Shared by name
 
@@ -362,7 +385,7 @@ A record (JSON, inside a blob):
 
 ```
 person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, score, last, timeline: [{at, line}]}
-org:     {r, t: org, name, role, role_hand, d, logo, score, last}
+org:     {r, t: org, name, role, role_hand, d, logo | logo_h + logo_img?, score, last}
 project: {r, t: project, name, board, board_seen, stages, stage, stage_hand, stage_at, why, next, about, org: {name, d, logo}, people: [hash], score, last, timeline}
 mail:    {tag, subject, messages: [{at, from, to, cc, body, attachments: [{name, size, mime, file | too_large}]}]}
 file:    {name, mime, data}                                   (one attachment; `file` above is its tag)
