@@ -10,7 +10,7 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // button on the Mine tab (Owner is in Filter), the List's filters on the board too (the Machine says which projects they
 // keep) with No reply in 10+ days a tap on a stage, owners on tiles, an owner on a page and its change in the timeline, an organization's websites with
 // Split off, Same organization? and Add a website…, and a CSV import with its preview, mapping and Undo. On a phone and
-// a desktop. CRM_SHOT=<dir> writes screenshots.
+// a desktop. CRM_SHOT=<dir> writes screenshots, CRM_SCHEME=dark in the dark theme.
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const node=(kind,id,name,extra={})=>({id,kind,name,strength:2,last_at:day(1),signals:3,ids:[],links:[],recent:[],around:[],open:{},...extra});
@@ -44,10 +44,10 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   if(q){res.end(JSON.stringify({found:[globex,node('org','org:umber.example','Umber',{domain:'umber.example'})].filter(x=>x.name.toLowerCase().includes(q))}));return}
   if(n){res.end(JSON.stringify({...(n==='org:globex.example'?globex:ada),owners}));return}
   res.end(JSON.stringify({list_counts:{people:1,quiet:0,new:0,work:1,personal:0,orgs:1,warmup:0,projects:2,projects_done:0},counts:{},people:[ada],orgs:[globex],projects,boards,owners,
-   org_doubles:globex.doubles,last_import:{id:7,kind:'person',new:3},person_names:[{id:'person:a',name:'Ada Lovelace'}],project_names:[]}));return}
+   org_doubles:globex.doubles,org_countries:['us','be'],last_import:{id:7,kind:'person',new:3},person_names:[{id:'person:a',name:'Ada Lovelace'}],project_names:[]}));return}
  res.statusCode=url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const base='http://127.0.0.1:'+server.address().port+'/',shotDir=process.env.CRM_SHOT,errors=[];let browser;
+const scheme=process.env.CRM_SCHEME==='dark'?'dark':'light',base='http://127.0.0.1:'+server.address().port+'/',shotDir=process.env.CRM_SHOT,errors=[];let browser;
 const shot=async(page,name)=>{if(shotDir)await page.screenshot({path:`${shotDir}/${name}.png`,fullPage:false})};
 const fits=async(page,where)=>{const r=await page.evaluate(()=>{const d=document.querySelector('dialog[open]')?.getBoundingClientRect();return {wide:document.documentElement.scrollWidth>innerWidth,d:d&&{l:d.left,r:d.right},w:innerWidth}});
  assert.ok(!r.wide,where+': wider than the screen');if(r.d)assert.ok(r.d.l>=-1&&r.d.r<=r.w+1,where+': the dialog fits')};
@@ -57,7 +57,7 @@ const until=async(test,what)=>{for(const end=Date.now()+20000;!test()&&Date.now(
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [390,1440]){const mobile=width<600,tag=String(width);calls=[];lists=[];uploads=[];
-  const context=await browser.newContext({viewport:{width,height:844},isMobile:mobile,hasTouch:mobile,locale:'en-GB'}),page=await context.newPage();
+  const context=await browser.newContext({viewport:{width,height:844},isMobile:mobile,hasTouch:mobile,locale:'en-GB',colorScheme:scheme}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(tag+': '+e.message));page.on('dialog',d=>d.accept());await page.goto(base);await page.waitForFunction(()=>typeof people==='function');
   const press=l=>mobile?l.tap():l.click(),click=sel=>press(page.locator(sel).first());
@@ -108,6 +108,35 @@ try{
   assert.match(await page.locator('#people-view .proj-board .board-active').textContent(),/No reply in 10\+ days/);await shot(page,`board-waiting-${tag}`);
   await page.evaluate(()=>projectsViewSet('list'));await page.waitForFunction(()=>/No reply in 10\+ days/.test(document.querySelector('[data-graph-panel="projects"] .proj-list .graph-active')?.textContent||''));
   await page.evaluate(()=>{crmSet('projects',{});projectsViewSet('board')});await page.locator('#people-view .tile[data-node="project:3"]').waitFor({state:'attached'});
+  // People and Organizations have filters of their own, no project ones: a People filter saved before with a
+  // project's value and board leaves those out (no hidden filter, not in the count, not asked for)
+  await page.evaluate(()=>{crmFilters.people={value_min:'5000',board:'1',close_to:'2026-12-31',owner:'me'};crmFilters.orgs={stage:'Demo'}});
+  assert.deepEqual(await page.evaluate(()=>[crmF('people'),crmCount('people'),crmF('orgs'),crmCount('orgs'),crmQuery('people')]),[{owner:'me'},1,{},0,'&owner=me']);
+  await page.evaluate(()=>{crmSet('people',{});crmSet('orgs',{})});
+  const sheet=(pane,name)=>shot(page,`${name}-${tag}-${scheme}`);
+  await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());await page.locator('#people-view [data-graph-panel="people"]').waitFor();
+  await page.evaluate(()=>crmFilterOpen('people'));await page.locator('#crm-dialog[open]').waitFor();
+  assert.deepEqual(await page.locator('#crm-form .ed-field').evaluateAll(ls=>ls.map(l=>l.firstChild.textContent.trim())),['Closeness','Last contact','Organization','Owner']);
+  assert.equal(await page.locator('#crm-form [name=board],#crm-form [name=value_min],#crm-form [name=close_from]').count(),0);
+  assert.equal(await page.locator('#crm-form .ed-note:not([data-crm-error])').count(),0);
+  assert.deepEqual(await page.locator('#crm-form select[name=last_contact] option').allTextContents(),['Any','In the last 30 days','30 to 90 days ago','Over 90 days ago']);
+  await fits(page,'people filter '+tag);await sheet('people','people-filter-empty');
+  await page.locator('#crm-form select[name=closeness]').selectOption('close');await page.locator('#crm-form select[name=last_contact]').selectOption('30');
+  await page.locator('#crm-form [name=open_project]').check();await sheet('people','people-filter-filled');
+  await click('#crm-form button.primary');await page.locator('#crm-dialog[open]').waitFor({state:'detached'});
+  assert.equal(await page.evaluate(()=>crmQuery('people')),'&closeness=close&last_contact=30&open_project=1');  /* what the People list asks the Machine for */
+  assert.deepEqual(await page.evaluate(()=>[...new DOMParser().parseFromString(String(crmChips('people')),'text/html').querySelectorAll('.chip')].map(c=>c.textContent)),['Closeness: Close','Last contact: in the last 30 days','Has an open project']);
+  await page.evaluate(()=>document.querySelector('[data-graph-sub="orgs"]').click());await page.locator('#people-view [data-graph-panel="orgs"]').waitFor();
+  await page.evaluate(()=>crmFilterOpen('orgs'));await page.locator('#crm-dialog[open]').waitFor();
+  assert.deepEqual(await page.locator('#crm-form .ed-field').evaluateAll(ls=>ls.map(l=>l.firstChild.textContent.trim())),['Industry','Size','Last contact','Country','Owner']);
+  assert.equal(await page.locator('#crm-form [name=industry]').getAttribute('placeholder'),'Any industry');
+  assert.deepEqual(await page.locator('#crm-form select[name=country] option').allTextContents(),['Any','Belgium','United States']);
+  await fits(page,'orgs filter '+tag);await sheet('orgs','orgs-filter-empty');
+  await page.locator('#crm-form [name=industry]').fill('Software');await page.locator('#crm-form select[name=size]').selectOption('11-50');
+  await page.locator('#crm-form select[name=country]').selectOption('be');await sheet('orgs','orgs-filter-filled');
+  await click('#crm-form button.primary');await page.locator('#crm-dialog[open]').waitFor({state:'detached'});
+  assert.equal(await page.evaluate(()=>crmQuery('orgs')),'&industry=Software&size=11-50&country=be');
+  await page.evaluate(()=>{crmSet('people',{});crmSet('orgs',{})});
   // Organizations: Same organization? merges the second into the first
   await page.evaluate(()=>document.querySelector('[data-graph-sub="orgs"]').click());await page.locator('#people-view [data-graph-panel="orgs"] .same-pair').waitFor();
   await shot(page,`orgs-doubles-${tag}`);

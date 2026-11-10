@@ -219,9 +219,12 @@ class Crm(unittest.TestCase):
             self.assertEqual(names('projects', org='Umber'), ['Umber deal'])  # a name: one in the Graph
             self.assertEqual(names('projects', org='Nobody'), [])
             self.assertEqual(names('projects', org='umber.example'), ['Umber deal'])
-            self.assertEqual(names('people', value_min='5000'), ['Ivy'])
             self.assertEqual(names('people', sort='value')[:2], ['Ivy', 'Bo'])
-            self.assertEqual([i['id'] for i in graph.page(db, 'orgs', 'close', filters={'board': '1'})['items']], ['org:globex.example', 'org:umber.example'])
+            self.assertEqual([i['id'] for i in graph.page(db, 'orgs', 'close')['items']][:2], ['org:globex.example', 'org:umber.example'])
+            # People and Organizations have no project filters: one kept from before is left out, never a hidden filter
+            kept = graph.page(db, 'people', filters={'value_min': '5000', 'board': '1', 'close_to': '2026-12-31'})
+            self.assertEqual((kept.get('filters'), len(kept['items'])), (None, len(graph.page(db, 'people')['items'])))
+            self.assertEqual(graph.page(db, 'orgs', filters={'stage': 'Proposal'}).get('filters'), None)
             self.assertEqual(names('people', org='org:globex.example'), ['Ivy'])
             found = graph.page(db, 'projects', filters={'value_min': '1'})
             self.assertEqual((found['total'], found['filters']), (2, {'value_min': 1.0}))
@@ -229,6 +232,45 @@ class Crm(unittest.TestCase):
                 graph.page(db, 'projects', filters={'value_min': 'lots'})
             with self.assertRaisesRegex(ValueError, 'a date'):
                 graph.page(db, 'projects', filters={'close_to': 'soon'})
+
+    def test_people_and_organizations_filter_by_what_is_about_them(self):
+        self.mails()
+        self.act('project_save', name='Globex pilot', org='globex.example', people=['email:ivy@globex.example'])
+        self.act('project_save', name='Umber deal', org='umber.example', people=['email:bo@umber.example'])
+        import datetime as dt
+        today = dt.datetime.now(dt.timezone.utc).date()
+        ago = lambda d: (today - dt.timedelta(days=d)).isoformat()
+        with self.store.connect() as db:
+            with db:  # what the build and enrichment bring, set straight on the nodes
+                db.execute("UPDATE projects SET closed_at=? WHERE name='Umber deal'", (ago(1),))
+                for node, strength, last in (('email:ivy@globex.example', 4, ago(3)), ('email:jo@globex.io', 1.5, ago(45)), ('email:bo@umber.example', 0.1, ago(200))):
+                    db.execute('UPDATE graph_nodes SET strength=?,last_at=? WHERE id=?', (strength, last, node))
+                for node, profile, last in (('org:globex.example', {'industry': 'Computer Software', 'size': '11-50', 'country': 'BE'}, ago(3)),
+                                            ('org:umber.example', {'industry': 'Retail', 'employees': 2400, 'size': '1001-5000', 'country': 'us'}, ago(120))):
+                    info = json.loads(db.execute('SELECT info FROM graph_nodes WHERE id=?', (node,)).fetchone()[0])
+                    db.execute('UPDATE graph_nodes SET info=?,last_at=? WHERE id=?', (json.dumps({**info, 'profile': profile}), last, node))
+            people = lambda **f: sorted(i['name'] for i in graph.page(db, 'people', filters=f)['items'])
+            orgs = lambda **f: sorted(i['id'] for i in graph.page(db, 'orgs', filters=f)['items'])
+            self.assertEqual(people(closeness='close'), ['Ivy'])
+            self.assertEqual(people(closeness='regular'), ['Jo'])
+            self.assertEqual(people(closeness='faint'), ['Bo'])
+            self.assertEqual(people(last_contact='30'), ['Ivy'])
+            self.assertEqual(people(last_contact='90'), ['Jo'])
+            self.assertEqual(people(last_contact='older'), ['Bo'])
+            self.assertEqual(people(open_project='1'), ['Ivy'])  # Bo's project is done
+            self.assertEqual(people(open_project='1', closeness='faint'), [])
+            self.assertEqual(orgs(industry='software'), ['org:globex.example'])
+            self.assertEqual(orgs(industry='50%'), [])  # typed as text, not a pattern
+            self.assertEqual(orgs(size='11-50'), ['org:globex.example'])
+            self.assertEqual(orgs(size='1000+'), ['org:umber.example'])  # the exact head count first
+            self.assertEqual(orgs(size='1-10'), [])
+            self.assertEqual(orgs(country='US'), ['org:umber.example'])
+            self.assertEqual(orgs(last_contact='older'), ['org:umber.example'])
+            self.assertEqual(orgs(open_project='1'), ['org:globex.example'])
+            self.assertEqual(crm.countries_in_use(db), ['be', 'us'])
+            self.assertEqual(graph.page(db, 'projects', filters={'closeness': 'close', 'country': 'be'}).get('filters'), None)  # not a project's
+            with self.assertRaisesRegex(ValueError, 'Size'):
+                graph.page(db, 'orgs', filters={'size': 'huge'})
 
     def test_filter_values_are_bound_for_rows_and_total_counts(self):
         self.mails()
@@ -238,8 +280,8 @@ class Crm(unittest.TestCase):
         with self.store.connect() as db:
             before = {table: db.execute('SELECT COUNT(*) FROM ' + table).fetchone()[0]
                       for table in ('graph_nodes', 'projects')}
-            for name in ('projects', 'people', 'orgs'):
-                for key in ('tag', 'stage', 'org'):
+            for name, keys in (('projects', ('tag', 'stage', 'org')), ('people', ('tag', 'org')), ('orgs', ('tag', 'industry'))):
+                for key in keys:
                     with self.subTest(name=name, filter=key):
                         found = graph.page(db, name, filters={key: payload})
                         self.assertEqual(found['items'], [])
@@ -247,6 +289,9 @@ class Crm(unittest.TestCase):
             for key in ('owner', 'board', 'value_min', 'close_from'):
                 with self.subTest(filter=key), self.assertRaises(ValueError):
                     graph.page(db, 'projects', filters={key: payload})
+            for name, key in (('people', 'closeness'), ('people', 'last_contact'), ('orgs', 'size'), ('orgs', 'country'), ('orgs', 'open_project')):
+                with self.subTest(name=name, filter=key), self.assertRaises(ValueError):
+                    graph.page(db, name, filters={key: payload})
             with self.assertRaises(ValueError):
                 graph.page(db, 'projects; DROP TABLE projects;--')
             found = graph.page(db, 'projects', 'name; DROP TABLE graph_nodes;--')

@@ -723,6 +723,7 @@ def make_handler(app):
                         found['last_import'] = crm_import.last(db)  # "Undo last import"
                         found['crm_fields'] = crm_fields.fields(db)  # the owner's own fields per record type
                         found['tags'] = crm_fields.tags_in_use(db)  # for the filter sheet
+                        found['org_countries'] = crm.countries_in_use(db)  # the Organizations filter's Country
                         found['currency'] = app.currency()  # project values are in it
                         if app.fleet:
                             try:  # contacts teammates, friends and Family shared here, waiting for Add or Dismiss (contact_share.py)

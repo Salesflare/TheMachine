@@ -5,7 +5,7 @@ summary: Everyone you're in touch with: their page, summary and timeline, and ho
 code: graph.py, crm.py, bounces.py, enrichment.py, record_log.py, dashboard.html
 order: 2
 ---
-Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Filters, fields, tags and import work the same on all three lists: see [The Graph](graph.md).
+Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Fields, tags and import work the same on all three lists, and each list has its own filters: see [The Graph](graph.md).
 
 ## Someone's page
 

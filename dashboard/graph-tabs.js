@@ -80,7 +80,7 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
  if(forTeam!==graphTeam)return;  // Mine or Team changed while this loaded: the newer load draws
  if(!g.team)graphContactsIn=g.contacts_in||[];
  const team=!!g.team&&(graphTeam||graphPane==='held');const start=team?shareNote(g.sharing):'';
- if(!team){graphOwners=g.owners||[];graphLastImport=g.last_import||null;graphFields=g.crm_fields||[];graphTags=g.tags||[];if(g.currency)graphCurrency=g.currency;tagsPaint()}
+ if(!team){graphOwners=g.owners||[];graphLastImport=g.last_import||null;graphFields=g.crm_fields||[];graphTags=g.tags||[];graphCountries=g.org_countries||[];if(g.currency)graphCurrency=g.currency;tagsPaint()}
  const back=graphScroll;  /* back from a person: a quiet refresh that wins the race restores it too */const lc=!team&&g.list_counts||Object.fromEntries(['people','quiet','new','orgs','warmup','projects','projects_done'].map(k=>[k,(g[k]||[]).length]));graphLocal=!team&&g.list_counts?null:g;  /* the team's lists come whole */
  const had=quiet&&new Map([...pagers].filter(([k,p])=>k.startsWith('graph:')&&p.items.length).map(([k,p])=>[k,p.items.length]));
  if(team||graphListsTeam||JSON.stringify(lc)!==JSON.stringify(graphLists)||!g.list_counts){pagerDrop('graph');graphLists=lc}graphListsTeam=team;

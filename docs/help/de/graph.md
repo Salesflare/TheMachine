@@ -14,7 +14,7 @@ Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus
 
 ## Filtern und sortieren
 
-**Filtern**, neben den Tabs, grenzt die Liste ein nach Inhaber, Tag, Board, Phase, Organisation, Wert, erwartetem Abschlussdatum und **Keine Antwort seit 10+ Tagen**. Personen und Organisationen passen über ihre offenen Projekte. Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
+**Filtern**, neben den Tabs, grenzt die Liste ein. Jede Liste hat ihre eigenen Filter. Personen: Nähe, letzter Kontakt, Organisation, Inhaber, Tag und **Hat ein offenes Projekt**. Organisationen: Branche, Größe, Land, letzter Kontakt, Inhaber, Tag und **Hat ein offenes Projekt**. Projekte: Inhaber, Board, Phase, Tag, Organisation, Wert, erwartetes Abschlussdatum und **Keine Antwort seit 10+ Tagen**. Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
 
 Das Sortiermenü sortiert die Liste, auch nach **Wert** und **Abschlussdatum**. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle.
 

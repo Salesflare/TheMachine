@@ -2085,12 +2085,12 @@ DEFAULT_SORT = {'projects': 'last', 'projects_done': 'last'}
 def page(db, name, sort='', cursor=0, limit=30, filters=None):
     """One page of a Graph tab's list in the chosen order (closest, last contact, name, a project's stage, value or
     expected close); the cursor is where the page starts, next the cursor of the page after it, or None at the end.
-    filters (crm.FILTERS: owner, board, stage, organization, value and close date) narrow it, and total counts
-    what is left."""
+    filters (crm.KIND_FILTERS for its kind: a project's board, stage, value and close date; how close a person or
+    organization is, the last contact, an organization's industry, size and country) narrow it, and total counts what is left."""
     import crm
     if name not in PAGED and name != 'warmup':
         raise ValueError('list is one of ' + ', '.join([*PAGED, 'warmup']))
-    filters = crm.clean_filters(filters) if name != 'warmup' else {}
+    filters = crm.clean_filters(filters, crm.kind_of(name)) if name != 'warmup' else {}
     if sort not in crm.SORTS or name == 'warmup':
         sort = sort if sort in SORTS and (sort != 'stage' or name.startswith('projects')) else DEFAULT_SORT.get(name, 'closest')
     by_crm = bool(filters) or sort in crm.SORTS  # filtered, or in a CRM order (value, close date)
@@ -2137,7 +2137,7 @@ def page_ids(db, name, filters):
     if name not in PAGED:
         raise ValueError('list is one of ' + ', '.join(PAGED))
     # The List's own query (crm.page_rows) with no limit (-1): no second place that puts SQL together from the request
-    rows, _ = crm.page_rows(db, name, crm.clean_filters(filters), 'name', -1, 0)
+    rows, _ = crm.page_rows(db, name, crm.clean_filters(filters, crm.kind_of(name)), 'name', -1, 0)
     return {'ids': [r['id'] for r in rows]}
 
 
