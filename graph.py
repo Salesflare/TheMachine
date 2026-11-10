@@ -142,6 +142,7 @@ FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook
 ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|contact|help|accounts?|finance|jobs|hr|press|legal|security|privacy|feedback)@')
 GENERIC_NAMES = {'you', 'linkedin member', 'x conversation', 'linkedin conversation', 'unknown', 'unknown sender', 'unknown caller'}
 WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
+UNDATED = frozenset({'owner.card'})  # a record the owner made about someone: when it was made is no contact with them
 # A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
 PERSON_ID = re.compile(r'(?:email|wa|tg|slack|li|x|gh|manual):\S+')
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
@@ -1391,6 +1392,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     event_people, direct_people = {}, {}
     next_meeting, accounts = {}, collections.defaultdict(set)
     live_weight, history_events = collections.defaultdict(float), collections.defaultdict(list)
+    last_day = {}
     for event_id, (kind, at, account_id, m, found) in per_event.items():
         people = {}
         for identifier, _, weight, role in found:
@@ -1402,6 +1404,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                 continue
             day = at.astimezone(tz).date()  # the owner's day: a message at 00:17 on Sunday is Sunday
             day_weight[(node, day)] += weight
+            if kind not in UNDATED:  # last contact: what happened with them, never when a record about them was made
+                last_day[node] = max(last_day.get(node, day), day)
             if event_id not in past:
                 live_weight[(node, day)] += weight
                 live_roles[node][role].add(day)
@@ -1420,10 +1424,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     def age(day):
         return (current - dt.datetime.combine(day, dt.time(12), dt.timezone.utc)).total_seconds() / 86400
 
-    strength, last_day, live = collections.defaultdict(float), {}, collections.defaultdict(float)
+    strength, live = collections.defaultdict(float), collections.defaultdict(float)
     for (node, day), weight in day_weight.items():
         strength[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
-        last_day[node] = max(last_day.get(node, day), day)
     for (node, day), weight in live_weight.items():
         live[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
     signal_events = {e: v for e, v in per_event.items() if e not in past}  # projects and unnamed work: signals only

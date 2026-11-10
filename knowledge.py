@@ -150,14 +150,15 @@ def record(db, ref, caller=OWNER, kinds=KINDS, also=None):
 
 def last_contact(db, node_id):
     """When the owner last had contact with a record (an ISO moment): its latest signal that already happened, never a
-    meeting still ahead; for an organization, its people's. None when there was none."""
+    meeting still ahead; for an organization, its people's. None when there was none: then its Graph day is None too
+    (a to-do made about someone is no contact with them)."""
     row = graph.resolve(db, node_id)
-    if not row:
+    if not row or not row['last_at']:
         return None
     nodes = _members(db, row)
     current = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
     found = db.execute(f"SELECT max(e.occurred_at) FROM graph_events g JOIN events e ON e.id=g.event_id WHERE g.node_id IN "
-                       f"({','.join('?' * len(nodes))}) AND e.deleted=0 AND e.occurred_at<=?", (*nodes, current)).fetchone()[0]
+                       f"({','.join('?' * len(nodes))}) AND e.deleted=0 AND e.kind NOT IN ('owner.card') AND e.occurred_at<=?", (*nodes, current)).fetchone()[0]
     return found or row['last_at']
 
 
