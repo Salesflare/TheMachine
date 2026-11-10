@@ -154,7 +154,7 @@ def make_handler(app):
             # the request line is in: the clock starts here, not while a kept-alive connection waits for the next one
             self.started, self.action_name = time.monotonic(), ''
             close_kept(getattr(_REQUEST_TIMING, 'value', None))  # a request before it on this thread that wasn't logged
-            _REQUEST_TIMING.value = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0}
+            _REQUEST_TIMING.value = {'db_wait': 0.0, 'db_held': 0.0, 'db_connections': 0, 'cpu': time.thread_time()}
             ok = super().parse_request()
             _REQUEST_TIMING.value['read'] = ok and self.command == 'GET'  # a read: what it reads twice can be kept (Fleet.meta)
             return ok
@@ -169,7 +169,11 @@ def make_handler(app):
                 self.log_slow()
 
         def log_slow(self):
-            """A request over SLOW_REQUEST_SECONDS: its path (no query), the action, the total and the database time."""
+            """A request over SLOW_REQUEST_SECONDS: its path (no query), the action, the total, the CPU its own thread used
+            and the database time. A total far over its CPU and database time waited on something else: another thread
+            holding the interpreter (a Graph build, the Fleet's rounds), a lock or the network. On a busy Machine the chat's
+            and reviews' graph lookups took some 10 s here, while the same lookups on a copy of its database took under
+            0.4 s (2026-11-10): this line says which of the two it was."""
             timing, _REQUEST_TIMING.value = getattr(_REQUEST_TIMING, 'value', None), None
             close_kept(timing)  # the connections it kept between its store.connect calls
             if self.started is None or timing is None:
@@ -178,8 +182,8 @@ def make_handler(app):
             if total < SLOW_REQUEST_SECONDS:
                 return
             path = urllib.parse.urlsplit(getattr(self, 'path', '') or '').path[:80]
-            LOG.warning('slow request method=%s path=%s action=%s total=%.1fs db_wait=%.1fs db_held=%.1fs db_connections=%d',
-                        self.command, path, self.action_name or '-', total, timing['db_wait'], timing['db_held'],
+            LOG.warning('slow request method=%s path=%s action=%s total=%.1fs cpu=%.1fs db_wait=%.1fs db_held=%.1fs db_connections=%d',
+                        self.command, path, self.action_name or '-', total, time.thread_time() - timing['cpu'], timing['db_wait'], timing['db_held'],
                         timing['db_connections'])
 
         def answer_one_request(self):

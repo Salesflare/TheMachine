@@ -67,6 +67,8 @@ class SlowRequests(unittest.TestCase):
         self.assertGreaterEqual(int(line.split('db_connections=')[1]), 1)
         held = float(line.split('db_held=')[1].split('s')[0])
         self.assertGreaterEqual(held, 0.1)
+        cpu, total = float(line.split(' cpu=')[1].split('s')[0]), float(line.split('total=')[1].split('s')[0])
+        self.assertLess(cpu, total)  # the action slept: its thread's CPU is apart from its total
         self.assertNotIn('sam@client.example', '\n'.join(logged.output))
         self.assertNotIn('secretclient', '\n'.join(logged.output))
 
