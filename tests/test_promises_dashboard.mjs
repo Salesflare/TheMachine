@@ -16,12 +16,13 @@ let promises=[
  {id:3,direction:'theirs',who:'Kim',what:'get back about the pilot',due:null,state:'open',made_at:made,check_at:check},
  {id:4,direction:'mine',who:'Old',what:'already kept',due:null,state:'kept',made_at:made,check_at:check}];
 const state=()=>({suggestions:[],promises,connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]});
-const calls=[],errors=[];
+const calls=[],errors=[];let failNext=false;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  if(failNext){failNext=false;res.statusCode=400;res.end(JSON.stringify({error:'This promise is no longer open'}));return}
   res.end(call.action==='promise_todo'?JSON.stringify({id:call.args.id,card:'c'+call.args.id,existing:call.args.id===2}):'{"status":"kept"}');return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
  res.end('{}');
@@ -64,17 +65,47 @@ try{
   assert.ok(sizes.page<=sizes.viewport&&sizes.list<=sizes.viewport,'overflow at '+width);widths.push({width,...sizes});
   if(process.env.PROMISES_SHOT)await list.screenshot({path:process.env.PROMISES_SHOT+'-'+width+'.png'});
  }
- // Nudge: its to-do is made and prepared on the Machine, then its chat opens
- await menu(3);await list.locator('[data-promise-todo="3"]').click();
+ // Nudge: its to-do is made and prepared on the Machine while the owner stays on the list. A second click while it asks
+ // sends nothing more; a toast says a draft is coming, with Open to-do; the row then shows "a to-do now".
+ const hashBefore=await page.evaluate(()=>location.hash);
+ // A failed ask says why in the toast, on the list, and the item works again
+ failNext=true;await menu(3);await list.locator('[data-promise-todo="3"]').click();
+ await page.locator('#toast.show.error').waitFor();
+ assert.ok((await page.locator('#toast').textContent()).includes('This promise is no longer open'));
+ assert.equal(await page.evaluate(()=>location.hash),hashBefore);
+ await page.waitForFunction(()=>!document.querySelector('[data-promise-todo="3"]').disabled);
+ calls.length=0;await page.evaluate(()=>$('#toast').classList.remove('show'));
+ await menu(3);
+ await list.locator('[data-promise-todo="3"]').evaluate(b=>{b.click();b.click()});
  for(let i=0;i<100&&!calls.length;i++)await page.waitForTimeout(20);
  assert.deepEqual(calls[0],{action:'promise_todo',args:{id:3}});
- await page.waitForFunction(()=>location.hash==='#chat=c3');
- assert.equal(await list.locator('details.promise-menu[open]').count(),0);
- await page.evaluate(()=>history.back());await page.waitForFunction(()=>location.hash!=='#chat=c3');
+ promises=promises.map(p=>p.id===3?{...p,state:'card',suggestion_id:'c3'}:p);
+ const toastEl=page.locator('#toast.show');
+ await toastEl.waitFor();
+ assert.equal((await toastEl.textContent()).trim(),'Drafting a nudge for you to send. Open to-do');
+ assert.ok(!(await toastEl.getAttribute('class')).includes('error'));
+ assert.equal(await page.evaluate(()=>location.hash),hashBefore);  // no chat, no page change
+ assert.ok(await page.locator('#promises-list').evaluate(d=>d.open));
+ assert.equal(calls.filter(c=>c.action==='promise_todo').length,1);
+ await page.evaluate(()=>refresh());
+ assert.equal(await list.locator('a.promise-todo[href="#chat=c3"]').textContent(),'a to-do now');
+ assert.equal(await list.locator('details.promise-menu[open]').count(),0,'its menu closed after Nudge');
+ if(process.env.PROMISES_SHOT)await page.screenshot({path:process.env.PROMISES_SHOT+'-toast.png'});
+ // Open to-do in the toast opens it
+ await toastEl.locator('[data-toast-open="c3"]').click();
+ await page.waitForFunction(()=>location.hash==='#card=c3');
+ await page.evaluate(()=>{location.hash=''});
  if(!await page.locator('#promises-list').evaluate(d=>d.open))await page.locator('#promises-head').click();
+ // Nudge on one that is a to-do already ("Open its to-do"): its chat opens, as before
+ await page.evaluate(()=>document.querySelectorAll('details.promise-menu[open]').forEach(d=>{d.open=false}));
+ await menu(2);await list.locator('[data-promise-todo="2"]').click();
+ await page.waitForFunction(()=>location.hash==='#chat=c2');
+ await page.evaluate(()=>history.back());await page.waitForFunction(()=>location.hash!=='#chat=c2');
+ if(!await page.locator('#promises-list').evaluate(d=>d.open))await page.locator('#promises-head').click();
+ const n=calls.length;
  await menu(1);await list.locator('[data-promise="1"][data-close="kept"]').click();
- for(let i=0;i<100&&calls.length<2;i++)await page.waitForTimeout(20);
- assert.deepEqual(calls[1],{action:'promise_close',args:{id:1,status:'kept'}});
+ for(let i=0;i<100&&calls.length<=n;i++)await page.waitForTimeout(20);
+ assert.deepEqual(calls[n],{action:'promise_close',args:{id:1,status:'kept'}});
  promises=promises.map(p=>p.id===1?{...p,state:'kept'}:p);await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#promises-list summary .count').textContent(),'2');
  assert.ok(await page.locator('#promises-list').evaluate(d=>d.open));  // stays open across refresh
