@@ -120,7 +120,7 @@ def new_person_info(node_id):
 def show_new_people(db, made, edited):
     """Many people the owner added by hand at once, by name only (graph.create_record, no address or organization), each
     with the same details of the owner's (edited, as person_edits keeps them: a Type): on their own pages at once, in one
-    write, as show_new_record and show_person_edit put one there. Facebook's Add them as people adds thousands."""
+    write, as show_new_record and show_person_edit put one there. Facebook's Add button adds thousands."""
     rows = []
     for done in made:
         info = new_person_info(done['node_id'])

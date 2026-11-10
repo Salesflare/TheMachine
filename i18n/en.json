@@ -265,10 +265,6 @@
  "Add stage": "Add stage",
  "Add the error log": "Add the error log",
  "Add the to-do": "Add the to-do",
- "Add them as people": {
-  "one": "Add them as a person",
-  "other": "Add them as people"
- },
  "Add to": "Add to",
  "Add to Home Screen": "Add to Home Screen",
  "Add to calendar": "Add to calendar",
@@ -279,6 +275,10 @@
  "Add transcript": "Add transcript",
  "Add your name first, in Settings": "Add your name first, in Settings",
  "Add {}": "Add {}",
+ "Add {} as personal contacts": {
+  "one": "Add {} as a personal contact",
+  "other": "Add {} as personal contacts"
+ },
  "Add “{}” as new": "Add “{}” as new",
  "Added": "Added",
  "Added a summary line": "Added a summary line",
@@ -299,9 +299,9 @@
  "Added to {} at {}.": "Added to {} at {}.",
  "Added to {}, invited {}.": "Added to {}, invited {}.",
  "Added to {}.": "Added to {}.",
- "Added {} people to your Graph.": {
-  "one": "Added {} person to your Graph.",
-  "other": "Added {} people to your Graph."
+ "Added {} personal contacts.": {
+  "one": "Added {} personal contact.",
+  "other": "Added {} personal contacts."
  },
  "Added {} projects.": "Added {} projects.",
  "Added {}.": "Added {}.",
@@ -6009,6 +6009,7 @@
  "With OpenAI (checking…)": "With OpenAI (checking…)",
  "With its board": "With its board",
  "With names": "With names",
+ "With their birthday. Reminders only come for people you write to.": "With their birthday. Reminders only come for people you write to.",
  "With you": "With you",
  "With your email": "With your email",
  "With {}": "With {}",
@@ -6715,6 +6716,10 @@
  "{} Check recovered and saved.": "{} Check recovered and saved.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}",
  "{} Encrypted for their Machine only.": "{} Encrypted for their Machine only.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} Facebook friend isn’t in your Graph yet.",
+  "other": "{} Facebook friends aren’t in your Graph yet."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "One Fleet item waits for you under To-dos.",
   "other": "{} Fleet items wait for you under To-dos."
@@ -7131,10 +7136,6 @@
  "{} other signals": {
   "one": "{} other signal",
   "other": "{} other signals"
- },
- "{} others aren’t in your Graph.": {
-  "one": "{} other isn’t in your Graph.",
-  "other": "{} others aren’t in your Graph."
  },
  "{} owns it.": "{} owns it.",
  "{} pages": {

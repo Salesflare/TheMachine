@@ -103,7 +103,7 @@ class BirthdaysFacebookApp:
                     raise ValueError('Import again first')
                 people = birthdays_facebook.save(db, got[1], stamp)
                 saved = len(people)
-                # the rest read goes with the preview; the friends nobody in the Graph has stay, for Add them as people
+                # the rest read goes with the preview; the friends nobody in the Graph has stay, for the Add button
                 birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people, 'others': got[1].get('others') or [],
                                                           'added': got[1].get('added') or []}, stamp)
             elif step in ('add', 'undo_add'):

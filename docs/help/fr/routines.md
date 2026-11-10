@@ -33,7 +33,7 @@ Les anniversaires viennent de vos agendas (les anniversaires et l’agenda Anniv
 
 Seul **Enregistrer** les garde, et seulement l’anniversaire, sur la page de chaque personne. Un anniversaire que vous y avez saisi reste. Elle ne relit jamais d’elle-même : c’est **Importer à nouveau** sur la tâche qui le fait. Le navigateur doit être connecté à Facebook. S’il ne l’est pas, touchez **Se connecter à Facebook** sur la tâche et connectez-vous-y ; ensuite elle lit la page d’elle-même. The Machine ne se connecte jamais à votre place.
 
-Les amis que personne dans votre Graph n’a sont comptés, avec quelques noms. **Ajouter comme personnes** les ajoute tous d’un coup, même après Enregistrer : chacun comme contact personnel, avec son nom et son anniversaire, jamais partagé avec une Work Fleet. Un nom qu’une personne de votre Graph a déjà est ignoré. **Annuler** sur la tâche retire exactement ces personnes.
+Les amis que personne dans votre Graph n’a sont comptés, avec quelques noms. **Ajouter … comme contacts personnels** les ajoute tous d’un coup, même après Enregistrer : chacun avec son nom et son anniversaire, jamais partagé avec une Work Fleet. Un nom qu’une personne de votre Graph a déjà est ignoré. Les rappels d’anniversaire ne viennent toujours que pour les personnes à qui vous écrivez. **Annuler** sur la tâche retire exactement ces personnes.
 
 Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam utilise un court passage quand il y a du courrier à lire). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
 

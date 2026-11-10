@@ -5,8 +5,9 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // The Import birthdays from Facebook to-do's preview with friends nobody in the Graph has (todos-facebook-people.js,
-// birthdays_facebook.add): how many, a few names, and Add them as people next to Save, which stays the main button.
-// Add sends one step; the to-do then says how many it added, with Undo there and on the toast. With no Save, Add is the
+// birthdays_facebook.add): how many, a few names, and Add … as personal contacts next to Save, which stays the main
+// button. Counts carry the locale's thousands separator, and a ghost button that starts a wrapped row lines up with the
+// row's left edge. Add sends one step; the to-do then says how many it added, with Undo there and on the toast. With no Save, Add is the
 // main button. At 390 and 1440, light and dark. SHOTS=<folder> saves screenshots. All mocked; made-up names only.
 const dashboard=await dashboardPage();
 const SHOTS=process.env.SHOTS||'';
@@ -31,43 +32,53 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port,errors=[];let browser;
 const text=async l=>(await l.innerText()).replace(/\s+/g,' ').trim();
+const ADD='Add 1,199 as personal contacts';
+// each button that starts a row of .cl-acts: how far its label is from the row's left edge (0 for every one)
+const rowStarts=l=>l.evaluate(row=>{const left=row.getBoundingClientRect().left;let top=-1;return [...row.querySelectorAll('button')].flatMap(b=>{const r=b.getBoundingClientRect();if(r.top<=top+1)return [];top=r.top;
+ const range=document.createRange();range.selectNodeContents(b);const label=b.classList.contains('ghost')?range.getBoundingClientRect().left:r.left;return [Math.round(label-left)]})});
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,scheme] of [[1440,'light'],[390,'light'],[1440,'dark'],[390,'dark']]){fresh();
   const context=await browser.newContext({viewport:{width,height:width<500?844:900},colorScheme:scheme,...(width<500?{isMobile:true,hasTouch:true,deviceScaleFactor:2}:{})}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
-  const shot=async name=>{if(SHOTS){await todo.scrollIntoViewIfNeeded();await page.screenshot({path:`${SHOTS}/facebook-people-${name}-${width}-${scheme}.png`})}};
+  const shot=async name=>{if(SHOTS){await todo.scrollIntoViewIfNeeded();if(width<500)await todo.locator('.cl-acts').evaluate(e=>e.scrollIntoView({block:'center'}));await page.screenshot({path:`${SHOTS}/facebook-people-${name}-${width}-${scheme}.png`})}};
   await page.goto(origin+'/?v='+width+scheme);
   const todo=page.locator('#task-fb1');await todo.waitFor();
-  // The preview: the others after the matched ones, a few of their names, Add them as people next to Save
+  // The preview: the others after the matched ones, a few of their names, Add … as personal contacts next to Save
   const others=todo.locator('.cl-fine',{hasText:'aren’t in your Graph'});await others.waitFor();
-  assert.match(await text(others),/^1,?199 others aren’t in your Graph\.$/);
-  assert.match(await text(todo.locator('.cl-fine',{hasText:'Ines Ivers'})),/^Ines Ivers, Jules Jessup, .*Pia Pell and 1,?191 more$/);
+  assert.equal(await text(todo.locator('.cl-lead')),'Found 1,312 birthdays on Facebook.');
+  assert.equal(await text(others),'1,199 Facebook friends aren’t in your Graph yet.');
+  assert.match(await text(todo.locator('.cl-fine',{hasText:'Ines Ivers'})),/^Ines Ivers, Jules Jessup, .*Pia Pell and 1,191 more$/);
+  const note=todo.locator('.cl-acts + .cl-fine');
+  assert.equal(await text(note),'With their birthday. Reminders only come for people you write to.','under the buttons');
   const fines=await todo.locator('.cl-fine').allInnerTexts();
   assert.ok(fines.findIndex(x=>x.includes('Skipped'))<fines.findIndex(x=>x.includes('aren’t in your Graph')),'after the matched and skipped ones');
   const buttons=todo.locator('.cl-acts button');
-  assert.deepEqual((await buttons.allInnerTexts()).map(x=>x.trim()),['Save 96 birthdays','Add them as people','Import again']);
+  assert.deepEqual((await buttons.allInnerTexts()).map(x=>x.trim()),['Save 96 birthdays',ADD,'Import again']);
   assert.deepEqual(await buttons.evaluateAll(b=>b.map(x=>x.className)),['primary','ghost','ghost'],'Save stays the main button');
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll at '+width);
+  const starts=await rowStarts(todo.locator('.cl-acts'));assert.ok(starts.every(x=>Math.abs(x)<=1),'every row starts at the left edge: '+starts);
+  if(width<500)assert.ok(starts.length>1,'the row wraps at '+width);
   await shot('preview');
   // Add: one step for all of them; the to-do and the toast say how many, each with Undo
-  await todo.getByRole('button',{name:'Add them as people'}).click();
-  await page.locator('#toast',{hasText:'people to your Graph.'}).waitFor();
+  await todo.getByRole('button',{name:ADD}).click();
+  await page.locator('#toast',{hasText:'Added 1,199 personal contacts.'}).waitFor();
   assert.deepEqual(posts.map(p=>p.args),[{suggestion_id:'fb1',step:'add'}]);
   const added=todo.locator('.cl-fine',{hasText:'Added'});await added.waitFor();
-  assert.match(await text(added),/^Added 1,?199 people to your Graph\.$/);
-  assert.equal(await todo.getByRole('button',{name:'Add them as people'}).count(),0,'added once');
+  assert.equal(await text(added),'Added 1,199 personal contacts.');
+  assert.equal(await note.count(),0,'no note once added');
+  assert.equal(await todo.getByRole('button',{name:ADD}).count(),0,'added once');
   assert.deepEqual((await buttons.allInnerTexts()).map(x=>x.trim()),['Save 96 birthdays','Undo','Import again'],'Undo takes Add’s place');
   assert.equal(await page.locator('#toast [data-fbp="undo_add"]').count(),1);
   await shot('added');
   // Undo on the to-do: exactly those go again, and Add is back
   await todo.locator('.cl-acts').getByRole('button',{name:'Undo'}).click();
   await page.locator('#toast',{hasText:'Undone.'}).waitFor();
-  await todo.getByRole('button',{name:'Add them as people'}).waitFor();
+  await todo.getByRole('button',{name:ADD}).waitFor();
   assert.deepEqual(posts.map(p=>p.args.step),['add','undo_add']);
   // Undo on the toast does the same
-  await todo.getByRole('button',{name:'Add them as people'}).click();
+  await todo.getByRole('button',{name:ADD}).click();
   await page.locator('#toast [data-fbp="undo_add"]').click();
   await page.locator('#toast',{hasText:'Undone.'}).waitFor();
   assert.deepEqual(posts.map(p=>p.args.step),['add','undo_add','add','undo_add']);
@@ -75,7 +86,7 @@ try{
   fresh(preview({matched:0,new:0,shown:[],more:0,ambiguous:[]}));await page.evaluate(()=>refresh());
   await todo.locator('.cl-end',{hasText:'None of them are in your Graph yet'}).waitFor();
   assert.equal(await todo.locator('.cl-fine',{hasText:'aren’t in your Graph'}).count(),0);
-  assert.deepEqual(await todo.locator('.cl-acts button').evaluateAll(b=>b.map(x=>[x.textContent.trim(),x.className])),[['Add them as people','primary'],['Import again','ghost']]);
+  assert.deepEqual(await todo.locator('.cl-acts button').evaluateAll(b=>b.map(x=>[x.textContent.trim(),x.className])),[[ADD,'primary'],['Import again','ghost']]);
   await shot('none-matched');
   await context.close();
  }

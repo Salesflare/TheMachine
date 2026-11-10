@@ -10,14 +10,14 @@ sign-in is handled here: a browser that isn't signed in to Facebook is told to t
 What is kept: only each matched person's birthday (month and day, the year when the page shows it), as the one
 birthday their page shows (person_birthday.offer, source facebook), which the Birthdays routine reads. One the owner set
 or removed on the person's page stays. Nothing else from Facebook is kept: no link, photo or ID. The names read are for
-matching and for Add them as people (below), and live only on the to-do until the owner reads again. After Save the
+matching and for the Add button (below), and live only on the to-do until the owner reads again. After Save the
 to-do keeps who was saved (their Graph id and name), to link to their pages.
 
 Matching never makes a new person: the same full name as exactly one person in the Graph (else the same first and last
 name, one with a middle name the other doesn't have). Two people with that name is ambiguous: skipped, and named in the
 preview so the owner can add it themselves.
 
-Friends nobody in the Graph has (others) become people only on the owner's Add them as people (add): each a person added
+Friends nobody in the Graph has (others) become people only on the owner's tap on Add (add): each a person added
 by hand (graph.create_record), with their name and birthday (source facebook) and Type Personal, so never shared with a
 Work Fleet (shared_graph.Scope). Matched again at that moment, so anyone who now has the same name as a person in the
 Graph is skipped. One transaction for all of them; their pages show at once and the rest of the Graph follows in one
@@ -51,7 +51,7 @@ STATES = ('reading', 'signed_out', 'failed', 'preview', 'saved')
 READ_MINUTES = 8  # a read that still says reading after this ended without a word (a restart): it failed
 SHOWN = 8  # matched people the preview names; the rest is a count
 AMBIGUOUS_SHOWN = 20
-ADD_MAX = 5000  # friends one Add them as people adds at most
+ADD_MAX = 5000  # friends one Add adds at most
 PERSONAL = {'side': 'personal'}  # their Type, as the owner sets it on a person's page (person_edits)
 
 # Months as the page may write them, in the languages the app speaks (and their short forms)
@@ -415,7 +415,7 @@ def view(db, suggestion_id, now=None):
 
 
 def others_view(data):
-    """The friends nobody in the Graph has, as the to-do shows them: {'others': how many Add them as people adds,
+    """The friends nobody in the Graph has, as the to-do shows them: {'others': how many Add adds,
     'others_shown': a few names, 'added': how many it added (Undo takes them away)}."""
     others = (data.get('others') or [])[:ADD_MAX]
     return {'others': len(others), 'others_shown': [o['name'] for o in others[:SHOWN]], 'added': len(data.get('added') or ())}

@@ -35,7 +35,7 @@ Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kal
 
 Nur **Speichern** behält sie, und nur den Geburtstag, auf der Seite der Person. Einen Geburtstag, den du dort eingetragen hast, behält sie. Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
 
-Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **Als Personen hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede als persönlicher Kontakt mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat, überspringt sie. **Rückgängig** in der Aufgabe entfernt genau diese Personen wieder.
+Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **… als persönliche Kontakte hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat, überspringt sie. Geburtstagserinnerungen kommen weiterhin nur für Leute, denen du schreibst. **Rückgängig** in der Aufgabe entfernt genau diese Personen wieder.
 
 Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 

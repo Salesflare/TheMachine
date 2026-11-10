@@ -1,5 +1,5 @@
 """Facebook friends nobody in the Graph has, added as people (birthdays_facebook.add and remove, the Import birthdays from
-Facebook to-do's Add them as people, docs/help/routines.md "Templates"): only on the owner's tap, each a Personal person
+Facebook to-do's Add button, docs/help/routines.md "Templates"): only on the owner's tap, each a Personal person
 with their name and birthday (source facebook), never shared with a Work Fleet. Matched again at that moment: a name a
 person in the Graph has now, or two people have, is skipped. One transaction, one Graph build after it, and nothing
 looked up for them. Undo takes exactly those people away. Made-up people only."""

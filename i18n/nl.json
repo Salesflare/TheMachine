@@ -265,10 +265,6 @@
  "Add stage": "Fase toevoegen",
  "Add the error log": "Het foutenlogboek toevoegen",
  "Add the to-do": "To-do toevoegen",
- "Add them as people": {
-  "one": "Voeg toe als persoon",
-  "other": "Voeg toe als personen"
- },
  "Add to": "Toevoegen aan",
  "Add to Home Screen": "Zet op beginscherm",
  "Add to calendar": "Toevoegen aan agenda",
@@ -279,6 +275,10 @@
  "Add transcript": "Transcript toevoegen",
  "Add your name first, in Settings": "Voeg eerst je naam toe, in Instellingen",
  "Add {}": "{} toevoegen",
+ "Add {} as personal contacts": {
+  "one": "Voeg {} toe als persoonlijk contact",
+  "other": "Voeg {} toe als persoonlijke contacten"
+ },
  "Add “{}” as new": "“{}” toevoegen als nieuw",
  "Added": "Toegevoegd",
  "Added a summary line": "Regel aan samenvatting toegevoegd",
@@ -299,9 +299,9 @@
  "Added to {} at {}.": "Toegevoegd aan {} om {}.",
  "Added to {}, invited {}.": "Toegevoegd aan {}, {} uitgenodigd.",
  "Added to {}.": "Toegevoegd aan {}.",
- "Added {} people to your Graph.": {
-  "one": "{} persoon toegevoegd aan je Graph.",
-  "other": "{} personen toegevoegd aan je Graph."
+ "Added {} personal contacts.": {
+  "one": "{} persoonlijk contact toegevoegd.",
+  "other": "{} persoonlijke contacten toegevoegd."
  },
  "Added {} projects.": "{} projecten toegevoegd.",
  "Added {}.": "{} toegevoegd.",
@@ -6009,6 +6009,7 @@
  "With OpenAI (checking…)": "Met OpenAI (controleren…)",
  "With its board": "Met het bord",
  "With names": "Met namen",
+ "With their birthday. Reminders only come for people you write to.": "Met hun verjaardag. Herinneringen komen alleen voor mensen naar wie je schrijft.",
  "With you": "Met jou",
  "With your email": "Met je e-mail",
  "With {}": "Met {}",
@@ -6715,6 +6716,10 @@
  "{} Check recovered and saved.": "{} Check hersteld en opgeslagen.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks lopen hoogstens elke 10 minuten, dus meldingen die ondertussen gewist zijn, kunnen gemist worden.{}",
  "{} Encrypted for their Machine only.": "{} Alleen versleuteld voor hun Machine.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} Facebookvriend staat nog niet in je Graph.",
+  "other": "{} Facebookvrienden staan nog niet in je Graph."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "{} Fleet-item wacht op je onder To-do’s.",
   "other": "{} Fleet-items wachten op je onder To-do’s."
@@ -7131,10 +7136,6 @@
  "{} other signals": {
   "one": "{} ander signaal",
   "other": "{} andere signalen"
- },
- "{} others aren’t in your Graph.": {
-  "one": "{} andere staat niet in je Graph.",
-  "other": "{} anderen staan niet in je Graph."
  },
  "{} owns it.": "{} is eigenaar.",
  "{} pages": {

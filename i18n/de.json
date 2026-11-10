@@ -265,10 +265,6 @@
  "Add stage": "Phase hinzufügen",
  "Add the error log": "Fehlerprotokoll anhängen",
  "Add the to-do": "Aufgabe hinzufügen",
- "Add them as people": {
-  "one": "Als Person hinzufügen",
-  "other": "Als Personen hinzufügen"
- },
  "Add to": "Hinzufügen zu",
  "Add to Home Screen": "Zum Startbildschirm hinzufügen",
  "Add to calendar": "Zum Kalender hinzufügen",
@@ -279,6 +275,10 @@
  "Add transcript": "Transkript hinzufügen",
  "Add your name first, in Settings": "Trag zuerst deinen Namen in den Einstellungen ein",
  "Add {}": "{} hinzufügen",
+ "Add {} as personal contacts": {
+  "one": "{} als persönlichen Kontakt hinzufügen",
+  "other": "{} als persönliche Kontakte hinzufügen"
+ },
  "Add “{}” as new": "„{}“ neu hinzufügen",
  "Added": "Hinzugefügt",
  "Added a summary line": "Zeile zur Zusammenfassung hinzugefügt",
@@ -299,9 +299,9 @@
  "Added to {} at {}.": "Um {1} zu {0} hinzugefügt.",
  "Added to {}, invited {}.": "Zu {} hinzugefügt, {} eingeladen.",
  "Added to {}.": "Zu {} hinzugefügt.",
- "Added {} people to your Graph.": {
-  "one": "{} Person zu deinem Graph hinzugefügt.",
-  "other": "{} Personen zu deinem Graph hinzugefügt."
+ "Added {} personal contacts.": {
+  "one": "{} persönlichen Kontakt hinzugefügt.",
+  "other": "{} persönliche Kontakte hinzugefügt."
  },
  "Added {} projects.": "{} Projekte hinzugefügt.",
  "Added {}.": "{} hinzugefügt.",
@@ -6009,6 +6009,7 @@
  "With OpenAI (checking…)": "Mit OpenAI (wird geprüft…)",
  "With its board": "Mit seinem Board",
  "With names": "Mit Namen",
+ "With their birthday. Reminders only come for people you write to.": "Mit ihrem Geburtstag. Erinnerungen kommen nur für Leute, denen du schreibst.",
  "With you": "Mit dir",
  "With your email": "Mit deiner E-Mail-Adresse",
  "With {}": "Mit {}",
@@ -6715,6 +6716,10 @@
  "{} Check recovered and saved.": "{} Prüfung wiederhergestellt und gespeichert.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Prüfungen laufen höchstens alle 10 Minuten, daher können zwischendurch gelöschte Benachrichtigungen fehlen.{}",
  "{} Encrypted for their Machine only.": "{} Nur für ihre Machine verschlüsselt.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} Facebook-Freund ist noch nicht in deinem Graph.",
+  "other": "{} Facebook-Freunde sind noch nicht in deinem Graph."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "{} Fleet-Eintrag wartet unter Aufgaben auf dich.",
   "other": "{} Fleet-Einträge warten unter Aufgaben auf dich."
@@ -7131,10 +7136,6 @@
  "{} other signals": {
   "one": "{} anderes Signal",
   "other": "{} andere Signale"
- },
- "{} others aren’t in your Graph.": {
-  "one": "{} weitere Person ist nicht in deinem Graph.",
-  "other": "{} weitere sind nicht in deinem Graph."
  },
  "{} owns it.": "Es gehört {}.",
  "{} pages": {

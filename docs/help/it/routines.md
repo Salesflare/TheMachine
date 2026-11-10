@@ -33,7 +33,7 @@ I compleanni vengono dai tuoi calendari (i compleanni e il calendario Compleanni
 
 Solo **Salva** li conserva, e solo il compleanno, sulla pagina di ogni persona. Un compleanno che hai inserito lì resta. Non rilegge mai da sola: lo fa **Importa di nuovo** sull’attività. Il browser deve avere l’accesso a Facebook. Se non ce l’ha, tocca **Accedi a Facebook** sull’attività e accedi lì; poi legge la pagina da sola. The Machine non accede mai al posto tuo.
 
-Gli amici che nessuno nel tuo Graph ha vengono contati, con alcuni nomi. **Aggiungi come persone** li aggiunge tutti insieme, anche dopo Salva: ognuno come contatto personale con nome e compleanno, mai condiviso con una Work Fleet. Un nome che ha già qualcuno nel tuo Graph viene saltato. **Annulla** sull’attività toglie esattamente quelle persone.
+Gli amici che nessuno nel tuo Graph ha vengono contati, con alcuni nomi. **Aggiungi … come contatti personali** li aggiunge tutti insieme, anche dopo Salva: ognuno con nome e compleanno, mai condiviso con una Work Fleet. Un nome che ha già qualcuno nel tuo Graph viene saltato. I promemoria di compleanno arrivano sempre solo per le persone a cui scrivi. **Annulla** sull’attività toglie esattamente quelle persone.
 
 Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 

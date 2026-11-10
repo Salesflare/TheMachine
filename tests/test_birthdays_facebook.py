@@ -264,7 +264,7 @@ class Import(unittest.TestCase):
         self.assertIn(('email:sam@mail.example', 'contacts'), on_day)  # the Birthdays run reads it like Google's
         kept = json.loads(row['data'])
         self.assertEqual((row['state'], set(kept)), ('saved', {'saved', 'people', 'others', 'added'}))  # who was saved; the rest read is gone
-        self.assertEqual(([o['name'] for o in kept['others']], kept['added']), (['Lee Okafor'], []))  # but friends nobody in the Graph has, for Add them as people
+        self.assertEqual(([o['name'] for o in kept['others']], kept['added']), (['Lee Okafor'], []))  # but friends nobody in the Graph has, for the Add button
         self.assertEqual({p['id'] for p in kept['people']}, {'email:robin@mail.example', 'email:sam@mail.example'})
         with self.store.connect() as db:
             self.assertEqual(person_birthday.get(db, 'email:sam@mail.example')['source'], 'facebook')  # the one on their page

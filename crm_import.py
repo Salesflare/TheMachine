@@ -477,7 +477,7 @@ def _person(db, rec, node_id, now, undo):
 
 def details_made(db, ids, fields, now):
     """The owner's details (person_edits fields) on people just made (graph.create_record): the graph has no node for
-    them until the rebuild, so they go on their identity directly. For an import, and Facebook's Add them as people."""
+    them until the rebuild, so they go on their identity directly. For an import, and Facebook's Add button."""
     db.executemany('INSERT OR REPLACE INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)', [(i, json.dumps(fields), now) for i in ids])
 
 
@@ -680,7 +680,7 @@ def undo(db, import_id, now):
 
 def drop_made(db, node_id):
     """A person or organization added as if by hand (graph.create_record) goes again: what made it and the details kept
-    on it. For an import's Undo, and Facebook's Add them as people's (birthdays_facebook.remove). The caller rebuilds."""
+    on it. For an import's Undo, and Facebook's Add's (birthdays_facebook.remove). The caller rebuilds."""
     db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
     db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
     db.execute('DELETE FROM person_edits WHERE identifier=?', (node_id,))

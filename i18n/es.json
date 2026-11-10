@@ -265,10 +265,6 @@
  "Add stage": "Añadir etapa",
  "Add the error log": "Añadir el registro de errores",
  "Add the to-do": "Añadir la tarea",
- "Add them as people": {
-  "one": "Añadir como persona",
-  "other": "Añadir como personas"
- },
  "Add to": "Añadir a",
  "Add to Home Screen": "Añadir a pantalla de inicio",
  "Add to calendar": "Añadir al calendario",
@@ -279,6 +275,10 @@
  "Add transcript": "Añadir transcripción",
  "Add your name first, in Settings": "Añade primero tu nombre, en Ajustes",
  "Add {}": "Añadir {}",
+ "Add {} as personal contacts": {
+  "one": "Añadir {} como contacto personal",
+  "other": "Añadir {} como contactos personales"
+ },
  "Add “{}” as new": "Añadir “{}” como nuevo",
  "Added": "Añadida",
  "Added a summary line": "Línea de resumen añadida",
@@ -299,9 +299,9 @@
  "Added to {} at {}.": "Añadido a {} a las {}.",
  "Added to {}, invited {}.": "Añadido a {}, invitado {}.",
  "Added to {}.": "Añadido a {}.",
- "Added {} people to your Graph.": {
-  "one": "{} persona añadida a tu Graph.",
-  "other": "{} personas añadidas a tu Graph."
+ "Added {} personal contacts.": {
+  "one": "{} contacto personal añadido.",
+  "other": "{} contactos personales añadidos."
  },
  "Added {} projects.": "Se añadieron {} proyectos.",
  "Added {}.": "Se añadió {}.",
@@ -6009,6 +6009,7 @@
  "With OpenAI (checking…)": "Con OpenAI (comprobando…)",
  "With its board": "Con su tablero",
  "With names": "Con nombres",
+ "With their birthday. Reminders only come for people you write to.": "Con su cumpleaños. Los recordatorios solo llegan para la gente a la que escribes.",
  "With you": "Contigo",
  "With your email": "Con tu correo",
  "With {}": "Con {}",
@@ -6715,6 +6716,10 @@
  "{} Check recovered and saved.": "{} Revisión recuperada y guardada.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Las comprobaciones se hacen como mucho cada 10 minutos, así que pueden perderse notificaciones borradas entre medias.{}",
  "{} Encrypted for their Machine only.": "{} Cifrado solo para su Machine.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} amigo de Facebook aún no está en tu Graph.",
+  "other": "{} amigos de Facebook aún no están en tu Graph."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "{} elemento de Fleet te espera en Tareas.",
   "other": "{} elementos de Fleet te esperan en Tareas."
@@ -7131,10 +7136,6 @@
  "{} other signals": {
   "one": "{} otra señal",
   "other": "{} otras señales"
- },
- "{} others aren’t in your Graph.": {
-  "one": "{} persona más no está en tu Graph.",
-  "other": "{} personas más no están en tu Graph."
  },
  "{} owns it.": "Es de {}.",
  "{} pages": {
