@@ -10,17 +10,19 @@ its log line the same way as the rest."""
 import embeddings
 import memory_use
 import search_ask
+from machine.app import senders
 
 
 def recall(app, purpose, about=None, budget=0):
     """The memory for one prompt. purpose: review, preparation, ask, talk or chat. about: what it is for
-    ({'todo': id}, {'run': id} with the batch's signals, {'question': text}). budget: the prompt's character limit,
+    ({'todo': id}, {'run': id}, {'run': id, 'analysis': id} for the batch a review claimed, {'question': text}). budget: the prompt's character limit,
     for Recalled.fit. Returns a memory_use.Recalled: text(block) or fit(block, used, reserve) for the prompt,
     picked() for the items per kind, rows() for the log.
 
     Blocks by purpose:
     - review: history (what the owner did with the last 30 days' to-dos), facts (all learned, with ids), promises
-      (the open ones).
+      (the open ones), sender (who wrote the claimed batch: one line per sender the Graph knows something specific
+      about, senders.lines; read when the batch is claimed, with the claim's reply as its budget).
     - preparation: rules and facts (for this to-do), records (the people and projects on it), skills(rules, room),
       team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt).
@@ -32,6 +34,7 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('history', lambda: store.preference_summary())
         memory.add('facts', lambda: store.facts_text(ids=True))
         memory.add('promises', lambda: store.promises_text())
+        memory.add('sender', lambda: senders.lines(app, about.get('analysis')))
     elif purpose == 'preparation':
         known = embeddings.settings(app.config)  # what was learned that this to-do needs, not all of it
         memory.add('rules', lambda: store.facts_for(todo, 'draft', known))
