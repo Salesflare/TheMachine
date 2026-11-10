@@ -20,7 +20,7 @@ STARTED = dt.datetime(2026, 3, 2, 9, 0, tzinfo=UTC)  # the day this person finis
 ENTRIES = [{'id': 'old', 'date': '2026-02-20', 'title': 'Old', 'text': 'From before they started.'},
            {'id': 'same-day', 'date': '2026-03-02', 'title': 'Same day', 'text': 'Shipped the day they started.'},
            {'id': 'one', 'date': '2026-03-05', 'title': 'One', 'text': 'The first new thing.',
-            'action': {'label': 'Open Routines', 'run': 'go-routines'}},
+            'action': {'label': 'Open Routines', 'run': 'go-routines'}, 'art': 'routines'},
            {'id': 'two', 'date': '2026-03-06', 'title': 'Two', 'text': 'The second.'},
            {'id': 'three', 'date': '2026-03-07', 'title': 'Three', 'text': 'The third.'},
            {'id': 'four', 'date': '2026-03-08', 'title': 'Four', 'text': 'The fourth.'}]
@@ -56,7 +56,7 @@ class WhatsNew(unittest.TestCase):
     def test_one_new_entry_shows_with_its_button(self):
         view = self.store.whats_new(at(5), ENTRIES)
         self.assertEqual(view, {'entries': [{'id': 'one', 'title': 'One', 'text': 'The first new thing.',
-                                             'action': {'label': 'Open Routines', 'run': 'go-routines'}}]})
+                                             'action': {'label': 'Open Routines', 'run': 'go-routines'}, 'art': 'routines'}]})
         self.assertIsNone(self.store.whats_new(at(6), ENTRIES[:2]))  # nothing new: no notice
 
     def test_nobody_gets_a_backlog(self):
@@ -131,6 +131,9 @@ class WhatsNew(unittest.TestCase):
         self.assertEqual(len(ids), len(set(ids)))
         self.assertEqual([e['date'] for e in whats_new.ENTRIES], sorted((e['date'] for e in whats_new.ENTRIES), reverse=True))
         script = dashboard_parts.assemble()
+        drawn = (ROOT / 'dashboard' / 'shell-whats-new.js').read_text(encoding='utf-8')
+        pictures = set(re.findall(r'^ ([a-z]+):\(\)=>', drawn.split('const WN_ART={', 1)[1], re.M))
+        self.assertIn('new', pictures)  # the stand-in for an entry without one
         for e in whats_new.ENTRIES:
             with self.subTest(entry=e['id']):
                 self.assertRegex(e['id'], r'^[a-z0-9-]+$')
@@ -139,6 +142,8 @@ class WhatsNew(unittest.TestCase):
                     self.assertIsNone(re.search('[—–!]', text), text)
                 self.assertLessEqual(len(e['title']), 40)
                 self.assertLessEqual(len(e['text']), 160)
+                if e.get('art'):  # a picture the dashboard draws
+                    self.assertIn(e['art'], pictures - {'new'})
                 run = (e.get('action') or {}).get('run')
                 if run and run != 'search':  # a palette command the dashboard has (the Settings tabs' ids are built from their names)
                     tab = re.fullmatch(r'go-settings-([a-z]+)', run)

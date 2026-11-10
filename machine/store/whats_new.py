@@ -9,7 +9,10 @@ top with a new id and the day it merges, then add its strings to the catalogs (s
 - date: the day it shipped (YYYY-MM-DD).
 - title: a few words. text: one or two short sentences: what changed and what the person can do now.
 - action (optional): {'label': the button, 'run': a command id of the dashboard's palette (dashboard/shell-keys.js
-  ACTIONS, like 'go-routines'), or 'search' for Search}. tests/test_whats_new.py checks it exists."""
+  ACTIONS, like 'go-routines'), or 'search' for Search}. tests/test_whats_new.py checks it exists.
+- art (optional): the name of its picture in WN_ART (dashboard/shell-whats-new.js): a small drawing of the feature in
+  the dashboard's own look, without words (CONTRIBUTING.md says how to draw one). Without one the entry is text only,
+  or a plain stand-in when others in the same notice have a picture."""
 import datetime as dt
 import json
 
@@ -20,15 +23,15 @@ ENTRIES = [
     {'id': 'routines', 'date': '2026-11-09', 'title': 'Routines run work for you',
      'text': 'Tell The Machine what to do and how often, and it does it by itself. Or start from a template, like '
              'Newsletter cleanup or Birthdays.',
-     'action': {'label': 'Open Routines', 'run': 'go-routines'}},
+     'action': {'label': 'Open Routines', 'run': 'go-routines'}, 'art': 'routines'},
     {'id': 'ask-from-search', 'date': '2026-11-07', 'title': 'Search answers questions',
      'text': 'Type a question into Search and get a short answer from your own messages, with a link to each message '
              'it used.',
-     'action': {'label': 'Open Search', 'run': 'search'}},
+     'action': {'label': 'Open Search', 'run': 'search'}, 'art': 'search'},
     {'id': 'export', 'date': '2026-11-06', 'title': 'Take everything with you',
      'text': 'Export everything your Machine keeps, or what it learned as files any AI can read. It’s in Settings, '
              'under General.',
-     'action': {'label': 'Open Settings', 'run': 'go-settings-general'}},
+     'action': {'label': 'Open Settings', 'run': 'go-settings-general'}, 'art': 'export'},
 ]
 
 SHOWN = 3  # entries in one notice; older new ones just count as seen
@@ -81,11 +84,11 @@ def due(db, current=None, entries=None):
 
 def view(db, current=None, entries=None):
     """The notice for the dashboard's status, in the person's language: {'entries': [{'id', 'title', 'text',
-    'action': {'label', 'run'} or None}]}, SHOWN at most (older new ones are left out), or None."""
+    'action': {'label', 'run'} or None, 'art': its picture or None}]}, SHOWN at most (older new ones are left out), or None."""
     new = due(db, current, entries)
     if not new:
         return None
-    return {'entries': [{'id': e['id'], 'title': i18n.t(e['title']), 'text': i18n.t(e['text']),
+    return {'entries': [{'id': e['id'], 'title': i18n.t(e['title']), 'text': i18n.t(e['text']), 'art': e.get('art'),
                          'action': {'label': i18n.t(e['action']['label']), 'run': e['action']['run']} if e.get('action') else None}
                         for e in new[:SHOWN]]}
 
