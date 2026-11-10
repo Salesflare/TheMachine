@@ -78,13 +78,18 @@ class OnePlace(unittest.TestCase):
             enrichment.offer_facts(db, [(['wa:15550100'], {'birthday': '--07-08'}, enrichment.STATED)], 'google', ago(0))
         self.assertIsNone(self.page())
         self.assertEqual(self.routine(dt.date(2027, 7, 8)), [])
-        # Set again, then removed with nothing else known: no empty mark is left
+        # Set again, then removed with nothing else known: it stays removed when an import or a contact comes later
         self.app.action('graph_birthday', {'node_id': SAM, 'month': 3, 'day': 1}, owner_dashboard=True)
         with self.store.connect() as db:
             db.execute("DELETE FROM person_facts WHERE source<>'owner'")
         self.app.action('graph_birthday', {'node_id': SAM, 'remove': True}, owner_dashboard=True)
+        self.assertIsNone(self.page())
         with self.store.connect() as db:
-            self.assertEqual(db.execute("SELECT count(*) FROM person_facts WHERE field='birthday'").fetchone()[0], 0)
+            self.assertFalse(pb.offer(db, SAM, '--04-04', 'facebook', ago(0)))
+            enrichment.offer_facts(db, [(['wa:15550100'], {'birthday': '--04-05'}, enrichment.STATED)], 'google', ago(0))
+        self.assertIsNone(self.page())
+        self.assertEqual(self.routine(dt.date(2027, 4, 4)), [])
+        self.assertEqual(self.routine(dt.date(2027, 4, 5)), [])
 
     def test_importers_offer_a_birthday_and_the_owners_word_stays(self):
         with self.store.connect() as db:

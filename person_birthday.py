@@ -3,7 +3,8 @@ Birthdays template reads (birthdays.py). Plain code, no model.
 
 It is kept as a fact (enrichment.person_facts, field birthday) on one of the person's identities: from a Google contact,
 a Facebook import, the owner's notes (notes_people.py, source notes) or the owner's own word (source owner). The owner's wins over every other and stays when a source
-says otherwise later; their Remove is kept as an empty value, so an import doesn't bring it back. Otherwise the highest
+says otherwise later; their Remove is kept as an empty value, so a contact or an import, now or later, doesn't bring it
+back. Otherwise the highest
 rank wins, then the latest. An identity more than one person goes by (a shared number) is nobody's, as in
 birthdays.by_identifier.
 
@@ -143,11 +144,9 @@ def set_birthday(db, node_id, args, now, code=None):
     import enrichment
     ids = birthdays.person_ids(row['id'], json.loads(row['info'] or '{}'), code)
     if args.get('remove'):
-        others = [r for r in _facts(db, ids) if r[3] != SOURCE and parts(r[1])]
-        if others:
-            _put(db, row['id'], '', now)  # kept as removed: a contact or an import doesn't bring it back
-        else:
-            enrichment.drop_facts(db, ids, FIELD, SOURCE)
+        # Kept as removed (an empty value of the owner's), also when nothing else knows one now: a contact or an
+        # import that comes later doesn't bring it back
+        _put(db, row['id'], '', now)
         value = None
     else:
         value = clean(args.get('month'), args.get('day'), args.get('year'))
