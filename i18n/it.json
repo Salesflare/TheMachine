@@ -7303,6 +7303,10 @@
   "one": "{} attività sbrigata in {}",
   "other": "{} attività sbrigate in {}"
  },
+ "{} to-dos for you": {
+  "one": "{} attività per te",
+  "other": "{} attività per te"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} attività in attesa fino a domani {}",
   "other": "{} attività in attesa fino a domani {}"

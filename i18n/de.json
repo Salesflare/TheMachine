@@ -7303,6 +7303,10 @@
   "one": "{} Aufgabe abgearbeitet in {}",
   "other": "{} Aufgaben abgearbeitet in {}"
  },
+ "{} to-dos for you": {
+  "one": "{} Aufgabe für dich",
+  "other": "{} Aufgaben für dich"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} Aufgabe wartet bis morgen {}",
   "other": "{} Aufgaben warten bis morgen {}"
