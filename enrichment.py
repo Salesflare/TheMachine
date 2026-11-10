@@ -1367,6 +1367,20 @@ def offer_facts(db, offers, source, now):
     return changed
 
 
+def put_fact(db, identifier, field, value, rank, source, now):
+    """Keeps one fact as given, whatever was there: the owner's own word (person_birthday.py), an empty one included."""
+    fact_tables(db)
+    db.execute('INSERT INTO person_facts(identifier,field,value,rank,source,seen_at) VALUES(?,?,?,?,?,?) ON CONFLICT(identifier,field) DO UPDATE SET '
+               'value=excluded.value,rank=excluded.rank,source=excluded.source,seen_at=excluded.seen_at', (identifier, field, value, int(rank), source, now))
+
+
+def drop_facts(db, identifiers, field, source, keep=None):
+    """Removes a source's facts of a field under these identifiers (all but keep)."""
+    fact_tables(db)
+    db.execute('DELETE FROM person_facts WHERE field=? AND source=? AND identifier IN (SELECT value FROM json_each(?)) AND identifier IS NOT ?',
+               (field, source, json.dumps(sorted(identifiers)), keep))
+
+
 def people_facts(db, fields=None, ids=None):
     """{identifier: {field: (value, rank, source, seen_at)}}; ids: only these identifiers (a person's page), by the key."""
     try:

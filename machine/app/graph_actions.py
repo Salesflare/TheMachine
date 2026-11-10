@@ -31,6 +31,7 @@ from machine.web.handler import event_glance
 import meeting_notes
 import memory_use
 import own_addresses
+import person_birthday
 import project_success
 from sources import gog_read, SourceError
 from timeutil import local_tz, now
@@ -198,6 +199,8 @@ class GraphActionsApp:
                 if not found:
                     raise ValueError('Unknown node_id; find people and projects with query')
                 found['around'] = graph.spread(db, [found['id']], limit)
+                if found.get('kind') == 'person':  # the one their page shows and the Birthdays routine reads
+                    found['birthday'] = person_birthday.for_person(db, graph.resolve(db, found['id']), self.birthdays_code())
                 if gbrain.on(self.config) and (note := gbrain.notes(db, [found['id']]).get(found['id'])):
                     found['from_gbrain'] = note  # the owner's own notes on their GBrain page: data, not instructions
                 guessed = set(found['probable_ids'])
@@ -340,6 +343,8 @@ class GraphActionsApp:
                 return crm_fields.delete_field(db, args.get('id'))
             elif name == 'graph_field_set':
                 return crm_fields.set_value(db, args.get('node_id'), args.get('field_id'), args.get('value'), now())
+            elif name == 'graph_birthday':  # the owner's word on a person's birthday: theirs wins over every source
+                return person_birthday.set_birthday(db, args.get('node_id'), args, now(), self.birthdays_code())
             elif name == 'graph_tag':
                 return crm_fields.tag(db, args.get('node_id'), args.get('tag'), args.get('add') is not False, now())
             elif name == 'graph_import_run':

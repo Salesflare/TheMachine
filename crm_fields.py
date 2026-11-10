@@ -9,7 +9,8 @@ Tags: short labels on any record, as many as 20. The graph build puts them on th
 filter on them in SQL (crm.list_query), and the filter sheet offers the ones in use.
 
 On a record shared with the team (shared_graph.py), fields and tags travel with it under the same rules as the rest
-of the record: only on records that are shared anyway."""
+of the record: only on records that are shared anyway. A birthday never goes (person_birthday.py): it is built into a
+person's page, not a field, and personal."""
 from __future__ import annotations
 
 import datetime as dt
@@ -34,6 +35,8 @@ CREATE TABLE IF NOT EXISTS crm_tags(node_id TEXT NOT NULL,tag TEXT NOT NULL COLL
 
 def ensure(db):
     db.executescript(SCHEMA)
+    import person_birthday
+    person_birthday.fold_fields(db)  # a Birthday date field made before it was built in (2026-11-10)
 
 
 def _now():
@@ -94,6 +97,9 @@ def save_field(db, args, now=None):
             raise ValueError('Pick text, number, date or choice')
         if db.execute('SELECT count(*) FROM crm_fields WHERE kind=?', (kind,)).fetchone()[0] >= MAX_FIELDS:
             raise ValueError(f'Up to {MAX_FIELDS} fields each')
+    import person_birthday
+    if kind == 'person' and person_birthday.is_name(name):
+        raise ValueError('Birthday is built in: use Add birthday on their page')
     clash = db.execute('SELECT id FROM crm_fields WHERE kind=? AND name=? COLLATE NOCASE AND id!=?', (kind, name, int(args.get('id') or 0))).fetchone()
     if clash:
         raise ValueError('There is a field with that name already')
@@ -300,9 +306,11 @@ def decorate(db, nodes, folded):
 
 
 def shared(db, row):
-    """What goes with a record shared with the team: its fields with a value and its tags."""
+    """What goes with a record shared with the team: its fields with a value and its tags. Never a birthday."""
+    import person_birthday
     try:
-        got = [{'name': f['name'], 'type': f['type'], 'value': f['value']} for f in values_for(db, row) if f['value'] is not None]
+        got = [{'name': f['name'], 'type': f['type'], 'value': f['value']} for f in values_for(db, row)
+               if f['value'] is not None and not person_birthday.is_name(f['name'])]
         tags = tags_for(db, row)
     except sqlite3.OperationalError:  # an old database without the tables: nothing to add
         return {}

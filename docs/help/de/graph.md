@@ -26,6 +26,12 @@ Klick unter Felder bei einer Person, Organisation oder einem Projekt auf einen W
 
 **+ Tag** fügt einen Tag hinzu, etwa VIP oder Partner. **×** nimmt ihn wieder ab. Tags erscheinen in den Listen und **Filtern** findet sie.
 
+## Geburtstag
+
+Der Geburtstag einer Person steht unter Kontakt, mit seiner Herkunft: ihr Google-Kontakt, ein Facebook-Import oder du. **Bearbeiten** setzt oder korrigiert ihn: Monat und Tag, und das Jahr, wenn du es kennst (dann steht auch das Alter dabei). Deiner gilt vor jeder Quelle und bleibt. **Entfernen** nimmt ihn weg; ein Kontakt bringt ihn nicht zurück.
+
+Ohne Geburtstag fügt **Geburtstag hinzufügen** unter Felder ihn hinzu. Die Routine Geburtstage liest denselben Geburtstag, den die Seite zeigt. Ein Geburtstag ist persönlich: Er geht nie an dein Team, auch nicht bei einem geteilten Eintrag.
+
 ## Eine Tabelle importieren
 
 **CSV importieren…** im Sortiermenü von Personen, Organisationen oder Projekten fügt eine als CSV gespeicherte Tabelle hinzu.
