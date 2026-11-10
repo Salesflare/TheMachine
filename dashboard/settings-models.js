@@ -111,6 +111,19 @@ renderModelPanel();renderChatModel();cmPaint('chat');renderLimitBanner();setHTML
 return html`<div class="usage"><span>${t('{}: {}% used',p.name+' '+label(w.label),+w.used|0)}${when}</span><progress max="100" value="${+w.used|0}">${+w.used|0}%</progress></div>`})}`)}`)}
 const RELATIVE_FMT=new Map(),relativeFmt=loc=>{let f=RELATIVE_FMT.get(loc);if(!f)RELATIVE_FMT.set(loc,f=new Intl.RelativeTimeFormat(loc,{numeric:'auto'}));return f};  // one per locale, as localeFmt
 const ago=v=>{if(!v)return t('Not yet');const s=(new Date(v)-Date.now())/1000,a=Math.abs(s),f=relativeFmt(DL);for(const[u,n]of[['day',86400],['hour',3600],['minute',60]])if(a>=n)return f.format(Math.round(s/n),u);return a<45?t('just now'):f.format(Math.round(s/60),'minute')};
+// When something last happened, as people say it (last contact, last signal): just now, 5 minutes ago, 3 hours ago (the
+// same day), yesterday, 3 days ago, then a short date (Oct 29 or 29 Oct, with the year when it isn't this one), in the
+// owner's date locale. A day without a time of day (2026-11-10) never claims hours: today. sinceTime is the same as a
+// <time> whose hover has the exact date.
+const sinceAt=v=>{const s=String(v||''),only=s.length<=10,d=new Date(only?s+'T12:00':s);return !v||isNaN(d)?null:{d,only}};
+const sinceWhen=v=>{const p=sinceAt(v);if(!p)return v?String(v):t('never');const {d,only}=p,now=new Date(),f=relativeFmt(DL),s=(now-d)/1000,
+  days=Math.round((new Date(localDay(now)+'T12:00')-new Date(localDay(d)+'T12:00'))/864e5);
+ if(!only&&s>-60&&s<3600)return s<60?t('just now'):f.format(-Math.floor(s/60),'minute');
+ if(!only&&days===0&&s>0)return f.format(-Math.floor(s/3600),'hour');
+ if(days>=0&&days<7)return f.format(-days||0,'day');  // today, yesterday, 3 days ago
+ return localeDate(d,DL,{day:'numeric',month:'short',...(d.getFullYear()!==now.getFullYear()?{year:'numeric'}:{})})};
+const sinceTitle=v=>{const p=sinceAt(v);if(!p)return '';const o={weekday:'long',day:'numeric',month:'long',year:'numeric'};return p.only?localeDate(p.d,DL,o):fmtDHM(p.d,o)};
+const sinceTime=v=>sinceAt(v)?html`<time datetime="${v}" title="${sinceTitle(v)}">${sinceWhen(v)}</time>`:sinceWhen(v);
 const time=(v,plain)=>html`<time class="${plain?'':'mono '}muted" datetime="${v||''}" title="${date(v)}">${ago(v)}</time>`;
 const timeNode=(v,plain)=>make('time',{class:(plain?'':'mono ')+'muted',datetime:v||'',title:date(v)},ago(v));
 const calendarDate=v=>localeDate(v+'T12:00:00',DL,{month:'short',day:'numeric',year:'numeric'});

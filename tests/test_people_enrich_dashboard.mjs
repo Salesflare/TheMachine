@@ -59,7 +59,9 @@ try{
   assert.equal((await pic('rae@initech.example').textContent()).trim(),'RQ');
   assert.equal(await pic('mia@hooli.example').locator('img').count(),0);  // the service's own link: never loaded
   assert.equal((await pic('kai@umbrella.example').textContent()).trim(),'KN');
-  assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub').textContent(),/^Head of Sales · Customer · last contact/);
+  assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub').textContent(),/^Head of Sales · Customer · last contact yesterday · usually every 7 days · /);
+  assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub time').getAttribute('title'),/^\w+day, \w+ \d+, \d{4}, \d\d:\d\d$/);  // the exact date on hover
+  assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub').getAttribute('title'),/^Head of Sales · Customer · last contact yesterday · /);  // the row's own hover: plain text
   assert.ok(photoRequests.includes('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')&&!outside.some(u=>u.includes('photos.test')),JSON.stringify({photoRequests,outside}));
   const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth);assert.ok(fits,'overflow at '+width);
   if(process.env.SHOT_DIR){await mkdir(process.env.SHOT_DIR,{recursive:true});await page.screenshot({path:`${process.env.SHOT_DIR}/people-${width}-${scheme}.png`})}
@@ -75,6 +77,7 @@ try{
   assert.ok(await page.locator('.person-delete-confirm').isHidden());
   if(width>=700){const [head,sub]=await page.evaluate(()=>[document.querySelector('.graph-detail .person-head').getBoundingClientRect().left,document.querySelector('.graph-detail .person-rel').getBoundingClientRect().left]);
    assert.ok(Math.abs(head-sub)<=2,`details line up with the name: ${head} ${sub}`)}
+  assert.equal(await page.locator('.graph-detail .person-rel').textContent(),'Talk weekly · last contact yesterday');
   assert.ok(!text.includes('At Globex'),text);
   assert.equal(await page.locator('.graph-detail .person-job button.node[data-node="org:globex.example"]').count(),1);
   assert.equal(await page.locator('.graph-detail .person-place').textContent(),'Springfield, United States');

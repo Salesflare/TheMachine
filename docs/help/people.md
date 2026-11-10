@@ -9,7 +9,7 @@ Everyone you're in touch with, closest first, from your messages and meetings. N
 
 ## Someone's page
 
-It starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last Fri, Oct 23 · next meeting Tue, Oct 27"). Below that:
+It starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last contact yesterday · next meeting Tue, Oct 27"). Recent contact reads like "just now", "3 hours ago", "yesterday" or "3 days ago", and older contact as a date; hover it for the exact date. Below that:
 
 - **Contact**: their phones and emails. Tap one to call or write, or **Copy** it. Their **Birthday** shows here too, with where it came from (Google contacts, Google Calendar, Facebook, or you): see [The Graph](graph.md#birthday).
 - **With you**: what they are to you, Work or Personal contact, and your Family or Fleet, with **See in Fleet**.
