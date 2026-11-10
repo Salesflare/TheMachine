@@ -19,6 +19,7 @@ from machine.cards import snooze_choices
 from machine.config import LOG, WORKSPACE
 from machine.delivery.push import reminder_channels, reviews_start_by_themselves
 from machine import names as display_names
+from machine import stamps
 from machine.sources.connectors import (connector_says, docs_offered, docs_provider, docs_unset, docs_write_offered,
                                         reconnect_help, SIGNIN_ONLY)
 from machine.text import clamp
@@ -348,6 +349,7 @@ class StatusApp:
             try:
                 result['fleet'] = {**self.fleet.summary(), 'family_invites': self.fleet.family_invite_on()}
                 with self.store.connect() as db:
+                    result['fleet']['stamp'] = stamps.fleet_view_stamp(db)  # api/fleet changed: the dashboard fetches it again
                     self.fleet.annotate(db, result.get('suggestions', []))
                     self.fleet.family_invite_annotate(db, result.get('suggestions', []))
             except (sqlite3.Error, ValueError) as error:

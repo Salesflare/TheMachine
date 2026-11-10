@@ -54,6 +54,7 @@ import urllib.request
 
 import graph
 import locale_prefs
+from machine import stamps
 from machine.timing import _REQUEST_TIMING
 import ms_graph
 from i18n import t
@@ -1777,6 +1778,7 @@ class Fleet(fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, con
         with self.connect() as db:
             ensure(db)
             shared_graph.ensure(db)
+            stamps.watch_fleet_view(db)  # the status's Fleet change marker (stamps.fleet_view_stamp)
 
     # -- state
     def meta(self, key, default=None):

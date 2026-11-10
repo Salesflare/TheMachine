@@ -86,8 +86,10 @@ function networkSection(f){const net=f.network;if(!net||!f.friends?.id)return'';
  h=html`${h}${html`<p>${netBtn('Leave the Network','leave','','','ghost','Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.')}</p></div>`}`;
  return h}
 const fleetSig=()=>agoFree(fleetCardsOf(fleetData).join('\n'));  // "2 minutes ago" alone is no change: the next redraw updates it in place
-// Suggestions load the Fleet's open items in the background (at most every 20 seconds) and re-render when they change.
-let fleetAt=0,fleetLoading=null;
+// Suggestions load the Fleet's open items in the background (at most every 20 seconds; off the Fleet tab only when
+// fleet.stamp changed) and re-render when they change.
+let fleetAt=0,fleetLoading=null,fleetStamp=null;
 function fleetSync(force){if(!state?.fleet?.on)return Promise.resolve();if(fleetLoading)return fleetLoading;if(!force&&Date.now()-fleetAt<20000)return Promise.resolve();
- const before=fleetSig();fleetLoading=request('api/fleet').then(d=>{fleetData=d;fleetAt=Date.now();if(fleetSig()!==before)render();if(!$('#fleet').hidden&&!($('#fleet-view').contains(document.activeElement)&&document.activeElement.matches('input,select,textarea')))fleetView(false,true)}).catch(()=>{fleetAt=Date.now()}).finally(()=>{fleetLoading=null});return fleetLoading}
+ const stamp=state.fleet.stamp;if(!force&&fleetData&&stamp!=null&&stamp===fleetStamp&&$('#fleet').hidden)return Promise.resolve();
+ const before=fleetSig();fleetLoading=request('api/fleet').then(d=>{fleetData=d;fleetAt=Date.now();fleetStamp=stamp;if(fleetSig()!==before)render();if(!$('#fleet').hidden&&!($('#fleet-view').contains(document.activeElement)&&document.activeElement.matches('input,select,textarea')))fleetView(false,true)}).catch(()=>{fleetAt=Date.now()}).finally(()=>{fleetLoading=null});return fleetLoading}
 const fleetOn=(type,fn)=>{for(const el of [$('#fleet-view'),$('#suggestions')])el.addEventListener(type,fn)};
