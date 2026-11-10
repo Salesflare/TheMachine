@@ -767,6 +767,15 @@ and the prompt's character budget. It gives the builder each block's text, which
 keeps what each picker put in as items of one shape (`memory_use.Item`): kind, row id, the text in the prompt, the
 records it is about, where it came from, when, and how it was picked (with its score, for closeness).
 
+A review also learns who wrote its batch. When it claims its signals (`begin_analysis`), the reply carries `senders`
+(the `sender` block, `machine/app/senders.py`): one short line per sender the Graph knows something specific about,
+with their role and organization, how close they are and the first line of their summary. It reads stored rows only,
+no model call. A sender with no role, no summary and less than regular contact gets no line, and neither do the
+owner's own messages. A summary line goes in only when its area (Work, Personal) is that of the signals this person
+sent in the batch. The block is at most 1,600 characters (about 400 tokens), closest senders first, and is left out
+whole when the reply, which also lists the projects and boards, would come within 2,000 characters of the 64,000
+where a tool result is cut. Each line is logged as a `record` read of that review.
+
 Once the run is admitted, the builder logs those items in one insert (`memory_use`: when, purpose, the run and the
 to-do, kind, row id, how, score, characters). The log has ids and numbers, never text. A prompt that wasn't sent logs
 nothing, and a log write that fails never fails the prompt.

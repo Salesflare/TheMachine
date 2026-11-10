@@ -32,6 +32,7 @@ from machine.app.first_look import (
 from machine.app.graph_actions import account_services
 from machine.app.preparation import PROMPT_LIMIT
 from machine.app.recall import recall
+from machine.app.senders import REPLY_CUT, REPLY_RESERVE
 from machine.browser import STEP_NAMES, transcript_tool_calls
 from machine.config import LOG, RULE_FILES
 from machine.prompts.profile import VOICE_TEXT
@@ -894,4 +895,12 @@ class ReviewApp:
                         if result['team']:  # the groups unsure threads already have: reuse a name for the same kind of thread
                             shared_graph.ensure(db)
                             result['share_groups'] = shared_graph.groups(db)
+                try:  # who wrote the batch, as far as the Graph knows them: only while the reply has room for it
+                    memory = recall(self, 'review', {'run': args.get('_review_run'), 'analysis': result['analysis_id']}, REPLY_CUT)
+                    senders = memory.fit('sender', len(encoded(result)), REPLY_RESERVE)
+                    if senders:
+                        result['senders'] = senders
+                        memory_use.record(self.store, 'review', memory.rows(), args.get('_review_run') or '')
+                except Exception as error:  # a review never fails over this context
+                    LOG.error('review senders error=%s', type(error).__name__)
             return result

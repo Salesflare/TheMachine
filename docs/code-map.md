@@ -91,7 +91,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `machine/app/recall.py` (`recall(app, purpose, about, budget)`): the one way a prompt reads memory. The review,
     preparation and Ask builders ask it for each block's text; the pickers behind it are unchanged and say what they
     put in (`memory_use.note`), and the builder logs that once its run is admitted (`memory_use.record`). A new reader
-    of memory is a block there, not another call in a builder.
+    of memory is a block there, not another call in a builder. `machine/app/senders.py` is the review's `sender`
+    block: one line per sender of the claimed batch the Graph knows something specific about.
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
     personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
     reads the other side at view time (`annotate`), so no Fleet sees it.
