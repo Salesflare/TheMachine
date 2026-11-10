@@ -633,6 +633,104 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
                         if t == table and c in column:
                             self.assertTrue(re.search(r"'\$\.(\w+)'", column)[1] in plain)
 
+    def sealed_json(self, db):
+        """What sealed_sql_scan needs: each sealed JSON column with its table and plain keys, and the other tables that
+        have a column of that name (their SQL is not this one's business)."""
+        columns = {'metadata': ('events', message_seal.PLAIN_METADATA)}
+        columns.update({column: (table, plain) for table, column, plain in message_seal.DERIVED_JSON})
+        others = {column: set() for column in columns}
+        for (table,) in db.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')").fetchall():
+            for row in db.execute(f'PRAGMA table_info({table})').fetchall():
+                if row[1] in columns and table != columns[row[1]][0]:
+                    others[row[1]].add(table)
+        return columns, others
+
+    def test_no_sql_reads_a_key_the_seal_hides(self):
+        """SQL sees only the plain keys of events.metadata and of the DERIVED_JSON columns on a sealed Machine: a
+        statement that reads another key (json_extract, json_each, ->, ->>), or searches or compares the column's
+        text, gets NULL there and fails without a sound. Read the rows instead (they open as they are read) and decide
+        in Python; tests/test_sealed_sql.py has the places that did it wrong.
+
+        What this cannot see: a key or path only known at run time (listed in RUN_TIME_KEYS, each with where its keys
+        come from, and those are checked below); a sealed column given another name in a subquery or view and read by
+        that name; SQL put together from pieces in different statements; sandbox/, scripts/ and the other databases'
+        modules, which source_modules leaves out. SQL that compares a wholly sealed text column (events.title) is
+        another matter and not looked at here."""
+        import ai_app
+        import missed_work
+        import sealed_sql_scan
+        from machine.store import conversation, voices
+        with tempfile.TemporaryDirectory() as temp:
+            with assistant.Store(Path(temp) / 'events.sqlite').connect() as db:
+                make_source_tables(db)
+                columns, others = self.sealed_json(db)
+        self.assertEqual(sorted(columns), ['metadata', 'next_action', 'outcome', 'payload'])
+        self.assertTrue({'notify_queue', 'calendar_writes'} <= others['payload'] and 'agent_jobs' in others['outcome'], others)
+        found = sealed_sql_scan.scan(source_modules(), ROOT, columns, others)
+        hidden = {where: lines for where, lines in found.items() if where[2] != 'key ?'}
+        self.assertEqual(hidden, {}, 'SQL cannot read this on a sealed Machine: read the rows and decide in Python (file, column, what: lines)')
+        # A path only known at run time: the statements that have one, and where each takes its keys from. Exact, so
+        # that a new one is looked at and one that is gone leaves this list
+        RUN_TIME_KEYS = {
+            'ai_app.py': (1, 'a key of ai_app.THREAD_KEYS'),
+            'machine/app/follow_ups.py': (1, 'thread_id, channel_id, chat_id or conversation_id, picked in the line above'),
+            'machine/store/conversation.py': (2, 'a bound path made from conversation.CONTEXT_KEYS'),
+            'machine/store/review.py': (1, "channel_id, chat_id or conversation_id from the function's own `keys`"),
+            'machine/store/voices.py': (1, 'the keys of voices.CONVERSATION_KEYS'),
+            'missed_work.py': (1, 'a key of missed_work.THREAD_KEYS'),
+        }
+        self.assertEqual({(file, column): len(lines) for (file, column, _), lines in found.items()},
+                         {(file, 'events.metadata'): count for file, (count, _) in RUN_TIME_KEYS.items()})
+        plain = set(message_seal.PLAIN_METADATA)
+        self.assertLessEqual(set(ai_app.THREAD_KEYS), plain)
+        self.assertLessEqual(set(conversation.CONTEXT_KEYS.values()), plain)
+        self.assertLessEqual({key for keys in voices.CONVERSATION_KEYS.values() for key in keys}, plain)
+        self.assertLessEqual({key for key, _ in missed_work.THREAD_KEYS}, plain)
+        for file, words in (('machine/app/follow_ups.py', ('thread_id', 'channel_id', 'chat_id', 'conversation_id')),
+                            ('machine/store/review.py', ('channel_id', 'chat_id', 'conversation_id'))):
+            self.assertLessEqual(set(words), plain)
+            self.assertTrue(all(f"'{word}'" in (ROOT / file).read_text(encoding='utf-8') for word in words), file)
+
+    def test_the_sql_check_catches_each_way_of_reading_a_hidden_key(self):
+        import sealed_sql_scan
+        columns = {'metadata': ('events', message_seal.PLAIN_METADATA), 'payload': ('action_jobs', ('kind',)), 'outcome': ('suggestions', ('state',))}
+        others = {'metadata': set(), 'payload': {'notify_queue'}, 'outcome': {'agent_jobs'}}
+
+        def reads(text, context=None):
+            return sealed_sql_scan.reads(text, context or text, columns, others)
+        caught = {
+            "SELECT id FROM events WHERE json_extract(metadata,'$.cc') LIKE ?": [('events.metadata', 'key cc')],
+            "SELECT 1 FROM events e WHERE coalesce(json_extract(e.metadata,'$.end_at'),occurred_at)>?": [('events.metadata', 'key end_at')],
+            "SELECT value FROM events, json_each(events.metadata,'$.attendees')": [('events.metadata', 'key attendees')],
+            "SELECT 1 FROM events, json_each(metadata)": [('events.metadata', 'whole')],
+            "SELECT metadata->>'$.chat_kind' FROM events": [('events.metadata', 'key chat_kind')],
+            "SELECT metadata->>'status' FROM events": [('events.metadata', 'key status')],
+            "SELECT 1 FROM events WHERE metadata LIKE ?": [('events.metadata', 'text')],
+            "SELECT 1 FROM events WHERE instr(metadata,?)": [('events.metadata', 'text')],
+            "SELECT 1 FROM events WHERE json_extract(metadata,?)=?": [('events.metadata', 'key ?')],
+            "SELECT 1 FROM events WHERE json_extract(metadata,'$.\x00')=?": [('events.metadata', 'key ?')],
+            "SELECT 1 FROM action_jobs WHERE json_extract(payload,'$.finish_result.state')='completed'": [('action_jobs.payload', 'key finish_result')],
+            "SELECT 1 FROM suggestions s JOIN agent_jobs j ON j.id=s.id WHERE json_extract(s.outcome,'$.follow_up')='stop'": [('suggestions.outcome', 'key follow_up')],
+            "CREATE INDEX i ON events(json_extract(metadata,'$.sender_id'))": [('events.metadata', 'key sender_id')],
+            "SELECT 1 FROM events WHERE json_extract(\x00,'$.cc')=?": [('?', 'column ?')],
+        }
+        for text, expected in caught.items():
+            self.assertEqual(reads(text), expected, text)
+        # the table can be named in another string of the same statement
+        self.assertEqual(reads("AND json_extract(payload,'$.to')=?", "SELECT 1 FROM action_jobs WHERE status=? AND json_extract(payload,'$.to')=?"),
+                         [('action_jobs.payload', 'key to')])
+        for text in ("SELECT 1 FROM events WHERE json_extract(metadata,'$.thread_id')=?",
+                     "SELECT 1 FROM events e, json_each(json_extract(e.metadata,'$.labels')) l WHERE l.value=?",
+                     """SELECT 1 FROM events WHERE instr(metadata,'"SENT"')""",
+                     "CREATE INDEX i ON events(json_extract(metadata,'$.conversation_id'))",
+                     "SELECT metadata FROM events WHERE metadata IS NOT NULL",
+                     "SELECT 1 FROM action_jobs WHERE json_extract(payload,'$.kind')='finish'",
+                     "SELECT 1 FROM suggestions WHERE json_extract(outcome,'$.state')='already_done'",
+                     "SELECT 1 FROM notify_queue WHERE json_extract(payload,'$.title')=?",
+                     "SELECT 1 FROM agent_jobs j WHERE json_extract(j.outcome,'$.summary')=?",
+                     "the metadata of an event, like its cc"):
+            self.assertEqual(reads(text), [], text)
+
     def test_every_text_column_that_could_hold_a_message_is_classified(self):
         """A new table or column whose name says it may hold message text has to be sealed (message_seal.DERIVED) or
         listed here with the reason it is not a message."""

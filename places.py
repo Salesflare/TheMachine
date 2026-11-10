@@ -17,6 +17,7 @@ import urllib.request
 PHOTON = 'https://photon.komoot.io/api/'
 AGENT = 'the-machine/1 (+https://themachine.computer)'
 MIN_LOCAL, MIN_REMOTE, MAX_QUERY, LIMIT = 2, 3, 120, 6
+EVENTS_READ = 3000  # calendar events read, newest first, for the places used before
 GAP = 1.0  # seconds between two outside requests, for the whole Machine
 
 _lock = threading.Lock()
@@ -26,6 +27,27 @@ _cache: dict[str, list] = {}
 
 def clean(text):
     return ' '.join(str(text or '').split())
+
+
+def used_before(db, words):
+    """[(place, times, last)] of the places of the newest EVENTS_READ calendar events that hold every word, the most
+    used first. Read from the rows, not matched in SQL: with message protection on, a meeting's location is sealed
+    (message_seal.PLAIN_METADATA)."""
+    try:
+        rows = db.execute("SELECT metadata,occurred_at FROM events WHERE kind='calendar.event' AND deleted=0 ORDER BY occurred_at DESC LIMIT ?",
+                          (EVENTS_READ,)).fetchall()
+    except Exception:  # noqa: BLE001 - an old database without events: nothing local
+        return []
+    places = {}
+    for metadata, at in rows:
+        try:
+            place = json.loads(metadata or '{}').get('location')
+        except (ValueError, AttributeError):
+            continue
+        if isinstance(place, str) and place and all(w in place.casefold() for w in words):
+            seen = places.setdefault(place.casefold(), [place, 0, at])  # newest first: its spelling and time are the latest
+            seen[1] += 1
+    return sorted(places.values(), key=lambda p: -p[1])[:20]  # a stable sort: among the equally used, the latest first
 
 
 def local(db, query, limit=LIMIT):
@@ -43,13 +65,7 @@ def local(db, query, limit=LIMIT):
             seen.add(value.casefold())
             found.append({'value': value, 'label': clean(label)[:120] or value, 'detail': clean(detail)[:160], 'source': source})
 
-    try:
-        rows = db.execute("SELECT json_extract(metadata,'$.location') AS place,count(*) AS n,max(occurred_at) AS last FROM events "
-                          "WHERE kind='calendar.event' AND deleted=0 AND " + every("lower(json_extract(metadata,'$.location'))") +
-                          ' GROUP BY lower(place) ORDER BY n DESC,last DESC LIMIT 20', likes).fetchall()
-    except Exception:  # noqa: BLE001 - an old database without events: nothing local
-        rows = []
-    for row in rows:
+    for row in used_before(db, q.split()[:6]):
         place = clean(row[0])
         if len(place) <= 200 and '\n' not in str(row[0]):
             add(place, place.split(',')[0], ', '.join(p.strip() for p in place.split(',')[1:]) or 'Used before', 'calendar')

@@ -62,6 +62,7 @@ def came_after(occurred_at, line):
 
 # Failures in a row before a transient sync failure (a rate limit, the service's own 5xx, the network) goes into the
 # error reports: each waits its Retry-After or the poll interval, so this is an hour or more of not reading.
+CALENDAR_RUNNING_DAYS = 35  # how far back the Calendar looks for a meeting or trip still running into the days shown
 TRANSIENT_REPORT_AFTER = 20
 
 
@@ -447,10 +448,14 @@ class EventsStore:
         with self.connect() as db:
             # by the meetings' own index (events_kind_calendar_event), not each account's events: +account_id keeps SQLite
             # off events_account_time, which walked every message of every account up to the week's end (some 80 ms)
-            rows = db.execute("SELECT id,account_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
-                              'AND +account_id IN (' + ','.join('?' for _ in account_ids) + ') AND occurred_at<? '
-                              "AND coalesce(json_extract(metadata,'$.end_at'),occurred_at)>? ORDER BY occurred_at,id LIMIT 300",
-                              (*account_ids, end, start)).fetchall()
+            # Only the start (occurred_at) is matched in SQL: with message protection on, end_at is sealed
+            # (message_seal.PLAIN_METADATA). The ones that began before the window, up to CALENDAR_RUNNING_DAYS back, are
+            # read to see whether they still run into it.
+            sql = ("SELECT id,account_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
+                   'AND +account_id IN (' + ','.join('?' for _ in account_ids) + ') AND occurred_at>? AND occurred_at<%s? ORDER BY occurred_at,id')
+            back = (dt.datetime.fromisoformat(start) - dt.timedelta(days=CALENDAR_RUNNING_DAYS)).isoformat()
+            rows = [r for r in db.execute(sql % '=', (*account_ids, back, start)) if str(json.loads(r['metadata'] or '{}').get('end_at') or '') > start]
+            rows = (rows + db.execute((sql % '') + ' LIMIT 300', (*account_ids, start, end)).fetchall())[:300]
         owner = {str(e).lower() for e in owner if e}
         rooms, kept, room_names = calendar_rooms(self.connect)
         found = []
