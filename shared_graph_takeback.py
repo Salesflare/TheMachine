@@ -123,6 +123,27 @@ class TakeBack:
                 kept[chain] = {**st, 'last': header['seq'], 'threads': listed, 'hashes': left}
                 self.set_meta('graph_chains:' + fleet, kept)
 
+    def graph_taken_out(self, group, me, at):
+        """An admin took this Machine out of the team's Graph (signed, at): what teammates shared with it goes from
+        here, once per removal. Their records, threads and files, by-name shares among them, and the copies kept to
+        pass on. Only that: the owner's own people, organizations, projects, messages and to-dos are other tables and
+        stay as they are, as does what this Machine shared itself (the team keeps that, and it goes on from there if
+        an admin lets it back in). The signed remove is what brings it, so it arrives whenever this Machine is next
+        on, however long it was away and whichever teammates are away then."""
+        fleet, mine = group['id'], me['member_id']
+        if str(at) <= str(self.meta('graph_taken_out:' + fleet) or ''):
+            return False
+        import shared_graph as sg
+        with self.connect() as db:
+            sg.ensure(db)
+            had = sg.drop_received(db, fleet, mine)
+            if had:
+                self.log(db, 'in', fleet, None, str(group.get('name') or 'Your team')[:80], 'graph', 'What the team shared',
+                         'removed from this Machine: an admin took it out of the team Graph')
+        self.set_meta('graph_taken_out:' + fleet, str(at))
+        sg.LOG.info('shared graph taken out fleet=%s removed=%s', fleet, had)
+        return True
+
     @staticmethod
     def _sent_records(db, fleet, member, chain, last):
         """{rid: record} as this Machine's last snapshot and the deltas since gave them to the team (chain: those of one

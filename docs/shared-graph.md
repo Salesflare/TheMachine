@@ -241,6 +241,16 @@ rows deletes all of it. Taking back works three ways:
 **Not taken back:** a member who stops sharing, or someone leaving, only stops what's new. What went stays with the
 Fleet. Someone may already have read what was taken back.
 
+**Someone taken out of the team's Graph** loses what the team shared with them, and only that. Their Machine does it
+itself when it sees the admin's signed `remove` (`graph_taken_out`): the records, timeline lines, threads, files and
+boards shared by name that came from teammates go, and so does anything still on its way. Their own mail, people,
+organizations, projects and to-dos stay, also about the same people: what came from the team was never mixed into
+them. A person or organization they only knew through the team disappears; one they also know themselves stays, as
+their own data has it. To-dos already made from a shared item stay, as with any take-back. The `remove` is a trust
+statement, not a mailbox blob, so it works while sharing is paused or off and reaches a Machine that was off whenever it
+is back, at its next look at the Fleet (within ten minutes when it is on). They see one line in Activity. What they
+shared stays with the team. Let back in, they get what the team shares now, each record and thread once.
+
 ## Someone leaving
 
 - The directory drops them at once and every Machine stops sealing for them.
@@ -251,8 +261,8 @@ Fleet. Someone may already have read what was taken back.
   sealed to admins.
 - What they got from the Fleet is removed from their Machine once it sees it's no longer in the Fleet (`_graph_forget`,
   as `work_removal.py` does for company data). What they already read can't be unread.
-- Someone taken out but still in the Fleet keeps what they got before and gets no take-backs after, since nothing is
-  sealed to them any more.
+- Someone taken out but still in the Fleet loses what the team shared with them too, and keeps their own data (see
+  Taking back). Nothing is sealed to them any more: their Machine removes it on the admin's signed `remove`.
 
 ## Threat model
 
