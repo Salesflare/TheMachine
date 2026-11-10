@@ -3116,8 +3116,8 @@ def create_record(db, kind, args, now, owner=None):
         found = resolve(db, identifier) if email else None
         if found:
             return {'node_id': found['id'], 'name': found['name'], 'existing': True}
-        if salt := _salt(db):  # deleted before, added back by the owner: no longer kept out, by address or name
-            db.executemany('DELETE FROM forgotten_people WHERE digest=?', [(forgotten_digest(salt, k),) for k in {identifier} | name_keys(name)])
+        if salt := _salt(db):  # deleted before, added back by the owner: no longer kept out (by name only when it has no address)
+            db.executemany('DELETE FROM forgotten_people WHERE digest=?', [(forgotten_digest(salt, k),) for k in {identifier} | (set() if email else name_keys(name))])
         org_id = None
         if org.startswith('org:'):
             row = db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='org'", (org,)).fetchone()

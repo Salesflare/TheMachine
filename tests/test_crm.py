@@ -308,19 +308,23 @@ class Crm(unittest.TestCase):
         workspace = Path(self.temp.name) / 'workspace'
         for node in ('email:jo@globex.io', rhea):
             self.app.delete_person(node, workspace=workspace)
-        text = ('Name,Email\nJo Pike,jo@globex.io\nRhea Stroud,rhea@new.example\nRhea Ann Stroud,\nNia Holm,nia@new.example\n')
+        text = ('Name,Email\nJo Pike,jo@globex.io\nRhea Stroud,rhea@new.example\nRhea Ann Stroud,\nRhea Stroud,\nNia Holm,nia@new.example\n')
         with self.store.connect() as db:
             seen = crm_import.preview(db, 'person', text)
-        self.assertEqual(seen['counts'], {'new': 1, 'match': 0, 'skip': 3})  # by address, by name, with a middle name
+        self.assertEqual(seen['counts'], {'new': 2, 'match': 0, 'skip': 3})  # by address; by name only with no address
+        self.assertEqual([r['status'] for r in seen['rows']], ['skip', 'new', 'skip', 'skip', 'new'])  # a namesake with a fresh address is someone else
         self.assertEqual({r.get('why') for r in seen['rows'] if r['status'] == 'skip'}, {crm_import.DELETED})
         done = self.act('graph_import_run', kind='person', text=text)
-        self.assertEqual((done['new'], done['skipped']), (1, 3))
+        self.assertEqual((done['new'], done['skipped']), (2, 3))
+        self.assertEqual(self.node('email:rhea@new.example')['name'], 'Rhea Stroud')
         self.assertIsNone(self.node('email:jo@globex.io'))
         with self.store.connect() as db:
             self.assertTrue(graph.forgotten(db)('email:jo@globex.io'))  # still kept out: the import cleared nothing
-            self.assertEqual(db.execute("SELECT count(*) FROM manual_nodes WHERE name LIKE 'Rhea%'").fetchone()[0], 0)
+            self.assertEqual(db.execute("SELECT count(*) FROM manual_nodes WHERE identifier LIKE 'manual:%' AND name LIKE 'Rhea%'").fetchone()[0], 0)
+            self.assertTrue(any(map(graph.forgotten(db), graph.name_keys('Rhea Stroud'))))  # the namesake leaves the deleted one's name kept out
         self.act('graph_import_undo', import_id=done['import_id'])
         self.assertIsNone(self.node('email:nia@new.example'))
+        self.assertIsNone(self.node('email:rhea@new.example'))
 
     def test_import_of_organisations_and_projects_matches_any_website_and_only_the_last_undoes(self):
         self.mails()
