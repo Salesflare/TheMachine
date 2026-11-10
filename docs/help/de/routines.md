@@ -33,7 +33,7 @@ Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kal
 
 **Geburtstage aus Facebook importieren**: Sobald Geburtstage an ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook zu lesen. Tippe auf **Importieren**, und The Machine öffnet sie in ihrem Browser, scrollt, bis jeder Monat geladen ist, und liest Name und Geburtstag jedes Freundes. Sie zeigt, wie viele sie gefunden hat und wer zu Personen in deinem Graph passt. Ein Name, den mehr als eine Person trägt, wird übersprungen und aufgelistet.
 
-Nur **Speichern** behält sie, und nur den Geburtstag, auf der Seite der Person. Einen Geburtstag, den du dort eingetragen hast, behält sie. Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein; auf einer gehosteten Machine meldest du dich über **Browser öffnen** an. The Machine meldet sich nie für dich an.
+Nur **Speichern** behält sie, und nur den Geburtstag, auf der Seite der Person. Einen Geburtstag, den du dort eingetragen hast, behält sie. Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
 
 Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 

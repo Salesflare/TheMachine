@@ -1,7 +1,8 @@
 // A lazy part (dashboard_parts.LAZY 'routinetodos', with todos-cleanup.js): todos-cards.js draws the Birthdays template's
 // Import birthdays from Facebook to-do through lazyIn('routinetodos'). Its to-do has no Do it, Ask for changes or
-// Mark done (todos-cards.js choices): Import, then Save, is its one main button, and Save marks it done. Import reads the page once (birthdays_facebook_app.py); the preview says who it matched, each
-// linked to their page, and only Save keeps their birthdays (person_birthday.offer); the saved to-do links them too. While it reads, the to-dos poll every few seconds.
+// Mark done: Import, then Save (which marks it done), is its main button. Import reads the page once (birthdays_facebook_app.py);
+// the preview links who it matched, and only Save keeps their birthdays. While it reads, the to-dos poll.
+// Signed out: Sign in to Facebook is the sign-in dialog (connections-signin.js) on Facebook's page; once in, it reads again.
 const fbDay=v=>{const m=/^(?:(\d{4})|-)-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return v||'';const d=new Date(Date.UTC(+(m[1]||2000),+m[2]-1,+m[3]));
  return new Intl.DateTimeFormat(DL,{month:'long',day:'numeric',...(m[1]?{year:'numeric'}:{}),timeZone:'UTC'}).format(d)};
 const fbMonth=m=>new Date(2000,m-1,9).toLocaleString(DL,{month:'long'});
@@ -10,7 +11,6 @@ const fbFine=x=>html`<p class="fine cl-fine">${x}</p>`;
 const fbActs=x=>html`<p class="cl-acts">${x}</p>`;
 const fbSaved=n=>t(['Saved {} birthday.','Saved {} birthdays.'],n);
 const fbBtn=(s,step,label,primary)=>html`<button type="button" class="${primary?'primary':'ghost'}" data-fb-step="${step}" data-fb-id="${s.id}">${label}</button>`;
-const fbBrowser=()=>html`<a class="browser-link" href="${safeHref(state.browser_link||'#')}" target="_blank" rel="noopener" data-browser-focus="facebook" data-page="https://www.facebook.com/">${t('Open the browser')}</a>`;
 function fbBirthdaysBox(s){const f=s.facebook_birthdays,open=!closed(s);
  if(f.state==='reading'){fbPoll();return html`<p class="cl-lead">${t('Reading Facebook’s birthdays page…')}</p><div class="send-progress" aria-hidden="true"><i></i></div>`}
  if(f.state==='preview'){const list=f.shown.map(m=>html`<li class="cl-row"><div class="cl-what"><b>${m.id?fbPerson(m):m.name}</b></div><span class="cl-end">${fbDay(m.date)}</span></li>`);
@@ -19,12 +19,15 @@ function fbBirthdaysBox(s){const f=s.facebook_birthdays,open=!closed(s);
   ${f.ambiguous.length?fbFine(t('Skipped, more than one person with this name: {}.',f.ambiguous.join(', '))):''}${f.unmatched?fbFine(t(['{} isn’t in your Graph, so it isn’t saved.','{} aren’t in your Graph, so they aren’t saved.'],f.unmatched)):''}
   ${open?fbActs(html`${f.new?fbBtn(s,'save',t(['Save {} birthday','Save {} birthdays'],f.new),true):html`<span class="cl-end">${t('Nothing new to save.')}</span>`}${fbBtn(s,'read',t('Import again'))}`):''}`}
  if(f.state==='saved')return html`<p class="cl-lead">${fbSaved(f.saved)}</p>${f.people?.length?fbFine(f.people.map((p,i)=>html`${i?', ':''}${fbPerson(p)}`)):''}${f.more?fbFine(t('And {} more.',f.more)):''}${open?fbActs(html`${fbBtn(s,'read',t('Import again'))}`):''}`;
- if(f.state==='signed_out')return html`<p class="cl-lead">${t('The Machine’s browser isn’t signed in to Facebook. Sign in there, then try again.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Try again'),true)}${fbBrowser()}`):''}`;
+ if(f.state==='signed_out')return html`<p class="cl-lead">${t('The Machine’s browser isn’t signed in to Facebook.')}</p>${open?fbActs(html`${fbBtn(s,'signin',t('Sign in to {}','Facebook'),true)}${fbBtn(s,'read',t('Try again'))}`):''}`;
  if(f.state==='failed')return html`<p class="cl-lead">${f.empty?t('No birthdays found on the page.'):t('Couldn’t read the page.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Try again'),true)}`):''}`;
  return html`<p class="cl-lead">${t('Reads the birthdays on Facebook’s birthdays page once, in The Machine’s browser. Nothing is saved before you say so.')}</p>${open?fbActs(html`${fbBtn(s,'read',t('Import'),true)}`):''}`}
 function fbPoll(){if(fbPoll.t)return;fbPoll.t=setTimeout(async()=>{fbPoll.t=0;try{await refresh(true)}catch(err){errCaught(err)}},3000)}
+async function fbStep(id,step){const r=await connectPost('birthdays_facebook',{suggestion_id:id,step});
+ if(r?.state==='saved'){toast(fbSaved(r.saved));if(r.people?.length===1)$('#toast').append(' ',make('button',{type:'button','data-fb-person':r.people[0].id},r.people[0].name))}await refresh()}  // Save also marks the to-do done: it moves to Done
+async function fbSignin(id){await connectPost('connect_site_signin',{site:'facebook'});
+ openSignin(null,true,null,null,'facebook',()=>fbStep(id,'read').catch(err=>{errCaught(err);toast(err.message,true)}))}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-fb-step]');if(!b)return;e.preventDefault();const id=b.dataset.fbId,s=(state.suggestions||[]).find(x=>x.id===id);if(!s?.facebook_birthdays)return;
- b.disabled=true;try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'birthdays_facebook',args:{suggestion_id:id,step:b.dataset.fbStep}})});
-  if(r?.state==='saved'){toast(fbSaved(r.saved));if(r.people?.length===1)$('#toast').append(' ',make('button',{type:'button','data-fb-person':r.people[0].id},r.people[0].name))}await refresh()}  // Save also marks the to-do done: it moves to Done
+ b.disabled=true;try{if(b.dataset.fbStep==='signin'){await fbSignin(id);b.disabled=false}else await fbStep(id,b.dataset.fbStep)}
  catch(err){errCaught(err);toast(err.message,true);b.disabled=false}});
 $('#toast').addEventListener('click',e=>{const b=e.target.closest('[data-fb-person]');if(b)location.hash='#graph/'+encodeURIComponent(b.dataset.fbPerson)});  // the one person saved: their page

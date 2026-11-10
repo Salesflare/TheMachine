@@ -256,8 +256,10 @@ class FormTest(unittest.TestCase):
                 patch.object(assistant.browser_viewer, 'focus') as focus:
             self.assertTrue(self.act('connect_site_signin', {'site': 'linkedin'})['opened'])
             self.act('connect_site_signin', {'site': 'x'})
-        self.assertEqual([c.args[1] for c in tab.call_args_list], ['https://www.linkedin.com/login', 'https://x.com/i/flow/login'])
-        self.assertEqual(focus.call_count, 2)
+            self.act('connect_site_signin', {'site': 'facebook'})  # the Import birthdays from Facebook to-do
+        self.assertEqual([c.args[1] for c in tab.call_args_list],
+                         ['https://www.linkedin.com/login', 'https://x.com/i/flow/login', 'https://www.facebook.com/login/'])
+        self.assertEqual(focus.call_count, 3)
         for bad in ('chatgpt', 'https://evil.example', None):
             with self.assertRaises(ValueError):
                 self.act('connect_site_signin', {'site': bad})

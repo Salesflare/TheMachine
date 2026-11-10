@@ -7,7 +7,8 @@ shows what was found and who it matched. Only the owner's Save keeps them. Anoth
 again on the to-do, also after Reopen).
 
 Hosted Machines get it too: their browser is the same shared one, seen through the viewer, where the owner signs in to
-Facebook themselves. A browser that isn't signed in is said on the to-do, with a link to the browser, and nothing is read."""
+Facebook themselves. A browser that isn't signed in is said on the to-do, with Sign in to Facebook (the dashboard's
+sign-in dialog, connect_site_signin), and nothing is read until the owner is in."""
 import datetime as dt
 import logging
 import secrets

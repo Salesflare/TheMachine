@@ -31,7 +31,7 @@ Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpl
 
 **Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
 
-Solo **Guardar** los conserva, y solo el cumpleaños, en la página de cada persona. Un cumpleaños que pusiste ahí se queda. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook; en una Machine alojada, inicia sesión con **Abrir el navegador**. The Machine nunca inicia sesión por ti.
+Solo **Guardar** los conserva, y solo el cumpleaños, en la página de cada persona. Un cumpleaños que pusiste ahí se queda. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
 
 Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam usa un turno corto cuando hay correo que leer). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
 
