@@ -299,6 +299,12 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
  .board-fits li:not(:has(.fit-pick)){grid-template-columns:minmax(0,1fr)}}  /* one project to review has no tick box: the text and buttons get the whole row */
 .proj-new{display:none;margin:0 0 10px}
 /*@lazy*/
+/* A project's description (project_about.py): a short paragraph under the name line, its meta and Edit quietly under it */
+.proj-about-text{margin:10px 0 0;max-width:68ch;line-height:1.5;overflow-wrap:anywhere}.proj-about .about-meta{margin:2px 0 0;color:var(--faint);font-size:var(--fs-xs)}
+.proj-about button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--faint);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.proj-about button.link:hover{color:var(--text)}
+.proj-about.editing>.proj-about-text,.proj-about.editing>.about-meta{display:none}.proj-about.blank:not(.editing){display:none}
+.about-form{margin:10px 0 0;max-width:68ch}.about-form[hidden]{display:none}/* the same height focused or not: the global textarea:focus height moved Cancel under a click */
+.about-form textarea,.about-form textarea:focus,.about-form textarea.filled{display:block;width:100%;box-sizing:border-box;height:auto;margin:0;padding:8px 12px;font:inherit;line-height:1.5;resize:vertical;field-sizing:content;min-height:4.5em;max-height:200px;transition:none}.about-form .role-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 0}.about-form .role-row button.link{font-size:var(--fs-sm);color:var(--muted)}.about-form .field-error{color:var(--c-red,#b3261e)}
 .proj-facts{margin:8px 0 0}.proj-facts p{margin:2px 0}.proj-notes{white-space:pre-wrap;color:var(--c-text-2)}
 .lane-more{display:block;width:100%;min-height:32px;margin:8px 0 0;padding:0;border:0;border-radius:var(--r-sm);background:none;box-shadow:none;color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1 var(--sans);cursor:pointer}
 .lane-more:hover{background:var(--c-hover);color:var(--text)}

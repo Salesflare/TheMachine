@@ -72,7 +72,7 @@ def forget_in_notes(root, needles):
 class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
-               'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action',
+               'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
                'graph_fact_unlink': 'graph_fact_unlink_action', 'graph_fact_add': 'graph_fact_add_action', 'unmerge_fact': 'unmerge_fact_action',
                'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
                'graph_org_edit': 'graph_org_edit_action', 'graph_org_wrong': 'graph_org_edit_action',
@@ -689,6 +689,12 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner changes a summary, on the dashboard')
         return self.summary_change(args)
+
+    def project_about_action(self, name, args, owner_dashboard=False):
+        # a project's description: the owner's own text, or back to The Machine's (Keep it updated)
+        if not owner_dashboard:
+            raise ValueError('Only the owner changes a project description, on the dashboard')
+        return self.about_change(args)
 
     def graph_fact_unlink_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

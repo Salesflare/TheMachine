@@ -1,15 +1,18 @@
 """Person summaries in the service (person_summary.py has the summaries): now and then one background turn rewrites the
-lines of a few people whose evidence changed, and the owner's own change to a line. Moved out of assistant.App as is. A
-mixin of assistant.App (APP_MIXINS)."""
+lines of a few people whose evidence changed, and the owner's own change to a line. Moved out of assistant.App as is.
+Project descriptions the same way (project_about.py): one turn for a few projects whose evidence changed. A mixin of
+assistant.App (APP_MIXINS)."""
 import json
 import logging
 import sqlite3
 import threading
+import time
 
 import graph
 import locale_prefs
 from models import background_model
 import person_summary
+import project_about
 from timeutil import now
 
 LOG = logging.getLogger('personal-assistant')
@@ -101,6 +104,73 @@ class SummariesApp:
             lines.sort(key=lambda x: person_summary.KINDS.index(x['kind']))
             del lines[person_summary.MAX_LINES:]
         return kept
+
+    ABOUT_SECONDS = 180
+    ABOUT_IDLE_SECONDS = 600  # nothing was due: look again after this
+
+    def about_step(self):
+        """Now and then: one background turn describes a few projects whose evidence changed (project_about.py), in a
+        thread of its own, within the usage budget like every background turn. Never in a request."""
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return None
+        thread = getattr(self, '_about_thread', None)
+        if (thread and thread.is_alive()) or time.monotonic() < getattr(self, '_about_next', 0):
+            return None
+        if not self.background_spaced() or self.background_pause(job='project-about'):
+            return None
+        with self.store.connect() as db:
+            items = project_about.due(db)
+        if not items:
+            self._about_next = time.monotonic() + self.ABOUT_IDLE_SECONDS
+            return None
+        self._about_next = time.monotonic() + project_about.PASS_MINUTES * 60
+        self.background_started()
+        self._about_thread = threading.Thread(target=self.about_run, args=(items,), name='project-about', daemon=True)
+        self._about_thread.start()
+        return len(items)
+
+    def about_run(self, items):
+        """One pass: the projects' evidence, one turn, their descriptions saved (the owner's own stays)."""
+        import help_chat
+        stand_in = getattr(self, 'about_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
+        try:
+            with self.store.connect() as db:
+                owner = graph.Owner({'accounts': self.config.get('accounts', [])}, db)
+                owner.slack |= set(getattr(self.store, 'owner_user_ids', None) or ())
+                pages = [project_about.evidence(db, owner, item) for item in items]
+            text = project_about.prompt(pages, locale_prefs.language_of(self.config))
+            if stand_in:
+                answer = stand_in(self.config, text)
+            else:
+                swap = background_model(self.config)
+                answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.ABOUT_SECONDS)
+            found = project_about.parse(answer, pages)
+            if found is None:
+                raise ValueError('unreadable answer')
+            written = 0
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                for item in items:
+                    written += project_about.save(db, item, found.get(item['node'])) == 'written'
+        except help_chat.Unavailable:
+            LOG.warning('project descriptions not written error=model')
+            return 0
+        except (sqlite3.Error, ValueError, KeyError, TypeError, OSError) as failure:
+            LOG.warning('project descriptions not written error=%s', type(failure).__name__)
+            return 0
+        LOG.info('project descriptions projects=%s written=%s', len(items), written)
+        return written
+
+    def about_change(self, args):
+        """The owner on a project's description: op edit (their text, which then stays) or auto (Keep it updated)."""
+        op = args.get('op')
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if op == 'edit':
+                return project_about.edit(db, args.get('node_id'), args.get('text'))
+            if op == 'auto':
+                return project_about.auto(db, args.get('node_id'))
+            raise ValueError('op is edit or auto')
 
     def summary_change(self, args):
         """The owner on a person's summary: op edit (lines), use (the suggested update), keep (theirs, without it), reset."""

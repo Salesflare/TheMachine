@@ -298,6 +298,7 @@ class WorkersApp:
             self.pacing_send()  # how often background work paced, counts only (pacing.py)
         self.apply_skill_clusters()  # a Create skill tapped on Telegram
         self.summary_step()  # people's summaries, when their evidence changed (person_summary.py)
+        self.about_step()  # project descriptions, when their evidence changed (project_about.py)
         if seeded or learned:
             LOG.info('style learned voices=%s replies=%s', seeded, learned)
 
