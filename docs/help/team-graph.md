@@ -41,7 +41,7 @@ An admin can require everyone's **Work email** and **Work calendar** at the Flee
 - Automated mail: receipts, invoices, alerts, newsletters and supplier bills.
 - Colleague-only threads, personal mail and anything from a personal account. Personal never goes, not even when you tap Team.
 - Anything you marked **Keep private**, and boards and projects set to Only you.
-- Projects with someone who is Personal to you, like your Family or Friends. Your board marks them with a lock and says how many stay with you.
+- Someone who is Personal to you, like your Family or Friends, and their mail. A project they're on still goes with its board, without them.
 
 Each thread is judged on what it's about, and that can be wrong. Check what would go and use Keep private to correct it. Sharing a thread yourself, with the team or named people, overrides a sensitive label, so check who gets it.
 

@@ -83,7 +83,8 @@ best effort: the owner reviews the preview and corrects mistakes with Keep priva
   promotion, social, forum or spam message is **Other** (`automated_message`, `Scope.automated`), and isn't sent to the
   review. Once someone on the owner's side replies, the review judges it.
 - People of the owner's own life never go: someone only in their Family or Friends, or someone they marked Personal. No
-  record of them, and a thread with them on it stays Only you.
+  record of them, and a thread with them on it stays Only you. A project they are on still goes when its board is shared
+  (with its work lines only); they stay off it. Someone kept private by hand still keeps their projects home.
 
 ## Records
 

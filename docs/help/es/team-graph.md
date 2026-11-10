@@ -36,7 +36,7 @@ Un administrador puede exigir el **Correo de trabajo** y el **Calendario de trab
 - Correo automático: recibos, facturas, alertas, boletines, y las facturas de tu propia empresa con sus proveedores.
 - Hilos internos (solo con compañeros), correo personal y cualquier cosa de una cuenta personal. Lo personal nunca se envía, ni siquiera cuando tocas Equipo.
 - Todo lo que marcaste como **Mantener en privado**, y los tableros y proyectos configurados como Solo tú.
-- Proyectos con alguien que es Personal para ti, como tu familia o tus amigos. Tu tablero los marca con un candado y dice cuántos se quedan contigo.
+- Alguien que es Personal para ti, como tu familia o tus amigos, y su correo. Un proyecto en el que está sigue yendo con su tablero, sin esa persona.
 
 Cada hilo se juzga por separado, según de qué trata. La clasificación puede equivocarse; revisa lo que se enviaría y usa Mantener en privado para corregirla. Tu elección explícita de Equipo o compartir con compañeros concretos puede anular una clasificación de sensible; revisa los destinatarios antes de compartir.
 

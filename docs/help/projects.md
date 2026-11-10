@@ -78,7 +78,7 @@ In **Team**, boards your teammates share show next to yours, the ones with most 
 
 Each project says what happened last, with its date: the newest line shared with the team, or its last move when that came later. Its owner's name shows when a stage has projects of more than one teammate.
 
-A teammate's board can have fewer projects than they see: a project they kept private, or with someone who is Personal to them (their Family or Friends), never leaves their Machine. On your own board, the header says "Shared with the team" and how many stay with you, and those projects have a lock.
+A teammate's board can have fewer projects than they see: a project they kept private, or with a personal conversation on it, never leaves their Machine. Someone who is Personal to them stays off the projects that go. On your own board, the header says "Shared with the team" and how many stay with you, and those projects have a lock.
 
 **Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
 

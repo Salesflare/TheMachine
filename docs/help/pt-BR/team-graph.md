@@ -36,7 +36,7 @@ Um admin pode exigir o **E-mail de trabalho** e o **Calendário de trabalho** de
 - E-mails automáticos: recibos, faturas, alertas, newsletters e as contas da sua própria empresa com os fornecedores dela.
 - Conversas internas (só entre colegas), e-mails pessoais e qualquer coisa de uma conta pessoal. O que é pessoal nunca vai, nem quando você toca em Equipe.
 - Tudo o que você marcou com **Manter privado**, e quadros e projetos definidos como Só você.
-- Projetos com alguém que é Pessoal para você, como sua família ou amigos. Seu quadro os marca com um cadeado e diz quantos ficam com você.
+- Alguém que é Pessoal para você, como sua família ou amigos, e os e-mails dessa pessoa. Um projeto em que ela está vai mesmo assim com o quadro, sem ela.
 
 Cada conversa é avaliada sozinha, pelo assunto dela. A classificação pode errar: confira o que iria e use Manter privado para corrigir. Sua escolha explícita de Equipe ou um compartilhamento com colegas específicos pode passar por cima de uma classificação sensível. Confira os destinatários antes de compartilhar.
 

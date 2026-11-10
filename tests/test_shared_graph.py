@@ -379,6 +379,28 @@ class SharedGraph(unittest.TestCase):
             labels = self.own.thread_labels(db, [dict(r) for r in db.execute('SELECT * FROM events')])
         self.assertEqual({labels[self.event_id(self.own, s)]['share'] for s in ('work-8', 'work-9', 'work-10')}, {'only_you'})
 
+    def test_a_shared_board_shares_every_project_and_someone_personal_on_one_stays_off_it(self):
+        """Sharing a board shares every project on it. Someone Personal to the owner on one stays off it: no record, no
+        mail, no line, and not their organization. Someone kept private by hand still keeps their project home."""
+        self.add(self.own,
+                 mail('work', 9, 'Kim Moss <kim@pal.example>', 'own1@acme.example', 'Climbing trip', 'Trip is booked.', 1, 't-kim'),
+                 mail('work', 11, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Gym floor quote', BODY, 1, 't-floor'),
+                 mail('work', 12, 'Rae Dunn <rae@vendor.example>', 'own1@acme.example', 'Wall panels', 'Panels ship Monday.', 1, 't-wall'))
+        with self.own.store.connect() as db:
+            graph.person_edit(db, 'email:kim@pal.example', {'side': 'personal'}, a.now())
+        self.judge(self.own, ('work-9', 'client', 'Kim wrote'), ('work-11', 'client', 'Lee sent the floor quote'), ('work-12', 'client', 'Rae ships panels'))
+        self.board(self.own, 'Gyms', 'team', {'Gym: Boulder': ['work-9', 'work-11'], 'Gym: Ridge': ['work-9'], 'Gym: Wall': ['work-12']})
+        with self.own.store.connect() as db:
+            sg.keep_private(db, 'email:rae@vendor.example')
+        self.rounds()
+        projects = self.projects_of(self.mem)
+        self.assertEqual(sorted(projects), ['Gym: Boulder', 'Gym: Ridge'])  # Rae is kept private by hand: Wall stays home
+        self.assertIn('Lee sent the floor quote', json.dumps(projects['Gym: Boulder']['timeline']))
+        self.assertIsNone(projects['Gym: Ridge'].get('org'))  # Kim's own organization would say who they are
+        received = json.dumps(self.team(self.mem) + self.team(self.mem, 'team_mail'))
+        for text in ('Kim', 'pal.example', 'Climbing', 'Trip is booked', 'Rae', 'Panels'):
+            self.assertNotIn(text, received)
+
     def test_internal_thread_is_never_shared_even_by_hand(self):
         self.olive_mail()
         with self.own.store.connect() as db:
