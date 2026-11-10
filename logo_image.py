@@ -19,23 +19,23 @@ MAX_SOURCE_PIXELS = 512 * 512  # bigger source pictures are skipped: decoding th
 
 
 class Bad(ValueError):
-    pass
+    """A picture this module doesn't read (no message: it never reaches the dashboard)."""
 
 
 def _chunks(data):
     """(type, body) of each PNG chunk, CRC checked; the bytes after IEND (should be none)."""
     if data[:8] != SIGNATURE:
-        raise Bad('not a PNG')
+        raise Bad
     at, out = 8, []
     while True:
         if at + 12 > len(data):
-            raise Bad('cut short')
+            raise Bad
         size, kind = struct.unpack('>I4s', data[at:at + 8])
         if size > len(data) - at - 12:
-            raise Bad('chunk too long')
+            raise Bad
         body = data[at + 8:at + 8 + size]
         if struct.unpack('>I', data[at + 8 + size:at + 12 + size])[0] != zlib.crc32(kind + body) & 0xffffffff:
-            raise Bad('bad CRC')
+            raise Bad
         out.append((kind, body))
         at += 12 + size
         if kind == b'IEND':
@@ -62,7 +62,7 @@ def _unfilter(raw, rows, stride, bpp):
                 pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
                 line[i] = (line[i] + (a if pa <= pb and pa <= pc else b if pb <= pc else c)) & 255
         elif f != 0:
-            raise Bad('bad filter')
+            raise Bad
         out += line
         prev = line
     return out
@@ -73,17 +73,17 @@ def decode_png(data, max_side=None, strict=False):
     only IHDR, IDAT and IEND, nothing after IEND), as a received thumbnail must be."""
     chunks, rest = _chunks(bytes(data))
     if chunks[0][0] != b'IHDR' or len(chunks[0][1]) != 13:
-        raise Bad('no header')
+        raise Bad
     w, h, depth, color, compression, filtering, interlace = struct.unpack('>IIBBBBB', chunks[0][1])
     if not w or not h or (max_side and (w > max_side or h > max_side)) or w * h > MAX_SOURCE_PIXELS:
-        raise Bad('size')
+        raise Bad
     if compression or filtering or interlace:
-        raise Bad('interlaced or unknown method')
+        raise Bad
     channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color)
     if not channels or depth not in ({8, 16} if color in (2, 4, 6) else {1, 2, 4, 8} if color == 3 else {1, 2, 4, 8, 16}):
-        raise Bad('color type')
+        raise Bad
     if strict and (color not in (2, 6) or depth != 8 or rest or any(k not in (b'IHDR', b'IDAT', b'IEND') for k, _ in chunks)):
-        raise Bad('not a thumbnail')
+        raise Bad
     palette, trns = None, None
     for kind, body in chunks[1:]:
         if kind == b'PLTE':
@@ -91,16 +91,16 @@ def decode_png(data, max_side=None, strict=False):
         elif kind == b'tRNS':
             trns = body
         elif kind[0] & 32 == 0 and kind not in (b'IDAT', b'IEND'):
-            raise Bad('unknown critical chunk')
+            raise Bad
     stride = (w * channels * depth + 7) // 8
     want = h * (stride + 1)
     d = zlib.decompressobj()
     try:
         raw = d.decompress(b''.join(body for kind, body in chunks if kind == b'IDAT'), want + 1)
     except zlib.error as error:
-        raise Bad('bad data') from error
+        raise Bad from error
     if len(raw) != want or d.unconsumed_tail:
-        raise Bad('wrong amount of data')
+        raise Bad
     px = _unfilter(raw, h, stride, max(1, channels * depth // 8))
     out = bytearray(w * h * 4)
     if depth == 8 and color == 6:
@@ -119,7 +119,7 @@ def decode_png(data, max_side=None, strict=False):
             s = samples[x * channels:(x + 1) * channels]
             if color == 3:
                 if not palette or s[0] >= len(palette):
-                    raise Bad('palette')
+                    raise Bad
                 r, g, b = palette[s[0]]
                 a = trns[s[0]] if trns and s[0] < len(trns) else 255
             elif color in (0, 4):
@@ -135,11 +135,11 @@ def decode_png(data, max_side=None, strict=False):
 def _bmp(data):
     """(width, height, RGBA) of the BMP picture inside an .ico (no file header; twice the height for its mask)."""
     if len(data) < 40 or struct.unpack('<I', data[:4])[0] != 40:
-        raise Bad('not a BMP')
+        raise Bad
     w, h2, _, bits, compression = struct.unpack('<iiHHI', data[4:20])
     h = h2 // 2
     if not (0 < w <= 256 and 0 < h <= 256) or compression or bits not in (1, 4, 8, 24, 32):
-        raise Bad('BMP kind')
+        raise Bad
     at = 40
     palette = []
     if bits <= 8:
@@ -148,7 +148,7 @@ def _bmp(data):
     stride = ((w * bits + 31) // 32) * 4
     mask_stride = ((w + 31) // 32) * 4
     if len(data) < at + stride * h:
-        raise Bad('BMP cut short')
+        raise Bad
     has_mask = len(data) >= at + stride * h + mask_stride * h
     out = bytearray(w * h * 4)
     alpha_seen = False
@@ -180,7 +180,7 @@ def _bmp(data):
 def decode_ico(data):
     """The best picture of an .ico file: the smallest of 64 pixels or more, else the largest."""
     if len(data) < 6 or data[:4] != b'\x00\x00\x01\x00':
-        raise Bad('not an icon')
+        raise Bad
     count = struct.unpack('<H', data[4:6])[0]
     entries = []
     for i in range(min(count, 32)):
@@ -197,7 +197,7 @@ def decode_ico(data):
             return decode_png(part) if part[:8] == SIGNATURE else _bmp(part)
         except Bad:
             continue
-    raise Bad('no picture in the icon')
+    raise Bad
 
 
 def decode(data, kind):
@@ -206,7 +206,7 @@ def decode(data, kind):
         return decode_png(data)
     if kind == 'image/x-icon':
         return decode_ico(data)
-    raise Bad('no decoder for ' + str(kind))  # JPEG, WebP: none in the standard library; SVG is never saved
+    raise Bad  # JPEG, WebP: none in the standard library; SVG is never saved
 
 
 def resize(w, h, rgba, side):
