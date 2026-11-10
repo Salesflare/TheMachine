@@ -372,8 +372,10 @@ class InstallerTest(unittest.TestCase):
     def swap(self, fail=(), breaks=None, reload_heals=False, busy=(), unit='openclaw-gateway.service', restart=True, wait='600'):
         """install_plugin against a fake Gateway with a model runtime: the plugin step `breaks` unpublishes it (as a
         swap OpenClaw could neither finish nor roll back does), a Gateway restart brings it back, a second reload only
-        with `reload_heals`. `fail`: the plugin steps that fail. `busy`: what the memory index says in turn, then idle."""
-        calls, state, looks = [], {'models': True, 'reloads': 0}, iter(busy)
+        with `reload_heals`. `fail`: the plugin steps that fail. `busy`: what the memory index says in turn (None: nothing
+        can tell), then nothing. The clock is a fake one that only time.sleep moves."""
+        calls, state, looks, clock = [], {'models': True, 'reloads': 0}, iter(busy), [1000.0]
+        self.clock = clock
         loaded = {'ok': True, 'plugins': {'loaded': [installer.PLUGIN_ID], 'errors': []}}
         def run(command, **kwargs):
             calls.append(' '.join(command[:1] + command[1:4]) if command[0] != 'openclaw' else ' '.join(command[1:3]))
@@ -402,7 +404,10 @@ class InstallerTest(unittest.TestCase):
         tmp = Path(tempfile.mkdtemp(prefix='machine-swap-'))
         self.addCleanup(shutil.rmtree, tmp, True)
         stamp = tmp / 'plugin-installed'
-        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer.time, 'sleep') as slept, \
+        def sleep(seconds):
+            clock[0] += seconds
+        with mock.patch.object(installer, 'run', side_effect=run), mock.patch.object(installer.time, 'sleep', side_effect=sleep) as slept, \
+                mock.patch.object(installer.time, 'monotonic', side_effect=lambda: clock[0]), \
                 mock.patch.object(installer, 'say', side_effect=said.append), mock.patch.object(installer, 'index_busy', side_effect=index_busy), \
                 mock.patch.object(installer.onboarding, 'gateway_units', return_value=[unit] if unit else []), \
                 mock.patch.dict(os.environ, {'ASSISTANT_GATEWAY_WAIT': '60', 'ASSISTANT_SWAP_WAIT': wait, 'ASSISTANT_PLUGIN_RETRY_WAIT': '0'}):
@@ -411,17 +416,110 @@ class InstallerTest(unittest.TestCase):
 
     RESTART = 'systemctl --user restart openclaw-gateway.service'
 
+    def idle(self, looks, wait='600', quiet=None, ports=None):
+        """gateway_idle against an index that says looks(seconds since the start) at each look, on a fake clock that
+        only time.sleep moves. Returns (idle, the seconds it took, what was said, the looks)."""
+        clock, said, seen = [500.0], [], []
+        def sleep(seconds):
+            clock[0] += seconds
+        def index_busy():
+            seen.append(looks(clock[0] - 500.0))
+            return seen[-1]
+        env = {'ASSISTANT_SWAP_WAIT': wait, **({'ASSISTANT_SWAP_QUIET': quiet} if quiet else {})}
+        with mock.patch.object(installer.time, 'sleep', side_effect=sleep), mock.patch.object(installer.time, 'monotonic', side_effect=lambda: clock[0]), \
+                mock.patch.object(installer, 'say', side_effect=said.append), mock.patch.object(installer, 'index_busy', side_effect=index_busy), \
+                mock.patch.dict(os.environ, env):
+            os.environ.pop('ASSISTANT_SWAP_POLL', None)
+            if not quiet:
+                os.environ.pop('ASSISTANT_SWAP_QUIET', None)
+            ok = installer.gateway_idle('the bridge goes in')
+        return ok, clock[0] - 500.0, '\n'.join(said), seen
+
+    def test_a_pause_in_the_memory_index_is_not_the_end_of_it(self):
+        # What happened on a real Machine: a long run went quiet for 40 seconds between batches and then went on.
+        ok, took, said, seen = self.idle(lambda t: t < 30 or 70 <= t < 100)
+        self.assertTrue(ok)
+        self.assertEqual(took, 160)  # 60 unbroken seconds after the last busy look, not after the first quiet one
+        self.assertGreater(seen.count(False), 3)  # far more than three quiet looks went by in the pause
+        self.assertEqual(said.count('waiting up to 10 min'), 1, said)
+        ok, took, said, _ = self.idle(lambda t: 20 <= t < 50)  # the first look fell in a pause: the same stretch, started again
+        self.assertTrue(ok)
+        self.assertEqual(took, 110)
+        self.assertIn('stays quiet for 60 s before the bridge goes in', said)
+        self.assertIn('waiting up to 10 min', said)
+
+    def test_an_unbroken_quiet_stretch_is_idle(self):
+        ok, took, said, seen = self.idle(lambda t: False)  # an embedding server that is doing nothing
+        self.assertTrue(ok)
+        self.assertEqual((took, len(seen)), (60, 31))
+        self.assertNotIn('waiting up to', said)
+        self.assertIn('stays quiet for 60 s', said)
+        ok, took, _, _ = self.idle(lambda t: t < 10, quiet='20')  # ASSISTANT_SWAP_QUIET
+        self.assertEqual((ok, took), (True, 30))
+        ok, took, _, _ = self.idle(lambda t: True if t < 10 else None)  # the server went away after its run: quiet from then on
+        self.assertEqual((ok, took), (True, 70))
+
+    def test_where_nothing_can_tell_there_is_no_wait(self):
+        ok, took, said, seen = self.idle(lambda t: None)  # no embedding server on this computer: most installs
+        self.assertEqual((ok, took, said, seen), (True, 0, '', [None]))
+
+    def test_the_bound_ends_a_run_that_never_goes_quiet_for_long(self):
+        ok, took, said, _ = self.idle(lambda t: True)
+        self.assertFalse(ok)
+        self.assertEqual(took, 600)
+        ok, took, _, _ = self.idle(lambda t: t % 50 < 10)  # 40 second pauses for good: busy all the way to the bound
+        self.assertFalse(ok)
+        self.assertEqual(took, 600)
+        ok, took, _, _ = self.idle(lambda t: t < 590)  # went quiet just before the bound: the stretch is let finish
+        self.assertEqual((ok, took), (True, 650))
+        ok, took, _, _ = self.idle(lambda t: t < 590 or 620 <= t)  # and one that broke after the bound ends it
+        self.assertEqual((ok, took), (False, 620))
+        ok, took, _, _ = self.idle(lambda t: 40 <= t, wait='30')  # the bound counts from the first busy look
+        self.assertEqual((ok, took), (False, 70))
+
     def test_the_bridge_goes_in_only_once_the_memory_index_has_stopped(self):
-        ok, calls, said, stamped, slept = self.swap(busy=[True, True, False, True, False, False, False])
+        ok, calls, said, stamped, slept = self.swap(busy=[True, True, False, True] + [False] * 31)
         self.assertTrue(ok, said)
         self.assertTrue(stamped)
-        self.assertEqual(calls[:8], ['index?'] * 7 + ['plugins install'], calls)  # one quiet look between batches is not idle
-        self.assertGreaterEqual(slept, 6)
+        self.assertEqual(calls[:36], ['index?'] * 35 + ['plugins install'], calls)  # a quiet look between batches is not idle
+        self.assertEqual(slept, 34)
         self.assertEqual(said.count('waiting up to 10 min'), 1, said)
         self.assertNotIn(self.RESTART, calls)
         ok, calls, said, _, slept = self.swap()  # nothing here can tell (no local embedding server): no wait
         self.assertTrue(ok, said)
         self.assertEqual((calls[:2], slept), (['index?', 'plugins install'], 0))
+
+    def test_an_index_that_starts_between_the_swap_and_the_reload_is_waited_for_too(self):
+        ok, calls, said, stamped, _ = self.swap(busy=[None, True, True])  # nothing to see at the swap, a run by the reload
+        self.assertTrue(ok, said)
+        self.assertTrue(stamped)
+        between = calls[calls.index('plugins enable'):calls.index('plugins reload')]
+        self.assertEqual(between.count('index?'), 2 + 31, calls)  # a full minute after the last busy look
+        self.assertEqual(self.clock[0] - 1000.0, 4 + 60)
+        self.assertEqual(said.count('  OpenClaw is building its memory index; waiting up to 10 min for it before reloading the bridge.'), 1, said)
+        ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0')  # still running at the bound
+        self.assertTrue(ok, said)  # this install may restart the Gateway: it goes on, the check after the reload covers it
+        self.assertIn('going on', said)
+        self.assertIn('plugins reload', calls)
+        ok, calls, said, stamped, _ = self.swap(busy=[None] + [True] * 50, wait='0', restart=False)
+        self.assertFalse(ok)
+        self.assertFalse(stamped)  # not reloaded is not installed: the next run does it
+        self.assertIn('plugins install', calls)
+        self.assertFalse([c for c in calls if c.startswith(('plugins reload', 'systemctl'))], calls)
+        self.assertIn('linked but not reloaded', said)
+        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertNotIn('openclaw memory status', said)
+
+    def test_the_reload_that_brings_models_back_waits_for_the_same_quiet(self):
+        # The swap went in during a pause the first check could not see (None), the index went on and the install failed.
+        ok, calls, said, _, _ = self.swap(fail=['install'], breaks='install', reload_heals=True, busy=[None, True, True] + [False] * 15 + [True])
+        self.assertFalse(ok)
+        after = calls[calls.index('plugins install'):calls.index('plugins reload')]
+        self.assertEqual(after.count('index?'), 18 + 31, calls)  # 30 quiet seconds did not do: a full minute after the last busy look
+        self.assertEqual(self.clock[0] - 1000.0, 36 + 60)
+        self.assertIn('  OpenClaw is building its memory index; waiting up to 10 min for it before reloading the bridge.', said)
+        self.assertIn('Reloaded the bridge: model calls work again', said)
+        self.assertNotIn(self.RESTART, calls)
 
     def test_an_index_that_never_stops_is_waited_for_only_so_long(self):
         ok, calls, said, stamped, _ = self.swap(busy=[True] * 50, wait='0')
@@ -433,7 +531,8 @@ class InstallerTest(unittest.TestCase):
         self.assertFalse(stamped)
         self.assertFalse([c for c in calls if c.startswith(('plugins', 'systemctl'))], calls)
         self.assertIn('nothing in OpenClaw was changed', said)
-        self.assertIn('Run ./install.sh again', said)
+        self.assertIn('Run ./install.sh again when it is done', said)
+        self.assertNotIn('openclaw memory status', said)  # that command does not show the run that indexes
 
     def test_a_failed_plugin_install_that_took_the_model_runtime_down_gets_it_back(self):
         ok, calls, said, stamped, _ = self.swap(fail=['install'], breaks='install')
@@ -510,7 +609,8 @@ class InstallerTest(unittest.TestCase):
                 raise OSError('refused')
             return Answer(metrics[port])
         with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, ps, '')), \
-                mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen):
+                mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen), mock.patch.dict(os.environ):
+            os.environ.pop('ASSISTANT_EMBEDDING_PORTS', None)
             self.assertEqual(installer.gateway_embedding_ports(), [4101])
             self.assertIs(installer.index_busy(), True)
             metrics[4101] = 'llamacpp:requests_processing 0\nllamacpp:requests_deferred 0\n'
@@ -521,6 +621,52 @@ class InstallerTest(unittest.TestCase):
             self.assertIsNone(installer.index_busy())
         with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 127, '', 'no ps')):
             self.assertIsNone(installer.index_busy())
+
+    def embedding_servers(self, pages, ports='8792'):
+        """index_busy with no Gateway embedding server, against fake servers: pages[(port, path)] is what one answers."""
+        asked = []
+        class Answer:
+            def __init__(self, text): self.text = text
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n=-1): return self.text.encode()
+        def urlopen(url, timeout=None):
+            asked.append(url)
+            host, path = url.split('//')[1].split('/', 1)
+            if (int(host.split(':')[1]), '/' + path) not in pages:
+                raise OSError('refused')
+            return Answer(pages[(int(host.split(':')[1]), '/' + path)])
+        with mock.patch.object(installer, 'run', return_value=subprocess.CompletedProcess([], 0, '  10     1 openclaw-gateway gateway run', '')), \
+                mock.patch.object(installer.urllib.request, 'urlopen', side_effect=urlopen), \
+                mock.patch.dict(os.environ, {'ASSISTANT_EMBEDDING_PORTS': ports}):
+            return installer.index_busy(), asked
+
+    def test_an_embedding_server_the_gateway_did_not_start_is_asked_by_its_port(self):
+        busy = 'llamacpp:requests_processing 1\nllamacpp:requests_deferred 0\n'
+        still = 'llamacpp:requests_processing 0\nllamacpp:requests_deferred 0\n'
+        self.assertEqual(self.embedding_servers({(8792, '/metrics'): busy}), (True, ['http://127.0.0.1:8792/metrics']))
+        self.assertIs(self.embedding_servers({(8792, '/metrics'): still})[0], False)
+        self.assertIs(self.embedding_servers({(8792, '/metrics'): still, (8793, '/metrics'): busy}, ports=' 8792, 8793 ,')[0], True)
+        self.assertEqual(self.embedding_servers({(8792, '/metrics'): busy}, ports=''), (None, []))  # not set: as before
+        # Only port numbers, only on this computer: anything else is skipped, never asked.
+        found, asked = self.embedding_servers({(8792, '/metrics'): busy}, ports='example.com:80,8792@example.com,-1,0,99999,8792/x,\u00b2,0x10')
+        self.assertEqual((found, asked), (None, []))
+        found, asked = self.embedding_servers({(8792, '/metrics'): busy}, ports='example.com:80,8792')
+        self.assertIs(found, True)
+        self.assertTrue(all(url.startswith('http://127.0.0.1:8792/') for url in asked), asked)
+
+    def test_an_embedding_server_without_metrics_is_read_from_its_slots(self):
+        slots = lambda *working: json.dumps([{'id': n, 'is_processing': one, 'n_ctx': 2048} for n, one in enumerate(working)])
+        found, asked = self.embedding_servers({(8792, '/slots'): slots(False, True)})
+        self.assertIs(found, True)
+        self.assertEqual(asked, ['http://127.0.0.1:8792/metrics', 'http://127.0.0.1:8792/slots'])  # /metrics first
+        self.assertIs(self.embedding_servers({(8792, '/slots'): slots(False, False)})[0], False)
+        self.assertIs(self.embedding_servers({(8792, '/metrics'): 'not counts\n', (8792, '/slots'): slots(True)})[0], True)
+        found, asked = self.embedding_servers({(8792, '/metrics'): 'llamacpp:requests_processing 0\n', (8792, '/slots'): slots(True)})
+        self.assertEqual((found, len(asked)), (False, 1))  # a /metrics that says is the answer
+        for unreadable in ('[]', '{"error": "slots are off"}', '[{"id": 0}]', 'not json', '[1, "x"]', 'null'):
+            self.assertIsNone(self.embedding_servers({(8792, '/slots'): unreadable})[0], unreadable)
+        self.assertIsNone(self.embedding_servers({})[0])  # nothing answers on that port
 
     def test_a_reload_without_a_running_gateway_starts_it_and_checks_the_bridge_loaded(self):
         loaded = {'ok': True, 'plugins': {'loaded': ['telegram', installer.PLUGIN_ID], 'errors': []}}
