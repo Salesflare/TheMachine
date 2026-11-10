@@ -29,7 +29,7 @@ Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. 
 
 Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversários do Google, lidos toda manhã mesmo sem sincronizar, e a agenda Aniversários do Outlook), dos seus contatos do Google numa Machine auto-hospedada e de um campo de data chamado Aniversário numa pessoa do Graph. Se nenhuma delas tiver um aniversário ainda, o resultado diz **Ainda não há aniversários** e como adicionar.
 
-**Importar aniversários do Facebook**: com Aniversários ligado, uma tarefa oferece ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine a abre no navegador dela, rola até todos os meses carregarem e lê o nome e o aniversário de cada amigo. Ela mostra quantos encontrou e quem corresponde a pessoas do seu Graph. Um nome que mais de uma pessoa tem é ignorado e listado.
+**Importar aniversários do Facebook**: com Aniversários ligado, uma tarefa oferece ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine a abre no navegador dela, rola até todos os meses carregarem e lê o nome e o aniversário de cada amigo. Ela mostra quantos encontrou e quem corresponde por nome e sobrenome a pessoas do seu Graph. Um nome que mais de uma pessoa tem é ignorado e listado.
 
 Só **Salvar** os guarda, e só o aniversário, na página de cada pessoa. Um aniversário que você informou lá continua. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
 

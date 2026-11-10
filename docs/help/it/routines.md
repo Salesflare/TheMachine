@@ -29,7 +29,7 @@ Nulla cambia finché non confermi sull’attività. I mittenti già decisi non t
 
 I compleanni vengono dai tuoi calendari (i compleanni e il calendario Compleanni di Google, letti ogni mattina anche se non sono sincronizzati, e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
 
-**Importa i compleanni da Facebook**: con Compleanni attivo, un’attività propone di leggere la pagina dei compleanni di Facebook. Tocca **Importa** e The Machine la apre nel suo browser, scorre finché ogni mese è caricato e legge nome e compleanno di ogni amico. Mostra quanti ne ha trovati e chi corrisponde a persone del tuo Graph. Un nome che ha più di una persona viene saltato ed elencato.
+**Importa i compleanni da Facebook**: con Compleanni attivo, un’attività propone di leggere la pagina dei compleanni di Facebook. Tocca **Importa** e The Machine la apre nel suo browser, scorre finché ogni mese è caricato e legge nome e compleanno di ogni amico. Mostra quanti ne ha trovati e chi corrisponde per nome e cognome a persone del tuo Graph. Un nome che ha più di una persona viene saltato ed elencato.
 
 Solo **Salva** li conserva, e solo il compleanno, sulla pagina di ogni persona. Un compleanno che hai inserito lì resta. Non rilegge mai da sola: lo fa **Importa di nuovo** sull’attività. Il browser deve avere l’accesso a Facebook. Se non ce l’ha, tocca **Accedi a Facebook** sull’attività e accedi lì; poi legge la pagina da sola. The Machine non accede mai al posto tuo.
 

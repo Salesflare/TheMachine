@@ -29,7 +29,7 @@ Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuel
 
 Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpleaños de Google, leídos cada mañana aunque no se sincronicen, y el calendario Cumpleaños de Outlook), de tus contactos de Google en una Machine autoalojada y de un campo de fecha llamado Cumpleaños en una persona del Graph. Si ninguno tiene todavía un cumpleaños, el resultado dice **Aún no hay cumpleaños** y cómo añadirlos.
 
-**Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
+**Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden por nombre y apellido con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
 
 Solo **Guardar** los conserva, y solo el cumpleaños, en la página de cada persona. Un cumpleaños que pusiste ahí se queda. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
 
