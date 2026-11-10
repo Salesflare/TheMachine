@@ -738,7 +738,10 @@ class ViewsStore(ConversationStore):
                 decision['title'] = titles.get(decision['suggestion_id']) or ''
             # What was learned, newest first; a condensed one says how many notes it stands for (the owner can undo that).
             merged = {r['merged_into']: r['n'] for r in db.execute('SELECT merged_into,count(*) n FROM facts WHERE merged_into IS NOT NULL GROUP BY 1')}
-            result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0)} for r in
+            about = {}  # who each is about (fact_about), for About <name> with Not about them
+            for r in db.execute('SELECT a.fact_id,a.node_id,n.name FROM fact_about a JOIN graph_nodes n ON n.id=a.node_id WHERE a.removed_at IS NULL ORDER BY a.created_at,a.node_id'):
+                about.setdefault(r['fact_id'], []).append({'id': r['node_id'], 'name': r['name']})
+            result['facts'] = [{**dict(r), 'merged': merged.get('fact:' + str(r['id']), 0), 'about': about.get(r['id'], [])} for r in
                                db.execute('SELECT id,text,suggestion_id,created_at,kind,fact_kind,valid_until FROM facts WHERE removed_at IS NULL '
                                           'ORDER BY created_at DESC,id DESC')]
             # Facts that ended (past their end day) in the last 30 days, each the owner can bring back; and those set aside

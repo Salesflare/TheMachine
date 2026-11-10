@@ -413,7 +413,7 @@ class VoicesStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for finished in learning_loop.unapplied(db):  # stopped between a pass's end and applying it
-                LOG.info('learning pass recovered changes=%s', learning_loop.apply(db, finished, self.tune_voice))
+                LOG.info('learning pass recovered changes=%s', learning_loop.apply(db, finished, self.tune_voice, self.link_named))
             if db.execute("SELECT 1 FROM profile_runs WHERE status IN ('starting','running')").fetchone():
                 return None
             skipped = learning_loop.settle(db)  # a failed pass's signals wait for a retry, given up after MAX_TRIES
@@ -434,7 +434,7 @@ class VoicesStore:
     def apply_tune(self, run_id):
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            return learning_loop.apply(db, run_id, self.tune_voice)
+            return learning_loop.apply(db, run_id, self.tune_voice, self.link_named)
 
     def undo_learning(self, change_id):
         try:
@@ -443,7 +443,7 @@ class VoicesStore:
             raise ValueError('id is the change to undo') from None
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            return learning_loop.undo(db, change_id)
+            return learning_loop.undo(db, change_id, self.unlink_named)
 
     def apply_voice_study(self, run_id):
         """A finished study's blocks become the voices, except blocks the owner wrote themselves."""

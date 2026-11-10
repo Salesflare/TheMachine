@@ -260,9 +260,10 @@ def set_fact(db, fact_id, text, removed_at, ref):
         db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), said, ref))
 
 
-def apply(db, run_id, voice_check):
+def apply(db, run_id, voice_check, link=None):
     """A finished pass's changes, applied and kept with what they replaced. voice_check(channel, text, current) gives the
-    channel's name as voices keep it and the block, or raises ValueError (the same rules as a learned voice update)."""
+    channel's name as voices keep it and the block, or raises ValueError (the same rules as a learned voice update).
+    link(db, fact id, text): the Store's link_named, which ties a new fact to the one record it names."""
     ensure(db)
     row = db.execute("SELECT draft FROM profile_runs WHERE run_id=? AND kind='tune' AND status='ok'", (run_id,)).fetchone()
     if not row:
@@ -302,6 +303,8 @@ def apply(db, run_id, voice_check):
                     db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), old['id']))
                 if kind == 'draft':
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
+                elif link:  # a fact that names one record is tied to it (fact_links.py)
+                    link(db, fact_id, text)
                 _record(db, run_id, kind, fact_id, json.dumps({'id': old['id'], 'text': old['text']}) if old else None, text, change['why'])
             done += 1
         except (ValueError, KeyError, TypeError):
@@ -309,8 +312,32 @@ def apply(db, run_id, voice_check):
     return done
 
 
-def undo(db, change_id):
-    """Put one change back. Refused when what it changed was changed again since (the owner's edit wins)."""
+NAMED = 'facts_named'  # learning_state: the one-time pass that ties facts to the record they name ran
+
+
+def named_done(db):
+    return bool(db.execute('SELECT 1 FROM learning_state WHERE key=?', (NAMED,)).fetchone())
+
+
+def name_links(db, link_all):
+    """One time: the facts already learned that clearly name one person, organization or project are tied to it, so
+    they show on its page and a preparation about it gets them (fact_links.py; no model). link_all: the Store's
+    link_named_all, which answers None while there is no graph yet (then this waits). Leaves one change, with Undo."""
+    ensure(db)
+    if named_done(db):
+        return None
+    found = link_all(db)
+    if found is None:
+        return None
+    db.execute('INSERT INTO learning_state(key,value) VALUES(?,?)', (NAMED, json.dumps({'at': now(), 'linked': len(found['pairs']), 'shared': found['shared'], 'several': found['several']})))
+    if found['pairs']:
+        _record(db, NAMED, 'about', json.dumps(found['pairs']), None, str(len(found['pairs'])), '')
+    return found
+
+
+def undo(db, change_id, unlink=None):
+    """Put one change back. Refused when what it changed was changed again since (the owner's edit wins). unlink: the
+    Store's unlink_named, for the one-time pass that tied facts to the record they name."""
     ensure(db)
     row = db.execute("SELECT * FROM learning_changes WHERE id=? AND status='applied'", (change_id,)).fetchone()
     if not row:
@@ -320,6 +347,8 @@ def undo(db, change_id):
     if row['kind'] == 'source':  # a fix where the wrong thing came from (corrections.py)
         import corrections
         done.update(corrections.undo(db, row))
+    elif row['kind'] == 'about':  # the one-time pass that tied facts to the record they name: those links go
+        unlink(db, json.loads(row['target']))
     elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
         import first_learned
         done.update(first_learned.undo(db, row))
@@ -373,5 +402,6 @@ def recent(db, limit=RECENT):
         before = json.loads(r['before']) if r['before'] else None
         out.append({'id': r['id'], 'at': r['at'], 'kind': r['kind'], 'channel': r['target'] if r['kind'] == 'voice' else None,
                     'text': r['after'], 'before': (before or {}).get('text'), 'why': r['why'], 'undone': r['status'] == 'undone',
-                    **({'line': json.loads(r['target']).get('line')} if r['kind'] == 'source' else {})})
+                    **({'line': json.loads(r['target']).get('line')} if r['kind'] == 'source' else {}),
+                    **({'line': ['Facts that name one person, organization or project: {}', int(r['after'])]} if r['kind'] == 'about' else {})})
     return out

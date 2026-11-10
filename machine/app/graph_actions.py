@@ -545,14 +545,15 @@ class GraphActionsApp:
                                       now(), skip_card=suggestion_id) if ids else []
         return gap_note.prompt_lines(found)
 
-    def graph_lines(self, suggestion_id):
-        """Who the people on a task are to the owner, and the projects around them, for a preparation."""
+    def graph_lines(self, suggestion_id, skip_facts=()):
+        """Who the people on a task are to the owner, and the projects around them, for a preparation. skip_facts: ids of
+        the facts its prompt has already (the facts block), left out of a record's known: here."""
         with self.store.connect() as db:
             row = db.execute('SELECT event_ids,project,account_ids FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             ids = json.loads(row['event_ids'] or '[]') if row else []
             area = {a.get('id'): graph.account_side(a) for a in self.config.get('accounts', []) if a.get('id')}
             sides = {area.get(a) for a in json.loads(row['account_ids'] or '[]')} - {None} if row else set()  # a summary's lines in this area only
-            text = graph.context_lines(db, ids, skip_card=suggestion_id, sides=sides) if ids else ''
+            text = graph.context_lines(db, ids, skip_card=suggestion_id, sides=sides, skip_facts=skip_facts) if ids else ''
             brain = self.gbrain_lines(db, ids) if text else ''
             if text and memory_use.collecting():  # which records its lines are, for the use log (memory_use.py)
                 nodes = [r['id'] for r in graph.for_events(db, ids)[:8] if r['kind'] in ('person', 'project')]

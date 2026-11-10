@@ -7,6 +7,8 @@ import math
 import re
 
 import embeddings
+import fact_links
+import learning_loop
 from machine.config import LOG
 from machine.store.voices import voice_channel
 import memory_use
@@ -170,11 +172,15 @@ def fact_subjects(db, about):
     about = [about] if isinstance(about, str) else about
     if not isinstance(about, (list, tuple)) or len(about) > 5 or not all(isinstance(v, str) for v in about):
         raise ValueError('about is a list of up to 5 graph node_ids (people, organizations or projects) the fact is about')
-    out = []
+    out, names = [], None
     for value in about:
         row = db.execute("SELECT id FROM graph_nodes WHERE id=? AND kind IN ('person','org','project')", (value,)).fetchone()
-        if not row:
-            raise ValueError(f'about: {value[:80]!r} is not a person, organization or project in the graph; use a node_id from graph')
+        if not row:  # their address or exact name, as a to-do's People and projects lines show them
+            names = fact_links.index(db) if names is None else names
+            node = fact_links.known(db, names, value)
+            if not node:
+                raise ValueError(f'about: {value[:80]!r} is not a person, organization or project in the graph; use a node_id from graph, their address or their exact name')
+            row = {'id': node}
         out.append(row['id'])
     return list(dict.fromkeys(out))
 
@@ -183,6 +189,40 @@ def link_fact(db, fact_id, node_ids, by):
     """Tie a fact to who it is about. A link the owner removed stays removed."""
     db.executemany('INSERT OR IGNORE INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,?,?)',
                    [(fact_id, n, by, now()) for n in dict.fromkeys(node_ids)])
+
+
+def link_named(db, fact_id, text, suggestion_id=None, names=None, config=None):
+    """Tie a fact about no one to the one record its own words name (fact_links.named). (that record's id or None,
+    why). One tied already, or that the owner said isn't about someone, is left alone."""
+    if db.execute('SELECT 1 FROM fact_about WHERE fact_id=?', (fact_id,)).fetchone():
+        return None, 'tied'
+    node, why = fact_links.named(fact_links.index(db, config or {}) if names is None else names, text, fact_links.todo_records(db, suggestion_id))
+    if node:
+        link_fact(db, fact_id, [node], fact_links.BY)
+    return node, why
+
+
+def link_named_all(db, config=None):
+    """The one-time pass over the facts already learned (learning_loop.name_links): each about no one that names one
+    record is tied to it. {'pairs': [[fact id, record id]], 'shared': n, 'several': n} (shared: a name several records
+    have; several: more than one record named; both left alone), or None while there is no graph to name."""
+    if not db.execute('SELECT 1 FROM graph_nodes LIMIT 1').fetchone():
+        return None
+    names, out = fact_links.index(db, config or {}), {'pairs': [], 'shared': 0, 'several': 0}
+    for f in db.execute("SELECT id,text,suggestion_id FROM facts WHERE removed_at IS NULL AND kind='fact' AND source IS NULL ORDER BY id").fetchall():
+        node, why = link_named(db, f['id'], f['text'], f['suggestion_id'], names)
+        if node:
+            out['pairs'].append([f['id'], node])
+        elif why in out:
+            out[why] += 1
+    LOG.info('facts tied by name linked=%s shared=%s several=%s', len(out['pairs']), out['shared'], out['several'])
+    return out
+
+
+def unlink_named(db, pairs):
+    """Undo of the one-time pass: its links go, and stay gone. One a review has since confirmed stays."""
+    db.executemany('UPDATE fact_about SET removed_at=? WHERE fact_id=? AND node_id=? AND by=? AND removed_at IS NULL',
+                   [(now(), int(f), str(n), fact_links.BY) for f, n in pairs])
 
 
 def owner_fact(db, text, decision_id, about=(), replaces=None):
@@ -217,7 +257,7 @@ def said_before(db, kind, text):
     """(the current fact or rule about no one, of this kind, that text says again, rewords' answer), or (None, None);
     one that says less is preferred over one text says more than."""
     rows = db.execute('SELECT id,text,kept_at FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)!=lower(?) '
-                      'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL) ORDER BY id DESC', (kind, text)).fetchall()
+                      'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL AND by!=?) ORDER BY id DESC', (kind, text, fact_links.BY)).fetchall()
     found = [(rewords(text, r['text']), r) for r in rows]
     return next(((r, how) for how in ('less', 'more') for h, r in found if h == how), (None, None))
 
@@ -259,18 +299,31 @@ def fact_line(f, ids=False):
            (['until ' + f['valid_until']] if f.get('valid_until') else [])
     by = ai_fact_by(f)
     text = f['text'].replace('<<<', '‹‹‹').replace('>>>', '›››') if by else f['text']
+    if f.get('who'):  # who it is about, when its own words don't say (facts_for)
+        bits.insert(0, 'about ' + f['who'])
     return '- ' + (f"[{f['id']}] " if ids else '') + text + (f" ({', '.join(bits)})" if bits else '') + (f' (saved by {by})' if by else '')
 
 
 def note_facts(facts, how, ids=False, scores=None, used=False):
     """Says which facts a prompt got, for the use log (memory_use.py); nothing outside a recall. how: one word, or
-    a function of the fact. used: picked for this to-do, so they count as used once the run is admitted."""
+    a function of the fact. used: picked for this to-do, so they count as used once the run is admitted (or a
+    function of the fact). Each says which records it is about, when the picker read them (with_about)."""
     if not memory_use.collecting():
         return
     for f in facts:
         memory_use.note('rule' if f.get('kind') == 'draft' else 'fact', f['id'], fact_line(f, ids), how(f) if callable(how) else how,
-                        source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
-                        score=(scores or {}).get(f['id']), used=used)
+                        about=f.get('about') or (), source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review',
+                        at=f.get('created_at'), score=(scores or {}).get(f['id']), used=used(f) if callable(used) else used)
+
+
+def with_about(db, facts):
+    """Each fact with the records it is about (about: their graph node ids, () for one about no one)."""
+    about = {}
+    for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL ORDER BY created_at,node_id'):
+        about.setdefault(r['fact_id'], []).append(r['node_id'])
+    for f in facts:
+        f['about'] = tuple(about.get(f['id'], ()))
+    return facts
 
 
 def close_facts(db, ids):
@@ -361,7 +414,11 @@ class FactsStore:
                                              'AND id NOT IN (SELECT fact_id FROM fact_about WHERE removed_at IS NULL)', sorted(ids)).fetchone()[0] if ids else 0
             carried = [r[0] for r in db.execute('SELECT DISTINCT node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (' +
                                                 ','.join('?' for _ in merging) + ')', sorted(merging))] if merging and storage == 'fact' else []
-            if not existing and not (subjects or carried):  # full: one not used lately makes room, never an error
+            named = []  # no one said who it is about: the one record its own words name (fact_links.py)
+            if storage == 'fact' and source is None and not existing and not (subjects or carried):
+                node, _ = fact_links.named(fact_links.index(db, self.own_config()), text, fact_links.todo_records(db, note['suggestion_id']))
+                named = [node] if node else []
+            if not existing and not (subjects or carried or named):  # full: one not used lately makes room, never an error
                 count = self.general_count(db) - general(merging)
                 if count >= FACTS_GENERAL_MAX:
                     count -= self.set_aside(db, count - FACTS_GENERAL_MAX + 1, FACTS_UNUSED_DAYS)
@@ -376,10 +433,11 @@ class FactsStore:
                     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Draft rule: ' + text, str(fact_id)))
             if storage == 'fact':
                 self.link_fact(db, fact_id, subjects + carried, 'ai' if source else 'review')
+                self.link_fact(db, fact_id, named, fact_links.BY)
             if originals:
                 self.merge_originals(db, originals, 'fact:' + str(fact_id), text)
                 return {'id': fact_id, 'merged': len(originals)}
-            return {'id': fact_id, **({'kind': sort} if sort else {}), **({'until': until} if until else {}), **({'about': subjects} if subjects else {})}
+            return {'id': fact_id, **({'kind': sort} if sort else {}), **({'until': until} if until else {}), **({'about': subjects or named} if subjects or named else {})}
 
     fact_state = staticmethod(fact_state)  # a function of db, at the top of this module
 
@@ -388,6 +446,29 @@ class FactsStore:
     fact_subjects = staticmethod(fact_subjects)  # a function of db, at the top of this module
 
     link_fact = staticmethod(link_fact)  # a function of db, at the top of this module
+
+    def own_config(self):
+        """The config fact_links reads the owner's own records from: the service's, or just the accounts."""
+        return self.config if self.config.get('accounts') else {**self.config, 'accounts': self.accounts}
+
+    def link_named(self, db, fact_id, text):
+        return link_named(db, fact_id, text, config=self.own_config())
+
+
+    unlink_named = staticmethod(unlink_named)  # a function of db, at the top of this module
+
+    def name_links_once(self):
+        """One time, once there is a graph: the facts already learned that name one record are tied to it, with one
+        entry under Learning, Changes that undoes it (learning_loop.name_links). What it did, or None."""
+        try:
+            with self.connect() as db:
+                if learning_loop.named_done(db):
+                    return None
+                db.execute('BEGIN IMMEDIATE')
+                return learning_loop.name_links(db, lambda db: link_named_all(db, self.own_config()))
+        except Exception as error:  # a busy database: the next round tries again
+            LOG.error('fact name links error=%s', type(error).__name__)
+            return None
 
     def fact_about(self, fact_id, about):
         """A review says who an existing fact is about."""
@@ -562,7 +643,11 @@ class FactsStore:
         """Everything learned for a review, up to limit characters: the ones used or said most lately first, so a long
         list leaves out the stalest, not the newest (a review that never saw a new fact saved it again). ids: each line
         starts with its id ("[12] "), for the review to end one a newer message overturned."""
-        return self.facts_within(sorted((f for f in self.facts() if f['kind'] == kind), key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True), limit, ids)
+        facts = [f for f in self.facts() if f['kind'] == kind]
+        if memory_use.collecting():  # the use log says which records each is about
+            with self.connect() as db:
+                with_about(db, facts)
+        return self.facts_within(sorted(facts, key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True), limit, ids)
 
     @classmethod
     def facts_within(cls, facts, limit, ids=False):
@@ -582,15 +667,23 @@ class FactsStore:
         """The facts (or draft rules) a preparation needs, not everything learned: all of them while they are few;
         else the ones learned on this card plus those closest in meaning to it (embeddings), else those that count most.
         Each counts by its decayed weight (fact_weight): an event fades in weeks, a preference or commitment in months, a
-        fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders. accounts (the
-        configured ones): a connected AI's fact in the other area than this to-do's (suggestion_scope) stays out."""
+        fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders. A fact about
+        a record on this to-do's signals (fact_about) comes before the closeness picks, within the same top: it takes
+        the place of the least close one. accounts (the configured ones): a connected AI's fact in the other area than
+        this to-do's (suggestion_scope) stays out, and so does a fact about a person on the other side only."""
         at = now()
         facts = [f for f in self.facts() if f['kind'] == kind]
-        if accounts is not None and any(f.get('side') for f in facts):
-            with self.connect() as db:
-                card = db.execute('SELECT account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        with self.connect() as db:
+            with_about(db, facts)
+            near = fact_links.todo_records(db, suggestion_id) if any(f['about'] for f in facts) else set()
+            who = fact_links.records(db, {n for f in facts for n in f['about']})
+            card = db.execute('SELECT account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        if accounts is not None and (who or any(f.get('side') for f in facts)):
             area = suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
-            facts = [f for f in facts if f.get('side') in (None, area)]
+            facts = [f for f in facts if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
+        for f in facts:  # a line says who it is about when its own words don't
+            f['who'] = fact_links.unnamed(f['text'], f['about'], who)
+        tied = sorted((f for f in reversed(facts) if f['suggestion_id'] != suggestion_id and near.intersection(f['about'])), key=lambda f: -fact_weight(f, at))
         if sum(len(self.fact_line(f)) + 1 for f in facts) + (len(AI_FACTS_HEAD) + 9 if any(ai_fact_by(f) for f in facts) else 0) <= all_under:
             return self.facts_within(facts, limit)
         own = [f for f in facts if f['suggestion_id'] == suggestion_id]
@@ -602,10 +695,10 @@ class FactsStore:
             except Exception as error:  # the embedding server is down: those that count most instead
                 LOG.error('fact ranking error=%s', type(error).__name__)
         if ranked is None:
-            picked = own + sorted((f for f in reversed(facts) if f not in own), key=lambda f: -weight[f['id']])
+            picked = own + tied + sorted((f for f in reversed(facts) if f not in own and f not in tied), key=lambda f: -weight[f['id']])
         else:
-            close = sorted(((score * (0.5 + 0.5 * weight[f['id']]), f) for score, f in ranked if score >= floor and f not in own), key=lambda x: -x[0])
-            picked = own + [f for _, f in close][:top]
+            close = sorted(((score * (0.5 + 0.5 * weight[f['id']]), f) for score, f in ranked if score >= floor and f not in own and f not in tied), key=lambda x: -x[0])
+            picked = own + (tied + [f for _, f in close])[:top]
         out, size = [], 0
         for f in picked:
             line = self.fact_line(f)
@@ -614,10 +707,11 @@ class FactsStore:
             out.append(f); size += len(line) + 1
         if memory_use.collecting():  # a prompt's recall: its use log stamps them as used once the run is admitted (memory_use.record)
             scores = {f['id']: score for score, f in close} if ranked is not None else {}
-            note_facts(out, lambda f: 'own' if f in own else 'closeness' if ranked is not None else 'weight', scores=scores, used=ranked is not None)
-        elif ranked is not None:  # picked for meaning (not just newest while the embedding server is down): used
+            note_facts(out, lambda f: 'own' if f in own else 'about' if f in tied else 'closeness' if ranked is not None else 'weight',
+                       scores=scores, used=lambda f: ranked is not None or f in tied)
+        elif ranked is not None or tied:  # picked for meaning or for its record (not just newest while the embedding server is down): used
             try:
-                self.mark_used(f['id'] for f in out)
+                self.mark_used(f['id'] for f in out if ranked is not None or f in tied)
             except Exception as error:  # a busy database never costs the preparation its facts
                 LOG.error('fact use error=%s', type(error).__name__)
         return self.facts_block(out)

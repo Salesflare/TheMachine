@@ -96,6 +96,15 @@ class LearningLoop(unittest.TestCase):
             self.app.action('learning_undo', {'id': by['fact']['id']}, owner_dashboard=True)
         self.assertTrue(next(c for c in self.store.snapshot([])['learning_changes'] if c['id'] == by['fact']['id'])['undone'])
 
+    def test_a_learned_fact_that_names_one_record_is_linked_to_it(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:ann@example.com','person','Ann Example',1,0,'{}')")
+        self.run_pass([{'kind': 'fact', 'text': 'Ann Example wants invoices as a PDF.', 'why': 'Two edits.'},
+                       {'kind': 'fact', 'text': 'Ann wants a call first.', 'why': 'A first name alone names no one.'}])
+        with self.store.connect() as db:
+            rows = [tuple(r) for r in db.execute('SELECT f.text,a.node_id,a.by FROM fact_about a JOIN facts f ON f.id=a.fact_id')]
+        self.assertEqual(rows, [('Ann Example wants invoices as a PDF.', 'email:ann@example.com', 'name')])
+
     def test_an_undo_never_overwrites_what_the_owner_changed_since(self):
         self.run_pass([{'kind': 'voice', 'channel': 'Email', 'text': EMAIL + '\nPlain words', 'why': 'Edits.'},
                        {'kind': 'draft', 'text': 'Thank people once, at the end, not in every line.', 'why': 'A chat correction said so.'}])
