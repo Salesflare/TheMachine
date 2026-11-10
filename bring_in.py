@@ -294,18 +294,21 @@ def conclude(db, state, reply):
     return {'offered': offered}
 
 
-def offered(db):
-    """The candidates waiting for the owner, oldest first: [{'id', 'text', 'kind', 'file'}]."""
-    ensure(db)
+def offered(db, made=False):
+    """The candidates waiting for the owner, oldest first: [{'id', 'text', 'kind', 'file'}]. made: the tables are
+    known to be there, or their absence is the caller's to catch (a read that must not write)."""
+    if not made:
+        ensure(db)
     return [dict(r) for r in db.execute("SELECT id,text,kind,file FROM bring_in_items WHERE status='offered' ORDER BY id LIMIT ?", (MAX_OFFERED,))]
 
 
 def status(connect):
-    """offered() on a connection of its own, for the dashboard's status; [] when it can't be read."""
+    """offered() on a connection of its own, for the dashboard's status; [] when it can't be read. A read only: it
+    never makes the tables (no pass has run yet: nothing to offer), so the page never waits for the write lock."""
     import sqlite3
     try:
         with connect() as db:
-            return offered(db)
+            return offered(db, made=True)
     except (sqlite3.Error, ValueError):
         return []
 

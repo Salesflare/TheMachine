@@ -4,7 +4,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The last check of new email above the to-dos (dashboard/todos-mail-check.js, state.mail_check from check_now.mail_check):
+// The last check of new email above the to-dos (dashboard/todos-mail-check.js, state.mail_check, made by check_now.mail_check):
 // "Checked 12 new emails at 16:11 · nothing needs you", a to-do held until later, and on a tap one row per thread with
 // who, the subject and its to-do or the review's reason. Made-up names; nothing is sent.
 const dashboard=await dashboardPage();
