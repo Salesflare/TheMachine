@@ -2977,6 +2977,9 @@ def doctor(config_path, workspace=None):
                 ' && openclaw plugins reload personal-assistant-bridge --wait')
         else:
             add('✓', 'OpenClaw bridge plugin loaded')
+        if service.model_runtime(openclaw, run, tries=1) is False:
+            add('✗', 'the OpenClaw Gateway cannot run models (its model runtime is not loaded): chats, checks and to-dos fail until it restarts',
+                service.gateway_restart_hint(gateway_units()))
     # Telegram (optional: without it cards reach you through the dashboard app)
     owners = telegram_owners(config)
     owner = str(config.get('telegram_owner') or '')

@@ -787,6 +787,22 @@ elif args[:2] == ["api", "call"]:
         text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
         self.assertIn('✓ OpenClaw bridge plugin loaded', text)
 
+    def test_doctor_says_when_the_gateway_cannot_run_models(self):
+        listed = 'print(json.dumps({"plugins": [{"id": "personal-assistant-bridge", "enabled": True, "status": "loaded"}], "ok": True}))'
+        self.stub('openclaw', listed + '\nif "models.list" in args: sys.exit(1)')
+        self.stub('systemctl', 'print("openclaw-gateway.service enabled enabled" if "list-unit-files" in args else "active")')
+        (self.home / '.openclaw').mkdir()
+        (self.home / '.openclaw/openclaw.json').write_text(json.dumps({'plugins': {'entries': {
+            'personal-assistant-bridge': {'enabled': True, 'hooks': {'allowConversationAccess': True}}}}}))
+        self.config(openclaw=str(self.bin / 'openclaw'))
+        text = '\n'.join(f'{m} {t} | {f}' for m, t, f in onboarding.doctor(self.path))
+        self.assertIn('✗ the OpenClaw Gateway cannot run models (its model runtime is not loaded): chats, checks and to-dos fail until it restarts'
+                      ' | systemctl --user restart openclaw-gateway.service', text)
+        self.stub('openclaw', listed)
+        self.assertNotIn('cannot run models', '\n'.join(t for _, t, _ in onboarding.doctor(self.path)))
+        self.stub('openclaw', 'sys.exit(1)')  # no Gateway answers: nothing to judge
+        self.assertNotIn('cannot run models', '\n'.join(t for _, t, _ in onboarding.doctor(self.path)))
+
     def test_doctor_reads_a_failed_plugin_list_as_unknown_not_missing(self):
         # A hosted Machine's service: the CLI refuses (another PID namespace) while the Gateway runs the plugin
         self.stub('openclaw', 'print("Failed to read config: cannot verify Gateway ownership from this process", file=sys.stderr); sys.exit(1)')

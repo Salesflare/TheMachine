@@ -897,7 +897,7 @@ def prepare(facts, paths, fresh, start, skip_plugin, bytecode=False):
         precompile(facts)
     install_node_packages(facts['node'])
     # The bridge reads config.json when it needs it; before the answers, the credentials it guards are all in paths.data
-    if not (skip_plugin or install_plugin(facts, reload=start, stamp=paths.data / 'plugin-installed')):
+    if not (skip_plugin or install_plugin(facts, reload=start, stamp=paths.data / 'plugin-installed', restart=may_restart_gateway(paths))):
         return False
     quiet_openclaw(facts, paths.data / 'openclaw-quiet.json')
     gateway_keep_retrying(paths)
@@ -950,10 +950,122 @@ def plugin_fingerprint(facts):
     return digest.hexdigest()
 
 
-def install_plugin(facts, reload=True, stamp=None):
+def may_restart_gateway(paths):
+    """Whether this install may restart the OpenClaw Gateway to get the bridge or the model runtime back: yes, unless
+    config.json says "gateway_restart": false (a Gateway with live chats and a browser its owner restarts themself)."""
+    try:
+        return json.loads(paths.config.read_text()).get('gateway_restart', True) is not False
+    except (OSError, ValueError, AttributeError, TypeError):
+        return True
+
+
+# OpenClaw 2026.11.2 has no call that says its memory index is running: `openclaw memory status` and the Gateway's
+# `memory.status` and `doctor.memory.status` each open a manager of their own, not the one that indexes. What does say
+# it is the embedding server the Gateway starts for a local embedding model (llama-server --embeddings --metrics, a
+# child of the Gateway): its /metrics counts the requests in hand and queued, and an index run keeps both above zero
+# from start to end. An index on a remote embedding provider cannot be seen; the checks after each step cover that.
+SWAP_WAIT = 600  # seconds an update waits for a running index before the bridge goes in
+EMBEDDING_COUNTS = re.compile(r'^llamacpp:requests_(?:processing|deferred)\s+([0-9.]+(?:[eE][+-]?[0-9]+)?)\s*$', re.M)
+
+
+def gateway_embedding_ports():
+    """The ports of the embedding servers the running Gateway started, from the process list."""
+    result = run(['ps', '-eo', 'pid=,ppid=,args='], timeout=15)
+    rows = {}
+    for line in (result.stdout or '').splitlines() if result.returncode == 0 else []:
+        parts = line.split(None, 2)
+        if len(parts) == 3 and parts[0].isdigit() and parts[1].isdigit():
+            rows[int(parts[0])] = (int(parts[1]), parts[2].split())
+    def under_gateway(pid):
+        seen = set()
+        while pid in rows and pid not in seen:
+            seen.add(pid)
+            pid = rows[pid][0]
+            words = rows.get(pid, (0, []))[1]
+            if 'gateway' in words and any('openclaw' in word for word in words):
+                return True
+        return False
+    ports = []
+    for pid, (_, words) in rows.items():
+        if words and Path(words[0]).name == 'llama-server' and '--embeddings' in words and '--metrics' in words and '--port' in words[:-1]:
+            port = words[words.index('--port') + 1]
+            if port.isdigit() and under_gateway(pid):
+                ports.append(int(port))
+    return sorted(ports)
+
+
+def embedding_requests(port):
+    """The requests an embedding server has in hand or queued, from its own /metrics; None when it does not say."""
+    try:
+        with urllib.request.urlopen(f'http://127.0.0.1:{int(port)}/metrics', timeout=5) as response:
+            found = EMBEDDING_COUNTS.findall(response.read(200_000).decode('utf-8', 'replace'))
+        return sum(float(x) for x in found) if found else None
+    except (OSError, ValueError):
+        return None
+
+
+def index_busy():
+    """Whether OpenClaw's memory index is embedding right now; None when nothing here can tell (no Gateway, no local
+    embedding server, or one that does not say)."""
+    counts = [n for n in map(embedding_requests, gateway_embedding_ports()) if n is not None]
+    return any(counts) if counts else None
+
+
+def gateway_idle(say_waiting):
+    """Wait, at most SWAP_WAIT, until OpenClaw's memory index has stopped: a plugin swap asks it to stop, gives it
+    5 seconds, and fails when it does not. Idle is three quiet looks in a row (a run pauses between batches). True
+    when idle or when nothing can tell, False when it is still running at the bound."""
+    bound = float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT))
+    pause = float(os.environ.get('ASSISTANT_SWAP_POLL', 2))
+    deadline, quiet = None, 0
+    while True:
+        busy = index_busy()
+        if busy is None:
+            return True
+        if busy:
+            quiet = 0
+            if deadline is None:
+                deadline = time.time() + bound
+                say(say_waiting)
+            elif time.time() >= deadline:
+                return False
+        else:
+            quiet += 1
+            if quiet >= 3:
+                return True
+        time.sleep(pause)
+
+
+def swap_minutes():
+    return f"{float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT)) / 60:g} min"
+
+
+def restore_model_runtime(openclaw, restart, after, restarted=False):
+    """A plugin step left the running Gateway unable to run models. Reload the bridge once when the Gateway is idle
+    (OpenClaw's own advice); if that does not bring it back, the same recovery as a failed reload: load_in_gateway,
+    which restarts the Gateway where this install may. True once model calls work again; False with the reason and
+    the one command that fixes it said."""
+    say(f'  After {after}, the OpenClaw Gateway cannot run models. Bringing that back before anything else.')
+    if gateway_idle(f'  OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before reloading the bridge.'):
+        run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
+        if service.model_runtime(openclaw, run) is not False:
+            say('  Reloaded the bridge: model calls work again.')
+            return True
+    if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart) and service.model_runtime(openclaw, run) is not False:
+        say('  Model calls work again.')
+        return True
+    say('  NOT FIXED: the OpenClaw Gateway cannot run models, so no chat, check or to-do run works until it restarts.'
+        f'\n  Restart it: {service.gateway_restart_hint(onboarding.gateway_units())}')
+    return False
+
+
+def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
-    model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it."""
+    model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
+    One that did waits for OpenClaw's memory index first (gateway_idle), and after each step checks that the Gateway
+    can still run models: it never ends, done or failed, with that broken and no recovery tried
+    (restore_model_runtime). `restart`: whether that recovery may restart the Gateway (may_restart_gateway)."""
     openclaw = facts.get('openclaw')
     if not openclaw:
         return False
@@ -962,10 +1074,22 @@ def install_plugin(facts, reload=True, stamp=None):
         say(f'OpenClaw plugin {PLUGIN_ID}: unchanged, left as it is')
         return True
     plugin = str(ROOT / 'openclaw-plugin')
+    if not gateway_idle(f'OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before the bridge goes in.'):
+        if not (restart and onboarding.gateway_units()):
+            say(f'  The memory index is still running after {swap_minutes()}. Swapping the bridge in now would leave the Gateway unable to run models,'
+                ' so nothing in OpenClaw was changed.\n  Run ./install.sh again when it is done (openclaw memory status).')
+            return False
+        say(f'  The memory index is still running after {swap_minutes()}; going on. If the Gateway does not take the bridge, it is restarted.')
+    def kept(after):  # the Gateway can still run models, or could again after the recovery
+        return service.model_runtime(openclaw, run) is not False or restore_model_runtime(openclaw, restart, after)
     say('Installing the local bridge and accepting its declared OpenClaw capabilities (see README Security model).')
     result = run([openclaw, 'plugins', 'install', '--link', '--force', '--accept-capabilities', plugin], timeout=300, capture_output=False)
     if result.returncode != 0:
         say(f'  plugin install failed; run it yourself: openclaw plugins install --link --force --accept-capabilities {plugin}')
+        if kept('the failed plugin install'):
+            say('  The bridge is not updated yet: run ./install.sh again.')
+        return False
+    if not kept('the plugin install'):
         return False
     wait = float(os.environ.get('ASSISTANT_PLUGIN_RETRY_WAIT', 5))
     for attempt in range(3):  # right after an install the Gateway may still be applying it; the CLI then fails briefly
@@ -975,6 +1099,9 @@ def install_plugin(facts, reload=True, stamp=None):
         time.sleep(wait * (attempt + 1))
     if result.returncode != 0:
         say('  plugin enable failed: ' + (result.stderr or result.stdout).strip()[:300])
+        kept('the failed plugin enable')
+        return False
+    if not kept('the plugin enable'):
         return False
     # OpenClaw only runs a non-bundled plugin's conversation hooks with this set; without them a review
     # is never tied to its run and every preview ends "without saving its review".
@@ -982,6 +1109,7 @@ def install_plugin(facts, reload=True, stamp=None):
     if result.returncode != 0:
         say('  could not allow the plugin\'s conversation hooks: ' + (result.stderr or result.stdout).strip()[:300]
             + f'\n  run it yourself: openclaw config set plugins.entries.{PLUGIN_ID}.hooks.allowConversationAccess true --strict-json')
+        kept('the failed config step')
         return False
     applied = True
     if reload:
@@ -989,9 +1117,16 @@ def install_plugin(facts, reload=True, stamp=None):
         if result.returncode != 0:
             # Reload only works in a running Gateway. One that is down (stopped, still starting, or given up by
             # systemd after failed starts) has the bridge saved and loads it as it starts: start it and check.
-            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip())
+            applied = load_in_gateway(openclaw, (result.stderr or result.stdout).strip(), restart)
             if applied is False:
+                if service.model_runtime(openclaw, run) is False:
+                    restore_model_runtime(openclaw, restart, 'the failed plugin reload', restarted=True)
                 return False
+            if applied and service.model_runtime(openclaw, run) is False \
+                    and not restore_model_runtime(openclaw, restart, 'the Gateway restart', restarted=True):
+                return False
+        elif not kept('the plugin reload'):
+            return False
     if stamp and reload and applied:
         stamp.parent.mkdir(parents=True, exist_ok=True)
         stamp.write_text(fingerprint + '\n')
@@ -1242,15 +1377,20 @@ def gateway_health(openclaw):
     return found if isinstance(found, dict) and found.get('ok') else None
 
 
-def load_in_gateway(openclaw, reload_error=''):
+def load_in_gateway(openclaw, reload_error='', restart=True):
     """After a failed reload: True once the Gateway runs with the bridge loaded, None when no Gateway service runs
-    here at all (the bridge is saved and loads when the owner starts one), False with the reason said otherwise."""
+    here at all (the bridge is saved and loads when the owner starts one), False with the reason said otherwise.
+    `restart` False (may_restart_gateway): the owner restarts this Gateway themself, so it says the command instead."""
     unit = (onboarding.gateway_units() or [None])[0]
     if not unit:
         if gateway_health(openclaw) is None:
             say('  The OpenClaw Gateway is not running here; the bridge is saved and loads when it starts (openclaw gateway start).')
             return None
         say('  plugin reload failed: ' + reload_error[:300])
+        return False
+    if not restart:
+        say(f'  The OpenClaw Gateway did not take the bridge live ({reload_error[:200]}), and this install leaves restarting it to you'
+            f' ("gateway_restart": false in config.json).\n  Restart it: systemctl --user restart {unit}')
         return False
     say(f'  The OpenClaw Gateway did not take the bridge live; (re)starting {unit} so it loads it.')
     run(['systemctl', '--user', 'reset-failed', unit], timeout=30)  # after repeated failed starts systemd stops trying
