@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import graph_show
 import mail_senders
 from machine.actions import CRM_ACTIONS
 from machine.app import claim_reply
@@ -802,8 +803,10 @@ class GraphActionsApp:
                 graph.set_org(db, node_id, str(fields['org'] or ''), 'owner', now())
             if 'name' in fields:
                 graph.rename(db, node_id, fields['name'], now())
-        # A new role alone is on their page already (graph.set_role): the rest of the Graph follows in the worker
-        (self.graph_later if set(fields) == {'role'} else self.graph_build)()
+            # On their page at once (a role by graph.set_role, the rest here); the rest of the Graph follows in the
+            # worker. A whole build before the answer held a Save some 16 s on a big Graph.
+            graph_show.show_person_edit(db, node_id, set(fields))
+        self.graph_later()
         return done
 
     def graph_role_action(self, name, args, owner_dashboard=False):

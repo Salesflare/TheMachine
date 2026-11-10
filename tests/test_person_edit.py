@@ -1,5 +1,7 @@
 """Editing a person: the owner's details win over a look-up and the messages, and stay through rebuilds, merges and Undo."""
 import json
+import threading
+import time
 import unittest
 
 import test_graph as tg
@@ -50,6 +52,40 @@ class PersonEdit(unittest.TestCase):
         self.edit(node, title='')
         view = self.node(node)
         self.assertEqual((view['profile']['title'], view['profile']['location']), ('VP Sales', 'Ghent, Belgium'))
+
+    def test_a_save_answers_at_once_and_its_page_shows_it_before_the_graph_is_built(self):
+        # A whole build before the answer held a Save some 16 s on a big Graph: the build is stubbed slow here, and
+        # the Save answers without it, its page already showing what was saved; the graph worker builds the rest.
+        self.add(tg.mail(3, 'Ivy Park <ivy@globex.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Ivy Park <ivy@globex.example>', ('SENT',)),
+                 tg.mail(1, 'Rex Moon <rex@initech.example>', 'sam@acme.com'))
+        self.look_up('email:ivy@globex.example', title='Sales', city='Springfield', country='US')
+        self.build()
+        node, built = 'email:ivy@globex.example', []
+        real_build = self.app.graph_build
+        self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
+        self.app.graph_build = lambda *a, **k: built.append(time.sleep(2))
+        start = time.monotonic()
+        self.edit(node, name='Ivy P. Park', title='Head of Sales', location='Ghent, Belgium', notes='Met at the fair', side='personal',
+                  phones=['+32 470 00 00 51'], role='partner', org='Initech')
+        self.assertLess(time.monotonic() - start, 0.3)
+        self.assertEqual(built, [])
+        self.assertTrue(self.app.graph_dirty.is_set())  # the worker builds the rest of the Graph
+        keys = ('name', 'role', 'side', 'side_by', 'notes', 'phones', 'org', 'org_by')
+        now_shown = {k: self.node(node).get(k) for k in keys}
+        self.assertEqual(now_shown, {'name': 'Ivy P. Park', 'role': 'partner', 'side': 'personal', 'side_by': 'owner', 'notes': 'Met at the fair',
+                                     'phones': [{'value': '+32 470 00 00 51', 'by': 'owner'}], 'org': 'org:initech.example', 'org_by': 'owner'})
+        self.assertEqual((self.node(node)['profile']['title'], self.node(node)['profile']['location']), ('Head of Sales', 'Ghent, Belgium'))
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT b FROM graph_links WHERE a=? AND kind='member'", (node,)).fetchall()[0][0], 'org:initech.example')
+        # An emptied field is the look-up's again at once; a new organization's name shows until the build makes it
+        self.edit(node, title='', org='Brand New Co')
+        self.assertEqual((self.node(node)['profile']['title'], self.node(node)['org']), ('Sales', 'org:named:brand-new-co'))
+        self.assertEqual(self.app.graph_action({'node_id': node})['org_name'], 'Brand New Co')
+        # The build that follows writes the same
+        self.app.graph_build = real_build
+        self.build()
+        self.assertEqual((self.node(node)['name'], self.node(node)['profile']['title'], self.node(node)['org'], self.node(node)['notes']),
+                         ('Ivy P. Park', 'Sales', 'org:named:brand-new-co', 'Met at the fair'))
 
     def test_an_address_the_owner_took_off_stays_off_and_a_new_one_still_shows(self):
         self.add(tg.mail(3, 'Ode Lin <ode@one.example>', 'sam@acme.com', cc='Ode Lin <ode.lin@two.example>'))

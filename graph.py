@@ -1608,30 +1608,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         hints = sorted(set().union(*(appears.get(i, ()) for i in group))) + (["an address at the owner's own domain"] if colleague else []) \
             + (["in the owner's Slack"] if any(i.startswith('slack:') for i in group) else []) \
             + (["shares the owner's surname"] if full and surnames & set(full.split()[1:]) else [])
-        person_profile = next((json.loads(looked_up[i]) for i in group if i in looked_up), None)
-        # Only a photo saved on this Machine shows (served by the dashboard), never the service's own link.
-        person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone')}
-        person_profile = enrichment.with_facts(person_profile, [facts[i] for i in group if i in facts])
-        photo_key = next((photos[i] for i in group if i in photos), None)
-        if photo_key:
-            person_profile['photo'] = 'api/person-photo?p=' + photo_key
         edited = {}
         for identifier in sorted((i for i in group if i in person_edits), key=list(person_edits).index):
             edited.update(person_edits[identifier])  # the owner's word wins over the look-up, a later save over an older one
-        if edited.get('photo') == 'none':
-            person_profile.pop('photo', None)  # the owner took the picture off: none, also not a looked-up one
-        elif PICTURE.fullmatch(str(edited.get('photo') or '')):
-            person_profile['photo'] = edited['photo']  # the owner's own picture wins
-        mine = {k: edited[k] for k in ('title', 'location', 'linkedin_url') if edited.get(k)}
-        if mine:
-            person_profile.update(mine)
-            person_profile['sources'] = {**(person_profile.get('sources') or {}), **{k: {'from': 'you', 'own': True} for k in mine}}
-        contacts = shown_contacts(group, edited)
-        stated_phone = ' '.join(str(person_profile.get('phone') or '').split())  # a number a connector read (their Slack profile)
-        gone = {contact_key('phones', v) for v in (edited.get('phones') or {}).get('removed', ())}
-        if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
-            contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
-        person_profile = person_profile or None
+        person_profile, contacts = person_shown(group, edited, looked_up, facts, photos)
         # A person's Type (Work or Personal), the one the Work and Personal lists and sharing with a Work Fleet go by: the
         # owner's word; else someone only in their Family or Friends, or family or a friend to them ("To you": wife,
         # father), is Personal, whatever address they write from; else what The Machine knows of them (auto_side).
@@ -2242,7 +2222,7 @@ def detail(db, node_id, events=12):
         view['bio'] = own.get('bio')
         if view.get('org'):
             org = db.execute('SELECT name FROM graph_nodes WHERE id=?', (view['org'],)).fetchone()
-            view['org_name'] = org['name'] if org else None
+            view['org_name'] = org['name'] if org else json.loads(row['info'] or '{}').get('org_name')  # one just named: at the next build
         try:  # the summary on top of their page, each line with its sources (person_summary.py)
             view['summary'] = person_summary.view(db, node_id)
         except (sqlite3.Error, ValueError, KeyError, TypeError):
@@ -3522,6 +3502,30 @@ def person_edit(db, node_id, fields, now):
         else:
             db.execute('DELETE FROM person_edits WHERE identifier=?', (identifier,))
     return {'node_id': node_id, 'edited': sorted(mine)}
+
+
+def person_shown(group, edited, looked_up, facts, photos):
+    """A person's profile and contacts as their page shows them, the owner's own details over all: (profile or None, contacts)."""
+    person_profile = next((json.loads(looked_up[i]) for i in group if i in looked_up), None)
+    # Only a photo saved on this Machine shows (served by the dashboard), never the service's own link.
+    person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone')}
+    person_profile = enrichment.with_facts(person_profile, [facts[i] for i in group if i in facts])
+    if photo_key := next((photos[i] for i in group if i in photos), None):
+        person_profile['photo'] = 'api/person-photo?p=' + photo_key
+    if edited.get('photo') == 'none':
+        person_profile.pop('photo', None)  # the owner took the picture off: none, also not a looked-up one
+    elif PICTURE.fullmatch(str(edited.get('photo') or '')):
+        person_profile['photo'] = edited['photo']  # the owner's own picture wins
+    mine = {k: edited[k] for k in ('title', 'location', 'linkedin_url') if edited.get(k)}
+    if mine:
+        person_profile.update(mine)
+        person_profile['sources'] = {**(person_profile.get('sources') or {}), **{k: {'from': 'you', 'own': True} for k in mine}}
+    contacts = shown_contacts(group, edited)
+    stated_phone = ' '.join(str(person_profile.get('phone') or '').split())  # a number a connector read (their Slack profile)
+    gone = {contact_key('phones', v) for v in (edited.get('phones') or {}).get('removed', ())}
+    if PHONE.fullmatch(stated_phone) and contact_key('phones', stated_phone) not in gone | {contact_key('phones', r['value']) for r in contacts['phones']}:
+        contacts['phones'].append({'value': stated_phone, 'by': ((person_profile.get('sources') or {}).get('phone') or {}).get('from') or 'messages'})
+    return person_profile or None, contacts
 
 
 def edits_state(db, node_id):
