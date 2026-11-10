@@ -47,6 +47,8 @@ After your first day, it folds into one quiet line above **For you**, like "2 st
 
 A new version of the dashboard never reloads while you're using it. It loads when you open the app, or when the window has been in the background or idle for a few minutes. It never interrupts unsaved text or an open dialog. **Update ready**, at the top, loads it right away.
 
+When a bigger feature or improvement ships, a small **What’s new** note tells you about it, at most once a day. **Close** it, or use its button to open the feature. It never shows over something you’re doing, and once closed it’s gone on every device. You only see what shipped after you got started.
+
 ## Messages
 
 Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search icon on a phone. Type two letters or more: **Messages** shows the best matches from everything your Machine read, by meaning or by words. Older [history](history.md) matches by words.

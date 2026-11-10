@@ -1,0 +1,15 @@
+/*@lazy*/
+/* What's new (shell-whats-new.js): one small notice, centered on a phone too (never the whole screen, unlike the other dialogs) */
+#whats-new{width:min(420px,calc(100vw - 32px));outline:0}
+#whats-new h2{margin:0 0 8px;overflow-wrap:anywhere}
+#whats-new p{margin:0;line-height:1.5;color:var(--muted)}
+#whats-new .wn-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+#whats-new .wn-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:14px}
+#whats-new .wn-list b{display:block;margin-bottom:2px;font-weight:var(--fw-medium,600)}
+#whats-new .wn-open{min-height:0;margin:4px 0 0;padding:0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;font-size:var(--fs-sm);text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+@media(max-width:560px){
+  #whats-new:not(#_):not(#_){inset:0;width:calc(100% - 32px);max-width:calc(100% - 32px);height:fit-content;max-height:calc(100dvh - 32px);margin:auto;padding:18px;border-radius:16px}
+  #whats-new:not(#_):not(#_)[open]{display:block}
+  #whats-new:not(#_):not(#_)::backdrop{background:color-mix(in srgb,var(--c-bg) 55%,transparent)}
+  #whats-new:not(#_):not(#_):not(#_):not(#_)>.wn-acts{margin-bottom:0}
+}

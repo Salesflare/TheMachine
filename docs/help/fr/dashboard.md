@@ -45,6 +45,8 @@ Après votre premier jour, elle se replie en une ligne discrète au-dessus de **
 
 Quand une nouvelle version du tableau de bord est prête, il ne se recharge jamais pendant que vous l’utilisez. L’ouverture ou le rechargement de l’app charge la version la plus récente. Une fenêtre ouverte la charge dès que la fenêtre passe en arrière-plan, ou après quelques minutes sans saisie, et jamais tant qu’un texte saisi n’est pas enregistré ou envoyé, ou qu’une boîte de dialogue est ouverte. **Mise à jour prête**, en haut, la charge tout de suite. Un redémarrage de votre Machine ne fait que rétablir la connexion.
 
+Quand une fonction ou une amélioration plus importante arrive, une petite note **Quoi de neuf** vous le dit, au plus une fois par jour. **Fermer** la fait disparaître, ou utilisez son bouton pour ouvrir la fonction. Elle ne s’affiche jamais par-dessus ce que vous faites, et une fois fermée elle disparaît sur tous vos appareils. Vous ne voyez que ce qui est arrivé après vos débuts.
+
 ## Messages
 
 Ouvrez la recherche avec `⌘K` sur Mac ou `Ctrl K` sur Windows et Linux, ou avec l’icône de recherche dans la barre du haut sur un téléphone. Tapez au moins deux lettres : **Messages** montre les meilleurs résultats parmi tout ce que votre Machine a lu, par sens ou par mots. L’[historique](history.md) plus ancien apparaît par mots.

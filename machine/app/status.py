@@ -254,6 +254,10 @@ class StatusApp:
             result['first_tips'] = self.store.first_tips()
         except sqlite3.Error as error:
             LOG.warning('first tips error=%s', type(error).__name__); result['first_tips'] = []
+        try:  # What's new: one notice for bigger changes since they got started (machine/store/whats_new.py)
+            result['whats_new'] = self.store.whats_new()
+        except (sqlite3.Error, ValueError, TypeError) as error:
+            LOG.warning('whats new error=%s', type(error).__name__); result['whats_new'] = None
         result['signatures'] = self.signature_view()
         result['lookups'] = self.lookups_view()
         result['own_addresses'] = self.own_addresses_view()
