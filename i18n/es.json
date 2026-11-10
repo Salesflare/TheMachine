@@ -6918,6 +6918,7 @@
   "other": "{} invitaciones creadas. Omitidos: {}."
  },
  "{} is Careful: answers wait for you and leave out names.": "{} está en Prudente: las respuestas te esperan y no incluyen nombres.",
+ "{} is a working name. Save the file in this job's attachments folder under the name the recipient should see: the source file's own name, or the name the earlier ones had (in Drive, or on the last email).": "{} es un nombre de trabajo. Guarda el archivo en la carpeta de adjuntos de esta tarea con el nombre que debe ver el destinatario: el nombre del archivo de origen, o el que tenían los anteriores (en Drive, o en el último correo).",
  "{} is already on this to-do": "{} ya está en esta tarea",
  "{} is based in {}": "{} está en {}",
  "{} is connected. Adding its notifications…": "{} está conectado. Añadiendo sus notificaciones…",
@@ -7377,6 +7378,7 @@
  "{} won’t get a ping. Let them know.": "{} no recibirá ningún aviso. Avísale tú.",
  "{} works at {}": "{} trabaja en {}",
  "{} works here": "{} trabaja aquí",
+ "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.": "{} no se abriría: {}. Vuelve a crearlo desde el original con assistant xlsx-set (Excel), compruébalo con assistant office-check y luego adjúntalo.",
  "{} writing rules": {
   "one": "{} regla de redacción",
   "other": "{} reglas de redacción"

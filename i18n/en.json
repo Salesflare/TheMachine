@@ -6918,6 +6918,7 @@
   "other": "{} invites made. Skipped: {}."
  },
  "{} is Careful: answers wait for you and leave out names.": "{} is Careful: answers wait for you and leave out names.",
+ "{} is a working name. Save the file in this job's attachments folder under the name the recipient should see: the source file's own name, or the name the earlier ones had (in Drive, or on the last email).": "{} is a working name. Save the file in this job's attachments folder under the name the recipient should see: the source file's own name, or the name the earlier ones had (in Drive, or on the last email).",
  "{} is already on this to-do": "{} is already on this to-do",
  "{} is based in {}": "{} is based in {}",
  "{} is connected. Adding its notifications…": "{} is connected. Adding its notifications…",
@@ -7377,6 +7378,7 @@
  "{} won’t get a ping. Let them know.": "{} won’t get a ping. Let them know.",
  "{} works at {}": "{} works at {}",
  "{} works here": "{} works here",
+ "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.": "{} would not open: {}. Make it again from the original with assistant xlsx-set (Excel), check it with assistant office-check, then attach it.",
  "{} writing rules": {
   "one": "{} writing rule",
   "other": "{} writing rules"

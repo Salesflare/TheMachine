@@ -30,6 +30,7 @@ onboarding = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(onboarding)
 onboarding._assistant = assistant
 import google_pair  # noqa: E402
+import office_files  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
 
@@ -976,6 +977,34 @@ def cmd_meeting_notes(config, args):
             print(f'No {word.lower()} yet.')
 
 
+def cmd_office_check(config, args):
+    """Each file opens: an Office file's package, XML and declared prefixes, a PDF's structure. Exit status 1 when one won't."""
+    found = {str(path): office_files.problems(Path(path).expanduser()) for path in args.files}
+    if args.json:
+        out_json({'ok': not any(found.values()), 'files': found})
+    else:
+        for path, problems in found.items():
+            print(f"{path}: {'ok' if not problems else '; '.join(problems)}")
+    if any(found.values()):
+        sys.exit(1)
+
+
+def cmd_xlsx_set(config, args):
+    values = {}
+    for item in args.cells:
+        ref, sep, value = item.partition('=')
+        if not sep:
+            raise CliError(f'{item}: give each cell as CELL=VALUE, like B2=2025-03-31')
+        values[ref.strip()] = value
+    try:
+        target = office_files.set_cells(Path(args.source).expanduser(), Path(args.target).expanduser(), values, sheet=args.sheet)
+    except ValueError as error:
+        raise CliError(str(error)) from None
+    if args.json:
+        return out_json({'ok': True, 'file': str(target), 'cells': sorted(values)})
+    print(f'{target}: {len(values)} cells set; the file checks out')
+
+
 def cmd_raw(config, args):
     out_json(call(config, args.action, json.loads(args.args) if args.args else {}))
 
@@ -1164,6 +1193,16 @@ def parser():
     c = add('report-bug', 'Write up a problem with The Machine the owner told you about, for them to check and send from Report a bug', cmd_report_bug)
     c.add_argument('words', help='what the owner said, in their words')
     c.add_argument('--summary', help='one plain sentence')
+    c = add('office-check', 'Check that files open before you upload or attach them: Excel, Word, PowerPoint and PDF (LibreOffice '
+                            'opening a file is not enough; it forgives what Excel refuses)', cmd_office_check)
+    c.add_argument('files', nargs='+')
+    c = add('xlsx-set', 'Make an Excel file from another by setting some cells, keeping everything else as it was (styles, '
+                        'formulas, the parts Excel needs); formulas recalculate when it opens', cmd_xlsx_set)
+    c.add_argument('source', help='the .xlsx to start from, like last month\'s invoice')
+    c.add_argument('target', help='the new .xlsx (its own name, like the earlier ones)')
+    c.add_argument('cells', nargs='+', help="CELL=VALUE: a number, a date as YYYY-MM-DD, text, '... for text that looks like a number, "
+                                            'or CELL= to clear it. A formula cell is refused: set the cells it uses')
+    c.add_argument('--sheet', help='the sheet by name (default: the first)')
     c = add('raw', 'Call any non-owner service action with JSON args', cmd_raw)
     c.add_argument('action')
     c.add_argument('args', nargs='?', help='JSON object')
@@ -1173,7 +1212,7 @@ def parser():
 def main(argv=None):
     args = parser().parse_args(argv)
     try:
-        args.func({} if args.func in (cmd_doctor, cmd_import, cmd_service, cmd_support_bundle) else load_config(args.config), args)
+        args.func({} if args.func in (cmd_doctor, cmd_import, cmd_service, cmd_support_bundle, cmd_office_check, cmd_xlsx_set) else load_config(args.config), args)
     except CliError as error:
         sys.exit(f'assistant: {error}')
     except BrokenPipeError:
