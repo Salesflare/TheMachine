@@ -6,17 +6,20 @@ How long each file takes comes from the test-impact map of main's last full run 
 "seconds"). A file the map doesn't know yet is guessed from its size. Each shard lists its files longest first, so a
 slow one starts early (scripts/test.py --in-order).
 
-scripts/test_shards.py --shards 4 [--impact map.json.gz] [picked.txt]
+scripts/test_shards.py --shards 4 [--target 1800] [--impact map.json.gz] [picked.txt]
     prints {"1": "test_a.py test_b.mjs ...", "2": ...} (JSON); picked.txt names the files to split (one per line, or
-    ALL), every test file without it."""
+    ALL; empty: none, and {} is printed), every test file without it. With --target, only as many shards (at most
+    --shards) as it takes for each to hold about that many seconds of files: a small selection stays one job."""
 import gzip
 import json
+import math
 from pathlib import Path
 import statistics
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 TESTS = ROOT / 'tests'
+TYPICAL = 10  # seconds a test file takes on our runner, on average (main's full runs, 2026-11)
 
 
 def every_test():
@@ -56,11 +59,22 @@ def split(files, seconds, count):
     return [shard for shard in shards if shard] or [[]]
 
 
+def needed(files, seconds, count, target):
+    """How many shards of about target seconds of files each, at most count. Without recorded times a file counts as
+    TYPICAL seconds (about the average on our runner)."""
+    if not target:
+        return count
+    total = sum(estimate(files, seconds).values()) if seconds else TYPICAL * len(files)
+    return max(1, min(count, math.ceil(total / target)))
+
+
 def main(argv):
-    count, impact, source = 1, None, None
+    count, impact, source, target = 1, None, None, 0
     while argv:
         if argv[0] == '--shards':
             count, argv = int(argv[1]), argv[2:]
+        elif argv[0] == '--target':
+            target, argv = float(argv[1]), argv[2:]
         elif argv[0] == '--impact':
             impact, argv = argv[1], argv[2:]
         else:
@@ -68,9 +82,13 @@ def main(argv):
     files = every_test()
     if source:
         picked = [Path(line.strip()).name for line in Path(source).read_text(encoding='utf-8').splitlines() if line.strip()]
+        if not picked:
+            print('{}')
+            return 0
         if picked[:1] != ['ALL']:
             files = picked
-    shards = split(files, recorded(impact) if impact else {}, count)
+    seconds = recorded(impact) if impact else {}
+    shards = split(files, seconds, needed(files, seconds, count, target))
     print(json.dumps({str(i): ' '.join(shard) for i, shard in enumerate(shards, 1)}))
     return 0
 

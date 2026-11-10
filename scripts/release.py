@@ -28,8 +28,10 @@ from pathlib import Path
 
 try:
     from scripts.security_gate import require_release_scan
+    from scripts import ci_runs as ci
 except ModuleNotFoundError:
     from security_gate import require_release_scan
+    import ci_runs as ci
 
 ROOT = Path(__file__).resolve().parent.parent
 SIGNERS = ROOT / 'deploy' / 'release-signers'
@@ -44,8 +46,8 @@ class Refused(Exception):
 
 
 REPO = 'Salesflare/TheMachine'
-# The runs of .github/workflows/ci.yml that run every test: a push to main, the weekly run and a manual one. A pull
-# request runs only the tests its change needs (scripts/test_select.py).
+# The runs of .github/workflows/ci.yml on main's commits: a push to main, the nightly and weekly runs and a manual one.
+# A pull request's run tests its merge commit, not main's.
 FULL_RUN = ('push', 'schedule', 'workflow_dispatch')
 
 
@@ -56,27 +58,39 @@ def ci_runs(query):
     return json.loads(out)['workflow_runs']
 
 
+def _gh_api(path):
+    return json.loads(subprocess.run(['gh', 'api', path], capture_output=True, text=True, timeout=60, check=True).stdout)
+
+
+def proven(run):
+    """Whether a passed run proves its commit (scripts/ci_runs.py): it ran every test, or the tests every change
+    since a commit whose full run passed can break."""
+    what = ci.tested(run, _gh_api)
+    return what == 'full' or ci.passed_full(what, _gh_api)
+
+
 def require_green_tests(sha):
-    """Raises RuntimeError unless a full test run passed on exactly this commit."""
+    """Raises RuntimeError unless every test passed on exactly this commit: a full run passed on it, or a run that
+    passed on it ran every test the changes since a commit with a passed full run can break (scripts/ci_runs.py)."""
     try:
         runs = [r for r in ci_runs(f'head_sha={sha}') if r['event'] in FULL_RUN]
+        if any(r['conclusion'] == 'success' and proven(r) for r in runs):
+            return
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         raise RuntimeError(f"CI's runs on {sha[:7]} could not be read with gh ({error})") from error
-    if any(r['conclusion'] == 'success' for r in runs):
-        return
     going = [r for r in runs if r['status'] != 'completed']
     if going:
         raise RuntimeError(f'the full test run on {sha[:7]} is not done yet ({going[0]["html_url"]}): cut again when it passes')
-    failed = [r for r in runs if r['conclusion'] not in ('cancelled', 'skipped')]
+    failed = [r for r in runs if r['conclusion'] not in ('cancelled', 'skipped', 'success')]
     if failed:
         raise RuntimeError(f'the full test run on {sha[:7]} {failed[0]["conclusion"]} ({failed[0]["html_url"]})')
     newest = None
     try:
         newest = next((r['head_sha'] for r in ci_runs('branch=main&status=success') if r['event'] in FULL_RUN
-                       and git('merge-base', '--is-ancestor', r['head_sha'], sha, check=False).returncode == 0), None)
+                       and git('merge-base', '--is-ancestor', r['head_sha'], sha, check=False).returncode == 0 and proven(r)), None)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         pass
-    raise RuntimeError(f'no full test run passed on {sha[:7]} (main runs the newest commit once the run going now ends)'
+    raise RuntimeError(f'no test run proved {sha[:7]} (main tests its newest commit; a full run passed on it, or one on what changed since a full run)'
                        + (f': wait for it, or cut the newest tested commit with --commit {newest[:7]}' if newest else ''))
 
 

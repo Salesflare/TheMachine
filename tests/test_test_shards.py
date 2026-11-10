@@ -1,5 +1,6 @@
-"""scripts/test_shards.py and scripts/test_impact.py merge: main's full run splits the test files into shards of about
-equal time, runs every file exactly once, and the shards' test-impact maps add up to the map one job would make."""
+"""scripts/test_shards.py, scripts/test_impact.py merge and scripts/ci_runs.py: a full run splits the test files into
+shards of about equal time and runs every file exactly once, the shards' test-impact maps add up to the map one job
+would make, and a push to main builds on the newest commit under it whose full run passed."""
 import gzip
 import importlib.util
 import json
@@ -19,6 +20,7 @@ def load(name):
 
 shards = load('test_shards')
 impact = load('test_impact')
+ci = load('ci_runs')
 
 
 class Shards(unittest.TestCase):
@@ -51,6 +53,13 @@ class Shards(unittest.TestCase):
         self.assertEqual(shards.split(['test_a.py'], {}, 4), [['test_a.py']])
         self.assertEqual(shards.split([], {}, 4), [[]])
 
+    def test_a_small_selection_stays_one_job(self):
+        files = shards.every_test()
+        self.assertEqual(shards.needed(files[:5], {}, 4, 1800), 1)
+        self.assertEqual(shards.needed(files, {}, 4, 1800), 4)
+        self.assertEqual(shards.needed(files, {}, 4, 0), 4)
+        self.assertEqual(shards.needed(files[:2], {files[0]: 2000.0, files[1]: 1000.0}, 4, 1800), 2)
+
     def test_durations_come_from_the_map(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder, 'map.json.gz')
@@ -58,6 +67,47 @@ class Shards(unittest.TestCase):
                 json.dump({'tests': ['test_a.py'], 'seconds': {'test_a.py': 12.5, 'test_b.mjs': 'x'}}, sink)
             self.assertEqual(shards.recorded(path), {'test_a.py': 12.5})
             self.assertEqual(shards.recorded(Path(folder, 'missing.json.gz')), {})
+
+
+class Base(unittest.TestCase):
+    """What a run of main proved, from its artifacts' names, and the commit the next push's selection starts from."""
+
+    def api(self, runs, artifacts):
+        def call(path):
+            if '/artifacts' in path:
+                return {'artifacts': [{'name': n} for n in artifacts.get(int(path.split('/runs/')[1].split('/')[0]), [])]}
+            if 'head_sha=' in path:
+                sha = path.split('head_sha=')[1].split('&')[0]
+                return {'workflow_runs': [r for r in runs if r['head_sha'] == sha]}
+            return {'workflow_runs': runs}
+        return call
+
+    def ci_run(self, id, sha, event='push', conclusion='success'):
+        return {'id': id, 'head_sha': sha, 'event': event, 'conclusion': conclusion}
+
+    def test_the_newest_full_run_under_head(self):
+        a, b, c, other = 'a' * 40, 'b' * 40, 'c' * 40, 'd' * 40
+        runs = [self.ci_run(5, other), self.ci_run(4, c), self.ci_run(3, b, event='pull_request'), self.ci_run(2, b), self.ci_run(1, a, event='schedule')]
+        artifacts = {5: ['tested-full'], 4: [f'tested-since-{a}'], 2: ['tested-full']}
+        under = {a, b, c}  # other is on another branch
+        found = ci.base(c, api=self.api(runs, artifacts), ancestor=lambda old, new: old in under)
+        self.assertEqual(found, b)
+        self.assertEqual(ci.tested(runs[1], self.api(runs, artifacts)), a)
+        self.assertEqual(ci.tested(runs[4], self.api(runs, artifacts)), 'full')  # a run from before the names
+
+    def test_a_pull_requests_run_proves_no_commit_of_main(self):
+        a = 'a' * 40
+        runs = [self.ci_run(1, a, event='pull_request')]
+        self.assertIsNone(ci.base(a, api=self.api(runs, {1: ['tested-full']}), ancestor=lambda old, new: True))
+        self.assertFalse(ci.passed_full(a, api=self.api(runs, {1: ['tested-full']})))
+
+    def test_a_selected_run_is_not_a_full_one(self):
+        a, b = 'a' * 40, 'b' * 40
+        runs = [self.ci_run(2, b), self.ci_run(1, a)]
+        api = self.api(runs, {2: [f'tested-since-{a}'], 1: ['tested-full']})
+        self.assertFalse(ci.passed_full(b, api=api))
+        self.assertTrue(ci.passed_full(a, api=api))
+        self.assertEqual(ci.base(b, api=api, ancestor=lambda old, new: True), a)
 
 
 class Merge(unittest.TestCase):

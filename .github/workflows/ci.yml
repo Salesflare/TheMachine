@@ -2,9 +2,10 @@ name: Tests and privacy checks
 
 on:
   # GitHub Actions minutes cost money (macOS 10x, Windows 2x Linux). So a pull request gets one Linux run of the pinned
-  # versions, of the tests its change needs (scripts/test_select.py). Main and release tags run every test, on our own
-  # runner too, so anything the selection missed shows up right after the merge. The full matrix, Windows and macOS run
-  # weekly and on demand.
+  # versions, of the tests its change needs (scripts/test_select.py). A push to main runs the tests every change since
+  # the newest commit whose full run passed needs (scripts/ci_runs.py), so it repeats nothing already proven; every test
+  # runs nightly, on our runner, so anything the selection missed shows up by the next morning (a failed nightly run
+  # opens an issue). The full matrix, Windows and macOS run weekly and on demand.
   pull_request:
   push:
     branches: [main]
@@ -18,19 +19,22 @@ on:
         default: false
   schedule:
     - cron: '17 5 * * 1'  # weekly, so a new OpenClaw release that breaks something shows up here
+    - cron: '23 1 * * *'  # nightly: every test on main, on our runner (the expressions below name this cron)
 
 permissions:
   contents: read
 
-# A new push to a pull request cancels its run still going: only the newest commit can be merged anyway.
-# Main is never canceled: a run goes on while the next merge waits (GitHub keeps only the newest one waiting). Its
-# shards finish in about 15 minutes, and scripts/release.py cuts only a commit whose full run passed.
+# A new push to a pull request or main cancels the run still going: only the newest commit can be merged, and on main
+# the next run tests everything changed since the last full run that passed, so a canceled run leaves nothing
+# unproven (scripts/release.py cuts only a commit a passed run proves). The nightly, weekly and manual runs have their
+# own groups and are never canceled: a full run is what the next pushes build on.
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && format('-{0}', github.event.schedule || 'manual') || '' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
-# Pull requests and pushes to main run on our own runner (Hetzner servers, one fresh runner per job; the themachine-cloud
-# repo's docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual runs stay on GitHub's.
+# Pull requests, pushes to main and the nightly run run on our own runner (Hetzner servers, one fresh runner per job;
+# the themachine-cloud repo's docs/operations.md, CI runner), so they cost no Actions minutes. The weekly and manual
+# runs stay on GitHub's (a manual run with own_runner on ours).
 # To fall back to GitHub's runners for pull requests too, set the repository variable CI_PR_RUNNER to "ubuntu-24.04"
 # (with the quotes); unset it to go back.
 # A contrib/ branch (a connector shared from a hosted Machine, opened by The Machine's cloud from its contributions fork)
@@ -39,11 +43,15 @@ jobs:
   plan:
     # Which test files run, in how many jobs. A pull request runs the tests its change needs (scripts/test_select.py):
     # with the test-impact map from main's last full run, the tests that ran each function it changes; without it,
-    # what imports or names each changed file. All of them when that isn't clear. Main, release tags and the weekly run
-    # run every one. A full run on our runner splits them into shards of about equal time (scripts/test_shards.py, by
-    # each file's time in main's last full run), side by side on our runner's slots: about 15 minutes instead of 40.
-    # The repository variable CI_SHARDS sets how many (4 when unset). Pull requests and GitHub's runners use one job.
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    # what imports or names each changed file. All of them when that isn't clear. A push to main or a release tag runs
+    # the tests for everything changed since the newest commit under it whose full run passed (scripts/ci_runs.py
+    # base; nothing when that is the commit itself, every test when there is none). The nightly, weekly and manual runs
+    # run every one. On our runner the files are split into shards of about equal time (scripts/test_shards.py, by each
+    # file's time in main's last full run; about 5 minutes of files each, at most CI_SHARDS, a repository variable, 4
+    # when unset), side by side on our runner's slots. GitHub's runners use one job.
+    # Each run on main's commits names what it tested in an artifact (tested-full, tested-since-<sha>): what
+    # scripts/ci_runs.py and scripts/release.py read.
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     permissions:
       contents: read
@@ -55,38 +63,65 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          fetch-depth: 2  # a pull request's merge commit and main under it, for the tests the change needs
+          # a pull request: its merge commit and main under it; main: its history, back to the last full run
+          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
           persist-credentials: false
       - name: Choose the tests and split them into shards
         id: split
         env:
           GITHUB_TOKEN: ${{ github.token }}
           EVENT: ${{ github.event_name }}
-          SHARDS: ${{ github.event_name != 'pull_request' && runner.environment == 'self-hosted' && (vars.CI_SHARDS || '4') || '1' }}
+          SHARDS: ${{ runner.environment == 'self-hosted' && (vars.CI_SHARDS || '4') || '1' }}
         run: |
           changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz" split="$RUNNER_TEMP/shards.json"
           python3 scripts/test_impact.py fetch "$map" || true
           echo ALL > "$picked"
+          marker=tested-full
+          # anything that goes wrong here runs every test
           if [ "$EVENT" = pull_request ]; then
-            # anything that goes wrong here runs every test
             git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base HEAD^1 "$changed" > "$picked" || echo ALL > "$picked"
+          elif [ "$EVENT" = push ]; then
+            base="$(python3 scripts/ci_runs.py base HEAD)" || base=
+            if [ "$base" = "$(git rev-parse HEAD)" ]; then
+              echo "A full run passed on this commit already"
+              : > "$picked"
+              marker="tested-since-$base"
+            elif [ -n "$base" ] && git diff --name-only "$base" HEAD > "$changed" && [ -s "$changed" ] \
+                && python3 scripts/test_select.py --impact "$map" --base "$base" "$changed" > "$picked"; then
+              echo "Since $base, the newest commit under this one whose full run passed:"
+              [ "$(head -n1 "$picked")" = ALL ] || marker="tested-since-$base"
+            else
+              echo ALL > "$picked"
+            fi
           fi
           if [ "$(head -n1 "$picked")" = ALL ]; then
             echo "Every test file"
             echo "full=true" >> "$GITHUB_OUTPUT"
+            marker=tested-full
           else
-            echo "$(wc -l < "$picked") test files for:" && cat "$changed"
+            echo "$(wc -l < "$picked") test files for:" && { cat "$changed" 2>/dev/null || true; }
             echo "full=false" >> "$GITHUB_OUTPUT"
           fi
-          python3 scripts/test_shards.py --shards "$SHARDS" --impact "$map" "$picked" > "$split"
+          echo "$marker" > "$RUNNER_TEMP/tested"
+          echo "marker=$marker" >> "$GITHUB_OUTPUT"
+          python3 scripts/test_shards.py --shards "$SHARDS" --target 1800 --impact "$map" "$picked" > "$split"
           echo "files=$(cat "$split")" >> "$GITHUB_OUTPUT"
           echo "shards=$(python3 -c 'import json, sys; print(json.dumps(list(json.load(open(sys.argv[1])))))' "$split")" >> "$GITHUB_OUTPUT"
           python3 -c 'import json, sys; [print(f"shard {k}: {len(v.split())} files") for k, v in json.load(open(sys.argv[1])).items()]' "$split"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        # what this run tests, in the artifact's name (scripts/ci_runs.py); a pull request's run proves no commit of main
+        if: github.event_name != 'pull_request'
+        with:
+          name: ${{ steps.split.outputs.marker }}
+          path: ${{ runner.temp }}/tested
+          retention-days: 90
+          if-no-files-found: error
 
   tests:
     needs: plan
+    if: needs.plan.outputs.shards != '[]'
     name: tests (${{ matrix.versions.python }}, ${{ matrix.versions.node }}, ${{ matrix.versions.openclaw }}, shard ${{ matrix.shard }})
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes (a pull request's that needs
     # every test is one job), and a run cut at 30 with no failure has to start over, which costs more than the extra minutes.
     timeout-minutes: 45
@@ -96,7 +131,7 @@ jobs:
       fail-fast: false
       matrix:
         # A pull request and main run the pinned versions only; the weekly run and a manual run add the newest Python, Node and OpenClaw.
-        versions: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push' || inputs.own_runner) && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
+        versions: ${{ fromJSON((github.event_name == 'pull_request' || github.event_name == 'push' || inputs.own_runner || github.event.schedule == '23 1 * * *') && '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"}]' || '[{"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"},{"python":"3.14","node":"26","openclaw":"latest"}]') }}
         shard: ${{ fromJSON(needs.plan.outputs.shards) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -175,7 +210,7 @@ jobs:
     permissions:
       contents: read
       actions: read  # the shards' parts in this run
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -199,10 +234,51 @@ jobs:
           retention-days: 3
           if-no-files-found: ignore
 
+  nightly-alert:
+    # A red nightly run opens an issue (or adds to the open one), so a test the selection missed is seen that morning;
+    # the next green nightly run closes it.
+    needs: [plan, tests, help, secrets]
+    if: always() && github.event.schedule == '23 1 * * *'
+    runs-on: ${{ fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') }}
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open or close the nightly issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+          title = 'Nightly full test run failed'
+          def api(path, body=None, method=None):
+              request = urllib.request.Request(f'https://api.github.com/repos/{os.environ["REPO"]}/{path}', method=method,
+                                               data=json.dumps(body).encode() if body is not None else None,
+                                               headers={'Authorization': f'Bearer {os.environ["GITHUB_TOKEN"]}',
+                                                        'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          found = [i for i in api('issues?state=open&per_page=100') if i['title'] == title and 'pull_request' not in i]
+          red, run = os.environ['RED'] == 'true', os.environ['RUN']
+          if red and found:
+              api(f'issues/{found[0]["number"]}/comments', {'body': f'Failed again: {run}'})
+          elif red:
+              api('issues', {'title': title, 'body': f'Every test runs nightly on main; this run failed: {run}\n\n'
+                             'A test the selection on pull requests and pushes to main missed, or a flaky one. Until a full '
+                             'run passes again, main tests everything changed since the last one that did.'})
+          for issue in found if not red else ():
+              api(f'issues/{issue["number"]}/comments', {'body': f'Green again: {run}'})
+              api(f'issues/{issue["number"]}', {'state': 'closed'}, method='PATCH')
+          print('red' if red else 'green', len(found))
+          EOF
+
   help:
     # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
     # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -218,7 +294,7 @@ jobs:
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.
     # Weekly and on demand only: these runners cost 2x (Windows) and 10x (macOS) a Linux minute, so not on each push to main.
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && !inputs.own_runner
+    if: github.event.schedule == '17 5 * * 1' || github.event_name == 'workflow_dispatch' && !inputs.own_runner
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
@@ -268,7 +344,7 @@ jobs:
         run: ./install.ps1 -DryRun
 
   secrets:
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner) && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

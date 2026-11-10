@@ -362,18 +362,32 @@ class Releases(unittest.TestCase):
             release.main(['cut', '--key', str(self.key), '--no-push', '--commit', run('git', 'rev-parse', 'HEAD', cwd=self.app)])
 
     def test_which_full_runs_count(self):
-        sha = 'a' * 40
+        sha, base = 'a' * 40, 'b' * 40
         def runs(*found):
             return mock.patch.object(release, 'ci_runs', side_effect=lambda query: list(found) if 'head_sha' in query else [])
-        run_of = lambda event, status, conclusion: {'event': event, 'status': status, 'conclusion': conclusion,
-                                                   'html_url': 'https://example.invalid/run', 'head_sha': sha}
-        for found, error in (
-                ([run_of('push', 'completed', 'success')], None),
-                ([run_of('pull_request', 'completed', 'success')], 'no full test run passed'),
-                ([run_of('push', 'in_progress', None)], 'not done yet'),
-                ([run_of('push', 'completed', 'failure')], 'failure'),
-                ([run_of('push', 'completed', 'cancelled')], 'no full test run passed')):
-            with self.subTest(found=found), runs(*found):
+        run_of = lambda event, status, conclusion, marker=None: {
+            'id': 1, 'event': event, 'status': status, 'conclusion': conclusion, 'html_url': 'https://example.invalid/run',
+            'head_sha': sha, 'marker': marker}
+
+        def gh(full_on_base):
+            # the run's artifacts name what it tested (scripts/ci_runs.py); the base's runs say whether a full one passed
+            def api(path):
+                if '/artifacts' in path:
+                    return {'artifacts': [{'name': self.marker}] if self.marker else []}
+                return {'workflow_runs': [{'id': 2, 'event': 'schedule', 'conclusion': 'success', 'head_sha': base}] if full_on_base else []}
+            return mock.patch.object(release, '_gh_api', side_effect=lambda path: (
+                {'artifacts': []} if '/runs/2/' in path else api(path)))
+        for found, marker, full_on_base, error in (
+                ([run_of('push', 'completed', 'success')], None, False, None),
+                ([run_of('push', 'completed', 'success')], 'tested-full', False, None),
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', True, None),
+                ([run_of('push', 'completed', 'success')], f'tested-since-{base}', False, 'no test run proved'),
+                ([run_of('pull_request', 'completed', 'success')], None, False, 'no test run proved'),
+                ([run_of('push', 'in_progress', None)], None, False, 'not done yet'),
+                ([run_of('push', 'completed', 'failure')], None, False, 'failure'),
+                ([run_of('push', 'completed', 'cancelled')], None, False, 'no test run proved')):
+            self.marker = marker
+            with self.subTest(found=found, marker=marker, full_on_base=full_on_base), runs(*found), gh(full_on_base):
                 if error is None:
                     REQUIRE_GREEN(sha)
                 else:
