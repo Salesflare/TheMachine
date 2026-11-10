@@ -6,8 +6,9 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A project's description (project_about.py) sits under its name line: one or two sentences The Machine keeps up to
-// date, with when it was updated and Edit. Save makes it the owner's ("Edited by you"), with Keep it updated to hand it
-// back. No description: nothing shows, and Edit description in the ⋯ menu opens the field. Made-up names.
+// date, with when it was updated. The project's own Edit changes it (a Description field under the name, with the
+// form's Save); then it is the owner's ("Edited by you · Keep it updated"). No description: nothing shows, no gap, and
+// Edit offers the empty field. Made-up names.
 // At 390 and 1440, light and dark. SHOT_DIR=… saves screenshots.
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
@@ -24,6 +25,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  if(url.pathname==='/api/graph'){res.end(JSON.stringify(url.searchParams.get('node')?node:{projects:[],people:[],quiet:[],new:[],orgs:[],boards:[{id:1,name:'Customers',stages,default:true,stuck:0,maybes:[],projects:[]}]}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);const a=call.args;
   if(call.action==='project_about')node={...node,about:a.op==='edit'?{text:a.text,by:'owner',at:day(0)}:{...node.about,by:'machine'}};
+  if(call.action==='project_save'){res.end(JSON.stringify({node_id:a.node_id,name:a.name}));return}
   res.end(JSON.stringify({about:node.about}));return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -46,39 +48,51 @@ try{
   assert.equal(await box.locator('.proj-about-text').textContent(),TEXT);
   assert.equal(await box.locator('.proj-about-text[translate="no"]').count(),1);
   const updated=await page.evaluate(d=>shortDay(d),node.about.at);
-  assert.equal(await box.locator('.about-meta').textContent(),`Updated ${updated} · Edit`);
-  assert.equal(await box.locator('.about-form').isVisible(),false);
+  assert.equal(await box.locator('.about-meta').textContent(),`Updated ${updated}`);
+  assert.equal(await card.locator('[data-about-edit],.about-form,[data-about-write]').count(),0,'one Edit: the project\'s');
   await fits(page,tag);await shot(page,`project-about-${tag}`);
-  // Edit: the text in one field; Cancel sends nothing
-  await box.locator('[data-about-edit]').click();
-  const ta=box.locator('textarea[name=text]');await ta.waitFor();
+  // Edit: the Description field under the name, filled; Save is the form's primary button
+  const dialog=page.locator('#project-dialog');
+  await card.locator('.name-row [data-proj-edit]').click();
+  const ta=dialog.locator('textarea[name=about]');await ta.waitFor();
   assert.equal(await ta.inputValue(),TEXT);
-  assert.equal(await box.locator('.proj-about-text').isVisible(),false,'the text steps aside while editing');
+  assert.equal(await dialog.locator('.pj-about').evaluate(e=>e.previousElementSibling?.querySelector('[name=name]')!=null),true,'right under the name');
+  assert.equal(await dialog.locator('[data-pj-about-auto]').count(),0);
+  assert.equal(await dialog.locator('button.primary').count(),1);
   await fits(page,tag+' editing');await shot(page,`project-about-edit-${tag}`);
-  await box.locator('[data-about-cancel]').click();assert.equal(calls.length,0);
-  assert.ok(await box.locator('.proj-about-text').isVisible());
-  // Save makes it the owner's; it then offers Keep it updated
-  await box.locator('[data-about-edit]').click();
+  // Saved unchanged: no description call
+  await dialog.locator('button.primary').click();await dialog.waitFor({state:'hidden'});
+  assert.deepEqual(calls.map(c=>c.action),['project_save']);
+  // Changed: the owner's, with Keep it updated
+  await card.locator('.name-row [data-proj-edit]').click();await ta.waitFor();
   await ta.fill('  Pilot at the first plant only.  ');
-  await box.locator('.about-form button:not([type])').click();
-  await card.locator('.proj-about [data-about-op="auto"]').first().waitFor();
-  assert.deepEqual(calls[0],{action:'project_about',args:{node_id:'project:7',op:'edit',text:'Pilot at the first plant only.'}});
-  const mine=card.locator('.proj-about');
+  await dialog.locator('button.primary').click();await dialog.waitFor({state:'hidden'});
+  assert.deepEqual(calls.at(-1),{action:'project_about',args:{node_id:'project:7',op:'edit',text:'Pilot at the first plant only.'}});
+  const mine=card.locator('.proj-about');await mine.locator('[data-about-op="auto"]').waitFor();
   assert.equal(await mine.locator('.proj-about-text').textContent(),'Pilot at the first plant only.');
-  assert.equal(await mine.locator('.about-meta').textContent(),'Edited by you · Edit · Keep it updated');
+  assert.equal(await mine.locator('.about-meta').textContent(),'Edited by you · Keep it updated');
   await fits(page,tag+' owner');await shot(page,`project-about-owner-${tag}`);
-  await mine.locator('.about-meta [data-about-op="auto"]').click();
-  await card.locator('.proj-about .about-meta [data-about-op="auto"]').waitFor({state:'detached'});
-  assert.deepEqual(calls[1],{action:'project_about',args:{node_id:'project:7',op:'auto'}});
-  // None: nothing shows; Edit description in the ⋯ menu opens the field
+  // The form says so too, and Keep it updated works there
+  await card.locator('.name-row [data-proj-edit]').click();await ta.waitFor();
+  assert.equal((await dialog.locator('.pj-about-note').textContent()).trim(),'Edited by you · Keep it updated');
+  await shot(page,`project-about-owner-edit-${tag}`);
+  await dialog.locator('[data-pj-about-auto]').click();await dialog.locator('[data-pj-about-auto]').waitFor({state:'detached'});
+  assert.deepEqual(calls.at(-1),{action:'project_about',args:{node_id:'project:7',op:'auto'}});
+  await dialog.locator('[data-pj-close]').first().click();await dialog.waitFor({state:'hidden'});
+  // Keep it updated on the page
+  node={...node,about:{text:'Ours.',by:'owner',at:day(0)}};await page.evaluate(()=>people(graphNode,true));
+  await card.locator('.proj-about [data-about-op="auto"]').click();
+  await card.locator('.proj-about [data-about-op="auto"]').waitFor({state:'detached'});
+  assert.deepEqual(calls.at(-1),{action:'project_about',args:{node_id:'project:7',op:'auto'}});
+  // None: nothing between the name line and the stage box; Edit offers the empty field
   node=fresh(null);await page.evaluate(()=>people(graphNode,true));
-  await card.locator('.proj-about-text').waitFor({state:'detached'});
-  assert.equal(await card.locator('.proj-about').isVisible(),false,'no empty section');
-  await card.locator('.name-row .fact-menu summary').click();
-  await card.locator('[data-about-write]').click();
-  await card.locator('.proj-about textarea[name=text]').waitFor();
-  assert.equal(await card.locator('.proj-about textarea[name=text]').inputValue(),'');
-  await fits(page,tag+' new');await shot(page,`project-about-new-${tag}`);
+  await card.locator('.proj-about').waitFor({state:'detached'});
+  assert.equal(await card.locator('.graph-sub.detail-sub').first().evaluate(e=>e.nextElementSibling?.classList.contains('graph-stage')||e.nextElementSibling?.className),true,'the stage box right under the name line: no gap or placeholder');
+  await fits(page,tag+' new');await shot(page,`project-about-none-${tag}`);
+  await card.locator('.name-row [data-proj-edit]').click();await ta.waitFor();
+  assert.equal(await ta.inputValue(),'');
+  assert.equal(await ta.getAttribute('placeholder'),'What it is and where it stands');
+  await shot(page,`project-about-new-${tag}`);
   assert.deepEqual(errors,[]);await context.close();
  }
  console.log('project about dashboard ok');
