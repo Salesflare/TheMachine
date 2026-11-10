@@ -60,17 +60,27 @@ def first_value(db, marks, since):
                                "SELECT min(updated_at),'result' FROM preparations WHERE status='done' AND updated_at>=?", (since, since)).fetchall():
         if at and ('first_prepared' not in found or at < found['first_prepared'][0]):
             found['first_prepared'] = (at, kind)
-    row = db.execute("SELECT updated_at,json_extract(payload,'$.kind') FROM action_jobs WHERE updated_at>=? AND (status='sent' AND message_id IS NOT NULL "
-                     "AND json_extract(payload,'$.kind') IN (" + ','.join('?' for _ in VERIFIED_KINDS) + ") OR status='done' "
-                     "AND json_extract(payload,'$.kind')='finish' AND json_extract(payload,'$.finish_result.state')='completed') "
-                     "ORDER BY updated_at LIMIT 1", (since, *VERIFIED_KINDS)).fetchall()
-    if row:
-        found['first_verified_action'] = tuple(row[0])
+    # payload keeps only `kind` in the clear when messages are sealed (message_seal.DERIVED_JSON): how a final step
+    # ended (finish_result) is read from the row, the first one that was completed
+    for at, kind, payload in db.execute("SELECT updated_at,json_extract(payload,'$.kind'),payload FROM action_jobs WHERE updated_at>=? AND (status='sent' "
+                                        "AND message_id IS NOT NULL AND json_extract(payload,'$.kind') IN (" + ','.join('?' for _ in VERIFIED_KINDS) + ") "
+                                        "OR status='done' AND json_extract(payload,'$.kind')='finish') ORDER BY updated_at", (since, *VERIFIED_KINDS)):
+        if kind != 'finish' or _finished(payload):
+            found['first_verified_action'] = (at, kind)
+            break
     for name in ('first_prepared', 'first_verified_action'):
         mark = marks.get(name)
         at, kind = mark if mark else found.get(name, (None, None))
         out[name + '_at'], out[name], out[name + '_backfill'] = at, kind, bool(at and not mark)
     return out
+
+
+def _finished(payload):
+    try:
+        result = json.loads(payload).get('finish_result')
+    except (ValueError, TypeError, AttributeError):
+        return False
+    return isinstance(result, dict) and result.get('state') == 'completed'
 
 
 # The live first look (first_look_names): at most this many names, from the signals of its newest batches

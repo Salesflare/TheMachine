@@ -52,7 +52,7 @@ def _names(text):
 # rebuilding it would cost hours on a big mailbox.
 _BY_PART = {
     'messages': _names('''events checkpoints sync_activity sync_daily history_backfill android_inbox
-        android_receipts android_feed_health chats messages state outbox photo_asks email_bounce_events email_bounce_scan
+        android_receipts android_feed_health chats messages state outbox photo_asks email_bounce_events email_bounce_scan email_bounce_cc email_bounce_cc_scan
         email_bounces own_addresses own_address_choices own_address_fetched own_domains slack_members meet_links meet_log
         meet_pins meet_seen meet_sessions meet_prefs meeting_moves talk_lines moved_in'''),
     'todos': _names('''suggestions suggestion_keys card_moves card_uses analyses review_runs review_save_failures first_look_ahead feedback_prompts
