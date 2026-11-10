@@ -24,7 +24,7 @@ Mensen die je kent en die op het Network zitten, worden meteen voorgesteld als j
 
 Mensen die het vindt, staan in je lijst Personen met **Heeft een Machine**. Het kijkt naar de adressen uit je berichten en de adressen die je met **Bewerken** aan iemand toevoegde: meldde iemand zich aan met een ander adres, voeg het dan aan die persoon toe. Op de pagina van iemand die het vond, stuurt **Toevoegen als vriend** hetzelfde verzoek als Verbinden (**Toevoegen als familie** staat in het menu ⋯).
 
-Bij iemand zonder Machine staat **Uitnodigen voor The Machine**: je ziet wat ze krijgen, om te **Kopiëren** of te **Openen in je mail**, en er wordt zelf niets verstuurd.
+Bij iemand zonder Machine staat **Uitnodigen voor The Machine**: de mail die ze krijgen, om aan te passen en te **Versturen** vanuit je eigen mailbox, als to-do op hun pagina. Er gaat niets weg voor je op Versturen drukt. Zonder mailbox die kan versturen: **Kopiëren** of **Openen in je mail**.
 
 Telefoonnummers tellen ook: de nummers uit je WhatsApp-chats met mensen aan wie je schreef of die je ontmoette, en de nummers die je met **Bewerken** toevoegde. Je gekoppelde WhatsApp-nummer en de nummers onder Over jou maken je vindbaar, elk met een eigen schakelaar onder **Vindbaar voor**. Een nummer vindt iemand alleen als die jou ook opzocht, of als jullie vrienden zijn, dus niemand kan nummers proberen om te zien wie een Machine heeft.
 

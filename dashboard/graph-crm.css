@@ -57,7 +57,7 @@
 /*@eager*/
 #board-form,#share-people-form,#contact-share-form{display:flex;flex-direction:column;gap:14px}
 #board-form .snooze-heading,#share-people-form .snooze-heading,#contact-share-form .snooze-heading{margin:0}
-#machine-invite .snooze-heading{margin:0 0 12px}#machine-invite>:is(p,.mi-preview){margin:0 0 14px}#machine-invite .fleet-fine{font-size:var(--fs-xs);color:var(--c-text-3)}
+#machine-invite .snooze-heading{margin:0 0 12px}#machine-invite>:is(p,.mi-preview,.ed-field){margin:0 0 14px}#machine-invite textarea{resize:vertical;min-height:10.5em;line-height:1.45}#machine-invite .fleet-fine{font-size:var(--fs-xs);color:var(--c-text-3)}
 .mi-preview{border:1px solid var(--c-line);border-radius:var(--r-sm);padding:10px 12px;overflow-wrap:anywhere}.mi-preview p{margin:0 0 8px}.mi-preview p:last-child{margin:0}.mi-family form.inline{display:inline}
 #contact-share-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}#contact-share-form select{display:block;width:100%;margin-top:6px}
 /*@lazy*/

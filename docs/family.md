@@ -32,8 +32,9 @@ prefilled with their address, where you see the email before it goes; **Not now*
   admin, or by starting one).
 - Each suggestion and tap is a line in Activity. Turn it off in Settings, Fleet: **Suggest inviting family**.
 - A person's page offers the same invite by hand: **Invite to The Machine** (for someone with no Machine you know of)
-  shows the words to copy or open in your email, and **Invite to your Family** when the same checks pass
-  (`family_invites.person_invite`).
+  shows the email to change and **Send** from your own mailbox (`person_invite_send`: a to-do about them, through the
+  normal send path), or to copy or open in your email without one, and **Invite to your Family** when the same checks
+  pass (`family_invites.person_invite`).
 
 
 Under **Sharing**, the Family has the same rules as a Work Fleet, one per kind for all of them, with exceptions per person

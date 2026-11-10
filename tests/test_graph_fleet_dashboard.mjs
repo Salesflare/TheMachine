@@ -142,6 +142,26 @@ try{
   await page.locator('.person-about').scrollIntoViewIfNeeded();await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-invite-${width}-${scheme}.png`})}
  await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
  await fits('invite');
+ // With a mailbox that can send: the words to change, and Send through the owner's mailbox (person_invite_send), only on Send
+ sky.invite.from='owner@home.example';
+ await page.evaluate(()=>{location.hash='#people'});await page.locator('#people-view article[data-node="email:sky@home.example"] button.node').click();
+ await page.waitForFunction(()=>document.querySelector('.graph-detail h3')?.textContent==='Sky Rivers');
+ await page.locator('[data-machine-invite]').click();await dialog.waitFor();
+ assert.equal(await dialog.locator('.fleet-fine').first().textContent(),'From owner@home.example. Nothing goes out until you press Send.');
+ assert.equal(await dialog.locator('[data-mi-to]').inputValue(),'sky@home.example');
+ assert.equal(await dialog.locator('[data-mi-subject]').inputValue(),'Have a look at The Machine');
+ assert.match(await dialog.locator('[data-mi-body]').inputValue(),/^Hi Sky,\n\nI use The Machine, .*https:\/\/themachine\.computer$/);
+ assert.equal(await dialog.locator('[data-mi-mail]').count(),0);  // it sends itself: no Open in email
+ assert.deepEqual(await dialog.locator('.ed-actions button').allTextContents(),['Copy','Send']);
+ if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1440])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:width<500?844:900});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);
+  await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-invite-send-${width}-${scheme}.png`})}
+ await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
+ assert.equal(calls.length,before);  // opening it sent nothing
+ await dialog.locator('[data-mi-body]').fill('Hi Sky,\n\nYou should try this.');
+ await dialog.locator('[data-mi-send]').click();await page.waitForFunction(()=>!document.querySelector('#machine-invite').open);
+ const send=calls.find(c=>c.action==='person_invite_send');
+ assert.deepEqual({...send.args,approval_id:typeof send.args.approval_id},{node_id:sky.id,to:'sky@home.example',subject:'Have a look at The Machine',
+  body:'Hi Sky,\n\nYou should try this.',approval_id:'string'});
  assert.deepEqual(errors,[]);
  console.log('graph fleet dashboard ok');
 }finally{await browser?.close();server.close()}
