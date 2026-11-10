@@ -80,6 +80,7 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     shows who matched and keeps their birthdays only on Save, through `person_birthday.offer` (the owner's own stays).
     Add as personal contacts adds the friends nobody in the Graph has as Personal people with their birthday, in one
     transaction and one build, with Undo (`birthdays_facebook.add`, `remove`).
+    An older to-do with no friends kept gets them once at start, from the same read (`birthdays_facebook_fill_old`).
   - `machine/export/` (with `moving.py`): `inventory.py`, the one list of what an install keeps by part, and `walk()`,
     one iterator over it; `home.py`, OpenClaw's conversations and what else an export takes from outside the data
     folder; `hold.py`, what an import holds so nothing goes out by itself ([moving.md](moving.md)).

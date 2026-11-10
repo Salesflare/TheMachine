@@ -2421,7 +2421,6 @@
  "Marked not needed {}": "Segnata come non necessaria · {}",
  "Marked not right": "Segnato come non giusto",
  "Marked won.": "Segnato come vinto.",
- "Matched to people in your Graph: {}": "Abbinati a persone del tuo Graph: {}",
  "Matches": "Corrispondenze",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Le corrispondenze ricevono ciò che dice il file; le celle vuote non cambiano nulla. Puoi annullare l’ultima importazione.",
  "Matches the Omarchy theme, also when it changes.": "Segue il tema Omarchy, anche quando cambia.",
@@ -6755,6 +6754,10 @@
  "{} approved “{}”": "{} ha approvato “{}”",
  "{} approved “{}”: “{}”": "{} ha approvato “{}”: “{}”",
  "{} are all in touch with {}": "{} sono tutti in contatto con {}",
+ "{} are already in your Graph.": {
+  "one": "{} è già nel tuo Graph.",
+  "other": "{} sono già nel tuo Graph."
+ },
  "{} are both in touch with {}": "{} sono entrambi in contatto con {}",
  "{} asked for your review": "{} ti ha chiesto una revisione",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} ha chiesto tramite la tua Fleet una presentazione a qualcuno di {}. Lì sei tu a conoscere meglio {}. La bozza chiede prima a questa persona se vuole la presentazione; non parte nulla finché non la invii.",
@@ -7105,6 +7108,10 @@
  "{} notifications": {
   "one": "{} notifica",
   "other": "{} notifiche"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} di loro ha già un compleanno.",
+  "other": "{} di loro hanno già un compleanno."
  },
  "{} of {}": "{} su {}",
  "{} of {} calendars": "{} di {} calendari",

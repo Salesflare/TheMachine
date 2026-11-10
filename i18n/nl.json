@@ -2421,7 +2421,6 @@
  "Marked not needed {}": "Gemarkeerd als niet nodig · {}",
  "Marked not right": "Gemarkeerd als niet juist",
  "Marked won.": "Gemarkeerd als gewonnen.",
- "Matched to people in your Graph: {}": "Gekoppeld aan mensen in je Graph: {}",
  "Matches": "Overeenkomsten",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Overeenkomsten krijgen wat in het bestand staat; lege cellen veranderen niets. Je kunt de laatste import ongedaan maken.",
  "Matches the Omarchy theme, also when it changes.": "Volgt het Omarchy-thema, ook als het verandert.",
@@ -6755,6 +6754,10 @@
  "{} approved “{}”": "{} keurde “{}” goed",
  "{} approved “{}”: “{}”": "{} keurde “{}” goed: “{}”",
  "{} are all in touch with {}": "{} hebben allemaal contact met {}",
+ "{} are already in your Graph.": {
+  "one": "{} staat al in je Graph.",
+  "other": "{} staan al in je Graph."
+ },
  "{} are both in touch with {}": "{} hebben allebei contact met {}",
  "{} asked for your review": "{} vroeg je om een review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} vroeg via je Fleet om een intro bij iemand van {}. Jij kent {} daar het best. Het concept vraagt eerst of die persoon de intro wil; er gaat niets weg tot jij het verstuurt.",
@@ -7105,6 +7108,10 @@
  "{} notifications": {
   "one": "{} melding",
   "other": "{} meldingen"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} van hen heeft al een verjaardag.",
+  "other": "{} van hen hebben al een verjaardag."
  },
  "{} of {}": "{} van {}",
  "{} of {} calendars": "{} van {} agenda's",

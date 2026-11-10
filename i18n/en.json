@@ -2421,7 +2421,6 @@
  "Marked not needed {}": "Marked not needed {}",
  "Marked not right": "Marked not right",
  "Marked won.": "Marked won.",
- "Matched to people in your Graph: {}": "Matched to people in your Graph: {}",
  "Matches": "Matches",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Matches get what the file says; empty cells change nothing. You can undo the last import.",
  "Matches the Omarchy theme, also when it changes.": "Matches the Omarchy theme, also when it changes.",
@@ -6755,6 +6754,10 @@
  "{} approved “{}”": "{} approved “{}”",
  "{} approved “{}”: “{}”": "{} approved “{}”: “{}”",
  "{} are all in touch with {}": "{} are all in touch with {}",
+ "{} are already in your Graph.": {
+  "one": "{} is already in your Graph.",
+  "other": "{} are already in your Graph."
+ },
  "{} are both in touch with {}": "{} are both in touch with {}",
  "{} asked for your review": "{} asked for your review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.",
@@ -7105,6 +7108,10 @@
  "{} notifications": {
   "one": "{} notification",
   "other": "{} notifications"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} of them already has a birthday.",
+  "other": "{} of them already have a birthday."
  },
  "{} of {}": "{} of {}",
  "{} of {} calendars": "{} of {} calendars",

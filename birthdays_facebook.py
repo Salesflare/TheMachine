@@ -373,6 +373,29 @@ def put(db, suggestion_id, state, data, stamp):
                'state=excluded.state,data=excluded.data,updated_at=excluded.updated_at', (suggestion_id, state, json.dumps(data or {}), stamp))
 
 
+def without_others(db):
+    """The to-dos read before the friends nobody in the Graph were kept: a preview or Save with no others yet."""
+    try:
+        rows = db.execute("SELECT suggestion_id,data FROM facebook_birthdays WHERE state IN ('preview','saved')").fetchall()
+    except Exception:  # noqa: BLE001 - a database before this table
+        return []
+    return [row['suggestion_id'] for row in rows if 'others' not in json.loads(row['data'] or '{}')]
+
+
+def fill_others(db, suggestion_id, items, today):
+    """An older to-do gains the friends nobody in the Graph has, from a fresh read's items (none when the read failed,
+    so it isn't tried again). Its state, matched people, Save and time stay as they are. Returns how many, or None
+    when it has them by now (Import again, or another fill)."""
+    got = get(db, suggestion_id)
+    if not got or got[0] not in ('preview', 'saved') or 'others' in got[1]:
+        return None
+    state, data, at = got
+    data['others'] = match(db, found(items or [], today))['others']
+    data.setdefault('added', [])
+    put(db, suggestion_id, state, data, at)
+    return len(data['others'])
+
+
 def get(db, suggestion_id):
     """(state, data, updated_at) of a to-do, or None for any other to-do."""
     try:
