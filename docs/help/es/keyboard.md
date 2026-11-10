@@ -26,7 +26,7 @@ Si varias personas tienen ese nombre, dice a cuál se refiere. Los demás mensaj
 
 Pulsa `?` para ver **Atajos de teclado**, la lista completa para tu ordenador.
 
-- Ir a una página: `G` y luego `T` Tareas, `C` Calendario, `P` Personas, `O` Organizaciones, `J` Proyectos, `W` Quién es quién (cuando aparece), `F` Fleet, `L` Aprendizaje, `N` Conexiones, `,` Ajustes. `G` y luego `E` abre los resultados de la búsqueda de mensajes. Los antiguos `G` y luego `S` y `G` y luego `B` siguen funcionando.
+- Ir a una página: `G` y luego `T` Tareas, `C` Calendario, `P` Personas, `O` Organizaciones, `J` Proyectos, `F` Fleet, `L` Aprendizaje, `N` Conexiones, `,` Ajustes. `G` y luego `E` abre los resultados de la búsqueda de mensajes. Los antiguos `G` y luego `S` y `G` y luego `B` siguen funcionando.
 - `N` añade una tarea nueva. `T` inicia Hablar, o lo termina mientras está en curso. `J` y `K` (o `↓` y `↑`) recorren una lista, Enter abre.
 - En una tarea: `E` le cambia el nombre, `S` la pospone, `D` la marca como hecha, `R` escribe en su chat.
 - En el Calendario: `T` va a hoy, `J` y `K` (o `→` y `←`) a la semana o el mes siguiente o anterior. `A`, `W` y `M` cambian a Agenda, Semana y Mes.

@@ -10,7 +10,7 @@ order: 4
 
 - **To-do's**: je to-do's en beloftes. Zie [To-do's](cards.md).
 - **Agenda**: de komende week met je afspraken, to-do's die moeten gebeuren en beloftes. Zie [Agenda](calendar.md).
-- **Graph**: de personen, organisaties en projecten in je berichten, en **Wie is wie** als er rollen op je bevestiging wachten. Zie [Graph](graph.md).
+- **Graph**: de personen, organisaties en projecten in je berichten. Zie [Graph](graph.md).
 - **Fleet**: je team, familie en vrienden op The Machine Network, zodra je er een hebt. Zie [Fleet](fleet.md).
 - **Leren**: hoe de to-do's het doen, en wat hij geleerd heeft.
 - **Koppelingen**: je bronnen en hoe het ermee gaat. Zie [Koppelingen](connections.md).

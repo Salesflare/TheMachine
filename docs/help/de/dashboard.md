@@ -10,7 +10,7 @@ order: 4
 
 - **Aufgaben**: deine Aufgaben und Versprechen. Siehe [Aufgaben](cards.md).
 - **Kalender**: die kommende Woche mit deinen Meetings, fälligen Aufgaben und Versprechen. Siehe [Kalender](calendar.md).
-- **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten, und **Wer ist wer**, wenn Rollen auf dein Wort warten. Siehe [Graph](graph.md).
+- **Graph**: die Personen, Organisationen und Projekte in deinen Nachrichten. Siehe [Graph](graph.md).
 - **Fleet**: dein Team, deine Familie und deine Freunde in The Machine Network, sobald du eine hast. Siehe [Fleet](fleet.md).
 - **Lernen**: wie es den Aufgaben geht und was sie gelernt hat.
 - **Verbindungen**: deine Quellen und wie es ihnen geht. Siehe [Verbindungen](connections.md).

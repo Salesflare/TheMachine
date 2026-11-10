@@ -504,7 +504,7 @@ class StoreCore:
             routines.ensure(db)  # routines (routines.py): new tables only
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
-            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py: graph.waiting,
+            # Change counters for what a status poll keeps between requests, after the tables (machine/stamps.py:
             # graph.slack_names, the to-dos' quality: profile.QUALITY_TABLES, and the Projects board's organizations: graph_boards)
             stamps.watch(db, ('graph_nodes', 'person_roles', 'identity_names', 'slack_members', *QUALITY_TABLES, *graph_boards.ORG_TABLES,
                               *CARD_TABLES))  # and the to-dos' views (views.CARDS)

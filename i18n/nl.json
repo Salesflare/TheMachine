@@ -957,11 +957,8 @@
  "Confirm {}’s Machine?": "De Machine van {} bevestigen?",
  "Confirmed Machines in": "Bevestigde Machines in",
  "Confirmed Machines in {}. The Network can't read it.": "Bevestigde Machines in {}. Het Network kan het niet lezen.",
- "Confirmed {} roles.": "{} rollen bevestigd.",
- "Confirmed {}, then:": "{} bevestigd, daarna:",
  "Confirmed. Their Machine is starting.": "Bevestigd. Hun Machine start op.",
  "Confirmed:": "Bevestigd:",
- "Confirmed: {}.": "Bevestigd: {}.",
  "Confirm…": "Bevestigen…",
  "Connect": "Verbinden",
  "Connect GBrain": "GBrain koppelen",
@@ -2354,7 +2351,6 @@
  "Manage on your account": "Beheren op je account",
  "Mar": "mrt",
  "Mark all as spam": "Alles als spam markeren",
- "Mark all {} roles as right?": "Alle {} rollen als juist markeren?",
  "Mark done": "Markeer als gedaan",
  "Mark done (D)": "Markeer als gedaan (D)",
  "Mark done only an open item": "Markeer alleen een open item als gedaan",
@@ -3962,12 +3958,10 @@
  "Reviews": "Reviews",
  "Rewrite": "Herschrijven",
  "Rewriting…": "Bezig met herschrijven…",
- "Right: {}": "Juiste persoon: {}",
  "Role": "Rol",
  "Role for {}": "Rol voor {}",
  "Role: {}": "Rol: {}",
  "Role: {}, corrected from {}": "Rol: {}, verbeterd van {}",
- "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Rollen die je Machine heeft opgepikt. Bevestig of bewerk; hij leert van je bewerkingen.",
  "Routine added": "Routine toegevoegd",
  "Routine stopped": "Routine gestopt",
  "Routines": "Routines",
@@ -5902,9 +5896,6 @@
  "Whose": "Van wie",
  "Whose is it? Change it any time.": "Van wie is het? Je kunt het altijd wijzigen.",
  "Whose is {}?": "Van wie is {}?",
- "Who’s who": "Wie is wie",
- "Who’s who (G then W)": "Wie is wie (G dan W)",
- "Who’s who · {}": "Wie is wie · {}",
  "Why": "Waarom",
  "Why isn’t this needed?": "Waarom is dit niet nodig?",
  "Why isn’t this needed? Reply here, or send “cancel” to keep it.": "Waarom is dit niet nodig? Antwoord hier, of stuur “cancel” om het te houden.",
@@ -7126,12 +7117,6 @@
  "{} requires your {}.": "{} vereist je {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} vereist je {}. Ze zijn van het bedrijf. Threads die je privé houdt, blijven privé.",
  "{} result": "Resultaat van {}",
- "{} role to confirm": "{} rol om te bevestigen",
- "{} roles to confirm": "{} rollen om te bevestigen",
- "{} roles to confirm in the Graph tab's Who's who": {
-  "one": "{} rol om te bevestigen in Wie is wie op het Graph-tabblad",
-  "other": "{} rollen om te bevestigen in Wie is wie op het Graph-tabblad"
- },
  "{} rows": {
   "one": "{} rij",
   "other": "{} rijen"
@@ -7412,7 +7397,5 @@
  "• +{} more": "• +{} meer",
  "…and {} more in the Fleet tab.": "…en nog {} in het Fleet-tabblad.",
  "€{} a month": "€{} per maand",
- "▶ Play a mini game": "▶ Speel een minigame",
- "✓ All {} are right": "✓ Alle {} kloppen",
- "✓ Right": "✓ Klopt"
+ "▶ Play a mini game": "▶ Speel een minigame"
 }

@@ -2047,8 +2047,6 @@ def overview(db, limit=12):
             'new': rows(f"SELECT * FROM graph_nodes WHERE kind='person' AND {NEW} ORDER BY strength DESC LIMIT ?",
                         week_ago, 8),
             'orgs': rows("SELECT * FROM graph_nodes WHERE kind='org' ORDER BY strength DESC LIMIT ?", 8),
-            'whos_who': unconfirmed(db),
-            'waiting': waiting(db),
             'warmup': hidden_list(db),
             'same_person': same_people(db),
             'hidden_senders': mail_senders.hidden_count(db),
@@ -2167,7 +2165,7 @@ def list_counts(db):
     return found
 
 
-# What the Graph tab counts and its Who's who, kept until the graph's people or their roles change (machine/stamps.py):
+# What the Graph tab counts, kept until the graph's people change (machine/stamps.py):
 # the tab asks on every open and every poll while it is open, and each was a pass over every node
 KEPT = stamps.Kept(8)
 
@@ -3030,27 +3028,6 @@ def corrections_lines(db, limit=8):
     return '\n'.join(f"- {c['name']}: a review said \"{c['old_role']}\", the owner " + (f"made it \"{c['new_role']}\"" if c['new_role'] else 'removed it')
                      for c in corrections(db, limit))
 
-
-def unconfirmed(db, limit=30):
-    """Roles a review set and the owner hasn't confirmed yet, closest first, each with the line it came from (kept)."""
-    return [dict(r) for r in KEPT.get(('unconfirmed', limit), stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _unconfirmed(db, limit))]
-
-
-def _unconfirmed(db, limit):
-    rows = db.execute("SELECT n.id identifier,r.role,r.quote,r.event_id,r.created_at,n.kind,n.name,n.strength FROM person_roles r "
-                      "JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) WHERE r.source!='owner' ORDER BY n.kind='org',n.strength DESC LIMIT ?", (limit,)).fetchall()
-    return [{'id': r['identifier'], 'kind': r['kind'], 'name': r['name'], 'role': r['role'], 'quote': r['quote'], 'event_id': r['event_id'],
-             'set_at': r['created_at'][:10], 'closeness': closeness(r['strength']) if r['kind'] == 'person' else None} for r in rows]
-
-
-def waiting(db):
-    """How many of the review's roles wait for the owner: the Who's who count, for the Graph tab's badge (kept)."""
-    return KEPT.get('waiting', stamps.stamp(db, ('person_roles', 'graph_nodes')), lambda: _waiting(db))
-
-
-def _waiting(db):
-    return db.execute("SELECT count(*) FROM person_roles r JOIN graph_nodes n ON r.identifier=coalesce(json_extract(n.info,'$.role_id'),n.id) "
-                      "WHERE r.source!='owner'").fetchone()[0]
 
 
 def stale_roles(db, now, limit=3, days=RECHECK_DAYS):

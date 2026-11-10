@@ -957,11 +957,8 @@
  "Confirm {}’s Machine?": "Confirmer la Machine de {} ?",
  "Confirmed Machines in": "Machines confirmées dans",
  "Confirmed Machines in {}. The Network can't read it.": "Machines confirmées dans {}. Le Network ne peut pas le lire.",
- "Confirmed {} roles.": "{} rôles confirmés.",
- "Confirmed {}, then:": "{} confirmé, puis :",
  "Confirmed. Their Machine is starting.": "Confirmé. Sa Machine démarre.",
  "Confirmed:": "Confirmé :",
- "Confirmed: {}.": "Confirmé : {}.",
  "Confirm…": "Confirmer…",
  "Connect": "Se connecter",
  "Connect GBrain": "Connecter GBrain",
@@ -2354,7 +2351,6 @@
  "Manage on your account": "Gérer sur votre compte",
  "Mar": "mars",
  "Mark all as spam": "Tout signaler comme spam",
- "Mark all {} roles as right?": "Marquer les {} rôles comme corrects ?",
  "Mark done": "Marquer comme fait",
  "Mark done (D)": "Marquer comme fait (D)",
  "Mark done only an open item": "Seul un élément ouvert peut être marqué fait",
@@ -3962,12 +3958,10 @@
  "Reviews": "Revues",
  "Rewrite": "Réécrire",
  "Rewriting…": "Réécriture…",
- "Right: {}": "Bonne personne : {}",
  "Role": "Rôle",
  "Role for {}": "Rôle de {}",
  "Role: {}": "Rôle : {}",
  "Role: {}, corrected from {}": "Rôle : {}, corrigé depuis {}",
- "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Les rôles que votre Machine a repérés. Confirmez ou modifiez ; elle apprend de vos modifications.",
  "Routine added": "Routine ajoutée",
  "Routine stopped": "Routine arrêtée",
  "Routines": "Routines",
@@ -5902,9 +5896,6 @@
  "Whose": "À qui",
  "Whose is it? Change it any time.": "À qui est-elle ? Modifiable à tout moment.",
  "Whose is {}?": "À qui est {} ?",
- "Who’s who": "Qui est qui",
- "Who’s who (G then W)": "Qui est qui (G puis W)",
- "Who’s who · {}": "Qui est qui · {}",
  "Why": "Pourquoi",
  "Why isn’t this needed?": "Pourquoi ce n’est pas nécessaire ?",
  "Why isn’t this needed? Reply here, or send “cancel” to keep it.": "Pourquoi n’est-ce pas nécessaire ? Répondez ici, ou envoyez « cancel » pour la garder.",
@@ -7126,12 +7117,6 @@
  "{} requires your {}.": "{} exige votre {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} exige votre {}. Ils appartiennent à l’entreprise. Les fils que vous gardez privés restent privés.",
  "{} result": "Résultat de {}",
- "{} role to confirm": "{} rôle à confirmer",
- "{} roles to confirm": "{} rôles à confirmer",
- "{} roles to confirm in the Graph tab's Who's who": {
-  "one": "{} rôle à confirmer dans Qui est qui, onglet Graph",
-  "other": "{} rôles à confirmer dans Qui est qui, onglet Graph"
- },
  "{} rows": {
   "one": "{} ligne",
   "other": "{} lignes"
@@ -7412,7 +7397,5 @@
  "• +{} more": "• +{} de plus",
  "…and {} more in the Fleet tab.": "…et {} de plus dans l’onglet Fleet.",
  "€{} a month": "{} € par mois",
- "▶ Play a mini game": "▶ Jouer à un mini-jeu",
- "✓ All {} are right": "✓ Les {} sont corrects",
- "✓ Right": "✓ Correct"
+ "▶ Play a mini game": "▶ Jouer à un mini-jeu"
 }

@@ -337,10 +337,10 @@ Roles show on people in the Graph tab, in preparation context, `graph` results a
 
 **Kept honest:**
 
-- **Evidence and Who's who.** A review gives the message it read a role in (`event_id`) and a short `quote` copied from
-  it; the service refuses a quote that isn't there. The Graph tab's **Who's who** lists the review roles you haven't
-  confirmed, closest first: **✓ Right** makes it your word, Edit changes it, **✓ All N are right** confirms them all
-  after one check. The weekly recap counts the ones waiting.
+- **Evidence.** A review gives the message it read a role in (`event_id`) and a short `quote` copied from it; the
+  service refuses a quote that isn't there. A role applies as read: it shows on their page with that line, and in
+  **Recent changes**. Nothing waits for a confirm; **Edit** on the page, or **⋯** on the line in Recent changes, fixes
+  a wrong one and makes it your word. A review's role is read again later (above); yours never is.
 - **Learning from corrections.** When you replace a review's role, `role_corrections` keeps the old and new one; the
   roles run and the review prompt get the latest eight as examples.
 - **Just in time.** People on open to-dos with no role are asked first in reviews. `suggest` answers with `no_role_yet`

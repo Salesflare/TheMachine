@@ -633,8 +633,8 @@ class Graph(unittest.TestCase):
         found = self.app.graph_action({'node_id': 'email:pat@client.com'})
         self.assertEqual((found['role'], found['role_by'], found['role_event_id']), ('CFO at Client Ltd', 'review', pat_id))
         self.assertEqual(found['role_quote'], '"the CFO at Client Ltd…"')
-        # Who's who: a review's roles wait for the owner's ✓, with the line they came from.
-        self.assertEqual([(w['name'], w['role'], w['event_id']) for w in self.app.graph_action({})['whos_who']], [('Pat Doe', 'CFO at Client Ltd', pat_id)])
+        # A review's role applies as read: no Who's who list waits for the owner's ✓
+        self.assertNotIn('whos_who', self.app.graph_action({}))
         # ✓ Right answers without a whole build (some 13 s on a big Graph): saved and on their page at once, the rest of
         # the Graph follows in the graph worker
         self.app.graph_worker_on, self.app.graph_dirty = True, threading.Event()
@@ -644,7 +644,6 @@ class Graph(unittest.TestCase):
         self.assertTrue(self.app.graph_dirty.is_set())
         found = self.app.graph_action({'node_id': 'email:pat@client.com'})
         self.assertEqual((found['role_by'], found['role_event_id']), ('owner', pat_id))  # confirmed: the owner's word, evidence kept
-        self.assertEqual(self.app.graph_action({})['whos_who'], [])
         # Edit with only a new role saves the same way
         self.app.graph_dirty.clear()
         self.app.action('graph_person_edit', {'node_id': 'email:pat@client.com', 'fields': {'role': 'finance lead'}}, owner_dashboard=True)
@@ -811,8 +810,8 @@ class Graph(unittest.TestCase):
         self.assertNotIn('thread', glance('gmail.message', 'Hi', thread_id='t1'))
 
     def test_the_graph_tabs_counts_are_one_pass_kept_until_the_graph_changes(self):
-        """The Graph tab counts each list and its Who's who on every open and every poll while it is open: one pass over
-        the graph (one per list was some 130 ms on a big graph), kept until a node or a role changes."""
+        """The Graph tab counts each list on every open and every poll while it is open: one pass over the graph (one per
+        list was some 130 ms on a big graph), kept until a node changes."""
         self.add(mail(3, 'Kim Lee (Initech) <kim@initech.example>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kim@initech.example', ('SENT',)))
         self.build()
         graph.KEPT.clear()
@@ -821,21 +820,21 @@ class Graph(unittest.TestCase):
             seen = []
             with self.store.connect() as db:
                 db.set_trace_callback(seen.append)
-                found = graph.list_counts(db), graph.counts(db), graph.waiting(db), graph.unconfirmed(db)
+                found = graph.list_counts(db), graph.counts(db)
                 db.set_trace_callback(None)
                 each = {n: db.execute(f'SELECT COUNT(*) FROM graph_nodes WHERE {w}', args).fetchone()[0]
                         for n, (w, args) in ((n, graph._paged_where(db, n)) for n in graph.PAGED)}
             return found, each, [s for s in seen if 'graph_nodes' in s and 'data_stamps' not in s]
-        (lists, totals, waiting, roles), each, read = counted()
-        self.assertEqual(len(read), 3)  # the lists' counts in one pass, then the Who's who count and list
+        (lists, totals), each, read = counted()
+        self.assertEqual(len(read), 1)  # the lists' counts in one pass
         self.assertEqual({k: v for k, v in lists.items() if k != 'warmup'}, each)
         self.assertEqual(totals, {'person': each['people'], 'org': each['orgs'], 'project': each['projects']})
         self.assertGreater(each['people'], 0)
         self.assertEqual(counted()[2], [])  # the next poll: kept
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:new@example.com','person','New',1,0,'{}')")
-        (lists, totals, waiting, roles), each, read = counted()
-        self.assertEqual((len(read), lists['people'], totals['person']), (3, each['people'], each['people']))
+        (lists, totals), each, read = counted()
+        self.assertEqual((len(read), lists['people'], totals['person']), (1, each['people'], each['people']))
 
 
 def linkedin(days_ago, conv, name, text, mine=False, headline=None):

@@ -957,11 +957,8 @@
  "Confirm {}’s Machine?": "Die Machine von {} bestätigen?",
  "Confirmed Machines in": "Bestätigte Machines in",
  "Confirmed Machines in {}. The Network can't read it.": "Bestätigte Machines in {}. Das Network kann es nicht lesen.",
- "Confirmed {} roles.": "{} Rollen bestätigt.",
- "Confirmed {}, then:": "{} bestätigt, dann:",
  "Confirmed. Their Machine is starting.": "Bestätigt. Ihre Machine startet.",
  "Confirmed:": "Bestätigt:",
- "Confirmed: {}.": "Bestätigt: {}.",
  "Confirm…": "Bestätigen…",
  "Connect": "Verbinden",
  "Connect GBrain": "GBrain verbinden",
@@ -2354,7 +2351,6 @@
  "Manage on your account": "In deinem Konto verwalten",
  "Mar": "Mär",
  "Mark all as spam": "Alle als Spam markieren",
- "Mark all {} roles as right?": "Alle {} Rollen als richtig markieren?",
  "Mark done": "Als erledigt markieren",
  "Mark done (D)": "Als erledigt markieren (D)",
  "Mark done only an open item": "Als erledigt markieren geht nur bei einem offenen Eintrag",
@@ -3962,12 +3958,10 @@
  "Reviews": "Prüfungen",
  "Rewrite": "Umschreiben",
  "Rewriting…": "Wird umgeschrieben…",
- "Right: {}": "Richtige Person: {}",
  "Role": "Rolle",
  "Role for {}": "Rolle für {}",
  "Role: {}": "Rolle: {}",
  "Role: {}, corrected from {}": "Rolle: {}, korrigiert von {}",
- "Roles your Machine picked up. Confirm or edit; it learns from your edits.": "Rollen, die deine Machine erkannt hat. Bestätige oder bearbeite sie; sie lernt aus deinen Änderungen.",
  "Routine added": "Routine hinzugefügt",
  "Routine stopped": "Routine gestoppt",
  "Routines": "Routinen",
@@ -5902,9 +5896,6 @@
  "Whose": "Wessen",
  "Whose is it? Change it any time.": "Wem gehört sie? Du kannst es jederzeit ändern.",
  "Whose is {}?": "Wem gehört {}?",
- "Who’s who": "Wer ist wer",
- "Who’s who (G then W)": "Wer ist wer (G dann W)",
- "Who’s who · {}": "Wer ist wer · {}",
  "Why": "Warum",
  "Why isn’t this needed?": "Warum ist das nicht nötig?",
  "Why isn’t this needed? Reply here, or send “cancel” to keep it.": "Warum ist das nicht nötig? Antworte hier oder sende „cancel“, um es zu behalten.",
@@ -7126,12 +7117,6 @@
  "{} requires your {}.": "{} verlangt dein {}.",
  "{} requires your {}. They belong to the company. Threads you keep private stay private.": "{} verlangt dein {}. Es gehört der Firma. Threads, die du privat hältst, bleiben privat.",
  "{} result": "Ergebnis von {}",
- "{} role to confirm": "{} Rolle zu bestätigen",
- "{} roles to confirm": "{} Rollen zu bestätigen",
- "{} roles to confirm in the Graph tab's Who's who": {
-  "one": "{} Rolle zum Bestätigen unter Wer ist wer im Graph-Tab",
-  "other": "{} Rollen zum Bestätigen unter Wer ist wer im Graph-Tab"
- },
  "{} rows": {
   "one": "{} Zeile",
   "other": "{} Zeilen"
@@ -7412,7 +7397,5 @@
  "• +{} more": "• +{} weitere",
  "…and {} more in the Fleet tab.": "…und {} weitere im Fleet-Tab.",
  "€{} a month": "{} € pro Monat",
- "▶ Play a mini game": "▶ Ein Minispiel spielen",
- "✓ All {} are right": "✓ Alle {} stimmen",
- "✓ Right": "✓ Stimmt"
+ "▶ Play a mini game": "▶ Ein Minispiel spielen"
 }

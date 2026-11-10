@@ -637,7 +637,7 @@ def make_handler(app):
                     with app.store.connect() as db:
                         found = app.fleet.team_overview(db, mine)
                         found['held'] = app.fleet.held_back(db)
-                    found.update(whos_who=mine.get('whos_who'), waiting=mine.get('waiting'), warmup=[])
+                    found.update(warmup=[])
                     self.output(200, found)
                 elif view == 'projects':  # open projects to put a to-do on (the project picker on a to-do)
                     with app.store.connect() as db:

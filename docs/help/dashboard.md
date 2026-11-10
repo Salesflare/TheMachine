@@ -10,7 +10,7 @@ order: 4
 
 - **To-dos**: your to-dos and promises. See [To-dos](cards.md).
 - **Calendar**: the week ahead with your meetings, due to-dos and promises. See [Calendar](calendar.md).
-- **Graph**: the people, organizations and projects in your messages, and **Who's who** when roles wait for your word. See [Graph](graph.md).
+- **Graph**: the people, organizations and projects in your messages. See [Graph](graph.md).
 - **Fleet**: your team, family and friends on The Machine Network, once you have one. See [Fleet](fleet.md).
 - **Learning**: how the to-dos are doing, and what it learned.
 - **Connections**: your sources and how they're doing. See [Connections](connections.md).

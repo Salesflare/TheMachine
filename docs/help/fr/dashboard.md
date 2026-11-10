@@ -10,7 +10,7 @@ order: 4
 
 - **Tâches** : vos tâches et vos promesses. Voir [Tâches](cards.md).
 - **Agenda** : la semaine à venir avec vos réunions, vos tâches à échéance et vos promesses. Voir [Agenda](calendar.md).
-- **Graph** : les personnes, organisations et projets de vos messages, et **Qui est qui** quand des rôles attendent votre avis. Voir [Graph](graph.md).
+- **Graph** : les personnes, organisations et projets de vos messages. Voir [Graph](graph.md).
 - **Fleet** : votre équipe, votre famille et vos amis sur The Machine Network, une fois que vous en avez une. Voir [Fleet](fleet.md).
 - **Apprentissage** : comment se passent les tâches, et ce qu’elle a appris.
 - **Connexions** : vos sources et leur état. Voir [Connexions](connections.md).

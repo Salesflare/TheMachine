@@ -10,7 +10,7 @@ order: 4
 
 - **Tareas**: tus tareas y promesas. Consulta [Tareas](cards.md).
 - **Calendario**: la semana que viene con tus reuniones, las tareas que vencen y las promesas. Consulta [Calendario](calendar.md).
-- **Graph**: las personas, organizaciones y proyectos de tus mensajes, y **Quién es quién** cuando hay roles esperando tu confirmación. Consulta [Graph](graph.md).
+- **Graph**: las personas, organizaciones y proyectos de tus mensajes. Consulta [Graph](graph.md).
 - **Fleet**: tu equipo, tu familia y tus amigos en The Machine Network, cuando tengas uno. Consulta [Fleet](fleet.md).
 - **Aprendizaje**: cómo van las tareas y qué ha aprendido.
 - **Conexiones**: tus fuentes y cómo van. Consulta [Conexiones](connections.md).

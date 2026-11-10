@@ -99,8 +99,8 @@ class GraphFixes(unittest.TestCase):
         with self.store.connect() as db:tg.graph.merge(db,'wa:32470000001','email:ann@client.com',True,tg.NOW.isoformat(),'owner')  # a name alone is a question (graph_joins.py): the owner says yes
         self.build()
         with self.store.connect() as db:
-            detail=tg.graph.detail(db,'email:ann@client.com');who=tg.graph.unconfirmed(db)
-        self.assertEqual(detail['role_event_id'],eid);self.assertEqual(detail['role_quote'],'Hi');self.assertEqual(who[0]['id'],'email:ann@client.com')
+            detail=tg.graph.detail(db,'email:ann@client.com')
+        self.assertEqual(detail['role_event_id'],eid);self.assertEqual(detail['role_quote'],'Hi');self.assertEqual((detail['role'],detail['role_by']),('friend','review'))
     def test_graph_build_does_not_publish_mixed_snapshot(self):
         import threading
         self.add(tg.mail(1,'Ann <ann@client.com>','sam@acme.com'));self.build()

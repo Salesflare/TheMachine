@@ -150,7 +150,7 @@ Links open a tab: `#settings`, `#settings/skills` or `#settings=skills` (also `a
 
 Graph and Connections have sub-tabs, like Fleet:
 
-- **Graph:** People, Projects, Organizations and Who's who (roles to confirm, counted on the Graph tab too).
+- **Graph:** People, Projects and Organizations.
 - **Connections:** your sources by kind (Mail and calendar, Chat, Other sources with Android), **+ Add**, saved **Sign-ins** and **Reviews**. A sub-tab with a source that needs you shows how many and opens first.
 
 Links open a tab or sub-tab: `#events`, `#graph`, `#graph=roles` (`people`, `projects`, `orgs`), `#connections`, `#connections=chat` (`mail`, `other`, `add`, `signins`, `reviews`; the old `phone` opens Other sources). The older `#people` and `#health` still work.
@@ -352,10 +352,10 @@ Everything on the dashboard can be reached from the keyboard. Keys never fire wh
 | Key | Page | Key | Page |
 |---|---|---|---|
 | **T** | To-dos | **J** | Projects |
-| **C** | Calendar | **W** | Who's who |
-| **P** | People | **F** | Fleet |
-| **O** | Organizations | **L** | Learning |
-| **N** | Connections | **,** | Settings |
+| **C** | Calendar | **F** | Fleet |
+| **P** | People | **L** | Learning |
+| **O** | Organizations | **N** | Connections |
+| **,** | Settings | | |
 
 **E** opens the message search results, and the old **S** and **B** still work.
 
