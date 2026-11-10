@@ -1,6 +1,7 @@
 """Explicit, revision-bound next actions. No model or arbitrary command execution."""
 import abilities
 import base64
+import bug_gate
 import calendar_writes
 import github_route
 import doc_writes
@@ -2068,8 +2069,8 @@ def git(path, *args, timeout=60):
 
 
 def merge_action(value, config):
-    if set(value) - {'kind', 'label', 'clone', 'summary'}:
-        raise ValueError('A merge needs only clone (the fixed copy) and summary (what the fix changes)')
+    if set(value) - {'kind', 'label', 'clone', 'summary', 'bug'}:
+        raise ValueError('A merge needs only clone (the fixed copy), summary (what the fix changes) and bug (why it is a bug)')
     if value.get('label') and not value['label'].startswith('Merge'):
         raise ValueError('Merge button labels start with Merge, such as Merge fix')
     summary = value.get('summary')
@@ -2094,7 +2095,7 @@ def merge_action(value, config):
         raise ValueError('git is not available to check the fix') from None
     if not 1 <= commits <= 20 or not files:
         raise ValueError('Commit the fix in the clone: there is nothing to merge yet')
-    result = {'kind': 'merge', 'label': value.get('label') or 'Merge fix', 'clone': str(clone), 'summary': ' '.join(summary.split()),
+    result = {'kind': 'merge', 'label': value.get('label') or 'Merge fix', 'clone': str(clone), 'summary': ' '.join(summary.split()), 'bug': bug_gate.evidence(value, clone, base, app),
               'base': base, 'head': head, 'commits': commits, 'files': files[:200], 'stat': stat[-4000:],
               'diff': diff if len(diff) <= MAX_DIFF else diff[:MAX_DIFF] + '\n… preview shortened; download the complete diff.',
               'diff_clipped':len(diff)>MAX_DIFF,'diff_sha256':hashlib.sha256(diff.encode()).hexdigest(),
@@ -2136,7 +2137,7 @@ def unsafe_merge(action, config):
 
 
 def merge_preview(action):
-    return ('Merge into The Machine: ' + action['summary'] + '\n\n' + action['stat']
+    return ('Merge into The Machine: ' + action['summary'] + bug_gate.preview(action) + '\n\n' + action['stat']
             + ('\n\nThe OpenClaw plugin changes too: it takes effect after openclaw plugins reload personal-assistant-bridge.' if action.get('plugin') else '')
             + '\n\nMerge now runs the tests again, then updates the running code and restarts The Machine.')
 
@@ -2163,8 +2164,8 @@ class MergeTransport:
     since the owner reviewed it and that the tests pass; the merge is a fast-forward to exactly the
     reviewed commit, then the code is pushed (when it has an upstream) and the service restarts."""
 
-    def __init__(self, config, restart=None):
-        self.config, self.restart = config, restart
+    def __init__(self, config, restart=None, judge=None):  # judge(page): the second bug check's model turn (bug_gate)
+        self.config, self.restart, self.judge = config, restart, judge
 
     def preflight(self, action):
         self.check(action)
@@ -2177,8 +2178,8 @@ class MergeTransport:
             raise ValueError('The tests did not finish on this fix. Nothing was merged.') from None
         if tests.returncode:
             raise ValueError('The tests fail on this fix. Nothing was merged; tap Change to have it fixed.')
-        if action.get('auto'):
-            action['proof']=self.proves(action, env)
+        if action.get('auto'):  # merging by itself: the new test proves the fix, then a second check that it only fixes a bug (last: it costs tokens)
+            action['proof']=self.proves(action, env);action['bug_check']=bug_gate.second_check(action, self.judge or bug_gate.ask(self.config))
         self.check(action)  # tests may take minutes; never activate edits made meanwhile
 
     def check(self, action):

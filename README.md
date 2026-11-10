@@ -123,7 +123,7 @@ Reviews notice promises in messages: ones you made, and ones made to you. Each h
 
 ### The Machine fixes itself
 
-The Machine records its own errors (never message content) and can fix them in a separate clone, with a test. Small proven fixes merge by themselves and can be undone for 24 hours; everything else waits for your **Merge fix**. More in [Usage](docs/usage.md#the-machine-fixes-itself).
+The Machine records its own errors (never message content) and can fix them in a separate clone, with a test. It changes its code only for bugs; requests that sound like bugs become suggestions for you. Small proven fixes merge by themselves and can be undone for 24 hours; everything else waits for your **Merge fix**. More in [Usage](docs/usage.md#the-machine-fixes-itself).
 
 ### Optional extras
 

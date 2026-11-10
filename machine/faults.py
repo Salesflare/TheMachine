@@ -238,7 +238,7 @@ FAULT_WHERE = 'Where (innermost last):'  # the technical part of a fault signal 
 # One line in each fault signal's metadata for the Do it run that fixes it: the product vision in short, so the fix is
 # judged against it without the whole file in every prompt (vision: lean on tokens).
 FIX_BY = ("Judge the fix against docs/vision.md: it's the owner's, and secure (their data, nothing unseen) first, then right, "
-          'in their control, easy, calm, lean on tokens. Small, no reshuffles.')
+          'in their control, easy, calm, lean on tokens. Small, bugs only, no reshuffles.')
 
 
 def fault_event(account, row, config):

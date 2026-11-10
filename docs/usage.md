@@ -432,6 +432,17 @@ Never arguments, values or message content. Trouble outside the code (a source o
 - A review suggests a fix when an error recurs or breaks something you rely on.
 - A to-do about an error nobody acted on closes by itself once newer code has gone a day without it.
 
+### Bugs only
+
+A fix changes The Machine's code only for a bug: existing, intended behavior that is broken. That means an error or crash, wrong data, something documented or clearly intended not working, a regression, or UI that is unreadable, overlapping or unclickable.
+
+- **Not a bug**, even when it says "broken": new or changed behavior, wording or a design that works as designed, a preference or nice-to-have, a new option or setting, anything that changes what The Machine does or decides, and anything that loosens permissions, privacy or sending rules. "The button is broken, it should also archive", "it doesn't support Outlook" and "the routines field is too small" are all requests, not bugs.
+- **Unsure** counts as not a bug.
+- **Judged by meaning**, never by words, in the same turn that makes the fix (no extra model call).
+- **Not a bug:** no code changes. The to-do becomes a suggestion for you: what it asks for and why it isn't a bug.
+- **Mixed:** only the bug part is fixed. The rest is named on the Merge fix as left for you.
+- **Evidence:** a fix says which intended behavior is broken and where that intent shows: a file, line or test of the running code, or an earlier release. The service checks that place exists. A fix without a bug verdict and evidence can't be saved, so there is nothing to merge.
+
 ### Do it and Merge fix
 
 - **Do it** never touches the running code (the plugin blocks that). The agent clones it into `fix_dir/<job id>`, finds the cause, fixes it, adds a test, runs the whole suite and commits.
@@ -448,7 +459,8 @@ A fix to one of its own recorded errors merges without a tap when it is small an
 - at most 3 Python files of the service and 50 lines besides the tests;
 - a new test that fails without the fix (checked on a copy of the old code);
 - no changes to the plugin, `AGENTS.md`/`PREPARATION.md`, the database layout or the config;
-- one a day at most.
+- one a day at most;
+- a second check agrees. Last, after the tests, one model turn of its own that never saw the run reads the problem, the fix's bug evidence and the diff. It must say it is a bug and the diff only restores the intended behavior. Not a bug, more than a restore, unsure or no answer: it is parked for you and never merges by itself. **Merge fix** stays your call.
 
 The to-do says it merged and has **Undo merge** for 24 hours, which reverts the commits, pushes and restarts. It undoes itself when the merged version records the same error again, or any new error within the first hour.
 

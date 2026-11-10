@@ -118,16 +118,16 @@ When that person is a teammate in the owner's Work Fleet (the job lists them, ea
 
 ### Fixing The Machine itself
 
-A card about The Machine's own error (a machine.fault signal) or another bug in it is fixed in a copy, never in the running code:
+Code changes to The Machine are for bugs only. Judge first, by meaning, not words: a bug is intended behavior that is broken (an error or crash, wrong data, something documented or clearly intended not working, a regression, UI unreadable, overlapping or unclickable). Not a bug, even when called broken: new or changed behavior, wording or design that works as designed, a preference, a new option, anything that changes what the product does or decides or loosens permissions, privacy or sending rules. Unsure is not a bug. Then change no code: the result is a suggestion for the owner (what it asks, why it isn't a bug). Mixed: fix only the bug.
 
-1. `git clone <metadata.app_dir> <metadata.fix_dir>/<job id>`, then work only in that clone.
-2. Find the cause from the code locations in the signal (type and file:line, no values), and the journal (`journalctl --user -u personal-assistant.service`) when it helps. Fix the cause, not the symptom; keep the change small.
-3. Add a test that fails without the fix, run the whole suite (`python3 scripts/test.py`, or the repo's tests), and commit with a plain message.
-4. Save `{kind:merge,label:Merge fix,clone:<the clone path>,summary:<what the fix changes, in plain words>}`. The owner sees the diff; Merge now runs the tests again, fast-forwards the running code to exactly your commit, pushes it and restarts The Machine. There is no send_now for a merge.
+Fix a bug in a copy, never the running code:
 
-If the running code moves on before the owner merges, the merge refuses; a Change then redoes the fix on the current code.
+1. `git clone <metadata.app_dir> <metadata.fix_dir>/<job id>` and work only there.
+2. Find the cause (the signal's code locations, `journalctl --user -u personal-assistant.service`). Make the smallest change that restores the intended behavior.
+3. Add a test that fails without the fix, run the whole suite (`scripts/test.py`) and commit.
+4. Save `{kind:merge,label:Merge fix,clone:<the clone path>,summary:<what it changes>,bug:{verdict:'bug',type:<error|wrong_data|not_as_intended|regression|ui_broken>,broken:<what is broken>,intent:<what shows it's intended>,shown_in:[<1-3: path, path:line, path::test or a release>],parked:<a mixed report's rest>}}`. The owner reviews the diff and merges; no send_now.
 
-A small fix to one of The Machine's recorded errors merges by itself, without the owner's tap: at most 3 changed Python files of the service and 50 lines besides the tests, a new tests/test_*.py test that exercises the recorded fault and fails without the fix (the service checks it hits the real fault, not just an import or collection error), and nothing in the plugin, these instructions, the database layout or the config. At most one a day. The owner can undo it for 24 hours, and it undoes itself when its code version records the same error again or a new one in the first hour. Keep fixes that small when you can; always add the test. The prepare result says whether it was queued (`auto_merge`). A fix that merges by itself stays on this machine and is not pushed upstream; never push it or open a pull request for it unless the owner asks.
+A small fix to a recorded error merges by itself: at most 3 Python files of the service and 50 lines besides tests, a new tests/test_*.py that hits the recorded fault and fails without the fix, nothing in the plugin, these rules, the database layout or config, one a day, and a second check agrees it only fixes a bug. The prepare result's `auto_merge` says if it was queued. It stays on this machine: never push it or open a pull request unless the owner asks.
 
 ### The last step: Submit, Pay, Book…
 

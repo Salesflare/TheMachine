@@ -13,6 +13,9 @@ import test_ux as ux
 from test_gateway import FakeJournal
 from seams import patch_everywhere  # noqa: E402
 a = ux.a
+# What a fix says about the bug it fixes (bug_gate.evidence): the graph.py of the test app shows the intent
+BUG = {'verdict': 'bug', 'type': 'error', 'broken': 'The graph rebuild stops with a KeyError when a row has no key.',
+       'intent': 'rebuild reads rows that may lack the key; a missing key means no value.', 'shown_in': ['graph.py:2']}
 
 
 def git(path, *args):
@@ -249,10 +252,10 @@ class Merge(unittest.TestCase):
         return clone
 
     def action(self, clone, **extra):
-        return n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'The graph rebuild no longer stops on a missing key.', **extra}, self.config, [])
+        return n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'The graph rebuild no longer stops on a missing key.', 'bug': BUG, **extra}, self.config, [])
 
     def transport(self):
-        return n.MergeTransport(self.config, lambda: self.restarts.append(1) or True)
+        return n.MergeTransport(self.config, lambda: self.restarts.append(1) or True, getattr(self, 'judge', None))
 
     def test_a_committed_fix_in_a_clone_becomes_a_reviewable_merge(self):
         clone = self.fix()
@@ -321,7 +324,7 @@ class Merge(unittest.TestCase):
         self.decide('accept')
         app = object.__new__(a.App)
         app.store, app.config = self.store, self.config
-        merge = {'kind': 'merge', 'clone': str(self.fix()), 'summary': 'The graph rebuild no longer stops on a missing key.'}
+        merge = {'kind': 'merge', 'clone': str(self.fix()), 'summary': 'The graph rebuild no longer stops on a missing key.', 'bug': BUG}
         with self.assertRaisesRegex(ValueError, 'send_now'):
             app.action('prepare', {'suggestion_id': self.sid, 'body': 'Fixed and tested in a copy.', 'next_action': merge, 'send_now': True})
         app.action('prepare', {'suggestion_id': self.sid, 'body': 'Fixed and tested in a copy.', 'next_action': merge})
@@ -352,6 +355,9 @@ class AutoMerge(unittest.TestCase):
         self.app = object.__new__(a.App)
         self.app.store, self.app.config = self.store, self.config
         self.decide('accept')
+        self.asked = []  # the second bug check's pages; it agrees unless a test says otherwise
+        self.verdict = {'verdict': 'bug', 'restores_only': True, 'why': 'A missing key crashed a rebuild meant to skip it.'}
+        self.judge = lambda page: self.asked.append(page) or json.dumps(self.verdict)
 
     def fix(self, proof=True, name='job1'):
         clone = self.fix_clone(name)
@@ -362,9 +368,9 @@ class AutoMerge(unittest.TestCase):
         git(clone, 'commit', '-qm', 'Test the missing key')
         return clone
 
-    def save(self, clone):
+    def save(self, clone, bug=None):
         return self.app.action('prepare', {'suggestion_id': self.sid, 'body': 'Fixed and tested in a copy.',
-                                           'next_action': {'kind': 'merge', 'clone': str(clone), 'summary': 'The graph rebuild no longer stops on a missing key.'}})
+                                           'next_action': {'kind': 'merge', 'clone': str(clone), 'summary': 'The graph rebuild no longer stops on a missing key.', 'bug': bug or BUG}})
 
     def labels(self):
         return [b['label'] for block in a.controls(self.row())['blocks'] for b in block['buttons']]
@@ -430,7 +436,7 @@ class AutoMerge(unittest.TestCase):
         (clone / 'other.py').write_text('x = 2\n')
         git(clone, 'add', '.')
         git(clone, 'commit', '-qm', 'Another fix')
-        action = n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'Another small fix to the service.'}, self.config, [])
+        action = n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'Another small fix to the service.', 'bug': BUG}, self.config, [])
         transport = self.transport()
         receipt = transport.send(action, {'id': 'job'})
         result = transport.complete(action, receipt)
@@ -443,7 +449,7 @@ class AutoMerge(unittest.TestCase):
         subprocess.run(['git', 'clone', '-q', str(self.app_dir), str(clone)], check=True, capture_output=True)
         (clone / 'other.py').write_text('x = 3\n')
         git(clone, 'commit', '-qam', 'Third fix')
-        third = n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'A third small fix to the service.'}, self.config, [])
+        third = n.validate({'kind': 'merge', 'clone': str(clone), 'summary': 'A third small fix to the service.', 'bug': BUG}, self.config, [])
         approved={**third,'auto':True}
         self.assertEqual(transport.complete(approved,transport.send(approved,{'id':'job'}))['pushed'],True)
         self.assertEqual(git(self.upstream, 'rev-parse', 'main'), third['head'])
@@ -466,7 +472,7 @@ class AutoMerge(unittest.TestCase):
         self.assertIn('A new error (TypeError) showed up right after the merge, so I undid it.', a.card(self.row()))
 
     def test_anything_less_than_safe_waits_for_the_owner(self):
-        action = {'kind': 'merge', 'files': ['graph.py', 'test_graph.py'], 'lines': 2, 'commits': 2, 'plugin': False, 'diff': '+x'}
+        action = {'kind': 'merge', 'files': ['graph.py', 'test_graph.py'], 'lines': 2, 'commits': 2, 'plugin': False, 'diff': '+x', 'bug': BUG}
         self.assertIsNone(n.unsafe_merge(action, {}))
         self.assertIsNone(n.unsafe_merge({**action, 'files': ['machine/text.py', 'test_graph.py']}, {}))  # the service's package
         for change, reason in [({'files': ['graph.py']}, 'no test'), ({'plugin': True}, 'more than'), ({'files': ['AGENTS.md', 'test_graph.py']}, 'more than'), ({'files': ['scripts/x.py', 'test_graph.py']}, 'more than'),

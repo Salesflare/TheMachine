@@ -373,7 +373,7 @@ class CardActionsApp:
         if any(a['kind']=='merge' for a in next_actions.actions(action)) and not saved.get('replayed'):
             # The service decides, never the agent: a small, tested fix to its own error merges by itself.
             why=self.store.auto_merge(args['suggestion_id'],self.config)
-            saved['auto_merge']='queued: it merges by itself if the tests pass and the new test fails without the fix' if why is None else 'waits for the owner’s Merge: '+why
+            saved['auto_merge']='queued: it merges by itself if the tests pass, the new test fails without the fix and a second check agrees it only fixes a bug' if why is None else 'waits for the owner’s Merge: '+why
         if isinstance(saved, dict) and args.get('skill_hint') and getattr(self, 'skills', None) and not saved.get('replayed'):
             saved['skill_hint'] = self.skills.hint(args['suggestion_id'], args['skill_hint'])  # "There's a skill for this", if it clearly helps
         return saved

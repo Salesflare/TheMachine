@@ -101,7 +101,7 @@ def redo_prompt(item, app, fix_dir, job_id):
 This to-do is a fix of The Machine's own that an update set aside: "{item['subject']}", kept as {PARKED}{item['commit']}. '''
             f'''Redo it on the code running now, the way Fixing The Machine itself in the preparation rules says: git clone {app} {fix_dir}/{job_id}, '''
             f'''then in that clone git fetch {app} {PARKED}{item['commit']} and git cherry-pick FETCH_HEAD; where it no longer applies, make the same change '''
-            '''by hand on the new code. Keep its test (add one if it has none), run the whole suite, commit, and save it as {kind:merge,label:Merge fix,clone:<the clone path>,summary:<what the fix changes>}. '''
+            '''by hand on the new code. Keep its test (add one if it has none), run the whole suite, commit, and save it as {kind:merge,label:Merge fix,clone:<the clone path>,summary:<what the fix changes>,bug:<the bug it fixes, as the rules say>}. '''
             '''When the running code already does what the fix did, save outcome:'already_done' saying so, with no next actions.''')
 
 
