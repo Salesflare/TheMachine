@@ -36,7 +36,7 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
  const cat=/^\/i18n\/(\w\w(?:-[A-Z]{2})?)\.json$/.exec(url.pathname);if(cat)return res.end(cats[cat[1]]||'{}');
  if(url.pathname==='/api/status')return res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0},locale}));
  if(url.pathname==='/api/graph'){const n=url.searchParams.get('node');if(n)return res.end(JSON.stringify(teamDetail));
-  if(url.searchParams.get('thread'))return res.end(JSON.stringify({subject:'Re: Terms',at:day(2),via:'Ada',messages:[{at:day(2),from:'Bo <bo@northfund.example>',body:'Here are the terms.',attachments:[]}]}));
+  if(url.searchParams.get('thread'))return res.end(JSON.stringify({subject:'Re: Terms',at:day(2),via:'Ada',messages:[{at:day(3),from:'Ada <ada@acme.example>',body:'Can you send the terms?',attachments:[]},{at:day(2),from:'Bo <bo@northfund.example>',body:'Here are the terms.',attachments:[]}]}));
   if(url.searchParams.get('view')==='team')return res.end(JSON.stringify({team:true,people:[],orgs:[],projects:[],quiet:[],new:[],boards:teamBoards,sharing,counts:{person:0,org:0,project:10}}));
   return res.end(JSON.stringify({people:[],orgs:[],projects:[],quiet:[],new:[],boards:mine,sharing,teammates:[{fleet:FL,member:'m_ada',name:'Ada'}]}))}
  res.end('{}')});
@@ -77,13 +77,23 @@ try{
   await page.locator('.board-title',{hasText:'Acquisition talks'}).waitFor({state:'attached'});
   if(LANG==='en')assert.match(await page.locator('.board-sub').textContent(),/^Ada shared this board with you · 2 projects/);
   await fits(page,w+' by name');await shot(page,`teammate-shared-by-name-${w}-${scheme}`);
-  // A teammate's project opens under Projects, its organization a link
-  if(w>600&&scheme==='light'){await page.locator('.tile[data-node$="030"]').click();await page.locator('.graph-detail h3',{hasText:'Northfund'}).waitFor();
-   assert.equal(await page.locator(`.graph-detail .graph-sub button.node[data-node="${teamDetail.org}"]`).count(),1);
-   assert.equal(await page.locator('nav .side-sub a[aria-current="page"]').getAttribute('data-graph-sub'),'projects');
-   // A shared thread opens with its messages
-   await page.locator('.team-thread summary').first().click();await page.locator('.team-thread[open] .team-msg-text',{hasText:'Here are the terms.'}).waitFor();
-   await shot(page,`teammate-project-${w}-${scheme}`)}
+  // A teammate's project opens under Projects, its organization a link; what the team shared is in its Timeline, with
+  // Mine · Team, each line saying who it came from, and a shared thread opens like an own one
+  await page.locator('.tile[data-node$="030"]').click();await page.locator('.graph-detail h3',{hasText:'Northfund'}).waitFor();
+  assert.equal(await page.locator(`.graph-detail .graph-sub button.node[data-node="${teamDetail.org}"]`).count(),1);
+  if(w>600)assert.equal(await page.locator('nav .side-sub a[aria-current="page"]').getAttribute('data-graph-sub'),'projects');
+  assert.equal(await page.locator('.team-block').count(),0);assert.equal(await page.locator('.graph-detail .team-ask').count(),1);
+  const tl=page.locator('.graph-timeline');assert.equal(await tl.locator('.ge-whose button').count(),2);
+  assert.equal(await tl.locator('.ge-whose [aria-pressed="true"]').getAttribute('data-tl-whose'),'team');
+  assert.match(await tl.locator('.ge-team.ge-change').innerText(),LANG==='en'?/Email: Re: Terms\s+\d\d:\d\d · via Ada/:/via Ada/);
+  assert.match(await tl.locator('[data-team-thread]').innerText(),LANG==='en'?/Re: Terms\s+2 messages · \d\d:\d\d · via Ada/:/2 berichten · .* · via Ada/);
+  await fits(page,w+' project');await page.mouse.move(0,0);await shot(page,`teammate-project-${w}-${scheme}`);
+  await tl.locator('[data-team-thread]').click();await page.locator('#email-dialog[open] .email-text',{hasText:'Here are the terms.'}).waitFor();
+  if(scheme==='light')await shot(page,`teammate-thread-${w}-${scheme}`);
+  await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'});
+  await tl.locator('[data-tl-whose="mine"]').click();await page.locator('.graph-timeline .ge-whose [data-tl-whose="mine"][aria-pressed="true"]').waitFor();
+  assert.equal(await page.locator('.graph-timeline .ge-team').count(),0);
+  await page.locator('.graph-timeline [data-tl-whose="team"]').click();await page.locator('.graph-timeline .ge-team').first().waitFor();
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('team boards dashboard ok');

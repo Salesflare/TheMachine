@@ -36,7 +36,7 @@ Every person and organization page has one, newest first: email, meetings and th
 
 Meetings still to come sit on top under **Coming up**, soonest first; **Show all upcoming** shows the rest. A meeting shows who was on it, each person once. One with notes or a transcript says **Notes** or **Transcript**; click it to read them.
 
-Your timelines are yours: the team's Graph shows only what your sharing rules allow.
+Your timelines are yours: the team's Graph shows only what your sharing rules allow. On a page, **Team** above the Timeline adds what teammates shared, each item saying who it came from; **Mine** shows only yours.
 
 ## Work and Personal
 
