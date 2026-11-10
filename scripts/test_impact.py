@@ -6,11 +6,12 @@ A full run on main records it: every Python process the tests start (a test, a s
 each function of this checkout it runs, once (sys.monitoring, Python 3.12 and newer: one callback per function, then
 it's switched off, so the tests barely slow down). A process that cleared its environment still counts for its test:
 the hook finds the test in its parents' environment on Linux. Only the files that passed go in the map; a test the map
-doesn't know is picked the old way. Every Node process loads scripts/test_impact_js.mjs too (NODE_OPTIONS): a page a test
-opens in Chromium notes the functions of the dashboard's parts (dashboard/*.js) that ran, from V8's coverage.
+doesn't know is picked the old way. Every Node process scripts/test.py starts loads scripts/test_impact_js.mjs too
+(NODE_OPTIONS): a page a test opens in Chromium notes the functions of the dashboard's parts (dashboard/*.js) that ran,
+from V8's coverage.
 
-scripts/test_impact.py install DIR        record into DIR from now on (a .pth file in site-packages; Node needs
-                                          NODE_OPTIONS=--import=./scripts/test_impact_js.mjs too)
+scripts/test_impact.py install DIR        record into DIR from now on (a .pth file in site-packages; scripts/test.py
+                                          loads scripts/test_impact_js.mjs into Node when THE_MACHINE_IMPACT_DIR is set)
 scripts/test_impact.py remove             stop recording
 scripts/test_impact.py build DIR OUT      the map from DIR's records (DIR/passed lists the files that passed), gzipped JSON
 scripts/test_impact.py fetch [OUT]        the newest map main's CI made (needs gh), for scripts/test.py --changed"""

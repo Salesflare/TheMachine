@@ -1,7 +1,7 @@
 // The test-impact map's browser half (scripts/test_impact.py): which functions of the dashboard's parts each test file
-// runs in Chromium. Loaded into every Node process of a recording run (NODE_OPTIONS=--import=<this file>, CI's full
-// run on main); with THE_MACHINE_IMPACT_DIR unset it does nothing. When a process loads playwright-core, each page it
-// opens collects V8's function coverage, and before the page navigates or closes each function of a part
+// runs in Chromium. scripts/test.py loads it into every Node process of a recording run (CI's full run on main) with
+// NODE_OPTIONS=--import=<this file> when THE_MACHINE_IMPACT_DIR is set. When a process loads playwright-core, each page
+// it opens collects V8's function coverage, and before the page navigates or closes each function of a part
 // (dashboard/<name>.js) is filed by its offsets in that part and whether it ran: "dashboard/x.js<TAB>start<TAB>end<TAB>1",
 // and "dashboard/x.js<TAB>-1<TAB>-1<TAB>1" for a part whose top level ran (a page loads them all).
 import * as nodeModule from 'node:module';  // registerHooks: Node 22.15 and newer; older ones (an action's own) skip it
