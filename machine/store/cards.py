@@ -129,6 +129,38 @@ def thread_keys(rows):
 KEEP_OWNER_TITLE = ("title=CASE WHEN title_source='user' THEN title ELSE ? END,"
                     "title_suggested=CASE WHEN title_source='user' THEN ? ELSE NULL END")
 OWNER_WORDS_MAX, TITLE_OWNER_MAX = 2000, 200
+WAIT_DAYS = 7  # a to-do that waits on someone else with no deadline comes back after this long (as their promises: PROMISE_CHECK_DAYS)
+
+
+def wait_until(due, digest_at='08:30', current=None):
+    """When a to-do that waits on someone else comes back by itself so the owner can chase them: the morning before its
+    deadline, or after WAIT_DAYS without one. None when that is less than three hours away: too late to wait."""
+    current = current or dt.datetime.fromisoformat(now())
+    hour, minute = (int(x) for x in digest_at.split(':'))
+    day = dt.date.fromisoformat(str(due)[:10]) - dt.timedelta(days=1) if due else current.astimezone(local_tz()).date() + dt.timedelta(days=WAIT_DAYS)
+    target = dt.datetime.combine(day, dt.time(hour, minute), local_tz())
+    return target.astimezone(dt.timezone.utc).isoformat() if target >= current + dt.timedelta(hours=3) else None
+
+
+def return_waiting(db):
+    """To-dos the review left waiting on someone else (CardsStore.wait_on_others) whose time to chase has come: back as
+    open to-dos that say whom they still wait on (outcome still_waiting, until a new message or a run), with one
+    notification each. Those waiting after a run (no `until`) stay. Returns how many."""
+    stamp = now()
+    # `until` is read here, not in SQL: on a sealed Machine only the outcome's state is in the clear
+    rows = [row for row in db.execute("SELECT id,outcome FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
+                                      "AND json_extract(outcome,'$.state')='waiting'").fetchall()
+            if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp]
+    for row in rows:
+        who = str(json.loads(row['outcome']).get('waiting_on') or '')[:200]
+        db.execute("UPDATE suggestions SET status='pending',outcome=? WHERE id=?", (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
+        db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   ('update:' + uuid.uuid4().hex, row['id'], 'update', 'Brought back: still waiting on ' + who,
+                    'assistant', stamp))
+        db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'queued',?) ON CONFLICT(suggestion_id) DO UPDATE SET "
+                   "status=CASE WHEN status IN ('sending') THEN status ELSE 'queued' END,reminder=1,error=NULL,"
+                   "needs_edit=CASE WHEN message_id IS NULL THEN needs_edit ELSE 1 END,updated_at=excluded.updated_at", (row['id'], stamp))
+    return len(rows)
 
 
 def owner_title(words, limit=90):
@@ -322,9 +354,11 @@ class CardsStore:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None, personal=False):
+                company=None, personal=False, waiting_on=None):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
+        waiting_on: the review's word that the owner did their part of that open card and the next step is someone
+        else's (the step and who, "Sam to answer the scope question"): it waits on them (wait_on_others).
         suggestion_id: the new card's id, when the caller made its evidence first (owner_card). owner_step: the step is
         one only the owner can do (True), one The Machine can do (False), or unchanged on an update (None).
         expires_at, expires_what: the moment the card's whole point is tied to, and what it is ("the meeting with Sam");
@@ -339,9 +373,13 @@ class CardsStore:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
-                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal)
+                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
+        if waiting_on is not None:
+            waiting_on = ' '.join(str(waiting_on).split())
+            if not 3 <= len(waiting_on) <= 200:
+                raise ValueError('waiting_on is the step still open and who it waits on, 3 to 200 characters')
         if due is not None:
             try:
                 due = dt.date.fromisoformat(str(due)[:10]).isoformat()
@@ -417,8 +455,12 @@ class CardsStore:
                                          + '. If it is the same matter (the same ask, commitment or conversation, in other words), call suggest again with '
                                            'card_id set to that card: it gets the new evidence, title and body and comes back if it was waiting. '
                                            'If it is a different matter, call suggest again with separate:true.')
+            if waiting_on and not target:
+                raise ValueError('waiting_on is for an open to-do the owner did their part of: pass its card_id. With no to-do for the matter, '
+                                 'what the other person owes the owner is a promise (direction theirs), not a to-do.')
             if target:
-                saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen)
+                saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen,
+                                         waiting_on=waiting_on)
                 if company and not target['area']:  # the review placed it with its company or in Personal; the owner's own move stands
                     db.execute('UPDATE suggestions SET account_ids=coalesce(?,account_ids),area=? WHERE id=?', (placed and encoded(placed), company, target['id']))
                 if owner_step is not None and not saved.get('attached'):
@@ -479,11 +521,40 @@ class CardsStore:
                 **({'prepared_ahead': True} if ahead else {}), **({'preview': True} if preview else {}),
                 **({'awaiting': 'The card waits; if they follow up first it closes itself.'} if watch else {})}
 
-    def update_card(self, db, card, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen):
+    def wait_on_others(self, db, card, title, body, ids, accounts, evidence, due, project, event_ids, waiting_on, digest_at):
+        """The review's word that the owner did their part of an open to-do and the next step is someone else's (they
+        asked a question back, sent it on): nothing for the owner until that moves. It waits under Waiting on others
+        (machine.cards.waits_on_others) with its deadline kept, and nothing is sent. A new message on it brings it back
+        as an open to-do (update_card), and so does the time to chase them (wait_until, return_waiting). None when that
+        time is here already: it stays a to-do."""
+        stamp, sid, own = now(), card['id'], card['origin'] == 'owner'
+        until = wait_until((card['due'] or due) if own else (due or card['due']), digest_at)
+        if not until:
+            return None
+        db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,'
+                   + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",status='prepared',outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
+                   'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,feedback_until=NULL WHERE id=?',
+                   (title[:300], title[:300], body[:5000], encoded(ids), encoded(accounts), source_line(evidence, db), due,
+                    encoded({'state': 'waiting', 'waiting_on': waiting_on, 'until': until}), sid))
+        db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   ('update:' + uuid.uuid4().hex, sid, 'update', f'Updated with a new signal. Waiting on: {waiting_on}', 'assistant', stamp))
+        db.execute("UPDATE action_jobs SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','blocked')", (stamp, sid))
+        db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','starting','running','blocked')", (stamp, sid))
+        # Nothing new for the owner: no notification, and one already sent is edited to match.
+        db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'", (sid,))
+        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (sid,))
+        if project:
+            graph.label(db, event_ids, project, 'card', stamp)
+        return {'id': sid, 'status': 'prepared', 'duplicate': False, 'updated': True, 'waiting_on': waiting_on, 'returns_at': until,
+                'note': 'The existing card was updated and now waits under Waiting on others. It comes back as a to-do when a new '
+                        'message on it arrives, or at returns_at so the owner can chase them.'}
+
+    def update_card(self, db, card, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen, waiting_on=None):
         """A new signal about a matter that already has a card. An open card gets the new evidence, title and body,
         and one that was snoozed or waiting for a reply comes back. A done or dismissed card only reopens when the
         reviewer says the matter needs the owner again (reopen) and a message from someone else arrived after it was
-        closed, or a promise on it came due (reopen='due'); otherwise the signal is kept on it as evidence."""
+        closed, or a promise on it came due (reopen='due'); otherwise the signal is kept on it as evidence. With
+        waiting_on an open card waits on someone else instead (wait_on_others)."""
         stamp, sid = now(), card['id']
         # The review's title; while the owner's own title holds (a rename) it waits in title_suggested for Reset.
         suggested, title = title, current_title(card, title)
@@ -525,6 +596,11 @@ class CardsStore:
             return {'id': sid, 'status': card['status'], 'duplicate': False, 'attached': True,
                     'note': 'Kept on the closed card as evidence; nothing was sent to the owner. If this genuinely needs the owner again, '
                             'call suggest again with card_id and reopen:true.'}
+        if waiting_on and not closed:
+            waits = self.wait_on_others(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, project, event_ids,
+                                        waiting_on, digest_at)
+            if waits:
+                return waits
         if due and (dt.date.fromisoformat(due) - dt.datetime.fromisoformat(stamp).astimezone(local_tz()).date()).days <= 3:
             when = 'now'
         deliver_after = delivery_time(when, digest_at, work=work, urgent=urgent)
@@ -538,7 +614,8 @@ class CardsStore:
         # A title the owner gave (a rename) stays: the review's goes to title_suggested. On their own card, their due date stays.
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,deliver_after=?,urgent=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ',status=?,'
-                   'early=?,outcome=CASE WHEN status=? THEN outcome ELSE NULL END,snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
+                   "early=?,outcome=CASE WHEN status=? AND coalesce(json_extract(outcome,'$.state'),'')!='still_waiting' THEN outcome ELSE NULL END,"
+                   'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,'
                    'feedback_until=NULL,expires_at=CASE WHEN expired_at IS NULL THEN expires_at END,expired_at=NULL WHERE id=?',
                    (suggested[:300], suggested[:300], body[:5000], encoded(ids), encoded(accounts), source_line([evidence[i] for i in ids if i in evidence], db),
                     deliver_after, int(urgent or bool(card['urgent'])), due, status, int(bool(ahead)), status, sid))

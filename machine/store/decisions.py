@@ -28,7 +28,7 @@ from machine.cards import (
     title_kept,
 )
 from machine.config import LOG
-from machine.store.cards import source_line
+from machine.store.cards import return_waiting, source_line
 from machine.text import encoded, first_sentence
 import next_actions
 import skills
@@ -782,6 +782,7 @@ class DecisionsStore:
                 # Exactly one new outbox intent per elapsed snooze. An unknown
                 # previous send must be reconciled, not blindly retried.
                 db.execute("UPDATE deliveries SET status='queued',reminder=1,needs_edit=1 WHERE suggestion_id=? AND status IN ('sent','uncertain')",(row['id'],))
+            return_waiting(db)  # those the review left waiting on someone else, when it is time to chase
             self.rewait_handoffs(db)
             return len(rows)
 

@@ -22,6 +22,9 @@ const cards=[
  {id:'h1',title:'Answer Elif about the invoice address',body:'Elif asks where to send the invoice.',status:'pending',scope:'work',created_at:now,event_ids:[2],due:late,handled_hint:hint('Elif confirmed it herself on Tuesday',ago(1))},
  {id:'h2',title:'Book the venue',body:'Find a venue for the offsite.',status:'prepared',scope:'work',created_at:now,event_ids:[3],handled_hint:hint('The booking confirmation came in',ago(3))},
  {id:'p1',title:'Decide on the partnership call',body:'They want a call next week.',status:'pending',scope:'work',created_at:now,event_ids:[5]},
+ {id:'w2',title:'Renewal at fewer days',body:'Sam proposes fewer days. The scope question went back to Sam.',status:'prepared',scope:'work',created_at:now,event_ids:[8],due:new Date(Date.now()+3*864e5).toISOString().slice(0,10),
+  outcome:JSON.stringify({state:'waiting',waiting_on:'Sam to answer the scope question',until:new Date(Date.now()+2*864e5).toISOString()})},
+ {id:'w3',title:'Chase the quote',body:'The quote was due last week.',status:'pending',scope:'work',created_at:now,event_ids:[10],outcome:JSON.stringify({state:'still_waiting',waiting_on:'Sam to send the quote'})},
  {id:'w1',title:'Hotfix waiting on review',body:'The hotfix PR is open and waits on review.',status:'prepared',scope:'work',created_at:now,event_ids:[7],outcome:JSON.stringify({state:'waiting',waiting_on:'the hotfix review'})},
  {id:'c9',title:'Send the quote',body:'Sent.',status:'completed',scope:'work',created_at:ago(50),closed_at:ago(2),event_ids:[6]}];
 const posts=[];
@@ -47,14 +50,26 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-r1').waitFor();
   // Not between real work, and not counted: For you has the real ones
   for(const id of ['d1','d2','h1','h2'])assert.equal(await page.locator('#task-'+id+':not(#finished-list .looks-done)').count(),0,id);
-  assert.equal(await page.locator('#badge-inbox').textContent(),'2');
+  assert.equal(await page.locator('#badge-inbox').textContent(),'3');
+  // One that waited on someone and came back by itself says so: an open to-do again
+  assert.equal(await page.locator('#task-w3 .status-line').textContent(),'Still waiting on: Sam to send the quote.');
   assert.equal(await page.locator('#task-r1 .chip').filter({hasText:'Overdue'}).count(),1);  // real work can still be late
   // A step still open on someone else's side: nothing is ready for them, so its own folded group, not counted
   assert.equal(await page.locator('#section-foryou #task-w1, #suggestions>.section-head~#task-w1').count(),0);
   assert.equal(await page.locator('#waiting-list').evaluate(d=>d.open),false);
-  assert.equal(await page.locator('#waiting-head .count').textContent(),'1');
+  assert.equal(await page.locator('#waiting-head .count').textContent(),'2');
   await page.locator('#waiting-head').click();
   assert.equal(await page.locator('#waiting-list #task-w1 .status-line').textContent().then(x=>x.includes('Waiting on: the hotfix review')),true);
+  // One the review left waiting after the owner asked back: no run made it, so no result to read; its deadline shows,
+  // and its chat says what it waits on over the message box
+  assert.equal(await page.locator('#task-w1 [data-result="read"]').count(),1);
+  assert.equal(await page.locator('#task-w2 [data-result="read"]').count(),0);
+  assert.equal(await page.locator('#task-w2 .status-line').textContent(),'Waiting on: Sam to answer the scope question.');
+  assert.match(await page.locator('#task-w2 .card-badges').textContent(),/Due /);
+  const over=id=>page.evaluate(id=>{const s=state.suggestions.find(x=>x.id===id),p=chatParts(s);return [String(chatStatus(s,p)).replace(/<[^>]+>/g,''),String(p.links)]},id);
+  assert.deepEqual(await over('w2'),['Waiting on: Sam to answer the scope question.','']);
+  assert.equal((await over('w1'))[0],'');  // a run's result in the chat says it there
+  assert.equal((await over('w3'))[0],'Still waiting on: Sam to send the quote.');  // brought back with nothing new
   await page.locator('#waiting-head').click();
   // No group of their own: they lead the folded Done list, counted with it
   const order=await page.locator('#suggestions>details[id]').evaluateAll(d=>d.map(x=>x.id));
@@ -95,7 +110,7 @@ try{
   posts.length=0;await card('d1').locator('[data-ld-not]').click();await page.locator('#task-d1:not(.looks-done)').waitFor();
   assert.deepEqual(posts.map(p=>[p.suggestion_id,p.choice]),[['d1','not_done']]);
   assert.equal(await card('d1').count(),0);
-  assert.equal(await page.locator('#badge-inbox').textContent(),'3');
+  assert.equal(await page.locator('#badge-inbox').textContent(),'4');
   // nothing else was closed
   assert.equal(await ld.count(),3);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

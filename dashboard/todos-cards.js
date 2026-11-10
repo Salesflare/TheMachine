@@ -114,6 +114,11 @@ const looksDone=s=>!closed(s)&&s.status!=='snoozed'&&(!!s.handled_hint||s.status
 // reply). Nothing is ready for you there, so it sits in its own folded group above Coming back later and never counts.
 // A new message on it (assistant.py update_card) makes it an open to-do again. Same rule as waits_on_others().
 const waitsOnOthers=s=>!closed(s)&&s.status==='prepared'&&!looksDone(s)&&(()=>{try{return JSON.parse(s.outcome||'{}')?.state==='waiting'}catch{return false}})();
+// Left waiting by the review after the owner did their part (its outcome says until when; Store.wait_on_others): no run
+// made it, so there is no result to read, and its chat has no result that says what it waits on.
+const waitsAfterOwner=s=>waitsOnOthers(s)&&!!JSON.parse(s.outcome).until;
+// Brought back when the wait was over with nothing new (Store.return_waiting): what it still waits on, or ''
+const stillWaiting=s=>{if(s.status!=='pending')return '';try{const w=JSON.parse(s.outcome||'null');return w?.state==='still_waiting'&&w.waiting_on?t('Still waiting on: {}',sentence(w.waiting_on)):''}catch{return ''}};
 // Its one line of evidence: the hint's reason, else the result's first sentence (what shows it)
 function doneWhy(s){try{const h=JSON.parse(s.handled_hint||'null');if(h?.reason)return h.reason}catch{}
  const plain=String(s.body||'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/[*_`]/g,'').replace(/\s+/g,' ').trim();
@@ -498,6 +503,8 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(closed(s)&&expiredLine(s))return line(expiredLine(s),' outcome done');
  if(closed(s))return doneLine(s);if(s.status==='snoozed')return '';let o=null;if(s.status==='prepared'&&s.outcome)try{o=JSON.parse(s.outcome)}catch{}
  if(o?.state==='already_done')return line('Looks done already. Mark it done if that’s right.',' outcome done');
+ // Back by itself after waiting on someone (return_waiting): why it is here again
+ if(!hint&&stillWaiting(s))return line(stillWaiting(s),' outcome');
  if(hint)return line((handled.fleet?'Done: ':'Looks handled: ')+hint,' handled');
  if(ask&&s.preparation_status==='blocked')return askLine(s,ask);
  if(s.early&&s.status==='accepted')return line('Preparing this ahead, so it arrives ready.');
@@ -520,7 +527,7 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
 const drafts=s.status==='prepared'&&!tpSent?smart.filter(a=>DRAFT_KINDS.includes(a.kind)&&draftText(a)):[];
 // One faint line, like the site: the source itself opens the original; Read result and Copy draft (when there is a draft or file) sit at its end.
     const calOnly=smart.length&&smart.every(a=>a.kind==='calendar')&&!s.result_files?.length;
-    const results=(s.status==='prepared'&&!calOnly)||s.result_files?.length?html`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?html`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
+    const results=(s.status==='prepared'&&!calOnly&&!waitsAfterOwner(s))||s.result_files?.length?html`<span class="foot-links"><button type="button" class="link" data-id="${s.id}" data-result="read">Read result</button>${(messageDrafts(s).length||s.result_files?.length)&&!copyLead(s,smart)&&!s.proposed_skill?html`<button type="button" class="link" data-id="${s.id}" data-result="copy">Copy draft</button>`:''}</span>`:'';
     const readLabel=isEmail(s)?'Read email':'Read message',src=s.source_line?sourceHtml(s.source_line):'';
     const srcOut=!closed(s)&&section!=='Chat';  // an open to-do shows where it came from on the to-do itself, a closed one under Details
     const original=s.routine?.name?routineSource(s):hasOriginal(s)?html`<button type="button" class="link read-original via-${cardViaIcon(s)}" data-id="${s.id}" data-original="read" aria-label="${readLabel}" title="${readLabel}">${src||readLabel}</button>`:src?html`<p class="source">${src}</p>`:'';

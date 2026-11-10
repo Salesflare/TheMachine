@@ -25,7 +25,7 @@ Después de enviar, una nota breve dice dónde está la tarea, como «Enviado. M
 
 Una tarea con **Parece hecho** se ve como una hecha, con lo que muestra que está hecha, como "PR #3451 fusionado". Aún no está cerrada: **Reabrir** la devuelve a tu lista, y tu Machine aprende de ello. Nunca aparecen como atrasadas ni cuentan como pendientes de ti. Una tarea con un borrador de respuesta también parece hecha cuando respondiste tú en esa conversación, como en Gmail o Slack.
 
-Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta.
+Una tarea cuyo último paso sigue abierto en manos de otra persona, como una revisión, una fusión o una respuesta, muestra **Esperando:** ese paso y sigue abierta. Espera en **Esperando a otros**, plegada encima de Vuelve más tarde, y no cuenta como lista para ti. Un mensaje nuevo sobre ella la trae de vuelta. Lo mismo si respondiste con una pregunta: vuelve la mañana antes de su fecha límite y dice a quién sigue esperando.
 
 Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **No hace falta** la cierra, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
 
