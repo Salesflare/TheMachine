@@ -24,7 +24,7 @@ Le persone che conosci e che sono nel Network ti vengono suggerite appena lo att
 
 Le persone trovate mostrano **Ha una Machine** nella tua lista Persone. Il controllo usa gli indirizzi dei tuoi messaggi e quelli che hai aggiunto a una persona con **Modifica**: se qualcuno si è registrato con un altro indirizzo, aggiungilo a quella persona. Nella pagina di una persona trovata, **Aggiungi come amico** invia la stessa richiesta di Collegati (**Aggiungi come famiglia** è nel menu ⋯).
 
-Per chi non ha una Machine, **Invita su The Machine** mostra l’email che riceverà, da modificare se vuoi e **Invia** dalla tua casella, come attività sulla sua pagina. Non parte nulla prima di Invia. Senza una casella che può inviare: **Copia** o **Apri nella tua email**.
+Per chi non ha una Machine, **Invita su The Machine** apre l’email che riceverà in **Inviare questa email?**, come per ogni attività, da modificare se vuoi. Non parte nulla prima di **Invia ora**. Se chiudi, l’invito resta come attività. Senza una casella che può inviare: **Copia** o **Apri nella tua email**.
 
 Contano anche i numeri di telefono: quelli delle tue chat WhatsApp con persone a cui hai scritto o che hai incontrato, e quelli che hai aggiunto con **Modifica**. Il tuo numero WhatsApp collegato e i numeri in Su di te ti rendono trovabile, ognuno con il suo interruttore sotto **Trovabile da**. Un numero trova qualcuno solo se anche quella persona ha cercato te, o se siete amici, quindi nessuno può provare numeri per vedere chi ha una Machine.
 

@@ -24,7 +24,7 @@ Pessoas que você conhece e que estão na Network são sugeridas assim que você
 
 As pessoas encontradas mostram **Tem uma Machine** na sua lista Pessoas. A verificação usa os endereços das suas mensagens e os que você adicionou a alguém com **Editar**: se alguém se cadastrou com outro endereço, adicione-o a essa pessoa. Na página de alguém encontrado, **Adicionar como amigo** envia o mesmo pedido que Conectar (**Adicionar como família** fica no menu ⋯).
 
-Para quem não tem uma Machine, **Convidar para a The Machine** mostra o e-mail que a pessoa recebe, para mudar se quiser e **Enviar** da sua própria caixa, como tarefa na página dela. Nada sai antes de Enviar. Sem uma caixa que possa enviar: **Copiar** ou **Abrir no seu e-mail**.
+Para quem não tem uma Machine, **Convidar para a The Machine** abre o e-mail que a pessoa recebe em **Enviar este e-mail?**, como em qualquer tarefa, para mudar se quiser. Nada sai antes de **Enviar agora**. Se fechar, o convite espera como tarefa. Sem uma caixa que possa enviar: **Copiar** ou **Abrir no seu e-mail**.
 
 Números de telefone também contam: os das suas conversas no WhatsApp com pessoas para quem você escreveu ou com quem se encontrou, e os que você adicionou com **Editar**. Seu número do WhatsApp vinculado e os números em Sobre você fazem você ser encontrado, cada um com sua chave em **Pode ser encontrado por**. Um número só encontra alguém quando essa pessoa também procurou você, ou vocês são amigos, então ninguém pode testar números para ver quem tem uma Machine.
 
