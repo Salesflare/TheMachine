@@ -23,6 +23,8 @@ Een gemiste wordt niet opgestapeld. Ze blijft open en toont hoeveel datums ze mi
 
 Snoozen verplaatst alleen deze. Het ritme blijft hetzelfde.
 
+Gedaan vóór de datum? Ze telt voor wat nu moet, en die datum komt toch voor de periode erna.
+
 Elke to-do wordt voorbereid zoals elke andere, en de voorbereiding ziet hoe de vorige liep en wat er in haar chat gezegd werd.
 
 ## Wijzigen of stoppen

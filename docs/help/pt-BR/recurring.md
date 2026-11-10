@@ -23,6 +23,8 @@ Uma perdida não se acumula. Ela continua aberta e mostra quantas datas perdeu, 
 
 Adiar move só esta. O ritmo continua o mesmo.
 
+Feita antes da data? Ela conta para o que vence agora, e essa data ainda chega para o período seguinte.
+
 Cada uma é preparada como qualquer tarefa, e a preparação vê como foi a anterior e o que foi dito no chat dela.
 
 ## Mudar ou parar

@@ -23,6 +23,8 @@ Una perdida no se acumula. Sigue abierta y muestra cuántas fechas se perdió, y
 
 Posponer mueve solo esta. El ritmo sigue igual.
 
+¿Hecha antes de su fecha? Cuenta para lo que toca ahora, y esa fecha sigue llegando para el periodo siguiente.
+
 Cada una se prepara como cualquier tarea, y la preparación ve cómo fue la anterior y lo que se dijo en su chat.
 
 ## Cambiarla o pararla

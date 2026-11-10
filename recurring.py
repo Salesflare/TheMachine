@@ -6,7 +6,9 @@ every N days, weeks or months. Its rule is small JSON (RULE): {'unit': 'day'|'we
 year come from the series' anchor, its first date.
 
 One open occurrence at a time. The next one appears on its date (the owner's own calendar day) once the one before is
-done, not needed or skipped (tick). A missed one stays open and counts what it missed (missed); occurrences never stack.
+done, not needed or skipped (tick). One done before its date (a new series' first, done now for the period that is
+due) leaves that date standing: the next one still comes on it. A missed one stays open and counts what it missed
+(missed); occurrences never stack.
 Snoozing moves only that to-do. Each occurrence is an ordinary to-do (Store.owner_card) in the same Work or Personal
 account and project, so it is prepared like any other; its preparation gets the previous occurrence's result
 (prep_lines).
@@ -229,7 +231,7 @@ def parse(text, today):
 
 def series_of(db, suggestion_id):
     """The series a to-do belongs to (its occurrence row joined to the series), or None."""
-    return db.execute('SELECT s.*,c.due card_due FROM recurring_cards c JOIN recurring_series s ON s.id=c.series_id WHERE c.suggestion_id=?',
+    return db.execute('SELECT s.*,c.due card_due,c.suggestion_id card_id FROM recurring_cards c JOIN recurring_series s ON s.id=c.series_id WHERE c.suggestion_id=?',
                       (str(suggestion_id or ''),)).fetchone()
 
 
@@ -272,8 +274,13 @@ def tick(db, today, stamp):
             if card and card['status'] not in CLOSED:
                 continue
             last_due = dt.date.fromisoformat(s['due'] or s['anchor'])
-            # the next date after this one, never one already gone: a late one doesn't bring the dates it missed
-            nxt = next_after(rule, anchor, max(last_due, today - dt.timedelta(days=1)))
+            if card and card['status'] == 'completed' and today < last_due:
+                # done before its date: it was the work due now (a new series' first one, done right away), so its date
+                # still comes. Skipped or not needed early: that date is passed over as asked.
+                nxt = last_due
+            else:
+                # the next date after this one, never one already gone: a late one doesn't bring the dates it missed
+                nxt = next_after(rule, anchor, max(last_due, today - dt.timedelta(days=1)))
             db.execute('UPDATE recurring_series SET last_id=current_id,last_done=?,current_id=NULL,next_due=?,updated_at=? WHERE id=?',
                        (stamp, nxt.isoformat(), stamp, s['id']))
             s = db.execute('SELECT * FROM recurring_series WHERE id=?', (s['id'],)).fetchone()
@@ -307,16 +314,24 @@ def annotate(db, cards, today):
                            'missed': missed(rule, anchor, due, today), 'next': next_after(rule, anchor, max(due, today)).isoformat()}
 
 
-def prep_lines(db, suggestion_id, limit=2500):
-    """For an occurrence's preparation: that it repeats, and how the previous one went (its result and the owner's
-    notes on it), so this month's payroll starts from last month's. '' when it isn't in a series or is the first."""
+def prep_lines(db, suggestion_id, limit=2500, today=None):
+    """For an occurrence's preparation: that it repeats, the period it covers, and how the previous one went (its
+    result and the owner's notes on it), so this month's payroll starts from last month's. '' when it isn't in a
+    series. today: the owner's date, for one done before its date."""
     s = series_of(db, suggestion_id)
     if not s:
         return ''
     rule, anchor = json.loads(s['rule']), dt.date.fromisoformat(s['anchor'])
     line = f"\n\nThis to-do repeats ({describe(rule, anchor)}); this one is for {s['card_due']}."
-    prev = db.execute('SELECT c.due,g.* FROM recurring_cards c JOIN suggestions g ON g.id=c.suggestion_id WHERE c.series_id=? AND c.due<? '
-                      'ORDER BY c.due DESC LIMIT 1', (s['id'], s['card_due'])).fetchone()
+    if today and today.isoformat() < s['card_due']:
+        line += (f" It is being done before that date, today ({today.isoformat()}): it covers the period due now, as if its date "
+                 f"were today (a monthly report done today is for the month before today's). The {s['card_due']} one still comes "
+                 "on its date for the period after. Work the period out from these dates; don't ask which one unless the owner's "
+                 "notes say otherwise.")
+    # the one before: an earlier date, or the same one done before it (tick keeps that date)
+    prev = db.execute('SELECT c.due,g.* FROM recurring_cards c JOIN suggestions g ON g.id=c.suggestion_id WHERE c.series_id=? AND c.due<=? '
+                      'AND c.suggestion_id<>? AND c.created_at<=(SELECT created_at FROM recurring_cards WHERE suggestion_id=?) '
+                      'ORDER BY c.due DESC,c.created_at DESC LIMIT 1', (s['id'], s['card_due'], s['card_id'], s['card_id'])).fetchone()
     if not prev:
         return line + ' It is the first one.'
     state = {'completed': 'done', 'rejected': 'not needed or skipped'}.get(prev['status'], 'still open')

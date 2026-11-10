@@ -23,6 +23,8 @@ Una saltata non si accumula. Resta aperta e mostra quante date ha saltato, e qua
 
 Posticipare sposta solo questa. Il ritmo resta lo stesso.
 
+Fatta prima della sua data? Conta per ciò che è dovuto ora, e quella data arriva comunque per il periodo successivo.
+
 Ognuna viene preparata come ogni attività, e la preparazione vede com'è andata la precedente e cosa si è detto nella sua chat.
 
 ## Cambiarla o fermarla

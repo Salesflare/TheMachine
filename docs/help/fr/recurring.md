@@ -23,6 +23,8 @@ Une tâche manquée ne s'empile pas. Elle reste ouverte et indique combien de da
 
 Reporter ne déplace que celle-ci. Le rythme reste le même.
 
+Faite avant sa date ? Elle compte pour ce qui est dû maintenant, et cette date arrive quand même pour la période suivante.
+
 Chacune est préparée comme toute tâche, et la préparation voit comment s'est passée la précédente et ce qui a été dit dans sa discussion.
 
 ## La modifier ou l'arrêter

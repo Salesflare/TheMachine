@@ -192,6 +192,41 @@ class Series(unittest.TestCase):
         self.assertIn('2026-11-02, done', lines)
         self.assertIn('Use the new bank template', lines)
 
+    def test_done_before_its_date_keeps_that_date_and_knows_its_period(self):
+        # A new monthly to-do on the 10th: its first date is next month's 2nd, but the owner does it now for the
+        # period that is due. That date still comes; the run works out the period from the dates instead of asking.
+        Today.day = D(2026, 11, 10)
+        made = self.act('card_new', text='Send the monthly report', due='2026-12-02', repeat='monthly')
+        self.assertEqual(self.series()[0]['due'], '2026-12-02')
+        with self.store.connect() as db:
+            early = r.prep_lines(db, made['id'], today=Today.day)
+        self.assertIn('this one is for 2026-12-02. It is being done before that date, today (2026-11-10)', early)
+        self.assertIn("don't ask which one", early)
+        self.done(made['id'])
+        self.app.recurring_step()
+        self.assertEqual(self.series()[0]['next_due'], '2026-12-02')  # not 2027-01-02: that date still comes
+        Today.day = D(2026, 12, 1)
+        self.assertEqual(self.app.recurring_step(), 0)
+        Today.day = D(2026, 12, 2)
+        self.assertEqual(self.app.recurring_step(), 1)
+        nxt = self.open_cards()[0]
+        self.assertEqual(nxt['due'], '2026-12-02')
+        with self.store.connect() as db:
+            lines = r.prep_lines(db, nxt['id'], today=Today.day)
+        self.assertIn('The previous one (2026-12-02, done)', lines)  # the early one is its previous, not "the first one"
+        self.assertNotIn('before that date', lines)
+        # Done on its date: the next is the month after
+        self.done(nxt['id'])
+        self.app.recurring_step()
+        self.assertEqual(self.series()[0]['next_due'], '2027-01-02')
+
+    def test_skipped_before_its_date_passes_that_date_over(self):
+        Today.day = D(2026, 11, 10)
+        made = self.act('card_new', text='Send the monthly report', due='2026-12-02', repeat='monthly')
+        self.act('card_repeat_skip', suggestion_id=made['id'])
+        self.app.recurring_step()
+        self.assertEqual(self.series()[0]['next_due'], '2027-01-02')
+
     def test_offer_from_a_learned_note_is_asked_once_and_makes_nothing_by_itself(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO facts(text,decision_id,created_at) VALUES('Sends the board update every first Monday','x','2026-10-01T00:00:00+00:00')")

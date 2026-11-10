@@ -23,6 +23,8 @@ A missed one isn't stacked. It stays open and shows how many dates it missed, an
 
 Snoozing moves only this one. The rhythm stays the same.
 
+Done before its date? It counts for what's due now, and that date still comes for the period after.
+
 Each one is prepared like any to-do, knowing how the last one went.
 
 ## Change or stop it
