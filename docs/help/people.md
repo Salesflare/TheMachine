@@ -70,7 +70,7 @@ To join two people yourself, open one of them, then **⋯**, **Same person as…
 
 On their page, open the ⋯ menu and pick **Delete permanently…**, then **Delete**. It removes them and what your Machine knows about them: their entry, addresses, looked-up details, the messages only between the two of you, and notes about them.
 
-To-dos that involve them stay, with their name taken out. They won't be added again. It can't be undone.
+To-dos that involve them stay, with their name taken out. They won't be added again, also not by an import or a Facebook birthdays to-do with their name or address. It can't be undone.
 
 ## Bounced
 

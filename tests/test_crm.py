@@ -2,6 +2,7 @@
 lists filtered and sorted on the Machine, and a spreadsheet imported (preview, import, undo)."""
 import json
 import unittest
+from pathlib import Path
 
 import test_graph as tg
 
@@ -296,6 +297,30 @@ class Crm(unittest.TestCase):
             self.assertIsNone(crm_import.last(db))
         with self.assertRaisesRegex(ValueError, 'last import'):
             self.act('graph_import_undo', import_id=done['import_id'])
+
+    def test_import_never_brings_back_someone_deleted_permanently(self):
+        self.mails()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            rhea = graph.create_record(db, 'person', {'name': 'Rhea Stroud'}, tg.NOW.isoformat())['node_id']
+            db.execute('COMMIT')
+        self.build()
+        workspace = Path(self.temp.name) / 'workspace'
+        for node in ('email:jo@globex.io', rhea):
+            self.app.delete_person(node, workspace=workspace)
+        text = ('Name,Email\nJo Pike,jo@globex.io\nRhea Stroud,rhea@new.example\nRhea Ann Stroud,\nNia Holm,nia@new.example\n')
+        with self.store.connect() as db:
+            seen = crm_import.preview(db, 'person', text)
+        self.assertEqual(seen['counts'], {'new': 1, 'match': 0, 'skip': 3})  # by address, by name, with a middle name
+        self.assertEqual({r.get('why') for r in seen['rows'] if r['status'] == 'skip'}, {crm_import.DELETED})
+        done = self.act('graph_import_run', kind='person', text=text)
+        self.assertEqual((done['new'], done['skipped']), (1, 3))
+        self.assertIsNone(self.node('email:jo@globex.io'))
+        with self.store.connect() as db:
+            self.assertTrue(graph.forgotten(db)('email:jo@globex.io'))  # still kept out: the import cleared nothing
+            self.assertEqual(db.execute("SELECT count(*) FROM manual_nodes WHERE name LIKE 'Rhea%'").fetchone()[0], 0)
+        self.act('graph_import_undo', import_id=done['import_id'])
+        self.assertIsNone(self.node('email:nia@new.example'))
 
     def test_import_of_organisations_and_projects_matches_any_website_and_only_the_last_undoes(self):
         self.mails()

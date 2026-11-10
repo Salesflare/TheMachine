@@ -70,7 +70,7 @@ Um zwei Personen selbst zusammenzuführen, öffne eine davon, dann **⋯**, **Gl
 
 Öffne auf der Seite das Menü ⋯ und wähle **Endgültig löschen…**, dann **Löschen**. Das entfernt die Person und was deine Machine über sie weiß: ihren Eintrag, Adressen, nachgeschlagene Details, die Nachrichten nur zwischen euch beiden und Notizen über sie.
 
-Aufgaben, an denen sie beteiligt ist, bleiben, ohne ihren Namen. Sie wird nicht wieder hinzugefügt. Das lässt sich nicht rückgängig machen.
+Aufgaben, an denen sie beteiligt ist, bleiben, ohne ihren Namen. Sie wird nicht wieder hinzugefügt, auch nicht durch einen Import oder eine Facebook-Geburtstagsaufgabe mit ihrem Namen oder ihrer Adresse. Das lässt sich nicht rückgängig machen.
 
 ## Zurückgekommen
 

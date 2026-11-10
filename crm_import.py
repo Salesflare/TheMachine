@@ -2,7 +2,8 @@
 
 The owner uploads a file on the dashboard; nothing of it leaves the Machine. The columns are guessed from their
 headers (and can be changed), and a preview shows each row as new, matching one already in the Graph (to update), or
-skipped with why: no name, an address that isn't one, the same row twice in the file. A match is the same email for a
+skipped with why: no name, an address that isn't one, the same row twice in the file, someone the owner deleted
+permanently (by address or name). A match is the same email for a
 person (else the same name at the same organization), the same website for an organization (any of its websites, else
 the same name), and the same name for a project.
 
@@ -207,6 +208,7 @@ def match(db, kind, rec):
 
 
 YOURS = 'That’s you: kept in About you'
+DELETED = 'Deleted earlier: not added again'
 
 
 def check(kind, rec):
@@ -339,6 +341,7 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
     out, seen = [], {}
     owner = graph.Owner({}, db)  # the owner's own addresses and numbers: About you, never a person
     owner.emails |= {str(e).lower() for e in owner_emails or ()}
+    gone = graph.forgotten(db)  # people the owner deleted permanently, by address or name: a new row never brings them back
     for n, row in enumerate(rows, start=2):
         rec = record(kind, row, mapping, kept.get(n))
         why = check(kind, rec) or (YOURS if kind == 'person' and (owner.has('email:' + (rec.get('email') or '')) or (
@@ -365,6 +368,9 @@ def plan(db, kind, text, mapping=None, fixes=None, ai=None, region=None, currenc
                 out.append({'line': n, 'status': 'skip', 'why': 'Twice in the file', 'record': rec})
             continue
         node_id, how = match(db, kind, rec)
+        if kind == 'person' and not node_id and (gone('email:' + (rec.get('email') or '')) or any(gone(k) for k in graph.name_keys(rec['name']))):
+            out.append({'line': n, 'status': 'skip', 'why': DELETED, 'record': rec})
+            continue
         item = {'line': n, 'status': 'match' if node_id else 'new', 'node_id': node_id, 'why': how, 'record': rec}
         seen[key] = item
         out.append(item)
