@@ -1,0 +1,65 @@
+<!doctype html>
+<!-- A made-up stand-in for Facebook's birthdays page (tests/test_birthdays_facebook.py): made-up people only. Like the
+     real page, it groups friends by month, from this month on, and loads more of them in small chunks, with a progress
+     bar, as it is scrolled to the end. Each friend is a profile picture whose label (or, with .../hover/, the tooltip
+     shown on hover) says their name and birthday. 500 friends over 12 months, 20 per chunk; .../small/ has one a
+     month, .../skipN/ leaves out the month N months from now (nobody's birthday then). -->
+<html lang="en">
+<head><meta charset="utf-8"><title>Birthdays</title>
+<style>body{font-family:sans-serif}section{min-height:200px}a{display:inline-block;margin:4px}svg{width:60px;height:60px}</style></head>
+<body>
+<div role="navigation"><a aria-label="Settings" href="#settings">Settings</a></div>
+<h2>Today's birthdays</h2>
+<section id="today"></section>
+<div id="months"></div>
+<script>
+const flags = location.pathname.split('/'), skipped = flags.find(f => /^skip\d+$/.test(f));
+const hover = flags.includes('hover'), skip = skipped ? +skipped.slice(4) : -1;
+const NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const FIRST = 'Ada Bram Cleo Dov Esme Finn Gia Hugo Ines Jules Kai Lena Milo Nora Otto Pia Quin Rhea Sami Tove Uma Vito Wren Xavi Yara'.split(' ');
+const LAST = 'Arden Brook Calloway Dunmore Ellery Fairbank Garrow Hollis Ivers Jessup Kestrel Lowell Marsh Northam Orrin Pell Quarry Rook Stroud Thorne'.split(' ');
+// The friends in page order: month by month from this one, each as [month offset, name, label day]
+const first = new Date().getMonth(), people = [];
+const total = flags.includes('small') ? 12 : FIRST.length * LAST.length;
+for (let k = 0; k < total; k++) {
+  const offset = Math.floor(k * 12 / total), month = (first + offset) % 12;
+  if (offset === skip) continue;
+  const name = FIRST[k % FIRST.length] + ' ' + LAST[Math.floor(k / FIRST.length) % LAST.length];
+  people.push([offset, name, NAMES[month] + ' ' + (1 + (k * 7) % 28) + (k % 50 === 0 ? ', 1988' : '')]);
+}
+function avatar(name, day) {
+  const a = document.createElement('a');
+  a.href = '#profile';
+  a.setAttribute('aria-label', hover || !day ? name : name + ' (' + day + ')');
+  a.innerHTML = '<svg viewBox="0 0 60 60"><image width="60" height="60" href="data:image/gif;base64,R0lGODlhAQABAAAAACw="></image></svg>';
+  if (hover && day) {
+    a.addEventListener('mouseover', () => { const tip = document.createElement('div'); tip.setAttribute('role', 'tooltip'); tip.innerText = name + '\n' + day; document.body.append(tip); });
+    a.addEventListener('mouseout', () => document.querySelectorAll('[role=tooltip]').forEach(t => t.remove()));
+  }
+  return a;
+}
+document.getElementById('today').append(avatar('Robin Vale', null));
+let next = 0, section = null, shown = -1, loading = false;
+function more() {
+  for (const [offset, name, day] of people.slice(next, next + 20)) {
+    if (offset !== shown) {
+      const h = document.createElement('h3'); h.textContent = NAMES[(first + offset) % 12];
+      section = document.createElement('section');
+      document.getElementById('months').append(h, section);
+      shown = offset;
+    }
+    section.append(avatar(name, day));
+  }
+  next += 20;
+}
+more();
+addEventListener('scroll', () => {
+  if (loading || next >= people.length || innerHeight + scrollY < document.documentElement.scrollHeight - 50) return;
+  loading = true;
+  const spinner = document.createElement('div'); spinner.setAttribute('role', 'progressbar'); spinner.textContent = 'Loading…';
+  document.body.append(spinner);
+  setTimeout(() => { more(); spinner.remove(); loading = false; }, 300 + (next % 3) * 400);
+});
+</script>
+</body>
+</html>

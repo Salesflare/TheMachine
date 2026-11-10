@@ -3,9 +3,9 @@ title: Routine
 area: cards
 summary: Lavoro che la tua Machine fa da sola, con un ritmo, come un riepilogo del lunedì dei tuoi deal aperti. Legge soltanto.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Crearne una
 
@@ -28,6 +28,10 @@ Nulla cambia finché non confermi sull’attività. I mittenti già decisi non t
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 
 I compleanni vengono dai tuoi calendari (i compleanni di Google e il calendario Compleanni di Outlook), dai tuoi contatti Google su una Machine self-hosted e da un campo data chiamato Compleanno su una persona del Graph. Se nessuno ha ancora un compleanno, il risultato dice **Ancora nessun compleanno** e come aggiungerne.
+
+**Importa i compleanni da Facebook**: con Compleanni attivo, un’attività propone di leggere la pagina dei compleanni di Facebook. Tocca **Importa** e The Machine la apre nel suo browser, scorre finché ogni mese è caricato e legge nome e compleanno di ogni amico. Mostra quanti ne ha trovati e chi corrisponde a persone del tuo Graph. Un nome che ha più di una persona viene saltato ed elencato.
+
+Solo **Salva** li conserva, e solo il compleanno, sulla pagina di ogni persona. Un compleanno che hai inserito lì resta. Non rilegge mai da sola: lo fa **Importa di nuovo** sull’attività. Il browser deve avere l’accesso a Facebook; su una Machine ospitata, accedi da **Apri il browser**. The Machine non accede mai al posto tuo.
 
 Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 

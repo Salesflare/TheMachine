@@ -147,6 +147,7 @@ class MailCleanupApp:
             return True
         if key == 'birthdays':  # plain code too (birthdays_app.py); Outlook's Birthdays calendar is read in it
             self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
+            self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
             return True
         ids = self.cleanup_mark_accounts(fresh=True)  # mail it can't move to spam isn't asked about
         with self.store.connect() as db:
