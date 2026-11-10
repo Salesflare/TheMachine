@@ -88,6 +88,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
     `machine/store/graph_history.py` lets history into the Graph's people and organizations in bounded passes, newest first.
   - `machine/app/search_ask.py` (`SearchAskApp`): Ask from search: the messages a question in Search finds in the area
     in view and the one-shot turn that answers it (`search_ask.py` has the prompt and the answer).
+  - `machine/app/ask_memory.py`: what Ask reads besides messages, as four blocks on the `ask` recall: promises, facts,
+    the asked-about record's summary and meeting notes that match the question, cited as what they are.
   - `machine/app/recall.py` (`recall(app, purpose, about, budget)`): the one way a prompt reads memory. The review,
     preparation and Ask builders ask it for each block's text; the pickers behind it are unchanged and say what they
     put in (`memory_use.note`), and the builder logs that once its run is admitted (`memory_use.record`). A new reader

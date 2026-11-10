@@ -18,6 +18,8 @@ Scrivi una domanda, come “cosa ha detto Kim sul progetto pilota?”, e sopra i
 
 Se chiedi di una persona e di un periodo, come “cosa ha detto Kim la settimana scorsa?”, legge solo i messaggi di quella persona o scambiati con lei in quei giorni, nel tuo fuso orario. Se allora non ha mandato nulla, la risposta lo dice e riporta il suo ultimo messaggio con la data.
 
+Legge anche ciò che la Machine tiene già sulla domanda: promesse aperte o chiuse negli ultimi 30 giorni, ciò che ha imparato, il riepilogo della persona, del progetto o dell’organizzazione di cui chiedi e le note delle riunioni. Ogni cosa usata dalla risposta compare sotto, chiamata per quello che è (Promessa, Imparato, Riepilogo, Note delle riunioni), e si apre dove si trova. Viene letto solo ciò che riguarda la domanda, e solo dall’area che stai guardando.
+
 Se più persone hanno quel nome, dice di quale si tratta. Gli altri messaggi letti compaiono sotto Messaggi. La domanda suggerita da una ricerca vuota è sempre una per cui ci sono messaggi.
 
 ## Scorciatoie

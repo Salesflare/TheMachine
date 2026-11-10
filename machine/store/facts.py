@@ -624,17 +624,21 @@ class FactsStore:
 
     def rank_facts(self, suggestion_id, facts, settings, timeout=15):
         """[(similarity, fact)] best first, between each fact and what this card is about (its title, text and latest note)."""
-        key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
         with self.connect() as db:
             card = db.execute('SELECT title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
-            stored = {r['fact_id']: embeddings.unpack(r['vector']) for r in db.execute('SELECT fact_id,vector FROM fact_vectors WHERE model=?', (key,))}
         if not card:
             return None
+        return self.facts_ranked(embeddings.document(card['title'], (card['body'] or '') + (' ' + note['feedback'] if note else '')), facts, settings, timeout)
+
+    def facts_ranked(self, asked, facts, settings, timeout=15):
+        """[(similarity, fact)] best first, between each fact and the text asked (as it is embedded): one embedding
+        request, with the facts that have no vector yet."""
+        key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+        with self.connect() as db:
+            stored = {r['fact_id']: embeddings.unpack(r['vector']) for r in db.execute('SELECT fact_id,vector FROM fact_vectors WHERE model=?', (key,))}
         missing = [f for f in facts if f['id'] not in stored]
-        texts = [embeddings.document('none', f['text']) for f in missing]
-        texts.append(embeddings.document(card['title'], (card['body'] or '') + (' ' + note['feedback'] if note else '')))
-        vectors = embeddings.embed(settings, texts, timeout)
+        vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing] + [asked], timeout)
         if missing:
             with self.connect() as db:
                 db.executemany('INSERT OR REPLACE INTO fact_vectors(fact_id,model,vector) VALUES(?,?,?)',

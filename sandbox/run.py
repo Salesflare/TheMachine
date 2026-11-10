@@ -131,15 +131,18 @@ def fake_help(config, prompt, model=None, thinking=None):
 
 def fake_ask(config, prompt):
     """Ask from search's stand-in model: a few keywords get NONE; a question gets one line on the best message found,
-    cited as [1]. No model runs."""
+    cited as [1], and one on the first promise, fact, summary or meeting notes the prompt has for it (ask_memory.py),
+    cited as what it is ([P1], [F1], [S1], [M1]). No model runs."""
     import re
     if 'reply with one JSON object' in prompt:  # the first turn, what it means: no person or days, so the search answers it
         return '{"question": true, "person": null, "said_by": "both", "from": null, "to": null, "about": ""}'
     question = prompt.rsplit('Question: <<<', 1)[-1].rstrip('>')
-    best = re.search(r'^\[1\] \w+ from ([^,\n]*), [^:\n]*: ([^\n]*)$', prompt, re.M)
-    if len(question.split()) < 4 or not best:
+    best = re.search(r'^\[1\] \w+ from ([^,\n]*), [^\n]*?\d\d:\d\d: ([^\n]*)$', prompt, re.M)  # its time has a colon too
+    kept = re.search(r'^\[([PFSM]1)\] ([^\n<]*?):? ?(?:\n)?<<<([^\n]*?)>>>$', prompt, re.M)
+    if len(question.split()) < 4 or not (best or kept):
         return 'NONE'
-    return f"{best[1]} wrote about it in “{best[2][:80]}” [1]."
+    said = [f"{best[1]} wrote about it in “{best[2][:80]}” [1]."] if best else []
+    return ' '.join(said + ([f"{kept[2].split(',')[0]}: “{kept[3][:120]}” [{kept[1]}]."] if kept else []))
 
 
 def seed_ai(app):

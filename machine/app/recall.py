@@ -10,6 +10,7 @@ its log line the same way as the rest."""
 import embeddings
 import memory_use
 import search_ask
+from machine.app import ask_memory
 from machine.app import senders
 
 
@@ -25,7 +26,9 @@ def recall(app, purpose, about=None, budget=0):
       about, senders.lines; read when the batch is claimed, with the claim's reply as its budget).
     - preparation: rules and facts (for this to-do), records (the people and projects on it), skills(rules, room),
       team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
-    - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt).
+    - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
+      question of promises, facts, records (a person's summary, a named project or organization) and meetings
+      (machine/app/ask_memory.py, each with (what it goes on, room)).
     - talk, chat: none yet; they read no memory of their own today."""
     about = dict(about or {})
     memory = memory_use.Recalled(purpose, about, budget)
@@ -45,4 +48,5 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('related', lambda: app.related_lines(todo))
     elif purpose == 'ask':
         memory.add('sources', search_ask.ask)
+        ask_memory.add(memory, app)
     return memory

@@ -18,6 +18,8 @@ Tapez une question, comme « qu’a dit Kim sur le pilote ? », et une réponse 
 
 Si vous demandez une personne et une période, comme « qu’a dit Kim la semaine dernière ? », elle lit seulement les messages de cette personne ou échangés avec elle ces jours-là, dans votre fuseau horaire. Si elle n’a rien envoyé alors, la réponse le dit et donne son dernier message avec sa date.
 
+Elle lit aussi ce que la Machine garde déjà sur la question : les promesses ouvertes ou closes depuis 30 jours, ce qu’elle a appris, le résumé de la personne, du projet ou de l’organisation dont vous parlez, et les notes de réunion. Chaque élément utilisé par la réponse s’affiche dessous, nommé pour ce qu’il est (Promesse, Appris, Résumé, Notes de réunion), et s’ouvre là où il se trouve. Seul ce qui correspond à la question est lu, et uniquement dans l’espace affiché.
+
 Si plusieurs personnes portent ce nom, elle dit laquelle. Les autres messages lus apparaissent sous Messages. La question proposée par une recherche vide est toujours une question pour laquelle il y a des messages.
 
 ## Raccourcis
