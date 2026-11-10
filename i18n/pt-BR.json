@@ -4645,7 +4645,7 @@
  "Take it back": "Pegar de volta",
  "Take it back from {}": "Pegar de volta de {}",
  "Take out": "Retirar",
- "Take them out of the team's Graph? Nothing new goes to their Machine. What they have stays with them.": "Retirar essa pessoa do Graph da equipe? Nada novo vai para a Machine dela. O que ela tem continua com ela.",
+ "Take them out of the team's Graph? Nothing new goes to their Machine, and what the team shared with them is removed from it.": "Retirar essa pessoa do Graph da equipe? Nada novo vai para a Machine dela, e o que a equipe compartilhou com ela é removido de lá.",
  "Take this on in your own Machine": "Assuma isso na sua própria Machine",
  "Take this on in your own Machine: {}": "Assuma isso na sua própria Machine: {}",
  "Take what your Machine learned with you.": "Leve com você o que sua Machine aprendeu.",

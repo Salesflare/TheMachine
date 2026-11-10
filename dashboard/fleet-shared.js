@@ -52,7 +52,7 @@ fleetOn('click',async e=>{const go=e.target.closest('[data-shared-go]');if(go){e
  if(b.matches('[data-off-cancel]')){sharedAsking[fleet]=false;if(ask)ask.hidden=true;return}
  if(b.dataset.graphPause)sharedAsking[fleet]=false;
  if(b.dataset.graphPause&&b.dataset.remove&&!confirm('Remove everything shared in this Fleet from all Machines? Each person looks it over again before anything goes.'))return;
- if(b.dataset.graphRemove&&!b.dataset.back&&!confirm('Take them out of the team\'s Graph? Nothing new goes to their Machine. What they have stays with them.'))return;
+ if(b.dataset.graphRemove&&!b.dataset.back&&!confirm('Take them out of the team\'s Graph? Nothing new goes to their Machine, and what the team shared with them is removed from it.'))return;
  if(b.dataset.graphSwitch&&!await shareConsent(`Share the Graph in ${sharedFleetName(fleet)}?`,SHARE_ON_POINTS(sharedFleetName(fleet)),
    `As an admin, you confirm ${sharedFleetName(fleet)} may share this Work mail and has told its people. It's experimental: you can turn it off for everyone at any time.`,'Turn on'))return;
  if(b.dataset.graphRekeyNo&&!confirm('Not their Machine? It never gets the team\'s Graph. Tell them, so they can check their account.'))return;

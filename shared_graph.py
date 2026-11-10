@@ -174,6 +174,21 @@ def _ensure(db):
     stamps.watch_graph_who(db)
 
 
+def drop_received(db, fleet, mine):
+    """What teammates shared with this Machine in one Fleet goes, and what still waited for its sender: never the
+    rows of this Machine's own share (mine). Returns how many rows went."""
+    went = sum(db.execute(FLEET_DELETE[table] + ' AND member<>?', (fleet, mine)).rowcount
+               for table in ('team_records', 'team_mail', 'team_files', 'team_asks', 'team_sources', 'team_blobs', 'team_wants'))
+    for row in db.execute('SELECT id,item FROM team_pending').fetchall():
+        try:
+            waits = (json.loads(row['item']).get('header') or {}).get('fleet') == fleet
+        except (ValueError, AttributeError):
+            waits = False
+        if waits:
+            db.execute('DELETE FROM team_pending WHERE id=?', (row['id'],))
+    return went
+
+
 def now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
@@ -1282,7 +1297,9 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         return gone
 
     def _sign_remove(self, group, me, mid):
-        statement = ft.remove(group['id'], mid, me['member_id'], now())
+        said = [str(i['s'].get('at') or '') for i in group.get('trust') or [] if isinstance(i, dict) and isinstance(i.get('s'), dict)
+                and i['s'].get('t') in ('member', 'remove') and i['s'].get('member') == mid]
+        statement = ft.remove(group['id'], mid, me['member_id'], after(max(said, default='')))  # newer than what let them in
         self.relay.call('POST', '/trust', {'fleet': group['id'], 'item': ft.sign(self._private(), statement)}, timeout=30)
         self.set_meta('graph_removed:' + group['id'], {**(self.meta('graph_removed:' + group['id']) or {}), mid: statement['at']})
         LOG.info('shared graph removed fleet=%s member=%s', group['id'], mid)
@@ -1304,12 +1321,14 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             keys = ft.keys_of(m) if m else None
             if not keys:
                 raise ValueError('Their Machine is not in the Fleet now')
-            item = ft.sign(self._private(), ft.statement('member', fleet, member, keys['sign'], me['member_id'], at=now()))
+            item = ft.sign(self._private(), ft.statement('member', fleet, member, keys['sign'], me['member_id'],
+                                                           at=after(self.graph_gone(group, trusted).get(member))))
             self.relay.call('POST', '/trust', {'fleet': fleet, 'item': item}, timeout=30)
             self.set_meta('graph_admitted:' + fleet, sorted(set(self.meta('graph_admitted:' + fleet) or []) | {member}))
         else:
             self._sign_remove(group, me, member)
             self.set_meta('graph_admitted:' + fleet, sorted(set(self.meta('graph_admitted:' + fleet) or []) - {member}))
+            self.graph_nudge(group, me, member)  # their Machine looks at the Fleet now, not at its next round
         self.directory(refresh=True)
         try:
             self.graph_round(force=True)
@@ -1378,7 +1397,10 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             return
         self.last['graph'] = stamp
         self._graph_db()
-        groups = [g for g in (self.directory().get('fleets') or []) if g.get('kind') == 'work' and g.get('id')]
+        work = lambda: [g for g in (self.directory().get('fleets') or []) if g.get('kind') == 'work' and g.get('id')]
+        if not force and any(self._me_in(g) for g in work()):
+            self.directory(refresh=True)  # an admin's remove, pause or purge is seen within a round, not at the next directory
+        groups = work()
         self._graph_forget(groups)
         for group in groups:
             me = self._me_in(group)
@@ -1403,9 +1425,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             self._graph_keys_round(group, me, found)
             self._optout_prompts(group, me, found, trusted, members)
         if me['member_id'] not in found:
-            if me['member_id'] in (self.meta('graph_removed:' + group['id']) or {}):
-                self.set_meta('graph_confirmed:' + group['id'], None)  # if let back in: it asks again for what it missed
-                self.set_meta('graph_want:' + group['id'], None)
+            self.graph_out(group, me)  # taken out by an admin: what the team shared with it leaves this Machine
             return
         if self.graph_paused(group, trusted, say=True):
             # an admin paused sharing for the whole Fleet: nothing new goes, from any Machine; what its owner took
@@ -1915,6 +1935,8 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             body = json.loads(want['body'])
             keys = self._public(group, who)
             if who == me['member_id'] or who not in found or not keys or str(body.get('at') or '') < _iso_ago(WANT_DAYS):
+                if who not in found and who in (self.meta('graph_removed:' + fleet) or {}) and self.meta(f'graph_served:{fleet}:{who}'):
+                    self.set_meta(f'graph_served:{fleet}:{who}', None)  # taken out: if let back in, caught up from the start
                 continue
             budget = min(self._budget(), SERVE_BATCH)
             if budget <= 0:
@@ -2277,10 +2299,15 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             if header.get('kind') in ('mail', 'file'):
                 self._caught_up(group['id'], sender, int(header['seq']))
         header, body, dk = opened
+        if header['kind'] in RELAYED and me['member_id'] not in found and me['member_id'] in (self.meta('graph_removed:' + group['id']) or {}):
+            return LOG.info('shared graph blob dropped member=%s reason=taken-out', sender)  # was on its way while this Machine was away
         if header['kind'] in RELAYED and str(header.get('at') or '') < str(self.meta('graph_purge_done:' + group['id']) or ''):
             raise ValueError('from before an admin removed what the Fleet shared')
         if header['kind'] == 'key' and sender not in trusted:
             raise ValueError('a graph key from someone who is not a confirmed admin')
+        if header['kind'] == 'want' and not body and sender in trusted and header.get('to') == [me['member_id']] \
+                and self.graph_look(group['id']):  # an admin's Machine says to look at the Fleet again (graph_nudge)
+            return
         if header['kind'] == 'want' and sender not in found:
             raise ValueError('a want from someone who is not a confirmed member')
         self._apply(group, header, body, dk, item)

@@ -123,6 +123,56 @@ class TakeBack:
                 kept[chain] = {**st, 'last': header['seq'], 'threads': listed, 'hashes': left}
                 self.set_meta('graph_chains:' + fleet, kept)
 
+    def graph_out(self, group, me):
+        """This Machine is not a confirmed member. If an admin's signed remove says why (kept in graph_removed by
+        confirmed()): what the team shared with it goes, and if it is let back in it asks again for what it missed."""
+        at = (self.meta('graph_removed:' + group['id']) or {}).get(me['member_id'])
+        if not at:
+            return False
+        self.set_meta('graph_confirmed:' + group['id'], None)
+        self.set_meta('graph_want:' + group['id'], None)
+        return self.graph_taken_out(group, me, at)
+
+    def graph_nudge(self, group, me, member):
+        """After an admin's remove: one empty blob for that member's Machine alone, so the Network rings it and it looks
+        at the Fleet now (graph_look). It carries nothing and decides nothing: without it, their next round does it."""
+        import shared_graph as sg
+        try:
+            self._put(group, me, 'want', None, [member], tag=sg.keyed(self.graph_secret(), 'look|' + group['id'] + '|' + member))
+        except (ValueError, OSError, KeyError, TypeError) as error:
+            sg.LOG.info('shared graph nudge error=%s', type(error).__name__)
+
+    def graph_look(self, fleet):
+        """An admin's Machine asked this one to look at the Fleet again: it reads the directory now and acts only on a
+        signed remove it finds there (graph_out). Anything else waits for the round, as before. Whether it is out."""
+        group = next((g for g in (self.directory(refresh=True).get('fleets') or []) if g.get('id') == fleet and g.get('kind') == 'work'), None)
+        me = group and self._me_in(group)
+        if not me or me['member_id'] in self.confirmed(group)[0]:
+            return False
+        self.graph_out(group, me)
+        return me['member_id'] in (self.meta('graph_removed:' + fleet) or {})
+
+    def graph_taken_out(self, group, me, at):
+        """An admin took this Machine out of the team's Graph (signed, at): what teammates shared with it goes from
+        here, once per removal. Their records, threads and files, by-name shares among them, and the copies kept to
+        pass on. Only that: the owner's own people, organizations, projects, messages and to-dos are other tables and
+        stay as they are, as does what this Machine shared itself (the team keeps that, and it goes on from there if
+        an admin lets it back in). The signed remove is what brings it, so it arrives whenever this Machine is next
+        on, however long it was away and whichever teammates are away then."""
+        fleet, mine = group['id'], me['member_id']
+        if str(at) <= str(self.meta('graph_taken_out:' + fleet) or ''):
+            return False
+        import shared_graph as sg
+        with self.connect() as db:
+            sg.ensure(db)
+            had = sg.drop_received(db, fleet, mine)
+            if had:
+                self.log(db, 'in', fleet, None, str(group.get('name') or 'Your team')[:80], 'graph', 'What the team shared',
+                         'removed from this Machine: an admin took it out of the team Graph')
+        self.set_meta('graph_taken_out:' + fleet, str(at))
+        sg.LOG.info('shared graph taken out fleet=%s removed=%s', fleet, had)
+        return True
+
     @staticmethod
     def _sent_records(db, fleet, member, chain, last):
         """{rid: record} as this Machine's last snapshot and the deltas since gave them to the team (chain: those of one

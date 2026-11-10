@@ -1494,6 +1494,11 @@ class SharedGraph(unittest.TestCase):
     def received(self, box):
         return json.dumps(self.team(box, 'team_mail'))
 
+    def from_others(self, box):
+        """What teammates shared with this Machine and it still has, per table."""
+        return {table: n for table in ('team_records', 'team_mail', 'team_files', 'team_sources', 'team_blobs')
+                if (n := len([r for r in self.team(box, table) if r['member'] != box.member_id]))}
+
     def test_someone_taken_out_gets_nothing_new_even_if_the_network_keeps_them_in(self):
         self.olive_mail()
         self.rounds()
@@ -1501,16 +1506,125 @@ class SharedGraph(unittest.TestCase):
         self.adm.graph_remove(FLEET, 'mem3')
         self.assertTrue(any(i['s']['t'] == 'remove' and i['s']['member'] == 'mem3' for i in self.net.trust))
         self.rounds(1)
+        self.assertNotIn(BODY, self.received(self.mem))  # what the team shared with them left their Machine
+        self.assertEqual(self.from_others(self.mem), {})
         self.net.trust = [i for i in self.net.trust if i['s']['t'] != 'remove']  # a Network that hides the remove later
         self.new_thread(20, 'Second order', 'Forty more seats, please.')
         self.rounds()
         self.assertNotIn('Forty more seats', self.received(self.mem))
-        self.assertIn(BODY, self.received(self.mem))  # what they had stays with them
+        self.assertEqual(self.from_others(self.mem), {})
         self.assertFalse([p for p in self.adm._prompts() if p['kind'] == 'member' and p['member'] == 'mem3'])  # no new OK asked
         self.assertEqual({p['name']: p['state'] for p in self.adm.sharing()[0]['people']}['Mo'], 'removed')
+        # let back in: what the team shares now, each thread and record once
         self.adm.graph_remove(FLEET, 'mem3', back=True)
         self.rounds(6)
         self.assertIn('Forty more seats', self.received(self.mem))
+        self.assertIn(BODY, self.received(self.mem))
+        theirs = lambda box, table, key: sorted((r['member'], r[key]) for r in self.team(box, table) if r['member'] == 'own1')
+        self.assertEqual(theirs(self.mem, 'team_mail', 'tag'), theirs(self.adm, 'team_mail', 'tag'))  # as a teammate who was never out
+        self.assertEqual(theirs(self.mem, 'team_records', 'rid'), theirs(self.adm, 'team_records', 'rid'))
+        with self.mem.store.connect() as db:
+            self.assertEqual([p['name'] for p in self.mem.team_overview(db, {})['people']].count('Lee Park'), 1)
+
+    def test_someone_taken_out_loses_what_the_team_shared_with_them_and_only_that(self):
+        self.olive_mail()
+        board = self.deal_board()
+        self.own.graph_board_share(board, [{'fleet': FLEET, 'member': 'mem3'}])  # a board shared with Mo by name
+        # Ada knows someone only she knows; Mo knows Lee too, from Mo's own mail, and shares that
+        self.add(self.adm, mail('work', 60, 'Kim Vale <kim@other.example>', 'adm2@acme.example', 'Pilot', 'Kim asks about a pilot.', 2, 't-kim'))
+        self.judge(self.adm, ('work-60', 'client', 'Kim asked about a pilot'))
+        self.add(self.mem, mail('work', 70, 'Lee Park <lee@client.example>', 'mem3@acme.example', 'Seats', 'Mo, can you check the seats?', 2, 't-seats'),
+                 mail('home', 71, 'Sam Friend <sam@friends.example>', 'mem3@home.example', 'Sunday', 'Lunch on Sunday?', 1, 't-lunch'))
+        self.judge(self.mem, ('work-70', 'client', 'Lee asked Mo about seats'))
+        self.rounds(3)
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertIn(DEAL, self.received(self.mem))
+        self.assertIn('Kim asks about a pilot', self.received(self.mem))
+        with self.mem.store.connect() as db:
+            self.assertEqual({p['name'] for p in self.mem.team_overview(db, {})['people']} & {'Lee Park', 'Kim Vale'}, {'Lee Park', 'Kim Vale'})
+
+        def own_data(box):
+            with box.store.connect() as db:
+                sg.ensure(db)
+                return {name: [tuple(r) for r in db.execute(sql)] for name, sql in (
+                    ('events', 'SELECT id,source_id,title,body,metadata FROM events ORDER BY id'),
+                    ('nodes', 'SELECT id,kind,name,info FROM graph_nodes ORDER BY id'),
+                    ('links', 'SELECT node_id,event_id FROM graph_events ORDER BY 1,2'),
+                    ('calls', 'SELECT thread,verdict,hand FROM share_threads ORDER BY 1'),
+                    ('sent', 'SELECT fleet,kind,key,hash FROM share_out ORDER BY 1,2,3'),
+                    ('blobs', "SELECT id FROM team_blobs WHERE member='mem3' ORDER BY 1"),
+                    ('to-dos', 'SELECT id,title FROM suggestions ORDER BY 1'))}
+        before, had = own_data(self.mem), {box.member_id: self.received(box) for box in (self.own, self.adm)}
+        self.assertTrue(before['sent'] and before['blobs'])
+        self.assertTrue(any(n[0] == 'email:lee@client.example' for n in before['nodes']))
+        self.adm.graph_remove(FLEET, 'mem3')
+        self.rounds(1)
+        self.assertEqual(self.from_others(self.mem), {})  # records, threads, the board shared by name, the copies to pass on
+        for text in (BODY, DEAL, 'Kim asks about a pilot'):
+            self.assertNotIn(text, self.received(self.mem) + json.dumps(self.team(self.mem)))
+        self.assertNotIn('Sale: Buyer', self.projects_of(self.mem))
+        self.assertEqual(own_data(self.mem), before)  # Mo's own mail, people, to-dos and what Mo shared: as they were
+        with self.mem.store.connect() as db:
+            names = {p['name'] for p in self.mem.team_overview(db, {})['people']}
+            self.assertNotIn('Kim Vale', names)  # known only through the team: gone
+            lee = db.execute("SELECT name FROM graph_nodes WHERE id='email:lee@client.example'").fetchone()
+            self.assertEqual(lee['name'], 'Lee Park')  # known to Mo too: Mo's own record of Lee stays
+            self.assertFalse([e for e in self.mem.team_graph(db) if any(x['member'] != 'mem3' for x in e['sources'])])
+        self.assertTrue(any(line['outcome'].startswith('removed from this Machine') for line in self.mem.view()['log']))
+        # the team keeps what Mo shared, and each other's
+        self.assertIn('Mo, can you check the seats?', self.received(self.own))
+        self.assertEqual({box.member_id: self.received(box) for box in (self.own, self.adm)}, had)
+        self.rounds()
+        self.assertEqual(self.from_others(self.mem), {})
+        self.assertEqual(own_data(self.mem), before)
+
+    def test_someone_taken_out_while_their_machine_is_away_loses_it_when_it_is_back(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        everyone, self.boxes = self.boxes, [self.own, self.adm]  # Mo's Machine is off
+        self.new_thread(22, 'While away', 'Sent while Mo was away.')
+        self.rounds()  # on the Network for Mo's Machine, from before the removal
+        self.adm.graph_remove(FLEET, 'mem3')
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))  # still off: nothing reached it
+        self.boxes = everyone  # back on, any time later
+        self.rounds(1)
+        self.assertEqual(self.from_others(self.mem), {})
+        self.assertNotIn('Sent while Mo was away', self.received(self.mem))  # nor what was still on its way
+        self.rounds()
+        self.assertEqual(self.from_others(self.mem), {})
+        with self.mem.store.connect() as db:
+            self.assertFalse(db.execute('SELECT count(*) FROM team_pending').fetchone()[0])
+
+    def test_someone_taken_out_loses_it_as_soon_as_the_network_rings_their_machine(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        everyone, self.boxes = self.boxes, [self.own, self.adm]  # no round of Mo's Machine from here on
+        # a ring without a signed remove does nothing: Mo keeps what the team shared
+        self.adm.graph_nudge(self.adm.directory()['fleets'][0], {'member_id': 'adm2'}, 'mem3')
+        self.mem.graph_fetch()
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertTrue(self.from_others(self.mem))
+        # the remove: the admin's Machine rings Mo's, which looks at the Fleet when its inbox says so (fleet.step)
+        before = len(self.net.calls)
+        self.adm.graph_remove(FLEET, 'mem3')
+        rings = [c[3]['blob'] for c in self.net.calls[before:] if c[0] == 'adm2' and c[2] == '/graph' and c[3] and c[3].get('op') == 'put'
+                 and c[3]['blob']['header']['to'] == ['mem3']]
+        self.assertEqual([b['header']['kind'] for b in rings], ['want'])  # one, empty: nothing of the team's is in it
+        self.mem.graph_fetch()
+        self.assertEqual(self.from_others(self.mem), {})
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.boxes = everyone
+
+    def test_a_round_reads_the_directory_again_so_a_remove_is_seen_within_one(self):
+        self.rounds()
+        asked = lambda: len([c for c in self.net.calls if c[0] == 'mem3' and c[2] == '/directory'])
+        before = asked()
+        self.mem.last['graph'] = -1e9
+        self.mem.graph_round()  # as every five minutes, not forced
+        self.assertEqual(asked(), before + 1)
 
     def test_someone_who_left_is_signed_out_so_the_network_cant_bring_them_back(self):
         self.rounds()
@@ -2829,7 +2943,10 @@ for _name in dir(SharedGraph):
             'test_someone_kept_private_on_one_message_keeps_the_whole_thread_also_what_arrives_later',
             'test_the_messages_read_for_someone_kept_private_give_what_reading_every_message_gives',
             'test_a_reply_that_went_before_is_taken_back_once_its_thread_has_someone_kept_private',
-            'test_only_you_on_a_direct_message_holds_for_what_arrives_in_it_later'):
+            'test_only_you_on_a_direct_message_holds_for_what_arrives_in_it_later',
+            'test_someone_taken_out_gets_nothing_new_even_if_the_network_keeps_them_in',
+            'test_someone_taken_out_loses_what_the_team_shared_with_them_and_only_that',
+            'test_someone_taken_out_while_their_machine_is_away_loses_it_when_it_is_back', 'test_someone_taken_out_loses_it_as_soon_as_the_network_rings_their_machine'):
         setattr(Sealed, _name, None)
 
 
