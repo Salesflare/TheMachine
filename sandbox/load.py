@@ -617,12 +617,25 @@ def load_cards(db, fixture, ids, base):
         assistant.Store.still_needed_ask(db, (base - dt.timedelta(days=days)).isoformat())
 
 
+# What the company look-up would say of each made-up company: industry, size and country (the Organizations filter).
+COMPANY_FACTS = {'Northwind Analytics': ('Computer Software', '51-200', 'us'), 'Brightpath Logistics': ('Logistics and Supply Chain', '201-500', 'nl'),
+                 'Cobalt & Finch': ('Design', '2-10', 'gb'), 'Harborline Health': ('Hospital and Health Care', '1001-5000', 'us'),
+                 'Quarry Lane Studios': ('Media Production', '11-50', 'gb'), 'Tidewater Foods': ('Food Production', '501-1000', 'be'),
+                 'Meridian Robotics': ('Machinery', '51-200', 'de'), 'Pinecrest Legal': ('Law Practice', '11-50', 'us'),
+                 'Saltmarsh Media': ('Online Media', '11-50', 'gb'), 'Vantage Rail': ('Railroad Manufacture', '1001-5000', 'de'),
+                 'Orchard Street Bakery': ('Food and Beverages', '2-10', 'be'), 'Kestrel Energy': ('Renewables and Environment', '201-500', 'nl'),
+                 'Glasswing Apps': ('Computer Software', '2-10', 'be'), 'Fernhill Schools': ('Education Management', '51-200', 'gb'),
+                 'Ironbark Outdoor': ('Sporting Goods', '11-50', 'ca')}
+
+
 def load_companies(db, fixture, base):
     """Every made-up company by its own name ("Saltmarsh Media"), as the company look-up would give it on a real
     Machine; without one the Graph would spell it from its domain ("Saltmarshmedia")."""
     for c in fixture.get('companies') or ():
+        industry, size, country = COMPANY_FACTS.get(c['name'], (None, None, None))
+        profile = {'name': c['name'], **({'industry': industry, 'size': size, 'country': country} if industry else {})}
         db.execute("INSERT OR IGNORE INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,'found',?,?)",
-                   (c['domain'], json.dumps({'name': c['name']}), base.isoformat()))
+                   (c['domain'], json.dumps(profile), base.isoformat()))
 
 
 def load_boards(db, fixture, ids, base):

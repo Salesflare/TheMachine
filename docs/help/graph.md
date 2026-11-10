@@ -14,7 +14,9 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 
 ## Filter and sort
 
-**Filter**, next to the tabs, narrows the list by owner, tag, board, stage, organization, value, expected close date and **No reply in 10+ days**. People and organizations match through their open projects. The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
+**Filter**, next to the tabs, narrows the list. Each list has its own filters. People: closeness, last contact, organization, owner, tag and **Has an open project**. Organizations: industry, size, country, last contact, owner, tag and **Has an open project**. Projects: owner, board, stage, tag, organization, value, expected close date and **No reply in 10+ days**.
+
+The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
 
 The order menu sorts the list, also by **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
 
