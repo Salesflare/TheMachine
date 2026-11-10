@@ -4,6 +4,7 @@ assistant.py as is."""
 import datetime as dt
 import http.client
 import json
+import logging
 import re
 import time
 import urllib.error
@@ -266,8 +267,29 @@ SALESFLARE_FEED_ROUTE = '/accounts/{id}/feed'
 
 # Salesflare refuses the feed for the whole team (a setting on its side, report s_f0d5d0200384ed92): every account of a
 # round answers 403 on the feed while the key's user is part of it. Asking each account again every round changes
-# nothing, so one account is asked about this often until one read succeeds.
+# nothing, so one account is asked until one read succeeds: every 10 minutes on the first day (the owner is likely
+# getting it switched on), hourly after that. The warning about it is logged at most hourly either way.
 SALESFLARE_FEED_RECHECK = dt.timedelta(hours=1)
+SALESFLARE_FEED_RECHECK_EARLY = dt.timedelta(minutes=10)
+SALESFLARE_FEED_EARLY = dt.timedelta(days=1)
+
+
+def feed_recheck_every(off, stamp):
+    """How long the feed, off since off['since'], waits between re-checks."""
+    try:
+        early = stamp - dt.datetime.fromisoformat(off['since']) < SALESFLARE_FEED_EARLY
+    except (KeyError, TypeError, ValueError):
+        early = False
+    return SALESFLARE_FEED_RECHECK_EARLY if early else SALESFLARE_FEED_RECHECK
+
+
+def feed_off_warns(off, stamp):
+    """True when a re-check that found the feed still off may log its warning: at most one an hour (off['warned']), so
+    the quicker re-checks of the first day are no louder than the hourly ones."""
+    try:
+        return stamp - dt.datetime.fromisoformat(off['warned']) >= SALESFLARE_FEED_RECHECK
+    except (KeyError, TypeError, ValueError):
+        return True
 
 
 def feed_off_wait(state, stamp):
@@ -277,7 +299,7 @@ def feed_off_wait(state, stamp):
     if not off or state.get('window') or ('next_full' in state and not state['next_full']):
         return False
     try:
-        return stamp - dt.datetime.fromisoformat(off['checked']) < SALESFLARE_FEED_RECHECK
+        return stamp - dt.datetime.fromisoformat(off['checked']) < feed_recheck_every(off, stamp)
     except (KeyError, TypeError, ValueError):
         return False
 
@@ -416,12 +438,16 @@ def sync_salesflare(store, config, account, source=None):
                     window['feed_refused'] = window.get('feed_refused', 0) + 1
                     if state.get('feed_off'):
                         # The re-check: still off, and this one account answered for the team. The round is dropped,
-                        # nobody else is asked, and the next re-check is an hour away. One line per re-check.
+                        # nobody else is asked, and the next re-check waits (feed_off_wait). One line per re-check:
+                        # a warning at most hourly, the ones in between at INFO.
                         state['feed_off']['checked'] = stamp.isoformat()
                         state['next_full'] = stamp.timestamp()  # a Restart's re-check is done
                         state.pop('window')
-                        LOG.warning('salesflare feed off for team account=%s since=%s recheck=1 route=%s message=%s', account['id'],
-                                    state['feed_off'].get('since'), error.route, getattr(error, 'reason', None) or '-')
+                        level = logging.INFO
+                        if feed_off_warns(state['feed_off'], stamp):
+                            level, state['feed_off']['warned'] = logging.WARNING, stamp.isoformat()
+                        LOG.log(level, 'salesflare feed off for team account=%s since=%s recheck=1 route=%s message=%s', account['id'],
+                                state['feed_off'].get('since'), error.route, getattr(error, 'reason', None) or '-')
                         store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
                         return {'mode': state.get('mode') or 'incremental', 'events': len(events), 'feed_off': True, 'more': False}
                 window['refused'] = window.get('refused', 0) + 1
@@ -477,10 +503,11 @@ def sync_salesflare(store, config, account, source=None):
             state['next_full'] = stamp.timestamp() + 86400
         if window.get('accounts') and window.get('feed_refused', 0) == window['accounts']:
             # Every account asked was refused on the feed while the key's user is part of it: Salesflare has the feed
-            # off for the whole team. From here one account is asked, about hourly (feed_off_wait).
-            state['feed_off'] = {'since': stamp.isoformat(), 'checked': stamp.isoformat()}
-            LOG.warning('salesflare feed off for team account=%s accounts=%d: one account is re-checked every %d min',
-                        account['id'], window['accounts'], SALESFLARE_FEED_RECHECK.total_seconds() // 60)
+            # off for the whole team. From here one account is asked, now and then (feed_off_wait).
+            state['feed_off'] = {'since': stamp.isoformat(), 'checked': stamp.isoformat(), 'warned': stamp.isoformat()}
+            LOG.warning('salesflare feed off for team account=%s accounts=%d: one account is re-checked every %d min for a day, '
+                        'then every %d min', account['id'], window['accounts'],
+                        SALESFLARE_FEED_RECHECK_EARLY.total_seconds() // 60, SALESFLARE_FEED_RECHECK.total_seconds() // 60)
         state.pop('window')
     store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
     involved = {'email:' + str(c.get('email')).lower() for e in events for c in e['metadata'].get('contacts') or ()}
