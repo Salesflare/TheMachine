@@ -658,6 +658,17 @@ class ViewsStore(ConversationStore):
                         suggestion['project_node'] = projects[suggestion['project']]
                     except sqlite3.Error:
                         pass
+                # The organization it is about, in the review's word (CardsStore.suggest org), for its chip; org_said: a review
+                # gave that word, also "none". Else the project's organization the owner or a review set (project_node org); never a
+                # person's employer.
+                suggestion['org_said'] = suggestion.get('org') is not None
+                if suggestion.get('org'):
+                    try:
+                        found = graph.card_org_view(db, suggestion['org'])
+                        if found:
+                            suggestion['org_node'] = found
+                    except sqlite3.Error:
+                        pass
                 if suggestion.get('next_action'):
                     suggestion['next_action']=json.loads(suggestion['next_action'])
                 prompt=suggestion.get('feedback_request_id') and db.execute('SELECT status,error FROM feedback_prompts WHERE request_id=?',(suggestion['feedback_request_id'],)).fetchone()

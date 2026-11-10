@@ -354,7 +354,7 @@ class CardsStore:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None, personal=False, waiting_on=None):
+                company=None, personal=False, waiting_on=None, org=None):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         waiting_on: the review's word that the owner did their part of that open card and the next step is someone
@@ -367,13 +367,16 @@ class CardsStore:
         on (todo_areas.owner_companies): the to-do gets that company's accounts and stays there, as after a move.
         personal: the review's word that the matter is the owner's own life (family, friends, home), also on a work
         mailbox; so is evidence whose people are all from the owner's own life (own_life_evidence). The to-do is
-        Personal from the start (todo_areas.personal_accounts), never a Work Fleet's."""
+        Personal from the start (todo_areas.personal_accounts), never a Work Fleet's.
+        org: the review's word on which organization the matter is about (graph.card_org: its node id, domain or name;
+        '' for none). Only the matter decides it, never who is on it; None leaves it as it was (not said)."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
-                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on)
+                                    expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on,
+                                    org=org)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if waiting_on is not None:
@@ -391,6 +394,8 @@ class CardsStore:
         with contextlib.nullcontext(_db) as db:
             if company is None and (personal is True or own_life_evidence(db, event_ids)):
                 company, placed = todo_areas.PERSONAL, todo_areas.personal_accounts(getattr(self, 'accounts', None) or [])
+            if org is not None:
+                org = graph.card_org(db, org)
             existing = db.execute('SELECT * FROM suggestions WHERE dedupe_key=? OR id=(SELECT suggestion_id FROM suggestion_keys WHERE dedupe_key=?)',
                                   (dedupe_key, dedupe_key)).fetchone()
             if existing and (not match or set(event_ids) <= set(json.loads(existing['event_ids'] or '[]'))):
@@ -467,6 +472,8 @@ class CardsStore:
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))
                 if expiry and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, target['id']))
+                if org is not None and not saved.get('attached'):  # the review's latest word on what it is about
+                    db.execute('UPDATE suggestions SET org=? WHERE id=?', (org, target['id']))
                 return saved
             if due:
                 # A deadline within three days goes out now; one that the
@@ -495,6 +502,8 @@ class CardsStore:
                         int(bool(owner_step))))
             if expiry:
                 db.execute('UPDATE suggestions SET expires_at=?,expires_what=? WHERE id=?', (*expiry, suggestion_id))
+            if org is not None:
+                db.execute('UPDATE suggestions SET org=? WHERE id=?', (org, suggestion_id))
             if company:  # pinned there, as a move is: a later signal on another company's mailbox doesn't pull it back
                 db.execute('UPDATE suggestions SET area=? WHERE id=?', (company, suggestion_id))
             db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)',
