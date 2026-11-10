@@ -47,8 +47,8 @@
 .new-menu{position:fixed;left:auto;z-index:60;min-width:200px}.new-menu[hidden]{display:none}
 #project-form fieldset{margin:0;padding:0;border:0;min-width:0}#project-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 #project-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
-/*@lazy*/
 .ed-field select{display:block;width:100%;margin-top:6px}
+/*@lazy*/
 .ed-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 /*@eager*/
 #project-form button.icon{flex:none;width:34px;min-height:34px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-3);font-size:1rem;border-radius:var(--r-sm)}
@@ -68,13 +68,9 @@
 .sp-line{margin:0;line-height:1.45;color:var(--text)}
 /*@eager*/
 #share-people-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}
-/*@lazy*/
 .ed-field{display:block;color:var(--c-text-2);font-size:var(--fs-sm)}
-/*@eager*/
 #board-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
-/*@lazy*/
 .ed-field input,.ed-field textarea{display:block;width:100%;margin-top:6px}
-/*@eager*/
 #board-form fieldset{margin:0;padding:0;border:0;min-width:0}
 #board-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 #board-form legend .count{margin-left:4px;color:var(--c-text-3)}
@@ -155,7 +151,7 @@
 @media(prefers-reduced-motion:reduce){.fr-item{transition:none}.fr-spin{animation:none}}
 @media(hover:none){#fu-review .fu-keys{display:none}}
 @media(max-width:560px){
-  #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#crm-dialog.wide,#share-people,#split-dialog,#contact-share,#machine-invite,#fu-dialog,#fu-review{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}#crm-dialog.tall{height:92dvh}
+  #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#crm-dialog.wide,#share-people,#contact-share,#machine-invite,#fu-dialog,#fu-review{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}#crm-dialog.tall{height:92dvh}
   .fu-row input[type=number],.fu-stages input[type=number]{width:3.2em}.fu-stages .fu-chk{flex-basis:9rem}
   #fu-review[open]{height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0;padding:14px 16px 16px}#fu-review .ed-actions{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
   .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}.fr-item{padding:12px}.fr-sub,.fr-body,.fr-none,.fr-held,.fr-state,.fr-advice{margin-left:0}.fr-change{margin:0 -16px;padding:12px 16px}.fr-edit{width:100%;margin-left:0}

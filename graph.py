@@ -2242,10 +2242,8 @@ def detail(db, node_id, events=12):
         except ValueError:
             view['project'] = None
         view['todos'] = project_todos(db, node_id)  # its own To-dos section, so not again under Open between you
-        import project_about  # its description under its name, written in the background (project_about.py)
-        view['about'] = project_about.view(db, int(node_id.split(':', 1)[1]))
-        import project_split  # split up into other projects, or split from one, while Undo holds (project_split.py)
-        view['split'] = project_split.page_line(db, int(node_id.split(':', 1)[1]))
+        import project_about, project_split  # its description (project_about.py); a split while Undo holds (project_split.py)
+        view['about'], view['split'] = project_about.view(db, pid := int(node_id.split(':', 1)[1])), project_split.page_line(db, pid)
         if view['todos']:
             view['open'].pop('cards', None)
     import crm
