@@ -89,6 +89,7 @@ try{
  assert.equal(calls.filter(c=>c.action==='promise_todo').length,1);
  await page.evaluate(()=>refresh());
  assert.equal(await list.locator('a.promise-todo[href="#chat=c3"]').textContent(),'a to-do now');
+ assert.equal(await list.locator('details.promise-menu[open]').count(),0,'its menu closed after Nudge');
  if(process.env.PROMISES_SHOT)await page.screenshot({path:process.env.PROMISES_SHOT+'-toast.png'});
  // Open to-do in the toast opens it
  await toastEl.locator('[data-toast-open="c3"]').click();
@@ -96,6 +97,7 @@ try{
  await page.evaluate(()=>{location.hash=''});
  if(!await page.locator('#promises-list').evaluate(d=>d.open))await page.locator('#promises-head').click();
  // Nudge on one that is a to-do already ("Open its to-do"): its chat opens, as before
+ await page.evaluate(()=>document.querySelectorAll('details.promise-menu[open]').forEach(d=>{d.open=false}));
  await menu(2);await list.locator('[data-promise-todo="2"]').click();
  await page.waitForFunction(()=>location.hash==='#chat=c2');
  await page.evaluate(()=>history.back());await page.waitForFunction(()=>location.hash!=='#chat=c2');
