@@ -265,7 +265,6 @@
  "Add stage": "Fase toevoegen",
  "Add the error log": "Het foutenlogboek toevoegen",
  "Add the to-do": "To-do toevoegen",
- "Add their email address.": "Vul hun e-mailadres in.",
  "Add to": "Toevoegen aan",
  "Add to Home Screen": "Zet op beginscherm",
  "Add to calendar": "Toevoegen aan agenda",
@@ -522,6 +521,7 @@
  "Asked. It shows as accepted once they take it.": "Gevraagd. Het staat op aanvaard zodra ze het opnemen.",
  "Asked. Their busy times show here.": "Gevraagd. Wanneer ze bezet zijn, verschijnt hier.",
  "Asked. This tab shows how it goes.": "Gevraagd. Dit tabblad toont hoe het loopt.",
+ "Asked: {}": "Gevraagd: {}",
  "Asking to join": "Vraagt om lid te worden",
  "Asking {}’s Machine for a time that suits you both.": "De Machine van {} wordt gevraagd naar een tijd die jullie allebei past.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Vraagt een {} Machine, betaald door de Fleet: {}.",
@@ -1400,7 +1400,6 @@
  "Family invites are no longer suggested.": "Uitnodigingen voor je familie worden niet meer voorgesteld.",
  "Family invites are suggested.": "Uitnodigingen voor je familie worden voorgesteld.",
  "Family plans": "Gezinsplannen",
- "Family? Your Machines can share plans and free times.": "Familie? Jullie Machines kunnen plannen en vrije momenten delen.",
  "Fast": "Snel",
  "Faster": "Sneller",
  "Feb": "feb",
@@ -1624,7 +1623,6 @@
  "From {} of your notes": "Uit {} van je notities",
  "From {}, version {}": "Van {}, versie {}",
  "From {}.": "Van {}.",
- "From {}. Nothing goes out until you press Send.": "Van {}. Er gaat niets weg tot je op Versturen drukt.",
  "From {}:": "Van {}:",
  "From {}: {}": "Van {}: {}",
  "From: {}": "Van: {}",
@@ -3236,6 +3234,7 @@
  "Only the owner edits an organization's details, on the dashboard": "Alleen de eigenaar bewerkt de gegevens van een organisatie, op het dashboard",
  "Only the owner edits how they write, in Settings": "Alleen de eigenaar bewerkt hoe hij schrijft, in Instellingen",
  "Only the owner imports birthdays, on the dashboard": "Alleen de eigenaar importeert verjaardagen, op het dashboard",
+ "Only the owner invites someone, from the dashboard": "Alleen de eigenaar nodigt iemand uit, vanaf het dashboard",
  "Only the owner labels a miss, on the dashboard": "Alleen de eigenaar labelt een gemiste, op het dashboard",
  "Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)": "Alleen de eigenaar beheert gekoppelde AI's, op het dashboard (Instellingen, Gekoppelde AI's)",
  "Only the owner merges people here, on the dashboard; reviews use graph with merge or different": "Alleen de eigenaar voegt hier personen samen, op het dashboard; reviews gebruiken graph met merge of different",
@@ -4226,7 +4225,6 @@
  "Sending in {} s": "Wordt verstuurd over {} s",
  "Sending to {} in {} s": "Wordt over {1} s verstuurd naar {0}",
  "Sending your approved draft…": "Je goedgekeurde concept versturen…",
- "Sending your invite…": "Je uitnodiging wordt verstuurd…",
  "Sending {} emails in {} s": "{0} e-mails worden over {1} s verstuurd",
  "Sending {} messages in {} s": "{0} berichten worden over {1} s verstuurd",
  "Sending {} of {}…": "{} van {} versturen…",
@@ -7302,6 +7300,10 @@
  "{} to-dos cleared in {}": {
   "one": "{} to-do afgehandeld in {}",
   "other": "{} to-do's afgehandeld in {}"
+ },
+ "{} to-dos for you": {
+  "one": "{} to-do voor jou",
+  "other": "{} to-do's voor jou"
  },
  "{} to-dos held until tomorrow {}": {
   "one": "{} to-do wacht tot morgen {}",

@@ -86,4 +86,4 @@ new MutationObserver(()=>document.querySelectorAll('.fleet-tabs:not([data-faded]
 const graphPeople=(...a)=>lazyIn('graph')?people(...a):lazyPart('graph').then(()=>people(...a));
 // Graph: People (closest, gone quiet, new), Projects and Organizations.
 const GRAPH_PANES=['people','projects','orgs'];
-const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}));  // an edit: the board's follow-ups are asked again
+const graphPost=(action,args)=>(fuKept=null,request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})}).then(r=>(pagerDrop('gsearch'),r)));  // an edit: the board's follow-ups are asked again, and a search asks the Machine again (a merged pair showed twice there)

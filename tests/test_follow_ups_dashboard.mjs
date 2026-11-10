@@ -84,7 +84,7 @@ try{
   assert.equal(await page.locator('#task-f400000000000000').count(),1);
   assert.equal((await page.locator('#badge-inbox').textContent()).trim(),'3');  // the group, Delta's own and the other one
   assert.deepEqual(await page.locator('#side-cards a').evaluateAll(l=>l.map(a=>a.textContent)),['3 follow-ups ready for Alpha testers','Follow up with Delta renewal','Reply to the venue about Friday']);
-  assert.match(await page.locator('#suggestions').evaluate(()=>document.querySelector('.app-side, body').textContent),/3 for you/);
+  assert.match(await page.locator('#suggestions').evaluate(()=>document.querySelector('.app-side, body').textContent),/3 to-dos for you/);
   await fits(page,'1440 to-dos');await shot(page,'grouped-todo-1440-light');
   // The fast review: the first is current; j moves, Enter sends it (one confirm_action with its revision)
   calls=[];await group.locator('[data-fu-review]').last().click();

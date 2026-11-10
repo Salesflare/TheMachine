@@ -4,7 +4,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// One count for For you: the header ("5 for you"), the stat tile, the For you section and the sidebar's For you all
+// One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section and the sidebar's For you all
 // count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
 // Fleet asks (a teammate waits) come before the prepared to-do, the ones that need a decision after it. A Fleet ask's
 // sidebar row brings its card up, also from an open chat. Made-up data.
@@ -30,8 +30,8 @@ try{
   const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block',locale:'en-US'}),page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.locator('#suggestions #fleet-share-p0').waitFor();await page.locator('#suggestions #fleet-w1').waitFor();
-  await page.waitForFunction(()=>/5 for you/.test(document.querySelector('.page-sub')?.textContent||''));
-  const counts=await page.evaluate(()=>({header:+/(\d+) for you/.exec(document.querySelector('.page-sub').textContent)[1],
+  await page.waitForFunction(()=>/5 to-dos for you/.test(document.querySelector('.page-sub')?.textContent||''));
+  const counts=await page.evaluate(()=>({header:+/(\d+) to-dos for you/.exec(document.querySelector('.page-sub').textContent)[1],
    tile:+document.querySelector('#suggestion-stats [data-fold-tile="foryou"] b').textContent,section:+document.querySelector('#section-foryou .count').textContent,
    side:+document.querySelector('#side-cards [data-side-fold="foryou"] .count').textContent,
    rows:[...document.querySelectorAll('#side-cards [data-side-fold="foryou"]~a')].map(a=>a.textContent.trim())}));

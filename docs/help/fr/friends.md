@@ -24,7 +24,7 @@ Les personnes que vous connaissez et qui sont sur le Network sont suggérées d�
 
 Les personnes trouvées affichent **A une Machine** dans votre liste Personnes. La vérification porte sur les adresses de vos messages et sur celles que vous avez ajoutées à une personne avec **Modifier** : si quelqu’un s’est inscrit avec une autre adresse, ajoutez-la à cette personne. Sur la page d’une personne trouvée, **Ajouter comme ami** envoie la même demande que Se connecter (**Ajouter comme famille** est dans le menu ⋯).
 
-Pour une personne sans Machine, **Inviter sur The Machine** montre l’e-mail qu’elle reçoit, à modifier si vous voulez et à **Envoyer** depuis votre propre boîte, comme tâche sur sa page. Rien ne part avant Envoyer. Sans boîte qui peut envoyer : **Copier** ou **Ouvrir dans votre messagerie**.
+Pour une personne sans Machine, **Inviter sur The Machine** ouvre l’e-mail qu’elle reçoit dans **Envoyer cet e-mail ?**, comme pour toute tâche, à modifier si vous voulez. Rien ne part avant **Envoyer maintenant**. Si vous fermez, l’invitation attend comme tâche. Sans boîte qui peut envoyer : **Copier** ou **Ouvrir dans votre messagerie**.
 
 Les numéros de téléphone comptent aussi : ceux de vos discussions WhatsApp avec des personnes à qui vous avez écrit ou que vous avez rencontrées, et ceux ajoutés avec **Modifier**. Votre numéro WhatsApp lié et les numéros sous À propos de vous vous rendent trouvable, chacun avec son interrupteur sous **Trouvable par**. Un numéro ne trouve quelqu’un que si cette personne vous a aussi recherché, ou si vous êtes amis : personne ne peut essayer des numéros pour voir qui a une Machine.
 

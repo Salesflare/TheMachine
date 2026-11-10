@@ -265,7 +265,6 @@
  "Add stage": "Aggiungi fase",
  "Add the error log": "Aggiungi il log degli errori",
  "Add the to-do": "Aggiungi l’attività",
- "Add their email address.": "Aggiungi il suo indirizzo email.",
  "Add to": "Aggiungi a",
  "Add to Home Screen": "Aggiungi alla schermata Home",
  "Add to calendar": "Aggiungi al calendario",
@@ -522,6 +521,7 @@
  "Asked. It shows as accepted once they take it.": "Chiesto. Risulta accettato quando la prende.",
  "Asked. Their busy times show here.": "Chiesto. I loro orari occupati compaiono qui.",
  "Asked. This tab shows how it goes.": "Chiesto. Questa scheda mostra come va.",
+ "Asked: {}": "Ha chiesto: {}",
  "Asking to join": "Chiedono di entrare",
  "Asking {}’s Machine for a time that suits you both.": "Chiedo alla Machine di {} un orario che vada bene a entrambi.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Chiede una Machine {}, pagata dalla Fleet: {}.",
@@ -1400,7 +1400,6 @@
  "Family invites are no longer suggested.": "Gli inviti alla famiglia non vengono più suggeriti.",
  "Family invites are suggested.": "Gli inviti alla famiglia vengono suggeriti.",
  "Family plans": "Piani di famiglia",
- "Family? Your Machines can share plans and free times.": "Famiglia? Le vostre Machine possono condividere piani e orari liberi.",
  "Fast": "Veloce",
  "Faster": "Più veloce",
  "Feb": "Feb",
@@ -1624,7 +1623,6 @@
  "From {} of your notes": "Da {} delle tue note",
  "From {}, version {}": "Da {}, versione {}",
  "From {}.": "Da {}.",
- "From {}. Nothing goes out until you press Send.": "Da {}. Non parte nulla finché non premi Invia.",
  "From {}:": "Da {}:",
  "From {}: {}": "Da {}: {}",
  "From: {}": "Da: {}",
@@ -3236,6 +3234,7 @@
  "Only the owner edits an organization's details, on the dashboard": "Solo il proprietario modifica i dettagli di un’organizzazione, nella dashboard",
  "Only the owner edits how they write, in Settings": "Solo il proprietario modifica come scrive, in Impostazioni",
  "Only the owner imports birthdays, on the dashboard": "Solo il proprietario importa i compleanni, dalla dashboard",
+ "Only the owner invites someone, from the dashboard": "Solo il proprietario invita qualcuno, dalla dashboard",
  "Only the owner labels a miss, on the dashboard": "Solo il proprietario segna una svista, nella dashboard",
  "Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)": "Solo il proprietario gestisce le IA collegate, nella dashboard (Impostazioni, IA collegate)",
  "Only the owner merges people here, on the dashboard; reviews use graph with merge or different": "Solo il proprietario unisce qui le persone, nella dashboard; le revisioni usano graph con merge o different",
@@ -4226,7 +4225,6 @@
  "Sending in {} s": "Invio tra {} s",
  "Sending to {} in {} s": "Invio a {0} tra {1} s",
  "Sending your approved draft…": "Invio della bozza approvata…",
- "Sending your invite…": "Invio del tuo invito…",
  "Sending {} emails in {} s": "Invio di {0} email tra {1} s",
  "Sending {} messages in {} s": "Invio di {0} messaggi tra {1} s",
  "Sending {} of {}…": "Invio {} di {}…",
@@ -7302,6 +7300,10 @@
  "{} to-dos cleared in {}": {
   "one": "{} attività sbrigata in {}",
   "other": "{} attività sbrigate in {}"
+ },
+ "{} to-dos for you": {
+  "one": "{} attività per te",
+  "other": "{} attività per te"
  },
  "{} to-dos held until tomorrow {}": {
   "one": "{} attività in attesa fino a domani {}",

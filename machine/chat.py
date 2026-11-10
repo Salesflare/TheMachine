@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import urllib.parse
 
+import i18n
 from machine.cards import CHAT_HANDLE, chat_plain_name
 from machine.text import _address, clamp, split_quoted_history
 import next_actions
@@ -423,6 +424,27 @@ def chat_cli_replies(run):
         else:
             texts.append({'kind': 'reply', 'text': text, 'at': at})
     return texts
+
+
+def asked_item(questions, at):
+    """The line for what the to-do asked, just before the owner's answer to it: "Asked: Should I …?". Small, as the
+    other event lines; the owner's own message then shows only their answer."""
+    return {'kind': 'event', 'text': i18n.t('Asked: {}', clamp(' '.join(' '.join(str(q).split()) for q in questions), 400)),
+            'asked': True, 'at': max(0, at - 1)}
+
+
+def chat_unglued(text, questions):
+    """An answer saved before the question was kept beside it (decision_asks): a quick pick wrote each answer line as
+    the question, then the pick ("Should I …? October invoices now"). Only a line that starts with one of the run's
+    own questions exactly, as that pick wrote it, comes apart: (the answer alone, [the questions]); else (text, [])."""
+    heads = [q if q.endswith(('.', '?', '!', '…')) else q + '.' for q in (str(q).strip() for q in questions) if q]
+    kept, asked = [], []
+    for line in str(text or '').split('\n'):
+        head = next((h for h in heads if line.startswith(h + ' ') and line[len(h) + 1:].strip()), None)
+        if head and head not in asked:
+            asked.append(head)
+        kept.append(line[len(head) + 1:].strip() if head else line)
+    return ('\n'.join(kept), asked) if asked else (text, [])
 
 
 def chat_items(messages, owner, results=None):

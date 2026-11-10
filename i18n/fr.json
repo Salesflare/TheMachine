@@ -265,7 +265,6 @@
  "Add stage": "Ajouter une étape",
  "Add the error log": "Joindre le journal d’erreurs",
  "Add the to-do": "Ajouter la tâche",
- "Add their email address.": "Ajoutez son adresse e-mail.",
  "Add to": "Ajouter à",
  "Add to Home Screen": "Ajouter à l’écran d’accueil",
  "Add to calendar": "Ajouter à l’agenda",
@@ -522,6 +521,7 @@
  "Asked. It shows as accepted once they take it.": "Demandé. Ça s’affiche comme accepté dès qu’ils le prennent.",
  "Asked. Their busy times show here.": "Demandé. Leurs heures occupées s’affichent ici.",
  "Asked. This tab shows how it goes.": "Demandé. Cet onglet montre comment ça avance.",
+ "Asked: {}": "A demandé : {}",
  "Asking to join": "Demandent à rejoindre",
  "Asking {}’s Machine for a time that suits you both.": "Demande à la Machine de {} un horaire qui vous convient à tous les deux.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Demande une Machine {}, payée par la Fleet : {}.",
@@ -1400,7 +1400,6 @@
  "Family invites are no longer suggested.": "Les invitations de la famille ne sont plus suggérées.",
  "Family invites are suggested.": "Les invitations de la famille sont suggérées.",
  "Family plans": "Projets en famille",
- "Family? Your Machines can share plans and free times.": "De la famille ? Vos Machines peuvent partager plans et disponibilités.",
  "Fast": "Rapide",
  "Faster": "Plus rapide",
  "Feb": "févr.",
@@ -1624,7 +1623,6 @@
  "From {} of your notes": "D’après {} de vos notes",
  "From {}, version {}": "De {}, version {}",
  "From {}.": "De {}.",
- "From {}. Nothing goes out until you press Send.": "De {}. Rien ne part avant que vous appuyiez sur Envoyer.",
  "From {}:": "De {} :",
  "From {}: {}": "De {} : {}",
  "From: {}": "De : {}",
@@ -3236,6 +3234,7 @@
  "Only the owner edits an organization's details, on the dashboard": "Seul le propriétaire modifie les détails d’une organisation, dans le tableau de bord",
  "Only the owner edits how they write, in Settings": "Seul le propriétaire modifie sa façon d’écrire, dans Paramètres",
  "Only the owner imports birthdays, on the dashboard": "Seul le propriétaire importe les anniversaires, depuis le tableau de bord",
+ "Only the owner invites someone, from the dashboard": "Seul le propriétaire invite quelqu’un, depuis le tableau de bord",
  "Only the owner labels a miss, on the dashboard": "Seul le propriétaire marque un oubli, dans le tableau de bord",
  "Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)": "Seul le propriétaire gère les IA connectées, sur le tableau de bord (Paramètres, IA connectées)",
  "Only the owner merges people here, on the dashboard; reviews use graph with merge or different": "Seul le propriétaire fusionne ici des personnes, dans le tableau de bord ; les revues utilisent graph avec merge ou different",
@@ -4226,7 +4225,6 @@
  "Sending in {} s": "Envoi dans {} s",
  "Sending to {} in {} s": "Envoi à {0} dans {1} s",
  "Sending your approved draft…": "Envoi de votre brouillon approuvé…",
- "Sending your invite…": "Envoi de votre invitation…",
  "Sending {} emails in {} s": "Envoi de {0} e-mails dans {1} s",
  "Sending {} messages in {} s": "Envoi de {0} messages dans {1} s",
  "Sending {} of {}…": "Envoi de {} sur {}…",
@@ -7302,6 +7300,10 @@
  "{} to-dos cleared in {}": {
   "one": "{} tâche traitée en {}",
   "other": "{} tâches traitées en {}"
+ },
+ "{} to-dos for you": {
+  "one": "{} tâche pour vous",
+  "other": "{} tâches pour vous"
  },
  "{} to-dos held until tomorrow {}": {
   "one": "{} tâche en attente jusqu’à demain {}",

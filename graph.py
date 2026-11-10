@@ -142,6 +142,7 @@ FREEMAIL = {'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.be', 'outlook
 ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|contact|help|accounts?|finance|jobs|hr|press|legal|security|privacy|feedback)@')
 GENERIC_NAMES = {'you', 'linkedin member', 'x conversation', 'linkedin conversation', 'unknown', 'unknown sender', 'unknown caller'}
 WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
+UNDATED = frozenset({'owner.card'})  # a record the owner made about someone: when it was made is no contact with them
 # A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
 PERSON_ID = re.compile(r'(?:email|wa|tg|slack|li|x|gh|manual):\S+')
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
@@ -1391,6 +1392,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     event_people, direct_people = {}, {}
     next_meeting, accounts = {}, collections.defaultdict(set)
     live_weight, history_events = collections.defaultdict(float), collections.defaultdict(list)
+    last_day = {}
     for event_id, (kind, at, account_id, m, found) in per_event.items():
         people = {}
         for identifier, _, weight, role in found:
@@ -1402,6 +1404,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                 continue
             day = at.astimezone(tz).date()  # the owner's day: a message at 00:17 on Sunday is Sunday
             day_weight[(node, day)] += weight
+            if kind not in UNDATED:  # last contact: what happened with them, never when a record about them was made
+                last_day[node] = max(last_day.get(node, day), day)
             if event_id not in past:
                 live_weight[(node, day)] += weight
                 live_roles[node][role].add(day)
@@ -1420,10 +1424,9 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     def age(day):
         return (current - dt.datetime.combine(day, dt.time(12), dt.timezone.utc)).total_seconds() / 86400
 
-    strength, last_day, live = collections.defaultdict(float), {}, collections.defaultdict(float)
+    strength, live = collections.defaultdict(float), collections.defaultdict(float)
     for (node, day), weight in day_weight.items():
         strength[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
-        last_day[node] = max(last_day.get(node, day), day)
     for (node, day), weight in live_weight.items():
         live[node] += fade(min(DAY_CAP, weight), age(day), HALF_LIFE['person'])
     signal_events = {e: v for e, v in per_event.items() if e not in past}  # projects and unnamed work: signals only
@@ -4996,9 +4999,10 @@ def project_moves(db, node_id, limit=8):
             'board_visibility': row['board_visibility'] or 'team', 'stages': stage_names(board), **({'success': success} if success else {})}
 
 
-def merge(db, a, b, same, now, source='agent'):
+def merge(db, a, b, same, now, source='agent', keep=None):
     """Merge (same) or Not the same. Not the same on a pair that was joined undoes that join for good: the two are never
-    joined again, directly or through others, until someone merges them."""
+    joined again, directly or through others, until someone merges them. A merge makes the two one record at once and
+    answers with the id that stays (keep: that one, when it is one of the two), or None until the rebuild joins them."""
     a, b = sorted((str(a).strip(), str(b).strip()))
     if not all(PERSON_ID.fullmatch(i) for i in (a, b)):
         raise ValueError('Pick two people')
@@ -5017,7 +5021,22 @@ def merge(db, a, b, same, now, source='agent'):
     for node, other in ((a, b), (b, a)):  # their pages stop asking too, before the rebuild that joins them (graph_later)
         db.execute("UPDATE graph_nodes SET info=json_set(info,'$.same',(SELECT json_group_array(json(j.value)) FROM json_each(info,'$.same') j "
                    "WHERE json_extract(j.value,'$.id') IS NOT ?)) WHERE id=? AND json_type(info,'$.same')='array'", (other, node))
+    if same:  # one record at once, before the rebuild (graph_fold.py)
+        import graph_fold
+        return graph_fold.fold(db, a, b, source, keep)
 
+
+def fold_write(db, stays, goes, strength, last, signals, info):
+    """graph_fold.fold's writes: the links and signals of goes move to stays (one it already has keeps its own), goes
+    is gone, and stays is the joined record (its identifiers follow, graph_identifiers)."""
+    for sql in ('INSERT OR IGNORE INTO graph_links(a,b,kind,strength,last_at) SELECT ?,b,kind,strength,last_at FROM graph_links WHERE a=? AND b NOT IN (?,?)',
+                'INSERT OR IGNORE INTO graph_links(a,b,kind,strength,last_at) SELECT a,?,kind,strength,last_at FROM graph_links WHERE b=? AND a NOT IN (?,?)'):
+        db.execute(sql, (stays, goes, stays, goes))
+    db.execute('INSERT OR IGNORE INTO graph_events(node_id,event_id,at,probable,direct) SELECT ?,event_id,at,probable,direct FROM graph_events WHERE node_id=?',
+               (stays, goes))
+    for sql in ('DELETE FROM graph_links WHERE a=?1 OR b=?1', 'DELETE FROM graph_events WHERE node_id=?1', 'DELETE FROM graph_nodes WHERE id=?1'):
+        db.execute(sql, (goes,))
+    db.execute('UPDATE graph_nodes SET strength=?,last_at=?,signals=?,info=? WHERE id=?', (strength, last, signals, json.dumps(info), stays))
 
 def merge_all(db, pairs, now):
     """Merge all: the owner merges every listed Same person? pair at once. Only pairs still asked count, so a pair marked

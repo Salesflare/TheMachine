@@ -104,7 +104,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 - When the status line is a question for you, or a run stopped to ask you something (not a sign-in), **Answer** leads, also on a to-do a teammate handed back.
 - Answer opens a box under the question. Your answer goes back like a **Change** note, so the work carries on. On Telegram, Answer asks for a reply.
 - A Change or answer after a handoff came back makes the to-do yours again.
-- A run that stops for your input asks short, plain questions, with quick picks for a clear choice that fill the answer box. Small calls with an obvious default it makes itself.
+- A run that stops for your input asks short, plain questions, with quick picks for a clear choice that fill the answer box. The box holds only your answer: the to-do keeps which question it answers, and its chat shows the question as a quiet line above it. Small calls with an obvious default it makes itself.
 - After a Try again that came back asking the same, Try again is no longer offered.
 
 **Reviews off:** the dashboard says so, with the way to turn them on. When to-dos are already there, it says they came from the one-time first look.

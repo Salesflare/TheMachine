@@ -19,6 +19,7 @@ import follow_ups
 import i18n
 import locale_prefs
 from machine.cards import (
+    ask_blocked,
     blocker_questions,
     CHAT_STOPPED,
     current_title,
@@ -362,6 +363,29 @@ def rewait_handoffs(db):
     return moved
 
 
+def waiting_questions(db, row):
+    """The questions a to-do waits on the owner's answer to, as its Needs you line asks them: those its stopped run
+    named (ask_blocked), else its result's own question (needs_you ending in ?, with nothing to send). [] when it asks
+    nothing. Same rule as ask_question() in machine/cards.py, from the stored rows."""
+    if row['status'] in ('completed', 'rejected', 'snoozed') or row['handled_hint']:
+        return []
+    prep = db.execute('SELECT status,reason,error,questions FROM preparations WHERE suggestion_id=?', (row['id'],)).fetchone()
+    view = {'preparation_status': prep['status'], 'preparation_reason': prep['reason'], 'preparation_error': prep['error'],
+            'preparation_questions': prep['questions']} if prep else {}
+    if ask_blocked(view):
+        return [q['question'] for q in blocker_questions(view['preparation_questions'])]
+    if row['status'] != 'prepared' or view.get('preparation_status') == 'blocked':
+        return []
+    if any(a.get('kind') != 'open' for a in next_actions.visible_actions(row['next_action'])):
+        return []
+    try:
+        outcome = json.loads(row['outcome'] or '{}')
+        question = ' '.join(str(outcome.get('needs') or '').split())
+        return [question] if outcome.get('state') == 'needs_you' and question.endswith('?') else []
+    except (ValueError, TypeError, AttributeError):
+        return []
+
+
 def bind_feedback_prompt(db, suggestion_id, request_id, message_id):
     db.execute("UPDATE feedback_prompts SET status='sent',message_id=?,error=NULL,updated_at=? WHERE request_id=? AND suggestion_id=?",
                (str(message_id),now(),request_id,suggestion_id))
@@ -662,8 +686,14 @@ class DecisionsStore:
             resume = 'pending'
         if choice == 'accept' and row['status'] == 'snoozed':
             status = resume
+        # A note while the to-do waits on a question answers it: the question is kept beside the answer (decision_asks),
+        # so the chat shows it as its own line and the run reads it as its question, never glued into the owner's words.
+        asked = waiting_questions(db, row) if choice == 'other' else []
         db.execute('INSERT INTO decisions VALUES(?,?,?,?,?,?)',
                    (decision_id, suggestion_id, choice, feedback[:5000], source, now()))
+        if asked:
+            db.execute('INSERT OR IGNORE INTO decision_asks(decision_id,suggestion_id,questions,created_at) VALUES(?,?,?,?)',
+                       (decision_id, suggestion_id, encoded(asked), now()))
         if choice == 'complete':
             db.execute('UPDATE suggestions SET completed_from=? WHERE id=?', (resume if row['status']=='snoozed' else row['status'],suggestion_id))
         if choice in ('complete','reject'):

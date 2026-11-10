@@ -265,7 +265,6 @@
  "Add stage": "Add stage",
  "Add the error log": "Add the error log",
  "Add the to-do": "Add the to-do",
- "Add their email address.": "Add their email address.",
  "Add to": "Add to",
  "Add to Home Screen": "Add to Home Screen",
  "Add to calendar": "Add to calendar",
@@ -522,6 +521,7 @@
  "Asked. It shows as accepted once they take it.": "Asked. It shows as accepted once they take it.",
  "Asked. Their busy times show here.": "Asked. Their busy times show here.",
  "Asked. This tab shows how it goes.": "Asked. This tab shows how it goes.",
+ "Asked: {}": "Asked: {}",
  "Asking to join": "Asking to join",
  "Asking {}’s Machine for a time that suits you both.": "Asking {}’s Machine for a time that suits you both.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Asks for a {} Machine, paid by the Fleet: {}.",
@@ -1400,7 +1400,6 @@
  "Family invites are no longer suggested.": "Family invites are no longer suggested.",
  "Family invites are suggested.": "Family invites are suggested.",
  "Family plans": "Family plans",
- "Family? Your Machines can share plans and free times.": "Family? Your Machines can share plans and free times.",
  "Fast": "Fast",
  "Faster": "Faster",
  "Feb": "Feb",
@@ -1624,7 +1623,6 @@
  "From {} of your notes": "From {} of your notes",
  "From {}, version {}": "From {}, version {}",
  "From {}.": "From {}.",
- "From {}. Nothing goes out until you press Send.": "From {}. Nothing goes out until you press Send.",
  "From {}:": "From {}:",
  "From {}: {}": "From {}: {}",
  "From: {}": "From: {}",
@@ -3236,6 +3234,7 @@
  "Only the owner edits an organization's details, on the dashboard": "Only the owner edits an organization's details, on the dashboard",
  "Only the owner edits how they write, in Settings": "Only the owner edits how they write, in Settings",
  "Only the owner imports birthdays, on the dashboard": "Only the owner imports birthdays, on the dashboard",
+ "Only the owner invites someone, from the dashboard": "Only the owner invites someone, from the dashboard",
  "Only the owner labels a miss, on the dashboard": "Only the owner labels a miss, on the dashboard",
  "Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)": "Only the owner manages connected AIs, on the dashboard (Settings, Connected AIs)",
  "Only the owner merges people here, on the dashboard; reviews use graph with merge or different": "Only the owner merges people here, on the dashboard; reviews use graph with merge or different",
@@ -4226,7 +4225,6 @@
  "Sending in {} s": "Sending in {} s",
  "Sending to {} in {} s": "Sending to {} in {} s",
  "Sending your approved draft…": "Sending your approved draft…",
- "Sending your invite…": "Sending your invite…",
  "Sending {} emails in {} s": "Sending {} emails in {} s",
  "Sending {} messages in {} s": "Sending {} messages in {} s",
  "Sending {} of {}…": "Sending {} of {}…",
@@ -7302,6 +7300,10 @@
  "{} to-dos cleared in {}": {
   "one": "{} to-do cleared in {}",
   "other": "{} to-dos cleared in {}"
+ },
+ "{} to-dos for you": {
+  "one": "{} to-do for you",
+  "other": "{} to-dos for you"
  },
  "{} to-dos held until tomorrow {}": {
   "one": "{} to-do held until tomorrow {}",

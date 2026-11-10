@@ -32,12 +32,18 @@ const view={on:true,ask_meetings:false,brief:{every:'off',tell:false},kinds:{rel
     {member_id:'fm_kim',name:'Kim Lee-Park',role:'member',answers_with:'Hosted: kim.example.test',email:'kim@acme.example',graph_node:'email:kim@acme.example'}],
    members:[{member_id:'fm_kim',name:'Kim Lee-Park',rules:rules()}],rules:rules(),exceptions:{}}],friends:null};
 const calls=[],errors=[];
+// The to-dos: one with an email draft (Review and send), and the invite once person_invite_draft makes it
+const mailDraft=(to,subject,body,revision)=>({kind:'email',label:'Send',account_id:'home',from:'owner@home.example',to:[to],cc:[],bcc:[],subject,body,signature:true,revision});
+const todos=[{id:'aaaaaaaaaaaaaaa1',title:'Reply to Kim',body:'A reply to Kim.',status:'prepared',scope:'personal',event_ids:[],sources:[],next_action:mailDraft('kim@studio.example','Re: Saturday','Hi Kim,\n\nSaturday works for me. See you at ten.','aaaaaaaaaaa1')}];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:todos,promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
  if(url.pathname==='/api/graph'){res.end(JSON.stringify(url.searchParams.get('node')===nia.id?nia:url.searchParams.get('node')===sky.id?sky:url.searchParams.get('node')?kim:{projects:[],people:[kim,alex,nia,pat,sky],quiet:[],new:[],orgs:[]}));return}
  if(url.pathname==='/api/fleet'){res.end(JSON.stringify(view));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  if(call.action==='person_invite_draft'){todos.push({id:'bbbbbbbbbbbbbbb2',title:'Invite Sky Rivers to The Machine',body:'An invite to The Machine, from their page.',status:'prepared',scope:'personal',event_ids:[],sources:[],
+    next_action:mailDraft('sky@home.example','Have a look at The Machine','Hi Sky,\n\nI use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: https://themachine.computer','bbbbbbbbbbb2')});
+   res.end(JSON.stringify({suggestion_id:'bbbbbbbbbbbbbbb2',revision:'bbbbbbbbbbb2'}));return}
   if(call.action==='fleet_network')nia.fleet.network={...nia.fleet.network,requested:true,can_add:false};  // what the Machine says once it is sent
   if(call.action==='graph_rename'){kim={...kim,name:call.args.name,fleet:{...fleetMark,named:false}};delete kim.name_from_messages;res.end(JSON.stringify({node_id:kim.id,name:call.args.name}));return}res.end('{}');return}
  res.statusCode=404;res.end('{}')});
@@ -132,7 +138,7 @@ try{
  assert.match(await dialog.locator('.mi-preview').textContent(),/To: sky@home\.exampleSubject: Have a look at The MachineHi Sky,I use The Machine, .*https:\/\/themachine\.computer$/);
  const mail=await dialog.locator('[data-mi-mail]').getAttribute('data-mi-mail');
  assert.ok(mail.startsWith('mailto:sky%40home.example?subject=Have%20a%20look%20at%20The%20Machine&body=Hi%20Sky%2C'),mail);
- assert.equal(await dialog.locator('.mi-family a').getAttribute('href'),sky.invite.family.url);  // the account page's Family invite, prefilled
+ assert.equal(await page.locator('.person-about .mi-family a').getAttribute('href'),sky.invite.family.url);  // the account page's Family invite, prefilled, on the page
  if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1440])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:width<500?844:900});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);
   await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-invite-dialog-${width}-${scheme}.png`})}
  await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
@@ -142,26 +148,30 @@ try{
   await page.locator('.person-about').scrollIntoViewIfNeeded();await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-invite-${width}-${scheme}.png`})}
  await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
  await fits('invite');
- // With a mailbox that can send: the words to change, and Send through the owner's mailbox (person_invite_send), only on Send
- sky.invite.from='owner@home.example';
+ // With a mailbox that can send: the invite is a to-do with its draft, opened in the send dialog every email uses
+ sky.invite.send=true;
  await page.evaluate(()=>{location.hash='#people'});await page.locator('#people-view article[data-node="email:sky@home.example"] button.node').click();
  await page.waitForFunction(()=>document.querySelector('.graph-detail h3')?.textContent==='Sky Rivers');
- await page.locator('[data-machine-invite]').click();await dialog.waitFor();
- assert.equal(await dialog.locator('.fleet-fine').first().textContent(),'From owner@home.example. Nothing goes out until you press Send.');
- assert.equal(await dialog.locator('[data-mi-to]').inputValue(),'sky@home.example');
- assert.equal(await dialog.locator('[data-mi-subject]').inputValue(),'Have a look at The Machine');
- assert.match(await dialog.locator('[data-mi-body]').inputValue(),/^Hi Sky,\n\nI use The Machine, .*https:\/\/themachine\.computer$/);
- assert.equal(await dialog.locator('[data-mi-mail]').count(),0);  // it sends itself: no Open in email
- assert.deepEqual(await dialog.locator('.ed-actions button').allTextContents(),['Copy','Send']);
- if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1440])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:width<500?844:900});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);
-  await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-invite-send-${width}-${scheme}.png`})}
- await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844});
- assert.equal(calls.length,before);  // opening it sent nothing
- await dialog.locator('[data-mi-body]').fill('Hi Sky,\n\nYou should try this.');
- await dialog.locator('[data-mi-send]').click();await page.waitForFunction(()=>!document.querySelector('#machine-invite').open);
- const send=calls.find(c=>c.action==='person_invite_send');
- assert.deepEqual({...send.args,approval_id:typeof send.args.approval_id},{node_id:sky.id,to:'sky@home.example',subject:'Have a look at The Machine',
-  body:'Hi Sky,\n\nYou should try this.',approval_id:'string'});
+ await page.locator('[data-machine-invite]').click();
+ const send=page.locator('#send-dialog[open]');await send.waitFor();
+ assert.deepEqual(calls.slice(before).map(c=>c.action),['person_invite_draft']);  // the draft only: nothing sent
+ assert.deepEqual(calls.at(-1).args,{node_id:sky.id});
+ assert.equal(await send.locator('#send-title').textContent(),'Send this email?');
+ const rows=async()=>(await send.locator('#send-head > div').allTextContents());
+ assert.deepEqual(await rows(),['Fromowner@home.example','Tosky@home.example']);
+ assert.equal(await send.locator('#send-subject').inputValue(),'Have a look at The Machine');
+ assert.match(await send.locator('#send-rich-body').textContent(),/^Hi Sky,I use The Machine, .*https:\/\/themachine\.computer/);
+ assert.deepEqual(await send.locator('#send-act button:visible').allTextContents(),['Send now','Ask for changes']);
+ assert.equal(await page.locator('#machine-invite[open]').count(),0);
+ const shoot=async name=>{if(process.env.GRAPH_FLEET_SHOTS)for(const width of [390,1440])for(const scheme of ['light','dark']){await page.setViewportSize({width,height:width<500?844:900});await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);
+  await page.screenshot({path:`${process.env.GRAPH_FLEET_SHOTS}-${name}-${width}-${scheme}.png`})}await page.emulateMedia({colorScheme:'light'});await page.setViewportSize({width:390,height:844})};
+ await shoot('invite-send');
+ await page.evaluate(()=>document.querySelector('#send-dialog').close());
+ // A to-do's own email draft, for the same dialog side by side
+ await page.evaluate(()=>openSend('aaaaaaaaaaaaaaa1','aaaaaaaaaaa1'));await send.waitFor();
+ assert.deepEqual(await rows(),['Fromowner@home.example','Tokim@studio.example']);
+ await shoot('todo-send');
+ await page.evaluate(()=>document.querySelector('#send-dialog').close());
  assert.deepEqual(errors,[]);
  console.log('graph fleet dashboard ok');
 }finally{await browser?.close();server.close()}
