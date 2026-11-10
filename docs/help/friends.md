@@ -24,7 +24,7 @@ People you know show up right away when you turn it on, and as they join later. 
 
 People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as a friend** sends the same request as Connect (**Add as family** is in the ⋯ menu).
 
-Someone without a Machine gets **Invite to The Machine**: the email they get, to change if you like and **Send** from your own mailbox, as a to-do on their page. Nothing goes out before Send. Without a mailbox that can send: **Copy** or **Open in email**.
+Someone without a Machine gets **Invite to The Machine**: it opens the email they get in **Send this email?**, the same one as for any to-do, to change if you like. Nothing goes out before **Send now**. Close it and the invite waits as a to-do. Without a mailbox that can send: **Copy** or **Open in email**.
 
 Phone numbers count too: the numbers in your WhatsApp chats with people you wrote to or met, and the ones you added with **Edit**. Your linked WhatsApp number and the numbers under About you make you findable, each with its own switch under **Findable by**. A number finds someone only when they looked you up too, or you are friends, so nobody can try numbers to see who has a Machine.
 
