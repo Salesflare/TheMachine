@@ -285,6 +285,10 @@ remove them.
   [local embeddings](intelligence.md#related-signals-optional-local-embeddings) on, else the newest).
 - Each fact has a sort (event, commitment, preference or fact, given by the review that saves it) and can have an end
   day (`until`). An event without one ends after 30 days.
+- A review can also call one a contact (it only says how to reach one person). Plain code then checks it
+  (`contact_facts.py`): one phone or email in it, and one certain person (the record with that number already, or the
+  one its words name). It goes on that record as the owner's, merged with the one other record of the same name, and
+  not into facts; one change under Learning, Changes with Undo. Otherwise it stays a fact.
 - A preparation weighs facts by how fresh they are: half-lives of 7 days for events, 90 for commitments and
   preferences, 365 for other facts, after GBrain's decay. A fact past its end day is left out; the next review retires
   it, and Learning lists it under **Ended** with **Bring back**.

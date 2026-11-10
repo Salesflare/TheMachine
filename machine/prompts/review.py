@@ -23,7 +23,8 @@ FACTS_YOU = '"you" in them is the owner'
 
 
 FACT_KIND_HINT = ('kind: preference (how the owner or someone likes things), commitment (something someone will do or keep doing), '
-                  'event (something that happens at a time) or fact (anything else); until=YYYY-MM-DD when it stops holding on a known day; '
+                  'event (something that happens at a time), contact (it only says how to reach one person: their phone, WhatsApp number or '
+                  'email address; it goes on their record in the Graph) or fact (anything else); until=YYYY-MM-DD when it stops holding on a known day; '
                   + OWNER_YOU)
 
 

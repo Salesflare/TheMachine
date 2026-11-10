@@ -675,10 +675,14 @@ class GraphActionsApp:
             if not note:
                 # read by the assistant in the chat, never shown to the owner
                 raise ValueError('Facts come from the owner’s own words: they wrote nothing in this chat in the last half hour. Save it when they say it.')
-            return self.store.remember_fact(args.get('text'), note, args.get('kind') or None, None, args.get('about'),
+            done = self.store.remember_fact(args.get('text'), note, args.get('kind') or None, None, args.get('about'),
                                             args.get('until') or args.get('valid_until'), said=True)
-        return self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
-                                        args.get('until') or args.get('valid_until'))
+        else:
+            done = self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
+                                            args.get('until') or args.get('valid_until'))
+        if done.get('record'):  # a contact detail went on someone's record (contact_facts.py): their page follows
+            self.graph_later()
+        return done
 
     def graph_summary_action(self, name, args, owner_dashboard=False):
         # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's

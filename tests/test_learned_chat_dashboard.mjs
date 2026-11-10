@@ -9,14 +9,17 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // the reply says: a quiet centered line "Saved to what I’ve learned · Edit · Undo" with what was saved under it. The link
 // opens that learning on What I've learned (its block unfolded, the row lit), Edit opens it there in its editor, Undo
 // removes it and the line then says so. A fact about a person, organization or project says where it went ("Saved to
-// Sam Lee in the Graph") and opens that record's page, where it lives. No line starts with "You".
+// Sam Lee in the Graph") and opens that record's page, where it lives. A contact detail that went on someone's record
+// (contact_facts.py) says "Added to <their name>", a link to their page, with Undo that brings it back as a fact. No line
+// starts with "You".
 // All mocked; LEARNED_CHAT_SHOTS=dir saves phone and desktop screenshots.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),t0=Date.now()-60000;
 const card={id:'d1d1d1d1d1d1d1d1',title:'NDA signed, awaiting Sam',body:'Signed it; the confirmation page said it went through.',status:'prepared',scope:'work',created_at:now,event_ids:[1]};
 const rule='Browser tasks: after signing, submitting, paying or booking something, leave the confirmation page open in its tab so the owner can check it; do not close that tab.';
-let facts,removed,fixedUndone;
-const reset=()=>{removed=new Set();fixedUndone=false;facts=[{id:31,kind:'draft',text:rule,created_at:now,merged:0},
+let facts,removed,fixedUndone,movedUndone;
+const moved='Robin Vale’s WhatsApp number is +1 555 0100.';
+const reset=()=>{removed=new Set();fixedUndone=movedUndone=false;facts=[{id:31,kind:'draft',text:rule,created_at:now,merged:0},
  ...[1,2,3,4,5,6].map(n=>({id:n,kind:'draft',text:`Older rule number ${n} about some other kind of task.`,created_at:new Date(Date.parse(now)-n*86400000).toISOString(),merged:0})),
  {id:7,kind:'fact',text:'The team meets on Mondays.',created_at:now,merged:0}]};
 const items=()=>[
@@ -27,7 +30,8 @@ const items=()=>[
  {kind:'learned',what:'draft',id:31,text:rule,state:removed.has(31)?'removed':'saved',at:t0+2000},
  {kind:'learned',what:'fact',id:40,text:'Sam Lee signs contracts for Contract Admin.',state:'saved',about:{id:'email:sam@example.com',name:'Sam Lee'},at:t0+2000},
  // A wrong thing fixed where it came from (corrections.py): what is right now, and where the wrong one came from.
- {kind:'fixed',id:9,line:['{}’s role is {}','Sam Lee','Head of Sales'],from:'an old email signature',undone:fixedUndone,at:t0+2000}];
+ {kind:'fixed',id:9,line:['{}’s role is {}','Sam Lee','Head of Sales'],from:'an old email signature',undone:fixedUndone,at:t0+2000},
+ {kind:'learned',what:'fact',id:41,text:moved,...(movedUndone?{state:'saved'}:{state:'record',record:'wa:15550100',name:'Robin Vale',change:12}),at:t0+2000}];
 const posts=[];
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  const asset={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'}[url.pathname];
@@ -38,7 +42,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/action'){const {action,args}=JSON.parse(body);posts.push({action,args});
   if(action==='card_chat'){res.end(JSON.stringify({session:true,status:'ok',active:false,cursor:'k'+removed.size,items:items()}));return}
   if(action==='forget_fact'){removed.add(args.id);res.end(JSON.stringify({removed:true}));return}
-  if(action==='learning_undo'){fixedUndone=true;res.end(JSON.stringify({undone:true}));return}
+  if(action==='learning_undo'){if(args.id===12)movedUndone=true;else fixedUndone=true;res.end(JSON.stringify({undone:true}));return}
   res.end('{}');return}
  res.statusCode=404;res.end('{}');
 });
@@ -68,8 +72,16 @@ try{
   assert.ok(await log.evaluate(e=>e.scrollWidth<=e.clientWidth),'chat log does not overflow sideways at '+width);
   const fixed=log.locator('.chat-fixed');
   assert.equal((await fixed.innerText()).replace(/\s*·\s*/g,' · ').replace(/\s+/g,' ').trim(),'Fixed: Sam Lee’s role is Head of Sales, from an old email signature · Undo');
-  if(shots){await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/chat-learned-${width}-${scheme}.png`})}
+  const record=log.locator('.chat-learned',{hasText:'Added to'});
+  assert.equal((await record.locator('.learned-acts').innerText()).replace(/\s*·\s*/g,' · ').replace(/\s+/g,' ').trim(),'Added to Robin Vale · Undo');
+  assert.equal(await record.locator('a').getAttribute('href'),'#graph/wa%3A15550100');
+  assert.equal(await record.locator('q').innerText(),moved);
+  if(shots){await page.evaluate(()=>document.fonts.ready);await page.screenshot({path:`${shots}/chat-learned-${width}-${scheme}.png`});await record.screenshot({path:`${shots}/chat-contact-${width}-${scheme}.png`})}
   if(scheme==='light'){
+   // Undo of a contact detail's move: it is a fact again, with the usual line.
+   await record.locator('[data-fixed-undo="12"]').click();
+   await log.locator('[data-learned-undo="41"]').waitFor();
+   assert.deepEqual(posts.filter(p=>p.action==='learning_undo').at(-1),{action:'learning_undo',args:{id:12}});
    // Undo puts back what was there (learning_undo, the owner's own); the line stays, marked Undone, with no button.
    await fixed.locator('[data-fixed-undo="9"]').click();
    await log.locator('.chat-fixed.gone').waitFor();
