@@ -201,6 +201,30 @@ jobs:
       - name: Check whitespace
         run: git diff --check
 
+  gate:
+    # The check main's rules require, under the name it had before the shards: green only when the plan and every
+    # shard passed (scripts/ci_runs.py gate). No shards, as when the plan picked no tests, passes; a failed or cancelled
+    # plan doesn't.
+    needs: [plan, tests]
+    if: always()
+    name: tests (3.12, 24.22.1, 2026.11.2)
+    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ci_runs.py
+          sparse-checkout-cone-mode: false
+      - name: Every shard passed
+        env:
+          PLAN: ${{ needs.plan.result }}
+          TESTS: ${{ needs.tests.result }}
+          SHARDS: ${{ needs.plan.outputs.shards }}
+        run: python3 scripts/ci_runs.py gate "$PLAN" "$TESTS" "$SHARDS"
+
   impact:
     # The shards' parts in one test-impact map, the one the pull requests read (scripts/test_impact.py fetch). A map
     # that can't be made leaves the pull requests on the one before, so it never turns a run red.

@@ -110,6 +110,43 @@ class Base(unittest.TestCase):
         self.assertEqual(ci.base(b, api=api, ancestor=lambda old, new: True), a)
 
 
+class Gate(unittest.TestCase):
+    """The check main's rules require (the gate job): green only when the plan and every shard passed."""
+
+    def test_green_only_when_every_shard_passed(self):
+        self.assertTrue(ci.gate('success', 'success', '["1","2","3"]')[0])
+        self.assertTrue(ci.gate('success', 'success', '["1"]')[0])  # one job
+        for tests in ('failure', 'cancelled', ''):
+            self.assertFalse(ci.gate('success', tests, '["1","2"]')[0], tests)
+            self.assertFalse(ci.gate('success', tests, '["1"]')[0], tests)
+
+    def test_skipped_shards_pass_only_when_no_tests_were_picked(self):
+        self.assertTrue(ci.gate('success', 'skipped', '[]')[0])
+        self.assertTrue(ci.gate('success', 'skipped', ' []\n')[0])
+        self.assertFalse(ci.gate('success', 'skipped', '["1"]')[0])
+        self.assertFalse(ci.gate('success', 'skipped', '')[0])
+
+    def test_a_plan_that_did_not_pass_fails(self):
+        for plan in ('failure', 'cancelled', 'skipped', ''):
+            self.assertFalse(ci.gate(plan, 'skipped', '[]')[0], plan)
+            self.assertFalse(ci.gate(plan, 'success', '["1"]')[0], plan)
+
+    def test_the_command_exits_by_the_result(self):
+        import subprocess, sys
+        command = [sys.executable, str(ROOT / 'scripts' / 'ci_runs.py'), 'gate']
+        self.assertEqual(subprocess.run(command + ['success', 'skipped', '[]'], capture_output=True).returncode, 0)
+        self.assertEqual(subprocess.run(command + ['success', 'failure', '["1"]'], capture_output=True).returncode, 1)
+
+    def test_the_workflow_names_the_required_check(self):
+        text = (ROOT / '.github' / 'workflows' / 'ci.yml').read_text()
+        job = text[text.index('\n  gate:\n'):text.index('\n  impact:\n')]
+        self.assertIn('    name: tests (3.12, 24.22.1, 2026.11.2)\n', job)
+        self.assertIn('needs: [plan, tests]', job)
+        self.assertIn('if: always()', job)
+        self.assertIn('ci_runs.py gate "$PLAN" "$TESTS" "$SHARDS"', job)
+        self.assertIn('"python":"3.12","node":"24.22.1","openclaw":"2026.11.2"', text)
+
+
 class Merge(unittest.TestCase):
     def write(self, folder, name, data):
         path = Path(folder, name)

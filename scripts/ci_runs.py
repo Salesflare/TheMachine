@@ -14,7 +14,9 @@ selection says the changes since then can break passed on this one. A release ne
 passed tested-full run on its exact commit, since a dependency the selection missed must never reach one. A run from
 before these names ran every test, so a run without one counts as full.
 
-scripts/ci_runs.py base SHA   the newest commit under SHA (or SHA itself) whose full run passed; nothing when none"""
+scripts/ci_runs.py base SHA   the newest commit under SHA (or SHA itself) whose full run passed; nothing when none
+scripts/ci_runs.py gate PLAN TESTS SHARDS   the one check main's rules require: exit 0 when the plan job and every shard
+                                            passed (results as GitHub gives them: success, failure, cancelled, skipped)"""
 from __future__ import annotations
 
 import importlib.util
@@ -72,7 +74,23 @@ def base(head, api=_default_api, ancestor=is_ancestor, pages=3):
     return None
 
 
+def gate(plan, tests, shards):
+    """(passed, why) for a run's tests: the plan job passed and so did every shard (GitHub sums a matrix's results:
+    success only when each one succeeded). Skipped shards pass only when the plan picked no tests (shards '[]')."""
+    if plan != 'success':
+        return False, f'the plan job: {plan or "no result"}'
+    if tests == 'success':
+        return True, 'every shard passed'
+    if tests == 'skipped' and (shards or '').strip() == '[]':
+        return True, 'no tests needed'
+    return False, f'the shards: {tests or "no result"}'
+
+
 def main(argv):
+    if argv[:1] == ['gate'] and len(argv) == 4:
+        passed, why = gate(*argv[1:])
+        print(why)
+        return 0 if passed else 1
     if argv[:1] == ['base'] and len(argv) == 2:
         head = subprocess.run(['git', 'rev-parse', argv[1]], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
         try:
