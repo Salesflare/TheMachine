@@ -213,6 +213,7 @@ class WorkersApp:
         answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         self.store.answered_elsewhere()
+        self.store.name_links_once()  # one time: facts already learned are tied to the record they name (fact_links.py)
         if (self.config.get('review_worker') or {}).get('enabled'):  # read how they write from their own messages, now and then
             self.store.voice_study_due()
             self.store.tune_due()  # keep learning from edits, dismissals, snoozes and chat corrections (learning_loop.py)

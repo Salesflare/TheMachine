@@ -61,6 +61,7 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
 
 - **What I've learned**: how you write, facts, and how you like things done, from your notes. **Edit** any of it in your own words, and **Remove** what's no longer true. When a note teaches a fact or rule, the to-do's chat says **Saved to what I’ve learned**, with **Edit** and **Undo**.
 - A fact can be **Temporary**, a **Commitment** or a **Preference**, with **Until** for when it holds. Temporary facts fade in weeks, preferences and commitments in months, other facts in a year. Past its date, or once a newer message shows it no longer holds, a fact moves to **Ended**, where **Bring back** restores it.
+- A fact about one person, organization or project says who it is about, and shows on their page. A fact that names one by their full name is linked when it is saved. **Remove link** takes only the link away: the fact stays.
 - The list never fills up. When it gets long, facts and rules it hasn't used in three weeks move to **Set aside**, where **Bring back** restores one. One you edited or brought back stays.
 - A note that says something already learned in other words replaces it, so nothing is listed twice. **Undo merge** brings the old wording back. Your own edits are never replaced.
 - **Changes**: what it picked up from your edits, dismissals and chats, each with **Undo**. See [Writing](writing.md#it-keeps-learning).

@@ -39,7 +39,8 @@ def recall(app, purpose, about=None, budget=0):
         known = embeddings.settings(app.config)  # what was learned that this to-do needs, not all of it
         memory.add('rules', lambda: store.facts_for(todo, 'draft', known))
         memory.add('facts', lambda: store.facts_for(todo, 'fact', known, accounts=app.config.get('accounts', [])))
-        memory.add('records', lambda: app.graph_lines(todo))
+        # a fact about a record on the to-do is in the facts block (picked by record): the record's line doesn't say it again
+        memory.add('records', lambda: app.graph_lines(todo, {int(i.row_id) for i in memory.blocks.get('facts', ()) if i.kind == 'fact'}))
         memory.add('skills', lambda rules, room: app.prep_skill_lines(todo, rules, room))
         memory.add('team', lambda: app.fleet.lines(todo))
         memory.add('related', lambda: app.related_lines(todo))
