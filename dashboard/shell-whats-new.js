@@ -1,6 +1,7 @@
-// What's new (state.whats_new, machine/store/whats_new.py): a small dialog about features shipped since this person
-// got started, at most three, one per view: picture, title, text and the entry's button. Back and Next stay in one
-// place, Done on the last; dots, arrow keys and a swipe step too. Closing it any way marks all seen (whats_new_seen).
+// What's new (state.whats_new, machine/store/whats_new.py): a small dialog with this morning's pick of features shipped
+// since this person got started, at most five, one per view: picture, title, text and the entry's button. Back and Next
+// stay in one place, Done on the last; dots, arrow keys and a swipe step too. Closing it any way marks them seen
+// (whats_new_seen).
 // Lazy (dashboard_parts.LAZY), loaded by shell-tabs.js whatsNewMaybe.
 // Pictures ('art'), 440 by 180, no words: c card, f accent tint with accent edge, b text line, s title, m/t accent and
 // its tint, e edge in a card, l accent line, k line on the accent, q quiet line. `new` stands in for a missing one.
@@ -19,6 +20,16 @@ const WN_ART={
   +`<path class="f" d="M44 84h124v62a8 8 0 0 1-8 8H52a8 8 0 0 1-8-8z"/><rect class="m" x="96" y="110" width="20" height="6" rx="3"/>`
   +`<path class="l" stroke-dasharray="2 7" d="M184 97h30"/><path class="l" d="M218 90l7 7-7 7"/>`+wnFile(244,52,[28,22,26],-10)+wnFile(298,40,[22,28,18],4)+wnFile(346,70,[26,20,28],12)
   +`<circle class="m" cx="396" cy="138" r="16"/><path class="k" d="M396 129.5v12m-5-5 5 5 5-5M389.5 146.5h13"/>`,
+ // A project's page: its name, then the description in the accent tint with its sparkle and the mark that it renews
+ // itself, and the Timeline's lines under it
+ project:()=>`<rect class="c" x="70" y="14" width="300" height="152" rx="12"/><rect class="m" x="92" y="32" width="28" height="28" rx="7"/>`+wnBar(132,36,140,'s',8)+wnBar(132,51,80)
+  +`<rect class="f" x="92" y="74" width="256" height="48" rx="9"/><path class="m" d="M110 87l2 4.8 4.8 2-4.8 2-2 4.8-2-4.8-4.8-2 4.8-2z"/>`+wnBar(126,86,170)+wnBar(126,100,120)
+  +`<g class="l" transform="translate(320 86) scale(.8)"><path d="M3 12a9 9 0 0 1 15.4-6.4L21 8M21 3v5h-5M21 12a9 9 0 0 1-15.4 6.4L3 16M3 21v-5h5"/></g>`
+  +[136,152].map((y,i)=>`<circle class="q" cx="98" cy="${y+3}" r="3.5"/>`+wnBar(110,y,i?120:170)).join(''),
+ // The team's board: three stages of project cards, every one there, the teammates' faces above it
+ team:()=>[60,170,280].map((x,i)=>`<rect class="c" x="${x}" y="46" width="100" height="122" rx="10"/>`+wnBar(x+12,58,[44,56,38][i],'s')
+  +[0,1,2].slice(0,3-i%2).map(j=>`<rect class="${j===1-i%2?'f':'t'}" x="${x+10}" y="${74+j*31}" width="80" height="23" rx="6"/>`+wnBar(x+18,82+j*31,[52,40,60][(i+j)%3])).join('')).join('')
+  +[0,1,2].map(i=>`<circle class="${i===1?'f':'m'}" cx="${192+i*28}" cy="26" r="11"/>`).join(''),
  new:()=>`<rect class="c" x="120" y="42" width="200" height="96" rx="12"/><path class="m" d="M152 62l4 9.5 9.5 4-9.5 4-4 9.5-4-9.5-9.5-4 9.5-4z"/>`+wnBar(180,68,110,'s')+wnBar(180,84,76)+wnBar(142,108,156)+wnBar(142,122,112)};
 let wn={list:[],i:0};
 // A tap on the backdrop (the dialog itself is the target there, and on its own padding too)
@@ -35,7 +46,7 @@ function whatsNewGo(i){const d=$('#whats-new'),n=wn.list.length;if(!(i>=0&&i<n))
  d.querySelectorAll('.wn-view h2').forEach((h,j)=>{if(j===i)h.id='wn-title';else h.removeAttribute('id')});
  setHTML(acts,html`${i?html`<button type="button" class="ghost" data-wn-go="${i-1}">Back</button>`:''}${last?html`<button type="button" class="primary" data-wn-close>Done</button>`:html`<button type="button" class="primary" data-wn-go="${i+1}">Next</button>`}`);
  if(held)(acts.querySelector(held)||acts.querySelector('.primary')).focus()}  // Enter keeps going
-function whatsNewOpen(n){const list=(n?.entries||[]).slice(0,3);if(!list.length||document.querySelector('dialog[open]'))return;
+function whatsNewOpen(n){const list=(n?.entries||[]).slice(0,5);if(!list.length||document.querySelector('dialog[open]'))return;
  let d=$('#whats-new');
  if(!d){d=document.createElement('dialog');d.id='whats-new';d.tabIndex=-1;d.setAttribute('aria-labelledby','wn-title');document.body.append(d);
   d.addEventListener('close',whatsNewSeen);

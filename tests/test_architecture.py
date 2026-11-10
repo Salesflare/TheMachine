@@ -438,7 +438,7 @@ FIRST_LOAD_CEILING = 1_423_000
 # clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
 # recipe 4,000 (2026-11-10): a repeating to-do's kept way, its chat line with Edit and Undo (about 3 KB).
 # fbpeople 4,000 (2026-11-10): Facebook's friends nobody in the Graph has, adding them as personal contacts and its Undo (about 2 KB).
-LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 12_000}
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):
