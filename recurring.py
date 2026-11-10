@@ -421,7 +421,8 @@ def method_lines(db, suggestion_id):
                   'what you make and its file names, who it goes to), also give method=<the whole way to do it next time, as short '
                   'steps; what changes each time, like the period, dates and amounts, as a rule, not this time\'s values> in the same '
                   'prepare call. It replaces the saved one, so keep what still holds. The next one starts from it. It never sends '
-                  'anything: drafts still wait for the owner. Don\'t propose a skill for this to-do: method keeps its way of working. '
+                  'anything: drafts still wait for the owner. Don\'t propose a skill for this to-do on your own: method keeps its way of working. When the owner\'s message '
+                  'asks for a skill, propose it with --asked. '
                   'The body doesn\'t mention it; the to-do shows it.')
 
 

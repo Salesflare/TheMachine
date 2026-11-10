@@ -136,6 +136,21 @@ class Method(unittest.TestCase):
         job = self.start_run(self.sid, 'job2')
         with self.assertRaisesRegex(ValueError, 'method on prepare'):
             self.act('skill_propose', owner=False, name='Monthly report', description='Making the monthly report', body=body, job_id=job)
+        with self.assertRaisesRegex(ValueError, 'owner’s own message'):  # asked, without the owner's message behind the run
+            self.act('skill_propose', owner=False, name='Monthly report', description='Making the monthly report', body=body, job_id=job, asked=True)
+
+    def test_a_skill_the_owner_asks_for_is_still_proposed_and_stays(self):
+        self.prepare(self.sid, self.start_run(self.sid, 'job1'), method=WAY)
+        # The owner's own message in the chat asks for a skill: that run may propose it, and it stays when the way is saved again
+        job = self.start_run(self.sid, 'job2')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('d-job2',?,'other',?,'dashboard','2026-11-02T09:00:00+00:00')",
+                       (self.sid, 'Make this a skill too, so I can use it for other clients'))
+        body = '1. Take last month\'s sheet.\n2. Fill in the period.\n3. Draft the email.'
+        out = self.act('skill_propose', owner=False, name='Monthly report', description='Making the monthly report', body=body, job_id=job, asked=True)
+        self.prepare(self.sid, job, method=BETTER, note_kind='new_ask')
+        with self.store.connect() as db:
+            self.assertEqual(skills.for_task(db, self.sid)['id'], out['id'])
 
 
 if __name__ == '__main__':

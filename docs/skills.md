@@ -90,7 +90,8 @@ the before and after first). That tap is the same Approve as in Settings > Skill
 proposal from the same to-do replaces its earlier one, so a renamed draft doesn't leave the old name waiting.
 
 A to-do that repeats keeps its own way of doing it instead (see [Recurring to-dos](help/recurring.md)): its run saves the
-steps for the next one, so it offers no **Create skill** for the same work. An update to one of your skills still can.
+steps for the next one, so it doesn't propose a skill for the same work on its own. When you ask for one in its chat, it
+still proposes it (`--asked`), and an update to one of your skills still can.
 
 ## Checked against your skills
 
