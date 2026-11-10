@@ -164,9 +164,11 @@ def fact_restore(db, kept):
     db.executemany('INSERT INTO fact_about(fact_id,node_id,by,created_at,removed_at) VALUES(?,?,?,?,?)', [(fact_id, *a) for a in kept['about']])
 
 
-def fact_subjects(db, about):
+def fact_subjects(db, about, config=None):
     """The graph nodes a fact is about, checked: people, organizations and projects. The owner is never a node, so a
-    fact about the owner (their habits, preferences, home, accounts) has none and stays in their own memory."""
+    fact about the owner (their habits, preferences, home, accounts) has none and stays in their own memory. config
+    (the service's): the owner's own person record and organization are left out too (fact_links.own), so a fact a
+    model said was about them stays a general one."""
     if about in (None, '', []):
         return []
     about = [about] if isinstance(about, str) else about
@@ -182,7 +184,12 @@ def fact_subjects(db, about):
                 raise ValueError(f'about: {value[:80]!r} is not a person, organization or project in the graph; use a node_id from graph, their address or their exact name')
             row = {'id': node}
         out.append(row['id'])
-    return list(dict.fromkeys(out))
+    out = list(dict.fromkeys(out))
+    if config is not None and out:
+        rows = db.execute('SELECT id,kind,name,info FROM graph_nodes WHERE id IN (' + ','.join('?' for _ in out) + ')', out).fetchall()
+        mine = fact_links.own(db, config, rows)
+        out = [o for o in out if o not in mine]
+    return out
 
 
 def link_fact(db, fact_id, node_ids, by):
@@ -220,9 +227,10 @@ def link_named_all(db, config=None):
 
 
 def unlink_named(db, pairs):
-    """Undo of the one-time pass: its links go, and stay gone. One a review has since confirmed stays."""
+    """Undo of a one-time pass: its links go, and stay gone. One a review has since confirmed stays. pairs: [fact id,
+    record id], or with the link's by third (fact_ties.py; without it, the name pass's)."""
     db.executemany('UPDATE fact_about SET removed_at=? WHERE fact_id=? AND node_id=? AND by=? AND removed_at IS NULL',
-                   [(now(), int(f), str(n), fact_links.BY) for f, n in pairs])
+                   [(now(), int(p[0]), str(p[1]), str(p[2]) if len(p) > 2 else fact_links.BY) for p in pairs])
 
 
 def owner_fact(db, text, decision_id, about=(), replaces=None):
@@ -408,7 +416,9 @@ class FactsStore:
             if sort == 'event' and not until:
                 until = (dt.date.fromisoformat(now()[:10]) + dt.timedelta(days=EVENT_DAYS)).isoformat()
             merging = {o['id'] for o in originals}
-            subjects = self.fact_subjects(db, about) if storage == 'fact' else []
+            subjects = self.fact_subjects(db, about, self.own_config()) if storage == 'fact' else []
+            if by_ai and not subjects:
+                raise ValueError('A fact from a connected AI is about someone, and is not a rule or a condense')  # the owner is no one here
             existing = next((r for r in db.execute('SELECT id FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (storage, text)) if r['id'] not in merging), None)
             if existing and not originals:
                 self.link_fact(db, existing['id'], subjects, 'ai' if by_ai else 'review')
@@ -481,9 +491,9 @@ class FactsStore:
             row = db.execute("SELECT id FROM facts WHERE id=? AND removed_at IS NULL AND kind='fact'", (int(fact_id),)).fetchone()
             if not row:
                 raise ValueError('Unknown fact (only a current kind=fact note has someone it is about)')
-            subjects = self.fact_subjects(db, about)
+            subjects = self.fact_subjects(db, about, self.own_config())
             if not subjects:
-                raise ValueError('about names who the fact is about: graph node_ids')
+                raise ValueError('about names who the fact is about: graph node_ids of people, organizations or projects other than the owner and their own organization')
             self.link_fact(db, row['id'], subjects, 'review')
         return {'id': row['id'], 'about': subjects}
 

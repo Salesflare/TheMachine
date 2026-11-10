@@ -376,8 +376,13 @@ the organization's role.
 - **Known about them.** The page is where facts about them live: all of them, apart from what is open, each with
   **Edit**, **Not about them** (a general fact again) and **Remove**, and **Add** for one in your own words
   (`graph_fact_add`, tied by you). A fact is about its subject, never about whoever sent the message (`fact_about`, set
-  with `remember_fact` `about`). You are never a node, so a fact about you stays in Learning, Facts, which lists only
-  the general ones and one line with how many live on Graph pages.
+  with `remember_fact` `about`, picked from the to-do's own people and projects). You are never a node, and neither
+  your own person record nor your own organization takes a fact (`fact_links.own`), so a fact about you stays in
+  Learning, Facts, which lists only the general ones and one line with how many live on Graph pages. Facts learned
+  before this are tied once: by name with no model (`fact_links.py`), then the rest that have real candidates (records
+  whose name shares a telling word with the fact, and the records on its own to-do) in one small background turn per
+  25 facts (`fact_ties.py`, about 9,000 tokens for 100 facts). Each pass leaves one entry under Learning, Changes,
+  with Undo, and a link you removed stays removed.
 - **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 

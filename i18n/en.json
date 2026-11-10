@@ -1378,6 +1378,7 @@
  "Facts": "Facts",
  "Facts linked": "Facts linked",
  "Facts that name one person, organization or project: {}": "Facts that name one person, organization or project: {}",
+ "Facts tied to who they are about: {}": "Facts tied to who they are about: {}",
  "Failed": "Failed",
  "Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.": "Failed payments, disputes, cancellations and new subscriptions. Reads only, never changes anything in Stripe.",
  "Failed payments, disputes, churn and big new subscriptions.": "Failed payments, disputes, churn and big new subscriptions.",
