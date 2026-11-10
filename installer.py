@@ -1077,9 +1077,10 @@ def swap_minutes():
 
 def restore_model_runtime(openclaw, restart, after, restarted=False):
     """A plugin step left the running Gateway unable to run models. Reload the bridge once, after the memory
-    index has been quiet for SWAP_QUIET (gateway_idle; OpenClaw's own advice is a reload when the Gateway is idle); if that does not bring it back, the same recovery as a failed reload: load_in_gateway,
-    which restarts the Gateway where this install may. True once model calls work again; False with the reason and
-    the one command that fixes it said."""
+    index has been quiet for SWAP_QUIET (gateway_idle; OpenClaw's own advice is a reload when the Gateway is
+    idle); if that does not bring it back, the same recovery as a failed reload: load_in_gateway, which restarts
+    the Gateway where this install may. True once model calls work again; False with the reason and the one
+    command that fixes it said."""
     say(f'  After {after}, the OpenClaw Gateway cannot run models. Bringing that back before anything else.')
     if gateway_idle('reloading the bridge', '  '):
         run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
@@ -1098,9 +1099,10 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
     model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
-    One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET first (gateway_idle), and after each step checks that the Gateway
-    can still run models: it never ends, done or failed, with that broken and no recovery tried
-    (restore_model_runtime). `restart`: whether that recovery may restart the Gateway (may_restart_gateway)."""
+    One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET first (gateway_idle), and
+    after each step checks that the Gateway can still run models: it never ends, done or failed, with that
+    broken and no recovery tried (restore_model_runtime). `restart`: whether that recovery may restart the
+    Gateway (may_restart_gateway)."""
     openclaw = facts.get('openclaw')
     if not openclaw:
         return False
