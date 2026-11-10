@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Make one
 
@@ -30,6 +30,10 @@ Nothing changes until you confirm on the to-do. Senders you decided on aren’t 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.
 
 Birthdays come from your calendars (Google’s birthday events and Outlook’s Birthdays calendar), your Google contacts on a self-hosted Machine and a date field named Birthday on a person in the Graph. When none of them holds a birthday yet, its result says **No birthday info yet** and how to add some.
+
+**Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph. A name that more than one person has is skipped and listed.
+
+Only **Save** keeps them, and only the birthday, on each person’s page. A birthday you set there stays. It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook; on a hosted Machine, sign in through **Open the browser**. The Machine never signs in for you.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

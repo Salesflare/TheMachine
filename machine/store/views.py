@@ -58,6 +58,7 @@ from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
+import birthdays_facebook
 import mail_cleanup
 import bring_in
 import missed_work
@@ -79,7 +80,7 @@ import whatsapp_images
 # CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
 # that). Kept as deep copies: the status changes what it is handed, never the kept copy.
 CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decisions', 'email_bounces',
-               'events', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
+               'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
                'promises', 'recap_items', 'recurring_series', 'routine_changes', 'routines', 'skill_clusters', 'skill_task_decided', 'skills',
                'slack_members', 'suggestions', 'task_pages', 'thread_snoozes', 'whatsapp_photos')
@@ -453,6 +454,8 @@ class ViewsStore(ConversationStore):
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
         cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows])
         if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
+        facebook=birthdays_facebook.view(db,suggestion['id'])
+        if facebook:extra['facebook_birthdays']=facebook  # Birthdays' import from Facebook: Import, the preview, Save (birthdays_facebook.py)
         proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()
         if proposal:
             extra['skill_proposal'] = {'name': proposal['name'], 'body': proposal['body'],

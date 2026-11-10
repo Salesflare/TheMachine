@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday
+keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Er een maken
 
@@ -28,6 +28,10 @@ Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste,
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
 
 Verjaardagen komen uit je agenda’s (de verjaardagen van Google en de agenda Verjaardagen van Outlook), je Google-contacten op een zelf gehoste Machine en een datumveld Verjaardag bij een persoon in de Graph. Staat er nog nergens een verjaardag, dan zegt het resultaat **Nog geen verjaardagen bekend** en hoe je ze toevoegt.
+
+**Verjaardagen importeren uit Facebook**: zodra Verjaardagen aan staat, biedt een to-do aan om de verjaardagspagina van Facebook te lezen. Tik op **Importeren** en The Machine opent ze in zijn browser, scrolt tot elke maand geladen is en leest de naam en verjaardag van elke vriend. Hij toont hoeveel hij vond en wie overeenkomt met mensen in je Graph. Een naam die meer dan één persoon heeft, wordt overgeslagen en vermeld.
+
+Alleen **Bewaren** houdt ze bij, en alleen de verjaardag, op de pagina van elke persoon. Een verjaardag die je daar zelf invulde, blijft. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook; op een gehoste Machine meld je je aan via **Browser openen**. The Machine meldt zich nooit voor je aan.
 
 Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 
