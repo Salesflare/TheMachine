@@ -19,6 +19,7 @@ The private key is read from $THE_MACHINE_RELEASE_KEY, else ~/.config/the-machin
 from __future__ import annotations
 
 import argparse
+import ast
 import datetime as dt
 import json
 import os
@@ -165,6 +166,41 @@ def verify(tag=None, signers=None):
     return tag, signed_commit(raw, tag, signers if signers is not None else SIGNERS.read_text())
 
 
+WHATS_NEW = 'machine/store/whats_new.py'
+
+
+def whats_new_entries(source):
+    """The ENTRIES list of a whats_new.py source, read without running it; ValueError when it isn't a plain list."""
+    for node in ast.parse(source).body:
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'ENTRIES' for t in node.targets):
+            try:
+                found = ast.literal_eval(node.value)
+            except ValueError:
+                break
+            if isinstance(found, list):
+                return found
+    raise ValueError('ENTRIES is not a plain list')
+
+
+def whats_new_problems(source, before=None):
+    """What's new candidates this release adds (ids not in `before`, the last release's file) that are not valid
+    (machine/store/whats_new.py problems), as 'id: problem' lines. Nothing more is checked."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from machine.store.whats_new import problems
+    try:
+        entries = whats_new_entries(source)
+        known = {e.get('id') for e in whats_new_entries(before) if isinstance(e, dict)} if before else set()
+    except (SyntaxError, ValueError) as error:
+        return [str(error)]
+    ids = [e.get('id') if isinstance(e, dict) else None for e in entries]
+    found = [f'{i}: id used twice' for i in sorted({i for i in ids if i and ids.count(i) > 1})]
+    for entry, i in zip(entries, ids):
+        if i not in known:
+            found += [f'{i}: {p}' for p in problems(entry)]
+    return found
+
+
 def cut(args):
     key = Path(args.key or os.environ.get('THE_MACHINE_RELEASE_KEY') or Path.home() / '.config/the-machine-release/signing-key')
     if not key.exists():
@@ -182,6 +218,11 @@ def cut(args):
     tag = 'release-' + dt.datetime.now(dt.timezone.utc).strftime('%Y%m%d-%H%M')
     if git('rev-parse', '-q', '--verify', f'refs/tags/{tag}', check=False).returncode == 0:
         raise SystemExit(f'{tag} exists already: wait a minute and try again.')
+    last = releases()[-1] if releases() else None
+    show = lambda ref: (lambda r: r.stdout if r.returncode == 0 else None)(git('show', f'{ref}:{WHATS_NEW}', check=False))
+    bad = whats_new_problems(show(sha) or 'ENTRIES = []', show(last) if last else None)
+    if bad:
+        raise SystemExit("Not released: What's new candidates to fix first:\n  " + '\n  '.join(bad))
     try:
         try:
             require_green_tests(sha)

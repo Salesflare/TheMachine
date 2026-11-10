@@ -187,9 +187,15 @@ class WorkersApp:
                 return
             wait = 60
 
+    def whats_new_team(self):
+        """Whether this Machine is in a Work Fleet, so What's new may pick what only a team can use."""
+        fleet = getattr(self, 'fleet', None)
+        return bool(fleet and fleet.work_fleets())
+
     def retention_worker(self):
         """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and
-        local copies of the database rotate (retention.py). Checks every ten minutes; never stops the service."""
+        local copies of the database rotate (retention.py). Also the morning's What's new pick. Checks every ten
+        minutes; never stops the service."""
         while not self.stop.wait(600):
             try:  # sign-ins older versions kept only to revoke at Google again: dropped, never revoked (mail_grants.retry)
                 import mail_grants
@@ -202,6 +208,10 @@ class WorkersApp:
                     LOG.info('retention %s', json.dumps(report, sort_keys=True))
             except Exception as error:  # noqa: BLE001 - tried again in ten minutes
                 LOG.error('retention error=%s', type(error).__name__)
+            try:  # What's new: the morning's pick from the pool, once a day (machine/store/whats_new.py)
+                self.store.whats_new_pick(team=self.whats_new_team())
+            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
+                LOG.warning('whats new pick error=%s', type(error).__name__)
             try:  # files added to a chat message and never sent, and those of cards that are gone (chat_files.py)
                 with self.store.connect() as db:
                     db.execute('BEGIN IMMEDIATE')

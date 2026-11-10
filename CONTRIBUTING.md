@@ -70,16 +70,20 @@ What every pull request needs:
 
 ### What's new
 
-- A bigger feature or improvement, one a person would want to be told about, gets an entry at the top of `ENTRIES` in
-  `machine/store/whats_new.py`, in the pull request that ships it: a new id, the day it merges, a short title, one or
-  two short sentences on what changed and what they can do now, and optionally a button that opens it (a palette
-  command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
+- A feature or improvement a person would want to be told about adds a candidate at the top of `ENTRIES` in
+  `machine/store/whats_new.py`, in the pull request that ships it: a new id, the day it merges, a `weight` (how much a
+  person would care: 3 a new thing most people will use, 2 a clear improvement to something they use, 1 a small change
+  worth a line; set it honestly, it decides what gets shown), a short title, one or two short sentences on what changed
+  and what they can do now, `who: 'team'` when only a Work Fleet can use it, and optionally a button that opens it (a
+  palette command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
 - Give it a picture: a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
   `art`. Draw it as inline SVG on the 440 by 180 canvas with the classes listed there (they use the theme's colors, so
   it is right in light and dark), no words in it, placeholder bars for text. It should read as its feature without
   the title. Check it at 390 and 1440 wide in both themes; `tests/test_whats_new.py` checks the name exists.
-- The dashboard shows it once, in one small dialog, to people who got started before that day
-  ([Code map](docs/code-map.md)). Keep it rare: most pull requests add nothing here.
+- ENTRIES is a pool, not a feed: a release never pushes a notice. Each morning a Machine picks at most five unseen
+  candidates for its person (weight, then the newest; only ones dated after they got started and at most 21 days old),
+  and the dashboard shows that pick once that day ([Code map](docs/code-map.md)). What isn't picked waits for a later
+  morning or expires. `scripts/release.py cut` refuses a release whose new candidates aren't valid.
 
 ### Where code goes
 

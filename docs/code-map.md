@@ -157,7 +157,8 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
   `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
   `ProfileStore` and `FirstLookStore` mixins), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
-  dashboard's What's new notice for bigger changes, when it is due and what a person saw; its dialog is
+  pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`) and what a
+  person saw; its dialog is
   `dashboard/shell-whats-new.js`), `machine/store/machine_cards.py` (the `MachineCardsStore` mixin: The
   Machine's own to-dos, through `Store.machine_card`), `machine/web/serving.py` (the dashboard page, hosts, CSRF,
   compression, ETags, status) and `machine/web/waiting.py` (`KeyWaitingPage`, `message_key_keeper`),
