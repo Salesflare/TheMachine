@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 import learning_loop
+from machine.store.cards import wait_until
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 a = ux.a
@@ -119,6 +120,53 @@ class LookDone(unittest.TestCase):
         self.assertFalse(a.waits_on_others(row))
         with self.store.connect() as db:
             self.assertEqual(a.waiting_count(db), 1)
+
+    def waiting(self, due='2026-11-12'):
+        """The owner answered with a question of their own: the review says the next step is the other person's."""
+        self.store.commit_page('work', {}, [ux.event(source='two', body='Does the scope shrink too?')])
+        with self.store.connect() as db:
+            db.execute("UPDATE deliveries SET status='sent',message_id='42'")
+        with patch_everywhere(a, 'now', return_value='2026-11-09T10:00:00+00:00'):
+            return self.store.suggest('asked', 'Renewal at fewer days', 'You asked Sam whether the scope shrinks too.', [2], due=due,
+                                      card_id=self.sid, match=True, waiting_on='Sam to answer the scope question')
+
+    def test_the_review_leaves_a_to_do_waiting_on_someone_with_its_deadline(self):
+        saved = self.waiting()
+        row = self.row()
+        self.assertEqual((saved['id'], saved['status']), (self.sid, 'prepared'))
+        self.assertTrue(a.waits_on_others(row))
+        self.assertEqual((row['due'], row['title']), ('2026-11-12', 'Renewal at fewer days'))
+        self.assertEqual(a.card(row).splitlines()[-1], 'Waiting on: Sam to answer the scope question.')
+        with self.store.connect() as db:
+            self.assertEqual(a.waiting_count(db), 0)
+            # nothing new for the owner: no notification, the message they have is edited
+            self.assertEqual(tuple(db.execute('SELECT status,needs_edit FROM deliveries').fetchone()), ('sent', 1))
+        # Their answer comes: an open to-do again, with the deadline
+        self.store.commit_page('work', {}, [ux.event(source='three', body='Scope stays the same.')])
+        self.store.suggest('answered', 'Answer Sam on the renewal', 'Sam says the scope stays.', [3], card_id=self.sid, match=True)
+        row = self.row()
+        self.assertEqual((row['status'], row.get('outcome'), row['due']), ('pending', None, '2026-11-12'))
+
+    def test_a_waiting_to_do_comes_back_when_chasing_is_due(self):
+        self.waiting()
+        with patch_everywhere(a, 'now', return_value='2026-11-10T12:00:00+00:00'):
+            self.store.wake_snoozed()
+        self.assertTrue(a.waits_on_others(self.row()))
+        with patch_everywhere(a, 'now', return_value='2026-11-11T12:00:00+00:00'):  # the morning before the deadline has come
+            self.store.wake_snoozed()
+        row = self.row()
+        self.assertEqual((row['status'], row.get('outcome'), row['due']), ('pending', None, '2026-11-12'))
+        with self.store.connect() as db:
+            self.assertEqual(a.waiting_count(db), 1)
+            self.assertEqual(tuple(db.execute('SELECT status,reminder FROM deliveries').fetchone()), ('queued', 1))
+
+    def test_waiting_without_a_deadline_returns_after_a_week_and_too_late_stays_a_to_do(self):
+        self.assertEqual(wait_until(None, current=a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00'))[:10], '2026-11-16')
+        saved = self.waiting(due='2026-11-09')  # due today: no time left to wait
+        self.assertEqual((saved['status'], self.row()['status']), ('pending', 'pending'))
+        self.store.commit_page('work', {}, [ux.event(source='four', body='Another matter')])
+        with self.assertRaisesRegex(ValueError, 'waiting_on is for an open to-do'):
+            self.store.suggest('new', 'Something else', 'Nothing here yet.', [3], match=True, separate=True, waiting_on='Sam to answer')
 
     def test_evidence_line_is_the_first_sentence(self):
         self.assertEqual(a.first_sentence('**PR #3451** [merged](https://x.example/1), deployed Oct 27. Nothing left.'),

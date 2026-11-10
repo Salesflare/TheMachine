@@ -25,7 +25,7 @@ Na het versturen zegt een korte melding waar de to-do nu staat, zoals "Verstuurd
 
 Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou. Een to-do met een conceptantwoord lijkt ook gedaan als je zelf in dat gesprek hebt geantwoord, zoals in Gmail of Slack.
 
-Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug.
+Een to-do waarvan de laatste stap nog openstaat bij iemand anders, zoals een review, een merge of een antwoord, zegt **Wacht op:** die stap en blijft open. Hij wacht in **Wacht op anderen**, ingeklapt boven Komt later terug, en telt niet mee als klaar voor jou. Een nieuw bericht erover brengt hem terug. Hetzelfde als je een wedervraag stelde: hij komt terug op de ochtend voor zijn deadline.
 
 Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Niet nodig** sluit hem, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Dan telt hij ook niet meer mee in het getal op het app-icoon en het ochtendoverzicht. Aanraken haalt hem terug.
 

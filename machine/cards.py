@@ -666,7 +666,9 @@ LOOKS_DONE_SQL = "(handled_hint IS NOT NULL OR (status='prepared' AND ifnull(jso
 
 
 # Waiting on others: its run found a step still open on someone else's side (outcome waiting: a review, merge, deploy,
-# a reply). Nothing for the owner until that step moves; a new message on it (update_card) brings it back as open.
+# a reply), or the review saw the owner do their part and the next step go to someone else (store.cards.wait_on_others,
+# which also brings it back when chasing is due). Nothing for the owner until that step moves; a new message on it
+# (update_card) brings it back as open.
 # Neither kind counts as needing the owner. Same rule as waitsOnOthers() in dashboard.html.
 NOT_FOR_OWNER_SQL = "(" + LOOKS_DONE_SQL + " OR (status='prepared' AND ifnull(json_extract(outcome,'$.state'),'')='waiting'))"
 

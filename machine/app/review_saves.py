@@ -73,7 +73,8 @@ class ReviewSavesApp:
                                    awaiting=args.get('awaiting_event_id'),project=args.get('project'),card_id=args.get('card_id'),
                                    separate=args.get('separate') is True,reopen=args.get('reopen') is True,match=True,
                                    owner_step=(args['owner_step'] is True) if 'owner_step' in args else None,
-                                   expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company, personal=personal)
+                                   expires_at=args.get('expires_at'), expires_what=args.get('expires_what'), company=company, personal=personal,
+                                   waiting_on=args.get('waiting_on') or None)
         if isinstance(saved, dict) and stale:
             saved['dates'] = (f"Saved {', '.join(sorted({w.lower() for w in stale}))} as the day itself: a to-do is read on later days, so name "
                               'the weekday or date, never today, tomorrow or yesterday.')

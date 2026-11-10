@@ -25,7 +25,7 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 **Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. A to-do with a reply draft also looks done when you answered that conversation yourself, like in Gmail or Slack.
 
-A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back.
+A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline.
 
 A to-do nobody touched for a week asks once: **Still needed?** **Not needed** closes it, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later, and the number on the app icon and the morning digest stop counting it. Opening it, a chat message, an edit, a snooze or a new message brings it back.
 
