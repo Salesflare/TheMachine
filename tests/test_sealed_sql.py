@@ -56,7 +56,8 @@ class OnBoth(unittest.TestCase):
 
     def test_the_keys_these_fixes_read_are_not_readable_in_sql_on_a_sealed_store(self):
         # the premise: were one of these keys made plain, its test below would no longer prove anything
-        for key in ('cc', 'chat_kind', 'sender_id', 'end_at', 'status', 'location', 'admin_emails'):
+        # (end_at, status and chat_kind are plain since: tests/test_plain_keys.py has their reads, with the rows from before)
+        for key in ('cc', 'sender_id', 'location', 'admin_emails'):
             self.assertNotIn(key, message_seal.PLAIN_METADATA)
         def check(store):
             store.commit_page('work', {}, [self.event('work', 's1', 'gmail.message', '2026-10-05T09:00:00+00:00', {'to': 'pat@client.example', 'cc': 'sam@client.example'})])

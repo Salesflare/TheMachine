@@ -302,7 +302,7 @@ def task_event(account, instance, row, me):
     return {'account_id': account['id'], 'source_id': 'task:' + row['Id'], 'kind': kind, 'occurred_at': at.isoformat(),
             'title': ' '.join(str(row.get('Subject') or 'Task').split())[:1000], 'body': body[:BODY],
             'metadata': {'crm_account': crm_account(row), 'contacts': [who] if who else [], 'task_id': row['Id'],
-                         'status': row.get('Status'), 'due': row.get('ActivityDate'), 'closed': bool(row.get('IsClosed')),
+                         'task_status': row.get('Status'), 'due': row.get('ActivityDate'), 'closed': bool(row.get('IsClosed')),
                          'mine': mine, 'subtype': row.get('TaskSubtype'), 'about': what.get('Name'),
                          'opportunity_id': row.get('WhatId') if str(row.get('WhatId') or '').startswith('006') else None,
                          'truncated': len(body) > BODY, **({'source_url': link(instance, row['Id'])} if link(instance, row['Id']) else {})},

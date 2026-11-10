@@ -7,7 +7,8 @@ calendar descriptions, and any connector added later):
 
 - `title` and `body` become sealed blobs;
 - `metadata` keeps in the clear only the keys the app looks up in SQL (PLAIN_METADATA: thread and chat ids, sender
-  and recipients, labels); every other key, including any a new connector adds, is sealed with the rest;
+  and recipients, labels, when a meeting ends, whether it is canceled, its series, whether a chat is a group);
+  every other key, including any a new connector adds, is sealed with the rest;
 - the keyword index (`event_search`) holds keyed hashes of the words instead of the words;
 - text the app derives from messages (card text, drafts, edits, prepared tool results, role quotes,
   promises) is sealed too (DERIVED).
@@ -59,9 +60,15 @@ KEEP_OPENED = (4096, 2048)
 KEY_NAME = 'message-content.key'
 KEYRING_NAME = 'message-content.keyring'  # the key is in the desktop's keyring (message_keyring.py)
 SEALED_KEY = 'mc1_sealed'
-# Metadata keys the app queries in SQL (json_extract, instr): routing and identity, never what a message says
+# Metadata keys the app queries in SQL (json_extract, instr): routing and identity, never what a message says.
+# ROUTING_KEYS joined later: when a meeting ends (end_at), whether it is on or canceled (status), the series it
+# belongs to (recurring_event_id) and whether a chat is a group (chat_kind): a time, a fixed word or an id, never
+# text someone wrote. Rows sealed before they joined keep them sealed until machine/store/plain_keys.py has been
+# over them: SQL that filters on one of these also takes the rows where it cannot see the key (NULL beside a
+# sealed member) and decides those from the opened row.
+ROUTING_KEYS = frozenset({'end_at', 'status', 'recurring_event_id', 'chat_kind'})
 PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_key_hash', 'user_id', 'from_me',
-                            'channel_id', 'chat_id', 'conversation_id'})
+                            'channel_id', 'chat_id', 'conversation_id'}) | ROUTING_KEYS
 # Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py),
 # a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what

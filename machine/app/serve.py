@@ -98,6 +98,7 @@ class ServeApp:
         if getattr(self, 'fleet', None):
             threading.Thread(target=self.bug_queue_worker, name='bug-queue', daemon=True).start()
         threading.Thread(target=self.retention_worker, daemon=True).start()
+        threading.Thread(target=self.plain_keys_worker, name='plain-keys', daemon=True).start()  # once (machine/store/plain_keys.py)
         threading.Thread(target=self.history_worker, name='history', daemon=True).start()  # older messages, as history (machine/app/history.py)
         self.meeting_write_resume()  # Generate notes that were going when the service stopped
         self.gbrain_start()  # GBrain (gbrain.py): only when the owner turned it on

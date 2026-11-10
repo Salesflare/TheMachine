@@ -1202,7 +1202,7 @@ def chat_photos_step(connect, now, ask, accounts, chat, limit=WHATSAPP_PHOTOS_PE
 # the store. Nothing is sent to them.
 TELEGRAM_USER = re.compile(r'[0-9]{1,20}')
 TELEGRAM_SCAN = 5000  # group messages read to find someone met only in groups
-TELEGRAM_READ = 4 * TELEGRAM_SCAN  # Telegram messages read at most to find those: a chat's kind is told from the row
+TELEGRAM_READ = 4 * TELEGRAM_SCAN  # rows read at most to find those while some still keep their chat's kind sealed
 
 
 def _telegram_metadata(metadata):
@@ -1217,8 +1217,10 @@ def telegram_addresses(db, wanted, accounts):
     """{'tg:<id>': (account id, user id)} for the wanted people: their private chat first, else a group message they
     sent (newest first).
 
-    Only chat_id is matched in SQL: with message protection on, chat_kind and sender_id are sealed
-    (message_seal.PLAIN_METADATA), so those are read from the rows, which open as they are read."""
+    chat_id and chat_kind are matched in SQL (plain keys, message_seal.PLAIN_METADATA), so only group messages are
+    read; sender_id is sealed with message protection on and is read from the rows, which open as they are read. A
+    row sealed before chat_kind was a plain key shows none beside its sealed member until machine/store/plain_keys.py
+    has been over it: those are read as well and told apart once opened."""
     found = {}
     marks = ','.join('?' * len(accounts))
     for chat, account in db.execute(f"SELECT DISTINCT json_extract(metadata,'$.chat_id'),account_id FROM events "
@@ -1233,6 +1235,8 @@ def telegram_addresses(db, wanted, accounts):
     if len(found) < len(wanted):
         groups = 0
         for metadata, account in db.execute(f"SELECT metadata,account_id FROM events WHERE kind='telegram.message' AND account_id IN ({marks}) "
+                                            "AND (json_extract(metadata,'$.chat_kind')='group' OR (json_extract(metadata,'$.chat_kind') IS NULL "
+                                            "AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL)) "
                                             "ORDER BY occurred_at DESC LIMIT ?", [*accounts, TELEGRAM_READ]):
             m = _telegram_metadata(metadata)
             if m.get('chat_kind') != 'group':

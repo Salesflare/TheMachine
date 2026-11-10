@@ -17,6 +17,7 @@ from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
 from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
+from machine.store import plain_keys
 from machine.store.review import bulk_kind
 import message_seal
 from models import background_model
@@ -90,6 +91,26 @@ LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 
 class WorkersApp:
     ACTIONS = {}  # its actions are still App.action's own branches
+
+    def plain_keys_worker(self):
+        """Once after the update: the messages kept before get their routing keys in the clear (machine/store/plain_keys.py),
+        in batches beside the service's own work. Waits for the message key when it is not there yet; an error is tried
+        again in ten minutes. Never stops the service. It begins half a minute after the start: the start's own work
+        and the first requests go first."""
+        wait = 30
+        while not self.stop.wait(wait):
+            wait = 600
+            try:
+                report = plain_keys.run(self.store, self.stop)
+            except Exception as error:  # noqa: BLE001 - tried again in ten minutes
+                LOG.error('plain keys pass error=%s', type(error).__name__)
+                continue
+            if report is None or report['state'] != 'waiting':
+                if report and report['state'] == 'done':
+                    LOG.info('Routing keys of %d kept message(s) are readable in SQL now; %d did not open and were left as they are',
+                             report['changed'], report['unread'])
+                return
+            wait = 60
 
     def retention_worker(self):
         """Once a day at a quiet hour: old sync history and preparation logs go, the space goes back to the disk and

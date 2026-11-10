@@ -873,6 +873,20 @@ class StoreCore:
             db.execute('INSERT INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
         return len(found)
 
+    def mark_fix_done(self, name):
+        """A one-time fix that keeps its own progress (plain_keys.py) is over: fix_done(name) says so from here on."""
+        with self.connect() as db:
+            db.execute('INSERT OR IGNORE INTO store_fixes(name,at) VALUES(?,?)', (name, now()))
+
+    @staticmethod
+    def restore_metadata(db, row_id, metadata, hashes=None):
+        """One message's metadata stored again as given: the same metadata sealed with today's plain keys, or with a
+        key renamed (plain_keys.py, which made it from the stored one). hashes (old, new) moves its content hash along
+        when it is still the old one, so the next sync finds the same event."""
+        db.execute('UPDATE events SET metadata=? WHERE id=?', (metadata, row_id))
+        if hashes:
+            db.execute('UPDATE events SET content_hash=? WHERE id=? AND content_hash=?', (hashes[1], row_id, hashes[0]))
+
     def copy_before(self, name):
         """A copy of the database next to it before a one-time fix changes it (events.sqlite.before-<name>-<time>Z, only
         the owner can read it; retention rotates it like other copies)."""

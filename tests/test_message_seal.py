@@ -700,11 +700,14 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             return sealed_sql_scan.reads(text, context or text, columns, others)
         caught = {
             "SELECT id FROM events WHERE json_extract(metadata,'$.cc') LIKE ?": [('events.metadata', 'key cc')],
-            "SELECT 1 FROM events e WHERE coalesce(json_extract(e.metadata,'$.end_at'),occurred_at)>?": [('events.metadata', 'key end_at')],
+            "SELECT 1 FROM events e WHERE coalesce(json_extract(e.metadata,'$.location'),occurred_at)>?": [('events.metadata', 'key location')],
             "SELECT value FROM events, json_each(events.metadata,'$.attendees')": [('events.metadata', 'key attendees')],
             "SELECT 1 FROM events, json_each(metadata)": [('events.metadata', 'whole')],
-            "SELECT metadata->>'$.chat_kind' FROM events": [('events.metadata', 'key chat_kind')],
-            "SELECT metadata->>'status' FROM events": [('events.metadata', 'key status')],
+            "SELECT metadata->>'$.chat_name' FROM events": [('events.metadata', 'key chat_name')],
+            "SELECT metadata->>'task_status' FROM events": [('events.metadata', 'key task_status')],
+            # asking whether a row has a sealed member does not make a hidden key readable
+            "SELECT 1 FROM events WHERE json_extract(metadata,'$.organizer') IS NULL AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL":
+                [('events.metadata', 'key organizer')],
             "SELECT 1 FROM events WHERE metadata LIKE ?": [('events.metadata', 'text')],
             "SELECT 1 FROM events WHERE instr(metadata,?)": [('events.metadata', 'text')],
             "SELECT 1 FROM events WHERE json_extract(metadata,?)=?": [('events.metadata', 'key ?')],
@@ -720,6 +723,10 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         self.assertEqual(reads("AND json_extract(payload,'$.to')=?", "SELECT 1 FROM action_jobs WHERE status=? AND json_extract(payload,'$.to')=?"),
                          [('action_jobs.payload', 'key to')])
         for text in ("SELECT 1 FROM events WHERE json_extract(metadata,'$.thread_id')=?",
+                     # a routing key (message_seal.ROUTING_KEYS), with the rows sealed before it was plain
+                     "SELECT 1 FROM events WHERE json_extract(metadata,'$.chat_kind')='group' OR (json_extract(metadata,'$.chat_kind') IS NULL "
+                     "AND json_extract(metadata,'$.mc1_sealed') IS NOT NULL)",
+                     "SELECT 1 FROM events WHERE CAST(json_extract(metadata,'$.end_at') AS TEXT)>? AND metadata->>'status'!='cancelled'",
                      "SELECT 1 FROM events e, json_each(json_extract(e.metadata,'$.labels')) l WHERE l.value=?",
                      """SELECT 1 FROM events WHERE instr(metadata,'"SENT"')""",
                      "CREATE INDEX i ON events(json_extract(metadata,'$.conversation_id'))",

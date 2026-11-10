@@ -88,7 +88,7 @@ LEFT_OUT = {
         'notify_digests', 'notify_queue', 'pacing_starts', 'person_summary_runs', 'preparation_calls', 'preparation_runs', 'preparations',
         'profile_runs', 'project_org_backfill', 'project_success', 'promise_log', 'promises_next', 'recap_items', 'recaps', 'record_changes',
         'recurring_cards', 'recurring_offers', 'recurring_series', 'mail_cleanup_items', 'mail_cleanup_senders', 'retention_runs', 'routine_changes', 'routine_runs', 'routines', 'review_runs', 'review_save_failures', 'rule_changes', 'self_record_backups',
-        'skill_task_decided', 'slipped', 'state', 'store_fixes', 'suggestion_keys', 'sync_activity', 'sync_daily', 'task_pages',
+        'skill_task_decided', 'slipped', 'state', 'store_fixes', 'plain_key_pass', 'suggestion_keys', 'sync_activity', 'sync_daily', 'task_pages',
         'thread_snoozes', 'voice_merges',
     },
 }
