@@ -18,6 +18,8 @@ Elke e-mail toont alleen wat er nieuw in staat. De eerdere berichten die erin ge
 
 Elke run staat er als één rustige regel, zoals "12 dingen nagekeken". Open die en je ziet elk soort stap één keer, met hoe vaak: "Gebruikte de browser op example.com · 7". Hij noemt de site, nooit het adres, een opdracht of een bestand.
 
+Stopte hij om je iets te vragen, dan staat de vraag ook als rustige regel, zoals "Gevraagd: Vandaag versturen of maandag?", en je bericht eronder toont alleen je antwoord.
+
 ## Wat je kunt vragen
 
 Voor je typt, biedt de chat soms tot drie suggesties uit deze to-do aan, zoals "Stel dinsdag 10:00 voor". Tik erop en hij staat in het berichtvak, om te versturen of aan te passen. Past er niets specifieks, dan zijn er geen.

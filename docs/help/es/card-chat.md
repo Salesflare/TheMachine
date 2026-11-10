@@ -18,6 +18,8 @@ Cada correo muestra solo lo nuevo. Los mensajes anteriores que cita quedan plega
 
 Cada ejecución aparece como una línea discreta, como «12 cosas revisadas». Ábrela para ver cada tipo de paso una vez, con cuántas veces: «Usó el navegador en example.com · 7». Nombra el sitio, nunca la dirección, un comando ni un archivo.
 
+Si se detuvo para preguntarte algo, la pregunta también aparece como una línea discreta, como «Preguntó: ¿Lo envío hoy o el lunes?», y tu mensaje debajo muestra solo tu respuesta.
+
 ## Qué preguntar
 
 Antes de escribir, el chat puede ofrecer hasta tres sugerencias hechas a partir de esta tarea, como «Ofrece el martes a las 10:00». Al tocar una, pasa al cuadro de mensaje para enviarla o cambiarla. Si nada concreto encaja, no hay ninguna.

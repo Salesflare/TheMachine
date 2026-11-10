@@ -34,6 +34,9 @@ jobs:
     # 45, not 30: with several PRs on our runner at once a full run takes 28 to 32 minutes, and a run cut at 30 with
     # no failure has to start over, which costs more than the extra minutes.
     timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read  # the test-impact map from main's last full run (scripts/test_impact.py fetch)
     strategy:
       fail-fast: false
       matrix:
@@ -73,14 +76,18 @@ jobs:
       - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
         run: python -m pip install --quiet cryptography==46.0.3
       - name: Choose the tests
-        # A pull request runs the tests its change needs (scripts/test_select.py: what imports or names each changed file,
-        # all of them when that isn't clear); main, release tags and the weekly run run every one.
+        # A pull request runs the tests its change needs (scripts/test_select.py): with the test-impact map from main's
+        # last full run, the tests that ran each function it changes; without it, what imports or names each changed file.
+        # All of them when that isn't clear. Main, release tags and the weekly run run every one.
         id: pick
         if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked"
+          changed="$RUNNER_TEMP/changed" picked="$RUNNER_TEMP/picked" map="$RUNNER_TEMP/test-impact.json.gz"
+          python3 scripts/test_impact.py fetch "$map" || true
           # anything that goes wrong here runs every test
-          git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py "$changed" > "$picked" || echo ALL > "$picked"
+          git diff --name-only HEAD^1 HEAD > "$changed" && [ -s "$changed" ] && python3 scripts/test_select.py --impact "$map" --base HEAD^1 "$changed" > "$picked" || echo ALL > "$picked"
           if [ "$(head -n1 "$picked")" = ALL ]; then
             echo "Every test file"
             echo "files=" >> "$GITHUB_OUTPUT"
@@ -88,6 +95,12 @@ jobs:
             echo "$(wc -l < "$picked") test files for:" && cat "$changed"
             echo "files=$(tr '\n' ' ' < "$picked")" >> "$GITHUB_OUTPUT"
           fi
+      - name: Record which functions each test runs
+        # A full run records the test-impact map the pull requests pick their tests with (scripts/test_impact.py).
+        if: steps.pick.outputs.files == '' && matrix.openclaw != 'latest'
+        run: |
+          python3 scripts/test_impact.py install "$RUNNER_TEMP/impact"
+          echo "THE_MACHINE_IMPACT_DIR=$RUNNER_TEMP/impact" >> "$GITHUB_ENV"
       - name: Test Python, Node, OpenClaw SDK and dashboard
         env:
           # 6 at a time on our runner: 8 browser tests each starved it into flaky timeouts. When every slot is busy the
@@ -98,6 +111,22 @@ jobs:
           THE_MACHINE_TEST_MAX_FAILURES: ${{ github.event_name == 'pull_request' && '5' || '' }}
           FILES: ${{ steps.pick.outputs.files }}
         run: python3 scripts/test.py $FILES
+      - name: Keep the test-impact map
+        id: impact
+        if: always() && env.THE_MACHINE_IMPACT_DIR != ''
+        run: |
+          python3 scripts/test_impact.py remove
+          if [ -s "$THE_MACHINE_IMPACT_DIR/passed" ]; then
+            python3 scripts/test_impact.py build "$THE_MACHINE_IMPACT_DIR" "$RUNNER_TEMP/test-impact.json.gz"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        # public repository: the artifact storage is free; the newest main one is all the pull requests read
+        if: always() && steps.impact.outcome == 'success'
+        with:
+          name: test-impact
+          path: ${{ runner.temp }}/test-impact.json.gz
+          retention-days: 3
+          if-no-files-found: ignore
       - name: Check whitespace
         run: git diff --check
 

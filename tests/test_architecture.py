@@ -426,6 +426,8 @@ OVER_BUDGET = {}
 # 2026-11-09: main had reached this ceiling (1,423,014, then 1,421,700). Settings' Connected AIs and Apps panels
 # (settings-ai.js, settings-ai.css, settings-apps.js) load when first needed, with Settings' other panels (first load
 # 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
+# 2026-11-10: main was over again (1,423,060). Go through's dialog (todos-clear-run.js and its rules) loads when first
+# needed; the header's Go through and its time stay (first load 1,423,060 -> 1,415,719). The ceiling stays.
 FIRST_LOAD_CEILING = 1_423_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
@@ -433,7 +435,8 @@ FIRST_LOAD_CEILING = 1_423_000
 # graph 344,000 -> 348,000 (2026-11-10): a project's description, its Edit and Keep it updated (about 2.5 KB).
 # graph 348,000 -> 350,000 (2026-11-10): a board's header says who sees it, and the owner's locks (about 1.2 KB).
 # graph 350,000 -> 348,000 (2026-11-10): team boards no longer fold look-alike projects.
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 12_000}
+# clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 356_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 12_000}
 
 
 def budget(name):

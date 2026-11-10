@@ -24,7 +24,7 @@ La gente que conoces y está en la Network se te sugiere en cuanto la activas, y
 
 Las personas que encuentra muestran **Tiene una Machine** en tu lista Personas. Revisa las direcciones de tus mensajes y las que añadiste a alguien con **Editar**: si alguien se registró con otra dirección, añádesela. En la página de alguien que encontró, **Añadir como amigo** envía la misma solicitud que Conectar (**Añadir como familia** está en el menú ⋯).
 
-Para alguien sin Machine, **Invitar a The Machine** muestra el correo que recibirá, para cambiarlo si quieres y **Enviar** desde tu propio buzón, como tarea en su página. No sale nada antes de Enviar. Sin un buzón que pueda enviar: **Copiar** o **Abrir en tu correo**.
+Para alguien sin Machine, **Invitar a The Machine** abre el correo que recibirá en **¿Enviar este correo?**, como en cualquier tarea, para cambiarlo si quieres. No sale nada antes de **Enviar ahora**. Si lo cierras, la invitación espera como tarea. Sin un buzón que pueda enviar: **Copiar** o **Abrir en tu correo**.
 
 Los números de teléfono también cuentan: los de tus chats de WhatsApp con personas a las que escribiste o con las que te reuniste, y los que añadiste con **Editar**. Tu número de WhatsApp vinculado y los números de Sobre ti hacen que te encuentren, cada uno con su interruptor en **Localizable por**. Un número solo encuentra a alguien si esa persona también te buscó, o si sois amigos, así que nadie puede probar números para ver quién tiene una Machine.
 

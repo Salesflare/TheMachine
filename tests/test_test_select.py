@@ -108,5 +108,119 @@ class Selection(unittest.TestCase):
         self.assertEqual(sorted(select.ALWAYS - names(TESTS)), [], 'ALWAYS names a test that is gone')
 
 
+MODULE = '''"""doc"""
+import json
+LIMIT = 3
+
+
+@register
+def helper(x=LIMIT):
+    return x
+
+
+class Box:
+    size = 2
+
+    def fill(self):
+        def inner():
+            return json.dumps(self.size)
+        return inner()
+
+
+def make():
+    class Handler:
+        def get(self):
+            return 'page'
+    return Handler
+'''
+
+
+class WithTheMap(unittest.TestCase):
+    """With the test-impact map, a change runs the tests that ran what it changed."""
+
+    def setUp(self):
+        self.patched = {name: getattr(select, name) for name in ('diff_lines', 'git_text')}
+
+    def tearDown(self):
+        for name, value in self.patched.items():
+            setattr(select, name, value)
+
+    def impact(self, ran, skip=()):
+        tests = sorted(Path(t).name for t in TESTS if Path(t).name not in skip)
+        index = {name: i for i, name in enumerate(tests)}
+        files = {}
+        for (path, qualname), names in ran.items():
+            files.setdefault(path, {})[qualname] = [index[n] for n in names]
+        return select.Impact({'tests': tests, 'known': [p for p in REPO.paths if p.endswith('.py')], 'files': files})
+
+    def change(self, path, lines):
+        text = (ROOT / path).read_text(encoding='utf-8')
+        select.git_text = lambda base, p: text if p == path else None
+        select.diff_lines = lambda base, p: (set(lines), set(lines)) if p == path else (set(), set())
+
+    def test_where_each_line_sits(self):
+        scopes = select.Scopes(MODULE)
+        line = {text.strip(): n for n, text in enumerate(MODULE.split('\n'), 1)}
+        self.assertEqual(scopes.at(line['return x']), ('func', 'helper'))
+        self.assertEqual(scopes.at(line['@register']), ('func', 'helper'))
+        self.assertEqual(scopes.at(line['def helper(x=LIMIT):']), ('func', 'helper'))
+        self.assertEqual(scopes.at(line['LIMIT = 3']), ('names', {'LIMIT'}))
+        self.assertEqual(scopes.at(line['import json']), ('local', {'json'}))
+        self.assertEqual(scopes.at(line['size = 2']), ('names', {'size'}))
+        self.assertEqual(scopes.at(line['return json.dumps(self.size)']), ('func', 'Box.fill.<locals>.inner'))
+        self.assertEqual(scopes.at(line['return inner()']), ('func', 'Box.fill'))
+        self.assertEqual(scopes.at(line["return 'page'"]), ('func', 'make.<locals>.Handler.get'))  # as co_qualname
+        self.assertIsNone(scopes.at(line['"""doc"""']))
+
+    def test_a_changed_function_runs_the_tests_that_ran_it(self):
+        path = 'i18n.py'
+        scopes = select.Scopes((ROOT / path).read_text(encoding='utf-8'))
+        start, end, qualname = next(f for f in scopes.funcs if '.' not in f[2] and f[1] - f[0] > 1)
+        self.change(path, [start + 1])
+        readers = {Path(t).name for t in REPO.named_by(path) if select.is_test(t)}
+        impact = self.impact({(path, qualname): ['test_moving.py'], (path, '_other'): sorted(readers)})
+        got = select.select([path], repo=REPO, impact=impact, base='HEAD')
+        self.assertIsNotNone(got)
+        self.assertIn('test_moving.py', got)
+        self.assertLessEqual(set(select.ALWAYS) & names(TESTS), set(got))
+        self.assertEqual(sorted(set(got) - select.ALWAYS - {'test_moving.py'}), [])
+
+    def test_a_test_the_map_does_not_know_follows_imports(self):
+        path = 'machine/store/conversation.py'
+        self.change(path, [1])
+        old = set(select.select([path], repo=REPO) or ())
+        new_test = sorted(old - select.ALWAYS)[0]
+        got = select.select([path], repo=REPO, impact=self.impact({}, skip={new_test}), base='HEAD')
+        self.assertIn(new_test, got)
+
+    def test_a_catalog_change_runs_the_tests_that_name_its_text(self):
+        text = 'A sentence no test names, ' + 'made up here'
+        strings = select.catalog_strings('{"Done": "Klaar"}', '{"Done": "Gedaan", "%s": "x"}' % text)
+        self.assertEqual(strings, {'Done', 'Klaar', 'Gedaan', text, 'x'})
+        pattern = select.text_pattern({'Snoozed {what} until {when}'})
+        self.assertTrue(pattern.search("expect(text).toContain('Snoozed the to-do until')"))
+        self.assertFalse(select.text_pattern({'OK'}).search('BROKEN'))
+
+    def test_a_catalog_alone_runs_the_catalog_checks_and_the_tests_that_name_its_text(self):
+        import json
+        catalog = json.loads((ROOT / 'i18n' / 'en.json').read_text(encoding='utf-8'))
+        key = sorted(catalog)[len(catalog) // 2]
+        before = dict(catalog, **{key: catalog[key] + ' (before)'})
+        select.git_text = lambda base, p: json.dumps(before) if p == 'i18n/en.json' else None
+        got = select.select(['i18n/en.json'], repo=REPO, impact=self.impact({}), base='HEAD')
+        self.assertIsNotNone(got)
+        pattern = select.text_pattern({key, catalog[key], before[key]})
+        allowed = select.ALWAYS | {Path(t).name for t in TESTS if select.CATALOG_CHECKS.search(Path(t).name)
+                                   or pattern.search(SOURCE[t])}
+        self.assertEqual(sorted(set(got) - allowed), [])
+        self.assertIn('test_i18n.py', got)
+
+    def test_a_folder_names_the_files_on_the_way_to_it(self):
+        self.assertTrue(select.names_exactly("HELP = ROOT / 'docs' / 'help'", 'docs/help/history.md'))
+        self.assertTrue(select.names_exactly("open('docs/help/' + name)", 'docs/help/history.md'))
+        self.assertFalse(select.names_exactly('See docs/development.md.', 'docs/code-map.md'))
+        self.assertFalse(select.names_exactly("ROOT / 'docs' / 'brand'", 'docs/help/history.md'))
+
+
 if __name__ == '__main__':
     unittest.main()

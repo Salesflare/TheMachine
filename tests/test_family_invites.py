@@ -197,9 +197,10 @@ class PersonInvite(unittest.TestCase):
         self.assertEqual((found['email'], found['family']), ('', None))  # Copy only
 
 
-class PersonInviteSend(unittest.TestCase):
-    """Send on Invite to The Machine (App.person_invite_send_action): the words the owner saw, from their own mailbox, as
-    an approved draft on a to-do about that person; only queued here (Store.confirm_action), never sent by a test."""
+class PersonInviteDraft(unittest.TestCase):
+    """Invite to The Machine with a mailbox that can send (App.person_invite_draft_action): a ready to-do about that
+    person with the invite as its email draft, for the send dialog every email uses. Nothing is sent or queued here;
+    Send there is Store.confirm_action, only queued in this test."""
     setUp, use = FamilyInvites.setUp, FamilyInvites.use
 
     def app(self, transport='gog'):
@@ -208,43 +209,42 @@ class PersonInviteSend(unittest.TestCase):
         app.store, app.config, app.fleet = self.store, {**HOSTED, 'accounts': accounts, 'owner_emails': ['owner@gmail.com']}, self.fleet
         return app
 
-    def send(self, app, node='p_sasha', approval='ok-1', **words):
-        args = {'node_id': node, 'to': 'sasha@mail.example', 'subject': 'Have a look at The Machine', 'body': 'Hi Sasha,\n\nTry it.', 'approval_id': approval, **words}
-        return app.person_invite_send_action('person_invite_send', args, owner_dashboard=True)
+    def draft(self, app, node='p_sasha'):
+        return app.person_invite_draft_action('person_invite_draft', {'node_id': node}, owner_dashboard=True)
 
     def jobs(self):
         with self.store.connect() as db:
-            return [(r['suggestion_id'], r['status'], json.loads(r['payload'])) for r in db.execute('SELECT * FROM action_jobs')]
+            return [(r['suggestion_id'], r['status']) for r in db.execute('SELECT * FROM action_jobs')]
 
-    def test_send_queues_the_words_the_owner_saw_from_their_mailbox(self):
+    def test_the_invite_is_a_ready_draft_for_the_send_dialog(self):
         app = self.app()
-        self.assertEqual(app.person_invite({'id': 'p_sasha', 'kind': 'person', 'side': 'personal'})['from'], 'owner@gmail.com')
+        self.assertTrue(app.person_invite({'id': 'p_sasha', 'kind': 'person', 'side': 'personal'})['send'])
         before = list(self.relay.calls)
-        done = self.send(app, body='Hi Sasha,\n\nMy own words.')
-        [(card, status, payload)] = self.jobs()
-        self.assertEqual((card, status), (done['suggestion_id'], 'queued'))
-        self.assertEqual((payload['from'], payload['to'], payload['subject'], payload['body']),
-                         ('owner@gmail.com', ['sasha@mail.example'], 'Have a look at The Machine', 'Hi Sasha,\n\nMy own words.'))
+        made = self.draft(app)
         with self.store.connect() as db:
-            title, origin = db.execute('SELECT title,origin FROM suggestions WHERE id=?', (card,)).fetchone()
+            row = db.execute('SELECT title,status,origin,next_action FROM suggestions WHERE id=?', (made['suggestion_id'],)).fetchone()
             about = json.loads(db.execute("SELECT metadata FROM events WHERE kind='owner.card'").fetchone()[0])['about']
-            decided = db.execute('SELECT choice,source FROM decisions WHERE id=?', ('ok-1',)).fetchone()
-        self.assertEqual((title, origin, [x['id'] for x in about], tuple(decided)), ('Invite Sasha Lane to The Machine', 'owner', ['p_sasha'], ('send', 'dashboard')))
-        self.assertEqual(self.send(app)['duplicate'], True)  # a repeated tap is that same send
-        self.assertEqual(len(self.jobs()), 1)
+        draft = json.loads(row['next_action'])
+        self.assertEqual((row['title'], row['status'], row['origin'], [x['id'] for x in about]), ('Invite Sasha Lane to The Machine', 'prepared', 'owner', ['p_sasha']))
+        self.assertEqual((draft['kind'], draft['from'], draft['to'], draft['subject'], draft['revision']),
+                         ('email', 'owner@gmail.com', ['sasha@mail.example'], 'Have a look at The Machine', made['revision']))
+        self.assertTrue(draft['body'].startswith('Hi Sasha,\n\nI use The Machine') and draft['body'].endswith('https://themachine.computer'))
+        self.assertEqual(self.jobs(), [])  # nothing sent or queued until Send in the dialog
+        self.assertEqual(self.draft(app), made)  # opened again: the same to-do, no second one
+        self.store.confirm_action(made['suggestion_id'], made['revision'], 'ok-1', 'dashboard')  # Send in the dialog
+        self.assertEqual(self.jobs(), [(made['suggestion_id'], 'queued')])
         self.assertEqual(self.relay.calls, before)
 
     def test_refused_without_the_owner_a_mailbox_or_an_invite(self):
         app = self.app()
         with self.assertRaises(ValueError):
-            app.person_invite_send_action('person_invite_send', {'node_id': 'p_sasha', 'approval_id': 'x'})  # not the dashboard
+            app.person_invite_draft_action('person_invite_draft', {'node_id': 'p_sasha'})  # not the dashboard
         with self.assertRaisesRegex(ValueError, 'mailbox'):
-            self.send(self.app(transport=None))
-        self.assertNotIn('from', self.app(transport=None).person_invite({'id': 'p_sasha', 'kind': 'person'}))  # Copy and Open in email
+            self.draft(self.app(transport=None))
+        self.assertNotIn('send', self.app(transport=None).person_invite({'id': 'p_sasha', 'kind': 'person'}))  # Copy and Open in email
         with self.assertRaisesRegex(ValueError, 'no invite'):
-            self.send(app, node='nobody')
+            self.draft(app, node='nobody')
         with self.assertRaisesRegex(ValueError, 'no invite'):
-            self.send(app, node='p_robin')  # in the Family: has a Machine
-        with self.assertRaises(ValueError):
-            self.send(app, to='not an address')
-        self.assertEqual(self.jobs(), [])
+            self.draft(app, node='p_robin')  # in the Family: has a Machine
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM suggestions").fetchone()[0], 0)

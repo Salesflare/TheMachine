@@ -18,6 +18,8 @@ Chaque e-mail ne montre que ce qui est nouveau. Les messages précédents qu’i
 
 Chaque exécution tient en une ligne discrète, comme « 12 points vérifiés ». Ouvrez-la pour voir chaque type d’étape une fois, avec le nombre de fois : « A utilisé le navigateur sur example.com · 7 ». Elle nomme le site, jamais l’adresse, une commande ou un fichier.
 
+Si elle s’est arrêtée pour vous demander quelque chose, la question tient aussi en une ligne discrète, comme « A demandé : Je l’envoie aujourd’hui ou lundi ? », et votre message en dessous ne montre que votre réponse.
+
 ## Quoi demander
 
 Avant que vous écriviez, le chat peut proposer jusqu’à trois suggestions tirées de cette tâche, comme « Proposer mardi 10:00 à la place ». En toucher une la place dans la zone de message, à envoyer ou modifier. Si rien de précis ne convient, il n’y en a aucune.

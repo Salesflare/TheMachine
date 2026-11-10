@@ -772,7 +772,7 @@ class CardsStore:
         places it by what it is about (company or personal), or the message it follows up on does (fill_owner_card).
         With files, the words may be empty (a PDF shared from the phone): the first file's name is its title until the
         review fills it in from file_texts ({file id: text}, chat_files.texts), kept sealed with the event's metadata.
-        accepted: the owner's step is already written (an invite from a person's page, App.person_invite_send): no
+        accepted: the owner's step is already written (an invite from a person's page, App.person_invite_draft): no
         review reads their words, and the to-do takes its draft at once (Store.prepare)."""
         words = '\n'.join(' '.join(line.split()) for line in str(text or '').strip().splitlines()).strip()
         words = re.sub(r'\n{3,}', '\n\n', words)
