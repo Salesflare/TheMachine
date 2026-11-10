@@ -625,6 +625,21 @@ def token_word(token):
     return re.compile('|'.join(forms))
 
 
+def closed_dialogs(html, word):
+    """The ids of the closed <dialog> elements every place word finds in html sits in, or None when one isn't in one."""
+    found = set()
+    for match in word.finditer(html):
+        start = html.rfind('<dialog', 0, match.start())
+        if start < 0 or html.find('</dialog>', start, match.start()) >= 0:
+            return None
+        tag = html[start:html.find('>', start) + 1]
+        dialog = re.search(r'\bid="([\w-]+)"', tag)
+        if not dialog or re.search(r'\sopen\b', tag):
+            return None
+        found.add(dialog[1])
+    return found
+
+
 def css_rules(text):
     """The style rules of a stylesheet: (start, end, selector, groups), from the rule's start (just after what came
     before it) to after its }, and the (start, end) of each @media, @supports or @container block it sits in, up to its
@@ -657,22 +672,39 @@ def css_rules(text):
 
 def css_tokens(selector):
     """For each selector in a list, the classes, ids and attribute names an element it styles has (not the ones in
-    :not(), :is() and the like, which it may lack); None when one of them names none (button, :root, @keyframes):
-    those style what no name finds."""
+    :not(), :has() and the like, which it may lack; :is(.a,.b) x counts as .a x and .b x); None when one of them names
+    none (button, :root, @keyframes): those style what no name finds."""
     if selector.startswith('@'):
         return None
-    out, depth, piece = [], 0, ''
-    for c in selector + ',':
-        if c == ',' and depth == 0:
-            plain = re.sub(r':[\w-]+\((?:[^()]|\([^()]*\))*\)', ' ', piece)
-            names = set(re.findall(r'[.#](-?[A-Za-z_][\w-]*)', plain)) | set(re.findall(r'\[\s*([A-Za-z_][\w-]*)', plain))
-            if not names:
+    alternative = re.search(r':(?:is|where)\(((?:[^()]|\([^()]*\))*)\)', selector)
+    if alternative:  # :is(.a,.b) x: .a x or .b x
+        out = []
+        for one in split_top(alternative[1]):
+            found = css_tokens(selector[:alternative.start()] + one + selector[alternative.end():])
+            if found is None:
                 return None
-            out.append(names)
+            out += found
+        return out
+    out = []
+    for piece in split_top(selector):
+        plain = re.sub(r':[\w-]+\((?:[^()]|\([^()]*\))*\)', ' ', piece)
+        names = set(re.findall(r'[.#](-?[A-Za-z_][\w-]*)', plain)) | set(re.findall(r'\[\s*([A-Za-z_][\w-]*)', plain))
+        if not names:
+            return None
+        out.append(names)
+    return out
+
+
+def split_top(text):
+    """text split at its commas outside brackets."""
+    out, depth, piece = [], 0, ''
+    for c in text + ',':
+        if c == ',' and depth == 0:
+            out.append(piece)
             piece = ''
             continue
-        depth += c == '('
-        depth -= c == ')'
+        depth += c in '(['
+        depth -= c in ')]'
         piece += c
     return out
 
@@ -1104,8 +1136,11 @@ def select_mapped(changed, repo, impact, base, why=None):
         word = token_word(token)
         # data-x and aria-x name what follows: a data-${key} elsewhere doesn't make every data- name
         cuts = [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
-        built = [re.compile(r'(?<![\w-])' + re.escape(token[:i + 1]) + r"""(?:\$\{|['"`]\s*\+)""") for i in cuts]
-        built += [re.compile(r"""(?:\}|\+\s*['"`])""" + re.escape(token[i:]) + r'(?![\w-])') for i in cuts]
+        # 'chat-' + x or `chat-${x}` makes chat-back where 'back' is a string there too
+        built = [(re.compile(r'(?<![\w-])' + re.escape(token[:i + 1]) + r"""(?:\$\{|['"`]\s*\+)"""),
+                  re.compile(r"""['"`]""" + re.escape(token[i + 1:]) + r"""['"`]""")) for i in cuts]
+        built += [(re.compile(r"""(?:\}|\+\s*['"`])""" + re.escape(token[i:]) + r'(?![\w-])'),
+                   re.compile(r"""['"`]""" + re.escape(token[:i]) + r"""['"`]""")) for i in cuts]
         files, dynamic = [], False
         for other in repo.paths:
             if Path(other).suffix not in ('.js', '.mjs', '.ts', '.html', '.py') or other.startswith(NOT_CODE):
@@ -1115,7 +1150,7 @@ def select_mapped(changed, repo, impact, base, why=None):
                 continue
             if word.search(text):
                 files.append(other)
-            if any(b.search(text) for b in built):
+            if not is_test(other) and any(b.search(text) and rest.search(text) for b, rest in built):  # a test draws no page
                 dynamic = True
         return files, dynamic
 
@@ -1176,9 +1211,20 @@ def select_mapped(changed, repo, impact, base, why=None):
                 elif other.endswith('.py') and not other.startswith('tests/'):
                     lines = [n for n, line in enumerate(text.split('\n'), 1) if word.search(line)]
                     lines_in(other, lines, f'{other} uses {token} ({why_text})')
+                elif other == 'dashboard.html' or other.startswith('dashboard/') and other.endswith('.html'):
+                    # in a closed dialog: drawn when the code that opens it runs
+                    dialogs = closed_dialogs(text, word)
+                    if dialogs is None:
+                        return False  # the page's own markup, on show at load
+                    for dialog in dialogs - {token} - dialogs_seen:
+                        dialogs_seen.add(dialog)
+                        if not drawn_by([{dialog}], f'{dialog} holds {token} ({why_text})'):
+                            return False
                 else:
-                    return False  # the page's own markup, or code elsewhere that draws it
+                    return False  # code elsewhere that draws it
         return True
+
+    dialogs_seen = set()
 
     def includes_only(path):
         """A change to dashboard.html that only adds or removes include lines of parts this change adds or removes too:

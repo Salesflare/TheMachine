@@ -284,10 +284,16 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(select.css_tokens('.c .d,#e:not(.f)'), [{'c', 'd'}, {'e'}])
         self.assertEqual(select.css_tokens('.x button[aria-pressed="true"]'), [{'x', 'aria-pressed'}])
         self.assertIsNone(select.css_tokens('.x,button:hover'))
+        self.assertEqual(select.css_tokens(':is(.model-pick,.select-like) svg'), [{'model-pick'}, {'select-like'}])
+        self.assertIsNone(select.css_tokens(':is(.a,button) svg'))
         self.assertIsNone(select.css_tokens(':root'))
         self.assertIsNone(select.css_tokens('@keyframes k'))
         self.assertIsNone(select.css_rules('.a{'))
         self.assertTrue(select.token_word('data-mail-check').search('b.dataset.mailCheck'))
+        html = '<p class="x">\n<dialog id="d1" aria-label="a"><p class="x y"></p></dialog><dialog id="d2" open><b class="z"></b></dialog>'
+        self.assertEqual(select.closed_dialogs(html, select.token_word('y')), {'d1'})
+        self.assertIsNone(select.closed_dialogs(html, select.token_word('x')))  # one is on show at load
+        self.assertIsNone(select.closed_dialogs(html, select.token_word('z')))  # an open dialog
 
     def page_map(self, part, ran):
         """A map whose browser half knows part as it is now: one function, all of it, that the test ran ran; every page
