@@ -18,6 +18,8 @@ Escribe una pregunta, como «¿qué dijo Kim sobre el piloto?», y sobre los res
 
 Si preguntas por una persona y un momento, como «¿qué dijo Kim la semana pasada?», lee solo los mensajes de esa persona o con ella en esos días, en tu zona horaria. Si no envió nada entonces, lo dice y te da su último mensaje con su fecha.
 
+También lee lo que la Machine ya guarda sobre la pregunta: promesas abiertas o cerradas en los últimos 30 días, lo que aprendió, el resumen de la persona, el proyecto o la organización por la que preguntas y notas de reuniones. Cada cosa que usó la respuesta aparece debajo, con el nombre de lo que es (Promesa, Aprendido, Resumen, Notas de reuniones), y se abre donde vive. Solo se lee lo que encaja con la pregunta, y solo del área que estás viendo.
+
 Si varias personas tienen ese nombre, dice a cuál se refiere. Los demás mensajes que leyó aparecen en Mensajes. La pregunta que sugiere una búsqueda vacía siempre es una para la que hay mensajes.
 
 ## Atajos

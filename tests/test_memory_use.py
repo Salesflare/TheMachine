@@ -1,5 +1,6 @@
 """One way to read memory (machine/app/recall.py) and the log of what was read (memory_use.py)."""
 import datetime as dt
+import functools
 import importlib.util
 import json
 import re
@@ -18,6 +19,7 @@ import retention  # noqa: E402
 import search_ask  # noqa: E402
 import work_removal  # noqa: E402
 from machine.app import preparation as preparation_app, review as review_app, search_ask as ask_app  # noqa: E402
+from machine.app import ask_memory  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
 from machine.export import inventory  # noqa: E402
 
@@ -51,6 +53,11 @@ class Before:
             'rules': lambda: store.facts_for(todo, 'draft', known), 'records': lambda: app.graph_lines(todo),
             'skills': lambda rules, room: app.prep_skill_lines(todo, rules, room), 'team': lambda: app.fleet.lines(todo),
             'related': lambda: app.related_lines(todo), 'sources': search_ask.ask}
+        if purpose == 'ask':  # what matches the question, each picker with (what it goes on, room)
+            self.pickers.update({name: functools.partial(picker, app) for name, picker in ask_memory.BLOCKS.items()})
+
+    def drop(self, block):
+        pass
 
     def read(self, block, *args, **kwargs):
         return self.pickers[block](*args, **kwargs)
@@ -150,7 +157,9 @@ class MemoryUseTests(unittest.TestCase):
             self.assertIn(part, message)
 
     def test_the_ask_prompt_is_the_same_text(self):
-        self.assertIn('Pilot timing', self.same(ask_app, self.ask))
+        text = self.same(ask_app, self.ask)
+        for part in ('Pilot timing', '[P1] Promise by Ann Example to the owner, open, due 2026-10-23', '[F1] Learned 2026-10-16'):
+            self.assertIn(part, text)  # the messages, and what the Machine keeps that matches the question
 
     # The log
 
@@ -182,7 +191,14 @@ class MemoryUseTests(unittest.TestCase):
         self.assertEqual([('1', 'always')], [r[2:4] for r in rows if r[1] == 'promise'])
         self.assertIn((self.other, 'recency'), [r[2:4] for r in rows if r[1] == 'history'])
         self.ask()
-        self.assertEqual([('signal', '1', 'search'), ('signal', '2', 'search')], sorted(r[1:4] for r in self.log("purpose='ask'")))
+        rows = self.log("purpose='ask'")
+        self.assertEqual([('signal', '1', 'search'), ('signal', '2', 'search')], sorted(r[1:4] for r in rows if r[1] == 'signal'))
+        self.assertEqual([('promise', '1', 'search')], [r[1:4] for r in rows if r[1] == 'promise'])  # the promise in a message it found
+        facts = [r for r in rows if r[1] == 'fact']  # the closest in meaning to the question, with how close
+        self.assertEqual((ask_memory.FACTS, {'closeness'}), (len(facts), {r[3] for r in facts}))
+        self.assertTrue(all(r[7] is not None and r[7] >= ask_memory.FACT_FLOOR for r in facts))
+        with self.store.connect() as db:  # read for a question: used, like one picked for a to-do
+            self.assertEqual(ask_memory.FACTS, db.execute('SELECT count(*) FROM facts WHERE used_at>?', (OLD,)).fetchone()[0])
 
     def test_the_log_has_no_text(self):
         self.prepare()

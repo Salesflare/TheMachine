@@ -180,8 +180,14 @@ function palRows(){const q=pal.q.trim(),ctx=pal.ctx,recent=palRecent(),groups=[]
  if(pal.todos){if(!q){const open=(state.suggestions||[]).filter(s=>!closed(s)).slice(0,5);if(open.length)groups.unshift(['To-dos',open.map(s=>({a:{id:'card:'+s.id,run:()=>chatGo(s.id),entity:true},label:s.title,sub:palCardSub(s)}))])}
   else groups.sort((x,y)=>['To-dos','Done'].includes(y[0])-['To-dos','Done'].includes(x[0]))}
  // A question's answer on top, its messages under it (palAsk)
- const a=pal.ask;if(q&&a&&a.q===q&&(a.state==='done'||(a.mark||a.plan)&&a.state!=='none'))groups.unshift(['Answer',a.sources.map(m=>({a:{id:'ask:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')})),a]);
+ const a=pal.ask;if(q&&a&&a.q===q&&(a.state==='done'||(a.mark||a.plan)&&a.state!=='none'))groups.unshift(['Answer',[...a.sources.map(m=>({a:{id:'ask:'+m.id,run:()=>msgOpen(m),entity:true},label:m.title||m.from||t('Message'),sub:[m.title?m.from:'',m.at?humanTime(m.at):''].filter(Boolean).join(' · ')})),...(a.memory||[]).map(palMemoryRow)],a]);
  return groups}
+// What the answer used besides messages (ask_memory.py), each named as what it is and opening where it lives: a
+// promise its page, a fact Learning, a person, project or organization its record, meeting notes the notes
+const PAL_MEMORY={promise:['Promise',m=>{location.hash=promiseHref(m)}],fact:['Learned',()=>{location.hash='#learning=learned'}],person:['Summary',m=>{location.hash=graphHash(m.id)}],
+ project:['Project',m=>{location.hash=graphHash(m.id)}],org:['Organization',m=>{location.hash=graphHash(m.id)}],meeting:['Meeting notes',m=>msgOpen(m)]};
+const palMemoryRow=m=>{const [name,go]=PAL_MEMORY[m.type]||PAL_MEMORY.meeting;
+ return {a:{id:'ask:'+m.type+':'+m.id,run:()=>go(m),entity:true},label:m.title||t(name),sub:[t(name),m.from,m.at?humanTime(m.at):''].filter(Boolean).join(' · ')}};
 // While it works: three gentle dots (still with reduced motion), and Looking… for a screen reader
 const palAnswer=a=>a.state==='done'?`<p class="pal-answer" id="pal-answer" translate="no" dir="auto">${esc(a.text.slice(0,a.shown))}</p>`
  :a.state==='error'?`<p class="pal-answer muted" id="pal-answer">${esc(t('Couldn’t answer that right now.'))}</p>`
@@ -222,7 +228,7 @@ function palAsk(q,seq){clearTimeout(pal.askTimer);if(pal.ask&&pal.ask.q!==q)pal.
   let r;try{r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'search_ask',args:{query:q,area,...(plan?{plan}:{})}})})}catch{r={error:true}}
   if(pal.ask!==a)return;
   if(r?.off){pal.askOff=true;pal.ask=null}
-  else if(typeof r?.answer==='string'&&r.answer.trim())Object.assign(a,{state:'done',text:r.answer.trim(),sources:Array.isArray(r.sources)?r.sources:[],...(Array.isArray(r.messages)?{messages:r.messages}:{})});
+  else if(typeof r?.answer==='string'&&r.answer.trim())Object.assign(a,{state:'done',text:r.answer.trim(),sources:Array.isArray(r.sources)?r.sources:[],memory:Array.isArray(r.memory)?r.memory:[],...(Array.isArray(r.messages)?{messages:r.messages}:{})});
   else if(r?.error)a.state='error';
   else a.state='none';  // not a question, or nothing found: the results stay as they are
   if(!$('#palette')?.open)return;pal.keep=true;palRender();if(a.state==='done')palReveal(a)},plan?0:ASK_REST)}

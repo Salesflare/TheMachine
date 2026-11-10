@@ -18,6 +18,8 @@ Tippe eine Frage, etwa „Was hat Kim über das Pilotprojekt gesagt?“, und üb
 
 Fragst du nach einer Person und einer Zeit, etwa „Was hat Kim letzte Woche gesagt?“, liest sie nur die Nachrichten von oder mit dieser Person an diesen Tagen, in deiner Zeitzone. Hat sie damals nichts geschickt, sagt die Antwort das und nennt ihre letzte Nachricht mit Datum.
 
+Sie liest auch, was die Machine zur Frage schon festhält: Versprechen, die offen sind oder in den letzten 30 Tagen abgeschlossen wurden, Gelerntes, die Zusammenfassung der Person, des Projekts oder der Organisation, nach der du fragst, und Meeting-Notizen. Alles, was die Antwort verwendet hat, steht darunter, benannt als das, was es ist (Versprechen, Gelernt, Zusammenfassung, Meeting-Notizen), und öffnet sich dort, wo es hingehört. Gelesen wird nur, was zur Frage passt, und nur aus dem Bereich, den du gerade ansiehst.
+
 Haben mehrere Personen diesen Namen, sagt sie, welche gemeint ist. Die anderen gelesenen Nachrichten stehen unter Nachrichten. Die Frage, die eine leere Suche vorschlägt, ist immer eine, zu der es Nachrichten gibt.
 
 ## Tastenkürzel

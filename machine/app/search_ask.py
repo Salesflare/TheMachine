@@ -15,6 +15,7 @@ import embeddings
 import graph
 import locale_prefs
 import timeutil
+from machine.app import ask_memory
 from machine.app.recall import recall
 from machine.text import shown_body
 import memory_use
@@ -85,10 +86,11 @@ class SearchAskApp:
             calls = {}  # no Shared Graph here
         return [r for r in rows if calls.get(shared_graph.thread_of(r['kind'], _meta(r), r['id'])) != 'personal']
 
-    def search_ask_rows(self, question, area, days=None):
+    def search_ask_rows(self, question, area, days=None, hits=None):
         """The messages the palette's search finds for the question (by meaning and keywords where local embeddings run,
         else by keywords), best first, in the area's connections only. days: (from, until) UTC bounds to keep only
-        those days' messages."""
+        those days' messages. hits: {'ids', 'starts'} to fill with everything the search found, messages or not (the
+        meeting notes and promises Ask reads from it, machine/app/ask_memory.py)."""
         accounts = self.search_ask_accounts(area)
         if not accounts:
             return []
@@ -101,6 +103,8 @@ class SearchAskApp:
                 order += [i for i in embeddings.fts_ids(db, accounts, question, FOUND_IN_DAYS if days else FOUND) if i not in order]
         if not order:
             return []
+        if hits is not None:
+            hits.update(ids=order[:FOUND if not days else FOUND_IN_DAYS], starts=starts)
         rows = self.store.events(accounts, event_ids=order, kinds=list(graph.MESSAGE_KINDS))
         for row in rows:  # a long one that matched further on: the answer reads that part, not its start
             if row['id'] in starts and len(row['body']) > search_ask.SOURCE_CHARS:
@@ -208,9 +212,9 @@ class SearchAskApp:
         one_to_one = m.get('conversation_type') in ('dm', 'im') or str(m.get('chat_id') or '').endswith('@s.whatsapp.net')
         return one_to_one and not said
 
-    def search_ask_scoped(self, question, area, plan, mine):
+    def search_ask_scoped(self, question, area, plan, mine, hits=None):
         """(rows, scope) for a question the first turn read: about a person, a time, or both. (None, None) when it is
-        about neither: the search answers it as before."""
+        about neither: the search answers it as before. hits: as for search_ask_rows."""
         tz = timeutil.local_tz()
         today = self.search_ask_today()
         days = search_ask.bounds(plan['start'], plan['end'], tz) if plan.get('start') else None
@@ -219,7 +223,7 @@ class SearchAskApp:
             if not days:
                 return None, None
             about = plan.get('about') or ''
-            rows = self.search_ask_rows(about, area, days) if about else []
+            rows = self.search_ask_rows(about, area, days, hits) if about else []
             return rows or self.search_ask_days_rows(area, days), scope
         accounts = self.search_ask_accounts(area)
         with self.store.connect() as db:
@@ -234,7 +238,7 @@ class SearchAskApp:
                        for n, (r, _, _) in enumerate(people[:PEOPLE])]
         if not people:
             scope['unknown'] = plan['person']
-            rows = self.search_ask_rows(plan.get('about') or question, area, days)
+            rows = self.search_ask_rows(plan.get('about') or question, area, days, hits)
             return rows, scope
         weighed.sort(key=lambda w: (w[0] > 0, w[1]), reverse=True)
         row, words, ids = people[weighed[0][2]]
@@ -281,7 +285,7 @@ class SearchAskApp:
 
     def search_ask(self, question, area=None, plan=None):
         """{'answer', 'sources'} (and 'messages': the other messages it read, newest first, when it read one person's or
-        one time's); {'none': True} when the words aren't a question or nothing was found; {'off': True} without a
+        one time's; 'memory': the promises, facts, summaries and meeting notes it cited, ask_memory.py); {'none': True} when the words aren't a question or nothing was found; {'off': True} without a
         model; {'error': True} when the turn failed. plan: the person and days of a suggested question it offered
         (search_ask.given_plan), which skips the first turn. Never sends, drafts or makes a to-do."""
         import help_chat
@@ -315,16 +319,23 @@ class SearchAskApp:
         try:
             with self.store.connect() as db:
                 mine = self.search_ask_owner(db)
-            rows, scope = self.search_ask_scoped(question, area, read, mine) if read else (None, None)
+            hits = {}
+            rows, scope = self.search_ask_scoped(question, area, read, mine, hits) if read else (None, None)
             if scope is None:
-                rows = self.search_ask_rows((read or {}).get('about') or question, area)
+                rows = self.search_ask_rows((read or {}).get('about') or question, area, hits=hits)
         except (sqlite3.Error, ValueError, embeddings.EmbeddingError) as error:
             LOG.warning('search ask not searched error=%s', type(error).__name__)
             return {'error': True}
         try:
             memory = recall(self, 'ask', {'question': question}, search_ask.PROMPT_CHARS)
-            found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine)
-            memory_use.record(self.store, 'ask', memory.rows())  # the messages its prompt held: ids only
+            days = search_ask.bounds(scope['start'], scope['end'], scope['tz']) if scope and scope.get('start') else None  # also when no message is of those days
+            # what the Machine keeps that matches it: on the question's records, or on what the search found for it
+            about = ask_memory.context(self, question, area, scope, hits.get('ids') or [r['id'] for r in rows or ()], hits.get('starts'), days,
+                                       [r['id'] for r in rows or ()])
+            kept, tags = ask_memory.read(memory, about, search_ask.PROMPT_CHARS)
+            found = memory.read('sources', question, rows, run, lang, body=lambda b: shown_body(b)[0], scope=scope, counted=counted, mine=mine,
+                                memory=kept, kept=tags)
+            memory_use.record(self.store, 'ask', memory.rows())  # what its prompt held: ids only
         except (search_ask.Unavailable, help_chat.Unavailable) as error:
             LOG.info('search ask not answered error=%s', type(error).__name__)
             return {'error': True}
