@@ -389,7 +389,9 @@ const lapsed=s=>s.status==='completed'&&!!s.expired_at;
 const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
- try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
+ return needsAsk(s)};
+// A result that needs the owner and says so with a question ("What is the new link?"): it waits on their answer, not on a tap
+const needsAsk=s=>{try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
 // A draft's Send opens the preview first: the button says so.
 const sendLabel=a=>a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated

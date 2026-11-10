@@ -45,6 +45,8 @@ Die Antwort geht trotzdem von der Arbeitsadresse, an der sie ankam, und sie ersc
 
 Ab zwei wartenden Aufgaben geht **Durchgehen** in der Überschrift von Für dich sie einzeln durch, in der Reihenfolge der Liste, jeden Entwurf vollständig, mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter, was zu sehen ist, `S` stellt zurück, `→` überspringt und Esc hört auf. Unter dem Titel sagt die Überschrift auch, wie lange sie in deinem Tempo dauern, etwa "etwa 2 Min.".
 
+Eine Aufgabe, die dich etwas fragt, zählt bei beidem nicht mit: Sie braucht deine Antwort, keinen Klick.
+
 ## Jetzt prüfen
 
 Deine Machine liest jede Quelle alle paar Minuten, Tag und Nacht, und prüft das Neue auf Aufgaben, sobald 40 Nachrichten warten oder die älteste Nachricht von einer Person 15 Minuten gewartet hat. Newsletter, Benachrichtigungen und Belege kommen in die nächste Prüfung, innerhalb einer Stunde.

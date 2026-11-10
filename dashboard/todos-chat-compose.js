@@ -96,7 +96,7 @@ const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.som
  // Only a link or a step back closes the chat on screen, never a refresh (a sent message, a job that starts or moves the
  // to-do to another list): an address that lost the chat's link on the way gets it back
  if(refreshed&&!location.hash&&chatId&&!$('#inbox').hidden&&chatOpen()){history.replaceState(history.state,'',location.pathname+location.search+'#chat='+chatId);return}
- if(id===chatId)return;const was=chatId;chatId=id;chat=null;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
+ if(id===chatId)return;if(id)toastNotAbout(id);const was=chatId;chatId=id;chat=null;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render('view');scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render('view');const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;

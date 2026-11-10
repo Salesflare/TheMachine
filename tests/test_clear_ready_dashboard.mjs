@@ -126,6 +126,19 @@ try{
   await head.locator('[data-clear-run]').click();await run(page).waitFor({state:'visible'});
   await page.keyboard.press('Escape');await run(page).waitFor({state:'hidden'});
   assert.equal(posts.length,4);assert.equal(cards[5].status,'pending');
+  // A draft whose result asks the owner something takes an answer, not a tap: it stays in For you, and is in neither
+  // the header's time (5 x 45 s now) nor the run. With only such to-dos left, no time and no Go through at all
+  reset();const ask=JSON.stringify({state:'needs_you',needs:'What is the link to the revised screens?'});cards[3].outcome=ask;
+  cards[0].outcome=JSON.stringify({state:'needs_you',needs:'check the draft and send it'});  // the usual line of a ready draft: counts
+  await page.evaluate(()=>refresh());
+  await page.waitForFunction(()=>document.querySelector('#section-foryou .clear-time')?.textContent==='about 4 min');
+  assert.equal(await page.locator('#task-'+id(4)).count(),1);
+  await head.locator('[data-clear-run]').click();await run(page).waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>cr.ids.length),5);assert.ok(!(await page.evaluate(()=>cr.ids)).includes(id(4)));
+  await page.keyboard.press('Escape');await run(page).waitFor({state:'hidden'});
+  cards=[cards[3],{...cards[2],outcome:ask}];await page.evaluate(()=>refresh());
+  await page.waitForFunction(()=>document.querySelectorAll('#inbox article.card').length===2&&!document.querySelector('#section-foryou .clear-time'));
+  assert.equal(await head.locator('[data-clear-run]').count(),0);
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('clear ready dashboard ok');

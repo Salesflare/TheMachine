@@ -67,7 +67,7 @@ Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets t
 - een groet met wat vandaag telt, zoals "Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen";
 - je afspraken in één regel;
 - hoogstens drie dingen om te doen, elk met een link Openen: eerst klaargezette concepten en beloftes voor vandaag;
-- hoeveel er nog kan wachten en hoe lang dat op jouw tempo duurt, zoals "12 andere kunnen wachten, ongeveer 5 min werk."
+- hoeveel er nog kan wachten en hoe lang dat op jouw tempo duurt, zoals "12 andere kunnen wachten, ongeveer 5 min werk." To-do's die op je antwoord wachten, tellen niet mee in die tijd.
 
 De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
 

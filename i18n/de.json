@@ -1700,6 +1700,10 @@
   "one": "Guten Morgen, {} Antwort ist bereit zum Senden",
   "other": "Guten Morgen, {} Antworten sind bereit zum Senden"
  },
+ "Good morning, {} waiting": {
+  "one": "Guten Morgen, {} wartet",
+  "other": "Guten Morgen, {} warten"
+ },
  "Good morning, {} waiting, about {} min to clear": {
   "one": "Guten Morgen, {} wartet, etwa {} Min. zum Erledigen",
   "other": "Guten Morgen, {} warten, etwa {} Min. zum Erledigen"
@@ -2487,6 +2491,10 @@
  "Morning {}, {} replies are ready to send": {
   "one": "Guten Morgen {}, {} Antwort ist bereit zum Senden",
   "other": "Guten Morgen {}, {} Antworten sind bereit zum Senden"
+ },
+ "Morning {}, {} waiting": {
+  "one": "Guten Morgen {}, {} wartet",
+  "other": "Guten Morgen {}, {} warten"
  },
  "Morning {}, {} waiting, about {} min to clear": {
   "one": "Guten Morgen {}, {} wartet, etwa {} Min. zum Erledigen",
@@ -6896,6 +6904,10 @@
   "one": "{} weitere kann warten, etwa {} Min. zum Erledigen.",
   "other": "{} weitere können warten, etwa {} Min. zum Erledigen."
  },
+ "{} more can wait.": {
+  "one": "{} weitere kann warten.",
+  "other": "{} weitere können warten."
+ },
  "{} more in Promises": "{} weitere unter Versprechen",
  "{} more like this wait. Always shares them too.": {
   "one": "{} weitere wie diese wartet. Immer teilt sie auch.",
@@ -7213,6 +7225,10 @@
  "{} waiting, about {} min to clear.": {
   "one": "{} wartet, etwa {} Min. zum Erledigen.",
   "other": "{} warten, etwa {} Min. zum Erledigen."
+ },
+ "{} waiting.": {
+  "one": "{} wartet.",
+  "other": "{} warten."
  },
  "{} wants a one-time code.": "{} möchte einen Einmalcode.",
  "{} wants a passkey.": "{} möchte einen Passkey.",

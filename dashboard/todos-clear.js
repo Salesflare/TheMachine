@@ -2,10 +2,11 @@
 // Send posts the send dialog's confirm (sendConfirmed) for the revision on screen only. Header pace: clear_pace.py.
 const CR_MSG=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
 const crDraft=s=>taskActions(s).find(a=>DRAFT_KINDS.includes(a.kind)&&!['handoff','email_demo'].includes(a.kind)&&!sendBusy(a.state||s.action_status)&&!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!docMade(s,a));
-// 'send', 'dialog' (the send dialog decides), 'do', or '' (left out)
+// 'send', 'dialog' (the send dialog decides), 'do', or '' (left out: also a result that asks the owner something, which
+// takes an answer and not a tap, so it is in neither the header's time nor the run)
 function crKind(s){if(!s||!state.suggestions.includes(s)||closed(s)||s.status==='snoozed'||looksDone(s)||waitsOnOthers(s)||s.handled_hint||ownerStep(s)||withTeammate(s)||s.review_in||s.preparation_status==='blocked')return '';
  if(s.status==='pending')return s.skill_proposal?.update?'':'do';
- const a=s.status==='prepared'&&crDraft(s);if(!a)return '';
+ const a=s.status==='prepared'&&!needsAsk(s)&&crDraft(s);if(!a)return '';
  return CR_MSG.includes(a.kind)&&!a.to_options?.length&&(a.from_options||[]).length<2&&!movedLine(a)&&!(a.to||[]).some(x=>a.bounced?.[String(x).toLowerCase()])?'send':'dialog'}
 const crList=(v,key)=>(v[key]||[]).filter(s=>plainTodo(s)&&crKind(s));
 const crPace=()=>+state?.clear_pace||30;

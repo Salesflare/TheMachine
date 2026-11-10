@@ -67,7 +67,7 @@ Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il 
 - un bonjour avec ce qui compte aujourd’hui, comme "Bonjour Sam, 2 réponses sont prêtes à envoyer" ;
 - vos réunions en une ligne ;
 - au plus trois choses à faire, chacune avec un lien Ouvrir : d’abord les brouillons prêts et les promesses du jour ;
-- combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter."
+- combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter." Les tâches qui attendent votre réponse ne comptent pas dans ce temps.
 
 Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
 

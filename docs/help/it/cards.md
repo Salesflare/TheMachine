@@ -45,6 +45,8 @@ La risposta parte comunque dall'indirizzo di lavoro dove è arrivata, e non comp
 
 Con due o più in attesa, **Scorri** nell’intestazione di Per te le passa una alla volta, nell’ordine della lista, ogni bozza per intero, con **Invia** o **Fallo**, **Chiedi modifiche**, **Posticipa** e **Salta**. Al computer, Invio invia ciò che è sullo schermo, `S` posticipa, `→` salta ed Esc si ferma. Sotto il titolo, l’intestazione dice anche quanto ci vuole al tuo ritmo, come "circa 2 min".
 
+Un'attività che ti chiede qualcosa resta fuori da entrambi: le serve la tua risposta, non un tocco.
+
 ## Controlla ora
 
 La tua Machine legge ogni fonte ogni pochi minuti, giorno e notte, e controlla cosa è arrivato in cerca di attività appena 40 messaggi sono in attesa o il messaggio più vecchio di una persona aspetta da 15 minuti. Newsletter, notifiche e ricevute entrano nel controllo successivo, entro un’ora.

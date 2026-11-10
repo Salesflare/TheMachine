@@ -127,9 +127,13 @@ class NotificationsApp:
             # what an earlier part already listed (notify.compose), so a pile still gets one
             later = still_needed.folded(db, utc(current), local_tz())  # a Still needed? left unanswered waits in Later
             top = notify.open_order([dict(r) for r in db.execute(
-                "SELECT id,title,status,due,due_at,created_at,event_ids,next_action FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "SELECT id,title,status,due,due_at,created_at,event_ids,next_action,outcome FROM suggestions WHERE status IN ('pending','prepared') AND NOT " + NOT_FOR_OWNER_SQL + " "
                 "AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in later], local)
             ready = [r for r in top if r['status'] == 'prepared']
+            # The ones that wait on the owner's answer (a run that stopped to ask, a result that asks): in the count, not
+            # in the time to clear, as in the dashboard's header (crKind)
+            stuck = {r[0] for r in db.execute("SELECT suggestion_id FROM preparations WHERE status='blocked'")}
+            asking = [r['id'] for r in top if r['id'] in stuck or notify.asks(r.get('outcome'))]
             total = waiting_count(db)
             per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)
@@ -137,7 +141,7 @@ class NotificationsApp:
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
-                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)])
+                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking)
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})

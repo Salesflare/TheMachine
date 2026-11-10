@@ -45,6 +45,8 @@ A resposta sai mesmo assim do endereço de trabalho onde chegou, e nunca aparece
 
 Com duas ou mais esperando, **Percorrer** no cabeçalho de Para você passa por elas uma a uma, na ordem da lista, cada rascunho inteiro, com **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc para. Abaixo do título, o cabeçalho também diz quanto tempo levam no seu ritmo, como "cerca de 2 min".
 
+Uma tarefa que pergunta algo a você fica fora dos dois: ela precisa da sua resposta, não de um toque.
+
 ## Verificar agora
 
 Sua Machine lê cada fonte a cada poucos minutos, de dia e de noite, e verifica o que chegou em busca de tarefas assim que 40 mensagens esperam ou a mensagem mais antiga de uma pessoa espera há 15 minutos. Newsletters, notificações e recibos entram na próxima verificação, em até uma hora.

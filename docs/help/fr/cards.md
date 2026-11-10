@@ -45,6 +45,8 @@ Sa réponse part quand même de l’adresse pro où elle est arrivée, et elle n
 
 À partir de deux en attente, **Passer en revue** dans l’en-tête de Pour vous les passe une par une, dans l’ordre de la liste, chaque brouillon en entier, avec **Envoyer** ou **Faire**, **Demander des modifications**, **Mettre en attente** et **Ignorer**. Sur un ordinateur, Entrée envoie ce qui est à l’écran, `S` met en attente, `→` ignore et Échap arrête. Sous le titre, l’en-tête dit aussi combien de temps elles prennent à votre rythme, comme "environ 2 min".
 
+Une tâche qui vous pose une question reste en dehors des deux : il lui faut votre réponse, pas un clic.
+
 ## Vérifier maintenant
 
 Votre Machine lit chaque source toutes les quelques minutes, jour et nuit, et vérifie ce qui est arrivé pour en tirer des tâches dès que 40 messages attendent ou que le plus ancien message d’une personne attend depuis 15 minutes. Les newsletters, notifications et reçus rejoignent la vérification suivante, dans l’heure.

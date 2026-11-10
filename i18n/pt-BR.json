@@ -1700,6 +1700,10 @@
   "one": "Bom dia: {} resposta pronta para enviar",
   "other": "Bom dia: {} respostas prontas para enviar"
  },
+ "Good morning, {} waiting": {
+  "one": "Bom dia: {} esperando",
+  "other": "Bom dia: {} esperando"
+ },
  "Good morning, {} waiting, about {} min to clear": {
   "one": "Bom dia: {} esperando, cerca de {} min para resolver",
   "other": "Bom dia: {} esperando, cerca de {} min para resolver"
@@ -2487,6 +2491,10 @@
  "Morning {}, {} replies are ready to send": {
   "one": "Bom dia, {}: {} resposta pronta para enviar",
   "other": "Bom dia, {}: {} respostas prontas para enviar"
+ },
+ "Morning {}, {} waiting": {
+  "one": "Bom dia, {}: {} esperando",
+  "other": "Bom dia, {}: {} esperando"
  },
  "Morning {}, {} waiting, about {} min to clear": {
   "one": "Bom dia, {}: {} esperando, cerca de {} min para resolver",
@@ -6896,6 +6904,10 @@
   "one": "Mais {} pode esperar, cerca de {} min para resolver.",
   "other": "Mais {} podem esperar, cerca de {} min para resolver."
  },
+ "{} more can wait.": {
+  "one": "Mais {} pode esperar.",
+  "other": "Mais {} podem esperar."
+ },
  "{} more in Promises": "Mais {} em Promessas",
  "{} more like this wait. Always shares them too.": {
   "one": "Mais {} como esta aguarda. Sempre compartilha também.",
@@ -7213,6 +7225,10 @@
  "{} waiting, about {} min to clear.": {
   "one": "{} esperando, cerca de {} min para resolver.",
   "other": "{} esperando, cerca de {} min para resolver."
+ },
+ "{} waiting.": {
+  "one": "{} esperando.",
+  "other": "{} esperando."
  },
  "{} wants a one-time code.": "{} quer um código de uso único.",
  "{} wants a passkey.": "{} pede uma chave de acesso.",

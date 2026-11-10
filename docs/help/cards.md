@@ -45,6 +45,8 @@ Such a Personal to-do still replies from the work address its email came in on, 
 
 With two or more waiting, **Go through** in the header of For you steps through them one at a time, in the list's order, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
 
+A to-do that asks you something is left out of both: it takes your answer, not a tap.
+
 ## Check now
 
 Your Machine reads each source every few minutes, day and night. It checks what came in once 40 messages wait or the oldest message from a person has waited 15 minutes. Newsletters, notifications and receipts join the next check, within the hour.
