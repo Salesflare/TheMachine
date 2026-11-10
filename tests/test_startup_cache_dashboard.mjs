@@ -88,7 +88,7 @@ try{
  assert.equal(await tab.evaluate(()=>__outline),true,'the outline is in the page from its first paint');
  assert.deepEqual(await tab.evaluate(()=>__before),[],'never "All clear" before the first data');
  assert.equal(await tab.locator('#suggestions').getAttribute('aria-busy'),null);
- assert.match(await tab.locator('#page-head').innerText(),/2 for you/);
+ assert.match(await tab.locator('#page-head').innerText(),/2 to-dos for you/);
 
  // 2. Kept on the device: encrypted, a non-extractable AES-GCM key, for this owner, no tokens
  await until(tab,async()=>(await indexedDB.databases()).some(d=>d.name==='tm-cache'),null,'the device cache');

@@ -7283,6 +7283,10 @@
   "one": "{} tâche traitée en {}",
   "other": "{} tâches traitées en {}"
  },
+ "{} to-dos for you": {
+  "one": "{} tâche pour vous",
+  "other": "{} tâches pour vous"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} tâche en attente jusqu’à demain {}",
   "other": "{} tâches en attente jusqu’à demain {}"

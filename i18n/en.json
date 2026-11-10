@@ -7283,6 +7283,10 @@
   "one": "{} to-do cleared in {}",
   "other": "{} to-dos cleared in {}"
  },
+ "{} to-dos for you": {
+  "one": "{} to-do for you",
+  "other": "{} to-dos for you"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} to-do held until tomorrow {}",
   "other": "{} to-dos held until tomorrow {}"

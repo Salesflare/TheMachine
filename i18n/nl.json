@@ -7283,6 +7283,10 @@
   "one": "{} to-do afgehandeld in {}",
   "other": "{} to-do's afgehandeld in {}"
  },
+ "{} to-dos for you": {
+  "one": "{} to-do voor jou",
+  "other": "{} to-do's voor jou"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} to-do wacht tot morgen {}",
   "other": "{} to-do's wachten tot morgen {}"

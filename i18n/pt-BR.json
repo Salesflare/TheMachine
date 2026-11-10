@@ -7283,6 +7283,10 @@
   "one": "{} tarefa resolvida em {}",
   "other": "{} tarefas resolvidas em {}"
  },
+ "{} to-dos for you": {
+  "one": "{} tarefa para você",
+  "other": "{} tarefas para você"
+ },
  "{} to-dos held until tomorrow {}": {
   "one": "{} tarefa aguardando até amanhã {}",
   "other": "{} tarefas aguardando até amanhã {}"
