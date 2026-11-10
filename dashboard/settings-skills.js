@@ -20,11 +20,13 @@ function renderSkills(){const v=state.skills,box=$('#settings-skills');if(!box)r
 // is installed with OpenClaw's own command, only by the owner's tap after reading it.
 let installedView=null,installedLoading=false,lookShown=null;
 const skillCall=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
-// Not read yet since the service started (loading): it reads in the background and this asks again a little later
+// Not read yet since the service started (loading), or a kept list being read again (updating): it reads in the
+// background and this asks again a little later
 let installedTries=0;
 async function loadInstalled(refresh=false){if(installedLoading)return;installedLoading=true;
  try{installedView=await skillCall('skill_installed',{refresh})}catch(err){errCaught(err);installedView={installed:[],error:err.message}}finally{installedLoading=false}
- if(installedView?.loading&&installedTries++<20)setTimeout(()=>loadInstalled(),3000);else if(!installedView?.loading)installedTries=0;renderInstalled()}
+ // updating: the list kept from before a restart shows now, and the fresh one replaces it when asked again
+ const again=installedView?.loading||installedView?.updating;if(again&&installedTries++<20)setTimeout(()=>loadInstalled(),3000);else if(!again)installedTries=0;renderInstalled()}
 const SKILL_GROUPS=[['workspace','Workspace'],['bundled','Bundled with The Machine'],['other','Other']];
 function installedRow(i){const meta=[i.state==='ready'?'<span class="skill-ready">Ready</span>':i.state==='off'?'Off':i.state==='blocked'?'Not allowed for this agent':'Needs setup'];
  if(i.needs&&i.state!=='ready'&&i.needs!=='Not allowed for this agent')meta.push(esc(i.needs));if(i.group==='other')meta.push(esc(i.source));

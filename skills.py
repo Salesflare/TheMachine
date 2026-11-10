@@ -942,6 +942,38 @@ class Catalog:
         self.fetch = fetch or self._fetch
         self.lock = threading.Lock()
         self.raw, self.at, self.error, self.searches = None, 0.0, '', {}
+        self.loading = False
+        # The last good list, kept next to the database: after a restart the page shows it at once while OpenClaw is
+        # asked again in the background (that read took 8-16 s right after a restart, 2026-11-10).
+        self.saved = Path(config['database']).parent / 'skills-catalog.json' if config.get('database') else None
+        self.stale = False
+        self._restore()
+
+    def _restore(self):
+        if not self.saved:
+            return
+        try:
+            data = json.loads(self.saved.read_text())
+            found, at = data.get('skills'), float(data.get('at') or 0)
+        except (OSError, ValueError, AttributeError, TypeError):
+            return
+        if isinstance(found, list) and at > 0:
+            self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
+            self.at, self.stale = at, True  # shown at once, read again soon
+
+    def _save(self, raw, at):
+        if not self.saved:
+            return
+        temporary = self.saved.with_name(f'.{self.saved.name}.{os.getpid()}.{threading.get_ident()}')
+        try:
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            with os.fdopen(fd, 'w') as stream:
+                json.dump({'at': at, 'skills': raw}, stream)
+            os.replace(temporary, self.saved)
+        except (OSError, TypeError, ValueError) as error:
+            LOG.warning('skills catalog save error=%s', type(error).__name__)
+            with contextlib.suppress(OSError):
+                temporary.unlink()
 
     def _cli(self, args, timeout=60):
         # No terminal and no colors: OpenClaw's own notices stay plain, and nothing waits on input
@@ -996,11 +1028,13 @@ class Catalog:
                 raise ValueError('The answer could not be read. Try again.')
             with self.lock:
                 self.raw = [r for r in found if isinstance(r, dict) and isinstance(r.get('name'), str)][:500]
-                self.at, self.error = self.clock(), ''
+                self.at, self.error, self.stale = self.clock(), '', False
+                raw, at = self.raw, self.at
+            self._save(raw, at)
         except ValueError as error:
             LOG.warning('skills catalog error=%s', error)
             with self.lock:
-                self.at, self.error = self.clock(), str(error)
+                self.at, self.error, self.stale = self.clock(), str(error), False  # tried: asked again in half an hour
         return self.raw
 
     def peek(self):
@@ -1012,7 +1046,7 @@ class Catalog:
         if stop.wait(60):
             return
         while True:
-            if self.clock() - self.at >= CATALOG_SECONDS - 5:
+            if self.stale or self.clock() - self.at >= CATALOG_SECONDS - 5:
                 self.load()
             if stop.wait(60):
                 return
@@ -1028,7 +1062,7 @@ class Catalog:
     def load_soon(self):
         """load() in the background, one at a time."""
         with self.lock:
-            if getattr(self, 'loading', False):
+            if self.loading:
                 return
             self.loading = True
 
@@ -1043,14 +1077,24 @@ class Catalog:
         if not wait and not refresh and self.raw is None:
             # Not read yet since the start (the worker reads it a minute in): read in the background and answer now; the
             # page asks again. A view that waited on OpenClaw took 15 s right after a restart (2026-11-10).
-            tried = bool(self.at) and not getattr(self, 'loading', False)
+            tried = bool(self.at) and not self.loading
             self.load_soon()
             return {'installed': [], 'checked_at': None, 'error': self.error if tried else '', **({} if tried else {'loading': True})}
-        items = [installed_item(r, mine) for r in self.installed(refresh)]
+        updating = False
+        if not wait and not refresh:
+            # A list kept from before a restart, or older than half an hour: shown now, read again in the background
+            # (updating: the page asks once more). Never a wait on OpenClaw here.
+            if self.stale or self.clock() - self.at > CATALOG_SECONDS:
+                self.load_soon()
+            updating = self.loading
+            raw = self.raw or []
+        else:
+            raw = self.installed(refresh)
+        items = [installed_item(r, mine) for r in raw]
         order = {'yours': 0, 'workspace': 1, 'bundled': 2, 'other': 3}
         items.sort(key=lambda i: (order[i['group']], i['name'].lower()))
         return {'installed': items, 'checked_at': dt.datetime.fromtimestamp(self.at, dt.timezone.utc).isoformat(timespec='seconds') if self.at else None,
-                'error': self.error}
+                'error': self.error, **({'updating': True} if updating else {})}
 
     def read(self, name):
         """One installed skill's SKILL.md, to read. Only read; nothing is written."""
