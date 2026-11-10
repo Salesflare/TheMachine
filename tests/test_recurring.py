@@ -68,6 +68,35 @@ class Words(unittest.TestCase):
         for text in ('Send the weekly report', 'Monthly numbers to Sam by Friday', 'Call Sam about every detail', 'Book the trip'):
             self.assertIsNone(r.parse(text, self.today), text)
 
+    def test_workday_of_the_month(self):
+        today = D(2026, 11, 10)
+        got = r.parse('Send the supplier report every second workday of the month', today, 'BE')
+        self.assertEqual((got['rule'], got['anchor'], got['rest']),
+                         ({'unit': 'month', 'n': 1, 'workday': 2, 'region': 'BE'}, D(2026, 12, 2), 'Send the supplier report'))
+        # Belgium: 1 January is off, so January's 2nd workday is Tuesday the 5th; without known holidays, Monday the 4th
+        self.assertEqual(r.next_after(got['rule'], got['anchor'], got['anchor']), D(2027, 1, 5))
+        self.assertEqual(r.next_after({'unit': 'month', 'n': 1, 'workday': 2}, D(2026, 12, 2), D(2026, 12, 2)), D(2027, 1, 4))
+        self.assertEqual(r.parse('Close the books last workday of the month', today)['rule'], {'unit': 'month', 'n': 1, 'workday': -1})
+        self.assertEqual(r.parse('Close the books last workday of the month', today)['anchor'], D(2026, 11, 30))
+        self.assertEqual(r.parse('every month on the 2nd business day send invoices', today)['rest'], 'Send invoices')
+        self.assertEqual(r.parse('Facturen sturen elke tweede werkdag van de maand', today)['rule']['workday'], 2)
+        self.assertEqual(r.describe(got['rule'], got['anchor']), 'monthly on the 2nd workday')
+
+    def test_unsure_words_keep_the_whole_text_and_never_guess(self):
+        today = D(2026, 11, 10)
+        # "every 2nd business day": the 2nd of the month, or every other workday? Neither is guessed
+        for text in ('Invoices every 2nd business day', 'Invoices every second workday', 'Invoices every 2nd workday',
+                     'Send invoices on the second workday'):
+            self.assertIsNone(r.parse(text, today), text)
+
+    def test_every_second_week_and_plain_steps(self):
+        today = D(2026, 11, 10)
+        self.assertEqual(r.parse('Team review every second week', today)['rule'], {'unit': 'week', 'n': 2})
+        self.assertEqual(r.parse('Water the plants every 2 days', today)['rule'], {'unit': 'day', 'n': 2})
+        got = r.parse('Pay rent every month on day 2', today)
+        self.assertEqual((got['rule'], got['anchor'], got['rest']), ({'unit': 'month', 'n': 1}, D(2026, 12, 2), 'Pay rent'))
+        self.assertEqual(r.parse('Report every 2nd day of the month', today)['anchor'], D(2026, 12, 2))
+
     def test_describe(self):
         self.assertEqual(r.describe({'unit': 'month', 'n': 1, 'nth': 1}, D(2026, 11, 2)), 'monthly on the first Monday')
         self.assertEqual(r.describe({'unit': 'week', 'n': 2}, D(2026, 11, 6)), 'every 2 weeks on Friday')
@@ -143,6 +172,19 @@ class Series(unittest.TestCase):
         plain = self.act('card_new', text='every Friday send invoices', repeat=False)
         self.assertEqual(self.row(plain['id'])['title'], 'every Friday send invoices')
         self.assertEqual(len(self.series()), 1)
+
+    def test_new_todo_on_a_workday_of_the_month(self):
+        Today.day = D(2026, 11, 10)
+        made = self.act('card_new', text='Send the supplier report every second workday of the month', scope='work')
+        card = self.row(made['id'])
+        self.assertEqual((card['title'], card['due']), ('Send the supplier report', '2026-12-02'))
+        self.assertEqual(json.loads(self.series()[0]['rule']), {'unit': 'month', 'n': 1, 'workday': 2, 'region': 'BE'})
+        # Unsure words: the whole text stays the title and nothing repeats
+        plain = self.act('card_new', text='Send the supplier report every 2nd business day', scope='work')
+        self.assertEqual((self.row(plain['id'])['title'], self.row(plain['id'])['due']), ('Send the supplier report every 2nd business day', None))
+        self.assertEqual(len(self.series()), 1)
+        # Custom… in Repeats reads it too, with the owner's holidays
+        self.assertEqual(self.act('repeat_read', text='every last workday of the month')['rule'], {'unit': 'month', 'n': 1, 'workday': -1, 'region': 'BE'})
 
     def test_more_repeat_change_skip_and_stop(self):
         made = self.act('card_new', text='Water the plants', due='2026-11-02')

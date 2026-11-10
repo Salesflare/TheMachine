@@ -11,6 +11,8 @@ import secrets
 import threading
 from zoneinfo import ZoneInfo
 
+import crm_fixes
+import locale_prefs
 import recurring
 
 LOG = logging.getLogger('personal-assistant')
@@ -33,12 +35,26 @@ class RecurringApp:
         except Exception:
             return ZoneInfo('Europe/Amsterdam')
 
+    def recurring_region(self):
+        """The owner's country, whose public holidays "the 2nd workday of the month" skips: `country` in the config or
+        the time zone's, else the region of their locale (en-BE)."""
+        try:
+            return crm_fixes.region_of(self.config) or locale_prefs.region(self.config.get('locale')) or None
+        except Exception:
+            return None
+
     def recurring_today(self):
         return dt.datetime.now(self.recurring_tz()).date()
 
     @staticmethod
     def recurring_stamp():
         return dt.datetime.now(dt.timezone.utc).isoformat()
+
+    def recurring_where(self, repeat):
+        """A workday rule from the dashboard (Custom…) gets the owner's country, so its days skip their holidays."""
+        if isinstance(repeat, dict) and repeat.get('workday') is not None and not repeat.get('region'):
+            return {**repeat, 'region': self.recurring_region()}
+        return repeat
 
     def recurring_work(self, card):
         """Whether a to-do is Work: its first account's boundary (work:<company>)."""
@@ -60,15 +76,15 @@ class RecurringApp:
         today = self.recurring_today()
         due = args.get('due')
         if args.get('repeat') not in (None, False, '', 'none'):
-            rule = recurring.clean_rule(args['repeat'])
+            rule = recurring.clean_rule(self.recurring_where(args['repeat']))
             try:
                 anchor = dt.date.fromisoformat(str(due)) if due else today
             except ValueError:
                 raise ValueError('due is YYYY-MM-DD') from None
-            if rule['unit'] == 'weekday' or rule.get('nth') is not None:
+            if recurring.by_day(rule):
                 anchor = recurring.anchor_for(rule, anchor, nth=rule.get('nth'))
         elif args.get('repeat') is None:
-            got = recurring.parse(args.get('text'), today)
+            got = recurring.parse(args.get('text'), today, self.recurring_region())
             if got and len(got['rest']) >= 2:
                 rule, anchor = got['rule'], got['anchor']
                 args['text'] = got['rest']
@@ -98,7 +114,7 @@ class RecurringApp:
             if recurring.STOP.search(words):
                 repeat = 'none'
             else:
-                got = recurring.parse(words, today)
+                got = recurring.parse(words, today, self.recurring_region())
                 if not got:
                     raise ValueError('I can’t read that rhythm yet. Try every week, every first Monday or every 3 months.')
                 repeat = got['rule']
@@ -113,7 +129,7 @@ class RecurringApp:
                 if running:
                     recurring.stop(db, running['id'], stamp)
                 return {'id': sid, 'repeats': None}
-            rule = recurring.clean_rule(repeat)
+            rule = recurring.clean_rule(self.recurring_where(repeat))
             if running:
                 recurring.change(db, running, rule, stamp, today)
             else:
@@ -123,7 +139,7 @@ class RecurringApp:
                     anchor = dt.date.fromisoformat(str(card['due'])[:10]) if card['due'] else today
                 except ValueError:
                     anchor = today
-                if rule['unit'] == 'weekday' or rule.get('nth') is not None:
+                if recurring.by_day(rule):
                     anchor = recurring.anchor_for(rule, anchor, nth=rule.get('nth'))
                 recurring.start(db, card, rule, anchor, card['owner_words'] or card['title'], stamp, self.recurring_work(card))
             view = {'id': sid, 'status': card['status']}
@@ -147,7 +163,7 @@ class RecurringApp:
 
     def repeat_read_action(self, name, args, owner_dashboard):
         """Custom… in Repeats: the rhythm in the owner's words, read as a rule (nothing is saved)."""
-        got = recurring.parse(str(args.get('text') or '')[:200], self.recurring_today())
+        got = recurring.parse(str(args.get('text') or '')[:200], self.recurring_today(), self.recurring_region())
         return {'rule': got['rule'], 'anchor': got['anchor'].isoformat()} if got else {'rule': None}
 
     def recurring_offer_action(self, name, args, owner_dashboard):

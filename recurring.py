@@ -1,9 +1,10 @@
 """Recurring to-dos (docs/help/recurring.md): a to-do that comes back on a rhythm.
 
-A series is one to-do that repeats: daily, on weekdays, weekly, monthly (on a date, or "the first Monday"), yearly, or
-every N days, weeks or months. Its rule is small JSON (RULE): {'unit': 'day'|'weekday'|'week'|'month'|'year', 'n': N,
-'nth': 1..4 or -1 for a month's first..fourth or last weekday}. The weekday, the day of the month and the date of the
-year come from the series' anchor, its first date.
+A series is one to-do that repeats: daily, on weekdays, weekly, monthly (on a date, "the first Monday" or "the 2nd
+workday"), yearly, or every N days, weeks or months. Its rule is small JSON (RULE): {'unit': 'day'|'weekday'|'week'|
+'month'|'year', 'n': N, 'nth': 1..4 or -1 for a month's first..fourth or last weekday, 'workday': 1..20 or -1 for a
+month's Nth or last workday, 'region': the country whose public holidays a workday skips (public_holidays.py)}. The
+weekday, the day of the month and the date of the year come from the series' anchor, its first date.
 
 One open occurrence at a time. The next one appears on its date (the owner's own calendar day) once the one before is
 done, not needed or skipped (tick). One done before its date (a new series' first, done now for the period that is
@@ -23,8 +24,11 @@ import json
 import re
 import uuid
 
+import public_holidays
+
 UNITS = ('day', 'weekday', 'week', 'month', 'year')
 N_MAX = 52
+WORKDAY_MAX = 20  # "the 20th workday of the month" is about as late as a month has
 CLOSED = ('completed', 'rejected')  # anything else still open (pending, accepted, prepared, instructions, snoozed)
 OFFER_DAYS = 200  # how far back a rhythm in closed to-dos is looked for
 
@@ -56,11 +60,25 @@ def clean_rule(rule):
     if not isinstance(n, int) or isinstance(n, bool) or not 1 <= n <= N_MAX:
         raise ValueError('Repeat every 1 to 52')
     out = {'unit': rule['unit'], 'n': 1 if rule['unit'] in ('weekday', 'year') else n}
-    if rule['unit'] == 'month' and rule.get('nth') is not None:
+    if rule['unit'] == 'month' and rule.get('workday') is not None:
+        nth = rule['workday']
+        if not isinstance(nth, int) or isinstance(nth, bool) or not (nth == -1 or 1 <= nth <= WORKDAY_MAX):
+            raise ValueError('Pick the 1st to 20th, or the last, workday of the month')
+        out['workday'] = nth
+        region = str(rule.get('region') or '').upper()
+        if re.fullmatch(r'[A-Z]{2}', region) and public_holidays.known(region):
+            out['region'] = region
+    elif rule['unit'] == 'month' and rule.get('nth') is not None:
         if rule['nth'] not in (1, 2, 3, 4, -1):
             raise ValueError('Pick the first to fourth, or the last, weekday of the month')
         out['nth'] = rule['nth']
     return out
+
+
+def by_day(rule):
+    """Whether the rule picks its own days (weekdays, "the first Monday", "the 2nd workday"), so a series' first date
+    is the first fitting day from the one asked for (anchor_for)."""
+    return rule['unit'] == 'weekday' or rule.get('nth') is not None or rule.get('workday') is not None
 
 
 PRESETS = {'daily': {'unit': 'day', 'n': 1}, 'weekdays': {'unit': 'weekday', 'n': 1}, 'weekly': {'unit': 'week', 'n': 1},
@@ -78,6 +96,13 @@ def _nth_weekday(year, month, weekday, nth):
     return dt.date(year, month, days[-1] if nth == -1 else days[nth - 1])
 
 
+def nth_workday(year, month, nth, region=None):
+    """A month's nth (or, for -1, last) workday: Monday to Friday, without the country's public holidays."""
+    days = [dt.date(year, month, d) for d in range(1, calendar.monthrange(year, month)[1] + 1)]
+    days = [d for d in days if public_holidays.is_workday(d, region)]
+    return days[-1] if nth == -1 else days[min(nth, len(days)) - 1]
+
+
 def occurrence(rule, anchor, k):
     """The k-th date of a series (k=0 is its anchor's own period)."""
     unit, n = rule['unit'], rule.get('n', 1)
@@ -91,6 +116,8 @@ def occurrence(rule, anchor, k):
         except ValueError:  # Feb 29 in a year without it
             return dt.date(anchor.year + k, 2, 28)
     first = _add_months(anchor.replace(day=1), k * n, 1)
+    if rule.get('workday') is not None:
+        return nth_workday(first.year, first.month, rule['workday'], rule.get('region'))
     if rule.get('nth') is not None:
         return _nth_weekday(first.year, first.month, anchor.weekday(), rule['nth'])
     return _add_months(anchor, k * n, anchor.day)
@@ -124,11 +151,14 @@ def missed(rule, anchor, due, today, cap=99):
 
 
 def anchor_for(rule, today, weekday=None, monthday=None, nth=None):
-    """The first date on or after today that fits what the words gave: a weekday, a day of the month, or a month's
-    first..last weekday."""
+    """The first date on or after today that fits what the words gave: a weekday, a day of the month, a month's
+    first..last weekday, or (from the rule) a month's Nth workday."""
     day = today
     for _ in range(400):
-        if weekday is not None and day.weekday() != weekday:
+        if rule.get('workday') is not None:
+            if nth_workday(day.year, day.month, rule['workday'], rule.get('region')) == day:
+                return day
+        elif weekday is not None and day.weekday() != weekday:
             pass
         elif monthday is not None and day.day != min(monthday, calendar.monthrange(day.year, day.month)[1]):
             pass
@@ -146,6 +176,10 @@ WEEKDAYS = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 
 ORDINALS = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', -1: 'last'}
 
 
+def ordinal(n):
+    return f'{n}{"th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")}'
+
+
 def describe(rule, anchor):
     """The rhythm in plain English, for prompts and logs (the dashboard words it in the owner's language itself)."""
     unit, n = rule['unit'], rule.get('n', 1)
@@ -158,6 +192,9 @@ def describe(rule, anchor):
     if unit == 'year':
         return f'yearly on {anchor.strftime("%B")} {anchor.day}'
     every = 'monthly' if n == 1 else f'every {n} months'
+    if rule.get('workday') is not None:
+        nth = rule['workday']
+        return f'{every} on the {"last" if nth == -1 else ordinal(nth)} workday'
     if rule.get('nth') is not None:
         return f'{every} on the {ORDINALS[rule["nth"]]} {WEEKDAYS[anchor.weekday()]}'
     return f'{every} on day {anchor.day}'
@@ -173,6 +210,28 @@ _NUM = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven':
 _NTH = {'first': 1, '1st': 1, 'second': 2, '2nd': 2, 'third': 3, '3rd': 3, 'fourth': 4, '4th': 4, 'last': -1}
 _NTHS = r'(first|1st|second|2nd|third|3rd|fourth|4th|last)'
 _UNIT = {'day': 'day', 'week': 'week', 'month': 'month', 'year': 'year'}
+_WD = r'(?:work ?days?|working days?|business days?)'
+_WD_NTH = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, 'last': -1,
+           'eerste': 1, 'tweede': 2, 'derde': 3, 'vierde': 4, 'vijfde': 5, 'laatste': -1,
+           'premier': 1, 'deuxième': 2, 'deuxieme': 2, 'second': 2, 'troisième': 3, 'troisieme': 3, 'quatrième': 4, 'quatrieme': 4,
+           'cinquième': 5, 'cinquieme': 5, 'dernier': -1,
+           'ersten': 1, 'zweiten': 2, 'dritten': 3, 'vierten': 4, 'fünften': 5, 'funften': 5, 'letzten': -1,
+           'primer': 1, 'segundo': 2, 'tercer': 3, 'cuarto': 4, 'quinto': 5, 'último': -1, 'ultimo': -1,
+           'primo': 1, 'secondo': 2, 'terzo': 3, 'quarto': 4,
+           'primeiro': 1, 'terceiro': 3}
+_WD_NTHS = r'(first|second|third|fourth|fifth|last|\d{1,2}(?:st|nd|rd|th))'
+# The other languages' "the second workday of the month"
+_WORLD_WD = [
+    r'\b(?:(?:elke|iedere|de|op de) )?(eerste|tweede|derde|vierde|vijfde|laatste) werkdag van (?:de|elke|iedere) maand\b',
+    r'\b(?:(?:le|chaque) )?(premier|deuxi[èe]me|second|troisi[èe]me|quatri[èe]me|cinqui[èe]me|dernier) jour (?:ouvr[ée]|ouvrable) (?:du|de chaque) mois\b',
+    r'\b(?:(?:jeden|am|an jedem) )?(ersten|zweiten|dritten|vierten|f[üu]nften|letzten) (?:werktag|arbeitstag) (?:des|im|jedes|eines) monats?\b',
+    r'\b(?:(?:el|cada) )?(primer|segundo|tercer|cuarto|quinto|[úu]ltimo) d[íi]a (?:h[áa]bil|laborable) (?:del|de cada) mes\b',
+    r'\b(?:(?:il|ogni) )?(primo|secondo|terzo|quarto|quinto|ultimo) giorno lavorativo (?:del|di ogni) mese\b',
+    r'\b(?:(?:o|todo) )?(primeiro|segundo|terceiro|quarto|quinto|[úu]ltimo) dia [úu]til (?:do|de cada) m[êe]s\b',
+]
+# Rhythm words left right next to what was read: "every 2nd" + "business day", "every month" + "on day 2"
+_PARTLY_AFTER = re.compile(r'^[\s,]*(?:(?:work ?|working |business |week ?)?(?:days?|weeks?|months?|years?)\b|(?:of|in) (?:the|each|every) month\b|on (?:day )?(?:the )?\d)')
+_PARTLY_BEFORE = re.compile(r'(?:\b(?:every|each|the|on|first|second|third|fourth|fifth|last|other|\d{1,2}(?:st|nd|rd|th)?)|\bon day \d{1,2})[\s,]*$')
 # The other languages the app speaks: their "every day/week/month/year" and "every weekday"
 _WORLD = [
     (r'\b(?:elke|iedere) werkdag\b|\bchaque jour ouvr[ée]\b|\bjeden werktag\b|\bcada d[íi]a laborable\b|\bogni giorno feriale\b|\btodo dia [úu]til\b', 'weekday'),
@@ -183,21 +242,41 @@ _WORLD = [
 ]
 
 
-def parse(text, today):
+def _workday(m):
+    """The Nth (or last) workday of the month, from the ordinal the words gave."""
+    word = next(g for g in m.groups() if g)
+    nth = _WD_NTH.get(word) or (int(re.match(r'\d+', word).group()) if word[:1].isdigit() else None)
+    return ({'unit': 'month', 'n': 1, 'workday': nth}, {}) if nth and (nth == -1 or nth <= WORKDAY_MAX) else None
+
+
+def parse(text, today, region=None):
     """A rhythm in the owner's words ("every first Monday of the month do payroll", "Water the plants every 3 days",
-    "Board update monthly"), or None. {'rule', 'anchor' (date), 'rest' (the words without the rhythm)}. Only clear
-    rhythms count: "every ..." anywhere, or daily/weekly/monthly/yearly at the end (not "the weekly report")."""
+    "Board update monthly", "every second workday of the month"), or None. {'rule', 'anchor' (date), 'rest' (the words
+    without the rhythm)}. Only clear rhythms count: "every ..." anywhere, or daily/weekly/monthly/yearly at the end (not
+    "the weekly report"). Words that only partly read as a rhythm ("every 2nd business day": the 2nd of the month, or
+    every other one?) count as none, so the to-do keeps all its words and nothing repeats by a guess. region: the
+    owner's country, whose public holidays a workday skips."""
     s = str(text or '')
     low = s.lower()
     found = None  # (start, end, rule, anchor hints)
     tries = [
-        (r'\b(?:every|each) (?:week ?day|working day|business day)s?\b|\bon weekdays\b', lambda m: ({'unit': 'weekday', 'n': 1}, {})),
+        # "every second workday of the month", "the last business day of each month", "monthly on the 2nd workday"
+        (r'\b(?:on )?(?:(?:every|each|the) )?' + _WD_NTHS + r' (?:' + _WD + r'|weekday)\s+(?:of|in)\s+(?:the|each|every|a)\s+month\b'
+         r'|\b(?:monthly|(?:every|each) month),? on the ' + _WD_NTHS + r' ' + _WD + r'\b', _workday),
+        *[(pattern, _workday) for pattern in _WORLD_WD],
+        (r'\b(?:every|each) (?:week ?day|work ?day|working day|business day)s?\b|\bon weekdays\b', lambda m: ({'unit': 'weekday', 'n': 1}, {})),
         (r'\b(?:on )?(?:every|each|the) ' + _NTHS + ' ' + _DAYS + r'(?:\s+(?:of|in)\s+(?:the|each|every)\s+month)?\b',
          lambda m: ({'unit': 'month', 'n': 1, 'nth': _NTH[m.group(1)]}, {'weekday': _DAY[m.group(2)], 'nth': _NTH[m.group(1)]})
          if m.group(0).strip().startswith(('every', 'each')) or re.search(r'month\b', m.group(0)) else None),
         (r'\bevery (\d{1,2}|' + '|'.join(_NUM) + r') (day|week|month|year)s?\b(?: on ' + _DAYS + r')?',
          lambda m: ({'unit': m.group(2), 'n': int(m.group(1)) if m.group(1).isdigit() else _NUM[m.group(1)]},
                     {'weekday': _DAY[m.group(3)]} if m.group(3) and m.group(2) == 'week' else {})),
+        # "every second week", "every 3rd day" (not "every 2nd day of the month", a date)
+        (r'\bevery (second|2nd|third|3rd|fourth|4th) (day|week|month|year)\b(?!\s+(?:of|in)\b)(?: on ' + _DAYS + r')?',
+         lambda m: ({'unit': m.group(2), 'n': _NTH[m.group(1)]}, {'weekday': _DAY[m.group(3)]} if m.group(3) and m.group(2) == 'week' else {})),
+        # "every month on day 2", "monthly on the 15th", "on day 2 of each month"
+        (r'\b(?:monthly|(?:every|each) month),? on (?:day (\d{1,2})|the (\d{1,2})(?:st|nd|rd|th)?)\b|\bon day (\d{1,2}) of (?:each|every|the) month\b',
+         lambda m: ({'unit': 'month', 'n': 1}, {'monthday': int(next(g for g in m.groups() if g))}) if 1 <= int(next(g for g in m.groups() if g)) <= 31 else None),
         (r'\b(?:every|each) (\d{1,2})(?:st|nd|rd|th)(?: (?:day )?of (?:the|each|every) month)?\b|\bon the (\d{1,2})(?:st|nd|rd|th) of (?:each|every) month\b',
          lambda m: ({'unit': 'month', 'n': 1}, {'monthday': int(m.group(1) or m.group(2))}) if 1 <= int(m.group(1) or m.group(2)) <= 31 else None),
         (r'\b(?:every|each) ' + _DAYS + r's?\b|\bon ' + _DAYS + r's\b',
@@ -218,6 +297,10 @@ def parse(text, today):
     if not found:
         return None
     start, end, rule, hints = found
+    if _PARTLY_AFTER.search(low[end:]) or _PARTLY_BEFORE.search(low[:start]):
+        return None  # more rhythm words next to the ones read: not sure what was meant
+    if rule.get('workday') is not None and region:
+        rule['region'] = region
     rule = clean_rule(rule)
     anchor = anchor_for(rule, today, **hints)
     rest = (s[:start] + ' ' + s[end:])
@@ -251,7 +334,7 @@ def change(db, series, rule, stamp, today):
     """A new rhythm for a series, from the open occurrence's date on (or, between occurrences, from today)."""
     rule = clean_rule(rule)
     anchor = dt.date.fromisoformat(series['due'] or today.isoformat())
-    if rule['unit'] == 'weekday' or rule.get('nth') is not None:  # the first fitting day from there
+    if by_day(rule):  # the first fitting day from there
         anchor = anchor_for(rule, anchor, nth=rule.get('nth'))
     next_due = None if series['current_id'] else next_after(rule, anchor, max(anchor, today - dt.timedelta(days=1))).isoformat()
     db.execute('UPDATE recurring_series SET rule=?,anchor=?,next_due=?,updated_at=? WHERE id=?',

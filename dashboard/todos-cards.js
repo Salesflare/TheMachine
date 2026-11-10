@@ -4,6 +4,8 @@ function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(ask
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;
 const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
+// Nothing more to say than the title (a to-do the owner just made, before the review fills it in): no body that repeats it
+const bare=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(!lead&&!s.step_stopped&&bare(named.plain(text))===bare(s.title))return proposal;
 // Short by default: the status line says where it stands; the rest folds behind Show more. A ready draft's card has one
 // Show more, under the draft, that opens both (cardDrafted). The length only rules out a text too short to ever need it;
 // whether it is really cut off is measured once drawn (clampKey).

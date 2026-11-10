@@ -5,11 +5,15 @@ summary: Aufgaben, die in einem Rhythmus wiederkommen, wie die Gehaltsabrechnung
 covers: recurring
 code: recurring.py, recurring_app.py, dashboard/todos-repeat.js
 order: 9
-keywords: repeat, recurring, every week, every month, routine
+keywords: repeat, recurring, every week, every month, workday, business day, routine
 ---
 ## Eine anlegen
 
 Wähle in **Neue Aufgabe** **Wiederholt sich** und einen Rhythmus: **Täglich**, **Werktags**, wöchentlich, monatlich an einem Datum oder an einem Wochentag wie dem ersten Montag, oder jährlich. **Eigene…** nimmt deine eigenen Worte, wie every 2 weeks oder every last Friday.
+
+Auch Werktage gehen: „Rechnungen senden am zweiten Werktag des Monats“ oder „Buchhaltung abschließen am letzten Werktag des Monats“. Ein Werktag ist Montag bis Freitag, ohne die Feiertage deines Landes.
+
+Sind die Worte nicht klar, etwa „every 2nd business day“ (der 2. des Monats oder jeder zweite Tag?), behält die Aufgabe alle deine Worte und wiederholt sich nicht. Wähle **Wiederholt sich**, um es festzulegen.
 
 Oder sag es einfach: „jeden Monat Gehaltsabrechnung machen“ in Neue Aufgabe oder in Sprechen legt eine Aufgabe an, die sich wiederholt.
 
