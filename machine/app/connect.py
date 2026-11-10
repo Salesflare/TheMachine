@@ -267,8 +267,12 @@ class ConnectApp:
                     LOG.warning('sign-in error not cleared account=%s error=%s', account['id'], type(error).__name__)
             guessed = account.get('boundary') if account.get('boundary_by') == 'guess' and not session.get('account_id') else None
             # A new account starts syncing in the running app (follow_config); anything else restarts it to read it
-            taken = self.accounts_follow_action('accounts_follow', {})
-            live = taken['taken'] and account['id'] in taken['accounts']
+            try:
+                taken = self.accounts_follow_action('accounts_follow', {})
+                live = taken['taken'] and account['id'] in taken['accounts']
+            except Exception as error:  # noqa: BLE001 - a restart reads it as before
+                LOG.warning('live connect not taken account=%s error=%s', account['id'], type(error).__name__)
+                live = False
             session.update(account=account['id'], restarting=False if live else restart_self(3), live=live, state='done', guessed=guessed)
         except onboarding.SetupError as error:
             session.update(state='cancelled' if session['ui'].cancelled else 'failed', error=error.message, fix=error.fix)

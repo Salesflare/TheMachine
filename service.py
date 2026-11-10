@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
 UNIT_NAME = 'personal-assistant.service'
@@ -323,3 +324,23 @@ def model_runtime(openclaw, run=default_run, tries=2):
         if attempt + 1 < tries:  # a Gateway still applying a plugin step refuses calls for a moment
             time.sleep(float(os.environ.get('ASSISTANT_PLUGIN_RETRY_WAIT', 5)))
     return False
+
+
+def took_accounts(config, account_ids):
+    """Whether the running service took these new accounts from config.json without a restart (App.follow_config): a
+    restart leaves the dashboard waiting, and the account page's connect came back to "Can't reach your Machine"
+    (2026-11-10). An older service, an edit or anything else it cannot take live: False, and it restarts as before."""
+    if not account_ids:
+        return False
+    try:
+        token = Path(config['credentials']['api-token']).expanduser().read_text().strip()
+        request = urllib.request.Request(f"http://127.0.0.1:{config.get('port', 8787)}/api/action",
+                                         data=json.dumps({'action': 'accounts_follow', 'args': {}}).encode(),
+                                         headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json',
+                                                  'X-Assistant-Client': 'local-cli'})
+        with urllib.request.urlopen(request, timeout=10) as response:
+            answer = json.loads(response.read())
+        live = answer.get('accounts')
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return False
+    return answer.get('taken') is True and isinstance(live, list) and set(account_ids) <= set(live)
