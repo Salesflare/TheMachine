@@ -75,6 +75,8 @@ Si vous aviez créé des tâches planifiées dans OpenClaw, votre Machine les li
 
 Elle garde vos corrections de la tâche et laisse de côté ce qu’elle envoyait ou publiait. Une tâche qui lançait un script, ou lisait ce qu’une tâche de script collectait, l’apporte comme Récupérer les données. **Ajouter** en fait une routine, **Non merci** ne redemande jamais pour cette tâche. Une tâche qui vous rappelait de faire quelque chose arrive plutôt comme offre de tâche récurrente dans Tâches.
 
+Avant d’ajouter une suggestion, **Modifier** et **Changer quand** dans son menu ⋯ la changent comme n’importe quelle routine. **Relancer** l’exécute maintenant avec ses mots actuels, pour voir des résultats plus récents, par exemple après un week-end calme. Elle ne fait que lire, tourne une fois par appui, et son nouveau résultat remplace l’ancien.
+
 Trois suggestions au plus attendent en même temps. Après une semaine de bonnes exécutions, la routine demande **Désactiver l’ancienne tâche OpenClaw ?** Elle n’est désactivée que si vous touchez **Désactiver**, et vous pouvez la réactiver dans OpenClaw.
 
 ## Depuis ce que vous faites

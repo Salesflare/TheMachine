@@ -85,6 +85,8 @@ Hast du vorher geplante Jobs in OpenClaw angelegt, liest deine Machine sie (sie 
 
 Deine Korrekturen am Job bleiben drin, was er gesendet oder gepostet hat, fällt weg. Ein Job, der ein Skript ausgeführt oder gelesen hat, was ein Skript-Job gesammelt hat, bringt es als Daten holen mit. **Hinzufügen** macht daraus eine Routine, **Nein danke** fragt nie wieder nach diesem Job. Ein Job, der dich an etwas erinnert hat, kommt stattdessen als Angebot für eine wiederkehrende Aufgabe unter Aufgaben.
 
+Bevor du einen Vorschlag hinzufügst, änderst du ihn mit **Bearbeiten** und **Zeitpunkt ändern** in seinem ⋯-Menü wie jede Routine. **Erneut ausführen** führt ihn jetzt mit seinen aktuellen Worten aus, damit du neuere Ergebnisse siehst, etwa nach einem ruhigen Wochenende. Er liest nur, läuft einmal pro Tippen, und das neue Ergebnis ersetzt das alte.
+
 Höchstens drei Vorschläge warten gleichzeitig. Nach einer Woche guter Läufe fragt die Routine **Den alten OpenClaw-Job ausschalten?** Er wird nur ausgeschaltet, wenn du auf **Ausschalten** tippst, und du kannst ihn in OpenClaw wieder einschalten.
 
 ## Aus dem, was du tust

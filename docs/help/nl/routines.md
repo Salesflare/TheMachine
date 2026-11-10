@@ -75,6 +75,8 @@ Maakte je eerder geplande taken in OpenClaw, dan leest je Machine ze (hij wijzig
 
 Je correcties op de taak blijven, wat hij verstuurde of postte valt weg. Een taak die een script draaide, of las wat een scripttaak verzamelde, neemt dat mee als Gegevens ophalen. **Toevoegen** maakt er een routine van, **Nee, bedankt** vraagt nooit meer naar die taak. Een taak die je aan iets herinnerde, komt in plaats daarvan als aanbod voor een terugkerende to-do bij To-do's.
 
+Voor je een voorstel toevoegt, pas je het aan met **Bewerken** en **Wanneer wijzigen** in het ⋯-menu, zoals elke routine. **Opnieuw uitvoeren** voert het nu uit met de huidige woorden, zodat je nieuwere resultaten ziet, bijvoorbeeld na een rustig weekend. Het leest alleen, loopt één keer per tik, en het nieuwe resultaat vervangt het oude.
+
 Er wachten hoogstens drie voorstellen tegelijk. Na een week goede runs vraagt de routine **De oude OpenClaw-taak uitzetten?** Hij gaat pas uit als je op **Uitzetten** tikt, en je kunt hem in OpenClaw weer aanzetten.
 
 ## Uit wat je doet

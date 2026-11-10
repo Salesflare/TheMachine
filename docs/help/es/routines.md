@@ -75,6 +75,8 @@ Si antes creaste trabajos programados en OpenClaw, tu Machine los lee (nunca los
 
 Mantiene tus correcciones al trabajo y deja fuera lo que enviaba o publicaba. Un trabajo que ejecutaba un script, o leía lo que recogía un trabajo de script, lo trae como Obtener datos. **Añadir** lo convierte en rutina, **No, gracias** nunca vuelve a preguntar por ese trabajo. Un trabajo que te recordaba hacer algo llega en cambio como oferta de tarea recurrente en Tareas.
 
+Antes de añadir una sugerencia, **Editar** y **Cambiar cuándo** en su menú ⋯ la cambian como cualquier rutina. **Ejecutar de nuevo** la ejecuta ahora con sus palabras actuales, para ver resultados más nuevos, por ejemplo tras un fin de semana tranquilo. Solo lee, se ejecuta una vez por toque y su nuevo resultado reemplaza al anterior.
+
 Esperan como mucho tres sugerencias a la vez. Tras una semana de buenas ejecuciones, la rutina pregunta **¿Desactivar el antiguo trabajo de OpenClaw?** Solo se desactiva cuando tocas **Desactivar**, y puedes volver a activarlo en OpenClaw.
 
 ## Desde lo que haces

@@ -23,7 +23,8 @@ what failed). New words drop it; an owner's Get data comes first, and then no re
 A routine can also come from an old OpenClaw job (routine_imports.py, origin 'openclaw:<job id>'). Such a row starts as
 'sorting': one run reads the job, says whether it fits (a routine, a recurring to-do or neither) and, when it is a
 routine, runs it once for real. That run is the preview of a 'suggested' routine, which the owner adds with one tap
-('on') or turns down ('stopped'). A sorted job never comes back: its row stays, 'skipped' when it didn't fit. A week
+('on') or turns down ('stopped'). Before that, they can edit it (its words, name and rhythm) and Run again: a test
+run of its words now, shown in place of the preview (one per press). A sorted job never comes back: its row stays, 'skipped' when it didn't fit. A week
 after it was added, a routine from an OpenClaw job that ran well offers to turn the old job off (old_job).
 
 A test run (period 'test:<stamp>') shows what a routine would give before it is kept: a new one waits as 'trying'
@@ -47,6 +48,7 @@ import routine_recipe
 
 STATES = ('on', 'paused', 'stopped')
 LIVE = ('on', 'paused')  # the owner's routines; 'sorting', 'suggested' and 'skipped' are suggestions (OpenClaw jobs, patterns); 'trying': a new one on trial
+OWN = LIVE + ('suggested',)  # what Edit, Change when and Run now (Run again) work on: a suggestion too, before Add
 SHORT_MAX = 18  # a suggested routine's name: it fits a phone's row next to its status
 MAX_SUGGESTED = 3  # open suggestions at a time: the next job or pattern is sorted once one is answered
 OLD_JOB_AFTER = 7  # days a routine from an OpenClaw job runs before it offers to turn the old job off
@@ -285,7 +287,7 @@ def get(db, routine_id, states=LIVE):
 
 
 def change_when(db, routine_id, rule, anchor, at, now_local, stamp):
-    row = get(db, routine_id)
+    row = get(db, routine_id, OWN)
     rule, at = recurring.clean_rule(rule), clean_at(at)
     anchor = recurring.anchor_for(rule, anchor)
     db.execute('UPDATE routines SET rule=?,anchor=?,at=?,next_due=?,updated_at=? WHERE id=?',
@@ -304,8 +306,9 @@ def clean_name(name):
 
 def change_instructions(db, routine_id, instructions, stamp, steps=False, name=None):
     """Edit: what the routine does, in new words, its script steps (False: as they are) and its name (None: as it is).
-    Its rhythm and its runs stay; a name made from the old words follows, unless the owner named it."""
-    row = get(db, routine_id)
+    Its rhythm and its runs stay; a name made from the old words follows, unless the owner named it. A suggestion
+    edits the same way before Add."""
+    row = get(db, routine_id, OWN)
     steps = steps_of(row) if steps is False else clean_steps(steps)
     instructions = _words(instructions, steps)
     name = None if name is None else clean_name(name)
@@ -379,8 +382,11 @@ def begin(db, routine_id, period, stamp, now_local=None):
 
 
 def run_now(db, routine_id, stamp):
-    """Run now: one at a time per routine."""
-    row = get(db, routine_id)
+    """Run now: one at a time per routine. On a suggestion it is Run again: a test run of its words now (dry, shown in
+    place of its preview, kept as its first result on Add), one per press."""
+    row = get(db, routine_id, OWN)
+    if row['state'] == 'suggested':
+        return try_words(db, row['id'], row['instructions'], stamp)
     if db.execute("SELECT 1 FROM routine_runs WHERE routine_id=? AND state='running'", (row['id'],)).fetchone():
         raise ValueError('It’s running already')
     return begin(db, row['id'], 'now:' + stamp, stamp)
@@ -408,7 +414,7 @@ def try_new(db, instructions, rule, anchor, at, now_local, stamp, steps=None):
 def try_words(db, routine_id, instructions, stamp, steps=False):
     """Try it: a test run of new words (and script steps; False: as they are), one per press. A new one's ('trying')
     change with it; a kept routine's stay as they are, the words and steps go with the run (trial) until Save."""
-    row = get(db, routine_id, LIVE + ('trying',))
+    row = get(db, routine_id, OWN + ('trying',))
     steps = steps_of(row) if steps is False else clean_steps(steps)
     instructions = _words(instructions, steps)
     kept = json.dumps(steps) if steps else None
