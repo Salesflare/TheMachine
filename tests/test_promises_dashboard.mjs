@@ -54,6 +54,10 @@ try{
  assert.deepEqual(await menu(1),['Do it Make it a to-do and prepare it','Mark done It was kept','Not happening It won’t happen. Stop tracking it']);
  assert.deepEqual(await menu(3),['Nudge Draft a short follow-up for you to send','Mark done It was kept','Not happening It won’t happen. Stop tracking it']);
  assert.equal(await list.locator('details.promise-menu[open]').count(),1);  // opening one closes the other
+ // The last row's menu opens upward (no room under it at this height) and covers the ⋯ above it, so close it first,
+ // the way someone would. Clicking through it waited for a status redraw to close it, and timed out on a slow runner.
+ await page.keyboard.press('Escape');
+ await page.waitForFunction(()=>!document.querySelector('#promises-list details.promise-menu[open]'));
  assert.deepEqual((await menu(2))[0],'Nudge Open its to-do');  // a to-do already: Nudge opens it
  await page.keyboard.press('Escape');
  assert.equal(await list.locator('details.promise-menu[open]').count(),0);
