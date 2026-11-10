@@ -29,6 +29,13 @@ LOGO_BLOB_BYTES = 200_000
 HEX = re.compile(r'[a-f0-9]{32}')
 _THUMBS = {}  # (photo key, saved_at) -> thumbnail PNG or None: made once per saved logo, not each round
 _OUT = {}  # logo_h -> thumbnail PNG, for the blobs of this round
+# An organization's logo goes with its record as an address only as a LinkedIn company logo (where lookups find them):
+# a public picture of a name that is shared anyway, and a teammate's dashboard loads no other address a teammate sent.
+TEAM_LOGO = re.compile(r'https://media\.licdn\.com/dms/image/[A-Za-z0-9_./%?=&~+-]{1,400}')
+
+
+def team_logo(url):
+    return url if isinstance(url, str) and TEAM_LOGO.fullmatch(url) else None
 
 
 # -- sending
@@ -54,6 +61,15 @@ def site_logo_thumb(db, logo):
     h = hashlib.sha256(png).hexdigest()[:32]
     _OUT[h] = png
     return h, png
+
+
+def org_logo(db, logo):
+    """What an organization's record says of its logo: a LinkedIn logo's address, else its own site's logo's picture
+    hash (the picture goes with snapshot_records and delta_records), else nothing."""
+    if team_logo(logo):
+        return {'logo': logo}
+    thumb = site_logo_thumb(db, logo)
+    return {'logo_h': thumb[0]} if thumb else {}
 
 
 def _attach(records, sent, budget):
@@ -98,8 +114,11 @@ def delta_records(records, changed, st):
 
 # -- receiving
 def clean(r, out):
-    """A teammate's organization record's logo picture, checked and drawn again here, into its cleaned record."""
-    if not HEX.fullmatch(str(r.get('logo_h'))):
+    """A teammate's organization record's logo, into its cleaned record: a LinkedIn logo's address, else its own
+    site's logo's picture, checked and drawn again here."""
+    if team_logo(r.get('logo')):
+        out['logo'] = r['logo']
+    if out.get('logo') or not HEX.fullmatch(str(r.get('logo_h'))):
         return
     out['logo_h'] = r['logo_h']
     text = r.get('logo_img')
@@ -152,6 +171,25 @@ def pictures(db):
 
 def url(key):
     return 'api/person-photo?p=' + key
+
+
+def closest(sources, pics):
+    """An organization's logo from teammates' records: the closest teammate's LinkedIn logo, else a picture of its
+    own site's logo one sent (pics: pictures()), else None."""
+    ranked = sorted(sources, key=lambda s: -(s['record'].get('score') or 0))
+    return next((s['record']['logo'] for s in ranked if team_logo(s['record'].get('logo'))), None) or next(
+        (url(s['record']['logo_key']) for s in ranked if s['record'].get('logo_key') in pics['png']), None)
+
+
+def by_domain(db, org):
+    """The address of a teammate's picture of an organization's own site's logo, by its hashed domains, or None."""
+    by_d = pictures(db)['by_d']
+    return next((url(by_d[h]) for h in org.get('d') or () if h in by_d), None)
+
+
+def without_pictures(items):
+    """Teammates' records [(fleet, member, record)] without the pictures themselves: photo() serves them."""
+    return [(f, m, {k: v for k, v in body.items() if k != 'logo_img'}) for f, m, body in items]
 
 
 def photo(db, key):

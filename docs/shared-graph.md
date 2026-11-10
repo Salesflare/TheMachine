@@ -132,7 +132,7 @@ are judged.
   organization never adds people, threads or timeline lines.
 - An organization's logo goes with its record (and a project's organization) only when it is a LinkedIn company logo
   (`media.licdn.com`), where lookups find them. A teammate's dashboard shows it, or its own logo when it knows the
-  organization, and drops any other address (`shared_graph.team_logo`).
+  organization, and drops any other address (`shared_graph_logos.team_logo`).
 - A logo the Machine took from the organization's own website (a file on it, never an address) goes with the
   organization's record as a small picture instead ([Logos from an organization's own site](#logos-from-an-organizations-own-site)).
 

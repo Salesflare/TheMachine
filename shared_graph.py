@@ -48,6 +48,7 @@ import project_about
 import security_levels
 import shared_graph_kept
 import shared_graph_logos as logos
+from shared_graph_logos import team_logo
 import shared_graph_takeback
 
 LOG = logging.getLogger('personal-assistant')
@@ -110,13 +111,6 @@ FLEET_DELETE = {
     'fleet_learn_removed': 'DELETE FROM fleet_learn_removed WHERE fleet=?',
 }
 MEMBER_ID = re.compile(r'[A-Za-z0-9_.:@-]{1,80}')  # a Fleet member's id, as crm.MEMBER
-# An organization's logo goes with its record only as a LinkedIn company logo (where lookups find them): a public
-# picture of a name that is shared anyway, and a teammate's dashboard loads no other address a teammate sent.
-TEAM_LOGO = re.compile(r'https://media\.licdn\.com/dms/image/[A-Za-z0-9_./%?=&~+-]{1,400}')
-
-
-def team_logo(url):
-    return url if isinstance(url, str) and TEAM_LOGO.fullmatch(url) else None
 
 
 SCHEMA = '''
@@ -894,11 +888,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         records[r] = {'r': r, 't': 'org', 'name': row['name'], 'name_hand': 'name' in (info.get('edited') or []), 'role': info.get('role'),
                       'role_hand': info.get('role_by') == 'owner', 'd': every('domain:' + domain), 'score': round(row['strength'], 3),
                       'last': (row['last_at'] or '')[:10], **owner_pick(info), **crm_fields.shared(db, row)}
-        card_logo = graph.org_card(db, domain)['logo']
-        if logo := team_logo(card_logo):
-            records[r]['logo'] = logo
-        elif thumb := logos.site_logo_thumb(db, card_logo):  # its own site's logo: a picture of pixels only, never the site
-            records[r]['logo_h'] = thumb[0]
+        records[r].update(logos.org_logo(db, graph.org_card(db, domain)['logo']))  # never its own site's address
     tiles = {t['id']: t for b in graph.boards(db, today.isoformat()) for t in b['projects']}
     team_boards = graph.team_board_ids(db)
     for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.stage_event_id,p.next_step,p.next_step_event_id,p.org porg,b.name board,b.stages stages,b.side side "
@@ -2635,8 +2625,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
     def team_items(self, db, kind):
         """Teammates' records of one kind, as [(fleet, member, record)]."""
         ensure(db)
-        items = [(r['fleet'], r['member'], json.loads(r['body'])) for r in db.execute('SELECT * FROM team_records WHERE kind=?', (kind,))]
-        return [(f, m, {k: v for k, v in body.items() if k != 'logo_img'}) for f, m, body in items]  # a picture: logos.photo serves it
+        return logos.without_pictures([(r['fleet'], r['member'], json.loads(r['body'])) for r in db.execute('SELECT * FROM team_records WHERE kind=?', (kind,))])
 
     def hash_index(self, db):
         """{hash: local node id} for this Machine's own people (by address) and organizations (by domain), with every
@@ -2840,12 +2829,8 @@ class SharedGraph(shared_graph_takeback.TakeBack):
                             'signals': 0, 'team_only': True, 'role': rec['role'], 'closeness': graph.closeness(rec['score'])}
             if e['kind'] == 'project' and not view:
                 item.update(state='active', people=[])
-            if e['kind'] == 'org' and not (view.get('profile') or {}).get('logo'):  # its own logo first, else the closest teammate's
-                closest = sorted(e['sources'], key=lambda s: -(s['record'].get('score') or 0))
-                logo = next((s['record']['logo'] for s in closest if team_logo(s['record'].get('logo'))), None) or next(
-                    (logos.url(s['record']['logo_key']) for s in closest if s['record'].get('logo_key') in pictures['png']), None)
-                if logo:
-                    item['profile'] = {**(item.get('profile') or {}), 'logo': logo}
+            if e['kind'] == 'org' and not (view.get('profile') or {}).get('logo') and (logo := logos.closest(e['sources'], pictures)):
+                item['profile'] = {**(item.get('profile') or {}), 'logo': logo}  # its own logo first, else the closest teammate's
             if e['kind'] == 'person' and not view and rec.get('org'):
                 item['org_name'] = rec['org'].get('name')
             if view and '@' in str(item.get('name') or '') and rec.get('name') and '@' not in rec['name']:
@@ -2966,10 +2951,9 @@ class SharedGraph(shared_graph_takeback.TakeBack):
     def _org_logo(self, db, org):
         """A teammate's project's organization's logo: this Machine's own one when it knows the organization, else the
         LinkedIn one the teammate sent (team_logo), else the picture of its own site's logo a teammate sent with it."""
-        index, by_d = self.hash_index(db), logos.pictures(db)['by_d']
+        index = self.hash_index(db)
         local = next((index[h] for h in org.get('d') or () if str(index.get(h, '')).startswith('org:')), None)
-        picture = next((by_d[h] for h in org.get('d') or () if h in by_d), None)
-        return (local and graph.org_card(db, local[4:])['logo']) or team_logo(org.get('logo')) or (picture and logos.url(picture))
+        return (local and graph.org_card(db, local[4:])['logo']) or team_logo(org.get('logo')) or logos.by_domain(db, org)
 
     def team_section(self, db, entry):
         """What teammates shared about one entity: sources, timeline lines and client threads, each with whose it is.
@@ -3181,10 +3165,7 @@ def _clean_record(r):
         out.update(ids=hashes(r.get('ids')), d=hashes(r.get('d')))
     elif r['t'] == 'org':
         out['d'] = hashes(r.get('d'))
-        if team_logo(r.get('logo')):
-            out['logo'] = r['logo']
-        else:
-            logos.clean(r, out)  # its own site's logo, a picture checked and drawn again here
+        logos.clean(r, out)  # a LinkedIn logo, else its own site's logo's picture, checked and drawn again here
     else:
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
