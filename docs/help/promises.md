@@ -17,7 +17,7 @@ Under **Promises** on the To-dos page:
 
 Each one has a **⋯** menu:
 
-- **Do it** on yours: it becomes a to-do now, and your Machine prepares it. **Nudge** on theirs: your Machine drafts a short follow-up where they promised it. Nothing is sent until you send it. One that is a to-do already opens that to-do.
+- **Do it** on yours: it becomes a to-do now, and your Machine prepares it. **Nudge** on theirs: your Machine drafts a short follow-up where they promised it, while you stay on the list. A short note says it's on its way, with **Open to-do**, and the promise shows "a to-do now". Nothing is sent until you send it. One that is a to-do already opens that to-do.
 - **Mark done**: it was kept.
 - **Not happening**: it won't happen, so your Machine stops tracking it, with no to-do.
 
