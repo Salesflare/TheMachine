@@ -37,6 +37,8 @@ Hetzelfde probleem geeft hooguit één to-do per twee weken, en nooit zolang die
 
 Op macOS, Windows en computers zonder systemd leest hij niets en zegt hij dat in `assistant doctor`.
 
+Op een gehoste Machine houden wij de server draaiende: zijn problemen gaan naar het team van The Machine, niet als to-do naar jou.
+
 ## Uitzetten
 
 Zet `"computer_logs": false` in config.json en herstart de service.

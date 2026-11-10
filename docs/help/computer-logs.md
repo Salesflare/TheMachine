@@ -37,6 +37,8 @@ The same problem brings at most one to-do every two weeks, and never while its t
 
 On macOS, Windows and computers without systemd it reads nothing and says so in `assistant doctor`.
 
+On a hosted Machine the server is ours to keep running: its problems go to The Machine team, not to you as to-dos.
+
 ## Turn it off
 
 Set `"computer_logs": false` in config.json and restart the service.

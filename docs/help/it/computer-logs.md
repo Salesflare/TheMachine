@@ -37,6 +37,8 @@ Lo stesso problema porta al massimo un’attività ogni due settimane, e mai men
 
 Su macOS, Windows e computer senza systemd non legge nulla e lo dice in `assistant doctor`.
 
+Su una Machine ospitata il server lo teniamo in funzione noi: i suoi problemi arrivano al team di The Machine, non a te come attività.
+
 ## Disattivarla
 
 Imposta `"computer_logs": false` in config.json e riavvia il servizio.

@@ -37,6 +37,8 @@ Dasselbe Problem bringt höchstens alle zwei Wochen eine Aufgabe und nie, solang
 
 Unter macOS, Windows und auf Computern ohne systemd liest sie nichts und sagt das in `assistant doctor`.
 
+Auf einer gehosteten Machine halten wir den Server am Laufen: Seine Probleme gehen an das Team von The Machine, nicht als Aufgabe an dich.
+
 ## Ausschalten
 
 Setz `"computer_logs": false` in config.json und starte den Dienst neu.

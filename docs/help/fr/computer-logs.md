@@ -37,6 +37,8 @@ Un même problème donne au plus une tâche toutes les deux semaines, et jamais 
 
 Sous macOS, Windows et sur les ordinateurs sans systemd, elle ne lit rien et le dit dans `assistant doctor`.
 
+Sur une Machine hébergée, c’est à nous de faire tourner le serveur : ses problèmes vont à l’équipe The Machine, pas à vous sous forme de tâches.
+
 ## La désactiver
 
 Mettez `"computer_logs": false` dans config.json et redémarrez le service.
