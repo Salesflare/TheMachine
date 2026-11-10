@@ -340,7 +340,7 @@ def sql_strings(found):
 # are one owner with assistant.py: a table the Store creates or writes from one of them is assistant.py's, as before.
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
-               'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py',
+               'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py', 'machine/store/whats_new.py',
                'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 
@@ -429,7 +429,8 @@ OVER_BUDGET = {}
 FIRST_LOAD_CEILING = 1_423_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
-LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000}
+# whatsnew 12,000 (2026-11-10): its pictures are drawn in it (about 5 KB of SVG).
+LAZY_CEILING = {'calendar': 96_000, 'connections': 108_000, 'fleet': 96_000, 'game': 12_000, 'graph': 344_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 12_000}
 
 
 def budget(name):

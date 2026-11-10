@@ -53,6 +53,7 @@ LAZY = {
     'routines': ('routines-page.css', 'routines-page.js'),
     'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js'),
     'talk': ('todos-chat-talk-live.js',),
+    'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)
 FENCE = re.compile(r'/\*@(?:lazy|eager)\*/\n')

@@ -1,0 +1,44 @@
+/*@lazy*/
+/* What's new (shell-whats-new.js): one small notice, centered on a phone too (never the whole screen, unlike the other
+   dialogs). Its picture fills the top edge to edge; its pictures and views lie on top of each other, so it keeps one
+   size from view to view. */
+#whats-new{--wn-pad:24px;width:min(440px,calc(100vw - 32px));padding:var(--wn-pad);outline:0}
+#whats-new .wn-arts,#whats-new .wn-views{display:grid}
+#whats-new .wn-art,#whats-new .wn-view{grid-area:1/1;min-width:0}
+#whats-new .wn-art:not(.on),#whats-new .wn-view:not(.on){visibility:hidden}
+#whats-new .wn-arts{margin:calc(-1*var(--wn-pad)) calc(-1*var(--wn-pad)) 20px;height:180px;overflow:hidden;background:color-mix(in srgb,var(--c-accent) 12%,var(--c-surface));border-bottom:1px solid var(--c-line)}
+#whats-new .wn-art svg{display:block;width:100%;height:100%}
+#whats-new svg .c{fill:var(--c-surface);stroke:var(--c-line-strong)}
+#whats-new svg .f{fill:var(--c-accent-tint);stroke:var(--c-accent);stroke-width:1.2}
+#whats-new svg .e{fill:none;stroke:var(--c-line-strong)}
+#whats-new svg .b{fill:var(--c-text-3);opacity:.45}
+#whats-new svg .s{fill:var(--c-text);opacity:.8}
+#whats-new svg .m{fill:var(--c-accent)}
+#whats-new svg .t{fill:var(--c-accent-tint)}
+#whats-new svg :is(.l,.k,.q){fill:none;stroke:var(--c-accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#whats-new svg .k{stroke:var(--c-accent-ink);stroke-width:2}
+#whats-new svg .q{stroke:var(--c-text-3);stroke-width:1.4}
+#whats-new .wn-dots{display:flex;justify-content:center;gap:2px;margin:-12px 0 8px}
+#whats-new .wn-dots button{min-height:0;width:18px;height:18px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;display:grid;place-items:center;cursor:pointer}
+#whats-new .wn-dots button::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c-line-strong);transition:width .18s var(--ease)}
+#whats-new .wn-dots button.on::before{width:14px;border-radius:3px;background:var(--c-accent)}
+#whats-new .wn-dots button:focus-visible{box-shadow:var(--ring)}
+#whats-new h2{margin:0 0 8px;overflow-wrap:anywhere}
+#whats-new p{margin:0;line-height:1.5;color:var(--muted)}
+#whats-new .wn-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:20px}
+#whats-new .wn-acts:has([data-wn-go]) .ghost{margin-right:auto;padding-inline:10px}  /* Close apart from the way on */
+/* Between views: a short fade and slide (transitions, not keyframes: the lazy run holds only this group's rules) */
+@media(prefers-reduced-motion:no-preference){
+  #whats-new .wn-art{transition:opacity .2s var(--ease)}
+  #whats-new .wn-view{transition:opacity .2s var(--ease),transform .2s var(--ease)}
+  #whats-new .wn-art:not(.on){opacity:0}
+  #whats-new .wn-view:not(.on){opacity:0;transform:translateX(10px)}
+  #whats-new.wn-back .wn-view:not(.on){transform:translateX(-10px)}
+}
+@media(max-width:560px){
+  #whats-new:not(#_):not(#_){--wn-pad:18px;inset:0;width:calc(100% - 32px);max-width:calc(100% - 32px);height:fit-content;max-height:calc(100dvh - 32px);margin:auto;padding:var(--wn-pad);border-radius:16px}
+  #whats-new:not(#_):not(#_)[open]{display:block}
+  #whats-new:not(#_):not(#_)::backdrop{background:color-mix(in srgb,var(--c-bg) 55%,transparent)}
+  #whats-new:not(#_):not(#_):not(#_):not(#_)>.wn-acts{margin-bottom:0}
+  #whats-new .wn-arts{height:140px;margin-bottom:18px}
+}

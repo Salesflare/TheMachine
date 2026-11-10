@@ -45,6 +45,8 @@ Después de tu primer día, se reduce a una línea discreta encima de **Para ti*
 
 Cuando hay lista una versión nueva del panel, nunca se recarga mientras lo usas. Al abrir o recargar la app se carga la versión más nueva. Una ventana abierta la carga cuando la ventana pasa a segundo plano, o tras unos minutos sin actividad, y nunca mientras haya algo escrito sin guardar ni enviar, o un diálogo abierto. **Actualización lista**, arriba, la carga al momento. Un reinicio de tu Machine solo vuelve a conectar.
 
+Cuando llega una función o mejora más grande, una pequeña nota **Novedades** te lo cuenta, como mucho una vez al día. **Cerrar** la quita, o usa su botón para abrir la función. Nunca aparece encima de lo que estás haciendo, y una vez cerrada desaparece en todos tus dispositivos. Solo ves lo que llegó después de que empezaste.
+
 ## Mensajes
 
 Abre la búsqueda con `⌘K` en un Mac o `Ctrl K` en Windows y Linux, o con el icono de búsqueda de la barra superior en un teléfono. Escribe dos letras o más: **Mensajes** muestra lo que mejor encaja de todo lo que ha leído tu Machine, por significado o por palabras. El [historial](history.md) más antiguo aparece por palabras.

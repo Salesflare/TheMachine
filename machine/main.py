@@ -79,6 +79,7 @@ from machine.store.promises import PromisesStore
 from machine.store.review import ReviewStore
 from machine.store.views import ViewsStore
 from machine.store.voices import VoicesStore
+from machine.store.whats_new import WhatsNewStore
 from meet_app import MeetApp
 from mail_cleanup_app import MailCleanupApp
 from birthdays_app import BirthdaysApp
@@ -98,7 +99,7 @@ from whatsapp_images_app import WhatsAppImagesApp
 
 
 class Store(CardsStore, DecisionsStore, EventsStore, FactsStore, FaultsStore, FirstLookStore, ProfileStore,
-            PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore):
+            PromisesStore, MachineCardsStore, ReviewStore, StoreCore, ViewsStore, VoicesStore, WhatsNewStore):
     """The service's database: every table, through the Store mixins it is made of (machine/store/*)."""
 
 

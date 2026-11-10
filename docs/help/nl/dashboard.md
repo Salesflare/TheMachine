@@ -45,6 +45,8 @@ Na je eerste dag klapt hij in tot één rustige regel boven **Voor jou**, zoals 
 
 Als er een nieuwe versie van het dashboard klaar is, herlaadt het nooit terwijl je het gebruikt. Bij openen of herladen laadt de app de nieuwste versie. Een open venster laadt die zodra het venster op de achtergrond staat, of na een paar minuten zonder invoer, en nooit terwijl er iets getypt is dat nog niet bewaard of verstuurd is, of een dialoogvenster open staat. **Update klaar**, bovenaan, laadt het meteen. Een herstart van je Machine maakt alleen opnieuw verbinding.
 
+Komt er een grotere functie of verbetering bij, dan vertelt een kleine melding **Wat is er nieuw** je dat, hooguit één keer per dag. **Sluiten** haalt ze weg, of gebruik de knop om de functie te openen. Ze verschijnt nooit over iets waar je mee bezig bent, en eenmaal gesloten is ze weg op elk apparaat. Je ziet alleen wat erbij kwam nadat je begonnen bent.
+
 ## Berichten
 
 Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zoekicoon in de bovenbalk op een telefoon. Typ twee letters of meer: **Berichten** toont de beste resultaten uit alles wat je Machine gelezen heeft, op betekenis of op woorden. Oudere [geschiedenis](history.md) verschijnt op woorden.

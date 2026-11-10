@@ -121,6 +121,7 @@ OWNER_ACTIONS = {
     'tip_done',
     'undo_merge',
     'unmerge_fact',
+    'whats_new_seen',
     'whatsapp_photos',
 }
 # Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
@@ -543,6 +544,7 @@ DASHBOARD_ACTIONS = frozenset({
     'tip_done',
     'undo_merge',
     'unmerge_fact',
+    'whats_new_seen',
     'whatsapp_photos',
 })
 UPLOAD_ACTIONS = {

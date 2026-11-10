@@ -63,6 +63,19 @@ What every pull request needs:
   sorted. When merging main still leaves a catalog conflict, `python3 scripts/i18n_extract.py --merge` settles it key
   by key.
 
+### What's new
+
+- A bigger feature or improvement, one a person would want to be told about, gets an entry at the top of `ENTRIES` in
+  `machine/store/whats_new.py`, in the pull request that ships it: a new id, the day it merges, a short title, one or
+  two short sentences on what changed and what they can do now, and optionally a button that opens it (a palette
+  command id). Fixes, polish and internal work get none. Add its strings to every catalog in `i18n/`.
+- Give it a picture: a small drawing of the feature in `WN_ART` (`dashboard/shell-whats-new.js`), named by the entry's
+  `art`. Draw it as inline SVG on the 440 by 180 canvas with the classes listed there (they use the theme's colors, so
+  it is right in light and dark), no words in it, placeholder bars for text. It should read as its feature without
+  the title. Check it at 390 and 1440 wide in both themes; `tests/test_whats_new.py` checks the name exists.
+- The dashboard shows it once, in one small dialog, to people who got started before that day
+  ([Code map](docs/code-map.md)). Keep it rare: most pull requests add nothing here.
+
 ### Where code goes
 
 - Put code in the module that owns its domain and tables ([Code map](docs/code-map.md)). `tests/test_architecture.py`

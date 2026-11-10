@@ -57,7 +57,7 @@ class SettingsActionsApp:
     ACTIONS = {'set_voice': 'set_voice_action', 'security_level': 'security_action',
                'security_setting': 'security_action', 'own_address': 'own_address_action',
                'own_domain': 'own_domain_action', 'set_people_lookup': 'set_people_lookup_action',
-               'set_agents': 'set_agents_action', 'tip_done': 'tip_done_action', 'set_locale': 'set_locale_action',
+               'set_agents': 'set_agents_action', 'tip_done': 'tip_done_action', 'whats_new_seen': 'whats_new_seen_action', 'set_locale': 'set_locale_action',
                'connector_sync': 'connector_sync_action', 'connector_contact_sync': 'connector_sync_action', 'set_work_hours': 'set_work_hours_action',
                'model_usage_refresh': 'model_usage_action', 'model_reset': 'model_usage_action',
                # LEARNING_ACTIONS less missed_work_label (MissedWorkApp)
@@ -123,6 +123,11 @@ class SettingsActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner closes a tip, on the dashboard')
         return self.store.tip_done(args.get('tip'))
+
+    def whats_new_seen_action(self, name, args, owner_dashboard=False):
+        if not owner_dashboard:
+            raise ValueError('Only the owner closes What’s new, on the dashboard')
+        return self.store.whats_new_seen()
 
     def set_locale_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

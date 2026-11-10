@@ -437,6 +437,7 @@ SERVER_TEXT = {
     'machine/browser.py': ['PREPARING_OTHER', 'PREPARING_TOOLS', 'PREPARING_CONNECTED', 'PREPARING_BROWSER', 'PREPARING_ACTIONS',
                            'PREPARING_MAIL', 'PREPARING_CALENDAR', 'PREPARING_DRAFT', 'PREPARING_PDF', 'PREPARING_PROGRAMS',
                            'PREPARING_GOG'],
+    'machine/store/whats_new.py': ['ENTRIES'],  # What's new: each entry's title, text and button
     'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
 }
 # Constants the dashboard also shows capitalized (cap()) as a label

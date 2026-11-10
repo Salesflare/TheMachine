@@ -47,6 +47,8 @@ Nach deinem ersten Tag wird sie zu einer ruhigen Zeile über **Für dich**, etwa
 
 Wenn eine neue Version des Dashboards bereit ist, lädt es nie neu, während du es benutzt. Beim Öffnen oder Neuladen lädt die App die neueste Version. Ein offenes Fenster lädt sie, sobald das Fenster im Hintergrund ist oder nach ein paar Minuten ohne Eingabe, und nie, solange etwas Getipptes noch nicht gespeichert oder gesendet ist oder ein Dialog offen ist. **Update bereit** oben lädt sie sofort. Ein Neustart deiner Machine verbindet nur neu.
 
+Kommt eine größere Funktion oder Verbesserung dazu, sagt dir ein kleiner Hinweis **Was ist neu** Bescheid, höchstens einmal am Tag. **Schließen** blendet ihn aus, oder öffne die Funktion mit seiner Schaltfläche. Er erscheint nie über etwas, das du gerade tust, und einmal geschlossen ist er auf jedem Gerät weg. Du siehst nur, was dazukam, nachdem du angefangen hast.
+
 ## Nachrichten
 
 Öffne die Suche mit `⌘K` auf einem Mac oder `Ctrl K` unter Windows und Linux, oder auf dem Handy mit dem Suchsymbol oben. Tippe zwei Buchstaben oder mehr: **Nachrichten** zeigt die besten Treffer aus allem, was deine Machine gelesen hat, nach Bedeutung oder nach Wörtern. Älterer [Verlauf](history.md) erscheint nach Wörtern.
