@@ -29,7 +29,7 @@
 .crm-fixtype ul{margin:4px 0 2px;padding:0 0 0 22px;list-style:none;display:grid;gap:4px}.crm-fixtype li label{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 8px;align-items:baseline}.crm-fixtype li input{margin:0}.crm-fixtype .ba{overflow-wrap:anywhere}.crm-fixtype .ba s{color:var(--c-text-3)}.crm-fixtype li small{grid-column:2;color:var(--c-text-3)}
 .crm-fixtype input[type=checkbox]{width:16px;height:16px;flex:none}
 @media(max-width:560px){.crm-fixtype{padding:8px 12px}.crm-fixtype>summary{gap:12px;min-height:40px}.crm-fixtype input[type=checkbox]{width:20px;height:20px}.crm-fixtype ul{gap:10px;margin-top:8px;padding-left:26px}.crm-fixtype li label{gap:4px 12px}}
-.owner-pick select{max-width:100%;margin:0}.tile-owner.mine-hide{display:none}
+.owner-pick select{max-width:100%;margin:0}
 .org-sites li{display:flex;align-items:center;gap:8px;min-height:34px}.org-sites ul{margin:4px 0 0;padding:0;list-style:none}.org-sites li span{flex:1;min-width:0;overflow-wrap:anywhere}
 .ge-change .ge-dot{flex:none;width:28px;display:grid;place-items:center;color:var(--c-text-3)}
 .ge-change .ge-head h4{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}  /* a change says it whole ("Now …, was …") */
@@ -224,7 +224,7 @@ button.convo-earlier{align-self:center;margin:0 0 var(--sp-1);padding:6px 8px;mi
 /*@eager*/
 .fleet-chip .ct{white-space:nowrap}.fleet-chip-sub{display:none;margin-right:6px;padding:1px 8px 1px 6px;vertical-align:1px}@media(max-width:600px){.fleet-chip-row{display:none}.fleet-chip-sub{display:inline-flex}}
 /*@lazy*/
-.fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub,.person-facts){white-space:normal}
+.fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub){white-space:normal}
 /*@eager*/
 .share-fp{font-size:var(--fs-xs);color:var(--faint);letter-spacing:.02em;margin-top:2px}
 /*@lazy*/
@@ -295,14 +295,14 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
 #later-list>.day-head:first-of-type{margin-top:12px}#later-list>article:last-child,#waiting-list>article:last-child,#finished-list>:last-child{margin-bottom:12px}#waiting-list>article:first-of-type{margin-top:12px}
 #finished-list>article:first-of-type,#finished-list>summary+.pager>.pager-rows>:first-child{margin-top:12px}
 .graph-open{padding:4px 16px}#people-view .graph-open .promise:first-child{border-top:0}
-.role-row,.org-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.org-row{white-space:normal}
+.role-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 /*@lazy*/
-:is(.role-row,.name-row,.org-row) button{padding:3px 10px;font-size:.82rem}
+:is(.role-row,.name-row) button{padding:3px 10px;font-size:.82rem}
 .org-form{display:grid;gap:10px;margin:8px 0 0}.org-buttons{display:flex;gap:8px;flex-wrap:wrap}.org-buttons button{padding:3px 0;font-size:.82rem;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}.org-form label,.org-form>p.graph-sub{white-space:normal;overflow:visible}.org-form label{display:grid;gap:4px}.org-form :is(input,textarea){width:100%;box-sizing:border-box;font:inherit;font-size:1rem;color:var(--text)}.org-form textarea{display:block;min-height:7.5em;resize:vertical}.org-form [aria-invalid=true]{border-color:var(--c-red,#b3261e)}.org-form .field-error{color:var(--c-red,#b3261e);font-size:.84rem}.org-form .field-error:empty{display:none}/* Editing an organization: Cancel and Save sit where Edit was, and that header stays in view while the form scrolls */.org-actions{display:flex;gap:6px;flex:0 0 auto}.org-actions [data-org-save],.org-actions [data-org-cancel]{display:none}.org-editing .org-actions [data-org-edit]{display:none}.org-editing .org-actions :is([data-org-save],[data-org-cancel]){display:inline-flex}.graph-detail.org-editing>.name-row{position:sticky;top:0;z-index:3;margin:calc(-1*var(--org-pt,16px)) calc(-1*var(--org-px,16px)) 0;padding:var(--org-pt,16px) var(--org-px,16px) 10px;background:var(--surface);border-radius:var(--radius) var(--radius) 0 0}.graph-detail.org-editing>.name-row.stuck{border-radius:0;box-shadow:0 1px 0 var(--border)}.graph-detail.org-editing>.name-row.stuck::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:calc(64px + env(safe-area-inset-top));background:var(--bg)}@media(max-width:1023px){.graph-detail.org-editing>.name-row{top:calc(52px + env(safe-area-inset-top))}}
 /*@eager*/
-.role-form,.name-form,.person-org-form{display:flex;gap:8px;margin:8px 0 0}
+.name-form{display:flex;gap:8px;margin:8px 0 0}
 /*@lazy*/
-:is(.role-form,.name-form) input{flex:1;min-width:0}/* One compact style for every inline edit field (To you, Add organization, Rename): a single-line field as tall as its Save, one thin focus ring, a Save that never wraps. */
+.name-form input{flex:1;min-width:0}/* One compact style for every inline edit field (To you, Add organization, Rename): a single-line field as tall as its Save, one thin focus ring, a Save that never wraps. */
 .inline-edit{display:flex;align-items:center;gap:8px;margin:8px 0 14px}.inline-edit[hidden]{display:none}.inline-edit input{flex:1 1 auto;min-width:0;width:auto;height:42px;min-height:0;margin:0;padding:0 12px;box-sizing:border-box;font:inherit;line-height:1.2}.inline-edit input:is(:focus,:focus-visible){outline:0;border-color:var(--mint);box-shadow:0 0 0 2px color-mix(in srgb,var(--mint) 24%,transparent)}.inline-edit button{flex:0 0 auto;width:auto;height:42px;min-height:0;margin:0;padding:0 16px;box-sizing:border-box;white-space:nowrap;line-height:1}
 /*@eager*/
 .browser-link{padding:0;border:0;background:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;white-space:nowrap}
@@ -358,7 +358,7 @@ button.stat[aria-expanded="true"]::after{content:"";position:absolute;left:28%;r
   .badge{min-width:17px;height:17px;padding:0 4px;font-size:.68rem}
   article{padding:16px}.card{padding-left:20px}
   .stat{padding:11px 4px}.stat b{font-size:1.25rem}.stat span{font-size:.7rem}
-  .actions{gap:6px}.actions button{flex:1 1 auto;padding:8px 10px;white-space:nowrap;font-size:.84rem}.actions button.primary{flex:1 1 100%;padding:11px 14px;font-size:inherit}.actions .spacer{display:none}.actions button.quiet{flex:0 0 auto;margin-left:auto;padding:8px 6px}
+  .actions{gap:6px}.actions button{flex:1 1 auto;padding:8px 10px;white-space:nowrap;font-size:.84rem}.actions button.primary{flex:1 1 100%;padding:11px 14px;font-size:inherit}.actions button.quiet{flex:0 0 auto;margin-left:auto;padding:8px 6px}
   .health{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:400px){.live .lbl{display:none}nav{overflow-x:auto}nav button{font-size:.73rem;gap:2px}}
