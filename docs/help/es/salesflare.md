@@ -26,7 +26,7 @@ Su tarjeta en **Conexiones**, **Otras fuentes** muestra cómo va: cuántas cuent
 
 Sus casillas cuentan las cuentas que pudo abrir y los emails y reuniones que trajo. Si Salesflare no deja que tu clave API abra ninguna cuenta, la tarjeta dice **Necesita tu ayuda**: usa la clave de un usuario que pueda verlas. Si Salesflare se queda sin responder a menudo pero cada reintento funciona, dice que Salesflare **a veces va lento**.
 
-Si Salesflare no ha activado el acceso al feed con claves API para tu equipo, la tarjeta lo dice: no llegan emails ni reuniones hasta que el soporte de Salesflare lo active. Vuelve a comprobarlo más o menos cada hora y sigue por sí sola en cuanto funciona.
+Si Salesflare no ha activado el acceso al feed con claves API para tu equipo, la tarjeta lo dice: no llegan emails ni reuniones hasta que el soporte de Salesflare lo active. Vuelve a comprobarlo cada 10 minutos el primer día, después más o menos cada hora, y sigue por sí sola en cuanto funciona.
 
 - **Detener**: no entra nada nuevo hasta que pulses **Iniciar**. Sigue donde estaba.
 - **Reiniciar sincronización**: descarta la ronda en curso, con sus errores, y vuelve a leer la última semana ahora. No se pierde nada de lo que trajo.

@@ -26,7 +26,7 @@ Sa carte sous **Connexions**, **Autres sources** montre où il en est : combien 
 
 Ses tuiles comptent les comptes qu’il a pu ouvrir et les e-mails et réunions qu’il a récupérés. Si Salesflare ne laisse votre clé API ouvrir aucun compte, la carte indique **Attend votre aide** : utilisez la clé d’un utilisateur qui peut les voir. Si Salesflare expire souvent mais que chaque nouvel essai passe, elle indique que Salesflare est **parfois lent**.
 
-Si Salesflare n’a pas activé l’accès au feed par clé API pour votre équipe, la carte le dit : aucun e-mail ni réunion n’arrive tant que le support de Salesflare ne l’a pas activé. Il revérifie environ toutes les heures et reprend tout seul dès que ça marche.
+Si Salesflare n’a pas activé l’accès au feed par clé API pour votre équipe, la carte le dit : aucun e-mail ni réunion n’arrive tant que le support de Salesflare ne l’a pas activé. Il revérifie toutes les 10 minutes le premier jour, puis environ toutes les heures, et reprend tout seul dès que ça marche.
 
 - **Arrêter** : plus rien de nouveau n’arrive jusqu’à ce que vous appuyiez sur **Démarrer**. Il reprend là où il en était.
 - **Relancer la synchro** : abandonne le tour en cours, avec ses erreurs, et relit tout de suite la dernière semaine. Rien de ce qu’il a récupéré n’est perdu.

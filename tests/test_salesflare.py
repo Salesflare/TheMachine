@@ -418,16 +418,31 @@ class SalesflareConnector(unittest.TestCase):
     def feeds_asked(self, crm):
         return [path for path, _ in crm.calls if path.endswith('/feed')]
 
-    def an_hour_later(self):
+    def later(self, **passed):
+        """Time passes while the feed is off: every stamp it keeps moves that far back."""
         state = self.store.checkpoint('work-crm')
-        state['feed_off']['checked'] = (NOW - a.dt.timedelta(minutes=61)).isoformat()
+        for key, value in state['feed_off'].items():
+            state['feed_off'][key] = (a.dt.datetime.fromisoformat(value) - a.dt.timedelta(**passed)).isoformat()
         self.store.commit_page('work-crm', state, [], record_sync=False)
+
+    def an_hour_later(self):
+        self.later(minutes=61)
+
+    def recheck(self, crm):
+        """One sync round while the feed is off: how many accounts it asked, and the level it logged the re-check at."""
+        crm.calls.clear()
+        with self.assertLogs(a.LOG, 'INFO') as logged:
+            a.LOG.info('round')  # so a silent round passes assertLogs
+            result = a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        self.assertEqual((result['feed_off'], result['more']), (True, False))
+        levels = [record.levelname for record in logged.records if 'recheck=1' in record.getMessage()]
+        return len(self.feeds_asked(crm)), levels
 
     def test_a_feed_refused_for_the_whole_team_goes_slow_and_says_so(self):
         crm = self.team_off()
         with self.assertLogs(a.LOG, 'WARNING') as logged:
             self.run_to_completion(crm)
-        self.assertIn('salesflare feed off for team account=work-crm accounts=2: one account is re-checked every 60 min', logged.output[-1])
+        self.assertIn('salesflare feed off for team account=work-crm accounts=2: one account is re-checked every 10 min for a day, then every 60 min', logged.output[-1])
         view = a.salesflare_progress(ACCOUNT, self.store.checkpoint('work-crm'))
         self.assertEqual((view['feed_off'], view['no_access_all']), (True, False))  # not the key's fault: another key changes nothing
         # The next rounds ask no account at all, log nothing, and still count as a sync that worked
@@ -452,6 +467,58 @@ class SalesflareConnector(unittest.TestCase):
         crm.calls.clear()
         a.sync_salesflare(self.store, {}, ACCOUNT, crm)
         self.assertEqual(crm.calls, [])
+
+    def test_on_the_first_day_one_account_is_asked_every_ten_minutes_and_the_warning_stays_hourly(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        self.later(minutes=9)
+        self.assertEqual(self.recheck(crm), (0, []))  # not yet
+        self.later(minutes=2)
+        self.assertEqual(self.recheck(crm), (1, ['INFO']))  # one account, and no warning so soon after the first one
+        self.assertEqual(self.recheck(crm), (0, []))
+        levels = []
+        for _ in range(12):  # every 11 minutes for over two hours
+            self.later(minutes=11)
+            asked, logged = self.recheck(crm)
+            self.assertEqual(asked, 1)
+            levels += logged
+        self.assertEqual(len(levels), 12)
+        self.assertEqual(levels.count('WARNING'), 2)
+        self.assertNotIn('window', self.store.checkpoint('work-crm'))
+
+    def test_after_a_day_one_account_is_asked_hourly(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        self.later(days=1, minutes=1)
+        self.assertEqual(self.recheck(crm), (1, ['WARNING']))
+        self.later(minutes=11)
+        self.assertEqual(self.recheck(crm), (0, []))  # ten minutes no longer does it
+        self.later(minutes=48)
+        self.assertEqual(self.recheck(crm), (0, []))
+        self.later(minutes=2)
+        self.assertEqual(self.recheck(crm), (1, ['WARNING']))
+
+    def test_a_feed_off_from_before_the_warning_was_timed_still_warns(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        state['feed_off'].pop('warned')
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+        self.later(minutes=11)
+        self.assertEqual(self.recheck(crm), (1, ['WARNING']))
+        self.later(minutes=11)
+        self.assertEqual(self.recheck(crm), (1, ['INFO']))
+
+    def test_a_quick_recheck_that_reads_clears_it(self):
+        crm = self.team_off()
+        self.run_to_completion(crm)
+        crm.off = False  # Salesflare support switched it on
+        self.later(minutes=11)
+        with self.assertLogs(a.LOG, 'INFO') as logged:
+            self.run_to_completion(crm)
+        self.assertIn('salesflare feed on again account=work-crm', ' '.join(logged.output))
+        self.assertNotIn('feed_off', self.store.checkpoint('work-crm'))
+        self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1', 'meeting:7'})
 
     def test_it_goes_by_route_status_and_part_of_not_by_the_message(self):
         class Reworded(FakeCRM):
@@ -510,7 +577,7 @@ class SalesflareConnector(unittest.TestCase):
         self.assertTrue(self.store.checkpoint('work-crm')['feed_off'])
         crm.off = False  # Salesflare support switched it on
         a.sync_salesflare(self.store, {}, ACCOUNT, crm)
-        self.assertEqual(self.store.events(['work-crm']), [])  # not asked before the hour is over
+        self.assertEqual(self.store.events(['work-crm']), [])  # not asked before the next re-check
         self.an_hour_later()
         with self.assertLogs(a.LOG, 'INFO') as logged:
             self.run_to_completion(crm)
