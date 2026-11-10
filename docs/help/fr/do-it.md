@@ -10,7 +10,7 @@ order: 2
 
 **Faire** demande à votre Machine de préparer la tâche : rédiger la réponse, chercher des informations, remplir un formulaire. Elle utilise vos propres comptes et son propre navigateur, comme vous le feriez.
 
-Pendant qu'elle travaille dans son navigateur, la tâche et son chat montrent cette page en direct. Cliquez sur l'image pour ouvrir le navigateur. Dans la tâche, elle s'ouvre en plus grand, avec **Arrêter** : un appui l'arrête tout de suite.
+Pendant qu'elle travaille dans son navigateur, la tâche et son chat montrent cette page en direct, aussi entre les étapes, jusqu'à ce qu'elle y ait fini. Cliquez sur l'image pour ouvrir le navigateur. Dans la tâche, elle s'ouvre en plus grand, avec **Arrêter** : un appui l'arrête tout de suite.
 
 Avant de rédiger une relance ou de passer la main, elle vérifie la conversation pour des réponses plus récentes, y compris d’un collègue. Si c’est déjà réglé, la tâche le dit. Quand elle a créé ou modifié un document ou une page, la tâche y mène directement.
 

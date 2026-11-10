@@ -626,12 +626,15 @@ if(s.preparation_status==='queued')return html`<p class="note">${holdNote(s.prep
 // A blocker that asks the owner already leads as the Needs you line: not said twice.
 if(s.preparation_status==='blocked')return html`${ask?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):html`<p class="note">${format(s.preparation_reason||'I couldn’t finish this. You can try again or change the request.')} ${browserLink(s.id,s.preparation_browser)}</p>`}${s.preparation_details&&!folded?html`<details class="tech" data-tech="${s.id}" ${openTech.has(s.id)?'open':''}><summary>${ask?'Technical details':'Details'}</summary><pre>${linkText(ask?plainDetails(s.preparation_details):s.preparation_details)}</pre></details>`:''}`;
 return html`<div class="prep"><div class="prep-main"><p class="note">Preparing… ${s.preparation_started_at?html`<span class="elapsed" data-since="${s.preparation_started_at}">${elapsed(s.preparation_started_at)}</span>`:''}${s.preparation_retried?' · second try':''} <span data-browser="${s.id}">${browserLink(s.id,s.preparation_browser)}</span></p><ul class="steps" data-steps="${s.id}" aria-live="polite">${stepItems(steps.get(s.id))}</ul></div><div class="peek" data-peek="${s.id}">${peekHTML(s.id)}</div></div>`}
-// While a preparation is on the browser, its card shows that tab live: a small picture every few seconds (right of
-// the steps; below them on a phone), larger on a click. Only the tab the run opened itself; gone when it stops.
+// While a preparation works in the browser, its card shows that tab live: a small picture every few seconds (right of
+// the steps; below them on a phone), larger on a click. Only the tab the run opened itself. It stays, with its last
+// picture, between browser steps (the model thinking, a command in between: run_tab) and goes once the run is done
+// with the browser (it ends, is ready, or waits on the owner) or closes that tab.
 const peeks=new Map();
 // The chat shows the same picture where its Open the browser link is (a slot with data-peek-via): a click there opens
-// the Browser pane, as the link does; without a picture the slot holds the link itself.
-const peekHTML=(id,b)=>{const p=peeks.get(id);if(!(p?.on&&p.image))return b?browserLink(id,b):'';const img=html`<img alt="The Machine’s browser, now" src="${p.image}">`;
+// the Browser pane, as the link does; without a picture the slot holds the link itself, or nothing (quiet) while the
+// run isn't waiting on the browser.
+const peekHTML=(id,b)=>{const p=peeks.get(id);if(!(p?.on&&p.image))return b&&!b.quiet?browserLink(id,b):'';const img=html`<img alt="The Machine’s browser, now" src="${p.image}">`;
  return b?browserOpen(id,b,img):html`<button type="button" class="peek-thumb" data-peek-open="${id}" aria-label="See the browser larger" title="What the browser shows now">${img}</button>`};
 function paintPeek(id){const p=peeks.get(id);for(const slot of document.querySelectorAll(`[data-peek="${CSS.escape(id)}"]`)){const img=slot.querySelector('img');
  if(img&&p?.on&&p.image){if(img.getAttribute('src')!==p.image)img.src=p.image;continue}

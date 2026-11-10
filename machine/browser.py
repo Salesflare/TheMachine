@@ -256,32 +256,13 @@ def browser_result(call):
     return found if isinstance(found, dict) else {}
 
 
-def peek_tab(db, job_id):
-    """The tab a running preparation is on now, as (DevTools target ID, DevTools port), for the dashboard's live
-    look at it: only while its latest step is a browser step, and only a tab this task opened itself (by the target
-    ID its own `open` step answered with): this run's, or, when this run carries on in a tab an earlier run of the same
-    task opened and left open (a retry, after a sign-in or a Change), that run's. None otherwise, never another task's
-    tab or one the owner uses."""
-    try:
-        calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
-                           (job_id,)).fetchall()
-    except sqlite3.OperationalError:
-        return None
-    if not calls or calls[0]['tool'] != 'browser':
-        return None
-    try:
-        last = json.loads(calls[0]['params'] or '{}')
-    except ValueError:
-        return None
-    if not isinstance(last, dict) or last.get('action') == 'close':
-        return None
-    return own_tab(db, job_id, calls, last.get('targetId') or last.get('label'))
-
-
 def run_tab(db, job_id):
-    """The tab a running preparation last worked in, as (DevTools target ID, port), also between its browser steps
-    (peek_tab only while it is on one): the tab of its latest browser step, when this task opened it itself (own_tab).
-    None otherwise."""
+    """The tab a running preparation last worked in, as (DevTools target ID, port): the tab of its latest browser step,
+    also between its browser steps (while it thinks, or runs a command in between), so the dashboard's live look at it
+    stays put until the run closes that tab or ends. Only a tab this task opened itself (by the target ID its own
+    `open` step answered with): this run's, or, when this run carries on in a tab an earlier run of the same task opened
+    and left open (a retry, after a sign-in or a Change), that run's (own_tab). None otherwise, never another task's tab
+    or one the owner uses."""
     try:
         calls = db.execute('SELECT tool,params,result FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT 200',
                            (job_id,)).fetchall()
