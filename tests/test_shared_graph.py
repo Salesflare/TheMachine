@@ -1597,6 +1597,35 @@ class SharedGraph(unittest.TestCase):
         with self.mem.store.connect() as db:
             self.assertFalse(db.execute('SELECT count(*) FROM team_pending').fetchone()[0])
 
+    def test_someone_taken_out_loses_it_as_soon_as_the_network_rings_their_machine(self):
+        self.olive_mail()
+        self.rounds()
+        self.assertIn(BODY, self.received(self.mem))
+        everyone, self.boxes = self.boxes, [self.own, self.adm]  # no round of Mo's Machine from here on
+        # a ring without a signed remove does nothing: Mo keeps what the team shared
+        self.adm.graph_nudge(self.adm.directory()['fleets'][0], {'member_id': 'adm2'}, 'mem3')
+        self.mem.graph_fetch()
+        self.assertIn(BODY, self.received(self.mem))
+        self.assertTrue(self.from_others(self.mem))
+        # the remove: the admin's Machine rings Mo's, which looks at the Fleet when its inbox says so (fleet.step)
+        before = len(self.net.calls)
+        self.adm.graph_remove(FLEET, 'mem3')
+        rings = [c[3]['blob'] for c in self.net.calls[before:] if c[0] == 'adm2' and c[2] == '/graph' and c[3] and c[3].get('op') == 'put'
+                 and c[3]['blob']['header']['to'] == ['mem3']]
+        self.assertEqual([b['header']['kind'] for b in rings], ['want'])  # one, empty: nothing of the team's is in it
+        self.mem.graph_fetch()
+        self.assertEqual(self.from_others(self.mem), {})
+        self.assertNotIn(BODY, self.received(self.mem))
+        self.boxes = everyone
+
+    def test_a_round_reads_the_directory_again_so_a_remove_is_seen_within_one(self):
+        self.rounds()
+        asked = lambda: len([c for c in self.net.calls if c[0] == 'mem3' and c[2] == '/directory'])
+        before = asked()
+        self.mem.last['graph'] = -1e9
+        self.mem.graph_round()  # as every five minutes, not forced
+        self.assertEqual(asked(), before + 1)
+
     def test_someone_who_left_is_signed_out_so_the_network_cant_bring_them_back(self):
         self.rounds()
         person = self.net.people.pop('mem3')  # they left the Fleet
@@ -2917,7 +2946,7 @@ for _name in dir(SharedGraph):
             'test_only_you_on_a_direct_message_holds_for_what_arrives_in_it_later',
             'test_someone_taken_out_gets_nothing_new_even_if_the_network_keeps_them_in',
             'test_someone_taken_out_loses_what_the_team_shared_with_them_and_only_that',
-            'test_someone_taken_out_while_their_machine_is_away_loses_it_when_it_is_back'):
+            'test_someone_taken_out_while_their_machine_is_away_loses_it_when_it_is_back', 'test_someone_taken_out_loses_it_as_soon_as_the_network_rings_their_machine'):
         setattr(Sealed, _name, None)
 
 

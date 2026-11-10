@@ -248,7 +248,10 @@ organizations, projects and to-dos stay, also about the same people: what came f
 them. A person or organization they only knew through the team disappears; one they also know themselves stays, as
 their own data has it. To-dos already made from a shared item stay, as with any take-back. The `remove` is a trust
 statement, not a mailbox blob, so it works while sharing is paused or off and reaches a Machine that was off whenever it
-is back, at its next look at the Fleet (within ten minutes when it is on). They see one line in Activity. What they
+is back. To make it quick, the admin's Machine also sends theirs one empty blob (`graph_nudge`): the Network rings
+their Machine, which reads the directory at once, so it is done within seconds when it is on. The blob carries nothing
+and decides nothing: without a signed `remove` in the directory it does nothing, and if it is lost the next round
+does it, within five minutes, since every round reads the directory again. They see one line in Activity. What they
 shared stays with the team. Let back in, they get what the team shares now, each record and thread once.
 
 ## Someone leaving

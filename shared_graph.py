@@ -1328,6 +1328,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         else:
             self._sign_remove(group, me, member)
             self.set_meta('graph_admitted:' + fleet, sorted(set(self.meta('graph_admitted:' + fleet) or []) - {member}))
+            self.graph_nudge(group, me, member)  # their Machine looks at the Fleet now, not at its next round
         self.directory(refresh=True)
         try:
             self.graph_round(force=True)
@@ -1396,7 +1397,10 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             return
         self.last['graph'] = stamp
         self._graph_db()
-        groups = [g for g in (self.directory().get('fleets') or []) if g.get('kind') == 'work' and g.get('id')]
+        work = lambda: [g for g in (self.directory().get('fleets') or []) if g.get('kind') == 'work' and g.get('id')]
+        if not force and any(self._me_in(g) for g in work()):
+            self.directory(refresh=True)  # an admin's remove, pause or purge is seen within a round, not at the next directory
+        groups = work()
         self._graph_forget(groups)
         for group in groups:
             me = self._me_in(group)
@@ -1421,11 +1425,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             self._graph_keys_round(group, me, found)
             self._optout_prompts(group, me, found, trusted, members)
         if me['member_id'] not in found:
-            gone = self.meta('graph_removed:' + group['id']) or {}
-            if me['member_id'] in gone:
-                self.set_meta('graph_confirmed:' + group['id'], None)  # if let back in: it asks again for what it missed
-                self.set_meta('graph_want:' + group['id'], None)
-                self.graph_taken_out(group, me, gone[me['member_id']])  # what the team shared with it leaves this Machine
+            self.graph_out(group, me)  # taken out by an admin: what the team shared with it leaves this Machine
             return
         if self.graph_paused(group, trusted, say=True):
             # an admin paused sharing for the whole Fleet: nothing new goes, from any Machine; what its owner took
@@ -2305,6 +2305,9 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             raise ValueError('from before an admin removed what the Fleet shared')
         if header['kind'] == 'key' and sender not in trusted:
             raise ValueError('a graph key from someone who is not a confirmed admin')
+        if header['kind'] == 'want' and not body and sender in trusted and header.get('to') == [me['member_id']] \
+                and self.graph_look(group['id']):  # an admin's Machine says to look at the Fleet again (graph_nudge)
+            return
         if header['kind'] == 'want' and sender not in found:
             raise ValueError('a want from someone who is not a confirmed member')
         self._apply(group, header, body, dk, item)
