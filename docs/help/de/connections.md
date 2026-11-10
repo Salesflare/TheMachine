@@ -24,7 +24,7 @@ Die Liste ist gruppiert (**Mail und Kalender**, **Chat**, **Meetings**, **Dokume
 
 Eine Quelle, die du schon verbunden hast, zeigt das in der Liste, mit ihrem Konto. Wähl sie, um eine weitere daneben hinzuzufügen: ihr Formular sagt das und verlinkt die bestehende.
 
-**Abbrechen** beendet das Hinzufügen. Vorher weggegangen? Öffne **Verbindungen** wieder, auf jedem Gerät, und es geht beim selben Schritt weiter. Sobald sie verbunden ist, startet deine Machine neu, um sie zu lesen, und öffnet dann die neue Karte. Die zeigt, wie die erste Synchronisierung läuft.
+**Abbrechen** beendet das Hinzufügen. Vorher weggegangen? Öffne **Verbindungen** wieder, auf jedem Gerät, und es geht beim selben Schritt weiter. Sobald sie verbunden ist, liest deine Machine sie sofort und öffnet die neue Karte. Die zeigt, wie die erste Synchronisierung läuft.
 
 Auf einer gehosteten Machine meldest du dich hier bei Google, Microsoft, Microsoft OneDrive, Zoom, Stripe und Intercom an: Wähle **Arbeit** oder **Privat**, tippe auf **Anmelden**, und du kommst zurück zu diesem Formular, das zeigt, wie das Verbinden läuft oder warum es nicht geklappt hat. GitHub, WhatsApp, Codex, Telegram-Chats und dein Android-Handy zeigen ihren Code direkt in diesem Formular. Die Kachel von Codex zeigt, ob Codex angemeldet ist.
 

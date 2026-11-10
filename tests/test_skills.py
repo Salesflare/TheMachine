@@ -331,6 +331,28 @@ class OpenClawSkills(unittest.TestCase):
         self.keeper.installed(refresh=True)
         self.assertEqual(self.oc.calls.count(['skills', 'list', '--json']), 2)
 
+    def test_the_dashboard_never_waits_on_openclaw_for_the_list(self):
+        # Right after a restart nothing is read yet, and OpenClaw took 15 s to answer (2026-11-10): the dashboard's
+        # skill_installed answers at once, "loading", reads in the background, and has the list when it asks again.
+        real, release = self.oc.run, skills.threading.Event()
+
+        def slow(argv, **kw):
+            release.wait(5)
+            return real(argv, **kw)
+        self.keeper.catalog.run = slow
+        view = self.keeper.installed(wait=False)
+        self.assertEqual((view['installed'], view.get('loading')), ([], True))
+        self.assertTrue(self.keeper.installed(wait=False)['loading'])  # one read at a time
+        release.set()
+        for _ in range(200):
+            if self.keeper.catalog.raw is not None and not self.keeper.catalog.loading:
+                break
+            skills.time.sleep(0.01)
+        view = self.keeper.installed(wait=False)
+        self.assertNotIn('loading', view)
+        self.assertIn('trello', {i['name'] for i in view['installed']})
+        self.assertEqual(self.oc.calls.count(['skills', 'list', '--json']), 1)
+
     def test_a_notice_openclaw_prints_around_the_list_doesnt_hide_it(self):
         # A hosted Machine's OpenClaw printed a line before the JSON: the list still shows, and a really unreadable
         # answer says so (and logs only its shape).

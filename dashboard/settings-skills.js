@@ -20,13 +20,17 @@ function renderSkills(){const v=state.skills,box=$('#settings-skills');if(!box)r
 // is installed with OpenClaw's own command, only by the owner's tap after reading it.
 let installedView=null,installedLoading=false,lookShown=null;
 const skillCall=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
+// Not read yet since the service started (loading): it reads in the background and this asks again a little later
+let installedTries=0;
 async function loadInstalled(refresh=false){if(installedLoading)return;installedLoading=true;
- try{installedView=await skillCall('skill_installed',{refresh})}catch(err){errCaught(err);installedView={installed:[],error:err.message}}finally{installedLoading=false}renderInstalled()}
+ try{installedView=await skillCall('skill_installed',{refresh})}catch(err){errCaught(err);installedView={installed:[],error:err.message}}finally{installedLoading=false}
+ if(installedView?.loading&&installedTries++<20)setTimeout(()=>loadInstalled(),3000);else if(!installedView?.loading)installedTries=0;renderInstalled()}
 const SKILL_GROUPS=[['workspace','Workspace'],['bundled','Bundled with The Machine'],['other','Other']];
 function installedRow(i){const meta=[i.state==='ready'?'<span class="skill-ready">Ready</span>':i.state==='off'?'Off':i.state==='blocked'?'Not allowed for this agent':'Needs setup'];
  if(i.needs&&i.state!=='ready'&&i.needs!=='Not allowed for this agent')meta.push(esc(i.needs));if(i.group==='other')meta.push(esc(i.source));
  return `<div class="${i.state==='ready'?'':'skill-off'}" data-installed="${esc(i.name)}"><span class="grow"><strong title="${esc(i.name)}">${i.emoji?esc(i.emoji)+' ':''}${esc(i.name)}</strong><small>${esc(i.description)}</small><small class="skill-meta">${meta.join(' · ')}</small></span><span class="skill-buttons"><button type="button" class="ghost" data-installed-read="${esc(i.name)}">Read</button>${i.toggle?`<button type="button" class="ghost" data-installed-toggle="${esc(i.name)}" data-on="${i.on?0:1}">${i.on?'Turn off':'Turn on'}</button>`:''}</span></div>`}
 function renderInstalled(){const box=$('#skills-installed'),v=installedView;if(!box)return;if(!v||!state.skills?.openclaw){box.innerHTML='';return}
+ if(v.loading){box.innerHTML=`<p class="fine">${esc(t('Loading…'))}</p>`;return}
  const items=(v.installed||[]).filter(i=>i.group!=='yours'),open=new Set([...box.querySelectorAll('details[open]')].map(d=>d.dataset.group));if(!box.innerHTML)open.add('workspace');
  box.innerHTML=(v.error?`<p class="fine">Couldn’t read the skill list just now: ${esc(v.error)}</p>`:'')+SKILL_GROUPS.map(([g,label])=>{const list=items.filter(i=>i.group===g);if(!list.length)return '';
   return `<details class="skills-group" data-group="${g}"${open.has(g)?' open':''}><summary>${label} <small>${list.filter(i=>i.state==='ready').length} of ${list.length} ready</small></summary><div class="list settings-list skills-list">${list.map(installedRow).join('')}</div></details>`}).join('')

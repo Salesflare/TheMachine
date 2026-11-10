@@ -91,7 +91,7 @@ SETUP = {'label': 'RSS feed',                          # name in prompts, doctor
 
 1. adds the account from `account` and asks each `ask` key (an empty answer stops it);
 2. stores the secret (with `credential_variable` in `account`, as `VARIABLE=value`, leaving other lines in that file as they were);
-3. verifies a real read, saves `config.json`, restarts the service and shows the first sync.
+3. verifies a real read, saves `config.json` and shows the first sync. The running service takes a new account at once (`App.follow_config`); a changed one restarts it.
 
 When the owner already has an account of this service, the new one starts from it instead of `account`, without the identity keys (`id`, `email`, `handle`, `login`, `url`, `connection_id`, … and your first `ask` key). `assistant doctor` treats a missing `ask` key or credential file as not set up.
 
@@ -142,7 +142,7 @@ Test with saved fixtures, not live accounts, in `tests/test_connector_<service>.
 - that `304 Not Modified` keeps the checkpoint,
 - that errors raise `SourceError` with a safe label.
 
-After fixture tests, the owner can run `assistant connect <service>`: setup verifies the account, restarts the service and shows its first read. A busy source remains explicitly unverified until that read succeeds. Check it later with `assistant sources`, `assistant doctor` or on the dashboard.
+After fixture tests, the owner can run `assistant connect <service>`: setup verifies the account, the running service starts reading it (a changed account restarts it) and setup shows its first read. A busy source remains explicitly unverified until that read succeeds. Check it later with `assistant sources`, `assistant doctor` or on the dashboard.
 
 ## 7. Help article and translations
 

@@ -7,6 +7,7 @@ import json
 import threading
 import time
 
+import abilities
 import chat_files
 import embeddings
 import enrichment
@@ -18,6 +19,7 @@ import linkedin_connections
 from machine.config import LOG
 from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
+from machine.sources.exclusions import default_exclusions
 from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
 from machine.store import plain_keys
@@ -91,9 +93,79 @@ def google_photo_accounts(config):
 # list before it restarts the app for them.
 LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 
+# A new account in config.json (a connect from the account page, the dashboard or a terminal) starts syncing in the
+# running app, without a restart: the restart after a connect left a teammate's Connections page on "Can't reach your
+# Machine" (2026-11-10). Only a plain addition: new accounts, and new keys (a broker's address, a credential's file)
+# beside settings that stay as they were. Anything else changed, or a source with a process or store of its own, still
+# restarts. The services below keep a process or store of their own that only a start sets up.
+LIVE_SKIP = frozenset({'android', 'gateway', 'telegram', 'whatsapp'})
+
+
+def live_additions(running, saved):
+    """What config.json adds to the running config, as (new accounts, new top-level keys, new keys inside a setting),
+    or None when anything else changed (an account edited or removed, a setting changed): that takes a restart."""
+    if not isinstance(saved, dict) or not isinstance(saved.get('accounts'), list):
+        return None
+    same = lambda a, b: json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+    have = {a.get('id'): a for a in running.get('accounts') or []}
+    found = {a.get('id'): a for a in saved['accounts'] if isinstance(a, dict)}
+    if len(found) != len(saved['accounts']) or any(i not in found or not same(a, found[i]) for i, a in have.items()):
+        return None
+    accounts = [a for a in saved['accounts'] if a['id'] not in have]
+    if any(not isinstance(a['id'], str) or not a['id'] or a.get('service') in LIVE_SKIP for a in accounts):
+        return None
+    keys, inside = {}, {}
+    if set(running) - set(saved) - set(LIVE_CONFIG):
+        return None  # a setting removed
+    for key, value in saved.items():
+        if key == 'accounts' or key in LIVE_CONFIG:
+            continue
+        if key not in running:
+            keys[key] = value
+        elif isinstance(value, dict) and isinstance(running[key], dict):
+            if any(k not in value or not same(v, value[k]) for k, v in running[key].items()):
+                return None
+            if extra := {k: v for k, v in value.items() if k not in running[key]}:
+                inside[key] = extra
+        elif not same(value, running[key]):
+            return None
+    return accounts, keys, inside
+
 
 class WorkersApp:
-    ACTIONS = {}  # its actions are still App.action's own branches
+    ACTIONS = {'accounts_follow': 'accounts_follow_action'}  # its other actions are still App.action's own branches
+
+    def accounts_follow_action(self, name, args, owner_dashboard=False):
+        """Setup (onboarding.restart_and_sync) asks the running app to take what it just saved: the accounts it reads
+        now, and whether it has all of config.json (taken). Both mean no restart. Only the local API token reaches it."""
+        self.follow_config()
+        try:
+            left = live_additions(self.config, json.loads(self.config_path.read_text()))
+        except (OSError, ValueError, AttributeError, TypeError):
+            left = None
+        # taken: nothing in the file the running app doesn't have (an edited account, a changed setting: a restart)
+        return {'accounts': [a['id'] for a in self.config.get('accounts') or []], 'taken': left is not None and not any(left)}
+
+    def adopt_accounts(self, accounts, keys, inside):
+        """New accounts start syncing now, as at a start (serve): their settings first, then a collector each."""
+        for key, value in keys.items():
+            self.config[key] = value
+        for key, extra in inside.items():
+            self.config[key].update(extra)
+        for account in accounts:
+            rules = (account.get('exclude') or []) + default_exclusions(self.config, account)
+            if rules:
+                self.store.exclusions[account['id']] = rules
+            if account.get('service') == 'slack' and account.get('user_id'):
+                self.store.owner_user_ids.add(account['user_id'])
+            self.config['accounts'].append(account)  # the store reads the same list (App.__init__)
+        self.note_connections()
+        if getattr(self, 'stop', None) is None:
+            return
+        for account in accounts:
+            threading.Thread(target=self.collector if abilities.signals_on(account) else self.ability_checker, args=(account,),
+                             daemon=True).start()
+        LOG.info('accounts added without a restart: %d', len(accounts))
 
     def plain_keys_worker(self):
         """Once after the update: the messages kept before get their routing keys in the clear (machine/store/plain_keys.py),
@@ -358,25 +430,30 @@ class WorkersApp:
         path = getattr(self, 'config_path', None)
         if not path:
             return False
-        try:
-            stamp = path.stat().st_mtime_ns
-            if stamp == getattr(self, 'config_stamp', None):
-                return False
-            first = getattr(self, 'config_stamp', None) is None
+        with self.__dict__.setdefault('config_following', threading.Lock()):  # the review worker and setup's ask
+            try:
+                stamp = path.stat().st_mtime_ns
+                if stamp == getattr(self, 'config_stamp', None):
+                    return False
+                if getattr(self, 'config_stamp', None) is None:
+                    self.config_stamp = stamp
+                    return False  # what the app started with
+                saved = json.loads(path.read_text())
+            except (OSError, ValueError):
+                return False  # a file being written: the next look reads it again
             self.config_stamp = stamp
-            if first:
-                return False  # what the app started with
-            saved = json.loads(path.read_text())
-        except (OSError, ValueError):
-            return False
-        changed = False
-        for key in LIVE_CONFIG:
-            if isinstance(saved, dict) and key in saved and saved[key] != self.config.get(key):
-                self.config[key] = saved[key]
+            changed = False
+            for key in LIVE_CONFIG:
+                if isinstance(saved, dict) and key in saved and saved[key] != self.config.get(key):
+                    self.config[key] = saved[key]
+                    changed = True
+            if changed:
+                LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
+            added = live_additions(self.config, saved)
+            if added and added[0]:
+                self.adopt_accounts(*added)
                 changed = True
-        if changed:
-            LOG.info('settings applied without a restart: %s', ','.join(LIVE_CONFIG))
-        return changed
+            return changed
 
     def stop_all(self):
         self.stop.set()

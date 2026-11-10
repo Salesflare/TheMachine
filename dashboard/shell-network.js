@@ -23,7 +23,17 @@ const graphPeek=new Map();  // Graph records fetched ahead of a click (graphPeek
 // The first api/status read takes the answer the page's head asked for (dashboard.html statusEarly); a later one, or one
 // that page could not start, asks anew
 const statusFirst=(path,options)=>{const p=path==='api/status'&&typeof statusEarly!=='undefined'&&statusEarly;if(!p)return null;statusEarly=null;return p.then(r=>r||fetch(path,options))};
-async function request(path,options){let r;if(options?.method&&options.method!=='GET')graphPeek.clear();  // a change: records fetched ahead may be older now
+// The Machine restarting (the host in front of it says so, or a restart this page asked for) is a wait of seconds, not
+// an error: a call waits for it quietly, "Your Machine is restarting." over the page, and goes on as normal once it
+// answers; only a restart longer than RESTART_WAIT says it can't reach the Machine. A change goes again only when the
+// host answered for the Machine (so it never got there). api/status and api/session keep their own waits (refresh),
+// and so do calls with restartWait:false: a decision (it waits on the device, decideOrWait), a read with a kept copy.
+const RESTART_WAIT=45000;
+async function request(path,options){const end=Date.now()+RESTART_WAIT,reading=!options?.method||options.method==='GET';
+ for(let waited=false;;){try{const d=await requestOnce(path,options);if(waited&&netDown){netSet(false);if(typeof refreshWhenReady==='function')refreshWhenReady()}return d}
+  catch(e){if(!e.offline||e.slow||!e.restarting||!(reading||e.restartSaid)||options?.restartWait===false||/^api\/(status|session)\b/.test(path)||options?.signal?.aborted||Date.now()>=end)throw e;
+   waited=true;netSet(true,true);await new Promise(ok=>setTimeout(ok,Math.min(e.retryAfter||2000,5000)))}}}
+async function requestOnce(path,options){let r;if(options?.method&&options.method!=='GET')graphPeek.clear();  // a change: records fetched ahead may be older now
  if(options?.headers&&'X-CSRF-Token' in options.headers&&!options.headers['X-CSRF-Token']){if(!csrfLive&&navigator.onLine===false)throw offline();
   // The Machine away: wait a little for api/session, then say offline (a change that may wait then waits, decideOrWait)
   await(netDown?Promise.race([csrfReady,new Promise((ok,no)=>setTimeout(()=>no(offline()),8000))]):csrfReady);options={...options,headers:{...options.headers,'X-CSRF-Token':csrfLive}}}
@@ -45,7 +55,7 @@ async function request(path,options){let r;if(options?.method&&options.method!==
  if(r.status>=500&&!d?.restarting&&(json||r.status===504))errApi(path,options,json?r.status:'timeout')
  // A gateway timeout (504) is the host answering for a Machine still busy: slow
  if(r.status===504&&!d?.restarting){slowSet(true);throw slowErr(d?.error)}
- if(r.status>=500||r.ok&&!json){slowSet(false);const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),retryAfter:wait>0?Math.min(wait,60)*1000:0})}
+ if(r.status>=500||r.ok&&!json){slowSet(false);const wait=+r.headers.get('retry-after');if(d?.restarting)netSetup=!!d.setting_up||setupUnderway();throw Object.assign(offline(d?.error),{restarting:!!d?.restarting||restartDue(),restartSaid:!!d?.restarting,retryAfter:wait>0?Math.min(wait,60)*1000:0})}
  slowSet(false);
  if(!r.ok)throw Object.assign(Error(d?.error||'Request failed'),{status:r.status,retry:!!d?.retry});return d}
 let retryIn=0,retryTimer=null;
@@ -94,8 +104,8 @@ async function cachedGet(path,fresh){if(!localCache.on)return request(path);
  if(liveNext.has(path)){const v=liveNext.get(path);liveNext.delete(path);return v}
  if(!liveSeen.has(path)){liveSeen.add(path);const hit=await localCache.read('get:'+path);
   if(hit){request(path).then(v=>{localCache.put('get:'+path,v);if(JSON.stringify(v)===JSON.stringify(hit.value))return;liveNext.set(path,v);fresh?.()},e=>{if(e.offline)staleMark(hit.at)});return hit.value}}
- try{const v=await request(path);localCache.put('get:'+path,v);return v}
- catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}}throw e}}
+ try{const v=await request(path,{restartWait:false});localCache.put('get:'+path,v);return v}
+ catch(e){if(e.offline){const hit=await localCache.read('get:'+path);if(hit){staleMark(hit.at);return hit.value}if(e.restarting){const v=await request(path);localCache.put('get:'+path,v);return v}}throw e}}  // nothing kept: wait for the restart
 const hhmm=t=>fmtHM(t);
 // What the screen shows is older than now: "Offline · updated 10:42", quietly at the foot of the sidebar
 // (said only once it is really offline, netOut: one failed read on opening the app is not)
@@ -137,7 +147,7 @@ function slowPaint(){const on=(netSlow||netWaits>0)&&!netOut&&!(netDown&&netRest
 // A restart during a new owner's setup (the Machine says so, setting_up, or the page sees it: an AI connecting, the
 // first look waiting or running) says "Setting up…", not that the Machine is restarting or offline
 const setupUnderway=()=>{const live=state?.review_live||{};return !!(live.ai_connecting||live.first_look||(live.runs||[]).some(r=>r.auto&&r.preview))};
-const decidePost=(sid,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:sid,...args}})});
+const decidePost=(sid,args)=>request('api/action',{method:'POST',restartWait:false,headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'decide',args:{suggestion_id:sid,...args}})});
 const outboxLoaded=localCache.read('outbox').then(hit=>{const kept=Array.isArray(hit?.value)?hit.value.filter(x=>x&&x.id&&x.sid&&Array.isArray(x.steps)&&x.steps.length):[];
  for(const x of kept)if(!outbox.items.some(y=>y.id===x.id))outbox.items.push({...x,sending:false});if(kept.length){netPaint();outboxFlush()}}).catch(()=>{});
 async function outboxSave(){const saved=await localCache.put('outbox',outbox.items.map(({sending,...x})=>x));netPaint();if(state?.suggestions)focusKept(render);return saved}

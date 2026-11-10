@@ -116,8 +116,8 @@ class SkillsApp:
             if task and choice == 'approve':
                 self.skill_task_done(task, skill_id)
             return view
-        if name == 'skill_installed':  # refresh: read OpenClaw's list again now
-            return keeper.installed(args.get('refresh') is True)
+        if name == 'skill_installed':  # refresh: read OpenClaw's list again now; else never a wait on OpenClaw (loading)
+            return keeper.installed(args.get('refresh') is True, wait=False)
         if name == 'skill_installed_get':
             return keeper.installed_get(str(args.get('name') or ''))
         if name == 'skill_installed_toggle':

@@ -2601,6 +2601,8 @@ def restart_and_sync(config, account_ids, ui, wait=90, config_path=None):
                if config_path and service_active() else f'  Start syncing with: {service.hint("restart")}')
         return False
     since = now()
+    if service.took_accounts(config, account_ids):
+        return first_sync(config, account_ids, since, ui, wait)
     result = service.restart(UNIT_NAME, run=run)
     if result.returncode or not healthy(config, 30):
         ui.say(f'  The service did not come back; see: {service.hint("logs")}')
