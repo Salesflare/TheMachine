@@ -125,6 +125,8 @@ are judged.
 - Never one of a personal account or another company's, with someone of the owner's own life, called personal or
   automated, kept private, of an Only you project, or with only colleagues on it.
 - A why or next step that came from a signal that never goes doesn't go either.
+- Its description (`project_about.py`) goes only when The Machine wrote it and every message, to-do, promise or fact
+  it cites went to the team. The owner's own edit never goes.
 - Its organization (`projects.org`) goes as a name and hashed domain only when that organization could go itself: one
   with a website, outside the Fleet's domains, not personal mail and not kept private. Linking a project to an
   organization never adds people, threads or timeline lines.
@@ -360,7 +362,7 @@ A record (JSON, inside a blob):
 ```
 person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, score, last, timeline: [{at, line}]}
 org:     {r, t: org, name, role, role_hand, d, logo, score, last}
-project: {r, t: project, name, board, stages, stage, stage_hand, stage_at, why, next, org: {name, d, logo}, people: [hash], score, last, timeline}
+project: {r, t: project, name, board, stages, stage, stage_hand, stage_at, why, next, about, org: {name, d, logo}, people: [hash], score, last, timeline}
 mail:    {tag, subject, messages: [{at, from, to, cc, body, attachments: [{name, size, mime, file | too_large}]}]}
 file:    {name, mime, data}                                   (one attachment; `file` above is its tag)
 ask:     {off, asked}                                         (a member asks to stop sharing, or not any more)

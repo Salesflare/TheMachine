@@ -69,7 +69,7 @@ SEALED_KEY = 'mc1_sealed'
 ROUTING_KEYS = frozenset({'end_at', 'status', 'recurring_event_id', 'chat_kind'})
 PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_key_hash', 'user_id', 'from_me',
                             'channel_id', 'chat_id', 'conversation_id'}) | ROUTING_KEYS
-# Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py),
+# Text the app derives from messages: card text and the drafts behind it, edits, what a preparation's tools returned, a person's summary (person_summary.py), a project's description (project_about.py),
 # a review's own summary (and its answer on a board check), what teammates' Machines asked and answered, what they shared in the team's Graph (and the review's
 # line for each shared thread), a Claude Code or Codex job's brief and result, a task page's record (with its link's key), the weekly recap as sent and the lines it offers a choice on, the line a role or an organization was read from, promises (what
 # and the note closing one), and the messages a profile, roles or skills run was given. JSON columns keep the named
@@ -94,7 +94,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
            'project_success': ('condition', 'evidence_url', 'evidence_note', 'blocker'),  # done when, its proof and blocker (project_success.py)
            'missed_audit_items': ('reason',),  # why the missed-work audit saw work in a signal (missed_work.py)
-           'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
+           'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason', 'about'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
            'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('data',), 'team_blobs': ('dk',), 'share_lines': ('line',),
            'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),
            'ai_activity': ('detail',),  # what a connected AI asked for and got, in short (ai_access.py)

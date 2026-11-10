@@ -20,6 +20,14 @@ Gib ihm einen Namen, ein Board und eine Phase, eine Organisation (such in deinem
 - **Archivieren** nimmt es vom Board und aus den Listen; eine neue Nachricht dazu holt es zurück.
 - **Löschen** entfernt es endgültig; seine Nachrichten und Personen bleiben.
 
+## Beschreibung
+
+Ein oder zwei Sätze unter dem Namen eines Projekts: worum es geht und wo es steht. Deine Machine schreibt sie aus den Nachrichten, Aufgaben, Versprechen, Fakten und der Phase des Projekts und aktualisiert sie, wenn sich etwas ändert, etwa eine neue Nachricht, ein Phasenwechsel oder ein Gewinn oder Verlust. Hat sie noch nichts Konkretes zu sagen, zeigt sie keine.
+
+Ändere sie unter **Beschreibung** in **Bearbeiten** des Projekts. Dann ist sie deine: "Von dir bearbeitet", und deine Machine lässt sie in Ruhe. **Aktuell halten**, darunter oder in **Bearbeiten**, gibt sie zurück. Leer gespeichert, zeigt sie keine.
+
+Bei einem geteilten Work-Projekt sieht dein Team die Beschreibung nur, wenn alles, worauf sie beruht, auch an das Team ging. Deine eigene Änderung bleibt bei dir.
+
 ## Ein Projekt verschieben
 
 Zieh es in eine andere Phase, oder nutze auf dem Handy **⋯**, **Verschieben nach**. Deine Verschiebung gilt, bis eine neuere Nachricht sie verschiebt.

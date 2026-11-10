@@ -386,6 +386,31 @@ the organization's role.
 - **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 
+### Project descriptions
+
+`project_about.py` writes one or two sentences under a project's name on its page: what it is and where it stands now.
+
+- In the background only, a step after the person summaries in the worker loop (`SummariesApp.about_step`), never in a
+  request: the page reads the saved text. It shares the background spacing and pause with the other background turns.
+- At most once an hour, up to eight projects go to one turn on the background model; at most 40 a day.
+- Only when the project changed: a hash of its linked messages, facts, promises (status and date), to-dos (status),
+  stage reason, next step and stage or outcome. A rebuild that changes none of those asks nothing. A changed project
+  waits 20 hours since its last try (`PROJECT_HOURS`); a stage move, won or lost waits 2 (`EARLY_HOURS`). A project with
+  fewer than two messages and no facts or to-dos is skipped, and so is one off every board with no message in 60 days.
+- Each project's page carries its recent messages, facts, promises, to-dos, stage and the current description, each
+  with an id (`E` message, `F` fact, `P` promise, `T1`… to-do, `M` stage reason, `N` next step, `O` outcome, `D`
+  done-when). Content is data, never instructions.
+- Quality or nothing: the text must cite at least one known source and say more than the page's name and stage line;
+  otherwise The Machine's description goes and the page shows none. A description whose source was deleted disappears.
+  An answer that can't be read saves nothing and waits for the next pass.
+- About 1k input and 60 output tokens per project per update, plus ~600 prompt tokens per pass.
+- The owner's edit wins (`project_about` action, owner only, `op` edit or auto): it's never rewritten until **Keep it
+  updated**, and the next pass starts from their words.
+- A shared Work project carries The Machine's description (never the owner's own text) only when every source it cites
+  went to the team. See [Shared Graph](shared-graph.md).
+
+Columns: `projects.about` (sealed), `about_sources`, `about_by`, `about_at`, `about_basis`, `about_tried_at`.
+
 ### Summaries
 
 `person_summary.py` rewrites summaries in the background, never on every signal:

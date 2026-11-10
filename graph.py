@@ -173,6 +173,9 @@ SORT_RESET = 'sort_run=NULL,sort_tries=0,sort_note=NULL'
 # What the owner keeps on a project like in a CRM (2026-10-24): a value, notes, who made it (the owner's own stays without
 # messages), and how it ended (won or lost, with why)
 PROJECT_CRM_COLUMNS = ('value REAL', 'notes TEXT', 'made_by TEXT', 'outcome TEXT', 'outcome_reason TEXT', 'close_date TEXT')
+# A project's description (2026-11-10, project_about.py): its text, the ids it stands on, who wrote it (the owner's stays),
+# when, and what it was written from (a hash: unchanged means nothing new to say)
+PROJECT_ABOUT_COLUMNS = ('about TEXT', 'about_sources TEXT', 'about_by TEXT', 'about_at TEXT', 'about_basis TEXT', 'about_tried_at TEXT')
 BOARD_EXTRA_COLUMNS = ('is_default INTEGER NOT NULL DEFAULT 0',)
 FIT_BATCH = 40          # projects on no board a review checks against the boards at a time
 FIT_FRESH_MINUTES = 30  # a board saved this recently starts a review for its check at once
@@ -242,7 +245,7 @@ def ensure(db):
     if 'people_shown' not in {r[1] for r in db.execute('PRAGMA table_info(graph_role_asks)')}:  # the ask showed an organization's people with their roles
         db.execute('ALTER TABLE graph_role_asks ADD COLUMN people_shown INTEGER NOT NULL DEFAULT 0')
     have = {r[1] for r in db.execute('PRAGMA table_info(projects)')}
-    for column in PROJECT_STAGE_COLUMNS + SORT_COLUMNS + PROJECT_CRM_COLUMNS:  # a project's place on a board (2026-10-23): its stage, why it last moved and from which message
+    for column in PROJECT_STAGE_COLUMNS + SORT_COLUMNS + PROJECT_CRM_COLUMNS + PROJECT_ABOUT_COLUMNS:  # a project's place on a board (2026-10-23): its stage, why it last moved and from which message
         if column.split()[0] not in have:
             db.execute('ALTER TABLE projects ADD COLUMN ' + column)
     if 'split' not in {r[1] for r in db.execute('PRAGMA table_info(board_fits)')}:  # a review said the project bundles several counterparts (2026-10-24)
@@ -2258,6 +2261,8 @@ def detail(db, node_id, events=12):
         except ValueError:
             view['project'] = None
         view['todos'] = project_todos(db, node_id)  # its own To-dos section, so not again under Open between you
+        import project_about  # its description under its name, written in the background (project_about.py)
+        view['about'] = project_about.view(db, int(node_id.split(':', 1)[1]))
         if view['todos']:
             view['open'].pop('cards', None)
     import crm

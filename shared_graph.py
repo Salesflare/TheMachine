@@ -44,6 +44,7 @@ from shared_graph_private import (ADDRESS, AUTOMATED_LABELS, ITEM_KINDS, MAIL_KI
 from machine.timing import _REQUEST_TIMING
 import network_crypto as nc
 import own_addresses
+import project_about
 import security_levels
 import shared_graph_kept
 import shared_graph_takeback
@@ -929,6 +930,9 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                               **({'logo': team_logo(org['logo'])} if team_logo(org['logo']) else {})} if org else None,
                       'people': sorted({h for p in linked for h in people.get(p, [])}), 'timeline': project_story(row), 'threads': thread_tags(row['id']),
                       **owner_pick(json.loads(row['info'] or '{}')), **crm_fields.shared(db, row)}
+        about = project_about.shared(db, row, views)  # its description, only when every source it stands on went
+        if about:
+            records[r]['about'] = about
     held_private = {r['thread'] for r in db.execute("SELECT thread FROM share_threads WHERE hand='private' AND hand_at>=?", (week,))}
     held = {t for t, v in this_week.items() if v in ('sensitive', 'ask')} | held_private  # sensitive, unsure, and Only you by hand
     stats = {'threads': sum(1 for v in this_week.values() if v == 'team'), 'held': len(held),
@@ -2985,7 +2989,8 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         return {'id': entry['key'], 'kind': entry['kind'], 'name': rec['name'] or '?', 'role': rec['role'], 'team_only': True, 'links': [], 'recent': [],
                 'probable_ids': [], 'last_at': rec['last'], 'strength': round(rec['score'], 2), 'closeness': graph.closeness(rec['score']), 'signals': 0,
                 'org_name': org.get('name'), 'state': 'active', 'stage': rec.get('stage'), 'board': rec.get('board'), 'next': rec.get('next'), 'team': section,
-                'team_fields': rec.get('fields') or [], 'tags': rec.get('tags') or []}
+                'team_fields': rec.get('fields') or [], 'tags': rec.get('tags') or [],
+                **({'about': {'text': rec['about'], 'by': 'team'}} if entry['kind'] == 'project' and rec.get('about') else {})}
 
     def team_thread(self, db, thread_id):
         """A client thread a teammate shared, in full: subject, messages with their text and their attachments (each one
@@ -3070,7 +3075,7 @@ def resolve(entry, local=None):
         cands.append({'record': local, 'score': local.get('score') or 0, 'who': None})
     cands += [{'record': s['record'], 'score': s['record'].get('score') or 0, 'who': s} for s in entry['sources']]
     out = {}
-    for field in ('name', 'role', 'org', 'next', 'board', 'why'):
+    for field in ('name', 'role', 'org', 'next', 'board', 'why', 'about'):
         best = pick([{'value': c['record'].get(field), 'hand': c['record'].get(field + '_hand'), 'score': c['score']} for c in cands])
         out[field] = best['value'] if best else None
     stage = pick_stage([{'value': c['record'].get('stage'), 'hand': c['record'].get('stage_hand'), 'at': c['record'].get('stage_at'),
@@ -3140,7 +3145,7 @@ def _clean_record(r):
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
                    stage_hand=r.get('stage_hand') is True, stage_at=text('stage_at', 25), why=text('why', 160), next=text('next', 120),
-                   people=hashes(r.get('people')))
+                   about=text('about', project_about.OWNER_CHARS), people=hashes(r.get('people')))
     return out
 
 

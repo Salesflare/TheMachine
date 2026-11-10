@@ -20,6 +20,14 @@ Give it a name, a board and stage, an organization (search your Graph, or **Add*
 - **Archive** takes it off the board and lists; a new message about it brings it back.
 - **Delete** removes it for good; its messages and people stay.
 
+## Description
+
+One or two sentences under a project's name: what it is and where it stands. Your Machine writes it from the project's messages, to-dos, promises, facts and stage, and updates it when something changes, like a new message, a stage move, or a win or loss. With nothing specific to say yet, it shows none.
+
+Change it under **Description** in the project's **Edit**. Then it's yours: "Edited by you", and your Machine leaves it alone. **Keep it updated**, under it or in **Edit**, hands it back. Saving it empty shows none.
+
+On a shared Work project your team sees the description only when everything it's based on went to them too. Your own edit stays with you.
+
 ## Move a project
 
 Drag it to another stage, or on a phone use **⋯**, **Move to**. Your move stands until a newer message moves it.
