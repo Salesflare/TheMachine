@@ -4,7 +4,9 @@
 Each test file runs in its own process with its own HOME, several at once (as many as the computer has cores, at
 most 8; THE_MACHINE_TEST_JOBS=1 runs them one by one). A file's output is printed when it's done, in full when it
 failed. The tests live in tests/ and run from the repository root. Name files to run only those (with or without tests/):
-scripts/test.py test_moving.py tests/test_fleet_dashboard.mjs"""
+scripts/test.py test_moving.py tests/test_fleet_dashboard.mjs
+The biggest files start first; --in-order starts named files in the order given (CI's shards list theirs longest
+first, scripts/test_shards.py)."""
 import concurrent.futures
 import os
 from pathlib import Path
@@ -188,6 +190,9 @@ def main():
             env['CHROMIUM_PATH'] = browser
         env['THE_MACHINE_SEAL_AUDITED'] = ','.join(SEAL_AUDIT)  # test_message_seal: these run audited here already
         chosen = sys.argv[1:]
+        in_order = chosen[:1] == ['--in-order']
+        if in_order:
+            chosen = chosen[1:]
         if chosen[:1] == ['--changed']:
             chosen = changed_tests(chosen[1:])
             if chosen == []:
@@ -226,7 +231,8 @@ def main():
         print(f'Running {len(files)} test files, {jobs} at a time' + (f' ({len(skips)} skipped on {sys.platform})' if skips else ''), flush=True)
         with concurrent.futures.ThreadPoolExecutor(jobs) as pool:
             # the biggest files first, so a slow one doesn't start last and keep everyone waiting
-            started = [pool.submit(run, file) for file in sorted(files, key=lambda f: -f.stat().st_size)]
+            order = files if in_order and chosen else sorted(files, key=lambda f: -f.stat().st_size)
+            started = [pool.submit(run, file) for file in order]
             for done in concurrent.futures.as_completed(started):
                 if done.cancelled():
                     continue
@@ -244,12 +250,17 @@ def main():
         wall = time.monotonic() - wall
         if cpu_total:
             # how busy the files kept the computer: about `jobs` here means the workers fit the cores they have
-            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers')
+            # and how busy the whole computer is (other jobs on the same runner too)
+            load = f'; load {os.getloadavg()[1]:.1f} on {os.cpu_count()} cores' if hasattr(os, 'getloadavg') else ''
+            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers{load}')
         print('Slowest: ' + ', '.join(f'{name} {seconds:.0f} s' for seconds, name in sorted(took, reverse=True)[:10]))
         if record := os.environ.get('THE_MACHINE_IMPACT_DIR'):
             # the files that passed: only their records go in the test-impact map (scripts/test_impact.py build)
             passed = sorted(name for _, name in took if name not in failed)
             Path(record, 'passed').write_text('\n'.join(passed) + '\n', encoding='utf-8')
+            # how long each file took: the next full run splits its shards by these (scripts/test_shards.py)
+            Path(record, 'seconds').write_text(''.join(f'{name}\t{seconds:.1f}\n' for seconds, name in sorted(took, key=lambda t: t[1])),
+                                               encoding='utf-8')
         print('\n'+('Failed: '+', '.join(sorted(failed)) if failed else 'All Python and Node suites passed.'))
         return 1 if failed else 0
 
