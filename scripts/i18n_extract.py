@@ -433,6 +433,10 @@ SERVER_TEXT = {
     'fleet.py': ['KIND_LABEL'],          # what a Fleet asks about, in a sentence and (capitalized) as a row's name
     'family.py': ['LABELS'],
     'machine/store/profile.py': ['TODO_SOURCE', 'TODO_SOURCE_OTHER'],  # Feedback's rows: where the to-dos came from
+    # a to-do being prepared: one plain line per kind of step
+    'machine/browser.py': ['PREPARING_OTHER', 'PREPARING_TOOLS', 'PREPARING_CONNECTED', 'PREPARING_BROWSER', 'PREPARING_ACTIONS',
+                           'PREPARING_MAIL', 'PREPARING_CALENDAR', 'PREPARING_DRAFT', 'PREPARING_PDF', 'PREPARING_PROGRAMS',
+                           'PREPARING_GOG'],
     'routine_templates.py': ['TEMPLATES'],  # the Routines page's Templates: each one's name and what it does
 }
 # Constants the dashboard also shows capitalized (cap()) as a label

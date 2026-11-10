@@ -148,7 +148,8 @@ class BrowserApp:
                 if wait and wait['sign_in']:
                     waiting.append({'title': title, 'site': signin_name(r['reason'], wait['page'])})
             elif r['job_id'] in used:  # a run that has used the browser counts until it ends, so the note doesn't flicker
-                steps = preparation_steps(r['session_job_id'] or r['job_id'], self.config.get('agent_db'), 1)
+                with self.store.connect() as db:
+                    steps = preparation_steps(db, r['job_id'], 1)
                 item = {'id': r['suggestion_id'], 'title': title, 'step': steps[-1]['title'] if steps else None}
                 working.insert(0, item) if front and front == tabs.get(r['job_id']) else working.append(item)
         return {'working': working[:3], 'waiting': waiting[:3]}

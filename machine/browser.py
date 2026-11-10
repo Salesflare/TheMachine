@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 import re
 import secrets
+import shlex
 import sqlite3
 import subprocess
 import sys
@@ -16,6 +17,8 @@ import urllib.parse
 
 import browser_login
 import browser_viewer
+import next_actions
+import preparation_state
 from machine.cards import HANDOFF
 from machine.config import ROOT
 
@@ -478,14 +481,112 @@ def transcript_tool_calls(session_key, agent_db=None, limit=4, scan=60):
     return calls[:limit]
 
 
-def preparation_steps(job_id, agent_db=None, limit=4):
-    """The latest step titles of a running preparation, read from the agent's own transcript (read-only).
+# What a running preparation is doing, for its to-do (the Preparing line) and the browser's note: one plain line per
+# kind of step. The kind is the step itself, as preparation_calls records it: the tool the run called and that call's
+# own action. Never the title or other words the model wrote about it (those stay in the to-do's chat, under its
+# folded steps). None is plumbing that shows nothing. A kind not named here says PREPARING_OTHER, never its raw text.
+PREPARING_OTHER = 'Working on it'
+PREPARING_TOOLS = {'read': 'Reading a file', 'write': 'Writing notes', 'edit': 'Writing notes', 'web_search': 'Searching the web',
+                   'web_fetch': 'Reading a web page', 'memory_search': 'Searching memory', 'memory_get': 'Searching memory',
+                   'pdf': 'Reading the PDF', 'view_image': 'Looking at a picture',
+                   'image': 'Looking at a picture',
+                   # waiting on its own earlier step, reading its own instructions, finding a tool
+                   'wait': None, 'process': None, 'skills_read': None, 'skills_search': None, 'tool_search': None,
+                   'tool_describe': None, 'tool_call': None}
+PREPARING_CONNECTED = 'Checking a connected app'  # a tool of an app the owner connected (named <app>__<tool>)
+PREPARING_BROWSER = {'open': 'Opening a page', 'navigate': 'Opening a page', 'snapshot': 'Reading the page',
+                     'screenshot': 'Reading the page', 'pdf': 'Reading the page', 'console': 'Reading the page',
+                     'act': 'Working on the page', 'upload': 'Working on the page', 'dialog': 'Working on the page',
+                     'status': None, 'start': None, 'stop': None, 'profiles': None, 'tabs': None, 'focus': None, 'close': None}
+PREPARING_ACTIONS = {'events': 'Reading the messages', 'slack_read': 'Reading the messages', 'mail_attachment': 'Reading the attachment',
+                     'graph': 'Looking up people and projects', 'status': 'Checking the to-do', 'related': 'Looking for related to-dos',
+                     'preparation_history': 'Reading earlier work on this to-do', 'remember_fact': 'Noting something to remember',
+                     'promise': 'Noting a promise', 'prepare': 'Saving the result', 'preparation_blocked': 'Noting what is needed'}
+PREPARING_MAIL = 'Reading the mail'
+PREPARING_CALENDAR = 'Checking the calendar'
+PREPARING_DRAFT = 'Writing the draft'
+PREPARING_PDF = 'Reading the PDF'
+# A command is told by the program it runs, never by the rest of its line. gog is told by its service.
+PREPARING_PROGRAMS = {'sleep': None, 'browser-lease.py': None, 'gh': 'Checking GitHub'}
+PREPARING_GOG = {'gmail': PREPARING_MAIL, 'calendar': PREPARING_CALENDAR, 'drive': 'Looking through the files'}
+MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
 
-    Best effort: a missing or busy transcript simply shows no steps."""
-    if not re.fullmatch(r'[a-f0-9]{32}', job_id or ''):
+
+def preparing_command(command):
+    """The line for a command, from the program it runs (and gog's service)."""
+    try:
+        words = shlex.split(command) if isinstance(command, str) else []
+    except ValueError:
+        return PREPARING_OTHER
+    while words and re.fullmatch(r'[A-Za-z_]\w*=.*', words[0]):
+        words.pop(0)
+    names = [Path(w).name for w in words]
+    for name in names[:2]:  # the program, or the script an interpreter runs
+        if name in PREPARING_PROGRAMS:
+            return PREPARING_PROGRAMS[name]
+    if names[:1] == ['gog']:
+        return next((PREPARING_GOG[w] for w in names[1:] if w in PREPARING_GOG), PREPARING_OTHER)
+    return PREPARING_OTHER
+
+
+def preparing_line(tool, params, event_kinds=None):
+    """One step of a running preparation as its to-do says it: a line, or None for plumbing (see PREPARING_TOOLS).
+    event_kinds(ids) gives the kinds of the messages a step reads by ID, so mail reads as mail."""
+    params = params if isinstance(params, dict) else {}
+    if tool == 'exec':
+        return preparing_command(params.get('command'))
+    if tool == 'browser':
+        request = {**params, **(params['request'] if isinstance(params.get('request'), dict) else {})}
+        if params.get('action') == 'act' and request.get('kind') == 'wait':
+            return None
+        action = params.get('action')
+        return PREPARING_BROWSER.get(action, PREPARING_OTHER) if isinstance(action, str) else PREPARING_OTHER
+    if tool == 'assistant_signals':
+        action = preparation_state.call_action(params)
+        args = params.get('args') if isinstance(params.get('args'), dict) else {}
+        if action == 'events':
+            kinds = args.get('kinds') if isinstance(args.get('kinds'), list) else []
+            ids = [i for i in args['event_ids'] if isinstance(i, int)][:50] if isinstance(args.get('event_ids'), list) else []
+            if not kinds and ids and event_kinds:
+                kinds = event_kinds(ids)
+            if kinds and all(k == 'calendar.event' for k in kinds):
+                return PREPARING_CALENDAR
+            if args.get('mailbox') is True or kinds and all(k in MAIL_KINDS for k in kinds):
+                return PREPARING_MAIL
+        if action == 'mail_attachment' and str(args.get('open') or '').lower().endswith('.pdf'):
+            return PREPARING_PDF
+        if action == 'prepare' and any(isinstance(a, dict) and a.get('kind') in next_actions.SEND_KINDS
+                                       for a in (args.get('next_actions') if isinstance(args.get('next_actions'), list) else [])):
+            return PREPARING_DRAFT
+        return PREPARING_ACTIONS.get(action, PREPARING_OTHER)
+    if tool == 'read' and str(params.get('path') or '').lower().endswith('.pdf'):
+        return PREPARING_PDF
+    if tool in PREPARING_TOOLS:
+        return PREPARING_TOOLS[tool]
+    return PREPARING_CONNECTED if '__' in str(tool) else PREPARING_OTHER
+
+
+def preparation_steps(db, job_id, limit=4, scan=60):
+    """The latest steps of a running preparation, oldest first, one plain line each (preparing_line): plumbing left
+    out and a line that repeats said once. From the run's own recorded calls; no model call, nothing the model wrote."""
+    try:
+        calls = db.execute('SELECT tool,params,started_at FROM preparation_calls WHERE job_id=? ORDER BY started_at DESC,rowid DESC LIMIT ?',
+                           (job_id, scan)).fetchall()
+    except sqlite3.OperationalError:
         return []
+    def event_kinds(ids):
+        try:
+            return [r[0] for r in db.execute(f"SELECT DISTINCT kind FROM events WHERE id IN ({','.join('?' * len(ids))})", ids)]
+        except sqlite3.OperationalError:
+            return []
+
     steps = []
-    for at, name, arguments in transcript_tool_calls('agent:main:assistant-review-preparation-' + job_id, agent_db, limit):
-        title = arguments.get('title') if isinstance(arguments.get('title'), str) else ''
-        steps.append({'title': ' '.join(title.split())[:120] or STEP_NAMES.get(name, 'Working'), 'at': at})
-    return steps[::-1]
+    for call in reversed(calls):
+        try:
+            params = json.loads(call['params'])
+        except (TypeError, ValueError):
+            params = {}
+        line = preparing_line(call['tool'], params, event_kinds)
+        if line and not (steps and steps[-1]['title'] == line):
+            steps.append({'title': line, 'at': call['started_at']})
+    return steps[-limit:]
