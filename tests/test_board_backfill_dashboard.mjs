@@ -25,6 +25,8 @@ const fresh=()=>[{id:1,name:'Demos and trials',stages,default:true,stuck:0,backf
    ...['Larkspur','Moonbeam Labs','Nettle & Co','Orchard Analytics','Pebblestone'].map((name,i)=>({id:'org:m'+i+'.example',name,why:'asked about a trial once'}))]},
  {id:2,name:'Customer support cases',stages:stages.slice(0,3).concat(stages.slice(-1)),stuck:0,backfill:{state:'running'},projects:[proj(30,'Fernwave','Demo','reported a sync gap')],maybes:[]}];
 let boards=fresh(),calls=[];
+// The rows change at once and the call follows: wait until it reached the fixture before reading it
+const posted=async()=>{for(let i=0;i<100&&!calls.length;i++)await new Promise(r=>setTimeout(r,50))};
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
@@ -75,11 +77,11 @@ try{
   boards[0].maybes=boards[0].maybes.filter(m=>m.id!=='org:late.example');
   await page.evaluate(()=>scrollTo({top:document.querySelector('[data-fit-add="org:puffin.example"]').getBoundingClientRect().top+scrollY-200}));const y0=await page.evaluate(()=>scrollY);
   calls=[];await box.locator('[data-fit-add="org:tinkerlane.example"]').click();await page.locator('.board-fits summary',{hasText:'8 projects could belong here'}).waitFor();
-  assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_id:'org:tinkerlane.example',add:true}]]);
+  await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_id:'org:tinkerlane.example',add:true}]]);
   assert.equal(await page.locator('.board-fits[open]').count(),1,'stays open after Add');
   assert.ok(Math.abs(await page.evaluate(()=>scrollY)-y0)<60,'keeps its place');
   calls=[];await page.locator('[data-fit-skip="org:puffin.example"]').click();await page.locator('.board-fits summary',{hasText:'7 projects could belong here'}).waitFor();
-  assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_id:'org:puffin.example',add:false}]]);
+  await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_id:'org:puffin.example',add:false}]]);
   assert.equal(await page.locator('.board-fits[open]').count(),1,'stays open after Leave out');
   // tick some: the top buttons say how many
   assert.equal(await page.locator('[data-fit-bulk="add"]').textContent(),'Add all');
@@ -88,10 +90,10 @@ try{
   assert.equal(await page.locator('[data-fit-all]').evaluate(e=>e.indeterminate),true);
   await page.evaluate(()=>scrollTo({top:document.querySelector('.fits-bulk').getBoundingClientRect().top+scrollY-120}));await shot(page,`backfill-picked-${tag}`);
   calls=[];await page.locator('[data-fit-bulk="skip"]').click();await page.locator('.board-fits summary',{hasText:'5 projects could belong here'}).waitFor();
-  assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_ids:['org:m0.example','org:m1.example'],add:false}]]);
+  await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,node_ids:['org:m0.example','org:m1.example'],add:false}]]);
   await page.waitForFunction(()=>/Left out 2\./.test(document.querySelector('#toast').textContent));  // the rows go at once, the toast once it is savedawait shot(page,`backfill-undo-${tag}`);
   calls=[];await page.locator('#toast [data-fit-undo]').click();await page.locator('.board-fits summary',{hasText:'9 projects could belong here'}).waitFor();
-  assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,undo:'tok2'}]]);
+  await posted();assert.deepEqual(calls.map(c=>[c.action,c.args]),[['board_fit',{board_id:1,undo:'tok2'}]]);
   // Select all, then Add all of them in one go
   await page.locator('[data-fit-all]').check();assert.deepEqual(await page.locator('[data-fit-bulk]').allTextContents(),['Add 9','Leave out 9']);
   await page.locator('[data-fit-all]').uncheck();assert.deepEqual(await page.locator('[data-fit-bulk]').allTextContents(),['Add all','Leave out all']);

@@ -69,7 +69,7 @@ try{
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}: Activity fits`);
   await page.evaluate(()=>showSettings('security'));await page.waitForSelector('#settings-support:not([hidden])');
   await page.click('#sa-toggle');await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
-  assert.equal(actions.at(-1).args.allow,false);
+  assert.equal(actions.filter(a=>a.action==='support_access'&&a.args.allow!==undefined).at(-1).args.allow,false);  // a status read can land after the toggle
   // On again, then not paired after all: the app refuses, the section hides
   await page.evaluate(()=>supportAccessSet(true));await page.waitForSelector('#settings-support:not([hidden])');
   paired=false;await page.evaluate(()=>supportAccessLoad(true));await page.waitForFunction(()=>document.querySelector('#settings-support').hidden);
