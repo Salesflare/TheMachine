@@ -14,7 +14,7 @@ Sa carte indique jusqu’où il remonte : **Historique : jusqu’à** un mois, u
 
 ## Ce qu’il apporte à votre Graph
 
-Votre [Graph](graph.md) le compte : votre proximité avec chacun, votre dernier échange, qui connaît qui, et les personnes et organisations elles-mêmes. Les réponses de votre Fleet à « qui connaît quelqu’un » l’utilisent depuis les comptes de travail, avec les mêmes [règles de partage](sharing-rules.md) que les nouveaux e-mails.
+Votre [Graph](graph.md) le compte : votre proximité avec chacun, votre dernier échange, qui connaît qui, et les personnes et organisations elles-mêmes. La Chronologie d’une personne ou d’une organisation l’affiche aussi, donc son dernier échange y est toujours. Les réponses de votre Fleet à « qui connaît quelqu’un » l’utilisent depuis les comptes de travail, avec les mêmes [règles de partage](sharing-rules.md) que les nouveaux e-mails.
 
 ## Ce qu’il ne fait jamais
 

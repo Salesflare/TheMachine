@@ -384,7 +384,7 @@ class GraphActionsApp:
         Team or Only you. Never part of what the team's Graph sends."""
         accounts = self.config['accounts']
         with self.store.connect() as db:
-            found = graph.timeline(db, node, source, cursor, limit, now)
+            found = graph.timeline(db, node, source, cursor, limit, now, history=True)  # what its last contact counts
         if found is None:
             raise ValueError('Not in the graph')
         both = found['items'] + found.get('upcoming', [])

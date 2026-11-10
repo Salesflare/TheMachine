@@ -125,6 +125,22 @@ class HistoryGraph(unittest.TestCase):
         self.assertEqual(self.opened(opening), 6)
         self.assertEqual(self.graph_tables(), cached)
 
+    def test_a_page_timeline_shows_the_history_its_last_contact_counts_and_a_model_never_reads_it(self):
+        self.advance()
+        self.build()
+        ann, org = self.node('email:ann@client.example'), self.node('org:client.example')
+        self.assertTrue(ann['last_at'])  # last contact from history alone
+        shown = {i['id']: i for i in self.app.graph_timeline('email:ann@client.example', now=tg.NOW.isoformat())['items'] if i['type'] == 'event'}
+        self.assertTrue(shown and set(shown) <= self.history_ids)
+        self.assertEqual(max(i['occurred_at'] for i in shown.values())[:10], ann['last_at'])  # the newest row is the last contact
+        # The organization: its people's history and signals, newest first, its last contact on top
+        items = [i for i in self.app.graph_timeline('org:client.example', now=tg.NOW.isoformat())['items'] if i['type'] == 'event']
+        self.assertTrue(set(shown) <= {i['id'] for i in items})
+        self.assertEqual(items[0]['occurred_at'][:10], org['last_at'])
+        with self.store.connect() as db:
+            self.assertFalse(set(graph.recent_messages(db, 'org:client.example', 100, now=tg.NOW.isoformat())) & self.history_ids)
+            self.assertEqual(graph.timeline(db, 'email:ann@client.example', now=tg.NOW.isoformat())['items'], [])
+
     def test_fleet_who_knows_reads_work_history_and_never_personal_history(self):
         self.advance()
         self.build()

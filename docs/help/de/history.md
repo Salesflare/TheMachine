@@ -14,7 +14,7 @@ Die Karte sagt, wie weit er zurückreicht: **Verlauf: zurück bis** zu einem Mon
 
 ## Was er deinem Graph gibt
 
-Dein [Graph](graph.md) zählt ihn mit: wie nah du Leuten bist, wann ihr zuletzt Kontakt hattet, wer wen kennt, und die Personen und Organisationen selbst. Die Antworten deiner Fleet auf „Wer kennt jemanden“ nutzen ihn aus Arbeitskonten, mit denselben [Teilregeln](sharing-rules.md) wie neue Mails.
+Dein [Graph](graph.md) zählt ihn mit: wie nah du Leuten bist, wann ihr zuletzt Kontakt hattet, wer wen kennt, und die Personen und Organisationen selbst. Der Verlauf einer Person oder Organisation zeigt ihn auch, so ist ihr letzter Kontakt immer dort zu sehen. Die Antworten deiner Fleet auf „Wer kennt jemanden“ nutzen ihn aus Arbeitskonten, mit denselben [Teilregeln](sharing-rules.md) wie neue Mails.
 
 ## Was er nie tut
 

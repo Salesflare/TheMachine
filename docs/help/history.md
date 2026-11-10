@@ -14,7 +14,7 @@ Each connection in **Connections** says how far back it reaches, like **History:
 
 ## What it adds to your Graph
 
-Your [Graph](graph.md) counts it: how close you are to people, when you last talked, who knows whom, and the people and organizations themselves. Your Fleet's "who knows someone" answers use it from work accounts, with the same [sharing rules](sharing-rules.md) as new mail.
+Your [Graph](graph.md) counts it: how close you are to people, when you last talked, who knows whom, and the people and organizations themselves. A person's or organization's Timeline shows it too, so its last contact is always there. Your Fleet's "who knows someone" answers use it from work accounts, with the same [sharing rules](sharing-rules.md) as new mail.
 
 ## What it never does
 
