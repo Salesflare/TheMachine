@@ -3,7 +3,7 @@ title: Routines
 area: cards
 summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
 keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
@@ -32,6 +32,8 @@ Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen 
 **Verjaardagen importeren uit Facebook**: zodra Verjaardagen aan staat, biedt een to-do aan om de verjaardagspagina van Facebook te lezen. Tik op **Importeren** en The Machine opent ze in zijn browser, scrolt tot elke maand geladen is en leest de naam en verjaardag van elke vriend. Hij toont hoeveel hij vond en wie op voor- en achternaam overeenkomt met mensen in je Graph. Een naam die meer dan één persoon heeft, wordt overgeslagen en vermeld.
 
 Alleen **Bewaren** houdt ze bij, en alleen de verjaardag, op de pagina van elke persoon. Een verjaardag die je daar zelf invulde, blijft. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook. Is hij dat niet, tik dan op **Inloggen bij Facebook** op de to-do en log daar in; daarna leest hij de pagina vanzelf. The Machine meldt zich nooit voor je aan.
+
+Vrienden die niemand in je Graph heeft, worden geteld, met een paar namen. **Voeg … toe als persoonlijke contacten** voegt ze allemaal tegelijk toe, ook na Bewaren: elk met naam en verjaardag, nooit gedeeld met een Work Fleet. Een naam die al iemand in je Graph heeft, wordt overgeslagen. Verjaardagsherinneringen komen nog altijd alleen voor mensen naar wie je schrijft. **Ongedaan maken** op de to-do haalt precies die mensen weer weg.
 
 Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 

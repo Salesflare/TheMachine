@@ -8,7 +8,10 @@ again on the to-do, also after Reopen).
 
 Hosted Machines get it too: their browser is the same shared one, seen through the viewer, where the owner signs in to
 Facebook themselves. A browser that isn't signed in is said on the to-do, with Sign in to Facebook (the dashboard's
-sign-in dialog, connect_site_signin), and nothing is read until the owner is in."""
+sign-in dialog, connect_site_signin), and nothing is read until the owner is in.
+
+A to-do read before the friends nobody in the Graph were kept gets them once, at start (birthdays_facebook_fill_old):
+the same read in the background, and nothing else on it changes."""
 import datetime as dt
 import logging
 import secrets
@@ -27,6 +30,7 @@ from machine.browser import browser_lease_script
 LOG = logging.getLogger('personal-assistant')
 OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered once (also when the owner said Not needed)
 KIND = 'routine.facebook_birthdays'
+FILL_TRIES, FILL_WAIT = 10, 120  # an older to-do's one fill at start: the browser may come up after the service
 
 
 class BirthdaysFacebookApp:
@@ -81,7 +85,8 @@ class BirthdaysFacebookApp:
         threading.Thread(target=target, args=args, daemon=True, name='birthdays-facebook').start()
 
     def birthdays_facebook_action(self, name, args, owner_dashboard):
-        """The owner's tap on the to-do: step read (Import, Try again, Import again) or save (Save on the preview)."""
+        """The owner's tap on the to-do: step read (Import, Try again, Import again), save (Save on the preview), add (Add
+        them as people: the friends nobody in the Graph has, also after Save) or undo_add (its Undo)."""
         if not owner_dashboard:
             raise ValueError('Only the owner imports birthdays, on the dashboard')
         sid, step = str(args.get('suggestion_id') or ''), args.get('step')
@@ -102,45 +107,94 @@ class BirthdaysFacebookApp:
                     raise ValueError('Import again first')
                 people = birthdays_facebook.save(db, got[1], stamp)
                 saved = len(people)
-                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people}, stamp)  # the rest read goes with the preview
+                # the rest read goes with the preview; the friends nobody in the Graph has stay, for the Add button
+                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people, 'others': got[1].get('others') or [],
+                                                          'added': got[1].get('added') or []}, stamp)
+            elif step in ('add', 'undo_add'):
+                if state not in ('preview', 'saved'):
+                    raise ValueError('Import again first')
+                data = got[1]
+                if step == 'add':
+                    if data.get('added'):
+                        raise ValueError('They were added already')
+                    data['added'] = [p['node_id'] for p in birthdays_facebook.add(db, data, stamp)]
+                    done = {'added': len(data['added'])}
+                else:
+                    if not data.get('added'):
+                        raise ValueError('Nothing to undo.')
+                    done = {'undone': birthdays_facebook.remove(db, data.pop('added'))}
+                birthdays_facebook.put(db, sid, state, data, stamp)
             else:
-                raise ValueError('step is read or save')
+                raise ValueError('step is read, save, add or undo_add')
         if step == 'read':
             self.birthdays_facebook_spawn(self.birthdays_facebook_read, sid)
             return {'state': 'reading'}
+        if step in ('add', 'undo_add'):
+            self.graph_later()  # their pages show already; the rest of the Graph follows in one build, in the worker
+            return {'state': state, **done}
         if row['status'] not in ('completed', 'rejected'):
             self.store.decide(sid, 'complete', '', 'facebook-birthdays-saved:' + sid + ':' + stamp, 'dashboard')
         return {'state': 'saved', 'saved': saved, 'people': people[:birthdays_facebook.SHOWN]}
 
-    def birthdays_facebook_read(self, sid):
-        """The read itself, under the shared browser lease, then the preview (or why there is none) on the to-do."""
-        state, data = 'failed', {}
+    def birthdays_facebook_fetch(self):
+        """The page read under the shared browser lease: read()'s result, or None when the browser or its lease isn't free."""
+        base = self.birthdays_facebook_base()
+        if not base:
+            return None
         owner = 'facebook-birthdays-' + secrets.token_hex(6)
         lease = [sys.executable, str(browser_lease_script(self.config))]
-        claimed = False
+        claim = subprocess.run([*lease, 'claim', '--owner', owner, '--minutes', '8', '--wait', '1'], capture_output=True, text=True, timeout=90)
+        if claim.returncode != 0:
+            return None
         try:
-            base = self.birthdays_facebook_base()
-            if base:
-                claim = subprocess.run([*lease, 'claim', '--owner', owner, '--minutes', '8', '--wait', '1'], capture_output=True, text=True, timeout=90)
-                claimed = claim.returncode == 0
-            if claimed:
-                result = birthdays_facebook.read(base, self.FACEBOOK_BIRTHDAYS)
-                if result.get('error') == 'signed-out':
-                    state = 'signed_out'
-                else:
-                    with self.store.connect() as db:
-                        data = birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(),
-                                                         result.get('capped'), result.get('missing'))
-                    state = 'preview' if data['found'] else 'failed'
-                    data = data if data['found'] else {'empty': True}
+            return birthdays_facebook.read(base, self.FACEBOOK_BIRTHDAYS)
+        finally:
+            try:
+                subprocess.run([*lease, 'release', '--owner', owner], capture_output=True, text=True, timeout=30)
+            except (OSError, subprocess.SubprocessError):
+                pass  # the lease runs out by itself
+
+    def birthdays_facebook_read(self, sid):
+        """The read itself, then the preview (or why there is none) on the to-do."""
+        state, data = 'failed', {}
+        try:
+            result = self.birthdays_facebook_fetch()
+            if result is not None and result.get('error') == 'signed-out':
+                state = 'signed_out'
+            elif result is not None:
+                with self.store.connect() as db:
+                    data = birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(),
+                                                     result.get('capped'), result.get('missing'))
+                state = 'preview' if data['found'] else 'failed'
+                data = data if data['found'] else {'empty': True}
         except Exception as error:  # noqa: BLE001 - whatever went wrong, the to-do says it didn't work
             LOG.info('facebook birthdays read failed error=%s', type(error).__name__)
-        finally:
-            if claimed:
-                try:
-                    subprocess.run([*lease, 'release', '--owner', owner], capture_output=True, text=True, timeout=30)
-                except (OSError, subprocess.SubprocessError):
-                    pass  # the lease runs out by itself
         with self.store.connect() as db:
             birthdays_facebook.put(db, sid, state, data, self.routines_stamp())
         return state
+
+    def birthdays_facebook_fill_old(self):
+        """At start: a to-do read before the friends nobody in the Graph were kept gets them, without a tap, from the same
+        read as Import again, in the background. Nothing else on it changes. Until the browser and its lease are free it
+        waits; a read that fails (signed out, a broken page) leaves it with none, and it isn't tried again."""
+        with self.store.connect() as db:
+            old = birthdays_facebook.without_others(db)
+        if old:
+            self.birthdays_facebook_spawn(self.birthdays_facebook_fill, old)
+
+    def birthdays_facebook_fill(self, sids, tries=FILL_TRIES):
+        result = None
+        for attempt in range(tries):
+            try:
+                result = self.birthdays_facebook_fetch()
+            except Exception as error:  # noqa: BLE001 - a broken read: none for them
+                LOG.info('facebook birthdays fill failed error=%s', type(error).__name__)
+                result = {}
+            if result is not None or self.stop.wait(FILL_WAIT if attempt < tries - 1 else 0):
+                break
+        if result is None:
+            return  # the browser never came: the next start tries again
+        items = [] if result.get('error') else result.get('items')
+        with self.store.connect() as db:
+            for sid in sids:
+                birthdays_facebook.fill_others(db, sid, items, dt.datetime.now().date())

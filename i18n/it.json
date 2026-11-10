@@ -275,6 +275,10 @@
  "Add transcript": "Aggiungi trascrizione",
  "Add your name first, in Settings": "Prima aggiungi il tuo nome, in Impostazioni",
  "Add {}": "Aggiungi {}",
+ "Add {} as personal contacts": {
+  "one": "Aggiungi {} come contatto personale",
+  "other": "Aggiungi {} come contatti personali"
+ },
  "Add “{}” as new": "Aggiungi “{}” come nuovo",
  "Added": "Aggiunta",
  "Added a summary line": "Riga di riepilogo aggiunta",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Aggiunto a {} alle {}.",
  "Added to {}, invited {}.": "Aggiunto a {}, invitato {}.",
  "Added to {}.": "Aggiunto a {}.",
+ "Added {} personal contacts.": {
+  "one": "{} contatto personale aggiunto.",
+  "other": "{} contatti personali aggiunti."
+ },
  "Added {} projects.": "Aggiunti {} progetti.",
  "Added {}.": "Aggiunto {}.",
  "Added {}’s task to your to-dos.": "Aggiunta l’attività di {} alle tue attività.",
@@ -2413,7 +2421,6 @@
  "Marked not needed {}": "Segnata come non necessaria · {}",
  "Marked not right": "Segnato come non giusto",
  "Marked won.": "Segnato come vinto.",
- "Matched to people in your Graph: {}": "Abbinati a persone del tuo Graph: {}",
  "Matches": "Corrispondenze",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Le corrispondenze ricevono ciò che dice il file; le celle vuote non cambiano nulla. Puoi annullare l’ultima importazione.",
  "Matches the Omarchy theme, also when it changes.": "Segue il tema Omarchy, anche quando cambia.",
@@ -5318,6 +5325,7 @@
  "They see those email addresses.": "Vedono quegli indirizzi email.",
  "They see your note.": "Vedono la tua nota.",
  "They share busy times only, never what, under their rules for you.": "Condividono solo gli orari occupati, mai cosa, secondo le loro regole per te.",
+ "They were added already": "Sono già stati aggiunti",
  "They wrote again": "Hanno scritto di nuovo",
  "Things I keep in mind about your work.": "Cose che tengo a mente sul tuo lavoro.",
  "Thinking": "Ragionamento",
@@ -6000,6 +6008,7 @@
  "With OpenAI (checking…)": "Con OpenAI (verifica…)",
  "With its board": "Con la sua bacheca",
  "With names": "Con i nomi",
+ "With their birthday. Reminders only come for people you write to.": "Con il loro compleanno. I promemoria arrivano solo per le persone a cui scrivi.",
  "With you": "Con te",
  "With your email": "Con la tua email",
  "With {}": "Con {}",
@@ -6706,6 +6715,10 @@
  "{} Check recovered and saved.": "{} Controllo recuperato e salvato.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} I controlli girano al massimo ogni 10 minuti, quindi le notifiche cancellate nel frattempo potrebbero sfuggire.{}",
  "{} Encrypted for their Machine only.": "{} Cifrato solo per la sua Machine.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} amico di Facebook non è ancora nel tuo Graph.",
+  "other": "{} amici di Facebook non sono ancora nel tuo Graph."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "{} elemento Fleet ti aspetta in Attività.",
   "other": "{} elementi Fleet ti aspettano in Attività."
@@ -6735,16 +6748,17 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} e quella che scegli diventano un’unica organizzazione, con persone, progetti e note. Separa annulla l’operazione.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} e la persona che scegli diventano una sola, con tutti i loro messaggi. Puoi annullare da Unito, nella pagina.",
  "{} and {}": "{} e {}",
+ "{} and {} more": "{} e altri {}",
  "{} approved": "{} ha approvato",
  "{} approved it": "{} ha approvato",
  "{} approved “{}”": "{} ha approvato “{}”",
  "{} approved “{}”: “{}”": "{} ha approvato “{}”: “{}”",
  "{} are all in touch with {}": "{} sono tutti in contatto con {}",
- "{} are both in touch with {}": "{} sono entrambi in contatto con {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} non è nel tuo Graph, quindi non viene salvato.",
-  "other": "{} non sono nel tuo Graph, quindi non vengono salvati."
+ "{} are already in your Graph.": {
+  "one": "{} è già nel tuo Graph.",
+  "other": "{} sono già nel tuo Graph."
  },
+ "{} are both in touch with {}": "{} sono entrambi in contatto con {}",
  "{} asked for your review": "{} ti ha chiesto una revisione",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} ha chiesto tramite la tua Fleet una presentazione a qualcuno di {}. Lì sei tu a conoscere meglio {}. La bozza chiede prima a questa persona se vuole la presentazione; non parte nulla finché non la invii.",
  "{} asked to slow down": "{} ha chiesto di rallentare",
@@ -7094,6 +7108,10 @@
  "{} notifications": {
   "one": "{} notifica",
   "other": "{} notifiche"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} di loro ha già un compleanno.",
+  "other": "{} di loro hanno già un compleanno."
  },
  "{} of {}": "{} su {}",
  "{} of {} calendars": "{} di {} calendari",

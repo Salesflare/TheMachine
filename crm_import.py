@@ -451,12 +451,11 @@ def _person(db, rec, node_id, now, undo):
         if made.get('existing'):
             return node_id, False
         undo['made'].append(node_id)
-        # the graph has no node for it until the rebuild: its details go on its identity directly
         if fields:
             fields.pop('phones', None)
             if rec.get('phone') and graph.PHONE.fullmatch(rec['phone']):
                 fields['phones'] = {'added': [rec['phone']], 'removed': []}
-            db.execute('INSERT OR REPLACE INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)', (node_id, json.dumps(fields), now))
+            details_made(db, [node_id], fields, now)
         return node_id, True
     row = graph.resolve(db, node_id)
     group = crm.group_of(row)
@@ -474,6 +473,12 @@ def _person(db, rec, node_id, now, undo):
         if not current or current['name'].casefold() != rec['org'].casefold():
             graph.set_org(db, node_id, rec['org'], 'owner', now)
     return node_id, False
+
+
+def details_made(db, ids, fields, now):
+    """The owner's details (person_edits fields) on people just made (graph.create_record): the graph has no node for
+    them until the rebuild, so they go on their identity directly. For an import, and Facebook's Add button."""
+    db.executemany('INSERT OR REPLACE INTO person_edits(identifier,fields,updated_at) VALUES(?,?,?)', [(i, json.dumps(fields), now) for i in ids])
 
 
 def _org(db, rec, node_id, now, undo):
@@ -668,12 +673,18 @@ def undo(db, import_id, now):
             except ValueError:
                 pass
             continue
-        db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
-        db.execute('DELETE FROM person_edits WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM person_orgs WHERE identifier=?', (node_id,))
-        db.execute('DELETE FROM record_owners WHERE node_id=?', (node_id,))
-        if node_id.startswith('org:'):
-            db.execute('DELETE FROM org_edits WHERE domain=?', (node_id if node_id.startswith('org:named:') else node_id[4:],))
+        drop_made(db, node_id)
     db.execute('UPDATE graph_imports SET undone_at=?,undo=NULL WHERE id=?', (now, row['id']))
     return {'undone': row['id'], 'kind': row['kind'], **json.loads(row['counts'] or '{}')}
+
+
+def drop_made(db, node_id):
+    """A person or organization added as if by hand (graph.create_record) goes again: what made it and the details kept
+    on it. For an import's Undo, and Facebook's Add's (birthdays_facebook.remove). The caller rebuilds."""
+    db.execute('DELETE FROM manual_nodes WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM graph_names WHERE node_id=?', (node_id,))
+    db.execute('DELETE FROM person_edits WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM person_orgs WHERE identifier=?', (node_id,))
+    db.execute('DELETE FROM record_owners WHERE node_id=?', (node_id,))
+    if node_id.startswith('org:'):
+        db.execute('DELETE FROM org_edits WHERE domain=?', (node_id if node_id.startswith('org:named:') else node_id[4:],))

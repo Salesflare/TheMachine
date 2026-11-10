@@ -9,13 +9,20 @@ sign-in is handled here: a browser that isn't signed in to Facebook is told to t
 
 What is kept: only each matched person's birthday (month and day, the year when the page shows it), as the one
 birthday their page shows (person_birthday.offer, source facebook), which the Birthdays routine reads. One the owner set
-or removed on the person's page stays. Nothing else from Facebook is kept: no link, photo or ID. The names read are only
-for matching, and live only in the preview until the owner saves or reads again; a name nobody in the Graph has is only
-counted. After Save the to-do keeps who was saved (their Graph id and name), to link to their pages.
+or removed on the person's page stays. Nothing else from Facebook is kept: no link, photo or ID. The names read are for
+matching and for the Add button (below), and live only on the to-do until the owner reads again. After Save the
+to-do keeps who was saved (their Graph id and name), to link to their pages.
 
 Matching never makes a new person: the same full name as exactly one person in the Graph (else the same first and last
 name, one with a middle name the other doesn't have). Two people with that name is ambiguous: skipped, and named in the
 preview so the owner can add it themselves.
+
+Friends nobody in the Graph has (others) become people only on the owner's tap on Add (add): each a person added
+by hand (graph.create_record), with their name and birthday (source facebook) and Type Personal, so never shared with a
+Work Fleet (shared_graph.Scope). Matched again at that moment, so anyone who now has the same name as a person in the
+Graph is skipped. One transaction for all of them; their pages show at once and the rest of the Graph follows in one
+build. Nothing is looked up for them: no address, so no lookup, and no messages, so no summary or embedding. Undo
+(remove) takes exactly those people away again.
 
 Table (this module owns it): facebook_birthdays, one row per to-do: its state and, while it waits on the owner, the
 preview."""
@@ -32,8 +39,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'integrations'))
 import birthdays  # noqa: E402
 import browser_cdp  # noqa: E402
+import crm_import  # noqa: E402
 import enrichment  # noqa: E402
 import graph  # noqa: E402
+import graph_show  # noqa: E402
 import person_birthday  # noqa: E402
 
 PAGE = 'https://www.facebook.com/events/birthdays/'
@@ -42,6 +51,8 @@ STATES = ('reading', 'signed_out', 'failed', 'preview', 'saved')
 READ_MINUTES = 8  # a read that still says reading after this ended without a word (a restart): it failed
 SHOWN = 8  # matched people the preview names; the rest is a count
 AMBIGUOUS_SHOWN = 20
+ADD_MAX = 5000  # friends one Add adds at most
+PERSONAL = {'side': 'personal'}  # their Type, as the owner sets it on a person's page (person_edits)
 
 # Months as the page may write them, in the languages the app speaks (and their short forms)
 MONTHS = {}
@@ -287,9 +298,10 @@ def found(items, today=None):
 
 
 def match(db, names):
-    """The page's names against the Graph's people: {'matched': [{id, name, date}], 'ambiguous': [name], 'unmatched': n}.
-    Matched: exactly one person with the same full name, else with the same first and last name (a middle name on one side
-    only). Someone deleted permanently is nobody."""
+    """The page's names against the Graph's people: {'matched': [{id, name, date}], 'ambiguous': [name], 'unmatched': n,
+    'others': [{name, date}]}. Matched: exactly one person with the same full name, else with the same first and last
+    name (a middle name on one side only). Others: the unmatched ones with a full name. Someone deleted permanently is
+    nobody."""
     gone = graph.forgotten(db)
     people, ends = {}, {}
     for row in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'"):
@@ -297,7 +309,7 @@ def match(db, names):
         if len(words) >= 2 and not gone(row['id']):
             people.setdefault(' '.join(words), []).append((row['id'], graph.person_name(row['name'])))
             ends.setdefault((words[0], words[-1]), []).append((row['id'], graph.person_name(row['name'])))
-    matched, ambiguous, unmatched = [], [], 0
+    matched, ambiguous, unmatched, others = [], [], 0, []
     for name, value in sorted(names.items()):
         words = graph.name_words(name)
         full = graph.name_match(words, words) == 'same'  # a full name
@@ -310,7 +322,9 @@ def match(db, names):
             ambiguous.append(name)
         else:
             unmatched += 1
-    return {'matched': matched, 'ambiguous': ambiguous, 'unmatched': unmatched}
+            if full:
+                others.append({'name': name, 'date': value})
+    return {'matched': matched, 'ambiguous': ambiguous, 'unmatched': unmatched, 'others': others}
 
 
 def owner_set(db, node_id):
@@ -359,6 +373,29 @@ def put(db, suggestion_id, state, data, stamp):
                'state=excluded.state,data=excluded.data,updated_at=excluded.updated_at', (suggestion_id, state, json.dumps(data or {}), stamp))
 
 
+def without_others(db):
+    """The to-dos read before the friends nobody in the Graph were kept: a preview or Save with no others yet."""
+    try:
+        rows = db.execute("SELECT suggestion_id,data FROM facebook_birthdays WHERE state IN ('preview','saved')").fetchall()
+    except Exception:  # noqa: BLE001 - a database before this table
+        return []
+    return [row['suggestion_id'] for row in rows if 'others' not in json.loads(row['data'] or '{}')]
+
+
+def fill_others(db, suggestion_id, items, today):
+    """An older to-do gains the friends nobody in the Graph has, from a fresh read's items (none when the read failed,
+    so it isn't tried again). Its state, matched people, Save and time stay as they are. Returns how many, or None
+    when it has them by now (Import again, or another fill)."""
+    got = get(db, suggestion_id)
+    if not got or got[0] not in ('preview', 'saved') or 'others' in got[1]:
+        return None
+    state, data, at = got
+    data['others'] = match(db, found(items or [], today))['others']
+    data.setdefault('added', [])
+    put(db, suggestion_id, state, data, at)
+    return len(data['others'])
+
+
 def get(db, suggestion_id):
     """(state, data, updated_at) of a to-do, or None for any other to-do."""
     try:
@@ -390,13 +427,60 @@ def view(db, suggestion_id, now=None):
         return {'state': 'preview', 'found': data.get('found', 0), 'matched': len(matched), 'new': data.get('new', 0),
                 'shown': [{'id': m['id'], 'name': m['name'], 'date': m['date']} for m in matched[:SHOWN]], 'more': max(0, len(matched) - SHOWN),
                 'ambiguous': (data.get('ambiguous') or [])[:AMBIGUOUS_SHOWN], 'unmatched': data.get('unmatched', 0),
-                'capped': bool(data.get('capped')), 'missing': data.get('missing') or []}
+                'capped': bool(data.get('capped')), 'missing': data.get('missing') or [], **others_view(data)}
     if state == 'saved':
         people = data.get('people') or []
-        return {'state': 'saved', 'saved': data.get('saved', 0), 'people': people[:SHOWN], 'more': max(0, data.get('saved', 0) - SHOWN)}
+        return {'state': 'saved', 'saved': data.get('saved', 0), 'people': people[:SHOWN], 'more': max(0, data.get('saved', 0) - SHOWN),
+                **others_view(data)}
     if state == 'failed':
         return {'state': 'failed', 'empty': bool(data.get('empty'))}  # empty: the page showed no birthdays it could read
     return {'state': state if state in STATES else 'failed'}
+
+
+def others_view(data):
+    """The friends nobody in the Graph has, as the to-do shows them: {'others': how many Add adds,
+    'others_shown': a few names, 'added': how many it added (Undo takes them away)}."""
+    others = (data.get('others') or [])[:ADD_MAX]
+    return {'others': len(others), 'others_shown': [o['name'] for o in others[:SHOWN]], 'added': len(data.get('added') or ())}
+
+
+def add(db, data, stamp):
+    """Add the friends nobody in the Graph has (data's others, at most ADD_MAX) as people, in the caller's transaction:
+    each as if added by hand (graph.create_record), Type Personal (the owner's word, as on their page), with their
+    birthday (source facebook). Matched against the Graph again first: a name that now has a person, or more than one,
+    is skipped. They show on their own pages at once (graph_show), in one write. Returns [{node_id, name}]."""
+    names = {o['name']: o['date'] for o in (data.get('others') or [])[:ADD_MAX] if isinstance(o, dict) and o.get('name')}
+    made = []
+    for other in match(db, names)['others']:
+        try:
+            done = graph.create_record(db, 'person', {'name': other['name']}, stamp)
+        except ValueError:  # a name over the length a person's name may have
+            continue
+        if done.get('created'):
+            made.append({'node_id': done['node_id'], 'name': done['name'], 'date': other['date']})
+    crm_import.details_made(db, [m['node_id'] for m in made], PERSONAL, stamp)
+    graph_show.show_new_people(db, made, PERSONAL)
+    enrichment.offer_facts(db, [([m['node_id']], {person_birthday.FIELD: m['date']}, enrichment.RECORD) for m in made], SOURCE, stamp)
+    return [{'node_id': m['node_id'], 'name': m['name']} for m in made]
+
+
+def remove(db, ids):
+    """Undo of add: exactly those people go again (crm_import.drop_made, as an import's Undo), with their birthday, in
+    the caller's transaction. One the owner joined with another person since (graph_merges) stays: it is part of that
+    person now. Returns how many went."""
+    try:
+        joined = {r[0] for r in db.execute('SELECT a FROM graph_merges UNION SELECT b FROM graph_merges')}
+    except Exception:  # noqa: BLE001 - a database before merges
+        joined = set()
+    ids = sorted({str(i) for i in ids or () if str(i).startswith('manual:')} - joined)
+    ids = [r[0] for r in db.execute("SELECT identifier FROM manual_nodes WHERE kind='person' AND identifier IN (SELECT value FROM json_each(?))",
+                                    (json.dumps(ids),))]
+    for node_id in ids:
+        crm_import.drop_made(db, node_id)
+    for source in (SOURCE, person_birthday.SOURCE):  # theirs from Facebook, and one the owner set on their page since
+        enrichment.drop_facts(db, ids, person_birthday.FIELD, source)
+    graph_show.drop_people(db, ids)
+    return len(ids)
 
 
 def read(base, url=PAGE, limits=None, timeout=420):

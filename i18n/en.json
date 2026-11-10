@@ -275,6 +275,10 @@
  "Add transcript": "Add transcript",
  "Add your name first, in Settings": "Add your name first, in Settings",
  "Add {}": "Add {}",
+ "Add {} as personal contacts": {
+  "one": "Add {} as a personal contact",
+  "other": "Add {} as personal contacts"
+ },
  "Add “{}” as new": "Add “{}” as new",
  "Added": "Added",
  "Added a summary line": "Added a summary line",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Added to {} at {}.",
  "Added to {}, invited {}.": "Added to {}, invited {}.",
  "Added to {}.": "Added to {}.",
+ "Added {} personal contacts.": {
+  "one": "Added {} personal contact.",
+  "other": "Added {} personal contacts."
+ },
  "Added {} projects.": "Added {} projects.",
  "Added {}.": "Added {}.",
  "Added {}’s task to your to-dos.": "Added {}’s task to your to-dos.",
@@ -2413,7 +2421,6 @@
  "Marked not needed {}": "Marked not needed {}",
  "Marked not right": "Marked not right",
  "Marked won.": "Marked won.",
- "Matched to people in your Graph: {}": "Matched to people in your Graph: {}",
  "Matches": "Matches",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Matches get what the file says; empty cells change nothing. You can undo the last import.",
  "Matches the Omarchy theme, also when it changes.": "Matches the Omarchy theme, also when it changes.",
@@ -5318,6 +5325,7 @@
  "They see those email addresses.": "They see those email addresses.",
  "They see your note.": "They see your note.",
  "They share busy times only, never what, under their rules for you.": "They share busy times only, never what, under their rules for you.",
+ "They were added already": "They were added already",
  "They wrote again": "They wrote again",
  "Things I keep in mind about your work.": "Things I keep in mind about your work.",
  "Thinking": "Thinking",
@@ -6000,6 +6008,7 @@
  "With OpenAI (checking…)": "With OpenAI (checking…)",
  "With its board": "With its board",
  "With names": "With names",
+ "With their birthday. Reminders only come for people you write to.": "With their birthday. Reminders only come for people you write to.",
  "With you": "With you",
  "With your email": "With your email",
  "With {}": "With {}",
@@ -6706,6 +6715,10 @@
  "{} Check recovered and saved.": "{} Check recovered and saved.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}",
  "{} Encrypted for their Machine only.": "{} Encrypted for their Machine only.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} Facebook friend isn’t in your Graph yet.",
+  "other": "{} Facebook friends aren’t in your Graph yet."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "One Fleet item waits for you under To-dos.",
   "other": "{} Fleet items wait for you under To-dos."
@@ -6735,16 +6748,17 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.",
  "{} and {}": "{} and {}",
+ "{} and {} more": "{} and {} more",
  "{} approved": "{} approved",
  "{} approved it": "{} approved it",
  "{} approved “{}”": "{} approved “{}”",
  "{} approved “{}”: “{}”": "{} approved “{}”: “{}”",
  "{} are all in touch with {}": "{} are all in touch with {}",
- "{} are both in touch with {}": "{} are both in touch with {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} isn’t in your Graph, so it isn’t saved.",
-  "other": "{} aren’t in your Graph, so they aren’t saved."
+ "{} are already in your Graph.": {
+  "one": "{} is already in your Graph.",
+  "other": "{} are already in your Graph."
  },
+ "{} are both in touch with {}": "{} are both in touch with {}",
  "{} asked for your review": "{} asked for your review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.",
  "{} asked to slow down": "{} asked to slow down",
@@ -7094,6 +7108,10 @@
  "{} notifications": {
   "one": "{} notification",
   "other": "{} notifications"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} of them already has a birthday.",
+  "other": "{} of them already have a birthday."
  },
  "{} of {}": "{} of {}",
  "{} of {} calendars": "{} of {} calendars",

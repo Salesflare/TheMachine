@@ -275,6 +275,10 @@
  "Add transcript": "Transcript toevoegen",
  "Add your name first, in Settings": "Voeg eerst je naam toe, in Instellingen",
  "Add {}": "{} toevoegen",
+ "Add {} as personal contacts": {
+  "one": "Voeg {} toe als persoonlijk contact",
+  "other": "Voeg {} toe als persoonlijke contacten"
+ },
  "Add “{}” as new": "“{}” toevoegen als nieuw",
  "Added": "Toegevoegd",
  "Added a summary line": "Regel aan samenvatting toegevoegd",
@@ -295,6 +299,10 @@
  "Added to {} at {}.": "Toegevoegd aan {} om {}.",
  "Added to {}, invited {}.": "Toegevoegd aan {}, {} uitgenodigd.",
  "Added to {}.": "Toegevoegd aan {}.",
+ "Added {} personal contacts.": {
+  "one": "{} persoonlijk contact toegevoegd.",
+  "other": "{} persoonlijke contacten toegevoegd."
+ },
  "Added {} projects.": "{} projecten toegevoegd.",
  "Added {}.": "{} toegevoegd.",
  "Added {}’s task to your to-dos.": "To-do van {} toegevoegd aan je to-do's.",
@@ -2413,7 +2421,6 @@
  "Marked not needed {}": "Gemarkeerd als niet nodig · {}",
  "Marked not right": "Gemarkeerd als niet juist",
  "Marked won.": "Gemarkeerd als gewonnen.",
- "Matched to people in your Graph: {}": "Gekoppeld aan mensen in je Graph: {}",
  "Matches": "Overeenkomsten",
  "Matches get what the file says; empty cells change nothing. You can undo the last import.": "Overeenkomsten krijgen wat in het bestand staat; lege cellen veranderen niets. Je kunt de laatste import ongedaan maken.",
  "Matches the Omarchy theme, also when it changes.": "Volgt het Omarchy-thema, ook als het verandert.",
@@ -5318,6 +5325,7 @@
  "They see those email addresses.": "Ze zien die e-mailadressen.",
  "They see your note.": "Ze zien je notitie.",
  "They share busy times only, never what, under their rules for you.": "Ze delen alleen wanneer ze bezet zijn, nooit waarmee, volgens hun regels voor jou.",
+ "They were added already": "Die zijn al toegevoegd",
  "They wrote again": "Ze schreven opnieuw",
  "Things I keep in mind about your work.": "Dingen die ik onthoud over je werk.",
  "Thinking": "Denkwerk",
@@ -6000,6 +6008,7 @@
  "With OpenAI (checking…)": "Met OpenAI (controleren…)",
  "With its board": "Met het bord",
  "With names": "Met namen",
+ "With their birthday. Reminders only come for people you write to.": "Met hun verjaardag. Herinneringen komen alleen voor mensen naar wie je schrijft.",
  "With you": "Met jou",
  "With your email": "Met je e-mail",
  "With {}": "Met {}",
@@ -6706,6 +6715,10 @@
  "{} Check recovered and saved.": "{} Check hersteld en opgeslagen.",
  "{} Checks run at most every 10 minutes, so notifications cleared in between may be missed.{}": "{} Checks lopen hoogstens elke 10 minuten, dus meldingen die ondertussen gewist zijn, kunnen gemist worden.{}",
  "{} Encrypted for their Machine only.": "{} Alleen versleuteld voor hun Machine.",
+ "{} Facebook friends aren’t in your Graph yet.": {
+  "one": "{} Facebookvriend staat nog niet in je Graph.",
+  "other": "{} Facebookvrienden staan nog niet in je Graph."
+ },
  "{} Fleet items wait for you under To-dos.": {
   "one": "{} Fleet-item wacht op je onder To-do’s.",
   "other": "{} Fleet-items wachten op je onder To-do’s."
@@ -6735,16 +6748,17 @@
  "{} and the one you pick become one organization, with their people, projects and notes. Split off undoes it.": "{} en de organisatie die je kiest worden één, met hun personen, projecten en notities. Afsplitsen maakt het ongedaan.",
  "{} and the person you pick become one, with all their messages. Undo is under Joined on the page.": "{} en de persoon die je kiest worden één, met al hun berichten. Ongedaan maken staat onder Samengevoegd op de pagina.",
  "{} and {}": "{} en {}",
+ "{} and {} more": "{} en nog {}",
  "{} approved": "{} keurde goed",
  "{} approved it": "{} keurde het goed",
  "{} approved “{}”": "{} keurde “{}” goed",
  "{} approved “{}”: “{}”": "{} keurde “{}” goed: “{}”",
  "{} are all in touch with {}": "{} hebben allemaal contact met {}",
- "{} are both in touch with {}": "{} hebben allebei contact met {}",
- "{} aren’t in your Graph, so they aren’t saved.": {
-  "one": "{} staat niet in je Graph en wordt niet bewaard.",
-  "other": "{} staan niet in je Graph en worden niet bewaard."
+ "{} are already in your Graph.": {
+  "one": "{} staat al in je Graph.",
+  "other": "{} staan al in je Graph."
  },
+ "{} are both in touch with {}": "{} hebben allebei contact met {}",
  "{} asked for your review": "{} vroeg je om een review",
  "{} asked through your Fleet for an intro to someone at {}. You know {} best there. The draft asks them first whether they want the intro; nothing goes out until you send it.": "{} vroeg via je Fleet om een intro bij iemand van {}. Jij kent {} daar het best. Het concept vraagt eerst of die persoon de intro wil; er gaat niets weg tot jij het verstuurt.",
  "{} asked to slow down": "{} vroeg om trager te gaan",
@@ -7094,6 +7108,10 @@
  "{} notifications": {
   "one": "{} melding",
   "other": "{} meldingen"
+ },
+ "{} of them already have a birthday.": {
+  "one": "{} van hen heeft al een verjaardag.",
+  "other": "{} van hen hebben al een verjaardag."
  },
  "{} of {}": "{} van {}",
  "{} of {} calendars": "{} van {} agenda's",
