@@ -39,8 +39,9 @@ PURPOSES = ('review', 'preparation', 'ask', 'talk', 'chat')
 KINDS = ('fact', 'rule', 'promise', 'history', 'record', 'signal', 'skill', 'team_learning')
 # How it was picked: always (all of them, while they fit), own (learned on this to-do), closeness (by meaning, with a
 # score), weight (what counts most, when meaning can't be ranked), recency (a window of days), match (by name or
-# words), about (it is on the to-do's signals, or in the question's scope), search (the search's best matches).
-HOWS = ('always', 'own', 'closeness', 'weight', 'recency', 'match', 'about', 'search')
+# words), about (it is on the to-do's signals, or in the question's scope), search (the search's best matches),
+# rotation (its turn: the one a review saw longest ago, review_facts.py).
+HOWS = ('always', 'own', 'closeness', 'weight', 'recency', 'match', 'about', 'search', 'rotation')
 OUTCOMES = ('sent_unchanged', 'sent_edited', 'dismissed', 'snoozed', 'open')
 
 SCHEMA = '''

@@ -753,7 +753,7 @@ Memory comes in kinds, each with its own table and its own picker:
 
 | kind | what it is | picked by |
 |---|---|---|
-| `fact`, `rule` | what was learned, and the draft rules (`facts`) | all of them while they are few (always), the to-do's own, closeness in meaning, else weight |
+| `fact`, `rule` | what was learned, and the draft rules (`facts`) | all of them while they are few (always), the to-do's own, closeness in meaning, else weight; in a review past its cap also by turns (rotation) |
 | `promise` | open promises (`promises`) | always, in a review |
 | `history` | what the owner did with the last 30 days' to-dos (`decisions`) | recency |
 | `record` | the people and projects on a to-do (`graph_nodes`) | being on the to-do (about) |
@@ -784,8 +784,21 @@ nothing, and a log write that fails never fails the prompt.
   reports. Removing an account takes its to-dos' rows, deleting a person takes their record's.
 - Rows go after 60 days (30 at the Careful level), in the nightly retention pass.
 - A fact counts as used (`facts.used_at`, which setting aside after 21 unused days reads) when a preparation that
-  picked it for its to-do was sent, not when it was only picked. A review lists every fact, so that is not a use.
+  picked it for its to-do was sent, not when it was only picked. A review's facts are never a use.
   `memory_use.last_used` gives the last read of any kind, skills and team learnings among them.
+- A review gets every fact while they fit its cap (3,000 characters). Past it, the same room is shared out
+  (`machine/app/review_facts.py`) instead of cut in one order, which left the same facts out of every review:
+  - First the standing ones, in a fixed order: facts the owner wrote or brought back themselves, and their own
+    preferences. At most half the room.
+  - Then, under a heading of their own, the ones closest in meaning to the signals that wait for this review, from the
+    vectors already stored for facts and signals (no embedding call, no model call). Without meaning search, the ones
+    said or used most lately.
+  - A fifth of that room goes by turns: the fact a review saw longest ago goes in whatever else was picked, a new one
+    first, so none is left out forever. A review's reads in `memory_use` are what counts as "saw"; `facts.used_at` is
+    neither read nor written.
+  - The picked block differs from one review to the next, so the prompt puts it after everything that changes slowly
+    and before the run's own lines: the cached prefix before it is the same as it was. The two blocks together are
+    never larger than the cut list was.
 - `memory_use.outcomes(db, to-do)` joins what was in a to-do's prompts with what the owner then did (sent unchanged,
   sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
   Nothing reads them yet.
