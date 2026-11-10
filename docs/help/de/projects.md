@@ -36,6 +36,12 @@ Zieh es in eine andere Phase, oder nutze auf dem Handy **⋯**, **Verschieben na
 
 „4 ohne Antwort seit 10+ Tagen“ unter einer Phase: Tippe darauf, um nur diese zu zeigen, auf dem Board und in der Liste. Tippe noch einmal, um alle zu zeigen.
 
+## Ein Projekt aufteilen
+
+Wenn ein Projekt mehr als eine Sache enthält, bittet **Aufteilen…** in seinem **⋯** deine Machine um zwei bis vier neue Projekte, jedes mit einem Namen, einer Zeile dazu, worum es geht, und welche Verläufe, Aufgaben und Personen wohin gehören. Noch ändert sich nichts: Benenne sie um, verschiebe ein Element in einen anderen Teil, lass es beim Projekt oder entferne es, dann bestätige.
+
+Die neuen Projekte stehen auf demselben Board in derselben Phase und sind mit denselben Personen geteilt wie das Original, nie mit mehr. Die Seite sagt dann, worin es aufgeteilt wurde, mit **Rückgängig**, das alles zurücksetzt.
+
 ## Aufgaben eines Projekts
 
 Eine Aufgabe kann zu einem Projekt gehören. Deine Machine wählt es, wenn ihr Thread oder die Personen, um die es geht, zu genau einem offenen Projekt gehören, und die Aufgabe zeigt seinen Namen unter dem Titel. **Projekt** unter den **Details** der Aufgabe oder **Einem Projekt zuordnen** im Befehlsmenü (Ctrl K) ändert es oder entfernt es. Deine Wahl bleibt.

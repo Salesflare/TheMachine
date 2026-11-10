@@ -398,7 +398,9 @@ def set_hand(db, event_id, choice):
 
 
 def keep_private(db, node_id, on=True):
-    if not db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (str(node_id),)).fetchone():
+    node = str(node_id)  # a project made a moment ago (project_split.py) counts before the next build puts it in the graph
+    if not (node[:8] == 'project:' and node[8:].isdigit() and db.execute('SELECT 1 FROM projects WHERE id=?', (int(node[8:]),)).fetchone()) \
+            and not db.execute('SELECT 1 FROM graph_nodes WHERE id=?', (node,)).fetchone():
         raise ValueError('Not in the graph')
     if on:
         db.execute('INSERT OR REPLACE INTO share_private(node_id,at) VALUES(?,?)', (str(node_id), now()))

@@ -362,12 +362,12 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .tile-why.sorting{font-style:italic}
 .tile-why.failed{color:var(--c-orange)}
 /*@eager*/
-#board-dialog,#project-dialog,#record-dialog,#crm-dialog,#share-people{width:min(520px,calc(100vw - 24px));padding:18px 18px 16px}#crm-dialog.wide{width:min(760px,calc(100vw - 24px))}
+#board-dialog,#project-dialog,#record-dialog,#crm-dialog,#share-people,#split-dialog{width:min(520px,calc(100vw - 24px));padding:18px 18px 16px}#split-dialog{width:min(600px,calc(100vw - 24px))}#crm-dialog.wide{width:min(760px,calc(100vw - 24px))}
 /* An import with a file keeps its size while the preview and the model's check come in: no growing under the pointer */
 #crm-dialog.tall{height:min(86vh,820px)}#crm-dialog.tall #crm-form{min-height:100%}#crm-dialog.tall .ed-actions{margin-top:auto}
 #share-people{width:min(440px,calc(100vw - 24px))}#contact-share,#machine-invite{width:min(480px,calc(100vw - 24px));padding:18px 18px 16px}
-#board-dialog h2,#project-dialog h2,#record-dialog h2,#crm-dialog h2,#share-people h2{margin:0;color:var(--text);font-size:1.2rem}
-:is(#project-form,#record-form,#crm-form){display:flex;flex-direction:column;gap:14px}:is(#project-form,#record-form,#crm-form) .snooze-heading{margin:0}
+#board-dialog h2,#project-dialog h2,#record-dialog h2,#crm-dialog h2,#share-people h2,#split-dialog h2{margin:0;color:var(--text);font-size:1.2rem}
+:is(#project-form,#record-form,#crm-form,#split-form){display:flex;flex-direction:column;gap:14px}:is(#project-form,#record-form,#crm-form,#split-form) .snooze-heading{margin:0}#split-form>.ed-note{margin:-6px 0 0}
 /*@lazy*/
 /* What The Machine updated today (graph_updates.py): a still dot on a row it changed, one quiet line that opens the list */
 .today-mark{flex:none;width:6px;height:6px;border-radius:50%;background:var(--mint);align-self:center}.tile-row .today-mark{align-self:flex-start;margin-top:8px}
@@ -375,4 +375,19 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 .graph-today>summary::-webkit-details-marker{display:none}.graph-today>summary::before{content:none}.graph-today>summary:hover,.graph-today[open]>summary{color:var(--text)}
 .today-list{list-style:none;margin:var(--sp-2) 0 0;padding:0 0 0 14px;display:grid;gap:4px}.today-list li{display:flex;gap:8px;min-width:0;align-items:baseline}
 .today-list button{flex:none;min-height:0;height:auto;margin:0;padding:0;border:0;background:none;box-shadow:none;font:inherit;font-weight:600;color:var(--text);cursor:pointer}.today-list button:hover{text-decoration:underline;text-underline-offset:3px}.today-what{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Split up (graph-boards.js spDraw): each proposed project a box with its name, its line and its items, each item with where it goes */
+.psplit-parts{display:flex;flex-direction:column;gap:12px}
+.psplit-part{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:0;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-align:left}
+.psplit-part .ed-field{display:grid;gap:4px;margin:0}.psplit-part .ed-field input{width:100%;box-sizing:border-box;font-weight:var(--fw-medium,500)}
+.psplit-rest{background:transparent;border-style:dashed}.psplit-rest h3{margin:0;font:var(--fw-medium) var(--fs-sm)/1.3 var(--sans);color:var(--muted)}
+.psplit-about{margin:0;color:var(--muted);font-size:var(--fs-sm);line-height:1.45}
+.psplit-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.psplit-items li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border);min-width:0}.psplit-items li:first-child{border-top:0}
+.psplit-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.psplit-text b{font-weight:var(--fw-medium,500);font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.psplit-text small{color:var(--muted);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.psplit-text .psplit-kind{color:var(--faint)}
+.psplit-items select{flex:0 1 auto;width:auto;max-width:42%;min-width:0;font-size:var(--fs-sm)}
+.psplit-none,.psplit-wait{margin:0;color:var(--muted);font-size:var(--fs-sm)}
+.psplit-line{margin:8px 0 0;font-size:var(--fs-sm)}.psplit-line .inline-node{font:inherit}
+.psplit-line button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--muted);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.psplit-line button.link:hover{color:var(--text)}
 /*@eager*/

@@ -34,6 +34,7 @@ import meeting_notes
 import memory_use
 import own_addresses
 import person_birthday
+import project_split
 import project_success
 from sources import gog_read, SourceError
 from timeutil import local_tz, now
@@ -76,6 +77,7 @@ class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
                'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
+               'project_split': 'project_split_action',
                'graph_fact_unlink': 'graph_fact_unlink_action', 'graph_fact_add': 'graph_fact_add_action', 'unmerge_fact': 'unmerge_fact_action',
                'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
                'graph_org_edit': 'graph_org_edit_action', 'graph_org_wrong': 'graph_org_edit_action',
@@ -796,6 +798,57 @@ class GraphActionsApp:
         if not owner_dashboard:
             raise ValueError('Only the owner changes a project description, on the dashboard')
         return self.about_change(args)
+
+    def project_split_action(self, name, args, owner_dashboard=False):
+        """Split up a project (project_split.py): op propose (one model turn, nothing changes), apply (the owner's
+        parts, confirmed) or undo."""
+        if not owner_dashboard:
+            raise ValueError('Only the owner splits up a project, on the dashboard')
+        op = args.get('op')
+        if op == 'propose':
+            return self.project_split_propose(args.get('node_id'))
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if op == 'apply':
+                done = project_split.apply(db, args.get('node_id'), args.get('parts'), args.get('drop') or (), now())
+            elif op == 'undo':
+                done = project_split.undo(db, args.get('split_id'), now())
+            else:
+                raise ValueError('op is propose, apply or undo')
+        self.graph_build()  # the new projects (or the original again) are on the Graph before the page asks for them
+        return done
+
+    def project_split_propose(self, node_id):
+        """One turn on what is on the project: {'parts', 'items', 'node_id', 'name'}; 'parts' [] when it reads as one
+        project. Never more than one turn per click."""
+        import help_chat
+        import locale_prefs
+        import model_service
+        from models import background_model, has_model
+        stand_in = getattr(self, 'split_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
+        if not stand_in and not has_model(self.config, wait=False):
+            raise ValueError('Split up needs a model. Set one up in Settings, Model.')
+        with self.store.connect() as db:
+            project_split.ensure(db)
+            row, found = project_split.items(db, node_id, graph.Owner({'accounts': self.config.get('accounts', [])}, db).emails)
+            if len(found) < 2:
+                return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'parts': [], 'items': {}}
+            page, ids = project_split.page(row, found)
+        text = project_split.prompt(page, locale_prefs.language_of(self.config))
+        try:
+            if stand_in:
+                answer = stand_in(self.config, text)
+            else:
+                swap = background_model(self.config)
+                answer = model_service.run(self.config, text, '/'.join(swap) if swap else None, timeout=project_split.TIMEOUT)
+        except help_chat.Unavailable as error:
+            raise ValueError(str(error)) from None
+        with self.store.connect() as db:
+            parts = project_split.parse(db, answer, row, ids)
+        if parts is None:
+            LOG.info('project split unreadable answer')
+            raise ValueError('That didn’t work. Try again.')
+        return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'parts': parts, 'items': project_split.view(found)}
 
     def graph_fact_unlink_action(self, name, args, owner_dashboard=False):
         if not owner_dashboard:

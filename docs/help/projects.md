@@ -36,6 +36,12 @@ Drag it to another stage, or on a phone use **⋯**, **Move to**. Your move stan
 
 "4 with no reply in 10+ days" under a stage: tap it to show only those, on the board and the list. Tap again to show all.
 
+## Split up a project
+
+When a project holds more than one thing, **Split up…** in its **⋯** asks your Machine for two to four new projects, each with a name, a line on what it is, and which threads, to-dos and people go where. Nothing changes yet: rename them, move any item to another part, leave it on the project or take it off, then confirm.
+
+The new projects sit on the same board and stage and are shared with the same people as the original, never more. The page then says what it was split into, with **Undo**, which puts everything back.
+
 ## A project's to-dos
 
 A to-do can belong to one project. Your Machine picks it when its thread or the people it's about are on a single open project, and the to-do shows its name under the title. **Project** under the to-do's **Details**, or **Put on a project** in the command menu (Ctrl K), changes it or takes it off. Your choice stays.
