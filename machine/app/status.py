@@ -13,6 +13,7 @@ import urllib.parse
 import abilities
 import agent_jobs
 import fleet
+import graph
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
 from machine.cards import snooze_choices
@@ -362,6 +363,12 @@ class StatusApp:
                 result['fleet']['take_line'] = self.handoff_mail.take_line()
         except (sqlite3.Error, ValueError) as error:
             LOG.error('task pages status error=%s', type(error).__name__)
+        try:  # the sidebar's People, Organizations and Projects counts, kept by the graph's stamp: a page load no longer
+            # fetches the whole Graph overview (some 600 KB) for three numbers; the overview comes when Graph opens
+            with self.store.connect() as db:
+                result['graph_counts'] = graph.counts(db)
+        except sqlite3.Error as error:
+            LOG.warning('graph counts error=%s', type(error).__name__); result['graph_counts'] = None
         return result
 
     def agent_status(self, suggestion_id=None):
