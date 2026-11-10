@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS memory_use(
   score REAL,chars INTEGER NOT NULL DEFAULT 0);
 CREATE INDEX IF NOT EXISTS memory_use_todo ON memory_use(suggestion_id);
 CREATE INDEX IF NOT EXISTS memory_use_item ON memory_use(kind,row_id);
+CREATE INDEX IF NOT EXISTS memory_use_seen ON memory_use(kind,purpose,row_id,at);
 '''
 
 

@@ -47,11 +47,15 @@ class ReviewFactsTests(unittest.TestCase):
         other = self.store.suggest('other', 'Pay the vendor', 'Body', [1])['id']
         self.store.decide(other, 'reject', 'we stopped using them', 'owner-note', 'dashboard')  # the note the facts come from
 
-    def learn(self, count, start=0):
+    def learn(self, count, start=0, about='org:client.example'):
+        """Facts about a record (about=None: about no one), each a minute later, so the newest is the newest."""
         ids = []
-        for i in range(start, start + count):  # each a minute later, so the newest is the newest
+        for i in range(start, start + count):
             self.clock[0] += dt.timedelta(minutes=1)
-            ids.append(self.store.remember_fact(f'General fact number {i} about how the owner works with pilots and renewals.', 'owner-note')['id'])
+            ids.append(self.store.remember_fact(f'Fact number {i} about how the owner works with pilots and renewals there.', 'owner-note')['id'])
+        if about:
+            with self.store.connect() as db:
+                db.executemany("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'review',?)", [(i, about, NOW.isoformat()) for i in ids])
         return ids
 
     def vectors(self, facts, signal=NEAR):
@@ -100,22 +104,50 @@ class ReviewFactsTests(unittest.TestCase):
 
     def test_standing_facts_keep_their_place_whatever_the_batch(self):
         ids = self.learn(60)
-        kept, preference, about_someone = ids[3], ids[7], ids[9]
-        self.store.edit_fact(kept, 'The owner wrote this one in their own words, so it stays.')
-        with self.store.connect() as db:
-            db.execute("UPDATE facts SET fact_kind='preference' WHERE id IN (?,?)", (preference, about_someone))
-            db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,'person:x','review',?)", (about_someone, NOW.isoformat()))
-        self.vectors({i: FAR for i in ids if i != kept})  # far from the batch, and the edited one has no vector yet
+        general = self.learn(3, 60, about=None)  # about no one: they hold for any batch, and are close to none
+        kept = ids[3]
+        self.store.edit_fact(kept, 'The owner wrote this one about them in their own words, so it stays.')
+        self.vectors({i: FAR for i in ids + general if i != kept})  # far from the batch, and the edited one has no vector yet
+        texts = set()
         for run in range(6):
             first, batch, memory = self.read(f'run-{run}')
-            self.assertEqual([kept, preference], self.listed(first))  # in id order, the same bytes every time
-            self.assertNotIn(kept, self.listed(batch))
+            texts.add(first)
+            self.assertEqual([kept, *general], self.listed(first))  # in id order
+            self.assertFalse({kept, *general} & set(self.listed(batch)))
             how = {int(i.row_id): i.how for i in memory.items()}
-            self.assertEqual(('always', 'always'), (how[kept], how[preference]))
+            self.assertEqual({'always'}, {how[i] for i in (kept, *general)})
+        self.assertEqual(1, len(texts))  # the same bytes every time
         message = a.review_prompt('r' * 32, ['work'], 'history', first, promises='promises', batch_facts=batch)
         self.assertLess(message.index(f'- [{kept}] '), message.index('What the owner did with suggestions'))
         self.assertLess(message.index('Open promises'), message.index('More facts the owner told you earlier'))
         self.assertLess(message.index('More facts the owner told you earlier'), message.index('This turn: review run'))
+
+    def test_more_standing_facts_than_half_the_room_the_latest_stay_and_the_others_take_turns(self):
+        general = self.learn(60, about=None)
+        self.app.config.pop('embeddings')
+        reached = set()
+        for run in range(12):
+            first, batch, memory = self.read(f'run-{run}')
+            standing = self.listed(first)
+            self.assertLessEqual(len(first), CAP * review_facts.STANDING_SHARE)
+            self.assertEqual(general[-len(standing):], standing)  # the most lately said, as the old cut chose
+            self.assertLessEqual(len(first) + len(batch), CAP)
+            reached |= set(standing) | set(self.listed(batch))
+        self.assertEqual(set(general), reached)
+
+    def test_a_fact_about_who_a_waiting_signal_is_with_gets_in_first(self):
+        ids = self.learn(60, about='org:other.example')
+        theirs = set(ids[:3])  # the oldest: main's cut left exactly these out
+        with self.store.connect() as db:
+            db.executemany("UPDATE fact_about SET node_id='org:client.example' WHERE fact_id=?", [(i,) for i in theirs])
+            db.execute("INSERT INTO graph_events(node_id,event_id,at) VALUES('org:client.example',?,?)", (self.signal, NOW.isoformat()))
+        self.vectors({i: FAR if i in theirs else NEAR for i in ids})  # by meaning alone the others would lead
+        for label in ('on', 'off'):
+            for run in range(4):
+                _, batch, memory = self.read(f'{label}-{run}')
+                self.assertLessEqual(theirs, set(self.listed(batch)))
+                self.assertEqual({'about'}, {i.how for i in memory.items() if int(i.row_id) in theirs})
+            self.app.config.pop('embeddings', None)
 
     def test_a_fact_close_to_the_batch_gets_in_over_a_far_one(self):
         ids = self.learn(60)

@@ -3,11 +3,15 @@
 While everything learned fits the review's fact cap, the review gets all of it, as before (Store.facts_text). Past the
 cap the list used to be cut in one order, so the same facts missed every review. Now, inside the same cap:
 
-- Standing facts keep their place, first and in a fixed order: the ones the owner wrote or brought back themselves
-  (kept_at) and their own preferences (fact_kind preference, about no one). At most STANDING_SHARE of the cap.
-- The rest is picked for the batch: closest in meaning to the signals that wait for this review, from the vectors
-  already stored for facts and signals (no embedding call, no model call). Without meaning search, or before any
-  vector is there, the ones said or used most lately instead, as before.
+- Standing facts keep their place, first and in a fixed order: the ones about no one (no person, organization or
+  project they are tied to, fact_about), which hold for any batch and so are close to none in particular, and the
+  ones the owner wrote or brought back themselves (kept_at). At most STANDING_SHARE of the cap; when they are more
+  than that, the ones said or used most lately, as the old cut chose, and the others go with the rest.
+- The rest (the facts about someone or something) is picked for the batch: first the ones about a person,
+  organization or project that a waiting signal is with (fact_about, graph_events), then the ones closest in meaning
+  to the signals that wait for this review, from the vectors already stored for facts and signals (no embedding
+  call, no model call). Without meaning search, or before any vector is there, the ones said or used most lately
+  instead, as before.
 - A part of the room (TURN_SHARE) goes by turns: the fact a review saw longest ago goes in, whatever else was
   picked, so none is left out forever. "Saw" is the use log (memory_use, purpose review); a fact no review saw yet
   goes first, so a new one is shown at once.
@@ -55,15 +59,17 @@ def cut_size(store, facts, limit):
     return len(store.facts_block(out, True)) + 2
 
 
-def pick(facts, limit, standing_ids=(), scores=None, seen=None, floor=FACTS_FLOOR):
+def pick(facts, limit, standing_ids=(), scores=None, seen=None, floor=FACTS_FLOOR, due=()):
     """(standing, picked, how) for a list that doesn't fit limit characters. standing: the standing facts, in id
-    order. picked: the rest that fits, in id order. how: {fact id: 'closeness', 'recency' or 'rotation'}.
+    order. picked: the rest that fits, in id order. how: {fact id: 'about', 'closeness', 'recency' or 'rotation'}.
     scores: {fact id: closeness to the batch}, or None when meaning can't rank (then the most lately said or used
-    lead). seen: {fact id as text: when a review last had it}."""
+    lead). seen: {fact id as text: when a review last had it}. due: the ids of the facts about a record that a
+    waiting signal is with, which go before the closest."""
     seen = seen or {}
     standing, size = [], 0
-    for f in sorted((f for f in facts if f['id'] in standing_ids and not ai_fact_by(f)), key=lambda f: -f['id']):
-        if size + cost(f) <= limit * STANDING_SHARE:  # the newest of them when even they are too many
+    lately = sorted(facts, key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True)
+    for f in lately:  # the ones said or used most lately when even they are too many, as the old cut chose
+        if f['id'] in standing_ids and not ai_fact_by(f) and size + cost(f) <= limit * STANDING_SHARE:
             standing.append(f); size += cost(f)
     standing.sort(key=lambda f: f['id'])
     rest = [f for f in facts if f not in standing]
@@ -71,38 +77,47 @@ def pick(facts, limit, standing_ids=(), scores=None, seen=None, floor=FACTS_FLOO
     turns = sorted(rest, key=lambda f: (seen.get(str(f['id']), ''), -f['id']))  # never seen first, the newest of those first
     reserve = max(int(room * TURN_SHARE), cost(turns[0])) if turns else 0  # its turn always fits
     if scores is None:
-        ranked = sorted(rest, key=lambda f: (f['last_use'], f['created_at'], f['id']), reverse=True)
+        ranked = [f for f in lately if f not in standing]
     else:
         ranked = sorted((f for f in rest if scores.get(f['id'], 0) >= floor), key=lambda f: -scores[f['id']])
+    theirs = sorted((f for f in lately if f['id'] in due and f not in standing), key=lambda f: -(scores or {}).get(f['id'], 0))
     picked, how, used = [], {}, 0
-    for label, queue, most in (('recency' if scores is None else 'closeness', ranked, room - reserve), ('rotation', turns, room)):
+    for label, queue, most in (('about', theirs, room - reserve), ('recency' if scores is None else 'closeness', ranked, room - reserve),
+                               ('rotation', turns, room)):
         for f in queue:
             if f['id'] not in how and used + cost(f) <= most:
                 picked.append(f); how[f['id']] = label; used += cost(f)
     return standing, sorted(picked, key=lambda f: f['id']), how
 
 
-def waiting_vectors(db, accounts, settings, each=BATCH_SIGNALS):
-    """The stored vectors of the signals that wait for a review: the newest and the ones waiting longest, the two ends
-    a batch is made from (Store.begin_analysis). The batch itself is claimed after the prompt is built."""
+def waiting(db, accounts, each=BATCH_SIGNALS):
+    """The ids of the signals that wait for a review: the newest and the ones waiting longest, the two ends a batch is
+    made from (Store.begin_analysis). The batch itself is claimed after the prompt is built."""
     if not accounts:
         return []
-    marks = ','.join('?' for _ in accounts)
-    sql = ('SELECT e.id,v.vector FROM events e JOIN event_vectors v ON v.event_id=e.id AND v.version=e.version '
-           f'WHERE e.account_id IN ({marks}) AND e.deleted=0 AND e.analyzed_version<e.version AND e.deferrals<? AND v.model=? AND v.dims=? ')
-    args = (*accounts, SET_ASIDE_AFTER, settings.get('model', ''), int(settings.get('dims', 256)), each)
+    sql = (f"SELECT id FROM events WHERE account_id IN ({','.join('?' for _ in accounts)}) AND deleted=0 "
+           'AND analyzed_version<version AND deferrals<? ')
     found = {}
-    for order in ('ORDER BY e.id DESC LIMIT ?', 'ORDER BY e.deferrals,e.ingested_at,e.id LIMIT ?'):
-        for r in db.execute(sql + order, args):
-            found[r[0]] = embeddings.unpack(r[1])
-    return list(found.values())
+    for order in ('ORDER BY id DESC LIMIT ?', 'ORDER BY deferrals,ingested_at,id LIMIT ?'):
+        found.update((r[0], True) for r in db.execute(sql + order, (*accounts, SET_ASIDE_AFTER, each)))
+    return list(found)
 
 
-def closeness(db, facts, accounts, settings, at=None):
-    """{fact id: how close it is to the waiting signals}: its best cosine against any of them, weighed by how much the
+def about_waiting(db, signals):
+    """The ids of the facts about a person, organization or project that one of these signals is with."""
+    marks = ','.join('?' for _ in signals)
+    return {r[0] for r in db.execute('SELECT DISTINCT a.fact_id FROM graph_events g JOIN fact_about a ON a.node_id=g.node_id '
+                                     f'WHERE a.removed_at IS NULL AND g.event_id IN ({marks})', signals)} if signals else set()
+
+
+def closeness(db, facts, signals, settings, at=None):
+    """{fact id: how close it is to these signals}: its best cosine against any of them, weighed by how much the
     fact still counts (as a preparation weighs it, Store.facts_for). None when there is nothing to rank by: no
-    waiting signal has a vector, or no fact has one. Stored vectors only."""
-    probes = waiting_vectors(db, accounts, settings)
+    signal has a vector, or no fact has one. Stored vectors only."""
+    marks = ','.join('?' for _ in signals)
+    probes = [embeddings.unpack(r[0]) for r in db.execute(
+        'SELECT v.vector FROM events e JOIN event_vectors v ON v.event_id=e.id AND v.version=e.version '
+        f'WHERE e.id IN ({marks}) AND v.model=? AND v.dims=?', (*signals, settings.get('model', ''), int(settings.get('dims', 256))))] if signals else []
     key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
     stored = {r[0]: embeddings.unpack(r[1]) for r in db.execute('SELECT fact_id,vector FROM fact_vectors WHERE model=?', (key,))}
     if not probes or not any(f['id'] in stored for f in facts):
@@ -131,19 +146,21 @@ class ReviewFacts:
                 self.parts = (None, [], {}, {})  # they all fit: the whole list, as before
                 return self.parts
             limit = cut_size(store, facts, self.limit)
-            scores, seen, standing_ids = None, {}, set()
+            scores, seen, standing_ids, due = None, {}, set(), set()
             settings = embeddings.settings(self.app.config)
             try:
                 with store.connect() as db:
                     about = {r[0] for r in db.execute('SELECT fact_id FROM fact_about WHERE removed_at IS NULL')}
                     kept = {r[0] for r in db.execute("SELECT id FROM facts WHERE removed_at IS NULL AND kind='fact' AND kept_at IS NOT NULL")}
-                    standing_ids = kept | {f['id'] for f in facts if f.get('fact_kind') == 'preference' and f['id'] not in about}
+                    standing_ids = kept | {f['id'] for f in facts if f['id'] not in about}  # about no one: for any batch
                     seen = last_seen(db)
+                    signals = waiting(db, [a['id'] for a in self.app.config.get('accounts', [])])
+                    due = about_waiting(db, signals)
                     if settings:
-                        scores = closeness(db, facts, [a['id'] for a in self.app.config.get('accounts', [])], settings)
+                        scores = closeness(db, facts, signals, settings)
             except Exception as error:  # a busy database or a missing table never costs the review its facts
                 LOG.error('review facts error=%s', type(error).__name__)
-            standing, picked, how = pick(facts, limit, standing_ids, scores, seen)
+            standing, picked, how = pick(facts, limit, standing_ids, scores, seen, due=due)
             self.parts = (standing, picked, how, scores or {})
         return self.parts
 

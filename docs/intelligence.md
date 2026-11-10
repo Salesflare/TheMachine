@@ -788,9 +788,11 @@ nothing, and a log write that fails never fails the prompt.
   `memory_use.last_used` gives the last read of any kind, skills and team learnings among them.
 - A review gets every fact while they fit its cap (3,000 characters). Past it, the same room is shared out
   (`machine/app/review_facts.py`) instead of cut in one order, which left the same facts out of every review:
-  - First the standing ones, in a fixed order: facts the owner wrote or brought back themselves, and their own
-    preferences. At most half the room.
-  - Then, under a heading of their own, the ones closest in meaning to the signals that wait for this review, from the
+  - First the standing ones, in a fixed order: facts about no one (tied to no person, organization or project), which
+    hold for any batch, and facts the owner wrote or brought back themselves. At most half the room; when they are
+    more, the ones said or used most lately, and the others go with the rest.
+  - Then, under a heading of their own, the facts about a person, organization or project that a waiting signal is
+    with, and after them the ones closest in meaning to the signals that wait for this review, from the
     vectors already stored for facts and signals (no embedding call, no model call). Without meaning search, the ones
     said or used most lately.
   - A fifth of that room goes by turns: the fact a review saw longest ago goes in whatever else was picked, a new one
