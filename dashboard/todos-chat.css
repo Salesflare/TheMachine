@@ -46,11 +46,14 @@
 @media(min-width:861px){.chat-head{align-self:center;width:min(100%,calc(var(--chat-col) + 21px));margin:0 -9px 0 -12px}}
 /* A soft edge under the header, so what scrolls under it fades instead of looking cut */
 .chat-head::after{content:'';position:absolute;left:0;right:0;top:100%;z-index:1;height:14px;background:linear-gradient(var(--bg) 30%,color-mix(in srgb,var(--bg) 0%,transparent));pointer-events:none}
-/* Back and ⋯ share one 32px box, and the title's line is that box too: the chevron, the dots and the title's capitals share one
-   center line (its x-height there left the chevron 2px low next to the capitals) */
+/* Back and ⋯ share one 32px box, centered with the title. The title's box is trimmed to its capitals (cap height to baseline),
+   so what is centered is the ink of its capitals, whatever the browser rounds the font's ascent and descent to; the padding
+   gives the letters above and below the capitals their room. Its x-height on the chevron, or its line box, left the chevron
+   1 to 2px low next to the capitals. */
 .chat-back,.chat-menu>summary{display:grid;place-items:center;flex:none;width:32px;height:32px;margin:0;border-radius:50%;color:var(--text);text-decoration:none;cursor:pointer}
 @media(hover:hover) and (pointer:fine){.chat-back:hover,.chat-menu>summary:hover{background:var(--c-hover)}}.chat-menu[open]>summary{background:var(--c-hover)}.chat-back svg{width:22px;height:22px}.chat-menu>summary svg{width:20px;height:20px}
 .chat-title{flex:1;min-width:0;margin:0;font:600 1rem/32px var(--sans);white-space:nowrap;overflow:hidden}
+@supports(text-box:trim-both cap alphabetic){.chat-title{text-box:trim-both cap alphabetic;padding:8px 0}}
 /* The chat's title is one line at every width, fading out at the right edge; its full text is in the title attribute. */
 :is(.chat-menu,.graph-sort){position:relative;flex:none;margin:0}:is(.chat-menu,.graph-sort)>summary{list-style:none}:is(.chat-menu,.graph-sort)>summary::-webkit-details-marker{display:none}:is(.chat-menu,.graph-sort)>summary::before,:is(.chat-menu,.graph-sort)>summary::after{content:none}
 :is(.chat-menu-list,.graph-sort-list){position:absolute;right:0;top:calc(100% + 4px);z-index:7;display:flex;flex-direction:column;min-width:190px;padding:6px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 12px 30px #0004}

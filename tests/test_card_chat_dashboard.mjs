@@ -368,7 +368,8 @@ try{
    assert.equal(m.lines,1,'one line at '+width);assert.ok(m.fade,'fades out at the right edge at '+width);assert.equal(m.title,long);
    assert.ok(Math.abs(m.mid-m.back)<=2&&Math.abs(m.back-m.menu)<=1,'one row at '+width+': '+JSON.stringify(m))
    const g=await page.evaluate(()=>{const q=s=>document.querySelector(s),R=n=>n.getBoundingClientRect(),h=q('.chat-title'),cs=getComputedStyle(h),cv=document.createElement('canvas').getContext('2d');cv.font=cs.font;
-    const f=cv.measureText('H'),L=parseFloat(cs.lineHeight),base=R(h).top+(L-(f.fontBoundingBoxAscent+f.fontBoundingBoxDescent))/2+f.fontBoundingBoxAscent,cap=base-f.actualBoundingBoxAscent/2;
+    const f=cv.measureText('H'),probe=document.createElement('span');probe.style.cssText='display:inline-block;width:0;height:0';h.append(probe);  // its bottom is the baseline
+    const base=R(probe).bottom,cap=base-f.actualBoundingBoxAscent/2;probe.remove();
     const box=R(q('.chat-back')),menu=R(q('.chat-menu>summary')),path=R(q('.chat-back path')),k=R(q('.chat-back svg')).width/24,dots=[...document.querySelectorAll('.chat-menu>summary circle')].map(R);
     const range=document.createRange();range.selectNodeContents(h);
     return {box:[box.width,box.height,menu.width,menu.height],chev:path.left-k,text:R(q('.chat-log .chat-msg:not(.you)')).left,dots:Math.max(...dots.map(r=>r.right)),bubble:R(q('.chat-log .chat-msg.you')).right,
