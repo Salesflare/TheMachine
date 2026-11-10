@@ -831,6 +831,9 @@ Learning, and saves only the ones the owner ticks.
   a specific, durable fact, preference or rule that would change what the assistant does. From `USER.md`, which
   reviews already read, only lines about a named person, organization or project. A file longer than one pass is read
   over the following days.
+- With [message protection](configuration.md#message-protection) on, a candidate's text is encrypted in the database,
+  also once dismissed; its file, kind and state are not. Candidates that do not open (no key, another key) are not
+  shown, a pass does not run on top of them, and a tick fails: sealed text is never saved as a fact.
 - A candidate is saved only by the owner's tick (`bring_in_decide`, the owner's dashboard only). A fact or preference
   becomes a fact, a rule becomes a rule, with the file as its source (`notes:MEMORY.md`), shown as "From MEMORY.md".
   It is read and removed like any other, and counts as the owner's own words for connected AIs.

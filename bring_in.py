@@ -23,10 +23,16 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
+import logging
 import re
 from pathlib import Path
 
+import message_seal
+
 from routine_imports import TOKEN
+
+LOG = logging.getLogger('personal-assistant')
+_warned = False  # the sealed-candidates warning, once per run of the service
 
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS bring_in_items(id INTEGER PRIMARY KEY,file TEXT NOT NULL,key TEXT NOT NULL UNIQUE,text TEXT NOT NULL,
@@ -210,6 +216,12 @@ def due(db, workspace, config=None, current=None):
     return bool(lines)
 
 
+def put_off(db):
+    """A pass that could not run counts as today's: the next one is a day away, not at the service's next step."""
+    ensure(db)
+    _set(db, 'last_pass', now())
+
+
 def _untrusted(text):
     return str(text).replace('<<<', '‹‹‹').replace('>>>', '›››')
 
@@ -228,6 +240,8 @@ def prepare(db, workspace, config=None):
     """What one pass reads: {'lines': the lines it is given, numbered from 1, 'hashes', 'rest': lines left for a later
     day, 'prompt'}; no prompt when there is nothing to read."""
     lines, hashes = unread(db, workspace, config)
+    # read first, so a Machine whose candidates do not open (SealError) reads and offers nothing on top of them
+    before = [r['text'] for r in _opened(db.execute('SELECT text FROM bring_in_items ORDER BY id DESC'))]
     given, size = [], 0
     for line in lines:
         size += len(line['text']) + len(line['heading']) + 24
@@ -238,7 +252,6 @@ def prepare(db, workspace, config=None):
     if not given:
         return state
     known = [r[0] for r in db.execute("SELECT text FROM facts WHERE removed_at IS NULL AND kind IN ('fact','draft') ORDER BY id DESC")]
-    before = [r[0] for r in db.execute('SELECT text FROM bring_in_items ORDER BY id DESC')]
     shown = '\n'.join(f'[{n}] {l["file"]}' + (f' ({_untrusted(l["heading"])})' if l['heading'] else '') + ': ' + _untrusted(l['text'])
                       for n, l in enumerate(given, 1))
     state['prompt'] = JUDGE.format(max=PER_PASS, known=_clip(known, KNOWN_CHARS), before=_clip(before, BEFORE_CHARS), lines=shown)
@@ -294,21 +307,39 @@ def conclude(db, state, reply):
     return {'offered': offered}
 
 
+def _opened(rows):
+    """Rows as read, or SealError when one still holds a sealed value: a connection without the message key (one with
+    another key raises as it reads). A candidate that cannot be read is never shown, offered or saved as if it were
+    text. Their text is sealed with message protection on (message_seal.DERIVED); status, kind, file and key are not."""
+    rows = [dict(r) for r in rows]
+    if any(message_seal.is_sealed(v) for r in rows for v in r.values()):
+        raise message_seal.SealError
+    return rows
+
+
 def offered(db, made=False):
     """The candidates waiting for the owner, oldest first: [{'id', 'text', 'kind', 'file'}]. made: the tables are
     known to be there, or their absence is the caller's to catch (a read that must not write)."""
     if not made:
         ensure(db)
-    return [dict(r) for r in db.execute("SELECT id,text,kind,file FROM bring_in_items WHERE status='offered' ORDER BY id LIMIT ?", (MAX_OFFERED,))]
+    return _opened(db.execute("SELECT id,text,kind,file FROM bring_in_items WHERE status='offered' ORDER BY id LIMIT ?", (MAX_OFFERED,)))
 
 
 def status(connect):
     """offered() on a connection of its own, for the dashboard's status; [] when it can't be read. A read only: it
-    never makes the tables (no pass has run yet: nothing to offer), so the page never waits for the write lock."""
+    never makes the tables (no pass has run yet: nothing to offer), so the page never waits for the write lock.
+    Candidates that are sealed and do not open (no key, another key) keep the section hidden and are logged once:
+    sealed text is never shown, and the rest of the status is not theirs to stop."""
+    global _warned
     import sqlite3
     try:
         with connect() as db:
             return offered(db, made=True)
+    except message_seal.SealError:
+        if not _warned:
+            _warned = True
+            LOG.warning('bring-in candidates are sealed and do not open: not shown')
+        return []
     except (sqlite3.Error, ValueError):
         return []
 
@@ -325,9 +356,10 @@ def decide(store, keep=(), dismiss=()):
     for item_id in keep:
         with store.connect() as db:
             ensure(db)
-            row = db.execute("SELECT id,file,text,kind FROM bring_in_items WHERE id=? AND status='offered'", (item_id,)).fetchone()
+            row = _opened(db.execute("SELECT id,file,text,kind FROM bring_in_items WHERE id=? AND status='offered'", (item_id,)))
         if not row:
             continue
+        row = row[0]  # opened: one that is sealed and does not open raised SealError above, and is never saved as a fact
         made = store.remember_fact(row['text'], f'notes:{row["file"]}:{row["id"]}', kind=KINDS[row['kind']], source='notes:' + row['file'])
         with store.connect() as db:
             db.execute('BEGIN IMMEDIATE')

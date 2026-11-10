@@ -2,17 +2,22 @@
 offered on Learning, and only the ones the owner ticks are saved. The files are only read; empty and template files
 cost nothing and show nothing; keys and tokens never reach the model; one small pass, cached by each file's content
 hash; a dismissed candidate does not come back. All notes here are made up."""
+import base64
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
+import sqlite3
 import tempfile
 import unittest
+import unittest.mock
 
 spec = importlib.util.spec_from_file_location('bring_in_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 import bring_in
+import message_seal
 import onboarding
 
 MEMORY = '''# MEMORY.md
@@ -228,6 +233,93 @@ class BringIn(unittest.TestCase):
         import load
         self.assertNotIn('notes', load.parse_states('all'))  # the site's demo is recorded from `all`
         self.assertIn('notes', load.STATES)
+
+
+class Locked(unittest.TestCase):
+    """A sealed Machine whose message key is missing or is another one: its candidates cannot be read. The dashboard
+    keeps the section hidden and says so once in the log; a pass and the owner's tick fail, so sealed bytes are never
+    offered again, shown or saved as a fact."""
+    def setUp(self):
+        patcher = unittest.mock.patch.dict(os.environ)  # sealed here, whatever the suite runs as
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        os.environ.pop('MESSAGE_PROTECTION_TEST', None)
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / 'events.sqlite'
+        self.workspace = Path(self.temp.name) / 'workspace'
+        self.workspace.mkdir()
+        (self.workspace / 'MEMORY.md').write_text(MEMORY)
+        store = a.Store(self.path, protect=True)
+        with store.connect() as db:
+            bring_in.ensure(db)
+        with store.connect() as db:
+            state = bring_in.prepare(db, self.workspace, {})
+            self.assertEqual(bring_in.conclude(db, state, judge({'Lumenfold': 'preference'})(state['prompt'])), {'offered': 1})
+            self.item = bring_in.offered(db)[0]
+        (self.workspace / 'MEMORY.md').write_text(MEMORY + '\n- Odile at Brightwater signs off every invoice herself.\n')  # a new line to read
+        self.key = message_seal.key_path(self.path)
+        bring_in._warned = False
+        self.addCleanup(setattr, bring_in, '_warned', False)
+
+    def unchanged(self):
+        with sqlite3.connect(self.path) as raw:
+            self.assertEqual(raw.execute('SELECT status,typeof(text),fact_id FROM bring_in_items').fetchall(), [('offered', 'blob', None)])
+            self.assertEqual(raw.execute('SELECT count(*) FROM facts').fetchone()[0], 0)
+
+    def another_key(self):
+        self.key.write_bytes(base64.b64encode(os.urandom(32)) + b'\n')
+        return a.Store(self.path)
+
+    def test_the_dashboard_keeps_the_section_hidden_and_says_so_once(self):
+        store = self.another_key()
+        with self.assertLogs('personal-assistant', 'WARNING') as logged:
+            self.assertEqual(bring_in.status(store.connect), [])
+        self.assertEqual(len(logged.output), 1)
+        self.assertNotIn(self.item['text'], logged.output[0])
+        with self.assertNoLogs('personal-assistant', 'WARNING'):
+            self.assertEqual(bring_in.status(store.connect), [])  # once, not at every load of the page
+        self.assertNotIn('bring_in', store.snapshot([]))  # and the rest of the status is still there
+        self.unchanged()
+
+    def test_without_the_key_nothing_is_shown_either(self):
+        self.key.unlink()
+
+        def keyless():
+            db = sqlite3.connect(self.path)
+            db.row_factory = sqlite3.Row
+            return db
+        with keyless() as db, self.assertRaises(message_seal.SealError):
+            bring_in.offered(db, made=True)
+        with self.assertLogs('personal-assistant', 'WARNING'):
+            self.assertEqual(bring_in.status(keyless), [])
+        self.unchanged()
+
+    def test_a_pass_fails_rather_than_offer_on_top_of_what_it_cannot_read(self):
+        store = self.another_key()
+        with store.connect() as db:
+            self.assertTrue(bring_in.due(db, self.workspace, {}, current=bring_in.dt.datetime.now(bring_in.dt.timezone.utc) + bring_in.dt.timedelta(days=2)))
+            with self.assertRaises(message_seal.SealError):
+                bring_in.prepare(db, self.workspace, {})
+        app = object.__new__(a.App)
+        app.store, app.config, app.fleet, app.bring_in_dir = store, {}, None, self.workspace
+        app.bring_in_model = judge({'Brightwater': 'fact'})
+        with self.assertLogs('personal-assistant', 'WARNING'):
+            self.assertEqual(app.bring_in_run({}), {'error': 'SealError'})
+        self.assertEqual(app.bring_in_model.prompts, [])  # no turn was spent
+        with store.connect() as db:
+            self.assertFalse(bring_in.due(db, self.workspace, {}))  # and not at every step: a day later at the earliest
+        self.unchanged()
+
+    def test_a_tick_fails_rather_than_save_what_does_not_open(self):
+        store = self.another_key()
+        with self.assertRaises(message_seal.SealError):
+            bring_in.decide(store, keep=[self.item['id']])
+        app = object.__new__(a.App)
+        app.store, app.config, app.fleet = store, {}, None
+        with self.assertRaises(message_seal.SealError):
+            app.action('bring_in_decide', {'keep': [self.item['id']]}, owner_dashboard=True)
+        self.unchanged()
 
 
 if __name__ == '__main__':

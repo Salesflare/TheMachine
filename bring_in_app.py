@@ -9,6 +9,7 @@ import threading
 
 import bring_in
 import help_chat
+import message_seal
 from machine.config import WORKSPACE
 
 LOG = logging.getLogger('personal-assistant')
@@ -60,6 +61,12 @@ class BringInApp:
                 reply = ask(state['prompt'])
         except help_chat.Unavailable:
             reply = None
+        except message_seal.SealError as error:  # the candidates kept are sealed and do not open: nothing is offered on top of them
+            LOG.warning('bring-in pass: the candidates are sealed and do not open, no pass today')
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                bring_in.put_off(db)
+            return {'error': type(error).__name__}
         except Exception as error:  # noqa: BLE001 - a pass that fails is tried again another day; nothing depends on it
             LOG.info('bring-in pass error=%s', type(error).__name__)
             return {'error': type(error).__name__}
