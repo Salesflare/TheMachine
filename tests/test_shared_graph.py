@@ -499,7 +499,9 @@ class SharedGraph(unittest.TestCase):
                                       'title': 'Chat: hello', 'body': 'hello', 'metadata': {'chat_id': chat, 'chat_kind': 'oneOnOne', 'message_id': str(n),
                                                                                            'from': 'Olive Owner', 'from_me': True, 'to': [who]}}
         with self.own.store.connect() as db:
-            self.assertEqual(bool(db.execute("SELECT count(*) FROM events WHERE instr(metadata,'mc1_sealed')>0").fetchone()[0]), bool(self.PROTECT))
+            # sealed where this class asks for it, and wherever the whole run is sealed (MESSAGE_PROTECTION_TEST)
+            self.assertTrue(self.own.store.protected or not self.PROTECT)
+            self.assertEqual(bool(db.execute("SELECT count(*) FROM events WHERE instr(metadata,'mc1_sealed')>0").fetchone()[0]), self.own.store.protected)
             db.executemany('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)',
                            [('slack:U0VERA0001', 'Vera Stone', 'vera@secret.example', a.now()), ('slack:U0LEE00001', 'Lee Park', 'lee@client.example', a.now())])
         self.add(self.own,
