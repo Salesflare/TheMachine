@@ -305,6 +305,10 @@ class Scopes:
                 # its decorators and signature too: what they set (a default, a wrapper) shows when it runs
                 self.funcs.append((start, stmt.end_lineno, qual))
                 self._walk(stmt.body, qual + '.<locals>.', ('func', qual))
+            elif isinstance(stmt, ast.ClassDef) and owner is not None and owner[0] == 'func':
+                # a class made inside a function: its methods are that function's '<locals>.Class.method'; the rest of
+                # its body runs with the function
+                self._walk(stmt.body, prefix + stmt.name + '.', ('func', owner[1]))
             elif isinstance(stmt, ast.ClassDef) and (owner is None or owner[0] == 'class'):
                 names = {stmt.name} | (owner[1] if owner else set())
                 first = stmt.body[0].lineno
@@ -460,6 +464,8 @@ def mention_lines(text, path):
 # The tests that check the catalogs themselves (keys, slots, every language). With the map, a catalog change runs these
 # and the tests that name a text it changed; a test that only serves a catalog to the page shows what it asserts.
 CATALOG_CHECKS = re.compile(r'^test_(?:i18n|locale)')
+# A script that looks over files in bulk (a glob, git ls-files).
+WALKS = re.compile(r"""\.r?glob\(|['"]ls-files['"]""")
 _NAMES = {}
 
 
@@ -688,6 +694,13 @@ def select_mapped(changed, repo, impact, base, why=None):
                         lines_in(other, mention_lines(repo.text.get(other, ''), current) or [1], f'{other} reads {current}')
                     elif not other.startswith('dashboard/'):
                         pending.append(other)
+    # a check script that walks the repository (i18n_extract: every source file's English; help_check: every article)
+    # can fail on any file without running it: the tests that run those scripts go with every change but a test's own
+    if any(not is_test(path) for path in changed):
+        for script in (p for p in repo.paths if p.startswith('scripts/') and p.endswith('.py')):
+            if WALKS.search(repo.text.get(script, '')):
+                for test in impact.ran_any(script):
+                    add(test, f'runs {script}, which reads every file')
     picked = set(reasons) | set(ALWAYS)
     if fallback:
         # the old way, for what the map can't place; a test it knows is kept only where the map can't speak for it

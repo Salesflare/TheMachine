@@ -125,6 +125,13 @@ class Box:
         def inner():
             return json.dumps(self.size)
         return inner()
+
+
+def make():
+    class Handler:
+        def get(self):
+            return 'page'
+    return Handler
 '''
 
 
@@ -162,6 +169,7 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(scopes.at(line['size = 2']), ('names', {'size'}))
         self.assertEqual(scopes.at(line['return json.dumps(self.size)']), ('func', 'Box.fill.<locals>.inner'))
         self.assertEqual(scopes.at(line['return inner()']), ('func', 'Box.fill'))
+        self.assertEqual(scopes.at(line["return 'page'"]), ('func', 'make.<locals>.Handler.get'))  # as co_qualname
         self.assertIsNone(scopes.at(line['"""doc"""']))
 
     def test_a_changed_function_runs_the_tests_that_ran_it(self):
