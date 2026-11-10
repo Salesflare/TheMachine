@@ -35,7 +35,7 @@ function whatsNewRun(run){if(run==='search')return palOpen();const ctx=kbCtx(),a
 // One view of it: its picture, its dot and its text come up, and the buttons are this view's: Close, the entry's own
 // button and Next; on the last view the entry's button is the main one (or Close, when it has none)
 function whatsNewGo(i){const d=$('#whats-new'),n=wn.list.length;if(!(i>=0&&i<n))return;const was=wn.i;wn.i=i;const e=wn.list[i],last=i===n-1,acts=d.querySelector('.wn-acts'),held=acts.contains(document.activeElement);
- d.classList.toggle('wn-back',i<was);
+ d.classList.toggle('wn-back',i<was);void d.offsetWidth;  // the way in is set before the view comes up
  for(const sel of ['.wn-art','.wn-view','.wn-dots button'])d.querySelectorAll(sel).forEach((x,j)=>x.classList.toggle('on',j===i));
  d.querySelectorAll('.wn-dots button').forEach((b,j)=>b.toggleAttribute('aria-current',j===i));
  d.querySelectorAll('.wn-view h2').forEach((h,j)=>{if(j===i)h.id='wn-title';else h.removeAttribute('id')});

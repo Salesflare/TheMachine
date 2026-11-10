@@ -27,14 +27,14 @@
 #whats-new p{margin:0;line-height:1.5;color:var(--muted)}
 #whats-new .wn-acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:20px}
 #whats-new .wn-acts:has([data-wn-go]) .ghost{margin-right:auto;padding-inline:10px}  /* Close apart from the way on */
+/* Between views: a short fade and slide (transitions, not keyframes: the lazy run holds only this group's rules) */
 @media(prefers-reduced-motion:no-preference){
-  #whats-new .wn-art.on{animation:wn-fade .2s var(--ease)}
-  #whats-new .wn-view.on{animation:wn-in .2s var(--ease)}
-  #whats-new.wn-back .wn-view.on{animation-name:wn-back}
+  #whats-new .wn-art{transition:opacity .2s var(--ease)}
+  #whats-new .wn-view{transition:opacity .2s var(--ease),transform .2s var(--ease)}
+  #whats-new .wn-art:not(.on){opacity:0}
+  #whats-new .wn-view:not(.on){opacity:0;transform:translateX(10px)}
+  #whats-new.wn-back .wn-view:not(.on){transform:translateX(-10px)}
 }
-@keyframes wn-fade{from{opacity:0}}
-@keyframes wn-in{from{opacity:0;transform:translateX(10px)}}
-@keyframes wn-back{from{opacity:0;transform:translateX(-10px)}}
 @media(max-width:560px){
   #whats-new:not(#_):not(#_){--wn-pad:18px;inset:0;width:calc(100% - 32px);max-width:calc(100% - 32px);height:fit-content;max-height:calc(100dvh - 32px);margin:auto;padding:var(--wn-pad);border-radius:16px}
   #whats-new:not(#_):not(#_)[open]{display:block}
