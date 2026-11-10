@@ -2329,7 +2329,7 @@ def _timeline_people(db, row):
     return [row['id']]
 
 
-def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
+def timeline(db, node_id, source='', cursor=0, limit=40, now=None, history=False):
     """One page of a person's, organization's or project's timeline: {'items', 'next', 'sources'}. An item is a signal
     ({'type': 'event', 'id': event id}), a card, a promise or a project's move, each with 'at' and its 'source' group
     (email, meetings, intercom, chats, cards, projects, other). source narrows it to one group; sources counts them all."""
@@ -2353,6 +2353,10 @@ def timeline(db, node_id, source='', cursor=0, limit=40, now=None):
         for r in db.execute(f"SELECT g.event_id,MAX(g.at) at,MIN(g.probable) probable,e.kind FROM graph_events g JOIN events e ON e.id=g.event_id "
                             f"WHERE g.node_id IN ({','.join('?' * len(chunk))}) AND e.deleted=0 GROUP BY g.event_id", chunk):
             add(r['event_id'], r['at'], r['kind'], r['probable'])
+        if history and kind != 'project':  # history rows, as last contact counts them: the owner's page, never a model's read
+            for r in db.execute(f"SELECT h.event_id,MAX(h.at) at,e.kind FROM graph_history_events h JOIN events e ON e.id=h.event_id "
+                                f"WHERE h.node_id IN ({','.join('?' * len(chunk))}) AND e.deleted=0 GROUP BY h.event_id", chunk):
+                add(r['event_id'], r['at'], r['kind'])
     if kind in ('person', 'org'):
         # Intercom: on their address, on the Intercom contact that wrote from it, or (an organization) on its domain.
         emails = set()

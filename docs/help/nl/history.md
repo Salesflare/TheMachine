@@ -14,7 +14,7 @@ De kaart zegt hoe ver ze teruggaat: **Geschiedenis: terug tot** een maand, zodra
 
 ## Wat ze aan je Graph geeft
 
-Je [Graph](graph.md) telt ze mee: hoe dicht je bij mensen staat, wanneer jullie laatst contact hadden, wie wie kent, en de mensen en organisaties zelf. De antwoorden van je Fleet op "wie kent iemand" gebruiken ze uit werkaccounts, met dezelfde [deelregels](sharing-rules.md) als nieuwe mail.
+Je [Graph](graph.md) telt ze mee: hoe dicht je bij mensen staat, wanneer jullie laatst contact hadden, wie wie kent, en de mensen en organisaties zelf. De Tijdlijn van een persoon of organisatie toont ze ook, zodat het laatste contact er altijd staat. De antwoorden van je Fleet op "wie kent iemand" gebruiken ze uit werkaccounts, met dezelfde [deelregels](sharing-rules.md) als nieuwe mail.
 
 ## Wat ze nooit doet
 

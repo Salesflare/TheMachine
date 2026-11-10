@@ -14,7 +14,7 @@ O cartão diz até onde ele vai: **Histórico: até** um mês, quando já chegou
 
 ## O que ele traz para o seu Graph
 
-O seu [Graph](graph.md) conta com ele: o quanto você é próximo das pessoas, quando vocês se falaram pela última vez, quem conhece quem, e as próprias pessoas e organizações. As respostas da sua Fleet a "quem conhece alguém" usam ele a partir das contas de trabalho, com as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
+O seu [Graph](graph.md) conta com ele: o quanto você é próximo das pessoas, quando vocês se falaram pela última vez, quem conhece quem, e as próprias pessoas e organizações. A Linha do tempo de uma pessoa ou organização também mostra ele, então o último contato sempre aparece lá. As respostas da sua Fleet a "quem conhece alguém" usam ele a partir das contas de trabalho, com as mesmas [regras de compartilhamento](sharing-rules.md) dos e-mails novos.
 
 ## O que ele nunca faz
 
