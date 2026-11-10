@@ -1,5 +1,5 @@
-/* A lazy part (dashboard_parts.LAZY 'recipe'): */
-/* A repeating to-do's way of doing it, edited in place from its line */
+/*@lazy*/
+/* A repeating to-do's way of doing it, edited in place from its chat line (todos-recipe.js recipeForm) */
 .chat-recipe-edit{display:grid;gap:8px;width:min(100%,560px);margin-inline:auto;text-align:start;color:var(--text)}.chat-recipe-edit label{font-size:13px;color:var(--chat-quiet)}
 .chat-recipe-edit textarea{width:100%;box-sizing:border-box;min-height:9em;resize:vertical;font:inherit;font-size:15px;line-height:1.45}
 .chat-recipe-edit .recipe-acts{display:flex;gap:8px;justify-content:flex-end}
