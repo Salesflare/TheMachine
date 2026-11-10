@@ -961,10 +961,14 @@ def may_restart_gateway(paths):
 
 # OpenClaw 2026.11.2 has no call that says its memory index is running: `openclaw memory status` and the Gateway's
 # `memory.status` and `doctor.memory.status` each open a manager of their own, not the one that indexes. What does say
-# it is the embedding server the Gateway starts for a local embedding model (llama-server --embeddings --metrics, a
-# child of the Gateway): its /metrics counts the requests in hand and queued, and an index run keeps both above zero
-# from start to end. An index on a remote embedding provider cannot be seen; the checks after each step cover that.
+# it is the embedding server: the one the Gateway starts for a local embedding model (llama-server --embeddings
+# --metrics, a child of the Gateway), and any other on this computer named in ASSISTANT_EMBEDDING_PORTS (a hosted
+# Machine runs its own as a service). Its /metrics counts the requests in hand and queued, its /slots says which slots
+# are working. A run does not keep those above zero from start to end: it pauses between batches, for longer than a
+# few looks, and goes on. So idle is one unbroken quiet stretch (SWAP_QUIET), not a quiet look. An index on a remote
+# embedding provider cannot be seen; the checks after each step cover that.
 SWAP_WAIT = 600  # seconds an update waits for a running index before the bridge goes in
+SWAP_QUIET = 60  # seconds the embedding server has to stay quiet, without a break, before the index counts as stopped
 EMBEDDING_COUNTS = re.compile(r'^llamacpp:requests_(?:processing|deferred)\s+([0-9.]+(?:[eE][+-]?[0-9]+)?)\s*$', re.M)
 
 
@@ -994,45 +998,76 @@ def gateway_embedding_ports():
     return sorted(ports)
 
 
-def embedding_requests(port):
-    """The requests an embedding server has in hand or queued, from its own /metrics; None when it does not say."""
+def extra_embedding_ports():
+    """More embedding servers to ask, for one the Gateway did not start itself: ASSISTANT_EMBEDDING_PORTS, port
+    numbers separated by commas. Always on this computer (127.0.0.1); anything that is not a port number is skipped."""
+    words = (word.strip() for word in os.environ.get('ASSISTANT_EMBEDDING_PORTS', '').split(','))
+    return sorted({int(word) for word in words if word.isascii() and word.isdigit() and 0 < int(word) < 65536})
+
+
+def embedding_answer(port, path, size):
     try:
-        with urllib.request.urlopen(f'http://127.0.0.1:{int(port)}/metrics', timeout=5) as response:
-            found = EMBEDDING_COUNTS.findall(response.read(200_000).decode('utf-8', 'replace'))
-        return sum(float(x) for x in found) if found else None
+        with urllib.request.urlopen(f'http://127.0.0.1:{int(port)}{path}', timeout=5) as response:
+            return response.read(size).decode('utf-8', 'replace')
     except (OSError, ValueError):
         return None
 
 
+def embedding_requests(port):
+    """The requests an embedding server has in hand or queued, from its own /metrics; from a server that has no
+    /metrics, the slots that are working (/slots). None when it says neither."""
+    found = EMBEDDING_COUNTS.findall(embedding_answer(port, '/metrics', 200_000) or '')
+    if found:
+        return sum(float(x) for x in found)
+    try:
+        slots = json.loads(embedding_answer(port, '/slots', 2_000_000) or 'null')
+    except ValueError:
+        return None
+    working = [slot['is_processing'] for slot in slots if isinstance(slot, dict) and 'is_processing' in slot] if isinstance(slots, list) else []
+    return sum(1 for one in working if one) if working else None
+
+
 def index_busy():
-    """Whether OpenClaw's memory index is embedding right now; None when nothing here can tell (no Gateway, no local
-    embedding server, or one that does not say)."""
-    counts = [n for n in map(embedding_requests, gateway_embedding_ports()) if n is not None]
+    """Whether OpenClaw's memory index is embedding right now; None when nothing here can tell (no Gateway embedding
+    server and none named in ASSISTANT_EMBEDDING_PORTS, or one that does not say)."""
+    ports = sorted({*gateway_embedding_ports(), *extra_embedding_ports()})
+    counts = [n for n in map(embedding_requests, ports) if n is not None]
     return any(counts) if counts else None
 
 
-def gateway_idle(say_waiting):
-    """Wait, at most SWAP_WAIT, until OpenClaw's memory index has stopped: a plugin swap asks it to stop, gives it
-    5 seconds, and fails when it does not. Idle is three quiet looks in a row (a run pauses between batches). True
-    when idle or when nothing can tell, False when it is still running at the bound."""
+def gateway_idle(before, indent=''):
+    """Wait until OpenClaw's memory index has stopped: a plugin swap asks it to stop, gives it 5 seconds, and fails
+    when it does not. Stopped is SWAP_QUIET seconds without one busy look: a run pauses between batches and goes on,
+    so any busy look starts the stretch again. A server that was quiet at the first look gets the same stretch (that
+    look may have been in a pause). SWAP_WAIT bounds the wait for a busy index, counted from the first busy look and
+    through its pauses; a quiet stretch under way at the bound is let finish. True when stopped, or at once when
+    nothing can tell at the first look (no embedding server to ask: nothing to wait for). False when it is still
+    running at the bound. An embedding server that goes away during the wait counts as quiet from then on."""
     bound = float(os.environ.get('ASSISTANT_SWAP_WAIT', SWAP_WAIT))
+    quiet = float(os.environ.get('ASSISTANT_SWAP_QUIET', SWAP_QUIET))
     pause = float(os.environ.get('ASSISTANT_SWAP_POLL', 2))
-    deadline, quiet = None, 0
+    deadline = quiet_since = None
+    first = True
     while True:
         busy = index_busy()
-        if busy is None:
+        now = time.monotonic()
+        if busy is None and first:
             return True
         if busy:
-            quiet = 0
+            quiet_since = None
             if deadline is None:
-                deadline = time.time() + bound
-                say(say_waiting)
-            elif time.time() >= deadline:
+                deadline = now + bound
+                say(f'{indent}OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before {before}.')
+            elif now >= deadline:
                 return False
         else:
-            quiet += 1
-            if quiet >= 3:
+            if quiet_since is None:
+                quiet_since = now
+                if first:
+                    say(f"{indent}Checking that OpenClaw's memory index stays quiet for {quiet:g} s before {before}.")
+            if now - quiet_since >= quiet:
                 return True
+        first = False
         time.sleep(pause)
 
 
@@ -1041,12 +1076,12 @@ def swap_minutes():
 
 
 def restore_model_runtime(openclaw, restart, after, restarted=False):
-    """A plugin step left the running Gateway unable to run models. Reload the bridge once when the Gateway is idle
-    (OpenClaw's own advice); if that does not bring it back, the same recovery as a failed reload: load_in_gateway,
+    """A plugin step left the running Gateway unable to run models. Reload the bridge once, after the memory
+    index has been quiet for SWAP_QUIET (gateway_idle; OpenClaw's own advice is a reload when the Gateway is idle); if that does not bring it back, the same recovery as a failed reload: load_in_gateway,
     which restarts the Gateway where this install may. True once model calls work again; False with the reason and
     the one command that fixes it said."""
     say(f'  After {after}, the OpenClaw Gateway cannot run models. Bringing that back before anything else.')
-    if gateway_idle(f'  OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before reloading the bridge.'):
+    if gateway_idle('reloading the bridge', '  '):
         run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
         if service.model_runtime(openclaw, run) is not False:
             say('  Reloaded the bridge: model calls work again.')
@@ -1063,7 +1098,7 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
     model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
-    One that did waits for OpenClaw's memory index first (gateway_idle), and after each step checks that the Gateway
+    One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET first (gateway_idle), and after each step checks that the Gateway
     can still run models: it never ends, done or failed, with that broken and no recovery tried
     (restore_model_runtime). `restart`: whether that recovery may restart the Gateway (may_restart_gateway)."""
     openclaw = facts.get('openclaw')
@@ -1074,7 +1109,7 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
         say(f'OpenClaw plugin {PLUGIN_ID}: unchanged, left as it is')
         return True
     plugin = str(ROOT / 'openclaw-plugin')
-    if not gateway_idle(f'OpenClaw is building its memory index; waiting up to {swap_minutes()} for it before the bridge goes in.'):
+    if not gateway_idle('the bridge goes in'):
         if not (restart and onboarding.gateway_units()):
             say(f'  The memory index is still running after {swap_minutes()}. Swapping the bridge in now would leave the Gateway unable to run models,'
                 ' so nothing in OpenClaw was changed.\n  Run ./install.sh again when it is done (openclaw memory status).')
