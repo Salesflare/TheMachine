@@ -74,7 +74,9 @@ Values are in euros unless your Machine is set to another currency. With **Owner
 
 ## A teammate's board
 
-In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. The header says whose board it is and who has it: the whole team ("Ada's board, shared with the team"), or only the teammates they chose ("Ada shared this board with you"). Each project says what happened last, with its date: the newest line shared with the team, or its last move when that came later. Its owner's name shows when a stage has projects of more than one teammate.
+In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. The header says whose board it is and who has it: the whole team ("Ada's board, shared with the team"), or only the teammates they chose ("Ada shared this board with you").
+
+Each project says what happened last, with its date: the newest line shared with the team, or its last move when that came later. Its owner's name shows when a stage has projects of more than one teammate.
 
 A teammate's board can have fewer projects than they see: a project they kept private, or with someone who is Personal to them (their Family or Friends), never leaves their Machine. On your own board, the header says "Shared with the team" and how many stay with you, and those projects have a lock.
 

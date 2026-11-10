@@ -36,6 +36,7 @@ Een beheerder kan ieders **Werkmail** en **Werkagenda** op het eigen domein van 
 - Automatische mail: bonnetjes, facturen, waarschuwingen, nieuwsbrieven, en de eigen rekeningen van je bedrijf met zijn leveranciers.
 - Interne threads (alleen collega's erop), privémail en alles uit een privéaccount. Privé gaat nooit mee, ook niet als je op Team tikt.
 - Alles wat je als **Privé houden** markeerde, en borden en projecten die op Alleen jij staan.
+- Projecten met iemand die voor jou Privé is, zoals je familie of vrienden. Je bord toont ze met een slotje en zegt hoeveel er bij jou blijven.
 
 Elke thread wordt apart beoordeeld, op waar hij over gaat. De indeling kan fout zijn; kijk na wat er mee zou gaan en gebruik Privé houden om het te corrigeren. Je uitdrukkelijke keuze voor Team of een deling met genoemde teamgenoten kan een gevoelige indeling overschrijven; controleer de ontvangers voor je deelt.
 

@@ -41,6 +41,7 @@ Ein Admin kann unter **Von der Fleet verlangt** die **Arbeits-E-Mail** und den *
 - Automatische Mails: Quittungen, Rechnungen, Warnungen, Newsletter und die eigenen Rechnungen deiner Firma mit ihren Lieferanten.
 - Interne Threads (nur unter Kolleginnen und Kollegen), private Mails und alles aus einem privaten Konto. Privates geht nie mit, auch nicht, wenn du auf Team tippst.
 - Alles, was du mit **Privat halten** markiert hast, und Boards und Projekte, die auf Nur du stehen.
+- Projekte mit jemandem, der für dich Privat ist, etwa deine Familie oder Freunde. Dein Board markiert sie mit einem Schloss und sagt, wie viele bei dir bleiben.
 
 Jeder Thread wird für sich beurteilt, danach, worum es geht. Die Einstufung kann falsch sein: Prüfe, was mitgehen würde, und korrigiere es mit Privat halten. Deine ausdrückliche Wahl von Team oder ein Teilen mit bestimmten Teammitgliedern kann eine sensible Einstufung überstimmen. Prüfe die Empfänger, bevor du teilst.
 
