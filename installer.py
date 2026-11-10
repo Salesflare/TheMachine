@@ -1006,6 +1006,55 @@ def bridge_in_openclaw(openclaw):
     return PLUGIN_ID in (((live or {}).get('plugins') or {}).get('loaded') or [])
 
 
+def bridge_changed_at():
+    """The last time anything in the bridge's folder changed on disk: its newest change time (ctime, which a checkout
+    or an unpacked archive always sets to now, unlike the modified time an archive can carry over). The folders count
+    too, so a removed file counts as a change. None when it cannot be read."""
+    root = ROOT / 'openclaw-plugin'
+    try:
+        return max(p.stat().st_ctime for p in [root, *root.rglob('*')] if 'node_modules' not in p.relative_to(root).parts)
+    except (OSError, ValueError):
+        return None
+
+
+def elapsed_seconds(text):
+    """ps's etime, [[dd-]hh:]mm:ss, in seconds; None when it is not that."""
+    days, _, clock = text.rpartition('-')
+    parts = clock.split(':')
+    if not (days.isdigit() or not days) or not 2 <= len(parts) <= 3 or not all(p.isdigit() for p in parts):
+        return None
+    seconds = 0
+    for part in parts:
+        seconds = seconds * 60 + int(part)
+    return int(days or 0) * 86400 + seconds
+
+
+def gateway_started():
+    """When the running OpenClaw Gateway started (epoch seconds), from the process list: a process run as `openclaw
+    ... gateway ...`. The oldest one counts, so a younger one (a CLI call) never makes it look newer. None when no such
+    process is found or ps cannot tell."""
+    result = run(['ps', '-eo', 'etime=,args='], timeout=15)
+    ages = []
+    for line in (result.stdout or '').splitlines() if result.returncode == 0 else []:
+        words = line.split()
+        if len(words) > 1 and 'gateway' in words[1:] and any('openclaw' in word for word in words[1:]):
+            age = elapsed_seconds(words[0])
+            if age is None:
+                return None
+            ages.append(age)
+    return time.time() - max(ages) if ages else None
+
+
+def gateway_runs_these_files(openclaw):
+    """Whether the running Gateway is known to have loaded the bridge's files as they are on disk now, without a stamp
+    that says which files it loaded: it started after they last changed (a linked bridge is read from this folder when
+    the Gateway starts), and it has this bridge in (bridge_in_openclaw). bridge_in_openclaw alone cannot say it: it
+    checks the link and that the bridge is loaded, not which version of the files. Anything unclear is False: the
+    usual swap."""
+    changed, started = bridge_changed_at(), gateway_started()
+    return bool(changed and started and changed < started - 2) and bridge_in_openclaw(openclaw)
+
+
 def may_restart_gateway(paths):
     """Whether this install may restart the OpenClaw Gateway to get the bridge or the model runtime back: yes, unless
     config.json says "gateway_restart": false (a Gateway with live chats and a browser its owner restarts themself)."""
@@ -1165,18 +1214,19 @@ def restore_model_runtime(openclaw, restart, after, restarted=False):
     command that fixes it said."""
     say(f'  After {after}, the OpenClaw Gateway cannot run models. Bringing that back before anything else.')
     if gateway_idle('reloading the bridge', '  '):
-        run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
+        result = run([openclaw, 'plugins', 'reload', PLUGIN_ID, '--wait'], timeout=300)
         if service.model_runtime(openclaw, run) is not False:
             say('  Reloaded the bridge: model calls work again.')
-            return True
+            return RELOADED if result.returncode == 0 else True
     if not restarted and load_in_gateway(openclaw, 'the Gateway cannot run models', restart) and service.model_runtime(openclaw, run) is not False:
         say('  Model calls work again.')
-        return True
+        return RELOADED
     say('  NOT FIXED: the OpenClaw Gateway cannot run models, so no chat, check or to-do run works until it restarts.'
         f'\n  Restart it: {service.gateway_restart_hint(onboarding.gateway_units())}')
     return False
 
 
+RELOADED = 'reloaded'  # restore_model_runtime: models work again and the Gateway read the bridge from disk doing it
 WAITING = 'waiting'  # install_plugin: the bridge waits for the memory index; the rest of the install goes on
 
 
@@ -1184,6 +1234,8 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     """Link, enable and reload the bridge, unless this exact bridge is already in. Every reload replaces the plugin
     inside a running Gateway, which is slow on a small server and can leave the model runtime unpublished (every
     model call then fails until the Gateway restarts): an update that did not touch the bridge should not do it.
+    So a swap only happens when the files changed since the Gateway loaded them: per the stamp's parts, or, without
+    them, per gateway_runs_these_files. The nightly --if-bridge-waits run comes through here too.
     One that did waits until OpenClaw's memory index has been quiet for SWAP_QUIET (gateway_idle) before the swap
     and again before the reload, and after each step checks that the Gateway can still run models: it never ends, done or failed, with that
     broken and no recovery tried (restore_model_runtime). `restart`: whether that recovery may restart the
@@ -1210,6 +1262,12 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
             write_stamp(stamp, facts)
             say(f'OpenClaw plugin {PLUGIN_ID}: unchanged and already loaded by this OpenClaw, left as it is')
             return True
+        if not parts and gateway_runs_these_files(openclaw):
+            # No stamp, or one from before the parts were kept, so it cannot say what the Gateway loaded; but the
+            # Gateway started after the bridge's files last changed and has it in: a swap would change nothing.
+            write_stamp(stamp, facts)
+            say(f'OpenClaw plugin {PLUGIN_ID}: already loaded as it is by the running Gateway, left as it is')
+            return True
         try:
             stamp.parent.mkdir(parents=True, exist_ok=True)
             stamp.with_name(BRIDGE_WAITING).write_text(fingerprint + '\n')  # until write_stamp: a nightly update tries again
@@ -1229,7 +1287,13 @@ def install_plugin(facts, reload=True, stamp=None, restart=True):
     result = run([openclaw, 'plugins', 'install', '--link', '--force', '--accept-capabilities', plugin], timeout=300, capture_output=False)
     if result.returncode != 0:
         say(f'  plugin install failed; run it yourself: openclaw plugins install --link --force --accept-capabilities {plugin}')
-        if kept('the failed plugin install'):
+        recovered = service.model_runtime(openclaw, run) is not False or restore_model_runtime(openclaw, restart, 'the failed plugin install')
+        if recovered == RELOADED and stamp and reload and bridge_in_openclaw(openclaw):
+            # The reload (or restart) that brought models back read the bridge from this folder: it is in after all.
+            write_stamp(stamp, facts)
+            say(f'OpenClaw plugin {PLUGIN_ID}: in after all; the reload that brought model calls back loaded it')
+            return True
+        if recovered:
             say('  The bridge is not updated yet: run ./install.sh again.')
         return False
     if not kept('the plugin install'):
