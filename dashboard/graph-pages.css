@@ -53,7 +53,7 @@
 .kv .v a{color:inherit;text-decoration:none}.kv .v a:hover{text-decoration:underline;text-underline-offset:3px}
 .kv .v .sub{display:block;margin-top:2px;color:var(--faint);font-size:var(--fs-sm);overflow-wrap:anywhere}.kv .v .sub .role-why{color:inherit}
 .kv>.acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 2px;align-self:center}.kv>.acts button{padding:3px 8px;min-height:0;font-size:var(--fs-sm);font-weight:var(--fw-medium);white-space:nowrap}
-@media (max-width:480px){.kv:has(.acts>:nth-child(2)){grid-template-columns:5.2rem minmax(0,1fr)}.kv:has(.acts>:nth-child(2))>.acts{grid-column:2;justify-content:flex-start;margin-left:-8px}}
+@media (max-width:480px){.kv:is(:has(.acts>:nth-child(2)),.kv-under){grid-template-columns:5.2rem minmax(0,1fr)}.kv:is(:has(.acts>:nth-child(2)),.kv-under)>.acts{grid-column:2;justify-content:flex-start;margin-left:-8px}}  /* kv-under: a long action, under the value on a phone */
 .person-page .joined{margin:18px 0 0;padding:12px 0 0;border-top:1px solid var(--border)}.person-page .joined summary{cursor:pointer;color:var(--faint)}
 .person-page .same-ask{margin-top:18px}.person-page .person-bio{margin:10px 0 0;color:var(--muted)}
 .org-editing .person-view,.org-editing .person-menu{display:none}@media (max-width:600px){.org-editing .person-head :is(.person-job,.person-place){display:none}}
@@ -365,6 +365,6 @@ button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;p
 #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#share-people{width:min(520px,calc(100vw - 24px));padding:18px 18px 16px}#crm-dialog.wide{width:min(760px,calc(100vw - 24px))}
 /* An import with a file keeps its size while the preview and the model's check come in: no growing under the pointer */
 #crm-dialog.tall{height:min(86vh,820px)}#crm-dialog.tall #crm-form{min-height:100%}#crm-dialog.tall .ed-actions{margin-top:auto}
-#share-people{width:min(440px,calc(100vw - 24px))}#contact-share{width:min(480px,calc(100vw - 24px));padding:18px 18px 16px}
+#share-people{width:min(440px,calc(100vw - 24px))}#contact-share,#machine-invite{width:min(480px,calc(100vw - 24px));padding:18px 18px 16px}
 #board-dialog h2,#project-dialog h2,#record-dialog h2,#crm-dialog h2,#share-people h2{margin:0;color:var(--text);font-size:1.2rem}
 :is(#project-form,#record-form,#crm-form){display:flex;flex-direction:column;gap:14px}:is(#project-form,#record-form,#crm-form) .snooze-heading{margin:0}

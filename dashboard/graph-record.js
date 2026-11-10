@@ -102,7 +102,9 @@ function personAbout(n){const rows=[],f=n.fleet,work=f?.in?.find(x=>x.kind==='wo
  rows.push(roleKv(n));
  if(n.side)rows.push(kv('Type',n.side==='work'?'Work contact':'Personal contact'));
  if(f?.in?.length)rows.push(kv('Network',html`<span class="fleet-mark">${[...new Set(f.in.map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)),f.machine?'Has a Machine':''].filter(Boolean).join(' · ')}</span>`,html`<button type="button" class="ghost" data-fleet-member="${f.in[0].member_id}">See in Fleet</button>${work?html`<button type="button" class="ghost" data-fleet-free="${work.fleet}">Ask your Fleet</button>`:''}`));
- else if(f?.machine)rows.push(kv('Network',html`<span class="fleet-mark">${[t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · ')}</span>`));  // found on the Network, in no Fleet together
+ else if(f?.machine)rows.push(kv('Network',html`<span class="fleet-mark">${[t('Has a Machine'),f.network?.requested?t('Friend request sent'):''].filter(Boolean).join(' · ')}</span>`,
+  f.network?.can_add?html`<button type="button" class="ghost" data-person-friend="${f.network.hint==='colleague'?'colleague':'friend'}" data-net-email="${f.network.email}">${t('Add as a friend')}</button>`:'','kv-under'));  // found on the Network, in no Fleet together
+ else if(n.invite)rows.push(kv('Network',html`<span class="fleet-mark">${t('No Machine found')}</span>`,html`<button type="button" class="ghost" data-machine-invite="${JSON.stringify(n.invite)}">${t('Invite to The Machine')}</button>`,'kv-under'));  // no Machine the owner knows of
  if(f?.named)rows.push(kv('Name',html`<span class="fleet-named">From your ${work?'Fleet':f.in[0].kind==='family'?'Family':'Friends'}. Your messages say “${n.name_from_messages||''}”.</span>`,html`<button type="button" class="ghost" data-fleet-keep="${n.name}">Keep</button>`));
  if(graphOwners.length)rows.push(ownerRow(n));
  return html`<section class="detail-section person-about"><h4>With you</h4>${rows}</section>`}
@@ -241,16 +243,36 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-contact-sh
 // On a person's page: Share contact… in ⋯ when someone can get it, and "Shared by" when a share made or joined them.
 function contactMarks(view,n){const list=view.querySelector('.person-page .person-menu .fact-menu-list');if(list&&n.can_share&&!list.querySelector('[data-contact-share]')){const item=document.createElement('button');item.type='button';item.setAttribute('role','menuitem');item.dataset.contactShare=n.id;item.textContent='Share contact…';list.prepend(item)}const m=n.shared_by,pv=view.querySelector('.person-page .person-view');
  if(m&&pv&&!pv.querySelector('.person-shared'))pv.prepend(htmlNodes(html`<p class="graph-sub person-shared">${m.kind==='work'?'Shared by':'Suggested by'} ${m.by}${m.note?`: “${m.note}”`:''}</p>`))}
-// On a person's page: Add as friend in ⋯ for someone found on the Network, in no Fleet, Family or Friends with the owner and
-// with no open request (graph.network_marks). It sends what the Suggestions card's Connect sends, Friend or Family the same.
-function friendMarks(view,n){const net=n.fleet?.network,list=view.querySelector('.person-page .person-menu .fact-menu-list');if(!net?.can_add||!list||list.querySelector('[data-person-friend]'))return;
- const item=(rel,label)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.personFriend=rel;b.dataset.netEmail=net.email;b.textContent=label;return b};
- list.prepend(...(net.hint==='colleague'?[item('colleague',t('Add as friend'))]:[item('friend',t('Add as friend')),item('family',t('Add as family'))]))}
-document.addEventListener('click',async e=>{const b=e.target.closest('[data-person-friend]');if(!b)return;const list=b.closest('.fact-menu-list');b.closest('details')?.removeAttribute('open');
- list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=true);
- try{await fleetPost('fleet_network',{do:'connect',email:b.dataset.netEmail,relation:b.dataset.personFriend});list.querySelectorAll('[data-person-friend]').forEach(x=>x.remove());
-  const mark=b.ownerDocument.querySelector('.person-page .person-about .fleet-mark');if(mark)mark.textContent=t('Has a Machine')+' · '+t('Friend request sent');
-  toast(t('Friend request sent'));refresh()}catch(err){errCaught(err);list.querySelectorAll('[data-person-friend]').forEach(x=>x.disabled=false);toast(err.message,true)}});
+// On a person's page, for someone found on the Network, in no Fleet, Family or Friends with the owner and with no open
+// request (graph.network_marks): Add as a friend next to "Has a Machine", and Add as family in ⋯. Each sends what the
+// Suggestions card's Connect sends: an ordinary friend request, nothing connects until they accept.
+function friendMarks(view,n){const net=n.fleet?.network,list=view.querySelector('.person-page .person-menu .fact-menu-list');if(!net?.can_add||net.hint==='colleague'||!list||list.querySelector('[data-person-friend]'))return;
+ const b=document.createElement('button');b.type='button';b.setAttribute('role','menuitem');b.dataset.personFriend='family';b.dataset.netEmail=net.email;b.textContent=t('Add as family');list.prepend(b)}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-person-friend]');if(!b)return;const page=b.closest('.person-page')||document;b.closest('details')?.removeAttribute('open');
+ const all=()=>page.querySelectorAll('[data-person-friend]');all().forEach(x=>x.disabled=true);
+ try{await fleetPost('fleet_network',{do:'connect',email:b.dataset.netEmail,relation:b.dataset.personFriend});all().forEach(x=>x.remove());
+  const mark=page.querySelector('.person-about .fleet-mark');if(mark)mark.textContent=t('Has a Machine')+' · '+t('Friend request sent');
+  toast(t('Friend request sent'));refresh()}catch(err){errCaught(err);all().forEach(x=>x.disabled=false);toast(err.message,true)}});
+// Invite to The Machine, for someone with no Machine the owner knows of (family_invites.person_invite): the words they
+// get, to copy or open in the owner's own email app, where the owner sends them. Nothing goes out from here. For someone
+// the Family invite fits, Invite to your Family opens the account page's invite form, prefilled, as the to-do line does.
+const INVITE_SITE='https://themachine.computer';
+const inviteWords=v=>({subject:t('Have a look at The Machine'),body:[v.first?t('Hi {},',v.first):t('Hi,'),t('I use The Machine, an AI assistant that turns my email and chats into to-dos and prepares the work. I think you would like it: {}',INVITE_SITE)].join('\n\n')});
+function inviteFamilyGo(f){if(!state.manage_url)return html`<a class="link" href="${safeHref(f.url)}" target="_blank" rel="noopener">${t('Invite to your Family')}</a>`;
+ return html`<form method="post" action="/_machine/account-hop" class="inline"><input type="hidden" name="to" value="family_invite"><input type="hidden" name="email" value="${f.email}"><input type="hidden" name="name" value="${f.name||''}"><button class="link">${t('Invite to your Family')}</button></form>`}
+let machineInvite=null;
+function machineInviteOpen(v){machineInvite=v;const w=inviteWords(v),d=$('#machine-invite'),mail=v.email?'mailto:'+encodeURIComponent(v.email)+'?subject='+encodeURIComponent(w.subject)+'&body='+encodeURIComponent(w.body):'';
+ setHTML(d,html`<div class="snooze-heading"><h2 id="machine-invite-title">${t('Invite {} to The Machine',v.first||v.name||t('them'))}</h2><button type="button" data-mi-close aria-label="Close">×</button></div>
+ <p class="fleet-fine">${t('What they get. Nothing is sent from here.')}</p>
+ <div class="mi-preview">${v.email?html`<p class="muted">${t('To: {}',v.email)}</p>`:''}<p class="muted">${t('Subject: {}',w.subject)}</p>${w.body.split('\n\n').map(p=>html`<p>${p}</p>`)}</div>
+ ${v.family?html`<p class="fleet-fine mi-family">${t('Family? Your Machines can share plans and free times.')} ${inviteFamilyGo(v.family)}</p>`:''}
+ <p class="fleet-fine">${t('Once they have a Machine, Add as a friend shows here.')}</p>
+ <div class="ed-actions"><span class="grow"></span><button type="button" class="${mail?'ghost':'primary'}" data-mi-copy>${t('Copy')}</button>${mail?html`<button type="button" class="primary" data-mi-mail="${mail}">${t('Open in email')}</button>`:''}</div>`);
+ if(!d.open)d.showModal();d.querySelector(mail?'[data-mi-mail]':'[data-mi-copy]')?.focus()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-machine-invite]');if(!b)return;let v;try{v=JSON.parse(b.dataset.machineInvite)}catch{return}machineInviteOpen(v)});
+$('#machine-invite').addEventListener('click',async e=>{const d=$('#machine-invite');if(e.target===d||e.target.closest('[data-mi-close]')){d.close();return}
+ const m=e.target.closest('[data-mi-mail]');if(m){location.href=m.dataset.miMail;d.close();return}
+ if(e.target.closest('[data-mi-copy]')&&machineInvite){try{await navigator.clipboard.writeText(inviteWords(machineInvite).body);toast(t('Copied.'))}catch(err){errCaught(err);toast(t('Couldn’t copy automatically. Select the text to copy it.'),true)}}});
 // Shared with you: at the top of People, until Add or Dismiss.
 const contactsInList=()=>graphContactsIn.length?html`<div class="section-head"><h2>Shared with you</h2><span class="count">${graphContactsIn.length}</span><p>Contacts sent to you. Add them to your Graph or dismiss them.</p></div><div class="graph-list contacts-in">${graphContactsIn.map(c=>html`<article class="contact-in"><div class="graph-row">${personPic({name:c.card.name})}<strong>${c.card.name}</strong></div><p class="graph-sub">${c.kind==='work'?`Shared by ${c.from}`:`${c.from} suggests you add ${c.card.own?'them':'this contact'}`}${c.card.own?' · their own contact':''} · ${c.where}</p><p class="graph-sub muted">${c.rows.filter(r=>!['Name','Note'].includes(r.label)).map(r=>r.value).join(' · ')||'Name only'}</p>${c.card.note?html`<p class="graph-sub">“${c.card.note}”</p>`:''}${c.existing?html`<p class="graph-sub muted">You have ${c.existing.name}. Add puts what’s new on their page.</p>`:''}<p class="graph-sub role-row"><button data-contact-in="add" data-id="${c.id}">Add</button><button class="ghost" data-contact-in="dismiss" data-id="${c.id}">Dismiss</button></p></article>`)}</div>`:'';
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-contact-in]');if(!b)return;b.disabled=true;try{const r=await graphPost('fleet_contact_decide',{id:b.dataset.id,choice:b.dataset.contactIn});

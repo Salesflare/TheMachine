@@ -266,6 +266,22 @@ class GraphActionsApp:
         except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
             return False
 
+    def person_invite(self, found):
+        """Invite to The Machine on a person's page (family_invites.person_invite), or None. Without the Network, still
+        the words to copy or email; the Family invite only with an account page and a Family to invite to."""
+        import family_invites
+        fleets, account, domains = {}, fleet.account_url(self.config), ()
+        if self.fleet:
+            try:
+                fleets, domains = self.fleet.fleets(), self.fleet.own_domains()
+            except (fleet.Off, sqlite3.Error, OSError, ValueError, KeyError, TypeError):
+                fleets, account = {}, None  # the directory unknown now: no Family invite to offer
+        try:
+            with self.store.connect() as db:
+                return family_invites.person_invite(db, found, fleets, account, graph.Owner(self.config, db).emails, domains)
+        except (sqlite3.Error, ValueError, KeyError, TypeError):
+            return None
+
     def slack_links(self, found):
         """Where 'Also on Slack' goes: each Slack user of theirs in the workspace it is from (its profile, which opens a
         message to them), else the newest Slack thread with them."""

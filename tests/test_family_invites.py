@@ -153,3 +153,45 @@ class FamilyInvites(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'dashboard'):  # the owner's own taps, never the agent's
             app.action('family_invite', {'suggestion_id': saved['id'], 'do': 'open'})
         self.assertEqual(app.action('family_invite_setting', {'on': False}, owner_dashboard=True), {'on': False})
+
+
+class PersonInvite(unittest.TestCase):
+    """Invite to The Machine on a person's page (family_invites.person_invite): only for someone with no Machine the owner
+    knows of, never the owner; the Family invite as one way for someone it fits. Nothing is sent from here."""
+    setUp, use = FamilyInvites.setUp, FamilyInvites.use
+
+    def invite(self, node, mark=None, side=None, config=HOSTED, owner=('owner@gmail.com',)):
+        app = object.__new__(a.App)
+        app.store, app.config, app.fleet = self.store, {**config, 'owner_emails': list(owner)}, self.fleet
+        page = {'id': node, 'kind': 'person', **({'fleet': mark} if mark else {}), **({'side': side} if side else {})}
+        return app.person_invite(page)
+
+    def test_someone_with_no_machine_gets_the_words_and_the_family_invite(self):
+        before = list(self.relay.calls)
+        found = self.invite('p_sasha', side='personal')
+        self.assertEqual({k: found[k] for k in ('name', 'first', 'email')}, {'name': 'Sasha Lane', 'first': 'Sasha', 'email': 'sasha@mail.example'})
+        url = urllib.parse.urlsplit(found['family']['url'])
+        self.assertEqual((url.path, url.fragment), ('/account', f'invites-{FAM}'))
+        self.assertEqual(urllib.parse.parse_qs(url.query)['to'], ['sasha@mail.example'])
+        self.assertEqual(self.relay.calls, before)  # nothing sent, nothing asked of the Network
+
+    def test_no_family_invite_for_work_contacts_or_without_an_account_page(self):
+        self.assertIsNone(self.invite('p_lee', side='work')['family'])  # still Invite to The Machine, not to the Family
+        self.assertIsNone(self.invite('p_sasha', config=CONFIG)['family'])
+        self.use(Relay(role='member'))
+        self.assertIsNone(self.invite('p_sasha')['family'])
+
+    def test_nothing_for_someone_with_a_machine_or_the_owner(self):
+        self.assertIsNone(self.invite('p_robin', mark={'machine': True, 'in': [{'kind': 'family'}]}))  # Family already
+        self.assertIsNone(self.invite('p_sasha', mark={'machine': True, 'in': [], 'network': {'can_add': True}}))  # found: Add as a friend
+        self.assertIsNone(self.invite('p_sasha', owner=('sasha@mail.example',)))  # the owner's own address
+        self.assertIsNone(self.invite('nobody'))
+        with self.store.connect() as db:
+            self.assertIsNone(family_invites.person_invite(db, {'id': 'p_sasha', 'kind': 'org'}))
+
+    def test_a_shared_address_is_not_one_to_invite_at(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('p_desk','person','Desk',1,1,?)",
+                       (json.dumps({'identifiers': ['email:info@shop.example']}),))
+        found = self.invite('p_desk')
+        self.assertEqual((found['email'], found['family']), ('', None))  # Copy only

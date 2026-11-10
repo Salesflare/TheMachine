@@ -660,6 +660,8 @@ def make_handler(app):
                 elif node and params.get('part', [''])[0] == 'head':  # the record's head first; its timeline comes with the whole page
                     found = app.graph_action({'node_id': node, 'limit': 10, 'events': 1})
                     found.update(owners=app.owner_choices(), recent=[], head_only=True)
+                    if found.get('kind') == 'person':
+                        found['invite'] = app.person_invite(found)  # Invite to The Machine
                     self.output(200, found)
                 elif node:
                     # a run of chat messages is one row; the event ids only (lines: False), as the timeline below shows them
@@ -670,6 +672,8 @@ def make_handler(app):
                     found['timeline'] = app.graph_timeline(found['id'])
                     found['recent'] = found['timeline'].pop('items')
                     found['slack_links'] = app.slack_links(found)
+                    if found.get('kind') == 'person':
+                        found['invite'] = app.person_invite(found)  # Invite to The Machine (family_invites.person_invite)
                     try:  # Recent changes: what The Machine changed or learned about it, each with its source (record_log.py)
                         with app.store.connect() as db:
                             found['log'] = record_log.recent(db, graph.resolve(db, found['id']))

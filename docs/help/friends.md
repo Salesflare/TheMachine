@@ -22,7 +22,9 @@ Both are on by default, and off at the Careful security level. Turn either off a
 
 People you know show up right away when you turn it on, and as they join later. Each one comes with Connect, Not now or **Never suggest**. Once you're friends, they're no longer suggested. **Leave the Network** takes you off it.
 
-People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as friend** in the ⋯ menu sends the same request as Connect.
+People it finds say **Has a Machine** in your People list. It checks the addresses in your messages and the ones you added to a person with **Edit**: if someone signed up with another address, add it to them. On the page of someone it found, **Add as a friend** sends the same request as Connect (**Add as family** is in the ⋯ menu).
+
+Someone without a Machine gets **Invite to The Machine**: it shows the words they get, to **Copy** or **Open in email**, and sends nothing itself.
 
 Phone numbers count too: the numbers in your WhatsApp chats with people you wrote to or met, and the ones you added with **Edit**. Your linked WhatsApp number and the numbers under About you make you findable, each with its own switch under **Findable by**. A number finds someone only when they looked you up too, or you are friends, so nobody can try numbers to see who has a Machine.
 
