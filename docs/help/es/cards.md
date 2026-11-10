@@ -45,6 +45,8 @@ Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca ap
 
 Con dos o más esperando, **Repasar** en el encabezado de Para ti las recorre una a una, en el orden de la lista, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".
 
+Una tarea que te pregunta algo queda fuera de ambos: necesita tu respuesta, no un toque.
+
 ## Revisar ahora
 
 Tu Machine lee cada fuente cada pocos minutos, de día y de noche, y revisa lo que llegó en busca de tareas en cuanto hay 40 mensajes esperando o el mensaje más antiguo de una persona lleva 15 minutos esperando. Los boletines, las notificaciones y los recibos entran en la siguiente revisión, en menos de una hora.

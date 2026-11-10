@@ -18,7 +18,11 @@ const base0=()=>[
  {id:id(2),title:'Hand the venue booking to Robin',body:'Robin books venues.',status:'prepared',scope:'work',created_at:at(5),event_ids:[2],
   next_actions:[{kind:'email',label:'Send to Robin',revision:'dd44ee55ff66',to:['robin@studio.example'],to_name:'Robin Hale',subject:'Venue',body:'Hi Robin, could you book it?',delegate:true,wait_days:3}]},
  {id:id(3),title:'Answer Lee about the invoice',body:'Answered.',status:'completed',scope:'work',created_at:at(3),closed_at:at(1),event_ids:[3]},
- {id:id(4),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:at(1),event_ids:[4]}];
+ {id:id(4),title:'Book the dentist',body:'',status:'pending',scope:'personal',created_at:at(1),event_ids:[4]},
+ {id:id(5),title:'Confirm the workshop date',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:at(4),event_ids:[5],
+  next_actions:[{kind:'email',label:'Send reply',revision:'ab12cd34ef56',to:['sam@harbor.example'],to_name:'Sam Okoro',subject:'Workshop',body:'Hi Sam, the 12th works.'}]},
+ {id:id(6),title:'Thank the printer',body:'Drafted a reply.',status:'prepared',scope:'work',created_at:at(4),event_ids:[6],
+  next_actions:[{kind:'email',label:'Send reply',revision:'ba21dc43fe65',to:['kim@press.example'],to_name:'Kim Vale',subject:'Thanks',body:'Hi Kim, thanks.'}]}];
 let cards,going;
 const reset=()=>{cards=base0();going=new Map()};reset();
 // A send takes a moment: the next status read still says sending, the one after it shows where the to-do went
@@ -77,6 +81,25 @@ try{
   await page.keyboard.press('Escape');
   assert.deepEqual((await palFind(page,'northfield',width)).slice(0,1),[['Done','Send Northfield the editable agreements','Done just now · Work']]);
   await page.keyboard.press('Escape');
+  // The notice is about the to-do that went: it goes when another to-do opens, so it never reads as being about that one
+  await send(page,id(5),'ab12cd34ef56');
+  await page.waitForFunction(()=>/Moved to Done/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
+  await page.evaluate(i=>{location.hash='#chat='+i},id(4));
+  await page.waitForFunction(()=>!document.querySelector('#toast.show'),null,{timeout:2000});
+  // A send that lands while another to-do is open says nothing over it, and says where it went once that one closes
+  await page.evaluate(()=>{location.hash=''});await page.locator('#task-'+id(6)).waitFor();
+  await send(page,id(6),'ba21dc43fe65');await page.evaluate(i=>{location.hash='#chat='+i},id(4));
+  await page.waitForFunction(()=>!document.querySelector('#toast.show'));
+  await page.evaluate(async()=>{await refresh();await refresh()});
+  assert.equal(cards.find(c=>c.id===id(6)).status,'completed');
+  assert.doesNotMatch(await page.evaluate(()=>document.querySelector('#toast.show')?.textContent||''),/Sent/);
+  await page.evaluate(async()=>{location.hash='';await new Promise(r=>setTimeout(r,50));await refresh()});
+  await page.waitForFunction(()=>/Moved to Done/.test(document.querySelector('#toast.show')?.textContent||''),null,{timeout:15000});
+  assert.equal(await page.locator('#toast [data-toast-open]').getAttribute('data-toast-open'),id(6));
+  // Its own to-do opening keeps it
+  await page.evaluate(i=>{location.hash='#chat='+i},id(6));await page.waitForFunction(i=>chatId===i,id(6));
+  assert.equal(await toastText(page),'Sent. Moved to Done. Open');
+  await page.evaluate(()=>{location.hash=''});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await context.close()}
  assert.deepEqual(errors,[]);

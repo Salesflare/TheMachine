@@ -45,6 +45,8 @@ Zo'n privé-to-do antwoordt toch vanaf het werkadres waar de mail binnenkwam, en
 
 Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou ze een voor een door, in de volgorde van de lijst, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".
 
+Een to-do die je iets vraagt, telt bij geen van beide mee: die heeft je antwoord nodig, geen tik.
+
 ## Nu checken
 
 Je Machine leest elke bron om de paar minuten, dag en nacht, en checkt wat er binnenkwam op to-do’s zodra er 40 berichten wachten of het oudste bericht van een persoon 15 minuten wacht. Nieuwsbrieven, meldingen en bonnetjes gaan mee met de volgende check, binnen het uur.

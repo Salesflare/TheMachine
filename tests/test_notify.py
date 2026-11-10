@@ -523,6 +523,41 @@ class Notifications(unittest.TestCase):
         self.assertNotIn('Sam', careful['text'] + careful['subject'] + careful['push']['body'])
         self.assertEqual(careful['push']['body'], '5 waiting, about 3 min to clear.')
 
+    def test_the_time_to_clear_counts_only_what_clears_at_a_tap(self):
+        # A to-do that waits on the owner's answer is in the count, not in the minutes (as the dashboard's header leaves
+        # it out); with none left to count, no time is said. Made-up data.
+        ids = [c * 16 for c in 'abcde']
+        top = [{'id': i, 'title': 'To-do ' + i[0]} for i in ids]
+        tail = lambda **kw: notify.compose([], [], [], '', total=5, top=top, per=90, **kw)['text'].split('\n\n')[-1]
+        self.assertEqual(tail(), '2 more can wait, about 3 min to clear.')
+        self.assertEqual(tail(asking=ids[4:]), '2 more can wait, about 2 min to clear.')
+        self.assertEqual(tail(asking=ids[:1]), '2 more can wait, about 3 min to clear.')  # listed above: not one of the two
+        self.assertEqual(tail(asking=ids[3:]), '2 more can wait.')
+        push = notify.compose([], [], [], '', total=5, top=top, per=90, asking=ids[3:])['push']['body']
+        self.assertTrue(push.endswith('\n2 more can wait.'), push)
+        self.assertEqual(tail(asking=ids, show_text=False), '5 waiting.')
+        pile = [{'id': '%016x' % n, 'title': 'To-do %d' % n} for n in range(12)]
+        asked = [p['id'] for p in pile]
+        self.assertEqual(notify.compose([], [], [], '', total=12, top=pile, asking=asked[:6])['subject'], 'Good morning, 12 waiting, about 3 min to clear')
+        self.assertEqual(notify.compose([], [], [], '', total=12, top=pile, asking=asked)['subject'], 'Good morning, 12 waiting')
+        self.assertEqual(notify.compose([], [], [], '', total=12, top=pile, asking=asked, name='Robin')['subject'], 'Morning Robin, 12 waiting')
+        self.assertTrue(notify.asks('{"state":"needs_you","needs":"Which link is the new one?"}'))
+        self.assertFalse(notify.asks('{"state":"needs_you","needs":"check the draft and send it"}'))
+        self.assertFalse(notify.asks(None) or notify.asks('not json') or notify.asks('{"state":"done","needs":"Sure?"}'))
+        # the whole way: the results that ask are found on the to-dos
+        current = a.dt.datetime(2026, 11, 5, 8, 30, tzinfo=UTC)
+        made = [self.card(key=k, title='Waiting to-do ' + k) for k in 'abcde']
+        with self.store.connect() as db:
+            for sid in made:
+                db.execute('UPDATE suggestions SET created_at=?,urgent=0 WHERE id=?', ((current - a.dt.timedelta(days=3)).isoformat(), sid))
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
+            before = self.app.digest(current)
+            with self.store.connect() as db:
+                db.execute('UPDATE suggestions SET outcome=?', ('{"state":"needs_you","needs":"Which link is the new one?"}',))
+            after = self.app.digest(current)
+        self.assertIn('2 more can wait, about 1 min to clear.', before['text'])
+        self.assertIn('\n\n2 more can wait.\n', after['text'])
+
     def test_the_digest_finds_the_ready_ones_and_the_owners_promises_due_today(self):
         current = a.dt.datetime(2026, 11, 5, 8, 30, tzinfo=UTC)
         ready = self.card(key='a', title='Reply to Sam about the pilot')

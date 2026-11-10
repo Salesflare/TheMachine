@@ -485,6 +485,16 @@ def first_name(name):
     return first if re.fullmatch(r"[^\W\d_][\w'’-]*", first) else ''
 
 
+def asks(outcome):
+    """Whether a to-do's result (its outcome JSON) needs the owner and says so with a question: it waits on their answer,
+    so it isn't one to clear at a tap (machine/cards.py ask_question, needsAsk() in the dashboard)."""
+    try:
+        result = json.loads(outcome or '{}')
+        return result.get('state') == 'needs_you' and str(result.get('needs') or '').strip().endswith('?')
+    except (ValueError, TypeError, AttributeError):
+        return False
+
+
 def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', new=0):
     """The morning summary's first line (the email's subject, the push's title): a greeting with the owner's first name
     and the one thing that makes today matter, only when it is true ("Morning Sam, 2 replies are ready to send"). With
@@ -496,9 +506,11 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
         return t('Morning {}, {} ready for your OK', name, ready) if name else t('Good morning, {} ready for your OK', ready)
     if due:
         return t('Morning {}, {} due today', name, due) if name else t('Good morning, {} due today', due)
-    if piled >= PILE:
+    if piled >= PILE and minutes:
         return (t('Morning {}, {} waiting, about {} min to clear', name, piled, minutes) if name
                 else t('Good morning, {} waiting, about {} min to clear', piled, minutes))
+    if piled >= PILE:  # none of them clears at a tap: no time said
+        return t('Morning {}, {} waiting', name, piled) if name else t('Good morning, {} waiting', piled)
     if first_at:
         return t('Morning {}, first meeting at {}', name, first_at) if name else t('Good morning, first meeting at {}', first_at)
     if new:
@@ -507,14 +519,16 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=()):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=()):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
     It reads: a greeting with what makes today matter (headline, also the subject and the push's title), the day's
     meetings in a line when there are any, at most three lines that each start with what to do (a to-do's title says
     that) with one Open link, then how many more can wait and the time they take ("12 more can wait, about 5 min to
-    clear."), at the owner's own pace (per: seconds per action, clear_pace). No news, no tips.
+    clear."), at the owner's own pace (per: seconds per action, clear_pace). The time counts only what clears at that
+    pace: not the to-dos that wait on the owner's answer (asking: their ids, as the dashboard's header leaves them out);
+    with none left to count, the line says how many wait and no time. No news, no tips.
 
     The three: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
     someone waits for) and promised [{id?, title}] (the owner's own promises due today; covers: the id of a to-do made
@@ -546,16 +560,24 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     picks = picks[:3] if show_text else []
     listed = sum(1 for i, _ in picks if i is not None and not str(i.get('id') or '').startswith('promise:'))
     more = max(0, total - listed)
-    minutes = clear_pace.minutes(more, per) if more else 0
+    asking = set(asking)
+
+    def about(count, shown):
+        """Minutes for `count` waiting to-dos beside the ones in `shown`, without those that ask something (0: none)."""
+        quick = count - len(asking - {str(i.get('id') or '') for i, _ in shown if i is not None})
+        return clear_pace.minutes(quick, per) if quick > 0 else 0
+
+    def waits(count, shown, beside):
+        took = about(count, shown)
+        if beside:
+            return t('{} more can wait, about {} min to clear.', count, took) if took else t('{} more can wait.', count)
+        return t('{} waiting, about {} min to clear.', count, took) if took else t('{} waiting.', count)
     first_at = clock(meetings[0]['at']) if meetings else ''
     head = headline(name, len(ready), sum(1 for r in ready if r.get('id') in set(replies)), len(due) + len(promised),
-                    total, clear_pace.minutes(total, per) if total else 0, first_at, len(overnight))
+                    total, about(total, []), first_at, len(overnight))
     about_meeting = bool(first_at) and not (ready or due or promised or total >= PILE)  # headline's own order
     opening = t('{} meetings today, the first at {}.', len(meetings), first_at) if meetings else ''
-    if more:
-        tail = t('{} more can wait, about {} min to clear.', more, minutes) if picks else t('{} waiting, about {} min to clear.', more, minutes)
-    else:
-        tail = ''
+    tail = waits(more, picks, bool(picks)) if more else ''
 
     def link(item):
         ident = str((item or {}).get('id') or '')
@@ -576,12 +598,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     for keep in range(len(shown), -1, -1):
         counted = sum(1 for i, _ in shown[:keep] if i is not None and not str(i.get('id') or '').startswith('promise:'))
         left = max(0, total - counted)
-        if not left:
-            last = ''
-        elif keep:
-            last = t('{} more can wait, about {} min to clear.', left, clear_pace.minutes(left, per))
-        else:
-            last = t('{} waiting, about {} min to clear.', left, clear_pace.minutes(left, per))
+        last = waits(left, shown[:keep], bool(keep)) if left else ''
         parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [opening, last]) if x] or [head]
         if len('\n'.join(parts)) <= APP_BODY:
             break

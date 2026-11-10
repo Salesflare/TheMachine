@@ -1700,6 +1700,10 @@
   "one": "Buongiorno, {} risposta è pronta da inviare",
   "other": "Buongiorno, {} risposte sono pronte da inviare"
  },
+ "Good morning, {} waiting": {
+  "one": "Buongiorno, {} in attesa",
+  "other": "Buongiorno, {} in attesa"
+ },
  "Good morning, {} waiting, about {} min to clear": {
   "one": "Buongiorno, {} in attesa, circa {} min per sbrigarla",
   "other": "Buongiorno, {} in attesa, circa {} min per sbrigarle"
@@ -2487,6 +2491,10 @@
  "Morning {}, {} replies are ready to send": {
   "one": "Buongiorno {}, {} risposta è pronta da inviare",
   "other": "Buongiorno {}, {} risposte sono pronte da inviare"
+ },
+ "Morning {}, {} waiting": {
+  "one": "Buongiorno {}, {} in attesa",
+  "other": "Buongiorno {}, {} in attesa"
  },
  "Morning {}, {} waiting, about {} min to clear": {
   "one": "Buongiorno {}, {} in attesa, circa {} min per sbrigarla",
@@ -6896,6 +6904,10 @@
   "one": "{} altra può aspettare, circa {} min per sbrigarla.",
   "other": "Altre {} possono aspettare, circa {} min per sbrigarle."
  },
+ "{} more can wait.": {
+  "one": "{} altra può aspettare.",
+  "other": "Altre {} possono aspettare."
+ },
  "{} more in Promises": "Altre {} in Promesse",
  "{} more like this wait. Always shares them too.": {
   "one": "{} altra come questa attende. Sempre la condivide anche.",
@@ -7213,6 +7225,10 @@
  "{} waiting, about {} min to clear.": {
   "one": "{} in attesa, circa {} min per sbrigarla.",
   "other": "{} in attesa, circa {} min per sbrigarle."
+ },
+ "{} waiting.": {
+  "one": "{} in attesa.",
+  "other": "{} in attesa."
  },
  "{} wants a one-time code.": "{} vuole un codice monouso.",
  "{} wants a passkey.": "{} chiede una passkey.",

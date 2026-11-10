@@ -67,7 +67,7 @@ Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que
 - um bom-dia com o que importa hoje, como "Bom dia, Sam: 2 respostas prontas para enviar";
 - suas reuniões numa linha;
 - no máximo três coisas a fazer, cada uma com um link Abrir: primeiro os rascunhos para revisar e as promessas de hoje;
-- quantas mais podem esperar e quanto tempo levam no seu ritmo, como "Mais 12 podem esperar, cerca de 5 min para resolver."
+- quantas mais podem esperar e quanto tempo levam no seu ritmo, como "Mais 12 podem esperar, cerca de 5 min para resolver." As tarefas que esperam a sua resposta não entram nesse tempo.
 
 O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
 

@@ -1700,6 +1700,10 @@
   "one": "Good morning, {} reply is ready to send",
   "other": "Good morning, {} replies are ready to send"
  },
+ "Good morning, {} waiting": {
+  "one": "Good morning, {} waiting",
+  "other": "Good morning, {} waiting"
+ },
  "Good morning, {} waiting, about {} min to clear": {
   "one": "Good morning, {} waiting, about {} min to clear",
   "other": "Good morning, {} waiting, about {} min to clear"
@@ -2487,6 +2491,10 @@
  "Morning {}, {} replies are ready to send": {
   "one": "Morning {}, {} reply is ready to send",
   "other": "Morning {}, {} replies are ready to send"
+ },
+ "Morning {}, {} waiting": {
+  "one": "Morning {}, {} waiting",
+  "other": "Morning {}, {} waiting"
  },
  "Morning {}, {} waiting, about {} min to clear": {
   "one": "Morning {}, {} waiting, about {} min to clear",
@@ -6896,6 +6904,10 @@
   "one": "{} more can wait, about {} min to clear.",
   "other": "{} more can wait, about {} min to clear."
  },
+ "{} more can wait.": {
+  "one": "{} more can wait.",
+  "other": "{} more can wait."
+ },
  "{} more in Promises": "{} more in Promises",
  "{} more like this wait. Always shares them too.": {
   "one": "{} more like this waits. Always shares it too.",
@@ -7213,6 +7225,10 @@
  "{} waiting, about {} min to clear.": {
   "one": "{} waiting, about {} min to clear.",
   "other": "{} waiting, about {} min to clear."
+ },
+ "{} waiting.": {
+  "one": "{} waiting.",
+  "other": "{} waiting."
  },
  "{} wants a one-time code.": "{} wants a one-time code.",
  "{} wants a passkey.": "{} wants a passkey.",

@@ -1700,6 +1700,10 @@
   "one": "Goeiemorgen, {} antwoord staat klaar om te versturen",
   "other": "Goeiemorgen, {} antwoorden staan klaar om te versturen"
  },
+ "Good morning, {} waiting": {
+  "one": "Goeiemorgen, {} wacht op je",
+  "other": "Goeiemorgen, {} wachten op je"
+ },
  "Good morning, {} waiting, about {} min to clear": {
   "one": "Goeiemorgen, {} wacht op je, ongeveer {} min werk",
   "other": "Goeiemorgen, {} wachten op je, ongeveer {} min werk"
@@ -2487,6 +2491,10 @@
  "Morning {}, {} replies are ready to send": {
   "one": "Goeiemorgen {}, {} antwoord staat klaar om te versturen",
   "other": "Goeiemorgen {}, {} antwoorden staan klaar om te versturen"
+ },
+ "Morning {}, {} waiting": {
+  "one": "Goeiemorgen {}, {} wacht op je",
+  "other": "Goeiemorgen {}, {} wachten op je"
  },
  "Morning {}, {} waiting, about {} min to clear": {
   "one": "Goeiemorgen {}, {} wacht op je, ongeveer {} min werk",
@@ -6896,6 +6904,10 @@
   "one": "{} andere kan wachten, ongeveer {} min werk.",
   "other": "{} andere kunnen wachten, ongeveer {} min werk."
  },
+ "{} more can wait.": {
+  "one": "{} andere kan wachten.",
+  "other": "{} andere kunnen wachten."
+ },
  "{} more in Promises": "Nog {} in Beloftes",
  "{} more like this wait. Always shares them too.": {
   "one": "Er wacht nog {} zoals deze. Altijd deelt die ook.",
@@ -7213,6 +7225,10 @@
  "{} waiting, about {} min to clear.": {
   "one": "{} wacht op je, ongeveer {} min werk.",
   "other": "{} wachten op je, ongeveer {} min werk."
+ },
+ "{} waiting.": {
+  "one": "{} wacht op je.",
+  "other": "{} wachten op je."
  },
  "{} wants a one-time code.": "{} vraagt een eenmalige code.",
  "{} wants a passkey.": "{} wil een passkey.",

@@ -68,7 +68,7 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 - a greeting with what matters today, like "Morning Sam, 2 replies are ready to send";
 - your meetings in one line;
 - at most three things to do, each with an Open link: drafts ready for you and promises due today first;
-- how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear."
+- how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time.
 
 The push says the same without links. Tap it to open today in the **Calendar**.
 

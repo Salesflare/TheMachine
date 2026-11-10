@@ -285,6 +285,50 @@ class Preparation(unittest.TestCase):
         row=self.q('SELECT s.status,p.status prep FROM suggestions s JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?',sid)
         self.assertEqual(row,{'status':'accepted','prep':'queued'})
 
+    def view(self,sid):
+        with self.store.connect() as db:
+            view=dict(db.execute('SELECT * FROM suggestions WHERE id=?',(sid,)).fetchone());self.store.card_views(db,[view])
+        return view
+
+    def newer_message(self,sid,title,body):
+        """A later message on the same matter: the review updates the to-do with it (update_card)."""
+        at=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(minutes=5)).isoformat()
+        self.store.commit_page('work',{},[{'account_id':'work','source_id':'later-'+title,'kind':'gmail.message','occurred_at':at,'title':'Moved','body':'It moved.','metadata':{},'deleted':False}])
+        with self.store.connect() as db:event=db.execute('SELECT max(id) FROM events').fetchone()[0]
+        return self.app.action('suggest',{'dedupe_key':'later:'+title,'title':title,'body':body,'event_ids':[event],'when':'now','card_id':sid})
+
+    def test_a_question_from_before_a_newer_message_is_not_the_to_dos_question_anymore(self):
+        # Asked about Monday; then a message moved it to Wednesday and the to-do was updated. The run that asked is
+        # canceled, so nothing waits on its question: no view gets it (the opened to-do showed it under the new summary).
+        sid,job=self.ahead_blocked()
+        later=(a.dt.datetime.now(a.dt.timezone.utc)+a.dt.timedelta(seconds=a.PREPARATION_SETTLE_SECONDS+5)).isoformat()
+        with patch_everywhere(a,'now',return_value=later):
+            self.app.preparation_step(lambda r:{'status':'ok' if r['action']=='status' else 'aborted'})
+        self.assertEqual(len(self.view(sid)['preparation_questions']),1)
+        self.app.config={'accounts':[],'prepare_ahead':False}
+        self.assertTrue(self.newer_message(sid,'Prepare the Wednesday status note','It moved to Wednesday at 09:00.').get('updated'))
+        view=self.view(sid)
+        self.assertEqual((view['status'],view['preparation_status'],view['title']),('pending','cancelled','Prepare the Wednesday status note'))
+        self.assertEqual((view['preparation_questions'],view['preparation_no_questions']),([],False))
+        self.assertFalse(a.ask_blocked(view));self.assertNotIn('billing@example.com',a.card(view))
+        # the row keeps what the run asked (restore_ahead_blockers reads its reason), only the to-do stops asking it
+        self.assertIn('billing@example.com',self.q('SELECT questions FROM preparations WHERE suggestion_id=?',sid)['questions'])
+
+    def test_a_question_its_run_still_waits_on_stays_through_an_update_and_goes_once_answered(self):
+        # The owner said Do it and the run stopped to ask. A newer message updates the to-do, the run still waits on
+        # its answer: the question stays. Once they answer, the next run is on its way and the question is behind it.
+        self.accept();self.app.preparation_step(lambda r:{'status':'admitted'})
+        self.app.action('preparation_blocked',{'suggestion_id':self.sid,'job_id':self.job()['job_id'],'reason':'I need one detail.',
+                                               'questions':[{'question':'Which date suits you?','options':['Tuesday','Thursday']}]})
+        self.assertTrue(self.newer_message(self.sid,'Prepare a useful draft for Thursday','They prefer Thursday.').get('updated'))
+        view=self.view(self.sid)
+        self.assertEqual((view['status'],view['preparation_status']),('accepted','blocked'))
+        self.assertEqual(view['preparation_questions'],[{'question':'Which date suits you?','options':['Tuesday','Thursday']}])
+        self.assertTrue(a.ask_blocked(view))
+        self.store.decide(self.sid,'other','Thursday','answer','dashboard')
+        view=self.view(self.sid)
+        self.assertEqual((view['preparation_status'],view['preparation_questions']),('queued',[]))
+
     def test_a_run_whose_blocker_was_saved_then_canceled_is_asked_how_it_ended_not_stopped(self):
         sid,job=self.ahead_blocked()
         with self.store.connect() as db:  # as settle_ahead left it before

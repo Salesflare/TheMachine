@@ -68,7 +68,7 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 - ein Gruß mit dem, was heute zählt, etwa "Guten Morgen Sam, 2 Antworten sind bereit zum Senden";
 - deine Termine in einer Zeile;
 - höchstens drei Dinge zu tun, jedes mit einem Link Öffnen: zuerst fertige Entwürfe und heute fällige Versprechen;
-- wie viele weitere warten können und wie lange sie in deinem Tempo dauern, etwa "12 weitere können warten, etwa 5 Min. zum Erledigen."
+- wie viele weitere warten können und wie lange sie in deinem Tempo dauern, etwa "12 weitere können warten, etwa 5 Min. zum Erledigen." Aufgaben, die auf deine Antwort warten, zählen bei der Zeit nicht mit.
 
 Der Push sagt dasselbe ohne Links. Tippst du darauf, öffnet sich heute im **Kalender**.
 

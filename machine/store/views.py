@@ -668,9 +668,14 @@ class ViewsStore(ConversationStore):
         pre=self.card_reads(db,cards)
         for suggestion in cards:
             job=found.get(suggestion['id'])
+            # A run's questions are the to-do's only while that run waits on them (blocked, by its own word). Once a newer
+            # message updated the to-do (update_card), the owner answered or the run went on, they are an older run's and
+            # no view shows them: the row keeps them, the to-do doesn't ask them.
+            asks=bool(job) and job['status']=='blocked' and not job['error']
             if job: suggestion.update(preparation_status=job['status'],preparation_reason=job['reason'],preparation_error=job['error'],
                                       preparation_details=job['details'],preparation_started_at=job['started_at'],preparation_retried=job['auto_retries']>0,
-                                      preparation_questions=blocker_questions(job.get('questions')),preparation_no_questions=job.get('questions')=='[]',
+                                      preparation_questions=blocker_questions(job.get('questions')) if asks else [],
+                                      preparation_no_questions=asks and job.get('questions')=='[]',
                                       preparation_cause=job.get('cause'),preparation_signed_in=str(job['decision_id']).startswith('signed-in:'),
                                       preparation_move_to=job.get('move_to') if job['status']=='blocked' else None,
                                       preparation_use=use_view(db,job.get('use_events')) if job['status']=='blocked' else None,
