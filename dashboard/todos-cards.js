@@ -402,19 +402,13 @@ new MutationObserver(()=>{if(!clampQueued)clampQueued=requestAnimationFrame(clam
 const clampAll=()=>new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)).forEach(clampKey);
 document.fonts?.ready.then(clampAll);document.fonts?.addEventListener('loadingdone',clampAll);
 document.addEventListener('click',e=>{const m=e.target.closest?.('button.more[data-more]');if(m)clampKey(m.dataset.more)});  // after the list's own handler folded or opened it
-// Tapping a folded text opens it, the same as its Show more (button.more[data-more], the text's data-clamp) or a chat
-// text's More (data-unclamp, the text's data-unclamp-by): that button is pressed, and stays the control for keyboards
-// and screen readers. Only a folded text opens; an open one stays open (Show less folds it). A link or button in the
-// text does its own thing, and a text selection, a drag or a long press (to copy) opens nothing. The tap stops here, so
-// nothing under it (the card's own handlers) sees it as well as the button's press.
-const FOLDED='[data-clamp].clamp,.chat-clamp[data-unclamp-by]:not(.open)';
-const foldButton=box=>{const sel=box.dataset.clamp!=null?`button.more[data-more="${CSS.escape(box.dataset.clamp)}"]:not([hidden])`:`[data-unclamp="${CSS.escape(box.dataset.unclampBy)}"]`;
- for(let p=box.parentElement;p;p=p.parentElement){const b=p.querySelector(sel);if(b)return b.getAttribute('aria-expanded')==='true'?null:b}return null};
-let foldDown=null;document.addEventListener('pointerdown',e=>{foldDown={x:e.clientX,y:e.clientY,at:e.timeStamp}},true);
-document.addEventListener('click',e=>{if(e.button||!e.isTrusted)return;const box=e.target.closest?.(FOLDED);if(!box||e.target.closest('a,button,input,select,textarea,summary,label,[role=button],[role=link],[contenteditable]'))return;
- const sel=getSelection(),d=foldDown;if(sel&&!sel.isCollapsed&&sel.containsNode(box,true))return;
- if(d&&(Math.hypot(e.clientX-d.x,e.clientY-d.y)>8||e.timeStamp-d.at>500))return;
- const b=foldButton(box);if(!b)return;e.stopPropagation();b.click()},true);
+// A tap on folded text presses its Show more (or a chat text's More), which stays the keyboard's control. Not on open
+// text, a link, a selection, a drag or a long press; stopped here so the card's handlers see only the press.
+let fDown;document.addEventListener('pointerdown',e=>{fDown=e},true);
+document.addEventListener('click',e=>{const x=e.target.closest?.('[data-clamp].clamp,.chat-clamp[data-unclamp-by]:not(.open)'),d=fDown,s=getSelection();
+ if(!x||e.button||!e.isTrusted||e.target.closest('a,button,input,select,textarea,summary,label,[role=button],[role=link],[contenteditable]')||!s.isCollapsed&&s.containsNode(x,true)||d&&(Math.hypot(e.clientX-d.clientX,e.clientY-d.clientY)>8||e.timeStamp-d.timeStamp>500))return;
+ const q=x.dataset.clamp!=null?`button.more[data-more="${CSS.escape(x.dataset.clamp)}"]:not([hidden])`:`[data-unclamp="${CSS.escape(x.dataset.unclampBy)}"]`;let b;
+ for(let p=x.parentElement;p&&!b;p=p.parentElement)b=p.querySelector(q);if(!b||b.getAttribute('aria-expanded')==='true')return;e.stopPropagation();b.click()},true);
 // The … menu's Hand off… opens its sheet in place (Back returns); a click outside, Escape or a choice closes the menu.
 document.addEventListener('click',e=>{const o=e.target.closest('.more-menu [data-mm-open],.more-menu [data-mm-back]');if(!o)return;e.preventDefault();const m=o.closest('.more-menu'),sub=m.querySelector('.mm-sub'),go=o.dataset.mmOpen!=null;
  m.classList.toggle('mm-in',go);if(sub)sub.hidden=!go;(go?sub?.querySelector('button:not([data-mm-back])'):m.querySelector('[data-mm-open]'))?.focus()});
