@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {measure, median, BASELINE} from './click-speed.mjs';
+import {measure, median, BASELINE, SETTLE} from './click-speed.mjs';
+import {dashboardPage} from './dashboard-page.mjs';
 
 // Every click answers in about 100 ms (docs/vision.md). The dashboard's most common clicks (tests/click-speed.mjs: Do it,
 // Done, Snooze, open and close a to-do, the tabs, the Work/Personal filter, search, a chat message) are timed on made-up
@@ -8,6 +9,10 @@ import {measure, median, BASELINE} from './click-speed.mjs';
 // (tests/click-speed-baseline.json). Clearly: more than twice the baseline and 60 ms over it, after the baseline is
 // scaled to how fast this computer is right now (each size's calibration), so a busy test run doesn't fail it.
 // After a change that makes a click slower or faster on purpose: node tests/click-speed.mjs --baseline (15 runs).
+// A tap this soon after a scroll only ends that scroll (the page's chatRealTap): the benchmark waits longer
+// after scrolling a target into view, or its tap on a to-do's Chat link opens nothing on a fast, quiet computer.
+const tapAfterScroll=+/scrolled:Date\.now\(\)-chatScrolledAt<(\d+)/.exec(await dashboardPage())?.[1];
+assert.ok(tapAfterScroll>0&&SETTLE>=tapAfterScroll+100,`the benchmark waits ${SETTLE} ms after a scroll, the page ignores taps for ${tapAfterScroll} ms`);
 const baseline=JSON.parse(await readFile(BASELINE,'utf8'));
 const runs={desk:5,phone:3};
 const slower=[],missing=[];

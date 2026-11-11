@@ -106,11 +106,15 @@ export const CLICKS=[
   after:async p=>{await p.locator('.chat-layout [data-chat-back]').click();await calm(p)}},
 ];
 
-// Once the page has scrolled no more for 150 ms (a target scrolled into view, also smoothly): at least 150 ms, at most 2 s
-const settled=page=>page.evaluate(()=>new Promise(done=>{let last=performance.now();const t0=last,on=()=>{last=performance.now()};
+// Once the page has scrolled no more for SETTLE ms (a target scrolled into view, also smoothly): at least that, at most
+// 2 s. Longer than the page's own wait (a tap within 250 ms of a scroll ends that scroll and opens no chat, see
+// dashboard/todos-chat-compose.js), or on a quiet, fast computer the tap on a to-do's Chat link comes too soon after
+// the scroll that brought it into view and opens nothing.
+export const SETTLE=400;
+const settled=page=>page.evaluate(settle=>new Promise(done=>{let last=performance.now();const t0=last,on=()=>{last=performance.now()};
  addEventListener('scroll',on,{capture:true,passive:true});
- const tick=()=>{const now=performance.now();if(now-last>=150||now-t0>2000){removeEventListener('scroll',on,{capture:true});done()}else requestAnimationFrame(tick)};
- requestAnimationFrame(tick)}));
+ const tick=()=>{const now=performance.now();if(now-last>=settle||now-t0>2000){removeEventListener('scroll',on,{capture:true});done()}else requestAnimationFrame(tick)};
+ requestAnimationFrame(tick)}),SETTLE);
 
 // One run on a fresh page: each click's time in ms (null when it didn't answer in 10 s)
 async function run(context,url,{only,throttle}){
