@@ -53,7 +53,7 @@ Apri la ricerca con `⌘K` su un Mac o `Ctrl K` su Windows e Linux, oppure con l
 
 Puoi anche fare una domanda, come quella che suggerisce una ricerca vuota, per una risposta breve dai tuoi messaggi ([Tastiera e palette dei comandi](keyboard.md)).
 
-**Vedi tutti i risultati** apre l'elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in un lettore, con un link al punto da cui è arrivato. Una ricerca vuota mostra i messaggi più recenti.
+**Vedi tutti i risultati** apre l'elenco completo, per tutti gli account o per uno solo. Ogni risultato si apre in un lettore, con un link al punto da cui è arrivato. Una ricerca vuota mostra i messaggi più recenti. Una ricerca mostra prima il risultato migliore, e l'anteprima sul telefono di un messaggio presente per intero appare una sola volta, come quel messaggio. Una domanda su tutti gli account riceve in alto una risposta breve, con il messaggio da cui viene. Se i tuoi messaggi non lo dicono, non appare nessuna risposta.
 
 ## Apprendimento
 

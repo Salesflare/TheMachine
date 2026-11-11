@@ -55,7 +55,7 @@ Open search with `⌘K` on a Mac or `Ctrl K` on Windows and Linux, or the search
 
 Ask a question there too, like the one an empty search suggests, for a short answer from your own messages ([Keyboard and the command palette](keyboard.md)).
 
-**See all results** opens the full list, for all accounts or one. Each result opens in a reader, with a link to where it came from. An empty search shows the newest messages.
+**See all results** opens the full list, for all accounts or one. Each result opens in a reader, with a link to where it came from. An empty search shows the newest messages. A search shows the best match first, and a phone preview of a message that’s there in full shows once, as that message. A question with all accounts gets a short answer on top, with the message it came from. When your messages don’t say, no answer shows.
 
 ## Learning
 

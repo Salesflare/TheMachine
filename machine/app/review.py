@@ -47,7 +47,7 @@ from machine.store.facts import suggestion_scope
 from machine.store.first_look import FIRST_ACTIONS, first_value
 from machine.store.review import (PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
                                   service_review_ended)
-from machine.text import clamp, encoded
+from machine.text import clamp, encoded, fold_previews
 import next_actions
 import shared_graph
 from timeutil import now
@@ -860,8 +860,11 @@ class ReviewApp:
         if name == 'events' and args.get('semantic') and str(args.get('query') or '').strip() and args.get('event_ids') is None and embeddings.settings(self.config):
             # Meaning and keywords fused, best first; the plain keyword search stays the default.
             # The dashboard waits for it: a slow embedding server falls back to keywords in seconds, not minutes.
-            found, _ = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
+            found, semantic = self.related(selected, (), str(args['query']), min(int(args.get('limit') or 40), 40), timeout=8 if args.get('full') else 30)
             order, starts = [i for i, _ in found], embeddings.starts(found)
+            if semantic:  # the best match by words stays in the first three: a name or place asked is never buried
+                with self.store.connect() as db:
+                    order = embeddings.words_lead(order, embeddings.best_word_hits(db, selected, str(args['query']), 1), 3)
             args = {**args, 'event_ids': order, 'query': ''}
         if name == 'events':
             kinds = args.get('kinds')
@@ -870,6 +873,7 @@ class ReviewApp:
             rows = self.store.events(selected, args.get('query', ''), args.get('limit', 40), event_ids=args.get('event_ids'), kinds=kinds)
             if args.get('semantic') and args.get('event_ids') is not None:
                 rows.sort(key=lambda r: args['event_ids'].index(r['id']) if r['id'] in args['event_ids'] else 0)
+                rows = fold_previews(rows)  # a phone's preview of a message found in full shows once, as the message
             # The CLI reads whole rows; agent tool results must stay under OpenClaw's size cut.
             if args.get('full'):
                 return rows

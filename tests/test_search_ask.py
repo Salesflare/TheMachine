@@ -398,10 +398,13 @@ class AskMemory(unittest.TestCase):
         self.ask('what is new at northwind and initech?', 'work')  # a name's first word, when no other record has it
         self.assertIn('Project Northwind rollout', self.memory())
         self.assertIn('Organization Initech: <<<customer>>>', self.memory())
-        self.ask('what is new at northwind and initech?', 'personal')  # known only from Work: not a record of this area
-        self.assertEqual(self.memory(), '')
+        asked = len(self.prompts)
+        found = self.ask('what is new at northwind and initech?', 'personal')  # known only from Work: not a record of this area
+        # nothing of it in Personal: no message has its words (its question words don't count) and no record goes in
+        self.assertEqual((found, len(self.prompts)), ({'none': True}, asked))
+        asked = len(self.prompts)
         self.ask('what did they say about the rollout plan?', 'work')  # a word of the name is not the name
-        self.assertNotIn('Project Northwind', self.memory())
+        self.assertNotIn('Project Northwind', self.memory() if len(self.prompts) > asked else '')  # no message has its words: no turn at all
 
     def test_meeting_notes_the_search_found(self):
         self.add(notes(3, 'Pilot kickoff', 'Agreed in the room: the pilot starts with twelve seats and Kim owns the rollout plan.'),
