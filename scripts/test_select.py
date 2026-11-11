@@ -586,6 +586,12 @@ DELEGATED = re.compile(r"""\s*document\.addEventListener\(\s*'(?:click|change|in
                        r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*(?:!\2\s*\)\s*return\s*[;}]|\2\s*\)\s*\{)""")
 
 
+def js_code(line):
+    """A line without its trailing // comment (a // in a string or a regex stays)."""
+    found = re.search(r"""\s//(?:[^'"`/]*)$""", line)
+    return line[:found.start()] if found else line
+
+
 def js_brackets(text):
     """The bracket pairs of JavaScript text, (open, close) offsets: strings, comments and the text of templates
     skipped, their ${...} parts not."""
@@ -1334,13 +1340,13 @@ def select_mapped(changed, repo, impact, base, why=None):
         b = len(text) if b < 0 else b
         while a > 0:
             previous = text.rfind('\n', 0, a - 1) + 1
-            if not re.match(r'[\s)\]}.?:,+\-*/&|]', text[a:a + 1]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[previous:a - 1]):
+            if not re.match(r'(?!//|/\*)[\s)\]}.?:,+\-*/&|]', text[a:a + 2]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', js_code(text[previous:a - 1])):
                 break
             a = previous
         while b < len(text):
             following = text.find('\n', b + 1)
             following = len(text) if following < 0 else following
-            if not re.match(r'[ \t)\]}.?:,+\-*/&|]', text[b + 1:b + 2]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[a:b]):
+            if not re.match(r'(?!//|/\*)[ \t)\]}.?:,+\-*/&|]', text[b + 1:b + 3]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', js_code(text[a:b])):
                 break
             b = following
         return [piece for piece in re.split(r';|\n(?=[^\s)\]}.?:,])', js_blank(text[a:b])) if piece.strip()]
@@ -1409,6 +1415,8 @@ def select_mapped(changed, repo, impact, base, why=None):
             if text is None:
                 continue
             for found in word.finditer(text):
+                if re.search(r'\b(?:const|let|var|function\*?|class)\s+$', text[max(0, found.start() - 12):found.start()]):
+                    continue  # where it is declared, not used: that statement didn't change with this
                 js_place(other, found.start(), found.end(), name, why_text, depth)
         handler = re.compile(r'\bon\w+=[^>]*\b' + re.escape(name) + r'\b')
         for other in repo.paths:
