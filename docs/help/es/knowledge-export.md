@@ -22,6 +22,7 @@ En una Machine alojada funciona igual, desde los Ajustes de tu propia Machine. E
 
 - Personas, organizaciones y proyectos: una página Markdown para cada uno, con cómo se relacionan.
 - Datos y preferencias: lo que sabe tu Machine, sobre ti y sobre ellos.
+- Datos anteriores: lo que ya no vale (terminado, apartado o sustituido), con lo que lo sustituyó. Los datos que quitaste quedan fuera.
 - Reglas, cómo escribes y firmas: lo que siguen tus borradores.
 - Habilidades: tus guías, activas o no.
 - Contexto: resúmenes del equipo, líneas de resumen, promesas y tareas abiertas.

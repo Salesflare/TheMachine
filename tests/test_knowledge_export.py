@@ -46,6 +46,22 @@ SECRET_BODY = 'BODY-SENTINEL the pricing sheet comes Monday'
 PRIVATE_BODY = 'PRIVATE-SENTINEL about the quiet merger'
 
 
+# Past facts and rules (text, kind, sort, about, to-do, until, removed days ago, how): merged_into is '<how>:<own id>'
+# for expired and aside, the target for call, skill, voice and record; None with removed is forgotten, without removed
+# a current fact past its end day; forgot: merged into the forgotten one above it.
+PAST_FACTS = (('Was based in the old office.', 'fact', 'fact', AVERY, 'pricing', '2026-01-31', 30, 'expired'),
+              ('Had a trial until last spring.', 'fact', 'event', AVERY, 'pricing', '2025-05-01', None, None),
+              ('Liked long reports.', 'fact', 'preference', None, 'done', None, 20, 'aside'),
+              ('Open drafts with the weather.', 'draft', None, None, 'done', None, 20, 'aside'),
+              ('Prefers calls.', 'fact', 'preference', AVERY, 'pricing', None, 10, 'call'),
+              ('Books the onboarding call within a week.', 'fact', 'fact', None, 'done', None, 9, 'skill'),
+              ('Signs emails with Cheers.', 'fact', 'preference', None, 'done', None, 8, 'voice'),
+              ("Cy's number is +32 470 00 00 00.", 'fact', 'fact', None, 'done', None, 7, 'record'),
+              ('FORGOTTEN-SENTINEL never say this', 'fact', 'fact', AVERY, 'pricing', None, 5, None),
+              ('FORGOTTEN-TOO-SENTINEL condensed into the forgotten one', 'fact', 'fact', AVERY, 'pricing', None, 6, 'forgot'),
+              ('MERGER-PAST-SENTINEL was in talks', 'fact', 'fact', AVERY, 'merger', None, 6, 'call'))
+
+
 class FakeFleet:
     def briefs(self):
         return {'f1': {'text': 'Your Fleet this week: two renewals are waiting on legal.', 'built_at': '2026-11-02T08:00:00+00:00'},
@@ -125,6 +141,17 @@ def build(folder):
                 db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'review',?)", (fid, about, ago(4)))
         db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,source,side) VALUES('Likes short agendas.','ai:c1',NULL,?,'fact','preference','ai:Claude','work')", (ago(1),))
         db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(last_insert_rowid(),?,'ai',?)", (BO, ago(1)))
+        call_id = db.execute("SELECT id FROM facts WHERE text='Prefers a call over email.'").fetchone()[0]
+        for text, kind, sort, about, todo, until, removed, into in PAST_FACTS:
+            fid = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind,fact_kind,valid_until,removed_at,merged_into) VALUES(?,?,?,?,?,?,?,?,?)',
+                             (text, 'd-' + todo, todos[todo], ago(40), kind, sort, until, removed and ago(removed), None)).lastrowid
+            if into is None and removed:
+                forgot_id = fid
+            target = {'call': f'fact:{call_id}', 'skill': 'skill:onboarding-call', 'voice': 'voice:Email', 'record': 'record:' + CY}.get(into)
+            target = f'fact:{forgot_id}' if into == 'forgot' else target
+            db.execute('UPDATE facts SET merged_into=? WHERE id=?', (target or (f'{into}:{fid}' if into else None), fid))
+            if about:
+                db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'review',?)", (fid, about, ago(40)))
         db.execute("INSERT INTO voices(channel,text,source,updated_at) VALUES('Email','Short and warm. Signs off with Cheers.','owner',?)", (ago(2),))
         db.execute("INSERT INTO voices(channel,text,source,updated_at) VALUES('Slack','Lowercase, no greeting.','review',?)", (ago(2),))
         promise_cols = {r[1] for r in db.execute('PRAGMA table_info(promises)')}
@@ -195,8 +222,8 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual({s['kind'] for s in self.bundle['summaries']}, set(person_summary.KINDS) - {'open'})  # the open line is the private one
         self.assertEqual({e['kind'] for e in self.bundle['entities']}, set(brain.KINDS))
         self.assertEqual({r['kind'] for r in self.bundle['relationships']}, set(knowledge.LINKS))
-        for key in ('entities', 'relationships', 'facts', 'rules', 'writing_style', 'signatures', 'skills', 'summaries', 'promises', 'todos',
-                    'team_briefs', 'notes', 'sources'):
+        for key in ('entities', 'relationships', 'facts', 'rules', 'fact_history', 'writing_style', 'signatures', 'skills', 'summaries', 'promises',
+                    'todos', 'team_briefs', 'notes', 'sources'):
             self.assertTrue(self.bundle[key], key)
             self.assertIn(f'records/{key}.jsonl', self.files) if key != 'notes' else None
 
@@ -228,6 +255,7 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual(got['What does the owner prefer for meetings?'], ['Prefers meetings after 10:00.'])
         self.assertEqual(got['What does Avery prefer for contact?'], ['Prefers a call over email.'])
         self.assertEqual(sorted(got['Who is Bo and how do they relate to Avery?']), ['Avery Quill often together with Bo Tern', 'Bo Tern assistant of Avery Quill'])
+        self.assertEqual(got['What did Avery prefer before, and what replaced it?'], [['Prefers calls.', 'merged', 'Prefers a call over email.']])
         self.assertEqual(got['Where does Avery work?'], ['Lumen Works'])
         self.assertEqual(got['What did the owner promise Avery, and by when?'], [['Send the pricing sheet', '2026-11-10']])
         self.assertEqual(got['Which open to-dos are on Harbor Rollout?'], ['Send Avery the pricing sheet'])
@@ -259,6 +287,46 @@ class KnowledgeExport(unittest.TestCase):
         self.assertEqual(ai['said_by'], 'ai:Claude')
         self.assertIn('Likes short agendas. (said by Claude)', self.files['people/bo-tern.md'].decode())
 
+    def test_fact_history_with_status_dates_source_and_replacement(self):
+        past = {f['text']: f for f in self.bundle['fact_history']}
+        current = {f['text']: f['id'] for f in self.bundle['facts']}
+        self.assertEqual({t: (f['status'], f['replaced_by']) for t, f in past.items()}, {
+            'Was based in the old office.': ('ended', None), 'Had a trial until last spring.': ('ended', None),
+            'Liked long reports.': ('set_aside', None), 'Open drafts with the weather.': ('set_aside', None),
+            'Prefers calls.': ('merged', current['Prefers a call over email.']),
+            'Books the onboarding call within a week.': ('moved', 'skill-onboarding-call'),
+            'Signs emails with Cheers.': ('moved', 'style-email'), "Cy's number is +32 470 00 00 00.": ('moved', CY)})
+        self.assertNotIn('FORGOTTEN-', self.text)  # forgotten by the owner, or condensed into one they forgot: never exported
+        self.assertEqual(past['Open drafts with the weather.']['id'][:5], 'rule-')
+        self.assertEqual((past['Open drafts with the weather.']['kind'], past['Liked long reports.']['kind']), ('rule', 'fact'))
+        ended = past['Was based in the old office.']
+        self.assertEqual((ended['about'], ended['sort'], ended['valid_until'], ended['ended_at'][:10]), ([AVERY], 'fact', '2026-01-31', self.day(30)))
+        self.assertEqual(past['Had a trial until last spring.']['ended_at'], '2025-05-01')  # past its end day, not retired yet
+        self.assertEqual(past['Liked long reports.']['set_aside_at'][:10], self.day(20))
+        self.assertEqual(past['Prefers calls.']['merged_at'][:10], self.day(10))
+        self.assertEqual(past['Prefers calls.']['learned_at'][:10], self.day(40))  # saved
+        self.assertEqual(past['Prefers calls.']['sources'], [knowledge.source_id('gmail.message', 'sam@owner.example', 'gm-pricing')])
+        self.assertEqual({f['said_by'] for f in past.values()}, {'owner'})
+        styles = [json.loads(line) for line in self.files['records/writing_style.jsonl'].decode().splitlines()]
+        self.assertIn('style-email', [s['id'] for s in styles])
+        manifest = json.loads(self.files['manifest.json'])
+        self.assertEqual(manifest['counts']['fact_history'], len(past))
+        self.assertIn('records/fact_history.jsonl', manifest['files'])
+        self.assertIn('fact_history.jsonl', self.files['README.md'].decode())
+        everything = knowledge.collect(self.reader, knowledge.Options(private=True))
+        self.assertIn('MERGER-PAST-SENTINEL was in talks', [f['text'] for f in everything['fact_history']])
+
+    def test_fact_history_names_who_saved_it(self):
+        reader = self.reader
+
+        class Past(knowledge.StoreReader):
+            def fact_history(self):
+                rows = reader.fact_history()
+                return [{**rows[0], 'source': 'ai:Claude', 'side': 'work'}, {**rows[1], 'condensed': True}, {**rows[2], 'condensed': True, 'kept_at': 'x'}]
+
+        got = knowledge.collect(Past(self.store, self.config, FakeFleet(), self.space))['fact_history']
+        self.assertEqual([f['said_by'] for f in got], ['ai:Claude', 'the-machine', 'owner'])
+
     # -- privacy -------------------------------------------------------------------------------------------------------
 
     def test_never_a_credential(self):
@@ -282,8 +350,8 @@ class KnowledgeExport(unittest.TestCase):
         for left in ('Quiet Merger', 'Wants the merger kept quiet.', 'Reply about the quiet merger', 'Share the merger terms', 'Asked about the quiet merger',
                      'CAREFUL-SENTINEL', PRIVATE_BODY):
             self.assertNotIn(left, self.text)
-        self.assertEqual(self.bundle['left_out'], {'private_projects': 1, 'private_facts': 1, 'private_summary_lines': 1, 'private_promises': 1,
-                                                   'private_todos': 1, 'careful_team_briefs': 1})
+        self.assertEqual(self.bundle['left_out'], {'private_projects': 1, 'private_facts': 1, 'private_fact_history': 1, 'private_summary_lines': 1,
+                                                   'private_promises': 1, 'private_todos': 1, 'careful_team_briefs': 1})
         self.assertIn('Private threads, Only-you projects and Careful team content are left out', self.files['README.md'].decode())
         everything = '\n'.join(d.decode() for d in knowledge.render(knowledge.collect(self.reader, knowledge.Options(messages=True, private=True))).values())
         for found in ('Quiet Merger', 'Wants the merger kept quiet.', 'Reply about the quiet merger', 'Share the merger terms', 'CAREFUL-SENTINEL', PRIVATE_BODY):

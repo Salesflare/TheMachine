@@ -22,6 +22,7 @@ Em uma Machine hospedada funciona igual, nas Configurações da sua própria Mac
 
 - Pessoas, organizações e projetos: uma página Markdown para cada, com como se relacionam.
 - Fatos e preferências: o que sua Machine sabe, sobre você e sobre eles.
+- Fatos anteriores: o que não vale mais (encerrado, deixado de lado ou substituído), com o que o substituiu. Fatos que você removeu ficam de fora.
 - Regras, como você escreve e assinaturas: o que seus rascunhos seguem.
 - Habilidades: seus guias, ligados e desligados.
 - Contexto: briefings da equipe, linhas de resumo, promessas e tarefas abertas.
