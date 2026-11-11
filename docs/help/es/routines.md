@@ -15,13 +15,13 @@ Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
 ## Plantillas
 
-En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30. Su tarjeta muestra sus palabras como cualquier rutina, y **Editar** cambia sus palabras o su nombre.
+En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30 (Limpieza de spam, cada hora). Su tarjeta muestra sus palabras como cualquier rutina, y **Editar** cambia sus palabras o su nombre.
 
 **Limpieza de newsletters** crea una tarea por área (trabajo y personal) con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
 
 Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una dirección de grupo, como un Google Group, aparece bajo quien lo escribió y nunca te da de baja del grupo.
 
-**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene.
+**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él. El spam nuevo va a la misma tarea mientras siga abierta.
 
 Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 
@@ -37,7 +37,7 @@ Los amigos que nadie en tu Graph tiene se cuentan, con algunos nombres. **Añadi
 
 **Deshacer** en la tarea quita exactamente a esas personas, también después de **Importar de nuevo**.
 
-Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam usa un turno corto cuando hay correo que leer). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
+Mientras sus palabras sean las de la plantilla, funciona con su propio código, sin tu plan de IA (Limpieza de spam primero lista con código el correo nuevo de remitentes desconocidos, y solo hace una pregunta corta a tu IA cuando hay alguno). Un nombre nuevo no cambia eso. Si cambias sus palabras, funciona como cualquier rutina con tus palabras.
 
 Limpieza de newsletters y Limpieza de spam siguen terminando en la misma tarea con una opción por correo. Un Cumpleaños editado da su resultado y como mucho un borrador, no una tarea por persona. **Volver a la plantilla** en **Editar** devuelve sus palabras.
 

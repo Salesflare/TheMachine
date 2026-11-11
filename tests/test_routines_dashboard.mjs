@@ -197,6 +197,11 @@ try{
   assert.equal(sent('routine_old_job').length,0);
   await old.locator('[data-rt-old="off"]').click();await old.waitFor({state:'detached'});
   assert.deepEqual(sent('routine_old_job'),[{action:'routine_old_job',id:SID,choice:'off'}]);
+  // An hourly one (Spam cleanup): Every hour, no time of day or next date; paused says so
+  list=[{...routine(),rule:{unit:'hour',n:1},at:'07:30',next_due:'2026-11-09T08:30:00'}];await page.evaluate(()=>routinesView(true));
+  await page.waitForFunction(id=>document.querySelector(`[data-rt="${id}"] .rt-when`)?.textContent==='Every hour',ID);
+  list=list.map(r=>({...r,state:'paused'}));await page.evaluate(()=>routinesView(true));
+  await page.waitForFunction(id=>document.querySelector(`[data-rt="${id}"] .rt-when`)?.textContent==='Every hour · Paused',ID);
   await context.close();
  }
  assert.deepEqual(errors,[]);

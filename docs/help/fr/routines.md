@@ -15,13 +15,13 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 ## Modèles
 
-Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30. Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
+Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30 (Tri du spam toutes les heures). Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
 
 **Tri des newsletters** crée une tâche par domaine (travail et personnel) avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
 
 Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arrivé par une adresse de groupe, comme un Google Group, est listé sous la personne qui l’a écrit et ne vous désabonne jamais du groupe.
 
-**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas.
+**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez. Le nouveau spam va sur la même tâche tant qu’elle est ouverte.
 
 Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 
@@ -37,7 +37,7 @@ Les amis que personne dans votre Graph n’a sont comptés, avec quelques noms. 
 
 **Annuler** sur la tâche retire exactement ces personnes, même après **Importer à nouveau**.
 
-Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam utilise un court passage quand il y a du courrier à lire). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
+Tant que ses mots sont ceux du modèle, elle tourne avec son propre code, sans votre forfait d’IA (Tri du spam liste d’abord par code les nouveaux e-mails d’expéditeurs inconnus, et ne pose une courte question à votre IA que s’il y en a). Un nouveau nom n’y change rien. Si vous changez ses mots, elle tourne comme toute routine, sur vos mots.
 
 Tri des newsletters et Tri du spam finissent toujours par la même tâche avec un choix par e-mail. Des Anniversaires modifiés donnent leur résultat et au plus un brouillon, pas une tâche par personne. **Revenir au modèle** dans **Modifier** remet ses mots.
 

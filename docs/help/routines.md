@@ -17,13 +17,13 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 ## Templates
 
-Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30. Its card shows its words like any routine, and **Edit** changes them or its name.
+Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour). Its card shows its words like any routine, and **Edit** changes them or its name.
 
 **Newsletter cleanup** makes one to-do per area (work and personal) with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise it shows **Open unsubscribe page**.
 
 Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group.
 
-**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it.
+**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
 
 Nothing changes until you confirm on the to-do. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
 
@@ -39,7 +39,7 @@ Friends nobody in your Graph has are counted, with a few names. **Add … as per
 
 **Undo** on the to-do takes exactly those people away again, also after **Import again**.
 
-While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
+While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup first lists new mail from unknown senders in code, and asks your AI one short question only when there is some). A new name keeps that. Once you change its words, it runs like any routine on your words.
 
 Newsletter cleanup and Spam cleanup still end in the same to-do with a choice per mail. An edited Birthdays gives its result and at most one draft, not a to-do per person. **Back to the template** in **Edit** puts its words back.
 

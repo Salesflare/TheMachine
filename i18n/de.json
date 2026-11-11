@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Um {1} zu {0} hinzugefügt.",
  "Added to {}, invited {}.": "Zu {} hinzugefügt, {} eingeladen.",
  "Added to {}.": "Zu {} hinzugefügt.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "{} Mail, die nach Spam aussieht, zur offenen Aufgabe hinzugefügt.",
+  "other": "{} Mails, die nach Spam aussehen, zur offenen Aufgabe hinzugefügt."
+ },
  "Added {} personal contacts.": {
   "one": "{} persönlichen Kontakt hinzugefügt.",
   "other": "{} persönliche Kontakte hinzugefügt."
@@ -1382,6 +1386,8 @@
  "Every Monday, sum up my deals": "Jeden Tag, fasse meine Deals zusammen",
  "Every event must exist and be live": "Jedes Event muss existieren und aktiv sein",
  "Every evidence event must exist and be live": "Jedes Beleg-Event muss existieren und aktiv sein",
+ "Every hour": "Jede Stunde",
+ "Every hour, a to-do with any new spam that got through. Mark each one as spam or not.": "Jede Stunde eine Aufgabe mit neuem Spam, der durchgekommen ist. Markiere jede als Spam oder nicht.",
  "Every morning, a to-do with a short greeting for each close contact who has a birthday.": "Jeden Morgen eine Aufgabe mit einem kurzen Glückwunsch für jeden engen Kontakt, der Geburtstag hat.",
  "Every morning, one to-do with spam that got through. Mark each one as spam or not.": "Jeden Morgen eine Aufgabe mit Spam, der durchgekommen ist. Markiere jede als Spam oder nicht.",
  "Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.": "Jeden Morgen eine Aufgabe mit den Newslettern des letzten Tages. Behalten oder abmelden, einzeln.",

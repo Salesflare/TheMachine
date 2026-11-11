@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Added to {} at {}.",
  "Added to {}, invited {}.": "Added to {}, invited {}.",
  "Added to {}.": "Added to {}.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "Added {} email that looks like spam to the open to-do.",
+  "other": "Added {} emails that look like spam to the open to-do."
+ },
  "Added {} personal contacts.": {
   "one": "Added {} personal contact.",
   "other": "Added {} personal contacts."
@@ -1382,6 +1386,8 @@
  "Every Monday, sum up my deals": "Every Monday, sum up my deals",
  "Every event must exist and be live": "Every event must exist and be live",
  "Every evidence event must exist and be live": "Every evidence event must exist and be live",
+ "Every hour": "Every hour",
+ "Every hour, a to-do with any new spam that got through. Mark each one as spam or not.": "Every hour, a to-do with any new spam that got through. Mark each one as spam or not.",
  "Every morning, a to-do with a short greeting for each close contact who has a birthday.": "Every morning, a to-do with a short greeting for each close contact who has a birthday.",
  "Every morning, one to-do with spam that got through. Mark each one as spam or not.": "Every morning, one to-do with spam that got through. Mark each one as spam or not.",
  "Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.": "Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.",

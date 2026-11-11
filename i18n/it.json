@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Aggiunto a {} alle {}.",
  "Added to {}, invited {}.": "Aggiunto a {}, invitato {}.",
  "Added to {}.": "Aggiunto a {}.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "Aggiunta {} email che sembra spam all’attività aperta.",
+  "other": "Aggiunte {} email che sembrano spam all’attività aperta."
+ },
  "Added {} personal contacts.": {
   "one": "{} contatto personale aggiunto.",
   "other": "{} contatti personali aggiunti."
@@ -1382,6 +1386,8 @@
  "Every Monday, sum up my deals": "Ogni giorno, riassumi le mie trattative",
  "Every event must exist and be live": "Ogni evento deve esistere ed essere attivo",
  "Every evidence event must exist and be live": "Ogni evento di prova deve esistere ed essere attivo",
+ "Every hour": "Ogni ora",
+ "Every hour, a to-do with any new spam that got through. Mark each one as spam or not.": "Ogni ora, un’attività con il nuovo spam passato. Segna ciascuna come spam o no.",
  "Every morning, a to-do with a short greeting for each close contact who has a birthday.": "Ogni mattina, un’attività con un breve augurio per ogni contatto stretto che compie gli anni.",
  "Every morning, one to-do with spam that got through. Mark each one as spam or not.": "Ogni mattina, un’attività con lo spam passato. Segna ciascuna come spam o no.",
  "Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.": "Ogni mattina, un’attività con le newsletter dell’ultimo giorno. Tieni o disiscriviti, una per una.",

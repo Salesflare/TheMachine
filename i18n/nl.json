@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Toegevoegd aan {} om {}.",
  "Added to {}, invited {}.": "Toegevoegd aan {}, {} uitgenodigd.",
  "Added to {}.": "Toegevoegd aan {}.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "{} mail die op spam lijkt toegevoegd aan de open to-do.",
+  "other": "{} mails die op spam lijken toegevoegd aan de open to-do."
+ },
  "Added {} personal contacts.": {
   "one": "{} persoonlijk contact toegevoegd.",
   "other": "{} persoonlijke contacten toegevoegd."
@@ -1382,6 +1386,8 @@
  "Every Monday, sum up my deals": "Elke dag, vat mijn deals samen",
  "Every event must exist and be live": "Elk event moet bestaan en actief zijn",
  "Every evidence event must exist and be live": "Elk bewijsevent moet bestaan en actief zijn",
+ "Every hour": "Elk uur",
+ "Every hour, a to-do with any new spam that got through. Mark each one as spam or not.": "Elk uur een to-do met nieuwe spam die erdoor kwam. Markeer per mail als spam of niet.",
  "Every morning, a to-do with a short greeting for each close contact who has a birthday.": "Elke ochtend een to-do met een korte felicitatie voor elk naast contact dat jarig is.",
  "Every morning, one to-do with spam that got through. Mark each one as spam or not.": "Elke ochtend één to-do met spam die erdoor kwam. Markeer per mail als spam of niet.",
  "Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.": "Elke ochtend één to-do met de nieuwsbrieven van de afgelopen dag. Houden of afmelden, per stuk.",

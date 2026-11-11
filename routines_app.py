@@ -615,6 +615,9 @@ class RoutinesApp:
             now, stamp = self.routines_now(), self.routines_stamp()
             with self.store.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
+                if not getattr(self, '_spam_hourly', False):  # once per start: a daily Spam cleanup from before runs hourly
+                    routine_templates.hourly_spam(db, stamp)
+                    self._spam_hourly = True
                 for row in db.execute("SELECT * FROM routines WHERE state='on'").fetchall():
                     period = routines.due_period(row, now)
                     if period:

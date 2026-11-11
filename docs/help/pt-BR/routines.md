@@ -15,13 +15,13 @@ Sem horário, ela roda às 8:00. O horário é o do relógio da sua Machine.
 
 ## Modelos
 
-Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30. O cartão dela mostra as palavras como qualquer rotina, e **Editar** muda as palavras ou o nome.
+Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30 (Limpeza de spam a cada hora). O cartão dela mostra as palavras como qualquer rotina, e **Editar** muda as palavras ou o nome.
 
 **Limpeza de newsletters** cria uma tarefa por área (trabalho e pessoal) com as newsletters do último dia, cada uma com **Manter** ou **Cancelar inscrição**. O cancelamento usa o link de um clique da lista, ou o e-mail de cancelamento a partir do seu endereço se o envio estiver ligado. Se não, mostra **Abrir página de cancelamento**.
 
 Recibos, pedidos e avisos de pagamento ficam de fora. Um e-mail que chega por um endereço de grupo, como um Google Group, aparece sob quem o escreveu e nunca cancela sua inscrição no grupo.
 
-**Limpeza de spam** cria uma tarefa por área com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico e o Gmail marca como spam. Só existe para e-mails que a The Machine pode mover: o Gmail conectado só para leitura não tem.
+**Limpeza de spam** cria uma tarefa por área com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico e o Gmail marca como spam. Só existe para e-mails que a The Machine pode mover: o Gmail conectado só para leitura não tem. Ela verifica a cada hora, então o spam costuma estar lá antes de você chegar nele. Spam novo vai para a mesma tarefa enquanto ela estiver aberta.
 
 Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
 
@@ -37,7 +37,7 @@ Amigos que ninguém no seu Graph tem são contados, com alguns nomes. **Adiciona
 
 **Desfazer** na tarefa remove exatamente essas pessoas, também depois de **Importar de novo**.
 
-Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
+Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam primeiro lista por código os e-mails novos de remetentes desconhecidos, e só faz uma pergunta curta à sua IA quando há algum). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
 
 Limpeza de newsletters e Limpeza de spam continuam terminando na mesma tarefa com uma escolha por e-mail. Aniversários editado dá o resultado e no máximo um rascunho, não uma tarefa por pessoa. **Voltar ao modelo** em **Editar** devolve as palavras.
 

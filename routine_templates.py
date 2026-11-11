@@ -4,8 +4,9 @@ moved to another time, renamed and edited like any routine. Its words are the te
 owner's language) until the owner changes them in Edit.
 
 While its words are the template's own and it has no script steps (own), its run is the template's own code, not a
-turn on its words (routines_app.routine_template_run): Newsletter cleanup is plain code, no model; Spam cleanup reads
-the day's mail by unknown senders in one short turn, only when there is any. Each ends in at most one to-do with a
+turn on its words (routines_app.routine_template_run): Newsletter cleanup is plain code, no model; Spam cleanup runs every
+hour (HOURLY): plain code lists the mail by unknown senders that is new since its last run, and only when there is any
+does one small model call (no tools, no agent) read just those. Each ends in at most one to-do with a
 choice per item (mail_cleanup.py), and nothing changes until the owner confirms there. Birthdays is plain code too
 (birthdays.py, birthdays_app.py): a to-do per close contact with a birthday today, its greeting drafted on their usual
 channel and sent only when the owner says so. A rename alone keeps this cheap path.
@@ -20,8 +21,9 @@ again.
 No table: the catalog is here, and a template is added when a live routine has its origin."""
 import i18n
 
-AT = '07:30'  # before the morning summary, so the to-do waits there
+AT = '07:30'  # before the morning summary, so the to-do waits there; an hourly one runs at :30
 DAILY = 'daily'  # recurring.PRESETS
+HOURLY = 'hourly'  # routines.HOURLY: often enough to be there before the owner marks spam by hand
 
 # key -> its name, what it does (the Templates list) and its words (its routine's words, what Edit shows), in the
 # owner's language at view time (scripts/i18n_extract.py SERVER_TEXT)
@@ -29,7 +31,8 @@ TEMPLATES = {
     'newsletters': {'name': 'Newsletter cleanup', 'what': 'Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.',
                     'words': 'Find the newsletters and mailing list emails that came in since the last run, one per sender. '
                              'Put them in one to-do where I pick Keep or Unsubscribe for each.'},
-    'spam': {'name': 'Spam cleanup', 'what': 'Every morning, one to-do with spam that got through. Mark each one as spam or not.',
+    'spam': {'name': 'Spam cleanup', 'what': 'Every hour, a to-do with any new spam that got through. Mark each one as spam or not.',
+             'rule': HOURLY, 'was': ('Every morning, one to-do with spam that got through. Mark each one as spam or not.',),
              'words': 'Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake '
                       'invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where '
                       'I pick Spam or Not spam for each.'},
@@ -38,6 +41,18 @@ TEMPLATES = {
                            'language, where I usually talk with them, for me to send.'},
 }
 CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (routines_app.routine_cleanup_lines)
+
+
+def rule(key):
+    """How often a template's routine runs: its own rhythm, else daily."""
+    return TEMPLATES[key].get('rule', DAILY)
+
+
+def hourly_spam(db, stamp):
+    """A Spam cleanup added while it ran daily, still on the template's time (the owner never changed when): hourly
+    from now on, its first hourly run right away. Changed when: left as the owner set it."""
+    import routines  # routines.py owns the table
+    routines.rerule(db, 'template:spam', {'unit': 'day', 'n': 1}, AT, routines.HOURLY, stamp)
 
 
 def key_of(origin):
@@ -62,7 +77,7 @@ def is_own(key, text):
     if key not in TEMPLATES:
         return False
     t = TEMPLATES[key]
-    return _flat(text) in {_flat(t['words']), _flat(words(key)), _flat(t['what'])}
+    return _flat(text) in {_flat(t['words']), _flat(words(key)), _flat(t['what']), *map(_flat, t.get('was', ()))}
 
 
 def own(origin, text, steps=None):

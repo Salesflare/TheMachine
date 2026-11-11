@@ -3,11 +3,12 @@
 A routine is not a recurring to-do. A recurring to-do (recurring.py) reminds the owner to do something; a routine is
 The Machine doing something by itself, like "every Monday at 9, sum up last week's open deals". Only the rhythm math is
 shared: a routine's `rule` and `anchor` are recurring.py's (clean_rule, occurrence, next_after, parse), plus a time of
-day, `at` ('HH:MM' on the owner's clock).
+day, `at` ('HH:MM' on the owner's clock). One rhythm is a routine's own, never a recurring to-do's: hourly (HOURLY), each
+hour at `at`'s minute. Its period is that hour ('YYYY-MM-DDTHH:MM') and its next_due a local time, not a date.
 
 Each routine runs once per period: a run's key is (routine, period), so a restart, a retry or a second worker never
-makes a second result. A scheduled period is its date; Run now is 'now:<stamp>'. Periods missed while the Machine was
-off don't stack: only the newest missed one runs. A run reads with the review's read-only tools and ends with one
+makes a second result. A scheduled period is its date (its hour when hourly); Run now is 'now:<stamp>'. Periods
+missed while the Machine was off don't stack: only the newest missed one runs. A run reads with the review's read-only tools and ends with one
 routine_result (routines_app.py): Ready (a result), Nothing new, or Didn't work. A run that ends without one didn't work.
 A run may follow the owner's skills that are on (instructions only, skills.py); its result names them (used).
 
@@ -67,6 +68,7 @@ DATA_MAX = 8000  # characters of Get data's output a run sees
 STEP_TIMEOUT = {'get': 60, 'check': 30}  # seconds a step may take unless the owner says, at most STEP_TIMEOUT_MAX
 STEP_TIMEOUT_MAX = 600
 COMMAND_MAX = 1000
+HOURLY = {'unit': 'hour', 'n': 1}  # a routine's own rhythm (Spam cleanup): every hour at at's minute
 
 
 def ensure(db):
@@ -172,8 +174,26 @@ def placeholder(row):
 
 # --- dates -------------------------------------------------------------------------------------------------------------
 
+def hourly(rule):
+    return isinstance(rule, dict) and rule.get('unit') == 'hour'
+
+
+def clean_rule(rule):
+    """recurring.clean_rule, and the routine's own hourly rhythm ('hourly' or HOURLY)."""
+    return dict(HOURLY) if rule == 'hourly' or hourly(rule) else recurring.clean_rule(rule)
+
+
+def _slot(now_local, at):
+    """The newest hourly slot at or before now: this hour's at-minute, or the last hour's."""
+    slot = now_local.replace(minute=int(at[3:5]), second=0, microsecond=0)
+    return slot if slot <= now_local else slot - dt.timedelta(hours=1)
+
+
 def first_due(rule, anchor, at, now_local):
-    """The routine's first date: its anchor, or the next date of its rhythm when the anchor's time already passed."""
+    """The routine's first date: its anchor, or the next date of its rhythm when the anchor's time already passed. An
+    hourly one: its next slot, a local time."""
+    if hourly(rule):
+        return _slot(now_local, at) + dt.timedelta(hours=1)
     today = now_local.date()
     if anchor > today or (anchor == today and not _past(now_local, at)):
         return anchor
@@ -190,7 +210,11 @@ def due_period(row, now_local):
     that is due runs, once."""
     if row['state'] != 'on' or not row['next_due']:
         return None
-    rule, anchor, due = json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), dt.date.fromisoformat(row['next_due'])
+    if hourly(json.loads(row['rule'])):  # its newest slot once due: missed hours don't stack either
+        if 'T' in row['next_due'] and now_local < dt.datetime.fromisoformat(row['next_due']):
+            return None
+        return _slot(now_local, row['at']).isoformat(timespec='minutes')
+    rule, anchor, due = json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), dt.date.fromisoformat(row['next_due'][:10])  # [:10]: from hourly
     today = now_local.date()
     if due > today or (due == today and not _past(now_local, row['at'])):
         return None
@@ -257,8 +281,8 @@ def steps_of(row):
 def create(db, instructions, rule, anchor, at, now_local, stamp, name=None, work=False, origin=None, state='on', steps=None, why=None):
     if state in ('on', 'trying'):
         _full(db)
-    rule, at = recurring.clean_rule(rule), clean_at(at)
-    anchor = recurring.anchor_for(rule, anchor)  # a weekdays routine never starts on a weekend
+    rule, at = clean_rule(rule), clean_at(at)
+    anchor = anchor if hourly(rule) else recurring.anchor_for(rule, anchor)  # a weekdays routine never starts on a weekend
     steps = clean_steps(steps)
     instructions = _words(instructions, steps)
     rid = uuid.uuid4().hex
@@ -374,7 +398,10 @@ def begin(db, routine_id, period, stamp, now_local=None):
     run_id = uuid.uuid4().hex
     made = db.execute('INSERT OR IGNORE INTO routine_runs(id,routine_id,period,version,state,started_at,steps) VALUES(?,?,?,?,?,?,?)',
                       (run_id, row['id'], period, row['version'], 'running', stamp, row['steps'])).rowcount
-    if not period.startswith(('now:', 'sort:', 'test:')):
+    if not period.startswith(('now:', 'sort:', 'test:')) and 'T' in period:  # an hourly slot: the next one
+        nxt = (dt.datetime.fromisoformat(period) + dt.timedelta(hours=1)).isoformat()
+        db.execute('UPDATE routines SET next_due=? WHERE id=? AND (next_due IS NULL OR next_due<?)', (nxt, row['id'], nxt))
+    elif not period.startswith(('now:', 'sort:', 'test:')):
         after = dt.date.fromisoformat(period)
         nxt = recurring.next_after(json.loads(row['rule']), dt.date.fromisoformat(row['anchor']), after)
         db.execute('UPDATE routines SET next_due=? WHERE id=? AND (next_due IS NULL OR next_due<?)', (nxt.isoformat(), row['id'], nxt.isoformat()))
@@ -507,6 +534,13 @@ def report(db, run_id, text=None, nothing=False, why=None, stamp=None, used=None
     if not finish(db, run_id, 'nothing' if nothing else 'ready', stamp, result=None if nothing else text,
                   why=' '.join(str(why or '').split()) if nothing else None, used=used):
         raise ValueError('This routine run is over: end the turn')
+
+
+def rerule(db, origin, old, at, new, stamp):
+    """Routines from origin (a template) still on rule old at their time at, on or paused: rule new from now on. One the
+    owner set another rhythm or time for keeps it."""
+    db.execute("UPDATE routines SET rule=?,updated_at=? WHERE origin=? AND state IN ('on','paused') AND rule=? AND at=?",
+               (json.dumps(new), stamp, origin, json.dumps(old), at))
 
 
 def restate(db, run_id, state, text):

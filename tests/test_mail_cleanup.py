@@ -113,6 +113,8 @@ class Cleanup(unittest.TestCase):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(mail_cleanup_app, 'one_click', lambda url: self.clicked.append(url) or True); p.start(); self.addCleanup(p.stop)
         self.sent, self.n = [], 0
+        self.asked, self.reply = [], '{"spam": []}'
+        self.app.cleanup_spam_model = lambda prompt: self.asked.append(prompt) or self.reply  # the spam pass's one model call
 
     def gateway(self, request):
         self.sent.append(request)
@@ -121,13 +123,15 @@ class Cleanup(unittest.TestCase):
     def act(self, name, owner=True, **args):
         return self.app.action(name, args, owner_dashboard=owner)
 
-    def mail(self, sender, title, hours_ago=3, body='', account='w', **metadata):
+    def mail(self, sender, title, hours_ago=3, body='', account='w', synced=None, version=1, **metadata):
+        """A made-up mail; synced: hours ago it came in (else when it was sent), version: 2 for one that changed since."""
         self.n += 1
         meta = {'from': sender, 'labels': ['INBOX'], 'thread_id': f't{self.n}',
                 'source_url': f'https://mail.google.com/mail/u/?authuser=owner@acme.example#all/m{self.n}', **metadata}
         with self.store.connect() as db:
-            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,?,?)',
-                       (account, f'm{self.n}', 'gmail.message', stamp(hours_ago), title, body, json.dumps(meta), 'h', stamp(hours_ago)))
+            db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at,version) VALUES(?,?,?,?,?,?,?,?,?,?)',
+                       (account, f'm{self.n}', 'gmail.message', stamp(hours_ago), title, body, json.dumps(meta), 'h',
+                        stamp(hours_ago if synced is None else synced), version))
         return f'm{self.n}'
 
     def todos(self):
@@ -426,29 +430,25 @@ class Cleanup(unittest.TestCase):
             routines.run_now(db, rid, self.app.routines_stamp())
         self.app.routines_step()
         self.assertEqual([s for s in self.sent if s['action'] == 'start'], [])
+        self.assertEqual(self.asked, [])
         self.assertEqual([r['state'] for r in self.runs()], ['nothing', 'nothing'])
         self.assertEqual(self.todos(), [])
 
     def test_spam_reads_only_unknown_senders_and_takes_only_what_it_read(self):
         self.marks = True
-        self.add('spam')  # nothing to read: no turn
-        self.assertEqual([s for s in self.sent if s['action'] == 'start'], [])
+        self.add('spam')  # nothing to read: no model at all
+        self.assertEqual((self.turns(), self.asked), ([], []))
         self.assertEqual(self.runs()[0]['state'], 'nothing')
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01, body='We noticed your site...')
         self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, **{'in-reply-to': '<x@partner.example>'})
         with self.store.connect() as db:
-            rid = db.execute("SELECT id FROM routines WHERE origin='template:spam'").fetchone()[0]
-            routines.run_now(db, rid, self.app.routines_stamp())
-        self.app.routines_step()
-        start = [s for s in self.sent if s['action'] == 'start']
-        self.assertEqual(len(start), 1)
-        self.assertIn('seo@ranks.example', start[0]['message'])
-        self.assertNotIn('sam@partner.example', start[0]['message'])
-        run = next(r for r in self.runs() if r['state'] == 'running')
-        with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
-        self.act('routine_result', owner=False, _routine_session=SESSION + run['id'], text='One cold pitch.',
-                 spam=[{'event_id': event, 'why': 'Cold SEO pitch'}, {'event_id': 999999, 'why': 'made up'}])
+        self.reply = 'Here you go:\n```json\n' + json.dumps({'spam': [{'event_id': event, 'why': 'Cold SEO pitch'}, {'event_id': 999999, 'why': 'made up'}]}) + '\n```'
+        self.again('spam')
+        self.assertEqual(self.turns(), [])  # one model call, never an agent turn
+        self.assertEqual(len(self.asked), 1)
+        self.assertIn('seo@ranks.example', self.asked[0])
+        self.assertNotIn('sam@partner.example', self.asked[0])
         todos = self.todos()
         self.assertEqual(len(todos), 1)
         row, extra = self.view(todos[0]['id'])
@@ -460,16 +460,150 @@ class Cleanup(unittest.TestCase):
         self.assertEqual(extra['cleanup']['items'][0]['state'], 'failed')
         self.assertNotIn('url', extra['cleanup']['items'][0])
 
+    def at(self, hour, minute=0):
+        """The owner's clock moves on, and the routines take a step."""
+        self.now = T(2026, 11, 9, hour, minute)
+        self.app.routines_step()
+
+    def test_spam_cleanup_runs_every_hour_and_asks_the_model_only_about_new_mail_by_unknown_senders(self):
+        self.marks = True
+        self.add('spam')  # its first run now, at 6:00
+        with self.store.connect() as db:
+            row = routines.get(db, self.rid('spam'))
+        self.assertEqual((json.loads(row['rule']), row['at'], row['next_due']), (routines.HOURLY, '07:30', '2026-11-09T06:30:00'))
+        self.assertEqual(self.app.routines_view()['routines'][0]['rule'], {'unit': 'hour', 'n': 1})
+        self.at(6, 20)
+        self.assertEqual(len(self.runs()), 1)  # not before :30
+        self.at(6, 30)
+        self.assertEqual([(r['period'], r['state']) for r in self.runs()[1:]], [('2026-11-09T06:30', 'nothing')])
+        self.at(6, 59)
+        self.assertEqual(len(self.runs()), 2)  # once per hour
+        self.mail('Sam Rivera <sam@partner.example>', 'Lunch Thursday?', hours_ago=0, from_me=True)  # the owner's own
+        self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=0)
+        self.at(7, 31)
+        self.assertEqual(len(self.asked), 1)  # one small call, with only the new mail by an unknown sender
+        self.assertIn('seo@ranks.example', self.asked[0])
+        self.assertNotIn('sam@partner.example', self.asked[0])
+        self.assertIn('Answer with JSON only', self.asked[0])
+        self.at(8, 30)  # nothing new since: no model call
+        self.at(9, 45)  # missed slots don't stack: the newest one runs, once
+        self.assertEqual(len(self.asked), 1)
+        self.assertEqual([r['period'] for r in self.runs()[2:]], ['2026-11-09T07:30', '2026-11-09T08:30', '2026-11-09T09:30'])
+        self.assertEqual(self.turns(), [])  # never an agent turn
+        # paused: no runs; resumed: from the next slot on, never what was missed
+        self.act('routine_state', id=self.rid('spam'), to='pause')
+        self.at(10, 30)
+        self.assertEqual(len(self.runs()), 5)
+        self.act('routine_state', id=self.rid('spam'), to='resume')
+        self.at(11, 0)
+        self.assertEqual(len(self.runs()), 5)
+        self.at(11, 30)
+        self.assertEqual(self.runs()[-1]['period'], '2026-11-09T11:30')
+
+    def test_mail_that_synced_after_a_run_is_read_once_and_a_changed_one_is_not_read_again(self):
+        self.marks = True
+        self.add('spam')
+        self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=0.1, synced=0)  # sent before that run, synced after
+        self.mail('Lead Lists <sales@leads.example>', '10,000 verified leads', hours_ago=0.1, synced=0, version=2)  # seen then, only its labels changed
+        self.mail('Old Pitch <hi@old.example>', 'Still interested?', hours_ago=2, synced=0)  # older than the sync lag
+        self.at(6, 30)
+        self.assertEqual(len(self.asked), 1)
+        self.assertIn('seo@ranks.example', self.asked[0])
+        self.assertNotIn('sales@leads.example', self.asked[0])
+        self.assertNotIn('hi@old.example', self.asked[0])
+        self.at(7, 30)
+        self.assertEqual(len(self.asked), 1)  # read once
+
+    def test_a_reply_that_is_no_answer_fails_and_the_next_run_reads_that_mail_again(self):
+        self.marks = True
+        self.add('spam')
+        self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=0)
+        self.reply = 'I could not decide.'
+        self.at(6, 30)
+        self.assertEqual((self.runs()[-1]['state'], self.runs()[-1]['error']), ('failed', 'no_result'))
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
+        self.reply = json.dumps({'spam': [{'event_id': event, 'why': 'Cold SEO pitch'}]})
+        self.at(7, 30)
+        self.assertEqual(len(self.asked), 2)
+        self.assertIn('seo@ranks.example', self.asked[1])
+        self.assertEqual(self.runs()[-1]['state'], 'ready')
+        self.assertEqual(len(self.todos()), 1)
+        # the usage budget holds the model call, never the plain-code check
+        self.mail('Lead Lists <sales@leads.example>', '10,000 verified leads', hours_ago=0)
+        with patch.object(a.App, 'background_pause', lambda s, **k: {'window': 'budget'}):
+            self.at(8, 30)
+            self.assertEqual(len(self.asked), 2)
+            self.assertEqual(self.runs()[-1]['state'], 'running')
+        self.at(8, 31)
+        self.assertEqual(len(self.asked), 3)
+        self.assertEqual(self.runs()[-1]['state'], 'nothing')
+
+    def spam_reply(self, *sources):
+        with self.store.connect() as db:
+            self.reply = json.dumps({'spam': [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in sources]})
+
+    def test_an_open_spam_todo_gets_the_next_runs_spam_and_a_settled_one_a_fresh_todo(self):
+        self.marks = True
+        self.add('spam')  # its first run at 6:00: nothing yet
+        first = self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=0)
+        self.spam_reply(first)
+        self.at(6, 30)
+        [todo] = self.todos()
+        with self.store.connect() as db:
+            sent = [dict(r) for r in db.execute('SELECT * FROM deliveries WHERE suggestion_id=?', (todo['id'],))]
+        second = self.mail('Lead Lists <sales@leads.example>', '10,000 verified leads', hours_ago=0)
+        self.spam_reply(second)
+        self.at(7, 30)
+        self.assertEqual(len(self.asked), 2)
+        self.assertEqual([t['id'] for t in self.todos()], [todo['id']])  # one to-do, not one per hour
+        row, extra = self.view(todo['id'])
+        self.assertEqual([(i['n'], i['address'], i['state']) for i in extra['cleanup']['items']],
+                         [(0, 'seo@ranks.example', 'open'), (1, 'sales@leads.example', 'open')])
+        self.assertEqual(row['title'], '2 emails look like spam')
+        self.assertIn('10,000 verified leads', row['body'])
+        self.assertLessEqual(len(row['body']), mail_cleanup_app.BODY_MAX)
+        self.assertEqual(self.runs()[-1]['result'], 'Added 1 email that looks like spam to the open to-do.')
+        with self.store.connect() as db:  # no new notification or push for an add
+            self.assertEqual([dict(r) for r in db.execute('SELECT * FROM deliveries WHERE suggestion_id=?', (todo['id'],))], sent)
+        with patch.object(a.next_actions.ThreadSnooze, 'write', lambda s, account, method, params, body: {}):
+            self.act('routine_cleanup', suggestion_id=todo['id'], picks={'0': 'go', '1': 'keep'})
+        self.assertEqual(self.view(todo['id'])[0]['status'], 'completed')
+        third = self.mail('Offshore Devs <hello@devs.example>', 'Your app built for half', hours_ago=0)
+        self.spam_reply(third)
+        self.at(8, 30)
+        todos = self.todos()
+        self.assertEqual(len(todos), 2)  # settled: the next spam makes a fresh one
+        _, extra = self.view(todos[-1]['id'])
+        self.assertEqual([i['address'] for i in extra['cleanup']['items']], ['hello@devs.example'])
+
+    def test_a_daily_spam_cleanup_from_before_runs_hourly_unless_the_owner_changed_when(self):
+        with self.store.connect() as db:
+            old = routines.create(db, routine_templates.TEMPLATES['spam']['words'], 'daily', self.now.date(), '07:30', self.now,
+                                  self.app.routines_stamp(), name='Spam cleanup', origin='template:spam')
+            mine = routines.create(db, 'Sum up my deals', 'daily', self.now.date(), '08:00', self.now, self.app.routines_stamp())
+        self.app._spam_hourly = False
+        self.at(6, 0)
+        with self.store.connect() as db:
+            rules = {r['id']: json.loads(r['rule']) for r in db.execute('SELECT id,rule FROM routines')}
+        self.assertEqual((rules[old], rules[mine]), (routines.HOURLY, {'unit': 'day', 'n': 1}))
+        self.assertTrue(routine_templates.own('template:spam', routine_templates.TEMPLATES['spam']['was'][0]))  # one added before it had words
+        with self.store.connect() as db:
+            db.execute("UPDATE routines SET rule=?,at='06:15' WHERE id=?", ('{"unit": "day", "n": 1}', old))
+        self.app._spam_hourly = False
+        self.at(6, 5)
+        with self.store.connect() as db:
+            self.assertEqual(json.loads(db.execute('SELECT rule FROM routines WHERE id=?', (old,)).fetchone()[0]), {'unit': 'day', 'n': 1})
+
     def test_spam_is_marked_where_the_machine_may(self):
         self.marks = True
         self.mail('Invoices <billing@fake-invoice.example>', 'Overdue invoice 4471')
         writes = []
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
+        self.reply = json.dumps({'spam': [event]})
         with patch.object(a.next_actions.ThreadSnooze, 'write', lambda s, account, method, params, body: writes.append((method, params, body)) or {}):
             self.add('spam')
-            run = next(r for r in self.runs() if r['state'] == 'running')
-            with self.store.connect() as db:
-                event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
-            self.act('routine_result', owner=False, _routine_session=SESSION + run['id'], text='x', spam=[event])
             sid = self.todos()[0]['id']
             self.act('routine_cleanup', suggestion_id=sid, picks={'0': 'go'})
         self.assertEqual(writes, [('gmail.users.threads.modify', {'userId': 'me', 'id': 't1'}, {'addLabelIds': ['SPAM'], 'removeLabelIds': ['INBOX']})])
