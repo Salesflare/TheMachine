@@ -19,6 +19,7 @@ import fleet
 import gap_note
 import gbrain
 import graph
+import graph_board_reviews
 import graph_show
 import graph_updates
 import mail_senders
@@ -1175,12 +1176,12 @@ class GraphActionsApp:
             elif name == 'board_default':
                 done = graph.default_board(db, args.get('board_id'))
             elif args.get('undo'):
-                done = graph.undo_fit(db, args['undo'])
+                done = graph_board_reviews.undo_fit(db, args['undo'])
             else:
                 many = args.get('node_ids')
                 if many is not None and not (isinstance(many, list) and all(isinstance(n, str) for n in many)):
                     raise ValueError('node_ids is a list of suggestion ids')
-                done = graph.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
+                done = graph_board_reviews.decide_fit(db, args.get('board_id'), many if many is not None else args.get('node_id'), args.get('add') is not False, now())
             if name == 'project_save':  # a new or renamed project, and the people on one, on its node and links at once
                 graph_show.show_project_save(db, done, args)
         # The board reads its projects as they are now, so these answer at once and the Graph follows in the background:

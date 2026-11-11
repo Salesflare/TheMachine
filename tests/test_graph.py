@@ -13,6 +13,7 @@ from seams import patch_everywhere  # noqa: E402
 spec = importlib.util.spec_from_file_location('graph_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 graph = a.graph
+import graph_board_reviews  # noqa: E402
 enrichment = a.enrichment
 NOW = dt.datetime(2026, 10, 16, 12, tzinfo=dt.timezone.utc)
 CONFIG = {'accounts': [{'id': 'work', 'email': 'sam@acme.com'}, {'id': 'chat', 'service': 'whatsapp', 'email': 'Personal WhatsApp'},
@@ -1274,12 +1275,12 @@ class Boards(unittest.TestCase):
             self.assertTrue(all(p['sorting'] and p['stage'] == 'Sourced' for p in board['projects']))
             brief = next(b for b in graph.boards_brief(db) if b['board'] == 'Hiring')
             self.assertEqual(brief['about'], 'Roles we hire for')
-            self.assertEqual(sorted(r['name'] for r in graph.unsorted_projects(db)), sorted(p['name'] for p in board['projects']))
+            self.assertEqual(sorted(r['name'] for r in graph_board_reviews.unsorted_projects(db)), sorted(p['name'] for p in board['projects']))
             # A review places one by its messages, with the reason, even in the stage it waits in
             event = db.execute('SELECT id FROM events ORDER BY id LIMIT 1').fetchone()[0]
             placed = graph.set_stage(db, board['projects'][0]['id'], 'Sourced', 'agent', NOW.isoformat(), reason='applied with a CV', event_id=event)
             self.assertNotIn('kept', placed)
-            self.assertEqual(len(graph.unsorted_projects(db)), 1)
+            self.assertEqual(len(graph_board_reviews.unsorted_projects(db)), 1)
 
     def test_a_saved_board_is_sorted_by_the_next_review_which_answers_for_each_project_and_a_failure_shows(self):
         asked, agreed, later = self.mails()
@@ -1290,7 +1291,7 @@ class Boards(unittest.TestCase):
             graph.save_board(db, {'name': 'Partners', 'stages': ['Contacted', 'Agreed', 'Live'], 'about': 'Partners we list with',
                                   'projects': ['Paperkite', 'Bramblebox', 'Quillfeather']}, NOW.isoformat())
             ids = {r['name']: 'project:' + str(r['id']) for r in db.execute('SELECT id,name FROM projects')}
-            self.assertEqual(len(graph.unsorted_projects(db)), 3)
+            self.assertEqual(len(graph_board_reviews.unsorted_projects(db)), 3)
         text = self.store.sort_text('run1')  # what the next review gets, at the top of its prompt
         self.assertIn(f"Paperkite ({ids['Paperkite']}) on Partners (Contacted > Agreed > Live > Stalled or declined)", text)
         self.assertIn(f'{agreed} (gmail.message, ', text)
@@ -1304,18 +1305,18 @@ class Boards(unittest.TestCase):
             self.assertEqual((tiles['Quillfeather']['sorting'], tiles['Quillfeather']['sort_note']), (False, 'No messages about it yet'))
             self.assertEqual(graph.boards(db, NOW.isoformat())[1]['sorting'], 2)
             with self.assertRaises(ValueError) as said:  # the review can't finish without answering for each one
-                graph.sort_answer(db, 'run1', None)
+                graph_board_reviews.sort_answer(db, 'run1', None)
             self.assertIn('Paperkite', str(said.exception)); self.assertIn('Bramblebox', str(said.exception))
             graph.set_stage(db, ids['Paperkite'], 'Agreed', 'agent', NOW.isoformat(), reason='Ann said yes', event_id=agreed)
             with self.assertRaises(ValueError):
-                graph.sort_answer(db, 'run1', [{'project': ids['Bramblebox']}])  # says why
-            self.assertEqual(graph.sort_answer(db, 'run1', [{'project': ids['Bramblebox'], 'why': 'only our own note so far'}]), 1)
-            self.assertEqual(graph.sort_answer(db, 'other-run', None), 0)
+                graph_board_reviews.sort_answer(db, 'run1', [{'project': ids['Bramblebox']}])  # says why
+            self.assertEqual(graph_board_reviews.sort_answer(db, 'run1', [{'project': ids['Bramblebox'], 'why': 'only our own note so far'}]), 1)
+            self.assertEqual(graph_board_reviews.sort_answer(db, 'other-run', None), 0)
             tiles = {p['name']: p for p in graph.boards(db, NOW.isoformat())[1]['projects']}
             self.assertEqual((tiles['Paperkite']['sorting'], tiles['Paperkite']['stage'], tiles['Paperkite']['reason']), (False, 'Agreed', 'Ann said yes'))
             self.assertEqual(tiles['Bramblebox']['sort_note'], 'only our own note so far')
             self.assertEqual(tiles['Bramblebox']['last_event_id'], later)  # its latest message instead of a move
-            self.assertEqual(graph.unsorted_projects(db), [])
+            self.assertEqual(graph_board_reviews.unsorted_projects(db), [])
             # A review that got it and failed: the tile says so, and the next review tries again, up to SORT_TRIES
             graph.label(db, [asked], 'Inkwell', 'review', NOW.isoformat())
             graph.save_board(db, {'board_id': db.execute("SELECT id FROM boards WHERE name='Partners'").fetchone()[0], 'name': 'Partners',
@@ -1327,12 +1328,12 @@ class Boards(unittest.TestCase):
             db.execute("INSERT INTO review_runs(run_id,status,started_at,updated_at,error) VALUES('run2','lost',?,?,'runtime_lost')", (NOW.isoformat(),) * 2)
             tile = next(p for p in graph.boards(db, NOW.isoformat())[1]['projects'] if p['name'] == 'Inkwell')
             self.assertEqual((tile['sorting'], tile['sort_failed']), (False, 'Sorting failed, trying again'))
-            self.assertEqual([r['name'] for r in graph.unsorted_projects(db)], ['Inkwell'])
+            self.assertEqual([r['name'] for r in graph_board_reviews.unsorted_projects(db)], ['Inkwell'])
         self.store.sort_text('run3'); self.store.sort_text('run4')
         with self.store.connect() as db:
             tile = next(p for p in graph.boards(db, NOW.isoformat())[1]['projects'] if p['name'] == 'Inkwell')
             self.assertEqual(tile['sort_failed'], "Couldn't sort it in 3 checks")
-            self.assertEqual(graph.unsorted_projects(db), [])
+            self.assertEqual(graph_board_reviews.unsorted_projects(db), [])
         self.assertEqual(self.store.sort_text('run5'), '')
 
     def test_finish_analysis_of_a_review_that_got_boards_to_sort_waits_for_its_answer(self):
@@ -1502,7 +1503,7 @@ class Boards(unittest.TestCase):
                 graph.label(db, ids, name, 'review', NOW.isoformat()) if ids else graph.project_id(db, name, NOW.isoformat())
             board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
             ids = {r['name']: 'project:' + str(r['id']) for r in db.execute('SELECT id,name FROM projects')}
-            self.assertTrue(graph.fit_due(db, NOW.isoformat()))  # a board just saved: its check starts a review now
+            self.assertTrue(graph_board_reviews.fit_due(db, NOW.isoformat()))  # a board just saved: its check starts a review now
         text = self.store.fit_text('run1')
         self.assertIn('Boards: Listings (Contacted > Agreed > Live > Stalled or declined): Partners we list with', text)
         for name in ids:
@@ -1510,15 +1511,15 @@ class Boards(unittest.TestCase):
         self.assertIn('Projects that may fit a board', a.review_prompt('run1', ['work'], fitting=text))
         with self.store.connect() as db:
             with self.assertRaises(ValueError):
-                graph.fit_answer(db, 'run1', None)
+                graph_board_reviews.fit_answer(db, 'run1', None)
             graph.set_stage(db, ids['Paperkite'], 'Agreed', 'agent', NOW.isoformat(), board='Listings', reason='Ann said yes', event_id=agreed)
             with self.assertRaises(ValueError):
-                graph.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'fit': 'maybe'}])  # says why
-            done = graph.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, listing not discussed yet'},
+                graph_board_reviews.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'fit': 'maybe'}])  # says why
+            done = graph_board_reviews.fit_answer(db, 'run1', [{'project': ids['Bramblebox'], 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, listing not discussed yet'},
                                                  {'project': ids['Quillfeather'], 'fit': 'maybe', 'why': 'asked about a listing once'},
                                                  {'project': ids['Home painting'], 'fit': 'no', 'why': 'a home job'}])
             self.assertEqual(done, 4)
-            self.assertFalse(graph.fit_due(db, NOW.isoformat()))
+            self.assertFalse(graph_board_reviews.fit_due(db, NOW.isoformat()))
             board = graph.boards(db, NOW.isoformat())[0]
             self.assertEqual([m['name'] for m in board['maybes']], ['Quillfeather', 'Bramblebox'] if board['maybes'][0]['name'] == 'Quillfeather' else ['Bramblebox', 'Quillfeather'])
         self.assertEqual(self.store.fit_text('run2'), '')  # each project is checked once per board
@@ -1548,7 +1549,7 @@ class Boards(unittest.TestCase):
         self.build()
         with self.store.connect() as db:
             board_id = db.execute("SELECT id FROM boards WHERE name='Listings'").fetchone()[0]
-            self.assertTrue(graph.backfill_due(db))
+            self.assertTrue(graph_board_reviews.backfill_due(db))
             self.assertEqual(graph.boards(db, NOW.isoformat())[0]['backfill'], {'state': 'running'})
         text = self.app.backfill_text('run1')
         self.assertIn('Boards: Listings (Contacted > Agreed > Live > Stalled or declined): Partners we list with', text)
@@ -1560,11 +1561,11 @@ class Boards(unittest.TestCase):
         self.assertIn('Looking through the history for new boards', a.review_prompt('run1', ['work'], backfill=text))
         with self.store.connect() as db:
             with self.assertRaises(ValueError):
-                graph.backfill_answer(db, 'run1', None)
+                graph_board_reviews.backfill_answer(db, 'run1', None)
         placed = self.app.graph_action({'project': 'Partner Example', 'event_ids': ids(deal), 'board': 'Listings', 'stage': 'Agreed',
                                         'event_id': ids(deal)[1], 'reason': 'Ann agreed to list us'})
         with self.store.connect() as db:
-            done = graph.backfill_answer(db, 'run1', [{'project': 'org:bramble.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, no listing yet'},
+            done = graph_board_reviews.backfill_answer(db, 'run1', [{'project': 'org:bramble.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a partner, no listing yet'},
                                                       {'project': 'email:kim@gmail.com', 'fit': 'no', 'why': 'a friend'}])
             self.assertEqual(done, 3)
             board = graph.boards(db, NOW.isoformat())[0]
@@ -1576,10 +1577,10 @@ class Boards(unittest.TestCase):
         fit = self.store.fit_text('run3')
         self.assertIn('Fernwave', fit)
         with self.store.connect() as db:
-            graph.fit_answer(db, 'run3', [{'project': 'Fernwave', 'board': 'Listings', 'fit': 'no', 'why': 'a supplier'}])
+            graph_board_reviews.fit_answer(db, 'run3', [{'project': 'Fernwave', 'board': 'Listings', 'fit': 'no', 'why': 'a supplier'}])
         self.assertEqual(self.app.backfill_text('run4'), '')
         with self.store.connect() as db:
-            self.assertFalse(graph.backfill_due(db))
+            self.assertFalse(graph_board_reviews.backfill_due(db))
             self.assertEqual(graph.boards(db, NOW.isoformat())[0]['backfill'], {'state': 'done', 'added': 1, 'review': 1})
         added = self.app.action('board_fit', {'board_id': board_id, 'node_id': 'org:bramble.example'}, owner_dashboard=True)
         with self.store.connect() as db:
@@ -1590,8 +1591,8 @@ class Boards(unittest.TestCase):
             self.assertEqual(board['maybes'], [])
             self.assertEqual(board['backfill'], {'state': 'done', 'added': 2, 'review': 0})
             graph.save_board(db, {'board_id': board_id, 'name': 'Listings', 'stages': self.STAGES, 'about': 'Partners we list with, any kind'}, NOW.isoformat())
-            self.assertFalse(graph.backfill_due(db))  # once per board: an edit doesn't start it again
-            later = (NOW + dt.timedelta(days=graph.BACKFILL_SHOWN_DAYS + 1)).isoformat()
+            self.assertFalse(graph_board_reviews.backfill_due(db))  # once per board: an edit doesn't start it again
+            later = (NOW + dt.timedelta(days=graph_board_reviews.BACKFILL_SHOWN_DAYS + 1)).isoformat()
             self.assertIsNone(graph.boards(db, later)[0]['backfill'])  # the header says it for a few days
 
     def test_the_look_through_the_history_keeps_only_you_boards_to_the_owner_and_respects_leave_out(self):
@@ -1614,7 +1615,7 @@ class Boards(unittest.TestCase):
         node = self.app.graph_action({'project': 'Buyer Example', 'event_ids': ids, 'board': 'Buyers', 'stage': 'Contacted', 'event_id': ids[0],
                                       'reason': 'Ann asked to talk about buying Acme'})
         with self.store.connect() as db:
-            graph.backfill_answer(db, 'run1', [{'project': 'org:maybe.example', 'board': 'Buyers', 'fit': 'maybe', 'why': 'asked about Acme once'}])
+            graph_board_reviews.backfill_answer(db, 'run1', [{'project': 'org:maybe.example', 'board': 'Buyers', 'fit': 'maybe', 'why': 'asked about Acme once'}])
             pid = db.execute("SELECT id FROM projects WHERE name='Buyer Example'").fetchone()[0]
             self.assertFalse(graph.visible_to_team(db, f'project:{pid}'))  # an Only-you board's projects stay Only you
             self.assertIn(ids[0], graph.hidden_event_ids(db))
@@ -1639,9 +1640,9 @@ class Boards(unittest.TestCase):
         self.assertIn("each board's own purpose", prompt)
         with self.store.connect() as db:
             with self.assertRaises(ValueError) as said:  # asked against two boards: one fit per board
-                graph.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'fit': 'maybe', 'why': 'a trial'}])
+                graph_board_reviews.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'fit': 'maybe', 'why': 'a trial'}])
             self.assertIn('each naming its board', str(said.exception))
-            graph.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a trial'},
+            graph_board_reviews.backfill_answer(db, 'run1', [{'project': 'org:shop.example', 'board': 'Listings', 'fit': 'maybe', 'why': 'a trial'},
                                                {'project': 'org:shop.example', 'board': 'Buyers', 'fit': 'no', 'why': 'a customer trial, not a buyer'}])
             maybes = {b['name']: [m['id'] for m in b['maybes']] for b in graph.boards(db, NOW.isoformat())}
             self.assertEqual(maybes, {'Listings': ['org:shop.example'], 'Buyers': []})
@@ -1681,7 +1682,7 @@ class Boards(unittest.TestCase):
             bram = db.execute("SELECT id FROM projects WHERE name='Bramble talks'").fetchone()[0]
             db.execute("INSERT INTO board_fits(board_id,project_id,fit,run_id,created_at) VALUES(?,?,'asked','run1',?)", (board_id, pid, NOW.isoformat()))
             db.execute("INSERT INTO board_fits(board_id,project_id,fit,run_id,created_at) VALUES(?,?,'asked','run1',?)", (board_id, bram, NOW.isoformat()))
-            graph.fit_answer(db, 'run1', [{'project': f'project:{pid}', 'fit': 'maybe', 'why': 'two buyers in one', 'split': True},
+            graph_board_reviews.fit_answer(db, 'run1', [{'project': f'project:{pid}', 'fit': 'maybe', 'why': 'two buyers in one', 'split': True},
                                           {'project': f'project:{bram}', 'fit': 'no', 'why': 'not a partner'}])
         return board_id, pid, bram, self.ids([m['source_id'] for m in partner]), self.ids([m['source_id'] for m in bramble])
 
@@ -1691,7 +1692,7 @@ class Boards(unittest.TestCase):
             org = db.execute("SELECT name FROM graph_nodes WHERE id='org:partner.example'").fetchone()[0]
             graph.project_id(db, org, NOW.isoformat())  # other work by that name, never merged into
             db.execute('UPDATE projects SET closed_at=? WHERE name=?', (NOW.isoformat(), org))
-            names = {p['key']: p['name'] for p in graph.split_plan(db, pid)}
+            names = {p['key']: p['name'] for p in graph_board_reviews.split_plan(db, pid)}
         self.assertEqual(names['org:partner.example'], f'Acme sale: {org}')
 
     def test_add_on_a_bundle_makes_one_project_per_counterpart_and_undo_puts_it_back(self):
@@ -1722,7 +1723,7 @@ class Boards(unittest.TestCase):
             self.assertEqual(db.execute('SELECT count(*) FROM event_projects WHERE project_id=?', (bram,)).fetchone()[0], 0)
             self.assertEqual([m['id'] for m in graph.boards(db, NOW.isoformat())[0]['maybes']], [f'project:{pid}'])
             with self.assertRaises(ValueError):
-                graph.undo_fit(db, done['undo'])  # once
+                graph_board_reviews.undo_fit(db, done['undo'])  # once
 
     def test_add_and_leave_out_answer_before_the_graph_is_built_again(self):
         """With the graph worker running (the service), Add and Leave out answer at once and hand the rebuild to it: a

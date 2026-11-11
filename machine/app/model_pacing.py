@@ -10,6 +10,7 @@ import time
 
 import embeddings
 import graph
+import graph_board_reviews
 from machine.model_usage import model_resets, model_status, model_usage, usage_status
 import model_budget
 import model_fallback
@@ -161,7 +162,7 @@ class ModelPacingApp:
         model, dims = settings.get('model', ''), int(settings.get('dims', 256))
         asked = embeddings.embed(settings, [embeddings.QUERY_PREFIX + text[:embeddings.BODY_CHARS]], 30)[0]
         with self.store.connect() as db:
-            found = graph.backfill_counterparts(db)
+            found = graph_board_reviews.backfill_counterparts(db)
             vector = lambda ids: [embeddings.unpack(r[0]) for r in db.execute(
                 f"SELECT v.vector FROM event_vectors v JOIN events e ON e.id=v.event_id WHERE e.deleted=0 AND v.version=e.version AND v.model=? AND v.dims=? "
                 f"AND e.id IN ({','.join('?' * len(ids))})", (model, dims, *ids))] if ids else []
@@ -183,13 +184,13 @@ class ModelPacingApp:
         return scores
 
     def backfill_text(self, run_id):
-        """The next round of a new board's look through the history for this review (graph.backfill_brief), ranked by
+        """The next round of a new board's look through the history for this review (graph_board_reviews.backfill_brief), ranked by
         meaning first when there are local embeddings. Empty while the model's limits are nearly used."""
         try:
             if not self.model_room() or self.history_paced():
                 return ''
             with self.store.connect() as db:
-                pending = graph.backfill_pending(db)
+                pending = graph_board_reviews.backfill_pending(db)
             for board, text in pending:
                 try:
                     scores = self.backfill_scores(board, text)
@@ -197,9 +198,9 @@ class ModelPacingApp:
                     LOG.info('backfill ranking without embeddings error=%s', type(error).__name__)
                     scores = None
                 with self.store.connect() as db:
-                    graph.rank_backfill(db, board['id'], scores)
+                    graph_board_reviews.rank_backfill(db, board['id'], scores)
             with self.store.connect() as db:
-                return graph.backfill_brief(db, run_id, now(), self.graph_event_lines)
+                return graph_board_reviews.backfill_brief(db, run_id, now(), self.graph_event_lines)
         except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
             LOG.error('backfill brief error=%s', type(error).__name__)
             return ''

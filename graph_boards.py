@@ -6,6 +6,7 @@ all projects at once; what a tile says is the same."""
 import json
 
 import graph
+import graph_board_reviews
 from machine import stamps
 
 ORG_TABLES = ('graph_nodes', 'org_profiles', 'org_edits', 'org_aliases')  # what graph.project_org reads
@@ -91,7 +92,7 @@ def boards(db, now):
             found = todos[node]
             card = found[0] if found else None
             items.append({'id': node, 'name': p['name'], 'stage': p['stage'] if p['stage'] in names else names[0], 'reason': p['stage_reason'],
-                          'by': p['stage_by'], **graph.sort_view(db, p), 'at': p['stage_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
+                          'by': p['stage_by'], **graph_board_reviews.sort_view(db, p), 'at': p['stage_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
                           'first': p['id'] not in moved, 'days': max(0, (today - since).days), 'closed': bool(p['closed_at']),
                           'visibility': p['visibility'], 'no_reply_days': max(0, (today - graph.parse_time(mine_since)).days) if mine_since else None,
                           'org': {**org, 'node_id': org['id']} if org else None, 'card': {'id': card[0], 'title': card[1]} if card else None,
@@ -102,6 +103,6 @@ def boards(db, now):
         out.append({'id': b['id'], 'name': b['name'], 'about': b['about'], 'side': bool(b['side']), 'visibility': b['visibility'] or 'team',
                     'stages': json.loads(b['stages']) + ([{'name': graph.STALLED, 'side': True}] if b['side'] else []), 'projects': items,
                     'stuck': sum(1 for i in items if (i['no_reply_days'] or 0) >= graph.STUCK_DAYS and i['stage'] != graph.STALLED),
-                    'sorting': sum(1 for i in items if i['sorting']), 'default': bool(b['is_default']), 'maybes': graph.board_maybes(db, b['id'])})
-        out[-1]['backfill'] = graph.backfill_view(db, b['id'], now, out[-1]['maybes'])
+                    'sorting': sum(1 for i in items if i['sorting']), 'default': bool(b['is_default']), 'maybes': graph_board_reviews.board_maybes(db, b['id'])})
+        out[-1]['backfill'] = graph_board_reviews.backfill_view(db, b['id'], now, out[-1]['maybes'])
     return out

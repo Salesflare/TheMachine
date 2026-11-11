@@ -12,6 +12,7 @@ import uuid
 import bounces
 import chat_files
 import graph
+import graph_board_reviews
 import project_org_checks
 from machine.config import LOG
 import meeting_mail
@@ -381,13 +382,13 @@ def owner_wrote_in(db, account_id, metadata):
 
 
 def fit_text(db, run_id):
-    """Open projects on no board, for this review to check against the boards (graph.fit_brief)."""
-    return graph.fit_brief(db, run_id, now())
+    """Open projects on no board, for this review to check against the boards (graph_board_reviews.fit_brief)."""
+    return graph_board_reviews.fit_brief(db, run_id, now())
 
 
 def sort_text(db, run_id):
-    """Projects the owner put on a board and no review placed yet, for this review to sort first (graph.sort_brief)."""
-    return graph.sort_brief(db, run_id)
+    """Projects the owner put on a board and no review placed yet, for this review to sort first (graph_board_reviews.sort_brief)."""
+    return graph_board_reviews.sort_brief(db, run_id)
 
 
 def org_check_text(db, run_id):
