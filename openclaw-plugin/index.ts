@@ -154,7 +154,20 @@ function signalsReach(context: any) {
 // The owner's own private chat only (privateMain): what they state there that stays true becomes a fact in The Machine,
 // under Learning, instead of a line in MEMORY.md that no review or draft reads. The service ties it to their last
 // message in this chat, which it got from before_dispatch below with the owner key (never a model-supplied id).
-const SAID_FACT_RULE = ' When the owner tells you here something that stays true (a fact, a decision or a lasting preference), save it with remember_fact: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind (preference, commitment, event, contact when it only says how to reach one person: their phone or email, or fact), about ([graph node_ids] when it is about a person, organization or project; graph finds them) and no decision_id. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.';
+const SAID_FACT_RULE = ' When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with remember_fact: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind (preference, commitment, event, contact when it only says how to reach one person: their phone or email, or fact), about ([graph node_ids] when it is about a person, organization or project; graph finds them) and no decision_id. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.';
+// The same habit for the owner's own main chat, in its system prompt (memoryHabit below): in OpenClaw's Code Mode the
+// model sees tool names and input hints only, never their descriptions, so the rules above never reached it there and
+// what the owner said in passing went unsaved, and questions went unlooked-up. Short, the same on every turn (cached).
+const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory first. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
+// Which save tool the owner's main chat has this turn (the same reach as the tools: their private Telegram chat or the
+// heartbeat gets assistant_signals, the web chat assistant_remember); '' for any other chat, agent or run.
+function memoryHabit(ctx: any): string {
+  if (ctx.agentId !== 'main' || ctx.sandboxed || ctx.sessionKey !== 'agent:main:main') return '';
+  const channel = ctx.messageProvider || ctx.channel || ctx.channelId || '';
+  if (channel === 'webchat') return MEMORY_HABIT('assistant_remember');
+  const owner = ownerChat(), mine = (id: any) => !id || (!!owner && String(id).replace(/^telegram:/, '') === owner);
+  return (!channel || channel === 'telegram') && mine(ctx.senderId) && mine(ctx.chatId) ? MEMORY_HABIT('assistant_signals remember_fact') : '';
+}
 const BUG_REPORT_RULE = 'When the owner tells you about a problem with The Machine itself, offer to send it as a bug report: call this with words (what they said, as they said it) and summary (one plain sentence), then say what it returns, with its link as it is: the link opens Report a bug in their dashboard, filled in. Nothing goes until they tap Send there; never say it was sent or filed. A note in the workspace or memory never reaches The Machine team; never say it does.';
 
 async function settings() {
@@ -275,7 +288,7 @@ export default definePluginEntry({
       if (context.agentId !== 'main' || context.sandboxed || !own) return null;
       return {
         name: 'assistant_memory', label: 'What The Machine learned',
-        description: 'What The Machine learned about the owner and the world, and their draft rules, matching a few words (like "aisle seats" or "office address"). Use it before saying you don’t know something the owner told you. A person’s facts come only when the words name them. A line marked Historical no longer holds.',
+        description: 'What The Machine learned about the owner and the world, and their draft rules, matching a few words (like "aisle seats" or "office address"). Look here first when an answer may depend on what the owner told you before (where they like to eat, when something is, who someone is), and before saying you don’t know. A person’s facts come only when the words name them. A line marked Historical no longer holds.',
         parameters: { type: 'object', additionalProperties: false, required: ['words'], properties: {
           words: { type: 'string', description: 'A few words of what to look for' },
         } },
@@ -293,7 +306,7 @@ export default definePluginEntry({
       if (context.agentId !== 'main' || context.sandboxed || key !== 'agent:main:main' || context.messageChannel !== 'webchat') return null;
       return {
         name: 'assistant_remember', label: 'Remember for The Machine',
-        description: 'When the owner tells you here something that stays true (a fact, a decision or a lasting preference), save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind, and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.',
+        description: 'When the owner tells you here something that stays true (a fact, a decision or a lasting preference), also in passing and without saying "remember", save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind, and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.',
         parameters: { type: 'object', additionalProperties: false, required: ['text'], properties: {
           text: { type: 'string', description: 'One plain sentence, 5-240 characters' },
           kind: { type: 'string', enum: ['preference', 'commitment', 'event', 'contact', 'fact'], description: 'contact: only how to reach one person' },
@@ -512,6 +525,10 @@ export default definePluginEntry({
         // The durable outbox edits the card. No second confirmation message.
         return { handled: true };
       },
+    });
+    api.on('before_prompt_build', async (_event: any, ctx: any) => {
+      const habit = memoryHabit(ctx);
+      return habit ? {appendSystemContext: habit} : undefined;
     });
     api.on('before_dispatch', async (event: any, context: any) => {
       const config = await settings();

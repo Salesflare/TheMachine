@@ -23,12 +23,12 @@ source=source.replace("import { registerSecretRedaction } from './secret-redacti
 source=source.replace("import { registerReviewRecovery, currentReviewRun } from './review-recovery.ts';",'const registerReviewRecovery=()=>{};const currentReviewRun=key=>globalThis.fixtureRuns?.[key];');
 source=source.replace("import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';",'const definePluginEntry=v=>v;').replace('export default definePluginEntry','globalThis.fixturePlugin=definePluginEntry');
 const fixturePath=join(fixtureDir,'handler.ts');await writeFile(fixturePath,source);
-const id='aaaaaaaaaaaaaaaa';let handler, beforeDispatch, toolFactory, toolFactories={}, choices=[], edits=[], replies=[];
+const id='aaaaaaaaaaaaaaaa';let handler, beforeDispatch, promptBuild, toolFactory, toolFactories={}, choices=[], edits=[], replies=[];
 globalThis.fixtureConfig={telegram_owner:'1000001',dashboard_host:'machine.example.ts.net',dashboard_path:'/assistant/'};
 let item={id,status:'snoozed'};
 globalThis.fixtureCall=async(action,args)=>{if(action==='refresh_card')return {queued:true};if(action==='status')return {suggestions:[item],deliveries:[{suggestion_id:id,message_id:'123',previous_message_ids:'["old"]'}]};choices.push(args);if(action==='decide')item.status=args.choice==='complete'?'completed':args.choice==='reject'?'rejected':args.choice==='snooze'?'snoozed':'accepted';return {status:item.status,snoozed_until:'2026-10-10T07:00:00Z'};};
 await import(fixturePath);
-globalThis.fixturePlugin.register({runtime:{config:{current:()=>({})}},registerTool(factory,opts){toolFactories[opts.name]=factory;if(opts.name==='assistant_signals')toolFactory=factory;},registerInteractiveHandler(h){handler=h.handler},on(name,h){if(name==='before_dispatch')beforeDispatch=h},registerCommand(){}});
+globalThis.fixturePlugin.register({runtime:{config:{current:()=>({})}},registerTool(factory,opts){toolFactories[opts.name]=factory;if(opts.name==='assistant_signals')toolFactory=factory;},registerInteractiveHandler(h){handler=h.handler},on(name,h){if(name==='before_dispatch')beforeDispatch=h;if(name==='before_prompt_build')promptBuild=h},registerCommand(){}});
 const ctx=(choice,message='123')=>({auth:{isAuthorizedSender:true},isGroup:false,accountId:'default',senderId:'1000001',callback:{data:`assistant:${id}:${choice}`,chatId:'1000001',messageId:message},callbackId:'unique',respond:{editButtons:async x=>edits.push(x),reply:async x=>replies.push(x),editMessage:async x=>edits.push(x),clearButtons:async()=>{}}});
 await handler(ctx('snooze'));assert.equal(choices.length,0);let buttons=edits.pop().buttons.flat();assert.equal(buttons.length,6);assert.ok(buttons.some(b=>b.url?.startsWith('https://machine.example.ts.net/assistant/#snooze-custom=')));assert.ok(buttons.filter(b=>b.callback_data).every(b=>Buffer.byteLength(b.callback_data)<=64&&decodeCallback(b.callback_data)));
 await handler(ctx('back'));assert.deepEqual(edits.pop().buttons.flat().map(b=>b.text),['Unsnooze','Change time','Not needed']);
@@ -267,6 +267,22 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  await remember(web).execute('t',{text:'You take the train.',kind:'preference',_owner_chat:false,decision_id:'n1'});
  assert.deepEqual(calls.pop(),['remember_fact',{text:'You take the train.',_owner_chat:true,kind:'preference'}]);
  globalThis.fixtureCall=saved;
+}
+// In Code Mode the model never sees tool descriptions, so the owner's main chat carries the memory habit in its system
+// prompt: save what they say in passing that stays true, look up before answering, naming the save tool this chat has.
+{
+ assert.ok(promptBuild,'the memory habit hook is registered');
+ const web=await promptBuild({},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat'});
+ assert.match(web.appendSystemContext,/assistant_remember.*don't say "remember".*assistant_memory.*Small talk/s);
+ assert.doesNotMatch(web.appendSystemContext,/remember_fact/);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000001',chatId:'1000001'},{agentId:'main',sessionKey:'agent:main:main'}])
+  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals remember_fact.*assistant_memory/s);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'whatsapp'},
+   {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageProvider:'webchat'},
+   {agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat',sandboxed:true}])assert.equal(await promptBuild({},c),undefined);
+ // The tool descriptions say the same where they are shown: in passing, and looked up before answering
+ assert.match(toolFactories.assistant_remember({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).description,/without saying "remember"/);
+ assert.match(toolFactories.assistant_memory({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).description,/Look here first when an answer may depend/);
 }
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {
