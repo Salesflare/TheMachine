@@ -792,6 +792,19 @@ class CardsStore:
                        (account_id, source_id, kind, stamp, title, body, json.dumps(meta), hashlib.sha256((title + body).encode()).hexdigest(), stamp))
             return db.execute('SELECT id FROM events WHERE account_id=? AND source_id=?', (account_id, source_id)).fetchone()[0]
 
+    def cleanup_grow(self, suggestion_id, event_id, title, body, meta):
+        """A routine's open cleanup to-do with more items (mail_cleanup_app.cleanup_todos): its title, text and evidence
+        brought up to date in place. Quiet: no delivery or notification, and where it is stays. False when it was
+        closed meanwhile."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            changed = db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + ",body=? WHERE id=? AND status NOT IN ('completed','rejected')",
+                                 (title[:300], title[:300], body[:5000], suggestion_id)).rowcount
+            if changed:
+                db.execute("UPDATE events SET title=?,body=?,metadata=? WHERE id=? AND kind='routine.cleanup'",
+                           (title, body, json.dumps(meta), event_id))
+            return bool(changed)
+
     def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None, area_open=False,
                    file_texts=None, accepted=False):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with

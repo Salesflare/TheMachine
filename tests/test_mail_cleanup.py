@@ -539,6 +539,44 @@ class Cleanup(unittest.TestCase):
         self.assertEqual(len(self.asked), 3)
         self.assertEqual(self.runs()[-1]['state'], 'nothing')
 
+    def spam_reply(self, *sources):
+        with self.store.connect() as db:
+            self.reply = json.dumps({'spam': [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in sources]})
+
+    def test_an_open_spam_todo_gets_the_next_runs_spam_and_a_settled_one_a_fresh_todo(self):
+        self.marks = True
+        self.add('spam')  # its first run at 6:00: nothing yet
+        first = self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=0)
+        self.spam_reply(first)
+        self.at(6, 30)
+        [todo] = self.todos()
+        with self.store.connect() as db:
+            sent = [dict(r) for r in db.execute('SELECT * FROM deliveries WHERE suggestion_id=?', (todo['id'],))]
+        second = self.mail('Lead Lists <sales@leads.example>', '10,000 verified leads', hours_ago=0)
+        self.spam_reply(second)
+        self.at(7, 30)
+        self.assertEqual(len(self.asked), 2)
+        self.assertEqual([t['id'] for t in self.todos()], [todo['id']])  # one to-do, not one per hour
+        row, extra = self.view(todo['id'])
+        self.assertEqual([(i['n'], i['address'], i['state']) for i in extra['cleanup']['items']],
+                         [(0, 'seo@ranks.example', 'open'), (1, 'sales@leads.example', 'open')])
+        self.assertEqual(row['title'], '2 emails look like spam')
+        self.assertIn('10,000 verified leads', row['body'])
+        self.assertLessEqual(len(row['body']), mail_cleanup_app.BODY_MAX)
+        self.assertEqual(self.runs()[-1]['result'], 'Added 1 email that looks like spam to the open to-do.')
+        with self.store.connect() as db:  # no new notification or push for an add
+            self.assertEqual([dict(r) for r in db.execute('SELECT * FROM deliveries WHERE suggestion_id=?', (todo['id'],))], sent)
+        with patch.object(a.next_actions.ThreadSnooze, 'write', lambda s, account, method, params, body: {}):
+            self.act('routine_cleanup', suggestion_id=todo['id'], picks={'0': 'go', '1': 'keep'})
+        self.assertEqual(self.view(todo['id'])[0]['status'], 'completed')
+        third = self.mail('Offshore Devs <hello@devs.example>', 'Your app built for half', hours_ago=0)
+        self.spam_reply(third)
+        self.at(8, 30)
+        todos = self.todos()
+        self.assertEqual(len(todos), 2)  # settled: the next spam makes a fresh one
+        _, extra = self.view(todos[-1]['id'])
+        self.assertEqual([i['address'] for i in extra['cleanup']['items']], ['hello@devs.example'])
+
     def test_a_daily_spam_cleanup_from_before_runs_hourly_unless_the_owner_changed_when(self):
         with self.store.connect() as db:
             old = routines.create(db, routine_templates.TEMPLATES['spam']['words'], 'daily', self.now.date(), '07:30', self.now,

@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Added to {} at {}.",
  "Added to {}, invited {}.": "Added to {}, invited {}.",
  "Added to {}.": "Added to {}.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "Added {} email that looks like spam to the open to-do.",
+  "other": "Added {} emails that look like spam to the open to-do."
+ },
  "Added {} personal contacts.": {
   "one": "Added {} personal contact.",
   "other": "Added {} personal contacts."

@@ -21,7 +21,7 @@ In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta.
 
 Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite un indirizzo di gruppo, come un Google Group, è elencata sotto chi l’ha scritta e non ti disiscrive mai dal gruppo.
 
-**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi.
+**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi. Il nuovo spam va nella stessa attività finché è aperta.
 
 Nulla cambia finché non confermi sull’attività. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
 

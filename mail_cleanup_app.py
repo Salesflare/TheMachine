@@ -213,13 +213,13 @@ class MailCleanupApp:
                 mail_cleanup.ensure(db)
                 found = mail_cleanup.newsletters(db, ids, self.cleanup_since(db, run['routine_id']))
             found = self.cleanup_ways(found)
-        listed, missed, made = self.cleanup_todos(run, key, found) if found and not routines.is_test(run) else (0, 0, 0)
+        listed, missed, made, added = self.cleanup_todos(run, key, found) if found and not routines.is_test(run) else (0, 0, 0, 0)
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             if missed:  # some found mail is on no to-do: said, and the next run reads it again
-                routines.finish(db, run['id'], 'failed', stamp, why=self.cleanup_said(key, listed, made, missed))
+                routines.finish(db, run['id'], 'failed', stamp, why=self.cleanup_said(key, listed, made, missed, added))
             elif listed:  # what the to-dos list, never what was found before them
-                routines.report(db, run['id'], text=self.cleanup_said(key, listed, made), stamp=stamp)
+                routines.report(db, run['id'], text=self.cleanup_said(key, listed, made, added=added), stamp=stamp)
             elif found and routines.is_test(run):  # Try it: what a real run would list, no to-do
                 routines.report(db, run['id'], text=i18n.t('Found {} newsletters.', len(found)), stamp=stamp)
             else:
@@ -227,10 +227,11 @@ class MailCleanupApp:
         return True
 
     @staticmethod
-    def cleanup_said(key, n, todos=1, missed=0):
-        """The run's result: how many its to-dos list (one per area), and how many more it couldn't put on one."""
+    def cleanup_said(key, n, todos=1, missed=0, added=0):
+        """The run's result: how many its to-dos list (one per area), and how many more it couldn't put on one. added:
+        how many of them went on a spam to-do that was still open (all of them: said so)."""
         news = key == 'newsletters'
-        said = [] if not n else [
+        said = [] if not n else [i18n.t('Added {} emails that look like spam to the open to-do.', n)] if added == n and not news else [
             (i18n.t('Made a to-do with {} newsletters.', n) if news else i18n.t('Made a to-do with {} emails that look like spam.', n))
             if todos <= 1 else
             (i18n.t('Made {} to-dos with {} newsletters.', todos, n) if news else i18n.t('Made {} to-dos with {} emails that look like spam.', todos, n))]
@@ -273,11 +274,11 @@ class MailCleanupApp:
         """A settled spam run's to-dos, one per area; the result then says what they list, and mail on none fails the
         run so the next run reads it again."""
         items = self.cleanup_spam_ways(picked)
-        listed, missed, made = self.cleanup_todos(routine, 'spam', items, run_id) if items else (0, 0, 0)
-        if listed != len(picked) or missed or made > 1:
+        listed, missed, made, added = self.cleanup_todos(routine, 'spam', items, run_id) if items else (0, 0, 0, 0)
+        if listed != len(picked) or missed or made > 1 or added:
             with self.store.connect() as db:
                 if missed or listed:
-                    routines.restate(db, run_id, 'failed' if missed else 'ready', self.cleanup_said('spam', listed, made, missed))
+                    routines.restate(db, run_id, 'failed' if missed else 'ready', self.cleanup_said('spam', listed, made, missed, added))
                 else:  # none in an account it may move mail in after all
                     routines.restate(db, run_id, 'nothing', i18n.t('No spam'))
 
@@ -325,7 +326,7 @@ class MailCleanupApp:
     def routine_cleanup_todos(self, mine, run_id, key, picked):
         """Its to-do, the template's own (cleanup_todos): each with how it will go, only what this Machine may do."""
         items = self.cleanup_ways(picked) if key == 'newsletters' else self.cleanup_spam_ways(picked)
-        return self.cleanup_todos(mine, key, items, run_id) if items else (0, 0, 0)
+        return self.cleanup_todos(mine, key, items, run_id) if items else (0, 0, 0, 0)
 
     def cleanup_account(self, account_id):
         return next((a for a in self.config.get('accounts', []) if a.get('id') == account_id), None)
@@ -404,9 +405,10 @@ class MailCleanupApp:
 
     def cleanup_todos(self, routine, key, items, run_id=None):
         """One to-do per area with its items (a Work to-do never lists personal mail). Quiet: delivery sees its items
-        (mail_cleanup_items) and never buzzes or pushes. Returns (listed, missed, made): how many items its to-dos list,
-        how many it couldn't put on one (no area, over a to-do's limit, or a to-do that didn't save), and how many
-        to-dos."""
+        (mail_cleanup_items) and never buzzes or pushes. Spam: while that area's spam to-do still has an item open, the
+        items go on it (cleanup_add), never on a second one. Returns (listed, missed, made, added): how many items its
+        to-dos list, how many it couldn't put on one (no area, over a to-do's limit, or a to-do that didn't save), how
+        many new to-dos, and how many items went on an open one."""
         name = routine['name']
         rid = routine['routine_id'] if 'routine_id' in routine.keys() else routine['id']
         run_id = run_id or routine['id']
@@ -419,8 +421,13 @@ class MailCleanupApp:
             else:
                 missed += 1
         companies = todo_areas.companies(self.config.get('accounts', []))
-        listed = made = 0
+        listed = made = added = 0
         for area, (account, mine) in areas.items():
+            if key == 'spam':
+                n = self.cleanup_add(area, mine)
+                listed, added, mine = listed + n, added + n, mine[n:]
+                if not mine:
+                    continue
             missed += max(0, len(mine) - mail_cleanup.MAX_ITEMS)
             mine = mine[:mail_cleanup.MAX_ITEMS]
             if key == 'newsletters':
@@ -445,7 +452,30 @@ class MailCleanupApp:
                 mail_cleanup.record(db, sid, key, mine, self.routines_stamp())
             listed += len(mine)
             made += 1
-        return listed, missed, made
+        return listed, missed, made, added
+
+    def cleanup_add(self, area, items):
+        """Spam for an area whose spam to-do still has an item open: on that to-do, as many as fit (MAX_ITEMS), with
+        its count and text brought up to date. Quiet, as when it was made. Returns how many went on it."""
+        with self.store.connect() as db:
+            mail_cleanup.ensure(db)
+            found = mail_cleanup.open_todo(db, 'spam', area)
+            if not found:
+                return 0
+            sid, event = found
+            meta = json.loads(db.execute('SELECT metadata FROM events WHERE id=?', (event,)).fetchone()[0] or '{}')
+        have = meta.get('items') or []
+        more = items[:max(0, mail_cleanup.MAX_ITEMS - len(have))]
+        if not more:
+            return 0
+        every = have + more
+        title = i18n.t('{} emails look like spam', len(every))
+        text = self.cleanup_body(i18n.t('Pick Spam or Not spam for each one, then confirm. Nothing changes before that.'), every)
+        if not self.store.cleanup_grow(sid, event, title, text, {**meta, 'items': every}):
+            return 0
+        with self.store.connect() as db:
+            mail_cleanup.record(db, sid, 'spam', more, self.routines_stamp(), start=len(have))
+        return len(more)
 
     # --- the owner's confirm -------------------------------------------------------------------------------------------
 

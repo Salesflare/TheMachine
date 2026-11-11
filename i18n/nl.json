@@ -307,6 +307,10 @@
  "Added to {} at {}.": "Toegevoegd aan {} om {}.",
  "Added to {}, invited {}.": "Toegevoegd aan {}, {} uitgenodigd.",
  "Added to {}.": "Toegevoegd aan {}.",
+ "Added {} emails that look like spam to the open to-do.": {
+  "one": "{} mail die op spam lijkt toegevoegd aan de open to-do.",
+  "other": "{} mails die op spam lijken toegevoegd aan de open to-do."
+ },
  "Added {} personal contacts.": {
   "one": "{} persoonlijk contact toegevoegd.",
   "other": "{} persoonlijke contacten toegevoegd."

@@ -23,7 +23,7 @@ Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Rout
 
 Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine Gruppenadresse, etwa eine Google Group, steht unter dem, der sie geschrieben hat, und meldet dich nie von der Gruppe ab.
 
-**Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst.
+**Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst. Neuer Spam kommt auf dasselbe To-do, solange es offen ist.
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 

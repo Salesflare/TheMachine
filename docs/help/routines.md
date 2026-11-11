@@ -23,7 +23,7 @@ Under **Templates** at the bottom of Routines, **Add** turns on a ready-made rou
 
 Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group.
 
-**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it. It checks every hour, so spam is usually there before you get to it.
+**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
 
 Nothing changes until you confirm on the to-do. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
 

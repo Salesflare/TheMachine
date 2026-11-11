@@ -21,7 +21,7 @@ Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routin
 
 Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een groepsadres binnenkomt, zoals een Google Group, staat onder wie hem schreef en meldt je nooit af bij de groep.
 
-**Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet. Het kijkt elk uur, zodat spam er meestal al staat voor jij eraan toekomt.
+**Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet. Het kijkt elk uur, zodat spam er meestal al staat voor jij eraan toekomt. Nieuwe spam komt op dezelfde to-do zolang die open staat.
 
 Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
 

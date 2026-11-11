@@ -21,7 +21,7 @@ En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. 
 
 Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una dirección de grupo, como un Google Group, aparece bajo quien lo escribió y nunca te da de baja del grupo.
 
-**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él.
+**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él. El spam nuevo va a la misma tarea mientras siga abierta.
 
 Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 

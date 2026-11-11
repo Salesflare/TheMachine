@@ -3,7 +3,8 @@ one to-do each run makes with a choice per item, and what is remembered of the o
 
 A run finds the items (newsletters: plain code, from the List-Unsubscribe and List-Id headers, as review_wait.mail_wait
 tells them apart; spam: the run's turn picks them from mail by unknown senders) and makes one to-do with them, quietly
-(no buzz or push: it waits in the list and the morning summary). No items, no to-do. A receipt, an order or a
+(no buzz or push: it waits in the list and the morning summary). No items, no to-do. Spam cleanup runs hourly: while
+its to-do for an area still has an item open, a run adds to that to-do instead of making another (open_todo). A receipt, an order or a
 payment the review sorted as a notification is no newsletter (notifications). Mail a list relayed (a Google Group like
 info@) counts under its original sender and is never unsubscribed through the list (relay_ways).
 
@@ -260,11 +261,25 @@ def picked_spam(candidates, picks):
     return [{**{k: v for k, v in c.items() if k != 'snippet'}, 'why': why[c['event']]} for c in candidates if c['event'] in why][:MAX_ITEMS]
 
 
-def record(db, suggestion_id, kind, items, stamp):
-    """A to-do's items, all open."""
-    for n, item in enumerate(items):
+def record(db, suggestion_id, kind, items, stamp, start=0):
+    """A to-do's items, all open; start: the number of the first (items added to a to-do that has some)."""
+    for n, item in enumerate(items, start):
         db.execute('INSERT OR IGNORE INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,state,updated_at) VALUES(?,?,?,?,?,?,?)',
                    (suggestion_id, n, kind, item['account'], item['address'], 'open', stamp))
+
+
+def open_todo(db, kind, area):
+    """The newest routine to-do of this kind for an area (cleanup_todos' source routine-cleanup:<run>:<area>) that is
+    still open with an item still open, as (suggestion id, its cleanup event id), or None."""
+    for row in db.execute("SELECT s.id,s.event_ids FROM suggestions s WHERE s.dedupe_key LIKE 'routine-cleanup:%' "
+                          "AND substr(s.dedupe_key,-length(?)-1)=':'||? AND s.status NOT IN ('completed','rejected') "
+                          "AND EXISTS(SELECT 1 FROM mail_cleanup_items i WHERE i.suggestion_id=s.id AND i.kind=? AND i.state='open') "
+                          "ORDER BY s.created_at DESC", (area, area, kind)):
+        for event in json.loads(row['event_ids'] or '[]'):
+            meta = db.execute("SELECT metadata FROM events WHERE id=? AND kind='routine.cleanup'", (event,)).fetchone()
+            if meta and json.loads(meta[0] or '{}').get('cleanup') == kind:
+                return row['id'], event
+    return None
 
 
 def items_of(db, suggestion_id):

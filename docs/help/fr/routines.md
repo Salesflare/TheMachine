@@ -21,7 +21,7 @@ Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prêt
 
 Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arrivé par une adresse de groupe, comme un Google Group, est listé sous la personne qui l’a écrit et ne vous désabonne jamais du groupe.
 
-**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez.
+**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez. Le nouveau spam va sur la même tâche tant qu’elle est ouverte.
 
 Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 
