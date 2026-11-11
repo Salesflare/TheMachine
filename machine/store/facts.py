@@ -52,7 +52,7 @@ FACTS_GENERAL_MAX = 80  # facts about no one in the graph (and draft rules); fac
 # A new fact or rule about no one that holds every content word of a current one says it again, maybe with more: it
 # takes that one's place, which stays behind it as history (Undo merge). One whose words a current one already holds
 # says nothing new: that one counts as said again. Lossless by construction; a difference in a number, a capitalized
-# word (a name, a day) or a negation keeps them apart, for the condense pass to judge by meaning. Tuned on a real store
+# word (a name, a day), a negation or two words that trade places keeps them apart, for the condense pass to judge by meaning. Tuned on a real store
 # where reviews saved one rule seven times in other words.
 FILLER = {'a', 'an', 'the', 'and', 'or', 'for', 'to', 'of', 'with', 'in', 'on', 'at', 'by', 'as', 'it', 'its', 'this', 'that',
           'their', 'such', 'use', 'using', 's', 'is', 'are', 'be'}
@@ -66,15 +66,33 @@ def fact_words(text):
     return set(re.findall(r'\w+', str(text or '').casefold())) - FILLER
 
 
+def swapped(new, old, shared):
+    """Two shared words that trade places around a third ('pay A before B' and 'pay B before A'): a different
+    meaning in the same words. Clauses that only move as a whole keep every word between two of them, so they don't."""
+    order = []
+    for text in (new, old):
+        words = [w for w in re.findall(r'\w+', str(text or '').casefold()) if w in shared]
+        order.append(list(dict.fromkeys(words)))  # each word where it first comes
+    a, b = order
+    at = {w: i for i, w in enumerate(b)}
+    for i, x in enumerate(a):
+        for j in range(i + 2, len(a)):
+            y = a[j]
+            if at[y] < at[x] and set(a[i + 1:j]) & set(b[at[y] + 1:at[x]]):
+                return True
+    return False
+
+
 def rewords(new, old):
     """'less' when old already says everything new says (the same words count as that), 'more' when new says all
     that old says and more,
-    else None; never when a word only one has is a number, a capitalized word or a negation."""
+    else None; never when a word only one has is a number, a capitalized word or a negation, nor when shared words
+    trade places (swapped)."""
     wn, wo = fact_words(new), fact_words(old)
     if len(wn) < 4 or len(wo) < 4 or not (wo <= wn or wn <= wo):
         return None
     named = {w.casefold() for text in (new, old) for w in re.findall(r'\w+', str(text)) if w[:1].isupper()}
-    if any(any(c.isdigit() for c in w) or w in named or w in NEGATIONS for w in wn ^ wo):
+    if any(any(c.isdigit() for c in w) or w in named or w in NEGATIONS for w in wn ^ wo) or swapped(new, old, wn & wo):
         return None
     return 'less' if wn <= wo else 'more'
 
