@@ -22,10 +22,10 @@ With GBrain on, inbox reviews may also call GBrain's read tools: `search`, `quer
 
 Every 30 minutes, through the `gbrain` CLI:
 
-- **Out**: people (closeness 0.3 or more, or added by hand), projects and companies from the Graph, and learnings (`the-machine/learnings`). Each page gets one section between `<!-- the-machine:start -->` and `<!-- the-machine:end -->`, with a link back to the Graph. The Machine finds existing pages by email or name first. Unchanged records cost no calls. Writes use GBrain's revision check, so a page edited at the same time is retried, not overwritten.
+- **Out**: people (closeness 0.3 or more, or added by hand), projects and companies from the Graph, and learnings (`the-machine/learnings`: the newest 200 the owner taught it, not ones a connected AI saved or that ended). Each page gets one section between `<!-- the-machine:start -->` and `<!-- the-machine:end -->`, with a link back to the Graph. The Machine finds existing pages by email or name first. Unchanged records cost no calls. Writes use GBrain's revision check, so a page edited at the same time is retried, not overwritten.
 - **Owner edits win**: when the owner edits or removes The Machine's section, it's left as they made it. A deleted page stays deleted.
 - **In**: the owner's own text on those pages (outside The Machine's section) shows next to that person in the Graph and in reviews, as data.
-- **Never**: message bodies, sealed content, owner-only notes on projects, or Team Graph data from teammates. Work people, companies and work projects go out only with `work` on. When a record no longer qualifies, its section is taken out.
+- **Never**: message bodies, sealed content, owner-only notes on projects, or Team Graph data from teammates. Work people, companies and work projects, and learnings about them or on the Work side, go out only with `work` on. When a record no longer qualifies, its section is taken out.
 
 ## Turning it off
 

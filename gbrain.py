@@ -397,13 +397,42 @@ def records(db, config):
     return out
 
 
-def learnings(db):
-    """What The Machine learned from the owner's notes (Learned: facts, rules), never removed or merged ones."""
+LEARNINGS_MAX = 200
+
+
+def _record_allowed(db, ids, work):
+    """The records, of these graph node ids, a fact may be about and still go in: the boundary rules of records()
+    (Personal, Work too only with Work on, never a teammate's), so a fact never says more than the pages may."""
+    sides = _project_sides(db) if ids and db.execute("SELECT 1 FROM sqlite_master WHERE name='projects'").fetchone() else {}
+    allowed = set()
+    for row in db.execute('SELECT id,kind,info FROM graph_nodes WHERE id IN (' + ','.join('?' for _ in ids) + ')', sorted(ids)) if ids else ():
+        info = _info(row)
+        side = 'work' if row['kind'] == 'org' else sides.get(row['id'], 'work') if row['kind'] == 'project' else info.get('side')
+        if not info.get('owner') and (side == 'personal' or (work and side == 'work')):
+            allowed.add(row['id'])
+    return allowed
+
+
+def learnings(db, config=None):
+    """What The Machine learned from the owner's notes (Learned: facts, rules), newest first: never removed, merged
+    or ended ones, nor what a connected AI saved (not the owner's), and with Work off nothing on the Work side (a
+    work fact, or one about a record that stays out of GBrain)."""
     if not db.execute("SELECT 1 FROM sqlite_master WHERE name='facts'").fetchone():
         return []
+    work = settings(config).get('work') is True
     have = {r[1] for r in db.execute('PRAGMA table_info(facts)')}
-    where = 'removed_at IS NULL' + (' AND merged_into IS NULL' if 'merged_into' in have else '')
-    return [' '.join(str(r[0]).split())[:400] for r in db.execute(f'SELECT text FROM facts WHERE {where} ORDER BY id LIMIT 200')]
+    where = ['removed_at IS NULL'] + (['merged_into IS NULL'] if 'merged_into' in have else [])
+    where += ["coalesce(source,'') NOT LIKE 'ai:%'"] if 'source' in have else []
+    where += ["coalesce(valid_until,'')='' OR valid_until>=?"] if 'valid_until' in have else []
+    where += ["coalesce(side,'')!='work'"] if 'side' in have and not work else []
+    rows = db.execute('SELECT id,text FROM facts WHERE ' + ' AND '.join(f'({w})' for w in where) + ' ORDER BY id DESC',
+                      (now()[:10],) if 'valid_until' in have else ()).fetchall()
+    about = {}
+    if db.execute("SELECT 1 FROM sqlite_master WHERE name='fact_about'").fetchone():
+        for fact_id, node_id in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL'):
+            about.setdefault(fact_id, set()).add(node_id)
+    allowed = _record_allowed(db, set().union(*about.values()), work) if about else set()
+    return [' '.join(str(r[1]).split())[:400] for r in rows if about.get(r[0], set()) <= allowed][:LEARNINGS_MAX]
 
 
 PREFIX = {'person': 'people/', 'org': 'companies/', 'project': 'projects/'}
@@ -523,7 +552,7 @@ def push(db, config, call, limit=MAX_WRITES):
     rows = {r['node_id']: r for r in db.execute('SELECT * FROM gbrain_pages')}
     wanted = records(db, config)
     items = [(r['node_id'], r, section(r, config)) for r in wanted]
-    items.append(('the-machine:learnings', None, learnings_section(learnings(db))))
+    items.append(('the-machine:learnings', None, learnings_section(learnings(db, config))))
     budget = limit
     for node_id, record, part in items:
         row = rows.get(node_id)
