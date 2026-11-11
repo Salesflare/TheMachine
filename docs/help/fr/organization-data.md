@@ -15,6 +15,8 @@ Seule l’adresse web d’une organisation est envoyée, jamais vos messages ni 
 
 Quand la recherche ne donne pas de logo, ou qu’il n’y a pas de recherche, le logo vient du site de l’organisation elle-même : l’icône que nomme sa page d’accueil. Il est enregistré sur votre Machine, ainsi aucun service de logos ne sait avec qui vous êtes en contact. Un site sans icône est de nouveau interrogé après 30 jours. Si la recherche a trouvé l’organisation mais pas de logo, elle est refaite une fois après une semaine, et le logo qu’elle trouve alors remplace l’icône du site.
 
+Quand la recherche les donne, jusqu’à 5 spécialités de l’organisation s’affichent sous sa description, et la liste des organisations peut être filtrée par l’une d’elles : **Filtrer**, puis **Spécialité**. Quand la recherche d’une personne apporte les détails de son entreprise, ils complètent aussi l’organisation, qui n’a alors pas besoin de sa propre recherche. Les détails recherchés il y a moins de 90 jours restent tels quels.
+
 ## Corriger une erreur
 
 Sur la page de l’organisation :

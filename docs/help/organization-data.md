@@ -15,6 +15,8 @@ Only an organization's web address is sent, never your messages or who you know 
 
 Without a logo from the look-up, The Machine uses the icon from the organization's own website, saved on your Machine. No logo service learns who you deal with.
 
+When the look-up has them, up to 5 of the organization's specialties show under its description, and the Organizations list can be filtered by one: **Filter**, then **Specialty**. When a person's look-up brings their company's details along, those fill in the organization too, so it needs no look-up of its own. Details looked up in the last 90 days stay as they are.
+
 ## Fix a wrong one
 
 On the organization's page:

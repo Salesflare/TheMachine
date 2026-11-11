@@ -15,6 +15,8 @@ Nur die Webadresse einer Organisation wird gesendet, nie deine Nachrichten oder 
 
 Hat das Nachschlagen kein Logo, oder gibt es keins, kommt das Logo von der eigenen Website der Organisation: das Symbol, das ihre Startseite nennt. Es wird auf deiner Machine gespeichert, so erfährt kein Logo-Dienst, mit wem du zu tun hast. Eine Website ohne Symbol wird nach 30 Tagen erneut gefragt. Hat das Nachschlagen die Organisation gefunden, aber kein Logo, wird es nach einer Woche noch einmal gemacht, und ein Logo, das es dann findet, ersetzt das Symbol der Website.
 
+Wenn das Nachschlagen sie kennt, stehen bis zu 5 Fachgebiete der Organisation unter ihrer Beschreibung, und die Liste der Organisationen lässt sich danach filtern: **Filtern**, dann **Fachgebiet**. Bringt das Nachschlagen einer Person die Details ihrer Firma mit, füllen sie auch die Organisation aus, die dann kein eigenes Nachschlagen braucht. Details, die in den letzten 90 Tagen nachgeschlagen wurden, bleiben, wie sie sind.
+
 ## Falsche Details korrigieren
 
 Auf der Seite der Organisation:

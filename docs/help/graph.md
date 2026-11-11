@@ -18,7 +18,7 @@ A quiet line on top of each list says what your Machine updated today, like **Up
 
 ## Filter and sort
 
-**Filter**, next to the tabs, narrows the list. Each list has its own filters. People: closeness, last contact, organization, owner, tag and **Has an open project**. Organizations: industry, size, country, last contact, owner, tag and **Has an open project**. Projects: owner, board, stage, tag, organization, value, expected close date and **No reply in 10+ days**.
+**Filter**, next to the tabs, narrows the list. Each list has its own filters. People: closeness, last contact, organization, owner, tag and **Has an open project**. Organizations: industry, specialty, size, country, last contact, owner, tag and **Has an open project**. Projects: owner, board, stage, tag, organization, value, expected close date and **No reply in 10+ days**.
 
 The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
 

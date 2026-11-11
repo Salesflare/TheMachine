@@ -489,16 +489,16 @@ def _brief(row):
 # ------------------------------------------------------------------ lists: filters and sorts on the Machine
 
 FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting',
-           'closeness', 'last_contact', 'open_project', 'industry', 'size', 'country')
+           'closeness', 'last_contact', 'open_project', 'industry', 'specialty', 'size', 'country')
 SORTS = ('value', 'close', 'size')
 # The orders each kind of list has: a project's value and close date on Projects only, like its filters.
 KIND_SORTS = {'person': ('closest', 'last', 'last_old', 'name'), 'org': ('closest', 'last', 'last_old', 'name', 'size'),
               'project': ('closest', 'last', 'name', 'stage', 'value', 'close')}
 # Which filters each kind of list has: a project's own facts on Projects; on People and Organizations what is about
-# them (how close, when last in touch, and an organization's industry, size and country), plus one "has an open project".
+# them (how close, when last in touch, and an organization's industry, specialty, size and country), plus one "has an open project".
 KIND_FILTERS = {'project': ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting'),
                 'person': ('owner', 'tag', 'org', 'closeness', 'last_contact', 'open_project'),
-                'org': ('owner', 'tag', 'industry', 'size', 'country', 'last_contact', 'open_project')}
+                'org': ('owner', 'tag', 'industry', 'specialty', 'size', 'country', 'last_contact', 'open_project')}
 CLOSENESS = {'close': 'strength>=3', 'regular': 'strength>=1 AND strength<3', 'occasional': 'strength>=0.3 AND strength<1', 'faint': 'strength<0.3'}
 LAST_CONTACT = ('30', '90', 'older')  # in the last 30 days, 30 to 90 days ago, over 90 days ago
 SIZES = {'1-10': (1, 10), '11-50': (11, 50), '51-200': (51, 200), '201-1000': (201, 1000), '1000+': (1001, None)}
@@ -645,6 +645,9 @@ def list_query(db, name, filters, sort):
     if 'industry' in filters:
         where.append("json_extract(info,'$.profile.industry') LIKE ? ESCAPE '\\'")
         args.append('%' + re.sub(r'([\\%_])', r'\\\1', filters['industry']) + '%')
+    if 'specialty' in filters:  # one of its looked-up specialties has these words (enrichment.specialties)
+        where.append("EXISTS(SELECT 1 FROM json_each(graph_nodes.info,'$.profile.specialties') s WHERE s.value LIKE ? ESCAPE '\\')")
+        args.append('%' + re.sub(r'([\\%_])', r'\\\1', filters['specialty']) + '%')
     if 'size' in filters:
         low, high = SIZES[filters['size']]
         where.append(f'{HEADCOUNT}>=?' + (f' AND {HEADCOUNT}<=?' if high else ''))

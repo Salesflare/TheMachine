@@ -628,14 +628,30 @@ COMPANY_FACTS = {'Northwind Analytics': ('Computer Software', '51-200', 'us'), '
                  'Ironbark Outdoor': ('Sporting Goods', '11-50', 'ca')}
 
 
+# What a few of them say they do best (a look-up's specialties: the organization's page and the Specialty filter).
+COMPANY_SPECIALTIES = {'Northwind Analytics': ['Data Warehousing', 'Business Intelligence', 'Forecasting', 'Dashboards'],
+                       'Meridian Robotics': ['Industrial Automation', 'Pick and Place', 'Machine Vision'],
+                       'Kestrel Energy': ['Solar Parks', 'Battery Storage', 'Grid Services']}
+# What the person look-up would say of one story contact: about text and role history (their page).
+PERSON_LOOKUPS = {'mila@northwindanalytics.example': {
+    'title': 'Head of Data', 'company': 'Northwind Analytics', 'company_domain': 'northwindanalytics.example',
+    'about': 'Turning messy data into decisions. Leading the data team at Northwind; before that, analytics for retail and logistics.',
+    'since': '2022-03', 'before': [{'title': 'Analytics Lead', 'company': 'Brightpath Logistics'}, {'title': 'Data Analyst', 'company': 'Tidewater Foods'}]}}
+
+
 def load_companies(db, fixture, base):
     """Every made-up company by its own name ("Saltmarsh Media"), as the company look-up would give it on a real
     Machine; without one the Graph would spell it from its domain ("Saltmarshmedia")."""
     for c in fixture.get('companies') or ():
         industry, size, country = COMPANY_FACTS.get(c['name'], (None, None, None))
         profile = {'name': c['name'], **({'industry': industry, 'size': size, 'country': country} if industry else {})}
+        if c['name'] in COMPANY_SPECIALTIES:
+            profile['specialties'] = COMPANY_SPECIALTIES[c['name']]
         db.execute("INSERT OR IGNORE INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,'found',?,?)",
                    (c['domain'], json.dumps(profile), base.isoformat()))
+    import enrichment
+    for address, profile in PERSON_LOOKUPS.items():
+        enrichment.save_person(db, 'email:' + address, 'found', profile, base.isoformat())
 
 
 def load_boards(db, fixture, ids, base):

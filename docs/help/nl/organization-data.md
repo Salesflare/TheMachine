@@ -15,6 +15,8 @@ Alleen het webadres van een organisatie wordt verstuurd, nooit je berichten of w
 
 Heeft de opzoeking geen logo, of is er geen opzoeking, dan komt het logo van de eigen website van de organisatie: het icoon dat de homepage noemt. Het wordt op je Machine bewaard, zodat geen logodienst te weten komt met wie je te maken hebt. Een site zonder icoon wordt na 30 dagen opnieuw gevraagd. Vond de opzoeking de organisatie maar geen logo, dan wordt ze na een week nog één keer gedaan, en een logo dat ze dan vindt, vervangt het icoon van de site.
 
+Als de opzoeking ze kent, staan tot 5 specialisaties van de organisatie onder haar beschrijving, en de lijst met organisaties kan erop gefilterd worden: **Filteren**, dan **Specialisatie**. Brengt de opzoeking van een persoon de gegevens van hun bedrijf mee, dan vullen die ook de organisatie aan, die dan geen eigen opzoeking nodig heeft. Gegevens die in de laatste 90 dagen opgezocht zijn, blijven zoals ze zijn.
+
 ## Een foute corrigeren
 
 Op de pagina van de organisatie:
