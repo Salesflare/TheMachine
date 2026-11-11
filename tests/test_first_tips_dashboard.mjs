@@ -11,10 +11,11 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 // work like the buttons themselves. Using a button or × closes the tip on the Machine (tip_done); an existing person
 // (first_tips empty) sees none.
 const dashboard=await dashboardPage();
-const now=new Date().toISOString();let tips=['change','send'];
+// For you goes newest first whatever a to-do's chip says (#1225): the ready draft is the newest, so it leads the list
+const now=new Date().toISOString(),later=new Date(Date.now()+1000).toISOString();let tips=['change','send'];
 const cards=[{id:'p1',title:'Reply to Sam about pricing',body:'Sam asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1]},
  {id:'p2',title:'Book the venue',body:'Two options.',status:'pending',scope:'work',created_at:now,event_ids:[2]},
- {id:'r1',title:'Send Noor the contract',body:'Draft ready.',status:'prepared',scope:'work',created_at:now,preparation_status:'done',event_ids:[3],
+ {id:'r1',title:'Send Noor the contract',body:'Draft ready.',status:'prepared',scope:'work',created_at:later,preparation_status:'done',event_ids:[3],
   next_actions:[{kind:'email',revision:'v1',label:'Send to Noor',to:['noor@example.com'],to_name:'Noor',subject:'Contract',body:'Hi Noor'}]}];
 const state=()=>({suggestions:cards,first_tips:tips,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
