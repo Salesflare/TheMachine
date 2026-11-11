@@ -77,18 +77,55 @@ def _start():
     fd = os.open(os.path.join(OUT, '%%s.%%d.rec' %% (test, os.getpid())), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
     prefix = ROOT + os.sep
     disable = mon.DISABLE
+    # 's' while a test sets up (setUpModule, setUpClass, setUp), '' otherwise: scripts/test_select.py doesn't count a
+    # function a test only ran while setting up as one it exercises
+    state = {'phase': '', 'patched': False}
+    seen = set()
+
+    def setting_up(original):
+        def run(*args, **kwargs):
+            state['phase'] = 's'
+            try:
+                return original(*args, **kwargs)
+            finally:
+                state['phase'] = ''
+        return run
+
+    def patch():
+        # unittest's own: each test's body runs with recording restarted, so a function setUp already ran is noted
+        # again when the test runs it
+        import unittest.case
+        import unittest.suite
+        case, suite = unittest.case.TestCase, unittest.suite.TestSuite
+        body = case._callTestMethod
+
+        def _callTestMethod(self, method):
+            state['phase'] = ''
+            mon.restart_events()
+            return body(self, method)
+        case._callSetUp = setting_up(case._callSetUp)
+        case._callTestMethod = _callTestMethod
+        suite._handleClassSetUp = setting_up(suite._handleClassSetUp)
+        suite._handleModuleFixture = setting_up(suite._handleModuleFixture)
 
     def ran(code, offset):
         path = code.co_filename
+        if not state['patched'] and code.co_qualname == 'TestSuite.run' and path.endswith(os.path.join('unittest', 'suite.py')):
+            state['patched'] = True
+            try:
+                patch()
+            except Exception:
+                pass
         if not path.startswith(prefix):
             if path.startswith('<') or os.path.isabs(path):
                 return disable
             path = os.path.realpath(path)
             if not path.startswith(prefix):
                 return disable
-        if code.co_flags & 1:  # a function (CO_OPTIMIZED); a module or class body only runs on import
+        if code.co_flags & 1 and (code, state['phase']) not in seen:  # a function (CO_OPTIMIZED), not a module or class body
+            seen.add((code, state['phase']))
             try:
-                os.write(fd, ('%%s\t%%s\n' %% (path[len(prefix):], code.co_qualname)).encode('utf-8', 'replace'))
+                os.write(fd, ('%%s\t%%s%%s\n' %% (path[len(prefix):], code.co_qualname, '\ts' if state['phase'] else '')).encode('utf-8', 'replace'))
             except OSError:
                 pass
         return disable
@@ -128,15 +165,18 @@ def build(records, out):
     passed = set((records / 'passed').read_text(encoding='utf-8').split()) if (records / 'passed').exists() else set()
     tests = sorted(passed)
     index = {name: i for i, name in enumerate(tests)}
-    files = {}
+    files, body = {}, {}
     for rec in records.glob('*.rec'):
         test = rec.name.rsplit('.', 2)[0]
         if test not in index:
             continue
         for line in rec.read_text(encoding='utf-8', errors='replace').splitlines():
             path, _, qualname = line.partition('\t')
+            qualname, _, phase = qualname.partition('\t')
             if qualname:
                 files.setdefault(path, {}).setdefault(qualname, set()).add(index[test])
+                if phase != 's':
+                    body.setdefault((path, qualname), set()).add(index[test])
     # the browser half (scripts/test_impact_js.mjs): per dashboard part, its functions by offsets, with the tests that
     # ran each (none for one no test ran), and the tests that loaded it ('top')
     js, js_tests = {}, set()
@@ -147,13 +187,15 @@ def build(records, out):
         js_tests.add(index[test])
         for line in rec.read_text(encoding='utf-8', errors='replace').splitlines():
             fields = line.split('\t')
-            if len(fields) != 4 or not fields[0].startswith('dashboard/'):
+            if len(fields) not in (4, 5) or not fields[0].startswith('dashboard/'):
                 continue
-            part = js.setdefault(fields[0], {'top': set(), 'funcs': {}})
+            part = js.setdefault(fields[0], {'top': set(), 'funcs': {}, 'after': {}})
             span = (int(fields[1]), int(fields[2]))
             ids = part['top'] if span[0] < 0 else part['funcs'].setdefault(span, set())
             if fields[3] == '1':
                 ids.add(index[test])
+                if fields[4:] != ['L'] and span[0] >= 0:
+                    part['after'].setdefault(span, set()).add(index[test])
     try:
         commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
         known = [p for p in subprocess.run(['git', 'ls-files', '*.py'], cwd=ROOT, capture_output=True, text=True,
@@ -173,10 +215,21 @@ def build(records, out):
             'js_tests': sorted(js_tests),
             'js': {part: {'top': sorted(found['top']), 'funcs': [[a, b, sorted(ids)] for (a, b), ids in sorted(found['funcs'].items())]}
                    for part, found in sorted(js.items())}}
+    _phases(data, {path: {q: ids - body.get((path, q), set()) for q, ids in funcs.items()} for path, funcs in files.items()},
+            {part: {span: ids - found['after'].get(span, set()) for span, ids in found['funcs'].items()} for part, found in js.items()})
     with gzip.open(out, 'wt', encoding='utf-8') as sink:
         json.dump(data, sink, separators=(',', ':'))
     print(f'{len(tests)} test files, {sum(len(f) for f in files.values())} functions in {len(files)} files, '
           f'{sum(len(p["funcs"]) for p in js.values())} in {len(js)} dashboard parts ({len(js_tests)} browser tests) -> {out}')
+
+
+def _phases(data, setup, load):
+    """What a test ran only while it set up (Python: setUpModule, setUpClass, setUp) or while its page loaded (a
+    dashboard part's functions before the test's first action): 'setup' and 'load', each test only where it has some."""
+    data['setup'] = {path: {q: sorted(ids) for q, ids in sorted(funcs.items()) if ids}
+                     for path, funcs in sorted(setup.items()) if any(funcs.values())}
+    data['load'] = {part: [[a, b, sorted(ids)] for (a, b), ids in sorted(spans.items()) if ids]
+                    for part, spans in sorted(load.items()) if any(spans.values())}
 
 
 def merge(out, parts):
@@ -188,7 +241,7 @@ def merge(out, parts):
             maps.append(json.load(source))
     tests = sorted({name for data in maps for name in data.get('tests') or ()})
     index = {name: i for i, name in enumerate(tests)}
-    files, js, js_tests, seconds, known = {}, {}, set(), {}, set()
+    files, js, js_tests, seconds, known, setup, load = {}, {}, set(), {}, set(), {}, {}
     for data in maps:
         mine = data.get('tests') or []
         ids = lambda found: {index[mine[i]] for i in found}
@@ -198,6 +251,12 @@ def merge(out, parts):
         for path, funcs in (data.get('files') or {}).items():
             for qualname, found in funcs.items():
                 files.setdefault(path, {}).setdefault(qualname, set()).update(ids(found))
+        for path, funcs in (data.get('setup') or {}).items():
+            for qualname, found in funcs.items():
+                setup.setdefault(path, {}).setdefault(qualname, set()).update(ids(found))
+        for name, spans in (data.get('load') or {}).items():
+            for start, end, found in spans:
+                load.setdefault(name, {}).setdefault((start, end), set()).update(ids(found))
         for name, found in (data.get('js') or {}).items():
             part = js.setdefault(name, {'top': set(), 'funcs': {}})
             part['top'].update(ids(found.get('top') or ()))
@@ -210,6 +269,7 @@ def merge(out, parts):
               'js_tests': sorted(js_tests),
               'js': {name: {'top': sorted(found['top']), 'funcs': [[a, b, sorted(ran)] for (a, b), ran in sorted(found['funcs'].items())]}
                      for name, found in sorted(js.items())}}
+    _phases(merged, setup, load)
     with gzip.open(out, 'wt', encoding='utf-8') as sink:
         json.dump(merged, sink, separators=(',', ':'))
     print(f'{len(tests)} test files from {len(maps)} shards -> {out}')
