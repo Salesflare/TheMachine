@@ -35,7 +35,9 @@ Geburtstage kommen aus deinen Kalendern (Googles Geburtstagstermine und sein Kal
 
 **Geburtstage aus Facebook importieren**: Sobald Geburtstage an ist, bietet eine Aufgabe an, die Geburtstagsseite von Facebook zu lesen. Tippe auf **Importieren**, und The Machine öffnet sie in ihrem Browser, scrollt, bis jeder Monat geladen ist, und liest Name und Geburtstag jedes Freundes. Sie zeigt, wie viele sie gefunden hat und wer nach Vor- und Nachname zu Personen in deinem Graph passt. Ein Name, den mehr als eine Person trägt, wird übersprungen und aufgelistet.
 
-Nur **Speichern** behält sie, und nur den Geburtstag, auf der Seite der Person. Einen Geburtstag, den du dort eingetragen hast, behält sie. Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
+Nur **Speichern** behält sie, auf der Seite der Person: den Geburtstag und, wenn sie noch kein Foto hat, ihr Facebook-Profilbild. Einen Geburtstag oder ein Bild, das du dort eingetragen hast, behält sie, und ein Foto, das jemand schon hat, wird nie ersetzt. Auf Facebook wird nichts geschrieben.
+
+Sie liest nie von selbst neu: Das macht **Erneut importieren** in der Aufgabe. Der Browser muss bei Facebook angemeldet sein. Ist er es nicht, tippe in der Aufgabe auf **Bei Facebook anmelden** und melde dich dort an; danach liest sie die Seite von selbst. The Machine meldet sich nie für dich an.
 
 Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. **… als persönliche Kontakte hinzufügen** fügt sie alle auf einmal hinzu, auch nach Speichern: jede mit Name und Geburtstag, nie mit einer Work Fleet geteilt. Einen Namen, den schon jemand in deinem Graph hat oder jemand hatte, den du endgültig gelöscht hast, überspringt sie. Geburtstagserinnerungen kommen weiterhin nur für Leute, denen du schreibst.
 

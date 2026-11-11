@@ -86,7 +86,7 @@ Wenn das Nachschlagen sie kennt, zeigt ihre Seite auch ihren Über-mich-Text, se
 
 Deine Verbindungen ergänzen mehr mit dem, was sie ohnehin lesen: Position, Telefon und Zeitzone aus Slack, Bio und Ort aus X, Headline und Foto aus LinkedIn, Positionen aus Google-Kontakten und Salesflare. Fahr mit der Maus über die Zeile unter dem Namen, um zu sehen, woher es kommt.
 
-WhatsApp- und Telegram-Bilder kommen über deine WhatsApp-Synchronisierung und deine Verbindung zu Telegram-Chats: bis zu 50 am Tag pro Dienst, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Alles bleibt auf deiner Machine.
+WhatsApp- und Telegram-Bilder kommen über deine WhatsApp-Synchronisierung und deine Verbindung zu Telegram-Chats: bis zu 50 am Tag pro Dienst, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Ein Import der Facebook-Geburtstage ergänzt beim Speichern das Profilbild von Personen ohne Foto ([Routinen](routines.md)). Alles bleibt auf deiner Machine.
 
 ## Über dich
 

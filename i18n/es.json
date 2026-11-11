@@ -316,6 +316,10 @@
   "one": "{} contacto personal añadido.",
   "other": "{} contactos personales añadidos."
  },
+ "Added {} profile pictures.": {
+  "one": "{} foto de perfil añadida.",
+  "other": "{} fotos de perfil añadidas."
+ },
  "Added {} projects.": "Se añadieron {} proyectos.",
  "Added {}.": "Se añadió {}.",
  "Added {}’s task to your to-dos.": "Se añadió la tarea de {} a tus tareas.",
@@ -4199,6 +4203,10 @@
   "one": "Guardar {} cumpleaños",
   "other": "Guardar {} cumpleaños"
  },
+ "Save {} pictures": {
+  "one": "Guardar {} foto",
+  "other": "Guardar {} fotos"
+ },
  "Saved": "Guardado",
  "Saved a fact": "Dato guardado",
  "Saved for later": "Guardado para más tarde",
@@ -7256,6 +7264,10 @@
  "{} of them already have a birthday.": {
   "one": "{} de ellos ya tiene cumpleaños.",
   "other": "{} de ellos ya tienen cumpleaños."
+ },
+ "{} of them have no photo yet: Save adds their Facebook pictures.": {
+  "one": "{} de ellos aún no tiene foto: Guardar añade su foto de Facebook.",
+  "other": "{} de ellos aún no tienen foto: Guardar añade sus fotos de Facebook."
  },
  "{} of {}": "{} de {}",
  "{} of {} calendars": "{} de {} calendarios",

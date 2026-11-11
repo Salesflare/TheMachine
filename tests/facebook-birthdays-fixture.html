@@ -5,7 +5,7 @@
      hover) says their name and birthday. 500 friends over 12 months, 20 per chunk; .../small/ has one a month,
      .../skipN/ leaves out the month N months from now (nobody's birthday then), .../nN/ has N friends, .../chunkN/ loads
      N at a time. .../data/ is the way Facebook's page works: the pictures say only a name, and each friend's name and
-     birthdate are in the page's data (a JSON script for the first chunk, then a graphql request per chunk; the test
+     birthdate (and a made-up profile picture link) are in the page's data (a JSON script for the first chunk, then a graphql request per chunk; the test
      server answers with what it was sent); its progress bar never goes away, and once the year is through, the page
      shows this month again and keeps growing with nobody new. .../virtual/ drops the pictures scrolled past as it loads more: 30 stay.
      .../early/ loads every month at once, then keeps growing with nobody new. A cold start (a browser just up):
@@ -49,7 +49,7 @@ function avatar(name, day) {
   }
   return a;
 }
-const node = ([offset, name, label, month, day, year], k) => ({__typename: 'User', id: 'u' + k, name, birthdate: {day, month, year}, profile_picture: {uri: ''}});
+const node = ([offset, name, label, month, day, year], k) => ({__typename: 'User', id: 'u' + k, name, birthdate: {day, month, year}, profile_picture: {uri: 'https://scontent.test.fbcdn.net/v/u' + k + '.jpg?oe=1'}});
 document.getElementById('today').append(avatar('Robin Vale', null));
 let next = 0, section = null, shown = -1, loading = false, wrapped = false;
 function more() {

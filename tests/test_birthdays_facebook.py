@@ -3,8 +3,8 @@ Birthdays template offers one to-do, once, on a Machine with a browser. Only the
 birthdays page, in a tab of its own that is closed after, scrolling until every month has loaded (or until its limits,
 which the preview says, with the months that never loaded); a browser that isn't signed in is said and nothing is read. The
 preview names who matched (the same full name as exactly one person), skips a name two people have, and only Save keeps
-their birthdays, as facts with source facebook that the Birthdays run reads like Google's. Nothing else is kept. A
-made-up page (tests/facebook-birthdays-fixture.html) and made-up people only; never the real Facebook."""
+their birthdays, as facts with source facebook that the Birthdays run reads like Google's, and the profile picture of a
+matched person who shows no photo yet, as a small copy on the Machine. Nothing else is kept. A made-up page (tests/facebook-birthdays-fixture.html) and made-up people only; never the real Facebook."""
 import datetime as dt
 import http.server
 import importlib.util
@@ -85,6 +85,14 @@ class Labels(unittest.TestCase):
                            ({'name': 'Sam', 'month': 11, 'day': 14}, None), ({'name': 'Sam Rivera', 'month': 2, 'day': 30}, None),
                            ({'name': 'Sam Rivera', 'month': 'x', 'day': 1}, None)):
             self.assertEqual(fb.from_data(item, TODAY), want, item)
+
+    def test_a_picture_link_only_from_facebooks_own_image_hosts(self):
+        items = [{'name': 'Sam Lee', 'month': 11, 'day': 14, 'photo': 'https://scontent.test.fbcdn.net/v/a.jpg'},
+                 {'name': 'Jo Kim', 'month': 1, 'day': 2, 'photo': 'https://images.example/a.jpg'},
+                 {'name': 'Pat Ray', 'month': 1, 'day': 3, 'photo': 'http://scontent.test.fbcdn.net/v/a.jpg'},
+                 {'label': 'Ann Ito (May 5)', 'heading': 'May', 'photo': 'https://static.test.fbcdn.net/b.png'},
+                 {'label': 'No Date', 'heading': 'May', 'photo': 'https://static.test.fbcdn.net/c.png'}]
+        self.assertEqual(fb.pictures(items, TODAY), {'Sam Lee': 'https://scontent.test.fbcdn.net/v/a.jpg', 'Ann Ito': 'https://static.test.fbcdn.net/b.png'})
 
     def test_a_name_shown_with_two_days_is_left_out(self):
         found = fb.found([{'label': 'Sam Rivera (November 14)'}, {'label': 'Sam Rivera (December 1)'}, {'label': 'Jo Tanaka (December 3)'},
@@ -183,6 +191,13 @@ class Read(unittest.TestCase):
         result = fb.read(self.base, self.origin + '/events/birthdays/data/spread/n120/chunk20/cold3000/slow3000/', self.FAST)
         self.assertEqual((result['capped'], result['missing'], result['woke']), (False, [], True))
         self.assertEqual(fb.found(result['items'], TODAY), self.friends(120))
+
+    def test_the_pages_data_brings_each_friends_picture_link_with_no_request_of_its_own(self):
+        result = fb.read(self.base, self.origin + '/events/birthdays/data/n40/chunk20/', self.FAST)
+        links = fb.pictures(result['items'], TODAY)
+        self.assertEqual(set(links), set(self.friends(40)))
+        self.assertEqual(links['Ada Arden'], 'https://scontent.test.fbcdn.net/v/u0.jpg?oe=1')
+        self.assertEqual(fb.pictures(fb.read(self.base, self.origin + '/events/birthdays/small/', self.FAST)['items'], TODAY), {})  # a data: image is no link
 
     def test_a_cold_start_with_months_still_missing_waits_out_its_quiet_start(self):
         result = fb.read(self.base, self.origin + '/events/birthdays/data/n120/chunk20/cold4000/slow2500/', {**self.FAST, 'idle': 2000})
@@ -297,7 +312,7 @@ class Import(unittest.TestCase):
         self.assertFalse({'email:pat@one.example', 'email:pat@two.example'} & set(facts))
         self.assertIn(('email:sam@mail.example', 'contacts'), on_day)  # the Birthdays run reads it like Google's
         kept = json.loads(row['data'])
-        self.assertEqual((row['state'], set(kept)), ('saved', {'saved', 'people', 'others', 'added', 'found', 'unmatched', 'capped', 'missing', 'read'}))
+        self.assertEqual((row['state'], set(kept)), ('saved', {'saved', 'photos', 'people', 'others', 'added', 'found', 'unmatched', 'capped', 'missing', 'read'}))
         # who was saved, and the read's report (counts only); the rest read (matched and ambiguous names) is gone
         self.assertEqual(([o['name'] for o in kept['others']], kept['added']), (['Lee Okafor'], []))  # but friends nobody in the Graph has, for the Add button
         self.assertEqual({p['id'] for p in kept['people']}, {'email:robin@mail.example', 'email:sam@mail.example'})
@@ -321,6 +336,76 @@ class Import(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(person_birthday.get(db, 'email:sam@mail.example')['value'], '--02-01')
             self.assertIsNone(person_birthday.get(db, 'email:robin@mail.example'))  # removed stays removed
+
+    PNG = b'\x89PNG\r\n\x1a\n' + bytes(40)
+
+    def pictures(self, got=True):
+        """The read with each friend's made-up picture link; downloads answered here, never from the internet."""
+        self.answer = {'items': [{**i, 'photo': 'https://scontent.test.fbcdn.net/v/%d.jpg' % n} for n, i in enumerate(self.ITEMS)]}
+        self.fetched = []
+        fetch = lambda link: self.fetched.append(link) or ((self.PNG, 'image/png') if got else None)  # noqa: E731
+        for target, name, value in ((enrichment, 'download_photo', fetch), (a.App, 'graph_later', lambda s: None)):
+            p = patch.object(target, name, value); p.start(); self.addCleanup(p.stop)
+
+    def photos(self):
+        with self.store.connect() as db:
+            return {r[0]: r[1] for r in db.execute('SELECT identifier,type FROM person_photos')}
+
+    def import_and_save(self, sid):
+        self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'read'}, owner_dashboard=True)
+        view = self.card(sid)
+        with patch.object(fb.time, 'sleep', lambda s: None):
+            done = self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'save'}, owner_dashboard=True) if view.get('new') or view.get('photos') else None
+        return view, done
+
+    def test_save_fills_in_the_picture_of_a_matched_person_without_a_photo_and_never_another(self):
+        with self.store.connect() as db:
+            db.execute("INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES('email:robin@mail.example',?,'image/jpeg',x'ffd8ff',?)",
+                       ('a' * 32, '2026-11-01'))  # Robin has a looked-up photo
+            graph.set_picture(db, 'email:sam@mail.example', None, '2026-11-02')  # the owner took Sam's off
+        self.pictures()
+        nodes = self.node_count()
+        sid = self.offer()
+        view, done = self.import_and_save(sid)
+        self.assertEqual((view['new'], view['photos']), (2, 1))  # only Jo: Pat's name is two people, Lee is nobody in the Graph
+        self.assertEqual((done['saved'], done['photos']), (2, 1))
+        self.assertEqual(self.fetched, ['https://scontent.test.fbcdn.net/v/2.jpg'])
+        self.assertEqual(self.photos(), {'email:robin@mail.example': 'image/jpeg', 'email:jo@mail.example': 'image/png'})
+        self.assertEqual(self.node_count(), nodes)  # nobody made
+        with self.store.connect() as db:
+            info = json.loads(db.execute("SELECT info FROM graph_nodes WHERE id='email:jo@mail.example'").fetchone()[0])
+            sam = json.loads(db.execute("SELECT info FROM graph_nodes WHERE id='email:sam@mail.example'").fetchone()[0])
+            kept = db.execute('SELECT data FROM facebook_birthdays WHERE suggestion_id=?', (sid,)).fetchone()[0]
+        self.assertEqual(info['profile']['photo'], 'api/person-photo?p=' + enrichment.photo_key('email:jo@mail.example'))  # on their page at once
+        self.assertNotIn('photo', sam.get('profile') or {})
+        self.assertNotIn('fbcdn', kept)  # the links go with the preview
+        self.assertEqual((self.card(sid)['state'], self.card(sid)['photos']), ('saved', 1))
+        with self.store.connect() as db:  # Reopen, then Import again: nothing new, nothing downloaded again
+            db.execute("UPDATE suggestions SET status='pending' WHERE id=?", (sid,))
+        view, done = self.import_and_save(sid)
+        self.assertEqual((view['new'], view['photos'], done), (0, 0, None))
+        self.assertEqual(len(self.fetched), 1)
+
+    def test_pictures_alone_can_be_saved_and_one_the_owner_set_meanwhile_stays(self):
+        self.pictures(got=False)  # the first time no picture came
+        sid = self.offer()
+        view, done = self.import_and_save(sid)
+        self.assertEqual((view['photos'], done['saved'], self.card(sid)['photos'], self.photos()), (3, 2, 0, {}))
+        self.pictures()
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='pending' WHERE id=?", (sid,))
+        self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'read'}, owner_dashboard=True)
+        self.assertEqual((self.card(sid)['new'], self.card(sid)['photos']), (0, 3))  # every birthday known: Save is for the pictures
+        with self.store.connect() as db:
+            graph.set_picture(db, 'email:robin@mail.example', self.PNG, '2026-11-03')  # the owner's own, after the preview
+        with patch.object(fb.time, 'sleep', lambda s: None):
+            done = self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'save'}, owner_dashboard=True)
+        self.assertEqual((done['saved'], self.card(sid)['photos']), (0, 2))
+        self.assertEqual({i for i in self.photos() if not i.startswith('pic:')}, {'email:sam@mail.example', 'email:jo@mail.example'})
+
+    def node_count(self):
+        with self.store.connect() as db:
+            return db.execute('SELECT count(*) FROM graph_nodes').fetchone()[0]
 
     def test_signed_out_is_said_and_import_again_is_the_owners_tap(self):
         sid = self.offer()

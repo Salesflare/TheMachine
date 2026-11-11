@@ -86,7 +86,7 @@ When the look-up has them, their page also shows their about text, since when th
 
 Your connections fill in more with what they already read: a title, phone and time zone from Slack, a bio and place from X, a headline and photo from LinkedIn, job titles from Google contacts and Salesflare. Hover over the line under their name to see where it came from.
 
-WhatsApp and Telegram pictures come through your WhatsApp sync and your Telegram chats connection: up to 50 a day each, only for people already in your Graph. Nothing is sent to them. It all stays on your Machine.
+WhatsApp and Telegram pictures come through your WhatsApp sync and your Telegram chats connection: up to 50 a day each, only for people already in your Graph. Nothing is sent to them. A Facebook birthdays import adds the profile picture of someone without a photo when you save it ([Routines](routines.md)). It all stays on your Machine.
 
 ## About you
 

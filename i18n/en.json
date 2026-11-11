@@ -316,6 +316,10 @@
   "one": "Added {} personal contact.",
   "other": "Added {} personal contacts."
  },
+ "Added {} profile pictures.": {
+  "one": "Added {} profile picture.",
+  "other": "Added {} profile pictures."
+ },
  "Added {} projects.": "Added {} projects.",
  "Added {}.": "Added {}.",
  "Added {}’s task to your to-dos.": "Added {}’s task to your to-dos.",
@@ -4199,6 +4203,10 @@
   "one": "Save {} birthday",
   "other": "Save {} birthdays"
  },
+ "Save {} pictures": {
+  "one": "Save {} picture",
+  "other": "Save {} pictures"
+ },
  "Saved": "Saved",
  "Saved a fact": "Saved a fact",
  "Saved for later": "Saved for later",
@@ -7256,6 +7264,10 @@
  "{} of them already have a birthday.": {
   "one": "{} of them already has a birthday.",
   "other": "{} of them already have a birthday."
+ },
+ "{} of them have no photo yet: Save adds their Facebook pictures.": {
+  "one": "{} of them has no photo yet: Save adds their Facebook picture.",
+  "other": "{} of them have no photo yet: Save adds their Facebook pictures."
  },
  "{} of {}": "{} of {}",
  "{} of {} calendars": "{} of {} calendars",

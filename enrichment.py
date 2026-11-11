@@ -1286,6 +1286,30 @@ def contact_photos_step(connect, now, limit=CONTACT_PHOTOS_PER_PASS, fetch=None)
     return saved
 
 
+def without_photo(db, nodes):
+    """Which of these people (graph_nodes rows with id and info) show no photo yet: none saved for any of their
+    identifiers (a look-up, a contact, a chat app, an import), none on their page, and none the owner set or took off
+    (person_edits photo). Three queries for all of them."""
+    groups = {r['id']: sorted(set(json.loads(r['info'] or '{}').get('identifiers') or ()) | {r['id']}) for r in nodes
+              if not (json.loads(r['info'] or '{}').get('profile') or {}).get('photo')}
+    every = json.dumps(sorted({i for g in groups.values() for i in g}))
+    have = {r[0] for r in db.execute('SELECT identifier FROM person_photos WHERE identifier IN (SELECT value FROM json_each(?))', (every,))}
+    have |= {r[0] for r in db.execute("SELECT identifier FROM person_edits WHERE json_extract(fields,'$.photo') IS NOT NULL "
+                                      'AND identifier IN (SELECT value FROM json_each(?))', (every,))}
+    return {node for node, group in groups.items() if not have & set(group)}
+
+
+def keep_photo(db, node_id, got, now):
+    """A photo (bytes, type) found for a person who shows none (without_photo, checked again here, in the caller's
+    write), saved on this Machine as theirs under their node id, small and only as an image. Never over one they have
+    or one the owner set or took off. Returns whether it was saved."""
+    row = db.execute("SELECT id,info FROM graph_nodes WHERE id=? AND kind='person'", (node_id,)).fetchone()
+    if not row or not got or image_type(got[0]) != got[1] or len(got[0]) > PHOTO_BYTES or not without_photo(db, [row]):
+        return False
+    return db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?) ON CONFLICT(identifier) DO NOTHING',
+                      (node_id, photo_key(node_id), got[1], got[0], now)).rowcount == 1
+
+
 # WhatsApp pictures: asked through the owner's always-on WhatsApp mirror (`wacli sync --follow
 # --profile-picture-budget N`), which owns the session; this Machine's own WhatsApp reads stay read-only. Only people
 # already in the graph without a photo, whose WhatsApp address the Machine has seen in a chat, at most 50 asks a day (the

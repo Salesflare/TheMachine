@@ -53,6 +53,8 @@ function fitsReview(b){const maybes=(b.maybes||[]).filter(m=>!fitsGoing.has(m.id
 function fitsBulkSync(box){const b=+box.dataset.fitsBoard,picked=fitsPicked.get(b)||new Set(),boxes=[...box.querySelectorAll('[data-fit-pick]')],all=box.querySelector('[data-fit-all]');
  if(all){all.checked=boxes.length>0&&picked.size===boxes.length;all.indeterminate=picked.size>0&&picked.size<boxes.length}
  const [add,skip]=fitsBulkText(null,picked),bs=box.querySelectorAll('[data-fit-bulk]');if(bs.length){bs[0].textContent=add;bs[1].textContent=skip}}
+// a half-ticked list keeps its "some" mark through any redraw of the view (indeterminate is no attribute, so html can't carry it)
+new MutationObserver(()=>{for(const all of $('#people-view').querySelectorAll('.board-fits [data-fit-all]')){const n=fitsPicked.get(+all.dataset.fitAll)?.size||0;all.indeterminate=n>0&&!all.checked}}).observe($('#people-view'),{childList:true,subtree:true});
 document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contains('board-fits')){const b=+d.dataset.fitsBoard;d.open?fitsOpen.add(b):fitsOpen.delete(b)}},true);
 document.addEventListener('change',e=>{const c=e.target.closest?.('[data-fit-pick],[data-fit-all]'),box=c?.closest('.board-fits');if(!box)return;const b=+box.dataset.fitsBoard,picked=fitsPicked.get(b)||new Set();fitsPicked.set(b,picked);
  if(c.dataset.fitAll){for(const x of box.querySelectorAll('[data-fit-pick]')){x.checked=c.checked;c.checked?picked.add(x.dataset.fitPick):picked.delete(x.dataset.fitPick)}}else c.checked?picked.add(c.dataset.fitPick):picked.delete(c.dataset.fitPick);

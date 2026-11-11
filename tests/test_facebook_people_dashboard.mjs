@@ -92,6 +92,18 @@ try{
   assert.equal(await todo.locator('.cl-fine',{hasText:/already in your Graph|None of them/}).count(),0);
   assert.deepEqual(await todo.locator('.cl-acts button').evaluateAll(b=>b.map(x=>[x.textContent.trim(),x.className])),[[ADD,'primary'],['Import again','ghost']]);
   await shot('none-matched');
+  // Profile pictures for matched people without a photo: a line above Save; with every birthday known, Save is for them
+  fresh(preview({photos:3}));await page.evaluate(()=>refresh());
+  await todo.locator('.cl-fine',{hasText:'no photo yet'}).waitFor();
+  assert.equal(await text(todo.locator('.cl-fine',{hasText:'no photo yet'})),'3 of them have no photo yet: Save adds their Facebook pictures.');
+  assert.deepEqual((await todo.locator('.cl-acts button').allInnerTexts()).map(x=>x.trim()),['Save 96 birthdays',ADD,'Import again']);
+  fresh(preview({new:0,photos:1}));await page.evaluate(()=>refresh());
+  await todo.getByRole('button',{name:'Save 1 picture'}).waitFor();
+  assert.equal(await text(todo.locator('.cl-fine',{hasText:'no photo yet'})),'1 of them has no photo yet: Save adds their Facebook picture.');
+  assert.deepEqual(await todo.locator('.cl-acts button').evaluateAll(b=>b.map(x=>[x.textContent.trim(),x.className])),[['Save 1 picture','primary'],[ADD,''],['Import again','ghost']]);
+  await shot('pictures');
+  fresh({state:'saved',saved:0,photos:3,people:[],more:0,others:0,others_shown:[],added:0});await page.evaluate(()=>refresh());
+  await todo.locator('.cl-lead',{hasText:'Added 3 profile pictures.'}).waitFor();
   await context.close();
  }
  assert.deepEqual(errors,[]);
