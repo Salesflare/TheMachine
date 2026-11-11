@@ -340,7 +340,7 @@ def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now, wro
 
 REDO_PREFIX = 'correction:'  # the decision that redoes one other draft: correction:<change id>:<to-do id>
 REDO_SOURCE = 'correction'
-# An approved or sending step keeps its draft: only a cancelled one, or one done or sent for another draft, doesn't
+# An approved or sending step keeps its draft: only a canceled one, or one done or sent for another draft, doesn't
 SETTLED_STEPS = ('cancelled', 'done', 'sent')
 
 
