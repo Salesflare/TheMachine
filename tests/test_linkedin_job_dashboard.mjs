@@ -11,7 +11,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 const dashboard=await dashboardPage();
 const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'),en=await readFile(new URL('../i18n/en.json',import.meta.url),'utf8');
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
-const bo={id:'email:bo@acme.example',kind:'person',name:'Bo Tamsin',strength:2,last_at:day(1),signals:3,ids:['email:bo@acme.example'],links:[],recent:[],around:[],open:{},side:'work',
+const bo={id:'email:bo@acme.example',kind:'person',name:'Bo Tamsin',strength:2,last_at:day(1),signals:3,ids:['bo@acme.example'],emails:[{value:'bo@acme.example',by:'messages'}],links:[],recent:[],around:[],open:{},side:'work',
  profile:{title:'Head of Sales',company:'Acme',linkedin_url:'https://www.linkedin.com/in/bo-tamsin/',linkedin_since:'2021-03-04',sources:{title:{from:'LinkedIn',at:day(2).slice(0,10),own:true},company:{from:'LinkedIn',at:day(2).slice(0,10),own:true}}},
  changes:[{field:'job',old:{title:'Sales Lead',company:'Acme'},new:{title:'Head of Sales',company:'Acme',via:'LinkedIn'},at:day(2)},
   {field:'job',new:{company:'Acme',via:'LinkedIn'},at:day(40)}]};
