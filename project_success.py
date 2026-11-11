@@ -116,9 +116,11 @@ def _goal_changed(db, project_id, before, condition, proof, now):
         except sqlite3.OperationalError:
             pass  # a bare graph without the assistant's tables
     holds = not condition or (old.casefold() == condition.casefold() and (proof != 'link' or before['evidence_url']))
-    if before['marked_by'] == 'evidence' and not holds:
-        if db.execute("UPDATE projects SET outcome=NULL,outcome_reason=NULL WHERE id=? AND outcome='won'", (int(project_id),)).rowcount:
-            _put(db, project_id, now, marked_by='changed', marked_at=now)
+    project = db.execute('SELECT outcome FROM projects WHERE id=?', (int(project_id),)).fetchone()
+    if before['marked_by'] == 'evidence' and not holds and project and project['outcome'] == 'won':
+        graph.set_outcome(db, 'project:' + str(int(project_id)), None, '', now)
+        # not the owner's Reopen (which set_outcome records): the next proof may mark it done again
+        _put(db, project_id, now, marked_by='changed', marked_at=now, reopened_at=before['reopened_at'])
 
 
 # ------------------------------------------------------------------ the proof
