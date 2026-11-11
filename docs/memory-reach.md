@@ -88,6 +88,27 @@ hands in its first draft gets it back once, nothing saved, to follow it (`routin
 or the draft's title name (Slack, LinkedIn) only goes first. A run that hands in no draft gets nothing. Logged as
 `voice` (by channel) under `routine` in `memory_use`.
 
+## One fact end to end
+
+`tests/test_memory_e2e.py` follows one fact through every surface, on a database file with made-up data, and checks
+each step again after a restart (a new Store and App on the same file). The owner says it in passing in the web chat
+and in their private chat (no "remember"), it is found by the main chat (`assistant_memory`), Ask, a to-do's
+preparation and chat, and Talk; a plain-word correction ("actually it's Antwerp") replaces it, the old one only as
+history; once the owner removes it under Learning it is gone from all of them and from the knowledge export. A fact
+about a Personal person stays out of a Work to-do, Ask in Work and the team's learnings; a connected AI's fact is never
+read back as the owner's; each surface stays in its budget.
+
+Fixed with it: Ask in Work found a fact about a Personal person by its words or meaning (a preparation already left
+it out). It now leaves out a fact about people all on the other side, as `Store.facts_for` does
+(`fact_links.on_side`). And a removed fact kept its stored vector, as did the facts it had replaced: removing one
+now deletes those vectors (`Store.forget_fact`); one brought back is embedded again when a preparation needs it.
+
+What stays by design: the owner's own facts have no area of their own (`side` is a connected AI's only); one about no
+person holds in Work and Personal. A removed fact's row stays behind as a tombstone (it keeps a review from saving it
+again, lets a to-do's chat tell its session to stop using it, and Undo merge), so its words stay in the keyword
+index (`fact_search`); every reader of the index leaves removed facts out. The main chat has no tool to remove a fact:
+the owner removes it under Learning.
+
 ## Still missing
 
 - **The owner's main chat** reads what was learned by words only (in their plain form, as Talk), not yet by meaning:

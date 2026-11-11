@@ -15,8 +15,8 @@ Only what matches the question goes in, and nothing when nothing matches: the pr
   ones the Graph has that person on.
 
 Privacy is Ask's own: only the connections of the area in view (All, Work or Personal), with Work never a thread
-judged to be about the owner's own life, a summary's lines only of that area, and a connected AI's fact only of that
-area. Nothing from the Fleet or a teammate. Each line has its own tag ([P1] a promise, [F1] something learned, [S1] a
+judged to be about the owner's own life, a summary's lines only of that area, a connected AI's fact only of that
+area, and no fact about people all on the other side. Nothing from the Fleet or a teammate. Each line has its own tag ([P1] a promise, [F1] something learned, [S1] a
 summary, [M1] meeting notes), so the answer cites it as what it is and never as a message."""
 import datetime as dt
 import functools
@@ -241,6 +241,11 @@ def facts(app, about, room):
     known = [f for f in app.store.facts() if f['kind'] == 'fact' and (area is None or f.get('side') in (None, area)) and fact_weight(f, at) > 0]
     if not known or not about['accounts']:
         return _block([], [])
+    if area:  # a fact about people all on the other side stays out, as from a preparation (Store.facts_for)
+        with app.store.connect() as db:
+            with_about(db, known)
+            who = fact_links.records(db, {n for f in known for n in f['about']})
+        known = [f for f in known if fact_links.on_side(f['about'], who, area)]
     tied = {}
     if nodes:
         with app.store.connect() as db:
