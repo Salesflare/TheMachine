@@ -770,7 +770,11 @@ Voice and style learn only from what the owner wrote themselves (`authorship.py`
 ## Keeps learning
 
 Reviews fold a note into a fact, rule or voice as it comes. The learning loop (`learning_loop.py`) looks at what piles up
-between them: the owner's own draft edits, dismissed and snoozed to-dos, and corrections in a to-do's chat.
+between them: the owner's own draft edits, dismissed and snoozed to-dos, corrections in a to-do's chat, and messages a
+review left without a to-do that needed one (`miss`: a [Real miss](#missed-work-audit), or a to-do the owner made from a
+message a finished review read and left without a to-do or promise). A miss carries the review's own line on why it
+needed nothing (finish_analysis `no_todo`), so the pass can add a fact reviews read ("A question in a group chat that
+names you needs a to-do"). It costs no turn of its own.
 
 - At most every 12 hours, with at least three signals waiting, one small background turn (kind `tune`, one page with
   the oldest 30 waiting signals plus the current voices, rules and facts) proposes at most three changes: a voice block
@@ -896,10 +900,15 @@ conversation. It is separate from the review and never changes it.
 - It keeps the share of misses with a 95% confidence interval, overall (each stratum weighted by its size) and per
   stratum, and adjusts it by the evaluator's precision and recall: recall from the made-up signals of the last eight
   audits, precision from the owner's own labels once there are five (from the made-up ones before that).
-- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open**,
-  **Real miss** and **Not a miss**. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
+- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open** (its line
+  opens it too, in the dashboard's own viewer; nothing when the message is no longer kept), **Real miss** and **Not a
+  miss**, and **Open to-do** once a Real miss has one. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
   sealed like other text derived from messages.
-- Real misses are input for improving the review's prompt by hand; the audit itself makes no to-do and adds no rule.
+- The audit itself makes no to-do and adds no rule. The owner's **Real miss** adds the message's to-do (`new_card` with
+  it attached, unless a to-do already has it), with **Undo** on its toast; taking the label back (Undo, or Not a miss)
+  dismisses that to-do again, by no decision of the owner's, while they haven't acted on it.
+- A Real miss is kept in `review_misses` (what the audit saw, the review's own reason, sealed) as a `miss` signal for the
+  [learning loop](#keeps-learning), as is a to-do the owner makes from a message a finished review passed over.
 
 `python3 tests/missed_work_eval.py --db <copy> --config <config.json>` runs one audit read-only against a database and
 prints counts, rates and patterns, never a message; `--calibrate` runs the evaluator on all made-up signals.

@@ -20,8 +20,11 @@ Once a week (with the weekly recap's rhythm), within the usage budget like every
 
 The misses it found show on Learning, How it's going, each with a link to the signal, for the owner to label as a
 real miss or not. The labels stay in this Machine's database and grow the human-labeled set; nothing is sent anywhere.
-Nothing here makes a to-do, changes a to-do or touches the review: real misses are patterns to improve the review's
-prompt by hand (patterns()).
+The audit itself never makes or changes a to-do and never touches the review. The owner's Real miss does two things
+(missed_work_app.py): the message gets its to-do (New to-do with it attached, with Undo), and the miss is kept in
+review_misses with the review's own line on why it needed nothing (finish_analysis no_todo). A to-do the owner makes
+themselves from a message a review read and left without one is kept there too. The learning loop reads those as `miss`
+signals (learning_loop.py), so its usual pass can add a fact the review reads; no turn of its own.
 
 Also a command, read-only against a database (never written), next to the knowledge eval: tests/missed_work_eval.py.
 It prints counts, rates and patterns only, never a message's text."""
@@ -44,6 +47,7 @@ CREATE TABLE IF NOT EXISTS missed_audit_items(audit_id TEXT NOT NULL,event_id IN
   work INTEGER NOT NULL,what TEXT,reason TEXT,no_reply INTEGER NOT NULL DEFAULT 0,label TEXT,labeled_at TEXT,PRIMARY KEY(audit_id,event_id));
 CREATE TABLE IF NOT EXISTS missed_audit_calibration(audit_id TEXT NOT NULL,case_id TEXT NOT NULL,expected INTEGER NOT NULL,said INTEGER NOT NULL,
   PRIMARY KEY(audit_id,case_id));
+CREATE TABLE IF NOT EXISTS review_misses(event_id INTEGER PRIMARY KEY,at TEXT NOT NULL,origin TEXT NOT NULL,suggestion_id TEXT,what TEXT,why TEXT);
 '''
 DAYS = 7                 # reviews of the last week
 EVERY_DAYS = 7           # one audit a week
@@ -574,24 +578,95 @@ def label(db, event_id, value):
                          (value, now() if value else None, int(event_id))).rowcount
     if not changed:
         raise ValueError('That signal is not one of the misses found')
-    return {'event_id': int(event_id), 'label': value}
+    # Real miss keeps it for the learning loop, with what the audit saw and the review's own line; taken back, it goes
+    # (with the to-do it made, which the caller takes away: the one it gives back as 'made')
+    was = miss(db, event_id)
+    if value == 'real':
+        item = db.execute('SELECT what,reason FROM missed_audit_items WHERE event_id=? AND work=1 ORDER BY rowid DESC LIMIT 1', (int(event_id),)).fetchone()
+        what = ': '.join(x for x in (item['what'] if item['what'] != 'none' else '', item['reason'] or '') if x)
+        db.execute("INSERT INTO review_misses(event_id,at,origin,what,why) VALUES(?,?,'audit',?,?) ON CONFLICT(event_id) DO UPDATE SET "
+                   'what=excluded.what', (int(event_id), now(), what or None, review_said(db, event_id)))
+        title = db.execute('SELECT title FROM events WHERE id=?', (int(event_id),)).fetchone()
+        text = str(item['reason'] or (title[0] if title else '') or '').strip()
+        return {'event_id': int(event_id), 'label': value, 'made': (was or {}).get('suggestion_id'), 'text': text[:1].upper() + text[1:]}
+    if was and was['origin'] == 'audit':
+        db.execute('DELETE FROM review_misses WHERE event_id=?', (int(event_id),))
+    return {'event_id': int(event_id), 'label': value, 'made': (was or {}).get('suggestion_id')}
+
+
+def review_said(db, event_id):
+    """The review's own line on why a message needed no to-do (finish_analysis no_todo, or its no_reply reason), from the
+    latest finished review that read it: '' when it gave none, None when no finished review read it."""
+    row = db.execute('SELECT ingested_at FROM events WHERE id=?', (int(event_id),)).fetchone()
+    if not row:
+        return None
+    for (items,) in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=? ORDER BY finished_at DESC", (row[0] or '',)):
+        try:
+            found = json.loads(items or '[]')
+        except (TypeError, ValueError):
+            continue
+        for item in found if isinstance(found, list) else ():
+            if isinstance(item, dict) and str(item.get('id')) == str(int(event_id)) and not item.get('excluded') and not item.get('deferred'):
+                said = next((x for x in (item.get('no_todo'), item.get('no_reply')) if isinstance(x, str) and x.strip()), '')
+                return ' '.join(said.split())[:REASON_CHARS]
+    return None
+
+
+def holder(db, event_id, other_than=None):
+    """The open or done to-do (not dismissed) that has this message as evidence, other than other_than; None."""
+    row = db.execute("SELECT s.id FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.id IS NOT ? AND s.status!='rejected' "
+                     'ORDER BY s.created_at LIMIT 1', (int(event_id), other_than)).fetchone()
+    return row[0] if row else None
+
+
+def passed_over(db, event_id, card_id):
+    """A to-do the owner made (card_id) from a message a finished review read and left without a to-do or a promise:
+    kept as a miss with the review's line, for the learning loop. True when kept."""
+    ensure(db)
+    said = review_said(db, event_id)
+    if said is None or holder(db, event_id, card_id):
+        return False
+    if _has(db, 'promises') and db.execute('SELECT 1 FROM promises WHERE event_id=?', (int(event_id),)).fetchone():
+        return False
+    return bool(db.execute("INSERT OR IGNORE INTO review_misses(event_id,at,origin,suggestion_id,why) VALUES(?,?,'owner',NULL,?)",
+                           (int(event_id), now(), said)).rowcount)
+
+
+def miss(db, event_id):
+    """The kept miss of one message: {'origin', 'suggestion_id' (the to-do Real miss made), 'what', 'why'} or None."""
+    ensure(db)
+    row = db.execute('SELECT origin,suggestion_id,what,why FROM review_misses WHERE event_id=?', (int(event_id),)).fetchone()
+    return dict(row) if row else None
+
+
+def made(db, event_id, card_id):
+    """The to-do Real miss made for this message, kept so its Undo (the label taken back) can take it away."""
+    db.execute('UPDATE review_misses SET suggestion_id=? WHERE event_id=?', (card_id, int(event_id)))
 
 
 def summary(db):
     """For Learning, How it's going: the last audit's estimate, the evaluator's accuracy, and the misses to check
-    (with each signal's link). None before the first audit."""
+    (with each signal's link). Each miss says whether its message can still be opened (open: kept and not deleted; the
+    dashboard opens it in its own viewer, with its title) and, once it is a Real miss, the to-do it has (card: the one
+    Real miss made, or one that already had it). None before the first audit."""
     if not _has(db, 'missed_audits'):
         return None
+    ensure(db)
     row = db.execute("SELECT * FROM missed_audits WHERE status='ok' ORDER BY started_at DESC LIMIT 1").fetchone()
     if not row:
         return None
     result = json.loads(row['result'] or '{}')
     misses = []
-    for r in db.execute('SELECT i.event_id,i.channel,i.area,i.what,i.reason,i.label,e.metadata FROM missed_audit_items i LEFT JOIN events e ON e.id=i.event_id '
+    for r in db.execute('SELECT i.event_id,i.channel,i.area,i.what,i.reason,i.label,e.id kept,e.deleted,e.kind,e.title,e.metadata,s.id made '
+                        'FROM missed_audit_items i LEFT JOIN events e ON e.id=i.event_id LEFT JOIN review_misses m ON m.event_id=i.event_id '
+                        "LEFT JOIN suggestions s ON s.id=m.suggestion_id AND s.status!='rejected' "
                         'WHERE i.audit_id=? AND i.work=1 ORDER BY i.label IS NOT NULL,i.event_id DESC', (row['id'],)):
         url = _metadata(r).get('source_url') if r['metadata'] else None
         misses.append({'event_id': r['event_id'], 'channel': r['channel'], 'area': r['area'], 'what': r['what'], 'reason': r['reason'] or '',
-                       'label': r['label'], 'url': url if isinstance(url, str) and url.startswith('https://') else None})
+                       'label': r['label'], 'url': url if isinstance(url, str) and url.startswith('https://') else None,
+                       'open': bool(r['kept'] and not r['deleted']), 'title': (r['title'] or '')[:200] if r['kept'] and not r['deleted'] else '',
+                       'meeting': r['kind'] == 'calendar.event',
+                       'card': (r['made'] or holder(db, r['event_id'])) if r['label'] == 'real' else None})
     cal = result.get('calibration') or {}
     return {'at': row['finished_at'], 'population': row['population'], 'sampled': row['sampled'], 'flagged': row['flagged'],
             'raw': result.get('raw'), 'adjusted': result.get('adjusted'),
