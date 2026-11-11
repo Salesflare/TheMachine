@@ -5,6 +5,7 @@ A board used to come with every project on it (150 a board), in every claim, wha
 most of a small claim and pushed a full one past OpenClaw's cut, which took the signals at the end of the reply. The
 rest of a board is one lookup away: graph {"board": name}."""
 import json
+import sqlite3
 
 import graph
 from machine.store.review import REVIEW_PAGE_CHARS
@@ -18,6 +19,7 @@ PERSON_PROJECTS = 8  # of the board projects a person or their organization is o
 BOARDS_NOTE = 'Each board lists only the projects this claim touches; others counts the rest. See a whole board with graph {"board": "<name>"}.'
 # What goes when a reply is still too long, in this order: the signals are what the review came for and stay
 LEFT_OUT = (('projects', 'the project names to reuse (find one with graph query)'),
+            ('done_when', 'the done when of this claim\'s projects on no board (graph with a project\'s node_id shows it)'),
             ('board projects', 'the projects on each board (see a board with graph {"board": "<name>"})'),
             ('share_groups', 'the share groups unsure threads already have'),
             ('boards', 'the boards (list them with graph {"boards": true})'))
@@ -71,11 +73,11 @@ def claimed_projects(db, event_ids, config):
     return names
 
 
-def boards(db, analysis_id, config):
+def boards(db, analysis_id, config, mine=None):
     """The boards for a claim: each one's stages and about (to place a new project), and where the projects in this
     claim (its signals, their mail threads and their people) stand, with their done_when. The other projects are
     counted, not listed."""
-    mine = claimed_projects(db, claim_ids(db, analysis_id), config)
+    mine = claimed_projects(db, claim_ids(db, analysis_id), config) if mine is None else mine
     out = []
     for b in graph.boards_brief(db, BOARD_PROJECTS):
         here = {name: stage for name, stage in b['projects'].items() if name in mine}
@@ -84,6 +86,20 @@ def boards(db, analysis_id, config):
                     **({'projects': here} if here else {}), **({'done_when': done} if done else {}),
                     **({'others': len(b['projects']) - len(here)} if len(b['projects']) > len(here) else {})})
     return out
+
+
+def done_when(db, mine):
+    """{name: condition} of this claim's open projects on no board that have one (project_success.py): a message in the
+    batch that meets it marks it done with finish_analysis stages {"project", "done": true, ...}."""
+    if not mine:
+        return {}
+    try:
+        return {r[0]: r[1] for r in db.execute(
+            "SELECT p.name,s.condition FROM project_success s JOIN projects p ON p.id=s.project_id WHERE p.board_id IS NULL AND p.closed_at IS NULL "
+            "AND p.outcome IS NULL AND s.condition IS NOT NULL AND s.condition<>'' AND p.name IN (SELECT value FROM json_each(?)) LIMIT ?",
+            (json.dumps(sorted(mine)), BOARD_LOOKUP))}
+    except sqlite3.OperationalError:  # a graph without project_success yet: nothing to list
+        return {}
 
 
 def lookup(db, name=None):

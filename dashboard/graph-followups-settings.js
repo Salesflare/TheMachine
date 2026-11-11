@@ -3,7 +3,7 @@
 // A project's page: its board and stage, its next step, and the latest moves with the message each came from.
 // Done when (project_success.py): the project's success condition, the proof that met it (the message, and the live page
 // when the condition asks for one) or that it was marked done by hand, why a review's "done" isn't proven yet, and what
-// stands in its way with its one to-do.
+// stands in its way with its one to-do. On no board, the box alone.
 const PS_WHY={'unlinked':'The page doesn’t link to you yet','unloaded':'The page didn’t load','unsaid':'The link isn’t in their message',
  'no_url':'No link to the page yet','from_owner':'It needs a message from them','no_message':'No message shows it yet'};
 const psBlock=x=>x.kind==='no_reply'?t('No reply in {} days',x.days)+(x.follow_ups?' · '+t('Follow-ups are on'):''):x.kind==='promise_theirs'?t('Waiting on {}: {}, due {}',x.who,x.what,shortDay(x.due)):t('Overdue for {}: {}, due {}',x.who,x.what,shortDay(x.due));
@@ -12,7 +12,7 @@ const successBox=s=>{if(!s)return '';const ev=s.evidence;
   :s.not_proven?html`<p class="ps-proof warn">${t('Not proven yet: {}',t(PS_WHY[s.not_proven]||s.not_proven))}</p>`:'';
  const block=!s.done&&s.blocker?html`<p class="ps-block">${psBlock(s.blocker)}${s.blocker.todo?html` · <a href="#card=${s.blocker.todo.id}" title="${s.blocker.todo.title}">${t('To-do')}</a>`:''}</p>`:'';
  return html`<div class="ps-box">${s.condition?html`<p class="ps-when">${t('Done when: {}',s.condition)}</p>`:''}${proof}${block}</div>`};
-const stageBox=n=>{const b=n.board;if(!b)return '';const moves=orEmpty(html`${(b.moves||[]).map(m=>html`<li>${shortDay(m.at)} · ${m.source==='owner'?`Moved to ${m.stage} by hand`:`${m.stage}: ${(m.source==='follow_up'?fuMoveReason(m,n):m.reason||'')}`}${m.event_id?html` <button type="button" class="link" data-quote-event="${m.event_id}">Read</button>`:''}</li>`)}`);
+const stageBox=n=>{const b=n.board;if(!b)return n.success&&!n.team_only?html`<div class="graph-stage">${successBox(n.success)}</div>`:'';const moves=orEmpty(html`${(b.moves||[]).map(m=>html`<li>${shortDay(m.at)} · ${m.source==='owner'?`Moved to ${m.stage} by hand`:`${m.stage}: ${(m.source==='follow_up'?fuMoveReason(m,n):m.reason||'')}`}${m.event_id?html` <button type="button" class="link" data-quote-event="${m.event_id}">Read</button>`:''}</li>`)}`);
  const seen=n.team_only?'':html`<label class="seen-pick">Who sees it<select data-project-seen="${n.id}"><option value=""${b.visibility?'':html` selected`}>Like its board (${b.board_visibility==='only_you'?'only you':b.board_visibility==='people'?'chosen teammates':'team'})</option><option value="only_you"${b.visibility==='only_you'?html` selected`:''}>Only you</option><option value="team"${b.visibility==='team'?html` selected`:''}>Your team</option></select></label>`;
  return html`<div class="graph-stage"><p><b>${b.stage||''}</b> <span class="muted">on ${b.board}</span>${['only_you','people'].includes(b.visibility||b.board_visibility)?html`${' '}${seenBy(b.visibility||b.board_visibility)}`:''}</p>${b.next?html`<p>Next: ${b.next}</p>`:''}${successBox(b.success)}${moves?html`<ol aria-label="Moves">${moves}</ol>`:''}${n.team_only?'':fuBox(n)}${seen}</div>`};
 document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-project-seen]');if(!t)return;t.disabled=true;

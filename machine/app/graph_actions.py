@@ -138,7 +138,10 @@ class GraphActionsApp:
                     graph.label(db, [int(i) for i in x['event_ids']], str(x['project']).strip(), 'agent', now())
                 split = [{'project': str(x['project']).strip(), 'events': len(x['event_ids'])} for x in parts]
                 changed = True
-            if args.get('project') and (args.get('stage') or args.get('board')):
+            if args.get('project') and not args.get('stage') and (args.get('done') or args.get('condition')) and project_success.off_board(db, args):
+                said = project_success.done_off_board(db, args, checked, 'agent', now())  # a project on no board: its condition, or done
+                changed = changed or bool(said.get('outcome'))
+            elif args.get('project') and (args.get('stage') or args.get('board')):
                 placed, verdict = project_success.gate(db, args, checked)  # the last stage only with its proof
                 said = graph.set_stage(db, args['project'], placed.get('stage'), 'agent', now(), board=args.get('board'), stages=args.get('stages'),
                                        reason=args.get('reason'), event_id=args.get('event_id'), next_step=args.get('next'), org=args.get('org'))

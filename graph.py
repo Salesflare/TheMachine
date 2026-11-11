@@ -2237,6 +2237,8 @@ def detail(db, node_id, events=12):
             view['org_quote'] = said_org['quote'] if said_org else None
     if row['kind'] == 'project':
         view['board'] = project_moves(db, node_id)
+        if not view['board']:  # on no board: its done when, proof and blocker on their own (project_success.py)
+            view['success'] = __import__('project_success').page(db, node_id)
         try:
             view['project'] = project_card(db, node_id)
         except ValueError:
@@ -4349,7 +4351,8 @@ def set_outcome(db, node_id, outcome, reason, now):
             db.execute('UPDATE projects SET stage_reason=? WHERE id=?', (reason or None, row['id']))
             db.execute('UPDATE project_moves SET reason=? WHERE id=(SELECT max(id) FROM project_moves WHERE project_id=?)', (reason or None, row['id']))
     db.execute('UPDATE projects SET outcome=?,outcome_reason=? WHERE id=?', (outcome, (reason or None) if outcome else None, row['id']))
-    return {'node_id': 'project:' + str(row['id']), 'outcome': outcome, 'stage': stage or row['stage']}
+    deal = __import__('project_success').outcome_set(db, row, outcome, now)  # the owner's word stands over a proof's
+    return {'node_id': 'project:' + str(row['id']), 'outcome': outcome, 'stage': stage or row['stage'], 'deal': deal}
 
 
 def archive_project(db, node_id, archived, now):
@@ -4393,16 +4396,7 @@ def project_card(db, node_id):
     return {'node_id': 'project:' + str(row['id']), 'name': row['name'], 'board_id': row['board_id'], 'stage': row['stage'], 'org': row['org'],
             'org_node': {**org, 'by': row['org_by']} if org else None,
             'value': row['value'], 'close_date': row['close_date'], 'notes': row['notes'], 'people': people, 'archived': bool(row['closed_at']), 'outcome': row['outcome'],
-            'outcome_reason': row['outcome_reason'], **_done_when(db, row['id'])}
-
-
-def _done_when(db, pid):
-    """{'condition', 'proof'} for the project dialog (project_success.py), or {}."""
-    try:
-        found = db.execute('SELECT condition,proof FROM project_success WHERE project_id=?', (pid,)).fetchone()
-    except sqlite3.OperationalError:
-        return {}
-    return {'condition': found['condition'], 'proof': found['proof']} if found and found['condition'] else {}
+            'outcome_reason': row['outcome_reason'], **__import__('project_success').card(db, row)}
 
 
 def fit_brief(db, run_id, now, limit=FIT_BATCH):

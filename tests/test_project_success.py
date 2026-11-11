@@ -14,6 +14,8 @@ from seams import patch_everywhere  # noqa: E402
 spec = importlib.util.spec_from_file_location('project_success_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 graph, ps = a.graph, a.project_success
+import graph_updates, record_log  # noqa: E402
+from machine.app import claim_reply  # noqa: E402
 NOW = dt.datetime(2026, 10, 28, 20, 0, tzinfo=dt.timezone.utc)
 STAGES = ['Contacted', 'Agreed', 'In review', 'Live']
 LIVE = 'https://blog.paperkite.example/best-crm-tools'
@@ -27,7 +29,7 @@ def mail(hours_ago, sender, to, body, labels=('INBOX',), thread='listing', title
             'metadata': {'from': sender, 'to': to, 'labels': list(labels), 'message-id': f'<{n}@x>', 'thread_id': thread}}
 
 
-class ProjectSuccess(unittest.TestCase):
+class Fixture:
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
@@ -58,6 +60,9 @@ class ProjectSuccess(unittest.TestCase):
             row = db.execute('SELECT * FROM projects WHERE name=?', (name,)).fetchone()
             return dict(row), graph.project_moves(db, 'project:' + str(row['id']))
 
+
+
+class ProjectSuccess(Fixture, unittest.TestCase):
     def agreed(self):
         """Robin pitched; Paperkite agreed to list them. The review places it with a suggested condition."""
         pitch, yes = self.add(mail(200, 'Robin <robin@quillfeather.example>', 'kai@paperkite.example', 'Would you list Quillfeather in your CRM guide?', ('SENT',)),
@@ -184,6 +189,109 @@ class ProjectSuccess(unittest.TestCase):
     def test_page_check_matches_the_domain_not_a_longer_one(self):
         self.assertTrue(ps.page_links_to(b'<a href="https://quillfeather.example/">', {'quillfeather.example'}))
         self.assertFalse(ps.page_links_to(b'<a href="https://quillfeather.example.evil.example/">x</a> notquillfeather.example', {'quillfeather.example'}))
+
+
+
+class OffBoard(Fixture, unittest.TestCase):
+    """A project on no board has a Done when too (2026-11-11): its proof marks it done (outcome 'won', called Done for work
+    that isn't a deal) with Undo under Recent changes; a stall on it gets the same one to-do, which waits for the result."""
+
+    def plan(self, condition='Lee confirms the guest post is published', proof='message'):
+        """A project on no board with the owner's condition, and the pitch it started from."""
+        pitch, = self.add(mail(300, 'Robin <robin@quillfeather.example>', 'lee@bramblebox.example', 'Could we write a guest post for you?', ('SENT',), thread='gp'))
+        with self.store.connect() as db:
+            graph.label(db, [pitch], 'Bramblebox guest post', 'review', NOW.isoformat())
+            node = 'project:' + str(db.execute("SELECT id FROM projects WHERE name='Bramblebox guest post'").fetchone()[0])
+            graph.save_project(db, {'node_id': node, 'condition': condition, 'proof': proof}, NOW.isoformat())
+            self.assertIsNone(db.execute("SELECT board_id FROM projects WHERE name='Bramblebox guest post'").fetchone()[0])
+        return node, pitch
+
+    def page(self, node):
+        with self.store.connect() as db:
+            log = record_log.recent(db, {'id': node, 'kind': 'project', 'info': None})  # its Recent changes (no graph build needed)
+            return graph.project_card(db, node), ps.page(db, node), log
+
+    def test_a_matching_message_marks_it_done_with_undo_and_reopen_stands(self):
+        node, _ = self.plan()
+        card, success, _ = self.page(node)
+        self.assertEqual((card['condition'], card['deal'], success['done']), ('Lee confirms the guest post is published', False, False))
+        # The owner's own message never proves it
+        mine, = self.add(mail(5, 'Robin <robin@quillfeather.example>', 'lee@bramblebox.example', 'Is it up yet?', ('SENT',), thread='gp'))
+        done = self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': mine, 'reason': 'asked'}])
+        self.assertEqual(done['stages'][0]['not_proven'], 'from_owner')
+        self.assertIsNone(self.project('Bramblebox guest post')[0]['outcome'])
+        # Lee's message meets it: done, with the message as its proof, and Undo on the page
+        yes, = self.add(mail(2, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'Your guest post is published today.', thread='gp'))
+        done = self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': yes, 'reason': 'Lee says it is published'}],
+                           replies=[{'event_id': yes, 'why': 'a confirmation'}])
+        self.assertEqual((done['stages'][0]['outcome'], done['stages'][0]['deal']), ('won', False))
+        row, board = self.project('Bramblebox guest post')
+        self.assertEqual((row['outcome'], row['outcome_reason'], board), ('won', 'Lee says it is published', None))
+        card, success, log = self.page(node)
+        self.assertEqual((success['done'], success['done_by'], success['evidence']['event_id']), (True, 'evidence', yes))
+        marked = [x for x in log if x['kind'] == 'done']
+        self.assertEqual(len(marked), 1)
+        self.assertEqual((marked[0]['deal'], marked[0]['act'], marked[0]['source']['id']), (False, {'reopen': node}, yes))
+        with self.store.connect() as db:
+            self.assertIn((node, NOW.isoformat(), {'kind': 'done', 'deal': False}), graph_updates._changes(db, graph_updates.since(NOW)))  # Updated today
+        # Undo is the owner's Reopen: open again, the line goes, and the same message never marks it done again
+        with self.store.connect() as db:
+            self.assertFalse(graph.set_outcome(db, node, None, '', NOW.isoformat())['deal'])
+        card, success, log = self.page(node)
+        self.assertEqual((card['outcome'], success['done'], [x for x in log if x['kind'] == 'done']), (None, False, []))
+        with self.store.connect() as db:
+            again = ps.done_off_board(db, {'project': 'Bramblebox guest post', 'done': True, 'event_id': yes, 'reason': 'Lee says it is published'}, {}, 'review',
+                                      NOW.isoformat())
+        self.assertEqual(again['kept'], 'The owner reopened it after this message')
+
+    def test_a_live_page_proves_it_and_a_deal_ends_won(self):
+        node, _ = self.plan('The partner page is live with a link to us', 'link')
+        with self.store.connect() as db:
+            graph.save_project(db, {'node_id': node, 'value': '4000'}, NOW.isoformat())
+        live, = self.add(mail(1, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', f'It is live: {LIVE}', thread='gp'))
+        self.pages[LIVE] = b'<html><a href="https://quillfeather.example">Quillfeather</a></html>'
+        # The claim lists the project's done when, so the review knows what to look for
+        claim = self.store.begin_analysis(['work'], 120)
+        with self.store.connect() as db:
+            mine = claim_reply.claimed_projects(db, claim_reply.claim_ids(db, claim['analysis_id']), {})
+            self.assertEqual(claim_reply.done_when(db, mine), {'Bramblebox guest post': 'The partner page is live with a link to us'})
+        done = self.store.finish_analysis(claim['analysis_id'], 'Live', stages=[{'project': 'Bramblebox guest post', 'done': True, 'event_id': live,
+                                                                                 'reason': 'Lee says it is live', 'url': LIVE}],
+                                          replies=[{'event_id': live, 'why': 'a confirmation'}])
+        self.assertEqual((done['stages'][0]['outcome'], done['stages'][0]['deal']), ('won', True))
+        _, success, log = self.page(node)
+        self.assertEqual(success['evidence']['url'], LIVE)
+        self.assertTrue(next(x for x in log if x['kind'] == 'done')['deal'])
+
+    def test_a_review_sets_a_condition_through_graph_but_never_over_the_owners(self):
+        pitch, = self.add(mail(30, 'Robin <robin@quillfeather.example>', 'sam@tealpond.example', 'Shall we sign the reseller agreement?', ('SENT',), thread='rs'))
+        with self.store.connect() as db:
+            graph.label(db, [pitch], 'Tealpond reseller', 'review', NOW.isoformat())
+            said = ps.done_off_board(db, {'project': 'Tealpond reseller', 'condition': 'Sam sends the signed agreement', 'proof': 'message'}, {}, 'review', NOW.isoformat())
+            self.assertEqual(said['condition'], 'Sam sends the signed agreement')
+            node = said['node_id']
+            graph.save_project(db, {'node_id': node, 'condition': 'Signed and paid', 'proof': 'message'}, NOW.isoformat())
+            ps.done_off_board(db, {'project': 'Tealpond reseller', 'condition': 'Something else'}, {}, 'review', NOW.isoformat())
+            self.assertEqual(graph.project_card(db, node)['condition'], 'Signed and paid')
+            with self.assertRaises(ValueError):  # neither a board nor a condition: as before, say which board
+                ps.done_off_board(db, {'project': 'Tealpond reseller'}, {}, 'review', NOW.isoformat())
+
+    def test_a_stall_on_a_project_on_no_board_gets_one_to_do_that_waits_for_the_result(self):
+        node, pitch = self.plan()
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET occurred_at=? WHERE id=?', ((NOW - dt.timedelta(days=12)).isoformat(), pitch))
+            self.store.project_blockers(db)
+            self.store.project_blockers(db)  # each review run: still one
+            todos = db.execute("SELECT id,title,status,done_when,done_when_by FROM suggestions WHERE dedupe_key LIKE 'project-success:%'").fetchall()
+        self.assertEqual([t['title'] for t in todos], ['Nudge Bramblebox guest post: no reply in 12 days'])
+        self.assertEqual((todos[0]['done_when'], todos[0]['done_when_by']), ('Lee confirms the guest post is published', 'project'))
+        _, success, _ = self.page(node)
+        self.assertEqual((success['blocker']['kind'], success['blocker']['days'], success['blocker']['todo']['id']), ('no_reply', 12, todos[0]['id']))
+        # Done: nothing stands in its way any more
+        yes, = self.add(mail(1, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'Published it this morning.', thread='gp'))
+        self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': yes, 'reason': 'Lee published it'}], replies=[{'event_id': yes, 'why': 'a confirmation'}])
+        _, success, _ = self.page(node)
+        self.assertEqual((success['done'], success['blocker']), (True, None))
 
 
 if __name__ == '__main__':

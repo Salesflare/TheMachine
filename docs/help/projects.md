@@ -16,7 +16,7 @@ Give it a name, a board and stage, an organization (search your Graph, or **Add*
 ## Edit, win or lose a project
 
 - **Edit** on a project's page, or **Edit** in its **⋯** on the board (or press E), changes all of the above.
-- **Won** or **Lost**, with why. Won moves it to the board's last stage, Lost to Stalled or declined. **Reopen** undoes it.
+- **Won** or **Lost**, with why, for a deal: a project with a value or expected close, or on a board where one has. Won moves it to the board's last stage, Lost to Stalled or declined. Other projects end with **Done**. **Reopen** undoes it.
 - **Archive** takes it off the board and lists; a new message about it brings it back.
 - **Delete** removes it for good; its messages and people stay.
 
@@ -70,9 +70,9 @@ A new board, or a suggested board you save, looks through your whole history onc
 
 ## Done when
 
-**Done when**, under **Edit** on a project, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Checks suggest one for partner listings.
+**Done when**, under **Edit** on any project, on a board or not, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Checks suggest one for partner listings.
 
-A check only moves a project to the last stage with that proof, linked on its page; **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
+A check only moves a project to the last stage with that proof, linked on its page. A project on no board is marked done instead, with **Undo** in its **⋯** under Recent changes. **Done** or **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
 
 ## Pipeline
 
