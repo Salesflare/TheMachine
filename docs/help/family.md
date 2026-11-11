@@ -10,7 +10,7 @@ order: 6
 
 - Find a time: "When are we all free on Saturday?" Only busy times are shared.
 - To-dos: ask someone in your family to do something. They accept or decline.
-- Plans: propose one. Everyone answers I'm in or Can't make it, and gets a link to add it to their calendar. Nothing is written to anyone's calendar for them.
+- Plans: propose one. Everyone answers I'm in or Can't make it. I'm in adds it to your own Google calendar, with nobody invited; Undo takes it off again. Without a calendar The Machine can change, you get a link to add it yourself.
 
 No work questions go through a Family Fleet.
 

@@ -26,14 +26,17 @@ const view={on:true,kinds:{relationships:'who knows someone',availability:'free/
   todos:[{id:'t2',title:'Buy milk',name:'Alex',stage:'accepted',due:'2026-10-24'}],
   plans:[{id:'t3',title:'Dinner at grandma’s with a rather long name that should wrap nicely',start:'2026-10-25T18:00+02:00',place:'Grandma’s',yes:['Robin'],no:[],waiting:['Alex'],link:'https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dinner'}],
   mine:[{id:'t4',title:'Pick up Sam',name:'Robin',stage:'accepted',due:'2026-10-21'}]},
- waiting:[{id:'q_'+'1'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'todo',question:'To-do: Pick up the kids, due Fri 23 Oct',status:'waiting',at:'2026-10-20T10:00:00Z'}],
+ waiting:[{id:'q_'+'1'.repeat(16),fleet:FAM,member_id:'fm_robin',name:'Robin',kind:'todo',question:'To-do: Pick up the kids, due Fri 23 Oct',status:'waiting',at:'2026-10-20T10:00:00Z'},
+  {id:'q_'+'2'.repeat(16),fleet:FAM,member_id:'fm_alex',name:'Alex',kind:'event',question:'Plan: Zoo trip, Sun 25 Oct',status:'waiting',at:'2026-10-20T11:00:00Z'}],
+ plan_calendar:'Home calendar',  // "I'm in" adds a plan to the owner's own calendar (family.py)
  friends:{id:FR,username:'sam',in:[],out:[],blocked:[]},
  asked:[],log:[],notices:[]};
 const calls=[];
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:1}}));return}
- if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;calls.push(JSON.parse(body));res.end('{"ok":true}');return}
+ if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
+  res.end(JSON.stringify(call.action==='fleet_decide'&&call.args.id==='q_'+'2'.repeat(16)?{status:'answered',card_id:'c1',calendar:{name:'Home calendar',id:call.args.id}}:{ok:true}));return}
  if(req.url.startsWith('/api/fleet')){res.end(JSON.stringify(view));return}
  res.statusCode=404;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -49,6 +52,14 @@ try{
   assert.match(await card.innerText(),/Robin asks you to do something/);
   calls.length=0;await card.locator('[data-choice-f="once"]').click();await page.waitForTimeout(200);
   assert.deepEqual(calls.at(-1),{action:'fleet_decide',args:{id:'q_'+'1'.repeat(16),choice:'once'}});
+  // A plan: I'm in says which calendar it goes on, nobody invited; the toast's Undo takes the event off again
+  const plan=page.locator('#fleet-q_'+'2'.repeat(16));await plan.waitFor();
+  assert.match(await plan.innerText(),/Alex proposes a plan/);assert.match(await plan.innerText(),/adds it to Home calendar\. Nobody is invited\./);
+  await plan.locator('[data-choice-f="once"]').click();const undo=page.locator('#toast [data-plan-undo]');await undo.waitFor();
+  assert.match(await page.locator('#toast').innerText(),/Answered\. Added to Home calendar\./);
+  calls.length=0;await undo.click();await page.waitForTimeout(200);
+  assert.deepEqual(calls.find(c=>c.action==='family_plan_undo'),{action:'family_plan_undo',args:{id:'q_'+'2'.repeat(16)}});
+  assert.match(await page.locator('#toast').innerText(),/Removed from your calendar\./);
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-tabs').waitFor();
   // Every Fleet together, Work and Family, by when it was joined; then Friends, Sharing and Activity
   assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Home','Beta','Friends','Sharing','Activity']);

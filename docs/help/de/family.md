@@ -10,7 +10,7 @@ order: 6
 
 - Wann alle frei sind: „Wann haben wir am Samstag alle Zeit?“ Nur belegte Zeiten.
 - Aufgaben: Bitte jemanden in deiner Familie, etwas zu erledigen. Die Person nimmt an oder lehnt ab.
-- Pläne: Schlag einen Plan vor. Alle antworten mit Bin dabei oder Kann nicht, mit einem Link, um ihn in den eigenen Kalender einzutragen. In niemandes Kalender wird etwas geschrieben.
+- Pläne: Schlag einen Plan vor. Alle antworten mit Ich bin dabei oder Ich kann nicht. Ich bin dabei trägt ihn in deinen eigenen Google-Kalender ein, ohne jemanden einzuladen; Rückgängig nimmt ihn wieder heraus. Ohne einen Kalender, den The Machine ändern darf, bekommst du einen Link, um ihn selbst einzutragen.
 
 Über eine Family Fleet laufen keine Arbeitsfragen.
 

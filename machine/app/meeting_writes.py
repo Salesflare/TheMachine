@@ -269,3 +269,29 @@ class MeetingWritesApp:
         if status == 'done':
             self.sync_soon(action['account_id'])
         return {'status': status, 'error': error, 'op': action['op'], 'calendar': action['calendar_name'], 'invited': len(action.get('guests') or ())}
+
+    def calendar_write_undo(self, request_id, transport=None):
+        """Undo on an event one tap added (calendar_write, a create without guests): it leaves the calendar, nobody told
+        (sendUpdates none). Not when it has guests by now: the owner changes that in the calendar itself, so they hear.
+        False when that tap added nothing (or it was taken back already)."""
+        with self.store.connect() as db:
+            row = db.execute("SELECT account_id FROM calendar_writes WHERE id=? AND op='create' AND status='done'", (request_id,)).fetchone()
+        if not row:
+            return False
+        account = calendar_writes.account_for(self.config, row['account_id'])
+        transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
+        google_id = calendar_writes.event_id(request_id)
+        try:
+            event = transport.event(account, google_id)
+        except Exception:  # noqa: BLE001 - a read that failed: nothing is deleted blind
+            raise ValueError(i18n.t('I couldn’t check your calendar. Nothing was changed.')) from None
+        if event and event.get('status') != 'cancelled':
+            if any(not a.get('self') for a in event.get('attendees') or []):
+                raise ValueError(i18n.t('That event has guests now. Change it in the calendar itself. Nothing was changed.'))
+            status, _ = transport.write(account, 'events.delete', {'eventId': google_id})
+            if status not in (None, 404, 410):
+                raise ValueError(i18n.t('I couldn’t remove it. Check your calendar.'))
+        with self.store.connect() as db:
+            db.execute("UPDATE calendar_writes SET status='undone',updated_at=? WHERE id=?", (now(), request_id))
+        self.sync_soon(row['account_id'])
+        return True

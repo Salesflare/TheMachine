@@ -10,7 +10,7 @@ order: 6
 
 - Quand tout le monde est libre : « Quand sommes-nous tous libres samedi ? » Uniquement les créneaux occupés.
 - Tâches : demandez à quelqu’un de votre famille de faire quelque chose. La personne accepte ou refuse.
-- Projets : proposez un projet. Chacun répond Je suis partant ou Je ne peux pas, avec un lien pour l’ajouter à son propre agenda. Rien n’est écrit dans l’agenda de personne.
+- Projets : proposez un projet. Chacun répond J’en suis ou Je ne peux pas. J’en suis l’ajoute à votre propre agenda Google, sans inviter personne ; Annuler le retire. Sans agenda que The Machine peut modifier, vous recevez un lien pour l’ajouter vous-même.
 
 Aucune question de travail ne passe par une Fleet Famille.
 

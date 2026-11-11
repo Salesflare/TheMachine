@@ -10,7 +10,7 @@ order: 6
 
 - Wanneer iedereen vrij is: "Wanneer zijn we zaterdag allemaal vrij?" Alleen bezette tijden.
 - To-do's: vraag iemand in je familie om iets te doen. Die persoon accepteert of weigert.
-- Plannen: stel een plan voor. Iedereen antwoordt Ik doe mee of Lukt niet, met een link om het in de eigen agenda te zetten. Er wordt niets in iemands agenda geschreven.
+- Plannen: stel een plan voor. Iedereen antwoordt Ik ben erbij of Lukt me niet. Ik ben erbij zet het in je eigen Google-agenda, zonder iemand uit te nodigen; Ongedaan maken haalt het er weer uit. Zonder agenda die The Machine mag aanpassen, krijg je een link om het zelf toe te voegen.
 
 Werkvragen gaan nooit via een Familie-Fleet.
 

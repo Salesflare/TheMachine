@@ -7,7 +7,9 @@ A Family Fleet asks three things, all over the Network:
 - todo: "can you pick up Sam on Friday?" A to-do for one member. Their Machine shows it as a card to accept or decline;
   once accepted it is theirs, with a reminder on its due day, and the asker sees accepted, declined or done.
 - event: "dinner at grandma's, Sunday 18:00?" A plan for some or all members. Each Machine shows it as a card to say
-  yes or no. Saying yes never writes to a calendar: the card has an "Add to my calendar" link the owner opens themselves.
+  yes or no. The owner's own "I'm in" tap adds it to their own Google calendar (no guests, nobody told; Undo removes
+  it). Without a calendar The Machine may change, or when Always said yes by itself, the card has an "Add to my
+  calendar" link the owner opens themselves.
 
 Rules are per kind for the Family, the same choices as a Work Fleet (Ask me first, Always, Never), with friendlier
 defaults: free/busy is answered by itself (busy blocks only), to-dos and plans wait for the owner. Work questions
@@ -156,6 +158,36 @@ def calendar_link(question):
     return 'https://calendar.google.com/calendar/render?' + urllib.parse.urlencode(params)
 
 
+def plan_request(ask_id):
+    """The calendar write an "I'm in" makes, by the plan it answers (calendar_writes ids): one event per plan, ever."""
+    return hashlib.sha256(('family-plan:' + str(ask_id)).encode()).hexdigest()[:32]
+
+
+def calendar_change(question, tz):
+    """A plan as a calendar change for the owner's own calendar (calendar_writes.validate): its title and place only, never
+    guests. A time without its offset is the owner's local time; no end is an hour (as in calendar_link)."""
+    start, end = question['start'], question.get('end')
+    change = {'op': 'create', 'title': question['title'], **({'location': question['place']} if question.get('place') else {})}
+    if len(start) == 10:
+        return {**change, 'all_day': True, 'start': start, 'end': end or start}
+
+    def moment(value):
+        stamp = dt.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return stamp if stamp.tzinfo else stamp.replace(tzinfo=tz)
+    a = moment(start)
+    b = moment(end) if end else a + dt.timedelta(hours=1)
+    return {**change, 'all_day': False, 'start': a.isoformat(), 'end': (b if b > a else a + dt.timedelta(hours=1)).isoformat()}
+
+
+def plan_body(sender, question, calendar=None):
+    """An accepted plan's to-do: what it is, and where it went: the owner's calendar, or the link to add it themselves."""
+    return (t('You said yes to {}’s plan: “{}”, {}', sender, question["title"], _shown(question["start"]))
+            + (', ' + question["place"] if question.get('place') else '') + '.'
+            + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
+            + ' ' + (t('Added to your calendar ({}). Nobody was invited.', calendar) if calendar
+                     else t('Add it to your calendar yourself: {}', calendar_link(question))))
+
+
 def common_free(busy_lists, start, days, tz, hours=(FREE_FROM, FREE_UNTIL), minutes=FREE_MINUTES):
     """The times everyone is free: within `hours` local time on each day, at least `minutes` long. busy_lists holds each
     member's busy blocks ([start, end] UTC slots, as friends.free_busy gives them). Plain code."""
@@ -257,13 +289,24 @@ class Family:
                                         + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
                                         + (' ' + t('Due {}.', _shown(question["due"])) if question.get('due') else '')),
                                   evidence=[], due=(question.get('due') or '')[:10] or None, family=True)
-        link = calendar_link(question)
         return self.make_card(kind='event', ask_id=row['id'], name=sender, title=f'{question["title"]}, {_shown(question["start"])}'[:90],
-                              body=(t('You said yes to {}’s plan: “{}”, {}', sender, question["title"], _shown(question["start"]))
-                                    + (', ' + question["place"] if question.get('place') else '') + '.'
-                                    + (' ' + t('Their note: “{}”', question["note"]) if question.get('note') else '')
-                                    + ' ' + t('Add it to your calendar yourself: {}', link)),
-                              evidence=[], due=timeutil.local_day_text(question['start']) or None, family=True)
+                              body=plan_body(sender, question), evidence=[], due=timeutil.local_day_text(question['start']) or None, family=True)
+
+    def family_plan(self, ask_id):
+        """A plan from the Family the owner said yes to, with its to-do: what "I'm in" adds to their calendar. Else None."""
+        with self.connect() as db:
+            row = db.execute("SELECT r.fleet,r.member_id,r.name,r.card_id,i.question FROM fleet_requests r JOIN fleet_in i ON i.id=r.id "
+                             "WHERE r.id=? AND r.kind='event' AND r.stage='accepted' AND r.card_id IS NOT NULL", (str(ask_id),)).fetchone()
+        if not row or row['fleet'] != self.family_ref():
+            return None
+        import fleet  # noqa: PLC0415 - fleet imports this module
+        sender = fleet.clean((self.member(row['fleet'], row['member_id']) or {}).get('name') or row['name'], 80)  # as request_card
+        return {'question': json.loads(row['question']), 'sender': sender, 'card_id': row['card_id']}
+
+    def family_plan_text(self, ask_id, calendar=None):
+        """(card id, text) for the plan's to-do: on the owner's calendar (its name), or back to the link after Undo."""
+        plan = self.family_plan(ask_id)
+        return (plan['card_id'], plan_body(plan['sender'], plan['question'], calendar)[:700]) if plan else None
 
     def family_reminders(self, today=None):
         """An accepted to-do, on its due day: one reminder on this Machine (phone and Telegram), once."""

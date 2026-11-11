@@ -15,8 +15,12 @@ self-hosted. Your Machines coordinate over the Network, under rules each of you 
   once they finish it.
 - **Plans.** Propose a plan to the whole Family ("Sunday lunch at grandma's", a time and a place). Each member says
   **I'm in** or **Can't make it** on their Machine; you see who is in, who can't and who hasn't answered yet.
-  **Nothing is written to anyone's calendar.** The plan carries an **Add to my calendar** link each person opens
-  themselves.
+  **I'm in** adds the plan to your own Google calendar: its title, time and place, **no guests**, and Google tells
+  nobody (`sendUpdates` none). The toast has **Undo**, which takes the event off again (your yes stays) and gives the
+  to-do its **Add to my calendar** link back. Only your own tap writes: a plan that **Always** accepted by itself, or a
+  Machine without a Google calendar it may change (your own, on a sign-in with calendar write access and a connection
+  that can do things), keeps the link, which you open yourself. Nobody else's calendar is ever written. The member's
+  note stays on the to-do and doesn't go into the event.
 
 ## Invite suggestions
 
