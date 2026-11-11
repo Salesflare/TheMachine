@@ -2,7 +2,9 @@
 promise and no to-do update is judged by a separate model turn that never sees the review's verdict, with made-up
 signals of known answer mixed in blind. It measures the miss rate with a confidence interval, overall and per channel
 and area, adjusts it with the evaluator's precision and recall, and lists the misses for the owner to label. It never
-makes or changes a to-do, and the owner's labels stay local."""
+makes or changes a to-do by itself, and the owner's labels stay local. The owner's Real miss gives the message its to-do
+(with Undo) and keeps the miss, with the review's own reason, for the learning loop, as does a to-do the owner makes from
+a message a review passed over."""
 import importlib.util
 import json
 from pathlib import Path
@@ -13,6 +15,7 @@ import unittest
 spec = importlib.util.spec_from_file_location('missed_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+import learning_loop
 import missed_work as mw
 
 ACCOUNTS = [{'id': 'work', 'service': 'gmail', 'email': 'owner@example.com', 'boundary': 'work:Acme'},
@@ -197,6 +200,93 @@ class Audit(unittest.TestCase):
         done = app.action('missed_work_label', {'event_id': self.ids['mail'][0], 'label': 'real'}, owner_dashboard=True)
         self.assertEqual(done['missed_work']['labeled'], 0)  # counted at the next audit
         self.assertIn('missed_work_label', a.DASHBOARD_ACTIONS)
+
+    def app(self):
+        app = object.__new__(a.App)
+        app.store, app.config, app.fleet = self.store, {'accounts': ACCOUNTS}, None
+        return app
+
+    def audited(self):
+        """One audit, with the review's own reason on the first mail (finish_analysis no_todo)."""
+        with self.store.connect() as db:
+            items = json.loads(db.execute("SELECT items FROM analyses WHERE id='r1'").fetchone()[0])
+            for item in items:
+                if item['id'] == self.ids['mail'][0]:
+                    item['no_todo'] = 'Only an update, nothing asked'
+            db.execute("UPDATE analyses SET items=? WHERE id='r1'", (json.dumps(items),))
+            audit = mw.begin(db)
+            mw.save(db, audit, mw.run(db, ACCOUNTS, answer_all, seed=audit, bulk=a.bulk_kind))
+
+    def test_real_miss_adds_the_to_do_and_feeds_the_learning_loop(self):
+        self.audited()
+        app, event = self.app(), self.ids['mail'][0]
+        done = app.action('missed_work_label', {'event_id': event, 'label': 'real'}, owner_dashboard=True)
+        card = done['card']
+        self.assertFalse(card.get('existing'))
+        self.assertEqual(card['title'], 'A deadline for the owner')  # the audit's reason, until the next review fills it in
+        with self.store.connect() as db:
+            row = db.execute('SELECT status,origin,event_ids FROM suggestions WHERE id=?', (card['id'],)).fetchone()
+            self.assertEqual((row['status'], row['origin']), ('pending', 'owner'))
+            self.assertIn(event, json.loads(row['event_ids']))  # the message is its evidence
+            self.assertEqual(mw.miss(db, event), {'origin': 'audit', 'suggestion_id': card['id'], 'what': 'deadline: a deadline for the owner',
+                                                  'why': 'Only an update, nothing asked'})
+            signals = [s for s in learning_loop.signals(db, '2000-01-01') if s['what'].startswith('said a message')]
+            self.assertEqual(len(signals), 1)
+            self.assertEqual(signals[0]['review_said'], 'Only an update, nothing asked')  # the review's reason, for the pass to answer
+            self.assertEqual((signals[0]['channel'], signals[0]['work']), ('email', 'deadline: a deadline for the owner'))
+            self.assertEqual(learning_loop.waiting(db, '2000-01-01'), 1)
+        again = app.action('missed_work_label', {'event_id': event, 'label': 'real'}, owner_dashboard=True)
+        self.assertEqual(again['card'], {'id': card['id'], 'existing': True})  # never a second one
+        # Undo (the label taken back): the to-do goes, by no decision of the owner's, and so does the signal
+        undone = app.action('missed_work_label', {'event_id': event, 'label': ''}, owner_dashboard=True)
+        self.assertEqual(undone['removed'], card['id'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (card['id'],)).fetchone()[0], 'rejected')
+            self.assertEqual([tuple(r) for r in db.execute('SELECT choice,source FROM decisions WHERE suggestion_id=?', (card['id'],))], [('reject', 'missed_work')])
+            self.assertIsNone(mw.miss(db, event))
+            self.assertEqual(learning_loop.waiting(db, '2000-01-01'), 0)  # not a dismissal either
+        self.assertIn('review_said', learning_loop.prompt('run'))
+
+    def test_a_to_do_the_owner_acted_on_stays_after_undo(self):
+        self.audited()
+        app, event = self.app(), self.ids['mail'][1]
+        card = app.action('missed_work_label', {'event_id': event, 'label': 'real'}, owner_dashboard=True)['card']
+        self.store.decide(card['id'], 'snooze', '', 'd-snooze', 'dashboard')
+        done = app.action('missed_work_label', {'event_id': event, 'label': 'not'}, owner_dashboard=True)
+        self.assertEqual(done['kept'], card['id'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (card['id'],)).fetchone()[0], 'snoozed')
+            self.assertIsNone(mw.miss(db, event))
+
+    def test_real_miss_on_a_message_with_a_to_do_adds_none(self):
+        self.audited()
+        app, event = self.app(), self.ids['mail'][2]
+        own = app.new_card({'text': 'Send the deck', 'attach': [event]})
+        done = app.action('missed_work_label', {'event_id': event, 'label': 'real'}, owner_dashboard=True)
+        self.assertEqual(done['card'], {'id': own['id'], 'existing': True})
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM suggestions WHERE origin='owner'").fetchone()[0], 1)
+        undone = app.action('missed_work_label', {'event_id': event, 'label': ''}, owner_dashboard=True)
+        self.assertNotIn('removed', undone)  # theirs, not Real miss's: it stays
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (own['id'],)).fetchone()[0], 'pending')
+
+    def test_a_to_do_from_a_message_the_review_passed_over_is_a_miss(self):
+        self.audited()
+        app = self.app()
+        passed, carded, fresh = self.ids['mail'][0], self.ids['carded'][0], self.ids['mail'][4]
+        with self.store.connect() as db:  # one the review never read
+            db.execute("UPDATE analyses SET items=json_remove(items,(SELECT '$['||j.key||']' FROM json_each(items) j WHERE json_extract(j.value,'$.id')=?)) WHERE id='r1'", (fresh,))
+        app.new_card({'text': 'Answer about the deck', 'attach': [passed]})
+        app.new_card({'text': 'Pay the invoice', 'attach': [carded]})  # already had a to-do: the review didn't pass it over
+        app.new_card({'text': 'Look again', 'attach': [fresh]})
+        app.new_card({'text': 'Book the dentist'})
+        with self.store.connect() as db:
+            self.assertEqual(mw.miss(db, passed), {'origin': 'owner', 'suggestion_id': None, 'what': None, 'why': 'Only an update, nothing asked'})
+            self.assertIsNone(mw.miss(db, carded))
+            self.assertIsNone(mw.miss(db, fresh))
+            signals = [s for s in learning_loop.signals(db, '2000-01-01') if s['what'].startswith('made a to-do')]
+        self.assertEqual([s['review_said'] for s in signals], ['Only an update, nothing asked'])
 
     def test_a_failed_turn_is_kept_as_failed(self):
         with self.store.connect() as db:

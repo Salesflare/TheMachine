@@ -17,6 +17,7 @@ from machine.store.cards import owner_title
 from machine.store.facts import suggestion_scope
 from machine.store.views import source_lines_shown
 from machine.text import body_after_title
+import missed_work
 import next_actions
 import own_addresses
 from sources import mail_account, MAIL_SERVICES
@@ -232,6 +233,11 @@ class NewCardsApp:
         saved = self.store.owner_card(args.get('text'), account, work=work, due=due, about=about, attach=attach, project=project,
                                       files=(draft, files) if files else None, due_at=due_at,
                                       area_open=area_open, file_texts=texts)
+        if attach:  # a message a review read and left without a to-do: a miss the learning loop reads (missed_work.passed_over)
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                for event_id in attach:
+                    missed_work.passed_over(db, event_id, saved['id'])
         if about and getattr(self, 'graph_dirty', None):
             self.graph_dirty.set()  # the card shows on their Graph page after the next build
         return saved

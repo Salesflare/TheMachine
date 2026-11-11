@@ -94,6 +94,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)
            'project_success': ('condition', 'evidence_url', 'evidence_note', 'blocker'),  # done when, its proof and blocker (project_success.py)
            'missed_audit_items': ('reason',),  # why the missed-work audit saw work in a signal (missed_work.py)
+           'review_misses': ('what', 'why'),  # a confirmed miss: the work the audit saw, the review's line on why none (missed_work.py)
            'projects': ('stage_reason', 'next_step', 'sort_note', 'notes', 'outcome_reason', 'about'), 'board_fits': ('why',), 'board_backfill_asks': ('why',), 'project_moves': ('reason',), 'board_suggestions': ('about', 'reason'), 'board_offers': ('answer',),
            'team_mail': ('body',), 'team_records': ('body',), 'team_files': ('data',), 'team_blobs': ('dk',), 'share_lines': ('line',),
            'agent_jobs': ('brief', 'asks', 'progress', 'summary', 'diff', 'files', 'error', 'answers'),

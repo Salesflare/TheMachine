@@ -3,10 +3,16 @@
 Once a week, from the service's ten-minute step, one small background turn judges a sample of reviewed signals that
 got no to-do (missed_work.py). It waits for the usage budget and the gap between background turns like every other
 (model_budget, background_pause), runs on the background model, and never touches the review, a to-do or a promise:
-it only keeps its numbers and the misses it found, which the owner labels on Learning, How it's going."""
+it only keeps its numbers and the misses it found, which the owner labels on Learning, How it's going.
+
+The owner's Real miss gives the message its to-do (new_card with it attached, as New to-do does) unless a to-do already
+has it, and keeps the miss for the learning loop; taking the label back (the toast's Undo, or Not a miss) takes that
+to-do away again while the owner hasn't touched it."""
 import logging
 import threading
+import uuid
 
+import i18n
 import missed_work
 
 LOG = logging.getLogger('personal-assistant')
@@ -22,9 +28,33 @@ class MissedWorkApp:
             raise ValueError('Only the owner labels a miss, on the dashboard')
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            missed_work.label(db, args.get('event_id'), args.get('label') or None)
+            done = missed_work.label(db, args.get('event_id'), args.get('label') or None)
+            held = missed_work.holder(db, done['event_id']) if done['label'] == 'real' and not done['made'] else None
+        out = {}
+        if done['label'] == 'real' and not done['made'] and not held:
+            card = self.new_card({'text': done['text'] or i18n.t('Look at this message'), 'attach': [done['event_id']]})
+            with self.store.connect() as db:
+                missed_work.made(db, done['event_id'], card['id'])
+            out['card'] = {'id': card['id'], 'title': card['title']}
+        elif done['label'] == 'real':
+            out['card'] = {'id': done['made'] or held, 'existing': True}
+        elif done['made']:
+            out.update(self.missed_work_unmake(done['made']))
         with self.store.connect() as db:
-            return {'missed_work': missed_work.summary(db)}
+            return {**out, 'missed_work': missed_work.summary(db)}
+
+    def missed_work_unmake(self, card_id):
+        """The to-do a Real miss made goes again while the owner hasn't acted on it (dismissed, not by them: it teaches
+        the learning loop nothing); one they acted on stays."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT status FROM suggestions WHERE id=?', (card_id,)).fetchone()
+            touched = db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram')", (card_id,)).fetchone()
+        if not row or row['status'] == 'rejected':
+            return {'removed': card_id}
+        if touched or row['status'] not in ('pending', 'accepted', 'prepared'):
+            return {'kept': card_id}
+        self.store.decide(card_id, 'reject', '', 'missed-undo:' + uuid.uuid4().hex[:12], 'missed_work')
+        return {'removed': card_id}
 
     def missed_work_step(self, helpers):
         """Start the week's audit when it is due and the budget allows; it runs in its own thread. None when not started.

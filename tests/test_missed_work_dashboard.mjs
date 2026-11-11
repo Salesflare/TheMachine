@@ -7,8 +7,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // Learning, How it's going, Missed to-dos (missed_work.py): the weekly check's one number with its range, the misses to
-// check (each opens the message, Real miss or Not a miss), how often the check is right; nothing before the first
-// check. All mocked; SHOTS=dir saves screenshots.
+// check (each opens the message, Real miss or Not a miss; Real miss adds the to-do, with Undo), how often the check is
+// right; nothing before the first check. All mocked; SHOTS=dir saves screenshots.
 const dashboard=await dashboardPage();
 const QUALITY={cards:12,worth_it:9,dismissed:3,open:2,hit_rate:75,do_it:4,first_time_rate:75,finished_rate:100,sent_as_written:3,sent_edited:1,
  previous:{hit_rate:60,first_time_rate:75,finished_rate:null},notes:{},by_source:{Email:{worth_it:8,dismissed:2}},trend:{first:null,daily:[],weekly:[]}};
@@ -27,7 +27,9 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(status()));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posts.push({action,args});
-  if(action==='missed_work_label'){missed={...missed,misses:missed.misses.map(m=>m.event_id===args.event_id?{...m,label:args.label||null}:m)};res.end(JSON.stringify({missed_work:missed}));return}}
+  if(action==='missed_work_label'){const was=missed.misses.find(m=>m.event_id===args.event_id)?.label;missed={...missed,misses:missed.misses.map(m=>m.event_id===args.event_id?{...m,label:args.label||null}:m)};
+   // Real miss adds the to-do (missed_work_app.py); taking the label back takes it away
+   res.end(JSON.stringify({missed_work:missed,...(args.label==='real'?{card:{id:'c'+args.event_id,title:'A partner waits'}}:was==='real'&&args.event_id===41?{removed:'c41'}:{})}));return}}
  res.statusCode=404;res.end('{}');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -55,6 +57,13 @@ try{
    await pane.locator('[data-mw-id="41"][data-mw-label="not"]').click();
    await pane.locator('[data-mw-id="41"][data-mw-label="not"][aria-pressed="true"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'missed_work_label',args:{event_id:41,label:'not'}});
+   await pane.locator('[data-mw-id="41"][data-mw-label="real"]').click();  // Real miss: the to-do is added, with Undo
+   await page.locator('#toast.show',{hasText:'Added to your to-dos.'}).waitFor();
+   assert.deepEqual(posts.at(-1),{action:'missed_work_label',args:{event_id:41,label:'real'}});
+   await page.locator('#toast button',{hasText:'Undo'}).click();
+   await page.locator('#toast.show',{hasText:'Undone.'}).waitFor();
+   assert.deepEqual(posts.at(-1),{action:'missed_work_label',args:{event_id:41,label:''}});
+   await pane.locator('[data-mw-id="41"][data-mw-label="real"][aria-pressed="false"]').waitFor();
    await pane.locator('[data-mw-id="42"][data-mw-label="real"]').click();  // pressed again: the label goes
    await pane.locator('[data-mw-id="42"][data-mw-label="real"][aria-pressed="false"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'missed_work_label',args:{event_id:42,label:''}});

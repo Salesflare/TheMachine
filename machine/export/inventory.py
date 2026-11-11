@@ -59,7 +59,7 @@ _BY_PART = {
         recaps recap_items thread_snoozes slipped milestones chat_stops preparations preparation_runs preparation_calls
         recurring_cards recurring_offers recurring_series routines routine_runs routine_changes mail_cleanup_items mail_cleanup_senders facebook_birthdays task_pages follow_up_advice follow_up_basis follow_up_cards
         follow_up_changes follow_up_ends follow_up_holds follow_up_pace follow_up_pauses follow_up_rules follow_up_threads
-        missed_audits missed_audit_items missed_audit_calibration project_success calendar_clashes gateway_starts'''),
+        missed_audits missed_audit_items missed_audit_calibration review_misses project_success calendar_clashes gateway_starts'''),
     'drafts': _names('''draft_edits draft_saves draft_seen deliveries action_jobs calendar_writes meeting_writes handoff_mails
         follow_up_sends merge_effects edits_offered'''),
     'decisions': _names('decisions decision_annotations tool_approval_proposals'),

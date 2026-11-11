@@ -16,9 +16,14 @@ function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est
   ...m.misses?.length?[make('div',{class:'list mw-list'},m.misses.map(row))]:[]]}
 // How it's going and Missed to-dos, drawn again from state
 const renderQuality=()=>$('#quality').replaceChildren(...qualityNodes(state.quality),...missedNodes(state.missed_work));
-$('#quality').addEventListener('click',async e=>{const b=e.target.closest('[data-mw-label]');if(!b)return;const on=b.getAttribute('aria-pressed')==='true';b.disabled=true;
- try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'missed_work_label',args:{event_id:Number(b.dataset.mwId),label:on?'':b.dataset.mwLabel}})});
-  state.missed_work=r.missed_work;renderQuality()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+// Real miss also adds the to-do (missed_work_app.py), with Undo on its toast: the label goes and so does that to-do
+const mwPost=(id,label)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'missed_work_label',args:{event_id:id,label}})});
+function mwDone(r){state.missed_work=r.missed_work;renderQuality();if(r.removed||r.kept){toast(r.kept?t('Kept the to-do: it changed since.'):t('Undone.'));refresh();return true}return false}
+$('#quality').addEventListener('click',async e=>{const b=e.target.closest('[data-mw-label]');if(!b)return;const on=b.getAttribute('aria-pressed')==='true',id=Number(b.dataset.mwId);b.disabled=true;
+ try{const r=await mwPost(id,on?'':b.dataset.mwLabel);if(mwDone(r))return;
+  if(r.card&&!r.card.existing){toast(t('Added to your to-dos.'));const tt=$('#toast'),u=make('button',{type:'button'},t('Undo'));
+   u.onclick=async()=>{u.disabled=true;tt.classList.remove('show');try{mwDone(await mwPost(id,''))}catch(err){errCaught(err);toast(err.message,true)}};
+   tt.append(' ',u);clearTimeout(toastTimer);toastTimer=setTimeout(()=>tt.classList.remove('show'),15000);refresh()}}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 // Long history lists show the latest few; Show more adds ten at a time and survives the refresh.
 const notesN=n=>`${n} note${n===1?'':'s'}`;
 // Open one learning on What I've learned (from a card's chat): its block unfolded, the row in view and lit; with edit, its editor open.
