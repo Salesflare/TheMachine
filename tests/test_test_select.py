@@ -340,6 +340,36 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(select.DELEGATED.match(statements[2])[3], '[data-q]')
         self.assertIsNone(select.DELEGATED.match("document.addEventListener('click',e=>{go(e)})"))
 
+    def test_a_function_tests_only_start_with_runs_where_tests_use_it(self):
+        impact = self.impact({('x.py', 'f'): ['test_moving.py', 'test_help.py', 'test_i18n.py', 'test_paging.py', 'test_still_needed.py'],
+                              ('x.py', 'boot'): ['test_moving.py', 'test_help.py']})
+        at = {name: i for i, name in enumerate(impact.tests)}
+        impact.seconds = {'test_help.py': 1.0, 'test_i18n.py': 2.0, 'test_paging.py': 3.0, 'test_still_needed.py': 4.0}
+        impact.setup = {'x.py': {'f': [at[t] for t in ('test_help.py', 'test_i18n.py', 'test_paging.py', 'test_still_needed.py')],
+                                 'boot': [at['test_moving.py'], at['test_help.py']]}}
+        # test_moving.py ran f past its setUp; of the four that only set up with it, the three quickest
+        self.assertEqual(impact.exercised('x.py', 'f'), {'test_moving.py', 'test_help.py', 'test_i18n.py', 'test_paging.py'})
+        # start code no test runs past its start: every test that ran it
+        self.assertEqual(impact.exercised('x.py', 'boot'), {'test_moving.py', 'test_help.py'})
+        page = ['test_accent_dashboard.mjs', 'test_activity_dashboard.mjs']
+        impact.load = {'dashboard/a.js': {(0, 10): [at[page[1]]]}}
+        self.assertEqual(impact.js_exercised('dashboard/a.js', 0, 10, [at[t] for t in page]), set(page))  # 1 quick one kept
+        impact.load = {'dashboard/a.js': {(0, 10): [at[t] for t in page]}}
+        self.assertEqual(impact.js_exercised('dashboard/a.js', 0, 10, [at[t] for t in page]), set(page))
+
+    def test_markup_that_starts_hidden_is_shown_by_the_code_that_opens_it(self):
+        html = '<main><p>on show</p><div id="panel" hidden><form><input id="q"><b>x</b></form></div>' \
+               '<dialog id="d"><div><i>y</i></div></dialog><dialog id="o" open>z</dialog></main>'
+        at = lambda text: (html.index(text), html.index(text) + len(text))
+        self.assertEqual(select.hidden_holders(html, [at('<b>x</b>'), at('<i>y</i>')]), {'panel', 'd'})
+        self.assertEqual(select.hidden_holders(html, [at('id="panel" hidden')]), {'panel'})
+        self.assertIsNone(select.hidden_holders(html, [at('on show')]))
+        self.assertIsNone(select.hidden_holders(html, [at('z')]))  # an open dialog
+        part = 'dashboard/settings-panels.html'
+        text = (ROOT / part).read_text(encoding='utf-8')
+        inner = text.index('id="addr-maybe"')
+        self.assertEqual(select.hidden_holders(text, [(inner, inner + 5)]), {'addr-maybe'})
+
     def test_include_lines_of_parts_the_change_adds_reach_only_those_parts(self):
         page, part = 'dashboard.html', 'dashboard/todos-mail-check.js'
         text = (ROOT / page).read_text(encoding='utf-8')

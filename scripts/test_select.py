@@ -25,6 +25,7 @@ scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
 scripts/test_select.py --why tests/test_x.py changed.txt   (why that test was picked, or not)"""
 import ast
 import gzip
+from html.parser import HTMLParser
 import io
 import json
 from pathlib import Path
@@ -57,6 +58,9 @@ ALWAYS = {
 PAGE = {'dashboard_parts.py', 'machine/web/serving.py'}
 # More than this share of the files picked: run them all, the difference isn't worth a partial run.
 ENOUGH = 0.85
+# A change to a function tests ran past setting up (or after their page loaded) runs those tests, plus this many of the
+# quickest that ran it only while starting, so a change that breaks the start still meets one.
+STARTS = 3
 # Folders on the import path besides the root (scripts/test.py puts tests/ there; scripts and integrations add their own).
 IMPORT_ROOTS = ('', 'tests/', 'scripts/', 'integrations/')
 IMPORT = re.compile(r'^[ \t]*(?:import[ \t]+(?P<plain>[\w.]+(?:[ \t]+as[ \t]+\w+)?(?:[ \t]*,[ \t]*[\w.]+(?:[ \t]+as[ \t]+\w+)?)*)'
@@ -377,9 +381,30 @@ class Impact:
         self.commit = data.get('commit') or ''
         self.js = data.get('js') or {}
         self.js_tests = {self.tests[i] for i in data.get('js_tests') or ()}
+        self.seconds = data.get('seconds') or {}
+        # what tests ran only while setting up, and a part's functions they ran only while their page loaded
+        self.setup = data.get('setup') or {}
+        self.load = {part: {(a, b): ids for a, b, ids in spans} for part, spans in (data.get('load') or {}).items()}
 
     def ran(self, path, qualname):
         return {self.tests[i] for i in self.files.get(path, {}).get(qualname, ())}
+
+    def quickest(self, names, count=STARTS):
+        return set(sorted(names, key=lambda name: (self.seconds.get(name, 1e9), name))[:count])
+
+    def _past_start(self, ran, only):
+        if not only or only >= ran:  # start code (or a map without phases): every test that ran it
+            return ran
+        return (ran - only) | self.quickest(only)
+
+    def exercised(self, path, qualname):
+        """The tests that ran a function past setting up, and a few that ran it only then; every test that ran it when
+        it only runs while tests set up."""
+        return self._past_start(self.ran(path, qualname), {self.tests[i] for i in self.setup.get(path, {}).get(qualname, ())})
+
+    def js_exercised(self, part, start, end, ids):
+        """The same for a dashboard part's function at [start, end): the tests that ran it after their page loaded."""
+        return self._past_start({self.tests[i] for i in ids}, {self.tests[i] for i in self.load.get(part, {}).get((start, end), ())})
 
     def ran_any(self, path):
         return {self.tests[i] for ids in self.files.get(path, {}).values() for i in ids}
@@ -640,6 +665,52 @@ def closed_dialogs(html, word):
     return found
 
 
+class _Elements(HTMLParser):
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
+
+    def __init__(self, text):
+        super().__init__(convert_charrefs=True)
+        self.starts = [0] + [i + 1 for i, c in enumerate(text) if c == '\n']
+        self.open, self.done, self.end = [], [], len(text)
+        self.feed(text)
+        self.close()
+        self.done += [(start, self.end, attrs) for _, start, attrs in self.open]
+
+    def at(self):
+        line, column = self.getpos()
+        return self.starts[line - 1] + column
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in self.VOID:
+            self.open.append((tag, self.at(), dict(attrs) | {'<': tag}))
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.open) - 1, -1, -1):
+            if self.open[i][0] == tag:
+                at = self.at()
+                for _, start, attrs in self.open[i:]:
+                    self.done.append((start, at + len(tag) + 3, attrs))
+                del self.open[i:]
+                return
+
+
+def hidden_holders(html, spans):
+    """The ids of the elements that start hidden (a hidden attribute, a <dialog> that isn't open) that each span of
+    html sits in, the innermost one each; None when a span isn't in one."""
+    try:
+        elements = _Elements(html).done
+    except Exception:  # markup the parser can't follow
+        return None
+    found = set()
+    for a, b in spans:
+        around = [(start, attrs) for start, end, attrs in elements if start <= a and max(b, a + 1) <= end
+                  and attrs.get('id') and ('hidden' in attrs or attrs['<'] == 'dialog' and 'open' not in attrs)]
+        if not around:
+            return None
+        found.add(max(around, key=lambda e: e[0])[1]['id'])
+    return found
+
+
 def css_rules(text):
     """The style rules of a stylesheet: (start, end, selector, groups), from the rule's start (just after what came
     before it) to after its }, and the (start, end) of each @media, @supports or @container block it sits in, up to its
@@ -876,7 +947,7 @@ def select_mapped(changed, repo, impact, base, why=None):
                     # a new function: what calls it
                     for name in {where[1].split('.<locals>.')[0].split('.')[-1]}:
                         names_in(path, name, why_text, depth)
-                for test in ran:
+                for test in impact.exercised(path, where[1]):
                     add(test, f'ran {path}:{where[1]} ({why_text})')
             elif where[1]:
                 for name in where[1]:
@@ -1035,7 +1106,8 @@ def select_mapped(changed, repo, impact, base, why=None):
         text, funcs, top = js_old(other)
         inner = [f for f in funcs if f[0] <= start < f[1]]
         if inner:
-            for test in js_ran(min(inner, key=lambda f: f[1] - f[0])[2]):
+            f = min(inner, key=lambda f: f[1] - f[0])
+            for test in impact.js_exercised(other, *f):
                 add(test, f'runs {other} code that uses {name} ({why_text})')
         else:
             js_top(other, js_statement(top, start, end), f'{other} uses {name}', depth + 1)
@@ -1101,8 +1173,8 @@ def select_mapped(changed, repo, impact, base, why=None):
         if path not in impact.js:
             if git_text(base, path) is not None:
                 return False
-            # a new part: what uses what it declares (a new name: the parts that call it changed too); a statement that
-            # does more at load, or a name another part declares, runs every page test
+            # a new part: what uses what it declares (a new name: the parts that call it changed too), the tests that
+            # name it, and a few page tests for what it does at load; a name another part declares runs every page test
             for statement in js_split(new):
                 listener = DELEGATED.match(statement)
                 if listener and js_declared(js_blank(statement)) is None:
@@ -1110,6 +1182,10 @@ def select_mapped(changed, repo, impact, base, why=None):
                     # this part runs its own)
                     if not drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
                         return False
+                    continue
+                if js_declared(js_blank(statement)) is None:
+                    for test in impact.quickest(impact.js_tests):
+                        add(test, f'loads {path}, which is new')
                     continue
                 js_top(path, [js_blank(statement)], f'{path} is new', 0)
             return path not in page_wide
@@ -1120,12 +1196,12 @@ def select_mapped(changed, repo, impact, base, why=None):
             inside = [f for f in funcs if (f[0] <= start and end <= f[1]) if start < end or f[0] < start < f[1]]
             if inside:
                 inner = min(inside, key=lambda f: f[1] - f[0])
-                for test in js_ran(inner[2]):
+                for test in impact.js_exercised(path, *inner):
                     add(test, f'ran {path}:{inner[0]}-{inner[1]}')
                 continue
             for f in funcs:
                 if f[0] < end and start < f[1]:
-                    for test in js_ran(f[2]):
+                    for test in impact.js_exercised(path, *f):
                         add(test, f'ran {path}:{f[0]}-{f[1]}')
             js_top(path, js_statement(top, start, end) + js_statement(new, new_start, new_end), f'{path} changed', 0)
         return True
@@ -1226,6 +1302,25 @@ def select_mapped(changed, repo, impact, base, why=None):
 
     dialogs_seen = set()
 
+    def html_part(path, new):
+        """A markup part's change inside elements that start hidden (a closed dialog, a hidden settings panel): the
+        tests that run the code that shows them. False when a change is on show at load."""
+        old = git_text(base, path)
+        if new is None or old is None:
+            return False
+        holders = set()
+        for text, ends in ((old, [(a, b) for a, b, _, _ in changed_spans(old, new)]),
+                           (new, [(a, b) for _, _, a, b in changed_spans(old, new)])):
+            found = hidden_holders(text, ends)
+            if found is None:
+                return False
+            holders |= found
+        for holder in sorted(holders - dialogs_seen):
+            dialogs_seen.add(holder)
+            if not drawn_by([{holder}], f'{path} changed inside #{holder}'):
+                return False
+        return True
+
     def includes_only(path):
         """A change to dashboard.html that only adds or removes include lines of parts this change adds or removes too:
         those parts' own changes say what it reaches."""
@@ -1321,6 +1416,8 @@ def select_mapped(changed, repo, impact, base, why=None):
                 browser = css_part(path, new)
             elif path == 'dashboard.html':
                 browser = includes_only(path)
+            elif path.startswith('dashboard/') and path.endswith('.html') and base is not None:
+                browser = html_part(path, new)
             browser = browser and path not in page_wide
             # a data file, a dashboard part, a helper: what names it, as before, but a Python file that reads it reaches
             # the tests of the functions that read it, not every test that imports that file

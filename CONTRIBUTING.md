@@ -25,6 +25,10 @@ About the test runner:
   you changed, from the test-impact map main's last full run made (`scripts/test_impact.py`, fetched with `gh`): for a
   dashboard part, the page tests that ran the functions it changed; for a stylesheet, the ones that ran the code drawing
   what the changed rules style; for a catalog, the tests that assert a changed text and ran the code that shows it.
+  A function counts for the tests that ran it past their setUp, or after their page loaded (up to their first action),
+  plus the three quickest that ran it only then; one that runs only at start counts for every test that ran it. A new
+  dashboard part runs the tests that name it and a few page tests; a markup part's change inside a hidden panel or
+  closed dialog runs the tests of the code that opens it.
   Whatever the map can't place runs as without it: every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
   says why a test was picked. A push to main runs the tests every change since the newest commit whose full run
   passed needs (`scripts/ci_runs.py`); every test runs nightly, and a red nightly run opens an issue. On CI the files
