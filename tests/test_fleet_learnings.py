@@ -1,5 +1,5 @@
 """Team learnings from team conversations (fleet_learnings.py): what a pass may keep. The way through the Team Graph,
-the switch and removals are in test_shared_graph.py. No network, no model."""
+the switch and removals are in test_shared_graph_more.py. No network, no model."""
 import base64
 import datetime as dt
 import importlib.util

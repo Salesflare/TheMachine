@@ -7,6 +7,7 @@ same object (the module it came from, and each module that imported it), and put
 
 It takes what `patch.object` takes and works the same way: `with`, as a decorator (also on a class), and start()/stop().
 Methods of a class (`a.App`, `a.Store`) need no help: patch the class attribute as before."""
+import functools
 from pathlib import Path
 import sys
 from unittest import mock
@@ -19,7 +20,17 @@ def ours(module):
     """Whether a loaded module is part of this app (its own code or a test's copy of it), never the standard library or
     a package: only those are patched besides the one named."""
     try:
-        path = Path(getattr(module, '__file__', None) or '').resolve()
+        return _ours(getattr(module, '__file__', None) or '')
+    except TypeError:  # a __file__ that isn't a path
+        return False
+
+
+@functools.lru_cache(maxsize=None)
+def _ours(file):
+    """ours, by the module's file: resolving the path of each of some 600 loaded modules took most of a patch (a test
+    that patches the clock at every step of a replayed day spent minutes here)."""
+    try:
+        path = Path(file).resolve()
     except (OSError, TypeError, ValueError):
         return False
     return bool(path.name) and path.is_relative_to(ROOT) and 'site-packages' not in path.parts
