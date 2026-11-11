@@ -826,9 +826,9 @@ class FactsStore:
         missing = [f for f in facts if f['id'] not in stored]
         vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing] + [asked], timeout)
         if missing:
-            with self.connect() as db:
-                db.executemany('INSERT OR REPLACE INTO fact_vectors(fact_id,model,vector) VALUES(?,?,?)',
-                               [(f['id'], key, embeddings.pack(v)) for f, v in zip(missing, vectors)])
+            with self.connect() as db:  # only while the fact still says what was embedded: an edit during the request keeps none
+                db.executemany('INSERT OR REPLACE INTO fact_vectors(fact_id,model,vector) SELECT id,?,? FROM facts WHERE id=? AND text=?',
+                               [(key, embeddings.pack(v), f['id'], f['text']) for f, v in zip(missing, vectors)])
             stored.update({f['id']: v for f, v in zip(missing, vectors)})
         asked = vectors[-1]
         return sorted(((embeddings.cosine(asked, stored[f['id']]), f) for f in facts), key=lambda x: -x[0])
