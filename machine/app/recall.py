@@ -50,8 +50,8 @@ def recall(app, purpose, about=None, budget=0):
       form, then those close in meaning by their stored vectors when embeddings are on (ask_memory.learned), next to
       OpenClaw's memory search.
     - chat (the owner's main chat, {'question': words}): learned(question), read only when the chat asks (the bridge's
-      assistant_memory tool): the owner's own facts and draft rules that match, then the set-aside and historical
-      ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
+      assistant_memory tool): the owner's own facts and draft rules that match by words, then by meaning from their
+      stored vectors when embeddings are on, then the set-aside and historical ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
     - todo_chat (a turn of a to-do's chat, {'todo': id, 'session': its session's job id}): new (what changed in
       what was learned since the session last read it, a small delta: retained_facts.since_session) and retained, as
       for its preparation, in a smaller slice; the rest of what was learned is in the session from its preparation."""

@@ -54,6 +54,12 @@ def fly(settings, texts, timeout=120):
     return [[1.0, 0.0] if 'fly' in t or 'flight' in t else [0.0, 1.0] for t in texts]
 
 
+def plane(settings, texts, timeout=120):
+    """Made-up vectors: flying, flights and planes are close; any other question far from every fact."""
+    return [[1.0, 0.0, 0.0] if any(w in t for w in ('fly', 'flight', 'plane')) else
+            [0.0, 0.0, 1.0] if t.startswith(a.embeddings.QUERY_PREFIX) else [0.0, 1.0, 0.0] for t in texts]
+
+
 class MemoryReach(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -410,6 +416,77 @@ class MemoryReach(unittest.TestCase):
             db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You prefer window seats on flights.','ai:c1',?,'fact','ai:Claude','work')",
                        (NOW.isoformat(),))
         self.assertNotIn('window', self.chat('seats on flights')['found'])
+
+    def flights_learned(self):
+        """What was learned about flying, every fact's vector stored as a preparation stores it (plane): one current,
+        one the owner forgot, one ended, and a connected AI's. The current one's text."""
+        klm = 'You only fly KLM.'
+        self.store.remember_fact(klm, 'note-1')
+        gone = self.store.remember_fact('You fly from the small airport.', 'note-1')['id']
+        ended = self.store.remember_fact('You fly Lufthansa to the fair.', 'note-1')['id']
+        with self.store.connect() as db:  # a connected AI's, not the owner's word
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
+                       (NOW.isoformat(),))
+        with patch.object(a.embeddings, 'embed', side_effect=plane):
+            self.store.facts_ranked('none', self.store.facts(), SETTINGS)
+        self.app.action('forget_fact', {'id': gone}, owner_dashboard=True)
+        with self.store.connect() as db:
+            db.execute('UPDATE facts SET valid_until=? WHERE id=?', ('2026-11-01', ended))
+        self.store.retire_expired()
+        return klm
+
+    def test_the_owners_chat_finds_what_was_learned_by_meaning(self):
+        klm = self.flights_learned()
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=plane) as embed_call:
+            for question in ('flying', 'which airline for my flights', 'plane trip next week'):
+                embed_call.reset_mock()
+                found = self.chat(question)['found']
+                self.assertEqual(embed_call.call_count, 1, question)  # the question only, never one call per fact
+                self.assertIn(klm, found, question)
+                self.assertNotIn('first class', found)  # a connected AI's
+                self.assertLessEqual(len(found), ask_memory.CHAT_CHARS)
+            lufthansa = [line for line in found.splitlines() if 'Lufthansa' in line]  # ended: only as history
+            self.assertEqual(len(lufthansa), 1)
+            self.assertTrue(lufthansa[0].startswith('- Historical, not current (ended '), lufthansa[0])
+            self.assertEqual(self.chat('quarterly board budget')['found'], '')  # far in meaning: nothing
+        with self.store.connect() as db:
+            self.assertIn('closeness', {r[0] for r in db.execute("SELECT how FROM memory_use WHERE purpose='chat'")})
+
+    def test_the_owners_chat_never_finds_a_forgotten_fact_by_meaning(self):
+        klm = self.flights_learned()
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=plane):
+            for question in ('flying', 'which airline for my flights', 'plane trip next week', 'small airport'):
+                self.assertNotIn('small airport', self.chat(question)['found'], question)  # its vector is still stored
+            self.assertIn(klm, self.chat('plane trip next week')['found'])
+            self.app.action('forget_fact', {'id': next(f['id'] for f in self.store.facts() if f['text'] == klm)}, owner_dashboard=True)
+            self.assertNotIn(klm, self.chat('plane trip next week')['found'])
+            self.assertNotIn(klm, self.chat('flying')['found'])
+
+    def test_the_owners_chat_without_embeddings_finds_by_words(self):
+        klm = self.flights_learned()
+        # none configured: words in their plain form, no embedding request; "flights" and "plane" are other stems
+        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
+            self.assertIn(klm, self.chat('which airline when flying')['found'])
+            self.assertNotIn(klm, self.chat('which airline for my flights')['found'])
+            self.assertEqual(self.chat('plane trip next week')['found'], '')
+        # the embedding server down: the same words, no error
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+            self.assertIn(klm, self.chat('flying')['found'])
+            self.assertEqual(self.chat('plane trip next week')['found'], '')
+
+    def test_the_owners_chat_answer_by_meaning_fits_its_budget(self):
+        self.flights_learned()
+        for n in range(40):
+            self.store.remember_fact(f'You fly route {n} on the early plane when the meeting is before ten in the morning.', 'note-1')
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=plane):
+            self.store.facts_ranked('none', self.store.facts(), SETTINGS)
+            found = self.chat('plane trip next week')['found']
+        self.assertGreater(len(found.splitlines()), 3)
+        self.assertLessEqual(len(found), ask_memory.CHAT_CHARS)
 
     def test_a_routine_run_reads_what_came_in_every_way(self):
         sent = []

@@ -534,30 +534,69 @@ def _people_named(question, who):
     return out
 
 
+def _chat_vector(app, question, settings):
+    """The chat question's own vector (one local embedding request, LEARNED_TIMEOUT), only when some fact has a stored
+    vector of this model to compare it with; None without embeddings, without stored vectors, or when the embedding
+    server is down or slow: the words alone then."""
+    if not settings:
+        return None
+    key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+    with app.store.connect() as db:
+        if not db.execute('SELECT 1 FROM fact_vectors WHERE model=? LIMIT 1', (key,)).fetchone():
+            return None
+    try:
+        return embeddings.embed(settings, [embeddings.QUERY_PREFIX + question], LEARNED_TIMEOUT)[0]
+    except Exception as error:  # words only, the rest of the answer as it was
+        LOG.info('chat recall meaning error=%s', type(error).__name__)
+        return None
+
+
+def _near_current(db, vector, settings):
+    """{fact id: cosine} of the current facts and draft rules whose stored vector (fact_vectors) is at least
+    FACT_FLOOR from the question's: the newest retained_facts.MEANING_WORK of them, one comparison each. None is
+    embedded here: a fact without a stored vector is matched by words only."""
+    key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+    out = {}
+    for fact_id, blob in db.execute("SELECT v.fact_id,v.vector FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? "
+                                    "AND f.removed_at IS NULL AND f.kind IN ('fact','draft') ORDER BY f.id DESC LIMIT ?", (key, retained_facts.MEANING_WORK)):
+        close = embeddings.cosine(vector, embeddings.unpack(blob))
+        if close >= FACT_FLOOR:
+            out[fact_id] = close
+    return out
+
+
 def for_chat(app, question, limit=CHAT_CHARS):
     """What was learned that the owner's chat question is about, in at most limit characters ('' when nothing
-    matches): their own current facts and draft rules by words (as Talk's learned), then what was learned earlier and
-    is no longer in the current list (retained_facts.py: set aside, or ended or replaced and marked historical). Never
-    a connected AI's fact, nor one the owner removed. A fact about a person comes only when the question names them.
-    Noted for the use log (purpose chat)."""
+    matches): their own current facts and draft rules by words (as Talk's learned), then by meaning (their stored
+    vectors against one embedding of the question, when the Machine has embeddings), then what was learned earlier and
+    is no longer in the current list (retained_facts.py: set aside, or ended or replaced and marked historical), by
+    words or meaning too. Never a connected AI's fact, nor one the owner removed. A fact about a person comes only
+    when the question names them. Noted for the use log (purpose chat)."""
     words = _asked(question)
     asked = _stems(fact_words(words))
     if not asked:
         return ''
-    # by words as Talk's recall: half of the asked words (a short noun like "gym" counts), most shared first
-    at, rank = now(), lambda f: (_shared(asked, f['text']), str(f.get('last_use') or ''))
-    current = sorted((f for f in app.store.facts() if _shared(asked, f['text']) and not ai_fact_by(f) and fact_weight(f, at) > 0), key=rank, reverse=True)
+    settings = embeddings.settings(app.config)
+    vector = _chat_vector(app, question, settings)
+    with app.store.connect() as db:
+        near = _near_current(db, vector, settings) if vector else {}
+        near_old = retained_facts.near(db, vector, settings, FACT_FLOOR) if vector else {}
+    # by words as Talk's recall: half of the asked words (a short noun like "gym" counts), most shared first, then by meaning
+    at, rank = now(), lambda f: (_shared(asked, f['text']), near.get(f['id'], 0.0), str(f.get('last_use') or ''))
+    current = sorted((f for f in app.store.facts() if (f['id'] in near or _shared(asked, f['text'])) and not ai_fact_by(f) and fact_weight(f, at) > 0),
+                     key=rank, reverse=True)
     with app.store.connect() as db:
         with_about(db, current)
         starts = {w[:-1] if w.endswith('y') and len(w) > 1 else w for w in asked}  # "party" is the stem of "parties"
-        old = [f for f in retained_facts.candidates(db, retained_facts.starting(db, starts)) if _shared(asked, f['text'])]  # never one the owner removed
+        old = [f for f in retained_facts.candidates(db, retained_facts.starting(db, starts) | set(near_old))  # never one the owner removed
+               if f['id'] in near_old or _shared(asked, f['text'])]
         with_about(db, old)
         people = {n for f in current + old for n in f['about']}
         who = fact_links.records(db, people)
     named = _people_named(question, who)
     mine = lambda f: not any(who.get(n, {}).get('kind') == 'person' and n not in named for n in f['about'])
     current = [f for f in current if f['kind'] in ('fact', 'draft') and mine(f)][:CHAT_LEARNED]
-    old = sorted((f for f in old if mine(f)), key=lambda f: (f['state'] != 'aside', -_shared(asked, f['text'])))[:retained_facts.LINES]
+    old = sorted((f for f in old if mine(f)), key=lambda f: (f['state'] != 'aside', -_shared(asked, f['text']), -near_old.get(f['id'], 0.0)))[:retained_facts.LINES]
     lines, size = [], len(CHAT_HEAD)
     for f in current + old:
         text = retained_facts.line(f) if 'state' in f else ('- Draft rule: ' + f['text']) if f['kind'] == 'draft' else fact_line(f)
@@ -565,6 +604,8 @@ def for_chat(app, question, limit=CHAT_CHARS):
             break
         lines.append(text)
         size += len(text) + 1
-        memory_use.note('rule' if f['kind'] == 'draft' else 'fact', f['id'], text, 'match', about=f['about'],
-                        source='note' if f.get('suggestion_id') else 'review', at=f.get('created_at'))
+        said = _shared(asked, f['text'])
+        memory_use.note('rule' if f['kind'] == 'draft' else 'fact', f['id'], text, 'match' if said else 'closeness', about=f['about'],
+                        source='note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
+                        score=None if said else (near_old if 'state' in f else near).get(f['id']))
     return '\n'.join([CHAT_HEAD, *lines]) if lines else ''
