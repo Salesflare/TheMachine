@@ -19,15 +19,18 @@ const TEMPLATES=()=>[{key:'newsletters',name:'Newsletter cleanup',what:'Every mo
 const news=()=>({id:'cl1',title:'3 newsletters: keep or unsubscribe?',status:'pending',scope:'work',created_at:now,event_ids:[1],
  body:'Pick Keep or Unsubscribe for each one, then confirm. Nothing changes before that.\n\n- Brightpath Weekly: This week in gardening',
  cleanup:{kind:'newsletters',items:[
-  {n:1,from:'Brightpath Weekly',address:'news@brightpath.example',title:'This week in gardening',count:3,state:'open',plan:'one_click'},
+  {n:1,from:'Brightpath Weekly',address:'news@brightpath.example',title:'This week in gardening',event:11,count:3,state:'open',plan:'one_click'},
   {n:2,from:'Fieldkit Team',address:'hello@fieldkit.example',title:'New tents are in',count:1,state:'open',plan:'mailto'},
   {n:3,from:'Parcelly Deals',address:'deals@parcelly.example',title:'48 hours only',count:1,state:'open',plan:'page'}]}});
 const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope:'work',created_at:now,event_ids:[2],
  body:'Pick Spam or Not spam for each one, then confirm. Nothing changes before that.',
  cleanup:{kind:'spam',items:[
-  {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',why:'Prize claim from a sender never seen',count:1,state:'open',plan:'junk'},
+  {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',event:21,why:'Prize claim from a sender never seen',count:1,state:'open',plan:'junk'},
   {n:2,from:'Crypto Gains',address:'x@gains.example',title:'Double your money',why:'Investment pitch from an unknown sender',count:1,state:'open',plan:'junk'}]}});
 let templates,cards;
+// the mails as the viewer gets them (api/originals); a row without event has no kept mail and no link
+const ORIGINALS={11:{kind:'email',event_id:11,from:'Brightpath Weekly <news@brightpath.example>',to:'owner@example.com',occurred_at:now,title:'This week in gardening',body:'Tomatoes, at last.'},
+ 21:{kind:'email',event_id:21,from:'Prize Desk <win@prize.example>',to:'owner@example.com',occurred_at:now,title:'You have been selected',body:'Claim your prize today.'}};
 const reset=()=>{templates=TEMPLATES();cards=[news(),spam()];posts.length=0};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
@@ -36,6 +39,8 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/routines'){res.end(routines());return}
+ if(url.pathname==='/api/originals'){const o=ORIGINALS[url.searchParams.get('event')];res.end(JSON.stringify({originals:o?[o]:[]}));return}
+ if(url.pathname==='/api/email'){res.end(JSON.stringify({html:''}));return}
  if(url.pathname.startsWith('/brand/')){try{const f=basename(url.pathname)==='avatar.png'?'app-icon-192.png':basename(url.pathname);res.setHeader('Content-Type',f.endsWith('.png')?'image/png':f.endsWith('.webp')?'image/webp':'application/octet-stream');res.end(await readFile(fileURLToPath(new URL('../brand/'+f,import.meta.url))))}catch{res.statusCode=404;res.end()}return}  // the app's own images, as machine/config.py serves them
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_template'){templates=templates.map(x=>x.key===b.args.key?{...x,added:true}:x);res.end(routines());return}
@@ -68,6 +73,10 @@ try{
   assert.equal(await card.locator('.cl-row').count(),3);
   assert.equal(await text(card.locator('.cl-row').first().locator('.cl-what')),'Brightpath Weekly ×3 This week in gardening');
   assert.equal(await card.getByRole('button',{name:'Do it',exact:true}).count(),0,'a cleanup to-do has no Do it');
+  assert.equal(await card.locator('[data-cl-open]').count(),1,'only a row with a kept mail opens');
+  await card.locator('[data-cl-open="11"]').click();
+  await page.locator('#email-dialog').getByText('Tomatoes, at last.').waitFor();
+  await page.keyboard.press('Escape');await page.locator('#email-dialog').waitFor({state:'hidden'});
   const go=card.locator('[data-cl-go]');assert.equal(await go.isDisabled(),true);
   await card.locator('[data-cl-n="1"][data-cl-to="go"]').click();
   await card.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
@@ -86,6 +95,21 @@ try{
   // Spam (only where mail can move to spam): Mark all as spam picks every row
   const sp=page.locator('#task-cl2');await sp.scrollIntoViewIfNeeded();
   assert.equal(await text(sp.locator('.cl-fine')),'Spam moves it to your spam folder.');
+  // a row's sender and subject open its mail in the viewer; nothing is posted and the picks stay; no kept mail, no link
+  assert.equal(await sp.locator('.cl-row').nth(1).locator('[data-cl-open]').count(),0);
+  assert.equal(await text(sp.locator('.cl-row').nth(1).locator('.cl-what')),'Crypto Gains Investment pitch from an unknown sender');
+  await sp.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
+  const sent=posts.length;
+  await sp.locator('.cl-row').first().locator('[data-cl-open]').click();
+  const dialog=page.locator('#email-dialog');await dialog.getByText('Claim your prize today.').waitFor();
+  assert.equal(await page.locator('#email-title').textContent(),'You have been selected');
+  await shot('spam-open');
+  await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});
+  assert.equal(posts.length,sent,'opening a mail posts nothing');
+  assert.equal(await sp.locator('[data-cl-n="2"][data-cl-to="keep"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await sp.locator('[data-cl-n="1"][data-cl-to="go"]').getAttribute('aria-pressed'),'false');
+  await sp.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no horizontal scroll at '+width);
   await sp.locator('[data-cl-all]').click();
   assert.equal(await text(sp.locator('[data-cl-go]')),'Mark 2 as spam');
   assert.equal(await sp.locator('[data-cl-all]').count(),0,'every row picked: one button');

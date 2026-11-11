@@ -25,7 +25,7 @@ Recibos, pedidos e avisos de pagamento ficam de fora. Um e-mail que chega por um
 
 Desconhecido quer dizer que você nunca escreveu para a pessoa, e um “Re:” só conta como conversa numa conversa em que você escreveu. Se e-mail de um remetente que você marcou como spam, na tarefa ou na sua caixa, passar de novo, ele aparece na próxima tarefa como **Já marcado como spam**. O que você mesmo moveu para o spam também ajuda a reconhecer e-mails parecidos.
 
-Nada muda até você confirmar na tarefa. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
+Nada muda até você confirmar na tarefa. Toque num remetente para ler o e-mail antes: ele continua não lido e nada muda. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
 
 **Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesmo escreve, como amigos, família e contatos frequentes. Cada uma traz uma mensagem curta escrita onde vocês costumam conversar, como o chat do WhatsApp ou sua conversa por e-mail, no idioma da pessoa. Ela só sai quando você envia. Um dia sem aniversários não cria tarefa.
 

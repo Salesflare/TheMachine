@@ -25,7 +25,7 @@ Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arr
 
 Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte comme conversation que dans un fil où vous avez écrit. Si un e-mail d’un expéditeur que vous avez signalé comme spam, sur la tâche ou dans votre boîte, passe encore, il est sur la tâche suivante avec **Déjà signalé comme spam**. Ce que vous avez déplacé vous-même dans le spam l’aide aussi à repérer des e-mails semblables.
 
-Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
+Rien ne change avant votre confirmation sur la tâche. Touchez un expéditeur pour lire d’abord l’e-mail : il reste non lu et rien ne change. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
 
