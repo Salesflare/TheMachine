@@ -40,8 +40,9 @@ def recall(app, purpose, about=None, budget=0):
       (machine/app/ask_memory.py, each with (what it goes on, room)).
     - routine: facts and rules (what was learned and the draft rules, said or used most lately first, up to
       ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them.
-    - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words
-      (ask_memory.learned, plain word matching), next to OpenClaw's memory search.
+    - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words in their plain
+      form, then those close in meaning by their stored vectors when embeddings are on (ask_memory.learned), next to
+      OpenClaw's memory search.
     - chat: none yet; the owner's main chat reads no memory through here (docs/memory-reach.md).
     - todo_chat (a turn of a to-do's chat, {'todo': id}): retained, as for its preparation, in a smaller slice;
       the rest of what was learned is in the session from its preparation."""
@@ -75,5 +76,5 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('facts', lambda: store.facts_text(ROUTINE_FACTS))
         memory.add('rules', lambda: store.facts_text(ROUTINE_RULES, 'draft'))
     elif purpose == 'talk':
-        memory.add('facts', lambda words: ask_memory.learned(store, words))
+        memory.add('facts', lambda words: ask_memory.learned(store, words, embeddings.settings(app.config)))
     return memory

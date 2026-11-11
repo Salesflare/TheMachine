@@ -26,7 +26,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | Review | facts block, set-aside and historical facts that bear on the batch (`recall` `review`, `retained`) | promises, sender lines | facts block, `USER.md` |
 | Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
 | Ask | facts on the question's records, others by meaning | promises, summaries, meetings | same as chat |
-| Talk | `recall` tool: learned facts by words (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
+| Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | facts about a person (`graph` node: `open.known`) | `graph`, `events` | `USER.md`, `MEMORY.md` (OpenClaw) |
 | Routine | facts and rules block (`recall` `routine`) | `events` and `graph` tools | facts and rules block, `USER.md`, memory search, birthdays |
 | Morning digest | through the to-dos it lists | promises due today | through the to-dos it lists |
@@ -39,6 +39,12 @@ office is in Brussels now") was saved next to the fact it corrects, since the ch
 reached preparations until the next condense pass. It now takes that fact's place at once
 (`graph_actions.said_instead`): a current fact about the same records whose words it shares, with a number or name
 swapped or a negation added or dropped. The old one stays behind it under Learning with Undo merge. No new model turn.
+Talk's recall matched exact words only: "flying" didn't find "flights", "seat" found only "seats". Words now match in
+their plain form (plurals, -ing, -ed: "booking" finds "booked"), and with embeddings on, the owner's facts and rules
+whose stored vector (`fact_vectors`, as a preparation or Ask stored it) is close to the words come after the word
+matches, against one local embedding of the words with a 2 second timeout. No model turn, no fact embedded during the
+call, still at most three (`LEARNED`). Without embeddings a word with another stem ("flying", "flights") still doesn't
+match. Forgotten, ended and replaced facts stay out; a connected AI's never comes in.
 
 ## Still missing
 
@@ -50,7 +56,6 @@ swapped or a negation added or dropped. The old one stays behind it under Learni
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
 - **A to-do's chat** answers in its preparation's session: a current fact learned after that preparation started
   reaches it only on a redo (each turn does get the set-aside and historical facts that bear on the to-do).
-- **Talk's recall** matches words, not meaning: "seat" finds "aisle seats", "flying" doesn't find "flights".
 - **A chat correction that swaps a plain word** ("window seats" for "aisle seats") is left to the condense pass,
   which judges it by meaning; code only swaps numbers, names and negations.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
