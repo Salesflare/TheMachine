@@ -17,14 +17,17 @@ const target=state.suggestions.find(s=>s.id===m[1]);
 const toChat=()=>{history.replaceState(null,'',location.pathname+location.search+'#chat='+m[1]);openChatLink()};
 if(m[2]&&(!target||closed(target)||target.status==='snoozed'||scopeFilter!=='all'&&target.scope!==scopeFilter)){toChat();return}
 if(!target){doneFetch(m[1],()=>{if(location.hash==='#card='+m[1])openCardLink()});return} // an older done one: asked for; else kept for a later refresh
+// One that looks done sits in Done, paged and folded, often past its first page: its chat is where it shows, so a
+// link to it opens that; so does one with no row in the list for another reason, never a view with nothing picked out.
+if(looksDone(target)){toChat();return}
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
-folded.delete('foryou');if(looksDone(target))lookExpanded.add(target.id);
+folded.delete('foryou');
 // a link to this to-do (Open draft from a notification) shows it whole: its summary and its draft, never behind Show more
 expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_action?.kind==='menu'?target.next_action.actions:target.next_action?[target.next_action]:[]))expandedBodies.add('draft-'+target.id+'-'+a.revision);
 render();document.querySelector('nav [data-tab="inbox"]').click();
-const c=document.getElementById('task-'+target.id)||fuEl();if(!c){if(m[2])toChat();return}
+const c=document.getElementById('task-'+target.id)||fuEl();if(!c){toChat();return}
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
 history.replaceState(null,'',location.pathname+location.search);
 // a tall card (a draft in full) from its top, under the header, so its title shows too

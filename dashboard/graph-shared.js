@@ -59,9 +59,11 @@ const graphHash=id=>'#graph/'+encodeURIComponent(id);
 // A fact that lives on a record's page (a to-do chat's Saved line): that page, with the fact's editor open on Edit
 let knownEdit=null;
 function recordFactShow(node,edit){if(chatId){history.pushState(null,'',location.pathname+location.search);openChatLink()}knownEdit=edit;location.hash=graphHash(node)}
+// A link out of a record's page (a to-do in its Open between you: #card=, #chat=) opens To-dos itself: the Graph stays on
+// that page, so Back finds it there, and nothing redrawn in the Graph meanwhile moves the view the link opened.
 function graphRoute(){const pm=/^#promise\/(\d+)$/.exec(location.hash),m=/^#graph\/(.+)$/.exec(location.hash);let id=pm?'promise:'+pm[1]:'';try{id=id||(m?decodeURIComponent(m[1]):'')}catch{}
  if(id){if($('#people').hidden){graphNode=id;document.querySelector('nav [data-tab="people"]')?.click()}else if(graphNode!==id)lazyRun('graph',()=>people(id));return}
- if(!$('#people').hidden&&graphNode)lazyRun('graph',()=>people(''))}
+ if(!$('#people').hidden&&graphNode&&!/^#(card|chat)=/.test(location.hash))lazyRun('graph',()=>people(''))}
 // Back or Forward onto an entry the app pushed (Settings, a card's chat) fires popstate but no hashchange, so a tab link
 // like #graph=people is opened here too, not only at the next refresh.
 // A hash link fires popstate and then hashchange, which opens it; so wait a tick and open it only when none came.
