@@ -96,6 +96,7 @@ try{
   await page.locator('.lane[data-lane="Agreed"] .tile[data-node="project:20"]').waitFor();
   assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Agreed']]);
   await transfer.dispose();await held.dispose();
+  await page.evaluate(()=>window.lastBoardMove);  // the drop's own refresh lands before the next drag starts, as after the menu move
   // A drag moves it too
   calls=[];await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
   await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
