@@ -50,8 +50,9 @@ call, still at most three (`LEARNED`). Without embeddings a word with another st
 match. Forgotten, ended and replaced facts stay out; a connected AI's never comes in.
 Ask found a fact about no one (one about the owner themselves, or the world) only by meaning, so on a Machine without
 embeddings, or while the embedding server was down, it found none. It now falls back to the owner's own facts that
-share the question's words: half of its words, as Talk's recall matches, or enough of the fact's own (`word_match`, as a
-preparation picks without embeddings), with at least one distinctive word shared. Never a connected AI's fact by words;
+share the question's words: half of what it is about, short words too ("when do I go to the gym" is about the gym;
+question and common words never count, `ask_memory.QUESTION_WORDS`), or enough of the fact's own (`word_match`, as a
+preparation picks without embeddings). Never a connected AI's fact by words;
 forgotten, ended and replaced facts stay out, as from Ask's meaning search.
 
 The owner's main chat (their private Telegram chat and the web chat) saved facts but couldn't read them back: only

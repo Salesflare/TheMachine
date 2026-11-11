@@ -142,6 +142,17 @@ class MemoryReach(unittest.TestCase):
             found = ask_memory.facts(self.app, {**about, 'subjects': [], 'question': 'Which seat do I like?'}, 1000)
         self.assertIn(SAID, found)  # the chat fact, by meaning
 
+    def test_ask_without_embeddings_matches_short_words(self):
+        ask = lambda question: ask_memory.facts(self.app, {'area': None, 'subjects': [], 'accounts': ['work'], 'question': question}, 1000)
+        for text in ('You go to the gym on Tuesday mornings.', 'Your car is parked at the station.', 'You go to Ghent on Fridays.'):
+            self.store.remember_fact(text, 'note-1')
+        found = ask('When do I go to the gym?')
+        self.assertIn('the gym', found)  # "gym" is what the question is about, short as it is
+        self.assertNotIn('Ghent', found)  # sharing only "go" is no match
+        self.assertIn('Your car', ask('Where is my car?'))
+        self.assertEqual(ask('What do I do?'), '')  # question words alone find nothing
+        self.assertEqual(ask('Where did I go?'), '')
+
     def test_ask_finds_facts_about_no_one_with_and_without_embeddings(self):
         ask = lambda question: ask_memory.facts(self.app, {'area': None, 'subjects': [], 'accounts': ['work'], 'question': question}, 1000)
         seats = 'Which seats do I book on flights?'
