@@ -249,8 +249,11 @@ def _verdict(db, m, row, checked):
         saved['condition'] if saved else None)
     if not condition:
         return None
-    # The proof the condition was saved with stands (a review can't swap a page check for a message); a new one's own
-    proof = saved['proof'] if saved and saved['condition'] else (m.get('proof') if m.get('proof') in PROOFS else 'link' if m.get('url') else 'message')
+    # The proof the condition was saved with stands (a review can't swap a page check for a message); a new one's own.
+    # An entry that changes the condition and proof too is checked against them, as set_condition saves them.
+    changes = graph.one_line(m.get('condition'), 140) and m.get('proof') in PROOFS and not (saved and saved['condition_by'] == 'owner')
+    proof = m['proof'] if changes else saved['proof'] if saved and saved['condition'] else (
+        m.get('proof') if m.get('proof') in PROOFS else 'link' if m.get('url') else 'message')
     event_id = int(m['event_id']) if str(m.get('event_id') or '').isdigit() else None
     why = None
     if event_id is None or _text(db, event_id) is None:

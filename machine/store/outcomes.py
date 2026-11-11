@@ -52,7 +52,19 @@ def set_done_when(db, suggestion_id, text, by):
     if (row['done_when'] or '') == text:
         return False
     db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (text or None, by if text else None, suggestion_id))
+    _follow_waiting(db, suggestion_id, row['done_when'], text)
     return True
+
+
+def _follow_waiting(db, suggestion_id, before, after):
+    """A to-do waiting for its result says what it waits on; when that line was its old done when (wait_for_result
+    with no one named), it follows the new one. A line someone wrote (a name, the run's or the owner's words) stays."""
+    row = db.execute('SELECT outcome FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+    found = _outcome(row) if row else {}
+    if not before or not after or found.get('state') not in ('waiting', 'still_waiting'):
+        return
+    if ' '.join(str(found.get('waiting_on') or '').split()) == ' '.join(before.split())[:200]:
+        db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (encoded({**found, 'waiting_on': after[:200]}), suggestion_id))
 
 
 def _outcome(row):
@@ -136,11 +148,12 @@ def project_proof(db, todo_id, condition, event_id, stamp):
 def follow_project(db, todo_id, before, after):
     """The project's Done when changed: its blocker to-do, which carries it (set by 'project'), tracks the new one while
     open, and its "Done when:" body with it. One a review or the run set since stays theirs. True when it changed."""
-    row = db.execute('SELECT status,done_when_by,body FROM suggestions WHERE id=?', (todo_id,)).fetchone()
+    row = db.execute('SELECT status,done_when,done_when_by,body FROM suggestions WHERE id=?', (todo_id,)).fetchone()
     if not row or row['status'] in ('completed', 'rejected') or row['done_when_by'] != 'project':
         return False
     after = clean(after)
     db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (after or None, 'project' if after else None, todo_id))
+    _follow_waiting(db, todo_id, row['done_when'], after)
     if after and before and row['body'] == i18n.t('Done when: {}', before)[:690]:
         db.execute('UPDATE suggestions SET body=? WHERE id=?', (i18n.t('Done when: {}', after)[:690], todo_id))
     return True
