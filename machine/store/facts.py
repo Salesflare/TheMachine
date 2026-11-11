@@ -303,6 +303,15 @@ def set_aside(db, count, unused_days):
     return len(rows)
 
 
+def make_room(db, count):
+    """Room for one more fact or rule about no one, with count of them current: at FACTS_GENERAL_MAX the one not used
+    for longest goes when it wasn't used lately, past FACTS_GENERAL_HARD after all. Never a refusal."""
+    if count >= FACTS_GENERAL_MAX:
+        count -= set_aside(db, count - FACTS_GENERAL_MAX + 1, FACTS_UNUSED_DAYS)
+    if count >= FACTS_GENERAL_HARD:  # all used lately: past this, the one not used for longest goes after all
+        set_aside(db, count - FACTS_GENERAL_HARD + 1, 0)
+
+
 def merge_originals(db, originals, into, text):
     db.executemany('UPDATE facts SET removed_at=?,merged_into=? WHERE id=?', [(now(), into, o['id']) for o in originals])
     db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'condense',?,?)",
@@ -449,11 +458,7 @@ class FactsStore:
                 node, _ = fact_links.named(fact_links.index(db, self.own_config()), text, fact_links.todo_records(db, note['suggestion_id']))
                 named = [node] if node else []
             if not existing and not (subjects or carried or named):  # full: one not used lately makes room, never an error
-                count = self.general_count(db) - general(merging)
-                if count >= FACTS_GENERAL_MAX:
-                    count -= self.set_aside(db, count - FACTS_GENERAL_MAX + 1, FACTS_UNUSED_DAYS)
-                if count >= FACTS_GENERAL_HARD:  # all used lately: past this, the one not used for longest goes after all
-                    self.set_aside(db, count - FACTS_GENERAL_HARD + 1, 0)
+                make_room(db, self.general_count(db) - general(merging))
             if existing:  # condensed into one that already says it
                 fact_id = existing['id']
             else:

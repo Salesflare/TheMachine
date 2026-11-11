@@ -96,6 +96,38 @@ class LearningLoop(unittest.TestCase):
             self.app.action('learning_undo', {'id': by['fact']['id']}, owner_dashboard=True)
         self.assertTrue(next(c for c in self.store.snapshot([])['learning_changes'] if c['id'] == by['fact']['id'])['undone'])
 
+    def test_a_full_list_makes_room_for_a_learned_rule_instead_of_losing_it(self):
+        from machine.store import facts
+        with self.store.connect() as db:  # the list of facts about no one is full, all of them unused for months
+            for i in range(facts.FACTS_GENERAL_MAX - 1):
+                db.execute("INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,'x',NULL,'2026-01-01T09:00:00+00:00','fact')",
+                           (f'General fact number {i}',))
+            self.assertEqual(facts.general_count(db), facts.FACTS_GENERAL_MAX)
+        self.run_pass([{'kind': 'draft', 'text': 'Always attach the invoice as a PDF.', 'why': 'Edited a draft to add it.'}])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM facts WHERE text='Always attach the invoice as a PDF.' AND removed_at IS NULL").fetchone()[0], 1)
+            self.assertEqual(facts.general_count(db), facts.FACTS_GENERAL_MAX)  # the one not used for longest was set aside
+            self.assertEqual(db.execute("SELECT count(*) FROM facts WHERE merged_into LIKE 'aside:%'").fetchone()[0], 1)
+            self.assertEqual(db.execute("SELECT count(*) FROM learning_signals WHERE status='done'").fetchone()[0], 5)
+
+    def test_a_learned_fact_in_other_words_is_not_saved_twice(self):
+        self.run_pass([{'kind': 'fact', 'text': 'Vendor newsletters wait a week.', 'why': 'Says what is known.'}])
+        with self.store.connect() as db:
+            rows = db.execute('SELECT id,text,confirmed_at FROM facts WHERE removed_at IS NULL').fetchall()
+        self.assertEqual([(r['id'], r['text']) for r in rows], [(self.old_fact, 'Vendor newsletters can wait a week.')])
+        self.assertTrue(rows[0]['confirmed_at'])  # said again
+        self.assertEqual(self.store.snapshot([])['learning_changes'], [])
+
+    def test_a_learned_fact_that_says_more_takes_the_place_of_the_old_wording(self):
+        self.run_pass([{'kind': 'fact', 'text': 'Vendor newsletters can wait a week or longer.', 'why': 'Snoozed one twice.'}])
+        with self.store.connect() as db:
+            self.assertEqual([r[0] for r in db.execute('SELECT text FROM facts WHERE removed_at IS NULL')], ['Vendor newsletters can wait a week or longer.'])
+        change = self.store.snapshot([])['learning_changes'][0]
+        self.assertEqual(change['before'], 'Vendor newsletters can wait a week.')
+        self.app.action('learning_undo', {'id': change['id']}, owner_dashboard=True)  # and Undo brings the old wording back
+        with self.store.connect() as db:
+            self.assertEqual([r[0] for r in db.execute('SELECT text FROM facts WHERE removed_at IS NULL')], ['Vendor newsletters can wait a week.'])
+
     def test_a_learned_fact_that_names_one_record_is_linked_to_it(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:ann@example.com','person','Ann Example',1,0,'{}')")
