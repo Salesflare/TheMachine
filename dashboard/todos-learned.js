@@ -154,7 +154,7 @@ $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('
 // Promises from your messages, both ways. A still-open one becomes a card when it's due.
 // To-dos that look done: at the top of Done / dismissed, each like a done one there: "Looks done" where that says Done,
 // what shows it as its line, Details, Chat and Reopen (not_done: back on the list). They stay open until the owner closes them.
-const lookExpanded=new Set();  // a link to one opens Done (openCardLink)
+const lookExpanded=new Set();  // the ones opened with their expand button
 const LD_CLASS='looks-done';
 function lookDoneCard(s){
  return htmlEdit(suggestionCard({...s,status:'completed',body:doneWhy(s)||s.body,handled_hint:null,outcome:null,undo_until:null,expired_at:null}),c=>{

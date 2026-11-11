@@ -98,4 +98,4 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
  draw((panes.length?html`${panes.map(p=>html`<div class="sub-pane" role="tabpanel" data-graph-panel="${p.id}"${p.id===current?'':html` hidden`}>${p.html}</div>`)}`:'')
   ||html`<div class="empty all-clear"><img class="sticker" src="brand/thinking.webp" alt=""><div><strong>Nothing mapped yet.</strong>People appear as messages and meetings come in.</div></div>`);
  if(version===graphRequest&&!team&&graphBoards.length&&!graphBoards.some(b=>'follow_ups'in b))fuLoad(version);
- if(version===graphRequest){graphAt=Date.now();pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;scrollTo(0,back)}}if(!quiet)notice('')}catch(e){errCaught(e);if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}
+ if(version===graphRequest){graphAt=Date.now();pagerMount(view);if(back!=null&&version===graphRequest){graphScroll=null;if(!$('#people').hidden)scrollTo(0,back)}}if(!quiet)notice('')}catch(e){errCaught(e);if(version===graphRequest&&(!quiet||!oldHtml))notice(e.message,true)}}

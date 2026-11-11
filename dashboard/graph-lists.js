@@ -75,7 +75,7 @@ const graphKeep=(pane,what,v)=>{try{localStorage.setItem(`graph-${what}-${pane}`
 function graphStash(view){if(view.dataset.mode!=='list'||!view.firstChild)return;const scroll=scrollY,f=document.createDocumentFragment();f.append(...view.childNodes);graphKept={f,scroll}}
 function graphUnstash(view){if(!graphKept)return false;const k=graphKept;graphKept=null;view.replaceChildren(k.f);view.dataset.mode='list';
  for(const el of view.querySelectorAll('[data-pager]')){const p=pagers.get(el.dataset.pager);if(p&&el.querySelectorAll('.pager-rows>*').length!==p.items.length)el.replaceChildren()}pagerMount(view);  /* rows a page brought in meanwhile */
- notice('');requestAnimationFrame(()=>{if(view.querySelector(`[data-graph-panel="${CSS.escape(graphPane)}"]`))showGraphPane(graphPane);scrollTo(0,k.scroll)});return true}  /* the layout waits for the frame, still before it paints */
+ notice('');requestAnimationFrame(()=>{if(view.querySelector(`[data-graph-panel="${CSS.escape(graphPane)}"]`))showGraphPane(graphPane);if(!$('#people').hidden)scrollTo(0,k.scroll)});return true}  /* the layout waits for the frame, still before it paints; another tab on screen meanwhile keeps its own place */
 let graphLists={},graphLocal=null,graphListsTeam=false;  // a Machine from before the paged lists sends them whole in the overview: they are sorted here
 const GRAPH_STAGE={active:0,cooling:1,dormant:2};
 const crmHeads=n=>+n.profile?.employees||parseInt(n.profile?.size)||0;
