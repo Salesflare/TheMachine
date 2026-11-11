@@ -248,6 +248,7 @@ OTHER_WRITERS = {
     'draft_edits': {'graph.py'},
     'edits_offered': {'machine/app/review.py'},
     'enrich_prefs': {'security_levels.py'},
+    'event_projects': {'project_split.py'},  # Split up moves threads between projects (graph.py is at its line budget)
     'event_search': {'assistant.py'},
     'events': {'sandbox/load.py', 'work_removal.py'},
     'facts': {'learning_loop.py', 'skills_app.py'},
@@ -264,7 +265,7 @@ OTHER_WRITERS = {
     'fleet_rules': {'fleet_requests.py'},
     'graph_events': {'graph_publish.py'},  # a build's publish, as the changes only (graph.py is at its line budget)
     'graph_imports': {'crm_import.py'},
-    'graph_links': {'graph_publish.py', 'graph_show.py'},  # an edit on its page before the next build (graph.py is at its line budget)
+    'graph_links': {'graph_publish.py', 'graph_show.py', 'project_split.py'},  # an edit on its page before the next build (graph.py is at its line budget); project_split: a person taken off a project it splits up
     'graph_names': {'crm.py', 'crm_import.py'},
     'graph_nodes': {'crm.py', 'crm_fields.py', 'graph_publish.py', 'graph_show.py'},
     'graph_offers': {'assistant.py'},
@@ -296,7 +297,8 @@ OTHER_WRITERS = {
     'profile_runs': {'fleet_learnings.py', 'learning_loop.py', 'machine/app/card_actions.py', 'machine/app/fleet.py',
                      'machine/app/profile.py', 'retention.py', 'skills_app.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
-    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by
+    'project_people': {'project_split.py'},  # Split up moves people between projects (graph.py is at its line budget)
+    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'project_split.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by; project_split: the projects it makes, on the original's board
     'promises': {'graph.py', 'machine/app/mail.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
     'push_subscriptions': {'machine/app/notifications.py', 'machine/delivery/push.py', 'machine/export/hold.py'},
     'recap_items': {'machine/app/recap.py'},
@@ -442,7 +444,8 @@ FIRST_LOAD_CEILING = 1_423_000
 # clearrun 12,000 (2026-11-10): Go through's dialog (about 8.4 KB).
 # recipe 4,000 (2026-11-10): a repeating to-do's kept way, its chat line with Edit and Undo (about 3 KB).
 # fbpeople 4,000 (2026-11-10): Facebook's friends nobody in the Graph has, adding them as personal contacts and its Undo (about 2 KB).
-LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+# split 12,000 (2026-11-10): Split up's dialog, its preview and Undo (about 9.7 KB), loaded when first used.
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 32_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):

@@ -74,7 +74,7 @@ _BY_PART = {
         hidden_domains identity_names forgotten_people forgotten_salt owner_numbers person_edits person_facts person_orgs
         person_photo_tries person_photos person_profiles person_roles role_corrections org_aliases org_apart org_edits
         org_profiles org_logo_retries org_logo_tries projects project_moves project_org_backfill project_org_checks project_org_fills
-        project_people event_projects boards board_backfill_asks board_backfills board_backfills_queued board_fit_undo
+        project_splits project_people event_projects boards board_backfill_asks board_backfills board_backfills_queued board_fit_undo
         board_fits board_offers board_suggestions side_changes side_rule self_record_backups crm_fields crm_tags crm_values
         record_changes record_owners contact_photo_links contact_photo_runs telegram_photo_asks whatsapp_photo_asks mail_hidden
         mail_shown'''),
