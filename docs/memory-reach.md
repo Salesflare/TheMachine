@@ -31,7 +31,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then set-aside and historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
-| Routine | facts and rules block (`recall` `routine`); a run that may draft: the voice for its channel | `events` and `graph` tools; voice | facts and rules block, `USER.md`, memory search, birthdays |
+| Routine | facts and rules block (`recall` `routine`); a run that leaves a draft: the voice for its channel | `events` and `graph` tools; voice | facts and rules block, `USER.md`, memory search, birthdays |
 | Morning digest | through the to-dos it lists | promises due today | through the to-dos it lists |
 
 Fixed here, each with its test: a routine's run read no fact or rule (it now gets the front of what a review gets:
@@ -81,11 +81,12 @@ in a list ("apples and pears"), not another form of the same word, and at least 
 bears on as "Historical, not current". No model call.
 
 A routine's run got no voice block, so a draft it left didn't follow how the owner writes on that channel. A run that
-may leave a draft now gets the owner's voice for its channel (`routines_app.routine_draft_channels`, the `voice` block
-of the `routine` recall): All and the block of each channel its words name, else of the accounts earlier drafts of the
-routine went out from, else of the owner's accounts; whole blocks only, up to 800 characters. It may draft when its
-words ask to write, post or send something (English words), or an earlier run left a draft. A run that only reads and
-sums up gets nothing. Logged as `voice` (by channel) under `routine` in `memory_use`.
+leaves a draft now gets the owner's voice for its channel (the `voice` block of the `routine` recall): All and the block
+of the account the draft goes out from, whole blocks only, up to 800 characters. Never judged from the run's words: a
+routine that left a draft before gets it in its turn's message (`routines_app.routine_draft_channels`); a run that
+hands in its first draft gets it back once, nothing saved, to follow it (`routine_draft_voice`). A service its words
+or the draft's title name (Slack, LinkedIn) only goes first. A run that hands in no draft gets nothing. Logged as
+`voice` (by channel) under `routine` in `memory_use`.
 
 ## Still missing
 
