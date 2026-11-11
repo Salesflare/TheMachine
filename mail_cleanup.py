@@ -457,8 +457,8 @@ def all_settled(db, suggestion_id):
 
 
 def view(db, suggestion_id, metas):
-    """What a to-do shows of its items, or None: {'kind', 'items': [{n, from, address, title, count, why, state, how,
-    link}]}. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it)."""
+    """What a to-do shows of its items, or None: {'kind', 'items': [{n, from, address, title, event, count, why, state,
+    how, link}]}; event: its mail's id while that mail is kept, else None. metas: the to-do's evidence metadata, as stored (the items' details are sealed with it)."""
     have = items_of(db, suggestion_id)
     if not have:
         return None
@@ -469,17 +469,26 @@ def view(db, suggestion_id, metas):
             continue
         if not isinstance(m, dict) or m.get('cleanup') not in KINDS:
             continue
-        items = []
+        items, kept = [], _kept(db, [i.get('event') for i in m.get('items') or () if isinstance(i, dict)])
         for n, item in enumerate(m.get('items') or ()):
             row = have.get(n)
             if not row:
                 continue
             items.append({'n': n, 'from': item.get('from') or '', 'address': item.get('address') or '', 'title': item.get('title') or '',
+                          'event': item.get('event') if item.get('event') in kept else None,  # its mail, to read in the viewer while still kept
                           'count': item.get('count') or 1, 'why': item.get('why') or '', 'state': row['state'], 'how': row['how'],
                           'plan': item.get('how'),  # what the pick will do, read when the run made it (mail_cleanup_app.py)
                           'link': row['link'] if row['state'] == 'yours' else None})
         return {'kind': m['cleanup'], 'items': items}
     return None
+
+
+def _kept(db, events):
+    """The ones of these event ids still kept (not deleted): an item's mail opens only while it is."""
+    ids = [e for e in events if isinstance(e, int) and not isinstance(e, bool)]
+    if not ids:
+        return set()
+    return {r[0] for r in db.execute(f"SELECT id FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0", ids)}
 
 
 def details(metas, n):

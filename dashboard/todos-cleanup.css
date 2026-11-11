@@ -4,6 +4,7 @@
 .cl-list{list-style:none;margin:10px 0 0;padding:0;border-top:1px solid var(--c-line)}
 .cl-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--c-line)}
 .cl-what{flex:1;min-width:0;display:flex;flex-direction:column}.cl-what b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cl-what small{color:var(--c-text-3);font-weight:normal}
+.cl-open{align-items:stretch;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit;text-align:start;cursor:pointer}.cl-open:hover b,.cl-open:focus-visible b{text-decoration:underline;text-underline-offset:3px}
 .cl-sub{color:var(--c-text-3);font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cl-pick{display:flex;flex:none;gap:6px}
 .cl-pick button{min-height:32px;padding:4px 10px;border:1px solid var(--c-line);border-radius:999px;background:transparent;color:var(--c-text-2);font-size:var(--fs-sm)}

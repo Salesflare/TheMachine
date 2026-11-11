@@ -27,7 +27,7 @@ Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine 
 
 Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in einem Verlauf als Gespräch, in dem du geschrieben hast. Kommt Mail von einem Absender, den du als Spam markiert hast (im To-do oder in deinem Postfach), wieder durch, steht sie im nächsten To-do als **Schon einmal als Spam markiert**. Was du selbst in den Spam verschoben hast, hilft auch, ähnliche Mail zu erkennen.
 
-Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
+Nichts ändert sich, bevor du auf dem To-do bestätigst. Tippe auf einen Absender, um die Mail vorher zu lesen: Sie bleibt ungelesen, und nichts ändert sich. Aus Spam aufräumen laden ihre Bilder aus dem Web nicht, damit der Absender nicht sieht, dass sie geöffnet wurde. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
 

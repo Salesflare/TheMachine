@@ -14,9 +14,10 @@ if(bg&&bg[3]>0&&bg[2]>.45)el.style.setProperty('background-color',hsl(bg[0],bg[1
 if(fg&&fg[2]<.65)el.style.setProperty('color',hsl(fg[0],fg[1],Math.max(.72,1-fg[2]*.6),fg[3]),'important');
 if(border&&border[2]>.6&&parseFloat(cs.borderTopWidth))el.style.setProperty('border-color',hsl(border[0],border[1]*.5,.3,border[3]),'important')}}
 const dark=()=>document.documentElement.dataset.theme!=='light';
-function emailDoc(html,images,id,ev){
+// local: nothing from outside loads (a mail opened from Spam cleanup: a tracking pixel would tell the sender the address is live)
+function emailDoc(html,images,id,ev,local){
 const doc=html.replace(/cid:([^"'\s)>]+)/gi,(m,c)=>{const p=images[c]??images[decodeURIComponent(c)];return p===undefined?m:apiURL(`api/attachment?id=${id}&event=${encodeURIComponent(ev)}&part=${encodeURIComponent(p)}`)});
-return `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${location.origin} https: data:; style-src 'unsafe-inline'; font-src https: data:"><meta name="referrer" content="no-referrer"><base target="_blank"><style>${dark()?'html{background:#16191d;color-scheme:dark}body{color:#e6e3dc}a{color:#BCCBA8}':'html{background:#fff}body{color:#202124}'}body{margin:0;padding:18px;font:15px/1.5 system-ui,-apple-system,sans-serif;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}
+return `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${location.origin}${local?'':' https:'} data:; style-src 'unsafe-inline'; font-src${local?'':' https:'} data:"><meta name="referrer" content="no-referrer"><base target="_blank"><style>${dark()?'html{background:#16191d;color-scheme:dark}body{color:#e6e3dc}a{color:#BCCBA8}':'html{background:#fff}body{color:#202124}'}body{margin:0;padding:18px;font:15px/1.5 system-ui,-apple-system,sans-serif;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}
 </style>`+doc}
 // A link in an email opens outside: a new tab, or the phone's browser in the app. The app's WebView has no windows, so
 // a new-tab link goes to the top page, which the frame's sandbox (no top navigation) blocks: the dashboard opens it.
@@ -30,4 +31,4 @@ function emailFrame(box,view,o,id){
 const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
 frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
 frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;doc.addEventListener('click',openMailLink);const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
-frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id);box.replaceChildren(frame)}
+frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id,o.local);box.replaceChildren(frame)}

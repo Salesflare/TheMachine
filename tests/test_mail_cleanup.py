@@ -455,6 +455,14 @@ class Cleanup(unittest.TestCase):
         self.assertEqual(len(todos), 1)
         row, extra = self.view(todos[0]['id'])
         self.assertEqual([(i['address'], i['why'], i['plan']) for i in extra['cleanup']['items']], [('seo@ranks.example', 'Cold SEO pitch', 'spam')])
+        # its mail opens in the viewer while it is kept; once gone, no link (and showing it changes nothing)
+        self.assertEqual(extra['cleanup']['items'][0]['event'], event)
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET deleted=1 WHERE id=?', (event,))
+        self.assertIsNone(self.view(row['id'])[1]['cleanup']['items'][0]['event'])
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET deleted=0 WHERE id=?', (event,))
+            self.assertEqual(db.execute("SELECT state FROM mail_cleanup_items WHERE suggestion_id=?", (row['id'],)).fetchone()[0], 'open')
         # the right taken away since: Spam didn't work, and nothing is left for the owner to do elsewhere
         self.marks = False
         self.act('routine_cleanup', suggestion_id=row['id'], picks={'0': 'go'})
