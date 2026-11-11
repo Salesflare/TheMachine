@@ -6,7 +6,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section and the sidebar's For you all
 // count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The
-// Fleet asks (a teammate waits) come before the prepared to-do, the ones that need a decision after it. A Fleet ask's
+// Fleet asks (a teammate waits) come before the to-dos, prepared or not (their chip says which, #1225). A Fleet ask's
 // sidebar row brings its card up, also from an open chat. Made-up data.
 const dashboard=await dashboardPage(process.env.PAGE);
 const FL='fl_'+'c'.repeat(16);
@@ -38,8 +38,8 @@ try{
   assert.deepEqual({header:counts.header,tile:counts.tile,section:counts.section,side:counts.side},{header:5,tile:5,section:5,side:5},width+': '+JSON.stringify(counts));
   assert.equal(counts.rows.length,5,JSON.stringify(counts.rows));
   const at=t=>counts.rows.findIndex(r=>r.includes(t));
-  assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<at('Reply to Sam')&&at('Reply to Sam')<Math.min(at('Pick a date'),at('Approve the new logo')),
-   'Fleet asks, then prepared, then the rest: '+JSON.stringify(counts.rows));
+  assert.ok(Math.max(at('Rae Moss'),at('Robin Vale'))<Math.min(at('Reply to Sam'),at('Pick a date'),at('Approve the new logo')),
+   'Fleet asks, then the to-dos: '+JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Rae Moss joined Acme. Share the team\'s Graph with them?'),JSON.stringify(counts.rows));
   assert.ok(counts.rows.includes('Robin Vale asks: Who knows someone at Initech?'),JSON.stringify(counts.rows));
   // From an open chat: the Fleet ask's row closes the chat and brings its card up, focused

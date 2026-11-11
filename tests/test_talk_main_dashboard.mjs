@@ -124,7 +124,7 @@ try{
   if(phone)await page.evaluate(()=>drawerOpen());
   await tap('#side-talk');await inView();await live(viewBar);assert.equal(ended(),0);
 
-  // What needs the owner, in the dashboard's order (For you): prepared first, then needs you
+  // What needs the owner, in the dashboard's order (For you): newest first, a tie by id, whatever the chip
   // Every open to-do the lists show, with its state in plain words: For you (a preparing one among them), then Later
   const listed=await call('l1','list_todos');
   assert.deepEqual(listed.todos.map(x=>[x.id,x.state]),[[A,'prepared'],[B,'needs you'],[P,'preparing'],[Z,'snoozed']]);

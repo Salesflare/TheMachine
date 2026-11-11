@@ -123,7 +123,7 @@ try{
   const sent=posts.find(p=>p.action==='decide');
   assert.equal(sent.args.suggestion_id,'q1');assert.equal(sent.args.choice,'other');assert.equal(sent.args.feedback,'Use 31 Dec 2099 and say so in the notes.');
   // The same box and path on the blocked, handed-back card
-  {const box=await page.locator('#task-h1').boundingBox();await page.screenshot({path:`/tmp/answer-blocked-${width}.png`,fullPage:true,clip:box})}
+  await page.locator('#task-h1').screenshot({path:`/tmp/answer-blocked-${width}.png`});  // wherever it sits in the list, above or below the screen
   posts.length=0;await page.locator('#task-h1 [data-choice="answer"]').click();
   assert.equal(await page.locator('#task-h1 .answer-editor label').textContent(),'Your answer');
   await page.locator('#feedback-h1').fill('It is 500 euros, by bank transfer.');await page.locator('#task-h1 [data-choice="other"]').click();
