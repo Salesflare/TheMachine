@@ -1553,9 +1553,10 @@ class AgentJobs:
 
     def card_changed(self, suggestion_id):
         """After a job started or ended: Stuck on its Telegram message goes once the job is on it (shown_preparation)."""
-        if self.changed:
+        changed = getattr(self, 'changed', None)  # None on a job store made without it
+        if changed:
             try:
-                self.changed(str(suggestion_id))
+                changed(str(suggestion_id))
             except Exception as error:  # noqa: BLE001 - the job goes on; the message catches up with the next edit
                 LOG.warning('agent job card edit error=%s', type(error).__name__)
 
