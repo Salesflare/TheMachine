@@ -511,6 +511,89 @@ class WithTheMap(unittest.TestCase):
         spans = select.changed_spans(old, new)
         self.assertEqual([(old[s:e], new[ns:ne]) for s, e, ns, ne in spans], [('2', '3'), ('', 'go();\n')])
 
+    def test_a_translation_is_named_by_its_own_folder_only(self):
+        # a test that names the English article (in its docstring, say) doesn't read its translations
+        self.assertFalse(select.names_exactly('Templates: docs/help/routines.md', 'docs/help/de/routines.md'))
+        self.assertTrue(select.names_exactly('Templates: docs/help/routines.md', 'docs/help/routines.md'))
+        self.assertTrue(select.names_exactly("open(f'docs/help/{lang}/routines.md')", 'docs/help/de/routines.md'))
+        self.assertTrue(select.names_exactly("open('docs/help/' + name)", 'docs/help/de/routines.md'))
+        self.assertTrue(select.names_exactly("HELP / 'de' / 'routines.md'", 'docs/help/de/routines.md'))
+        self.assertFalse(select.names_exactly("read('docs/help/history.md')", 'docs/help/routines.md'))
+
+    def test_a_doc_a_test_only_mentions_in_its_docstring_doesnt_pick_it(self):
+        text = '"""Birthdays (docs/help/routines.md "Templates")."""\nimport unittest\n'
+        self.assertEqual(select.test_strings('tests/test_x.py', text), '')
+        self.assertIn('docs/help/routines.md', select.test_strings('tests/test_x.py', text + "DOC = 'docs/help/routines.md'\n"))
+        self.assertIn('docs/help/x.md', select.test_strings('tests/test_x.mjs', "// docs/help/y.md\nread('docs/help/x.md')"))
+        self.assertNotIn('docs/help/y.md', select.test_strings('tests/test_x.mjs', "// docs/help/y.md\nread('docs/help/x.md')"))
+
+    def test_a_rule_taken_out_or_put_in_changes_no_rule_beside_it(self):
+        old = '.a{color:red}\n.b{x:1}\n.c{y:2}\n'
+        self.assertEqual(select.changed_selectors(old, '.a{color:red}\n.c{y:2}\n'), {'.b'})
+        self.assertEqual(select.changed_selectors(old, '.a{color:red}\n.b{x:1}\n.n{z:1}\n.c{y:2}\n'), {'.n'})
+        self.assertEqual(select.changed_selectors(old, '.a{color:red}\n.b{x:2}\n.c{y:2}\n'), {'.b'})
+        # cut into a rule: it styles something else now
+        self.assertEqual(select.changed_selectors('.a .b{x:1}\n', '.a{x:1}\n'), {'.a .b', '.a'})
+        self.assertEqual(select.changed_selectors('@media (x){.a{y:1}}\n', '@media (z){.a{y:1}}\n'), {'.a'})
+
+    def test_a_class_name_is_drawn_where_code_has_it_as_text_not_as_a_variable(self):
+        word = select.token_word('elapsed')
+        js = ("const elapsed=v=>v+1;\nconst row=s=>html`<span class=\"elapsed\">${elapsed(s)}</span>`;\n"
+              "const re=/<span class=\"elapsed\">/g, on={elapsed:true};\n")
+        found = [(js.count('\n', 0, m.start()) + 1, select.drawn_here('dashboard/x.js', js, m)) for m in word.finditer(js)]
+        self.assertEqual(found, [(1, False), (2, True), (2, False), (3, True), (3, True)])
+        py = "elapsed = now - start\nHTML = f'<span class=\"elapsed\">{elapsed}</span>'\n"
+        found = [(py.count('\n', 0, m.start()) + 1, select.drawn_here('machine/x.py', py, m)) for m in word.finditer(py)]
+        self.assertEqual(found[:2], [(1, False), (2, True)])  # {elapsed} in the f-string: code from Python 3.12 on
+        # every part of the dashboard parses to the end (a regular expression's quote or backtick doesn't stop it)
+        for path in REPO.paths:
+            if path.startswith('dashboard/') and path.endswith('.js'):
+                self.assertIsNotNone(select.string_spans(path, (ROOT / path).read_text(encoding='utf-8')), path)
+
+    def test_a_python_test_that_builds_the_page_runs_when_a_text_it_asserts_changed(self):
+        old = "const a=1;function checkHead(){return {kind:'busy'}}\nconst b=2;\n"
+        new = "const a=1;function checkHead(){return {kind:'idle'}}\nconst b=2;\n"
+        spans = select.changed_spans(old, new)
+        sides = [(old, [(s, e) for s, e, _, _ in spans]), (new, [(s, e) for _, _, s, e in spans])]
+        page = old + ('kind ' * 10)
+        asserts = lambda text: select.asserts_any('tests/test_x.py', text, sides, page)
+        self.assertTrue(asserts("self.assertIn(\"return {kind:'busy'}\", page)"))
+        self.assertTrue(asserts("self.assertNotIn(\"kind:'idle'\", page)"))
+        self.assertTrue(asserts("self.assertRegex(page, r\"checkHead\\(\\)\\{return \\{kind:'busy'\")"))
+        self.assertFalse(asserts("self.assertIn('const b=2', page)"))  # not what changed
+        self.assertFalse(asserts("self.assertIn('kind', page)"))  # everywhere on the page: one going turns nothing
+        self.assertFalse(asserts('"""checks kind:\'busy\' in its docstring only"""\n'))
+
+
+    def test_a_listener_put_in_for_clicks_on_a_selector_runs_what_draws_it_not_every_page_test(self):
+        text = (ROOT / 'dashboard/shell-core.js').read_text(encoding='utf-8')
+        part, impact, fmt, arrow, idle = self.browser(text)
+        listener = "document.addEventListener('click',async e=>{const b=e.target.closest('[data-zz-nowhere]');if(!b)return;b.disabled=true;\n try{await go(b)}catch(err){b.disabled=false}});\n"
+        REPO.text[part] = text + listener
+        try:
+            why = {}
+            got = select.select([part], repo=REPO, impact=impact, base='HEAD', why=why)
+        finally:
+            REPO.text[part] = text
+        self.assertIsNotNone(got)
+        self.assertNotIn(idle, got)
+        self.assertFalse(any('top level changed' in why.get(t, '') for t in got))
+        self.assertTrue(select.delegated(listener.strip()))
+        self.assertIsNone(select.delegated("document.addEventListener('click',e=>{go(e)})"))  # every click
+        self.assertIsNone(select.delegated("document.addEventListener('click',e=>{const b=e.target.closest('[data-q]');if(b){go(b)}start()})"))
+
+    def test_a_name_put_in_a_set_runs_what_passes_it(self):
+        path = 'machine/actions.py'
+        text = (ROOT / path).read_text(encoding='utf-8')
+        n, line = next((n, l) for n, l in enumerate(text.split('\n'), 1) if re.fullmatch(r"\s+'family_[a-z_]+',", l))
+        self.assertTrue(select.SET_LINE.fullmatch(line.strip()))
+        name = line.strip()[1:-2]
+        # the Python tests that pass it (a page test answers the page's posts itself)
+        passing = names(t for t in TESTS if t.endswith('.py') and re.search(r"""['"]""" + name + r"""['"]""", SOURCE[t]))
+        self.change(path, [n])
+        got = select.select([path], repo=REPO, impact=self.impact({}), base='HEAD')
+        if got is not None:
+            self.assertLessEqual(passing, set(got))
 
 if __name__ == '__main__':
     unittest.main()
