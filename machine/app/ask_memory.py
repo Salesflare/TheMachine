@@ -47,6 +47,7 @@ SUMMARY_CHARS = 500
 MEETING_CHARS = 450   # of one meeting's notes: the part that matched
 FACT_FLOOR = 0.6           # cosine of a fact to the question: under it the fact is not about the question (unrelated ones reach 0.5)
 LEARNED = 3           # facts and rules Talk's recall gets for its words (learned)
+LEARNED_TIMEOUT = 2   # seconds for the words' vector in Talk's recall; slower, and words only (a voice waits on it)
 FACT_TIMEOUT = 4      # seconds for the question's vector; slower, and no fact is ranked
 NAMED = 2             # organizations and projects named in one question
 NAME_LETTERS = 4      # a name's first word counts alone from this many letters, when no other record has it
@@ -376,25 +377,76 @@ def read(memory, about, budget):
     return ('\n'.join([INTRO, *parts]), entries) if parts else ('', {})
 
 
+def _stem(word):
+    """A word's plain form, cheaply and the same for both sides of a match: plurals, -ing and -ed off, a doubled last
+    letter and a final e dropped ("seats", "seat" > seat; "booking", "booked", "books" > book; "quoting", "quotes" >
+    quot). No word list and no model: a word that changes its stem ("flying", "flights") matches by meaning only."""
+    w = word
+    if len(w) > 4 and w.endswith('ies'):
+        w = w[:-3] + 'y'
+    elif len(w) > 4 and w.endswith(('ches', 'shes', 'xes', 'zes')):
+        w = w[:-2]
+    elif len(w) > 3 and w.endswith('s') and not w.endswith(('ss', 'us', 'is')):
+        w = w[:-1]
+    if len(w) > 5 and w.endswith('ing'):  # after the plural: "meetings" > meet
+        w = w[:-3]
+    elif len(w) > 4 and w.endswith('ed') and not w.endswith('eed'):
+        w = w[:-2]
+    if w != word and len(w) > 3 and w[-1] == w[-2] and w[-1] not in 'lsz':  # planned > plan, running > run
+        w = w[:-1]
+    if len(w) > 3 and w.endswith('e') and not w.endswith('ee'):
+        w = w[:-1]
+    return w
+
+
 def _stems(words):
-    """fact_words with a plural's s dropped, so "seat" finds "seats"."""
-    return {w[:-1] if len(w) > 3 and w.endswith('s') else w for w in words}
+    """fact_words in their plain form (_stem), so "seat" finds "seats" and "booking" finds "booked"."""
+    return {_stem(w) for w in words}
 
 
-def learned(store, words):
+def _meaning(store, words, facts, settings):
+    """{fact id: cosine} of the facts with a stored vector close in meaning to the words (at least FACT_FLOOR): the
+    vectors a preparation or Ask already stored (fact_vectors), against one local embedding of the words, as
+    retained_facts.py reads them. A fact without a stored vector is matched by words only, and none is embedded here.
+    {} without embeddings, or when the embedding server is down or slow."""
+    if not settings or not facts:
+        return {}
+    key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+    ids = [f['id'] for f in facts]
+    with store.connect() as db:
+        stored = {r[0]: embeddings.unpack(r[1]) for r in db.execute(
+            f'SELECT fact_id,vector FROM fact_vectors WHERE model=? AND fact_id IN ({_marks(ids)})', (key, *ids))}
+    if not stored:
+        return {}
+    try:
+        asked = embeddings.embed(settings, [embeddings.QUERY_PREFIX + words], LEARNED_TIMEOUT)[0]
+    except Exception as error:  # words only, the rest of the recall as it was
+        LOG.info('talk recall meaning error=%s', type(error).__name__)
+        return {}
+    close = {i: embeddings.cosine(asked, v) for i, v in stored.items()}
+    return {i: c for i, c in close.items() if c >= FACT_FLOOR}
+
+
+def learned(store, words, settings=None):
     """What was learned that a few words are about, for Talk's recall (the `talk` recall's facts block): the owner's own
-    facts and rules, never a connected AI's, that share at least half of the words' content words, most shared first,
-    at most LEARNED. Plain word matching on the stored text: no embedding and no model call, so it works on every
-    Machine. Without it, what the owner said in a chat ("remember ...") never came back by voice: it is a fact here,
-    not in OpenClaw's memory files."""
+    facts and rules, never a connected AI's, that share at least half of the words' content words (in their plain
+    form, _stem), most shared first, then those close in meaning to the words (their stored vectors, when the Machine
+    has embeddings: settings), at most LEARNED. No model call: words alone work on every Machine. Without it, what the
+    owner said in a chat ("remember ...") never came back by voice: it is a fact here, not in OpenClaw's memory files.
+    Only current facts: a forgotten, ended or replaced one is not in store.facts()."""
     asked = _stems(fact_words(words))
     if not asked:
         return []
-    at, scored = now(), []
-    for f in store.facts():
+    at = now()
+    own = [f for f in store.facts() if not ai_fact_by(f) and fact_weight(f, at) > 0]
+    close = _meaning(store, words, own, settings)
+    scored = []
+    for f in own:
         shared = len(asked & _stems(fact_words(f['text'])))
-        if shared and 2 * shared >= len(asked) and not ai_fact_by(f) and fact_weight(f, at) > 0:
-            scored.append((shared, str(f.get('last_use') or ''), f))
-    picked = [f for _, _, f in sorted(scored, key=lambda x: x[:2], reverse=True)[:LEARNED]]
-    note_facts(picked, 'match')
+        shared = shared if shared and 2 * shared >= len(asked) else 0
+        if shared or f['id'] in close:
+            scored.append((shared, close.get(f['id'], 0.0), str(f.get('last_use') or ''), f))
+    picked = [x[3] for x in sorted(scored, key=lambda x: x[:3], reverse=True)[:LEARNED]]
+    said = {f['id'] for s, _, _, f in scored if s}
+    note_facts(picked, lambda f: 'match' if f['id'] in said else 'closeness', scores={i: c for i, c in close.items() if i not in said})
     return picked

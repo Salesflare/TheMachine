@@ -46,6 +46,11 @@ def embed(settings, texts, timeout=120):
     return [[1.0, 0.0] if 'aisle' in t or 'seat' in t else [0.0, 1.0] for t in texts]
 
 
+def fly(settings, texts, timeout=120):
+    """Made-up vectors: anything about flying is close to the rest of it, everything else far."""
+    return [[1.0, 0.0] if 'fly' in t or 'flight' in t else [0.0, 1.0] for t in texts]
+
+
 class MemoryReach(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -155,6 +160,51 @@ class MemoryReach(unittest.TestCase):
         self.app.memory_search = lambda request: {'results': [{'source': 'memory', 'text': 'Seat notes from last spring.'}]}
         found = self.app.talk_recall('aisle seat')['found']
         self.assertEqual([f['from'] for f in found], ['what The Machine learned', 'the notes'])
+
+    def test_talk_recalls_beyond_the_exact_words_with_and_without_embeddings(self):
+        self.app.memory_search = lambda request: {'error': 'off'}
+        texts = lambda words: [f['text'] for f in ask_memory.learned(self.store, words, a.embeddings.settings(self.app.config))]
+        gone = self.store.remember_fact('You fly economy on short trips.', 'note-1')['id']
+        ended = self.store.remember_fact('You fly to the fair on Friday.', 'note-1')['id']
+        old = self.store.remember_fact('You fly through the travel desk.', 'note-1')['id']
+        with self.store.connect() as db:
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
+                       (NOW.isoformat(),))  # a connected AI's, not the owner's word
+        with patch.object(a.embeddings, 'embed', side_effect=fly):  # what a preparation stores: every fact's vector
+            self.store.facts_ranked('none', self.store.facts(), SETTINGS)
+        self.store.forget_fact(gone)
+        new = 'You fly with your own booking tool now.'
+        self.store.remember_fact(new, 'note-1', replaces=[old])
+        with self.store.connect() as db:
+            db.execute('UPDATE facts SET valid_until=? WHERE id=?', ('2026-11-01', ended))
+        self.store.retire_expired()
+        outside = ('economy', 'the fair', 'travel desk', 'first class')
+        # no embeddings: the words in their plain form
+        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('no embedding request without embeddings')):
+            self.assertEqual(texts('seat'), [SAID])  # "seat" finds "seats"
+            self.assertEqual(texts('booking an aisle seat'), [SAID])  # "booking" finds "book"
+            self.assertEqual(texts('quoting in PDF'), [NOTE])
+            self.assertEqual(texts('invoice'), [FIXED])
+            self.assertEqual(texts('flying'), [new])  # "flying" finds "fly", and only the current one of them
+            self.assertNotIn(SAID, texts('flying'))  # "flights" is another stem: by meaning only
+        # embeddings on: the stored vectors bring what means the same, never more than LEARNED
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=fly) as embed_call:
+            found = self.app.talk_recall('flying')['found']
+            self.assertEqual(embed_call.call_count, 1)  # the words only: the facts' vectors were stored
+            said = [f['text'] for f in found]
+            self.assertTrue(any(SAID in t for t in said), said)  # "flying" finds "flights"
+            self.assertTrue(any(new in t for t in said), said)
+            for text in outside:
+                self.assertFalse(any(text in t for t in said), (text, said))
+            self.assertEqual(texts('seat')[0], SAID)  # words first
+            self.assertLessEqual(len(texts('flying flights travel trips')), ask_memory.LEARNED)
+        with self.store.connect() as db:
+            self.assertIn('closeness', {r[0] for r in db.execute("SELECT how FROM memory_use WHERE purpose='talk'")})
+        # the embedding server down: words only, no error
+        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+            self.assertEqual(texts('flying'), [new])
+            self.assertEqual(texts('seats'), [SAID])
 
     def test_the_owners_chat_finds_facts_on_a_persons_page(self):
         known = [k['text'] for k in self.app.graph_action({'node_id': ANN})['open'].get('known', [])]
