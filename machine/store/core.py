@@ -547,6 +547,8 @@ class StoreCore:
         restored = self.restore_ahead_blockers()
         if restored:
             LOG.info('Showed the blocker again on %d prepared-ahead to-do(s)', restored)
+        if self.index_facts():
+            LOG.info('Indexed the facts for retained-fact recall')
         self.clean_protection_leftovers()
         try:
             self.message_protection(True if protect is None and os.environ.get('MESSAGE_PROTECTION_TEST') else protect)

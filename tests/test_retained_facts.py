@@ -5,6 +5,7 @@ embeddings."""
 import datetime as dt
 import importlib.util
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -228,6 +229,52 @@ class RetainedFactsTests(unittest.TestCase):
             db.execute("UPDATE facts SET side='personal' WHERE id=?", (self.ids[ASIDE],))  # as a connected AI's area would say
         self.app.config['accounts'] = [{**ACCOUNTS[0], 'boundary': 'work:acme'}]
         self.assertNotIn(ASIDE, self.retained()[0])
+
+    def test_years_of_facts_outside_the_list_are_all_looked_at_quickly(self):
+        self.app.config['embeddings'] = SETTINGS
+        key = f"{SETTINGS['model']}:{SETTINGS['dims']}"
+        later = (START + dt.timedelta(days=41)).isoformat()  # each left the list after the ones that bear on the to-do
+        with self.store.connect() as db:
+            for i in range(3000):  # one shared word each ("offsite"): looked at, and too little to match
+                fact = db.execute("INSERT INTO facts(text,decision_id,created_at,removed_at,kind) VALUES(?,'owner-note',?,?,'fact')",
+                                  (f'Archived offsite note {i} on ledger zq{i}x.', START.isoformat(), later)).lastrowid
+                db.execute('UPDATE facts SET merged_into=? WHERE id=?', (f'aside:{fact}', fact))
+                db.execute('INSERT INTO fact_vectors(fact_id,model,vector) VALUES(?,?,?)', (fact, key, a.embeddings.pack(FAR)))
+        self.vectors({ASIDE_MEANING: NEAR}, {2: NEAR})
+        with self.store.connect() as db:
+            newer = db.execute("SELECT count(*) FROM facts WHERE merged_into LIKE 'aside:%' AND removed_at>?",
+                               (self.clock[0].isoformat(),)).fetchone()[0]
+        self.assertGreater(newer, 500)  # past the 500 most lately removed that were looked at before
+        with patch.object(retained_facts, 'LINES', 20), patch.object(retained_facts, 'CHARS', 5000):
+            started = time.monotonic()
+            text, rows = self.retained()
+            review, _ = self.retained('review')
+            took = time.monotonic() - started
+        for fact in (ASIDE, ASIDE_NAMED, ASIDE_MEANING):  # by words, by name and by meaning
+            self.assertIn('- ' + fact, text)
+        self.assertIn('- ' + ASIDE, review)
+        self.assertNotIn('Archived offsite note', text + review)
+        self.assertNotIn(FORGOTTEN, text + review)
+        self.assertLess(took, 10)  # some 0.3 s on a desktop
+
+    def test_an_older_database_gets_the_index_once_after_a_copy(self):
+        with self.store.connect() as db:
+            for name in ('fact_search_insert', 'fact_search_update', 'fact_search_delete'):
+                db.execute(f'DROP TRIGGER {name}')
+            db.execute('DROP TABLE fact_search')
+            db.execute('DROP INDEX fact_about_node')
+        self.store = self.app.store = a.Store(self.store.path)
+        copies = list(self.store.path.parent.glob('events.sqlite.before-fact-index-*'))
+        self.assertEqual(1, len(copies))
+        self.assertFalse(self.store.index_facts())  # once: the next start only reads the schema
+        self.assertEqual(copies, list(self.store.path.parent.glob('events.sqlite.before-fact-index-*')))
+        self.assertIn('- ' + ASIDE, self.retained()[0])  # facts from before the index are in it
+        with self.store.connect() as db:  # kept up to date as facts change
+            db.execute('UPDATE facts SET text=? WHERE id=?', ('Quarterly taxes for the Lisbon offsite venue are filed in March.', self.ids[ASIDE_OTHER]))
+            db.execute('DELETE FROM facts WHERE id=?', (self.ids[ASIDE],))
+            found = {r[0] for r in db.execute("SELECT rowid FROM fact_search WHERE fact_search MATCH 'lisbon'")}
+        self.assertIn(self.ids[ASIDE_OTHER], found)
+        self.assertNotIn(self.ids[ASIDE], found)
 
 
 if __name__ == '__main__':
