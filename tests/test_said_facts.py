@@ -102,6 +102,26 @@ class SaidFacts(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM decisions').fetchone()[0], 0)
 
+    def test_the_web_chat_saves_what_the_owner_said_there(self):
+        # the bridge notes the owner's web chat message (owner key, before_dispatch); the words never reach the service
+        self.assertIn('web_chat_said', a.OWNER_ACTIONS)
+        self.assertEqual(self.app.action('web_chat_said', {'message_id': 'run-7f3a'}), {'noted': True})
+        saved = self.save('You take the train to the office.')
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT decision_id,suggestion_id,source FROM facts WHERE id=?', (saved['id'],)).fetchone())
+        self.assertEqual(row, {'decision_id': 'webchat-said:run-7f3a', 'suggestion_id': None, 'source': None})
+        self.assertEqual([f['text'] for f in self.store.snapshot([])['facts']], ['You take the train to the office.'])
+        # a model can't name a web chat message itself, and a made-up id is refused
+        with self.assertRaisesRegex(ValueError, 'owner’s own written notes'):
+            self.app.action('remember_fact', {'text': 'You take the bus.', 'decision_id': 'webchat-said:run-7f3a'})
+        with self.assertRaisesRegex(ValueError, 'web chat message id'):
+            self.app.action('web_chat_said', {'message_id': 'x y'})
+        # half an hour later it no longer counts
+        with patch.object(feedback['time'], 'time', return_value=NOW.timestamp() + feedback['OWNER_SAID_MINUTES'] * 60 + 3600):
+            self.app.owner_said_last = ('webchat-said:run-8', NOW.timestamp())
+            with self.assertRaisesRegex(ValueError, 'owner’s own words'):
+                self.save('You take the bus.')
+
     def test_a_connected_ais_fact_stays_marked_as_third_party_text(self):
         self.assertIn('said', a.Store.remember_fact.__code__.co_varnames)
         with self.assertRaisesRegex(ValueError, 'connected AI'):  # said never loosens what an AI's fact needs

@@ -38,7 +38,7 @@ OWNER_SAID_MINUTES = 30
 class FeedbackApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'request_feedback': 'request_feedback_action', 'bind_feedback_prompt': 'bind_feedback_prompt_action',
-               'feedback_reply': 'feedback_reply_action'}
+               'feedback_reply': 'feedback_reply_action', 'web_chat_said': 'web_chat_said_action'}
 
     def request_feedback_action(self, name, args, owner_dashboard=False):
         # Read only native cached message identities in this exact owner
@@ -103,14 +103,25 @@ class FeedbackApp:
         if not result.get('handled') and str(args.get('text') or '').strip() and not str(args['text']).startswith('/'):
             # Not about a to-do: something the owner wrote in their own chat. Its id and when, in memory only (the words
             # are kept nowhere), so a fact they state there can be saved from it (owner_said, remember_fact_action).
-            self.owner_said_last = (str(args['message_id']), time.time())
+            self.owner_said_last = ('telegram-said:' + str(args['message_id']), time.time())
         return result
 
+    def web_chat_said_action(self, name, args, owner_dashboard=False):
+        """The owner wrote in the web chat's main session (the bridge's before_dispatch, with the owner key): its id and
+        when, in memory only, as feedback_reply keeps a Telegram message, so a fact they state there can be saved from
+        it. The words are not sent."""
+        message_id = str(args.get('message_id') or '')
+        if not re.fullmatch(r'[A-Za-z0-9_.:-]{1,120}', message_id):
+            raise ValueError('A web chat message id')
+        self.owner_said_last = ('webchat-said:' + message_id, time.time())
+        return {'noted': True}
+
     def owner_said(self):
-        """The note id of the owner's last message in their own private chat ('telegram-said:<message id>'), while it is
-        at most OWNER_SAID_MINUTES old; None otherwise. Only feedback_reply sets it, which takes the owner key."""
-        message_id, at = getattr(self, 'owner_said_last', None) or (None, 0)
-        return 'telegram-said:' + message_id if message_id and 0 <= time.time() - at <= OWNER_SAID_MINUTES * 60 else None
+        """The note id of the owner's last message in their own chat ('telegram-said:<message id>' in their private
+        Telegram chat, 'webchat-said:<id>' in the web chat), while it is at most OWNER_SAID_MINUTES old; None otherwise.
+        Only feedback_reply and web_chat_said set it, which take the owner key."""
+        note, at = getattr(self, 'owner_said_last', None) or (None, 0)
+        return note if note and 0 <= time.time() - at <= OWNER_SAID_MINUTES * 60 else None
 
     def feedback_prompt_step(self, request_id=None, sender=None):
         """Durable prompt admission, receipt recovery and conservative ambiguous-send hold."""

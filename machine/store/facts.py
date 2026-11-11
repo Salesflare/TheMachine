@@ -422,7 +422,7 @@ class FactsStore:
         its originals were about. Saying a current one again starts its decay over (confirmed_at). source: a connected AI
         ('ai:<name>', ai_app.py) instead of a note: decision_id is then 'ai:<connection id>', it is about someone, and it
         neither condenses nor makes a rule. side: its area, work or personal (an AI's fact only). said: the note is a
-        message the owner wrote in their own private chat (decision_id 'telegram-said:<message id>', which the service
+        message the owner wrote in their own chat (decision_id 'telegram-said:<message id>' or 'webchat-said:<id>', which the service
         vouches for: remember_fact_action), not one on a to-do. source 'notes:<file>' with decision_id 'notes:<file>:<id>':
         a line of the owner's own OpenClaw notes that they ticked on Learning (bring_in.py); it is the owner's own, kept
         like a note's fact, and can be a rule. kind contact: how to reach one person (their phone or email), from a note
@@ -455,7 +455,7 @@ class FactsStore:
                 decision_id = originals[-1]['decision_id']
                 note = {'suggestion_id': originals[-1]['suggestion_id']}
             elif not originals:
-                note = {'suggestion_id': None} if by_ai or notes or (said is True and str(decision_id).startswith('telegram-said:')) else owner_note()
+                note = {'suggestion_id': None} if by_ai or notes or (said is True and str(decision_id).startswith(('telegram-said:', 'webchat-said:'))) else owner_note()
             if not note:
                 raise ValueError('Facts must come from one of the owner’s own written notes: give that decision_id')
             if not originals:
