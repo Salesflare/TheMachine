@@ -282,7 +282,9 @@ remove them.
 
 - A preparation doesn't get everything learned. While the list is short it gets all of it. After that: the facts and
   draft rules learned on that to-do, plus the ones closest in meaning to it (with
-  [local embeddings](intelligence.md#related-signals-optional-local-embeddings) on, else the newest).
+  [local embeddings](intelligence.md#related-signals-optional-local-embeddings) on; without them, the ones that share
+  at least two distinctive words, and a third of their own, with the to-do's title, text or latest note, then the
+  newest), in the same limit.
 - Each fact has a sort (event, commitment, preference or fact, given by the review that saves it) and can have an end
   day (`until`). An event without one ends after 30 days.
 - A review can also call one a contact (it only says how to reach one person). Plain code then checks it
@@ -296,7 +298,9 @@ remove them.
   room. At the cap, the fact or rule not used for longest is set aside when it wasn't used in 21 days (used: a
   preparation picked it as close to its to-do, or a note said it again); else the list grows, up to 120. Each review
   also sets aside those not used in 21 days while there are more than 70. Learning lists them under **Set aside** with
-  **Bring back**. One the owner edited or brought back is never set aside.
+  **Bring back**. One the owner edited or brought back is never set aside. A set-aside fact, and an ended or replaced
+  one marked as history, still reaches a review, preparation or to-do chat when it bears on it, in a small slice of
+  its own ([how](intelligence.md)).
 - A review gets the facts used or said most lately first, up to its limit, so a long list leaves out the stalest.
 - A fact or rule about no one saved again is checked against the current ones by their content words. When a current
   one already holds every word, it counts as said again. When the new one holds every word of a current one and more,

@@ -11,6 +11,7 @@ import embeddings
 import memory_use
 import search_ask
 from machine.app import ask_memory
+from machine.app import retained_facts
 from machine.app import senders
 from machine.app.review_facts import ReviewFacts
 
@@ -21,7 +22,7 @@ ROUTINE_RULES = 600
 
 
 def recall(app, purpose, about=None, budget=0):
-    """The memory for one prompt. purpose: review, preparation, ask, routine, talk or chat. about: what it is for
+    """The memory for one prompt. purpose: review, preparation, ask, routine, talk, chat or todo_chat. about: what it is for
     ({'todo': id}, {'run': id}, {'run': id, 'analysis': id} for the batch a review claimed, {'question': text}). budget: the prompt's character limit,
     for Recalled.fit. Returns a memory_use.Recalled: text(block) or fit(block, used, reserve) for the prompt,
     picked() for the items per kind, rows() for the log.
@@ -31,8 +32,8 @@ def recall(app, purpose, about=None, budget=0):
       fit; past the cap the standing ones) and batch_facts (past the cap: the ones picked for this batch,
       review_facts.py), promises (the open ones), sender (who wrote the claimed batch: one line per sender the Graph
       knows something specific about, senders.lines; read when the batch is claimed, with the claim's reply as its
-      budget).
-    - preparation: rules and facts (for this to-do), records (the people and projects on it), skills(rules, room),
+      budget), retained (set-aside facts and history that bear on the waiting signals, retained_facts.py).
+    - preparation: rules and facts (for this to-do), retained (set-aside facts and history that bear on it), records (the people and projects on it), skills(rules, room),
       team (the Work Fleet's lines, team learnings among them), related (signals close in meaning).
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
@@ -41,7 +42,9 @@ def recall(app, purpose, about=None, budget=0):
       ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them.
     - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words
       (ask_memory.learned, plain word matching), next to OpenClaw's memory search.
-    - chat: none yet; the owner's main chat reads no memory through here (docs/memory-reach.md)."""
+    - chat: none yet; the owner's main chat reads no memory through here (docs/memory-reach.md).
+    - todo_chat (a turn of a to-do's chat, {'todo': id}): retained, as for its preparation, in a smaller slice;
+      the rest of what was learned is in the session from its preparation."""
     about = dict(about or {})
     memory = memory_use.Recalled(purpose, about, budget)
     store, todo = app.store, about.get('todo')
@@ -52,15 +55,19 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('batch_facts', facts.for_batch)
         memory.add('promises', lambda: store.promises_text())
         memory.add('sender', lambda: senders.lines(app, about.get('analysis')))
+        memory.add('retained', lambda: retained_facts.for_review(app))
     elif purpose == 'preparation':
         known = embeddings.settings(app.config)  # what was learned that this to-do needs, not all of it
         memory.add('rules', lambda: store.facts_for(todo, 'draft', known))
         memory.add('facts', lambda: store.facts_for(todo, 'fact', known, accounts=app.config.get('accounts', [])))
+        memory.add('retained', lambda: retained_facts.for_todo(app, todo))
         # a fact about a record on the to-do is in the facts block (picked by record): the record's line doesn't say it again
         memory.add('records', lambda: app.graph_lines(todo, {int(i.row_id) for i in memory.blocks.get('facts', ()) if i.kind == 'fact'}))
         memory.add('skills', lambda rules, room: app.prep_skill_lines(todo, rules, room))
         memory.add('team', lambda: app.fleet.lines(todo))
         memory.add('related', lambda: app.related_lines(todo))
+    elif purpose == 'todo_chat':
+        memory.add('retained', lambda: retained_facts.for_todo(app, todo, retained_facts.CHAT_CHARS))
     elif purpose == 'ask':
         memory.add('sources', search_ask.ask)
         ask_memory.add(memory, app)

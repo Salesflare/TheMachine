@@ -32,7 +32,7 @@ from timeutil import now
 LOG = logging.getLogger('personal-assistant')
 
 KEEP_DAYS = 60   # a use older than this is gone (fewer at the Careful level, as for a run's tool calls)
-PURPOSES = ('review', 'preparation', 'ask', 'routine', 'talk', 'chat')
+PURPOSES = ('review', 'preparation', 'ask', 'routine', 'talk', 'chat', 'todo_chat')
 # What a piece of memory is, by the table its row id is in:
 # fact, rule: facts (kind fact, draft); promise: promises; history: suggestions (the owner's recent to-dos, 30 days);
 # record: graph_nodes (a person or project); signal: events; skill: skills (by slug); team_learning: by fingerprint.

@@ -853,6 +853,20 @@ nothing, and a log write that fails never fails the prompt.
   - The picked block differs from one review to the next, so the prompt puts it after everything that changes slowly
     and before the run's own lines: the cached prefix before it is the same as it was. The two blocks together are
     never larger than the cut list was.
+- Facts outside the current list still count when they bear on the matter (`machine/app/retained_facts.py`, the
+  `retained` block of the review, preparation and chat recalls):
+  - A set-aside fact still holds, so it goes in as a fact. A fact that ended (past its end day, or a newer message
+    overturned it) or that a newer one replaced in a condense goes in only as history: "Historical, not current", with
+    the day it ended and what replaced it. One whose words the newer one all holds is left out: it adds nothing.
+  - Never one the owner removed, or one whose replacement they removed; never a connected AI's.
+  - It bears on the matter when it is about, or names, a person, organization or project on the to-do's signals (a
+    review: the waiting signals), shares at least two distinctive words and a third of its own with the to-do (title,
+    body, the owner's latest note) or the waiting signals' subjects, or, with embeddings on, its stored vector is close
+    (0.45 or more) to a stored vector of those signals. No embedding request, no model call.
+  - A small fixed slice: at most 3 lines and 600 characters (400 in a to-do's chat turn), set-aside ones first,
+    outside the current facts' own cap, and nothing when nothing matches. In a review it comes after the batch's facts,
+    so the cached prefix stays the same. A to-do's preparation and its fact area follow `facts_for`'s.
+  - A pick is not a use: a set-aside fact stays set aside until the owner brings it back.
 - `memory_use.outcomes(db, to-do)` joins what was in a to-do's prompts with what the owner then did (sent unchanged,
   sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
   Nothing reads them yet.

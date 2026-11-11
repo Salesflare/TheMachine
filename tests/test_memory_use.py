@@ -45,14 +45,15 @@ class Before:
 
     def __init__(self, app, purpose, about=None, budget=0):
         store, todo, known = app.store, (about or {}).get('todo'), a.embeddings.settings(app.config)
-        self.budget = budget
+        self.budget, self.purpose = budget, purpose
         self.pickers = {
             'history': lambda: store.preference_summary(), 'promises': lambda: store.promises_text(), 'batch_facts': lambda: '',
             'facts': (lambda: store.facts_text(ids=True)) if purpose == 'review' else
                      (lambda: store.facts_for(todo, 'fact', known, accounts=app.config.get('accounts', []))),
             'rules': lambda: store.facts_for(todo, 'draft', known), 'records': lambda: app.graph_lines(todo),
             'skills': lambda rules, room: app.prep_skill_lines(todo, rules, room), 'team': lambda: app.fleet.lines(todo),
-            'related': lambda: app.related_lines(todo), 'sources': search_ask.ask}
+            'related': lambda: app.related_lines(todo), 'sources': search_ask.ask,
+            'retained': lambda: ''}  # nothing was set aside, ended or replaced here: the prompt is the one it was
         if purpose == 'ask':  # what matches the question, each picker with (what it goes on, room)
             self.pickers.update({name: functools.partial(picker, app) for name, picker in ask_memory.BLOCKS.items()})
 
