@@ -59,7 +59,8 @@ try{
   assert.equal(await page.locator('#results .ev-soon').count(),0,'no Coming up split in a search');
   // A question: the answer above the results, with the message it read, which opens
   await searchFor(page,QUESTION);
-  await page.locator('#ev-answer p').waitFor();
+  // the answer, not the Looking… line that shows while it works
+  await page.locator('#ev-answer p:not([role=status])').waitFor();
   assert.deepEqual(asks.at(-1),{query:QUESTION,area:'all'});
   assert.equal(await page.locator('#ev-answer p').textContent(),ANSWER);
   assert.equal(await page.locator('#ev-answer .ge-day').textContent(),'Answer');
@@ -81,7 +82,7 @@ try{
   await page.evaluate(()=>new Promise(r=>setTimeout(r,80)));assert.ok(await page.locator('#ev-answer').isHidden(),'no model: nothing');
   await context.close()}
  for(const [w,h] of [[390,844],[1440,900]])for(const scheme of ['light','dark']){const {context,page}=await open(w,h,scheme);
-  await searchFor(page,QUESTION);await page.locator('#ev-answer p').waitFor();
+  await searchFor(page,QUESTION);await page.locator('#ev-answer p:not([role=status])').waitFor();
   const over=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);assert.ok(over<=0,`${w}: no sideways scroll`);
   const a=await page.locator('#ev-answer').boundingBox();assert.ok(a.x>=8&&a.x+a.width<=w-8,`${w}: the answer fits`);
   if(shots)await page.screenshot({path:`${shots}/messages-answer-${w}-${scheme}.png`});
