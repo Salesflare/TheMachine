@@ -24,7 +24,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | work | chat | messages | notes |
 |---|---|---|---|
 | Review | facts block, set-aside and historical facts that bear on the batch (`recall` `review`, `retained`) | promises, sender lines | facts block, `USER.md` |
-| Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
+| Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with what changed since the session read the list (`new`) and its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
 | Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then set-aside and historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
@@ -60,13 +60,19 @@ the question names them. At most 900 characters (about 225 tokens), logged as `c
 block: a turn that doesn't ask costs only the tool's definition (about 120 tokens, cached with the rest). The bridge
 sets the chat mark (`_owner_chat`); the service answers nothing without it.
 
+A to-do's chat answers in its preparation's session, so a fact learned after that preparation started reached it only
+on a redo. Each chat turn now gets what changed since the session read the list (`retained_facts.since_session`, the
+`new` block of `todo_chat`): a fact or rule learned, edited or brought back since, that bears on the to-do (all of
+them while the list is short, as a preparation gets all of it then), and a line for one the session had that the
+owner removed ("no longer use it") or that ended (as history). At most 3 lines and 400 characters, never one the
+session was already given in that state (the session's runs in `memory_use`), never one learned on this to-do or a
+connected AI's. Logged as `todo_chat`.
+
 ## Still missing
 
 - **The owner's main chat** reads what was learned by words only (in their plain form, as Talk), not yet by meaning:
   "flying" doesn't find "flights".
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
-- **A to-do's chat** answers in its preparation's session: a current fact learned after that preparation started
-  reaches it only on a redo (each turn does get the set-aside and historical facts that bear on the to-do).
 - **A chat correction that swaps a plain word** ("window seats" for "aisle seats") is left to the condense pass,
   which judges it by meaning; code only swaps numbers, names and negations.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only

@@ -46,8 +46,9 @@ def recall(app, purpose, about=None, budget=0):
     - chat (the owner's main chat, {'question': words}): learned(question), read only when the chat asks (the bridge's
       assistant_memory tool): the owner's own facts and draft rules that match, then the set-aside and historical
       ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
-    - todo_chat (a turn of a to-do's chat, {'todo': id}): retained, as for its preparation, in a smaller slice;
-      the rest of what was learned is in the session from its preparation."""
+    - todo_chat (a turn of a to-do's chat, {'todo': id, 'session': its session's job id}): new (what changed in
+      what was learned since the session last read it, a small delta: retained_facts.since_session) and retained, as
+      for its preparation, in a smaller slice; the rest of what was learned is in the session from its preparation."""
     about = dict(about or {})
     memory = memory_use.Recalled(purpose, about, budget)
     store, todo = app.store, about.get('todo')
@@ -70,6 +71,7 @@ def recall(app, purpose, about=None, budget=0):
         memory.add('team', lambda: app.fleet.lines(todo))
         memory.add('related', lambda: app.related_lines(todo))
     elif purpose == 'todo_chat':
+        memory.add('new', lambda: retained_facts.since_session(app, todo, about.get('session')))
         memory.add('retained', lambda: retained_facts.for_todo(app, todo, retained_facts.CHAT_CHARS))
     elif purpose == 'ask':
         memory.add('sources', search_ask.ask)
