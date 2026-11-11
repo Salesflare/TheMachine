@@ -145,6 +145,38 @@ class Boundaries(Base):
         self.assertFalse([q for q in traced if 'team_' in q or 'FROM events' in q])
         self.assertIn('Casey Buyer', text)
 
+    def test_learnings_are_the_owners_newest_current_ones_within_the_side_rules(self):
+        for column in ('valid_until TEXT', 'source TEXT', 'side TEXT'):
+            self.db.execute('ALTER TABLE facts ADD COLUMN ' + column)
+        self.db.execute('CREATE TABLE IF NOT EXISTS fact_about(fact_id INTEGER NOT NULL,node_id TEXT NOT NULL,by TEXT NOT NULL,created_at TEXT NOT NULL,'
+                        'removed_at TEXT,PRIMARY KEY(fact_id,node_id))')
+        add = lambda text, **cols: self.db.execute('INSERT INTO facts(text,decision_id,created_at,' + ''.join(c + ',' for c in cols) + 'removed_at) '
+                                                   'VALUES(?,?,?,' + '?,' * len(cols) + 'NULL)', (text, 'd', '2026-10-05', *cols.values())).lastrowid
+        add('The conference trip ended long ago', valid_until='2000-01-01')
+        add('The garden party is next spring', valid_until='2999-01-01')
+        add('Saved by another AI about a hiking trip', source='ai:Other', side='personal')
+        add('A work deal note from the owner', side='work')
+        about = lambda fact_id, node_id: self.db.execute("INSERT INTO fact_about(fact_id,node_id,by,created_at) VALUES(?,?,'review','2026-10-05')", (fact_id, node_id))
+        about(add('Casey Buyer wants quotes by email'), 'email:buyer@acme.test')
+        about(add('Robin Lee likes trail maps'), 'email:sis@example.org')
+        about(add('The teammate record prefers calls'), 'email:mate@acme.test')
+        cap = getattr(gbrain, 'LEARNINGS_MAX', 200)
+        for i in range(cap):
+            add(f'Later fact {i}')
+        out = gbrain.learnings(self.db, self.config)
+        self.assertEqual(len(out), cap)
+        self.assertEqual(out[0], f'Later fact {cap - 1}')  # newest first, the newest always in
+        self.assertNotIn('Invoices go to the shared inbox', out)            # the oldest is what the cut leaves out
+        self.db.execute("DELETE FROM facts WHERE text LIKE 'Later fact%'")
+        personal = gbrain.learnings(self.db, self.config)
+        self.assertEqual(personal, ['Robin Lee likes trail maps', 'The garden party is next spring', 'Invoices go to the shared inbox'])
+        self.config['gbrain']['work'] = True
+        self.assertEqual(gbrain.learnings(self.db, self.config), ['Robin Lee likes trail maps', 'Casey Buyer wants quotes by email',
+                                                                  'A work deal note from the owner', 'The garden party is next spring',
+                                                                  'Invoices go to the shared inbox'])  # never another AI's, an ended one or a teammate's record
+        gbrain.push(self.db, self.config, self.brain)
+        self.assertIn('- Casey Buyer wants quotes by email', self.brain.pages[gbrain.LEARNINGS_SLUG]['content'])
+
     def test_turning_work_off_takes_the_machines_part_off_those_pages(self):
         self.config['gbrain']['work'] = True
         gbrain.push(self.db, self.config, self.brain)
