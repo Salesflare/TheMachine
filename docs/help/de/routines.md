@@ -75,7 +75,7 @@ In **Bearbeiten** lässt **Ausprobieren** die neuen Worte einmal laufen und zeig
 
 **Pausieren** hält die Läufe an bis **Fortsetzen**; pausierte Routinen warten unten unter **Pausiert**, und was während der Pause verpasst wurde, läuft danach nicht. **Stopp** beendet eine Routine endgültig.
 
-Nutzt du **Änderungen anfragen** bei einer Aufgabe einer Routine und gilt deine Notiz für jeden Lauf, etwa „nie Emojis“, bietet die Aufgabe **Auch die Routine ändern** an. Sie zeigt, was sich an den Worten der Routine ändert, und die Routine ändert sich erst, wenn du auf **Ändern** tippst. **So lassen** lässt sie, wie sie ist. Eine Korrektur nur an diesem Entwurf bietet nichts an.
+Nutzt du **Änderungen anfragen** bei einer Aufgabe einer Routine oder schreibst in ihrem Chat, und gilt deine Notiz für jeden Lauf, etwa „nie Emojis“, bietet die Aufgabe **Auch die Routine ändern** an, auf der Aufgabe und in ihrem Chat unter der Antwort. Sie zeigt, was sich an den Worten der Routine ändert, und die Routine ändert sich erst, wenn du auf **Ändern** tippst. **So lassen** lässt sie, wie sie ist. Eine Korrektur nur an diesem Entwurf bietet nichts an.
 
 ## Erweitert: Skriptschritte
 

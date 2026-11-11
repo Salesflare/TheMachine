@@ -75,7 +75,7 @@ In **Edit**, **Try it** runs the new words once and shows the result there. The 
 
 **Pause** stops the runs until **Resume**; paused routines wait under **Paused** at the bottom, and nothing missed while paused runs afterwards. **Stop** ends a routine for good.
 
-When you use **Ask for changes** on a routine’s to-do and your note is meant for every run, like "never use emoji", the to-do offers **Also change the routine**. It shows what changes in the routine’s words, and the routine only changes when you tap **Change it**. **Keep it as is** leaves it. A fix to just that draft offers nothing.
+When you use **Ask for changes** on a routine’s to-do, or write in its chat, and your note is meant for every run, like "never use emoji", the to-do offers **Also change the routine**, on the to-do and in its chat under the reply. It shows what changes in the routine’s words, and the routine only changes when you tap **Change it**. **Keep it as is** leaves it. A fix to just that draft offers nothing.
 
 ## Advanced: script steps
 

@@ -12,3 +12,9 @@
 .cl-fine{margin:8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .cl-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin:8px 0 0}
 .cl-acts .ghost{padding-inline:10px;margin-inline:-11px}
+/* Also change the routine (todos-routine-change.js): on the card, and in a to-do's chat under the reply that made it */
+.card .rt-offer{display:block;margin:12px 0 0;padding:6px 14px;border:1px solid var(--border-strong);border-radius:999px;font-size:.88rem}.rt-part{display:flex;gap:10px;margin:6px 0;font-size:.88rem;overflow-wrap:anywhere}.rt-part span{flex:none;min-width:2.6em;color:var(--muted)}.rt-part del{color:var(--muted)}.rt-part ins{text-decoration:none}
+.chat-routine-change .rt-offer{width:auto;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--text);font:400 .84rem/1.3 var(--sans)}
+.chat-routine-change:has(.change-editor){width:min(100%,560px)}
+.chat-routine-change .change-editor{margin:0;padding:12px 14px;border:1px solid var(--c-line);border-radius:12px;text-align:start;color:var(--text);font-size:.92rem}
+.chat-routine-change .actions{display:flex;gap:8px;margin:10px 0 0}.chat-routine-change .actions button{flex:none;min-height:34px;margin:0;padding:6px 14px;border-radius:999px;font-size:.87rem}

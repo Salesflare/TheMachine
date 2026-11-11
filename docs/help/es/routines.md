@@ -65,7 +65,7 @@ Las rutinas corren de una en una y esperan cuando el uso de tu plan de IA está 
 
 Está en el menú ⋯ de la rutina. **Cambiar cuándo** toma un nuevo ritmo en tus propias palabras, como "cada día laborable a las 8". **Pausar** detiene las ejecuciones hasta **Reanudar**; lo perdido durante la pausa no corre después. **Detener** termina una rutina para siempre.
 
-Cuando usas **Pedir cambios** en una tarea de una rutina y tu nota vale para cada ejecución, como "nunca uses emojis", la tarea ofrece **Cambiar también la rutina**. Muestra qué cambia en las palabras de la rutina, y la rutina solo cambia cuando tocas **Cambiarla**. **Dejarla así** la deja como está. Una corrección solo de ese borrador no ofrece nada.
+Cuando usas **Pedir cambios** en una tarea de una rutina, o escribes en su chat, y tu nota vale para cada ejecución, como "nunca uses emojis", la tarea ofrece **Cambiar también la rutina**, en la tarea y en su chat bajo la respuesta. Muestra qué cambia en las palabras de la rutina, y la rutina solo cambia cuando tocas **Cambiarla**. **Dejarla así** la deja como está. Una corrección solo de ese borrador no ofrece nada.
 
 ## Avanzado: pasos de script
 
