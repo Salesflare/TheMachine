@@ -31,6 +31,11 @@ let templates,cards;
 // the mails as the viewer gets them (api/originals); a row without event has no kept mail and no link
 const ORIGINALS={11:{kind:'email',event_id:11,from:'Brightpath Weekly <news@brightpath.example>',to:'owner@example.com',occurred_at:now,title:'This week in gardening',body:'Tomatoes, at last.'},
  21:{kind:'email',event_id:21,from:'Prize Desk <win@prize.example>',to:'owner@example.com',occurred_at:now,title:'You have been selected',body:'Claim your prize today.'}};
+// their full HTML, each with remote content: an image, a background, a font (a tracking pixel would tell the sender the
+// address is live, so a mail opened from Spam cleanup loads none of it; a newsletter loads as anywhere else)
+const remote=n=>`<style>@font-face{font-family:t;src:url(https://pixel.example/${n}.woff)}p{font-family:t}</style>`+
+ `<div style="background:url(https://pixel.example/${n}-bg.png)"><img src="https://pixel.example/${n}.gif" width="1" height="1">`;
+const HTML={11:remote('news')+'<p>Tomatoes, at last.</p></div>',21:remote('spam')+'<p>Claim your prize today.</p></div>'};
 const reset=()=>{templates=TEMPLATES();cards=[news(),spam()];posts.length=0};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
@@ -40,7 +45,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname==='/api/routines'){res.end(routines());return}
  if(url.pathname==='/api/originals'){const o=ORIGINALS[url.searchParams.get('event')];res.end(JSON.stringify({originals:o?[o]:[]}));return}
- if(url.pathname==='/api/email'){res.end(JSON.stringify({html:''}));return}
+ if(url.pathname==='/api/email'){res.end(JSON.stringify({html:HTML[url.searchParams.get('event')]||''}));return}
  if(url.pathname.startsWith('/brand/')){try{const f=basename(url.pathname)==='avatar.png'?'app-icon-192.png':basename(url.pathname);res.setHeader('Content-Type',f.endsWith('.png')?'image/png':f.endsWith('.webp')?'image/webp':'application/octet-stream');res.end(await readFile(fileURLToPath(new URL('../brand/'+f,import.meta.url))))}catch{res.statusCode=404;res.end()}return}  // the app's own images, as machine/config.py serves them
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_template'){templates=templates.map(x=>x.key===b.args.key?{...x,added:true}:x);res.end(routines());return}
@@ -55,7 +60,7 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const width of [390,1440])for(const scheme of SHOTS?['light','dark']:['light']){reset();const mobile=width<500;
   const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme,...(mobile?{isMobile:true,hasTouch:true}:{})});
-  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const outside=[];await context.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1')return route.continue();outside.push(u.href);return route.abort()});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const shot=async name=>{if(SHOTS)await page.screenshot({path:join(SHOTS,`${name}-${width}-${scheme}.png`)})};
   await page.goto('http://127.0.0.1:'+server.address().port+'/#routines');
@@ -75,7 +80,9 @@ try{
   assert.equal(await card.getByRole('button',{name:'Do it',exact:true}).count(),0,'a cleanup to-do has no Do it');
   assert.equal(await card.locator('[data-cl-open]').count(),1,'only a row with a kept mail opens');
   await card.locator('[data-cl-open="11"]').click();
-  await page.locator('#email-dialog').getByText('Tomatoes, at last.').waitFor();
+  await page.frameLocator('#email-dialog iframe.email-frame').getByText('Tomatoes, at last.').waitFor();
+  await page.waitForTimeout(500);
+  assert.ok(outside.some(u=>u.startsWith('https://pixel.example/news')),'a newsletter loads its images as anywhere else (the check below can see a request)');
   await page.keyboard.press('Escape');await page.locator('#email-dialog').waitFor({state:'hidden'});
   const go=card.locator('[data-cl-go]');assert.equal(await go.isDisabled(),true);
   await card.locator('[data-cl-n="1"][data-cl-to="go"]').click();
@@ -101,7 +108,9 @@ try{
   await sp.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
   const sent=posts.length;
   await sp.locator('.cl-row').first().locator('[data-cl-open]').click();
-  const dialog=page.locator('#email-dialog');await dialog.getByText('Claim your prize today.').waitFor();
+  const dialog=page.locator('#email-dialog');await page.frameLocator('#email-dialog iframe.email-frame').getByText('Claim your prize today.').waitFor();
+  await page.waitForTimeout(500);
+  assert.deepEqual(outside.filter(u=>u.includes('pixel.example/spam')),[],'a mail opened from Spam cleanup loads nothing from outside');
   assert.equal(await page.locator('#email-title').textContent(),'You have been selected');
   await shot('spam-open');
   await page.keyboard.press('Escape');await dialog.waitFor({state:'hidden'});

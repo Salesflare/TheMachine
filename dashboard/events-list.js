@@ -8,15 +8,15 @@ $('#results').onclick=e=>{const m=e.target.closest('[data-ev-soon]');if(m){for(c
 function openEventFrom(e){const a=e.target.closest('article[data-event]');if(!a||e.target.closest('a,button,input'))return false;const title=a.querySelector('h3,h4')?.textContent;
  if(a.dataset.events)openConversation(a);else if('meeting' in a.dataset)openMeeting(a.dataset.meeting||a.dataset.event,title);else openEvent(a.dataset.event,title);return true}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches?.('article[data-event]'))openEventFrom(e)});
-const openEvent=(ev,title)=>openOriginal(ev,title,false);
+const openEvent=(ev,title,local)=>openOriginal(ev,title,false,local);  // local: nothing from outside loads (events-email-frame.js)
 // One collected signal as it came in. A meeting opens as it does in the Calendar instead (openMeeting), unless its raw
 // invite is asked for (raw: Original invite in the meeting's details).
-async function openOriginal(ev,title,raw){const dialog=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
+async function openOriginal(ev,title,raw,local){const dialog=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
 let o;try{o=(await request('api/originals?event='+encodeURIComponent(ev))).originals[0]}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!o){setHTML($('#email-content'),html`<p class="muted">The original is no longer available.</p>`);return}
 if(o.kind==='calendar'&&!raw){openMeeting(ev,title);return}
 if(isChat(o)){setHTML($('#email-content'),chatThreadHTML([o]));return}  // a chat message as in its thread, its text once
-o.raw=!!raw;setHTML($('#email-content'),html`<div class="email" data-msg="0">${messageHTML(o,'',0)}</div>`);fillMessage($('#email-content [data-msg="0"]'),o,'')}
+o.raw=!!raw;o.local=!!local;setHTML($('#email-content'),html`<div class="email" data-msg="0">${messageHTML(o,'',0)}</div>`);fillMessage($('#email-content [data-msg="0"]'),o,'')}
 // A meeting, wherever it is opened (a timeline, Events, a to-do's source, a search): the Calendar's own details, with its
 // Notes, Transcript and Generate notes, and its invite one tap away. When the meeting can't be read that way, its invite.
 async function openMeeting(ev,title){let m=null;try{m=(await request('api/meeting?event='+encodeURIComponent(ev))).meeting}catch(e){errCaught(e)}

@@ -12,12 +12,12 @@ function cleanupRow(s,news,i){const p=(cleanupPicks.get(s.id)||{})[i.n]||'',pick
   :i.state==='failed'?html`<span class="cl-end bad">${t('Didn’t work')}</span>`:i.state==='unknown'?html`<span class="cl-end">${t('Sent, not confirmed')}</span>`:i.state==='working'?html`<span class="cl-end">${t('Working…')}</span>`:'';
  const what=html`<b translate="no">${i.from}</b>${i.count>1?html` <small>×${i.count}</small>`:''}<span class="cl-sub" translate="no">${i.why||i.title}</span>`;
  // sender and subject open its kept mail in the viewer, read only
- return html`<li class="cl-row">${i.event?html`<button type="button" class="cl-what cl-open" data-cl-open="${i.event}" data-cl-title="${i.title||i.from}">${what}</button>`:html`<div class="cl-what">${what}</div>`}${end}</li>`}
+ return html`<li class="cl-row">${i.event?html`<button type="button" class="cl-what cl-open" data-cl-open="${i.event}"${news?'':html` data-cl-local`} data-cl-title="${i.title||i.from}">${what}</button>`:html`<div class="cl-what">${what}</div>`}${end}</li>`}
 function cleanupBox(s){const c=s.cleanup,news=c.kind==='newsletters',picks=cleanupPicks.get(s.id)||{},go=Object.values(picks).filter(v=>v==='go').length,open=!closed(s)&&c.items.some(i=>i.state==='open');
  const lead=String(s.body||'').split('\n\n')[0];
  return html`<p class="cl-lead">${lead}</p><ul class="cl-list">${c.items.map(i=>cleanupRow(s,news,i))}</ul>${open?html`<p class="fine cl-fine">${t(news?'Unsubscribe uses the list’s own link or unsubscribe email.':'Spam moves it to your spam folder.')}</p>
   <p class="cl-acts"><button type="button" class="primary" data-cl-go="${s.id}"${Object.keys(picks).length?'':html` disabled`}>${go?t(news?'Unsubscribe from {}':'Mark {} as spam',go):t('Save picks')}</button>${c.items.filter(i=>i.state==='open').length>1&&c.items.some(i=>i.state==='open'&&!picks[i.n])?html`<button type="button" class="link" data-cl-all="${s.id}">${t(news?'Unsubscribe from all':'Mark all as spam')}</button>`:''}</p>`:''}`}
-document.addEventListener('click',async e=>{const o=e.target.closest('[data-cl-open]');if(o){e.preventDefault();openEvent(o.dataset.clOpen,o.dataset.clTitle);return}
+document.addEventListener('click',async e=>{const o=e.target.closest('[data-cl-open]');if(o){e.preventDefault();openEvent(o.dataset.clOpen,o.dataset.clTitle,'clLocal' in o.dataset);return}  // spam: no remote images
  const b=e.target.closest('[data-cl],[data-cl-go],[data-cl-all]');if(!b)return;e.preventDefault();
  const id=b.dataset.cl||b.dataset.clGo||b.dataset.clAll,s=(state.suggestions||[]).find(x=>x.id===id);if(!s?.cleanup)return;const picks=cleanupPicks.get(id)||{};
  if(!b.dataset.clGo){if(b.dataset.clAll)s.cleanup.items.filter(i=>i.state==='open').forEach(i=>picks[i.n]='go');else if(picks[b.dataset.clN]===b.dataset.clTo)delete picks[b.dataset.clN];else picks[b.dataset.clN]=b.dataset.clTo;

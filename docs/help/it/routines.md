@@ -25,7 +25,7 @@ Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite
 
 Sconosciuto vuol dire che non gli hai mai scritto, e un “Re:” conta come conversazione solo in un thread in cui hai scritto. Se passa di nuovo posta da un mittente che hai segnato come spam, nell’attività o nella tua casella, è nella prossima attività come **Già segnato come spam**. Quello che hai spostato tu nello spam la aiuta anche a riconoscere posta simile.
 
-Nulla cambia finché non confermi sull’attività. Tocca un mittente per leggere prima l’email: resta da leggere e non cambia nulla. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
+Nulla cambia finché non confermi sull’attività. Tocca un mittente per leggere prima l’email: resta da leggere e non cambia nulla. Da Pulizia spam le sue immagini dal web non si caricano, così il mittente non vede che è stata aperta. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
 
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 
