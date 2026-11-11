@@ -12,6 +12,6 @@ Quando sua contagem de **Feito** passa de 10, 50, 100, 250, 500, 1.000, 2.500, 5
 
 ## Compartilhe
 
-Toque em **Compartilhar** para uma imagem com o número e o mascote, criada no seu dispositivo. No celular ou no app, abre o seu próprio menu de compartilhar. No computador, escolha **Quadrada** ou **Para links**, depois **Baixar imagem** ou **Copiar imagem**, com o **Texto para publicar**.
+Toque em **Compartilhar** para uma imagem com o número e o mascote, criada no seu dispositivo. No celular ou no app, abre o seu próprio menu de compartilhar. No computador, escolha **Quadrada** ou **Para links**, depois **Baixar imagem** ou **Copiar imagem**, com o **Texto para publicar**. Onde uma imagem não pode ser copiada (como no app), **Compartilhar imagem** abre o menu de compartilhar.
 
 A imagem só tem o número. Nenhum nome, nenhuma tarefa e nada mais da sua Machine. Nada é publicado a menos que você mesmo publique.

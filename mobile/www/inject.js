@@ -11,7 +11,8 @@
 //    the draft shows in full (#card=<id>); listen: the same for taps while this page is open (iOS).
 //  - files: a download (a link with `download`, an export) goes to the app (MachineFiles on Android, machineFiles on
 //    iOS, both only there on the Machine's own address), which saves it on the phone. A WebView has no downloads.
-//    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app.
+//    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app. A file the page
+//    made goes to the phone's share sheet (window.__machineShareFile; a WebView has no Web Share).
 //  The phone's id from app_push_register is kept with the token, so Settings can tell this phone's notifications.
 //  - phone: window.machinePhone, the phone's own questions (the microphone, notifications) and its settings page.
 // payload: {base, device: {platform, sandbox, label, fetch?}, push?: {platform, token, sandbox, label, fetch?},
@@ -126,25 +127,31 @@
     const origin = new URL(base).origin, LIMIT = 25 * 1024 * 1024;
     const ours = href => { try { const u = new URL(href, location.href); return u.origin === origin && /^(?:https|blob):$/.test(u.protocol); } catch (e) { return false; } };
     const said = () => { try { if (typeof window.toast === 'function') window.toast(typeof window.t === 'function' ? window.t('That file couldn’t be read.') : 'That file couldn’t be read.', true); } catch (e) { /* no toast */ } };
-    // open: a link to the file (the phone shows it in an app); otherwise a download (saved on the phone)
+    // A file to the app. open: the phone shows it in an app; share: the phone's share sheet; else saved on the phone
+    const post = async (blob, name, how) => {
+      if (blob.size > LIMIT) return false;
+      const data = await new Promise((resolve, reject) => {
+        const f = new FileReader();
+        f.onload = () => resolve(String(f.result).replace(/^data:[^,]*,/, ''));
+        f.onerror = reject;
+        f.readAsDataURL(blob);
+      });
+      native.postMessage(JSON.stringify({name: String(name || 'file').slice(0, 200), type: blob.type || '', data, open: how === 'open', share: how === 'share'}));
+      return true;
+    };
     const give = async (href, name, open) => {
       try {
         const r = await fetch(href, {credentials: 'same-origin'});
         if (!r.ok) { said(); return; }
         const sent = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(r.headers.get('Content-Disposition') || '');
         if (sent && (open || !name)) { try { name = decodeURIComponent(sent[1]); } catch (e) { name = sent[1]; } }
-        const blob = await r.blob();
-        if (blob.size > LIMIT) { said(); return; }
-        const data = await new Promise((resolve, reject) => {
-          const f = new FileReader();
-          f.onload = () => resolve(String(f.result).replace(/^data:[^,]*,/, ''));
-          f.onerror = reject;
-          f.readAsDataURL(blob);
-        });
-        native.postMessage(JSON.stringify({name: String(name || 'file').slice(0, 200), type: blob.type || '', data, open: !!open}));
+        if (!await post(await r.blob(), name, open ? 'open' : 'save')) said();
       } catch (e) { said(); }
     };
     window.__machineFiles = (href, name) => { if (ours(href)) give(href, name); };
+    // A file the page made (a milestone's image) to the phone's share sheet, where a WebView has no Web Share.
+    // Resolves true once the app has it; the page says so itself when it doesn't.
+    window.__machineShareFile = async (blob, name) => { try { return await post(blob, name, 'share'); } catch (e) { return false; } };
     const take = a => {
       if (!a || !a.hasAttribute('download') || !ours(a.href)) return false;
       give(a.href, a.getAttribute('download') || decodeURIComponent(new URL(a.href).pathname.split('/').pop() || '') || 'file');

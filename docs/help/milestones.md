@@ -12,6 +12,6 @@ When your **Done** count passes 10, 50, 100, 250, 500, 1,000, 2,500, 5,000 or 10
 
 ## Share it
 
-Tap **Share** for an image with the number and the mascot, made on your device. On a phone or in the app, your own share sheet opens. On a computer, pick **Square** or **For links**, then **Download image** or **Copy image**, with the **Text to post**.
+Tap **Share** for an image with the number and the mascot, made on your device. On a phone or in the app, your own share sheet opens. On a computer, pick **Square** or **For links**, then **Download image** or **Copy image**, with the **Text to post**. Where an image can't be copied (like in the app), **Share image** opens the share sheet instead.
 
 The image only has the number. No names, no to-dos and nothing else from your Machine. Nothing is posted unless you post it yourself.

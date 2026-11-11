@@ -278,6 +278,19 @@ test('inject: a download on the Machine goes to the app; a linked file opens the
   assert.deepEqual(p.posted.map(x => [x.name, x.open, x.data]), [['list.csv', false, 'aGk='], ['notes.txt', true, 'aGk=']]);
 });
 
+test('inject: an image the page made goes to the phone\'s share sheet, a download to the phone', async () => {
+  const base = 'https://sam.app.themachine.computer/';
+  const p = page(base, {files: true});
+  await p.run({base});
+  assert.equal(await p.win.__machineShareFile({size: 2, type: 'image/png', b64: 'aGk='}, 'the-machine-500-todos.png'), true);
+  // the dashboard's Download image: a blob: link of the Machine's own page
+  assert.equal(await p.tap({href: 'blob:https://sam.app.themachine.computer/1b2c', download: 'the-machine-500-todos.png'}), true);
+  assert.equal(await p.tap({href: 'blob:https://example.com/1b2c', download: 'x.png'}), false);
+  await new Promise(r => setTimeout(r, 5));
+  assert.deepEqual(p.posted.map(x => [x.name, x.share, x.open]), [['the-machine-500-todos.png', true, false], ['the-machine-500-todos.png', false, false]]);
+  assert.equal(await p.win.__machineShareFile({size: 30 * 1024 * 1024, type: 'image/png', b64: ''}, 'big.png'), false);  // too big: the page says so
+});
+
 test('inject: a file that can\'t be fetched says so', async () => {
   const base = 'https://sam.app.themachine.computer/';
   const p = page(base, {files: true});

@@ -12,6 +12,6 @@ Quando il conteggio di **Fatto** supera 10, 50, 100, 250, 500, 1.000, 2.500, 5.0
 
 ## Condividilo
 
-Tocca **Condividi** per un’immagine con il numero e la mascotte, creata sul tuo dispositivo. Sul telefono o nell’app si apre il tuo menu di condivisione. Sul computer scegli **Quadrata** o **Per i link**, poi **Scarica immagine** o **Copia immagine**, con il **Testo da pubblicare**.
+Tocca **Condividi** per un’immagine con il numero e la mascotte, creata sul tuo dispositivo. Sul telefono o nell’app si apre il tuo menu di condivisione. Sul computer scegli **Quadrata** o **Per i link**, poi **Scarica immagine** o **Copia immagine**, con il **Testo da pubblicare**. Dove un’immagine non si può copiare (come nell’app), **Condividi immagine** apre invece il menu di condivisione.
 
 L’immagine contiene solo il numero. Nessun nome, nessuna attività e nient’altro dalla tua Machine. Non viene pubblicato nulla se non lo pubblichi tu.

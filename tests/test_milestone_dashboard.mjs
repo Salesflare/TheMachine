@@ -8,8 +8,9 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 
 // A milestone on done to-dos (todos-milestone.js, state.done_milestone): one card on top of To-dos with the count,
 // Share and ×. × marks it seen on the Machine (done_milestone_seen) and it is gone, also on the next opening. Share hands
-// the image to the share sheet where there is one, else a dialog with the image in two sizes, Download image and the
-// text to post. The image is drawn from the count alone: nothing from the owner's to-dos or name reaches it.
+// the image to the share sheet where there is one (Web Share, or the phone app's own), else a dialog with the image in
+// two sizes, Download image (a blob: link, which a browser saves and the phone app takes), Copy image or Share image,
+// and the text to post. Each button says what it did inside the dialog, and its × stays in reach on a phone. The image is drawn from the count alone: nothing from the owner's to-dos or name reaches it.
 const dashboard=await dashboardPage();
 const ROOT=new URL('..',import.meta.url);
 const BRAND={'party.webp':'brand/party.webp','party-512.webp':'brand/party-512.webp','serif.woff2':'brand/fonts/source-serif-4-latin.woff2','sans.woff2':'brand/fonts/inter-latin.woff2'};
@@ -31,13 +32,21 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 const base=()=>'http://127.0.0.1:'+server.address().port;
 // share: what the page's navigator offers ('none': no Web Share, as on a computer's browser; 'files': a phone's sheet)
-const open=async(width,{share='none',motion='no-preference',theme}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
+const open=async(width,{share='none',motion='no-preference',theme,app,clip=true}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await context.addInitScript(share=>{
   if(share==='none'){delete Navigator.prototype.share;delete Navigator.prototype.canShare}
   else{Navigator.prototype.canShare=d=>!!d?.files?.length;Navigator.prototype.share=async d=>{window.shared={files:d.files.map(f=>({name:f.name,type:f.type,size:f.size})),text:d.text,url:d.url}}}
   // every word the image gets: the canvas's own text calls
   window.drawn=[];const fill=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(text,...a){window.drawn.push(String(text));return fill.call(this,text,...a)}},share);
+ // app: the phone app's hooks (mobile/www/inject.js): 'old' only takes downloads, 'new' also has the share sheet
+ if(app)await context.addInitScript(app=>{window.saved=[];window.appShared=[];window.__machineFiles=(href,name)=>window.saved.push([href,name]);
+  document.addEventListener('click',e=>{const a=e.target.closest?.('a[download]');if(a&&a.href.startsWith('blob:'+location.origin+'/')){e.preventDefault();window.saved.push([a.href.slice(0,5),a.getAttribute('download')])}},true);
+  if(app==='new')window.__machineShareFile=async(blob,name)=>{window.appShared.push({name,type:blob.type,size:blob.size});return true}},app);
+ // clip: what the clipboard does with an image (true: takes it; false: refuses, as a browser without the permission)
+ await context.addInitScript(clip=>{window.clipped=[];if(!navigator.clipboard)return;
+  navigator.clipboard.write=async items=>{if(!clip)throw new DOMException('Write permission denied.','NotAllowedError');for(const i of items)window.clipped.push(i.types.join())};
+  navigator.clipboard.writeText=async text=>{window.clipped.push(text)}},clip);
  if(theme)await context.addInitScript(theme=>{try{localStorage.setItem('theme',theme)}catch{}},theme);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base()+'/');await page.locator('#task-'+ID).first().waitFor({state:'attached'});return {context,page}};
@@ -79,13 +88,20 @@ try{
  // No share sheet: the dialog, with the image in both sizes, Download image and the text to post
  {const {context,page}=await open(1440);await card(page).waitFor();await watchInputs(page);
   await page.locator('#milestone [data-ms-share]').click();const d=page.locator('#ms-share[open]');await d.waitFor();
-  const size=()=>page.locator('#ms-share .ms-preview').evaluate(async i=>{await i.decode();return [i.naturalWidth,i.naturalHeight,i.src.slice(0,22)]});
-  assert.deepEqual(await size(),[1080,1080,'data:image/png;base64,']);
+  const size=()=>page.locator('#ms-share .ms-preview').evaluate(async i=>{await i.decode();return [i.naturalWidth,i.naturalHeight,i.src.slice(0,5)]});
+  assert.deepEqual(await size(),[1080,1080,'blob:']);
   await page.locator('#ms-share [data-ms-size="wide"]').click();await page.waitForFunction(()=>document.querySelector('#ms-share .ms-preview').naturalWidth===1200);
-  assert.deepEqual(await size(),[1200,630,'data:image/png;base64,']);
+  assert.deepEqual(await size(),[1200,630,'blob:']);
   assert.equal(await page.locator('#ms-share .ms-post-text').textContent(),'500 to-dos done with The Machine. https://themachine.computer');
   const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#ms-share [data-ms-download]').click()]);
   assert.equal(download.suggestedFilename(),'the-machine-500-todos-wide.png');
+  assert.ok(download.url().startsWith('blob:'),download.url());  // a data: link does nothing in a phone's WebView
+  // Copy image and Copy text: on the clipboard, and said inside the dialog (a toast would sit under it)
+  const said=()=>page.locator('#ms-share .ms-said').evaluate(p=>p.hidden?'':p.textContent);
+  await page.locator('#ms-share [data-ms-copy-image]').click();await page.waitForFunction(()=>window.clipped.length===1);
+  assert.deepEqual(await page.evaluate(()=>window.clipped),['image/png']);assert.equal(await said(),'Image copied.');
+  await page.locator('#ms-share [data-ms-copy-text]').click();await page.waitForFunction(()=>window.clipped.length===2);
+  assert.equal(await page.evaluate(()=>window.clipped[1]),'500 to-dos done with The Machine. https://themachine.computer');assert.equal(await said(),'Copied.');
   // The image's inputs are the count, the size and the theme; its words are the count and fixed text, never the owner's
   const inputs=await page.evaluate(()=>window.inputs);
   assert.ok(inputs.length>=2);for(const i of inputs){assert.equal(i.length,3);assert.equal(i[0],500);assert.equal(typeof i[1],'boolean');assert.equal(typeof i[2],'boolean')}
@@ -94,6 +110,35 @@ try{
   const all=JSON.stringify(words);for(const s of ['Sam','Keller','Acme','@',SECRET])assert.ok(!all.includes(s),s);
   await page.keyboard.press('Escape');await d.waitFor({state:'detached'}).catch(()=>{});assert.equal(await page.locator('#ms-share[open]').count(),0);
   assert.equal(await card(page).count(),1);await context.close()}
+ // A phone: the dialog is the whole screen, its × on the title's row (below the phone's status bar, env(safe-area-inset-top)) and closing it; a refused copy says so in the dialog
+ {const {context,page}=await open(390,{clip:false});await card(page).waitFor();
+  await page.locator('#milestone [data-ms-share]').click();const d=page.locator('#ms-share[open]');await d.waitFor();
+  const x=await page.locator('#ms-share [data-ms-close-share]').boundingBox(),title=await page.locator('#ms-share-title').boundingBox();
+  assert.ok(x.y>=8&&x.x+x.width<=390&&x.width>=24&&Math.abs((x.y+x.height/2)-(title.y+title.height/2))<12,JSON.stringify([x,title]));
+  await page.locator('#ms-share [data-ms-copy-image]').click();
+  await page.waitForFunction(()=>!document.querySelector('#ms-share .ms-said').hidden);
+  assert.equal(await page.locator('#ms-share .ms-said').textContent(),'That didn’t work here. Download the image instead.');
+  assert.ok(await page.locator('#ms-share .ms-said').isVisible());
+  await page.locator('#ms-share [data-ms-close-share]').click();await page.waitForFunction(()=>!document.querySelector('#ms-share[open]'));
+  assert.equal(await card(page).count(),1);await context.close()}
+ // The phone app (its WebView has no Web Share and puts no image on the clipboard): Share goes to the app's own sheet;
+ // an app from before that gets the dialog with Download image, which the app takes as a blob: link, and no Copy image
+ {const {context,page}=await open(390,{app:'new'});await card(page).waitFor();
+  await page.locator('#milestone [data-ms-share]').click();await page.waitForFunction(()=>window.appShared.length===1);
+  const got=(await page.evaluate(()=>window.appShared))[0];assert.equal(got.name,'the-machine-500-todos.png');assert.equal(got.type,'image/png');assert.ok(got.size>20000);
+  assert.equal(await page.locator('#ms-share[open]').count(),0);
+  await page.evaluate(()=>msDialog(500));await page.locator('#ms-share[open]').waitFor();
+  assert.deepEqual(await page.locator('#ms-share .ms-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Download image','Share image']);
+  await page.locator('#ms-share [data-ms-share-image]').click();await page.waitForFunction(()=>window.appShared.length===2);
+  await page.locator('#ms-share [data-ms-download]').click();await page.waitForFunction(()=>window.saved.length===1);
+  assert.deepEqual(await page.evaluate(()=>window.saved),[['blob:','the-machine-500-todos.png']]);
+  await context.close()}
+ {const {context,page}=await open(390,{app:'old'});await card(page).waitFor();
+  await page.locator('#milestone [data-ms-share]').click();await page.locator('#ms-share[open]').waitFor();
+  assert.deepEqual(await page.locator('#ms-share .ms-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Download image']);
+  await page.locator('#ms-share [data-ms-download]').click();await page.waitForFunction(()=>window.saved.length===1);
+  assert.deepEqual(await page.evaluate(()=>window.saved),[['blob:','the-machine-500-todos.png']]);
+  await context.close()}
  // Reduced motion: no pop, no confetti, the number as it is
  {const {context,page}=await open(1440,{motion:'reduce'});await card(page).waitFor();
   assert.equal(await page.locator('#milestone .ms-n').textContent(),'500');

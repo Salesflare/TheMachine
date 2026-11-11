@@ -7,6 +7,7 @@ import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.ContentValues;
 import android.os.Build;
 import android.provider.MediaStore;
@@ -375,7 +376,15 @@ public class MachineShellPlugin extends Plugin {
                     // nothing opens this type: saved below
                 }
             }
-            if (Build.VERSION.SDK_INT >= 29) {
+            // A file the page made for sharing (a milestone's image), or before Android 10, where there is no
+            // Downloads to write to without a storage permission: the phone's share sheet (Copy, Save, any app)
+            if (o.optBoolean("share", false) || Build.VERSION.SDK_INT < 29) {
+                Uri u = FileProvider.getUriForFile(c, c.getPackageName() + ".fileprovider", cacheFile(c, name, bytes));
+                Intent send = new Intent(Intent.ACTION_SEND).setType(type).putExtra(Intent.EXTRA_STREAM, u).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                send.setClipData(ClipData.newRawUri(name, u)); // the sheet's preview and Copy read it from here
+                Intent chooser = Intent.createChooser(send, name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                c.startActivity(chooser);
+            } else if (Build.VERSION.SDK_INT >= 29) {
                 ContentValues v = new ContentValues();
                 v.put(MediaStore.Downloads.DISPLAY_NAME, name);
                 v.put(MediaStore.Downloads.MIME_TYPE, type);
@@ -393,11 +402,6 @@ public class MachineShellPlugin extends Plugin {
                 }
                 String said = c.getString(R.string.saved_download, name);
                 bridge.executeOnMainThread(() -> Toast.makeText(c, said, Toast.LENGTH_SHORT).show());
-            } else { // before Android 10 there is no Downloads to write to without a storage permission: share it
-                Uri u = FileProvider.getUriForFile(c, c.getPackageName() + ".fileprovider", cacheFile(c, name, bytes));
-                Intent send = new Intent(Intent.ACTION_SEND).setType(type).putExtra(Intent.EXTRA_STREAM, u).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                Intent chooser = Intent.createChooser(send, name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                c.startActivity(chooser);
             }
         } catch (JSONException | IOException | RuntimeException e) { // on its own thread: never takes the app down
             bridge.executeOnMainThread(() -> Toast.makeText(getContext(), R.string.not_saved, Toast.LENGTH_SHORT).show());
