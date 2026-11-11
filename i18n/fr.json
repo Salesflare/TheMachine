@@ -316,6 +316,10 @@
   "one": "{} contact personnel ajouté.",
   "other": "{} contacts personnels ajoutés."
  },
+ "Added {} profile pictures.": {
+  "one": "{} photo de profil ajoutée.",
+  "other": "{} photos de profil ajoutées."
+ },
  "Added {} projects.": "{} projets ajoutés.",
  "Added {}.": "{} ajouté.",
  "Added {}’s task to your to-dos.": "Tâche de {} ajoutée à vos tâches.",
@@ -4196,6 +4200,10 @@
   "one": "Enregistrer {} anniversaire",
   "other": "Enregistrer {} anniversaires"
  },
+ "Save {} pictures": {
+  "one": "Enregistrer {} photo",
+  "other": "Enregistrer {} photos"
+ },
  "Saved": "Enregistré",
  "Saved a fact": "Fait enregistré",
  "Saved for later": "Gardé pour plus tard",
@@ -7251,6 +7259,10 @@
  "{} of them already have a birthday.": {
   "one": "{} d’entre eux a déjà un anniversaire.",
   "other": "{} d’entre eux ont déjà un anniversaire."
+ },
+ "{} of them have no photo yet: Save adds their Facebook pictures.": {
+  "one": "{} d’entre eux n’a pas encore de photo : Enregistrer ajoute sa photo Facebook.",
+  "other": "{} d’entre eux n’ont pas encore de photo : Enregistrer ajoute leurs photos Facebook."
  },
  "{} of {}": "{} sur {}",
  "{} of {} calendars": "{} agendas sur {}",

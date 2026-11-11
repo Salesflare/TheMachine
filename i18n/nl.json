@@ -316,6 +316,10 @@
   "one": "{} persoonlijk contact toegevoegd.",
   "other": "{} persoonlijke contacten toegevoegd."
  },
+ "Added {} profile pictures.": {
+  "one": "{} profielfoto toegevoegd.",
+  "other": "{} profielfoto’s toegevoegd."
+ },
  "Added {} projects.": "{} projecten toegevoegd.",
  "Added {}.": "{} toegevoegd.",
  "Added {}’s task to your to-dos.": "To-do van {} toegevoegd aan je to-do's.",
@@ -4196,6 +4200,10 @@
   "one": "{} verjaardag bewaren",
   "other": "{} verjaardagen bewaren"
  },
+ "Save {} pictures": {
+  "one": "{} foto bewaren",
+  "other": "{} foto’s bewaren"
+ },
  "Saved": "Opgeslagen",
  "Saved a fact": "Feit bewaard",
  "Saved for later": "Bewaard voor later",
@@ -7251,6 +7259,10 @@
  "{} of them already have a birthday.": {
   "one": "{} van hen heeft al een verjaardag.",
   "other": "{} van hen hebben al een verjaardag."
+ },
+ "{} of them have no photo yet: Save adds their Facebook pictures.": {
+  "one": "{} van hen heeft nog geen foto: Bewaren voegt de Facebook-foto toe.",
+  "other": "{} van hen hebben nog geen foto: Bewaren voegt hun Facebook-foto’s toe."
  },
  "{} of {}": "{} van {}",
  "{} of {} calendars": "{} van {} agenda's",

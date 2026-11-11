@@ -7,11 +7,15 @@ X: the shared browser at browser_cdp_url, under the shared browser lease), the w
 tab of its own, scroll it to the end, read each friend's name and birthday as the page has them, close the tab. No
 sign-in is handled here: a browser that isn't signed in to Facebook is told to the owner, and the read stops.
 
-What is kept: only each matched person's birthday (month and day, the year when the page shows it), as the one
+What is kept: each matched person's birthday (month and day, the year when the page shows it), as the one
 birthday their page shows (person_birthday.offer, source facebook), which the Birthdays routine reads. One the owner set
-or removed on the person's page stays. Nothing else from Facebook is kept: no link, photo or ID. The names read are for
-matching and for the Add button (below), and live only on the to-do until the owner reads again. After Save the
-to-do keeps who was saved (their Graph id and name), to link to their pages.
+or removed on the person's page stays. And for a matched person who shows no photo yet, their profile picture, as the
+page already has it (its link in the same data, so no request to Facebook of its own): on Save, a small copy is saved on
+this Machine like a looked-up photo (enrichment.keep_photo), one at a time with a pause, never over a photo they have or
+one the owner set or took off. Facebook's picture links expire, so the link itself is never kept past Save. Nothing else
+from Facebook is kept: no link or ID. The names read are for matching and for the Add button (below), and live only on
+the to-do until the owner reads again. After Save the to-do keeps who was saved (their Graph id and name), to link to
+their pages. Nothing is ever written to Facebook.
 
 Matching never makes a new person: the same full name as exactly one person in the Graph (else the same first and last
 name, one with a middle name the other doesn't have). Two people with that name is ambiguous: skipped, and named in the
@@ -55,6 +59,8 @@ ADD_MAX = 5000  # friends one Add adds at most
 FILL_READS = 3  # reads an older to-do's fill takes at most, while they come back short
 SHORT = 0.9  # a fill's read that found less than this share of what the to-do's own read found came back short
 PERSONAL = {'side': 'personal'}  # their Type, as the owner sets it on a person's page (person_edits)
+PHOTO_LINK = re.compile(r'https://(?:[a-z0-9-]+\.)+fbcdn\.net/[^\s"\'<>\\]{1,2000}')  # a profile picture on Facebook's own image hosts
+PHOTO_PAUSE = 0.3  # seconds between two pictures on Save
 
 # Months as the page may write them, in the languages the app speaks (and their short forms)
 MONTHS = {}
@@ -115,6 +121,9 @@ READ_JS = r'''async function (limits) {
   const headingOf = (el, headings) => { let found = ''; for (const h of headings) { if (h.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) found = clean(h.innerText || h.textContent); else break; } return found.slice(0, 60); };
   const pictures = () => [...document.querySelectorAll('a, [role=link], [role=button], [aria-label], [title]')]
     .filter(el => el.querySelector('img, image, svg image') || /^(img|image)$/i.test(el.tagName));
+  const https = u => typeof u === 'string' && /^https:\/\//.test(u) && u.length <= 2000 ? u : '';
+  // A friend's profile picture, as the page already has it (no request of its own): its link in their data, or the picture's image
+  const pictureOf = el => { const img = /^(img|image)$/i.test(el.tagName) ? el : el.querySelector('img, image'); return img ? https(img.currentSrc || img.getAttribute('src') || img.getAttribute('href') || img.getAttribute('xlink:href')) : ''; };
   const labelOf = el => { const img = el.querySelector('img, image'); return clean(el.getAttribute('aria-label') || el.getAttribute('title') || el.getAttribute('data-tooltip-content') || (img && (img.getAttribute('alt') || img.getAttribute('aria-label')))); };
   const busy = () => !!document.querySelector('[role=progressbar], [aria-busy=true]');
   const fold = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -125,8 +134,10 @@ READ_JS = r'''async function (limits) {
     if (!o || typeof o !== 'object' || depth > 100) return;
     const b = o.birthdate;
     if (b && typeof b === 'object' && typeof o.name === 'string' && +b.month && +b.day) {
-      const key = String(o.id || o.name), had = people.get(key);
-      if (!had || (+b.year && !had.year)) people.set(key, {name: clean(o.name).slice(0, 160), month: +b.month, day: +b.day, year: +b.year || null});
+      const key = String(o.id || o.name), had = people.get(key), pic = o.profile_picture || o.profilePicture || o.picture || {};
+      const photo = https(typeof pic === 'string' ? pic : pic.uri || pic.url) || (had && had.photo) || '';
+      if (!had || (+b.year && !had.year)) people.set(key, {name: clean(o.name).slice(0, 160), month: +b.month, day: +b.day, year: +b.year || null, photo});
+      else if (photo && !had.photo) had.photo = photo;
     }
     for (const v of Array.isArray(o) ? o : Object.values(o)) if (v && typeof v === 'object') take(v, depth + 1);
   };
@@ -166,7 +177,7 @@ READ_JS = r'''async function (limits) {
   const collect = () => { if (people.size) return;  // the data has them: no labels needed
     const headings = headingsNow();
     for (const el of pictures()) { const label = labelOf(el); if (!label) continue; const heading = headingOf(el, headings);
-      const key = label + '\n' + heading; if (!seen.has(key)) seen.set(key, {label, heading}); } };
+      const key = label + '\n' + heading; if (!seen.has(key)) seen.set(key, {label, heading, photo: pictureOf(el)}); } };
   const count = () => people.size + seen.size;
   const start = Date.now(), high = () => document.documentElement.scrollHeight;
   let capped = false, woke = false, settled = 0, rounds = 0, extra = 0, last = start, gaps = missing().length;
@@ -208,7 +219,7 @@ READ_JS = r'''async function (limits) {
       await wait(60);
       const tip = [...document.querySelectorAll('[role=tooltip]')].map(t => clean(t.innerText || t.textContent)).filter(Boolean).pop();
       for (const type of ['pointerout', 'mouseout', 'mouseleave']) el.dispatchEvent(new MouseEvent(type, {bubbles: type !== 'mouseleave', view: window}));
-      if (tip) hovered.push({label: tip, heading: headingOf(el, headings)});
+      if (tip) hovered.push({label: tip, heading: headingOf(el, headings), photo: pictureOf(el)});
     }
     if (hovered.length) items = hovered;
   }
@@ -317,11 +328,26 @@ def found(items, today=None):
     return {n: v for n, v in out.items() if n not in clash}
 
 
-def match(db, names):
-    """The page's names against the Graph's people: {'matched': [{id, name, date}], 'ambiguous': [name], 'unmatched': n,
-    'others': [{name, date}]}. Matched: exactly one person with the same full name, else with the same first and last
-    name (a middle name on one side only). Others: the unmatched ones with a full name, but none with the name of someone
-    the owner deleted permanently (graph.name_keys). Someone deleted permanently is nobody."""
+def pictures(items, today=None):
+    """{name: link} of the profile pictures the page showed with its birthdays (the read's items), once per name: only
+    a link to Facebook's own image hosts (PHOTO_LINK)."""
+    out = {}
+    for item in items or ():
+        link = str(item.get('photo') or '') if isinstance(item, dict) else ''
+        if not PHOTO_LINK.fullmatch(link):
+            continue
+        got = from_data(item, today) if 'month' in item else parse(item.get('label'), item.get('heading') or '', today)
+        if got:
+            out.setdefault(got[0], link)
+    return out
+
+
+def match(db, names, links=None):
+    """The page's names against the Graph's people: {'matched': [{id, name, date, photo when links has theirs}],
+    'ambiguous': [name], 'unmatched': n, 'others': [{name, date}]}. Matched: exactly one person with the same full name,
+    else with the same first and last name (a middle name on one side only). Others: the unmatched ones with a full
+    name, but none with the name of someone the owner deleted permanently (graph.name_keys). Someone deleted
+    permanently is nobody."""
     gone = graph.forgotten(db)
     people, ends = {}, {}
     for row in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'"):
@@ -337,7 +363,7 @@ def match(db, names):
         if full and not hits:  # with or without a middle name ("Ann Marie Lee", "Ann Lee"): the same first and last name
             hits = ends.get((words[0], words[-1]), [])
         if len(hits) == 1:
-            matched.append({'id': hits[0][0], 'name': hits[0][1], 'date': value})
+            matched.append({'id': hits[0][0], 'name': hits[0][1], 'date': value, **({'photo': links[name]} if name in (links or {}) else {})})
         elif hits:
             ambiguous.append(name)
         else:
@@ -355,21 +381,38 @@ def owner_set(db, ids):
                                      (person_birthday.FIELD, person_birthday.SOURCE, json.dumps(sorted(set(ids)))))}
 
 
-def fresh(db, matched):
-    """The matched people ([{id, date}]) whose birthday is news, as {their id in matched: the person's node id now}:
-    nobody set theirs by hand, and the one their page shows (person_birthday.known, as person_birthday.get has it) is
-    another day or none. All at once: every birthday and every person is looked at once, not once per person
-    (thousands of friends, each a person with a birthday). Only reads: callers run it before taking the write lock."""
+def nodes(db, matched):
+    """{their id in matched: the person's graph_nodes row now}, all at once: an id from an earlier preview that is part
+    of another person since (a merge) is that person, as person_birthday.get has it."""
     ids = {m['id'] for m in matched or ()}
     if not ids:
         return {}
     rows = db.execute("SELECT id,name,info,kind FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))", (json.dumps(sorted(ids)),)).fetchall()
     node = {r['id']: r for r in rows}
-    for gone in ids - set(node):  # an id from an earlier preview, part of another person since (a merge): as person_birthday.get
+    for gone in ids - set(node):
         row = graph.resolve(db, gone)
         if row:
             node[gone] = row
-    node = {i: r for i, r in node.items() if r['kind'] == 'person'}
+    return {i: r for i, r in node.items() if r['kind'] == 'person'}
+
+
+def photo_news(db, matched):
+    """The matched people ([{id, photo}]) whose profile picture would fill in a photo: they show none yet, and the
+    owner neither set nor took off theirs (enrichment.without_photo). {their id in matched: the person's node id now}.
+    Only reads."""
+    node = nodes(db, [m for m in matched or () if m.get('photo')])
+    bare = enrichment.without_photo(db, list({r['id']: r for r in node.values()}.values())) if node else set()
+    return {i: r['id'] for i, r in node.items() if r['id'] in bare}
+
+
+def fresh(db, matched):
+    """The matched people ([{id, date}]) whose birthday is news, as {their id in matched: the person's node id now}:
+    nobody set theirs by hand, and the one their page shows (person_birthday.known, as person_birthday.get has it) is
+    another day or none. All at once: every birthday and every person is looked at once, not once per person
+    (thousands of friends, each a person with a birthday). Only reads: callers run it before taking the write lock."""
+    node = nodes(db, matched)
+    if not node:
+        return {}
     people = {r['id']: {'id': r['id'], 'name': r['name'], 'info': json.loads(r['info'] or '{}')} for r in node.values()}
     mine = owner_set(db, people)
     have = person_birthday.known(db, people) if people else {}
@@ -398,7 +441,7 @@ def preview(db, items, today=None, capped=False, missing=(), deadline=None):
     deadline: past it (time.monotonic()), TimeoutError."""
     names = found(items, today)
     due(deadline)
-    out = match(db, names)
+    out = match(db, names, pictures(items, today))
     due(deadline)
     out['found'] = len(names)
     out['capped'] = bool(capped)  # the read stopped at its limits: the page may have had more
@@ -408,6 +451,11 @@ def preview(db, items, today=None, capped=False, missing=(), deadline=None):
         if m['id'] in news:
             m['new'] = True  # Save writes theirs: the to-do lists these, the rest is a count
     out['new'] = len([m for m in out['matched'] if m.get('new')])
+    bare = photo_news(db, out['matched'])
+    for m in out['matched']:
+        if m['id'] not in bare:
+            m.pop('photo', None)  # only the links Save would use stay on the to-do
+    out['photos'] = len(bare)
     out['flagged'] = True  # matched people carry new (a preview before this listed every matched person)
     due(deadline)
     return out
@@ -434,6 +482,37 @@ def write_saved(db, picks, stamp):
                                            (person_birthday.FIELD, SOURCE, json.dumps(sorted({p['node'] for p in picks}))))}
     return [{'id': p['id'], 'name': p['name']} for p in picks
             if p['node'] in kept and birthdays.birthday_value(kept[p['node']]) == birthdays.birthday_value(p['date'])]
+
+
+def to_photos(db, data):
+    """The profile pictures Save keeps, from reads only: [{node, link}] for each matched person the preview found a
+    picture for who still shows no photo (photo_news)."""
+    matched = [m for m in data.get('matched') or () if isinstance(m, dict) and m.get('id') and PHOTO_LINK.fullmatch(str(m.get('photo') or ''))]
+    bare = photo_news(db, matched)
+    return [{'node': bare[m['id']], 'link': m['photo']} for m in matched if m['id'] in bare]
+
+
+def save_photos(connect, picks, stamp, fetch=None, pause=PHOTO_PAUSE, wait=None):
+    """The pictures to_photos found, one at a time with a pause: each downloaded (enrichment.download_photo: https to
+    a public address, small, only an image), then saved in a short write of its own (enrichment.keep_photo, which
+    checks again that they still show none) and put on their page at once (graph_show). Returns how many were saved."""
+    fetch, wait = fetch or enrichment.download_photo, wait or time.sleep
+    saved = 0
+    for n, pick in enumerate(picks):
+        if n:
+            wait(pause)
+        try:
+            got = fetch(pick['link'])
+        except Exception:  # noqa: BLE001 - a picture that didn't come: the next one
+            got = None
+        if not got:
+            continue
+        with connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if enrichment.keep_photo(db, pick['node'], got, stamp):
+                graph_show.show_person_edit(db, pick['node'], ())
+                saved += 1
+    return saved
 
 
 def save(db, data, stamp):
@@ -548,13 +627,13 @@ def view(db, suggestion_id, now=None):
     if state == 'preview':
         matched = data.get('matched') or []
         listed = [m for m in matched if m.get('new')] if data.get('flagged') else matched  # what Save writes; the rest is a count
-        return {'state': 'preview', 'found': data.get('found', 0), 'matched': len(matched), 'new': data.get('new', 0),
+        return {'state': 'preview', 'found': data.get('found', 0), 'matched': len(matched), 'new': data.get('new', 0), 'photos': data.get('photos', 0),
                 'shown': [{'id': m['id'], 'name': m['name'], 'date': m['date']} for m in listed[:SHOWN]], 'more': max(0, len(listed) - SHOWN),
                 'ambiguous': (data.get('ambiguous') or [])[:AMBIGUOUS_SHOWN], 'unmatched': data.get('unmatched', 0),
                 'capped': bool(data.get('capped')), 'missing': data.get('missing') or [], **others_view(db, data)}
     if state == 'saved':
         people = data.get('people') or []
-        return {'state': 'saved', 'saved': data.get('saved', 0), 'people': people[:SHOWN], 'more': max(0, data.get('saved', 0) - SHOWN),
+        return {'state': 'saved', 'saved': data.get('saved', 0), 'photos': data.get('photos', 0), 'people': people[:SHOWN], 'more': max(0, data.get('saved', 0) - SHOWN),
                 **others_view(db, data)}
     if state == 'failed':
         return {'state': 'failed', 'empty': bool(data.get('empty'))}  # empty: the page showed no birthdays it could read

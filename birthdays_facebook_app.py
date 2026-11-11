@@ -96,12 +96,12 @@ class BirthdaysFacebookApp:
             raise ValueError('Only the owner imports birthdays, on the dashboard')
         sid, step = str(args.get('suggestion_id') or ''), args.get('step')
         stamp = self.routines_stamp()
-        picks = seen = None
-        if step == 'save':  # which birthdays are news: worked out from reads only, before the write lock (thousands of people)
+        picks = seen = photos = None
+        if step == 'save':  # which birthdays and pictures are news: worked out from reads only, before the write lock (thousands of people)
             with self.store.connect() as db:
                 got = birthdays_facebook.get(db, sid)
                 if got and got[0] == 'preview':
-                    picks, seen = birthdays_facebook.to_save(db, got[1]), got[2]
+                    picks, photos, seen = birthdays_facebook.to_save(db, got[1]), birthdays_facebook.to_photos(db, got[1]), got[2]
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             got = birthdays_facebook.get(db, sid)
@@ -117,12 +117,12 @@ class BirthdaysFacebookApp:
                 if state != 'preview':
                     raise ValueError('Import again first')
                 if picks is None or got[2] != seen:  # the preview changed in between: worked out again
-                    picks = birthdays_facebook.to_save(db, got[1])
+                    picks, photos = birthdays_facebook.to_save(db, got[1]), birthdays_facebook.to_photos(db, got[1])
                 people = birthdays_facebook.write_saved(db, picks, stamp)  # one short write
                 saved = len(people)
                 # the rest read goes with the preview; the friends nobody in the Graph has stay, for the Add button
                 kept = {k: got[1][k] for k in ('found', 'unmatched', 'capped', 'missing', 'read', 'fill') if k in got[1]}  # the read's report
-                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'people': people, 'others': got[1].get('others') or [],
+                birthdays_facebook.put(db, sid, 'saved', {'saved': saved, 'photos': len(photos), 'people': people, 'others': got[1].get('others') or [],
                                                           'added': got[1].get('added') or [], **kept}, stamp)
             elif step in ('add', 'undo_add'):
                 if state not in ('preview', 'saved'):
@@ -148,7 +148,27 @@ class BirthdaysFacebookApp:
             return {'state': state, **done}
         if row['status'] not in ('completed', 'rejected'):
             self.store.decide(sid, 'complete', '', 'facebook-birthdays-saved:' + sid + ':' + stamp, 'dashboard')
-        return {'state': 'saved', 'saved': saved, 'people': people[:birthdays_facebook.SHOWN]}
+        if photos:  # the pictures after, in a thread of their own: one at a time with a pause
+            self.birthdays_facebook_spawn(self.birthdays_facebook_photos, sid, photos, stamp)
+        return {'state': 'saved', 'saved': saved, 'photos': len(photos), 'people': people[:birthdays_facebook.SHOWN]}
+
+    def birthdays_facebook_photos(self, sid, photos, stamp):
+        """Save's profile pictures (birthdays_facebook.save_photos), then how many came on the to-do, and the rest of
+        the Graph in one build. A picture that didn't come is there for Import again."""
+        try:
+            saved = birthdays_facebook.save_photos(self.store.connect, photos, stamp)
+        except Exception as error:  # noqa: BLE001 - the birthdays are saved already
+            LOG.info('facebook birthdays pictures stopped error=%s', type(error).__name__)
+            saved = 0
+        LOG.info('facebook birthdays pictures saved=%s of=%s', saved, len(photos))
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            got = birthdays_facebook.get(db, sid)
+            if got and got[0] == 'saved':
+                birthdays_facebook.put(db, sid, 'saved', {**got[1], 'photos': saved}, got[2])
+        if saved:
+            self.graph_later()
+        return saved
 
     def birthdays_facebook_fetch(self):
         """The page read under the shared browser lease: read()'s result, or None when the browser or its lease isn't free."""
