@@ -53,7 +53,7 @@ function rtReveal(box){if(!rtWant)return;const a=box.querySelector(`article[data
  a.tabIndex=-1;a.scrollIntoView({block:'center'});a.focus({preventScroll:true});a.classList.add('rt-found');setTimeout(()=>a.classList.remove('rt-found'),2400)}
 // A run in progress: look again in a few seconds (slower after a failed look), so its result shows in the card when ready
 function rtLook(ms){const d=routinesData;clearTimeout(rtTimer);if([...d.routines,...d.suggested||[],...d.trying||[]].some(r=>r.runs[0]?.state==='running'||r.test?.state==='running'))rtTimer=setTimeout(()=>$('#routines-view')?.offsetParent?routinesView(true):routinesAt=0,ms)}
-function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),tpl=(routinesData.templates||[]).filter(x=>!x.added),
+function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sv=$('#routines-view .rt-form')?.dataset.rtSave,sugg=routinesData.suggested||[],trying=routinesData.trying||[],on=list.filter(r=>r.state!=='paused'),off=list.filter(r=>r.state==='paused'),tpl=(routinesData.templates||[]).filter(x=>!x.added),
   fo=document.activeElement,typing=fo?.id==='rt-words'&&[fo.selectionStart,fo.selectionEnd],cards=new Map(),slot=f=>r=>{cards.set(r.id,[f(r),()=>f(r).s]);return html`<article data-rt-slot="${r.id}"></article>`};
  const frame=html`<form class="rt-new"><textarea id="rt-words" class="rt-grow" rows="1" spellcheck="true" autocapitalize="sentences" placeholder="${t('Every Monday, sum up my deals')}" aria-label="${t('New routine')}"></textarea><button class="primary">${t('Add')}</button></form>
   <p class="fine">${t('Routines only read. Any change waits for your OK on a to-do.')}</p>${trying.map(slot(rtTrying))}${sugg.length?rtSection('sugg',t('Suggested'),sugg.map(slot(rtSuggested)),t(sugg.every(r=>r.from_openclaw)?'From your OpenClaw jobs. Each one ran once to show you.':'Each one ran once to show you.')):''}${
@@ -69,7 +69,7 @@ function rtFull(box,list,form){const typed=$('#rt-words')?.value||'',sugg=routin
   const w=Object.assign($('#rt-words'),{value:typed});rtGrow(w);if(typing){w.focus({preventScroll:true});w.setSelectionRange(...typing)}}
  for(const el of drawn)for(const d of el.querySelectorAll('details'))if(rtDetails.has(rtDetailKey(d)))d.open=true;
  for(const [id,h] of held)heldPut(box.querySelector(`article[data-rt="${id}"]`),h);  // a card drawn again keeps its focused button and menu
- const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(!card)rtForm=null;else if(!card.querySelector('.rt-form'))rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true))}
+ const card=rtForm&&box.querySelector(`[data-rt="${rtForm.id}"]`);if(!card)rtForm=null;else if(!card.querySelector('.rt-form')){rtOpen(card,rtForm.kind,rtForm.words,box.contains(fo)&&!!fo.closest('.rt-form')&&(fo.dataset.step||true));if(sv)card.querySelector('.rt-form').dataset.rtSave=sv}}
 const rtDetailKey=d=>d.closest('[data-rt]')?.dataset.rt+' '+d.className;
 // The open form's card, in place: its test run and Try it; false when the cards themselves changed (a rebuild then)
 function rtPatch(box){const all=[...routinesData.routines,...routinesData.suggested||[],...routinesData.trying||[]],r=all.find(x=>x.id===rtForm.id),
@@ -115,11 +115,14 @@ function rtOpen(card,kind,words,focus=true){const adv=kind==='steps';if(adv){kin
  const fm=card.querySelector('.rt-form'),x=rtWordsIn(fm),nm=fm.querySelector('.rt-name');x.value=rtForm.words;if(nm)nm.value=rtForm.name;if(kind!=='when')rtGrow(x);if(focus){const y=card.querySelector(`.rt-form [data-step="${focus}"]`)||x;y.focus({preventScroll:true});y.setSelectionRange?.(y.value.length,y.value.length)}}
 function rtShut(back){const f=$('#routines-view .rt-form');rtForm=null;if(!f)return;const id=f.closest('[data-rt]')?.dataset.rt;f.remove();if(rtStale)routinesRender();
  if(back)$(`#routines-view [data-rt="${id}"] .more-actions>summary`)?.focus({preventScroll:true})}
-document.addEventListener('pointerdown',e=>{const f=$('#routines-view .rt-form');if(f&&!f.contains(e.target)&&matchMedia('(pointer:fine)').matches&&!e.target.closest?.('[data-rt-do="edit"],[data-rt-do="when"],[data-rt-do="change"],[data-rt-do="steps"]'))rtShut()});
+// Not while it saves: it went from under the pointer and the click missed
+document.addEventListener('pointerdown',e=>{const f=$('#routines-view .rt-form');if(f&&!f.dataset.rtSave&&!f.contains(e.target)&&matchMedia('(pointer:fine)').matches&&!e.target.closest?.('[data-rt-do="edit"],[data-rt-do="when"],[data-rt-do="change"],[data-rt-do="steps"]'))rtShut()});
 $('#routines-view').addEventListener('submit',e=>{e.preventDefault();const f=e.target,input=rtWordsIn(f),words=input.value.trim(),b=f.querySelector('.primary'),steps=rtStepsOf(f);if(!words&&!steps?.get)return;
  if(input.id==='rt-words'){rtDo('routine_try',{words},b).then(ok=>{if(ok)rtGrow(Object.assign($('#rt-words'),{value:''}))});return}
  const id=f.closest('[data-rt]').dataset.rt,kind=f.dataset.rtForm,nm=f.querySelector('.rt-name'),name=nm?.value.trim(),was=[...routinesData.routines,...routinesData.suggested||[],...routinesData.trying||[]].find(r=>r.id===id)?.name;
- rtDo(kind==='change'?'routine_try':kind==='edit'?'routine_edit':'routine_when',{id,words,...(steps?{steps}:{}),...(nm&&name!==was?{name}:{})},b).then(ok=>{if(ok)rtShut()})});
+ const n=f.dataset.rtSave=++rtSaves+'';
+ rtDo(kind==='change'?'routine_try':kind==='edit'?'routine_edit':'routine_when',{id,words,...(steps?{steps}:{}),...(nm&&name!==was?{name}:{})},b).then(ok=>{const g=$('#routines-view .rt-form');if(g?.dataset.rtSave!==n)return;delete g.dataset.rtSave;if(ok)rtShut()})});  // not one opened since
+let rtSaves=0;
 // As the chat box: Enter adds or saves, Shift+Enter or a phone's Enter is a new line
 $('#routines-view').addEventListener('toggle',e=>{const d=e.target;if(d.tagName!=='DETAILS'||!d.closest('[data-rt]'))return;const k=rtDetailKey(d);d.open?rtDetails.add(k):rtDetails.delete(k)},true);
 $('#routines-view').addEventListener('input',e=>{if(e.target.matches('.rt-grow'))rtGrow(e.target);if(rtForm&&e.target.closest('.rt-form')){const k=e.target.dataset.step;if(k)rtForm.steps[k]=e.target.value;else if(e.target.matches('.rt-name'))rtForm.name=e.target.value;else rtForm.words=e.target.value}});

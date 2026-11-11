@@ -400,25 +400,22 @@ class Embeddings(unittest.TestCase):
         self.assertRegex(where, r'^tests/test_embeddings\.py:\d+ broken < tests/test_embeddings\.py:\d+ test_a_related')
         self.assertEqual(a.fault_where(ValueError('no traceback')), '-')
 
-    def test_cosine_scores_as_the_plain_sum_and_quicker(self):
-        # A search scores every stored vector against the query: the score is the dot product, in C (math.sumprod)
-        import random, time
+    def test_cosine_scores_as_the_plain_sum_in_c(self):
+        # A search scores every stored vector against the query: the score is the dot product, in C (math.sumprod).
+        # Checked by the call, not a stopwatch: a wall-clock ratio failed on a busy runner.
+        import random
         rnd = random.Random(7)
-        vectors = [emb.unpack(emb.pack([rnd.uniform(-.1, .1) for _ in range(256)])) for _ in range(3000)]
+        vectors = [emb.unpack(emb.pack([rnd.uniform(-.1, .1) for _ in range(256)])) for _ in range(200)]
         asked = [rnd.uniform(-.1, .1) for _ in range(256)]
-        for v in vectors[:200]:
+        for v in vectors:
             self.assertAlmostEqual(emb.cosine(asked, v), sum(x * y for x, y in zip(asked, v)), places=12)
         self.assertAlmostEqual(emb.cosine([1.0, 2.0, 3.0], [1.0, 1.0]), 3.0)  # unequal lengths: the shared part, as zip did
         self.assertEqual(emb.cosine([], []), 0)
-
-        def run(f):
-            t = time.perf_counter()
-            for v in vectors:
-                f(asked, v)
-            return time.perf_counter() - t
-        plain = min(run(lambda p, q: sum(x * y for x, y in zip(p, q))) for _ in range(3))
-        kept = min(run(emb.cosine) for _ in range(3))
-        self.assertLess(kept * 2, plain, f'cosine {kept * 1000:.1f} ms, a Python sum {plain * 1000:.1f} ms')  # a ratio: a busy computer doesn't matter
+        with patch.object(emb.math, 'sumprod', wraps=math.sumprod) as sumprod:
+            self.assertAlmostEqual(emb.cosine(asked, vectors[0]), sum(x * y for x, y in zip(asked, vectors[0])), places=12)
+            emb.cosine([1.0, 2.0, 3.0], [1.0, 1.0])
+        self.assertEqual(sumprod.call_count, 2, 'every score is one math.sumprod call, never a Python loop')
+        self.assertEqual(sumprod.call_args.args, ([1.0, 2.0], [1.0, 1.0]))
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ const routine=()=>({id:ID,name:'Sum up my deals',instructions:'Sum up my deals',
 const SID='d4'.repeat(16),suggestion=()=>({...routine(),id:SID,name:'Failed payments',instructions:'List customers whose payment failed',state:'suggested',next_due:null,
  runs:[{id:'r2',state:'ready',started_at:now,result:'**Halyard**: card declined'}]});
 const TID='e5'.repeat(16),tryOne=words=>({...routine(),id:TID,name:words,instructions:words,state:'trying',next_due:null,runs:[],test:{id:'t1',state:'running',started_at:now}});
-let list=[],suggested=[],trying=[];
+let list=[],suggested=[],trying=[],editGate=null;
 const all=()=>JSON.stringify({routines:list,suggested,trying});
 const state=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
@@ -25,7 +25,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/routines'){res.end(all());return}
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_try'){if(b.args.id===ID)list=list.map(r=>({...r,test:{id:'t2',state:'ready',started_at:now,trial:b.args.words,result:'**Tried** it',got:!!b.args.steps?.get}}));else trying=[tryOne(b.args.words)];res.end(all());return}
-  if(b.action==='routine_edit'){list=list.map(r=>({...r,steps:b.args.steps,...(b.args.name?{name:b.args.name}:{})}));res.end(all());return}
+  if(b.action==='routine_edit'){await editGate;list=list.map(r=>({...r,steps:b.args.steps,...(b.args.name?{name:b.args.name}:{})}));res.end(all());return}
   if(b.action==='routine_state'&&b.args.id===TID){trying=[];res.end(all());return}
   if(b.action==='routine_accept'){list=[...list,{...suggestion(),state:'on'}];suggested=[];res.end(JSON.stringify({routines:list,suggested}));return}
   if(b.action==='routine_old_job'){list=list.map(r=>({...r,old_job:false}));res.end(JSON.stringify({routines:list,suggested}));return}
@@ -112,9 +112,12 @@ try{
   assert.equal(await card.locator('.rt-body').isVisible(),false,'the card\'s own result waits while Edit is open');
   assert.equal(await card.locator('.rt-what').isVisible(),false,'its words show once, in the box');
   assert.equal(await edit.inputValue(),'Sum up my won deals');
-  await card.locator('.rt-form .primary').click();
+  // A click outside while it saves leaves the form: shut on the press, it moved what was under the pointer and the click missed
+  let saved;editGate=new Promise(r=>saved=r);await card.locator('.rt-form .primary').click();
   for(let i=0;i<60&&!sent('routine_edit').length;i++)await page.waitForTimeout(50);
   assert.deepEqual(sent('routine_edit'),[{action:'routine_edit',id:ID,words:'Sum up my won deals'}],'its script steps stay as they are');
+  await page.locator('#routines-view>.fine').click();assert.equal(await card.locator('.rt-form').count(),1,'the form stays while it saves');
+  saved();editGate=null;await card.locator('.rt-form').waitFor({state:'detached'});
   // Script steps: never in Edit by default; Advanced in the ... menu shows them, empty, with no made-up commands
   await card.locator('.more-actions>summary').click();await card.locator('[data-rt-do="edit"]').click();
   assert.equal(await card.locator('.rt-form .rt-steps').count(),0,'Edit is the routine\'s words only');
