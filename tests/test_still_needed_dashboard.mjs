@@ -63,6 +63,8 @@ try{
   // Not needed: the dashboard's own Not needed, with its Undo
   await page.locator('#task-'+FOLD+' [data-still="drop"]').click();
   await page.waitForFunction(()=>document.querySelector('#toast')?.textContent.includes('Marked not needed'));
+  // the toast shows in the click's own frame, before the post goes out: wait for the post itself
+  for(let i=0;i<200&&!sent('decide').length;i++)await new Promise(r=>setTimeout(r,25));
   assert.deepEqual(sent('decide').map(p=>[p.suggestion_id,p.choice,p.feedback]),[[FOLD,'reject','No longer needed']]);
   assert.equal(await page.locator('#toast [data-undo]').count(),1);
   // In the to-do's chat the same question shows
