@@ -17,6 +17,12 @@ MAX_TRIES = 3
 # How suggest's "read what came after the evidence first" starts (assistant.py): a step of the review, not a failed save.
 GUIDANCE = 'Something happened after this to-do'
 
+# How suggest's "this to-do rests on automated mail alone" starts (machine/app/review_saves.py): a step too.
+AUTOMATED_GUIDANCE = 'This to-do rests only on automated mail'
+
+# Every answer of suggest that is a step of the review, never a failed save.
+STEPS = (GUIDANCE, AUTOMATED_GUIDANCE)
+
 
 def ensure(db):
     db.execute('CREATE TABLE IF NOT EXISTS review_save_failures(event_id INTEGER PRIMARY KEY, failed_at TEXT NOT NULL, error TEXT NOT NULL, '

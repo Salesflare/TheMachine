@@ -1,15 +1,28 @@
 """The suggest action around its save (App.action 'suggest_save'): a dedupe_key the review left out is made from the
 source message, arguments it got wrong are told back in words, and a save that fails keeps its messages for the next
 review (machine/store/review_saves.py). A mixin of assistant.App (APP_MIXINS)."""
+import json
 import logging
 import sqlite3
 
+from calendar_clashes import with_others
 from machine.app.preparation import activity_lines
 from machine.cards import undated_card
 from machine.store import review_saves
+from machine.store.review import bulk_kind
+from mail_senders import automated
 import todo_areas
 
 LOG = logging.getLogger('personal-assistant')
+
+# A new to-do whose evidence is automated mail alone (ReviewSavesApp.automated_only): that mail informs a to-do, and
+# makes one only when it asks the owner to act itself. Told back once, like "read what came after first"; mail_asks
+# (what the mail asks, in a few words) says the review judged it so. Costs a step only for these few to-dos.
+AUTOMATED_ONLY = (review_saves.AUTOMATED_GUIDANCE + ' (a booking, receipt, notification or newsletter), with no message from a '
+                  'person. Such mail informs a to-do; on its own it makes one only when the mail itself asks the owner to act '
+                  '(an invoice to pay by hand, a card or plan that runs out). A step you work out from it, like moving the '
+                  'owner\'s own plans around a booking, is no to-do: they made both and move their own. Judge what the mail '
+                  'asks, never its wording. When it does ask, suggest again with mail_asks: what it asks, in a few words.')
 
 
 class ReviewSavesApp:
@@ -22,7 +35,7 @@ class ReviewSavesApp:
         try:
             saved = self.action('suggest_save', args, owner_dashboard)
         except ValueError as error:
-            if not str(error).startswith(review_saves.GUIDANCE):  # "read what came after first" is a step, not a failure
+            if not str(error).startswith(review_saves.STEPS):  # "read what came after first" and the like are steps, not failures
                 self.save_failed(args['event_ids'], error)
             raise
         except (KeyError, TypeError, sqlite3.Error) as error:
@@ -33,6 +46,34 @@ class ReviewSavesApp:
         with self.store.connect() as db:
             review_saves.saved(db, args['event_ids'])
         return saved
+
+    def automated_only(self, event_ids):
+        """Whether a new to-do's evidence is automated mail alone: at least one mail a program sent (a booking, receipt,
+        notification or newsletter: what the review sees as a title line, or Precedence bulk or Auto-Submitted), and
+        besides those only the owner's own calendar entries with nobody else on them. No message from a person, no
+        meeting with someone, nothing the owner wrote. Read from the headers, never from words in the mail."""
+        ids = [i for i in event_ids if isinstance(i, int)]
+        if not ids:
+            return False
+        with self.store.connect() as db:
+            rows = db.execute(f"SELECT kind,title,metadata FROM events WHERE id IN ({','.join('?' * len(ids))})", ids).fetchall()
+        mail = False
+        for row in rows:
+            try:
+                metadata = json.loads(row['metadata'] or '{}')
+            except ValueError:
+                return False
+            if not isinstance(metadata, dict):
+                return False
+            if row['kind'] == 'calendar.event':
+                if with_others({'meta': metadata}):
+                    return False
+            elif row['kind'] == 'gmail.message' and (bulk_kind(row['kind'], metadata, row['title']) or automated(metadata) and not (
+                    metadata.get('from_me') or set(metadata.get('labels') or ()) & {'SENT', 'DRAFT'})):
+                mail = True
+            else:
+                return False
+        return mail
 
     def save_failed(self, event_ids, error):
         LOG.warning('suggest failed error=%s', type(error).__name__)
@@ -53,6 +94,8 @@ class ReviewSavesApp:
         # the owner's own life (family, friends, home), also on a work mailbox: Personal from the start (todo_areas.py)
         personal=company is None and (args.get('personal') is True or bool(args.get('family_with')))
         work=not personal and any(a['id'] in source_accounts and a.get('boundary','').startswith('work:') for a in self.config['accounts'])
+        if not args.get('card_id') and not str(args.get('mail_asks') or '').strip() and self.automated_only(args['event_ids']):
+            raise ValueError(AUTOMATED_ONLY)
         if not args.get('card_id'):
             # A new to-do only when nothing since shows it handled: what came after its evidence is read first
             newer = self.newer_unchecked(args['event_ids'], args.get('newer_checked'))

@@ -36,7 +36,7 @@ class LeadPerson(unittest.TestCase):
         self.assertEqual(self.people([2]), ['Marco Bell', 'Lena Ortiz'])  # a meeting's own to-do: nobody leads it
 
     def test_the_rules_are_in_the_prompts(self):
-        self.assertTrue("Two of the owner's own plans that overlap with nobody else in either" in a.review_prompt('r1', ['work']))
+        self.assertTrue('Automated mail alone makes a to-do only when it asks the owner to act' in a.review_prompt('r1', ['work']))
         self.assertTrue('nor a message you only read to answer the owner' in a.preparation_prompt({'job_id': 'j', 'suggestion_id': 's'}))
 
 
