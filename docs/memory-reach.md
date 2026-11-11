@@ -34,7 +34,11 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 Fixed here, each with its test: a routine's run read no fact or rule (it now gets the front of what a review gets:
 1,200 characters of facts and 600 of rules, logged as `routine` in `memory_use`), and Talk's `recall` only searched
 OpenClaw's memory files, so a fact the owner told the chat never came back by voice (it now gets up to three of the
-owner's own facts and rules that share the words, logged as `talk`). No new model turn.
+owner's own facts and rules that share the words, logged as `talk`). A correction said in the owner's chat ("the
+office is in Brussels now") was saved next to the fact it corrects, since the chat sees no fact ids, so both values
+reached preparations until the next condense pass. It now takes that fact's place at once
+(`graph_actions.said_instead`): a current fact about the same records whose words it shares, with a number or name
+swapped or a negation added or dropped. The old one stays behind it under Learning with Undo merge. No new model turn.
 
 ## Still missing
 
@@ -47,5 +51,7 @@ owner's own facts and rules that share the words, logged as `talk`). No new mode
 - **A to-do's chat** answers in its preparation's session: a fact learned after that preparation started reaches it
   only on a redo.
 - **Talk's recall** matches words, not meaning: "seat" finds "aisle seats", "flying" doesn't find "flights".
+- **A chat correction that swaps a plain word** ("window seats" for "aisle seats") is left to the condense pass,
+  which judges it by meaning; code only swaps numbers, names and negations.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
   through the to-dos and promises they list. By design.

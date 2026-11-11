@@ -108,6 +108,27 @@ class MemoryReach(unittest.TestCase):
         self.assertIn(ROLE, memory.text('records'))  # what a review read about Ann, on the to-do's record
         # the to-do's chat runs in this preparation's session (preparation.chat_prompt): it has what this prompt had
 
+    def test_a_correction_said_in_chat_takes_the_place_of_the_fact_it_corrects(self):
+        said = lambda text, n, **args: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
+                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, **args}))[1]
+        old = said('Your office is in Ghent.', 601)
+        new = said('Your office is in Brussels now.', 602)
+        self.assertEqual(new['replaced'], old['id'])  # the chat saw no ids; code found the one it corrects
+        facts = recall(self.app, 'preparation', {'todo': self.todo}).text('facts')
+        self.assertIn('Brussels', facts)
+        self.assertNotIn('Ghent', facts)  # never both values in one draft
+        drink = said('You drink coffee every morning.', 603)
+        self.assertEqual(said('You no longer drink coffee every morning.', 604)['replaced'], drink['id'])
+        # another fact that only shares words, or one about someone else, stays
+        self.assertNotIn('replaced', said('Your office has a quiet room for calls.', 605))
+        self.assertNotIn('replaced', said('Ann Example lives in Ghent.', 606, about=[ANN]))
+        self.assertNotIn('replaced', said('You only book window seats on flights.', 607))  # a plain word swapped: left to the condense pass
+        # Undo merge under Learning brings the old one back
+        self.store.unmerge_fact(new['id'])
+        facts = recall(self.app, 'preparation', {'todo': self.todo}).text('facts')
+        self.assertIn('Ghent.', facts)
+        self.assertNotIn('Brussels', facts)
+
     def test_ask_reads_facts_on_the_record_and_by_meaning(self):
         about = {'area': None, 'subjects': [{'id': ANN, 'name': 'Ann Example'}], 'accounts': ['work'], 'question': 'What does Ann eat?'}
         self.assertIn(NOTE_ANN, ask_memory.facts(self.app, about, 1000))  # the notes fact, on her page
