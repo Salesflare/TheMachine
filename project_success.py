@@ -36,7 +36,8 @@ MONITOR_LIMIT = 60      # projects with a condition looked at per review run
 SCHEMA = '''CREATE TABLE IF NOT EXISTS project_success(project_id INTEGER PRIMARY KEY,condition TEXT,proof TEXT NOT NULL DEFAULT 'message',
   condition_by TEXT,condition_at TEXT,evidence_event_id INTEGER,evidence_url TEXT,evidence_at TEXT,evidence_note TEXT,
   blocker TEXT,blocker_at TEXT,todo_id TEXT,updated_at TEXT)'''
-# marked_by 'evidence' when a proof marked a project on no board done (its Undo), 'owner' for Won or Done by hand;
+# marked_by 'evidence' when a proof marked a project on no board done (its Undo), 'owner' for Won or Done by hand,
+# 'changed' when its Done when changed so that proof no longer met it and it opened again (_goal_changed);
 # reopened_at: the owner's Reopen, which stands until a newer message proves it again
 COLUMNS = ('marked_by TEXT', 'marked_at TEXT', 'reopened_at TEXT')
 URL = re.compile(r'https://[^\s"\'<>()\[\]]+')
@@ -91,10 +92,35 @@ def set_condition(db, project_id, condition, proof, source, now):
     if not condition:
         if source == 'owner':
             _put(db, project_id, now, condition=None, condition_by='owner', condition_at=now)
+            _goal_changed(db, project_id, row, None, None, now)
         return True
-    _put(db, project_id, now, condition=condition, proof=clean_proof(proof if proof is not None else (row['proof'] if row else None)),
-         condition_by=source, condition_at=now)
+    proof = clean_proof(proof if proof is not None else (row['proof'] if row else None))
+    _put(db, project_id, now, condition=condition, proof=proof, condition_by=source, condition_at=now)
+    _goal_changed(db, project_id, row, condition, proof, now)
     return True
+
+
+def _goal_changed(db, project_id, before, condition, proof, now):
+    """A changed Done when (or proof) is the goal from now on, for what was derived from the old one: why a review's
+    "done" wasn't proven goes, its blocker to-do tracks the new result (outcomes.follow_project), and a Done its proof
+    made reopens when that proof no longer meets it (a reworded goal, or a live page asked for where a message proved
+    it), with a Recent changes line; the next proof marks it done again. A Done by hand stays, as does a Reopen."""
+    old = (before['condition'] or '') if before else ''
+    if not before or (old == (condition or '') and before['proof'] == (proof or before['proof'])):
+        return
+    _put(db, project_id, now, evidence_note=None)
+    if before['todo_id'] and old != (condition or ''):
+        from machine.store import outcomes
+        try:
+            outcomes.follow_project(db, before['todo_id'], old, condition or '')
+        except sqlite3.OperationalError:
+            pass  # a bare graph without the assistant's tables
+    holds = not condition or (old.casefold() == condition.casefold() and (proof != 'link' or before['evidence_url']))
+    project = db.execute('SELECT outcome FROM projects WHERE id=?', (int(project_id),)).fetchone()
+    if before['marked_by'] == 'evidence' and not holds and project and project['outcome'] == 'won':
+        graph.set_outcome(db, 'project:' + str(int(project_id)), None, '', now)
+        # not the owner's Reopen (which set_outcome records): the next proof may mark it done again
+        _put(db, project_id, now, marked_by='changed', marked_at=now, reopened_at=before['reopened_at'])
 
 
 # ------------------------------------------------------------------ the proof
@@ -275,6 +301,7 @@ def done_off_board(db, m, checked, source, now):
     out = {'node_id': 'project:' + str(row['id']), 'project': row['name']}
     if graph.one_line(m.get('condition'), 140):
         set_condition(db, row['id'], m['condition'], m.get('proof') if m.get('proof') in PROOFS else None, source, now)
+        row = _project(db, out['node_id'])  # a new goal may have reopened it (_goal_changed)
     if not verdict['proven']:
         _put(db, row['id'], now, evidence_note=verdict['why'])
         return {**out, 'not_proven': verdict['why']}

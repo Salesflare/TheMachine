@@ -72,7 +72,9 @@ A new board, or a suggested board you save, looks through your whole history onc
 
 **Done when**, under **Edit** on any project, on a board or not, says what finishes it in plain words, with its proof: **A live page** (The Machine opens the link from their message and checks it links to you) or **Their message**. Checks suggest one for partner listings.
 
-A check only moves a project to the last stage with that proof, linked on its page. A project on no board is marked done instead, with **Undo** in its **⋯** under Recent changes. **Done** or **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
+A check only moves a project to the last stage with that proof, linked on its page. A project on no board is marked done instead, with **Undo** in its **⋯** under Recent changes.
+
+Change **Done when** later and a done its proof no longer fits opens again; its to-do follows the new one. **Done** or **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
 
 ## Pipeline
 

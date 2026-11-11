@@ -76,6 +76,29 @@ class Outcomes(unittest.TestCase):
         self.assertEqual(outcomes.clean(' Sam  signed\nit '), 'Sam signed it')
         self.assertIn('add done_when to suggest', a.review_prompt('r1', []))  # the review knows the arg
 
+    def test_a_review_revises_its_own_line_when_the_goal_changes_never_the_owners(self):
+        from machine.app import status
+        self.set(RESULT, 'review')
+        # The review sees the open to-do's line in status, so it can tell when a newer message changes the goal
+        self.assertEqual(status.compact_card(self.suggestion())['done_when'], RESULT)
+        self.store.commit_page('work', {}, [email('m2', '2026-10-16T08:00:00+00:00', body='We will pay the deposit instead of signing.')])
+        with self.store.connect() as db:
+            newer = db.execute("SELECT id FROM events WHERE source_id='m2'").fetchone()[0]
+        app = self.app()
+        app.config = {**app.config, 'digest_at': '08:30'}
+
+        def rewrite(done_when):
+            return app.action('suggest', {'dedupe_key': 'order-form', 'card_id': self.sid, 'title': 'Get Sam\'s deposit',
+                                          'body': 'Sam pays a deposit instead.', 'event_ids': [newer], 'done_when': done_when})
+        rewrite('Sam paid the deposit')  # the review's update path (suggest with card_id) carries the new result
+        self.assertEqual((self.suggestion()['done_when'], self.suggestion()['done_when_by']), ('Sam paid the deposit', 'review'))
+        self.set('The order is in', 'run')  # what the owner said in its chat, through the run
+        rewrite('Something else')
+        self.assertEqual((self.suggestion()['done_when'], self.suggestion()['done_when_by']), ('The order is in', 'run'))
+        prompt = a.review_prompt('r1', [])
+        self.assertIn('the new done_when; one the owner set stays', prompt)
+        self.assertIn('its title, body, draft and done_when following the new plan', prompt)
+
     def test_a_send_without_a_result_line_still_closes(self):
         self.send(done_when=None)
         self.assertEqual(self.suggestion()['status'], 'completed')

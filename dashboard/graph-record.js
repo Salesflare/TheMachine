@@ -319,6 +319,7 @@ function rcText(n,x){switch(x.kind){
  case 'side':return t(RC_SIDE[x.side]||'');
  case 'move':return t('Moved to {}',x.stage);
  case 'done':return x.deal?t('Marked won'):t('Project marked done');
+ case 'reopened':return t('Reopened: Done when changed');
  case 'ai':return x.parts.map(p=>t(RC_AI[p]||'')).filter(Boolean).join(' · ')+(x.undone?' · '+t('undone'):'');
  default:return x.text||''}}
 function rcSource(s){if(!s)return'';

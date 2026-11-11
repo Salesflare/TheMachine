@@ -54,7 +54,7 @@ def compact_card(s):
     (about 20k tokens a read, 2026-11-08) and pushed the open to-dos past OpenClaw's tool-result cut."""
     if s.get('status') in CLOSED:
         return {**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'closed_at') if s.get(k)}, **agent_work_status(s.get('agent_job'))}
-    return {**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at', 'deliver_after', 'snoozed_until', 'latest_feedback', 'preparation_status', 'handled_hint') if s.get(k)},
+    return {**{k: s[k] for k in ('id', 'status', 'title', 'dedupe_key', 'created_at', 'deliver_after', 'snoozed_until', 'latest_feedback', 'preparation_status', 'handled_hint', 'done_when') if s.get(k)},
             'body': clamp(s.get('body') or '', 400), **agent_work_status(s.get('agent_job'))}
 
 
