@@ -33,7 +33,9 @@ Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversário
 
 Só **Salvar** os guarda, e só o aniversário, na página de cada pessoa. Um aniversário que você informou lá continua. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
 
-Amigos que ninguém no seu Graph tem são contados, com alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, também depois de Salvar: cada um com nome e aniversário, nunca compartilhado com uma Work Fleet. Um nome que alguém do seu Graph já tem, ou que tinha alguém que você excluiu de vez, é pulado. Os lembretes de aniversário continuam vindo só para pessoas para quem você escreve. **Desfazer** na tarefa remove exatamente essas pessoas, também depois de **Importar de novo**.
+Amigos que ninguém no seu Graph tem são contados, com alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, também depois de Salvar: cada um com nome e aniversário, nunca compartilhado com uma Work Fleet. Um nome que alguém do seu Graph já tem, ou que tinha alguém que você excluiu de vez, é pulado. Os lembretes de aniversário continuam vindo só para pessoas para quem você escreve.
+
+**Desfazer** na tarefa remove exatamente essas pessoas, também depois de **Importar de novo**.
 
 Enquanto as palavras forem as do modelo, ela roda com código próprio, sem o seu plano de IA (Limpeza de spam usa um turno curto quando há e-mail para ler). Um nome novo não muda isso. Se você mudar as palavras, ela roda como qualquer rotina com as suas palavras.
 
