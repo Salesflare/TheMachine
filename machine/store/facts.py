@@ -745,6 +745,10 @@ class FactsStore:
             db.execute('UPDATE facts SET removed_at=? WHERE id=?', (now(), int(fact_id)))
             if undo:
                 db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE merged_into=?', ('fact:' + str(int(fact_id)),))
+            # its vector, and those of what it replaced (forgotten with it), go: nothing reads them, and nothing close in
+            # meaning to it is found again; one brought back later is embedded again when a preparation needs it
+            db.execute("WITH RECURSIVE gone(id) AS (SELECT ? UNION SELECT f.id FROM facts f JOIN gone g ON f.merged_into='fact:'||g.id) "
+                       'DELETE FROM fact_vectors WHERE fact_id IN (SELECT id FROM gone)', (int(fact_id),))
             if row['kind'] == 'draft':
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Removed draft rule: ' + row['text'], str(fact_id)))
         return {'removed': True}
