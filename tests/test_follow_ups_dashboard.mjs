@@ -256,7 +256,7 @@ try{
   await group.waitFor();assert.equal((await group.locator('h3').textContent()).trim(),'2 follow-ups ready for Alpha testers');  // Bolt and Cobalt
   await context.close()}
  // Drafts being written: the board's follow-ups are already one to-do ("Follow-ups for …", "Writing 3 follow-ups…"), never
- // one per email in Preparing, the sidebar or a to-do's chat; once one is written it moves to Ready with the rest still writing
+ // one per email in For you, the sidebar or a to-do's chat (there is no Preparing list); once one is written it says ready
  for(const [width,height] of [[1440,900],[1440,700],[390,844]]){reset();
   const writing=s=>s.follow_up?.group==='board:1'?{...s,status:'accepted',next_action:null,preparation_status:'running'}:s;
   suggestions=suggestions.map(writing);
@@ -265,7 +265,7 @@ try{
   assert.equal((await group.locator('h3').textContent()).trim(),'Follow-ups for Alpha testers');
   assert.equal((await group.locator('.fu-progress').textContent()).trim(),'Writing 3 follow-ups…');
   assert.equal(await group.locator('[data-fu-review]').count(),0);  // nothing to review yet
-  assert.equal(await page.locator('#section-preparing .count').textContent(),'1');
+  assert.equal(await page.locator('#section-preparing').count(),0);assert.equal(await page.locator('#section-foryou .count').textContent(),'3');  // the board's one and the rest
   for(const i of [1,2,3])assert.equal(await page.locator(`#task-f${i}00000000000000`).count(),0);
   assert.equal(await page.locator('#side-cards a').evaluateAll(l=>l.filter(a=>/^Follow up with (Acme|Bolt|Cobalt)/.test(a.textContent)).length),0);
   assert.equal((await page.locator('#badge-inbox').textContent()).trim(),'3');

@@ -126,7 +126,7 @@ a time; a to-do's own Talk live can run beside it.
 
 **Tools** (`talk_live.MAIN_TOOLS`):
 
-- `list_todos` (the page's own): every open to-do in the order the lists show (For you, most urgent first, then Preparing,
+- `list_todos` (the page's own): every open to-do in the order the lists show (For you, most urgent first, preparing ones among them,
   Waiting on others, Later; not one that looks done, which sits in Done), at most 30, each with its id, state, title and who it's from, and `counts` per state.
 - `open_todo`: the page shows that to-do in Talk's view, tells the Machine (`talk_focus`) and returns `todo_details`; a
   closed one too, even one the page hasn't loaded.

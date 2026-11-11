@@ -6825,7 +6825,6 @@
  "{} Machine, {} GB, paid by the Fleet: {}": "{} Machine, {} GB, paid by the Fleet: {}",
  "{} New and still changing.{}": "{} New and still changing.{}",
  "{} Nothing is lost: The Machine picks up where it left off.": "{} Nothing is lost: The Machine picks up where it left off.",
- "{} Preparing": "{} Preparing",
  "{} Ready, tap to show or hide": "{} Ready, tap to show or hide",
  "{} To decide, tap to show or hide": "{} To decide, tap to show or hide",
  "{} accepted {}, changed to: “{}”.": "{} accepted {}, changed to: “{}”.",
@@ -7257,7 +7256,6 @@
  },
  "{} picked a time on the booking link.": "{} picked a time on the booking link.",
  "{} picked this time on your booking link.": "{} picked this time on your booking link.",
- "{} preparing": "{} preparing",
  "{} probably part of it": "{} probably part of it",
  "{} projects": {
   "one": "{} project",

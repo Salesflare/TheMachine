@@ -58,10 +58,11 @@ ASK_SECONDS = 180            # a confirm question older than this needs asking a
 SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply', 'doc_write')
 CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
             'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc', 'doc_write': 'in the doc'}
-# An open to-do's state, in plain words, as the dashboard's lists show it: For you (its chip says prepared or needs you),
-# Preparing, Waiting on others, Later, in that order
+# An open to-do's state, in plain words, as the dashboard's lists show it: For you (its chip says prepared, needs you or
+# preparing), Waiting on others, Later, in that order. Preparing is a chip in For you now, no list of its own.
 STATES = ('prepared', 'needs you', 'preparing', 'waiting on others', 'snoozed')
-# What these were called before For you (Ready, To decide): an owner may still say "what's ready", "anything to decide"
+# What these were called before For you (Ready, To decide): an owner may still say "what's ready", "anything to decide".
+# "Anything preparing?" still finds the ones with that chip: preparing stays a state.
 STATE_ALIASES = {'ready': 'prepared', 'to decide': 'needs you'}
 # One that looks done already: still open (Reopen puts it back), but the dashboard shows it at the top of Done / dismissed
 LOOKS_DONE = 'looks done'
@@ -175,8 +176,8 @@ TOOL = {t['name']: t for t in TOOLS}
 MAIN_TOOLS = [
     {'type': 'function', 'name': 'list_todos',
      'description': ('All the owner’s open to-dos, in the order the dashboard shows them: the ones for the owner first, '
-                     'most urgent first, prepared (a draft is ready) or needs you (a decision or an answer first), then '
-                     'preparing (still being worked on, no draft yet), '
+                     'most urgent first, each prepared (a draft is ready), needs you (a decision or an answer first) or '
+                     'preparing (still being worked on, no draft yet); then '
                      'waiting on others and snoozed. Each has an id, its state, its title and who it is from; counts has '
                      'how many there are in each state. One that looks done is in Done, not here: find_todos finds it.'),
      'parameters': NONE},
@@ -639,8 +640,8 @@ def main_instructions(language, now_text=None, languages=None, zone=None):
         '- If you didn’t hear or understand the owner, ask them briefly to say it again.',
         '',
         '# Going through the to-dos',
-        '- Start with list_todos. It has every open to-do and its state. Begin with the ones for the owner (prepared, '
-        'needs you), in the order given: say how many, in one line, then take the first one.',
+        '- Start with list_todos. It has every open to-do and its state. Begin with the ones for the owner that are prepared '
+        'or need them, in the order given: say how many, in one line, then take the first one.',
         '- Mention in a few words how many are still preparing, and that you’ll tell them when one is ready. Don’t go '
         'through the preparing, waiting or snoozed ones unless they ask.',
         '- If they ask about one that is preparing, open it and say in a sentence what it’s working on. There is no draft '

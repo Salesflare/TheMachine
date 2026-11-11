@@ -113,7 +113,7 @@ Review turns get the owner's profile (`USER.md`) and these instructions in their
   - Never record, synthesize or paraphrase a decision or feedback on the owner's behalf.
   - Don't turn a Change click alone into written feedback.
   - Don't mark done or reopen anything to tidy the inbox.
-- **Statuses.** Preparing and Prepared (in For you) are still outstanding: a prepared draft doesn't finish the task, only the owner's Mark done does.
+- **Statuses.** Preparing… and Prepared (chips in For you) are still outstanding: a prepared draft doesn't finish the task, only the owner's Mark done does.
   - Reopen, from the authenticated dashboard only, restores the previous state and keeps drafts and history.
   - Undo reverses the latest Done or Dismiss for five minutes, keeping the previous state, snooze time, result and history. Dismissed items otherwise stay closed. Try again restarts a blocked preparation; an unconfirmed earlier run must be proven ended first.
 - **Card updates.** Do it, Done, Dismiss, Undo, Snooze and saved feedback edit the existing Telegram card, never with a confirmation message; prepared results and due reminders do notify anew.

@@ -7,8 +7,9 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // The open lists' order (openOrder): a to-do overdue or due by tomorrow first, then the rest newest first by the time
 // each one shows (created_at), whatever its people weight or a deadline weeks away. Same-moment to-dos (one review)
-// go by weight. For you mixes prepared and needs-you to-dos: what is due soon first whichever it is, then the prepared
-// ones, then the ones that need a decision. The sidebar lists them in the same order. Made-up data.
+// go by weight. For you mixes prepared and needs-you to-dos: what is due soon first whichever it is, then the rest
+// newest first, whatever each one's chip says (so a run that starts or ends never moves one). The sidebar lists them
+// in the same order. Made-up data.
 // SHOTS=<folder> saves screenshots at 1440x900 and 390x844 (before the checks, so a page without the fix can be shot
 // too: PAGE=<another dashboard.html>).
 const dashboard=await dashboardPage(process.env.PAGE);
@@ -34,7 +35,7 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port,errors=[],shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const id=c=>'task-'+c.repeat(16).slice(0,16);
-const FOR_YOU=['e','j','a','c','g','f','d','b','i','h'].map(id);
+const FOR_YOU=['e','j','a','i','c','g','f','d','h','b'].map(id);
 let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -45,7 +46,7 @@ try{
   await page.locator('#section-foryou').waitFor();
   if(shots){await page.screenshot({path:`${shots}/order-${width}x${height}.png`});if(width===390)await page.screenshot({path:`${shots}/order-${width}x${height}-full.png`,fullPage:true})}
   const list=await page.locator('#suggestions article[id^="task-"]').evaluateAll(a=>a.map(x=>x.id));
-  assert.deepEqual(list,FOR_YOU,'due soon first, then prepared, then the rest; each newest first, a tie by weight');
+  assert.deepEqual(list,FOR_YOU,'due soon first, then the rest; each newest first, a tie by weight');
   if(width===1440){
    const side=await page.locator('#side-cards a[href^="#chat="]').evaluateAll(a=>a.map(x=>'task-'+x.getAttribute('href').slice(6)));
    assert.deepEqual(side,FOR_YOU.slice(0,8),'the sidebar in the same order (its first 8)');

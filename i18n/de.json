@@ -6825,7 +6825,6 @@
  "{} Machine, {} GB, paid by the Fleet: {}": "{} Machine, {} GB, bezahlt von der Fleet: {}",
  "{} New and still changing.{}": "{} Neu und noch im Wandel.{}",
  "{} Nothing is lost: The Machine picks up where it left off.": "{} Nichts geht verloren: The Machine macht da weiter, wo sie aufgehört hat.",
- "{} Preparing": "{} in Vorbereitung",
  "{} Ready, tap to show or hide": "{} Bereit, tippen zum Ein- oder Ausblenden",
  "{} To decide, tap to show or hide": "{} Zu entscheiden, tippen zum Ein- oder Ausblenden",
  "{} accepted {}, changed to: “{}”.": "{} hat {} angenommen, geändert in: „{}“.",
@@ -7257,7 +7256,6 @@
  },
  "{} picked a time on the booking link.": "{} hat über den Buchungslink eine Zeit gewählt.",
  "{} picked this time on your booking link.": "{} hat diese Zeit über deinen Buchungslink gewählt.",
- "{} preparing": "{} in Vorbereitung",
  "{} probably part of it": "{} wahrscheinlich dabei",
  "{} projects": {
   "one": "{} Projekt",

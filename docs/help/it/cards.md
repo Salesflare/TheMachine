@@ -12,8 +12,7 @@ La tua Machine legge tutto ciò che è nuovo e crea un'attività solo quando qua
 
 La pagina **Attività** le raggruppa:
 
-- **Per te**: tutto ciò che aspetta te, prima il più urgente. Ogni attività dice **Preparata** (il lavoro è fatto, e **Fallo** o **Invia** lo porta a termine) o **Serve il tuo intervento** (prima serve una tua decisione o una risposta).
-- **In preparazione**: la tua Machine ci sta lavorando. Un'attività a cui hai appena detto **Fallo** resta dov'era mentre si prepara, poi dice **Preparata**.
+- **Per te**: tutto ciò che aspetta te, prima il più urgente. Ogni attività dice **Preparata** (il lavoro è fatto, e **Fallo** o **Invia** lo porta a termine) **Serve il tuo intervento** (prima serve una tua decisione o una risposta) o **In preparazione…** (la tua Machine ci sta lavorando).
 - **Appena fatto**: un ultimo passo che hai confermato, come inviare un modulo o creare una issue, è andato a buon fine mentre eri via. Mostra cosa è successo finché non tocchi **Ho capito**, al massimo per un giorno, e lo sa anche il tuo telefono. Poi resta solo in Fatto.
 - **Torna più tardi**: posticipate, e le attività senza risposta a **Serve ancora?** (sotto).
 - **Promesse**: quello che hai promesso e quello che altri hanno promesso a te. Vedi [Promesse](promises.md).
@@ -21,7 +20,7 @@ La pagina **Attività** le raggruppa:
 
 Dopo l’invio, una breve nota dice dove si trova l’attività, come «Inviato. Spostato in Fatto.» o, se aspetta una risposta, «Inviato. Spostato in Più tardi fino a lun.» **Apri** ti ci porta. Il thread che esce dalla posta in arrivo per qualche giorno riguarda solo la tua casella. La ricerca trova un’attività per titolo o destinatario, anche in Più tardi e Fatto.
 
-**Per te** mette prima ciò che è scaduto o in scadenza entro domani, poi le domande della tua Fleet, poi le attività **Preparata**, poi quelle che aspettano te. In ogni parte, prima la più recente. Gli altri gruppi aperti mettono prima ciò che è scaduto o in scadenza entro domani, il resto dalla più recente. La barra laterale ha lo stesso ordine.
+**Per te** mette prima ciò che è scaduto o in scadenza entro domani, poi le domande della tua Fleet, poi il resto. In ogni parte, prima la più recente. Un'attività resta al suo posto mentre la tua Machine la prepara e quando ha finito: cambia solo il suo segno. Gli altri gruppi aperti mettono prima ciò che è scaduto o in scadenza entro domani, il resto dalla più recente. La barra laterale ha lo stesso ordine.
 
 Un’attività con **Sembra fatto** appare come una fatta, con ciò che mostra che è fatta, come "PR #3451 unita". Non è ancora chiusa: **Riapri** la rimette nella tua lista, e la tua Machine ne tiene conto. Non risultano mai in ritardo e non contano come in attesa di te. Un’attività con una bozza di risposta sembra fatta anche quando hai risposto tu in quella conversazione, come in Gmail o Slack.
 

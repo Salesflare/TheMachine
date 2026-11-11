@@ -12,8 +12,7 @@ Deine Machine liest alles Neue und erstellt nur dann eine Aufgabe, wenn etwas di
 
 Die Seite **Aufgaben** gruppiert sie:
 
-- **Für dich**: alles, was auf dich wartet, das Dringendste zuerst. Jede Aufgabe zeigt **Vorbereitet** (die Arbeit ist getan, und **Ausführen** oder **Senden** erledigt sie) oder **Braucht dich** (zuerst deine Entscheidung oder eine Antwort).
-- **Wird vorbereitet**: Deine Machine arbeitet daran. Eine Aufgabe, zu der du gerade **Ausführen** gesagt hast, bleibt an ihrem Platz, während sie vorbereitet wird, und zeigt dann **Vorbereitet**.
+- **Für dich**: alles, was auf dich wartet, das Dringendste zuerst. Jede Aufgabe zeigt **Vorbereitet** (die Arbeit ist getan, und **Ausführen** oder **Senden** erledigt sie) **Braucht dich** (zuerst deine Entscheidung oder eine Antwort) oder **Wird vorbereitet…** (deine Machine arbeitet daran).
 - **Gerade erledigt**: ein letzter Schritt, den du bestätigt hast, etwa ein Formular absenden oder ein Issue anlegen, ist gelungen, während du weg warst. Er zeigt, was passiert ist, bis du auf **Verstanden** tippst, höchstens einen Tag, und dein Handy erfährt es auch. Danach steht er nur noch unter Erledigt.
 - **Kommt später zurück**: zurückgestellt, und Aufgaben ohne Antwort auf **Noch nötig?** (unten).
 - **Versprechen**: was du versprochen hast und was andere dir versprochen haben. Siehe [Versprechen](promises.md).
@@ -21,7 +20,7 @@ Die Seite **Aufgaben** gruppiert sie:
 
 Nach dem Senden sagt ein kurzer Hinweis, wo die Aufgabe jetzt ist, etwa „Gesendet. Verschoben nach Erledigt.“ oder, wenn sie auf eine Antwort wartet, „Gesendet. Verschoben nach Später bis Mo.“ **Öffnen** bringt dich hin. Dass der E-Mail-Verlauf für ein paar Tage aus deinem Posteingang verschwindet, betrifft nur dein Postfach. Die Suche findet eine Aufgabe nach Titel oder Empfänger, auch in Später und Erledigt.
 
-**Für dich** zeigt zuerst, was überfällig oder bis morgen fällig ist, dann Fragen aus deiner Fleet, dann Aufgaben, die **Vorbereitet** sind, dann die, die dich brauchen. Darin jeweils neueste zuerst. Die anderen offenen Gruppen zeigen Überfälliges oder bis morgen Fälliges oben, den Rest neueste zuerst. Die Seitenleiste hat dieselbe Reihenfolge.
+**Für dich** zeigt zuerst, was überfällig oder bis morgen fällig ist, dann Fragen aus deiner Fleet, dann der Rest. Darin jeweils neueste zuerst. Eine Aufgabe bleibt an ihrem Platz, während deine Machine sie vorbereitet und wenn sie fertig ist: Nur ihre Markierung ändert sich. Die anderen offenen Gruppen zeigen Überfälliges oder bis morgen Fälliges oben, den Rest neueste zuerst. Die Seitenleiste hat dieselbe Reihenfolge.
 
 Eine Aufgabe mit **Scheinbar erledigt** sieht aus wie eine erledigte, mit dem, was zeigt, dass sie erledigt ist, etwa "PR #3451 gemergt". Sie ist noch nicht geschlossen: **Wieder öffnen** setzt sie wieder auf deine Liste, und deine Machine lernt daraus. Sie sind nie überfällig und zählen nicht als wartend auf dich. Eine Aufgabe mit einem Antwortentwurf scheint auch erledigt, wenn du in dieser Unterhaltung selbst geantwortet hast, etwa in Gmail oder Slack.
 
