@@ -128,6 +128,25 @@ class LearningLoop(unittest.TestCase):
         with self.store.connect() as db:
             self.assertEqual([r[0] for r in db.execute('SELECT text FROM facts WHERE removed_at IS NULL')], ['Vendor newsletters can wait a week.'])
 
+    def test_an_edit_past_the_start_of_a_long_draft_reaches_the_pass(self):
+        body = 'Hi Sam, ' + 'we reviewed the plan and agree on the scope. ' * 9
+        edits = [(body + 'Kind regards, Owner', body + 'Cheers, O.'),                         # a new sign-off
+                 ('Dear Sam, ' + body, 'Hi Sam, ' + body),                                     # a new greeting
+                 (body + 'Please send the deck. ' + body, body + 'Send the deck by Friday. ' + body)]  # one line in the middle
+        for before, after in edits:
+            with self.subTest(after=after[-30:]):
+                seen = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': a.now(), 'channel': 'email', 'title': 'T',
+                                            'before': before, 'after': after}])[0]
+                self.assertGreater(len(before), learning_loop.CLIP)
+                self.assertNotEqual(seen['draft'], seen['theirs'])
+                self.assertLessEqual(max(len(seen['draft']), len(seen['theirs'])), learning_loop.CLIP)  # the same budget
+                changed = [w for w in after.split() if w not in before.split()]
+                self.assertTrue(all(w in seen['theirs'] for w in changed), seen)
+                self.assertTrue(all(w in seen['draft'] for w in before.split() if w not in after.split()), seen)
+        short = learning_loop.view([{'kind': 'edit', 'source': 'dashboard', 'at': a.now(), 'channel': 'email', 'title': 'T',
+                                     'before': 'Dear Sam,\nthanks', 'after': 'Hi Sam, thanks'}])[0]
+        self.assertEqual((short['draft'], short['theirs']), ('Dear Sam, thanks', 'Hi Sam, thanks'))  # short ones stay whole
+
     def test_a_learned_fact_that_names_one_record_is_linked_to_it(self):
         with self.store.connect() as db:
             db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:ann@example.com','person','Ann Example',1,0,'{}')")
