@@ -11,6 +11,7 @@ from machine.cards import undated_card
 from machine.store import review_saves
 from machine.store.review import bulk_kind
 from mail_senders import automated
+from machine.store import outcomes
 import todo_areas
 
 LOG = logging.getLogger('personal-assistant')
@@ -104,6 +105,7 @@ class ReviewSavesApp:
                                  + '\nWhen they show it handled (the owner answered or did it, here or on another channel, someone else took '
                                  'care of it, a meeting covered it, a later message settled it) or no longer the owner\'s, make no to-do. '
                                  'Otherwise suggest again with newer_checked: [these event ids], saying in the body what is still open.')
+        done_when = outcomes.clean(args.get('done_when'))  # checked before anything is saved
         # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
         (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
         if args.get('based_on') is not None:
@@ -139,6 +141,9 @@ class ReviewSavesApp:
         if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and not saved.get('attached'):
             with self.store.connect() as db:  # what the owner may want to say in its chat: each update says it again
                 self.store.set_chat_asks(db, saved['id'], args.get('asks'))
+        if isinstance(saved, dict) and saved.get('id') and done_when:
+            with self.store.connect() as db:  # the result that counts as done: a send alone doesn't close it (outcomes.py)
+                outcomes.set_done_when(db, saved['id'], done_when, 'review')
         unknown = self.store.no_role_yet(args['event_ids'])
         if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
             saved['no_role_yet'] = unknown

@@ -5922,6 +5922,7 @@
  "Waiting for the current work to finish…": "Wacht tot het huidige werk af is…",
  "Waiting for the first sync. It starts within a few minutes.": "Wacht op de eerste sync. Die start binnen enkele minuten.",
  "Waiting for the owner to confirm.": "Wacht tot de eigenaar bevestigt.",
+ "Waiting for the result: {}": "Wacht op het resultaat: {}",
  "Waiting for the usage limit to reset.": "Wacht tot de gebruikslimiet reset.",
  "Waiting for the usage limit to reset. Starts around {}.": "Wacht tot de gebruikslimiet reset. Begint rond {}.",
  "Waiting for them": "Wacht op hen",
@@ -6190,6 +6191,7 @@
  "Worth it, day by day": "De moeite waard, dag na dag",
  "Worth it, week by week": "De moeite waard, week na week",
  "Would share: {}": "Zou delen: {}",
+ "Write a short nudge": "Schrijf een korte herinnering",
  "Write an answer first, or decline": "Schrijf eerst een antwoord, of weiger",
  "Write an answer first, or decline.": "Schrijf eerst een antwoord, of weiger.",
  "Write in the chat": "Schrijf in de chat",
@@ -7107,6 +7109,7 @@
  "{} joined {}. Share the team's Graph with them?": "{} is lid geworden van {}. De Graph van het team met hen delen?",
  "{} keeps message text in the clear in {}": "{} bewaart berichttekst onversleuteld in {}",
  "{} keeps restarting": "{} blijft herstarten",
+ "{} kept the promise to {}": "{} deed wat beloofd was: {}",
  "{} knows someone at {}.": "{} kent iemand bij {}.",
  "{} learnings to share, if you like: ": {
   "one": "{} inzicht om te delen, als je wilt: ",

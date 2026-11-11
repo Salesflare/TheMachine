@@ -22,6 +22,7 @@ from machine.store import review_saves
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
+from machine.store import outcomes
 import project_success
 import shared_graph
 from timeutil import local_tz, now
@@ -782,12 +783,14 @@ class ReviewStore:
         """Signals answering a message the owner sent from a card, so the review comes back
         with the answer and a take instead of leaving it to the inbox."""
         with self.connect() as db:
-            sent = db.execute("SELECT j.suggestion_id,j.payload,j.rfc_message_id,j.message_id,j.updated_at,s.title FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id "
+            sent = db.execute("SELECT j.suggestion_id,j.payload,j.rfc_message_id,j.message_id,j.updated_at,s.title,s.done_when,s.status FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id "
                               "WHERE j.status='sent' AND j.updated_at>=?", ((dt.datetime.fromisoformat(now()) - dt.timedelta(days=60)).isoformat(),)).fetchall()
         by_key = {}
         for job in sent:
             action = json.loads(job['payload'])
-            card = {'suggestion_id': job['suggestion_id'], 'title': job['title'], 'sent_at': job['updated_at']}
+            card = {'suggestion_id': job['suggestion_id'], 'title': job['title'], 'sent_at': job['updated_at'],
+                    # the result it waits for (outcomes.py): looks_handled when this shows it, else it keeps waiting
+                    **({'done_when': job['done_when']} if job['done_when'] and job['status'] not in ('completed', 'rejected') else {})}
             if action.get('kind') == 'email':
                 if job['rfc_message_id']:
                     by_key[('rfc', job['rfc_message_id'])] = card
@@ -1179,6 +1182,8 @@ class ReviewStore:
                 card = self.suggest(act['dedupe'], act['title'], act['body'], act['event_ids'], project=act['project'], owner_step=True, _db=db)
                 if not card.get('duplicate'):
                     project_success.linked(db, act['project_id'], card['id'], now())
+                    # The project's condition is its result: a nudge sent from it waits for that (outcomes.py)
+                    outcomes.set_done_when(db, card['id'], act['condition'], 'project')
                 db.execute('RELEASE project_blocker')
             except (sqlite3.Error, ValueError, TypeError, KeyError) as error:
                 db.execute('ROLLBACK TO project_blocker')

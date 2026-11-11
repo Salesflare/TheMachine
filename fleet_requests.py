@@ -328,6 +328,7 @@ class Requests:
     drop_card = None  # drops a card made for a silent acceptance that could not be told (assistant.py)
     own_event = None  # whether an event is the owner's own doing: a message they sent, a call they joined (assistant.py)
     wait_card = wake_card = None  # a handed-off card waits under Later until their Machine answers (assistant.py)
+    wait_result = None  # a handoff they took on whose to-do has a done when waits for that result (outcomes.py, assistant.py)
 
     # -- a teammate asks this owner
     def is_request(self, ask_id):
@@ -962,7 +963,10 @@ class Requests:
             with self.connect() as db:
                 if db.execute('SELECT 1 FROM fleet_meta WHERE key=?', ('handoff_withdrawn:' + str(row['id']),)).fetchone():
                     return  # taken back from them: their answer is kept, and moves or tells nothing
-        if row['kind'] == 'handoff' and stage in ('accepted', 'adjusted', 'done') and self.close_card and str(row['context'] or '').startswith('handoff:'):
+        if row['kind'] == 'handoff' and stage in ('accepted', 'adjusted') and self.wait_result and str(row['context'] or '').startswith('handoff:') \
+                and self.wait_result(row['context'][8:], row['name'], str(row['id'])):
+            pass  # taken on, but the to-do's result (its done when) isn't there yet: it waits for that, or for their Done
+        elif row['kind'] == 'handoff' and stage in ('accepted', 'adjusted', 'done') and self.close_card and str(row['context'] or '').startswith('handoff:'):
             try:  # it's theirs now: the owner's card is done, saying to whom (Undo or Reopen bring it back)
                 self.close_card(row['context'][8:], self.on_it_line(row['name'], answer) if (answer or {}).get('silent') else t('Handed off to {}', row['name']),
                                 'fleet-handoff-' + str(row['id']))

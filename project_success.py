@@ -229,6 +229,13 @@ def after_move(db, m, result, verdict, now):
         return
     if verdict['proven']:
         record_proof(db, row['id'], verdict['event_id'], verdict['url'], now)
+        saved = _row(db, row['id'])
+        if saved and saved['todo_id'] and saved['condition']:
+            from machine.store import outcomes
+            try:  # the to-do made for its blocker has its result now: it closes, or looks done (outcomes.result_seen)
+                outcomes.project_proof(db, saved['todo_id'], saved['condition'], verdict['event_id'], now)
+            except sqlite3.OperationalError:
+                pass  # a bare graph without the assistant's tables
     else:
         _put(db, row['id'], now, evidence_note=verdict['why'])
 
@@ -317,7 +324,7 @@ def action(row, found, condition):
     else:
         title = i18n.t('Overdue for {}: {}', found['who'], found['what'])
     return {'project_id': row['id'], 'project': row['name'], 'title': title[:89],
-            'body': i18n.t('Done when: {}', condition)[:690], 'event_ids': [found['event_id']],
+            'body': i18n.t('Done when: {}', condition)[:690], 'event_ids': [found['event_id']], 'condition': condition,
             'dedupe': f"project-success:{row['id']}:{kind}:{found.get('promise_id') or found['event_id']}"}
 
 

@@ -245,6 +245,10 @@ class StoreCore:
             # when the review said it is about none, NULL when no review said (an older to-do)
             if 'org' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN org TEXT')
+            # The result that counts as done (outcomes.py): one line, sealed, and who set it (review, run, promise, project)
+            if 'done_when' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN done_when TEXT')
+                db.execute('ALTER TABLE suggestions ADD COLUMN done_when_by TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')

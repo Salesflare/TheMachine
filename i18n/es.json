@@ -5922,6 +5922,7 @@
  "Waiting for the current work to finish…": "Esperando a que termine el trabajo en curso…",
  "Waiting for the first sync. It starts within a few minutes.": "Esperando la primera sincronización. Empieza en unos minutos.",
  "Waiting for the owner to confirm.": "Esperando a que el propietario confirme.",
+ "Waiting for the result: {}": "Esperando el resultado: {}",
  "Waiting for the usage limit to reset.": "Esperando a que se reinicie el límite de uso.",
  "Waiting for the usage limit to reset. Starts around {}.": "Esperando a que se reinicie el límite de uso. Empieza hacia las {}.",
  "Waiting for them": "Esperando respuesta",
@@ -6190,6 +6191,7 @@
  "Worth it, day by day": "Valió la pena, día a día",
  "Worth it, week by week": "Valió la pena, semana a semana",
  "Would share: {}": "Compartiría: {}",
+ "Write a short nudge": "Escribe un recordatorio breve",
  "Write an answer first, or decline": "Escribe primero una respuesta, o rechaza",
  "Write an answer first, or decline.": "Escribe primero una respuesta, o rechaza.",
  "Write in the chat": "Escribir en el chat",
@@ -7107,6 +7109,7 @@
  "{} joined {}. Share the team's Graph with them?": "{} se unió a {}. ¿Compartir con esa persona el Graph del equipo?",
  "{} keeps message text in the clear in {}": "{} guarda el texto de los mensajes sin cifrar en {}",
  "{} keeps restarting": "{} se reinicia una y otra vez",
+ "{} kept the promise to {}": "{} cumplió su promesa: {}",
  "{} knows someone at {}.": "{} conoce a alguien en {}.",
  "{} learnings to share, if you like: ": {
   "one": "{} aprendizaje para compartir, si quieres: ",

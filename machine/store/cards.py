@@ -16,6 +16,7 @@ import i18n
 import todo_org
 import locale_prefs
 import meeting_mail
+from machine.store import outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.calendar import calendar_owned, expiry_moment
@@ -161,12 +162,14 @@ def return_waiting(db):
     notification each. Those waiting after a run (no `until`) stay. Returns how many."""
     stamp = now()
     # `until` is read here, not in SQL: on a sealed Machine only the outcome's state is in the clear
-    rows = [row for row in db.execute("SELECT id,outcome FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
+    rows = [row for row in db.execute("SELECT id,outcome,done_when FROM suggestions WHERE status='prepared' AND handled_hint IS NULL "
                                       "AND json_extract(outcome,'$.state')='waiting'").fetchall()
             if '' < str(json.loads(row['outcome']).get('until') or '') <= stamp]
     for row in rows:
         who = str(json.loads(row['outcome']).get('waiting_on') or '')[:200]
         db.execute("UPDATE suggestions SET status='pending',outcome=? WHERE id=?", (encoded({'state': 'still_waiting', 'waiting_on': who}), row['id']))
+        if row['done_when']:  # still no result (outcomes.py): a nudge is one tap in its chat, drafted only when they ask
+            db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded([outcomes.nudge_ask()]), row['id']))
         db.execute('INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
                    ('update:' + uuid.uuid4().hex, row['id'], 'update', 'Brought back: still waiting on ' + who,
                     'assistant', stamp))
@@ -1037,13 +1040,17 @@ class CardsStore:
             db.execute("UPDATE preparations SET status='cancelled',updated_at=? WHERE suggestion_id=? AND status IN ('queued','starting','running','blocked')", (stamp, row['id']))
         # A task handed to someone closes when they answer; their answer is reviewed as a reply to
         # this card, so anything left for the owner gets a new card.
-        for row in db.execute("SELECT id,awaiting FROM suggestions WHERE status IN ('snoozed','prepared') AND json_extract(awaiting,'$.delegated')=1").fetchall():
+        # With a done when (outcomes.py) their answer isn't the result: it waits for that instead.
+        for row in db.execute("SELECT * FROM suggestions WHERE status IN ('snoozed','prepared') AND json_extract(awaiting,'$.delegated')=1").fetchall():
             watch = json.loads(row['awaiting'])
             answer = next((e for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE account_id=? AND kind=? AND occurred_at>? AND deleted=0 ORDER BY occurred_at',
                                                  (watch['account_id'], watch['kind'], watch['since'])) if awaiting_match(watch, dict(e), self.owner_user_ids)), None)
             if not answer:
                 continue
             stamp = now()
+            if row['done_when']:
+                outcomes.handoff_reply(db, row, watch, answer, stamp)
+                continue
             db.execute("UPDATE suggestions SET status='completed',completed_from='prepared',snoozed_until=NULL,resume_status=NULL,awaiting=? WHERE id=?",
                        (encoded({**watch, 'answered': answer['title'][:150]}), row['id']))
             db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",

@@ -5922,6 +5922,7 @@
  "Waiting for the current work to finish…": "Waiting for the current work to finish…",
  "Waiting for the first sync. It starts within a few minutes.": "Waiting for the first sync. It starts within a few minutes.",
  "Waiting for the owner to confirm.": "Waiting for the owner to confirm.",
+ "Waiting for the result: {}": "Waiting for the result: {}",
  "Waiting for the usage limit to reset.": "Waiting for the usage limit to reset.",
  "Waiting for the usage limit to reset. Starts around {}.": "Waiting for the usage limit to reset. Starts around {}.",
  "Waiting for them": "Waiting for them",
@@ -6190,6 +6191,7 @@
  "Worth it, day by day": "Worth it, day by day",
  "Worth it, week by week": "Worth it, week by week",
  "Would share: {}": "Would share: {}",
+ "Write a short nudge": "Write a short nudge",
  "Write an answer first, or decline": "Write an answer first, or decline",
  "Write an answer first, or decline.": "Write an answer first, or decline.",
  "Write in the chat": "Write in the chat",
@@ -7107,6 +7109,7 @@
  "{} joined {}. Share the team's Graph with them?": "{} joined {}. Share the team's Graph with them?",
  "{} keeps message text in the clear in {}": "{} keeps message text in the clear in {}",
  "{} keeps restarting": "{} keeps restarting",
+ "{} kept the promise to {}": "{} kept the promise to {}",
  "{} knows someone at {}.": "{} knows someone at {}.",
  "{} learnings to share, if you like: ": {
   "one": "{} learning to share, if you like: ",

@@ -76,7 +76,7 @@ PLAIN_METADATA = frozenset({'thread_id', 'from', 'to', 'labels', 'notification_k
 # keys in the clear. Not here, on purpose: columns the app matches in SQL, and what the Machine learned (facts, rules,
 # feedback, skills, profile, voices, roles), which support may read (docs/configuration.md). The words around a
 # learning are here: a Fleet's team learnings, what a learned change replaced and why, and the Fleet's log lines.
-DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks'), 'feedback_prompts': ('title',),
+DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'title_suggested', 'expires_what', 'chat_asks', 'done_when'), 'feedback_prompts': ('title',),
            'person_roles': ('quote',), 'person_orgs': ('quote',), 'person_summaries': ('lines', 'proposal'), 'person_facts': ('value',), 'promises': ('what', 'note'), 'profile_runs': ('evidence',),
            'draft_edits': ('before_subject', 'before_body', 'after_subject', 'after_body'),
            'graph_unnamed': ('titles',), 'preparation_calls': ('params', 'result'), 'analyses': ('summary',),
