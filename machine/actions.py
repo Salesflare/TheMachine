@@ -125,6 +125,7 @@ OWNER_ACTIONS = {
     'tip_done',
     'undo_merge',
     'unmerge_fact',
+    'web_chat_said',
     'whats_new_seen',
     'whatsapp_photos',
 }

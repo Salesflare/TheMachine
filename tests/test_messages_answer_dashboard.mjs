@@ -54,7 +54,8 @@ try{
   // Keywords: no answer asked, results newest first without words, in the search's order with words
   await searchFor(page,'regenboog');
   assert.equal(asks.length,0,'one word is never asked');assert.ok(await page.locator('#ev-answer').isHidden());
-  assert.deepEqual(await page.locator('#results article').evaluateAll(a=>a.map(x=>+x.dataset.event)),[51,52,53,54],'best match first, the meeting to come in its place');
+  // the list before the search (newest first) can still be the one shown when the first result appears: wait for the search's
+  await settled(()=>page.locator('#results article').evaluateAll(a=>a.map(x=>+x.dataset.event)),[51,52,53,54],'best match first, the meeting to come in its place');
   assert.equal(await page.locator('#results .ev-soon').count(),0,'no Coming up split in a search');
   // A question: the answer above the results, with the message it read, which opens
   await searchFor(page,QUESTION);

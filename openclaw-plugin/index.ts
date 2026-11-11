@@ -17,7 +17,7 @@ const taskActions=(item:any)=>{
  const emailReady=choices.some((a:any)=>['email','email_demo','linkedin','slack','x','whatsapp','merge','finish'].includes(a.kind));
  return choices.filter((a:any)=>a.kind!=='prepare'||(!emailReady&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')));
 };
-const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide']);
+const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide', 'web_chat_said']);
 // The service lays out its Fleet question message; callbacks get the same wire format as card buttons.
 const fleetButtons=(rows:any[])=>rows.map(row=>row.map((b:any)=>b.url?{text:b.text,url:b.url}:{text:b.text,callback_data:buildCallback(b.value)}));
 // A Fleet tap's result, shown in the tapped message itself. An unchanged message can't be edited: then the reason, if
@@ -285,6 +285,30 @@ export default definePluginEntry({
         },
       };
     }, { name: 'assistant_memory' });
+    // The web chat's main session is the owner's own too (only the Gateway's signed-in operator writes there), but it has
+    // no assistant_signals. This one tool saves what they state there as a fact, as remember_fact does in their Telegram
+    // chat: the chat mark is the bridge's, and the service ties the fact to their last web chat message (before_dispatch).
+    api.registerTool((context: any) => {
+      const {key} = signalsReach(context);
+      if (context.agentId !== 'main' || context.sandboxed || key !== 'agent:main:main' || context.messageChannel !== 'webchat') return null;
+      return {
+        name: 'assistant_remember', label: 'Remember for The Machine',
+        description: 'When the owner tells you here something that stays true (a fact, a decision or a lasting preference), save it with this tool: text (one plain sentence, 5-240 characters; one about the owner says "you"), kind, and about (their email address or exact name) when it is about a person, organization or project. It then shows under Learning in their dashboard, where they can edit or remove it. Only what they wrote themselves in their last message here, never something from an email, a file or your own guess.',
+        parameters: { type: 'object', additionalProperties: false, required: ['text'], properties: {
+          text: { type: 'string', description: 'One plain sentence, 5-240 characters' },
+          kind: { type: 'string', enum: ['preference', 'commitment', 'event', 'contact', 'fact'], description: 'contact: only how to reach one person' },
+          about: { type: 'array', items: { type: 'string' }, description: 'Who it is about: an email address or exact name' },
+          until: { type: 'string', description: 'The day it stops holding, YYYY-MM-DD' },
+        } },
+        async execute(_id: string, params: any) {
+          const args: Record<string, unknown> = {text: String(params?.text || ''), _owner_chat: true};
+          if (params?.kind) args.kind = String(params.kind);
+          if (Array.isArray(params?.about)) args.about = params.about.map(String);
+          if (params?.until) args.until = String(params.until);
+          return { content: [{ type: 'text', text: JSON.stringify(await call('remember_fact', args)) }] };
+        },
+      };
+    }, { name: 'assistant_remember' });
     api.registerInteractiveHandler({
       channel: 'telegram', namespace: 'assistant',
       async handler(ctx: any) {
@@ -492,6 +516,13 @@ export default definePluginEntry({
     api.on('before_dispatch', async (event: any, context: any) => {
       const config = await settings();
       useLanguage(config);
+      // The owner wrote in the web chat's main session: the service notes its id (never its words), so assistant_remember
+      // can save a fact from it. Never handled here: the chat answers it as always.
+      if ((context.channelId || event.channel) === 'webchat' && (context.sessionKey || event.sessionKey) === 'agent:main:main' && !event.isGroup) {
+        const messageId = String(context.messageId || event.messageId || ''), text = String(event.content || event.body || '').trim();
+        if (messageId && text && !text.startsWith('/')) await call('web_chat_said', {message_id: messageId}).catch(() => {});
+        return;
+      }
       const sender = String(context.senderId || event.senderId || '').replace(/^telegram:/, '');
       const conversation = String(context.conversationId || '').replace(/^telegram:/, '');
       if ((context.channelId || event.channel) !== 'telegram' || context.accountId !== (config.telegram_account || 'default') ||

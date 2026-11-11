@@ -8,7 +8,10 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 ## Ways in
 
 - **Chat.** What the owner states in their own private chat ("remember ...") is a fact (`remember_fact` with the
-  bridge's `_owner_chat`, tied to their last message there). A note or correction on a to-do (Change, Not needed, a
+  bridge's `_owner_chat`, tied to their last message there). In the web chat's main session, which has no
+  `assistant_signals`, the bridge's `assistant_remember` tool does the same: `before_dispatch` notes the id of the
+  owner's message there (`web_chat_said`, with the owner key, never the words) and the fact is tied to it
+  (`webchat-said:<id>`). A note or correction on a to-do (Change, Not needed, a
   to-do's chat, Fixed at the source) becomes a fact, a draft rule or a voice line through the review or the to-do's
   own run.
 - **Messages.** A review reads mail, Slack and the other sources. It never saves someone else's words as a fact; it

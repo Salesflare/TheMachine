@@ -248,6 +248,26 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  assert.match(JSON.parse(out.content[0].text).found,/aisle seats/);
  globalThis.fixtureCall=saved;
 }
+// The web chat's main session saves what the owner states there with assistant_remember: its message is noted by the
+// bridge (owner key, no words), the chat mark is the bridge's, and no other chat, group, agent or run gets the tool.
+{
+ const remember=toolFactories.assistant_remember;assert.ok(remember,'the remember tool is registered');
+ const web={agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'};
+ assert.equal(remember(web).name,'assistant_remember');assert.match(remember(web).description,/stays true.*Learning/);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:main',messageChannel:'whatsapp'},
+   {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32),messageChannel:'webchat'},{agentId:'work',sessionKey:'agent:main:main',messageChannel:'webchat'},
+   {...web,sandboxed:true},{agentId:'main',sessionKey:'agent:main:webchat:other',messageChannel:'webchat'}])assert.equal(remember(c),null);
+ const saved=globalThis.fixtureCall,calls=[];
+ globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {id:7,text:args.text};};
+ assert.equal(await beforeDispatch({content:'remember that I take the train',channel:'webchat'},{channelId:'webchat',sessionKey:'agent:main:main',messageId:'run-1'}),undefined);
+ assert.deepEqual(calls.pop(),['web_chat_said',{message_id:'run-1'}]);  // its id only, and the chat answers as always
+ for(const [event,ctx] of [[{content:'/status'},{channelId:'webchat',sessionKey:'agent:main:main',messageId:'run-2'}],[{content:'hi'},{channelId:'webchat',sessionKey:'agent:main:other',messageId:'run-3'}],
+   [{content:'hi'},{channelId:'whatsapp',sessionKey:'agent:main:main',messageId:'run-4'}]])await beforeDispatch(event,ctx);
+ assert.deepEqual(calls,[]);  // a command, another session or another channel: nothing noted
+ await remember(web).execute('t',{text:'You take the train.',kind:'preference',_owner_chat:false,decision_id:'n1'});
+ assert.deepEqual(calls.pop(),['remember_fact',{text:'You take the train.',_owner_chat:true,kind:'preference'}]);
+ globalThis.fixtureCall=saved;
+}
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {
  const key='agent:main:assistant-review-skills-'+'d'.repeat(32);
