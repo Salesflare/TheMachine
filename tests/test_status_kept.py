@@ -76,20 +76,26 @@ class StatusKept(unittest.TestCase):
         self.assertNotIn('marked', self.status()['review_health'])
 
     def test_requests_at_once_share_one_build(self):
-        built = self.app.status_built
+        # One tab starts the build, five more ask while it runs. The minute is part of what the status is kept for, so
+        # the clock stands still here: a minute turning during the build made the late ones build again (on a busy runner)
+        built, building, release = self.app.status_built, threading.Event(), threading.Event()
 
         def slow(done):
-            time.sleep(0.3)
+            building.set(); release.wait(10)
             return built(done)
         self.app.status_built = slow
         self.store.commit_page('work', {}, [mail(1)])  # something new: one build is due
-        start, out = threading.Barrier(6), []
+        out = []
 
         def ask():
-            start.wait(); out.append(self.status())
-        threads = [threading.Thread(target=ask) for _ in range(6)]
-        for t in threads: t.start()
-        for t in threads: t.join(10)
+            out.append(self.status())
+        with patch('machine.app.status.now', return_value=NOW.isoformat()):
+            threads = [threading.Thread(target=ask)]
+            threads[0].start(); self.assertTrue(building.wait(10))
+            threads += [threading.Thread(target=ask) for _ in range(5)]
+            for t in threads[1:]: t.start()
+            time.sleep(0.2); release.set()  # the five are waiting on it by now (or come after it: kept, as nothing changed)
+            for t in threads: t.join(10)
         self.assertEqual(len(out), 6)
         self.assertEqual(len(self.builds), 1, 'six tabs asking at once: one build')
 

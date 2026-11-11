@@ -28,7 +28,7 @@ const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const scheme of ['light','dark'])for(const [width,height] of [[390,844],[1440,900]]){
-  const context=await browser.newContext({viewport:{width,height},colorScheme:scheme,locale:'en-US'});
+  posts.length=0;const context=await browser.newContext({viewport:{width,height},colorScheme:scheme,locale:'en-US'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);
@@ -44,7 +44,9 @@ try{
   if(shots){await page.waitForTimeout(300);await card.screenshot({path:`${shots}/connect-slack-${width}-${scheme}.png`})}
   await lead.click();
   await page.waitForFunction(()=>location.hash.startsWith('#health')||document.querySelector('nav [data-tab="health"]')?.classList.contains('active'));
-  assert.ok(posts.includes('connect_sources'));  // the Add list, with Slack in it
+  // the Add list, with Slack in it: its post may reach the stand-in after the tab shows (a busy runner)
+  for(let i=0;i<200&&!posts.includes('connect_sources');i++)await page.waitForTimeout(25);
+  assert.ok(posts.includes('connect_sources'));
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('connect from a stuck to-do: ok');
