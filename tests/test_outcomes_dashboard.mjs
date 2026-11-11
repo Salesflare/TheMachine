@@ -4,8 +4,8 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Done when (outcomes.py): an open to-do shows the result it is done at, in one muted line under its status, unless its
-// text says it already. Closed ones don't. One waiting for that result after a Send sits under Waiting on others.
+// Done when (machine/store/outcomes.py): the result that closes a to-do is one row under its Details, never a line on the
+// to-do itself (its title says it already). One waiting for that result after a Send sits under Waiting on others.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const cards=[
@@ -28,13 +28,14 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-o1').waitFor();
-  assert.equal(await page.locator('#task-o1 .done-when').textContent(),'Done when: Sam signed the order form.');
-  assert.equal(await page.locator('#task-o2 .done-when').count(),0);  // its text says it already
-  // Waiting for its result after the Send: under Waiting on others, with the line
+  const row=id=>page.locator('#task-'+id+' .card-fields div').filter({hasText:'Done when'});
+  for(const id of ['o1','o2','o3','o4'])assert.equal(await page.locator('#task-'+id+' > p').filter({hasText:/Done when/}).count(),0,id);  // not on the face
+  assert.equal(await row('o1').locator('dd').textContent(),'Sam signed the order form');
+  assert.equal(await page.locator('#details-o1').isHidden(),true);  // folded until Details opens
+  // Waiting for its result after the Send: under Waiting on others, the row under its Details
   assert.equal(await page.locator('#waiting-list #task-o3').count(),1);
-  assert.equal(await page.locator('#task-o3 .done-when').textContent(),'Done when: Sam sent the quote.');
-  assert.equal(await page.locator('#task-o4 .done-when').count(),0);
-  if(process.env.OUTCOMES_SHOT){await page.locator('#waiting-list').evaluate(d=>{d.open=true});
+  assert.equal(await row('o3').locator('dd').textContent(),'Sam sent the quote');
+  if(process.env.OUTCOMES_SHOT){await page.locator('#waiting-list').evaluate(d=>{d.open=true});await page.locator('#task-o1 .details-toggle').click();await page.locator('#details-o1').waitFor();
    for(const scheme of ['light','dark']){await page.emulateMedia({colorScheme:scheme});await page.waitForTimeout(400);await page.screenshot({path:`${process.env.OUTCOMES_SHOT}/done-when-${width}-${scheme}.png`,fullPage:width===390})}}
   await context.close();
  }

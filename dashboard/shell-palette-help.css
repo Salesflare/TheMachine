@@ -199,7 +199,7 @@ input[type=checkbox],input[type=radio],input[type=range],progress{accent-color:v
 }
 /* Under Details, an open to-do's title, project and area (todos-cards.js cardFields): each a tap to change. */
 .card-fields{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;margin:2px 0 10px;font-size:var(--fs-sm)}
-.card-fields>div{display:contents}.card-fields dt{color:var(--muted)}.card-fields dd{margin:0;min-width:0}
+.card-fields>div{display:contents}.card-fields dt{color:var(--muted)}.card-fields dd{margin:0;min-width:0}.card-fields dd.ro{padding:0 11px}
 .card-fields .field{display:inline-flex;max-width:100%;min-height:32px;align-items:center;padding:4px 10px;border:1px solid transparent;border-radius:8px;background:var(--tile);color:var(--text);font:inherit;text-align:left;cursor:pointer;box-shadow:none}
 .card-fields .field>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-fields .field:hover{background:var(--tile-hover)}
 .card .actions>[hidden]{display:none!important}
