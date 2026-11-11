@@ -531,6 +531,7 @@
  "Asked first; if you answer, they get: {}.": "Primero te pregunta; si respondes, recibe: {}.",
  "Asked first; if you answer, {} gets: {}.": "Primero te pregunta; si respondes, {} recibe: {}.",
  "Asked for a review. The to-do shows how it goes.": "Revisión pedida. La tarea muestra cómo va.",
+ "Asked in chat": "Pedido en el chat",
  "Asked to add a summary line": "Pidió añadir una línea de resumen",
  "Asked to add a to-do": "Pidió añadir una tarea",
  "Asked to add an email draft": "Pidió añadir un borrador de correo",
@@ -1603,7 +1604,9 @@
   "one": "{} inicio de sesión guardado olvidado.",
   "other": "{} inicios de sesión guardados olvidados."
  },
+ "Forgot: {}": "Olvidado: {}",
  "Forgotten everywhere.": "Olvidado en todas partes.",
+ "Forgotten in chat": "Olvidado en el chat",
  "Forgotten.": "Olvidado.",
  "Formatting": "Formato",
  "Forwarded {} mails to {} in {} weeks": "{0} correos reenviados a {1} en {2} semanas",

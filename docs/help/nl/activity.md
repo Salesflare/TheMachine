@@ -16,7 +16,7 @@ Open **Instellingen**, **Activiteit**. Elke regel is iets wat The Machine deed, 
 - een link naar de to-do, als die er is
 - bij een AI die je koppelde, zoals ChatGPT of Claude: de naam met **(gekoppelde AI)**, zodat je ze onderscheidt van The Machine zelf
 
-Je ziet berichten en antwoorden, wijzigingen in documenten en de agenda, stappen op het web, oplossingen die hij samenvoegde, codeeragents, Fleet-vragen en -antwoorden, inzichten verstuurd naar het team van The Machine, skills, Graph-imports, toegevoegde of verwijderde koppelingen, en elke blik van ons team via [Toegang voor support](get-support.md#support-access), ook geweigerde.
+Je ziet berichten en antwoorden, wijzigingen in documenten en de agenda, stappen op het web, oplossingen die hij samenvoegde, codeeragents, Fleet-vragen en -antwoorden, inzichten verstuurd naar het team van The Machine, skills, Graph-imports, feiten die je in de chat liet vergeten (met **Ongedaan maken**), toegevoegde of verwijderde koppelingen, en elke blik van ons team via [Toegang voor support](get-support.md#support-access), ook geweigerde.
 
 ## Filteren
 

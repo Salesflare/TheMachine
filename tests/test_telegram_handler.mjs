@@ -273,16 +273,38 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
 {
  assert.ok(promptBuild,'the memory habit hook is registered');
  const web=await promptBuild({},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat'});
- assert.match(web.appendSystemContext,/assistant_remember.*don't say "remember".*assistant_memory.*Small talk/s);
+ assert.match(web.appendSystemContext,/assistant_remember.*don't say "remember".*assistant_memory.*forget or stop using something learned, call assistant_forget\..*Small talk/s);
  assert.doesNotMatch(web.appendSystemContext,/remember_fact/);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000001',chatId:'1000001'},{agentId:'main',sessionKey:'agent:main:main'}])
-  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals remember_fact.*assistant_memory/s);
+  assert.match((await promptBuild({},c)).appendSystemContext,/assistant_signals remember_fact.*assistant_memory.*call assistant_forget\./s);
  for(const c of [{agentId:'main',sessionKey:'agent:main:main',channel:'telegram',senderId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageProvider:'whatsapp'},
    {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageProvider:'webchat'},
    {agentId:'main',sessionKey:'agent:main:main',messageProvider:'webchat',sandboxed:true}])assert.equal(await promptBuild({},c),undefined);
  // The tool descriptions say the same where they are shown: in passing, and looked up before answering
  assert.match(toolFactories.assistant_remember({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).description,/without saying "remember"/);
  assert.match(toolFactories.assistant_memory({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).description,/Look here first when an answer may depend/);
+}
+// The owner's own main chat (their private Telegram chat, the web chat) forgets with assistant_forget: declared in the
+// manifest as side-effecting, the chat mark and the owner key are the bridge's, and no other chat, agent or run gets it.
+{
+ const manifest=JSON.parse(await readFile(new URL('../openclaw-plugin/openclaw.plugin.json',import.meta.url),'utf8'));
+ assert.ok(manifest.contracts.tools.includes('assistant_forget'));assert.equal(manifest.toolMetadata.assistant_forget.sideEffecting,true);
+ assert.match(source,/const OWNER_ACTIONS = new Set\(\[[^\]]*'forget_learned'/);  // sent with the owner key: the local CLI can't forget
+ const forget=toolFactories.assistant_forget;assert.ok(forget,'the forget tool is registered');
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'},{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'}])
+  assert.equal(forget(c).name,'assistant_forget');
+ assert.match(forget({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).description,/asks to forget, drop or stop using/);
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageChannel:'whatsapp'},
+   {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageChannel:'webchat'},
+   {agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat',sandboxed:true},{agentId:'main',sessionKey:'agent:main:webchat:other',messageChannel:'webchat'}])assert.equal(forget(c),null);
+ const saved=globalThis.fixtureCall,calls=[];
+ globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {forgot:'You moved to Ghent.',undo:3};};
+ const out=await forget({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).execute('t',{words:'moved to Ghent',_owner_chat:false,id:'x'});
+ assert.deepEqual(calls.pop(),['forget_learned',{words:'moved to Ghent',_owner_chat:true}]);  // a model's mark or a non-number id never goes
+ assert.equal(JSON.parse(out.content[0].text).undo,3);
+ await forget({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).execute('t',{id:12});
+ assert.deepEqual(calls.pop(),['forget_learned',{words:'',_owner_chat:true,id:12}]);
+ globalThis.fixtureCall=saved;
 }
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {

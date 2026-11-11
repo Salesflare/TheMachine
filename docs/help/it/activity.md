@@ -16,7 +16,7 @@ Apri **Impostazioni**, **Movimenti**. Ogni riga è una cosa che The Machine ha f
 - un link alla sua attività, quando c’è
 - per un’IA che hai collegato, come ChatGPT o Claude: il suo nome con **(IA collegata)**, per distinguerla da The Machine
 
-Elenca messaggi e risposte, modifiche a documenti e calendario, passaggi sul web, correzioni che ha unito, agenti di programmazione, domande e risposte del Fleet, apprendimenti inviati al team di The Machine, skill, importazioni nel Graph, connessioni aggiunte o rimosse, e ogni accesso del nostro team con l’[Accesso per l’assistenza](get-support.md#support-access), anche quelli rifiutati.
+Elenca messaggi e risposte, modifiche a documenti e calendario, passaggi sul web, correzioni che ha unito, agenti di programmazione, domande e risposte del Fleet, apprendimenti inviati al team di The Machine, skill, importazioni nel Graph, fatti che hai chiesto di dimenticare in chat (con **Annulla**), connessioni aggiunte o rimosse, e ogni accesso del nostro team con l’[Accesso per l’assistenza](get-support.md#support-access), anche quelli rifiutati.
 
 ## Filtrare
 

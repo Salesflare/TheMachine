@@ -17,7 +17,7 @@ const taskActions=(item:any)=>{
  const emailReady=choices.some((a:any)=>['email','email_demo','linkedin','slack','x','whatsapp','merge','finish'].includes(a.kind));
  return choices.filter((a:any)=>a.kind!=='prepare'||(!emailReady&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')));
 };
-const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide', 'web_chat_said']);
+const OWNER_ACTIONS = new Set(['decide', 'feedback_reply', 'request_feedback', 'bind_feedback_prompt', 'confirm_action', 'undo_merge', 'fleet_decide', 'fleet_notice_decide', 'recap_decide', 'web_chat_said', 'forget_learned']);
 // The service lays out its Fleet question message; callbacks get the same wire format as card buttons.
 const fleetButtons=(rows:any[])=>rows.map(row=>row.map((b:any)=>b.url?{text:b.text,url:b.url}:{text:b.text,callback_data:buildCallback(b.value)}));
 // A Fleet tap's result, shown in the tapped message itself. An unchanged message can't be edited: then the reason, if
@@ -158,7 +158,7 @@ const SAID_FACT_RULE = ' When the owner tells you here something that stays true
 // The same habit for the owner's own main chat, in its system prompt (memoryHabit below): in OpenClaw's Code Mode the
 // model sees tool names and input hints only, never their descriptions, so the rules above never reached it there and
 // what the owner said in passing went unsaved, and questions went unlooked-up. Short, the same on every turn (cached).
-const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory first. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
+const MEMORY_HABIT = (save: string) => `The Machine's memory, in this chat: when the owner mentions something about themselves, their preferences or their work that will still hold later (a diet, a habit, a plan or date that moved, who handles what), save it with ${save} in that same turn, also when they don't say "remember"; one fact per call. When an answer may depend on what they told you before (where to book, when something is, what they like, who someone is), look it up with assistant_memory first. When they ask to forget or stop using something learned, call assistant_forget. Small talk, thanks, moods and one-off requests are not facts: save nothing for them.`;
 // Which save tool the owner's main chat has this turn (the same reach as the tools: their private Telegram chat or the
 // heartbeat gets assistant_signals, the web chat assistant_remember); '' for any other chat, agent or run.
 function memoryHabit(ctx: any): string {
@@ -322,6 +322,28 @@ export default definePluginEntry({
         },
       };
     }, { name: 'assistant_remember' });
+    // The owner's own main chat (as assistant_memory) forgets what they ask it to: the service finds their own fact or
+    // rule that clearly matches and forgets it, with Undo in Activity; several or none come back for the chat to ask.
+    api.registerTool((context: any) => {
+      const {key, privateMain} = signalsReach(context);
+      const own = privateMain || (key === 'agent:main:main' && context.messageChannel === 'webchat');
+      if (context.agentId !== 'main' || context.sandboxed || !own) return null;
+      return {
+        name: 'assistant_forget', label: 'Forget for The Machine',
+        description: 'When the owner asks to forget, drop or stop using something The Machine learned, call this with their words for it. One clear match is forgotten: say "Forgot: " and its text. Several or none come back: ask which one, then call again with its id. undo brings back what it just forgot.',
+        parameters: { type: 'object', additionalProperties: false, properties: {
+          words: { type: 'string', description: 'The thing to forget, in the owner’s words (like "moved to Ghent")' },
+          id: { type: 'integer', description: 'The candidate the owner picked' },
+          undo: { type: 'integer', description: 'The undo id a forget returned' },
+        } },
+        async execute(_id: string, params: any) {
+          const args: Record<string, unknown> = {words: String(params?.words || ''), _owner_chat: true};
+          if (Number.isInteger(params?.id)) args.id = params.id;
+          if (Number.isInteger(params?.undo)) args.undo = params.undo;
+          return { content: [{ type: 'text', text: JSON.stringify(await call('forget_learned', args)) }] };
+        },
+      };
+    }, { name: 'assistant_forget' });
     api.registerInteractiveHandler({
       channel: 'telegram', namespace: 'assistant',
       async handler(ctx: any) {

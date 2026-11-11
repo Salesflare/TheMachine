@@ -21,7 +21,8 @@ Every line has one shape, the same for every source (and for sources other modul
      'detail': None,                 # an optional second line
      'withdraw': None,               # {'id', 'n'} on a learning that can still be withdrawn (Fleet's Withdraw)
      'undo': None}                   # {'action', 'id'}: what still can be taken back, by that owner's dashboard action
-                                     # with {'id'} (a connected AI's Graph change: ai_undo). The source keeps what it was
+                                     # with {'id'} (a connected AI's Graph change: ai_undo; a fact
+                                     # forgotten in chat: learning_undo). The source keeps what it was
                                      # before and refuses when it changed since; this module only passes it on.
 
 What it reads:
@@ -37,6 +38,7 @@ What it reads:
 - access: The Machine team's looks under Support access. They live on the control plane (hosted) or come through the
   Fleet (self-hosted); the dashboard adds them from Settings, Security, as it reads them there.
 - ai: other AIs connected over MCP, each call and each refused one. Their module adds them with register('ai', read).
+- memory: what the owner asked their main chat to forget (learning_changes kind 'forgot'), with Undo while it holds.
 
 A source that isn't set up on this Machine (no table yet) adds nothing."""
 from __future__ import annotations
@@ -51,7 +53,7 @@ from machine import names
 
 LOG = logging.getLogger('personal-assistant')
 KINDS = ('messages', 'docs', 'calendar', 'web', 'fixes', 'agents', 'fleet', 'learnings', 'skills', 'graph', 'connections',
-         'access', 'ai')
+         'access', 'ai', 'memory')
 OUTCOMES = ('done', 'refused', 'failed', 'undone', 'pending')
 PAGE = 50
 MAX_OFFSET = 2000
@@ -313,6 +315,16 @@ def _graph(db, limit, tables):
                     'undone' if r['undone_at'] else 'done', i18n.t('Undone') if r['undone_at'] else i18n.t('Done'), 'Graph', i18n.t('After your OK'))
 
 
+def _memory(db, limit, tables):
+    if 'learning_changes' not in tables:
+        return
+    for r in db.execute("SELECT id,at,after,status FROM learning_changes WHERE kind='forgot' ORDER BY at DESC,id DESC LIMIT ?", (limit,)):
+        undone = r['status'] == 'undone'
+        yield _line('memory', r['id'], r['at'], i18n.t('Forgot: {}', _clip(r['after'], 200)), 'undone' if undone else 'done',
+                    i18n.t('Undone') if undone else i18n.t('Done'), None, i18n.t('Asked in chat'),
+                    undo=None if undone else {'action': 'learning_undo', 'id': r['id']})
+
+
 def _connections(db, limit, tables):
     if 'activity_accounts' not in tables:
         return
@@ -363,6 +375,7 @@ def page(db, config=None, kind='', offset=0, limit=PAGE, outcome='', actor=''):
         'skills': lambda: _skills(db, size['skills'], tables),
         'graph': lambda: _graph(db, size['graph'], tables),
         'connections': lambda: _connections(db, size['connections'], tables),
+        'memory': lambda: _memory(db, size['memory'], tables),
     }
     for name, reads in _sources.items():
         for n, read in enumerate(reads):

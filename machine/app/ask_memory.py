@@ -614,3 +614,29 @@ def for_chat(app, question, limit=CHAT_CHARS):
                         source='note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
                         score=None if said else (near_old if 'state' in f else near).get(f['id']))
     return '\n'.join([CHAT_HEAD, *lines]) if lines else ''
+
+
+# The owner asks their main chat to forget something learned (the bridge's assistant_forget, forget_learned): the same
+# matching as the chat's recall finds their own current facts and draft rules, and only a clear match is forgotten.
+FORGET_CANDIDATES = 5
+
+
+def to_forget(app, words):
+    """(clear, candidates) for the owner's words about what to forget: their own current facts and draft rules that
+    match by words (as for_chat), then by meaning (stored vectors, when the Machine has embeddings), best first, at
+    most FORGET_CANDIDATES. Never a connected AI's fact; a teammate's learnings are not facts here at all. clear is the
+    one to forget, or None: the only fact that has every one of the words. One that has only some of them, a match by
+    meaning alone, or several that fit as well, is never clear: the chat asks which one."""
+    asked = _stems(fact_words(_asked(words)))
+    if not asked:
+        return None, []
+    settings = embeddings.settings(app.config)
+    vector = _chat_vector(app, words, settings)
+    with app.store.connect() as db:
+        near = _near_current(db, vector, settings) if vector else {}
+    own = [f for f in app.store.facts() if f['kind'] in ('fact', 'draft') and not ai_fact_by(f)]
+    found = sorted(((_shared(asked, f['text']), near.get(f['id'], 0.0), f) for f in own if f['id'] in near or _shared(asked, f['text'])),
+                   key=lambda x: x[:2], reverse=True)
+    candidates = [f for _, _, f in found][:FORGET_CANDIDATES]
+    full = [f for shared, _, f in found if shared == len(asked)]
+    return (full[0] if len(full) == 1 else None), candidates

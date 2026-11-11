@@ -531,6 +531,7 @@
  "Asked first; if you answer, they get: {}.": "Eerst gevraagd; als je antwoordt, krijgen ze: {}.",
  "Asked first; if you answer, {} gets: {}.": "Eerst gevraagd; als je antwoordt, krijgt {}: {}.",
  "Asked for a review. The to-do shows how it goes.": "Review gevraagd. De to-do toont hoe het loopt.",
+ "Asked in chat": "Gevraagd in de chat",
  "Asked to add a summary line": "Vroeg een regel aan de samenvatting toe te voegen",
  "Asked to add a to-do": "Vroeg een to-do toe te voegen",
  "Asked to add an email draft": "Vroeg een e-mailconcept toe te voegen",
@@ -1603,7 +1604,9 @@
   "one": "{} opgeslagen login vergeten.",
   "other": "{} opgeslagen logins vergeten."
  },
+ "Forgot: {}": "Vergeten: {}",
  "Forgotten everywhere.": "Overal vergeten.",
+ "Forgotten in chat": "Vergeten in de chat",
  "Forgotten.": "Vergeten.",
  "Formatting": "Opmaak",
  "Forwarded {} mails to {} in {} weeks": "{0} mails doorgestuurd naar {1} in {2} weken",

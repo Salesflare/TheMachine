@@ -17,6 +17,13 @@ made-up data, no model call), and what is still missing. How memory is picked fo
   the owner's main chat (`before_prompt_build`, `MEMORY_HABIT`). A note or correction on a to-do (Change, Not needed, a
   to-do's chat, Fixed at the source) becomes a fact, a draft rule or a voice line through the review or the to-do's
   own run.
+- **Forgetting in chat.** When the owner asks either main chat to forget something learned, the bridge's
+  `assistant_forget` tool sends their words (`forget_learned`, an owner action, only after they wrote there). The
+  chat recall's word and meaning matching (`ask_memory.to_forget`) finds their own current facts and rules, never a
+  connected AI's; only the one fact that has every word is forgotten, as Learning's Remove does it
+  (`Store.forget_fact`: the row stays, its vectors go). Several or none come back for the chat to ask, and an id is
+  taken only from those it offered. Each forget is a `learning_changes` row (kind `forgot`), so Learning, Changes and
+  Settings, Activity show it with the same Undo (`learning_undo`).
 - **Messages.** A review reads mail, Slack and the other sources. It never saves someone else's words as a fact; it
   keeps promises, the Graph (roles, organizations, projects, summaries), the owner's voice from their own sent
   messages, contact details, and ends a fact a newer message overturned.
