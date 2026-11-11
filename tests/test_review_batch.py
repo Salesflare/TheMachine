@@ -2,6 +2,7 @@
 before. Classified without a model; unsure is a person's."""
 import datetime as dt
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
@@ -110,9 +111,16 @@ class Runner:
 
 
 class Worker(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # A new database's schema, made once and copied for every test (making it took most of a test)
+        cls.kept = tempfile.TemporaryDirectory(); cls.addClassCleanup(cls.kept.cleanup)
+        a.Store(Path(cls.kept.name) / 'events.sqlite')
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
+        shutil.copytree(self.kept.name, temp.name, dirs_exist_ok=True)
         self.store = a.Store(Path(temp.name) / 'events.sqlite')
         self.app = object.__new__(a.App)
         self.app.store = self.store

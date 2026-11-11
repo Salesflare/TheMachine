@@ -129,7 +129,10 @@ class Read(unittest.TestCase):
             time.sleep(0.1)
         return found
 
-    FAST = {'pause': 300}  # the made-up page loads a chunk within 1.1 s; the real one gets 0.8 s and up to 5 s more
+    FAST = {'pause': 300}  # the made-up page loads a chunk within 0.5 s; the real one gets 0.8 s and up to 5 s more
+    # A page that never answers a scroll (every friend there at once) is read as it is after WAKE ms: 45 s for the real
+    # page, 1.5 s for the made-up one that has nothing more to load.
+    STILL = {**FAST, 'wake': 1500}
 
     @staticmethod
     def friends(total=500, skip=-1):
@@ -152,7 +155,7 @@ class Read(unittest.TestCase):
         self.assertEqual(found, {'Robin Vale': '--11-10', **self.friends()})
 
     def test_a_month_nobody_has_is_named_after_the_page_stays_quiet(self):
-        result = fb.read(self.base, self.origin + '/events/birthdays/small/skip5/', {**self.FAST, 'idle': 3000})
+        result = fb.read(self.base, self.origin + '/events/birthdays/small/skip5/', {**self.STILL, 'idle': 3000})
         self.assertFalse(result['capped'])
         self.assertEqual(result['missing'], [(dt.date.today().month + 4) % 12 + 1])
         self.assertEqual(len(fb.found(result['items'], TODAY)), 12)
@@ -205,7 +208,7 @@ class Read(unittest.TestCase):
         self.assertEqual(fb.found(result['items'], TODAY), {'Robin Vale': '--11-10', **self.friends(1700)})
 
     def test_reads_the_tooltips_when_the_labels_have_no_dates(self):
-        found = fb.found(fb.read(self.base, self.origin + '/events/birthdays/hover/small/', self.FAST)['items'], TODAY)
+        found = fb.found(fb.read(self.base, self.origin + '/events/birthdays/hover/small/', self.STILL)['items'], TODAY)
         self.assertEqual(found, self.friends(12))  # the Today picture has no tooltip in this made-up page
 
     def test_a_sign_in_page_is_said_and_nothing_is_read(self):
@@ -218,12 +221,28 @@ class Import(unittest.TestCase):
              {'label': 'Jo Tanaka (December 3)', 'heading': 'December'}, {'label': 'Pat Quinn (December 9)', 'heading': 'December'},
              {'label': 'Lee Okafor (January 5)', 'heading': 'January'}]
 
+    ACCOUNTS = [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'}]
+
+    @classmethod
+    def setUpClass(cls):
+        # The made-up people, built once (a new database's schema takes most of a test) and copied for every test
+        cls.kept = tempfile.TemporaryDirectory(); cls.addClassCleanup(cls.kept.cleanup)
+        store = a.Store(Path(cls.kept.name) / 'e.sqlite')
+        store.accounts = cls.ACCOUNTS
+        with store.connect() as db:
+            graph.ensure(db)
+            for node, name in (('email:robin@mail.example', 'Robin Vale'), ('email:sam@mail.example', 'Sam Rivera'),
+                               ('email:jo@mail.example', 'Jo Tanaka'), ('email:pat@one.example', 'Pat Quinn'), ('email:pat@two.example', 'Pat Quinn')):
+                db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,'person',?,1,?,5,?)",
+                           (node, name, '2026-11-01', json.dumps({'identifiers': [node], 'wrote': 3})))
+            enrichment.offer_facts(db, [(['email:jo@mail.example'], {'birthday': '1990-12-03'}, enrichment.RECORD)], 'google', '2026-11-01')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        shutil.copytree(self.kept.name, self.temp.name, dirs_exist_ok=True)
         self.store = a.Store(Path(self.temp.name) / 'e.sqlite')
         self.app = object.__new__(a.App); self.app.store = self.store
-        self.app.config = {'accounts': [{'id': 'home', 'email': 'owner@mail.example', 'service': 'gmail', 'boundary': 'personal'}],
-                           'timezone': 'Europe/Brussels', 'browser_cdp_url': 'http://127.0.0.1:9'}
+        self.app.config = {'accounts': self.ACCOUNTS, 'timezone': 'Europe/Brussels', 'browser_cdp_url': 'http://127.0.0.1:9'}
         self.store.accounts = self.app.config['accounts']
         self.app.birthdays_facebook_inline = True
         self.reads, self.answer = [], {'items': self.ITEMS}
@@ -231,13 +250,6 @@ class Import(unittest.TestCase):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
         p = patch.object(fb, 'read', lambda base, url=fb.PAGE, limits=None: self.reads.append(url) or self.answer); p.start(); self.addCleanup(p.stop)
         p = patch('subprocess.run', lambda *x, **k: subprocess.CompletedProcess(x, 0, '', '')); p.start(); self.addCleanup(p.stop)  # the lease
-        with self.store.connect() as db:
-            graph.ensure(db)
-            for node, name in (('email:robin@mail.example', 'Robin Vale'), ('email:sam@mail.example', 'Sam Rivera'),
-                               ('email:jo@mail.example', 'Jo Tanaka'), ('email:pat@one.example', 'Pat Quinn'), ('email:pat@two.example', 'Pat Quinn')):
-                db.execute("INSERT INTO graph_nodes(id,kind,name,strength,last_at,signals,info) VALUES(?,'person',?,1,?,5,?)",
-                           (node, name, '2026-11-01', json.dumps({'identifiers': [node], 'wrote': 3})))
-            enrichment.offer_facts(db, [(['email:jo@mail.example'], {'birthday': '1990-12-03'}, enrichment.RECORD)], 'google', '2026-11-01')
 
     def offer(self):
         return self.app.birthdays_facebook_offer({'routine_id': 'r1'})

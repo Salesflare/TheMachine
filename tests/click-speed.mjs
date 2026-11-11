@@ -106,6 +106,12 @@ export const CLICKS=[
   after:async p=>{await p.locator('.chat-layout [data-chat-back]').click();await calm(p)}},
 ];
 
+// Once the page has scrolled no more for 150 ms (a target scrolled into view, also smoothly): at least 150 ms, at most 2 s
+const settled=page=>page.evaluate(()=>new Promise(done=>{let last=performance.now();const t0=last,on=()=>{last=performance.now()};
+ addEventListener('scroll',on,{capture:true,passive:true});
+ const tick=()=>{const now=performance.now();if(now-last>=150||now-t0>2000){removeEventListener('scroll',on,{capture:true});done()}else requestAnimationFrame(tick)};
+ requestAnimationFrame(tick)}));
+
 // One run on a fresh page: each click's time in ms (null when it didn't answer in 10 s)
 async function run(context,url,{only,throttle}){
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -114,7 +120,7 @@ async function run(context,url,{only,throttle}){
  await page.waitForLoadState('networkidle');await page.waitForTimeout(1500);
  const out={},ids={};
  for(const c of CLICKS){if(only&&!only.includes(c.name))continue;
-  try{await c.prep?.(page,ids);const target=await c.target(page,ids);await target.scrollIntoViewIfNeeded();await page.waitForTimeout(400);
+  try{await c.prep?.(page,ids);const target=await c.target(page,ids);await target.scrollIntoViewIfNeeded();await settled(page);
    await page.evaluate(ARM(c.ready(ids)));await target.click();
    await page.waitForFunction(()=>window.__click.done,null,{timeout:10000});out[c.name]=await page.evaluate(TOOK)}
   catch(e){out[c.name]=null;errors.push(c.name+': '+e.message.split('\n')[0]);if(process.env.CLICK_SPEED_SHOTS)await page.screenshot({path:process.env.CLICK_SPEED_SHOTS+'/'+c.name.replace(/\W+/g,'-')+'.png'}).catch(()=>{})}

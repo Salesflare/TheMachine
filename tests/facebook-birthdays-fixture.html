@@ -91,7 +91,7 @@ setTimeout(() => addEventListener('scroll', () => {
     xhr.open('POST', '/api/graphql/' + (slow > 0 && next === chunk ? 'slow' + slow + '/' : ''));
     xhr.onload = done;
     xhr.send(JSON.stringify({data: {node: {all_friends_by_birthday_month: {edges: body}}}}) + '\n' + JSON.stringify({label: 'deferred', data: {}}));
-  }, 300 + (next % 3) * 400);
+  }, 100 + (next % 3) * 200);  // every third chunk takes longer than the tests' pause (300 ms): the progress bar holds the read
 }), Math.max(cold, 0));
 </script>
 </body>
