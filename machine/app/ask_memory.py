@@ -32,7 +32,7 @@ import graph
 import memory_use
 import person_summary
 from machine.app import retained_facts
-from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, key_words, note_facts, with_about, word_match
+from machine.store.facts import COMMON, ai_fact_by, fact_line, fact_weight, fact_words, key_words, note_facts, with_about, word_match
 from machine.store.promises import promise_card, promise_state, who_named
 from machine.text import shown_body
 from timeutil import now
@@ -424,17 +424,32 @@ def _shared(asked, text):
     return shared if shared and 2 * shared >= len(asked) else 0
 
 
+# Words of how a question is asked, not what it is about: they never make a fact match (matching).
+QUESTION_WORDS = {'who', 'whom', 'whose', 'what', 'when', 'where', 'why', 'how', 'which', 'do', 'does', 'did', 'done', 'doing',
+          'i', 'me', 'my', 'mine', 'myself', 'we', 'us', 'our', 'you', 'your', 'yours', 'was', 'were', 'am', 'been',
+          'can', 'shall', 'may', 'might', 'must', 'has', 'had', 'get', 'got', 'any', 'tell', 'know', 'remember', 'again',
+          'usually', 'ever', 'there', 'here', 'from', 'up', 'out', 'so', 'if', 'all', 'now', 'go', 'goes', 'going', 'went',
+          'come', 'comes', 'take', 'takes', 'put', 'say', 'said', 'see', 'thing', 'things'}
+
+
+def _distinct(text):
+    """The words of a text that say what it is about, short ones too ("gym", "car", "tax"), in their plain form:
+    content words without filler, question words or common ones, never a word list's length cut."""
+    return _stems(w for w in fact_words(text) if not w.isdigit()) - _stems(QUESTION_WORDS | COMMON)
+
+
 def matching(facts, words):
     """[(score 0-1, fact)] of the facts that share the words, best first, without embeddings or a model call: at
-    least half of the words' content words (as Talk's recall matches a few spoken words), or enough of the fact's
-    own distinctive words (facts.word_match, as a preparation picks facts without embeddings: for a longer question).
-    Either way at least one shared word is distinctive, so "what do I do" alone finds nothing."""
-    asked, keys = _stems(fact_words(words)), _stems(key_words(words))
-    if not keys:
+    least half of what the question is about (_distinct: "when do I go to the gym" is about the gym), or enough
+    of the fact's own distinctive words (facts.word_match, as a preparation picks facts without embeddings: for a
+    longer question). A question of only question words ("what do I do") finds nothing."""
+    asked, keys = _distinct(words), _stems(key_words(words))
+    if not asked:
         return []
     out = []
     for f in facts:
-        half = _shared(asked, f['text']) / len(asked) if keys & _stems(key_words(f['text'])) else 0
+        shared = len(asked & _distinct(f['text']))
+        half = shared / len(asked) if shared and 2 * shared >= len(asked) else 0
         score = max(half, word_match(f['text'], keys, _stems))
         if score:
             out.append((score, f))
