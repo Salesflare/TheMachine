@@ -46,7 +46,8 @@ const open=async(width,height,platform='Linux x86_64')=>{const mobile=width<600;
 const sent=name=>actions.filter(a=>a.action===name);
 // Posts the page makes by itself, never for a to-do: bookkeeping (the browser's region, an error report, a seen line)
 // and reads (voice input's state, loaded when Settings or a mic gets ready). They don't count as a to-do's action
-const PAGE_BOOKKEEPING=new Set(['set_locale','client_error','card_report_seen','tip_done','whats_new_seen','voice_status','talk_status']);
+// draft_seen: a prepared draft on screen for 1.5 s is told to the Machine (todos-chat-talk.js) on a timer, so a slow run posts it
+const PAGE_BOOKKEEPING=new Set(['set_locale','client_error','card_report_seen','tip_done','whats_new_seen','voice_status','talk_status','draft_seen']);
 const pal=page=>page.locator('#palette');
 const isOpen=page=>page.evaluate(()=>!!document.querySelector('#palette')?.open);
 const labels=page=>page.locator('#pal-list .pal-item .pal-label').allTextContents();
