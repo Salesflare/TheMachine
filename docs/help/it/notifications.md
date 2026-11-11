@@ -69,6 +69,8 @@ Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che n
 - quante altre possono aspettare e quanto ti richiedono al tuo ritmo, come "Altre 12 possono aspettare, circa 5 min per sbrigarle." Le attività che aspettano la tua risposta non contano in quel tempo.
 - le tue riunioni in una riga.
 
+Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o in un'altra vista, si apre la sua chat.
+
 La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
 
 ## Privacy

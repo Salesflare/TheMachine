@@ -10,8 +10,13 @@ const notifyPresence=(()=>{const id=Math.random().toString(36).slice(2,12)||'pag
  setInterval(beat,3e4);addEventListener('focus',beat);addEventListener('blur',beat);document.addEventListener('visibilitychange',beat);addEventListener('pagehide',beat);
  return {beat,inUse,id}})();
 function openCardLink(){
-const m=/^#card=([a-f0-9]{16})$/.exec(location.hash);if(!m||!state.suggestions)return;
-const target=state.suggestions.find(s=>s.id===m[1]);if(!target){doneFetch(m[1],()=>{if(location.hash==='#card='+m[1])openCardLink()});return} // an older done one: asked for; else kept for a later refresh
+const m=/^#card=([a-f0-9]{16})(&or=chat)?$/.exec(location.hash);if(!m||!state.suggestions)return;
+const target=state.suggestions.find(s=>s.id===m[1]);
+// &or=chat (the morning digest's Open): a to-do no longer on the list as shown (done, snoozed, another scope, or not
+// here) opens its chat instead, as these links did before; openChatLink asks for an older done one itself
+const toChat=()=>{history.replaceState(null,'',location.pathname+location.search+'#chat='+m[1]);openChatLink()};
+if(m[2]&&(!target||closed(target)||target.status==='snoozed'||scopeFilter!=='all'&&target.scope!==scopeFilter)){toChat();return}
+if(!target){doneFetch(m[1],()=>{if(location.hash==='#card='+m[1])openCardLink()});return} // an older done one: asked for; else kept for a later refresh
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
@@ -19,7 +24,7 @@ folded.delete('foryou');if(looksDone(target))lookExpanded.add(target.id);
 // a link to this to-do (Open draft from a notification) shows it whole: its summary and its draft, never behind Show more
 expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_action?.kind==='menu'?target.next_action.actions:target.next_action?[target.next_action]:[]))expandedBodies.add('draft-'+target.id+'-'+a.revision);
 render();document.querySelector('nav [data-tab="inbox"]').click();
-const c=document.getElementById('task-'+target.id)||fuEl();if(!c)return;
+const c=document.getElementById('task-'+target.id)||fuEl();if(!c){if(m[2])toChat();return}
 for(let parent=c.parentElement;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true;
 history.replaceState(null,'',location.pathname+location.search);
 // a tall card (a draft in full) from its top, under the header, so its title shows too

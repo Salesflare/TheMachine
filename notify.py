@@ -581,8 +581,10 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     tail = waits(more, picks, bool(picks)) if more else ''
 
     def link(item):
+        """Open: the to-do in the dashboard's list, in view and highlighted (#card=); one no longer there (done,
+        snoozed, another scope) opens its chat instead (&or=chat, openCardLink)."""
         ident = str((item or {}).get('id') or '')
-        return f" · [{t('Open')}]({root}#chat={ident})" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
     # The headline's own list right under it, then how many more wait, then the day's meetings: a meeting line between
     # "3 due today" and its list read as if the list were the meeting's
     lines = [head, '']

@@ -69,6 +69,8 @@ Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que
 - quantas mais podem esperar e quanto tempo levam no seu ritmo, como "Mais 12 podem esperar, cerca de 5 min para resolver." As tarefas que esperam a sua resposta não entram nesse tempo.
 - suas reuniões numa linha.
 
+Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela.
+
 O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
 
 ## Privacidade
