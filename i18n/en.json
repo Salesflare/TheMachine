@@ -804,6 +804,10 @@
  "Checked by your model. Change anything below.": "Checked by your model. Change anything below.",
  "Checked open to-dos": "Checked open to-dos",
  "Checked {}": "Checked {}",
+ "Checked {} messages at {}": {
+  "one": "Checked {} message at {}",
+  "other": "Checked {} messages at {}"
+ },
  "Checked {} new emails at {}": {
   "one": "Checked {} new email at {}",
   "other": "Checked {} new emails at {}"

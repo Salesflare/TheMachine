@@ -1,5 +1,5 @@
 /*@lazy*/
-/* The last check of new email, above the to-dos (todos-mail-check.js, mailCheckBlock): one quiet line, a list on tap */
+/* The last check of new messages, above the to-dos (todos-mail-check.js, mailCheckBlock): one quiet line, a list on tap */
 .mail-check{margin:0 0 12px;font-size:var(--fs-sm);color:var(--muted)}
 .mail-check .mc-line{display:flex;align-items:flex-start;gap:6px;width:100%;min-height:32px;margin:0;padding:4px 0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .mail-check .mc-line svg{flex:none;width:14px;height:14px;margin-top:.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform:rotate(-90deg);transition:transform .15s}
@@ -7,9 +7,13 @@
 .mail-check .mc-line:hover{color:var(--text)}
 .mail-check .mc-list{list-style:none;margin:4px 0 0 20px;padding:0;border-left:1px solid var(--border)}
 .mail-check .mc-list li{padding:6px 0 6px 12px}
-.mail-check .mc-list p{margin:0;overflow-wrap:anywhere}
+.mail-check .mc-row{display:block;width:100%;min-width:0;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.mail-check .mc-row:hover .mc-who>span:last-child{text-decoration:underline}
+.mail-check .mc-who,.mail-check .mc-why{display:block;margin:0;overflow-wrap:anywhere}
 .mail-check .mc-who{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mail-check .mc-who b{font-weight:var(--fw-medium,600)}
+.mail-check .mc-src .icon{display:inline-grid;width:16px;height:16px;margin:0 6px 0 0;vertical-align:-3px;border:0;border-radius:0;background:none;color:var(--faint)}
+.mail-check .mc-src .icon svg{width:14px;height:14px}
 .mail-check .mc-why{font-size:var(--fs-xs);color:var(--muted)}
 .mail-check .mc-todo b{font-weight:var(--fw-medium,600);color:var(--text)}
 .mail-check .mc-more{font-size:var(--fs-xs);color:var(--faint)}

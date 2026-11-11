@@ -804,6 +804,10 @@
  "Checked by your model. Change anything below.": "Controllato dal tuo modello. Modifica quello che vuoi qui sotto.",
  "Checked open to-dos": "Ha controllato le attività aperte",
  "Checked {}": "Controllato {}",
+ "Checked {} messages at {}": {
+  "one": "{} messaggio controllato alle {}",
+  "other": "{} messaggi controllati alle {}"
+ },
  "Checked {} new emails at {}": {
   "one": "{} nuova email controllata alle {}",
   "other": "{} nuove email controllate alle {}"

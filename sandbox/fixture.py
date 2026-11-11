@@ -301,17 +301,29 @@ LAST_CHECK = {'minutes': (24, 19), 'todo_events': ['story:pricing:2'], 'emails':
      'That fixed it, the full export works now. Thanks!\n\nMatteo', 30, 'Thanks for the fix, nothing to answer'),
     ('check:news:0', 'Fieldnote Weekly <digest@fieldnote.example>', 'alex@lumenlabs.example', '', 'This week in sales tools',
      'Five new tools, two price changes and a guide to cleaner pipelines.', 33, 'Newsletter, nothing in it needs a reply'),
+], 'chats': [  # key, account, kind, who, chat or channel, text, minutes ago, the review's reason
+    ('check:wa:0', 'home-whatsapp', 'whatsapp.message', 'Jamie Morgan', 'Jamie Morgan', 'Landed! Taking the train home, see you at 7', 25,
+     'Just letting you know they landed'),
+    ('check:slack:0', 'work-slack', 'slack.message', 'Tomasz Nowak', 'general', 'Office is closed Friday for the move, the new keys are at the desk', 27,
+     'Office news for everyone, nothing to do'),
 ]}
 
 
 def last_check_data():
-    """The emails of the last check (LAST_CHECK) and what the sandbox's review of them said."""
+    """The emails and chats of the last check (LAST_CHECK) and what the sandbox's review of them said."""
     events = [{'key': key, 'account_id': 'work-gmail', 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject, 'body': body,
                'metadata': {'from': sender, 'to': to, **({'cc': cc} if cc else {}), 'labels': ['INBOX', 'UNREAD'], 'thread_id': 't-' + key.replace(':', '-'),
                             'message-id': f'<{key.replace(":", ".")}@mail.example>'}}
               for key, sender, to, cc, subject, body, minutes, _ in LAST_CHECK['emails']]
-    return events, {'minutes': list(LAST_CHECK['minutes']), 'events': [e['key'] for e in events] + LAST_CHECK['todo_events'],
-                    'why': {key: why for key, *_, why in LAST_CHECK['emails']}}
+    for key, account, kind, who, chat, text, minutes, _ in LAST_CHECK['chats']:
+        meta = ({'chat_name': chat, 'chat_id': slug(chat), 'from_me': False, 'group': False, 'sender_display': who, 'message_id': 'wa-' + key.replace(':', '-')}
+                if kind == 'whatsapp.message' else
+                {'channel_name': chat, 'channel_id': 'C0' + chat.upper(), 'conversation_type': 'channel', 'sender_display': who, 'user_id': 'U2200',
+                 'message_ts': f'1762{minutes:06d}.000300'})
+        events.append({'key': key, 'account_id': account, 'kind': kind, 'minutes_ago': minutes, 'title': chat if kind == 'whatsapp.message' else f'#{chat}: {who}',
+                       'body': text, 'metadata': meta})
+    reasons = {key: why for key, *_, why in LAST_CHECK['emails'] + LAST_CHECK['chats']}
+    return events, {'minutes': list(LAST_CHECK['minutes']), 'events': [e['key'] for e in events] + LAST_CHECK['todo_events'], 'why': reasons}
 
 
 def board_data():

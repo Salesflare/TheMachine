@@ -1,22 +1,35 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
 import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// The last check of new email above the to-dos (dashboard/todos-mail-check.js, state.mail_check, made by check_now.mail_check):
-// "Checked 12 new emails at 16:11 · nothing needs you", a to-do held until later, and on a tap one row per thread with
-// who, the subject and its to-do or the review's reason. Made-up names; nothing is sent.
+// The last check of new messages above the to-dos (dashboard/todos-mail-check.js, state.mail_check, made by check_now.mail_check):
+// "Checked 12 messages at 16:11 · nothing needs you", a to-do held until later, and on a tap one row per thread with
+// who, the subject and its to-do or the review's reason. Every source the check read counts, in one total no longer
+// than the email-only line was (one line on a phone in every language); each row has its source's icon and opens its
+// message in the viewer.
+// Made-up names; nothing is sent.
 const dashboard=await dashboardPage();
 const NOW=Date.parse('2026-11-09T16:20:00Z'),at=m=>new Date(NOW+m*6e4).toISOString();
-const quiet={at:at(-9),emails:12,todos:0,held:0,held_until:null,more:0,threads:[
- {from:'Robin Vale',subject:'Re: Trial seats',why:'Only cc’d, Robin is answering'},
- {from:'Yara Oak',subject:'Re: Coffee next week',why:'Coffee already set for Thursday 10:00'},
- {from:'Fieldnote Weekly',subject:'This week in tools'},
- {from:'Lee Ash',subject:'Invoice question',later:true}]};
+const em=(from,subject,event,rest)=>({from,subject,source:'email',kind:'gmail.message',event,...rest});
+const quiet={at:at(-9),read:12,counts:{email:12},todos:0,held:0,held_until:null,more:0,threads:[
+ em('Robin Vale','Re: Trial seats',11,{why:'Only cc’d, Robin is answering'}),
+ em('Yara Oak','Re: Coffee next week',12,{why:'Coffee already set for Thursday 10:00'}),
+ em('Fieldnote Weekly','This week in tools',13),
+ em('Lee Ash','Invoice question',14,{later:true})]};
+const mixed={...quiet,read:13,counts:{email:9,chat:4},threads:[
+ {from:'Noor Pell',subject:'Did anyone finish chapter 4?',source:'chat',kind:'whatsapp.message',event:21,why:'Group chat chatter, nothing asked of you'},
+ {from:'Rae Fenn',subject:'Lunch moved to 13:00',source:'chat',kind:'slack.message',event:22,why:'Team lunch moved, nothing to do'},
+ em('Yara Oak','Re: Coffee next week',12,{why:'Coffee already set for Thursday 10:00'}),
+ {from:'',subject:'',source:'chat',kind:'telegram.message',event:23}]};
+const many={...mixed,read:15,counts:{email:9,chat:4,notification:2},threads:[...mixed.threads,
+ {from:'Parcels',subject:'Parcel: Delivered to your door',source:'notification',kind:'android.notification',event:31,why:'A delivery notice, the parcel is in'}]};
 const busy={...quiet,todos:2,held:1,held_until:'2026-11-10T08:30:00Z',more:3,threads:[
- {from:'Mila Under',subject:'Pricing for our team',todo:'Send Mila annual pricing',held_until:'2026-11-10T08:30:00Z'},
- {from:'Jonah Kett',subject:'API limits',todo:'Answer Jonah about API limits'},...quiet.threads]};
+ em('Mila Under','Pricing for our team',15,{todo:'Send Mila annual pricing',held_until:'2026-11-10T08:30:00Z'}),
+ em('Jonah Kett','API limits',16,{todo:'Answer Jonah about API limits'}),...quiet.threads]};
+const opened=[];
 let mail=quiet;
 const state=()=>({suggestions:[{id:'a1'.repeat(8),title:'Answer Jonah about API limits',body:'',status:'prepared',scope:'work',created_at:at(-10),event_ids:[1]}],
  promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{last_completed:at(-9)},review_runs:[],review_live:{runs:[]},connectors:[],
@@ -25,6 +38,8 @@ const state=()=>({suggestions:[{id:'a1'.repeat(8),title:'Answer Jonah about API 
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
+ if(url.pathname==='/api/originals'&&url.searchParams.get('event')){const id=url.searchParams.get('event');opened.push(id);
+  res.end(JSON.stringify({originals:[{id:+id,kind:'whatsapp',title:'Book club',body:'Did anyone finish chapter 4?',from:'Noor Pell',occurred_at:at(-30),metadata:{chat_name:'Book club',sender_display:'Noor Pell'}}]}));return}
  if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
  res.end(url.pathname==='/api/events'?'[]':'{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -37,7 +52,7 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port+'/');
  const line=page.locator('#suggestions .mail-check .mc-line');await line.waitFor();
- assert.equal((await line.innerText()).trim(),'Checked 12 new emails at 16:11 · nothing needs you');
+ assert.equal((await line.innerText()).trim(),'Checked 12 messages at 16:11 · nothing needs you');
  assert.equal(await line.getAttribute('aria-expanded'),'false');
  assert.equal(await page.locator('#suggestions .mc-list').count(),0,'folded until tapped');
  // A tap: one row per thread, its reason or nothing when the check gave none worth showing
@@ -51,14 +66,51 @@ try{
  // New to-dos, one held for the morning: the line says until when, and so does its row
  mail=busy;await page.evaluate(()=>refresh());
  await page.waitForFunction(()=>/new to-do/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
- assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 12 new emails at 16:11 · 2 new to-dos · 1 to-do held until tomorrow 08:30');
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 12 messages at 16:11 · 2 new to-dos · 1 to-do held until tomorrow 08:30');
  assert.deepEqual((await rows()).slice(0,2),['Mila Under Pricing for our team Held until tomorrow 08:30 Send Mila annual pricing','Jonah Kett API limits New to-do Answer Jonah about API limits']);
  assert.equal((await rows()).at(-1),'And 3 more threads');
  // All new to-dos held: the held line alone
  mail={...busy,todos:1,more:0};await page.evaluate(()=>refresh());
  await page.waitForFunction(()=>!/new to-dos/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
- assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 12 new emails at 16:11 · 1 to-do held until tomorrow 08:30');
- // No check with new email in the last hours: no line
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 12 messages at 16:11 · 1 to-do held until tomorrow 08:30');
+ // Every source it read: one total, each row with its source's icon (the to-dos' own) and its reason
+ mail=mixed;await page.evaluate(()=>refresh());
+ await page.waitForFunction(()=>/13 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 13 messages at 16:11 · nothing needs you');
+ assert.deepEqual(await rows(),['Noor Pell Did anyone finish chapter 4? Group chat chatter, nothing asked of you','Rae Fenn Lunch moved to 13:00 Team lunch moved, nothing to do',
+  'Yara Oak Re: Coffee next week Coffee already set for Thursday 10:00','Unknown sender']);
+ assert.equal(await page.locator('#suggestions .mc-list li .mc-src svg').count(),4,'a source icon on every row');
+ const iconOf=k=>page.evaluate(k=>{const s=document.createElement('div');s.innerHTML=icon(kindService(k)).s;return s.querySelector('svg').innerHTML},k);
+ assert.equal(await page.locator('#suggestions .mc-list li').nth(0).locator('.mc-src svg').innerHTML(),await iconOf('whatsapp.message'));
+ assert.equal(await page.locator('#suggestions .mc-list li').nth(1).locator('.mc-src svg').innerHTML(),await iconOf('slack.message'));
+ assert.equal(await page.locator('#suggestions .mc-list li').nth(2).locator('.mc-src svg').innerHTML(),await iconOf('gmail.message'));
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=390),'no sideways scroll on a phone with icons');
+ // A tap on a row opens its message in the viewer
+ await page.locator('#suggestions [data-mc-event="21"]').click();
+ await page.locator('#email-dialog[open]').waitFor();
+ assert.deepEqual(opened,['21']);
+ await page.waitForFunction(()=>/chapter 4/.test(document.querySelector('#email-content')?.textContent||''));
+ await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'});
+ // Many sources: still one total, the detail is in the list
+ mail=many;await page.evaluate(()=>refresh());
+ await page.waitForFunction(()=>/15 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
+ assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 15 messages at 16:11 · nothing needs you');
+ assert.equal((await rows()).at(-1),'Parcels Parcel: Delivered to your door A delivery notice, the parcel is in');
+ // Never longer than the email-only line was, in any language, and one line on a phone: every catalog's
+ // "Checked … messages" is no longer than its "Checked … new emails", and the whole line fits at 390
+ const fill=(s,...v)=>v.reduce((o,x)=>o.replace('{}',x),s);
+ const lines=[];
+ for(const lang of ['en','de','es','fr','it','nl','pt-BR']){
+  const cat=JSON.parse(await readFile(new URL(`../i18n/${lang}.json`,import.meta.url),'utf8'));
+  const now=cat['Checked {} messages at {}'],was=cat['Checked {} new emails at {}'];
+  for(const form of ['one','other'])assert.ok(now[form].length<=was[form].length,`${lang} ${form}: "${now[form]}" is longer than "${was[form]}"`);
+  lines.push([lang,fill(now.other,13,'08:41')+' · '+(typeof cat['nothing needs you']==='string'?cat['nothing needs you']:'nothing needs you')]);
+ }
+ const heights=await page.evaluate(lines=>{const span=document.querySelector('#suggestions .mc-line span'),b=span.closest('.mc-line'),kept=span.textContent;
+  const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out},lines);
+ const one=heights[0][2];
+ for(const [lang,text,h] of heights)assert.ok(h<=one+1,`${lang} wraps at 390: "${text}" (${h}px, one line is ${one}px)`);
+ // No check with new messages in the last hours: no line
  mail=null;await page.evaluate(()=>refresh());await page.locator('#suggestions .mail-check').waitFor({state:'detached'});
  // A thread's words are data: markup in them stays text
  mail={...quiet,threads:[{from:'<img src=x onerror="window.__xss=1">',subject:'<b>x</b>',why:'<img src=x onerror="window.__xss=1"> was here'}]};

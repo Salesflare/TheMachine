@@ -58,9 +58,9 @@ LinkedIn, X and Salesflare keep their own pace.
 
 ## Last check
 
-After a check that read new email, a line above your to-dos says what it found, like "Checked 12 new emails at 16:11 · nothing needs you" or "· 2 new to-dos". When a new to-do waits for a better moment, like your morning summary, it says until when: "1 to-do held until tomorrow 08:30".
+After a check that read new messages, a line above your to-dos says what it found, from every source it read, like "Checked 13 messages at 16:11 · nothing needs you" or "· 2 new to-dos". When a new to-do waits for a better moment, like your morning summary, it says until when: "1 to-do held until tomorrow 08:30".
 
-Tap the line to see each email thread: who wrote, the subject, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. The line shows for 12 hours after the check.
+Tap the line to see each email thread, chat and notification, with its source's icon: who wrote, the subject or first words, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. Tap one to read it. The line shows for 12 hours after the check.
 
 It counts only mail to you. Your own replies are read for context and promises, but aren't new mail. The Machine's own emails to you, like your morning summary or a fix notice, are never read or listed. Mail about billing, your trial or an invite is read as usual.
 

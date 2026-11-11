@@ -1,4 +1,4 @@
-const mailCheckSlot=()=>state?.mail_check?.emails?lazyIn('mailcheck')?mailCheckBlock():(lazyRun('mailcheck',render),''):'';
+const mailCheckSlot=()=>state?.mail_check?.read?lazyIn('mailcheck')?mailCheckBlock():(lazyRun('mailcheck',render),''):'';
 const milestoneSlot=()=>state?.done_milestone?lazyIn('milestone')?milestoneCard():(lazyRun('milestone',render),''):'';
 const learnedSlot=()=>state?.first_look_learned?lazyIn('learned')?learnedCard():(lazyRun('learned',render),''):'';
 const SKELETON=nodeHTML($('#suggestions .skeleton'));  // the page's own loading outline
