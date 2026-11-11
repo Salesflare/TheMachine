@@ -97,9 +97,10 @@ def key_words(text):
     return {w for w in re.findall(r'\w+', str(text or '').casefold()) if len(w) >= 4 and not w.isdigit()} - FILLER - COMMON
 
 
-def word_match(text, asked):
-    """How much a fact's text shares with the words asked (key_words): the share of its own words, 0 when too few."""
-    own = key_words(text)
+def word_match(text, asked, norm=None):
+    """How much a fact's text shares with the words asked (key_words): the share of its own words, 0 when too few.
+    norm: a function of a word set, applied to the fact's own words (asked comes in already through it)."""
+    own = norm(key_words(text)) if norm else key_words(text)
     shared = len(own & asked)
     return shared / len(own) if shared >= MATCH_WORDS and shared * 3 >= len(own) else 0.0
 

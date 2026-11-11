@@ -142,6 +142,46 @@ class MemoryReach(unittest.TestCase):
             found = ask_memory.facts(self.app, {**about, 'subjects': [], 'question': 'Which seat do I like?'}, 1000)
         self.assertIn(SAID, found)  # the chat fact, by meaning
 
+    def test_ask_finds_facts_about_no_one_with_and_without_embeddings(self):
+        ask = lambda question: ask_memory.facts(self.app, {'area': None, 'subjects': [], 'accounts': ['work'], 'question': question}, 1000)
+        seats = 'Which seats do I book on flights?'
+        gone = self.store.remember_fact('You only take aisle seats on trains.', 'note-1')['id']
+        self.store.forget_fact(gone)  # forgotten: never comes back
+        ended = self.store.remember_fact('You book aisle seats on flights for the fair this week.', 'note-1')['id']
+        old = self.store.remember_fact('You book seats on flights through the travel desk.', 'note-1')['id']
+        new = 'You book seats on flights yourself now.'
+        self.store.remember_fact(new, 'note-1', replaces=[old])  # replaced: history, not how things are now
+        with self.store.connect() as db:
+            db.execute('UPDATE facts SET valid_until=? WHERE id=?', ('2026-11-01', ended))
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You book seats on flights in first class.','ai:c1',?,'fact','ai:Claude','work')",
+                       (NOW.isoformat(),))  # a connected AI's, not the owner's word
+        self.store.retire_expired()
+        outside = ('aisle seats on trains', 'for the fair', 'travel desk', 'first class')
+        # no embeddings on this Machine: the owner's own facts that share the question's words
+        found = ask(seats)
+        self.assertIn(SAID, found)  # what the owner said about themselves, about no one
+        self.assertIn(new, found)
+        for text in outside:
+            self.assertNotIn(text, found)
+        self.assertIn(NOTE, ask('What format do quotes go out in?'))  # a general fact from the notes
+        self.assertEqual(ask('What do I do?'), '')  # no distinctive word: nothing
+        self.assertEqual(ask('quarterly board budget'), '')
+        memory = memory_use.Recalled('ask', {'question': seats}).add('facts', ask)
+        memory.read('facts', seats)
+        self.assertEqual({i.how for i in memory.picked()['fact']}, {'match'})  # logged as picked by words
+        # embeddings on: by meaning, the same left out
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=embed):
+            found = ask(seats)
+        self.assertIn(SAID, found)
+        for text in outside[:3]:
+            self.assertNotIn(text, found)
+        # embeddings on but the server down: the words again
+        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('down')):
+            found = ask(seats)
+        self.assertIn(SAID, found)
+        self.assertNotIn('first class', found)
+
     def test_talk_recalls_what_was_learned_with_memory_search_off(self):
         self.app.memory_search = lambda request: {'error': 'off'}
         for words, text in (('aisle seat', SAID), ('invoices', FIXED), ('quotes as PDF', NOTE), ('Ann vegetarian', NOTE_ANN)):

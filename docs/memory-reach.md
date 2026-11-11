@@ -25,7 +25,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 |---|---|---|---|
 | Review | facts block, set-aside and historical facts that bear on the batch (`recall` `review`, `retained`) | promises, sender lines | facts block, `USER.md` |
 | Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
-| Ask | facts on the question's records, others by meaning | promises, summaries, meetings | same as chat |
+| Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | facts about a person (`graph` node: `open.known`) | `graph`, `events` | `USER.md`, `MEMORY.md` (OpenClaw) |
 | Routine | facts and rules block (`recall` `routine`) | `events` and `graph` tools | facts and rules block, `USER.md`, memory search, birthdays |
@@ -45,14 +45,17 @@ whose stored vector (`fact_vectors`, as a preparation or Ask stored it) is close
 matches, against one local embedding of the words with a 2 second timeout. No model turn, no fact embedded during the
 call, still at most three (`LEARNED`). Without embeddings a word with another stem ("flying", "flights") still doesn't
 match. Forgotten, ended and replaced facts stay out; a connected AI's never comes in.
+Ask found a fact about no one (one about the owner themselves, or the world) only by meaning, so on a Machine without
+embeddings, or while the embedding server was down, it found none. It now falls back to the owner's own facts that
+share the question's words: half of its words, as Talk's recall matches, or enough of the fact's own (`word_match`, as a
+preparation picks without embeddings), with at least one distinctive word shared. Never a connected AI's fact by words;
+forgotten, ended and replaced facts stay out, as from Ask's meaning search.
 
 ## Still missing
 
 - **The owner's main chat** (Telegram, the web chat) can't read a fact about the owner or the world, nor a draft rule:
   only what the `graph` tool shows on a person's page. It saves facts there but doesn't read them back. A fix needs a
   read action in the bridge (`TOOL_ACTIONS`) or a bounded context block, both plugin changes.
-- **Ask without embeddings** finds a fact about no one only by meaning, so on a Machine without embeddings it doesn't.
-  `ask_memory.learned` (words) could be its fallback.
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
 - **A to-do's chat** answers in its preparation's session: a current fact learned after that preparation started
   reaches it only on a redo (each turn does get the set-aside and historical facts that bear on the to-do).
