@@ -28,6 +28,7 @@ from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import mail_cleanup
 from models import model_ready
 import next_actions
+import outcomes
 import own_addresses
 import recurring
 import routine_changes
@@ -340,7 +341,11 @@ class CardActionsApp:
             # first, and what came after is named once (handled_check.py)
             why=self.handled_gate(args['suggestion_id'],args.get('job_id'),next_actions.actions(action))
             if why:raise ValueError(why)
+        done_when=outcomes.clean(args['done_when']) if args.get('done_when') is not None else None  # checked before anything is saved
         saved=self.store.prepare(args['suggestion_id'], args['body'],args.get('job_id'),action,outcome,args.get('note_kind'),require_note=True,finish_state=args.get('finish_state'),title=args.get('title'),send_now=args.get('send_now') is True)
+        if done_when is not None and not saved.get('replayed'):
+            # The result that counts as done ('' clears it): after the send it waits for that, not done (outcomes.py)
+            with self.store.connect() as db:outcomes.set_done_when(db,args['suggestion_id'],done_when,'run')
         if args.get('routine_change') is not None and not saved.get('replayed'):
             with self.store.connect() as db:routine_changes.offer(db,args['suggestion_id'],routine_change)
         if args.get('method') is not None and not saved.get('replayed'):

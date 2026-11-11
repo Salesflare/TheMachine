@@ -86,6 +86,8 @@ class FleetApp:
             self.fleet.mail_files = self.share_files  # a shared client thread's attachments, read-only (shared_graph.py)
             # A handoff the teammate accepted is theirs now: the owner's card is done, saying to whom (Undo brings it back).
             self.fleet.close_card = lambda card_id, why, key: self.store.decide_handoff(card_id, 'complete', why, key, key.removeprefix('fleet-handoff-'))
+            # One with a done when (outcomes.py) waits for that result instead, until it shows or their Machine says done
+            self.fleet.wait_result = self.store.handoff_result_wait
             # Handed off and not answered yet: the card waits under Later and comes back to check in if their Machine stays
             # quiet: within hours when due today, before a near deadline, the next work morning when urgent, else in 3 work
             # days (handoff_checkin); an answer, a decline or a done brings it back at once;

@@ -15,10 +15,11 @@ from machine.app.follow_ups import activity_who, newer_activity, NEWER_KINDS
 from machine.config import LOG
 from machine.sources.calendar import company_domains
 from machine.store.cards import promise_closed_at, same_matter_cards, same_thread_card
-from machine.store.promises import promise_card as promise_todo, promise_logged, promise_text, promise_title, promise_who_named
+from machine.store.promises import fit_title, promise_card as promise_todo, promise_logged, promise_text, promise_title, promise_who_named
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import encoded
 from models import background_model, openclaw_model
+import outcomes
 from timeutil import now
 
 
@@ -315,6 +316,10 @@ class PromiseChecksApp:
             if p['watch'] and not saved.get('duplicate'):
                 # Their reply closes the card too while it is still on its way.
                 db.execute('UPDATE suggestions SET awaiting=? WHERE id=?', (encoded({**json.loads(p['watch']), 'promise': True}), saved['id']))
+            if p['direction'] == 'theirs' and not p.get('together'):
+                # What they promised is the result: a nudge sent from it waits for that, never keeps the promise (outcomes.py)
+                named = promise_who_named(db, p)
+                outcomes.set_done_when(db, saved['id'], fit_title(outcomes.theirs_line(named['who'], named['what']), outcomes.MAX), 'promise')
         return saved
 
     def promise_close_action(self, name, args, owner_dashboard=False):

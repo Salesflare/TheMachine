@@ -33,6 +33,7 @@ from machine.config import LOG
 from machine.store.cards import return_waiting, source_line
 from machine.text import encoded, first_sentence
 import next_actions
+import outcomes
 import skills
 from timeutil import local_tz, now
 import todo_areas
@@ -45,7 +46,8 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
     """A ready card whose message went out, or whose final step went through, is done: it leaves
     Ready for you with one status, the sent note (2026-10-22). Not while another of its sends or final
     steps still waits, not for a handoff (that card waits for the reply) and not for a merge (it keeps
-    Undo merge). The preparation's "Nothing sent." no longer holds and its needs-you outcome is answered."""
+    Undo merge). The preparation's "Nothing sent." no longer holds and its needs-you outcome is answered. A to-do with
+    a done when (outcomes.py) isn't done by the send: it waits for that result under Waiting on others."""
     row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
     if not row or row['status'] != 'prepared':
         return False
@@ -56,6 +58,15 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
         return False
     body = NOTHING_SENT.sub('', row['body'] or '').strip() or row['body']
     db.execute('UPDATE suggestions SET body=?,outcome=NULL WHERE id=?', (body, suggestion_id))
+    if row['done_when']:
+        # The owner's part went out, the result it is for hasn't come yet (outcomes.py): it waits for that, not done
+        job = db.execute('SELECT payload FROM action_jobs WHERE id=?', (job_id,)).fetchone()
+        try:
+            sent = json.loads(job['payload']) if job else {}
+        except (TypeError, ValueError):
+            sent = {}
+        outcomes.wait_for_result(db, row, str(sent.get('to_name') or '') if isinstance(sent, dict) else '', now())
+        return True
     store._decide(db, suggestion_id, 'complete', (note or (i18n.t('Sent: {}', label) if label else i18n.t('Sent')))[:200], 'sent:' + job_id, 'assistant')
     return True
 
@@ -435,12 +446,14 @@ class DecisionsStore:
             return kept_steps(db, suggestion_id, job_id, action, do_now)
 
     def looks_handled(self, suggestion_id, reason, event_ids):
-        """A later signal suggests an open card is already done. Only a hint: the owner still closes it."""
+        """A later signal suggests an open card is already done. Only a hint: the owner still closes it. A to-do whose
+        owner did their part and that waits for this result (outcomes.py) closes by itself, with Undo for a day."""
         reason = ' '.join(str(reason or '').split())
         if not 5 <= len(reason) <= 200 or not event_ids:
             raise ValueError('Give a short plain reason (5-200 characters) and the event_ids that show it')
         with self.connect() as db:
-            row = db.execute('SELECT status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row:
                 raise ValueError('Unknown suggestion')
             if row['status'] in ('completed', 'rejected'):
@@ -453,8 +466,8 @@ class DecisionsStore:
             newest = db.execute('SELECT max(ingested_at) FROM events WHERE id IN (' + ','.join('?' for _ in event_ids) + ')', event_ids).fetchone()[0]
             if said and (newest or '') <= said:
                 return {'skipped': 'the owner said it is not done; only a newer signal can show otherwise'}
-            db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': event_ids, 'at': now()}), suggestion_id))
-            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+            if outcomes.result_seen(db, row, reason, event_ids, now()) == 'closed':
+                return {'saved': True, 'closed': True, 'note': 'It waited for this result: it closed by itself, with Undo for a day.'}
         return {'saved': True}
 
     def plan_changed(self, suggestion_id, reason, event_ids, undo_hours=24):
@@ -545,9 +558,28 @@ class DecisionsStore:
             db.execute('BEGIN IMMEDIATE')
             latest = db.execute('SELECT id,source FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 1',
                                 (suggestion_id,)).fetchone()
-            if not latest or latest['source'] != 'fleet' or latest['id'] != 'fleet-handoff-wait-' + request_id:
+            # Handed off, or taken on and waiting for the to-do's result (handoff_result_wait): their Done closes it
+            if not latest or latest['source'] != 'fleet' or latest['id'] not in ('fleet-handoff-wait-' + request_id, 'fleet-handoff-result-' + request_id):
                 return {'skipped': True, 'reason': 'newer_card_choice'}
             return self._decide(db, suggestion_id, choice, feedback, decision_id, 'fleet')
+
+    def handoff_result_wait(self, suggestion_id, name, request_id):
+        """A teammate's Machine took on a handoff (accepted, adjusted) whose to-do has a done when (outcomes.py): taking it on
+        isn't the result, so the to-do waits for that under Waiting on others instead of closing, while this handoff still
+        owns it. Their Done, or a signal with the result (looks_handled), closes it. True when it waits."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row or not row['done_when'] or row['status'] in ('completed', 'rejected'):
+                return False
+            latest = db.execute('SELECT id,source FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 1', (suggestion_id,)).fetchone()
+            if not latest or latest['source'] != 'fleet' or latest['id'] not in ('fleet-handoff-wait-' + request_id, 'fleet-handoff-result-' + request_id):
+                return False
+            if latest['id'] == 'fleet-handoff-result-' + request_id:
+                return True  # waiting already (an adjusted answer after accepted)
+            # The wait's line is the fleet's, so this handoff still owns the to-do for their Done (decide_handoff)
+            outcomes.wait_for_result(db, row, name, now(), 'fleet-handoff-result-' + request_id, 'fleet')
+            return True
 
     def handoff_back(self, suggestion_id, decision_id, request_id, handed_at):
         """A teammate declined a handoff: the card comes back to Ready. From Later while this handoff still owns the card,
@@ -1032,8 +1064,9 @@ class DecisionsStore:
             db.execute('BEGIN IMMEDIATE')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             action=next_actions.selected(row['next_action'],revision) if row else None
-            # A card closes once its send or final step went through (settle_sent): a repeated tap is that same send.
-            done=db.execute("SELECT status FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('sent','done')",(suggestion_id,revision)).fetchone() if row and row['status']=='completed' else None
+            # A card closes once its send or final step went through (settle_sent), or waits for its result (outcomes.py):
+            # a repeated tap is that same send.
+            done=db.execute("SELECT status FROM action_jobs WHERE suggestion_id=? AND revision=? AND status IN ('sent','done')",(suggestion_id,revision)).fetchone() if row and (row['status']=='completed' or row['done_when']) else None
             if done:
                 return {'status':done['status'],'duplicate':True}
             # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.

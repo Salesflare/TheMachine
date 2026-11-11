@@ -57,6 +57,7 @@ from machine.store.cards import use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
+import outcomes
 import recurring
 import talk_live
 from timeutil import local_tz, now
@@ -285,7 +286,7 @@ class CardChatApp:
         except (ValueError, TypeError):
             ids = []
         names, owner, kinds, metas = {}, [], {}, {}
-        card = db.execute('SELECT title,owner_step,origin FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+        card = db.execute('SELECT title,owner_step,origin,done_when FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
         own_files = chat_files.of_cards(db, [suggestion_id])
         # planned: only the owner can do its step; one of The Machine's own (origin machine) has Do it, never Plan it
         title, planned = (card['title'] or '', bool(card['owner_step']) and card['origin'] != 'machine') if card else ('', False)
@@ -339,7 +340,7 @@ class CardChatApp:
         # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
         answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
         loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','handled','plan','correction') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND (source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','handled','plan','correction') OR id LIKE 'outcome-wait:%') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -347,6 +348,10 @@ class CardChatApp:
                 continue
             if r['source'] == 'handled':  # newer messages show it done already (Store.close_handled); Undo takes it back
                 owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {}', clamp(r['feedback'], 200)), 'choice': 'complete', 'at': at})
+                continue
+            if r['id'].startswith('outcome-wait:'):  # its part went out, the result it is for hasn't come yet (outcomes.wait_for_result)
+                if card and card['done_when']:
+                    owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
                 continue
             if r['source'] == 'plan':  # a newer message overturned its plan (Store.plan_changed); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': i18n.t('Updated: {}', clamp(r['feedback'], 200)), 'choice': 'complete', 'at': at})
@@ -364,7 +369,10 @@ class CardChatApp:
             if r['source'] == 'fleet' or r['choice'] != 'snooze':
                 was, waiting = waiting, r['source'] == 'fleet' and r['id'].startswith('fleet-handoff-wait-')
                 if r['source'] == 'fleet':
-                    if r['choice'] == 'complete' and ' is on it · ' in (r['feedback'] or ''):  # a teammate took it on (silent acceptance)
+                    if r['id'].startswith('fleet-handoff-result-'):  # they took it on; the result isn't there yet (outcomes.py)
+                        if card and card['done_when']:
+                            owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
+                    elif r['choice'] == 'complete' and ' is on it · ' in (r['feedback'] or ''):  # a teammate took it on (silent acceptance)
                         owner.append({'kind': 'event', 'text': clamp(r['feedback'], 200), 'choice': 'complete', 'at': at})
                     elif r['choice'] == 'reject' and r['id'].startswith('fleet-withdrawn-'):  # the teammate who handed it took it back
                         owner.append({'kind': 'event', 'text': clamp(r['feedback'], 200), 'choice': 'reject', 'handoff': True, 'at': at})
