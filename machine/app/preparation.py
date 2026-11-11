@@ -39,6 +39,7 @@ from machine.prompts.profile import VOICE_CHARS, VOICE_LINES, VOICE_PRECISE
 from machine.prompts.review import FACT_KIND_HINT, FACTS_YOU, source_notes
 from machine.sources.connectors import calendar_prompt, doc_write_prompt, meeting_notes_prompt, slack_prompt
 from machine.store.decisions import owner_area_open, pause_idle_steps
+from machine.store.cards import pressing_cutoff
 from machine.store.machine_cards import parked_redo
 from machine.text import encoded
 import memory_use
@@ -350,11 +351,13 @@ class PreparationApp:
             # per tick once the first card was shown. They show on the board as Preparing, so they don't wait for
             # BACKGROUND_GAP_SECONDS behind a review or another background turn.
             limited=self.background_pause(owner=True)
-            queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status,s.early FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
+            # Pressing work first (urgent, or due within PRESSING_DAYS by its own fields), then the oldest
+            queued=[dict(r) for r in db.execute("""SELECT p.*,s.status suggestion_status,s.early,
+                (s.urgent=1 OR (coalesce(s.due,'')<>'' AND substr(s.due,1,10)<=?)) pressing FROM preparations p JOIN suggestions s ON s.id=p.suggestion_id
                 WHERE p.status='queued' AND s.status IN ('accepted','instructions') AND (p.retry_at IS NULL OR p.retry_at<=?)
                 AND NOT EXISTS(SELECT 1 FROM preparation_runs r WHERE r.finished_at IS NULL AND r.job_id!=p.job_id
                                AND (r.suggestion_id=p.suggestion_id OR r.session_job_id=coalesce(p.session_job_id,p.job_id)))
-                ORDER BY p.created_at LIMIT ?""",(now(),room+20)).fetchall()] if room and not limited else []
+                ORDER BY pressing DESC,p.created_at LIMIT ?""",(pressing_cutoff(),now(),room+20)).fetchall()] if room and not limited else []
             ahead_first=not db.execute("SELECT 1 FROM milestones WHERE name='first_ahead_started'").fetchone()
             # Automated follow-ups go last (follow_ups.py): after every other queued preparation, and only while usage has room for them
             following={r[0] for r in db.execute("SELECT suggestion_id FROM follow_up_cards WHERE state='open'")} if queued else set()
@@ -366,7 +369,7 @@ class PreparationApp:
                     card=db.execute('SELECT event_ids FROM suggestions WHERE id=?',(j['suggestion_id'],)).fetchone() if j['early'] else None
                     found=card and self.store.card_waiting_since(db,card)
                     waited[j['suggestion_id']]=found[0] if found else '~'
-            queued.sort(key=lambda j:(j['suggestion_id'] in following,waited.get(j['suggestion_id'],'')))
+            queued.sort(key=lambda j:(j['suggestion_id'] in following,not j['pressing'],waited.get(j['suggestion_id'],'')))
             late=follow_ups.late_ids(db,now()) if following else set()
             pauses=follow_ups.paused_ids(db,now()) if following else {}  # a paused board or project: no follow-up prepared in the background
             admitted=[]

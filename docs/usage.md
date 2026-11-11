@@ -408,7 +408,7 @@ That button shows what goes out (amounts, dates, names, text). **Confirm** runs 
 
 If the work stops on something only you can settle (a question, a sign-in, another mailbox), the to-do arrives with **Needs your help**, the reason and its questions. **Answer** or **Try again** starts it for you and it carries on.
 
-Nothing is sent, submitted, paid or changed before your confirm. The work starts within seconds of the review that made the to-do. Only the usage budget or a usage limit holds it; the to-do then says so and roughly when it starts. Settings: `prepare_ahead` and `prepare_ahead_per_day` in [Configuration](configuration.md).
+Nothing is sent, submitted, paid or changed before your confirm. The work starts within seconds of the review that made the to-do. Only the usage budget or a usage limit holds it; the to-do then says so and roughly when it starts. Urgent work, or work due within 2 days, goes first; automated follow-ups go last. Of the day's prepared-ahead to-dos (10 by default), the last 3 are kept for urgent or soon-due work. Settings: `prepare_ahead` and `prepare_ahead_per_day` in [Configuration](configuration.md).
 
 ## The Machine fixes itself
 

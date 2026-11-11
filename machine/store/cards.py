@@ -38,6 +38,18 @@ def active_preview(db):
 
 USE_MAIL_KINDS = ('gmail.message', 'ms_graph.message')
 CHAT_ASK_CHARS = 60  # a chat ask is a tap, one short line (set_chat_asks)
+PRESSING_DAYS = 2  # urgent, or due within this many days: prepared ahead first, and on the room held for it (ahead_room)
+AHEAD_HELD = 3  # of the day's prepared-ahead room, the last ones are kept for pressing work
+
+
+def pressing_cutoff():
+    """The last due date (YYYY-MM-DD, the owner's day) that counts as pressing."""
+    return (dt.datetime.fromisoformat(now()).astimezone(local_tz()).date() + dt.timedelta(days=PRESSING_DAYS)).isoformat()
+
+
+def pressing(urgent=False, due=None):
+    """Urgent, or due (a date or a moment) within PRESSING_DAYS: by the to-do's own fields, never words in its text."""
+    return bool(urgent) or bool(due) and str(due)[:10] <= pressing_cutoff()
 
 
 def use_view(db, use_events):
@@ -994,12 +1006,15 @@ class CardsStore:
             self.decide(other['id'], 'other', own['owner_words'], decision_id + ':note', source)
         return {'id': other['id'], 'merged': True, 'from': own['id']}
 
-    def ahead_room(self, per_day):
+    def ahead_room(self, per_day, urgent=False, due=None):
+        """Room to prepare one more to-do ahead today. The last AHEAD_HELD of per_day are held for pressing work
+        (urgent, or due within PRESSING_DAYS), so a busy morning of routine drafts doesn't leave none for it."""
         since = (dt.datetime.fromisoformat(now()) - dt.timedelta(days=1)).isoformat()
+        cap = per_day if pressing(urgent, due) else per_day - min(AHEAD_HELD, per_day // 3)
         with self.connect() as db:
             # Automated follow-ups count apart (follow_ups.PER_DAY): they never use up the room for other to-dos
             return db.execute("SELECT count(*) FROM decisions WHERE choice='prepare_ahead' AND created_at>=? "
-                              'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < per_day
+                              'AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards)', (since,)).fetchone()[0] < cap
 
     def settle_ahead(self, db):
         return settle_ahead(db)

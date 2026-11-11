@@ -55,7 +55,7 @@ class CalendarClashesApp:
         for clash in [c for c in found if c['key'] not in done][:max(room, 0)]:
             side = calendar_clashes.newer_side(clash)
             title, body = clash_text(clash, side)
-            ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
+            ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)), due=clash[side]['start'].isoformat())
             try:
                 with self.store.connect() as db:
                     db.execute('BEGIN IMMEDIATE')
