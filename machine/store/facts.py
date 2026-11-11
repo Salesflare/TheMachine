@@ -399,13 +399,14 @@ class FactsStore:
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             originals = self.replaced_facts(db, replaces)
-            if originals:  # condensing: the merged fact comes from the newest note behind them
+            owner_note = lambda: db.execute("SELECT suggestion_id,feedback FROM decisions WHERE id=? AND source IN ('telegram','dashboard') AND feedback!='' AND id NOT IN (SELECT decision_id FROM decision_annotations)", (decision_id,)).fetchone()
+            # a newer note that corrects them: the fact comes from that note (Learning says so, and reviews stop offering it)
+            note = owner_note() if originals and decision_id not in {None, *(o['decision_id'] for o in originals)} else None
+            if originals and not note:  # condensing: the merged fact comes from the newest note behind them
                 decision_id = originals[-1]['decision_id']
                 note = {'suggestion_id': originals[-1]['suggestion_id']}
-            elif by_ai or notes or (said is True and str(decision_id).startswith('telegram-said:')):
-                note = {'suggestion_id': None}
-            else:
-                note = db.execute("SELECT suggestion_id,feedback FROM decisions WHERE id=? AND source IN ('telegram','dashboard') AND feedback!='' AND id NOT IN (SELECT decision_id FROM decision_annotations)", (decision_id,)).fetchone()
+            elif not originals:
+                note = {'suggestion_id': None} if by_ai or notes or (said is True and str(decision_id).startswith('telegram-said:')) else owner_note()
             if not note:
                 raise ValueError('Facts must come from one of the owner’s own written notes: give that decision_id')
             if not originals:
