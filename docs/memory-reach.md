@@ -23,8 +23,8 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 
 | work | chat | messages | notes |
 |---|---|---|---|
-| Review | facts block (`recall` `review`) | promises, sender lines | facts block, `USER.md` |
-| Preparation and draft | facts and rules (`facts_for`); the to-do's chat runs in that session | records, related signals, voice | facts and rules, `USER.md` |
+| Review | facts block, set-aside and historical facts that bear on the batch (`recall` `review`, `retained`) | promises, sender lines | facts block, `USER.md` |
+| Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
 | Ask | facts on the question's records, others by meaning | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
 | Owner's main chat | facts about a person (`graph` node: `open.known`) | `graph`, `events` | `USER.md`, `MEMORY.md` (OpenClaw) |
@@ -48,8 +48,8 @@ swapped or a negation added or dropped. The old one stays behind it under Learni
 - **Ask without embeddings** finds a fact about no one only by meaning, so on a Machine without embeddings it doesn't.
   `ask_memory.learned` (words) could be its fallback.
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
-- **A to-do's chat** answers in its preparation's session: a fact learned after that preparation started reaches it
-  only on a redo.
+- **A to-do's chat** answers in its preparation's session: a current fact learned after that preparation started
+  reaches it only on a redo (each turn does get the set-aside and historical facts that bear on the to-do).
 - **Talk's recall** matches words, not meaning: "seat" finds "aisle seats", "flying" doesn't find "flights".
 - **A chat correction that swaps a plain word** ("window seats" for "aisle seats") is left to the condense pass,
   which judges it by meaning; code only swaps numbers, names and negations.

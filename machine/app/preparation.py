@@ -512,6 +512,9 @@ class PreparationApp:
             if fast is not None:request['fast']=fast
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
                 request['message']=chat_prompt(job,self.config)
+                memory=recall(self,'todo_chat',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned earlier that bears on it, outside the session's list
+                lines=memory.text('retained')
+                if lines:request['message']+='\n\n'+lines
                 try:  # its area now: the owner may have moved it since the chat began
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
@@ -530,7 +533,8 @@ class PreparationApp:
                 rules=memory.text('rules')
                 try:gaps=self.gap_lines(job['suggestion_id'])  # what isn't known about the people on it (gap_note.py)
                 except Exception as error:LOG.error('gap note error=%s',type(error).__name__);gaps=''
-                request['message']=preparation_prompt(job,memory.text('facts'),self.config,'' if style else self.store.draft_edits_text(),
+                facts='\n\n'.join(filter(None,(memory.text('facts'),memory.text('retained'))))  # set aside or history that bears on it (retained_facts.py)
+                request['message']=preparation_prompt(job,facts,self.config,'' if style else self.store.draft_edits_text(),
                                                       rules,style,gaps)
                 try:  # how to read the card's own sources (its accounts' notes only)
                     with self.store.connect() as db:
@@ -596,10 +600,10 @@ class PreparationApp:
                 if images:request['attachments']=images
                 request['message']+=lines
             except OSError as error:LOG.error('chat files error=%s',type(error).__name__)
-        if memory:request['_memory']=memory.rows()  # a retry resends its first start, with that start's list
+        if memory:request['_memory'],request['_memory_for']=memory.rows(),memory.purpose  # a retry resends its first start, with that start's list
         result=runner(request)
         if request.get('_memory') and result.get('status')=='admitted':
-            memory_use.record(self.store,'preparation',request['_memory'],job['job_id'],job['suggestion_id'])
+            memory_use.record(self.store,request.get('_memory_for') or 'preparation',request['_memory'],job['job_id'],job['suggestion_id'])
         if 'fast' in request and result.get('status')=='admitted':
             with self.store.connect() as db:  # the session's speed as the runner set it (chat_model.fast_ran)
                 if request['fast']:chat_model.fast_ran(db,request['session_job_id'],now())

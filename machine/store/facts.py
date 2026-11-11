@@ -83,6 +83,27 @@ def swapped(new, old, shared):
     return False
 
 
+# A fact shares words with a to-do when at least MATCH_WORDS of its distinctive words (four letters or more, no
+# filler) are in it, and at least a third of them: what picks by relevance without embeddings (facts_for, and the
+# facts outside the current list, machine/app/retained_facts.py). No model, no embedding request.
+MATCH_WORDS = 2
+COMMON = {'about', 'after', 'also', 'always', 'been', 'before', 'from', 'have', 'into', 'more', 'only', 'over', 'some', 'than',
+          'them', 'then', 'they', 'were', 'what', 'when', 'will', 'your', 'owner', 'there', 'their', 'these', 'those', 'which',
+          'would', 'should', 'could', 'other', 'every', 'each', 'does', 'just', 'like', 'make', 'need', 'needs', 'want', 'with'}
+
+
+def key_words(text):
+    """The distinctive words of a text: lowercase, at least four letters, no filler."""
+    return {w for w in re.findall(r'\w+', str(text or '').casefold()) if len(w) >= 4 and not w.isdigit()} - FILLER - COMMON
+
+
+def word_match(text, asked):
+    """How much a fact's text shares with the words asked (key_words): the share of its own words, 0 when too few."""
+    own = key_words(text)
+    shared = len(own & asked)
+    return shared / len(own) if shared >= MATCH_WORDS and shared * 3 >= len(own) else 0.0
+
+
 def rewords(new, old):
     """'less' when old already says everything new says (the same words count as that), 'more' when new says all
     that old says and more,
@@ -781,7 +802,8 @@ class FactsStore:
 
     def facts_for(self, suggestion_id, kind='fact', settings=None, limit=3000, all_under=FACTS_ALL_UNDER, top=FACTS_TOP, floor=FACTS_FLOOR, accounts=None):
         """The facts (or draft rules) a preparation needs, not everything learned: all of them while they are few;
-        else the ones learned on this card plus those closest in meaning to it (embeddings), else those that count most.
+        else the ones learned on this card plus those closest in meaning to it (embeddings), else those that share its
+        words (word_match on its title, text and latest note) and then those that count most.
         Each counts by its decayed weight (fact_weight): an event fades in weeks, a preference or commitment in months, a
         fact in a year; one past its end day is gone. Closeness picks (at least floor), the weight orders. A fact about
         a record on this to-do's signals (fact_about) comes before the closeness picks, within the same top: it takes
@@ -793,7 +815,8 @@ class FactsStore:
             with_about(db, facts)
             near = fact_links.todo_records(db, suggestion_id) if any(f['about'] for f in facts) else set()
             who = fact_links.records(db, {n for f in facts for n in f['about']})
-            card = db.execute('SELECT account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            card = db.execute('SELECT account_ids,area,title,body FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
         if accounts is not None and (who or any(f.get('side') for f in facts)):
             area = suggestion_scope(card['account_ids'] if card else '[]', accounts, card['area'] if card else None)
             facts = [f for f in facts if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
@@ -810,8 +833,12 @@ class FactsStore:
                 ranked = self.rank_facts(suggestion_id, facts, settings)
             except Exception as error:  # the embedding server is down: those that count most instead
                 LOG.error('fact ranking error=%s', type(error).__name__)
-        if ranked is None:
-            picked = own + tied + sorted((f for f in reversed(facts) if f not in own and f not in tied), key=lambda f: -weight[f['id']])
+        said = {}
+        if ranked is None:  # no meaning search: the ones that share the to-do's words first, then those that count most
+            asked = key_words(' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))) if card else set()
+            said = {f['id']: word_match(f['text'], asked) for f in facts if f not in own and f not in tied}
+            said = {i: s for i, s in said.items() if s}
+            picked = own + tied + sorted((f for f in reversed(facts) if f not in own and f not in tied), key=lambda f: (-said.get(f['id'], 0), -weight[f['id']]))
         else:
             close = sorted(((score * (0.5 + 0.5 * weight[f['id']]), f) for score, f in ranked if score >= floor and f not in own and f not in tied), key=lambda x: -x[0])
             picked = own + (tied + [f for _, f in close])[:top]
@@ -823,11 +850,11 @@ class FactsStore:
             out.append(f); size += len(line) + 1
         if memory_use.collecting():  # a prompt's recall: its use log stamps them as used once the run is admitted (memory_use.record)
             scores = {f['id']: score for score, f in close} if ranked is not None else {}
-            note_facts(out, lambda f: 'own' if f in own else 'about' if f in tied else 'closeness' if ranked is not None else 'weight',
-                       scores=scores, used=lambda f: ranked is not None or f in tied)
-        elif ranked is not None or tied:  # picked for meaning or for its record (not just newest while the embedding server is down): used
+            note_facts(out, lambda f: 'own' if f in own else 'about' if f in tied else 'closeness' if ranked is not None else 'match' if f['id'] in said else 'weight',
+                       scores=scores, used=lambda f: ranked is not None or f in tied or f['id'] in said)
+        elif ranked is not None or tied or said:  # picked for meaning, its record or its words (not just newest while the embedding server is down): used
             try:
-                self.mark_used(f['id'] for f in out if ranked is not None or f in tied)
+                self.mark_used(f['id'] for f in out if ranked is not None or f in tied or f['id'] in said)
             except Exception as error:  # a busy database never costs the preparation its facts
                 LOG.error('fact use error=%s', type(error).__name__)
         return self.facts_block(out)

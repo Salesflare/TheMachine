@@ -96,12 +96,16 @@ class OwnerMemoryScenario(unittest.TestCase):
         if a.embeddings.settings(self.app.config):  # by meaning: not for a to-do it has nothing to do with
             self.assertNotIn(text, self.prepare(other))
 
-    def retrieve_again(self, fact_id):
-        """The owner brings a set-aside fact back from Learning.
-        TODO(shared retrieval): once the shared retrieval of set-aside memory lands, retrieve it through that here too,
-        and assert the same picks below."""
+    def retrieve_again(self, fact_id, todo, other):
+        """Set aside, it still reaches a preparation of a to-do it fits through the shared retrieval (recall's retained
+        block, machine/app/retained_facts.py), as the fact it still is, and not one it has nothing to do with; then
+        the owner brings it back from Learning."""
         aside = [f['id'] for f in self.store.snapshot([], lean=True)['facts_aside']]
         self.assertEqual(aside, [fact_id])
+        text = self.row(fact_id)['text']
+        self.assertIn('- ' + text, recall(self.app, 'preparation', {'todo': todo}, 30000).text('retained'))
+        self.assertNotIn(text, recall(self.app, 'preparation', {'todo': other}, 30000).text('retained'))
+        self.assertEqual(self.row(fact_id)['merged_into'], f'aside:{fact_id}')  # reading it is not a use: still set aside
         self.assertEqual(self.app.action('unmerge_fact', {'expired': fact_id}, owner_dashboard=True), {'restored': 1})
 
     def flow(self, embed):
@@ -143,7 +147,7 @@ class OwnerMemoryScenario(unittest.TestCase):
             self.store.retire_expired()
             self.assertEqual(self.row(corrected)['merged_into'], f'aside:{corrected}')
             self.assertNotIn(CORRECTED, self.prepare(calls))
-            self.retrieve_again(corrected)
+            self.retrieve_again(corrected, calls, other)
             self.assert_applied(calls, other, CORRECTED)
 
         # 5. Another embedding model: the vectors are made again, and the right preference is still picked
