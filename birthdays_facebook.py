@@ -356,12 +356,13 @@ def owner_set(db, ids):
 
 
 def fresh(db, matched):
-    """The matched people ([{id, date}]) whose birthday is news: nobody set theirs by hand, and the one their page shows
-    (person_birthday.known, as person_birthday.get has it) is another day or none. All at once: every birthday and every
-    person is looked at once, not once per person (thousands of friends, each a person with a birthday)."""
+    """The matched people ([{id, date}]) whose birthday is news, as {their id in matched: the person's node id now}:
+    nobody set theirs by hand, and the one their page shows (person_birthday.known, as person_birthday.get has it) is
+    another day or none. All at once: every birthday and every person is looked at once, not once per person
+    (thousands of friends, each a person with a birthday). Only reads: callers run it before taking the write lock."""
     ids = {m['id'] for m in matched or ()}
     if not ids:
-        return set()
+        return {}
     rows = db.execute("SELECT id,name,info,kind FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))", (json.dumps(sorted(ids)),)).fetchall()
     node = {r['id']: r for r in rows}
     for gone in ids - set(node):  # an id from an earlier preview, part of another person since (a merge): as person_birthday.get
@@ -372,7 +373,7 @@ def fresh(db, matched):
     people = {r['id']: {'id': r['id'], 'name': r['name'], 'info': json.loads(r['info'] or '{}')} for r in node.values()}
     mine = owner_set(db, people)
     have = person_birthday.known(db, people) if people else {}
-    out = set()
+    out = {}
     for m in matched:
         person = node.get(m['id'])
         if not person:
@@ -381,14 +382,14 @@ def fresh(db, matched):
         if person['id'] in mine or (got and got['source'] == person_birthday.SOURCE):
             continue
         if not got or birthdays.birthday_value(got['value']) != birthdays.birthday_value(m['date']):
-            out.add(m['id'])
+            out[m['id']] = person['id']
     return out
 
 
 def due(deadline):
     """A step with a deadline (time.monotonic()) that has passed it stops: TimeoutError."""
     if deadline is not None and time.monotonic() > deadline:
-        raise TimeoutError('the step after the read ran too long')
+        raise TimeoutError
 
 
 def preview(db, items, today=None, capped=False, missing=(), deadline=None):
@@ -403,21 +404,43 @@ def preview(db, items, today=None, capped=False, missing=(), deadline=None):
     out['capped'] = bool(capped)  # the read stopped at its limits: the page may have had more
     out['missing'] = sorted({int(m) for m in missing or () if str(m).isdigit() and 1 <= int(m) <= 12})  # months it never saw
     news = fresh(db, out['matched'])
-    out['new'] = sum(1 for m in out['matched'] if m['id'] in news)
+    for m in out['matched']:
+        if m['id'] in news:
+            m['new'] = True  # Save writes theirs: the to-do lists these, the rest is a count
+    out['new'] = len([m for m in out['matched'] if m.get('new')])
+    out['flagged'] = True  # matched people carry new (a preview before this listed every matched person)
     due(deadline)
     return out
 
 
-def save(db, data, stamp):
-    """The matched birthdays, each through the person's one birthday (person_birthday.offer, source facebook): one the
-    owner set stays, one the Machine already knew for that day is left as it is. Returns the people saved: [{id, name}]."""
-    matched = [m for m in data.get('matched') or () if isinstance(m, dict) and m.get('id')]
+def to_save(db, data):
+    """What Save writes, worked out from reads only (fresh), before the write lock: [{id, node, name, date}] for each
+    matched person whose birthday is news."""
+    matched = [m for m in data.get('matched') or () if isinstance(m, dict) and m.get('id') and person_birthday.parts(m.get('date'))]
     news = fresh(db, matched)
-    saved = []
-    for m in matched:
-        if m['id'] in news and person_birthday.offer(db, m['id'], m['date'], SOURCE, stamp):
-            saved.append({'id': m['id'], 'name': m['name']})
-    return saved
+    return [{'id': m['id'], 'node': news[m['id']], 'name': m['name'], 'date': m['date']} for m in matched if m['id'] in news]
+
+
+def write_saved(db, picks, stamp):
+    """Save's write, in the caller's short transaction: the birthdays to_save found, in one pass (source facebook,
+    enrichment.offer_facts). One the owner set since stays, as does one a higher source has. Returns the people saved:
+    [{id, name}]."""
+    mine = owner_set(db, [p['node'] for p in picks])
+    picks = [p for p in picks if p['node'] not in mine]
+    if not picks:
+        return []
+    enrichment.offer_facts(db, [([p['node']], {person_birthday.FIELD: p['date']}, enrichment.RECORD) for p in picks], SOURCE, stamp)
+    kept = {r[0]: r[1] for r in db.execute('SELECT identifier,value FROM person_facts WHERE field=? AND source=? AND identifier IN (SELECT value FROM json_each(?))',
+                                           (person_birthday.FIELD, SOURCE, json.dumps(sorted({p['node'] for p in picks}))))}
+    return [{'id': p['id'], 'name': p['name']} for p in picks
+            if p['node'] in kept and birthdays.birthday_value(kept[p['node']]) == birthdays.birthday_value(p['date'])]
+
+
+def save(db, data, stamp):
+    """The matched birthdays, each as the person's one birthday (source facebook): one the owner set stays, one the
+    Machine already knew for that day is left as it is. Returns the people saved: [{id, name}]. The action works it out
+    before its write lock (to_save) and writes in a short transaction (write_saved)."""
+    return write_saved(db, to_save(db, data), stamp)
 
 
 def put(db, suggestion_id, state, data, stamp):
@@ -524,8 +547,9 @@ def view(db, suggestion_id, now=None):
         return {'state': 'failed', 'empty': False} if late else {'state': 'reading'}
     if state == 'preview':
         matched = data.get('matched') or []
+        listed = [m for m in matched if m.get('new')] if data.get('flagged') else matched  # what Save writes; the rest is a count
         return {'state': 'preview', 'found': data.get('found', 0), 'matched': len(matched), 'new': data.get('new', 0),
-                'shown': [{'id': m['id'], 'name': m['name'], 'date': m['date']} for m in matched[:SHOWN]], 'more': max(0, len(matched) - SHOWN),
+                'shown': [{'id': m['id'], 'name': m['name'], 'date': m['date']} for m in listed[:SHOWN]], 'more': max(0, len(listed) - SHOWN),
                 'ambiguous': (data.get('ambiguous') or [])[:AMBIGUOUS_SHOWN], 'unmatched': data.get('unmatched', 0),
                 'capped': bool(data.get('capped')), 'missing': data.get('missing') or [], **others_view(db, data)}
     if state == 'saved':

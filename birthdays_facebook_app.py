@@ -96,6 +96,12 @@ class BirthdaysFacebookApp:
             raise ValueError('Only the owner imports birthdays, on the dashboard')
         sid, step = str(args.get('suggestion_id') or ''), args.get('step')
         stamp = self.routines_stamp()
+        picks = seen = None
+        if step == 'save':  # which birthdays are news: worked out from reads only, before the write lock (thousands of people)
+            with self.store.connect() as db:
+                got = birthdays_facebook.get(db, sid)
+                if got and got[0] == 'preview':
+                    picks, seen = birthdays_facebook.to_save(db, got[1]), got[2]
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             got = birthdays_facebook.get(db, sid)
@@ -110,7 +116,9 @@ class BirthdaysFacebookApp:
             elif step == 'save':
                 if state != 'preview':
                     raise ValueError('Import again first')
-                people = birthdays_facebook.save(db, got[1], stamp)
+                if picks is None or got[2] != seen:  # the preview changed in between: worked out again
+                    picks = birthdays_facebook.to_save(db, got[1])
+                people = birthdays_facebook.write_saved(db, picks, stamp)  # one short write
                 saved = len(people)
                 # the rest read goes with the preview; the friends nobody in the Graph has stay, for the Add button
                 kept = {k: got[1][k] for k in ('found', 'unmatched', 'capped', 'missing', 'read', 'fill') if k in got[1]}  # the read's report
@@ -171,7 +179,7 @@ class BirthdaysFacebookApp:
                                                   result.get('missing'), deadline=deadline)
             except sqlite3.OperationalError:
                 if time.monotonic() > deadline:
-                    raise TimeoutError('the step after the read ran too long') from None
+                    raise TimeoutError from None
                 raise
             finally:
                 db.set_progress_handler(None, 0)

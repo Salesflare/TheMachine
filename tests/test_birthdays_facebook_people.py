@@ -6,6 +6,7 @@ looked up for them. Undo takes exactly those people away. Made-up people only.""
 import datetime as dt
 import importlib.util
 import json
+import sqlite3
 import subprocess
 import tempfile
 import threading
@@ -376,15 +377,57 @@ class AddPeople(unittest.TestCase):
             read = time.monotonic() - start
             view = self.card(sid)
             self.assertEqual((view['state'], view['matched'], view['new'], view['added']), ('preview', 1300, 1, 1300))
+            self.assertEqual(([m['name'] for m in view['shown']], view['more']), ([names[0]], 0))  # only what Save writes
+            free = []
+
+            def fresh(db, matched, real=fb.fresh):  # the slow part runs with no write lock held: another writer gets in at once
+                other = sqlite3.connect(self.store.path, timeout=0.2)
+                other.isolation_level = None
+                other.execute('BEGIN IMMEDIATE')
+                other.execute('COMMIT')
+                other.close()
+                free.append(not db.in_transaction)
+                return real(db, matched)
             start = time.monotonic()
-            self.assertEqual(self.step(sid, 'save')['saved'], 1)  # the one known for another day; the owner's stays
+            with patch.object(fb, 'fresh', fresh):
+                self.assertEqual(self.step(sid, 'save')['saved'], 1)  # the one known for another day; the owner's stays
             save = time.monotonic() - start
+            self.assertEqual(free, [True])  # worked out once, before the write
         self.assertLessEqual((len(scans), len(people_scans)), (2, 2))  # every birthday and every person looked at once per step
         self.assertLess(read + save, 20, f'Import again took {read:.1f} s, Save {save:.1f} s')
         with self.store.connect() as db:
             self.assertEqual(person_birthday.get(db, nodes[names[0]])['value'], '--01-01')
             self.assertEqual(person_birthday.get(db, nodes[names[1]])['value'], '--07-07')
         self.assertEqual(self.step(sid, 'undo_add')['undone'], 1300)
+
+    def test_saving_1300_new_birthdays_holds_the_database_a_moment(self):
+        names = [f'{f} {m} {l}' for f in FIRST for m in FIRST[:10] for l in LAST][:1300]
+        self.answer = {'items': [{'name': n, 'month': 1 + i % 12, 'day': 1 + i % 28} for i, n in enumerate(names)]}
+        sid = self.read()
+        self.step(sid, 'add')
+        with self.store.connect() as db:  # people in the Graph without a birthday yet
+            db.execute("DELETE FROM person_facts WHERE field='birthday'")
+        self.build()
+        self.step(sid, 'read')
+        view = self.card(sid)
+        self.assertEqual((view['new'], len(view['shown']), view['more']), (1300, fb.SHOWN, 1300 - fb.SHOWN))
+        held, write = [], fb.write_saved
+
+        def timed(db, picks, stamp):
+            start = time.monotonic()
+            try:
+                return write(db, picks, stamp)
+            finally:
+                held.append(time.monotonic() - start)
+        start = time.monotonic()
+        with patch.object(fb, 'write_saved', timed):
+            self.assertEqual(self.step(sid, 'save')['saved'], 1300)
+        took = time.monotonic() - start
+        self.assertEqual(len(held), 1)  # one write for all of them
+        self.assertLess(held[0], 3, f'the write held the database {held[0]:.2f} s')
+        self.assertLess(took, 20, f'Save took {took:.1f} s')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM person_facts WHERE field='birthday' AND source='facebook'").fetchone()[0], 1300)
 
 
 if __name__ == '__main__':
