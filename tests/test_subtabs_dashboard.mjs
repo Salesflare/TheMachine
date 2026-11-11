@@ -59,6 +59,10 @@ try{
  await page.goto(base+'/#graph=roles');await page.locator('#people:not([hidden])').waitFor();
  await page.goto(base+'/#graph=projects');await page.locator('[data-graph-panel="projects"]:not([hidden])').waitFor();
  assert.equal(await page.locator('#people').isVisible(),true);assert.equal(await page.evaluate(()=>location.hash),'#graph=projects');  // the pane stays in the address
+ // A redraw that ends between a pane link and its hashchange (a busy page) keeps the link: the old pane is not put back
+ await page.goto(base+'/#graph=people');await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
+ await page.evaluate(()=>{location.hash='#graph=projects';graphHashSync()});
+ await page.locator('[data-graph-panel="projects"]:not([hidden])').waitFor({timeout:3000});assert.equal(await page.evaluate(()=>location.hash),'#graph=projects');
  await page.goto(base+'/#people');await page.locator('#people:not([hidden])').waitFor();
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();

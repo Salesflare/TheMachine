@@ -8,7 +8,9 @@ function graphSubLabels(){for(const a of document.querySelectorAll('.side-sub a'
 function graphSubSync(){pageHead();const on=!$('#people').hidden,graph=$('nav [data-tab="people"]');let lit=false;
  const shown=graphNode&&!/^promise:/.test(graphNode)?graphNodePane(graphNode):graphShown;
  for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===shown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit)}
-function graphHashSync(){if($('#people').hidden||graphNode||!graphShown)return;const h=location.hash;if(h&&!/^#(graph|people)(=[a-z]+)?$/.test(h))return;const want='#graph='+graphShown;if(h!==want)history.replaceState(null,'',location.pathname+location.search+want)}
+// A link to another pane that is drawn (#graph=projects just followed, its hashchange still to come) is left for
+// openTabLink: a redraw that started before it never puts the old pane back in the address
+function graphHashSync(){if($('#people').hidden||graphNode||!graphShown)return;const h=location.hash;if(h&&!/^#(graph|people)(=[a-z]+)?$/.test(h))return;const to=/^#graph=([a-z]+)$/.exec(h)?.[1];if(to&&to!==graphShown&&GRAPH_PANES.includes(to)&&$('#people-view').querySelector(`[data-graph-panel="${to}"]`))return;const want='#graph='+graphShown;if(h!==want)history.replaceState(null,'',location.pathname+location.search+want)}
 $('#graph-sub').addEventListener('click',e=>{const a=e.target.closest('a[data-graph-sub]');if(!a||e.ctrlKey||e.metaKey||e.shiftKey)return;e.preventDefault();const url=location.pathname+location.search+'#graph='+a.dataset.graphSub;
  if(history.state?.drawer)history.replaceState(null,'',url);else if(location.hash!=='#graph='+a.dataset.graphSub)history.pushState(null,'',url);openTabLink();graphSubSync();if(!DESK.matches)scrollTo(0,0)});
 {const fold=$('#graph-fold'),lab=fold.parentNode.querySelector('.nl'),place=()=>{const w=lab.offsetLeft+lab.offsetWidth;if(w)fold.style.setProperty('--fold-x',w+(matchMedia('(max-width:1023px)').matches?2:4)+'px')  /* just after the label, its box never under the text */};
