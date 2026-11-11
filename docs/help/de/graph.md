@@ -18,7 +18,7 @@ Deine Machine baut eine Karte davon, mit wem du zu tun hast und was los ist, aus
 
 Die gewählten Filter stehen über der Liste, mit **Entfernen**. Bei Projekten teilen sich Liste und Board einen Filter. Auf dem Handy öffnen sie sich als Blatt.
 
-Das Sortiermenü sortiert die Liste, auch nach **Wert** und **Abschlussdatum**. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle.
+Das Sortiermenü sortiert die Liste. Personen und Organisationen nach Nähe, neuestem oder ältestem Kontakt und Name, Organisationen auch nach Größe. Projekte auch nach **Wert** und **Abschlussdatum**. **CSV herunterladen** im Sortiermenü speichert den aktuellen Tab als Tabelle.
 
 ## Felder und Tags
 

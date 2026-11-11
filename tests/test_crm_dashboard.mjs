@@ -114,6 +114,16 @@ try{
   assert.deepEqual(await page.evaluate(()=>[crmF('people'),crmCount('people'),crmF('orgs'),crmCount('orgs'),crmQuery('people')]),[{owner:'me'},1,{},0,'&owner=me']);
   await page.evaluate(()=>{crmSet('people',{});crmSet('orgs',{})});
   const sheet=(pane,name)=>shot(page,`${name}-${tag}-${scheme}`);
+  // ...and orders of their own: a project's Value or Close date saved before falls back to Closest, and is not asked for
+  await page.evaluate(()=>{graphKeep('people','sort','value');graphKeep('orgs','sort','close')});
+  for(const [pane,own] of [['people',['Closest','Newest contact','Oldest contact','Name A–Z']],['orgs',['Closest','Newest contact','Oldest contact','Name A–Z','Size']]]){
+   const d=`#people-view [data-graph-panel="${pane}"] .graph-sort`;
+   await page.evaluate(p=>document.querySelector(`[data-graph-sub="${p}"]`).click(),pane);await page.locator(d+' summary').waitFor();
+   assert.match(await page.locator(d+' summary').textContent(),/^Closest/);await until(()=>last(pane)&&last(pane).sort==='closest',pane+' asked in its own order');
+   await page.locator(d+' summary').click();await page.locator(d+' [data-graph-sort]').first().waitFor();
+   assert.deepEqual(await page.locator(d+' [data-graph-sort]').allTextContents(),own);await shot(page,`${pane}-sort-menu-${tag}-${scheme}`);
+   await page.locator(d+' [data-graph-sort="last_old"]').click();await until(()=>last(pane).sort==='last_old',pane+' oldest contact first');
+   await page.evaluate(p=>graphKeep(p,'sort','closest'),pane)}
   await page.evaluate(()=>document.querySelector('[data-graph-sub="people"]').click());await page.locator('#people-view [data-graph-panel="people"]').waitFor();
   await page.evaluate(()=>crmFilterOpen('people'));await page.locator('#crm-dialog[open]').waitFor();
   assert.deepEqual(await page.locator('#crm-form .ed-field').evaluateAll(ls=>ls.map(l=>l.firstChild.textContent.trim())),['Closeness','Last contact','Organization','Owner']);

@@ -490,7 +490,10 @@ def _brief(row):
 
 FILTERS = ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting',
            'closeness', 'last_contact', 'open_project', 'industry', 'size', 'country')
-SORTS = ('value', 'close')
+SORTS = ('value', 'close', 'size')
+# The orders each kind of list has: a project's value and close date on Projects only, like its filters.
+KIND_SORTS = {'person': ('closest', 'last', 'last_old', 'name'), 'org': ('closest', 'last', 'last_old', 'name', 'size'),
+              'project': ('closest', 'last', 'name', 'stage', 'value', 'close')}
 # Which filters each kind of list has: a project's own facts on Projects; on People and Organizations what is about
 # them (how close, when last in touch, and an organization's industry, size and country), plus one "has an open project".
 KIND_FILTERS = {'project': ('owner', 'tag', 'board', 'stage', 'org', 'value_min', 'value_max', 'close_from', 'close_to', 'waiting'),
@@ -685,7 +688,7 @@ def list_query(db, name, filters, sort):
                          "OR id IN (SELECT l.b FROM graph_links l JOIN graph_nodes m ON m.id=l.a WHERE l.kind='project' "
                          "AND json_extract(m.info,'$.org') IN (SELECT value FROM json_each(?))))")
             args += [json.dumps(keys), json.dumps(ids)]
-    if facts or sort in SORTS:
+    if facts or sort in ('value', 'close'):
         pw, pargs = _project_where(filters, closed_too=kind == 'project')
         db.execute('CREATE TEMP TABLE IF NOT EXISTS crm_pick(id TEXT PRIMARY KEY,value REAL,close TEXT)')
         db.execute('DELETE FROM temp.crm_pick')
@@ -711,4 +714,6 @@ def list_query(db, name, filters, sort):
     elif sort == 'close':
         pick = '(SELECT close FROM temp.crm_pick WHERE crm_pick.id=graph_nodes.id)'
         order = f'{pick} IS NULL,{pick},strength DESC'
+    elif sort == 'size':  # the head count first, unknown last
+        order = f'{HEADCOUNT} IS NULL,{HEADCOUNT} DESC,strength DESC'
     return ' AND '.join(where) or None, tuple(args), order

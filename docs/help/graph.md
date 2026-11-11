@@ -18,7 +18,7 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 
 The filters you picked show above the list, with **Clear**. On Projects, the list and the board share one Filter. On a phone they open as a sheet.
 
-The order menu sorts the list, also by **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
+The order menu sorts the list. People and Organizations go by closeness, newest or oldest contact and name, and Organizations also by size. Projects also go by **Value** and **Close date**. **Download CSV**, under the order menu, saves the tab you're on as a spreadsheet.
 
 ## Fields and tags
 
