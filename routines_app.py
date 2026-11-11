@@ -60,6 +60,14 @@ SKILL_ROOM = 6000  # characters of the owner's skills in a routine's prompt: the
 WAIT_AT_MOST = 12 * 3600  # a run that couldn't start in this long didn't work (the usage budget held it all day)
 SESSION = re.compile(r'^agent:main:assistant-review-routine-([a-f0-9]{32})$')
 DRAFT_ACTS = ('post', 'send')  # what a draft's step does: its to-do's button says it (machine/store/views.py ROUTINE_ACT)
+# A run may leave a draft (routine_draft_channels) when its words ask to write, post or send something: then it gets
+# the owner's voice for the channel. The channels its words name, and those of an account's service.
+DRAFT_WORDS = re.compile(r'\b(?:drafts?|write|writes|post|posts|send|sends|reply|replies|tweets?|announce|e-?mail|message)\b', re.I)
+VOICE_WORDS = (('Email', re.compile(r'\b(?:e-?mails?|mail|newsletter)\b', re.I)), ('Slack', re.compile(r'\bslack\b', re.I)),
+               ('WhatsApp', re.compile(r'\bwhatsapp\b', re.I)), ('Telegram', re.compile(r'\btelegram\b', re.I)),
+               ('LinkedIn', re.compile(r'\blinkedin\b', re.I)), ('X DM', re.compile(r'\b(?:tweets?|twitter)\b|\bX\b')))
+VOICE_SERVICES = {'gmail': 'Email', 'outlook': 'Email', 'microsoft': 'Email', 'imap': 'Email', 'slack': 'Slack', 'whatsapp': 'WhatsApp',
+                  'telegram': 'Telegram', 'linkedin': 'LinkedIn', 'x': 'X DM'}
 # What a run's failure says on the page: a short reason from the runner's categories, never provider text.
 WHY_FAILED = {'usage_limited': 'Your AI plan’s usage limit was reached.', 'runtime_timeout': 'It took too long.',
               'no_result': 'It finished without a result.', 'not_started': 'It couldn’t start today.',
@@ -546,10 +554,40 @@ class RoutinesApp:
         run (_memory) and are logged once the turn is admitted. '' when nothing was learned yet."""
         memory = recall(self, 'routine', {'run': run['id']})
         facts, rules = memory.text('facts'), memory.text('rules')
+        try:  # a run that may leave a draft: how the owner writes where it goes out; nothing for one that won't
+            channels = self.routine_draft_channels(run)
+            voice = memory.text('voice', channels) if channels else ''
+        except Exception as error:  # a run without the owner's voice beats no run
+            LOG.error('routine voice error=%s', type(error).__name__)
+            memory.drop('voice')
+            voice = ''
         run['_memory'] = memory.rows()
         return '\n'.join(x for x in (
             facts and 'What you learned about the owner and their world (it counts for this run):\n' + facts,
-            rules and 'How the owner wants things done (draft rules; follow them in a draft):\n' + rules) if x)
+            rules and 'How the owner wants things done (draft rules; follow them in a draft):\n' + rules, voice) if x)
+
+    def routine_draft_channels(self, run):
+        """The channels a draft of this run may go out on (voice_channel names, most likely first), or [] for a run that
+        won't leave one. It may when its words ask to write, post or send something (DRAFT_WORDS), or an earlier run of
+        the routine left a draft. The channels: those its words name, then those of the accounts earlier drafts went
+        out from, else those of the owner's accounts. Plain code, no model call."""
+        words = str(self.routine_words(run) or '')
+        accounts = {a.get('id'): a for a in self.config.get('accounts', [])}
+        service = lambda a: VOICE_SERVICES.get(str(a.get('service') or 'gmail').partition('-')[0].casefold()) if a else None
+        earlier = []
+        if run.get('routine_id'):
+            with self.store.connect() as db:
+                for r in db.execute("SELECT account_id,metadata FROM events WHERE kind='routine.draft' ORDER BY id DESC LIMIT 200"):
+                    try:
+                        mine = json.loads(r['metadata'] or '{}').get('routine') == run['routine_id']
+                    except (TypeError, ValueError):
+                        mine = False
+                    if mine:
+                        earlier.append(service(accounts.get(r['account_id'])))
+        if not DRAFT_WORDS.search(words) and not earlier:
+            return []
+        named = [channel for channel, pattern in VOICE_WORDS if pattern.search(words)]
+        return list(dict.fromkeys(filter(None, named + earlier or [service(a) for a in accounts.values()])))
 
     def routine_since(self, run, now):
         """What's new is since the last run that ended well, or the last 24 hours on the first run (its own words may say otherwise)."""

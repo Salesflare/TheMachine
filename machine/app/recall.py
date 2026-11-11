@@ -19,6 +19,9 @@ from machine.app.review_facts import ReviewFacts
 # tokens. Everything learned is in a review; a routine is one read-only turn, often daily, so it gets the front of it.
 ROUTINE_FACTS = 1200
 ROUTINE_RULES = 600
+# A run that may leave a draft also gets how the owner writes on its channel: All and that channel's block, about 200
+# tokens at most (a block is at most 450 characters).
+ROUTINE_VOICE = 800
 
 
 def recall(app, purpose, about=None, budget=0):
@@ -39,7 +42,9 @@ def recall(app, purpose, about=None, budget=0):
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
       (machine/app/ask_memory.py, each with (what it goes on, room)).
     - routine: facts and rules (what was learned and the draft rules, said or used most lately first, up to
-      ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them.
+      ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them; voice(channels):
+      the owner's voice for the channels a draft of the run may go out on (Store.voice_text, up to ROUTINE_VOICE
+      characters), read only for a run that may leave one (routines_app.routine_draft_channels).
     - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words in their plain
       form, then those close in meaning by their stored vectors when embeddings are on (ask_memory.learned), next to
       OpenClaw's memory search.
@@ -79,6 +84,7 @@ def recall(app, purpose, about=None, budget=0):
     elif purpose == 'routine':
         memory.add('facts', lambda: store.facts_text(ROUTINE_FACTS))
         memory.add('rules', lambda: store.facts_text(ROUTINE_RULES, 'draft'))
+        memory.add('voice', lambda channels: store.voice_text(channels, ROUTINE_VOICE))
     elif purpose == 'chat':
         memory.add('learned', lambda question: ask_memory.for_chat(app, question, budget or ask_memory.CHAT_CHARS))
     elif purpose == 'talk':

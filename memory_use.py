@@ -35,8 +35,9 @@ KEEP_DAYS = 60   # a use older than this is gone (fewer at the Careful level, as
 PURPOSES = ('review', 'preparation', 'ask', 'routine', 'talk', 'chat', 'todo_chat')
 # What a piece of memory is, by the table its row id is in:
 # fact, rule: facts (kind fact, draft); promise: promises; history: suggestions (the owner's recent to-dos, 30 days);
-# record: graph_nodes (a person or project); signal: events; skill: skills (by slug); team_learning: by fingerprint.
-KINDS = ('fact', 'rule', 'promise', 'history', 'record', 'signal', 'skill', 'team_learning')
+# record: graph_nodes (a person or project); signal: events; skill: skills (by slug); team_learning: by fingerprint;
+# voice: voices (by channel).
+KINDS = ('fact', 'rule', 'promise', 'history', 'record', 'signal', 'skill', 'team_learning', 'voice')
 # How it was picked: always (all of them, while they fit), own (learned on this to-do), closeness (by meaning, with a
 # score), weight (what counts most, when meaning can't be ranked), recency (a window of days), match (by name or
 # words), about (it is on the to-do's signals, or in the question's scope), search (the search's best matches),
