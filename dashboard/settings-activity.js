@@ -24,10 +24,10 @@ $('#sa-toggle').onclick=async()=>{const b=$('#sa-toggle'),was=!!b.dataset.on;b.d
 new MutationObserver(()=>{if(!$('#settings').hidden)supportAccessLoad()}).observe($('#settings'),{attributes:true,attributeFilter:['hidden']});
 // Settings, Activity (activity_log.py, help: activity): one list of everything The Machine did, newest first, by day.
 // Read-only: each line says what, when, where and who started it, and links to its to-do; a learning sent to The Machine
-// team keeps its Withdraw, and a line with undo (a connected AI's Graph change) its Undo; one with decide (a change that
+// team keeps its Withdraw, and a line with undo (a connected AI's Graph change, a fact forgotten in chat) its Undo; one with decide (a change that
 // waits for the owner's OK: the AI's Messages is on) Apply and Dismiss. The filter picks one kind, or what was refused or blocked. Fleet, Activity is this same list
 // for the Fleet and learnings (actEmbed). Support access's looks come from Settings, Security (saData), added by time.
-const ACT_KINDS=[['messages','Messages'],['docs','Docs'],['calendar','Calendar'],['web','Steps on the web'],['fixes','Fixes'],['agents','Coding agents'],['fleet','Fleet'],['learnings','Learnings'],['skills','Skills'],['graph','Graph'],['connections','Connections'],['access','Support access'],['ai','Connected AIs']];
+const ACT_KINDS=[['messages','Messages'],['docs','Docs'],['calendar','Calendar'],['web','Steps on the web'],['fixes','Fixes'],['agents','Coding agents'],['fleet','Fleet'],['learnings','Learnings'],['skills','Skills'],['graph','Graph'],['connections','Connections'],['access','Support access'],['ai','Connected AIs'],['memory','Learning']];
 const act={filter:'',items:[],next:null,kinds:[],busy:false,error:false,at:0,seq:0},actFleet={items:null,at:0,busy:false};
 SETTINGS_OF['settings-activity']='activity';HELP_FOR.activity='activity';
 {const d=document.createElement('div');d.id='settings-activity';
@@ -47,9 +47,9 @@ function actRow(x){const meta=[fmtHM(x.at),x.where,x.by].filter(Boolean).join(' 
  const what=orEmpty(html`${[sent.example?html`<p>${t('Example: {}',sent.example)}</p>`:'',...(sent.use_cases||[]).map(c=>html`<p class="fine">${c}</p>`),sent.log?html`<pre>${sent.log}</pre>`:'']}`);
  return html`<li class="act-row act-${x.outcome||'done'}"><div class="act-top"><span class="act-what">${x.what}</span>${x.status?html`<span class="act-status">${x.status}</span>`:''}</div><small class="act-meta">${meta}</small>${x.detail?html`<small class="act-meta">${x.detail}</small>`:''}${what?html`<details class="act-sent"><summary>${t('What was sent')}</summary>${what}</details>`:''}${x.todo||x.withdraw||actUndoable(x)||actDecidable(x)?html`<div class="act-acts">${x.todo?html`<button type="button" class="link act-todo" data-act-todo="${x.todo.id}"><span class="ell">${t('To-do: {}',x.todo.title||t('(no title)'))}</span></button>`:''}${x.withdraw?html`<button type="button" class="ghost" data-tl-withdraw="${x.withdraw.id}" data-n="${x.withdraw.n}">${t('Withdraw')}</button>`:''}${actUndoable(x)?html`<button type="button" class="ghost" data-act-undo="${x.undo.action}" data-id="${x.undo.id}">${t('Undo')}</button>`:''}${actDecidable(x)?html`<button type="button" class="primary" data-act-decide="${x.decide.apply}" data-id="${x.decide.id}">${t('Apply')}</button><button type="button" class="ghost" data-act-decide="${x.decide.dismiss}" data-id="${x.decide.id}">${t('Dismiss')}</button>`:''}</div>`:''}</li>`}
 // Undo on a line: the action it names takes it back (only the ones listed here, each an owner's dashboard action)
-const ACT_UNDO=new Set(['ai_undo']),actUndoable=x=>!!x.undo&&ACT_UNDO.has(x.undo.action);
+const ACT_UNDO=new Set(['ai_undo','learning_undo']),actUndoable=x=>!!x.undo&&ACT_UNDO.has(x.undo.action);
 async function actUndo(b){if(!ACT_UNDO.has(b.dataset.actUndo))return;b.disabled=true;
- try{await sharePost(b.dataset.actUndo,{id:+b.dataset.id});toast(t('Undone.'));actChanged();if(typeof aiActivityReload==='function')aiActivityReload()}
+ try{await sharePost(b.dataset.actUndo,{id:+b.dataset.id});toast(t('Undone.'));actChanged();if(b.dataset.actUndo==='learning_undo')refresh();if(typeof aiActivityReload==='function')aiActivityReload()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}}
 document.addEventListener('click',e=>{const u=e.target.closest('[data-act-undo]');if(u)actUndo(u);const d=e.target.closest('[data-act-decide]');if(d)actDecide(d)});
 // Apply or Dismiss on a connected AI's change that waits for the owner's OK (ai_apply, ai_dismiss)

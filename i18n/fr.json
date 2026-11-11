@@ -531,6 +531,7 @@
  "Asked first; if you answer, they get: {}.": "Vous êtes consulté d’abord ; si vous répondez, la personne reçoit : {}.",
  "Asked first; if you answer, {} gets: {}.": "Vous êtes consulté d’abord ; si vous répondez, {} reçoit : {}.",
  "Asked for a review. The to-do shows how it goes.": "Relecture demandée. La tâche montre où elle en est.",
+ "Asked in chat": "Demandé dans le chat",
  "Asked to add a summary line": "A demandé à ajouter une ligne de résumé",
  "Asked to add a to-do": "A demandé d’ajouter une tâche",
  "Asked to add an email draft": "A demandé d’ajouter un brouillon d’e-mail",
@@ -1603,7 +1604,9 @@
   "one": "{} identifiant enregistré oublié.",
   "other": "{} identifiants enregistrés oubliés."
  },
+ "Forgot: {}": "Oublié : {}",
  "Forgotten everywhere.": "Oublié partout.",
+ "Forgotten in chat": "Oublié dans le chat",
  "Forgotten.": "Oublié.",
  "Formatting": "Mise en forme",
  "Forwarded {} mails to {} in {} weeks": "{0} e-mails transférés à {1} en {2} semaines",

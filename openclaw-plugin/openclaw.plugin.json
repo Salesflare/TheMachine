@@ -17,7 +17,8 @@
       "assistant_signals",
       "assistant_bug_report",
       "assistant_memory",
-      "assistant_remember"
+      "assistant_remember",
+      "assistant_forget"
     ]
   },
   "toolMetadata": {
@@ -40,6 +41,12 @@
       "sideEffecting": false
     },
     "assistant_remember": {
+      "profiles": [
+        "full"
+      ],
+      "sideEffecting": true
+    },
+    "assistant_forget": {
       "profiles": [
         "full"
       ],

@@ -531,6 +531,7 @@
  "Asked first; if you answer, they get: {}.": "Asked first; if you answer, they get: {}.",
  "Asked first; if you answer, {} gets: {}.": "Asked first; if you answer, {} gets: {}.",
  "Asked for a review. The to-do shows how it goes.": "Asked for a review. The to-do shows how it goes.",
+ "Asked in chat": "Asked in chat",
  "Asked to add a summary line": "Asked to add a summary line",
  "Asked to add a to-do": "Asked to add a to-do",
  "Asked to add an email draft": "Asked to add an email draft",
@@ -1603,7 +1604,9 @@
   "one": "Forgot {} saved sign-in.",
   "other": "Forgot {} saved sign-ins."
  },
+ "Forgot: {}": "Forgot: {}",
  "Forgotten everywhere.": "Forgotten everywhere.",
+ "Forgotten in chat": "Forgotten in chat",
  "Forgotten.": "Forgotten.",
  "Formatting": "Formatting",
  "Forwarded {} mails to {} in {} weeks": "Forwarded {} mails to {} in {} weeks",

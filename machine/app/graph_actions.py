@@ -156,10 +156,14 @@ def said_instead(store, fact_id):
                 return {'replaced': row['id']}
     return {}
 
+
+FORGET_OFFER_SECONDS = 30 * 60  # an id from the candidates the chat was offered, while the owner answers which one
+
+
 class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
-               'remember_fact': 'remember_fact_action', 'recall_learned': 'recall_learned_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
+               'remember_fact': 'remember_fact_action', 'recall_learned': 'recall_learned_action', 'forget_learned': 'forget_learned_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
                'project_split': 'project_split_action',
                'graph_fact_unlink': 'graph_fact_unlink_action', 'graph_fact_add': 'graph_fact_add_action', 'unmerge_fact': 'unmerge_fact_action',
                'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
@@ -887,6 +891,48 @@ class GraphActionsApp:
         found = memory.read('learned', words)
         memory_use.record(self.store, 'chat', memory.rows())
         return {'found': found} if found else {'found': '', 'note': 'Nothing The Machine learned matches those words.'}
+
+    def forget_learned_action(self, name, args, owner_dashboard=False):
+        """The owner asks their own main chat to forget something learned (the bridge's assistant_forget, which marks the
+        chat: _owner_chat, never the model; an owner action, so never the local CLI). Only after they wrote there
+        (owner_said), only their own facts and rules (ask_memory.to_forget), and only a clear match: several or none
+        come back for the chat to ask which one, and an id is taken only from the ones it offered. Forgotten as Learning's
+        Remove does it (Store.forget_fact), kept as a change with Undo (learning_loop.undo); undo takes one back."""
+        if args.get('_owner_chat') is not True:
+            raise ValueError('Only the owner forgets what was learned, in their own main chat')
+        note = self.owner_said()
+        if not note:  # read by the assistant in the chat, never shown to the owner
+            raise ValueError('Forget only when the owner asks: they wrote nothing in this chat in the last half hour.')
+        if args.get('undo') is not None:
+            with self.store.connect() as db:
+                said = db.execute("SELECT 1 FROM sqlite_master WHERE name='learning_changes'").fetchone() and db.execute(
+                    "SELECT 1 FROM learning_changes WHERE id=? AND kind='forgot'", (int(args['undo']),)).fetchone()
+            if not said:
+                raise ValueError('undo is the id a forget returned')
+            self.store.undo_learning(args['undo'])
+            return {'brought_back': True}
+        offered, at = getattr(self, 'forget_offered', None) or ((), 0)
+        if args.get('id') is not None:
+            if int(args['id']) not in offered or time.time() - at > FORGET_OFFER_SECONDS:
+                raise ValueError('id is one of the candidates this tool offered just now: call it with the owner’s words first')
+            clear = next((f for f in self.store.facts() if f['id'] == int(args['id'])), None)
+            if not clear:
+                raise ValueError('That one is not in what was learned any more')
+        else:
+            words = ' '.join(str(args.get('words') or '').split())[:200]
+            if not words:
+                raise ValueError('Say what to forget, in the owner’s words.')
+            clear, candidates = ask_memory.to_forget(self, words)
+            if not clear:
+                self.forget_offered = ([f['id'] for f in candidates], time.time())
+                if not candidates:
+                    return {'forgot': None, 'note': 'Nothing learned matches. Tell the owner; nothing was forgotten.'}
+                return {'forgot': None, 'candidates': [{'id': f['id'], 'text': f['text']} for f in candidates],
+                        'note': 'Not one clear match: ask the owner which one, then call again with its id. Nothing was forgotten.'}
+        self.forget_offered = None
+        done = self.store.forget_fact(clear['id'], said=note)
+        return {'forgot': done['text'], 'undo': done['change'],
+                'note': 'Tell the owner "Forgot: <the text>". Undo is in Settings, Activity, or call again with undo.'}
 
     def graph_summary_action(self, name, args, owner_dashboard=False):
         # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's

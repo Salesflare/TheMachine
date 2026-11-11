@@ -746,9 +746,10 @@ class FactsStore:
         verb = {'reject': 'Not needed', 'complete': 'Done', 'snooze': 'Snoozed', 'not_done': 'Not done (it looked done)'}
         return '\n'.join(f'- {verb[r["choice"]]}: "{r["title"]}". They wrote: "{r["feedback"][:300]}" (decision_id {r["id"]})' for r in rows)
 
-    def forget_fact(self, fact_id, undo=False):
+    def forget_fact(self, fact_id, undo=False, said=None):
         """Remove a fact or rule. undo: the to-do chat's Undo of what a note just saved, so one it replaced in other words
-        (said_before) comes back as it was."""
+        (said_before) comes back as it was. said: the owner asked their main chat to forget it (the note id of their
+        message): kept as a change under Learning, Changes, and a line in Activity, each with Undo (learning_loop.undo)."""
         with self.connect() as db:
             row = db.execute('SELECT kind,text FROM facts WHERE id=? AND removed_at IS NULL', (int(fact_id),)).fetchone()
             if not row:
@@ -762,6 +763,10 @@ class FactsStore:
                        'DELETE FROM fact_vectors WHERE fact_id IN (SELECT id FROM gone)', (int(fact_id),))
             if row['kind'] == 'draft':
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'draft_rule',?,?)", (now(), 'Removed draft rule: ' + row['text'], str(fact_id)))
+            if said:
+                learning_loop.ensure(db)
+                change = learning_loop.record(db, 'chat:' + str(said), 'forgot', int(fact_id), json.dumps({'text': row['text']}), row['text'], '')
+                return {'removed': True, 'change': change, 'text': row['text']}
         return {'removed': True}
 
     def fact_overturned(self, fact_id, reason, event_ids):

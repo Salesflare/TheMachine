@@ -417,6 +417,13 @@ def undo(db, change_id, unlink=None):
         if row['run_id'] == 'notes_people':  # facts from notes: their old words come back, the birthdays set go
             import notes_people
             notes_people.undo(db, before)
+    elif row['kind'] == 'forgot':  # the owner asked their main chat to forget it (Store.forget_fact said): it comes back
+        fact = db.execute('SELECT kind,text,removed_at,merged_into FROM facts WHERE id=?', (int(row['target']),)).fetchone()
+        if not fact or not fact['removed_at'] or fact['merged_into'] or fact['text'] != row['after']:
+            raise ValueError('That changed since. Change it where it is now')
+        if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (fact['kind'], fact['text'])).fetchone():
+            raise ValueError('That is already in what I’ve learned')
+        db.execute('UPDATE facts SET removed_at=NULL WHERE id=?', (int(row['target']),))  # its vector is stored again when a preparation needs it
     elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
         import first_learned
         done.update(first_learned.undo(db, row))

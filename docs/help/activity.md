@@ -5,7 +5,7 @@ summary: One list of everything The Machine did for you, newest first: messages,
 covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
-keywords: log, history, audit, what did it do, sent, refused, blocked
+keywords: log, history, audit, what did it do, sent, refused, blocked, forgot, forget
 ---
 ## What it shows
 
@@ -16,7 +16,7 @@ Open **Settings**, **Activity**. Each line is one thing The Machine did, newest 
 - a link to its to-do, when there is one
 - for an AI you connected, like ChatGPT or Claude: its name with **(connected AI)**, so you can tell it from The Machine itself
 
-It lists messages and replies, doc and calendar changes, steps on the web, fixes it merged, coding agents, Fleet questions and answers, learnings sent to The Machine team, skills, Graph imports, connections added or removed, and each look by our team under [Support access](get-support.md#support-access), refused ones included.
+It lists messages and replies, doc and calendar changes, steps on the web, fixes it merged, coding agents, Fleet questions and answers, learnings sent to The Machine team, skills, Graph imports, facts you asked your chat to forget (with **Undo**), connections added or removed, and each look by our team under [Support access](get-support.md#support-access), refused ones included.
 
 ## Filter it
 

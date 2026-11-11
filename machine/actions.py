@@ -69,6 +69,7 @@ OWNER_ACTIONS = {
     'follow_up_settings',
     'follow_up_stop',
     'forget_fact',
+    'forget_learned',
     'graph_fact_add',
     'graph_fact_unlink',
     'graph_new',
