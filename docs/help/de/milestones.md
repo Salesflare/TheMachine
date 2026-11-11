@@ -12,6 +12,6 @@ Wenn deine **Erledigt**-Zahl 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 oder 10.
 
 ## Teilen
 
-Tippe auf **Teilen** für ein Bild mit der Zahl und dem Maskottchen, auf deinem Gerät erstellt. Auf dem Handy oder in der App öffnet sich dein eigenes Teilen-Menü. Am Computer wählst du **Quadratisch** oder **Für Links**, dann **Bild herunterladen** oder **Bild kopieren**, mit dem **Text zum Posten**.
+Tippe auf **Teilen** für ein Bild mit der Zahl und dem Maskottchen, auf deinem Gerät erstellt. Auf dem Handy oder in der App öffnet sich dein eigenes Teilen-Menü. Am Computer wählst du **Quadratisch** oder **Für Links**, dann **Bild herunterladen** oder **Bild kopieren**, mit dem **Text zum Posten**. Wo sich ein Bild nicht kopieren lässt (etwa in der App), öffnet **Bild teilen** stattdessen das Teilen-Menü.
 
 Auf dem Bild steht nur die Zahl. Keine Namen, keine Aufgaben und nichts anderes aus deiner Machine. Gepostet wird nur, was du selbst postest.

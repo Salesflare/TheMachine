@@ -12,6 +12,6 @@ Cuando tu contador de **Hecho** pasa de 10, 50, 100, 250, 500, 1.000, 2.500, 5.0
 
 ## Compártelo
 
-Toca **Compartir** para una imagen con el número y la mascota, creada en tu dispositivo. En el teléfono o en la app se abre tu propio menú para compartir. En una computadora, elige **Cuadrada** o **Para enlaces**, y luego **Descargar imagen** o **Copiar imagen**, con el **Texto para publicar**.
+Toca **Compartir** para una imagen con el número y la mascota, creada en tu dispositivo. En el teléfono o en la app se abre tu propio menú para compartir. En una computadora, elige **Cuadrada** o **Para enlaces**, y luego **Descargar imagen** o **Copiar imagen**, con el **Texto para publicar**. Donde una imagen no se puede copiar (como en la app), **Compartir imagen** abre el menú para compartir.
 
 La imagen solo tiene el número. Sin nombres, sin tareas y nada más de tu Machine. No se publica nada a menos que lo publiques tú.

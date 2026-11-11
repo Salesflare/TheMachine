@@ -12,6 +12,6 @@ Als je **Gedaan**-teller voorbij 10, 50, 100, 250, 500, 1.000, 2.500, 5.000 of 1
 
 ## Delen
 
-Tik op **Delen** voor een afbeelding met het getal en de mascotte, gemaakt op je toestel. Op een telefoon of in de app opent je eigen deelvenster. Op een computer kies je **Vierkant** of **Voor links**, en dan **Afbeelding downloaden** of **Afbeelding kopiëren**, met de **Tekst om te posten**.
+Tik op **Delen** voor een afbeelding met het getal en de mascotte, gemaakt op je toestel. Op een telefoon of in de app opent je eigen deelvenster. Op een computer kies je **Vierkant** of **Voor links**, en dan **Afbeelding downloaden** of **Afbeelding kopiëren**, met de **Tekst om te posten**. Waar een afbeelding niet te kopiëren is (zoals in de app), opent **Afbeelding delen** in de plaats het deelvenster.
 
 Op de afbeelding staat alleen het getal. Geen namen, geen to-do's en niets anders uit je Machine. Er wordt niets gepost tenzij je het zelf post.
