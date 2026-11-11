@@ -62,6 +62,8 @@ Nach einer Prüfung, die neue E-Mails gelesen hat, sagt eine Zeile über deinen 
 
 Tippe auf die Zeile, um jeden E-Mail-Verlauf zu sehen: wer geschrieben hat, den Betreff und seine neue Aufgabe oder warum nichts nötig war, etwa „Nur in Kopie, ein Teammitglied antwortet“ oder „Treffen steht schon für Donnerstag“. Ein Verlauf zeigt keinen Grund, wenn die Prüfung nur einen vagen hatte. Die Zeile bleibt 12 Stunden nach der Prüfung stehen.
 
+Sie zählt nur E-Mails an dich. Deine eigenen Antworten werden für den Zusammenhang und Zusagen gelesen, sind aber keine neuen E-Mails. Die eigenen E-Mails deiner Machine an dich, etwa deine Morgenübersicht oder ein Hinweis auf eine Korrektur, werden nie gelesen oder aufgeführt. E-Mails zu Zahlungen, deiner Testphase oder einer Einladung werden wie gewohnt gelesen.
+
 ## Die Buttons
 
 Eine Aufgabe zeigt ihren nächsten Schritt, etwa **Ausführen** oder **Prüfen und senden**, mit **Zurückstellen** daneben. Siehe [Ausführen](do-it.md) und [Zurückstellen](snooze.md).

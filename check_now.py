@@ -21,6 +21,7 @@ import threading
 import time
 
 import abilities
+from machine.sources.gmail import machine_notice
 
 REST_SECONDS = 60             # after a check ends, a new press within this long shows it instead of starting another
 READ_WAIT = 180               # the sources' reads, at most this long
@@ -73,12 +74,20 @@ def mail_check(db, current=None, own=()):
         items = {i['id']: i for i in batch if i.get('version', 1) == 1}
         if not items:
             continue
-        mail = db.execute('SELECT id,account_id,occurred_at,title,metadata FROM events WHERE kind IN (%s) AND deleted=0 AND id IN '
+        mail = db.execute('SELECT id,kind,account_id,occurred_at,title,metadata FROM events WHERE kind IN (%s) AND deleted=0 AND id IN '
                           '(SELECT value FROM json_each(?)) ORDER BY occurred_at' % ','.join('?' * len(MAIL_KINDS)),
                           (*MAIL_KINDS, json.dumps(sorted(items)))).fetchall()
-        if mail:
+        # The Machine's own notices are never news (nor read: machine_notice). The owner's own sent mail is read (the
+        # context of the threads it answers, the promises they make) but is no new email for them: a thread only they
+        # wrote in is left out, and only mail to them counts
+        mail = [r for r in mail if not machine_notice(r['kind'], _meta(r['metadata']))]
+        if any(not _from_owner(_meta(r['metadata']), own) for r in mail):
             return _mail_view(db, review, items, {i['id'] for i in batch}, mail, current, own)
     return None
+
+
+def _from_owner(meta, own):
+    return bool({'SENT', 'DRAFT'} & set(meta.get('labels') or ())) or meta.get('from_me') is True or _sender(meta.get('from'))[1] in own
 
 
 def _thread_key(account_id, meta, event_id):
@@ -104,8 +113,9 @@ def _mail_view(db, review, items, batch, mail, current, own):
     threads = {}
     for row in mail:
         meta = _meta(row['metadata'])
-        thread = threads.setdefault(_thread_key(row['account_id'], meta, row['id']), {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False})
+        thread = threads.setdefault(_thread_key(row['account_id'], meta, row['id']), {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'in': 0})
         thread['ids'].append(row['id'])
+        thread['in'] += not _from_owner(meta, own)
         thread['last'] = row['occurred_at']  # rows come oldest first
         name, address = _sender(meta.get('from'))
         if name and (address not in own or not thread['from']):
@@ -135,6 +145,8 @@ def _mail_view(db, review, items, batch, mail, current, own):
         for thread in hit[:1]:
             thread.setdefault('todo', card['title'])
             thread.setdefault('held_until', later)
+    # only the owner wrote in it: no new mail for them, unless their own mail made a to-do (a promise they made)
+    threads = {key: thread for key, thread in threads.items() if thread['in'] or 'todo' in thread}
     said = collections.Counter(' '.join(t['why'].casefold().split()).rstrip('.') for t in threads.values() if t['why'])
     rows = []
     # to-dos first, then the newest thread first
@@ -152,7 +164,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
         elif why:
             row['why'] = why
         rows.append(row)
-    return {'at': review['finished_at'], 'emails': len(mail), 'todos': todos, 'held': len(held),
+    return {'at': review['finished_at'], 'emails': sum(t['in'] for t in threads.values()), 'todos': todos, 'held': len(held),
             'held_until': min(held) if held else None, 'threads': rows[:MAIL_CHECK_THREADS], 'more': max(0, len(rows) - MAIL_CHECK_THREADS)}
 
 

@@ -62,6 +62,8 @@ Dopo un controllo che ha letto nuove email, una riga sopra le tue attività dice
 
 Tocca la riga per vedere ogni conversazione: chi ha scritto, l’oggetto, e la sua nuova attività o perché non serviva nulla, come “Solo in copia, risponde un collega” o “Riunione già fissata per giovedì”. Una conversazione non mostra un motivo quando il controllo ne ha dato solo uno vago. La riga resta per 12 ore dopo il controllo.
 
+Conta solo le email indirizzate a te. Le tue risposte vengono lette per il contesto e le promesse, ma non sono email nuove. Le email che la tua Machine ti manda, come il tuo riepilogo del mattino o un avviso di correzione, non vengono mai lette né elencate. Le email su pagamenti, la tua prova o un invito vengono lette come sempre.
+
 ## I pulsanti
 
 Un'attività mostra il passo successivo, come **Fallo** o **Rivedi e invia**, con **Posticipa** accanto. Vedi [Fallo](do-it.md) e [Posticipa](snooze.md).
