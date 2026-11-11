@@ -1187,6 +1187,9 @@ def select_mapped(changed, repo, impact, base, why=None):
 
     def string_users(key, path, why_text):
         """The tests that run code that has key as a whole string: False when one such place can't be told."""
+        if ('string', key) in seen:
+            return True
+        seen.add(('string', key))
         quoted = re.compile(r"""(['"`])""" + re.escape(key) + r'\1')
         for other in repo.paths:
             other_text = repo.text.get(other)
