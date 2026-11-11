@@ -431,7 +431,14 @@ OVER_BUDGET = {}
 # 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
 # 2026-11-10: main was over again (1,423,060). Go through's dialog (todos-clear-run.js and its rules) loads when first
 # needed; the header's Go through and its time stay (first load 1,423,060 -> 1,415,719). The ceiling stays.
-FIRST_LOAD_CEILING = 1_423_000
+# 1,423,000 -> 1,391,000 (2026-11-11): main sat a few hundred bytes under it and every UI change hit it. A follow-up
+# group's fast review (LAZY 'followups'), a project's follow-ups and Done when, a board's follow-ups line and the
+# follow-up settings dialog (the Graph's part) load when first needed (first load 1,421,711 -> 1,380,493). The
+# ceiling is that plus 10 KB, and FIRST_LOAD_ROOM keeps it close: room that opens up is taken in.
+FIRST_LOAD_CEILING = 1_391_000
+# At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
+# the room it made stays room, not a buffer for the next feature to fill.
+FIRST_LOAD_ROOM = 32_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
 # whatsnew 12,000 (2026-11-10): its pictures are drawn in it (about 5 KB of SVG).
@@ -461,6 +468,10 @@ def budget(name):
 # routinetodos 12,000 -> 14,000 (2026-11-11): Also change the routine in a to-do's chat too, and all its styles, which
 # moved here out of the first load (about 1.8 KB).
 LAZY_CEILING['routinetodos'] = 14_000
+# followups 28,000 (2026-11-11): a follow-up group's fast review (about 23.9 KB), out of the first load.
+# graph 360,000 -> 384,000 (2026-11-11): a project's follow-ups and Done when, a board's follow-ups line and the
+# follow-up settings dialog, which only the Graph's pages open (about 17.6 KB), out of the first load.
+LAZY_CEILING.update(followups=28_000, graph=384_000)
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
@@ -628,6 +639,9 @@ class Architecture(unittest.TestCase):
                                                        'it before To-dos shows. Make it smaller, load a part when first '
                                                        'needed (dashboard_parts.LAZY), or raise the ceiling on purpose in '
                                                        'a pull request that says why.')
+        self.assertLessEqual(FIRST_LOAD_CEILING - size, FIRST_LOAD_ROOM, f'The dashboard\'s first load is {size} bytes, '
+                             f'more than {FIRST_LOAD_ROOM} under FIRST_LOAD_CEILING ({FIRST_LOAD_CEILING}): lower the '
+                             'ceiling to about its size plus 10 KB, so the room stays room.')
         self.assertEqual(sorted(lazy), sorted(LAZY_CEILING))
         for group, script in lazy.items():
             with self.subTest(group=group):
