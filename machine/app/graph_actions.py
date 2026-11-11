@@ -23,7 +23,9 @@ import graph_show
 import graph_updates
 import mail_senders
 from machine.actions import CRM_ACTIONS
+from machine.app import ask_memory
 from machine.app import claim_reply
+from machine.app.recall import recall
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
@@ -118,7 +120,7 @@ def said_instead(store, fact_id):
 class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'graph': 'graph_query_action', 'undo_merge': 'undo_merge_action',
-               'remember_fact': 'remember_fact_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
+               'remember_fact': 'remember_fact_action', 'recall_learned': 'recall_learned_action', 'graph_summary': 'graph_summary_action', 'project_about': 'project_about_action',
                'project_split': 'project_split_action',
                'graph_fact_unlink': 'graph_fact_unlink_action', 'graph_fact_add': 'graph_fact_add_action', 'unmerge_fact': 'unmerge_fact_action',
                'graph_rename': 'graph_rename_action', 'graph_stage': 'graph_stage_action',
@@ -833,6 +835,19 @@ class GraphActionsApp:
         if done.get('record'):  # a contact detail went on someone's record (contact_facts.py): their page follows
             self.graph_later()
         return done
+
+    def recall_learned_action(self, name, args, owner_dashboard=False):
+        """The owner's main chat reads what was learned that a few words are about (the bridge's assistant_memory tool,
+        which marks the chat: _owner_chat, never the model). The `chat` recall, logged in memory_use."""
+        if args.get('_owner_chat') is not True:
+            raise ValueError('What was learned is read in the owner’s own main chat')
+        words = ' '.join(str(args.get('words') or '').split())[:200]
+        if not words:
+            raise ValueError('Say what to look for.')
+        memory = recall(self, 'chat', {'question': words}, ask_memory.CHAT_CHARS)
+        found = memory.read('learned', words)
+        memory_use.record(self.store, 'chat', memory.rows())
+        return {'found': found} if found else {'found': '', 'note': 'Nothing The Machine learned matches those words.'}
 
     def graph_summary_action(self, name, args, owner_dashboard=False):
         # a person's summary: the owner's edit, a suggested update used or kept out, or back to The Machine's

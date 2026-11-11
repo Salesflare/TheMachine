@@ -232,6 +232,22 @@ const handled=await beforeDispatch({content:'I fixed it already',timestamp:17916
  assert.match(JSON.parse(out.content[0].text).url,/^https:\/\/machine\.example\.ts\.net\/assistant\/#bug-offer=bo_0{16}$/);
  globalThis.fixtureCall=saved;
 }
+// The owner's own main chat (their Telegram chat, the web chat) reads back what was learned with assistant_memory: the
+// chat mark is the bridge's, and no other chat, group, agent or run gets the tool.
+{
+ const memory=toolFactories.assistant_memory;assert.ok(memory,'the memory tool is registered');
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000001'},{agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}])
+  assert.equal(memory(c).name,'assistant_memory');
+ for(const c of [{agentId:'main',sessionKey:'agent:main:main',messageChannel:'telegram',nativeChannelId:'1000002'},{agentId:'main',sessionKey:'agent:main:main',messageChannel:'whatsapp'},
+   {agentId:'main',sessionKey:'agent:main:assistant-review-preparation-'+'a'.repeat(32)},{agentId:'work',sessionKey:'agent:main:main',messageChannel:'webchat'},
+   {agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat',sandboxed:true},{agentId:'main',sessionKey:'agent:main:webchat:other',messageChannel:'webchat'}])assert.equal(memory(c),null);
+ const saved=globalThis.fixtureCall,calls=[];
+ globalThis.fixtureCall=async(action,args)=>{calls.push([action,args]);return {found:'- You only book aisle seats on flights.'};};
+ const out=await memory({agentId:'main',sessionKey:'agent:main:main',messageChannel:'webchat'}).execute('t',{words:'aisle seats',_owner_chat:false,extra:'x'});
+ assert.deepEqual(calls,[['recall_learned',{words:'aisle seats',_owner_chat:true}]]);
+ assert.match(JSON.parse(out.content[0].text).found,/aisle seats/);
+ globalThis.fixtureCall=saved;
+}
 // The Find my skills report: bound to its own skills session (sent as an upload); refused from any other session.
 {
  const key='agent:main:assistant-review-skills-'+'d'.repeat(32);

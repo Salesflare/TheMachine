@@ -266,6 +266,25 @@ export default definePluginEntry({
         },
       };
     }, { name: 'assistant_bug_report' });
+    // The owner's own main chat (their private Telegram chat, or the web chat) reads back what The Machine learned:
+    // facts about the owner and the world, and draft rules (recall_learned, the `chat` recall). Read on demand, so a
+    // turn that doesn't ask costs nothing. The chat mark is host-owned; the service answers only with it.
+    api.registerTool((context: any) => {
+      const {key, privateMain} = signalsReach(context);
+      const own = privateMain || (key === 'agent:main:main' && context.messageChannel === 'webchat');
+      if (context.agentId !== 'main' || context.sandboxed || !own) return null;
+      return {
+        name: 'assistant_memory', label: 'What The Machine learned',
+        description: 'What The Machine learned about the owner and the world, and their draft rules, matching a few words (like "aisle seats" or "office address"). Use it before saying you don’t know something the owner told you. A person’s facts come only when the words name them. A line marked Historical no longer holds.',
+        parameters: { type: 'object', additionalProperties: false, required: ['words'], properties: {
+          words: { type: 'string', description: 'A few words of what to look for' },
+        } },
+        async execute(_id: string, params: any) {
+          const found = await call('recall_learned', {words: String(params?.words || ''), _owner_chat: true});
+          return { content: [{ type: 'text', text: JSON.stringify(found) }] };
+        },
+      };
+    }, { name: 'assistant_memory' });
     api.registerInteractiveHandler({
       channel: 'telegram', namespace: 'assistant',
       async handler(ctx: any) {

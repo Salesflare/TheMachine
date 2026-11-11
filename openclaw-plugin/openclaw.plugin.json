@@ -15,7 +15,8 @@
   "contracts": {
     "tools": [
       "assistant_signals",
-      "assistant_bug_report"
+      "assistant_bug_report",
+      "assistant_memory"
     ]
   },
   "toolMetadata": {
@@ -30,6 +31,12 @@
         "full"
       ],
       "sideEffecting": true
+    },
+    "assistant_memory": {
+      "profiles": [
+        "full"
+      ],
+      "sideEffecting": false
     }
   },
   "commandAliases": [
