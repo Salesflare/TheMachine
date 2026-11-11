@@ -32,7 +32,10 @@ const heldZ=async page=>{for(;;){await page.waitForFunction(()=>document.querySe
  if(r)return r}};
 const score=page=>page.evaluate(()=>+document.querySelector('#game-score').textContent);
 try{
- browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ // A mouse whatever the host has: headless Chromium takes (pointer:fine) from the host's input devices, and a runner
+ // without a mouse drew no hit area (the phone context below stays coarse either way)
+ browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage',
+  '--blink-settings=primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2']});
  {const context=await browser.newContext({viewport:{width:1440,height:900}});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
