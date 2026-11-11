@@ -29,6 +29,9 @@ What reads what, and how often (Graph throttles Teams per app and tenant; every 
 Bots, apps and Teams' system messages are left out. The first import reads the last `bootstrap_days` (7); older chat
 messages come in as history only (machine/app/history.py), after the first look, one page at a time.
 
+Graph's 403 or 404 on one chat, channel or meeting is about that one (refused): it is set aside and the others are read,
+like Slack's refused conversations. Only the sign-in itself (expired, revoked, a scope not granted) asks to connect again.
+
 Personal Microsoft accounts have no Teams chats in Graph: work and school accounts only."""
 import datetime as dt
 from html.parser import HTMLParser
@@ -91,6 +94,26 @@ def zulu(moment):
 def teams_link(url):
     parts = urllib.parse.urlsplit(str(url or ''))
     return url if parts.scheme == 'https' and parts.hostname in TEAMS_HOSTS else None
+
+
+SET_ASIDE_KEEP = 100
+
+
+def refused(error):
+    """Graph's 403 or 404 on one chat, channel or meeting (the owner left it, it belongs to another organization, or a
+    policy keeps it from this app): about that one, not the sign-in. A scope not granted (teams_not_granted) and an
+    expired sign-in (teams_signin_expired, 401) stay the connection's."""
+    return getattr(error, 'category', None) == 'teams_http' and getattr(error, 'status', None) in (403, 404)
+
+
+def set_aside(state, key, aside):
+    """Notes one chat or channel Graph refused (`aside`) or read again (not `aside`) in state['set_aside']: the others are
+    read all the same, and the connection keeps saying it is connected."""
+    kept = [k for k in state.get('set_aside') or [] if k != key] + ([key] if aside else [])
+    if kept:
+        state['set_aside'] = kept[-SET_ASIDE_KEEP:]
+    else:
+        state.pop('set_aside', None)
 
 
 class _Text(HTMLParser):
@@ -448,7 +471,12 @@ def meeting_events(source, account, item, granted, missing):
     events = []
     if not item.get('meeting'):
         url = item['url'].replace("'", "''")
-        found = source.call('teams.meetings', {'$filter': f"JoinWebUrl eq '{url}'"})
+        try:
+            found = source.call('teams.meetings', {'$filter': f"JoinWebUrl eq '{url}'"})
+        except helpers.SourceError as error:
+            if not refused(error):
+                raise
+            found = None  # another organization's meeting, or one a policy keeps from this app: the same as not found
         meetings = [m for m in (found or {}).get('value') or [] if isinstance(m, dict) and m.get('id')]
         if not meetings:
             return [], False  # not one this sign-in may see (another organization's, say): the meeting chat is what there is
@@ -545,10 +573,18 @@ def sync(store, config, account, helpers):
         cache = {}
     queue = list(state['queue'])
     for chat_id in queue[:MAX_CHATS]:
-        chat = cache.get(chat_id) or source.call('teams.chat', {'chat': chat_id})
         since = max(floor, stamp(cursors.get(chat_id)) - OVERLAP) if stamp(cursors.get(chat_id)) else floor
-        events, newest, ended = read_chat(source, account, chat, since, state)
-        cursors[chat_id] = newest.isoformat()
+        try:
+            chat = cache.get(chat_id) or source.call('teams.chat', {'chat': chat_id})
+            events, newest, ended = read_chat(source, account, chat, since, state)
+            cursors[chat_id] = newest.isoformat()
+            set_aside(state, chat_id, False)
+        except helpers.SourceError as error:
+            if not refused(error):
+                raise
+            # this one chat: set aside, its cursor kept; the chat list brings it back with its next message
+            events, ended = [], []
+            set_aside(state, chat_id, True)
         for item in ended:
             if not any(m['chat'] == item['chat'] and m['url'] == item['url'] for m in meetings):
                 meetings.append(item)
@@ -571,8 +607,15 @@ def sync(store, config, account, helpers):
                     team, channel, name = channels[(turn + n) % len(channels)]
                     since = max(now - dt.timedelta(days=days), stamp(ccursors.get(channel)) - OVERLAP) if stamp(ccursors.get(channel)) \
                         else now - dt.timedelta(days=days)
-                    events, newest = read_channel(source, account, team, channel, name, since, state)
-                    ccursors[channel] = newest.isoformat()
+                    try:
+                        events, newest = read_channel(source, account, team, channel, name, since, state)
+                        ccursors[channel] = newest.isoformat()
+                        set_aside(state, channel, False)
+                    except helpers.SourceError as error:
+                        if not refused(error):
+                            raise
+                        events = []  # this one channel (a private one the owner left, say): its turn passes, the rest read
+                        set_aside(state, channel, True)
                     state.update(channel_cursors=ccursors, channel_turn=(turn + n + 1) % max(1, len(channels)))
                     store.commit_page(account['id'], state, events)
                     count += len(events)
@@ -645,12 +688,17 @@ def history_page(config, account, helpers, state, upper, target):
 
 def history_chat(source, account, state, upper, target):
     chat_id = state['chats'][0]
-    chat = source.call('teams.chat', {'chat': chat_id})
-    info = chat_info(source, chat)
     params = {'chat': chat_id, '$top': 50, '$orderby': 'createdDateTime desc', '$filter': f'createdDateTime lt {zulu(upper)}'}
     if state.get('link'):
         params = {'chat': chat_id, '$link': state['link']}
-    page = source.call('teams.chat.messages', params)
+    try:
+        info = chat_info(source, source.call('teams.chat', {'chat': chat_id}))
+        page = source.call('teams.chat.messages', params)
+    except source.helpers.SourceError as error:
+        if not refused(error):
+            raise
+        state.update(chats=state['chats'][1:], link=None)  # gone, or no longer the owner's: on to the next one
+        return []
     events, old = [], False
     for raw in (page or {}).get('value') or []:
         at = stamp(raw.get('createdDateTime')) if isinstance(raw, dict) else None
