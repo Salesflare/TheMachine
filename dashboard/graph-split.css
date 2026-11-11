@@ -6,7 +6,7 @@
 /* Split up (graph-split.js splDraw): each proposed project a box with its name, its line and its items, each item with where it goes */
 .psplit-parts{display:flex;flex-direction:column;gap:12px}
 .psplit-part{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:0;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-align:left}
-.psplit-part .ed-field{display:grid;gap:4px;margin:0}.psplit-part .ed-field input{width:100%;box-sizing:border-box;font-weight:var(--fw-medium,500)}
+.psplit-field{display:grid;gap:4px;margin:0;color:var(--c-text-2);font-size:var(--fs-sm)}.psplit-field input{display:block;width:100%;box-sizing:border-box;font-weight:var(--fw-medium,500)}
 .psplit-rest{background:transparent;border-style:dashed}.psplit-rest h3{margin:0;font:var(--fw-medium) var(--fs-sm)/1.3 var(--sans);color:var(--muted)}
 .psplit-about{margin:0;color:var(--muted);font-size:var(--fs-sm);line-height:1.45}
 .psplit-items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -16,5 +16,5 @@
 .psplit-text small{color:var(--muted);font-size:var(--fs-xs);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.psplit-text .psplit-kind{color:var(--faint)}
 .psplit-items select{flex:0 1 auto;width:auto;max-width:42%;min-width:0;font-size:var(--fs-sm)}
 .psplit-none,.psplit-wait{margin:0;color:var(--muted);font-size:var(--fs-sm)}
-.psplit-line{margin:8px 0 0;font-size:var(--fs-sm)}.psplit-line .inline-node{font:inherit}
+.psplit-line{margin:8px 0 0;font-size:var(--fs-sm)}.psplit-line button.psplit-node{display:inline;min-height:0;box-shadow:none;border-radius:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.psplit-line button.psplit-node:hover{text-decoration-color:currentColor}
 .psplit-line button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:var(--muted);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}.psplit-line button.link:hover{color:var(--text)}

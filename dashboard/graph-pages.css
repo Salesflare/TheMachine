@@ -205,10 +205,8 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 .tiles:empty+.lane-more{margin-top:2px}
 .tile-held{display:inline-flex;flex:none;margin-top:3px;color:var(--c-text-2)}.tile-held svg,.board-held svg{width:13px;height:13px}.board-held{white-space:nowrap;cursor:help}.board-held svg{vertical-align:-2px;margin-right:4px}
 .board-seg{display:inline-flex;flex:none;margin:0 0 0 auto;padding:2px;border:1px solid var(--c-line);border-radius:999px}.board-seg button{height:28px;min-height:28px;margin:0;padding:0 10px;border:0;border-radius:999px;background:none;box-shadow:none;color:var(--c-text-2);font:600 .85rem/1 var(--sans);white-space:nowrap}.board-seg button[aria-pressed=true]{background:var(--text);color:var(--surface)}.board-seg .badge{min-width:18px;height:18px;margin-left:2px;font-size:.68rem;background:color-mix(in srgb,currentColor 14%,transparent);color:inherit}.board-seg+.board-filter{margin-left:6px}
-/*@eager*/
 /* A project's organization: a quiet link on its page, its tile, its row and the project form; an organization lists its projects */
 button.inline-node{display:inline;min-height:0;box-shadow:none;border-radius:0;padding:0;border:0;background:none;color:inherit;font:inherit;font-weight:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer;text-align:left}button.inline-node:hover{background:none;text-decoration-color:currentColor}
-/*@lazy*/
 .tile-org{margin:4px 0 0;padding-left:32px;font-size:var(--fs-xs);color:var(--c-text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tile-org .inline-node{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}  /* a long organization name ends in … inside the tile, not cut off at its edge */
 .proj-org{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-weight:600;min-width:0}.proj-org .inline-node{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

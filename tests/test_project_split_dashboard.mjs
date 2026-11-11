@@ -80,7 +80,7 @@ try{
   // The page says what it was split into, each a link, with Undo; the toast too
   const line=card.locator('.psplit-line');await line.waitFor();
   assert.match(await line.textContent(),/Split up on .*: Northwind pilot, Settings and sidebar · Undo/);
-  assert.equal(await line.locator('.inline-node').count(),2);
+  assert.equal(await line.locator('.psplit-node').count(),2);
   assert.equal(await page.locator('#toast [data-split-undo="5"]').count(),1);
   await fits(page,tag+' split');await shot(page,`split-result-${tag}`);
   await line.locator('[data-split-undo]').click();await line.waitFor({state:'detached'});

@@ -47,8 +47,8 @@
 .new-menu{position:fixed;left:auto;z-index:60;min-width:200px}.new-menu[hidden]{display:none}
 #project-form fieldset{margin:0;padding:0;border:0;min-width:0}#project-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 #project-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
-.ed-field select{display:block;width:100%;margin-top:6px}
 /*@lazy*/
+.ed-field select{display:block;width:100%;margin-top:6px}
 .ed-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 /*@eager*/
 #project-form button.icon{flex:none;width:34px;min-height:34px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--c-text-3);font-size:1rem;border-radius:var(--r-sm)}
@@ -68,9 +68,13 @@
 .sp-line{margin:0;line-height:1.45;color:var(--text)}
 /*@eager*/
 #share-people-form .fleet-fine{margin:0;font-size:var(--fs-xs);color:var(--c-text-3)}
+/*@lazy*/
 .ed-field{display:block;color:var(--c-text-2);font-size:var(--fs-sm)}
+/*@eager*/
 #board-form textarea{min-height:4.8em;field-sizing:content;resize:vertical}
+/*@lazy*/
 .ed-field input,.ed-field textarea{display:block;width:100%;margin-top:6px}
+/*@eager*/
 #board-form fieldset{margin:0;padding:0;border:0;min-width:0}
 #board-form legend{padding:0;margin-bottom:6px;color:var(--c-text-2);font-size:var(--fs-sm)}
 #board-form legend .count{margin-left:4px;color:var(--c-text-3)}
