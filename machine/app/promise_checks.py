@@ -299,7 +299,7 @@ class PromiseChecksApp:
             promise_logged(_db, p['id'], 'carded', 'closed with its to-do')
             return {'id': home['id'], 'status': home['status'], 'duplicate': True}
         if ahead is None:
-            ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)))
+            ahead = self.config.get('prepare_ahead', True) is not False and self.store.ahead_room(int(self.config.get('prepare_ahead_per_day', 10)), due=p['due'])
         # Waiting on them: when the owner wrote there since (a reply, a nudge), that message leads, so the to-do's source
         # is what it waits on; their promise comes second.
         last = owner_last_word(_db, json.loads(p["watch"]), self.store.owner_user_ids) if p['direction'] == 'theirs' and p.get('watch') else None

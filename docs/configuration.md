@@ -69,7 +69,7 @@
 | `slack_active_minutes` / `slack_recent_hours` / `slack_quiet_hours` | `60` / `6` / `24` | How long a Slack conversation rests after a read: someone wrote in it today / this week / longer ago |
 | `slack_dm_check_minutes` | `10` | How often a direct message is checked for a new message (a cheap call; a history read follows only when there is one) |
 | `preparation_concurrency` | `3` | Do it runs at once |
-| `prepare_ahead`, `prepare_ahead_per_day` | `true`, `10` | [Prepared ahead](usage.md#prepared-ahead): to-dos you'd very likely say yes to arrive done up to their last step |
+| `prepare_ahead`, `prepare_ahead_per_day` | `true`, `10` | [Prepared ahead](usage.md#prepared-ahead): to-dos you'd very likely say yes to arrive done up to their last step; the last 3 of the day are kept for urgent work or work due within 2 days |
 | `prompt_receipts` | `<data>/prompt-receipts` | Telegram Change-prompt receipts |
 | `attachment_dir`, `attachment_sources` | `<data>/attachments`; workspace `data/assistant-attachments`, `memory/assistant` | Where email attachments are stored, and the only folders they may come from |
 | `excluded_email_subjects` | calendar "Accepted:" replies | Regexes; matching email subjects are never stored |

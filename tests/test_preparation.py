@@ -713,6 +713,38 @@ class Preparation(unittest.TestCase):
         self.app.preparation_step(lambda r:calls.append(r) or {'status':'pending'})
         self.assertEqual([c['action'] for c in calls],['start','status'])
 
+    def test_urgent_and_soon_due_work_is_prepared_before_older_work(self):
+        self.accept()  # the oldest, nothing pressing
+        day=lambda n:(a.dt.datetime.fromisoformat(a.now()).astimezone(a.local_tz()).date()+a.dt.timedelta(days=n)).isoformat()
+        made={}
+        for key,extra in (('later',{'due':day(9)}),('soon',{'due':day(1)}),('urgent',{'urgent':True})):
+            made[key]=self.store.suggest(key,'Task '+key,'I can do this.',[1],**extra)['id'];self.store.decide(made[key],'accept','','click-'+key,'telegram')
+        self.app.config={'accounts':[],'preparation_concurrency':1}
+        order=[]
+        for _ in range(4):
+            self.app.preparation_step(lambda r:{'status':'admitted'})
+            running=self.q("SELECT suggestion_id FROM preparations WHERE status='running'")['suggestion_id'];order.append(running)
+            with self.store.connect() as db:db.execute("UPDATE preparations SET status='done' WHERE suggestion_id=?",(running,))
+            with self.store.connect() as db:db.execute("UPDATE preparation_runs SET status='ok',finished_at=?",(a.now(),))
+        self.assertEqual(order,[made['soon'],made['urgent'],self.sid,made['later']])  # pressing first, each lot oldest first
+
+    def test_the_last_ahead_drafts_of_the_day_are_held_for_pressing_work(self):
+        self.app.config={'accounts':[]}
+        with self.store.connect() as db:
+            for n in range(7):  # 7 of the default 10 used today
+                db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)",
+                           (f'used-{n}',self.sid,'prepare_ahead','','assistant',a.now()))
+        day=lambda n:(a.dt.datetime.fromisoformat(a.now()).astimezone(a.local_tz()).date()+a.dt.timedelta(days=n)).isoformat()
+        ask=lambda key,**extra:self.app.action('suggest',dict({'dedupe_key':key,'title':'Task '+key,'body':'B','event_ids':[1],'prepare_ahead':True},**extra))['status']
+        self.assertEqual(ask('routine'),'pending')
+        self.assertEqual(ask('next-week',due=day(6)),'pending')
+        self.assertEqual(ask('urgent',urgent=True),'accepted')
+        self.assertEqual(ask('tomorrow',due=day(1)),'accepted')
+        self.assertEqual(ask('day-after',due=day(2)),'accepted')
+        self.assertEqual(ask('one-more',urgent=True),'pending')  # the day's 10 are used
+        with self.store.connect() as db:db.execute("DELETE FROM decisions WHERE choice='prepare_ahead'")
+        self.assertTrue(self.store.ahead_room(1))  # a small cap holds nothing back
+
     def test_an_old_run_that_wont_stop_only_holds_back_its_own_card(self):
         self.accept();first=self.job()['job_id'];self.app.preparation_step(lambda _: {'status':'admitted'})
         self.store.prepare(self.sid,'Ready draft',first)  # finished, but its run is still going past the settle time
