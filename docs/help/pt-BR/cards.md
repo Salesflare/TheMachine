@@ -58,9 +58,9 @@ LinkedIn, X e Salesflare mantêm o próprio ritmo.
 
 ## Última verificação
 
-Depois de uma verificação que leu e-mails novos, uma linha acima das suas tarefas diz o que ela encontrou, como "12 e-mails novos verificados às 16:11 · nada precisa de você" ou "· 2 tarefas novas". Quando uma tarefa nova espera um momento melhor, como seu resumo da manhã, ela diz até quando: "1 tarefa aguardando até amanhã 08:30".
+Depois de uma verificação que leu mensagens novas, uma linha acima das suas tarefas diz o que ela encontrou em todas as fontes, como "13 mensagens vistas às 16:11 · nada precisa de você" ou "· 2 tarefas novas". Quando uma tarefa nova espera um momento melhor, como seu resumo da manhã, ela diz até quando: "1 tarefa aguardando até amanhã 08:30".
 
-Toque na linha para ver cada conversa: quem escreveu, o assunto, e a tarefa nova ou por que nada era preciso, como "Só em cópia, um colega está respondendo" ou "Reunião já marcada para quinta". Uma conversa não mostra motivo quando a verificação deu só um vago. A linha fica por 12 horas depois da verificação.
+Toque na linha para ver cada conversa, chat e notificação, com o ícone da sua fonte: quem escreveu, o assunto ou as primeiras palavras, e a tarefa nova ou por que nada era preciso, como "Só em cópia, um colega está respondendo" ou "Reunião já marcada para quinta". Uma conversa não mostra motivo quando a verificação deu só um vago. Toque em uma para ler. A linha fica por 12 horas depois da verificação.
 
 Ela conta só e-mails para você. Suas próprias respostas são lidas pelo contexto e pelas promessas, mas não são e-mail novo. Os e-mails que sua Machine envia para você, como seu resumo da manhã ou um aviso de correção, nunca são lidos nem listados. E-mails sobre cobrança, seu teste ou um convite são lidos normalmente.
 

@@ -803,6 +803,10 @@
  "Checked by your model. Change anything below.": "Gecontroleerd door je model. Wijzig hieronder wat je wilt.",
  "Checked open to-dos": "Bekeek open to-do's",
  "Checked {}": "Gecheckt {}",
+ "Checked {} messages at {}": {
+  "one": "{} bericht gecheckt om {}",
+  "other": "{} berichten gecheckt om {}"
+ },
  "Checked {} new emails at {}": {
   "one": "{} nieuwe e-mail gecheckt om {}",
   "other": "{} nieuwe e-mails gecheckt om {}"

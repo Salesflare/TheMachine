@@ -58,9 +58,9 @@ LinkedIn, X e Salesflare mantengono il loro ritmo.
 
 ## Ultimo controllo
 
-Dopo un controllo che ha letto nuove email, una riga sopra le tue attività dice cosa ha trovato, come “12 nuove email controllate alle 16:11 · nulla ha bisogno di te” o “· 2 nuove attività”. Quando una nuova attività aspetta un momento migliore, come il tuo riepilogo del mattino, dice fino a quando: “1 attività in attesa fino a domani 08:30”.
+Dopo un controllo che ha letto nuovi messaggi, una riga sopra le tue attività dice cosa ha trovato in tutte le fonti, come “13 messaggi controllati alle 16:11 · nulla ha bisogno di te” o “· 2 nuove attività”. Quando una nuova attività aspetta un momento migliore, come il tuo riepilogo del mattino, dice fino a quando: “1 attività in attesa fino a domani 08:30”.
 
-Tocca la riga per vedere ogni conversazione: chi ha scritto, l’oggetto, e la sua nuova attività o perché non serviva nulla, come “Solo in copia, risponde un collega” o “Riunione già fissata per giovedì”. Una conversazione non mostra un motivo quando il controllo ne ha dato solo uno vago. La riga resta per 12 ore dopo il controllo.
+Tocca la riga per vedere ogni conversazione, chat e notifica, con l’icona della sua fonte: chi ha scritto, l’oggetto o le prime parole, e la sua nuova attività o perché non serviva nulla, come “Solo in copia, risponde un collega” o “Riunione già fissata per giovedì”. Una conversazione non mostra un motivo quando il controllo ne ha dato solo uno vago. Toccane una per leggerla. La riga resta per 12 ore dopo il controllo.
 
 Conta solo le email indirizzate a te. Le tue risposte vengono lette per il contesto e le promesse, ma non sono email nuove. Le email che la tua Machine ti manda, come il tuo riepilogo del mattino o un avviso di correzione, non vengono mai lette né elencate. Le email su pagamenti, la tua prova o un invito vengono lette come sempre.
 

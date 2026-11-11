@@ -7354,6 +7354,38 @@
     "thread_id": "t-check-news-0",
     "message-id": "<check.news.0@mail.example>"
    }
+  },
+  {
+   "key": "check:wa:0",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 25,
+   "title": "Jamie Morgan",
+   "body": "Landed! Taking the train home, see you at 7",
+   "metadata": {
+    "chat_name": "Jamie Morgan",
+    "chat_id": "jamiemorgan",
+    "from_me": false,
+    "group": false,
+    "sender_display": "Jamie Morgan",
+    "message_id": "wa-check-wa-0"
+   }
+  },
+  {
+   "key": "check:slack:0",
+   "account_id": "work-slack",
+   "kind": "slack.message",
+   "minutes_ago": 27,
+   "title": "#general: Tomasz Nowak",
+   "body": "Office is closed Friday for the move, the new keys are at the desk",
+   "metadata": {
+    "channel_name": "general",
+    "channel_id": "C0GENERAL",
+    "conversation_type": "channel",
+    "sender_display": "Tomasz Nowak",
+    "user_id": "U2200",
+    "message_ts": "1762000027.000300"
+   }
   }
  ],
  "cards": [
@@ -9368,13 +9400,17 @@
    "check:meet:0",
    "check:thanks:0",
    "check:news:0",
+   "check:wa:0",
+   "check:slack:0",
    "story:pricing:2"
   ],
   "why": {
    "check:cc:0": "Only cc’d, Priya already added the seats",
    "check:meet:0": "Coffee already set for Thursday 10:00",
    "check:thanks:0": "Thanks for the fix, nothing to answer",
-   "check:news:0": "Newsletter, nothing in it needs a reply"
+   "check:news:0": "Newsletter, nothing in it needs a reply",
+   "check:wa:0": "Just letting you know they landed",
+   "check:slack:0": "Office news for everyone, nothing to do"
   }
  }
 }

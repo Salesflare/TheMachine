@@ -52,18 +52,35 @@ def reviews(db, queue, min_signals):
 
 
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
-MAIL_CHECK_HOURS = 12        # the To-dos page says what the last check of new mail found for this long after it
+# What the line counts each new message as: email, chat, notification, or else an update (a calendar change, a comment
+# on a doc, a payment, meeting notes)
+EMAIL_KINDS = (*MAIL_KINDS, 'salesflare.email', 'fleet.email', 'imap.message', 'email.message')
+CHAT_KINDS = ('slack.message', 'whatsapp.message', 'telegram.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.message',
+              'intercom.conversation', 'sms.message', 'signal.message', 'fleet.message')
+OWN_KINDS = ('machine.', 'gateway.')  # The Machine's own logs and alerts: nothing that came in
+MAIL_CHECK_HOURS = 12        # the To-dos page says what the last check of new messages found for this long after it
 MAIL_CHECK_THREADS = 40      # its list shows at most this many threads
 SAME_WHY = 3                 # one reason given for this many threads of one check is a label, not a reason
 
 
+def source_group(kind):
+    """'email', 'chat', 'notification' or 'update': how the line counts a message of this kind."""
+    if kind in EMAIL_KINDS:
+        return 'email'
+    if kind in CHAT_KINDS:
+        return 'chat'
+    return 'notification' if kind.endswith('.notification') else 'update'
+
+
 def mail_check(db, current=None, own=()):
-    """What the last check that saw new email found, for the line on To-dos (docs/help/cards.md#last-check): when it
-    ran, how many new emails, how many new to-dos it made and how many of those are held until later, and one row per
-    thread: who, the subject, and either its new to-do or why it needed nothing (the review's finish_analysis no_todo).
-    Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. `own`: the
-    owner's addresses, so a thread shows who wrote to them rather than their own reply. None without such a check in
-    the last MAIL_CHECK_HOURS."""
+    """What the last check that saw new messages found, from every source it read (email, chats, phone notifications,
+    the rest), for the line on To-dos (docs/help/cards.md#last-check): when it ran, how many new messages of each kind
+    (`counts`, `read` in all), how many new to-dos it made and how many of those are held until later, and one row per
+    thread or chat: its kind and newest message (to open it), who, the subject or the message's first words, and either
+    its new to-do or why it needed nothing (the review's finish_analysis no_todo, as stored: no model call here).
+    Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. The owner's own
+    chat messages (from_me) and The Machine's own logs (OWN_KINDS) aren't new. `own`: the owner's addresses, so a
+    thread shows who wrote to them rather than their own reply. None without such a check in the last MAIL_CHECK_HOURS."""
     current = current or dt.datetime.now(dt.timezone.utc)
     since = (current - dt.timedelta(hours=MAIL_CHECK_HOURS)).isoformat()
     own = {str(a).lower() for a in own if a}
@@ -74,13 +91,12 @@ def mail_check(db, current=None, own=()):
         items = {i['id']: i for i in batch if i.get('version', 1) == 1}
         if not items:
             continue
-        mail = db.execute('SELECT id,kind,account_id,occurred_at,title,metadata FROM events WHERE kind IN (%s) AND deleted=0 AND id IN '
-                          '(SELECT value FROM json_each(?)) ORDER BY occurred_at' % ','.join('?' * len(MAIL_KINDS)),
-                          (*MAIL_KINDS, json.dumps(sorted(items)))).fetchall()
-        # The Machine's own notices are never news (nor read: machine_notice). The owner's own sent mail is read (the
-        # context of the threads it answers, the promises they make) but is no new email for them: a thread only they
-        # wrote in is left out, and only mail to them counts
-        mail = [r for r in mail if not machine_notice(r['kind'], _meta(r['metadata']))]
+        found = db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND id IN '
+                           '(SELECT value FROM json_each(?)) ORDER BY occurred_at', (json.dumps(sorted(items)),)).fetchall()
+        # The Machine's own notices and logs are never news (nor read: machine_notice, OWN_KINDS). The owner's own sent
+        # mail and chat messages are read (the context of the threads they answer, the promises they make) but are
+        # nothing new for them: a thread only they wrote in is left out, and only messages to them count
+        mail = [r for r in found if not str(r['kind']).startswith(OWN_KINDS) and not machine_notice(r['kind'], _meta(r['metadata']))]
         if any(not _from_owner(_meta(r['metadata']), own) for r in mail):
             return _mail_view(db, review, items, {i['id'] for i in batch}, mail, current, own)
     return None
@@ -90,8 +106,16 @@ def _from_owner(meta, own):
     return bool({'SENT', 'DRAFT'} & set(meta.get('labels') or ())) or meta.get('from_me') is True or _sender(meta.get('from'))[1] in own
 
 
-def _thread_key(account_id, meta, event_id):
-    return (account_id, str(meta.get('thread_id') or meta.get('conversation_id') or f'event:{event_id}'))
+def _thread_key(account_id, kind, meta, event_id):
+    """One row per email thread, chat or channel; a phone notification or an update is a row of its own."""
+    group = source_group(kind)
+    keyed = (meta.get('thread_id') or meta.get('conversation_id')) if group == 'email' else \
+        (meta.get('conversation_id') or meta.get('chat_id') or meta.get('channel_id') or meta.get('thread_id')) if group == 'chat' else None
+    return (account_id, group, str(keyed or f'event:{event_id}'))
+
+
+def _snippet(text, size=160):
+    return ' '.join(str(text or '').split())[:size]
 
 
 def _meta(value):
@@ -109,18 +133,39 @@ def _sender(value):
     return (name.strip().strip('"') or address).strip(), address.lower()
 
 
+def _who_and_what(row, meta):
+    """A message that isn't email: who it's from and its first words (a chat), the app and what it said (a phone
+    notification), or who and its title (an update)."""
+    group, title, body = source_group(row['kind']), ' '.join(str(row['title'] or '').split()), _snippet(row['body'])
+    if group == 'notification':
+        return str(meta.get('app_name') or meta.get('package_name') or ''), _snippet(f'{title}: {body}' if title and body else title or body)
+    who = str(meta.get('from') or meta.get('sender_display') or meta.get('sender_name') or meta.get('user_name') or '')
+    who = _sender(who)[0] if '<' in who or '@' in who else ' '.join(who.split())  # "Sam <U123>", an address, or a name as is
+    if group == 'chat':
+        return who or str(meta.get('chat_name') or meta.get('channel_name') or title), body or _snippet(title)
+    return who, _snippet(title) or body
+
+
 def _mail_view(db, review, items, batch, mail, current, own):
     threads = {}
     for row in mail:
         meta = _meta(row['metadata'])
-        thread = threads.setdefault(_thread_key(row['account_id'], meta, row['id']), {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'in': 0})
+        group, mine = source_group(row['kind']), _from_owner(meta, own)
+        thread = threads.setdefault(_thread_key(row['account_id'], row['kind'], meta, row['id']),
+                                    {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'source': group, 'in': 0})
         thread['ids'].append(row['id'])
-        thread['in'] += not _from_owner(meta, own)
+        thread['in'] += not mine
         thread['last'] = row['occurred_at']  # rows come oldest first
-        name, address = _sender(meta.get('from'))
-        if name and (address not in own or not thread['from']):
-            thread['from'] = name
-        thread['subject'] = (row['title'] or '').strip() or thread['subject']
+        if not mine or 'open' not in thread:
+            thread['open'], thread['kind'] = row['id'], row['kind']  # its newest message to the owner opens
+        if group == 'email':
+            name, address = _sender(meta.get('from'))
+            if name and (address not in own or not thread['from']):
+                thread['from'] = name
+            thread['subject'] = (row['title'] or '').strip() or thread['subject']
+        elif not mine or not thread['from']:
+            who, what = _who_and_what(row, meta)
+            thread['from'], thread['subject'] = who or thread['from'], what or thread['subject']
         item = items[row['id']]
         if item.get('no_todo'):
             thread['why'] = item['no_todo']
@@ -131,13 +176,13 @@ def _mail_view(db, review, items, batch, mail, current, own):
                       (review['started_at'], end)).fetchall()
     cards = [(card, {int(i) for i in json.loads(card['event_ids'] or '[]') if str(i).isdigit()}) for card in made]
     linked = {i for _, ids in cards for i in ids}
-    keys = {r['id']: _thread_key(r['account_id'], _meta(r['metadata']), r['id'])
-            for r in db.execute('SELECT id,account_id,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(linked)),))}
+    keys = {r['id']: _thread_key(r['account_id'], r['kind'], _meta(r['metadata']), r['id'])
+            for r in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(sorted(linked)),))}
     now_iso, todos, held = current.isoformat(), 0, []
     for card, ids in cards:
         hit = [threads[keys[i]] for i in ids if keys.get(i) in threads]
         if not hit and not ids & batch:
-            continue  # not from this check (the owner's own, a chat's)
+            continue  # not from this check (the owner's own, one from chat with the Machine)
         todos += 1
         later = card['deliver_after'] if card['deliver_after'] and card['deliver_after'] > now_iso else None
         if later:
@@ -154,7 +199,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
         why = thread['why']
         if why and (len(why.split()) < 3 or said[' '.join(why.casefold().split()).rstrip('.')] >= SAME_WHY):
             why = None
-        row = {'from': thread['from'], 'subject': thread['subject'][:160]}
+        row = {'from': thread['from'], 'subject': thread['subject'][:160], 'source': thread['source'], 'kind': thread['kind'], 'event': thread['open']}
         if 'todo' in thread:
             row['todo'] = thread['todo']
             if thread.get('held_until'):
@@ -164,7 +209,10 @@ def _mail_view(db, review, items, batch, mail, current, own):
         elif why:
             row['why'] = why
         rows.append(row)
-    return {'at': review['finished_at'], 'emails': sum(t['in'] for t in threads.values()), 'todos': todos, 'held': len(held),
+    counts = collections.Counter()
+    for thread in threads.values():
+        counts[thread['source']] += thread['in']
+    return {'at': review['finished_at'], 'read': sum(counts.values()), 'counts': {k: n for k, n in counts.items() if n}, 'todos': todos, 'held': len(held),
             'held_until': min(held) if held else None, 'threads': rows[:MAIL_CHECK_THREADS], 'more': max(0, len(rows) - MAIL_CHECK_THREADS)}
 
 

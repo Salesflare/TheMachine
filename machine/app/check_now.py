@@ -59,7 +59,8 @@ class CheckNowApp:
         return {'started': started, 'check': self.check_view()}
 
     def mail_check_view(self):
-        """The line on To-dos after a check that saw new email (check_now.mail_check): what it read and why nothing needed the owner."""
+        """The line on To-dos after a check that saw new messages, from any source (check_now.mail_check): what it read
+        and why nothing needed the owner."""
         try:
             own = [a.get('email') for a in self.config.get('accounts') or [] if a.get('email')]
             with self.store.connect() as db:

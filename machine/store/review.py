@@ -1137,7 +1137,7 @@ class ReviewStore:
                 for group, ids in read.items():
                     if group in FIRST_LOOK_READ and isinstance(ids, list):
                         sorted_as.update({int(i): group for i in ids if str(i).isdigit()})
-            # Why an email thread got no to-do, in a few words: the To-dos page's last-check list shows it under the thread
+            # Why an email thread or chat got no to-do, in a few words: the To-dos page's last-check list shows it under it
             # (check_now.mail_check). Optional and never a reason to refuse: a malformed entry is left out.
             quiet = {int(q['event_id']): ' '.join(str(q['why']).split())[:200] for q in no_todo if isinstance(q, dict)
                      and str(q.get('event_id') or '').isdigit() and str(q.get('why') or '').strip()} if isinstance(no_todo, list) else {}
