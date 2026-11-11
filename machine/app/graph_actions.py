@@ -27,6 +27,7 @@ from machine.app import claim_reply
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
+from machine.store.facts import fact_words, merge_originals, NEGATIONS, replaced_facts
 from machine.store.review import own_message
 from machine.text import clamp
 from machine.web.handler import event_glance
@@ -72,6 +73,47 @@ def forget_in_notes(root, needles):
             path.write_text(''.join(kept), encoding='utf-8')
     return removed
 
+
+
+def _values(text):
+    """A text's words that carry a value: a number, or a name (capitalized past its first word)."""
+    words = re.findall(r'\w+', str(text or ''))
+    return {w.casefold() for n, w in enumerate(words) if any(c.isdigit() for c in w) or (n and w[:1].isupper())}
+
+
+def corrects(new, old):
+    """Whether new says the same thing as old with another value: most of the words shared, and what old said that new
+    doesn't is a number or a name new swaps for its own ("Your office is in Brussels now" for "Your office is in
+    Ghent"), or new adds or drops a negation ("You don't drink coffee anymore"). Plain words: no model."""
+    wn, wo = fact_words(new), fact_words(old)
+    shared = wn & wo
+    if len(shared) < 2 or 2 * len(shared) < min(len(wn), len(wo)):
+        return False
+    gone, added, values = wo - wn, wn - wo, _values(new) | _values(old)
+    if gone:
+        return len(gone) <= 2 and len(added) <= 4 and gone <= values and bool(added & values)
+    return len(added) <= 3 and bool(wn & NEGATIONS) != bool(wo & NEGATIONS)
+
+
+def said_instead(store, fact_id):
+    """A correction the owner states in their own chat ("no, the office is in Brussels now") takes the place of the fact
+    it corrects, at once: the chat sees no fact ids, so it can't pass replaces, and until the next condense pass both
+    reached every preparation. The one it corrects is found in code (corrects): a current fact about the same records
+    (or, like it, about no one), newest first. It stays behind the new one as history, under Learning with Undo merge
+    (Store.unmerge_fact). {'replaced': its id}, or {} when none."""
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        about = lambda i: {r[0] for r in db.execute('SELECT node_id FROM fact_about WHERE fact_id=? AND removed_at IS NULL', (i,))}
+        new = db.execute("SELECT text FROM facts WHERE id=? AND removed_at IS NULL AND kind='fact'", (fact_id,)).fetchone()
+        if not new:
+            return {}
+        subjects = about(fact_id)
+        for row in db.execute("SELECT id,text FROM facts WHERE removed_at IS NULL AND kind='fact' AND id!=? AND (source IS NULL OR source NOT LIKE 'ai:%') "
+                              'ORDER BY id DESC', (fact_id,)).fetchall():
+            if about(row['id']) == subjects and corrects(new['text'], row['text']):
+                merge_originals(db, replaced_facts(db, [row['id']]), 'fact:' + str(fact_id), new['text'])
+                return {'replaced': row['id']}
+    return {}
 
 class GraphActionsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
@@ -783,6 +825,8 @@ class GraphActionsApp:
                 raise ValueError('Facts come from the owner’s own words: they wrote nothing in this chat in the last half hour. Save it when they say it.')
             done = self.store.remember_fact(args.get('text'), note, args.get('kind') or None, None, args.get('about'),
                                             args.get('until') or args.get('valid_until'), said=True)
+            if done.get('id') and not any(done.get(k) for k in ('duplicate', 'suppressed', 'merged', 'record')):
+                done.update(said_instead(self.store, done['id']))
         else:
             done = self.store.remember_fact(args.get('text'), args.get('decision_id'), args.get('kind') or None, args.get('replaces'), args.get('about'),
                                             args.get('until') or args.get('valid_until'))

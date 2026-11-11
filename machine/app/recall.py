@@ -14,9 +14,14 @@ from machine.app import ask_memory
 from machine.app import senders
 from machine.app.review_facts import ReviewFacts
 
+# A routine's run gets what was learned, said or used most lately first, in this many characters: about 300 and 150
+# tokens. Everything learned is in a review; a routine is one read-only turn, often daily, so it gets the front of it.
+ROUTINE_FACTS = 1200
+ROUTINE_RULES = 600
+
 
 def recall(app, purpose, about=None, budget=0):
-    """The memory for one prompt. purpose: review, preparation, ask, talk or chat. about: what it is for
+    """The memory for one prompt. purpose: review, preparation, ask, routine, talk or chat. about: what it is for
     ({'todo': id}, {'run': id}, {'run': id, 'analysis': id} for the batch a review claimed, {'question': text}). budget: the prompt's character limit,
     for Recalled.fit. Returns a memory_use.Recalled: text(block) or fit(block, used, reserve) for the prompt,
     picked() for the items per kind, rows() for the log.
@@ -32,7 +37,11 @@ def recall(app, purpose, about=None, budget=0):
     - ask: sources (search_ask.ask with its own arguments: the messages that fit the prompt), and what matches the
       question of promises, facts, records (a person's summary, a named project or organization) and meetings
       (machine/app/ask_memory.py, each with (what it goes on, room)).
-    - talk, chat: none yet; they read no memory of their own today."""
+    - routine: facts and rules (what was learned and the draft rules, said or used most lately first, up to
+      ROUTINE_FACTS and ROUTINE_RULES characters), so a run and the draft it may leave follow them.
+    - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words
+      (ask_memory.learned, plain word matching), next to OpenClaw's memory search.
+    - chat: none yet; the owner's main chat reads no memory through here (docs/memory-reach.md)."""
     about = dict(about or {})
     memory = memory_use.Recalled(purpose, about, budget)
     store, todo = app.store, about.get('todo')
@@ -55,4 +64,9 @@ def recall(app, purpose, about=None, budget=0):
     elif purpose == 'ask':
         memory.add('sources', search_ask.ask)
         ask_memory.add(memory, app)
+    elif purpose == 'routine':
+        memory.add('facts', lambda: store.facts_text(ROUTINE_FACTS))
+        memory.add('rules', lambda: store.facts_text(ROUTINE_RULES, 'draft'))
+    elif purpose == 'talk':
+        memory.add('facts', lambda words: ask_memory.learned(store, words))
     return memory

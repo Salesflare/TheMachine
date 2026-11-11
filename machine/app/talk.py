@@ -16,7 +16,9 @@ import enrichment
 import graph
 import knowledge
 import locale_prefs
+import memory_use
 from machine.actions import TALK_ACTIONS
+from machine.app.recall import recall
 from machine.cards import todo_state
 from machine.chat import chat_name, chat_person
 from machine.config import LOG, ROOT
@@ -460,15 +462,25 @@ class TalkApp:
 
     def talk_recall(self, words):
         """recall: what the owner said or decided in earlier conversations and the notes (knowledge.recall, OpenClaw's
-        memory search). Each excerpt marked <untrusted>, since it can quote anyone; with RECALL_NOTE. Off, failing or
-        slow: nothing found, said plainly, never an error."""
+        memory search), and first what the Machine learned that the words are about (the `talk` recall: a fact the owner
+        stated in a chat is saved here, not in OpenClaw's memory files). Each excerpt marked <untrusted>, since it can
+        quote anyone; with RECALL_NOTE. Off, failing or slow: nothing found, said plainly, never an error."""
         if not words:
             return {'error': 'Say what to look for.'}
+        memory = recall(self, 'talk', {'question': words})
+        try:
+            learned = memory.read('facts', words)
+        except (sqlite3.Error, ValueError, KeyError, TypeError) as error:  # the rest still answers
+            LOG.warning('talk recall facts error=%s', type(error).__name__)
+            learned = []
+        memory_use.record(self.store, 'talk', memory.rows())  # the tool's answer is its prompt: read once it is given
         found = knowledge.recall(self.memory_search, words)
-        if not found:
+        if not found and not learned:
             return {'found': [], 'searched': 'earlier conversations and notes for "%s"' % words, 'note': talk_live.NOTHING_NOTE}
         mark = lambda r: ai_access.untrusted(clamp(' '.join(r['text'].split()), 600), 'conversation' if r['source'] == 'sessions' else 'notes')
-        return {'found': [{'from': r['from'], **({'when': self.talk_when(r['at'])} if r['at'] else {}), 'text': mark(r)} for r in found],
+        kept = [{'from': 'what The Machine learned', 'when': self.talk_when(f.get('confirmed_at') or f['created_at']),
+                 'text': ai_access.untrusted(clamp(f['text'], 300), 'notes')} for f in learned]
+        return {'found': kept + [{'from': r['from'], **({'when': self.talk_when(r['at'])} if r['at'] else {}), 'text': mark(r)} for r in found],
                 'note': talk_live.RECALL_NOTE}
 
     def memory_search(self, request):
