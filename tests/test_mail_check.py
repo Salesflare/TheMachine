@@ -94,6 +94,7 @@ class MailCheck(unittest.TestCase):
         listed them as "Digest repeats existing to-dos". They are known by their sender with the mailer's header (or its
         no-reply address), never by their words."""
         digest = mail('The Machine <no-reply@themachine.computer>', 'The Machine: Good morning, 3 due today', 'digest')
+        digest['metadata']['machine_notice'] = True  # X-The-Machine, as the control plane's mailer sets it on notify mail
         fixed = mail('The Machine <support@themachine.computer>', 'The Machine: Fixed: imports now finish', 'fix')
         fixed['metadata']['machine_notice'] = True  # X-The-Machine, as the control plane's mailer sets it
         person = mail('Support <support@themachine.computer>', 'Could you send a log?', 'ask')  # a person at support: read
@@ -102,7 +103,11 @@ class MailCheck(unittest.TestCase):
         sent = mail(OWNER, 'Re: Featuring us', 'own', to='editor@press.example')
         sent['metadata']['labels'] = ['SENT']
         incoming = mail('Mila Under <mila@north.example>', 'Question', 'q')
-        ids = self.add(digest, fixed, person, spoofed, sent, incoming)
+        # the same address without the header: mail that may need a to-do, reviewed like any other
+        billing = mail('The Machine <no-reply@themachine.computer>', 'Your payment failed', 'billing')
+        invite = mail('The Machine <no-reply@themachine.computer>', 'Join the team on The Machine', 'invite')
+        trial = mail('The Machine <no-reply@themachine.computer>', 'Your trial ends Friday', 'trial')
+        ids = self.add(digest, fixed, person, spoofed, sent, incoming, billing, invite, trial)
         claim = self.store.begin_analysis(['work'], 120)
         with self.store.connect() as db:
             claimed = {i['id'] for i in json.loads(db.execute('SELECT items FROM analyses WHERE id=?', (claim['analysis_id'],)).fetchone()[0])}
@@ -110,21 +115,23 @@ class MailCheck(unittest.TestCase):
             self.assertEqual([r[0] for r in db.execute('SELECT analyzed_version=version FROM events WHERE id IN (?,?)', ids[:2])], [1, 1])
         self.store.finish_analysis(claim['analysis_id'], 'Nothing new')
         got = self.view()
-        self.assertEqual(got['emails'], 3)
-        self.assertEqual(sorted(r['subject'] for r in got['threads']), ['Could you send a log?', 'Hide me', 'Question'])
+        self.assertEqual(got['emails'], 6)
+        self.assertEqual(sorted(r['subject'] for r in got['threads']), ['Could you send a log?', 'Hide me', 'Join the team on The Machine', 'Question',
+                                                                         'Your payment failed', 'Your trial ends Friday'])
 
     def test_the_mailers_header_is_kept_and_only_counts_from_the_machines_domain(self):
         from machine.sources import gmail
         self.assertEqual(gmail.list_headers({'x-the-machine': 'notice'}), {'machine_notice': True})
         notice = lambda sender, **more: gmail.machine_notice('gmail.message', {'from': sender, 'labels': ['INBOX'], **more})
-        self.assertTrue(notice('The Machine <no-reply@themachine.computer>'))
+        self.assertTrue(notice('The Machine <no-reply@themachine.computer>', machine_notice=True))
         self.assertTrue(notice('support@themachine.computer', machine_notice=True))
-        self.assertTrue(notice('no-reply@mail.themachine.computer'))
+        self.assertTrue(notice('no-reply@mail.themachine.computer', machine_notice=True))
+        self.assertFalse(notice('The Machine <no-reply@themachine.computer>'))  # billing, a trial, an invite: reviewed
         self.assertFalse(notice('support@themachine.computer'))
         self.assertFalse(notice('no-reply@themachine.computer.evil.example', machine_notice=True))
         self.assertFalse(notice('no-reply@notthemachine.computer'))
-        self.assertFalse(notice('no-reply@themachine.computer', labels=['SENT']))
-        self.assertFalse(gmail.machine_notice('slack.message', {'from': 'no-reply@themachine.computer'}))
+        self.assertFalse(notice('no-reply@themachine.computer', labels=['SENT'], machine_notice=True))
+        self.assertFalse(gmail.machine_notice('slack.message', {'from': 'no-reply@themachine.computer', 'machine_notice': True}))
 
     def test_the_review_is_asked_for_a_reason_per_thread_and_the_dashboard_shows_the_line(self):
         prompt = a.review_prompt('run', ['work'])

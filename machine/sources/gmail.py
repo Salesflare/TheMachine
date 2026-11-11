@@ -59,20 +59,20 @@ def list_headers(headers):
     return found
 
 
-# The Machine's own mail to its owner: the morning digest and what still waits (notify.mail), fix notices and the
-# other notices the control plane's mailer sends. That mailer sends from NOTICE_DOMAIN and stamps NOTICE_HEADER.
+# The Machine's own purely informational mail to its owner: the morning digest and what still waits (notify.mail) and
+# fix notices. The control plane's mailer sends it from NOTICE_DOMAIN and stamps NOTICE_HEADER on it, and only on it:
+# billing, a trial ending, an invite or an account change come from the same address without it and may need a to-do.
 NOTICE_HEADER = 'x-the-machine'
 NOTICE_DOMAIN = 'themachine.computer'
-NOTICE_SENDERS = frozenset({'no-reply', 'noreply'})  # only ever a program; support@ can be a person, so it needs the header
 MAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message'})
 
 
 def machine_notice(kind, metadata):
-    """Mail The Machine itself sent the owner, known by its sender (an address at NOTICE_DOMAIN) together with its
-    mailer's header or its no-reply address, never by its words. It is The Machine telling the owner about to-dos the
-    dashboard already has: never read by the review (Store.commit_page marks it reviewed), so it costs no model turn and
-    never shows in the last check's list. Both parts are needed: the header alone anyone can add, and a person can
-    write from support@."""
+    """Informational mail The Machine itself sent the owner, known by its sender (an address at NOTICE_DOMAIN) together
+    with its mailer's NOTICE_HEADER, never by its words. It tells the owner about what the dashboard already has: never
+    read by the review (Store.commit_page marks it reviewed), so it costs no model turn and never shows in the last
+    check's list. Both parts are needed: the header alone anyone can add, and the same address also sends mail that
+    may need a to-do (billing, a trial ending, an invite), which has no header."""
     if kind not in MAIL_KINDS or not isinstance(metadata, dict):
         return False
     if set(metadata.get('labels') or ()) & {'SENT', 'DRAFT'} or metadata.get('from_me'):
@@ -80,7 +80,7 @@ def machine_notice(kind, metadata):
     local, _, domain = _address(metadata.get('from')).rpartition('@')
     if not local or not (domain == NOTICE_DOMAIN or domain.endswith('.' + NOTICE_DOMAIN)):
         return False
-    return bool(metadata.get('machine_notice')) or local in NOTICE_SENDERS
+    return bool(metadata.get('machine_notice'))
 
 
 ATTACHMENTS_LISTED = 10  # names kept per message

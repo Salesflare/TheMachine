@@ -60,7 +60,7 @@ Na een check die nieuwe e-mails las, zegt een regel boven je to-do’s wat hij v
 
 Tik op de regel om elk e-mailgesprek te zien: wie schreef, het onderwerp, en de nieuwe to-do of waarom er niets nodig was, zoals "Alleen in cc, een collega antwoordt" of "Afspraak staat al voor donderdag". Een gesprek toont geen reden als de check alleen een vage gaf. De regel blijft 12 uur na de check staan.
 
-Hij telt alleen mail aan jou. Je eigen antwoorden worden gelezen voor context en beloftes, maar zijn geen nieuwe mail. De eigen e-mails van je Machine aan jou, zoals je ochtendoverzicht of een melding van een fix, worden nooit gelezen of getoond.
+Hij telt alleen mail aan jou. Je eigen antwoorden worden gelezen voor context en beloftes, maar zijn geen nieuwe mail. De eigen e-mails van je Machine aan jou, zoals je ochtendoverzicht of een melding van een fix, worden nooit gelezen of getoond. Mail over betalingen, je proefperiode of een uitnodiging wordt gewoon gelezen.
 
 ## De knoppen
 
