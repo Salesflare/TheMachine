@@ -7,7 +7,9 @@ Only what matches the question goes in, and nothing when nothing matches: the pr
 - promises: open ones and those closed in the last CLOSED_DAYS days whose message is one the search found, or is on
   one of those records. A question about some days gets the ones said or due in those days.
 - facts: the ones tied to those records, then the closest in meaning to the question (the stored fact vectors
-  against the question's own, as a preparation ranks them: local embeddings, no model turn).
+  against the question's own, as a preparation ranks them: local embeddings, no model turn). Without embeddings (or
+  when the embedding server fails) the owner's own facts that share the question's words instead (matching), so a
+  fact about no one, like one about the owner themselves, is still found.
 - records: the person's summary lines of the area in view, a project's stage and next step, an organization's role.
 - meetings: the meeting notes the search found for the question (Ask kept only messages of what it found), or the
   ones the Graph has that person on.
@@ -28,7 +30,7 @@ import embeddings
 import graph
 import memory_use
 import person_summary
-from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, note_facts
+from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, key_words, note_facts, word_match
 from machine.store.promises import promise_card, promise_state, who_named
 from machine.text import shown_body
 from timeutil import now
@@ -216,19 +218,23 @@ def promises(app, about, room):
 
 def _closest(app, about, facts):
     """{fact id: cosine} of the facts close in meaning to the question, from their stored vectors and the question's
-    own (one local embedding request, with the facts that have no vector yet); {} when embeddings don't run here."""
+    own (one local embedding request, with the facts that have no vector yet); None when embeddings don't run here
+    or the embedding server is down or slow, so the facts are matched by words instead."""
     settings = embeddings.settings(app.config)
-    if not settings or not facts:
+    if not settings:
+        return None
+    if not facts:
         return {}
     try:
         return {f['id']: score for score, f in app.store.facts_ranked(embeddings.QUERY_PREFIX + about['question'], facts, settings, FACT_TIMEOUT)}
-    except Exception as error:  # the embedding server is down or slow: no fact by meaning, the rest of the answer as it was
+    except Exception as error:  # the embedding server is down or slow: the words instead, the rest of the answer as it was
         LOG.info('ask memory facts error=%s', type(error).__name__)
-        return {}
+        return None
 
 
 def facts(app, about, room):
-    """What was learned about the question's records, then what is closest in meaning to the question."""
+    """What was learned about the question's records, then what is closest in meaning to the question, or without
+    embeddings the owner's own facts that share its words (matching)."""
     area, nodes, at = about['area'], [s['id'] for s in about['subjects']], now()
     known = [f for f in app.store.facts() if f['kind'] == 'fact' and (area is None or f.get('side') in (None, area)) and fact_weight(f, at) > 0]
     if not known or not about['accounts']:
@@ -239,7 +245,13 @@ def facts(app, about, room):
             nodes = _on(db, nodes)  # an organization's facts are also the ones on its people
             for r in db.execute(f'SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL AND node_id IN ({_marks(nodes)})', nodes):
                 tied.setdefault(r['fact_id'], []).append(r['node_id'])
-    scores = {i: s for i, s in _closest(app, about, [f for f in known if f['id'] not in tied]).items() if s >= FACT_FLOOR}
+    rest = [f for f in known if f['id'] not in tied]
+    closest = _closest(app, about, rest)
+    how = 'closeness' if closest is not None else 'match'
+    if closest is None:  # no meaning here: by words, and only what the owner said, never a connected AI's
+        scores = {f['id']: s for s, f in matching([f for f in rest if not ai_fact_by(f)], about['question'])}
+    else:
+        scores = {i: s for i, s in closest.items() if s >= FACT_FLOOR}
     asked = {s['id'] for s in about['subjects']}
     found = sorted((f for f in known if f['id'] in tied), key=lambda f: (bool(asked & set(tied[f['id']])), f['created_at']), reverse=True) \
         + sorted((f for f in known if f['id'] in scores), key=lambda f: -scores[f['id']])
@@ -247,7 +259,7 @@ def facts(app, about, room):
     def line_of(n, f):
         tag = f'F{n}'
         line = f"[{tag}] Learned {str(f.get('confirmed_at') or f['created_at'])[:10]}: <<<{_data(fact_line(f)[2:])[:FACT_CHARS]}>>>"
-        note = lambda: memory_use.note('fact', f['id'], line, 'about' if f['id'] in tied else 'closeness', about=tied.get(f['id'], ()),
+        note = lambda: memory_use.note('fact', f['id'], line, 'about' if f['id'] in tied else how, about=tied.get(f['id'], ()),
                         source='ai' if ai_fact_by(f) else 'note' if f.get('suggestion_id') else 'review', at=f.get('created_at'),
                         score=scores.get(f['id']), used=True)
         return note, tag, line, {'type': 'fact', 'id': f['id'], 'title': _data(f['text'])[:160], 'from': '', 'at': str(f.get('created_at') or '')[:32]}
@@ -404,6 +416,29 @@ def _stems(words):
     return {_stem(w) for w in words}
 
 
+def _shared(asked, text):
+    """How many of the words' content words (asked, _stems) a text has: 0 under half of them."""
+    shared = len(asked & _stems(fact_words(text)))
+    return shared if shared and 2 * shared >= len(asked) else 0
+
+
+def matching(facts, words):
+    """[(score 0-1, fact)] of the facts that share the words, best first, without embeddings or a model call: at
+    least half of the words' content words (as Talk's recall matches a few spoken words), or enough of the fact's
+    own distinctive words (facts.word_match, as a preparation picks facts without embeddings: for a longer question).
+    Either way at least one shared word is distinctive, so "what do I do" alone finds nothing."""
+    asked, keys = _stems(fact_words(words)), _stems(key_words(words))
+    if not keys:
+        return []
+    out = []
+    for f in facts:
+        half = _shared(asked, f['text']) / len(asked) if keys & _stems(key_words(f['text'])) else 0
+        score = max(half, word_match(f['text'], keys, _stems))
+        if score:
+            out.append((score, f))
+    return sorted(out, key=lambda x: -x[0])
+
+
 def _meaning(store, words, facts, settings):
     """{fact id: cosine} of the facts with a stored vector close in meaning to the words (at least FACT_FLOOR): the
     vectors a preparation or Ask already stored (fact_vectors), against one local embedding of the words, as
@@ -442,8 +477,7 @@ def learned(store, words, settings=None):
     close = _meaning(store, words, own, settings)
     scored = []
     for f in own:
-        shared = len(asked & _stems(fact_words(f['text'])))
-        shared = shared if shared and 2 * shared >= len(asked) else 0
+        shared = _shared(asked, f['text'])
         if shared or f['id'] in close:
             scored.append((shared, close.get(f['id'], 0.0), str(f.get('last_use') or ''), f))
     picked = [x[3] for x in sorted(scored, key=lambda x: x[:3], reverse=True)[:LEARNED]]
