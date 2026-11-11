@@ -165,6 +165,24 @@ class Outcomes(unittest.TestCase):
             outcomes.project_proof(db, self.sid, 'Listing is live', self.event, '2026-10-18T09:00:00+00:00')
         self.assertEqual(self.suggestion()['status'], 'completed')
 
+    def test_a_changed_goal_moves_the_waiting_line_that_was_the_old_goal_only(self):
+        with self.store.connect() as db:  # a project's blocker to-do, waiting on the project's result
+            outcomes.set_done_when(db, self.sid, 'Listing is live', 'project')
+            outcomes.wait_for_result(db, db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone(), '', '2026-10-16T09:00:00+00:00')
+            self.assertTrue(outcomes.follow_project(db, self.sid, 'Listing is live', 'Listing links to us'))
+        self.assertEqual(json.loads(self.suggestion()['outcome'])['waiting_on'], 'Listing links to us')
+        with self.store.connect() as db:  # back as Still waiting: the line still follows the goal
+            db.execute("UPDATE suggestions SET status='pending',outcome=? WHERE id=?",
+                       (json.dumps({'state': 'still_waiting', 'waiting_on': 'Listing links to us'}), self.sid))
+            outcomes.set_done_when(db, self.sid, 'Listing links to us with a follow link', 'project')
+        self.assertEqual(json.loads(self.suggestion()['outcome'])['waiting_on'], 'Listing links to us with a follow link')
+        with self.store.connect() as db:  # a line someone wrote stays
+            db.execute('UPDATE suggestions SET outcome=? WHERE id=?',
+                       (json.dumps({'state': 'waiting', 'waiting_on': 'Sam to check with their editor', 'until': '2026-10-20'}), self.sid))
+            outcomes.follow_project(db, self.sid, 'Listing links to us with a follow link', 'Listing is back online')
+        self.assertEqual(json.loads(self.suggestion()['outcome'])['waiting_on'], 'Sam to check with their editor')
+        self.assertEqual(self.suggestion()['done_when'], 'Listing is back online')
+
 
 class TheirPromise(unittest.TestCase):
     setUp = tp.Promises.setUp

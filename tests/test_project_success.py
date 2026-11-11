@@ -348,6 +348,32 @@ class OffBoard(Fixture, unittest.TestCase):
                              'condition': 'Lee says the homepage links to us'}])
         self.assertEqual(done['stages'][0].get('outcome'), 'won')
 
+    def test_a_done_with_a_new_proof_in_the_same_entry_is_checked_against_that_proof(self):
+        pitch, = self.add(mail(30, 'Robin <robin@quillfeather.example>', 'kai@fernhollow.example', 'Could you list us?', ('SENT',), thread='fh'))
+        with self.store.connect() as db:
+            graph.label(db, [pitch], 'Fernhollow listing', 'review', NOW.isoformat())
+            node = ps.done_off_board(db, {'project': 'Fernhollow listing', 'condition': 'Kai confirms the listing', 'proof': 'message'}, {}, 'review',
+                                     NOW.isoformat())['node_id']
+        said, = self.add(mail(2, 'Kai <kai@fernhollow.example>', 'robin@quillfeather.example', 'You are listed now.', thread='fh'))
+        # The review's own goal becomes a live page in the same entry that marks it done: a message alone no longer does it
+        done = self.review([{'project': 'Fernhollow listing', 'done': True, 'event_id': said, 'reason': 'Kai says it is listed',
+                             'condition': 'The listing page links to us', 'proof': 'link'}])
+        self.assertEqual(done['stages'][0].get('not_proven'), 'no_url')
+        self.assertIsNone(self.page(node)[0]['outcome'])
+        # And back: a message is the proof again, and the same entry's message meets it
+        said, = self.add(mail(1, 'Kai <kai@fernhollow.example>', 'robin@quillfeather.example', 'Listed for good.', thread='fh'))
+        done = self.review([{'project': 'Fernhollow listing', 'done': True, 'event_id': said, 'reason': 'Kai says it is listed',
+                             'condition': 'Kai confirms the listing', 'proof': 'message'}])
+        self.assertEqual(done['stages'][0].get('outcome'), 'won')
+
+    def test_the_owners_proof_stands_when_a_review_marks_done_with_another(self):
+        node, _ = self.plan('The partner page is live with a link to us', 'link')
+        said, = self.add(mail(2, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'It is up now.', thread='gp'))
+        done = self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': said, 'reason': 'Lee says it is up',
+                             'condition': 'Lee says it is up', 'proof': 'message'}])
+        self.assertEqual(done['stages'][0].get('not_proven'), 'no_url')
+        self.assertEqual(self.page(node)[0]['condition'], 'The partner page is live with a link to us')
+
 
 if __name__ == '__main__':
     unittest.main()
