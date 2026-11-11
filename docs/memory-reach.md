@@ -53,8 +53,8 @@ forgotten, ended and replaced facts stay out, as from Ask's meaning search.
 
 The owner's main chat (their private Telegram chat and the web chat) saved facts but couldn't read them back: only
 what `graph` shows on a person's page. The bridge's `assistant_memory` tool now reads them on demand
-(`recall_learned`, the `chat` recall, `ask_memory.for_chat`): the owner's own current facts and draft rules that match
-the question's words (`ask_memory.matching`, as Ask without embeddings), then set-aside ones and, marked "Historical, not current", ended or replaced
+(`recall_learned`, the `chat` recall, `ask_memory.for_chat`): the owner's own current facts and draft rules that share
+at least half of the question's words in their plain form (as Talk's recall), then set-aside ones and, marked "Historical, not current", ended or replaced
 ones (`retained_facts.py`). Never a connected AI's fact or one the owner removed, and a fact about a person only when
 the question names them. At most 900 characters (about 225 tokens), logged as `chat` in `memory_use`. No context
 block: a turn that doesn't ask costs only the tool's definition (about 120 tokens, cached with the rest). The bridge

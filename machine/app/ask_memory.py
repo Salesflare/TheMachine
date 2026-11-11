@@ -526,18 +526,22 @@ def for_chat(app, question, limit=CHAT_CHARS):
     a connected AI's fact, nor one the owner removed. A fact about a person comes only when the question names them.
     Noted for the use log (purpose chat)."""
     words = _asked(question)
-    at = now()
-    current = [f for _, f in matching([f for f in app.store.facts() if not ai_fact_by(f) and fact_weight(f, at) > 0], words)]
+    asked = _stems(fact_words(words))
+    if not asked:
+        return ''
+    # by words as Talk's recall: half of the asked words (a short noun like "gym" counts), most shared first
+    at, rank = now(), lambda f: (_shared(asked, f['text']), str(f.get('last_use') or ''))
+    current = sorted((f for f in app.store.facts() if _shared(asked, f['text']) and not ai_fact_by(f) and fact_weight(f, at) > 0), key=rank, reverse=True)
     with app.store.connect() as db:
         with_about(db, current)
-        old = matching(retained_facts.candidates(db), words)  # never one the owner removed, nor a connected AI's
-        with_about(db, [f for _, f in old])
-        people = {n for f in current + [f for _, f in old] for n in f['about']}
+        old = [f for f in retained_facts.candidates(db) if _shared(asked, f['text'])]  # never one the owner removed
+        with_about(db, old)
+        people = {n for f in current + old for n in f['about']}
         who = fact_links.records(db, people)
     named = _people_named(question, who)
     mine = lambda f: not any(who.get(n, {}).get('kind') == 'person' and n not in named for n in f['about'])
     current = [f for f in current if f['kind'] in ('fact', 'draft') and mine(f)][:CHAT_LEARNED]
-    old = [f for _, f in sorted(((s, f) for s, f in old if mine(f)), key=lambda x: (x[1]['state'] != 'aside', -x[0]))][:retained_facts.LINES]
+    old = sorted((f for f in old if mine(f)), key=lambda f: (f['state'] != 'aside', -_shared(asked, f['text'])))[:retained_facts.LINES]
     lines, size = [], len(CHAT_HEAD)
     for f in current + old:
         text = retained_facts.line(f) if 'state' in f else ('- Draft rule: ' + f['text']) if f['kind'] == 'draft' else fact_line(f)
