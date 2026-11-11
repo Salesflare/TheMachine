@@ -60,6 +60,8 @@ Depois de uma verificação que leu e-mails novos, uma linha acima das suas tare
 
 Toque na linha para ver cada conversa: quem escreveu, o assunto, e a tarefa nova ou por que nada era preciso, como "Só em cópia, um colega está respondendo" ou "Reunião já marcada para quinta". Uma conversa não mostra motivo quando a verificação deu só um vago. A linha fica por 12 horas depois da verificação.
 
+Ela conta só e-mails para você. Suas próprias respostas são lidas pelo contexto e pelas promessas, mas não são e-mail novo. Os e-mails que sua Machine envia para você, como seu resumo da manhã ou um aviso de correção, nunca são lidos nem listados.
+
 ## Os botões
 
 Uma tarefa mostra o próximo passo, como **Fazer** ou **Revisar e enviar**, com **Adiar** ao lado. Veja [Fazer](do-it.md) e [Adiar](snooze.md).

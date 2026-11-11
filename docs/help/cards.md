@@ -60,6 +60,8 @@ After a check that read new email, a line above your to-dos says what it found, 
 
 Tap the line to see each email thread: who wrote, the subject, and its new to-do or why it needed nothing, like "Only cc'd, a teammate is answering" or "Meeting already set for Thursday". A thread shows no reason when the check gave only a vague one. The line shows for 12 hours after the check.
 
+It counts only mail to you. Your own replies are read for context and promises, but aren't new mail. The Machine's own emails to you, like your morning summary or a fix notice, are never read or listed.
+
 ## The buttons
 
 A to-do shows its next step, like **Do it** or **Review and send**, with **Snooze** beside it. See [Do it](do-it.md) and [Snooze](snooze.md).

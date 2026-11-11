@@ -5,6 +5,7 @@ thread (finish_analysis no_todo) and To-dos shows it. A fake review drives the r
 finish_analysis; no model and nothing is sent. Every name and address is made up."""
 import datetime as dt
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -62,7 +63,7 @@ class MailCheck(unittest.TestCase):
             {'event_id': vague, 'why': 'No action.'}, *[{'event_id': i, 'why': 'Nothing needed here.'} for i in same]])
         got = self.view()
         self.assertEqual({k: got[k] for k in ('at', 'emails', 'todos', 'held', 'more')},
-                         {'at': NOW.isoformat(), 'emails': 8, 'todos': 1, 'held': 1, 'more': 0})  # the Slack message is no email
+                         {'at': NOW.isoformat(), 'emails': 7, 'todos': 1, 'held': 1, 'more': 0})  # the Slack message and the owner's reply are no new email
         self.assertEqual(got['held_until'], held['deliver_after'])
         rows = {r['subject']: r for r in got['threads']}
         self.assertEqual(got['threads'][0]['todo'], 'Send Mila annual pricing')  # the thread with a to-do comes first
@@ -87,6 +88,43 @@ class MailCheck(unittest.TestCase):
         claim = self.store.begin_analysis(['work'], 120)
         self.store.finish_analysis(claim['analysis_id'], 'Nothing new', no_todo='bad')
         self.assertEqual(self.view(self.clock)['at'], NOW.isoformat())  # the Slack-only check is skipped
+
+    def test_the_machines_own_mail_to_the_owner_is_never_reviewed_or_listed_and_their_own_sent_mail_is_read_but_no_new_mail(self):
+        """The review read the morning summary and fix notices The Machine sent the owner, spent a model turn on each and
+        listed them as "Digest repeats existing to-dos". They are known by their sender with the mailer's header (or its
+        no-reply address), never by their words."""
+        digest = mail('The Machine <no-reply@themachine.computer>', 'The Machine: Good morning, 3 due today', 'digest')
+        fixed = mail('The Machine <support@themachine.computer>', 'The Machine: Fixed: imports now finish', 'fix')
+        fixed['metadata']['machine_notice'] = True  # X-The-Machine, as the control plane's mailer sets it
+        person = mail('Support <support@themachine.computer>', 'Could you send a log?', 'ask')  # a person at support: read
+        spoofed = mail('Mallory <m@else.example>', 'Hide me', 'spoof')
+        spoofed['metadata']['machine_notice'] = True  # the header alone, from anyone else: read
+        sent = mail(OWNER, 'Re: Featuring us', 'own', to='editor@press.example')
+        sent['metadata']['labels'] = ['SENT']
+        incoming = mail('Mila Under <mila@north.example>', 'Question', 'q')
+        ids = self.add(digest, fixed, person, spoofed, sent, incoming)
+        claim = self.store.begin_analysis(['work'], 120)
+        with self.store.connect() as db:
+            claimed = {i['id'] for i in json.loads(db.execute('SELECT items FROM analyses WHERE id=?', (claim['analysis_id'],)).fetchone()[0])}
+            self.assertEqual(claimed, set(ids[2:]))  # the two notices never reach the review; sent mail does (promises, context)
+            self.assertEqual([r[0] for r in db.execute('SELECT analyzed_version=version FROM events WHERE id IN (?,?)', ids[:2])], [1, 1])
+        self.store.finish_analysis(claim['analysis_id'], 'Nothing new')
+        got = self.view()
+        self.assertEqual(got['emails'], 3)
+        self.assertEqual(sorted(r['subject'] for r in got['threads']), ['Could you send a log?', 'Hide me', 'Question'])
+
+    def test_the_mailers_header_is_kept_and_only_counts_from_the_machines_domain(self):
+        from machine.sources import gmail
+        self.assertEqual(gmail.list_headers({'x-the-machine': 'notice'}), {'machine_notice': True})
+        notice = lambda sender, **more: gmail.machine_notice('gmail.message', {'from': sender, 'labels': ['INBOX'], **more})
+        self.assertTrue(notice('The Machine <no-reply@themachine.computer>'))
+        self.assertTrue(notice('support@themachine.computer', machine_notice=True))
+        self.assertTrue(notice('no-reply@mail.themachine.computer'))
+        self.assertFalse(notice('support@themachine.computer'))
+        self.assertFalse(notice('no-reply@themachine.computer.evil.example', machine_notice=True))
+        self.assertFalse(notice('no-reply@notthemachine.computer'))
+        self.assertFalse(notice('no-reply@themachine.computer', labels=['SENT']))
+        self.assertFalse(gmail.machine_notice('slack.message', {'from': 'no-reply@themachine.computer'}))
 
     def test_the_review_is_asked_for_a_reason_per_thread_and_the_dashboard_shows_the_line(self):
         prompt = a.review_prompt('run', ['work'])

@@ -60,6 +60,8 @@ Tras una revisión que leyó correos nuevos, una línea encima de tus tareas dic
 
 Toca la línea para ver cada conversación: quién escribió, el asunto, y su tarea nueva o por qué no hacía falta nada, como «Solo en copia, responde un compañero» o «Reunión ya fijada para el jueves». Una conversación no muestra motivo cuando la revisión solo dio uno vago. La línea se queda 12 horas después de la revisión.
 
+Solo cuenta el correo que te llega. Tus propias respuestas se leen por contexto y promesas, pero no son correo nuevo. Los correos que tu Machine te envía, como tu resumen de la mañana o un aviso de arreglo, nunca se leen ni se listan.
+
 ## Los botones
 
 Una tarea muestra su siguiente paso, como **Hazlo** o **Revisar y enviar**, con **Posponer** al lado. Consulta [Hazlo](do-it.md) y [Posponer](snooze.md).

@@ -9,7 +9,7 @@ import urllib.parse
 import bounces
 from machine.sources.exclusions import email_subject_excluded
 from machine.sources.rows import SKIPPED, Skips
-from machine.text import QUOTED_HISTORY_KEPT, email_body, trim_quoted_history
+from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_history
 from sources import SourceError, gog_read
 from timeutil import now
 
@@ -40,7 +40,8 @@ class Gmail:
 def list_headers(headers):
     """What says a message went to a list: List-Unsubscribe (only that it is there, never its link or address), List-Id
     and Precedence; X-Original-From (or -Sender), who wrote a mail a list relayed; and Auto-Submitted, that a program
-    sent it. Lowercased header names, as message_event reads them."""
+    sent it; X-The-Machine, that The Machine's own mailer sent it (machine_notice). Lowercased header names, as
+    message_event reads them."""
     found = {}
     if headers.get('list-unsubscribe', '').strip():
         found['list_unsubscribe'] = True
@@ -53,7 +54,33 @@ def list_headers(headers):
         found['original_from'] = ' '.join(original.split())[:300]  # who wrote it, when a list relayed it (a Google Group)
     if headers.get('auto-submitted', '').strip().lower() not in ('', 'no'):
         found['auto_submitted'] = True  # an auto-reply or other mail a program sent (RFC 3834)
+    if headers.get(NOTICE_HEADER, '').strip():
+        found['machine_notice'] = True  # The Machine's own mailer sent it (machine_notice)
     return found
+
+
+# The Machine's own mail to its owner: the morning digest and what still waits (notify.mail), fix notices and the
+# other notices the control plane's mailer sends. That mailer sends from NOTICE_DOMAIN and stamps NOTICE_HEADER.
+NOTICE_HEADER = 'x-the-machine'
+NOTICE_DOMAIN = 'themachine.computer'
+NOTICE_SENDERS = frozenset({'no-reply', 'noreply'})  # only ever a program; support@ can be a person, so it needs the header
+MAIL_KINDS = frozenset({'gmail.message', 'ms_graph.message', 'outlook.message'})
+
+
+def machine_notice(kind, metadata):
+    """Mail The Machine itself sent the owner, known by its sender (an address at NOTICE_DOMAIN) together with its
+    mailer's header or its no-reply address, never by its words. It is The Machine telling the owner about to-dos the
+    dashboard already has: never read by the review (Store.commit_page marks it reviewed), so it costs no model turn and
+    never shows in the last check's list. Both parts are needed: the header alone anyone can add, and a person can
+    write from support@."""
+    if kind not in MAIL_KINDS or not isinstance(metadata, dict):
+        return False
+    if set(metadata.get('labels') or ()) & {'SENT', 'DRAFT'} or metadata.get('from_me'):
+        return False
+    local, _, domain = _address(metadata.get('from')).rpartition('@')
+    if not local or not (domain == NOTICE_DOMAIN or domain.endswith('.' + NOTICE_DOMAIN)):
+        return False
+    return bool(metadata.get('machine_notice')) or local in NOTICE_SENDERS
 
 
 ATTACHMENTS_LISTED = 10  # names kept per message

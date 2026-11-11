@@ -60,6 +60,8 @@ Après une vérification qui a lu de nouveaux e-mails, une ligne au-dessus de vo
 
 Touchez la ligne pour voir chaque conversation : qui a écrit, l’objet, et sa nouvelle tâche ou pourquoi rien n’était nécessaire, comme « Seulement en copie, un collègue répond » ou « Rendez-vous déjà fixé jeudi ». Une conversation n’affiche aucune raison quand la vérification n’en a donné qu’une vague. La ligne reste 12 heures après la vérification.
 
+Elle ne compte que les e-mails qui vous sont adressés. Vos propres réponses sont lues pour le contexte et les promesses, mais ne sont pas de nouveaux e-mails. Les e-mails que votre Machine vous envoie, comme votre résumé du matin ou un avis de correction, ne sont jamais lus ni listés.
+
 ## Les boutons
 
 Une tâche affiche son étape suivante, comme **Faire** ou **Vérifier et envoyer**, avec **Mettre en attente** à côté. Voir [Faire](do-it.md) et [Mettre en attente](snooze.md).
