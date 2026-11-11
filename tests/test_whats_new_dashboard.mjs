@@ -149,14 +149,16 @@ try{
  news=null;
  {const {context,page}=await open(1440);await page.waitForTimeout(1200);assert.equal(await page.locator('#whats-new').count(),0);await context.close()}
  // Never over another dialog: it waits for the next opening, and nothing is marked seen
- news={entries:[ROUTINES]};seen=0;
- {const {context,page}=await open(1440);await page.evaluate(()=>palOpen());await tried(page);
+ // (news comes with a refresh after the other dialog is up: a slow first load can't let it in before)
+ news=null;seen=0;
+ {const {context,page}=await open(1440);await page.evaluate(()=>palOpen());news={entries:[ROUTINES]};await page.evaluate(()=>refresh());await tried(page);
   assert.equal(await dialog(page).count(),0);assert.ok(await page.evaluate(()=>document.querySelector('#palette').open));
   await page.keyboard.press('Escape');await page.evaluate(()=>refresh());await page.waitForTimeout(900);assert.equal(await dialog(page).count(),0);
   assert.equal(seen,0);await context.close()}
  // Nor over an open to-do (its chat), while typing, or during the hello of someone's first views
  {const {context,page}=await open(1440,'#chat='+ID);await tried(page);assert.equal(await page.evaluate(()=>chatId),ID);assert.equal(await dialog(page).count(),0);await context.close()}
- {const {context,page}=await open(1440);await page.evaluate(()=>{const i=document.createElement('textarea');i.id='typing';document.body.append(i);i.focus()});await tried(page);
+ news=null;{const {context,page}=await open(1440);await page.evaluate(()=>{const i=document.createElement('textarea');i.id='typing';document.body.append(i);i.focus()});
+  news={entries:[ROUTINES]};await page.evaluate(()=>refresh());await tried(page);
   assert.equal(await dialog(page).count(),0);await context.close()}
  greeting={name:'Sam'};
  {const {context,page}=await open(1440);await tried(page);assert.equal(await dialog(page).count(),0);await context.close()}
