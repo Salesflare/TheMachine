@@ -9,7 +9,8 @@ Read only, from what the Machine already keeps; no table of its own and no model
 - two identities a review joined as one person (graph_merges, source not the owner's);
 - Work or Personal set by a new rule (side_changes);
 - a project moved by a review (project_moves), with Undo back to the stage before while it still stands there;
-- a project on no board its proof marked done (project_success), with Undo (Reopen) while it stays done;
+- a project on no board its proof marked done (project_success), with Undo (Reopen) while it stays done, or opened
+  again when its Done when changed past that proof (reopened);
 - facts about them (facts, fact_about), "updated" when a newer note condensed older ones (merged_into);
 - a connected AI's change to the record (ai_writes), with its Undo while nothing changed it since.
 
@@ -136,10 +137,14 @@ def _project(db, row, out, wanted):
         out.append(item)
         wanted.add(m['event_id'])
     try:
-        done = db.execute("SELECT marked_at,evidence_event_id FROM project_success WHERE project_id=? AND marked_by='evidence'", (project_id,)).fetchone()
+        done = db.execute("SELECT marked_by,marked_at,evidence_event_id FROM project_success WHERE project_id=? AND marked_by IN ('evidence','changed')",
+                          (project_id,)).fetchone()
     except sqlite3.OperationalError:
         done = None  # no project_success yet
-    if done and done['marked_at']:
+    if done and done['marked_at'] and done['marked_by'] == 'changed':  # its Done when changed past the proof that marked it done
+        out.append({'kind': 'reopened', 'at': done['marked_at'], 'event': done['evidence_event_id']})
+        wanted.add(done['evidence_event_id'])
+    elif done and done['marked_at']:
         import graph
         project = db.execute('SELECT * FROM projects WHERE id=?', (project_id,)).fetchone()
         item = {'kind': 'done', 'at': done['marked_at'], 'event': done['evidence_event_id'], 'deal': __import__('project_success').is_deal(db, project)}
@@ -176,7 +181,7 @@ def _ai(db, node_id, out):
 
 def recent(db, row, limit=LIMIT):
     """[{'kind', 'at', …, 'source', 'act'}] for a person's, organization's or project's page, newest first. kind:
-    role, role_fix, org, member, relation, joined, side, move, done, fact, ai. source: {'type': 'event', 'id', 'via',
+    role, role_fix, org, member, relation, joined, side, move, done, reopened, fact, ai. source: {'type': 'event', 'id', 'via',
     'from' or 'mine'}, {'type': 'note', 'card', 'title'}, {'type': 'ai', 'name'}, {'type': 'quote', 'text'} (the line a role was
     read in, when its message isn't at hand) or {'type': 'line', 'via'}. act: what
     the page's own correction for it needs (edit, unrelate, split, stage, reopen, ai_undo); none when there is nothing to undo."""

@@ -293,6 +293,61 @@ class OffBoard(Fixture, unittest.TestCase):
         _, success, _ = self.page(node)
         self.assertEqual((success['done'], success['blocker']), (True, None))
 
+    def test_a_new_done_when_reaches_its_to_do_and_drops_what_the_old_one_said(self):
+        node, pitch = self.plan('The partner page is live with a link to us', 'link')
+        said, = self.add(mail(30, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'It is up now.', thread='gp'))
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET occurred_at=? WHERE id=?', ((NOW - dt.timedelta(days=12)).isoformat(), pitch))
+            self.store.project_blockers(db)
+        self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': said, 'reason': 'Lee says it is up'}])
+        self.assertEqual(self.page(node)[1]['not_proven'], 'no_url')
+        with self.store.connect() as db:
+            graph.save_project(db, {'node_id': node, 'condition': 'Lee pays the invoice', 'proof': 'message'}, NOW.isoformat())
+            todo = db.execute("SELECT done_when,done_when_by,body FROM suggestions WHERE dedupe_key LIKE 'project-success:%'").fetchone()
+        # The blocker to-do waits for the new result, and why the old one wasn't proven is gone with it
+        self.assertEqual((todo['done_when'], todo['done_when_by'], todo['body']), ('Lee pays the invoice', 'project', 'Done when: Lee pays the invoice'))
+        self.assertIsNone(self.page(node)[1]['not_proven'])
+        with self.store.connect() as db:  # a line the run set (the owner's word in its chat) stays theirs
+            db.execute("UPDATE suggestions SET done_when='Paid in full',done_when_by='run' WHERE dedupe_key LIKE 'project-success:%'")
+            graph.save_project(db, {'node_id': node, 'condition': 'Lee pays the deposit'}, NOW.isoformat())
+            self.assertEqual(db.execute("SELECT done_when FROM suggestions WHERE dedupe_key LIKE 'project-success:%'").fetchone()[0], 'Paid in full')
+
+    def test_a_done_its_proof_made_follows_the_goal_and_a_done_by_hand_stays(self):
+        node, _ = self.plan()
+        yes, = self.add(mail(2, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'Your guest post is published today.', thread='gp'))
+        self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': yes, 'reason': 'Lee says it is published'}])
+        with self.store.connect() as db:  # the same goal in other letters: still done
+            graph.save_project(db, {'node_id': node, 'condition': 'lee confirms the guest post is published'}, NOW.isoformat())
+        self.assertEqual(self.page(node)[0]['outcome'], 'won')
+        with self.store.connect() as db:  # now it asks for a live page, which a message alone never proved
+            graph.save_project(db, {'node_id': node, 'condition': 'lee confirms the guest post is published', 'proof': 'link'}, NOW.isoformat())
+        card, success, log = self.page(node)
+        self.assertEqual((card['outcome'], success['done']), (None, False))
+        line = next(x for x in log if x['kind'] == 'reopened')
+        self.assertEqual((line['source']['id'], 'act' in line, [x for x in log if x['kind'] == 'done']), (yes, False, []))
+        # A newer message that meets the new goal marks it done again
+        live, = self.add(mail(1, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', f'It is live: {LIVE}', thread='gp'))
+        self.pages[LIVE] = b'<html><a href="https://quillfeather.example">Quillfeather</a></html>'
+        self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': live, 'reason': 'Lee says it is live', 'url': LIVE}])
+        self.assertEqual(self.page(node)[1]['done_by'], 'evidence')
+        with self.store.connect() as db:  # the goal reworded: that proof was for another goal
+            graph.save_project(db, {'node_id': node, 'condition': 'Lee links us from the homepage'}, NOW.isoformat())
+        self.assertIsNone(self.page(node)[0]['outcome'])
+        # The owner's Done stands whatever the goal becomes
+        with self.store.connect() as db:
+            graph.set_outcome(db, node, 'won', '', NOW.isoformat())
+            graph.save_project(db, {'node_id': node, 'condition': 'Something else entirely', 'proof': 'message'}, NOW.isoformat())
+        _, success, _ = self.page(node)
+        self.assertEqual((self.page(node)[0]['outcome'], success['done_by']), ('won', 'owner'))
+        # A review that sends a new goal with its proof in one entry ends done by that proof
+        with self.store.connect() as db:
+            graph.set_outcome(db, node, None, '', NOW.isoformat())
+            db.execute('UPDATE project_success SET reopened_at=NULL WHERE project_id=?', (int(node.split(':')[1]),))
+        again, = self.add(mail(0.5, 'Lee <lee@bramblebox.example>', 'robin@quillfeather.example', 'Homepage link added.', thread='gp'))
+        done = self.review([{'project': 'Bramblebox guest post', 'done': True, 'event_id': again, 'reason': 'Lee added the link',
+                             'condition': 'Lee says the homepage links to us'}])
+        self.assertEqual(done['stages'][0].get('outcome'), 'won')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -72,7 +72,7 @@ Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht e
 
 **Fertig, wenn** unter **Bearbeiten** bei jedem Projekt, auf einem Board oder nicht, sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Prüfungen schlagen eine für Partner-Einträge vor.
 
-Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite. Ein Projekt ohne Board wird stattdessen als erledigt markiert, mit **Rückgängig** in seinem **⋯** unter Letzte Änderungen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
+Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite. Ein Projekt ohne Board wird stattdessen als erledigt markiert, mit **Rückgängig** in seinem **⋯** unter Letzte Änderungen. Änderst du **Fertig, wenn** später und passt der Beleg nicht mehr, wird es wieder geöffnet; seine Aufgabe folgt dem neuen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
 
 ## Pipeline
 

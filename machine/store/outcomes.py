@@ -6,7 +6,9 @@ sealed), like a project's success condition (project_success.py):
 
 - who sets it: a review (suggest done_when), the to-do's run (save done_when, also from what the owner said in its chat;
   '' clears it), a promise of someone else's that became a to-do (what they promised), and a project's blocker to-do
-  (the project's condition). The run's word stands over a review's; a review only fills one nobody set.
+  (the project's condition, which it follows when that changes: follow_project). The run's word stands over a review's;
+  a review fills one nobody set, or revises its own (or a promise's or project's) when newer messages change the goal
+  and it suggests with card_id (status shows each open to-do's done_when).
 - after the owner's part went out (settle_sent, a delegated reply in settle_awaiting, a teammate's Machine accepting a
   handoff), a to-do with a done when isn't done: it waits under Waiting on others (outcome 'waiting', as the review's
   waiting_on, machine.cards.waits_on_others) with the time to chase them (until).
@@ -129,6 +131,19 @@ def project_proof(db, todo_id, condition, event_id, stamp):
             return None
         return result_seen(db, row, condition, [event_id], stamp)
     return None
+
+
+def follow_project(db, todo_id, before, after):
+    """The project's Done when changed: its blocker to-do, which carries it (set by 'project'), tracks the new one while
+    open, and its "Done when:" body with it. One a review or the run set since stays theirs. True when it changed."""
+    row = db.execute('SELECT status,done_when_by,body FROM suggestions WHERE id=?', (todo_id,)).fetchone()
+    if not row or row['status'] in ('completed', 'rejected') or row['done_when_by'] != 'project':
+        return False
+    after = clean(after)
+    db.execute('UPDATE suggestions SET done_when=?,done_when_by=? WHERE id=?', (after or None, 'project' if after else None, todo_id))
+    if after and before and row['body'] == i18n.t('Done when: {}', before)[:690]:
+        db.execute('UPDATE suggestions SET body=? WHERE id=?', (i18n.t('Done when: {}', after)[:690], todo_id))
+    return True
 
 
 def theirs_line(who, what):
