@@ -70,6 +70,8 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 - wie viele weitere warten können und wie lange sie in deinem Tempo dauern, etwa "12 weitere können warten, etwa 5 Min. zum Erledigen." Aufgaben, die auf deine Antwort warten, zählen bei der Zeit nicht mit.
 - deine Termine in einer Zeile.
 
+Öffnen zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat.
+
 Der Push sagt dasselbe ohne Links. Tippst du darauf, öffnet sich heute im **Kalender**.
 
 ## Datenschutz

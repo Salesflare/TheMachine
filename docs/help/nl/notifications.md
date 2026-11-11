@@ -69,6 +69,8 @@ Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets t
 - hoeveel er nog kan wachten en hoe lang dat op jouw tempo duurt, zoals "12 andere kunnen wachten, ongeveer 5 min werk." To-do's die op je antwoord wachten, tellen niet mee in die tijd.
 - je afspraken in één regel.
 
+Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat.
+
 De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
 
 ## Privacy

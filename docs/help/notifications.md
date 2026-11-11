@@ -70,6 +70,8 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 - how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time.
 - your meetings in one line.
 
+Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat.
+
 The push says the same without links. Tap it to open today in the **Calendar**.
 
 ## Privacy

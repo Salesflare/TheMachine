@@ -69,6 +69,8 @@ Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il 
 - combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter." Les tâches qui attendent votre réponse ne comptent pas dans ce temps.
 - vos réunions en une ligne.
 
+Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mise en attente ou dans une autre vue, son chat s’ouvre.
+
 Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
 
 ## Confidentialité

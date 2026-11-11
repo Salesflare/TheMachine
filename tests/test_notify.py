@@ -486,10 +486,15 @@ class Notifications(unittest.TestCase):
     def test_the_summary_gives_each_line_one_open_link_and_telegram_drops_it(self):
         ready = [{'id': 'a1b2c3d4e5f60718', 'title': 'Send the reply to Robin'}]
         out = notify.compose([], [], [], 'https://m.example/', total=1, ready=ready, replies=['a1b2c3d4e5f60718'], name='Robin')
-        self.assertIn('• Send the reply to Robin · [Open](https://m.example/#chat=a1b2c3d4e5f60718)\n', out['text'])
+        # Open shows the to-do in the dashboard's list (#card=), its chat when it isn't there anymore (&or=chat)
+        self.assertIn('• Send the reply to Robin · [Open](https://m.example/#card=a1b2c3d4e5f60718&or=chat)\n', out['text'])
+        self.assertNotIn('#chat=', out['text'])
         self.assertEqual(out['subject'], 'Morning Robin, 1 reply is ready to send')
+        # Telegram gets the line without the link, the push no per-to-do link: it opens today in the Calendar
         self.assertIn('• Send the reply to Robin\n', notify.LINKS.sub('', out['text']))
+        self.assertNotIn('#chat=', notify.LINKS.sub('', out['text']))
         self.assertNotIn('[Open]', out['push']['body'])
+        self.assertEqual(out['push']['url'], 'https://m.example/' + notify.DIGEST_VIEW)
 
     def test_a_waiting_pile_gets_its_digest_in_the_dashboards_order(self):
         # It was skipped every morning while 17-19 to-dos waited: no meetings, nothing due or new overnight. A pile that
