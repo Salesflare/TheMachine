@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from seams import patch_everywhere  # noqa: E402
+from machine.store import facts
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 assistant = importlib.util.module_from_spec(spec)
@@ -92,6 +93,25 @@ class FactConsolidate(unittest.TestCase):
                      'Never prefers email over calls for contract questions.'):
             self.assertNotIn('merged', self.store.remember_fact(text, 'owner-note'))
         self.assertEqual(len(self.current()), 4)
+
+    def test_the_same_words_in_another_order_that_change_the_meaning_stay_apart(self):
+        for first, second in (('Pay the contractor before the landlord each month.', 'Pay the landlord before the contractor each month.'),
+                              ('Prefers email over phone calls.', 'Prefers phone calls over email.'),
+                              ('Send the summary to the client, then the board.', 'Send the summary to the board, then the client.'),
+                              ('Quarterly reports go out after the invoices are checked.', 'Invoices go out after the quarterly reports are checked.')):
+            with self.subTest(second=second):
+                self.assertIsNone(facts.rewords(second, first))
+                self.assertIsNone(facts.rewords(first, second))
+        old = self.store.remember_fact('Pay the contractor before the landlord each month.', 'owner-note')['id']
+        new = self.store.remember_fact('Pay the landlord before the contractor each month.', 'owner-note')
+        self.assertNotIn('duplicate', new)
+        self.assertEqual(sorted(self.current()), sorted([old, new['id']]))
+
+    def test_clauses_that_only_move_still_count_as_other_words(self):
+        self.assertEqual(facts.rewords(REWORDED, RULE), 'more')
+        self.assertEqual(facts.rewords(SAME, RULE), 'less')
+        self.assertEqual(facts.rewords('Lead with the partner’s concrete benefit before the ask in listing exchange emails.', RULE), 'less')
+        self.assertEqual(facts.rewords('Invoices go to finance on the first working day.', 'On the first working day, invoices go to finance.'), 'less')
 
     def test_the_condense_pass_is_told_which_ones_are_close_in_meaning(self):
         ids = [self.store.remember_fact(t, 'owner-note', 'draft')['id'] for t in
