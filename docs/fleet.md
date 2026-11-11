@@ -256,8 +256,14 @@ Priya". It covers:
 - email waiting on the team, and for how long, checked against everyone's replies and "is on it" claims (mail from
   today, and mail only to you younger than two days, isn't waiting yet);
 - meetings with the same company on several calendars;
-- companies several of you are in touch with;
+- companies where two or more of you are on separate threads with the same people there ("You and Priya are both in
+  touch with Globex");
 - companies that went quiet, when several of you knew them or they are a customer.
+
+**Both in touch** means a real chance of talking past each other: each of you took part yourselves (wrote, met, or
+answered in a shared inbox), on separate threads, with the same person at the company. One thread you are all on (cc'd)
+is already one thread. Different people there, mail that only came in, automated mail, and a support conversation a
+teammate handled don't count.
 
 **Only what involves the team.** A waiting email counts when the review made a to-do of it that is still open, and it
 went to two or more of you, to a shared address of the team (sales@, info@, a group), comes from a company a teammate
@@ -265,14 +271,17 @@ is in touch with, or from a customer. Each line says which. Mail only you got, f
 To-dos. Cold sales, newsletters and notifications never count.
 
 **On the dashboard.** Five lines show (**Show more** for the rest), each with **Ask** (a question for the Fleet), **Open**
-(that company's mail, when it came to you) and **Not needed**. When nothing needs the team it says so in one line. It
+(that company's mail, when it came to you) and **Not needed**. Not needed on a "both in touch" line is remembered: the
+same people of the team on the same threads with that company aren't flagged again (also as those threads go on), a
+new separate thread is. When nothing needs the team it says so in one line. It
 is told once, within your work hours, once everyone answered or two hours passed. Teammates who haven't answered are
 listed. It is put together by plain code, never a model.
 
 **What each Machine shares** is aggregate only: company names and domains, counts, last-touch dates, hashes of emails
 and meetings keyed with the Fleet's secret, which members an email went to (as hashes), the name of a shared address
-("sales") and whether the company is a customer. No subjects, message text, outside people, addresses or calendar
-titles.
+("sales") and whether the company is a customer. For companies where you took part yourself, also hashes of up to three
+of those threads (their newest messages or the conversation) and of the people there on them, so briefs can tell one
+thread from separate ones. No subjects, message text, names, addresses or calendar titles.
 
 ### Brief facts follow the Team Graph
 

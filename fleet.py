@@ -15,7 +15,8 @@ with a long poll. A Work Fleet asks three things:
   Not needed). A teammate's open card on the same email then shows who already handled it (handled_round).
 - brief: "what the Fleet saw", daily or weekly. Each teammate's Machine answers with aggregate facts only (companies
   with counts and last-touch dates, which went quiet, hashes of unanswered and answered inbound emails, hashes of
-  meetings with outside people); the asking Machine assembles the brief by plain code (brief_facts, assemble_brief).
+  meetings with outside people); the asking Machine assembles the brief by plain code (brief_facts here, assemble_brief
+  and its lines in fleet_brief.py).
   Only what involves the team: mail the review said needs a reply that went to two of you, to a shared address, or
   comes from a company a teammate knows or a customer. Mail only you got from someone only you know stays in Suggestions.
 - anything: a free-text question ("has anyone dealt with Stripe disputes?"). Untrusted text: it is only searched for in
@@ -53,7 +54,7 @@ import urllib.parse
 import urllib.request
 
 import graph
-import locale_prefs
+from fleet_brief import BRIEF_SHOWN, assemble_brief, brief_items, brief_text, gmail_search, settled
 from machine import stamps
 from machine.timing import _REQUEST_TIMING
 import ms_graph
@@ -126,9 +127,12 @@ BRIEF_BYTES = 30000  # under what the relay carries for a brief
 BRIEF_EVERY = ('off', 'day', 'week')
 BRIEF_SETTLE = 7200      # seconds after asking: the brief is told then, or once everyone answered, within work hours
 BRIEF_REBUILD = 1800     # an assembled brief is rebuilt at most this often while nothing new came in
+BRIEF_LEARNED_DAYS = 90  # an overlap Not needed settled stays settled this long after it last came up
 UNANSWERED_DAYS = 14     # inbound emails this recent count for "nobody answered"
 FREE_CHARS, FREE_ANSWER_CHARS, FREE_OPEN, FREE_WAIT_HOURS = 300, 600, 3, 24
 HASH = re.compile(r'[0-9a-f]{64}')
+MARK = re.compile(r'[0-9a-f]{32}')  # _short: a thread's or a person's hash in a brief
+THREADS_SHARED, MARKS_SHARED, PEOPLE_SHARED = 3, 4, 3  # per company in a brief: threads the owner took part in, and per thread
 STOP_WORDS = set('''a an and any anyone anybody are as at be been but by can could did do does done dealt deal dealing for from had has
 have having how i if in into is it its know knows me my no not of on or our ours please so some someone somebody that the their them
 there these they this those to us was we were what when where which who whom why will with would you your yours ever about'''.split())
@@ -945,11 +949,46 @@ def _tokens(address):
     return {t for t in re.split(r'[._+-]', address.split('@', 1)[0]) if len(t) > 1}
 
 
+def _short(secret, *parts):
+    """A shorter hash keyed by the Fleet's secret, for what a brief compares across Machines (threads, people)."""
+    return _hash(secret, *parts)[:32]
+
+
+def took_part(kind, m, mine):
+    """Whether the owner took part in one signal themselves: wrote it, is at the meeting, or wrote in a shared-inbox
+    conversation. Mail that only came in, an automated one, and a support conversation a teammate handled don't."""
+    if kind == 'gmail.message':
+        sender = (graph.addresses(m.get('from')) or [('', '')])[0][1]
+        return ('SENT' in set(m.get('labels') or ()) or sender in mine) and not graph.automated(m)
+    if kind == 'calendar.event':
+        return m.get('status') != 'cancelled' and any(
+            isinstance(a, dict) and (a.get('self') or str(a.get('email') or '').lower() in mine) and a.get('responseStatus') != 'declined'
+            for a in m.get('attendees') or ())
+    if kind in ('intercom.conversation', 'fleet.intercom'):
+        wrote = m.get('admin_emails') if isinstance(m.get('admin_emails'), dict) else {}
+        return bool({str(v).lower() for v in wrote.values()} & mine)
+    return m.get('from_me') is True
+
+
+def _thread_marks(secret, kind, m, account_id, source_id):
+    """(thread, marks): the thread a signal is in on this Machine, and hashes another Machine finds for the same
+    thread. Mail: its Message-ID and the one it answers (the same in every mailbox it reached); else the
+    conversation, channel thread or meeting id."""
+    if kind == 'gmail.message':
+        ids = {str(m.get(h) or '').strip().strip('<>').lower() for h in ('message-id', 'in-reply-to')} - {''}
+        return f"{account_id}:{m.get('thread_id') or source_id}", {_short(secret, 'message', i) for i in ids}
+    key = graph.thread_key(kind, m)[0] or (f"cal:{source_id}" if kind == 'calendar.event' else f"{kind}:{source_id}")
+    return f"{account_id}:{key}", {_short(secret, 'thread', key)}
+
+
 def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine=(), allowed=None):
     """What this Machine adds to a teammate's brief: aggregate facts from the given (work) accounts only. Company
     names and domains, counts and dates, and hashes keyed by the Fleet's secret (an email's like a claim's, a meeting's
     of its calendar id), never a message, a subject, a person, an address or a calendar title.
-    - touched: companies in contact since `since`, with how many signals and the last day;
+    - touched: companies in contact since `since`, with how many signals and the last day. Where the owner took part
+      themselves (took_part), also the last such day (`active`) and up to THREADS_SHARED of those threads, each as
+      hashes of its messages (or conversation) and of the people at the company on it: enough for assemble_brief to
+      tell separate threads with the same people from one thread several of you are on;
     - quiet: companies of people the graph says went quiet (silent much longer than usual), with the last day;
     - unanswered: inbound emails of the last UNANSWERED_DAYS that the review judged need something (an open card on
       them), with no reply in their thread yet. Each says which Fleet members it was sent to (hashes of their addresses,
@@ -965,13 +1004,13 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
     if not accounts:
         return out
     marks = ','.join('?' * len(accounts))
-    nodes = {}
+    nodes = {}  # person -> their addresses, for someone the owner works with
 
     def domains(node_id):
         if node_id not in nodes:
             row = db.execute("SELECT * FROM graph_nodes WHERE id=? AND kind='person'", (node_id,)).fetchone()
-            nodes[node_id] = sorted({e.rsplit('@', 1)[1] for e in _emails(row) if not graph.bulk(e)} if row and _engaged(row) else set())
-        return [d for d in nodes[node_id] if _outside(d, internal)]
+            nodes[node_id] = sorted(e for e in _emails(row) if not graph.bulk(e)) if row and _engaged(row) else []
+        return [d for d in sorted({e.rsplit('@', 1)[1] for e in nodes[node_id]}) if _outside(d, internal)]
     known = {}
     cards = db.execute("SELECT event_ids,status FROM suggestions WHERE created_at>=?", ((today - dt.timedelta(days=UNANSWERED_DAYS + 7)).isoformat(),)).fetchall() \
         if _has_table(db, 'suggestions') else []
@@ -1003,18 +1042,33 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
             known[address] = bool(row and _engaged(row))
         return known[address]
     touched = {}
-    for row in db.execute(f"SELECT g.node_id,e.id,e.occurred_at,e.account_id,e.kind,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id "
+    for row in db.execute(f"SELECT g.node_id,e.id,e.source_id,e.occurred_at,e.account_id,e.kind,e.metadata FROM graph_events g JOIN events e ON e.id=g.event_id "
                           f"JOIN graph_nodes n ON n.id=g.node_id WHERE e.deleted=0 AND e.occurred_at>=? AND e.occurred_at<? AND e.account_id IN ({marks}) "
                           "AND n.kind='person'", (since, (today + dt.timedelta(days=1)).isoformat(), *accounts)):
         node_id, event_id, at = row['node_id'], row['id'], row['occurred_at']
         if not ok(row):
             continue
         for domain in domains(node_id)[:1]:
-            seen = touched.setdefault(domain, {'events': set(), 'last': ''})
+            seen = touched.setdefault(domain, {'events': set(), 'last': '', 'threads': {}})
             seen['events'].add(event_id)
             seen['last'] = max(seen['last'], str(at)[:10])
+            m = json.loads(row['metadata'] or '{}')
+            thread, found = _thread_marks(secret, row['kind'], m, row['account_id'], row['source_id'])
+            entry = seen['threads'].setdefault(thread, {'marks': {}, 'people': set(), 'active': ''})
+            for mark in found:
+                entry['marks'][mark] = max(entry['marks'].get(mark, ''), str(at))
+            entry['people'] |= {_short(secret, 'person', e) for e in nodes.get(node_id) or () if e.rsplit('@', 1)[1] == domain}
+            if took_part(row['kind'], m, mine):
+                entry['active'] = max(entry['active'], str(at)[:10])
     for domain, seen in sorted(touched.items(), key=lambda kv: (-len(kv[1]['events']), kv[0]))[:40]:
-        out['touched'].append({'org': _org_name(db, domain), 'domain': domain, 'count': len(seen['events']), 'last': day(seen['last'])})
+        item = {'org': _org_name(db, domain), 'domain': domain, 'count': len(seen['events']), 'last': day(seen['last'])}
+        active = sorted((t for t in seen['threads'].values() if t['active']), key=lambda t: t['active'], reverse=True)
+        if active:  # the first and newest marks of each thread: what another Machine on the same thread has too
+            ends = lambda found: sorted(set(found[:MARKS_SHARED // 2] + found[-(MARKS_SHARED - MARKS_SHARED // 2):]))
+            item.update(active=day(active[0]['active']), threads=[
+                {'marks': ends(sorted(t['marks'], key=t['marks'].get)), 'people': sorted(t['people'])[:PEOPLE_SHARED]}
+                for t in active[:THREADS_SHARED]])
+        out['touched'].append(item)
     quiet = {}
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' AND quiet=1 ORDER BY strength DESC LIMIT 200"):
         last = _work_last(db, row['id'], accounts) if allowed is None else _shared_last(db, row['id'], accounts, ok)
@@ -1206,12 +1260,27 @@ def _brief_extras(raw, kept):
     return out
 
 
+def _brief_threads(raw, kept):
+    """The optional `active` day and `threads` of touched items (brief_facts), by shape: hashes only."""
+    raw = [r for r in (raw if isinstance(raw, list) else []) if isinstance(r, dict)]
+    marks = lambda v, n: sorted({h for h in (v if isinstance(v, list) else [])[:n] if isinstance(h, str) and MARK.fullmatch(h)})
+    out = []
+    for item in kept:
+        found = next((r for r in raw if r.get('domain') == item['domain']), {})
+        threads = [{'marks': marks(t.get('marks'), MARKS_SHARED), 'people': marks(t.get('people'), PEOPLE_SHARED)}
+                   for t in (found.get('threads') if isinstance(found.get('threads'), list) else [])[:THREADS_SHARED] if isinstance(t, dict)]
+        threads = [t for t in threads if t['marks'] and t['people']]
+        active = day(found.get('active'))
+        out.append({**item, **({'active': active, 'threads': threads} if active and threads else {})})
+    return out
+
+
 def clean_brief(answer):
     """A teammate's brief facts, kept to the fields brief_facts sends: anything else (text, names, addresses) is dropped."""
     if not isinstance(answer, dict):
         return None
     replied = answer.get('replied') if isinstance(answer.get('replied'), list) else []
-    return {'touched': _brief_items(answer.get('touched'), ('org', 'domain', 'count', 'last'), 40),
+    return {'touched': _brief_threads(answer.get('touched'), _brief_items(answer.get('touched'), ('org', 'domain', 'count', 'last'), 40)),
             'quiet': _brief_extras(answer.get('quiet'), _brief_items(answer.get('quiet'), ('org', 'domain', 'last'), 20)),
             'unanswered': _brief_extras(answer.get('unanswered'), _brief_items(answer.get('unanswered'), ('org', 'domain', 'key', 'at'), 25)),
             'replied': [k for k in replied[:60] if isinstance(k, str) and HASH.fullmatch(k)],
@@ -1472,260 +1541,6 @@ def answer_text(kind, answer):
                 bit += f"; {label}: {x['what']}" + (f" by {x['due']}" if x.get('due') else '')
         lines.append(bit)
     return '; '.join(lines) if lines else 'doesn’t know them'
-
-
-def assemble_brief(own, answers, claimed=(), members=None):
-    """"What the Fleet saw", by plain code from cleaned facts: this Machine's own (as "You") and each teammate's that
-    answered [(name, facts)]. Only what involves the team; nothing here reaches a model. `members` names the hashes of
-    Fleet members' addresses ("You" for the owner's own).
-    - quiet: companies that went quiet, that nobody was in touch with in the period, and that two or more of you knew
-      or that are a customer;
-    - several: companies two or more of you were in touch with;
-    - unanswered: inbound emails the review said need something that nobody answered or claimed, and only when they
-      involve the team: sent to two or more of you, to a shared address of the team, from a company another of you
-      is in touch with, or from a customer. Mail only you got from someone only you
-      know is for Suggestions, not here;
-    - meetings: the same meeting on several calendars, or several of you meeting one company."""
-    everyone = [('You', own)] + list(answers)
-    members = members or {}
-    orgs, touched, talks = {}, {}, {}
-
-    def named(domain, org):  # a real company name wins over a bare domain, whoever has it
-        if orgs.get(domain, domain) == domain:
-            orgs[domain] = org
-    for name, facts in everyone:
-        for t in facts['touched']:
-            named(t['domain'], t['org'])
-            entry = touched.setdefault(t['domain'], {'who': {}, 'last': ''})
-            entry['who'][name] = entry['who'].get(name, 0) + t['count']
-            entry['last'] = max(entry['last'], t['last'])
-            talks.setdefault(t['domain'], set()).add(name)
-        for m in facts['meetings']:
-            talks.setdefault(m['domain'], set()).add(name)
-    quiet = {}
-    for name, facts in everyone:
-        for q in facts['quiet']:
-            if q['domain'] in touched:
-                continue
-            named(q['domain'], q['org'])
-            entry = quiet.setdefault(q['domain'], {'who': [], 'last': '', 'known': ''})
-            if name not in entry['who']:
-                entry['who'].append(name)
-            entry['last'] = max(entry['last'], q['last'])
-            entry['known'] = entry['known'] or q.get('known') or ''
-    replied = {k for _, facts in everyone for k in facts['replied']} | set(claimed)
-    emails = {}
-    for name, facts in everyone:
-        for u in facts['unanswered']:
-            if u['key'] in replied:
-                continue
-            named(u['domain'], u['org'])
-            entry = emails.setdefault(u['key'], {'domain': u['domain'], 'at': u['at'], 'who': [], 'shared': set(), 'known': ''})
-            for who in [name] + [members[h] for h in u.get('team') or () if h in members]:
-                if who not in entry['who']:
-                    entry['who'].append(who)
-            entry['shared'] |= set(u.get('shared') or ())
-            entry['known'] = entry['known'] or u.get('known') or ''
-            entry['at'] = min(entry['at'], u['at'])
-    open_ = {}
-    for key, e in emails.items():
-        also = talks.get(e['domain'], set()) - set(e['who'])
-        if len(e['who']) < 2 and not e['shared'] and not also and not e['known']:
-            continue  # only you got it, from someone only you know: that's for Suggestions
-        entry = open_.setdefault(e['domain'], {'keys': set(), 'who': [], 'since': e['at'], 'shared': set(), 'also': set(), 'known': ''})
-        entry['keys'].add(key)
-        entry['since'] = min(entry['since'], e['at'])
-        entry['who'] += [w for w in e['who'] if w not in entry['who']]
-        entry['shared'] |= e['shared']
-        entry['also'] |= also
-        entry['known'] = entry['known'] or e['known']
-    by_key, by_domain = {}, {}
-    for name, facts in everyone:
-        for m in facts['meetings']:
-            named(m['domain'], m['org'])
-            same = by_key.setdefault(m['key'], {'domain': m['domain'], 'day': m['day'], 'who': []})
-            if name not in same['who']:
-                same['who'].append(name)
-            by_domain.setdefault(m['domain'], {}).setdefault(name, set()).add(m['day'])
-    meetings = [{'org': orgs[s['domain']], 'domain': s['domain'], 'day': s['day'], 'who': s['who'], 'same': True}
-                for s in by_key.values() if len(s['who']) > 1]
-    covered = {m['domain'] for m in meetings}
-    meetings += [{'org': orgs[d], 'domain': d, 'day': min(min(days) for days in who.values()), 'who': sorted(who), 'same': False}
-                 for d, who in by_domain.items() if len(who) > 1 and d not in covered]
-    return {'quiet': [{'org': orgs[d], 'domain': d, 'last': e['last'], 'who': e['who'], **({'known': e['known']} if e['known'] else {})}
-                      for d, e in sorted(quiet.items(), key=lambda kv: kv[1]['last']) if len(e['who']) > 1 or e['known']][:10],
-            'several': [{'org': orgs[d], 'domain': d, 'last': e['last'], 'who': [{'name': n, 'count': c} for n, c in e['who'].items()]}
-                        for d, e in sorted(touched.items(), key=lambda kv: (-len(kv[1]['who']), -sum(kv[1]['who'].values())))
-                        if len(e['who']) > 1][:10],
-            'unanswered': [{'org': orgs[d], 'domain': d, 'count': len(e['keys']), 'since': e['since'], 'who': e['who'],
-                            **({'shared': sorted(e['shared'])} if e['shared'] else {}),
-                            **({'also': sorted(e['also'] - set(e['who']))} if e['also'] - set(e['who']) else {}),
-                            **({'known': e['known']} if e['known'] else {})}
-                           for d, e in sorted(open_.items(), key=lambda kv: kv[1]['since'])][:10],
-            'meetings': sorted(meetings, key=lambda m: m['day'])[:10],
-            'from': [name for name, _ in answers]}
-
-
-BRIEF_SHOWN = 5  # items a brief shows before "Show more"
-
-
-def _brief_date(value):
-    try:
-        return dt.date.fromisoformat(str(value)[:10])
-    except ValueError:
-        return None
-
-
-def _on_day(value, today):
-    """A day as people say it: today, tomorrow, yesterday, Thu, Oct 12."""
-    d = _brief_date(value)
-    if not d:
-        return ''
-    gap = (d - today).days
-    if gap == 0:
-        return t('today')
-    if gap == 1:
-        return t('tomorrow')
-    if gap == -1:
-        return t('yesterday')
-    if -6 <= gap <= 6:
-        return locale_prefs.weekday_name(d)
-    return locale_prefs.day_text(d, weekday=False)
-
-
-def _waited(value, today):
-    d = _brief_date(value)
-    days = (today - d).days if d else 0
-    return days, (t('since yesterday') if days == 1 else t('{} days', days) if days < 7 else t('since {}', locale_prefs.day_text(d, weekday=False)))
-
-
-def _plain_name(label):
-    """A teammate's label as a name: without "(their@address)" or any address in it."""
-    text = re.sub(r'\([^)]*\)|<[^>]*>|\S+@\S+', ' ', str(label or ''))
-    return ' '.join(text.split()) or 'A teammate'
-
-
-def _first_names(view):
-    """Teammates by first name when that's unambiguous in this brief ("Priya" for Priya Okonedo), never an address."""
-    everyone = {w if isinstance(w, str) else w.get('name') for k in ('unanswered', 'several', 'meetings', 'quiet') for x in view.get(k) or []
-                for w in (x.get('who') or []) + (x.get('also') or [])} | set(view.get('from') or []) | set(view.get('missing') or [])
-    everyone = {str(n) for n in everyone if n and n != 'You'}
-    first = collections.Counter(_plain_name(n).split()[0] for n in everyone)
-    return {n: _plain_name(n).split()[0] if first[_plain_name(n).split()[0]] == 1 else _plain_name(n) for n in everyone}
-
-
-def _people(who, short=None, after=False):
-    """Names in a row, you first: 'you, Pat and Kim'. after: they follow a word ("sent to you"), which some languages
-    say differently ("jou", "dich")."""
-    who = sorted(who, key=lambda w: w != 'You')  # you first
-    names = [(t('you (after a word)') if after else t('you')) if w == 'You' else (short or {}).get(w, w) for w in who]
-    return names[0] if len(names) == 1 else ', '.join(names[:-1]) + t(' and {}', names[-1]) if names else ''
-
-
-def company(x):
-    """A company as people name it: the graph's name, else the domain's own name ("scribbl.co" → Scribbl)."""
-    org, domain = str(x.get('org') or ''), str(x.get('domain') or '')
-    if org and org.lower() != domain.lower():
-        return org
-    labels = domain.lower().split('.')
-    name = labels[-3] if len(labels) >= 3 and labels[-2] in ('co', 'com', 'org', 'net', 'ac', 'gov') else labels[0] if len(labels) < 3 else labels[-2]
-    return name[:1].upper() + name[1:] if name else domain
-
-
-def _cap(text):
-    return text[:1].upper() + text[1:]
-
-
-def gmail_search(domain):
-    return 'https://mail.google.com/mail/#search/' + urllib.parse.quote(f"from:{domain} in:inbox")
-
-
-KNOWN_WHY = {'customer': 'a customer'}  # read through t()
-
-
-def _team_why(x, people):
-    """Why a waiting email is the team's: who got it, a shared address, a teammate in touch, a customer. '' when none."""
-    who, also = x.get('who') or [], x.get('also') or []
-    why = []
-    if len(who) > 1 or (who and 'You' not in who):
-        why.append(t('sent to {}', people(who, True)))
-    if x.get('shared'):
-        why.append(t('to {} (a shared address)', ', '.join(f"{s}@" for s in x['shared'])))
-    if also:
-        why.append(t('{} also talks to them', people(also)) if len(also) == 1 and also[0] != 'You' else t('{} also talk to them', people(also)))
-    if x.get('known') in KNOWN_WHY:
-        why.append(t(KNOWN_WHY[x['known']]))
-    team = len(who) > 1 or x.get('shared') or also or x.get('known') in KNOWN_WHY
-    return ', '.join(why) if team else ''
-
-
-def brief_items(view, today=None, hidden=(), opener=None):
-    """The brief as a few ranked lines worth reading: who is waiting on the team and for how long, where several of you
-    are on the same company or meeting, and companies that went quiet that a teammate knows. Each item has a stable key
-    (for Not needed), a title, why it matters and, where the Fleet can help, a question to ask it. `opener(domain)` links
-    the owner's own waiting mail (a Gmail search by default). Plain code."""
-    opener = opener or gmail_search
-    today = today or dt.datetime.now(dt.timezone.utc).date()
-    short = _first_names(view)
-    people = lambda who, after=False: _people(who, short, after)
-    items = []
-    for x in view.get('unanswered') or []:
-        days, waited = _waited(x.get('since'), today)
-        who, also = x.get('who') or [], x.get('also') or []
-        team = [w for w in who if w != 'You']
-        if days < 1 or (not team and days < 2):  # today's mail isn't waiting yet; your own needs a couple of days
-            continue
-        several = len(who) > 1
-        why = _team_why(x, people)
-        if not why:  # only you got it, from someone only you know (a brief from before 2026-10-21): that's for Suggestions
-            continue
-        count = x.get('count') or 1
-        items.append({'key': 'unanswered:' + x['domain'], 'kind': 'waiting', 'score': 100 + min(days, 14) * 5 + (20 if several else 0),
-                      'title': t('{} is waiting for a reply', company(x)) + (t(' ({} emails)', count) if count > 1 else ''),
-                      'why': f"{waited}, {why}", 'ask': t('Who is answering {}?', company(x)),
-                      'open': opener(x['domain']) if 'You' in who else ''})
-    for x in view.get('meetings') or []:
-        d = _brief_date(x.get('day'))
-        soon = d is not None and 0 <= (d - today).days <= 3
-        items.append({'key': 'meeting:' + x['domain'] + ':' + str(x.get('day')), 'kind': 'meeting', 'score': (80 if soon else 50) + len(x['who']),
-                      'title': t('{} meet {} {} (a meeting in the brief)', _cap(people(x['who'])), company(x), _on_day(x.get('day'), today)).rstrip(),
-                      'why': t('the same meeting, so agree who leads') if x.get('same') else t('separate meetings, worth lining up'),
-                      'ask': t('Who leads with {}?', company(x))})
-    for x in view.get('several') or []:
-        who = [w['name'] for w in x.get('who') or []]
-        items.append({'key': 'several:' + x['domain'], 'kind': 'overlap', 'score': 60 + len(who),
-                      'title': t('{} are all in touch with {}', _cap(people(who)), company(x)) if len(who) > 2 else t('{} are both in touch with {}', _cap(people(who)), company(x)),
-                      'why': t('last contact {}, so keep it to one thread', _on_day(x.get('last'), today)), 'ask': t('Who leads with {}?', company(x))})
-    for x in view.get('quiet') or []:
-        who = x.get('who') or []
-        if len(who) < 2 and not x.get('known'):  # one of you, a company the team doesn't know (a brief from before 2026-10-21)
-            continue
-        why = [t('known to {}', people(who, True))] if len(who) > 1 else []
-        why += [t(KNOWN_WHY[x['known']])] if x.get('known') in KNOWN_WHY else []
-        items.append({'key': 'quiet:' + x['domain'], 'kind': 'quiet', 'score': 40 + (10 if len(who) > 1 else 0),
-                      'title': t('{} went quiet', company(x)),
-                      'why': ', '.join([t('last contact {}', _on_day(x.get('last'), today))] + why),
-                      'ask': t('Anyone in touch with {} lately?', company(x))})
-    hidden = set(hidden)
-    items = [i for i in items if i['key'] not in hidden]
-    items.sort(key=lambda i: -i['score'])
-    return items[:12]
-
-
-def brief_text(view, today=None, hidden=()):
-    """The brief as plain lines, for the Telegram message (the Fleet tab draws brief_items itself)."""
-    head = (t('Your Fleet this week') if view.get('every') == 'week' else t('Your Fleet today')) + (f" · {view['fleet_name']}" if view.get('fleet_name') else '')
-    items = brief_items(view, today, hidden)
-    lines = [head] + [f"• {i['title']}. {_cap(i['why'])}." for i in items[:BRIEF_SHOWN]]
-    if len(items) > BRIEF_SHOWN:
-        lines.append(t('…and {} more in the Fleet tab.', len(items) - BRIEF_SHOWN))
-    if not items:
-        lines.append(t('Nothing that needs the team.'))
-    told = view.get('from') or []
-    lines += ['', t('From {}.', _people(['You'] + told, _first_names(view), True)) if told else t('Only from your own Machine so far.')]
-    if view.get('missing'):
-        lines.append(t('Still to answer: {}.', _people(view['missing'], _first_names(view))))
-    return '\n'.join(lines)
 
 
 # ---------------------------------------------------------------- the Fleet on this Machine
@@ -2734,6 +2549,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         view.update(period=period, every=every, since=since, fleet=fleet, fleet_name=clean((self.fleets().get(fleet) or {}).get('name'), 80),
                     asked=len(rows), missing=[r['name'] for r in rows if r['status'] in ('asked', 'waiting')],
                     declined=[r['name'] for r in rows if r['status'] in ('declined', 'expired')])
+        self.learn_brief(fleet, view)  # threads of overlaps Not needed settled stay settled as they go on
         with self.connect() as db:
             db.execute('INSERT INTO fleet_briefs(fleet,period,every,view,answers,built_at) VALUES(?,?,?,?,?,?) '
                        'ON CONFLICT(fleet,period) DO UPDATE SET view=excluded.view,answers=excluded.answers,built_at=excluded.built_at',
@@ -2757,9 +2573,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             return None
         root = dashboard_root(self.config)
         try:
-            hidden = self.brief_hidden(fleet, period)
-            message_id = self.notify_brief(brief_text(view, local.date(), hidden), (root + '#fleet-brief=' + fleet) if root else '',
-                                           [i['title'] for i in brief_items(view, local.date(), hidden)])
+            hidden, learned = self.brief_hidden(fleet, period), self.brief_learned(fleet)
+            message_id = self.notify_brief(brief_text(view, local.date(), hidden, learned), (root + '#fleet-brief=' + fleet) if root else '',
+                                           [i['title'] for i in brief_items(view, local.date(), hidden, learned=learned)])
         except Exception as error:
             LOG.warning('fleet brief notify error=%s', type(error).__name__)
             message_id = None
@@ -2777,9 +2593,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         for row in rows:
             if row['fleet'] not in out:
                 view = json.loads(row['view'])
-                hidden = self.brief_hidden(row['fleet'], row['period'])
-                out[row['fleet']] = {**view, 'text': brief_text(view, self.local_now().date(), hidden), 'built_at': row['built_at'],
-                                     'items': brief_items(view, self.local_now().date(), hidden, self.brief_opener()), 'shown': BRIEF_SHOWN}
+                hidden, learned = self.brief_hidden(row['fleet'], row['period']), self.brief_learned(row['fleet'])
+                out[row['fleet']] = {**view, 'text': brief_text(view, self.local_now().date(), hidden, learned), 'built_at': row['built_at'],
+                                     'items': brief_items(view, self.local_now().date(), hidden, self.brief_opener(), learned), 'shown': BRIEF_SHOWN}
         return out
 
     def brief_opener(self):
@@ -2804,11 +2620,40 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
     def brief_hidden(self, fleet, period):
         return set(((self.meta('brief_hidden') or {}).get(fleet) or {}).get(period) or [])
 
+    def brief_learned(self, fleet):
+        """Overlaps ("both in touch") Not needed settled in this Fleet: {key: {'who', 'marks', 'at'}} (see settled)."""
+        return (self.meta('brief_learned') or {}).get(fleet) or {}
+
+    def learn_brief(self, fleet, view, key=None):
+        """Remembers what Not needed said of overlaps. With `key`: that overlap, its people of the team and its threads.
+        Without: the overlaps of a new brief it still settles add their threads' new marks, so a thread
+        that goes on stays settled (a reply carries the Message-ID it answers), and what is older than
+        BRIEF_LEARNED_DAYS goes."""
+        found = self.meta('brief_learned') or {}
+        mine = dict(found.get(fleet) or {})
+        cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=BRIEF_LEARNED_DAYS)).isoformat(timespec='seconds')
+        changed = False
+        for x in view.get('several') or []:
+            k = 'several:' + str(x.get('domain'))
+            if k == key:
+                who = sorted(w['name'] for w in x.get('who') or [])
+                old = mine.get(k) if set((mine.get(k) or {}).get('who') or ()) == set(who) else {}
+                marks = set((old or {}).get('marks') or ()) | {m for t in x.get('threads') or () for m in t}
+                mine[k], changed = {'who': who, 'marks': sorted(marks)[-200:], 'at': now()}, True
+            elif key is None and settled(mine, x):
+                more = {m for t in x.get('threads') or () for m in t} - set(mine[k].get('marks') or ())
+                if more:
+                    mine[k], changed = {**mine[k], 'marks': sorted(set(mine[k]['marks']) | more)[-200:], 'at': now()}, True
+        kept = {k: v for k, v in mine.items() if str(v.get('at') or '') >= cutoff}
+        if changed or kept != mine:
+            self.set_meta('brief_learned', {**found, fleet: kept})
+
     def hide_brief_item(self, fleet, key):
-        """Not needed: drop one item from this Fleet's latest brief (and that brief only)."""
+        """Not needed: drop one item from this Fleet's latest brief. On an overlap it is also learned (learn_brief): the
+        same people of the team on the same threads at that company aren't flagged again; a new thread is."""
         key = clean(str(key or ''), 200)
         with self.connect() as db:
-            row = db.execute('SELECT period FROM fleet_briefs WHERE fleet=? ORDER BY built_at DESC LIMIT 1', (fleet,)).fetchone()
+            row = db.execute('SELECT period,view FROM fleet_briefs WHERE fleet=? ORDER BY built_at DESC LIMIT 1', (fleet,)).fetchone()
         if not row or not key:
             raise ValueError('That brief is gone')
         found = self.meta('brief_hidden') or {}
@@ -2817,6 +2662,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         if key not in mine:
             mine.append(key)
         self.set_meta('brief_hidden', kept)
+        if key.startswith('several:'):
+            self.learn_brief(fleet, json.loads(row['view']), key)
         return {'hidden': key}
 
     # -- handling (claims)
