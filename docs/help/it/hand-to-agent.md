@@ -12,7 +12,7 @@ order: 5
 1. Sull'attività, apri **…**, poi **Passa…**, e scegli **Codex** o **Claude Code**. Compaiono solo gli strumenti che hai configurato.
 2. Controlla il riepilogo e cosa riceve, aggiungi una nota se vuoi e premi **Passa**. **Vedi il lavoro completo** mostra tutte le istruzioni.
 
-L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Cosa ha fatto** e **Mostra modifiche**. **Chiedi modifiche** gli dice cosa cambiare; **Passa…** in **…** ricomincia da capo; **Nascondi** mette via il risultato.
+L'attività mostra poi che ci sta lavorando, e il risultato quando ha finito, con **Cosa ha fatto** e **Mostra modifiche**. **Chiedi modifiche** gli dice cosa cambiare; **Passa…** in **…** ricomincia da capo; **Nascondi** mette via il risultato. Un’attività **Bloccata** che passi mostra **In corso…** finché il lavoro va avanti.
 
 Un lavoro non invia mai nulla per te. Se ti lascia un passaggio di pubblicazione o di deploy, **Fallo** sull’attività esegue quel passaggio. Una risposta che ha scritto resta una bozza che invii tu.
 

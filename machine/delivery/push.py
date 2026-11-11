@@ -420,7 +420,7 @@ def app_notice(store, config, tag, kind=None, version=1):
     tag = str(tag or '')
     with store.connect() as db:
         line, detail = notify.app_line(db, tag), notify.app_line_body(db, tag)
-        row = db.execute('SELECT s.*,p.status preparation_status,p.reason preparation_reason,p.error preparation_error '
+        row = db.execute(f'SELECT s.*,{agent_jobs.shown_preparation(db, card="s.id")} preparation_status,p.reason preparation_reason,p.error preparation_error '
                          'FROM suggestions s LEFT JOIN preparations p ON p.suggestion_id=s.id '
                          'WHERE s.id=?', (tag,)).fetchone() if notify.APP_ID.fullmatch(tag) else None
         if not row:
@@ -442,11 +442,15 @@ def app_notice(store, config, tag, kind=None, version=1):
         blocked = row.get('preparation_status') == 'blocked'
         browser = (store.suggestion_result(row, db).get('preparation_browser') or {}) if blocked else {}
         ready_lead = result_lead(db, row)
-    if row['status'] == 'prepared':
+    if row.get('preparation_status') == agent_jobs.WORKING:  # a job handed off after a stuck run is on it: not Stuck
+        lead, buttons = 'Working', ['snooze', 'done']
+    elif row['status'] == 'prepared':
         lead, buttons = ready_lead, ['snooze', 'done']
     elif blocked:
         lead = 'Needs you to sign in' if browser.get('signin_url') else 'Stuck' if row.get('preparation_error') else 'Needs your help'
         buttons = ['snooze', 'done']
+    elif row.get('preparation_status') == agent_jobs.HANDED_BACK:  # that job's result is in: nothing runs, so no Preparing
+        lead, buttons = None, ['snooze', 'done']
     elif row['status'] in ('accepted', 'instructions', 'local_preparation'):
         lead, buttons = 'Preparing', ['snooze', 'done']
     else:
@@ -457,7 +461,7 @@ def app_notice(store, config, tag, kind=None, version=1):
              'New to-do': ('New to-do: {}', t('New to-do')), 'Stuck': ('Stuck: {}', t('Stuck')),
              'Needs your help': ('Needs your help: {}', t('Needs your help')),
              'Needs you to sign in': ('Needs you to sign in: {}', t('Needs you to sign in')),
-             'Reminder': ('Reminder: {}', t('Reminder'))}
+             'Reminder': ('Reminder: {}', t('Reminder')), 'Working': ('Working: {}', t('Working'))}
     if lead == 'Ready' and text:  # what it is about leads; the line under it says what is ready (a draft, a result)
         title = notify.clip(row['title'], notify.APP_LINE)
     elif lead:

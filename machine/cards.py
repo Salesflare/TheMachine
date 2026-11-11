@@ -326,6 +326,7 @@ def card(row):
     elif row.get('preparation_status') in ('starting','running'):
         status=t('Preparing… I’ve been in the browser a while; it may need you there (a sign-in or a check).') if row.get('preparation_browser') else t('Preparing…')
     elif row.get('preparation_status') == 'queued': status=t('Next up. I’ll start shortly.')
+    elif row.get('preparation_status') == 'working': status=t('Working…')  # a job handed off after a stuck run (agent_jobs.WORKING)
     elif row.get('preparation_status') == 'blocked' and row.get('preparation_error') == 'stopped': status=t(CHAT_STOPPED)
     elif row.get('preparation_status') == 'blocked' and (row.get('preparation_browser') or {}).get('sign_in'):
         status=t('Waiting for you to sign in: {}. Sign in through Sign in and I carry on by myself.', row['preparation_reason'].rstrip('.'))

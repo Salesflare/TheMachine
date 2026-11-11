@@ -12,7 +12,7 @@ order: 5
 1. Open **…** op de to-do, dan **Overdragen…**, en kies **Codex** of **Claude Code**. Alleen de tools die je ingesteld hebt, verschijnen.
 2. Bekijk de samenvatting en wat hij meekrijgt, voeg eventueel een notitie toe en druk op **Overdragen**. **Bekijk de volledige opdracht** toont de hele briefing.
 
-De to-do toont dan dat er aan gewerkt wordt, en het resultaat als het klaar is, met **Wat het deed** en **Wijzigingen tonen**. **Wijzigingen vragen** zegt wat er anders moet; **Overdragen…** onder **…** begint opnieuw; **Verbergen** legt het resultaat weg.
+De to-do toont dan dat er aan gewerkt wordt, en het resultaat als het klaar is, met **Wat het deed** en **Wijzigingen tonen**. **Wijzigingen vragen** zegt wat er anders moet; **Overdragen…** onder **…** begint opnieuw; **Verbergen** legt het resultaat weg. Een **Vastgelopen** to-do die je overdraagt toont **Bezig…** zolang de opdracht loopt.
 
 Een opdracht verstuurt nooit iets voor je. Laat ze een stap om te publiceren of te deployen voor jou over, dan voert **Doe het** op de to-do die stap uit. Een antwoord dat ze schreef blijft een concept dat je zelf verstuurt.
 

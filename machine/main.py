@@ -178,7 +178,7 @@ class App(*APP_MIXINS):
         self.skills.finder = self.skills_find_start
         # Hand to Claude Code / Hand to Codex on a card (agent_jobs.py): only where the tool is there to hand to.
         self.agents = agent_jobs.AgentJobs(self.store.connect, config, Path(config['database']).parent / 'agent-jobs',
-                                           card=self.agent_card, revise=self.agent_revise,
+                                           card=self.agent_card, revise=self.agent_revise, changed=self.store.card_message_changed,
                                            network=(lambda body: self.fleet.relay.call('POST', '/agent-results', body)) if self.fleet else None,
                                            ) if agent_jobs.settings(config) is not None else None
         if self.fleet:

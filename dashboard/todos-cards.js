@@ -429,7 +429,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing…':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  return needsAsk(s)};

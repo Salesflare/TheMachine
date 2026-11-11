@@ -10,6 +10,7 @@ import sqlite3
 import time
 import urllib.request
 
+import agent_jobs
 import bounces
 import browser_login
 import calendar_clashes
@@ -87,6 +88,15 @@ CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'd
 CARD_KEEP_S = 120
 CARDS = stamps.Kept(4)
 DONE_FIRST = 30  # the done to-dos the dashboard's status gets: its Done list's first page (dashboard donePager)
+
+
+def shown_job(job):
+    """A preparation row as the to-do shows it (agent_jobs.shown_preparation): once a handed-off job took over from a
+    stuck run, that run's error and reason are not the to-do's any more (the row keeps them)."""
+    shown = job.pop('shown', None) or job['status']
+    if shown != job['status']:
+        job.update(status=shown, error=None, reason=None)
+    return job
 
 
 
@@ -693,7 +703,9 @@ class ViewsStore(ConversationStore):
             still_needed.annotate(db, cards, now(), local_tz())  # "Still needed?" on a to-do untouched for a week (still_needed.py)
             return
         few = len(cards) <= 200  # a Done page: only its own; the status payload: all at once
-        found={r['suggestion_id']:dict(r) for r in db.execute('SELECT p.*,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
+        # shown: its status as every view shows it, a stuck run that a Claude Code or Codex job took over after it is not
+        # Stuck any more (agent_jobs.shown_preparation)
+        found={r['suggestion_id']:shown_job(dict(r)) for r in db.execute(f'SELECT p.*,{agent_jobs.shown_preparation(db)} shown,d.choice cause FROM preparations p LEFT JOIN decisions d ON d.id=p.decision_id'
                                                               +(' WHERE p.suggestion_id IN ('+','.join('?' for _ in cards)+')' if few else ''),[c['id'] for c in cards] if few else [])} if cards else {}
         pre=self.card_reads(db,cards)
         for suggestion in cards:
