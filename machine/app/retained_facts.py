@@ -26,7 +26,17 @@ What bears on the matter, without a model call or an embedding request:
 
 The block is a small fixed slice (CHARS, LINES), outside the current facts' own cap, and empty when nothing matches:
 the prompt is then the one it was. Set-aside facts go first, then history. A pick is not a use: facts.used_at is
-neither read nor written, so a set-aside fact stays set aside until the owner brings it back."""
+neither read nor written, so a set-aside fact stays set aside until the owner brings it back.
+
+A to-do's chat answers in its preparation's session, which read the current list when that preparation started.
+since_session is the `new` block of the chat's recall: what changed in the list after the session last read it, as a
+small delta (NEW_CHARS, NEW_LINES), and nothing when nothing changed:
+- a current fact or rule learned, edited or brought back since then, that the session wasn't given in this state
+  (memory_use: the session's runs, by id and time), of the to-do's area. While the list is short every preparation
+  gets all of it, so all such ones go; else only those that bear on the to-do, by `matches` above. Never one learned
+  on this to-do (the session saw that note), never a connected AI's;
+- one the session was given that has since gone: removed by the owner ("no longer use"), or ended (as history). One a
+  newer fact replaced, set aside or moved elsewhere still says nothing wrong, so it gets no line."""
 import json
 
 import embeddings
@@ -34,7 +44,7 @@ import fact_links
 import memory_use
 from machine.app.review_facts import waiting
 from machine.config import LOG
-from machine.store.facts import ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
+from machine.store.facts import FACTS_ALL_UNDER, ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
 from timeutil import now
 
 CHARS = 600           # about 150 tokens, only when something matches
@@ -48,6 +58,11 @@ HEAD = ('Also learned earlier, outside the current list, matching this {what}. A
 REVIEW_HEAD = HEAD.format(what='batch')
 TODO_HEAD = HEAD.format(what='to-do')
 HISTORY = 'Historical, not current'
+NEW_CHARS = 400       # a chat turn's delta: about 100 tokens, only when the list changed since the session read it
+NEW_LINES = 3
+NEW_HEAD = ('Changed in what was learned since this session read it. Where a line differs from what you were told earlier '
+            'in this session, the line here is current.')
+GONE = 'The owner removed this; no longer use it'
 
 
 def _chain(rows, fact_id, depth=10):
@@ -231,3 +246,79 @@ def for_review(app, limit=None):
         LOG.error('retained facts error=%s', type(error).__name__)
         return ''
     return block(found, limit or CHARS, REVIEW_HEAD)
+
+
+def _session(db, session):
+    """(when a preparation session last read the current list, {(kind, row id): when one of its runs was last given
+    it}): the later of its first start and its latest preparation's logged read (memory_use)."""
+    runs = [r[0] for r in db.execute('SELECT job_id FROM preparation_runs WHERE session_job_id=? OR job_id=?', (session, session))]
+    if not runs:
+        return None, {}
+    marks = ','.join('?' for _ in runs)
+    start = db.execute(f'SELECT min(started_at) FROM preparation_runs WHERE job_id IN ({marks})', runs).fetchone()[0]
+    read = db.execute(f"SELECT max(at) FROM memory_use WHERE purpose='preparation' AND run_id IN ({marks})", runs).fetchone()[0]
+    given = {(r[0], r[1]): r[2] for r in db.execute(
+        f"SELECT kind,row_id,max(at) FROM memory_use WHERE kind IN ('fact','rule') AND run_id IN ({marks}) GROUP BY kind,row_id", runs)}
+    return max(filter(None, (start, read)), default=None), given
+
+
+def _kind(f):
+    return 'rule' if f['kind'] == 'draft' else 'fact'
+
+
+def since_session(app, suggestion_id, session, limit=None):
+    """The `new` block of a to-do's chat turn: what changed in what was learned since its session last read it (see
+    the module's docstring). '' when nothing did."""
+    try:
+        current = [f for f in app.store.facts() if not ai_fact_by(f)]
+        with app.store.connect() as db:
+            card = db.execute('SELECT title,body,event_ids,account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            since, given = _session(db, session) if card and session else (None, {})
+            if not since:
+                return ''
+            changed = {r[0]: r[1] for r in db.execute(
+                "SELECT id,max(created_at,coalesce(kept_at,'')) FROM facts WHERE removed_at IS NULL AND max(created_at,coalesce(kept_at,''))>?", (since,))}
+            ids = [int(i) for k, i in given if str(i).isdigit()]
+            gone = [dict(r) for r in db.execute(
+                f"SELECT id,text,kind,removed_at,merged_into,valid_until FROM facts WHERE removed_at IS NOT NULL AND id IN ({','.join('?' for _ in ids)}) "
+                "AND (merged_into IS NULL OR merged_into='expired:'||id) ORDER BY removed_at DESC", ids)] if ids else []
+            gone = [f for f in gone if f['removed_at'] > given.get((_kind(f), str(f['id'])), '')]
+            if not changed and not gone:
+                return ''
+            about = {}
+            for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL'):
+                about.setdefault(r['fact_id'], []).append(r['node_id'])
+            for f in current:
+                f['about'], f['state'] = tuple(about.get(f['id'], ())), 'aside'  # current: matched and shown as a fact
+            area = suggestion_scope(card['account_ids'] or '[]', app.config.get('accounts', []), card['area'])
+            who = fact_links.records(db, {n for f in current for n in f['about']})
+            current = [f for f in current if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
+            short = {kind for kind in ('fact', 'draft') if sum(len(fact_line(f)) + 1 for f in current if f['kind'] == kind) <= FACTS_ALL_UNDER}
+            new = [f for f in current if f['id'] in changed and f['suggestion_id'] != suggestion_id
+                   and given.get((_kind(f), str(f['id'])), '') < changed[f['id']]]
+            picks = []
+            if new:
+                note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
+                try:
+                    signals = [int(i) for i in json.loads(card['event_ids'] or '[]')][:20]
+                except (TypeError, ValueError):
+                    signals = []
+                text = ' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))
+                picks = matches(db, new, fact_links.todo_records(db, suggestion_id), text, signals, embeddings.settings(app.config))
+                matched = {f['id'] for _, _, f in picks}  # while the list is short a preparation gets all of it: so does this
+                picks += [('recency', None, f) for f in sorted(new, key=lambda f: changed[f['id']], reverse=True) if f['kind'] in short and f['id'] not in matched]
+    except Exception as error:  # a busy database never costs the chat turn its answer
+        LOG.error('session facts error=%s', type(error).__name__)
+        return ''
+    lines, size = [], len(NEW_HEAD) + 1
+    shown = [('recency', None, f, (f"- {GONE}: {f['text'][:80]}" if f['merged_into'] is None
+                                   else f"- {HISTORY} (ended {(f['valid_until'] or f['removed_at'])[:10]}): {f['text']}")) for f in gone]
+    shown += [(how, score, f, ('- Draft rule: ' + f['text'] if f['kind'] == 'draft' else fact_line(f))) for how, score, f in picks]
+    for how, score, f, text in shown:
+        if len(lines) >= NEW_LINES or size + len(text) + 1 > (limit or NEW_CHARS):
+            continue  # a shorter one after it may still fit
+        lines.append(text)
+        size += len(text) + 1
+        memory_use.note(_kind(f), f['id'], text, how, about=f.get('about', ()), source='note' if f.get('suggestion_id') else 'review',
+                        at=f.get('created_at', ''), score=score if how == 'closeness' else None, used=False)
+    return NEW_HEAD + '\n' + '\n'.join(lines) if lines else ''

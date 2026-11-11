@@ -867,6 +867,13 @@ nothing, and a log write that fails never fails the prompt.
     outside the current facts' own cap, and nothing when nothing matches. In a review it comes after the batch's facts,
     so the cached prefix stays the same. A to-do's preparation and its fact area follow `facts_for`'s.
   - A pick is not a use: a set-aside fact stays set aside until the owner brings it back.
+- A to-do's chat turn runs in its preparation's session, which read the current list when it started. Each turn
+  also gets what changed since (`retained_facts.since_session`, the `new` block of the `todo_chat` recall): a fact or
+  rule of the to-do's area learned, edited or brought back after the session's latest preparation read the list, all
+  of them while the list is short and else only those that bear on the to-do (as above); and one the session was
+  given that the owner has since removed ("no longer use it") or that ended (as history). Never one the session was
+  already given in that state (its runs' `memory_use` rows), one learned on this to-do, or a connected AI's. At most 3
+  lines and 400 characters, before the `retained` slice, and nothing when nothing changed.
 - `memory_use.outcomes(db, to-do)` joins what was in a to-do's prompts with what the owner then did (sent unchanged,
   sent after their own edit, dismissed, snoozed), and `memory_use.summary(db)` counts that per kind and per item.
   Nothing reads them yet.

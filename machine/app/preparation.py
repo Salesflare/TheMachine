@@ -512,9 +512,11 @@ class PreparationApp:
             if fast is not None:request['fast']=fast
             if str(job.get('decision_id') or '').startswith('chat-') and request['session_job_id']!=job['job_id'] and not job.get('finish') and not job['ahead'] and not changing:
                 request['message']=chat_prompt(job,self.config)
-                memory=recall(self,'todo_chat',{'todo':job['suggestion_id']},PROMPT_LIMIT)  # what was learned earlier that bears on it, outside the session's list
-                lines=memory.text('retained')
-                if lines:request['message']+='\n\n'+lines
+                # what was learned since the session read the list (a small delta), and earlier facts outside that list that bear on it
+                memory=recall(self,'todo_chat',{'todo':job['suggestion_id'],'session':request['session_job_id']},PROMPT_LIMIT)
+                for block in ('new','retained'):
+                    lines=memory.text(block)
+                    if lines:request['message']+='\n\n'+lines
                 try:  # its area now: the owner may have moved it since the chat began
                     with self.store.connect() as db:
                         row=db.execute('SELECT account_ids FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()

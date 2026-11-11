@@ -18,6 +18,7 @@ a = importlib.util.module_from_spec(spec); spec.loader.exec_module(a)
 import bring_in  # noqa: E402
 import memory_use  # noqa: E402
 from machine.app import ask_memory  # noqa: E402
+from machine.app import retained_facts  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 10, 7, tzinfo=dt.timezone.utc)  # a Tuesday, 08:00 in Brussels
@@ -133,6 +134,68 @@ class MemoryReach(unittest.TestCase):
         facts = recall(self.app, 'preparation', {'todo': self.todo}).text('facts')
         self.assertIn('Ghent.', facts)
         self.assertNotIn('Brussels', facts)
+
+    def chat_turn(self, n, text):
+        """The owner writes in the to-do's chat; its turn runs in the preparation's session. Returns its message."""
+        with self.store.connect() as db:
+            db.execute("UPDATE preparation_runs SET status='ok',finished_at=? WHERE finished_at IS NULL", (NOW.isoformat(),))
+            db.execute("UPDATE preparations SET status='done'")
+            db.execute("UPDATE suggestions SET status='prepared' WHERE id=?", (self.todo,))
+        self.store.decide(self.todo, 'other', text, f'chat-{n:036d}', 'dashboard')
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        return next(c['message'] for c in calls if c.get('message'))
+
+    def test_a_to_do_chat_gets_what_was_learned_after_its_session_read_the_list(self):
+        self.store.decide(self.todo, 'accept', '', 'click', 'dashboard')
+        calls = []
+        self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        first = next(c['message'] for c in calls if c.get('message'))
+        self.assertIn(NOTE, first)
+        clock = [NOW + dt.timedelta(hours=1)]
+        later = patch_everywhere(a, 'now', lambda: clock[0].isoformat())
+        later.start()
+        self.addCleanup(later.stop)
+        # learned after the preparation started: in the owner's chat, an edit of one it had, and one the owner removed
+        fresh = self.app.action('remember_fact', {'text': 'Contracts with Client Co are signed through the e-sign portal.', '_owner_chat': True})['id']
+        with self.store.connect() as db:
+            said, note = (db.execute('SELECT id FROM facts WHERE text=?', (t,)).fetchone()[0] for t in (SAID, NOTE))
+        self.store.edit_fact(note, 'Quotes always go out as a PDF attachment, never as a link.')
+        self.store.forget_fact(said)
+        chat = self.chat_turn(1, 'How do we sign it?')
+        block = chat[chat.index(retained_facts.NEW_HEAD):].split('\n\n')[0]
+        self.assertIn('e-sign portal', block)
+        self.assertIn('PDF attachment', block)
+        self.assertIn(retained_facts.GONE, block)  # forgotten: the session is told to stop using it
+        self.assertLessEqual(len(block), retained_facts.NEW_CHARS)
+        self.assertLessEqual(block.count('\n- '), retained_facts.NEW_LINES)
+        self.assertNotIn(FIXED, block)  # the session already has it
+        with self.store.connect() as db:
+            logged = {(r[0], r[1]) for r in db.execute("SELECT kind,row_id FROM memory_use WHERE purpose='todo_chat' AND suggestion_id=?", (self.todo,))}
+        self.assertTrue({('fact', str(fresh)), ('fact', str(note)), ('fact', str(said))} <= logged)
+        # the next turn doesn't send it again; a fact that ended since it was sent comes back as history
+        self.assertNotIn(retained_facts.NEW_HEAD, self.chat_turn(2, 'And who signs?'))
+        clock[0] = NOW + dt.timedelta(hours=2)
+        self.store.commit_page('work', {}, [mail(9, 'Ann Example <ann@client.example>', 'sam@acme.example', 'Portal', 'We stopped using the e-sign portal.')])
+        with self.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE source_id='m9'").fetchone()[0]
+        self.store.fact_overturned(fresh, 'Client Co stopped using the e-sign portal', [event])
+        block = self.chat_turn(3, 'Still the portal?')
+        self.assertIn(retained_facts.HISTORY + ' (ended', block)
+        self.assertNotIn(f'{retained_facts.GONE}', block.split(retained_facts.NEW_HEAD, 1)[1].split('\n\n')[0])
+
+    def test_a_to_do_chat_skips_new_facts_that_dont_bear_on_it_once_the_list_is_long(self):
+        self.store.decide(self.todo, 'accept', '', 'click', 'dashboard')
+        self.app.preparation_step(lambda r: {'status': 'admitted'})
+        later = patch_everywhere(a, 'now', lambda: (NOW + dt.timedelta(hours=1)).isoformat())
+        later.start()
+        self.addCleanup(later.stop)
+        self.app.action('remember_fact', {'text': 'Contracts with Client Co are signed through the e-sign portal.', '_owner_chat': True})
+        self.app.action('remember_fact', {'text': 'The garden hedge is trimmed every spring.', '_owner_chat': True})
+        with patch.object(retained_facts, 'FACTS_ALL_UNDER', 0):
+            chat = self.chat_turn(1, 'How do we sign the contract?')
+        self.assertIn('e-sign portal', chat)  # its words match the to-do
+        self.assertNotIn('garden hedge', chat)
 
     def test_ask_reads_facts_on_the_record_and_by_meaning(self):
         about = {'area': None, 'subjects': [{'id': ANN, 'name': 'Ann Example'}], 'accounts': ['work'], 'question': 'What does Ann eat?'}
