@@ -140,6 +140,42 @@ class Busy(unittest.TestCase):
         self.assertTrue(assistant.db_busy(sqlite3.OperationalError('database is locked')))
         self.assertFalse(assistant.db_busy(sqlite3.OperationalError('no such column: x')))
 
+    def test_a_loop_waits_out_a_busy_database_but_one_that_stays_busy_is_an_error_again(self):
+        from machine import faults
+        clock = [1000.0]
+        faults._busy.clear()
+        self.addCleanup(faults._busy.clear)
+        locked, other = sqlite3.OperationalError('database is locked'), sqlite3.OperationalError('no such column: x')
+
+        def levels(error, name='approved action', at=None):
+            with patch.object(faults.time, 'monotonic', lambda: clock[0]), self.assertLogs(assistant.LOG, 'INFO') as logged:
+                try:
+                    raise error
+                except sqlite3.OperationalError as caught:
+                    faults.loop_failed(assistant.LOG, name, caught, at)
+            return [(r.levelname, r.getMessage()) for r in logged.records]
+        self.assertEqual(levels(locked), [('INFO', 'approved action waits: database busy')])
+        clock[0] += 60
+        self.assertEqual(levels(locked), [('INFO', 'approved action waits: database busy')])
+        self.assertEqual(levels(locked, 'routines'), [('INFO', 'routines waits: database busy')])  # its own stretch
+        clock[0] += 61  # busy for over two minutes: a lock that is never let go still shows
+        self.assertEqual(levels(locked), [('ERROR', 'approved action error=OperationalError')])
+        clock[0] += 3600  # another stretch, much later
+        self.assertEqual(levels(locked), [('INFO', 'approved action waits: database busy')])
+        self.assertEqual(levels(other), [('ERROR', 'approved action error=OperationalError')])  # never only a wait
+        self.assertEqual(levels(other, 'fleet', 'step:1'), [('ERROR', 'fleet error=OperationalError at=step:1')])
+        # The fault log takes the same place from it as before.
+        seen = []
+        log = faults.FaultLog(None)
+        log.record = lambda error, location: seen.append(location)
+        with self.assertLogs(assistant.LOG, 'INFO'):  # its handler stands in for the others while it runs
+            assistant.LOG.addHandler(log)
+            try:
+                raise other
+            except sqlite3.OperationalError as caught:
+                faults.loop_failed(assistant.LOG, 'review worker', caught)
+        self.assertEqual(seen, ['review worker'])
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -36,6 +36,7 @@ import i18n
 from machine.app.recall import recall
 from machine.app.review import fit_events
 from machine.config import WORKSPACE
+from machine.faults import loop_failed
 from machine.text import encoded
 import memory_use
 import recurring
@@ -905,7 +906,7 @@ class RoutinesApp:
             try:
                 self.routines_step()
             except Exception as error:
-                LOG.error('routines error=%s', type(error).__name__)
+                loop_failed(LOG, 'routines', error)
 
     @staticmethod
     def routine_why(error):

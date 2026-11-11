@@ -11,6 +11,7 @@ import subprocess
 import message_seal
 import models
 import whatsapp_images
+from machine.faults import loop_failed
 from sources import SourceError
 from timeutil import now
 
@@ -45,7 +46,7 @@ class WhatsAppImagesApp:
             try:
                 self.whatsapp_photo_step()
             except Exception as error:  # noqa: BLE001 - tried again at the next step
-                LOG.error('whatsapp photos error=%s', type(error).__name__)
+                loop_failed(LOG, 'whatsapp photos', error)
 
     def whatsapp_photo_step(self, run=subprocess.run):
         """Fetch and read a few noted photos. Returns how many it finished (read, or set aside)."""
