@@ -59,6 +59,24 @@ def clip(text, n=CLIP):
     return text if len(text) <= n else text[:n - 1] + '…'
 
 
+def edit_parts(before, after, n=CLIP):
+    """A draft and the owner's version of it, each at most n characters: whole when both fit, else the part they
+    changed with a little context around it (… where text is left out), so an edit past the start still shows."""
+    before, after = (' '.join(str(t or '').split()) for t in (before, after))
+    if len(before) <= n and len(after) <= n:
+        return before, after
+    same = min(len(before), len(after))
+    head = next((i for i in range(same) if before[i] != after[i]), same)
+    tail = next((i for i in range(same - head) if before[-1 - i] != after[-1 - i]), same - head)
+    context = max(40, (n - max(len(before), len(after)) + head + tail) // 2)
+    start = max(0, head - context)
+
+    def part(text):
+        stop = min(len(text), len(text) - tail + context)
+        return clip(('…' if start else '') + text[start:stop] + ('…' if stop < len(text) else ''), n)
+    return part(before), part(after)
+
+
 def _rows(db, sql, args=()):
     try:
         return [dict(r) for r in db.execute(sql, args)]
@@ -135,7 +153,7 @@ def view(rows):
                         'review_said': clip(r['why'], 160) if r['why'] else '(no reason given)'})
         elif r['kind'] == 'edit':
             out.append({'what': 'answered it themselves' if r['source'] == 'elsewhere' else 'edited a draft', 'at': r['at'], 'channel': r['channel'],
-                        'to_do': clip(r['title'], 100), 'draft': clip(r['before']), 'theirs': clip(r['after'])})
+                        'to_do': clip(r['title'], 100), **dict(zip(('draft', 'theirs'), edit_parts(r['before'], r['after'])))})
         else:
             out.append({'what': words[r['choice']], 'at': r['at'], 'to_do': clip(r['title'], 100), **({'note': clip(r['note'])} if r['note'] else {}),
                         **({'note_kind': r['note_kind']} if r['note_kind'] else {})})
