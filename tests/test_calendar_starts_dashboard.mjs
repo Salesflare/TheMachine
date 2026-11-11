@@ -16,6 +16,7 @@ process.env.TZ='Europe/Brussels';
 const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const NOW=new Date('2026-10-27T12:00:00+01:00'),START='2026-10-23';
+const START_WEEK=new Date('2026-10-19T00:00:00+02:00');  // the Monday of the start's week
 const at=(days,h,m=0)=>{const d=new Date(NOW);d.setDate(d.getDate()+days);d.setHours(h,m,0,0);return d};
 const iso=d=>d.toISOString(),now=iso(NOW);
 // Made-up meetings from the start on, none in the week of 2 November (a clear week, no edge)
@@ -56,7 +57,10 @@ try{
   const d=await days(page);assert.equal(d[0],START,'the agenda starts on the first day that came in: '+d);
   const top=await page.evaluate(()=>[document.querySelector('.cal-start').getBoundingClientRect().bottom,document.querySelector('#calendar-view [data-day]').getBoundingClientRect().top]);
   assert.ok(top[0]<=top[1],'the line sits above the first day');
-  const n=asks.length;await page.evaluate(()=>dispatchEvent(new WheelEvent('wheel',{deltaY:-400})));await page.waitForTimeout(300);assert.equal(asks.length,n,'nothing earlier is asked for');
+  // The weeks around the one on show still come one at a time behind it (calQueue), so only an ask that reaches before
+  // the start's week counts: that is what a wheel at the top would ask for if it went on past the start
+  const n=asks.length;await page.evaluate(()=>dispatchEvent(new WheelEvent('wheel',{deltaY:-400})));await page.waitForTimeout(300);
+  assert.deepEqual(asks.slice(n).filter(([a])=>a<START_WEEK).map(([a])=>a.toISOString()),[],'nothing earlier is asked for');
   await fits(page,`agenda ${w} ${scheme}`);
   if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/agenda-${w}-${scheme}.png`});
   // Week: the week that holds the start says it; the clear week after it says nothing
