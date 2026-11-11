@@ -32,7 +32,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 const base=()=>'http://127.0.0.1:'+server.address().port;
 // share: what the page's navigator offers ('none': no Web Share, as on a computer's browser; 'files': a phone's sheet)
-const open=async(width,{share='none',motion='no-preference',theme,app,clip=true}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
+const open=async(width,{share='none',motion='no-preference',theme,app,clip=true,canvas}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await context.addInitScript(share=>{
   if(share==='none'){delete Navigator.prototype.share;delete Navigator.prototype.canShare}
@@ -47,6 +47,8 @@ const open=async(width,{share='none',motion='no-preference',theme,app,clip=true}
  await context.addInitScript(clip=>{window.clipped=[];if(!navigator.clipboard)return;
   navigator.clipboard.write=async items=>{if(!clip)throw new DOMException('Write permission denied.','NotAllowedError');for(const i of items)window.clipped.push(i.types.join())};
   navigator.clipboard.writeText=async text=>{window.clipped.push(text)}},clip);
+ // canvas 'old': a canvas without roundRect, as on a phone's browser before Chrome 99 or Safari 16
+ if(canvas==='old')await context.addInitScript(()=>{delete CanvasRenderingContext2D.prototype.roundRect;delete Path2D.prototype.roundRect});
  if(theme)await context.addInitScript(theme=>{try{localStorage.setItem('theme',theme)}catch{}},theme);
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base()+'/');await page.locator('#task-'+ID).first().waitFor({state:'attached'});return {context,page}};
@@ -138,6 +140,21 @@ try{
   assert.deepEqual(await page.locator('#ms-share .ms-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Download image']);
   await page.locator('#ms-share [data-ms-download]').click();await page.waitForFunction(()=>window.saved.length===1);
   assert.deepEqual(await page.evaluate(()=>window.saved),[['blob:','the-machine-500-todos.png']]);
+  await context.close()}
+ // An older phone browser, whose canvas has no roundRect ("c.roundRect is not a function"): the image still draws, in
+ // both sizes, its rounded confetti and the site's chip made from arcTo
+ {const {context,page}=await open(390,{canvas:'old'});await card(page).waitFor();
+  assert.equal(await page.evaluate(()=>typeof CanvasRenderingContext2D.prototype.roundRect),'undefined');
+  const drawn=await page.evaluate(()=>{let k=0;const a=CanvasRenderingContext2D.prototype.arcTo;CanvasRenderingContext2D.prototype.arcTo=function(...x){k++;return a.apply(this,x)};
+   return msImage(500,false,false).then(cv=>{CanvasRenderingContext2D.prototype.arcTo=a;return [k,cv.width,cv.height]})});
+  assert.ok(drawn[0]>=8&&drawn[0]%4===0&&drawn[1]===1080&&drawn[2]===1080,JSON.stringify(drawn));  // the chip and the confetti, 4 corners each
+  await page.locator('#milestone [data-ms-share]').click();await page.locator('#ms-share[open]').waitFor();
+  const size=()=>page.locator('#ms-share .ms-preview').evaluate(async i=>{await i.decode();return [i.naturalWidth,i.naturalHeight]});
+  assert.deepEqual(await size(),[1080,1080]);
+  await page.locator('#ms-share [data-ms-size="wide"]').click();await page.waitForFunction(()=>document.querySelector('#ms-share .ms-preview').naturalWidth===1200);
+  assert.deepEqual(await size(),[1200,630]);
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#ms-share [data-ms-download]').click()]);
+  assert.equal(download.suggestedFilename(),'the-machine-500-todos-wide.png');
   await context.close()}
  // Reduced motion: no pop, no confetti, the number as it is
  {const {context,page}=await open(1440,{motion:'reduce'});await card(page).waitFor();

@@ -1,10 +1,9 @@
-// A milestone on done to-dos (state.done_milestone, machine/store/done_milestones.py): one small card on top of To-dos,
-// "500 to-dos done", the party mascot popping in with a burst of confetti and the number counting up (under 2 s; still
-// with reduced motion), Share and ×. × marks it seen on the Machine (done_milestone_seen), so it shows once per level.
-// Share draws an image on the device (msImage: a canvas, nothing uploaded) and hands it to the phone's or app's share
-// sheet (Web Share with the file); where there is none, a small dialog has Download image, Copy image and the text to
-// post. Nothing is ever posted for them. The image holds the count and fixed words only: never a name, a to-do or an
-// address. A lazy part (dashboard_parts.LAZY 'milestone'): shell-render.js milestoneSlot loads it only while one is due.
+// A milestone on done to-dos (state.done_milestone, machine/store/done_milestones.py): a small card on top of To-dos,
+// "500 to-dos done", the party mascot popping in with confetti and the number counting up (still with reduced motion),
+// Share and ×. × marks it seen on the Machine (done_milestone_seen): once per level. Share draws an image on the device
+// (msImage: a canvas, nothing uploaded) for the phone's or app's share sheet; where there is none, a dialog has
+// Download image, Copy image and the text to post. Nothing is posted for them. The image holds the count and fixed
+// words only. A lazy part (dashboard_parts.LAZY 'milestone'): shell-render.js milestoneSlot loads it while one is due.
 const MS_SITE='themachine.computer',MS_URL='https://themachine.computer';
 const MS_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>';
 const MS_SHARE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>';
@@ -24,9 +23,9 @@ function msCount(){const b=document.querySelector('#milestone .ms-n:not([data-ms
  const step=now=>{const k=Math.min(1,(now-start)/ms),e=1-Math.pow(1-k,3);b.textContent=msNum(Math.round(to*e));if(k<1&&b.isConnected)requestAnimationFrame(step);else{b.textContent=msNum(to);b.style.minWidth=''}};
  requestAnimationFrame(step)}
 new MutationObserver(msCount).observe($('#suggestions'),{childList:true});msCount();
-// The image: a bold block of the brand's color, the number huge, the party mascot big, the wordmark and the site.
-// Square (1080) for a feed, wide (1200x630) for a link preview; light or dark like the dashboard. Its only inputs are
-// the count, the size and the theme; every word on it is fixed text in the owner's language.
+// The image: the brand's color, the number huge, the party mascot, the wordmark and the site. Square (1080) for a
+// feed, wide (1200x630) for a link preview, light or dark like the dashboard. Its only inputs are the count, the size
+// and the theme; every word on it is fixed text in the owner's language.
 const MS_WORDMARK=['M20 40v-7h7v-7h7v7h7v7M49 40v-7h7v-7h7v7h7v7M37 52v6h14v-6',[90,'M0 0H28M14 0V40'],[133,'M0 0V40M28 0V40M0 20H28'],[176,'M28 0H0V40H28M0 20H23'],
  [236,'M0 40V0L14 21L28 0V40'],[279,'M0 40L14 0L28 40M6 24H22'],[322,'M28 3Q0 -8 0 20Q0 48 28 37'],[365,'M0 0V40M28 0V40M0 20H28'],[408,'M4 0H24M14 0V40M4 40H24'],
  [451,'M0 40V0L28 40V0'],[494,'M28 0H0V40H28M0 20H23']];
@@ -39,10 +38,13 @@ const msFont=(w,px,fam)=>`${w} ${px}px ${fam==='serif'?'"Source Serif 4",Georgia
 function msFit(c,text,w,px,fam,max){c.font=msFont(w,px,fam);const m=c.measureText(text).width;return m>max?Math.floor(px*max/m):px}
 function msWordmark(c,x,y,w,color){const k=w/502;c.save();c.translate(x-20*k,y-26*k);c.scale(k,k);c.strokeStyle=color;c.lineWidth=4.4;c.lineCap=c.lineJoin='round';
  for(const p of MS_WORDMARK){c.save();if(Array.isArray(p))c.translate(p[0],30);c.stroke(new Path2D(Array.isArray(p)?p[1]:p));c.restore()}c.restore()}
+// A rounded box: roundRect, or arcTo where a canvas lacks it (Chrome before 99, Safari before 16)
+function msRound(c,x,y,w,h,r){if(c.roundRect)return c.roundRect(x,y,w,h,r);r=Math.min(r,w/2,h/2);const p=[x+w,y,x+w,y+h,x,y+h,x,y,x+w,y];
+ c.moveTo(x+r,y);for(let i=0;i<8;i+=2)c.arcTo(p[i],p[i+1],p[i+2],p[i+3],r);c.closePath()}
 // Confetti from a fixed seed: the same image for the same count
 function msBits(c,th,W,H,n,keep){let s=n*9301+49297;const r=()=>(s=(s*9301+49297)%233280)/233280;
  for(let i=0;i<34;i++){const x=36+r()*(W-72),y=36+r()*(H-72),w=10+r()*16,h=w*(.45+r()*.3),a=r()*Math.PI;if(keep(x,y))continue;
-  c.save();c.translate(x,y);c.rotate(a);c.fillStyle=th.bits[i%th.bits.length];c.globalAlpha=.85;c.beginPath();c.roundRect(-w/2,-h/2,w,h,3);c.fill();c.restore()}}
+  c.save();c.translate(x,y);c.rotate(a);c.fillStyle=th.bits[i%th.bits.length];c.globalAlpha=.85;c.beginPath();msRound(c,-w/2,-h/2,w,h,3);c.fill();c.restore()}}
 async function msImage(n,wide,dark){const th=MS_THEME[dark?'dark':'light'],W=wide?1200:1080,H=wide?630:1080;
  await Promise.all([document.fonts?.load(msFont(750,200,'serif')),document.fonts?.load(msFont(650,60,'sans'))]).catch(()=>{});
  const bot=await msBot(),cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
@@ -55,7 +57,7 @@ async function msImage(n,wide,dark){const th=MS_THEME[dark?'dark':'light'],W=wid
  c.save();c.translate(bx+bs/2,by+bs/2);c.rotate(-.06);c.drawImage(bot,-bs/2,-bs/2,bs,bs);c.restore();
  // the site in a chip: under the words on the wide one, across from the wordmark on the square one
  c.font=msFont(600,wide?28:30,'sans');const sw=c.measureText(MS_SITE).width,ch=wide?52:56,cx=wide?pad:W-pad-sw-44,cy=wide?H-pad-ch+8:(74+mark*44/502/2)-ch/2;
- c.fillStyle=th.chip;c.beginPath();c.roundRect(cx,cy,sw+44,ch,ch/2);c.fill();c.fillStyle=th.ink;c.fillText(MS_SITE,cx+22,cy+ch/2+(wide?10:11));
+ c.fillStyle=th.chip;c.beginPath();msRound(c,cx,cy,sw+44,ch,ch/2);c.fill();c.fillStyle=th.ink;c.fillText(MS_SITE,cx+22,cy+ch/2+(wide?10:11));
  const max=wide?bx-pad-20:W-2*pad,x=wide?pad:W/2;c.textAlign=wide?'left':'center';
  c.fillStyle=th.num;c.font=msFont(750,msFit(c,f,750,wide?250:280,'serif',max),'serif');c.fillText(f,x-(wide?6:0),wide?330:by+bs+196);
  c.fillStyle=th.ink;c.font=msFont(700,msFit(c,rest,700,wide?62:66,'sans',max),'sans');c.fillText(rest,x,wide?412:by+bs+282);
@@ -76,11 +78,10 @@ async function msShare(btn){const n=+state?.done_milestone?.count,dark=msDark();
  try{const blob=(msReady?.n===n&&msReady.dark===dark&&await msReady.blob)||await msBlob(await msImage(n,false,dark));
   if(!await msSheet(new File([blob],msName(n,false),{type:'image/png'}),n))await msDialog(n)}
  catch(e){errCaught(e);toast(e.message,true)}finally{btn.disabled=false}}
-// The dialog: the image (Square or For links), Download image, Copy image (or Share image where the image can't go on
-// the clipboard but a share sheet is there, whose Copy does it), and the text to post. Download is a blob: link, which
-// a browser saves and the phone app takes over (a data: link does nothing in a WebView). The phone app's WebView puts
-// no image on the clipboard, so Copy image isn't offered there. What each button did shows in the dialog itself: a
-// toast would sit under it.
+// The dialog: the image (Square or For links), Download image, Copy image (or Share image where the clipboard takes
+// no image but a share sheet is there), and the text to post. Download is a blob: link, which a browser saves and the
+// phone app takes (a data: link does nothing in a WebView); that WebView puts no image on the clipboard, so no Copy
+// image there. What each button did shows in the dialog: a toast would sit under it.
 const msCopyImage=()=>!msApp()&&isSecureContext&&!!(window.ClipboardItem&&navigator.clipboard?.write);
 const msShareImage=()=>msAppSheet()||msWebShare(new File([new Blob(['x'],{type:'image/png'})],'x.png',{type:'image/png'}));
 let msWide=false,msShown=null,msShownUrl=null;
@@ -105,8 +106,8 @@ async function msDialog(n){let d=$('#ms-share');
 <p class="ms-said" role="status" hidden></p>
 <div class="ms-post"><span>${t('Text to post')}</span><button type="button" class="quiet" data-ms-copy-text>${t('Copy text')}</button><p class="ms-post-text">${msPost(n)}</p></div>`);
  await msPreview(n);d.showModal()}
-// The image shown is the one every button uses: drawn, then made a PNG once, so a tap acts at once (Safari and the
-// phone app want the download or the copy to follow the tap straight away)
+// The image shown is the one every button uses, made a PNG once, so a tap acts at once (Safari and the phone app
+// want the download or copy to follow the tap)
 async function msPreview(n){const d=$('#ms-share');msShown=await msBlob(await msImage(n,msWide,msDark()));if(msShownUrl)URL.revokeObjectURL(msShownUrl);
  msShownUrl=URL.createObjectURL(msShown);d.querySelector('.ms-preview').src=msShownUrl;
  d.querySelector('.ms-frame').classList.toggle('wide',msWide);d.querySelectorAll('[data-ms-size]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.msSize==='wide')===msWide)))}
