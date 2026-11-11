@@ -128,7 +128,7 @@ class MemoryReach(unittest.TestCase):
         # another fact that only shares words, or one about someone else, stays
         self.assertNotIn('replaced', said('Your office has a quiet room for calls.', 605))
         self.assertNotIn('replaced', said('Ann Example lives in Ghent.', 606, about=[ANN]))
-        self.assertNotIn('replaced', said('You only book window seats on flights.', 607))  # a plain word swapped: left to the condense pass
+        self.assertNotIn('replaced', said('You only book aisle seats on trains.', 607))  # another word in a scope: another matter
         # Undo merge under Learning brings the old one back
         self.store.unmerge_fact(new['id'])
         facts = recall(self.app, 'preparation', {'todo': self.todo}).text('facts')
@@ -196,6 +196,47 @@ class MemoryReach(unittest.TestCase):
             chat = self.chat_turn(1, 'How do we sign the contract?')
         self.assertIn('e-sign portal', chat)  # its words match the to-do
         self.assertNotIn('garden hedge', chat)
+
+    def test_a_correction_that_swaps_a_plain_word_takes_the_place_of_the_fact_it_corrects(self):
+        said = lambda text, n, **args: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
+                                        self.app.action('remember_fact', {'text': text, '_owner_chat': True, **args}))[1]
+        with self.store.connect() as db:
+            aisle = db.execute('SELECT id FROM facts WHERE text=?', (SAID,)).fetchone()[0]
+        window = said('You only book window seats on flights.', 701)
+        self.assertEqual(window['replaced'], aisle)
+        memory = recall(self.app, 'preparation', {'todo': self.todo})
+        facts = memory.text('facts')
+        self.assertIn('window seats', facts)
+        self.assertNotIn('aisle seats', facts)  # never both in one draft
+        self.app.memory_search = lambda request: {'error': 'off'}
+        found = [f['text'] for f in self.app.talk_recall('seats on flights')['found']]
+        self.assertEqual(len(found), 1)  # Talk recalls the new one only
+        self.assertIn('window seats', found[0])
+        with self.store.connect() as db:  # the old one stays as history behind the new one, with Undo merge
+            self.assertEqual(db.execute('SELECT merged_into FROM facts WHERE id=?', (aisle,)).fetchone()[0], f"fact:{window['id']}")
+        trip = self.store.suggest('trip', 'Book the flights and seats for the trip', 'Flights for the offsite.', [1])['id']
+        history = recall(self.app, 'preparation', {'todo': trip}).text('retained')
+        self.assertIn('Historical, not current', history)  # a to-do it bears on sees it as history, with what it says now
+        self.assertIn('aisle seats', history)
+        # the same frame about another matter, or about someone else, stays apart
+        drink = said('You drink green tea every morning.', 702)
+        self.assertEqual(said('You drink black tea every morning.', 703)['replaced'], drink['id'])
+        # the same frame about another matter, or about someone else, stays apart
+        for n, text, args in ((704, 'You buy apples and pears at the weekly market.', {}),
+                              (705, 'You buy apples and plums at the weekly market.', {}),  # one more item of a list
+                              (706, 'Lunch with the team is at noon on Fridays.', {}),
+                              (707, 'Dinner with the team is at noon on Fridays.', {}),   # the subject: another matter
+                              (708, 'Ann Example drinks green tea every morning.', {'about': [ANN]}),  # someone else
+                              (709, 'You like coffee.', {}), (710, 'You like tea.', {})):  # too short a frame to tell
+            self.assertNotIn('replaced', said(text, n, **args), text)
+        with self.store.connect() as db:
+            ann = db.execute("SELECT id FROM facts WHERE text='Ann Example drinks green tea every morning.'").fetchone()[0]
+        self.assertEqual(said('Ann Example drinks black tea every morning.', 711, about=[ANN])['replaced'], ann)  # same records: hers
+        # Undo merge under Learning brings the old one back, and the correction goes
+        self.store.unmerge_fact(window['id'])
+        facts = recall(self.app, 'preparation', {'todo': self.todo}).text('facts')
+        self.assertIn(SAID, facts)
+        self.assertNotIn('window seats', facts)
 
     def test_ask_reads_facts_on_the_record_and_by_meaning(self):
         about = {'area': None, 'subjects': [{'id': ANN, 'name': 'Ann Example'}], 'accounts': ['work'], 'question': 'What does Ann eat?'}
