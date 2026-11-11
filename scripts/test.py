@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -119,6 +120,29 @@ def execute(command, env, limit, folder):
     return process.returncode == 0, output, usage.ru_utime + usage.ru_stime
 
 
+class Room:
+    """THE_MACHINE_TEST_LOAD=X: start a file only while the computer's load stays under X per core (other jobs on a
+    shared runner count too), with at least one file of this run going so it always moves on. Unset: no limit."""
+
+    def __init__(self, per_core, cores=None, load=None, pause=1.0):
+        self.ceiling = per_core * (cores or os.cpu_count() or 1) if per_core and hasattr(os, 'getloadavg') else 0
+        self.load, self.pause, self.going, self.held = load or (lambda: os.getloadavg()[0]), pause, 0, 0
+        self.lock = threading.Lock()
+
+    def enter(self):
+        while True:
+            with self.lock:
+                if not self.ceiling or not self.going or self.load() < self.ceiling:
+                    self.going += 1
+                    return
+                self.held += 1
+            time.sleep(self.pause)
+
+    def leave(self):
+        with self.lock:
+            self.going -= 1
+
+
 def changed_tests(args):
     """scripts/test.py --changed [REF]: the test files this worktree's change needs, against where it left origin/main
     (or REF): commits, staged and unstaged edits and new files, picked as on a pull request (scripts/test_select.py with
@@ -208,7 +232,16 @@ def main():
         if wsl2 := sum(reason == IN_WSL2 for reason in skips.values()):
             print(f'skip {wsl2} files: {IN_WSL2}', flush=True)
 
+        room = Room(float(os.environ.get('THE_MACHINE_TEST_LOAD') or 0))
+
         def run(file):
+            room.enter()
+            try:
+                return run_one(file)
+            finally:
+                room.leave()
+
+        def run_one(file):
             limit = int(configured_limit or 600)
             command = [sys.executable, '-m', 'unittest', file.stem] if file.suffix == '.py' else [node, str(file)]
             started = time.monotonic()
@@ -252,7 +285,8 @@ def main():
             # how busy the files kept the computer: about `jobs` here means the workers fit the cores they have
             # and how busy the whole computer is (other jobs on the same runner too)
             load = f'; load {os.getloadavg()[1]:.1f} on {os.cpu_count()} cores' if hasattr(os, 'getloadavg') else ''
-            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers{load}')
+            held = f'; files waited {room.held} s in all for the load' if room.held else ''
+            print(f'CPU {cpu_total:.0f} s in {wall:.0f} s: {cpu_total / wall:.1f} cores busy on average, {jobs} workers{load}{held}')
         print('Slowest: ' + ', '.join(f'{name} {seconds:.0f} s' for seconds, name in sorted(took, reverse=True)[:10]))
         if record := os.environ.get('THE_MACHINE_IMPACT_DIR'):
             # the files that passed: only their records go in the test-impact map (scripts/test_impact.py build)

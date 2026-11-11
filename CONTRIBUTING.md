@@ -22,14 +22,18 @@ About the test runner:
 - Name files to run only those: `python3 scripts/test.py test_moving.py`.
 - To run what your change needs, as CI does on a pull request: `python3 scripts/test.py --changed`. It compares the
   worktree (commits, edits and new files) with where it left `origin/main` and picks the tests that ran the functions
-  you changed, from the test-impact map main's last full run made (`scripts/test_impact.py`, fetched with `gh`). Without
-  the map it picks every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
+  you changed, from the test-impact map main's last full run made (`scripts/test_impact.py`, fetched with `gh`): for a
+  dashboard part, the page tests that ran the functions it changed; for a stylesheet, the ones that ran the code drawing
+  what the changed rules style; for a catalog, the tests that assert a changed text and ran the code that shows it.
+  Whatever the map can't place runs as without it: every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
   says why a test was picked. A push to main runs the tests every change since the newest commit whose full run
   passed needs (`scripts/ci_runs.py`); every test runs nightly, and a red nightly run opens an issue. On CI the files
   are split into shards of about equal time (`scripts/test_shards.py`, by each file's time in main's last full run)
   that run side by side.
 - `THE_MACHINE_TEST_MAX_FAILURES=5` stops starting files after 5 failed ones. Each file's line shows its CPU time,
   and the summary how many cores the run kept busy and the computer's load.
+- `THE_MACHINE_TEST_LOAD=2` starts a file only while the computer's load is under 2 per core, with at least one
+  file going. CI sets it on the shared runner, so runs that overlap slow down instead of timing out.
 - If OpenClaw is installed outside the Node prefix, set `OPENCLAW_PACKAGE_DIR` to its package directory.
   `PLAYWRIGHT_CORE` may point to another `playwright-core/index.mjs`.
 

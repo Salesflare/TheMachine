@@ -192,5 +192,41 @@ class Merge(unittest.TestCase):
         self.assertEqual(got['seconds'], {'test_a.py': 3.4, 'test_b.py': 7.0})
 
 
+
+class Room(unittest.TestCase):
+    """scripts/test.py starts a file only while the shared runner's load leaves room, with one file always going."""
+
+    def test_a_busy_runner_holds_back_all_but_one_file(self):
+        import threading
+        runner = load('test')
+        load_now = [40.0]
+        room = runner.Room(1.5, cores=16, load=lambda: load_now[0], pause=0.01)
+        room.enter()  # the first file always starts: the run keeps moving
+        started = threading.Event()
+        second = threading.Thread(target=lambda: (room.enter(), started.set()))
+        second.start()
+        self.assertFalse(started.wait(0.1), 'load 40 on 16 cores: the second file waits')
+        load_now[0] = 20.0
+        self.assertTrue(started.wait(2), 'under 24: it starts')
+        second.join()
+        self.assertEqual(room.going, 2)
+        self.assertGreater(room.held, 0)
+        room.leave(), room.leave()
+        load_now[0] = 99.0
+        room.enter()
+        self.assertEqual(room.going, 1, 'nothing going: a file starts whatever the load')
+
+    def test_no_limit_unless_asked(self):
+        runner = load('test')
+        room = runner.Room(0, cores=16, load=lambda: 99.0)
+        for _ in range(8):
+            room.enter()
+        self.assertEqual((room.going, room.held), (8, 0))
+
+    def test_ci_sets_it_on_the_self_hosted_runner(self):
+        workflow = (ROOT / '.github' / 'workflows' / 'ci.yml').read_text(encoding='utf-8')
+        self.assertIn("THE_MACHINE_TEST_LOAD: ${{ runner.environment == 'self-hosted' && '2' || '' }}", workflow)
+
+
 if __name__ == '__main__':
     unittest.main()
