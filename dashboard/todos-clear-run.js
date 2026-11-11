@@ -15,7 +15,7 @@ function crDraw(error=''){const d=crDialog(),s=crNow();
  const go=t(kind==='do'?'Do it':CR_MSG.includes(a.kind)?'Send':sendLabel(a));
  const k=v=>html`<kbd class="cr-key" aria-hidden="true">${v}</kbd>`;
  setHTML(d,html`<div class="cr-top"><span class="cr-pos">${t('{} of {}',cr.at+1,left)}</span><button type="button" class="cr-x" data-cr="close" aria-label="${t('Close')}">×</button></div>
- <div class="cr-main"><h2 class="cr-title" translate="no">${s.title}</h2>${a?html`<div class="cr-draft">${draftBox(s,a,'')}</div>`:html`<div class="cr-body" translate="no">${format(s.body||'')}</div>`}</div>
+ <div class="cr-main"><h2 class="cr-title" translate="no">${s.title}</h2>${a?html`<div class="cr-draft">${draftBox(s,a,'')}</div>`:html`<div class="cr-body" translate="no">${format(bodyAfterTitle(s.title,s.body))}</div>`}</div>
  ${cr.asking?html`<div class="cr-ask"><textarea id="cr-ask" spellcheck="true" autocapitalize="sentences" rows="3" placeholder="${t('Tell me what to change (Ctrl+Enter saves)')}" aria-label="${t('Ask for changes')}"></textarea><div class="cr-acts"><button type="button" class="primary" data-cr="ask-save">${t('Send changes')}</button><button type="button" data-cr="ask-back">${t('Back')}</button></div></div>`:''}
  <p class="cr-error" role="alert">${error}</p>
  <div class="cr-acts"${cr.asking?html` hidden`:''}><button type="button" class="primary" data-cr="go" data-id="${s.id}" data-rev="${a?.revision||''}">${go}${k('Enter')}</button><button type="button" data-cr="ask">${t('Ask for changes')}</button><button type="button" data-cr="snooze">${t('Snooze')}${k('S')}</button><button type="button" data-cr="skip">${t('Skip')}${k('→')}</button></div>`);

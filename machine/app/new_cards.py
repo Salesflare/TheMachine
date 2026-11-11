@@ -16,6 +16,7 @@ from machine.config import WORKSPACE
 from machine.store.cards import owner_title
 from machine.store.facts import suggestion_scope
 from machine.store.views import source_lines_shown
+from machine.text import body_after_title
 import next_actions
 import own_addresses
 from sources import mail_account, MAIL_SERVICES
@@ -261,7 +262,7 @@ class NewCardsApp:
         stamp, key = now(), 'ai:' + uuid.uuid4().hex[:16]
         name = ' '.join(str(who or 'AI').split())[:60]
         title = owner_title(text)
-        body = text if not draft else i18n.t('{} wrote this email for you. Read it, change it if you like, and send it yourself.', name) + (
+        body = (body_after_title(title, text) or text) if not draft else i18n.t('{} wrote this email for you. Read it, change it if you like, and send it yourself.', name) + (
             '\n\n' + text if text != draft['subject'] else '')
         meta = {'sender_display': i18n.t('{} (connected AI)', name), 'ai_connection': name}
         event_id = self.store.add_ai_request(account, key, stamp, title, text, meta)

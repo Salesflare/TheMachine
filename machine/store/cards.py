@@ -21,7 +21,7 @@ from machine.config import LOG
 from machine.sources.calendar import calendar_owned, expiry_moment
 from machine.sources.connectors import load_connector
 from machine.store.review import CARD_OPEN, own_message
-from machine.text import _address, clamp, encoded
+from machine.text import _address, body_after_title, clamp, encoded
 from timeutil import local_tz, now
 import todo_areas
 
@@ -786,7 +786,7 @@ class CardsStore:
                 **({'area_open': [str(x) for x in area_open][:8]} if area_open else {})}
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            body = words
+            body = body_after_title(title, words) or words  # what follows the title; the same words when there is nothing more (shown as none)
             if title is None:  # only files: the first one's name as its title and their names as its text, until the review reads them
                 names = [r['name'] for r in (db.execute('SELECT name FROM chat_files WHERE id=? AND suggestion_id=?', (str(i), files[0])).fetchone()
                                              for i in files[1][:chat_files.MAX_FILES]) if r]

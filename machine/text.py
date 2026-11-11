@@ -267,3 +267,21 @@ def first_sentence(text):
     """The first sentence of a card's body, plain: an already_done result leads with what shows it."""
     text = ' '.join(re.sub(r'[*_`\[\]]|\(https?://[^)]*\)', '', str(text or '')).split())
     return re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0][:200]
+
+
+def body_after_title(title, body):
+    """What a to-do's body says beyond its title: '' when it only repeats the title (New to-do's own words), the rest
+    when its first line or sentence is the title (Talk's title, then a note), else all of it. Case, spacing and
+    punctuation don't count; a title cut short (…) keeps the whole body, which says it in full. The dashboard reads
+    bodies by the same rule (todos-cards.js bodyAfterTitle), so ones stored before it show clean too."""
+    head, text = str(title or '').strip(), str(body or '')
+    t, b = list(re.finditer(r'[^\W_]+', head)), list(re.finditer(r'[^\W_]+', text))
+    n = len(t)
+    if not n or len(b) < n or any(x.group().lower() != y.group().lower() for x, y in zip(t, b)):
+        return text
+    if len(b) == n:
+        return ''
+    end = b[n - 1].end()
+    if head.endswith('…') or not re.search(r'[\n.!?:;…]', head[-1] + text[end:b[n].start()]):
+        return text
+    return re.sub(r'^[\s.!?:;,…–—-]+', '', text[end:])
