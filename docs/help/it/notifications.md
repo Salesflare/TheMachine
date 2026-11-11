@@ -65,9 +65,9 @@ Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la d
 Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:
 
 - un saluto con ciò che conta oggi, come "Buongiorno Sam, 2 risposte sono pronte da inviare";
-- le tue riunioni in una riga;
 - al massimo tre cose da fare, ognuna con un link Apri: prima le bozze pronte e le promesse in scadenza oggi;
 - quante altre possono aspettare e quanto ti richiedono al tuo ritmo, come "Altre 12 possono aspettare, circa 5 min per sbrigarle." Le attività che aspettano la tua risposta non contano in quel tempo.
+- le tue riunioni in una riga.
 
 La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
 

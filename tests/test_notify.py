@@ -419,12 +419,36 @@ class Notifications(unittest.TestCase):
         overnight = [{'title': f'To-do {n}'} for n in range(5)]
         full = notify.compose(meetings, [{'title': 'Pay the invoice'}], overnight, 'https://m.example/')
         self.assertEqual(full['push']['title'], 'Good morning, 1 due today')
-        self.assertEqual(full['text'], 'Good morning, 1 due today\n\n1 meeting today, at 09:30.\n\n• Pay the invoice\n'
+        self.assertEqual(full['text'], 'Good morning, 1 due today\n\n• Pay the invoice\n'
                                        '• 09:30 Planning with the agency\n• To-do 0\n\n4 more can wait, about 2 min to clear.\n\n'
-                                       'Open The Machine: https://m.example/')
+                                       '1 meeting today, at 09:30.\n\nOpen The Machine: https://m.example/')
         careful = notify.compose(meetings, [], overnight, '', show_text=False)
-        self.assertEqual(careful['push']['body'], '1 meeting today, at 09:30.\n5 waiting, about 3 min to clear.')
+        self.assertEqual(careful['push']['body'], '5 waiting, about 3 min to clear.\n1 meeting today, at 09:30.')
         self.assertNotIn('agency', careful['text'] + careful['subject'] + careful['push']['body'])
+
+    def test_the_headline_is_followed_by_its_own_list_and_the_meetings_come_after(self):
+        # "3 due today", then a meeting line, then the three read as if they were the meeting's. The same text goes to
+        # Telegram and email, so each variant is checked on it. Made-up data.
+        one = [{'at': '2026-10-12T13:00:00+00:00', 'title': 'Lunch with the agency'}]
+        three = one + [{'at': '2026-10-12T15:00:00+00:00', 'title': 'Review'}, {'at': '2026-10-12T16:00:00+00:00', 'title': 'Call'}]
+        due = [{'title': 'Send the deck'}, {'title': 'Pay the invoice'}, {'title': 'Book the venue'}]
+        text = lambda meetings, due, overnight=(), **kw: notify.compose(meetings, due, list(overnight), 'https://m.example/', **kw)['text']
+        self.assertEqual(text(one, due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
+                                                  '1 meeting today, at 13:00.\n\nOpen The Machine: https://m.example/')
+        self.assertEqual(text(three, due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
+                                                    '3 meetings today, the first at 13:00.\n\nOpen The Machine: https://m.example/')
+        self.assertEqual(text([], due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
+                                                 'Open The Machine: https://m.example/')
+        self.assertEqual(text(three, due[:1], total=6), 'Good morning, 1 due today\n\n• Send the deck\n• 13:00 Lunch with the agency\n\n'
+                                                        '5 more can wait, about 3 min to clear.\n\n3 meetings today, the first at 13:00.\n\n'
+                                                        'Open The Machine: https://m.example/')
+        # No due items: the headline is the first meeting and the list starts with it; the meeting line isn't said twice
+        self.assertEqual(text(one, [], [{'title': 'Answer the school'}], total=1),
+                         'Good morning, first meeting at 13:00\n\n• 13:00 Lunch with the agency\n• Answer the school\n\n'
+                         'Open The Machine: https://m.example/')
+        careful = notify.compose(three, due, [], '', show_text=False, total=3)
+        self.assertEqual(careful['text'], 'Good morning, 3 due today\n\n3 waiting, about 2 min to clear.\n\n3 meetings today, the first at 13:00.')
+        self.assertEqual(careful['push']['body'], '3 waiting, about 2 min to clear.\n3 meetings today, the first at 13:00.')
 
     def test_the_morning_push_says_what_waits_and_when_the_first_meeting_is(self):
         # The push has the summary's lines: at most three to-do titles, the first meeting by its time (never its title),
@@ -438,7 +462,7 @@ class Notifications(unittest.TestCase):
         alone = push(meeting, [], [], total=0)
         self.assertEqual((alone['title'], alone['body']), ('Good morning, first meeting at 10:00', '1 meeting today, at 10:00.'))
         careful = push(meeting, [], [], show_text=False, total=2, top=top[:2])
-        self.assertEqual(careful['body'], '1 meeting today, at 10:00.\n2 waiting, about 1 min to clear.')
+        self.assertEqual(careful['body'], '2 waiting, about 1 min to clear.\n1 meeting today, at 10:00.')
         long = push(meeting, [], [], total=9, top=[{'title': 'Reply ' * 30}, {'title': 'Pay ' * 30}])
         self.assertLessEqual(len(long['body']), notify.APP_BODY)
         self.assertNotIn('merger', push(meeting, [], [], total=2, top=top[:2])['body'])

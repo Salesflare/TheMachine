@@ -523,12 +523,13 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
-    It reads: a greeting with what makes today matter (headline, also the subject and the push's title), the day's
-    meetings in a line when there are any, at most three lines that each start with what to do (a to-do's title says
-    that) with one Open link, then how many more can wait and the time they take ("12 more can wait, about 5 min to
-    clear."), at the owner's own pace (per: seconds per action, clear_pace). The time counts only what clears at that
-    pace: not the to-dos that wait on the owner's answer (asking: their ids, as the dashboard's header leaves them out);
-    with none left to count, the line says how many wait and no time. No news, no tips.
+    It reads: a greeting with what makes today matter (headline, also the subject and the push's title), right under it
+    at most three lines that each start with what to do (a to-do's title says that) with one Open link, then how many
+    more can wait and the time they take at the owner's own pace ("12 more can wait, about 5 min to clear."; per:
+    seconds per action, clear_pace), then the day's meetings in a line when there are any (never between the headline
+    and its own list). The time counts only what clears at that pace: not the to-dos that wait on the owner's answer
+    (asking: their ids, as the dashboard's header leaves them out); with none left to count, the line says how many
+    wait and no time. No news, no tips.
 
     The three: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
     someone waits for) and promised [{id?, title}] (the owner's own promises due today; covers: the id of a to-do made
@@ -582,13 +583,15 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     def link(item):
         ident = str((item or {}).get('id') or '')
         return f" · [{t('Open')}]({root}#chat={ident})" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+    # The headline's own list right under it, then how many more wait, then the day's meetings: a meeting line between
+    # "3 due today" and its list read as if the list were the meeting's
     lines = [head, '']
-    if opening and not about_meeting:  # a headline about the first meeting already says it
-        lines += [opening, '']
     if picks:
         lines += ['• ' + text + link(item) for item, text in picks] + ['']
     if tail:
         lines += [tail, '']
+    if opening and not about_meeting:  # a headline about the first meeting already says it
+        lines += [opening, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
@@ -599,7 +602,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         counted = sum(1 for i, _ in shown[:keep] if i is not None and not str(i.get('id') or '').startswith('promise:'))
         left = max(0, total - counted)
         last = waits(left, shown[:keep], bool(keep)) if left else ''
-        parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [opening, last]) if x] or [head]
+        parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [last, opening]) if x] or [head]
         if len('\n'.join(parts)) <= APP_BODY:
             break
     body = '\n'.join(clip(x, APP_BODY) for x in parts)

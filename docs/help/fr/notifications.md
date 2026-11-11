@@ -65,9 +65,9 @@ Les e-mails qui listent ce qui vous attend ont des liens Ouvrir et Mettre en att
 Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :
 
 - un bonjour avec ce qui compte aujourd’hui, comme "Bonjour Sam, 2 réponses sont prêtes à envoyer" ;
-- vos réunions en une ligne ;
 - au plus trois choses à faire, chacune avec un lien Ouvrir : d’abord les brouillons prêts et les promesses du jour ;
 - combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter." Les tâches qui attendent votre réponse ne comptent pas dans ce temps.
+- vos réunions en une ligne.
 
 Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
 

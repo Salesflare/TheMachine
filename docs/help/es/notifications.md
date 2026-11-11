@@ -65,9 +65,9 @@ Los correos con lo que te espera tienen enlaces Abrir y Posponer. Solo abren el 
 Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya nada que contar. **Vista previa**, en su fila, lo muestra sin enviarlo. Por defecto es un push y un correo, cortos para leer de un vistazo:
 
 - un saludo con lo que importa hoy, como "Buenos días, Sam: 2 respuestas listas para enviar";
-- tus reuniones en una línea;
 - como mucho tres cosas que hacer, cada una con un enlace Abrir: primero los borradores para revisar y las promesas de hoy;
 - cuántas más pueden esperar y cuánto te llevan a tu ritmo, como "12 más pueden esperar, unos 5 min para terminar." Las tareas que esperan tu respuesta no cuentan en ese tiempo.
+- tus reuniones en una línea.
 
 El push dice lo mismo sin enlaces. Tócalo para abrir hoy en el **Calendario**.
 
