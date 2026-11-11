@@ -110,12 +110,16 @@ def log(**more):
 # The Codex app's queue for a thread it has open (`codex queue`): the app runs the message next in that thread, which
 # another app server reads with thread/turns/list (as `interrupted` without completedAt until it ends).
 queue = Path(os.environ['HOME']) / 'codex-queue.json'
+def put_queue(q):  # whole or not at all: an app server still polling never reads it half written
+    part = queue.with_name(queue.name + '.' + str(os.getpid()))
+    part.write_text(json.dumps(q))
+    os.replace(part, queue)
 if args[:1] == ['queue']:
     if os.environ.get('AJ_NO_QUEUE'):
         sys.stderr.write("error: unrecognized subcommand 'queue'\n")
         sys.exit(2)
     log(thread=args[args.index('--thread') + 1], message=args[args.index('--message') + 1])
-    queue.write_text(json.dumps({'thread': args[args.index('--thread') + 1], 'text': args[args.index('--message') + 1], 'reads': 0}))
+    put_queue({'thread': args[args.index('--thread') + 1], 'text': args[args.index('--message') + 1], 'reads': 0})
     print('Queued message for thread ' + args[args.index('--thread') + 1] + '.')
     sys.exit(0)
 def app_turns(thread):
@@ -124,7 +128,7 @@ def app_turns(thread):
         return [base]
     q = json.loads(queue.read_text())
     q['reads'] += 1
-    queue.write_text(json.dumps(q))
+    put_queue(q)
     mine = {'id': 'tq', 'status': 'interrupted', 'completedAt': None, 'items': [{'type': 'userMessage', 'content': [{'type': 'text', 'text': q['text']}]}]}
     if q['reads'] >= 2 and 'hang' not in q['text']:
         mine['items'].append({'type': 'commandExecution', 'command': 'printf more > out.txt'})
@@ -990,7 +994,9 @@ class AgentJobs(unittest.TestCase):
             runner = agent_jobs.AppServerCodex(str(self.bin / 'codex'))
             state = {'size': 0, 'n': 0, 'summary': '', 'error': '', 'status': None}
             q = Path(os.environ['HOME']) / 'codex-queue.json'
-            q.write_text(json.dumps({**json.loads(q.read_text()), 'text': 'done now', 'reads': 1}))
+            part = q.with_name(q.name + '.test')  # whole, as the app writes it: the old app server may still poll it
+            part.write_text(json.dumps({**json.loads(q.read_text()), 'text': 'done now', 'reads': 1}))
+            os.replace(part, q)
             import subprocess
             proc = subprocess.Popen([str(self.bin / 'codex'), 'app-server'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             self.addCleanup(lambda: (proc.kill(), proc.wait(), proc.stdin.close(), proc.stdout.close()))
