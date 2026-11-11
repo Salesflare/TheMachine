@@ -27,7 +27,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
 | Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
-| Owner's main chat | facts about a person (`graph` node: `open.known`) | `graph`, `events` | `USER.md`, `MEMORY.md` (OpenClaw) |
+| Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then set-aside and historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
 | Routine | facts and rules block (`recall` `routine`) | `events` and `graph` tools | facts and rules block, `USER.md`, memory search, birthdays |
 | Morning digest | through the to-dos it lists | promises due today | through the to-dos it lists |
 
@@ -51,11 +51,19 @@ share the question's words: half of its words, as Talk's recall matches, or enou
 preparation picks without embeddings), with at least one distinctive word shared. Never a connected AI's fact by words;
 forgotten, ended and replaced facts stay out, as from Ask's meaning search.
 
+The owner's main chat (their private Telegram chat and the web chat) saved facts but couldn't read them back: only
+what `graph` shows on a person's page. The bridge's `assistant_memory` tool now reads them on demand
+(`recall_learned`, the `chat` recall, `ask_memory.for_chat`): the owner's own current facts and draft rules that share
+at least half of the question's words in their plain form (as Talk's recall), then set-aside ones and, marked "Historical, not current", ended or replaced
+ones (`retained_facts.py`). Never a connected AI's fact or one the owner removed, and a fact about a person only when
+the question names them. At most 900 characters (about 225 tokens), logged as `chat` in `memory_use`. No context
+block: a turn that doesn't ask costs only the tool's definition (about 120 tokens, cached with the rest). The bridge
+sets the chat mark (`_owner_chat`); the service answers nothing without it.
+
 ## Still missing
 
-- **The owner's main chat** (Telegram, the web chat) can't read a fact about the owner or the world, nor a draft rule:
-  only what the `graph` tool shows on a person's page. It saves facts there but doesn't read them back. A fix needs a
-  read action in the bridge (`TOOL_ACTIONS`) or a bounded context block, both plugin changes.
+- **The owner's main chat** reads what was learned by words only (in their plain form, as Talk), not yet by meaning:
+  "flying" doesn't find "flights".
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
 - **A to-do's chat** answers in its preparation's session: a current fact learned after that preparation started
   reaches it only on a redo (each turn does get the set-aside and historical facts that bear on the to-do).

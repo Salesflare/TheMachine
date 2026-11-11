@@ -43,7 +43,9 @@ def recall(app, purpose, about=None, budget=0):
     - talk: facts(words) for its recall tool: the owner's own facts and rules that share the words in their plain
       form, then those close in meaning by their stored vectors when embeddings are on (ask_memory.learned), next to
       OpenClaw's memory search.
-    - chat: none yet; the owner's main chat reads no memory through here (docs/memory-reach.md).
+    - chat (the owner's main chat, {'question': words}): learned(question), read only when the chat asks (the bridge's
+      assistant_memory tool): the owner's own facts and draft rules that match, then the set-aside and historical
+      ones, in ask_memory.CHAT_CHARS (ask_memory.for_chat).
     - todo_chat (a turn of a to-do's chat, {'todo': id}): retained, as for its preparation, in a smaller slice;
       the rest of what was learned is in the session from its preparation."""
     about = dict(about or {})
@@ -75,6 +77,8 @@ def recall(app, purpose, about=None, budget=0):
     elif purpose == 'routine':
         memory.add('facts', lambda: store.facts_text(ROUTINE_FACTS))
         memory.add('rules', lambda: store.facts_text(ROUTINE_RULES, 'draft'))
+    elif purpose == 'chat':
+        memory.add('learned', lambda question: ask_memory.for_chat(app, question, budget or ask_memory.CHAT_CHARS))
     elif purpose == 'talk':
         memory.add('facts', lambda words: ask_memory.learned(store, words, embeddings.settings(app.config)))
     return memory

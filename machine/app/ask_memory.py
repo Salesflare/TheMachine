@@ -27,10 +27,12 @@ import sqlite3
 import unicodedata
 
 import embeddings
+import fact_links
 import graph
 import memory_use
 import person_summary
-from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, key_words, note_facts, word_match
+from machine.app import retained_facts
+from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, key_words, note_facts, with_about, word_match
 from machine.store.promises import promise_card, promise_state, who_named
 from machine.text import shown_body
 from timeutil import now
@@ -484,3 +486,69 @@ def learned(store, words, settings=None):
     said = {f['id'] for s, _, _, f in scored if s}
     note_facts(picked, lambda f: 'match' if f['id'] in said else 'closeness', scores={i: c for i, c in close.items() if i not in said})
     return picked
+
+
+# The owner's main chat (Telegram, the web chat) reads what was learned on demand: the bridge's assistant_memory tool,
+# the `chat` recall's learned block. Nothing goes in its prompt until it asks, so a turn that doesn't ask costs nothing.
+CHAT_CHARS = 900          # the whole answer at most: about 225 tokens
+CHAT_LEARNED = 5          # current facts and rules
+ASKING = frozenset(('what', 'which', 'where', 'when', 'who', 'whom', 'why', 'how', 'do', 'does', 'did', 'i', 'me', 'my',
+                    'mine', 'you', 'your', 'we', 'our', 'us', 'know', 'remember', 'said', 'say', 'tell', 'told', 'about',
+                    'again', 'there', 'anything', 'something'))
+CHAT_HEAD = ('What The Machine learned that matches: the owner\'s own facts and draft rules. A line marked '
+             f'"{retained_facts.HISTORY}" no longer holds: never give it as how things are now.')
+
+
+def _asked(question):
+    """The question's words without the ones every question has ("what do you know about my ...") and short ones
+    ("go", "is"), numbers kept."""
+    return ' '.join(w for w in re.findall(r'\w+', str(question or '')) if w.casefold() not in ASKING and (len(w) > 2 or w.isdigit()))
+
+
+def _people_named(question, who):
+    """Of these records (fact_links.records), the people the question names: their whole name, or their first name
+    (three letters or more). A fact about someone else stays out unless the question asks about them."""
+    asked = set(_fold(question))
+    out = set()
+    for node, r in who.items():
+        if r['kind'] != 'person':
+            continue
+        name = _fold(r['name'])
+        if name and (set(name) <= asked or (len(name[0]) >= 3 and name[0] in asked)):
+            out.add(node)
+    return out
+
+
+def for_chat(app, question, limit=CHAT_CHARS):
+    """What was learned that the owner's chat question is about, in at most limit characters ('' when nothing
+    matches): their own current facts and draft rules by words (as Talk's learned), then what was learned earlier and
+    is no longer in the current list (retained_facts.py: set aside, or ended or replaced and marked historical). Never
+    a connected AI's fact, nor one the owner removed. A fact about a person comes only when the question names them.
+    Noted for the use log (purpose chat)."""
+    words = _asked(question)
+    asked = _stems(fact_words(words))
+    if not asked:
+        return ''
+    # by words as Talk's recall: half of the asked words (a short noun like "gym" counts), most shared first
+    at, rank = now(), lambda f: (_shared(asked, f['text']), str(f.get('last_use') or ''))
+    current = sorted((f for f in app.store.facts() if _shared(asked, f['text']) and not ai_fact_by(f) and fact_weight(f, at) > 0), key=rank, reverse=True)
+    with app.store.connect() as db:
+        with_about(db, current)
+        old = [f for f in retained_facts.candidates(db) if _shared(asked, f['text'])]  # never one the owner removed
+        with_about(db, old)
+        people = {n for f in current + old for n in f['about']}
+        who = fact_links.records(db, people)
+    named = _people_named(question, who)
+    mine = lambda f: not any(who.get(n, {}).get('kind') == 'person' and n not in named for n in f['about'])
+    current = [f for f in current if f['kind'] in ('fact', 'draft') and mine(f)][:CHAT_LEARNED]
+    old = sorted((f for f in old if mine(f)), key=lambda f: (f['state'] != 'aside', -_shared(asked, f['text'])))[:retained_facts.LINES]
+    lines, size = [], len(CHAT_HEAD)
+    for f in current + old:
+        text = retained_facts.line(f) if 'state' in f else ('- Draft rule: ' + f['text']) if f['kind'] == 'draft' else fact_line(f)
+        if size + len(text) + 1 > limit:
+            break
+        lines.append(text)
+        size += len(text) + 1
+        memory_use.note('rule' if f['kind'] == 'draft' else 'fact', f['id'], text, 'match', about=f['about'],
+                        source='note' if f.get('suggestion_id') else 'review', at=f.get('created_at'))
+    return '\n'.join([CHAT_HEAD, *lines]) if lines else ''

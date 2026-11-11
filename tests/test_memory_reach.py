@@ -250,6 +250,50 @@ class MemoryReach(unittest.TestCase):
         known = [k['text'] for k in self.app.graph_action({'node_id': ANN})['open'].get('known', [])]
         self.assertIn(NOTE_ANN, known)  # OpenClaw's chat asks graph for a person: what was learned about them comes along
 
+    def chat(self, question):
+        """A later question in the owner's main chat, as the bridge's assistant_memory tool asks it."""
+        return self.app.action('recall_learned', {'words': question, '_owner_chat': True})
+
+    def test_the_owners_chat_reads_back_what_it_was_told(self):
+        # said in the chat (setUp), asked later in the chat: the answer has it, and the draft rule from the notes
+        found = self.chat('Which seats do I book on flights?')['found']
+        self.assertIn(SAID, found)
+        self.assertLessEqual(len(found), ask_memory.CHAT_CHARS)
+        self.assertIn('- Draft rule: ' + NOTE_RULE, self.chat('how do I sign an email')['found'])
+        with self.store.connect() as db:  # logged as the main chat's read, ids only
+            self.assertEqual({tuple(r) for r in db.execute("SELECT kind,how FROM memory_use WHERE purpose='chat'")}, {('fact', 'match'), ('rule', 'match')})
+        self.assertEqual(self.chat('quarterly board budget'), {'found': '', 'note': 'Nothing The Machine learned matches those words.'})
+        # only the owner's own chat: no mark from the bridge, no answer
+        with self.assertRaisesRegex(ValueError, 'own main chat'):
+            self.app.action('recall_learned', {'words': 'aisle seats'})
+
+    def test_the_owners_chat_never_reads_a_forgotten_fact(self):
+        said = lambda text, n: (self.app.action('feedback_reply', {'text': text, 'message_id': str(n), 'timestamp': NOW.timestamp(), 'reply_to_id': ''}),
+                                self.app.action('remember_fact', {'text': text, '_owner_chat': True}))[1]
+        gym = said('You go to the gym on Thursdays.', 701)
+        self.assertIn('gym on Thursdays', self.chat('when do I go to the gym')['found'])
+        self.app.action('forget_fact', {'id': gym['id']}, owner_dashboard=True)
+        self.assertEqual(self.chat('when do I go to the gym')['found'], '')  # not as current, not as history
+        # a correction: the old one comes back only marked as history; once the owner removes the new one, neither
+        old = said('Your office is in Ghent.', 702)
+        new = said('Your office is in Brussels now.', 703)
+        self.assertEqual(new['replaced'], old['id'])
+        found = self.chat('where is my office')['found'].splitlines()
+        self.assertIn('- Your office is in Brussels now.', found)
+        ghent = [line for line in found if 'Ghent' in line]
+        self.assertEqual(len(ghent), 1)
+        self.assertTrue(ghent[0].startswith('- Historical, not current (ended '), ghent[0])
+        self.app.action('forget_fact', {'id': new['id']}, owner_dashboard=True)
+        self.assertEqual(self.chat('where is my office')['found'], '')
+
+    def test_the_owners_chat_reads_a_persons_facts_only_when_asked_about_them(self):
+        self.assertNotIn(NOTE_ANN, self.chat('who is vegetarian')['found'])
+        self.assertIn(NOTE_ANN, self.chat('is Ann vegetarian')['found'])
+        with self.store.connect() as db:  # a connected AI's fact is not the owner's word
+            db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You prefer window seats on flights.','ai:c1',?,'fact','ai:Claude','work')",
+                       (NOW.isoformat(),))
+        self.assertNotIn('window', self.chat('seats on flights')['found'])
+
     def test_a_routine_run_reads_what_came_in_every_way(self):
         sent = []
         for name, value in (('routines_now', lambda s: NOW.astimezone(s.routines_tz())),
