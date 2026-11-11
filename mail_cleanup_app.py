@@ -2,9 +2,11 @@
 docs/code-map.md).
 
 routine_template adds a template's routine (routine_templates.py) and starts its first run. A template routine's run is
-its own (routine_template_run, from routines_app.routines_step): Newsletter cleanup in plain code, Spam cleanup in one
-short read-only turn over the day's mail by unknown senders, only when there is any. Either ends in at most one to-do
-per area with a choice per item (mail_cleanup.py), quiet: no buzz or push.
+its own (routine_template_run, from routines_app.routines_step): Newsletter cleanup in plain code. Spam cleanup runs every
+hour: plain code lists the mail by unknown senders that is new since its last run (no model), and only when there is
+any, one small model call reads just that list (cleanup_spam_pass: no agent, no tools, the background model; it waits
+for the usage budget like any background turn). Either ends in at most one to-do per area with a choice per item
+(mail_cleanup.py), quiet: no buzz or push.
 
 An edited Newsletter or Spam cleanup runs as a normal routine on its new words (routine_templates.py). Its turn still
 sees the mail its template would list (routine_cleanup_lines) and may pick from it (routine_result cleanup): its picks,
@@ -34,6 +36,7 @@ import urllib.parse
 import uuid
 from email.utils import make_msgid
 
+import help_chat
 import i18n
 import mail_cleanup
 import ms_graph
@@ -43,6 +46,7 @@ import routines
 import todo_areas
 from enrichment import _Pinned
 from machine.sources.gmail import Gmail
+from models import background_model
 from sources import credential, gog_read
 
 LOG = logging.getLogger('personal-assistant')
@@ -52,6 +56,7 @@ POST_TIMEOUT = 15
 BODY_MAX = 700  # a to-do's text (Store.suggest)
 LINE_MAX = 80  # one item's line in it
 MARK_KEEP_S = 600  # how long the Routines page keeps which accounts may move mail to spam
+SPAM_TIMEOUT = 120  # seconds the spam pass's model call may take
 
 
 def one_click(url, timeout=POST_TIMEOUT):
@@ -114,7 +119,7 @@ class MailCleanupApp:
             found = routine_templates.live(db, key)
             if found:
                 return self.routines_view(found['id'])
-            rid = routines.create(db, template['words'], routine_templates.DAILY, now.date(), routine_templates.AT, now, stamp,
+            rid = routines.create(db, template['words'], routine_templates.rule(key), now.date(), routine_templates.AT, now, stamp,
                                   name=i18n.t(template['name']), origin='template:' + key)
             routines.run_now(db, rid, stamp)  # its first look now: the past day
         self.routines_wake().set()
@@ -142,8 +147,9 @@ class MailCleanupApp:
         return routines.last_run(db, routine_id) or (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)).isoformat()
 
     def routine_template_run(self, run, key):
-        """A template routine's run (routines_step), before any turn. Newsletters: found and done here, no turn (True).
-        Spam: nothing to read finishes it here (True); else the turn's message (str)."""
+        """A template routine's run (routines_step): always done here, never an agent turn (True). Newsletters: found and
+        done in plain code. Spam: nothing new by unknown senders finishes it at once; else one small model call over just
+        that mail, in a thread of its own, once the usage budget allows (cleanup_spam_pass)."""
         if key == 'newsletters':  # its headers are read from the mailbox: in a thread of its own, never under the lock
             self.routine_spawn(lambda _: self.cleanup_finish_run(run, key), run['id'])
             return True
@@ -151,15 +157,51 @@ class MailCleanupApp:
             self.routine_spawn(lambda _: self.birthdays_run(run), run['id'])
             self.birthdays_facebook_spawn(self.birthdays_facebook_offer, run)  # once: Import birthdays from Facebook (birthdays_facebook_app.py)
             return True
+        if run['id'] in self.__dict__.get('_routine_steps', ()):
+            return True  # its pass is running
         ids = self.cleanup_mark_accounts(fresh=True)  # mail it can't move to spam isn't asked about
         with self.store.connect() as db:
             mail_cleanup.ensure(db)
             since = self.cleanup_since(db, run['routine_id'])
             found = mail_cleanup.spam_candidates(db, ids, since) if ids else []
-        if found:
-            return self.cleanup_spam_prompt(found, since)
-        self.cleanup_finish_run(run, key)
+        if not found:  # the check before any model: nothing new by unknown senders
+            self.cleanup_finish_run(run, key)
+            return True
+        now_run = str(run['period']).startswith(('now:', 'test:'))  # the owner pressed it: only the usage limit holds it
+        if self.background_pause(owner=now_run, job='routine') or not (now_run or self.background_spaced()):
+            return True  # a next step
+        self.background_started()
+        self.routine_spawn(lambda _: self.cleanup_spam_pass(run, found, since), run['id'])
         return True
+
+    def cleanup_spam_pass(self, run, found, since):
+        """The spam pass: one model call with only the new mail by unknown senders (no agent, no tools), its picks kept
+        only from that mail. They become one to-do per area after the run is settled; none, or a reply that isn't one,
+        settles the run as nothing new or didn't work. Mail it didn't settle is read again by the next run."""
+        ask = getattr(self, 'cleanup_spam_model', None)  # tests and the sandbox: (prompt) -> reply
+        prompt = self.cleanup_spam_prompt(found, since)
+        try:
+            if ask:
+                reply = ask(prompt)
+            else:
+                model = background_model(self.config)
+                reply = help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=SPAM_TIMEOUT)
+        except help_chat.Unavailable:
+            reply = None
+        picks = mail_cleanup.spam_reply(reply)
+        stamp = self.routines_stamp()
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if picks is None:
+                routines.finish(db, run['id'], 'failed', stamp, error='no_result' if reply else 'runtime_error')
+                return
+            picked = mail_cleanup.picked_spam(found, picks)
+            if picked:
+                routines.report(db, run['id'], text=self.cleanup_said('spam', len(picked)), stamp=stamp)
+            else:
+                routines.report(db, run['id'], nothing=True, why=i18n.t('No spam'), stamp=stamp)
+        if picked and not routines.is_test(run):  # what each Spam will do is asked after the transaction: no network inside it
+            self.cleanup_spam_todos(run, run['id'], picked)
 
     def cleanup_finish_run(self, run, key):
         """A run with nothing for a turn: Newsletter cleanup's, or Spam cleanup's with no mail to read."""
@@ -206,15 +248,15 @@ class MailCleanupApp:
             'development), scams, phishing, fake invoices or payment requests, and mass mail the owner never asked for. Never '
             'pick a newsletter or service the owner may have signed up for, a receipt, a notification from a service they use, '
             'or a real person writing about something specific. When unsure, leave it out.',
-            'Read nothing else. Then call assistant_signals routine_result once with spam: [{event_id, why: 2 to 5 words, '
-            f'like Cold SEO pitch}}] (an empty list when none is spam) and text: one short line, in {i18n.written_in()}. '
-            'Then end the turn with: Done.',
+            'Answer with JSON only: {"spam": [{"event_id": 123, "why": "2 to 5 words, like Cold SEO pitch"}]}, an empty list '
+            f'when none is spam. Write why in {i18n.written_in()}.',
             '<<<', mail_cleanup.evidence(found), '>>>',
         ])
 
     def routine_spam_result(self, mine, run_id, args, stamp, db):
-        """The Spam cleanup turn's report (routine_result, inside its transaction): its picks, only from the mail it read,
-        become one to-do per area after the run is settled. Returns what routine_result answers."""
+        """The report of a Spam cleanup turn started before its pass was a model call (routine_result, inside its
+        transaction): its picks, only from the mail it read, become one to-do per area after the run is settled. Returns
+        what routine_result answers."""
         ids = self.cleanup_mark_accounts()
         mail_cleanup.ensure(db)
         picked = mail_cleanup.picked_spam(mail_cleanup.spam_candidates(db, ids, self.cleanup_since(db, mine['id'])), args.get('spam'))
@@ -224,15 +266,20 @@ class MailCleanupApp:
             routines.report(db, run_id, nothing=True, why=i18n.t('No spam'), stamp=stamp)
         db.commit()
         if picked and not routines.is_test(mine):  # what each Spam will do is asked after the transaction: no network inside it
-            items = self.cleanup_spam_ways(picked)
-            listed, missed, made = self.cleanup_todos(mine, 'spam', items, run_id) if items else (0, 0, 0)
-            if listed != len(picked) or missed or made > 1:  # the result says what the to-do lists; mail on none is read again next run
-                with self.store.connect() as db:
-                    if missed or listed:
-                        routines.restate(db, run_id, 'failed' if missed else 'ready', self.cleanup_said('spam', listed, made, missed))
-                    else:  # none in an account it may move mail in after all
-                        routines.restate(db, run_id, 'nothing', i18n.t('No spam'))
+            self.cleanup_spam_todos(mine, run_id, picked)
         return {'saved': True, 'next': 'End your turn now with: Done.'}
+
+    def cleanup_spam_todos(self, routine, run_id, picked):
+        """A settled spam run's to-dos, one per area; the result then says what they list, and mail on none fails the
+        run so the next run reads it again."""
+        items = self.cleanup_spam_ways(picked)
+        listed, missed, made = self.cleanup_todos(routine, 'spam', items, run_id) if items else (0, 0, 0)
+        if listed != len(picked) or missed or made > 1:
+            with self.store.connect() as db:
+                if missed or listed:
+                    routines.restate(db, run_id, 'failed' if missed else 'ready', self.cleanup_said('spam', listed, made, missed))
+                else:  # none in an account it may move mail in after all
+                    routines.restate(db, run_id, 'nothing', i18n.t('No spam'))
 
     def cleanup_found(self, db, key, routine_id):
         """The mail a cleanup run of this routine would list now: newsletters, or spam candidates where mail can move."""

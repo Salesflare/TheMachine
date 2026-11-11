@@ -15,13 +15,13 @@ Senza un orario, gira alle 8:00. L’orario è quello dell’orologio della tua 
 
 ## Modelli
 
-In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30. La sua scheda mostra le sue parole come ogni routine, e **Modifica** cambia le parole o il nome.
+In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30 (Pulizia spam ogni ora). La sua scheda mostra le sue parole come ogni routine, e **Modifica** cambia le parole o il nome.
 
 **Pulizia newsletter** crea un’attività per area (lavoro e personale) con le newsletter dell’ultimo giorno, ognuna con **Tieni** o **Disiscriviti**. La disiscrizione usa il link a un clic della lista, o la sua email di disiscrizione dal tuo indirizzo se l’invio è attivo. Altrimenti mostra **Apri la pagina di disiscrizione**.
 
 Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite un indirizzo di gruppo, come un Google Group, è elencata sotto chi l’ha scritta e non ti disiscrive mai dal gruppo.
 
-**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha.
+**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi.
 
 Nulla cambia finché non confermi sull’attività. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
 
@@ -37,7 +37,7 @@ Gli amici che nessuno nel tuo Graph ha vengono contati, con alcuni nomi. **Aggiu
 
 **Annulla** sull’attività toglie esattamente quelle persone, anche dopo **Importa di nuovo**.
 
-Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam usa un breve turno quando c’è posta da leggere). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
+Finché le sue parole sono quelle del modello, gira con il suo codice, senza il tuo piano di IA (Pulizia spam elenca prima con il codice la posta nuova di mittenti sconosciuti, e fa una breve domanda alla tua IA solo quando ce n’è). Un nuovo nome non cambia nulla. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 
 Pulizia newsletter e Pulizia spam finiscono sempre nella stessa attività con una scelta per email. Compleanni modificato dà il suo risultato e al massimo una bozza, non un’attività per persona. **Torna al modello** in **Modifica** rimette le sue parole.
 

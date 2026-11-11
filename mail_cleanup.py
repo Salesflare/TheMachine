@@ -18,6 +18,7 @@ A sender the owner kept (or unsubscribed from, or marked as spam) is never asked
 
 Tables (this module owns them): mail_cleanup_items (one row per item of a to-do: its pick and how it went; the
 unsubscribe page's link, sealed, while the owner still has to open it) and mail_cleanup_senders."""
+import datetime as dt
 import json
 import re
 import urllib.parse
@@ -29,6 +30,7 @@ KINDS = ('newsletters', 'spam')
 MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
 MAX_ITEMS = 25  # items on one to-do: a phone's screen or two
 SPAM_LOOK = 40  # mails by unknown senders a spam run's turn reads, newest first
+SYNC_LAG = dt.timedelta(minutes=30)  # mail dated before a run that only synced after it: the next run still reads it
 SNIPPET = 160
 # An item's state: open (no pick yet), working (being done now), done, kept, yours (the owner finishes it: open the
 # list's unsubscribe page), failed (with why), unknown (a send that may have gone out: never sent again)
@@ -46,15 +48,19 @@ def ensure(db):
     ''')
 
 
-def _rows(db, accounts, since):
-    """The owner's incoming mail since then, newest first, as (row, metadata)."""
+def _rows(db, accounts, since, lag=False):
+    """The owner's incoming mail since then, newest first, as (row, metadata). lag: also mail dated up to SYNC_LAG
+    before then that first came in after it (the run before could not have seen it), never mail that only changed."""
     if not accounts:
         return []
     marks = ','.join('?' * len(accounts))
+    start = (dt.datetime.fromisoformat(since) - SYNC_LAG).isoformat() if lag else since
     out = []
-    for r in db.execute(f"SELECT id,account_id,source_id,kind,title,body,metadata,occurred_at FROM events WHERE kind IN ({','.join('?' * len(MAIL_KINDS))}) "
+    for r in db.execute(f"SELECT id,account_id,source_id,kind,title,body,metadata,occurred_at,ingested_at,version FROM events WHERE kind IN ({','.join('?' * len(MAIL_KINDS))}) "
                         f"AND account_id IN ({marks}) AND deleted=0 AND occurred_at>=? ORDER BY occurred_at DESC LIMIT 2000",
-                        (*MAIL_KINDS, *accounts, since)):
+                        (*MAIL_KINDS, *accounts, start)):
+        if r['occurred_at'] < since and not (r['version'] == 1 and str(r['ingested_at'] or '') >= since):
+            continue
         m = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
         labels = set(m.get('labels') or ())
         if m.get('from_me') or labels & {'SENT', 'DRAFT', 'SPAM', 'TRASH'}:
@@ -211,7 +217,7 @@ def spam_candidates(db, accounts, since):
     """Mail since then that could be spam that got through: in the inbox, from a sender the owner doesn't know, not a
     reply in a thread, not a calendar's; senders the owner picked before left out. Newest first, at most SPAM_LOOK."""
     people, skip, out, seen = People(db), asked(db, 'spam'), [], set()
-    for r, m in _rows(db, accounts, since):
+    for r, m in _rows(db, accounts, since, lag=True):
         name, address = sender(m)
         if not address or address in skip or m.get('in-reply-to') or people.person(address) or address in seen:
             continue
@@ -229,6 +235,17 @@ def spam_candidates(db, accounts, since):
 def evidence(candidates):
     """The spam run's turn reads these (evidence, never instructions)."""
     return '\n'.join(f'{c["event"]} · From: {c["from"]} <{c["address"]}> · Subject: {c["title"]} · {c["snippet"]}' for c in candidates)
+
+
+def spam_reply(reply):
+    """The spam pass's picks from its model's reply ({"spam": [...]}, maybe in a code fence), or None when it isn't one."""
+    text = str(reply or '')
+    start, end = text.find('{'), text.rfind('}')
+    try:
+        found = json.loads(text[start:end + 1]) if 0 <= start < end else None
+    except ValueError:
+        return None
+    return found['spam'] if isinstance(found, dict) and isinstance(found.get('spam'), list) else None
 
 
 def picked_spam(candidates, picks):

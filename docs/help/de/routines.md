@@ -17,13 +17,13 @@ Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ih
 
 ## Vorlagen
 
-Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30. Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
+Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30 (Spam aufräumen jede Stunde). Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
 
 **Newsletter aufräumen** macht ein To-do pro Bereich (Arbeit und Privat) mit den Newslettern des letzten Tages, jeweils mit **Behalten** oder **Abmelden**. Abmelden nutzt den Ein-Klick-Link der Liste oder ihre Abmelde-Mail von deiner Adresse, wenn Senden an ist. Sonst zeigt es **Abmeldeseite öffnen**.
 
 Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine Gruppenadresse, etwa eine Google Group, steht unter dem, der sie geschrieben hat, und meldet dich nie von der Gruppe ab.
 
-**Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht.
+**Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst.
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 
@@ -39,7 +39,7 @@ Freunde, die niemand in deinem Graph hat, werden gezählt, mit ein paar Namen. *
 
 **Rückgängig** in der Aufgabe entfernt genau diese Personen wieder, auch nach **Erneut importieren**.
 
-Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen nutzt einen kurzen Durchlauf, wenn es Mail zu lesen gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
+Solange ihre Worte die der Vorlage sind, läuft sie mit eigenem Code, ohne dein KI-Abo (Spam aufräumen listet neue Mail von unbekannten Absendern zuerst per Code und stellt deiner KI nur dann eine kurze Frage, wenn es welche gibt). Ein neuer Name ändert daran nichts. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 
 Newsletter aufräumen und Spam aufräumen enden weiter im selben To-do mit einer Wahl pro Mail. Geänderte Geburtstage geben ihr Ergebnis und höchstens einen Entwurf, kein To-do pro Person. **Zurück zur Vorlage** in **Bearbeiten** setzt ihre Worte zurück.
 

@@ -15,13 +15,13 @@ Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
 
 ## Sjablonen
 
-Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30. Haar kaart toont haar woorden zoals elke routine, en **Bewerken** past ze of haar naam aan.
+Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30 (Spam opruimen elk uur). Haar kaart toont haar woorden zoals elke routine, en **Bewerken** past ze of haar naam aan.
 
 **Nieuwsbrieven opruimen** maakt één to-do per gebied (werk en persoonlijk) met de nieuwsbrieven van de voorbije dag, elk met **Houden** of **Afmelden**. Afmelden gebruikt de afmeldlink met één klik van de lijst, of de afmeldmail vanaf je adres als versturen aanstaat. Anders toont het **Afmeldpagina openen**.
 
 Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een groepsadres binnenkomt, zoals een Google Group, staat onder wie hem schreef en meldt je nooit af bij de groep.
 
-**Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet.
+**Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet. Het kijkt elk uur, zodat spam er meestal al staat voor jij eraan toekomt.
 
 Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
 
@@ -37,7 +37,7 @@ Vrienden die niemand in je Graph heeft, worden geteld, met een paar namen. **Voe
 
 **Ongedaan maken** op de to-do haalt precies die mensen weer weg, ook na **Opnieuw importeren**.
 
-Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
+Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen zet nieuwe mail van onbekende afzenders eerst met code op een rij, en stelt je AI alleen een korte vraag als er zulke mail is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 
 Nieuwsbrieven opruimen en Spam opruimen eindigen nog altijd in dezelfde to-do met een keuze per mail. Een aangepaste Verjaardagen geeft haar resultaat en hoogstens één concept, geen to-do per persoon. **Terug naar het sjabloon** in **Bewerken** zet haar woorden terug.
 
