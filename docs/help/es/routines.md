@@ -33,7 +33,9 @@ Los cumpleaños vienen de tus calendarios (los cumpleaños y el calendario Cumpl
 
 **Importar cumpleaños de Facebook**: con Cumpleaños activado, una tarea ofrece leer la página de cumpleaños de Facebook. Toca **Importar** y The Machine la abre en su navegador, se desplaza hasta que cargan todos los meses y lee el nombre y el cumpleaños de cada amigo. Muestra cuántos encontró y quiénes coinciden por nombre y apellido con personas de tu Graph. Un nombre que tiene más de una persona se omite y se lista.
 
-Solo **Guardar** los conserva, en la página de cada persona: el cumpleaños y, si aún no tiene foto, su foto de perfil de Facebook. Un cumpleaños o una foto que pusiste ahí se queda, y una foto que ya tiene nunca se reemplaza. No se escribe nada en Facebook. Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
+Solo **Guardar** los conserva, en la página de cada persona: el cumpleaños y, si aún no tiene foto, su foto de perfil de Facebook. Un cumpleaños o una foto que pusiste ahí se queda, y una foto que ya tiene nunca se reemplaza. No se escribe nada en Facebook.
+
+Nunca vuelve a leer por sí sola: lo hace **Importar de nuevo** en la tarea. El navegador tiene que tener sesión iniciada en Facebook. Si no la tiene, toca **Inicia sesión en Facebook** en la tarea e inicia sesión ahí; después lee la página por sí sola. The Machine nunca inicia sesión por ti.
 
 Los amigos que nadie en tu Graph tiene se cuentan, con algunos nombres. **Añadir … como contactos personales** los añade todos a la vez, también después de Guardar: cada uno con su nombre y cumpleaños, nunca compartido con una Work Fleet. Un nombre que ya tiene alguien de tu Graph, o que tenía alguien que borraste para siempre, se omite. Los recordatorios de cumpleaños siguen llegando solo para la gente a la que escribes.
 

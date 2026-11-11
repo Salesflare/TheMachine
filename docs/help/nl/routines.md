@@ -33,7 +33,9 @@ Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen 
 
 **Verjaardagen importeren uit Facebook**: zodra Verjaardagen aan staat, biedt een to-do aan om de verjaardagspagina van Facebook te lezen. Tik op **Importeren** en The Machine opent ze in zijn browser, scrolt tot elke maand geladen is en leest de naam en verjaardag van elke vriend. Hij toont hoeveel hij vond en wie op voor- en achternaam overeenkomt met mensen in je Graph. Een naam die meer dan één persoon heeft, wordt overgeslagen en vermeld.
 
-Alleen **Bewaren** houdt ze bij, op de pagina van elke persoon: de verjaardag, en de Facebook-profielfoto voor wie nog geen foto heeft. Een verjaardag of foto die je daar zelf instelde, blijft, en een foto die iemand al heeft, wordt nooit vervangen. Er wordt niets naar Facebook geschreven. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook. Is hij dat niet, tik dan op **Inloggen bij Facebook** op de to-do en log daar in; daarna leest hij de pagina vanzelf. The Machine meldt zich nooit voor je aan.
+Alleen **Bewaren** houdt ze bij, op de pagina van elke persoon: de verjaardag, en de Facebook-profielfoto voor wie nog geen foto heeft. Een verjaardag of foto die je daar zelf instelde, blijft, en een foto die iemand al heeft, wordt nooit vervangen. Er wordt niets naar Facebook geschreven.
+
+Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook. Is hij dat niet, tik dan op **Inloggen bij Facebook** op de to-do en log daar in; daarna leest hij de pagina vanzelf. The Machine meldt zich nooit voor je aan.
 
 Vrienden die niemand in je Graph heeft, worden geteld, met een paar namen. **Voeg … toe als persoonlijke contacten** voegt ze allemaal tegelijk toe, ook na Bewaren: elk met naam en verjaardag, nooit gedeeld met een Work Fleet. Een naam die al iemand in je Graph heeft, of die iemand had die je definitief verwijderde, wordt overgeslagen. Verjaardagsherinneringen komen nog altijd alleen voor mensen naar wie je schrijft.
 

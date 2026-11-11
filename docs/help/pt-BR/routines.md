@@ -33,7 +33,9 @@ Os aniversários vêm das suas agendas (os aniversários e a agenda Aniversário
 
 **Importar aniversários do Facebook**: com Aniversários ligado, uma tarefa oferece ler a página de aniversários do Facebook. Toque em **Importar** e a The Machine a abre no navegador dela, rola até todos os meses carregarem e lê o nome e o aniversário de cada amigo. Ela mostra quantos encontrou e quem corresponde por nome e sobrenome a pessoas do seu Graph. Um nome que mais de uma pessoa tem é ignorado e listado.
 
-Só **Salvar** os guarda, na página de cada pessoa: o aniversário e, para quem ainda não tem foto, a foto de perfil do Facebook. Um aniversário ou uma foto que você informou lá continua, e uma foto que a pessoa já tem nunca é substituída. Nada é escrito no Facebook. Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
+Só **Salvar** os guarda, na página de cada pessoa: o aniversário e, para quem ainda não tem foto, a foto de perfil do Facebook. Um aniversário ou uma foto que você informou lá continua, e uma foto que a pessoa já tem nunca é substituída. Nada é escrito no Facebook.
+
+Ela nunca lê de novo sozinha: quem faz isso é **Importar de novo** na tarefa. O navegador precisa estar conectado ao Facebook. Se não estiver, toque em **Entrar em Facebook** na tarefa e entre lá; depois ela lê a página sozinha. A The Machine nunca entra por você.
 
 Amigos que ninguém no seu Graph tem são contados, com alguns nomes. **Adicionar … como contatos pessoais** adiciona todos de uma vez, também depois de Salvar: cada um com nome e aniversário, nunca compartilhado com uma Work Fleet. Um nome que alguém do seu Graph já tem, ou que tinha alguém que você excluiu de vez, é pulado. Os lembretes de aniversário continuam vindo só para pessoas para quem você escreve.
 

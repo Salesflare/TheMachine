@@ -35,7 +35,9 @@ Birthdays come from your calendars (Google’s birthday events and Birthdays cal
 
 **Import birthdays from Facebook**: once Birthdays is on, a to-do offers to read Facebook’s birthdays page. Tap **Import** and The Machine opens it in its browser, scrolls until every month has loaded and reads each friend’s name and birthday. It shows how many it found and who matched people in your Graph by first and last name. A name that more than one person has is skipped and listed.
 
-Only **Save** keeps them, on each person’s page: the birthday, and their Facebook profile picture for someone who has no photo yet. A birthday or picture you set there stays, and a photo they already have is never replaced. Nothing is written to Facebook. It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook. If it isn’t, tap **Sign in to Facebook** on the to-do and sign in there; once you’re in, it reads the page by itself. The Machine never signs in for you.
+Only **Save** keeps them, on each person’s page: the birthday, and their Facebook profile picture for someone who has no photo yet. A birthday or picture you set there stays, and a photo they already have is never replaced. Nothing is written to Facebook.
+
+It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook. If it isn’t, tap **Sign in to Facebook** on the to-do and sign in there; once you’re in, it reads the page by itself. The Machine never signs in for you.
 
 Friends nobody in your Graph has are counted, with a few names. **Add … as personal contacts** adds them all at once, also after Save: each with their name and birthday, never shared with a Work Fleet. A name someone in your Graph already has, or someone you deleted permanently had, is skipped. Birthday reminders still only come for people you write to.
 
