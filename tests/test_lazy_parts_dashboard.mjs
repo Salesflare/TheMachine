@@ -13,7 +13,8 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 // they're in, drawn (Skills and Connected AIs too). They're fetched one at a time, not all at once with the page's data. A link straight to Calendar opens it once its part is in. When they can't load, the rest is drawn
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
 // draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
-// conversation by Talk starts with its session's part.
+// conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
+// opens once it's in.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -50,7 +51,7 @@ try{
   // one at a time: the next is asked for once the one before is in (it's held, so none other comes)
   for(const until=Date.now()+20000;!asked.length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
   await new Promise(r=>setTimeout(r,1500));assert.equal(asked.length,1,'one part at a time');
-  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof splOpen),'undefined'.repeat(7));
+  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof splOpen+typeof frOpen+typeof fuOpen),'undefined'.repeat(9));
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
   await p.locator('#suggestions .all-clear .poke').click();
@@ -64,7 +65,11 @@ try{
   await p.evaluate(()=>{fleetData={on:false,fleets:[]};fleetShown=fleetView(false,true)});assert.equal(await p.locator('#fleet-view').innerHTML(),'');
   await p.evaluate(()=>showTab('routines'));assert.equal(await p.locator('#routines-view').innerHTML(),'');
   await p.evaluate(()=>showTab('calendar'));await p.evaluate(()=>document.querySelector('#open-help').click());
+  // A follow-up group's Review tapped while its part is on its way: the review opens once it's in
+  await p.evaluate(()=>{const b=document.createElement('button');b.id='fu-held';b.dataset.fuReview='board:held';document.body.append(b);b.click()});
+  assert.equal(await p.evaluate(()=>fr),null);
   release();hold=null;holdOnly=null;
+  await p.waitForFunction(()=>fr?.g==='board:held');await p.evaluate(()=>document.querySelector('#fu-held').remove());
   // #help-panel is made by Help's part: until it's in, there's none (the check waits, it doesn't throw). Settings has a
   // block of its own below: opened here too, whichever part came last would decide what shows.
   await p.waitForFunction(()=>document.querySelector('#calendar-view').children.length>0&&document.querySelector('#learn-tabs').children.length>0&&document.querySelector('#help-panel')?.open&&document.querySelector('#people-view').innerHTML!==''&&document.querySelector('#fleet-view').textContent.includes('not in a Fleet')&&document.querySelector('#health-tabs').children.length>0&&document.querySelector('#connectors').children.length>0);
