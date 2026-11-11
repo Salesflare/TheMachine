@@ -285,3 +285,23 @@ def body_after_title(title, body):
     if head.endswith('…') or not re.search(r'[\n.!?:;…]', head[-1] + text[end:b[n].start()]):
         return text
     return re.sub(r'^[\s.!?:;,…–—-]+', '', text[end:])
+
+
+def _words(text):
+    return ' '.join(re.findall(r'[^\W_]+', str(text or '').casefold()))
+
+
+def fold_previews(rows):
+    """Search results without the phone's previews of what is there in full: a notification whose text a message in
+    the results already has (the chat or mail it previews), or that repeats an earlier preview word for word, goes.
+    A preview of something the Machine has nothing else of stays where it ranked."""
+    full = [_words(f"{r.get('title') or ''} {r.get('body') or ''}") for r in rows if r.get('kind') != 'android.notification']
+    seen, out = set(), []
+    for r in rows:
+        if r.get('kind') == 'android.notification':
+            said = _words(r.get('body') or r.get('title'))
+            if said and (said in seen or (len(said) >= 12 and any(said in text for text in full))):
+                continue
+            seen.add(said)
+        out.append(r)
+    return out

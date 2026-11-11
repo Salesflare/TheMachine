@@ -31,6 +31,7 @@ FOUND_IN_DAYS = 400  # keyword matches looked at for a question about a time, be
 PEOPLE = 8          # people with the name asked about that are weighed
 PERSON_ROWS = 400   # of one person's messages in the days asked about, the newest looked at
 EXAMPLE_PEOPLE = 6  # people from the open to-dos a suggested question may be about
+WORD_LEADS = 3      # the best keyword matches that always reach the answer's messages
 
 
 def _meta(r):
@@ -96,8 +97,11 @@ class SearchAskApp:
             return []
         order, starts = [], {}
         if embeddings.settings(self.config):
-            found, _ = self.related(accounts, (), question, FOUND if not days else 40, timeout=8)
+            found, semantic = self.related(accounts, (), question, FOUND if not days else 40, timeout=8)
             order, starts = [i for i, _ in found], embeddings.starts(found)
+            if semantic and not days:  # the best matches by words go in too: a name or place asked is never left out
+                with self.store.connect() as db:
+                    order = embeddings.words_lead(order, embeddings.best_word_hits(db, accounts, question, WORD_LEADS), search_ask.SOURCES)
         if days or not order:
             with self.store.connect() as db:
                 order += [i for i in embeddings.fts_ids(db, accounts, question, FOUND_IN_DAYS if days else FOUND) if i not in order]

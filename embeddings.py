@@ -427,9 +427,54 @@ def cosine(a, b):
     return math.sumprod(a, b)
 
 
-def fts_ids(db, accounts, query, limit, signals_only=False):
-    """Keyword ranking (bm25) within the accounts; any word may match, rarer words weigh more."""
+# Words that only shape a question ("what's the", "wat is de", "c'est quoi le"), in the dashboard's languages: the word
+# match leaves them out while other words remain, so a question matches on what it asks about, not on every message
+# with "what" and "the" in it.
+QUESTION_WORDS = frozenset((
+    'a an the is are was were be do does did can could will would should of for to in on at by with from about and or '
+    'what whats which who whom whose where when why how it its this that these those my our your me we you there any some '
+    'de het een is zijn was waren wat wie welk welke waar wanneer waarom hoe van voor op aan met bij in en of om dat die '
+    'dit deze mijn ons onze je jouw we er ook nog nu '
+    'der die das ein eine ist sind war was wer wo wann warum wie welche mein unser und oder für mit von zu im '
+    'le la les un une des du est sont quel quelle quels quelles qui où quand pourquoi comment mon ma mes notre et ou pour '
+    'el los las una es son qué que cuál cuáles quién dónde cuándo por cómo mi nuestro para con del '
+    'il lo gli le uno di che chi dove quando perché come qual quale è sono mio nostro per '
+    'o os as um uma é são quem onde porque como meu nosso com da do'
+).split())
+
+
+def search_words(query):
+    """The words a keyword search matches on: without the question's own words while any other word is left."""
     words = [w for w in re.findall(r'\w+', query) if len(w) > 1]
+    asked = [w for w in words if w.casefold() not in QUESTION_WORDS]
+    return asked or words
+
+
+def best_word_hits(db, accounts, query, n, pool=30):
+    """The n keyword matches with the most of the words asked, then by bm25: a long mail with the place and the code
+    asked comes before a short line that only names the place."""
+    words, ids = {w.casefold() for w in search_words(query)}, fts_ids(db, accounts, query, pool)
+    if len(words) < 2 or len(ids) <= 1:
+        return ids[:n]
+    has = {r[0]: words & set(re.findall(r'\w+', f'{r[1]} {r[2]}'.casefold()))
+           for r in db.execute('SELECT id,title,body FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids)}
+    return sorted(ids, key=lambda i: -len(has.get(i, ())))[:n]
+
+
+def words_lead(order, word_hits, room):
+    """order (best first) with each of word_hits (the best keyword matches, best first) in its first `room` places: a
+    message with the rare words asked (a name, a place) is never buried under ones that only mean something alike."""
+    lead = [i for i in word_hits if i not in order[:room]][:room]
+    if not lead:
+        return list(order)
+    cut = room - len(lead)
+    return order[:cut] + lead + [i for i in order[cut:] if i not in lead]
+
+
+def fts_ids(db, accounts, query, limit, signals_only=False):
+    """Keyword ranking (bm25) within the accounts; any word may match, rarer words weigh more. A question's own words
+    (search_words) are left out."""
+    words = search_words(query)
     if not words:
         return []
     marks = ','.join('?' for _ in accounts)

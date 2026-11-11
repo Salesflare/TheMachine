@@ -55,6 +55,8 @@ Vous pouvez aussi poser une question, comme celle que propose une recherche vide
 
 **Voir tous les résultats** ouvre la liste complète, pour tous les comptes ou un seul. Chaque résultat s’ouvre dans un lecteur, avec un lien vers son origine. Une recherche vide montre les messages les plus récents.
 
+Une recherche montre d’abord le meilleur résultat, et l’aperçu sur le téléphone d’un message présent en entier n’apparaît qu’une fois, comme ce message. Une question sur tous les comptes reçoit en haut une réponse courte, avec le message d’où elle vient. Si vos messages ne le disent pas, aucune réponse n’apparaît.
+
 ## Apprentissage
 
 Apprentissage a une rangée d’onglets. Un onglet encore vide n’est pas affiché.

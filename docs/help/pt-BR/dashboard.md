@@ -55,6 +55,8 @@ Você também pode fazer uma pergunta, como a que uma pesquisa vazia sugere, par
 
 **Ver todos os resultados** abre a lista completa, de todas as contas ou de uma só. Cada resultado abre em um leitor, com um link para o lugar de onde veio. Uma pesquisa vazia mostra as mensagens mais novas.
 
+Uma pesquisa mostra primeiro o melhor resultado, e a prévia do celular de uma mensagem que está completa aparece uma vez só, como essa mensagem. Uma pergunta com todas as contas recebe no topo uma resposta curta, com a mensagem de onde ela veio. Se as suas mensagens não disserem, nenhuma resposta aparece.
+
 ## Aprendizado
 
 O Aprendizado tem uma fileira de abas. Uma aba ainda sem nada fica de fora.

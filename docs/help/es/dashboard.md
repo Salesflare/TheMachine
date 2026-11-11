@@ -55,6 +55,8 @@ También puedes hacer una pregunta, como la que sugiere una búsqueda vacía, pa
 
 **Ver todos los resultados** abre la lista completa, de todas las cuentas o de una. Cada resultado se abre en un lector, con un enlace al lugar de donde llegó. Una búsqueda vacía muestra los mensajes más recientes.
 
+Una búsqueda muestra primero lo que mejor encaja, y la vista previa del teléfono de un mensaje que está completo aparece una sola vez, como ese mensaje. Una pregunta con todas las cuentas recibe arriba una respuesta corta, con el mensaje del que sale. Si tus mensajes no lo dicen, no aparece ninguna respuesta.
+
 ## Aprendizaje
 
 Aprendizaje tiene una fila de pestañas. Una pestaña que aún no tiene nada no aparece.
