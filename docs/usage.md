@@ -84,7 +84,7 @@ Nothing changes until you tap. A tap only changes your own filters or to-dos and
 
 ## The dashboard
 
-The dashboard shows the same to-dos grouped as **For you** (most urgent first, each marked **Prepared** or **Needs you**), **Preparing** and **Coming back later**. It also has:
+The dashboard shows the same to-dos grouped as **For you** (most urgent first, each marked **Prepared**, **Needs you** or **Preparing…**) and **Coming back later**. It also has:
 
 - the open [promises](architecture.md#promises), each with its own page: who promised what to whom and by when, where it stands, the message it came from, who and what it's about, its to-do and a short history, with **Done**, **Change date** and **Not needed**;
 - Work/Personal filters, deadlines, sources and their health;

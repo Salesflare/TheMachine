@@ -12,8 +12,7 @@ Sua Machine lê tudo o que chega e cria uma tarefa só quando algo precisa de vo
 
 A página **Tarefas** agrupa as tarefas:
 
-- **Para você**: tudo o que espera por você, o mais urgente primeiro. Cada tarefa diz **Preparada** (o trabalho está feito, e **Fazer** ou **Enviar** conclui) ou **Precisa de você** (primeiro precisa da sua decisão ou de uma resposta).
-- **Preparando**: sua Machine está trabalhando nela. Uma tarefa em que você acabou de clicar em **Fazer** fica onde estava enquanto é preparada e depois diz **Preparada**.
+- **Para você**: tudo o que espera por você, o mais urgente primeiro. Cada tarefa diz **Preparada** (o trabalho está feito, e **Fazer** ou **Enviar** conclui) **Precisa de você** (primeiro precisa da sua decisão ou de uma resposta) ou **Preparando…** (sua Machine está trabalhando nela).
 - **Feito agora**: uma última etapa que você confirmou, como enviar um formulário ou abrir uma issue, deu certo enquanto você estava fora. Ela mostra o que aconteceu até você tocar em **Entendi**, por um dia no máximo, e seu celular também fica sabendo. Depois fica só em Feito.
 - **Volta mais tarde**: adiada, e as tarefas sem resposta a **Ainda precisa?** (abaixo).
 - **Promessas**: o que você prometeu e o que outras pessoas prometeram a você. Veja [Promessas](promises.md).
@@ -21,7 +20,7 @@ A página **Tarefas** agrupa as tarefas:
 
 Depois de enviar, um aviso curto diz onde a tarefa está, como "Enviado. Movido para Feito." ou, se ela espera uma resposta, "Enviado. Movido para Depois até seg." **Abrir** leva você até ela. A conversa sair da sua caixa de entrada por alguns dias é só sobre o seu e-mail. A busca encontra uma tarefa pelo título ou por quem a recebeu, também em Depois e Feito.
 
-**Para você** põe primeiro o que está atrasado ou vence até amanhã, depois as perguntas do seu Fleet, depois as tarefas **Preparada**, depois as que precisam de você. Em cada parte, as mais novas primeiro. Os outros grupos abertos põem primeiro o que está atrasado ou vence até amanhã, o resto das mais novas para as mais antigas. A barra lateral segue a mesma ordem.
+**Para você** põe primeiro o que está atrasado ou vence até amanhã, depois as perguntas do seu Fleet, depois o resto. Em cada parte, as mais novas primeiro. Uma tarefa fica no lugar enquanto sua Machine a prepara e quando termina: só a marca muda. Os outros grupos abertos põem primeiro o que está atrasado ou vence até amanhã, o resto das mais novas para as mais antigas. A barra lateral segue a mesma ordem.
 
 Uma tarefa com **Parece feito** aparece como uma feita, com o que mostra que está feita, como "PR #3451 mesclado". Ela ainda não foi fechada: **Reabrir** a devolve para a sua lista, e a sua Machine aprende com isso. Elas nunca aparecem como atrasadas e não contam como esperando por você. Uma tarefa com um rascunho de resposta também parece feita quando você respondeu nessa conversa, como no Gmail ou no Slack.
 

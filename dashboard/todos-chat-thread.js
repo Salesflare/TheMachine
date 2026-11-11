@@ -15,7 +15,7 @@ const target=state.suggestions.find(s=>s.id===m[1]);if(!target){doneFetch(m[1],(
 linkedCardId=target.id;const fuEl=()=>target.follow_up?.group&&document.getElementById('fu-'+target.follow_up.group.replace(':','-'));
 // Reveal this destination without overwriting the device's saved filter/fold preferences.
 if(scopeFilter!=='all'&&target.scope!==scopeFilter)scopeFilter='all';
-{const at=placeOf(target);folded.delete(at==='preparing'?at:'foryou')}if(looksDone(target))lookExpanded.add(target.id);
+folded.delete('foryou');if(looksDone(target))lookExpanded.add(target.id);
 // a link to this to-do (Open draft from a notification) shows it whole: its summary and its draft, never behind Show more
 expandedBodies.add(target.id);for(const a of target.next_actions||(target.next_action?.kind==='menu'?target.next_action.actions:target.next_action?[target.next_action]:[]))expandedBodies.add('draft-'+target.id+'-'+a.revision);
 render();document.querySelector('nav [data-tab="inbox"]').click();

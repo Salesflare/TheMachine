@@ -12,8 +12,7 @@ Je Machine leest alles wat nieuw is en maakt alleen een to-do als iets jou nodig
 
 De pagina **To-do's** groepeert ze:
 
-- **Voor jou**: alles wat op jou wacht, het dringendste eerst. Elke to-do zegt **Klaargezet** (het werk is gedaan, en **Doe het** of **Versturen** voert het uit) of **Wacht op jou** (eerst je beslissing of een antwoord nodig).
-- **Wordt voorbereid**: je Machine werkt eraan. Een to-do waarop je net **Doe het** zei, blijft staan waar hij stond terwijl hij voorbereid wordt, en staat dan als **Klaargezet**.
+- **Voor jou**: alles wat op jou wacht, het dringendste eerst. Elke to-do zegt **Klaargezet** (het werk is gedaan, en **Doe het** of **Versturen** voert het uit) **Wacht op jou** (eerst je beslissing of een antwoord nodig) of **Aan het voorbereiden…** (je Machine werkt eraan).
 - **Net gedaan**: een laatste stap die je bevestigde, zoals een formulier indienen of een issue aanmaken, is gelukt terwijl je weg was. Hij toont wat er gebeurde tot je op **Begrepen** tikt, hoogstens een dag, en je telefoon hoort het ook. Daarna staat hij alleen in Gedaan.
 - **Komt later terug**: gesnoozed, en to-do's zonder antwoord op **Nog nodig?** (hieronder).
 - **Beloftes**: wat jij beloofde en wat anderen jou beloofden. Zie [Beloftes](promises.md).
@@ -21,7 +20,7 @@ De pagina **To-do's** groepeert ze:
 
 Na het versturen zegt een korte melding waar de to-do nu staat, zoals "Verstuurd. Verplaatst naar Gedaan." of, als hij op een antwoord wacht, "Verstuurd. Verplaatst naar Later tot ma." **Openen** brengt je erheen. Dat de mailthread een paar dagen uit je inbox gaat, gaat alleen over je mailbox. Zoeken vindt een to-do op titel of op wie hij naartoe ging, ook in Later en Gedaan.
 
-**Voor jou** zet bovenaan wat te laat is of uiterlijk morgen moet, dan vragen uit je Fleet, dan to-do's die **Klaargezet** zijn, dan die op jou wachten. Binnen elk deel nieuwste eerst. De andere open groepen zetten wat te laat is of uiterlijk morgen moet bovenaan, de rest nieuwste eerst. De zijbalk houdt dezelfde volgorde.
+**Voor jou** zet bovenaan wat te laat is of uiterlijk morgen moet, dan vragen uit je Fleet, dan de rest. Binnen elk deel nieuwste eerst. Een to-do blijft op zijn plaats terwijl je Machine hem voorbereidt en als hij klaar is: alleen zijn label verandert. De andere open groepen zetten wat te laat is of uiterlijk morgen moet bovenaan, de rest nieuwste eerst. De zijbalk houdt dezelfde volgorde.
 
 Een to-do met **Lijkt gedaan** ziet eruit als een gedane, met wat laat zien dat hij gedaan is, zoals "PR #3451 gemerged". Hij is nog niet gesloten: **Heropenen** zet hem terug op je lijst, en je Machine leert ervan. Ze staan nooit als te laat en tellen niet mee als wachtend op jou. Een to-do met een conceptantwoord lijkt ook gedaan als je zelf in dat gesprek hebt geantwoord, zoals in Gmail of Slack.
 

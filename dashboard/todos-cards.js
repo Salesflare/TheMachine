@@ -96,16 +96,17 @@ function dueChip(s){if(!s.due||closed(s)||looksDone(s))return '';const today=new
   :days===0?'Due today':days===1?'Due tomorrow':'Due '+localeDate(due,DL,days<7?{weekday:'long'}:{day:'numeric',month:'short'});
  return html`<span class="chip t-${late||days<=0?'orange':days===1?'amber':'muted'}" title="Due ${localeDate(due,DL,{weekday:'long',day:'numeric',month:'long'})+(timed?' '+fmtHM(at):'')}">${text}</span>`}
 const closed=s=>['completed','rejected'].includes(s.status);
-// The open lists' order (For you, Preparing, Waiting on others; the sidebar the same): what is overdue or due by
+// The open lists' order (For you, Waiting on others; the sidebar the same): what is overdue or due by
 // tomorrow first, then the rest; each newest first by when it was added, the time its to-do shows. A tie (one review
 // made them together) goes to the one about the people closest to you (weight), then the id.
 const dueSoon=s=>{if(!s.due)return false;const at=s.due_at?Date.parse(s.due_at):NaN;if(!isNaN(at)&&at<Date.now())return true;const t=new Date();t.setDate(t.getDate()+1);return s.due<=localDay(t)};
 const addedAt=s=>Date.parse(s.created_at)||0;
 const openOrder=(a,b)=>dueSoon(b)-dueSoon(a)||addedAt(b)-addedAt(a)||(b.weight||0)-(a.weight||0)||String(a.id).localeCompare(String(b.id));
-// For you: due by tomorrow (openOrder), a Fleet ask, prepared, the rest
+// For you: due by tomorrow, a Fleet ask, a board's follow-ups, the rest, each in openOrder. Prepared, Needs you and
+// Preparing… are only chips: the order reads the to-do's own fields, so a run starting or ending never moves it.
 const plainTodo=x=>!!x&&typeof x==='object'&&!(x instanceof SafeHTML);
-function forYouList(ready,needs){const rank=(x,need)=>plainTodo(x)&&dueSoon(x)?0:need?(plainTodo(x)?3:1):2,all=[...ready.map(x=>[x,rank(x,false)]),...needs.map(x=>[x,rank(x,true)])];
- return [0,1,2,3].flatMap(r=>{const l=all.filter(([,k])=>k===r).map(([x])=>x);return r===0?l.sort(openOrder):l})}
+function forYouList(ready,needs){const rank=(x,fleet)=>!plainTodo(x)?(fleet?1:2):dueSoon(x)?0:3,all=[...ready.map(x=>[x,rank(x)]),...needs.map(x=>[x,rank(x,1)])];
+ return [0,1,2,3].flatMap(r=>{const l=all.filter(([,k])=>k===r).map(([x])=>x);return r%3?l:l.sort(openOrder)})}
 // A done to-do keeps its title (what needed doing); how it ended goes under it: what went out has its own line
 // (outboxLine), the sign that it was handled is this one.
 const doneLine=s=>{if(s.status!=='completed')return '';let why='';try{why=JSON.parse(s.handled_hint||'{}').reason||''}catch{}
@@ -191,11 +192,8 @@ const resultLinks=s=>{const found=[],r={text:resultBody(s,(words,path)=>{found.p
  r.fill=x=>html`${String(x).split(/(\d+)/).map((y,i)=>i%2?r.piece(y):y)}`;
  r.mark=(x,mark)=>x.replace(/(\d+)/g,(m,i)=>{const p=r.piece(i);return p instanceof SafeHTML?mark(p):p.replace(/[\u0000\u0001]/g,'')});return r};
 const needsDecision=s=>s.status==='pending'||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
-// Where an open to-do sits: ready or needs (For you) or Preparing. One that starts preparing (Do it, Ask for changes)
-// stays where it was until the run is done, so it doesn't jump to another section and back while it works.
-const placeHeld=new Map();
-const placeOf=s=>{const now=needsDecision(s)?'needs':s.status==='prepared'?'ready':'preparing',was=placeHeld.get(s.id);
- if(now==='preparing'&&was&&was!=='preparing')return was;placeHeld.set(s.id,now);return now};
+// An open to-do's chip in For you: needs (Needs you), ready (Prepared) or preparing (Preparing…). All three sit in For you.
+const placeOf=s=>needsDecision(s)?'needs':s.status==='prepared'?'ready':'preparing';
 // A to-do held for later (deliver_after): when it reaches the owner, and where, as deliver_one sends it
 // (state.todo_channels, from Settings, Notifications: New to-dos). Nowhere but here: no chip.
 function deliveryLabel(value,ch=state?.todo_channels){
@@ -424,7 +422,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing':label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?'Preparing…':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  return needsAsk(s)};

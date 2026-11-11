@@ -6825,7 +6825,6 @@
  "{} Machine, {} GB, paid by the Fleet: {}": "{} Machine, {} GB, betaald door de Fleet: {}",
  "{} New and still changing.{}": "{} Nieuw en nog in beweging.{}",
  "{} Nothing is lost: The Machine picks up where it left off.": "{} Er gaat niets verloren: The Machine gaat verder waar hij gebleven was.",
- "{} Preparing": "{} in voorbereiding",
  "{} Ready, tap to show or hide": "{} Klaargezet, tik om te tonen of verbergen",
  "{} To decide, tap to show or hide": "{} Te beslissen, tik om te tonen of verbergen",
  "{} accepted {}, changed to: “{}”.": "{} aanvaardde {}, gewijzigd naar: “{}”.",
@@ -7257,7 +7256,6 @@
  },
  "{} picked a time on the booking link.": "{} koos een tijd via de boekingslink.",
  "{} picked this time on your booking link.": "{} koos deze tijd via je boekingslink.",
- "{} preparing": "{} in voorbereiding",
  "{} probably part of it": "{} hoort er waarschijnlijk bij",
  "{} projects": {
   "one": "{} project",

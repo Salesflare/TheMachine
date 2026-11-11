@@ -92,20 +92,20 @@ $('#fu-form').addEventListener('submit',async e=>{e.preventDefault();if(!fu)retu
  catch(x){errCaught(x);err.textContent=x.message;err.hidden=false}finally{btn.disabled=false}});
 $('#fu-dialog').addEventListener('close',()=>{fu=null});
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-open]');if(!b)return;e.preventDefault();e.stopPropagation();b.closest('details')?.removeAttribute('open');fuOpen(b.dataset.fuOpen,b.dataset.fuFor)},true);
-// The board's follow-ups as one to-do: "8 follow-ups ready for <board>", in Ready once one is written, else in Preparing
-// as "Follow-ups for <board>". Each is in it from the start, also alone: never a to-do of its own in any list, so a board
+// The board's follow-ups as one to-do: "8 follow-ups ready for <board>" once one is written, else
+// "Follow-ups for <board>", in For you either way. Each is in it from the start, also alone: never a to-do of its own in any list, so a board
 // with follow-ups on is one to-do to review, not one per email. While drafts are written it says "Writing 3 follow-ups…".
 // One that got stuck (needs the owner's help) stays a to-do of its own. A project's own follow-up (not grouped) is a
 // normal to-do. Follow-ups on their way in a batch (spaced 30-45 s per mailbox) show as one progress to-do per board
 // instead (fuSendingCard).
 // Queued or on its way: out of the ready to-do at once. A follow-up's draft can sit in a menu, so its own state counts too.
 const fuBusy=s=>sendBusy(s.action_status)||taskActions(s).some(a=>DRAFT_KINDS.includes(a.kind)&&sendBusy(a.state));
-function fuSplit(ready,needs,preparing){fuGroups.clear();const groups={},member=s=>typeof s!=='string'&&!(s instanceof SafeHTML)&&s.follow_up?.group&&s.follow_up.state==='open'&&!fuBusy(s)&&!needsDecision(s);
+function fuSplit(ready,needs){fuGroups.clear();const groups={},member=s=>typeof s!=='string'&&!(s instanceof SafeHTML)&&s.follow_up?.group&&s.follow_up.state==='open'&&!fuBusy(s)&&!needsDecision(s);
  const batch=new Set((state.follow_up_progress||[]).filter(p=>p.going).map(p=>p.group||'own')),inBatch=s=>s.follow_up&&fuBusy(s)&&batch.has(s.follow_up.group||'own');
- for(const s of [...ready,...needs,...preparing])if(member(s))(groups[s.follow_up.group]??=[]).push(s);
+ for(const s of [...ready,...needs])if(member(s))(groups[s.follow_up.group]??=[]).push(s);
  const grouped=new Set(Object.values(groups).flat().map(s=>s.id)),cards=Object.entries(groups).map(([g,l])=>[l.some(s=>s.status==='prepared'),fuGroupCard(g,l)]);
  const out=list=>list.filter(s=>typeof s==='string'||s instanceof SafeHTML||!grouped.has(s.id));
- return {ready:[...cards.filter(([r])=>r).map(([,c])=>c),...out(ready).filter(s=>!inBatch(s))],needs:out(needs),preparing:[...cards.filter(([r])=>!r).map(([,c])=>c),...out(preparing)]}}
+ return {ready:[...cards.filter(([r])=>r).map(([,c])=>c),...cards.filter(([r])=>!r).map(([,c])=>c),...out(ready).filter(s=>!inBatch(s))],needs:out(needs)}}
 // The sidebar lists a board's group as one row that opens the review
 const fuGroups=new Map();
 function fuSide(items){return items.map(x=>fuGroups.has(x)?fuGroups.get(x):x)}
@@ -294,6 +294,6 @@ $('#fu-review').addEventListener('close',()=>{const skip=[...(fr?.skipped.keys()
  if(skip.length)Promise.all(skip.map(id=>decidePost(id,{choice:'reject',feedback:'',decision_id:crypto.randomUUID()}).catch(errCaught))).finally(()=>refresh().catch(()=>{}));else if(sent)refresh().catch(()=>{})});
 document.addEventListener('click',e=>{const w=e.target.closest?.('[data-fu-card]');if(w){e.preventDefault();e.stopPropagation();fuShow(w.dataset.fuCard);return}});
 // A board's follow-ups still being written: back to the to-do list, at their to-do
-function fuShow(g){if(chatId)location.hash='';document.querySelector('nav [data-tab="inbox"]')?.click();folded.delete('preparing');render();
+function fuShow(g){if(chatId)location.hash='';document.querySelector('nav [data-tab="inbox"]')?.click();folded.delete('foryou');render();
  const c=document.getElementById('fu-'+g.replace(':','-'));if(!c)return;c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash')}
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-fu-review]');if(!b)return;e.preventDefault();e.stopPropagation();frOpen(b.dataset.fuReview)},true);

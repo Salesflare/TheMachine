@@ -125,7 +125,7 @@ try{
   await tap('#side-talk');await inView();await live(viewBar);assert.equal(ended(),0);
 
   // What needs the owner, in the dashboard's order (For you): prepared first, then needs you
-  // Every open to-do the lists show, with its state in plain words: what needs the owner first, then Preparing, Later
+  // Every open to-do the lists show, with its state in plain words: For you (a preparing one among them), then Later
   const listed=await call('l1','list_todos');
   assert.deepEqual(listed.todos.map(x=>[x.id,x.state]),[[A,'prepared'],[B,'needs you'],[P,'preparing'],[Z,'snoozed']]);
   assert.deepEqual(listed.counts,{prepared:1,'needs you':1,preparing:1,snoozed:1});assert.equal(listed.count,4);
