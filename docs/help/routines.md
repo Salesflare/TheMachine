@@ -25,6 +25,8 @@ Receipts, orders and payment notices are left out. Mail that came through a grou
 
 **Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
 
+Unknown means you never wrote to them, and a “Re:” only counts as a conversation in a thread you wrote in. When mail from a sender you marked as spam, on the to-do or in your mailbox, gets through again, it’s on the next to-do as **Marked as spam before**. What you moved to spam yourself also helps it spot similar mail.
+
 Nothing changes until you confirm on the to-do. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.

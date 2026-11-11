@@ -23,6 +23,8 @@ Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite
 
 **Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi. Il nuovo spam va nella stessa attività finché è aperta.
 
+Sconosciuto vuol dire che non gli hai mai scritto, e un “Re:” conta come conversazione solo in un thread in cui hai scritto. Se passa di nuovo posta da un mittente che hai segnato come spam, nell’attività o nella tua casella, è nella prossima attività come **Già segnato come spam**. Quello che hai spostato tu nello spam la aiuta anche a riconoscere posta simile.
+
 Nulla cambia finché non confermi sull’attività. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
 
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.

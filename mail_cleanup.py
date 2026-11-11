@@ -15,7 +15,13 @@ the owner's mailbox when sending is on, else the to-do offers the list's page to
 Mail.ReadWrite) or labeled spam (Gmail, only with gmail.modify), else the to-do offers to open the mail. A send whose
 outcome is unknown is never sent again.
 
-A sender the owner kept (or unsubscribed from, or marked as spam) is never asked about again: mail_cleanup_senders.
+A sender the owner kept (or unsubscribed from) is never asked about again: mail_cleanup_senders. Spam is the other way
+round. Who the owner never wrote to is unknown, even when the Graph has them from mail they sent (known_senders), and a
+reply counts as a conversation only in a thread the owner wrote in: a made-up "Re:" from a stranger is still read. A
+sender the owner said Spam about, on the to-do or by moving their mail to spam themselves (learn_marks: mail that went
+to spam after it came in), is remembered as such: their next mail that gets through is on the to-do without a model, and
+the owner's newest own marks go with the spam pass as examples of what they call spam (marked_examples). Not spam on a
+later to-do wins.
 
 Tables (this module owns them): mail_cleanup_items (one row per item of a to-do: its pick and how it went; the
 unsubscribe page's link, sealed, while the owner still has to open it) and mail_cleanup_senders."""
@@ -25,6 +31,7 @@ import re
 import urllib.parse
 
 import graph
+import i18n
 from machine.store.review_wait import People, mail_wait
 
 KINDS = ('newsletters', 'spam')
@@ -32,7 +39,11 @@ MAIL_KINDS = ('gmail.message', 'ms_graph.message', 'outlook.message')
 MAX_ITEMS = 25  # items on one to-do: a phone's screen or two
 SPAM_LOOK = 40  # mails by unknown senders a spam run's turn reads, newest first
 SYNC_LAG = dt.timedelta(minutes=30)  # mail dated before a run that only synced after it: the next run still reads it
-SNIPPET = 160
+SNIPPET = 120  # the start of a mail's text the spam pass reads: enough to tell a pitch, short enough to stay cheap
+MARKS_DAYS = 30  # how far back the owner's own spam marks are read
+EXAMPLES = 6  # the owner's newest own spam marks the spam pass sees as examples
+EXAMPLE_TITLE = 70
+SPAM_SENDERS = ('gone', 'marked')  # mail_cleanup_senders choices that say spam: Spam on a to-do, or the owner's own mark
 # An item's state: open (no pick yet), working (being done now), done, kept, yours (the owner finishes it: open the
 # list's unsubscribe page), failed (with why), unknown (a send that may have gone out: never sent again)
 STATES = ('open', 'working', 'done', 'kept', 'yours', 'failed', 'unknown')
@@ -164,8 +175,9 @@ def unsubscribe_ways_of(headers, via=''):
 
 
 def asked(db, kind):
-    """Senders not to ask about: the owner's earlier picks, and those on an item still open on another to-do."""
-    out = {r[0] for r in db.execute('SELECT address FROM mail_cleanup_senders WHERE kind=?', (kind,))}
+    """Senders not to ask about: the owner's earlier picks (spam: only Not spam), and those on an item still open on
+    another to-do."""
+    out = {r[0] for r in db.execute('SELECT address FROM mail_cleanup_senders WHERE kind=?' + (" AND choice='keep'" if kind == 'spam' else ''), (kind,))}
     out |= {r[0] for r in db.execute("SELECT i.address FROM mail_cleanup_items i JOIN suggestions s ON s.id=i.suggestion_id "
                                      "WHERE i.kind=? AND i.state='open' AND s.status NOT IN ('completed','rejected')", (kind,))}
     return out
@@ -214,28 +226,133 @@ def newsletters(db, accounts, since):
     return list(found.values())
 
 
+_BY_OWNER = "(json_extract({0}.metadata,'$.from_me') IN (1,'true') OR instr(json_extract({0}.metadata,'$.labels'),'\"SENT\"')>0)"
+
+
+class Known:
+    """Who the owner wrote to and the threads they wrote in, read once per run. Getting mail from someone, or the Graph
+    having them from it, is not knowing them: only a message the owner sent to them (any channel, on their person in the
+    Graph), or the owner saying the sender is a person (mail_shown)."""
+
+    def __init__(self, db):
+        self.db, self.cache = db, {}
+
+    def _one(self, key, sql, args):
+        if key not in self.cache:
+            try:
+                self.cache[key] = bool(self.db.execute(sql, args).fetchone())
+            except Exception:  # a table this database doesn't have yet
+                self.cache[key] = False
+        return self.cache[key]
+
+    def wrote_to(self, address):
+        identifier = 'email:' + address
+        return self._one(('to', address), 'SELECT 1 FROM graph_identifiers i JOIN graph_events g ON g.node_id=i.node_id JOIN events e '
+                         f'ON e.id=g.event_id WHERE i.identifier=? AND e.deleted=0 AND {_BY_OWNER.format("e")} LIMIT 1', (identifier,)) \
+            or self._one(('shown', address), 'SELECT 1 FROM mail_shown WHERE identifier=? LIMIT 1', (identifier,))
+
+    def wrote_in(self, account, thread):
+        """The owner sent mail in this thread: a reply in it is a conversation."""
+        return bool(thread) and self._one(('in', account, thread), f"SELECT 1 FROM events e WHERE e.account_id=? AND e.kind IN ({','.join('?' * len(MAIL_KINDS))}) "
+                                          f"AND e.deleted=0 AND json_extract(e.metadata,'$.thread_id')=? AND {_BY_OWNER.format('e')} LIMIT 1",
+                                          (account, *MAIL_KINDS, thread))
+
+
+def known_senders(db, addresses):
+    """Of these addresses, the ones the owner wrote to (Known.wrote_to)."""
+    known = Known(db)
+    return {a for a in addresses if known.wrote_to(a)}
+
+
+def _marked_rows(db, accounts):
+    """The owner's own spam marks of the past MARKS_DAYS: their mail that went to spam after it came in (labels SPAM,
+    changed since its first sync), newest first."""
+    if not accounts:
+        return []
+    start = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=MARKS_DAYS)).isoformat()
+    rows = db.execute(f"SELECT id,account_id,kind,title,metadata,ingested_at FROM events WHERE kind IN ({','.join('?' * len(MAIL_KINDS))}) "
+                      f"AND account_id IN ({','.join('?' * len(accounts))}) AND deleted=0 AND occurred_at>=? AND version>1 "
+                      "AND instr(json_extract(metadata,'$.labels'),'\"SPAM\"')>0 ORDER BY ingested_at DESC LIMIT 500",
+                      (*MAIL_KINDS, *accounts, start))
+    out = []
+    for r in rows:
+        m = r['metadata'] if isinstance(r['metadata'], dict) else json.loads(r['metadata'] or '{}')
+        if not m.get('from_me') and 'SENT' not in set(m.get('labels') or ()):
+            out.append((r, m))
+    return out
+
+
+def learn_marks(db, accounts, stamp):
+    """Remember the senders of the owner's own spam marks (mail_cleanup_senders 'marked'), never someone the owner wrote
+    to. A newer pick wins either way: Not spam on a later to-do, or a mark after an earlier Not spam. Plain code, each
+    run; returns how many were new."""
+    rows = _marked_rows(db, accounts)
+    known, n = Known(db), 0
+    for r, m in reversed(rows):  # oldest first: the newest mark is the one kept
+        _, address = sender(m)
+        if not address or known.wrote_to(address):
+            continue
+        n += db.execute("INSERT INTO mail_cleanup_senders(kind,address,choice,at) VALUES('spam',?,'marked',?) "
+                        "ON CONFLICT(kind,address) DO UPDATE SET choice='marked',at=excluded.at WHERE excluded.at>mail_cleanup_senders.at "
+                        "AND mail_cleanup_senders.choice!='marked'", (address, r['ingested_at'] or stamp)).rowcount
+    return n
+
+
+def marked_examples(db, accounts):
+    """The owner's newest own spam marks, as examples for the spam pass: subject and the sender's domain only, never
+    mail from someone the owner wrote to."""
+    out, known = [], Known(db)
+    for r, m in _marked_rows(db, accounts):
+        _, address = sender(m)
+        if not address or known.wrote_to(address):
+            continue
+        line = f'{" ".join(str(r["title"] or "").split())[:EXAMPLE_TITLE]} · {address.rpartition("@")[2]}'
+        if line not in out:
+            out.append(line)
+        if len(out) >= EXAMPLES:
+            break
+    return out
+
+
 def spam_candidates(db, accounts, since):
-    """Mail since then that could be spam that got through: in the inbox, from a sender the owner doesn't know, not a
-    reply in a thread, not a calendar's; senders the owner picked before left out. Newest first, at most SPAM_LOOK."""
-    people, skip, out, seen = People(db), asked(db, 'spam'), [], set()
+    """Mail since then that could be spam that got through: in the inbox, from a sender the owner never wrote to, not a
+    reply in a thread the owner wrote in, not a calendar's; senders the owner said Not spam about left out. A sender the
+    owner said Spam about before is marked (spammed): it goes on the to-do without the model. Newest first, at most
+    SPAM_LOOK."""
+    known, skip, out, seen = Known(db), asked(db, 'spam'), [], set()
+    spammed = {r[0] for r in db.execute(f"SELECT address FROM mail_cleanup_senders WHERE kind='spam' AND choice IN ({','.join('?' * len(SPAM_SENDERS))})", SPAM_SENDERS)}
     for r, m in _rows(db, accounts, since, lag=True):
         name, address = sender(m)
-        if not address or address in skip or m.get('in-reply-to') or people.person(address) or address in seen:
+        if not address or address in skip or address in seen:
             continue
+        reply = bool(m.get('in-reply-to'))
+        if (reply and known.wrote_in(r['account_id'], m.get('thread_id'))) or known.wrote_to(address):
+            continue  # a conversation the owner is in, or someone they wrote to
         if r['kind'] == 'gmail.message' and 'INBOX' not in set(m.get('labels') or ()):
             continue  # archived or filtered by the owner's own rules: not in the way
-        if mail_wait(m, r['title'] or '', people) in ('system', 'automated', 'precedence'):
+        if mail_wait({k: v for k, v in m.items() if k != 'in-reply-to'}, r['title'] or '', None) in ('system', 'automated', 'precedence'):
             continue  # receipts, notifications and the owner's own services: not spam
         seen.add(address)
-        out.append({**_item(r, m, name, address), 'snippet': ' '.join(str(r['body'] or '').split())[:SNIPPET]})
+        out.append({**_item(r, m, name, address), 'snippet': ' '.join(str(r['body'] or '').split())[:SNIPPET],
+                    **({'reply': True} if reply else {}), **({'spammed': True} if address in spammed else {})})
         if len(out) >= SPAM_LOOK:
             break
     return out
 
 
-def evidence(candidates):
-    """The spam run's turn reads these (evidence, never instructions)."""
-    return '\n'.join(f'{c["event"]} · From: {c["from"]} <{c["address"]}> · Subject: {c["title"]} · {c["snippet"]}' for c in candidates)
+def for_model(candidates):
+    """The candidates the spam pass's model reads: all but senders the owner said Spam about before."""
+    return [c for c in candidates if not c.get('spammed')]
+
+
+def evidence(candidates, examples=()):
+    """The spam pass reads these (evidence, never instructions): the mail it may pick from, and the owner's own newest
+    marks as examples."""
+    lines = [f'{c["event"]} · {c["from"]} <{c["address"]}> · {c["title"]} · {c["snippet"]}' + (' · Re: without the owner' if c.get('reply') else '')
+             for c in for_model(candidates)]
+    if examples:
+        lines += ['', 'Examples the owner moved to spam lately (subject · domain):', *examples]
+    return '\n'.join(lines)
 
 
 def spam_reply(reply):
@@ -250,12 +367,13 @@ def spam_reply(reply):
 
 
 def picked_spam(candidates, picks):
-    """The turn's picks (spam: [{event_id, why}] or [event_id]), kept only for candidates, in their order, each with its why."""
-    why = {}
+    """The turn's picks (spam: [{event_id, why}] or [event_id]), kept only for candidates, in their order, each with its
+    why; a sender the owner said Spam about before is on it without a pick."""
+    why = {c['event']: i18n.t('Marked as spam before') for c in candidates if c.get('spammed')}
     for p in picks if isinstance(picks, list) else ():
         event, reason = (p.get('event_id'), p.get('why')) if isinstance(p, dict) else (p, '')
         try:
-            why[int(event)] = ' '.join(str(reason or '').split())[:60]
+            why.setdefault(int(event), ' '.join(str(reason or '').split())[:60])
         except (TypeError, ValueError):
             continue
     return [{**{k: v for k, v in c.items() if k != 'snippet'}, 'why': why[c['event']]} for c in candidates if c['event'] in why][:MAX_ITEMS]

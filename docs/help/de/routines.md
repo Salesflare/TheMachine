@@ -25,6 +25,8 @@ Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine 
 
 **Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Es gibt ihn nur für Mail, die The Machine verschieben darf: Gmail mit nur Leserechten bekommt ihn nicht. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst. Neuer Spam kommt auf dasselbe To-do, solange es offen ist.
 
+Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in einem Verlauf als Gespräch, in dem du geschrieben hast. Kommt Mail von einem Absender, den du als Spam markiert hast (im To-do oder in deinem Postfach), wieder durch, steht sie im nächsten To-do als **Schon einmal als Spam markiert**. Was du selbst in den Spam verschoben hast, hilft auch, ähnliche Mail zu erkennen.
+
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.

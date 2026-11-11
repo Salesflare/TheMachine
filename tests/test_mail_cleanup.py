@@ -398,7 +398,8 @@ class Cleanup(unittest.TestCase):
         rid = self.rid('spam')
         self.act('routine_edit', id=rid, words='Find cold pitches about SEO only. One to-do, Spam or Not spam each.')
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01, body='We noticed your site...')
-        self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, **{'in-reply-to': '<x@partner.example>'})
+        self.mail('Owner <owner@acme.example>', 'The contract', hours_ago=1, from_me=True, labels=['SENT'], thread_id='contract', to='sam@partner.example')
+        self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, thread_id='contract', **{'in-reply-to': '<x@partner.example>'})
         self.again('spam')
         turn = self.turns()
         self.assertEqual(len(turn), 1)
@@ -406,7 +407,7 @@ class Cleanup(unittest.TestCase):
         self.assertIn('seo@ranks.example', turn[0]['message'])
         self.assertNotIn('sam@partner.example', turn[0]['message'])
         with self.store.connect() as db:
-            seo, sam = [db.execute('SELECT id FROM events WHERE source_id=?', (m,)).fetchone()[0] for m in ('m1', 'm2')]
+            seo, sam = [db.execute('SELECT id FROM events WHERE source_id=?', (m,)).fetchone()[0] for m in ('m1', 'm3')]
         run = next(r for r in self.runs() if r['state'] == 'running')
         self.act('routine_result', owner=False, _routine_session=SESSION + run['id'], text='One SEO pitch.',
                  cleanup=[{'event_id': seo, 'why': 'Cold SEO pitch'}, {'event_id': sam, 'why': 'not shown'}])
@@ -440,7 +441,8 @@ class Cleanup(unittest.TestCase):
         self.assertEqual((self.turns(), self.asked), ([], []))
         self.assertEqual(self.runs()[0]['state'], 'nothing')
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01, body='We noticed your site...')
-        self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, **{'in-reply-to': '<x@partner.example>'})
+        self.mail('Owner <owner@acme.example>', 'The contract', hours_ago=1, from_me=True, labels=['SENT'], thread_id='contract', to='sam@partner.example')
+        self.mail('Sam Rivera <sam@partner.example>', 'Re: the contract', hours_ago=-0.01, thread_id='contract', **{'in-reply-to': '<x@partner.example>'})
         with self.store.connect() as db:
             event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
         self.reply = 'Here you go:\n```json\n' + json.dumps({'spam': [{'event_id': event, 'why': 'Cold SEO pitch'}, {'event_id': 999999, 'why': 'made up'}]}) + '\n```'
@@ -594,6 +596,91 @@ class Cleanup(unittest.TestCase):
         self.at(6, 5)
         with self.store.connect() as db:
             self.assertEqual(json.loads(db.execute('SELECT rule FROM routines WHERE id=?', (old,)).fetchone()[0]), {'unit': 'day', 'n': 1})
+
+    def spam_run(self, picks=()):
+        """Run the Spam cleanup now, its model answering with picks; what the model was asked, or None when it ran
+        without it."""
+        before, self.reply = len(self.asked), json.dumps({'spam': list(picks)})
+        self.again('spam')
+        return self.asked[-1] if len(self.asked) > before else None
+
+    def event(self, source_id):
+        with self.store.connect() as db:
+            return db.execute('SELECT id FROM events WHERE source_id=?', (source_id,)).fetchone()[0]
+
+    def test_a_made_up_re_from_a_stranger_is_read_and_a_reply_in_the_owners_thread_is_not(self):
+        self.marks = True
+        self.add('spam')
+        self.mail('Owner <owner@acme.example>', 'Renewal', hours_ago=5, from_me=True, labels=['SENT'], thread_id='renewal', to='ana@client.example')
+        self.mail('Ana Silva <ana@client.example>', 'Re: Renewal', hours_ago=-0.01, thread_id='renewal', **{'in-reply-to': '<a@acme.example>'})
+        fake = self.mail('Mia Grant <mia@pay-now.example>', 'Re: your unpaid invoice', hours_ago=-0.01, thread_id='made-up',
+                         **{'in-reply-to': '<never-sent@acme.example>'})
+        message = self.spam_run([{'event_id': self.event(fake), 'why': 'Fake invoice reply'}])
+        self.assertIn('mia@pay-now.example', message)
+        self.assertIn('Re: without the owner', next(x for x in message.splitlines() if 'mia@pay-now.example' in x))
+        self.assertNotIn('ana@client.example', message)
+        _, extra = self.view(self.todos()[0]['id'])
+        self.assertEqual([i['address'] for i in extra['cleanup']['items']], ['mia@pay-now.example'])
+
+    def test_a_known_sender_is_one_the_owner_wrote_to_not_one_who_only_wrote_to_them(self):
+        self.marks = True
+        self.add('spam')
+        # in the Graph from earlier mail: one the owner answered, one who only ever wrote to them
+        self.mail('Lee Park <lee@vendor.example>', 'Intro', hours_ago=30, thread_id='intro')
+        self.mail('Owner <owner@acme.example>', 'Re: Intro', hours_ago=29, from_me=True, labels=['SENT'], thread_id='intro', to='Lee Park <lee@vendor.example>')
+        self.mail('Growth Team <seo@ranks.example>', 'Page one on Google', hours_ago=30, thread_id='seo-1')
+        with self.store.connect() as db:
+            a.graph.build(db, self.app.config, stamp(0))
+            self.assertTrue(mc.People(db).person('seo@ranks.example'))  # the Graph has them...
+            self.assertEqual(mc.known_senders(db, ['seo@ranks.example', 'lee@vendor.example']), {'lee@vendor.example'})  # ...not known
+        self.mail('Lee Park <lee@vendor.example>', 'Next week', hours_ago=-0.01)
+        self.mail('Growth Team <seo@ranks.example>', 'Still want page one?', hours_ago=-0.01)
+        message = self.spam_run()
+        self.assertIn('seo@ranks.example', message)
+        self.assertNotIn('lee@vendor.example', message)
+
+    def moved_to_spam(self, source_id, hours_ago=0):
+        """The owner moves a mail to spam in their mailbox: the next sync brings its new labels (a changed row)."""
+        with self.store.connect() as db:
+            row = db.execute('SELECT metadata FROM events WHERE source_id=?', (source_id,)).fetchone()
+            meta = json.loads(row[0]); meta['labels'] = ['SPAM']
+            db.execute('UPDATE events SET metadata=?,version=version+1,ingested_at=? WHERE source_id=?', (json.dumps(meta), stamp(hours_ago), source_id))
+
+    def test_the_owners_own_spam_marks_are_learned_and_their_next_mail_is_caught(self):
+        self.marks = True
+        moved = self.mail('Lead Lists <sales@leads.example>', '10,000 verified leads for you', hours_ago=20)
+        self.moved_to_spam(moved, hours_ago=17)
+        self.mail('Filtered <x@junk.example>', 'You won', hours_ago=20, labels=['SPAM'])  # the mail filter's own: not the owner's mark
+        self.mail('Owner <owner@acme.example>', 'Hello', hours_ago=40, from_me=True, labels=['SENT'], to='pat@friend.example')
+        friend = self.mail('Pat Lee <pat@friend.example>', 'Photos', hours_ago=20)
+        self.moved_to_spam(friend, hours_ago=16)  # someone the owner wrote to: never learned as spam
+        with self.store.connect() as db:
+            a.graph.build(db, self.app.config, stamp(0))
+        self.add('spam')
+        with self.store.connect() as db:
+            self.assertEqual({r[0]: r[1] for r in db.execute("SELECT address,choice FROM mail_cleanup_senders WHERE kind='spam'")},
+                             {'sales@leads.example': 'marked'})
+        # their next mail that gets through: on the to-do without a model
+        self.mail('Lead Lists <sales@leads.example>', 'Last chance: 10,000 leads', hours_ago=-0.01)
+        self.assertIsNone(self.spam_run())
+        row, extra = self.view(self.todos()[0]['id'])
+        self.assertEqual([(i['address'], i['why']) for i in extra['cleanup']['items']], [('sales@leads.example', 'Marked as spam before')])
+        # a new sender: the model reads only them, with the owner's own marks as examples
+        new = self.mail('List Builders <hi@lists.example>', 'Verified leads in your niche', hours_ago=-0.01)
+        message = self.spam_run([{'event_id': self.event(new), 'why': 'Lead list pitch'}])
+        self.assertIn('hi@lists.example', message)
+        self.assertIn('10,000 verified leads for you · leads.example', message)
+        self.assertNotIn('Photos', message)
+        self.assertEqual(len(self.todos()), 1)  # added to the open spam to-do
+        # Not spam on the to-do wins over the earlier mark: not asked again
+        self.act('routine_cleanup', suggestion_id=row['id'], picks={'0': 'keep'})
+        self.mail('Lead Lists <sales@leads.example>', 'Hello again', hours_ago=-0.01)
+        self.assertIsNone(self.spam_run())
+        _, extra = self.view(row['id'])
+        self.assertEqual([(i['address'], i['state']) for i in extra['cleanup']['items']],
+                         [('sales@leads.example', 'kept'), ('hi@lists.example', 'open')])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT choice FROM mail_cleanup_senders WHERE address='sales@leads.example'").fetchone()[0], 'keep')
 
     def test_spam_is_marked_where_the_machine_may(self):
         self.marks = True

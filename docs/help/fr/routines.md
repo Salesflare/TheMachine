@@ -23,6 +23,8 @@ Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arr
 
 **Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez. Le nouveau spam va sur la même tâche tant qu’elle est ouverte.
 
+Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte comme conversation que dans un fil où vous avez écrit. Si un e-mail d’un expéditeur que vous avez signalé comme spam, sur la tâche ou dans votre boîte, passe encore, il est sur la tâche suivante avec **Déjà signalé comme spam**. Ce que vous avez déplacé vous-même dans le spam l’aide aussi à repérer des e-mails semblables.
+
 Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
