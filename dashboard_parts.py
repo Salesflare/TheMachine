@@ -52,7 +52,7 @@ LAZY = {
     'split': ('graph-split.css', 'graph-split.js'),
     'settings': ('settings-ai.css', 'settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-ai.js',
                  'settings-export.js', 'settings-upkeep.js', 'settings-apps.js'),
-    'learning': ('learning-bring.js', 'learning-missed.js'),
+    'learning': ('learning-missed.css', 'learning-bring.js', 'learning-missed.js'),
     'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
     'milestone': ('todos-milestone.css', 'todos-milestone.js'),
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),
