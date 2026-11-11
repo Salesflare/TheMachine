@@ -5,7 +5,7 @@ summary: One list of everything The Machine did for you, newest first: messages,
 covers: settings:activity
 code: activity_log.py, dashboard/settings-activity.js
 order: 2
-keywords: log, history, audit, what did it do, sent, refused, blocked, forgot, forget
+keywords: log, history, audit, what did it do, sent, refused, blocked
 ---
 ## What it shows
 

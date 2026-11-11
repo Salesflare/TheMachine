@@ -16,7 +16,7 @@ keywords: log, history, audit, what did it do, sent, refused, blocked
 - ein Link zu ihrer Aufgabe, wenn es eine gibt
 - bei einer KI, die du verbunden hast, etwa ChatGPT oder Claude: ihr Name mit **(verbundene KI)**, damit du sie von The Machine selbst unterscheidest
 
-Sie zeigt Nachrichten und Antworten, Änderungen an Dokumenten und im Kalender, Schritte im Web, Korrekturen, die sie zusammengeführt hat, Coding-Agents, Fleet-Fragen und -Antworten, Erkenntnisse an das Team von The Machine, Skills, Graph-Importe, hinzugefügte oder entfernte Verbindungen und jeden Blick unseres Teams über den [Support-Zugriff](get-support.md#support-access), abgelehnte eingeschlossen.
+Sie zeigt Nachrichten und Antworten, Änderungen an Dokumenten und im Kalender, Schritte im Web, Korrekturen, die sie zusammengeführt hat, Coding-Agents, Fleet-Fragen und -Antworten, Erkenntnisse an das Team von The Machine, Skills, Graph-Importe, Fakten, die du im Chat vergessen ließest (mit **Rückgängig**), hinzugefügte oder entfernte Verbindungen und jeden Blick unseres Teams über den [Support-Zugriff](get-support.md#support-access), abgelehnte eingeschlossen.
 
 ## Filtern
 

@@ -16,7 +16,7 @@ Abra **Configurações**, **Atividade**. Cada linha é algo que The Machine fez,
 - um link para a tarefa, quando houver
 - para uma IA que você conectou, como ChatGPT ou Claude: o nome dela com **(IA conectada)**, para distinguir da The Machine
 
-Ela lista mensagens e respostas, mudanças em documentos e na agenda, etapas na web, correções que ela mesclou, agentes de código, perguntas e respostas do Fleet, aprendizados enviados à equipe da The Machine, habilidades, importações no Graph, conexões adicionadas ou removidas, e cada acesso da nossa equipe pelo [Acesso de suporte](get-support.md#support-access), inclusive os recusados.
+Ela lista mensagens e respostas, mudanças em documentos e na agenda, etapas na web, correções que ela mesclou, agentes de código, perguntas e respostas do Fleet, aprendizados enviados à equipe da The Machine, habilidades, importações no Graph, fatos que você pediu para esquecer no chat (com **Desfazer**), conexões adicionadas ou removidas, e cada acesso da nossa equipe pelo [Acesso de suporte](get-support.md#support-access), inclusive os recusados.
 
 ## Filtrar
 
