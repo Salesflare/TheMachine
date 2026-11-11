@@ -1,11 +1,18 @@
 // The files the owner made the to-do with (New to-do): a chip each, opened from the Machine; a WhatsApp photo it came from
 const cardFiles=s=>html`${(s.files||[]).length?html`<div class="chat-files card-files">${s.files.map(f=>html`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':html` download="${f.name}"`}>${f.name}</a>`)}</div>`:''}${photoThumbs(s.photos)}`;  // and a WhatsApp photo it came from (events-photos.js)
+// What a to-do's body says beyond its title (machine/text.py body_after_title, the same rule): '' when it only repeats
+// the title (New to-do's own words, before the review fills it in), the rest when its first line or sentence is the
+// title (Talk's title, then a note), else all of it. Case, spacing and punctuation don't count; a title cut short (…)
+// keeps the whole body, which says it in full.
+const bodyAfterTitle=(title,body)=>{const words=x=>[...String(x||'').matchAll(/[\p{L}\p{N}]+/gu)],head=String(title||'').trim(),text=String(body||'');
+ const t=words(head),b=words(text),n=t.length;if(!n||b.length<n||t.some((w,i)=>w[0].toLowerCase()!==b[i][0].toLowerCase()))return text;if(b.length===n)return '';
+ const end=b[n-1].index+b[n-1][0].length;return !/…$/.test(head)&&/[\n.!?:;…]/.test(head.slice(-1)+text.slice(end,b[n].index))?text.slice(end).replace(/^[\s.!?:;,…–—-]+/,''):text};
 function cardBody(s,section){const asked=section==='Chat'?'':askedBody(s);if(asked)return asked;const named=resultLinks(s);let text=s.step_stopped||named.text,lead='';
 if(s.skill_proposal?.related)text=text.split(/\n\s*\n/).filter(p=>!p.trim().startsWith('Related to ')).join('\n\n');const m=text.match(/^\*\*([^*\n]+)\*\*\s*\n([\s\S]+)$/);if(m){lead=m[1];text=m[2].trim()}
+if(!lead&&!s.step_stopped)text=bodyAfterTitle(s.title,text);  // no body that only repeats the title, only what follows it
 const body=html`${lead?html`<p class="lead-line" translate="no">${named.fill(lead)}</p>`:''}${text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean).map(p=>html`<p>${richText(p,true,{br:true,pieces:(x,mark)=>named.mark(cardLinks(x,s,mark),mark)})}</p>`)}`;
 const proposal=html`${skillProposal(s)}${proposedSkillBox(s)}`;
-// Nothing more to say than the title (a to-do the owner just made, before the review fills it in): no body that repeats it
-const bare=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(!lead&&!s.step_stopped&&bare(named.plain(text))===bare(s.title))return proposal;
+if(!lead&&!named.plain(text).trim())return proposal;  // nothing more to say than the title
 // Short by default: the status line says where it stands; the rest folds behind Show more. A ready draft's card has one
 // Show more, under the draft, that opens both (cardDrafted). The length only rules out a text too short to ever need it;
 // whether it is really cut off is measured once drawn (clampKey).
