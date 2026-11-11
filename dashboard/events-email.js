@@ -1,5 +1,5 @@
 // The messages behind each card, read in a dialog. HTML renders in a sandboxed frame:
-// no scripts, forms or navigation of the dashboard; links open in a new tab.
+// no scripts, forms or navigation of the dashboard; links open outside (events-email-frame.js).
 const originals=new Map(),emailViews=new Map(),around=new Map();  // around: what was said around a to-do's source message
 const fileSize=b=>!b?'':b<1024?b+' B':b<1048576?Math.round(b/1024)+' KB':(b/1048576).toFixed(1)+' MB';
 // A mailing list's rewrite as people say it: Google Groups' "'Sam Lee' via Sales" is "Sam Lee via Sales", and a group named
@@ -28,24 +28,6 @@ const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.ori
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals
 const isEmail=s=>/^Source: email/.test(s.source_line||'')||!/^Source: notes from /.test(s.source_line||'')&&(s.original_urls||[]).some(u=>/^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//.test(u));
 const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/originals?id='+id).then(r=>{around.set(id,r.around||null);return r.originals}).catch(e=>{originals.delete(id);throw e}));return originals.get(id)};
-// Dark mode for HTML emails, like Gmail's: light backgrounds turn dark and dark text turns light,
-// keeping each color's hue. Images are left alone.
-function rgbHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),l=(max+min)/2;if(max===min)return [0,0,l];const d=max-min,s=l>.5?d/(2-max-min):d/(max+min);const h=max===r?(g-b)/d+(g<b?6:0):max===g?(b-r)/d+2:(r-g)/d+4;return [h*60,s,l]}
-function darkenEmail(doc){
-const win=doc.defaultView,hsl=(h,s,l,a)=>`hsla(${h.toFixed(0)},${(s*100).toFixed(0)}%,${(l*100).toFixed(0)}%,${a})`;
-const parse=c=>{const m=/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/.exec(c||'');return m?[...rgbHsl(+m[1],+m[2],+m[3]),m[4]===undefined?1:+m[4]]:null};
-// Email templates can paint the canvas on <html>, not just on their body/tables.
-for(const el of [doc.documentElement,doc.body,...doc.body.querySelectorAll('*')]){
-if(['IMG','SVG','PICTURE','VIDEO','CANVAS'].includes(el.tagName.toUpperCase()))continue;
-const cs=win.getComputedStyle(el),bg=parse(cs.backgroundColor),fg=parse(cs.color),border=parse(cs.borderTopColor);
-if(bg&&bg[3]>0&&bg[2]>.45)el.style.setProperty('background-color',hsl(bg[0],bg[1]*.6,.09+(1-bg[2])*.6,bg[3]),'important');
-if(fg&&fg[2]<.65)el.style.setProperty('color',hsl(fg[0],fg[1],Math.max(.72,1-fg[2]*.6),fg[3]),'important');
-if(border&&border[2]>.6&&parseFloat(cs.borderTopWidth))el.style.setProperty('border-color',hsl(border[0],border[1]*.5,.3,border[3]),'important')}}
-const dark=()=>document.documentElement.dataset.theme!=='light';
-function emailDoc(html,images,id,ev){
-const doc=html.replace(/cid:([^"'\s)>]+)/gi,(m,c)=>{const p=images[c]??images[decodeURIComponent(c)];return p===undefined?m:apiURL(`api/attachment?id=${id}&event=${encodeURIComponent(ev)}&part=${encodeURIComponent(p)}`)});
-return `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${location.origin} https: data:; style-src 'unsafe-inline'; font-src https: data:"><meta name="referrer" content="no-referrer"><base target="_blank"><style>${dark()?'html{background:#16191d;color-scheme:dark}body{color:#e6e3dc}a{color:#BCCBA8}':'html{background:#fff}body{color:#202124}'}body{margin:0;padding:18px;font:15px/1.5 system-ui,-apple-system,sans-serif;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}
-</style>`+doc}
 // What a source is, when nobody sent it: never the raw kind ("calendar")
 const KIND_LABEL={calendar:'Meeting invite',email:'Email',phone:'Phone',signal:'Signal',note:'Note',message:'Message'};
 const kindLabel=k=>t(KIND_LABEL[k]||k||'Original');
@@ -53,24 +35,13 @@ function messageHTML(o,id,i){
 // Details holds the headers, or a signal's technical part (an error's code locations); no toggle when there is neither.
 const meta=[[['From',o.from],['To',o.to],['Cc',o.cc]].filter(([,v])=>v).map(([k,v])=>html`<div><span>${k}</span> ${v}</div>`),o.details?html`<pre class="email-tech">${o.details}</pre>`:''].flat();
 return html`<div class="email-meta"><div class="email-from"><strong>${sender(o.from)||kindLabel(o.kind)}</strong><time>${fmtDHM(o.occurred_at,{weekday:'short',day:'numeric',month:'short'})}</time></div>${o.title?html`<div class="email-subject">${o.title}</div>`:''}${meta.some(Boolean)?html`<details class="email-headers"><summary>Details</summary>${meta}</details>`:''}</div>${(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:''}<div class="email-body" data-email-body="${i}"><p class="muted">Loading…</p></div>${o.kind==='calendar'&&!o.raw?html`<p class="email-open"><button type="button" class="link" data-open-meeting="${o.event_id}">${t('Notes and transcript')}</button></p>`:''}${o.url&&safeURL(o.url)?html`<p class="email-open"><a href="${o.url}" target="_blank" rel="noreferrer">${o.kind==='calendar'?t(calOpenLabel(o.url)):`Open in ${o.kind==='email'?(/^https:\/\/outlook\./.test(o.url||'')?'Outlook':'Gmail'):['phone','signal'].includes(o.kind)?'app':o.kind} ↗`}</a></p>`:''}`}
-// A link in an email opens outside: a new tab, or the phone's browser in the app. The app's WebView has no windows, so
-// a new-tab link goes to the top page, which the email's sandbox (no top navigation) blocks: the dashboard opens it.
-// Only http(s) and mailto, never the dashboard's own addresses; no opener, no referrer.
-const mailLink=href=>{try{const u=new URL(href);return ['http:','https:','mailto:'].includes(u.protocol)&&u.origin!==location.origin?u.href:''}catch{return ''}};
-function openMailLink(e){const a=e.target?.closest?.('a[href]');if(!a||e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
- if(/^#/.test(a.getAttribute('href')))return;  // a jump inside the email
- e.preventDefault();const url=mailLink(a.href);if(!url)return;
- const out=document.createElement('a');out.href=url;out.target='_blank';out.rel='noopener noreferrer';out.click()}
 async function fillMessage(container,o,id){
 const box=container.querySelector('.email-body');if(!box||box.dataset.filled)return;box.dataset.filled='1';
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
 const text=()=>{setHTML(box,said?html`<div class="email-text">${linkify(said)}</div>`:html`<p class="muted">${t('No description.')}</p>`)};
 if(o.kind!=='email'||o.near){text();return}  // a message around the source reads as its stored text
 const view=await emailViewFor(id,o.event_id);if(!view.html){text();if(view.failed)emailRetry(container,box,o,id);return}
-const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
-frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
-frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;doc.addEventListener('click',openMailLink);const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
-frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id);box.replaceChildren(frame)}
+lazyPart('emailframe').then(()=>emailFrame(box,view,o,id),text)}  // its frame (events-email-frame.js)
 // The full email didn't come (Gmail or the Machine didn't answer): the saved text stays, with one line to try again.
 // Not when there is no full email to read (an email from another provider): that is the saved text alone.
 function emailRetry(container,box,o,id){const p=document.createElement('p');p.className='email-retry muted';

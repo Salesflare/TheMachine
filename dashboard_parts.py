@@ -40,6 +40,7 @@ KINDS = ('js', 'css', 'html')
 LAZY = {
     'calendar': ('calendar-view.css', 'calendar-view.js'),
     'clearrun': ('todos-clear.css', 'todos-clear-run.js'),
+    'emailframe': ('events-email-frame.js',),
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
     'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
