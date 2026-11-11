@@ -111,12 +111,13 @@ try{
   release();stageHold=null;await page.locator('#toast',{hasText:'Moved to Partly live.'}).waitFor();
   await page.evaluate(()=>window.lastBoardMove);await page.evaluate(()=>people('',true));
   assert.equal(await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').count(),1);
+  stageHold=new Promise(r=>release=r);
   await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
   await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
-  // the move's answer and its refresh first: a board drawn again under the next press took its click with it
-  await page.evaluate(()=>window.lastBoardMove);
-  // Clicking a tile opens the project page, with its stage and moves
+  // Clicking a tile opens the project page, with its stage and moves; a move answered meanwhile keeps it open
   calls=[];await page.locator('.tile[data-node="project:1"] .tile-next').click();await page.locator('.graph-stage').waitFor();
+  release();stageHold=null;await page.locator('#toast',{hasText:'Moved to Live.'}).waitFor();await page.evaluate(()=>window.lastBoardMove);
+  assert.equal(await page.locator('.graph-stage').count(),1,'the move\'s refresh leaves the project page open');
   assert.ok(nodeAsks.includes('project:1'));assert.match(await page.locator('.graph-stage').textContent(),/Contacted on Partner listings/);
   assert.equal(calls.length,0,'opening posts nothing');
   // Who sees this project: like its board, or Only you / Team for this one
