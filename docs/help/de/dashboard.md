@@ -55,7 +55,9 @@ Kommt eine größere Funktion oder Verbesserung dazu, sagt dir ein kleiner Hinwe
 
 Du kannst auch eine Frage stellen, etwa die, die eine leere Suche vorschlägt, und bekommst eine kurze Antwort aus deinen eigenen Nachrichten ([Tastatur und Befehlspalette](keyboard.md)).
 
-**Alle Ergebnisse** öffnet die ganze Liste, für alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link dorthin, wo es herkommt. Eine leere Suche zeigt die neuesten Nachrichten. Eine Suche zeigt den besten Treffer zuerst, und eine Handy-Vorschau einer Nachricht, die ganz da ist, erscheint nur einmal, als diese Nachricht. Eine Frage mit allen Konten bekommt oben eine kurze Antwort, mit der Nachricht, aus der sie stammt. Wenn deine Nachrichten es nicht sagen, erscheint keine Antwort.
+**Alle Ergebnisse** öffnet die ganze Liste, für alle Konten oder ein einzelnes. Jedes Ergebnis öffnet sich in einer Leseansicht, mit einem Link dorthin, wo es herkommt. Eine leere Suche zeigt die neuesten Nachrichten.
+
+Eine Suche zeigt den besten Treffer zuerst, und eine Handy-Vorschau einer Nachricht, die ganz da ist, erscheint nur einmal, als diese Nachricht. Eine Frage mit allen Konten bekommt oben eine kurze Antwort, mit der Nachricht, aus der sie stammt. Wenn deine Nachrichten es nicht sagen, erscheint keine Antwort.
 
 ## Lernen
 

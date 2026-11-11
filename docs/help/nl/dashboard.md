@@ -53,7 +53,9 @@ Open zoeken met `⌘K` op een Mac of `Ctrl K` op Windows en Linux, of met het zo
 
 Je kunt ook een vraag stellen, zoals die een lege zoekopdracht voorstelt, voor een kort antwoord uit je eigen berichten ([Toetsenbord en het opdrachtpalet](keyboard.md)).
 
-**Alle resultaten** opent de volledige lijst, voor alle accounts of voor één. Elk resultaat opent in een lezer, met een link naar waar het vandaan kwam. Een lege zoekopdracht toont de nieuwste berichten. Een zoekopdracht toont de beste match eerst, en een telefoonvoorbeeld van een bericht dat er volledig is, verschijnt één keer, als dat bericht. Een vraag met alle accounts krijgt bovenaan een kort antwoord, met het bericht waar het uit komt. Als je berichten het niet zeggen, verschijnt er geen antwoord.
+**Alle resultaten** opent de volledige lijst, voor alle accounts of voor één. Elk resultaat opent in een lezer, met een link naar waar het vandaan kwam. Een lege zoekopdracht toont de nieuwste berichten.
+
+Een zoekopdracht toont de beste match eerst, en een telefoonvoorbeeld van een bericht dat er volledig is, verschijnt één keer, als dat bericht. Een vraag met alle accounts krijgt bovenaan een kort antwoord, met het bericht waar het uit komt. Als je berichten het niet zeggen, verschijnt er geen antwoord.
 
 ## Leren
 

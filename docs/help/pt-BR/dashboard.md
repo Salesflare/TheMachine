@@ -53,7 +53,9 @@ Abra a pesquisa com `⌘K` no Mac ou `Ctrl K` no Windows e no Linux, ou com o í
 
 Você também pode fazer uma pergunta, como a que uma pesquisa vazia sugere, para uma resposta curta tirada das suas próprias mensagens ([Teclado e a paleta de comandos](keyboard.md)).
 
-**Ver todos os resultados** abre a lista completa, de todas as contas ou de uma só. Cada resultado abre em um leitor, com um link para o lugar de onde veio. Uma pesquisa vazia mostra as mensagens mais novas. Uma pesquisa mostra primeiro o melhor resultado, e a prévia do celular de uma mensagem que está completa aparece uma vez só, como essa mensagem. Uma pergunta com todas as contas recebe no topo uma resposta curta, com a mensagem de onde ela veio. Se as suas mensagens não disserem, nenhuma resposta aparece.
+**Ver todos os resultados** abre a lista completa, de todas as contas ou de uma só. Cada resultado abre em um leitor, com um link para o lugar de onde veio. Uma pesquisa vazia mostra as mensagens mais novas.
+
+Uma pesquisa mostra primeiro o melhor resultado, e a prévia do celular de uma mensagem que está completa aparece uma vez só, como essa mensagem. Uma pergunta com todas as contas recebe no topo uma resposta curta, com a mensagem de onde ela veio. Se as suas mensagens não disserem, nenhuma resposta aparece.
 
 ## Aprendizado
 
