@@ -150,11 +150,10 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-share-ok],[data-share-
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-decide]');if(!b)return;
  if(b.dataset.choiceF==='decline'&&FLEET_REQ.includes(fleetData?.waiting?.find(x=>x.id===b.dataset.fleetDecide)?.kind)){fleetNoting.set(b.dataset.fleetDecide,'decline');fleetRedraw();return}
  b.disabled=true;
- try{const r=await fleetPost('fleet_decide',{id:b.dataset.fleetDecide,choice:b.dataset.choiceF});if(r.calendar)toastPlanUndo(r.calendar);else toast(r.status==='answered'?'Answered.':'Declined.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-// "I'm in" put the plan on the owner's own calendar (family.py): Undo takes the event off again; their yes stays.
-function toastPlanUndo(c){toast(t('Answered. Added to {}.',c.name));$('#toast').append(htmlNodes(html` <button type="button" data-plan-undo="${c.id}">${t('Undo')}</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}
+ try{const r=await fleetPost('fleet_decide',{id:b.dataset.fleetDecide,choice:b.dataset.choiceF}),c=r.calendar;toast(c?t('Answered. Added to {}.',c.name):r.status==='answered'?'Answered.':'Declined.');if(c){$('#toast').append(' ',make('button',{type:'button','data-plan-undo':c.id},t('Undo')));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+// Undo after I'm in: the event leaves the calendar, the yes stays (family.py)
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-plan-undo]');if(!b)return;b.disabled=true;
- try{await fleetPost('family_plan_undo',{id:b.dataset.planUndo});toast(t('Removed from your calendar.'));await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+ try{await fleetPost('family_plan_undo',{id:b.dataset.planUndo});toast(t('Removed from your calendar.'));refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('submit',async e=>{const t=e.target;if(t.classList.contains('fleet-intro-form')){e.preventDefault();
   try{await fleetPost('fleet_intro',{fleet:t.dataset.fleet,member_id:t.dataset.member,about:t.dataset.about,note:t.elements.note.value.trim()});toast('Asked. This tab shows how it goes.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}}
  else if(t.classList.contains('fleet-split-form')){e.preventDefault();const items={};for(const i of t.querySelectorAll('input'))items[i.name]=i.value.trim();

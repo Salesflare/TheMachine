@@ -303,12 +303,10 @@ class Family:
         sender = fleet.clean((self.member(row['fleet'], row['member_id']) or {}).get('name') or row['name'], 80)  # as request_card
         return {'question': json.loads(row['question']), 'sender': sender, 'card_id': row['card_id']}
 
-    def family_plan_on(self, ask_id, calendar=None):
-        """The plan's to-do says where it went: on the owner's calendar (its name), or back to the link after Undo."""
+    def family_plan_text(self, ask_id, calendar=None):
+        """(card id, text) for the plan's to-do: on the owner's calendar (its name), or back to the link after Undo."""
         plan = self.family_plan(ask_id)
-        if plan:
-            with self.connect() as db:
-                db.execute('UPDATE suggestions SET body=? WHERE id=?', (plan_body(plan['sender'], plan['question'], calendar)[:700], plan['card_id']))
+        return (plan['card_id'], plan_body(plan['sender'], plan['question'], calendar)[:700]) if plan else None
 
     def family_reminders(self, today=None):
         """An accepted to-do, on its due day: one reminder on this Machine (phone and Telegram), once."""

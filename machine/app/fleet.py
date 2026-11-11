@@ -12,7 +12,6 @@ import time
 import types
 import uuid
 
-import calendar_writes
 import family
 import fleet
 import fleet_learnings
@@ -34,7 +33,7 @@ import notify
 import security_levels
 import shared_graph
 import shared_graph_kept
-from sources import credential, gog_read, SourceError
+from sources import credential, SourceError
 import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
@@ -539,40 +538,30 @@ class FleetApp:
             return None
         if done.get('status') != 'done' and not done.get('duplicate'):
             return None
-        self.fleet.family_plan_on(ask_id, target['name'])
+        self.family_plan_on(ask_id, target['name'])
         return {'name': target['name'], 'id': ask_id}
+
+    def family_plan_on(self, ask_id, calendar=None):
+        """The plan's to-do says where it went (family.plan_body); a to-do closed since keeps its text."""
+        found = self.fleet.family_plan_text(ask_id, calendar)
+        if found:
+            try:
+                self.store.review_body(*found)
+            except ValueError:
+                pass
 
     def family_plan_undo(self, ask_id, transport=None):
         """Undo on a Family plan "I'm in" added: its event goes from the owner's calendar (nobody told), their yes stays,
         and the to-do shows the "Add to my calendar" link again. Only the event that tap made; not one with guests now."""
-        request_id = family.plan_request(ask_id)
-        with self.store.connect() as db:
-            row = db.execute("SELECT account_id FROM calendar_writes WHERE id=? AND op='create' AND status='done'", (request_id,)).fetchone()
-        if not row:
+        if not self.calendar_write_undo(family.plan_request(ask_id), transport):
             raise ValueError(i18n.t('That plan isn’t on your calendar.'))
-        account = calendar_writes.account_for(self.config, row['account_id'])
-        transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
-        google_id = calendar_writes.event_id(request_id)
-        try:
-            event = transport.event(account, google_id)
-        except Exception:  # noqa: BLE001
-            raise ValueError(i18n.t('I couldn’t check your calendar. Nothing was changed.')) from None
-        if event and event.get('status') != 'cancelled':
-            if any(not a.get('self') for a in event.get('attendees') or []):
-                raise ValueError(i18n.t('That event has guests now. Change it in the calendar itself. Nothing was changed.'))
-            status, _ = transport.write(account, 'events.delete', {'eventId': google_id})
-            if status not in (None, 404, 410):
-                raise ValueError(i18n.t('I couldn’t remove it. Check your calendar.'))
-        with self.store.connect() as db:
-            db.execute("UPDATE calendar_writes SET status='undone',updated_at=? WHERE id=?", (now(), request_id))
-        self.fleet.family_plan_on(ask_id)
-        self.sync_soon(row['account_id'])
+        self.family_plan_on(ask_id)
         return {'removed': True}
 
     def fleet_view(self):
         """The Fleet tab, with each member who is in the graph linked to their person there."""
         view = self.fleet.view()
-        if self.fleet.family_ref():  # "I'm in" on a plan says where it goes; never a grant check inside the view
+        if any(f.get('kind') == family.KIND for f in view.get('fleets') or ()):  # "I'm in" says where a plan goes; no grant check inline
             view['plan_calendar'] = (self.family_plan_calendar(wait=False) or {}).get('name')
         try:
             view['shared'] = self.fleet.shared_view()  # shared connectors: what this Machine shares or holds, and OKs to give
