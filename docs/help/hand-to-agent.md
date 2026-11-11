@@ -12,7 +12,7 @@ order: 5
 1. On the to-do, open **…**, then **Hand off…**, and pick **Codex** or **Claude Code**. Only the tools you set up show.
 2. Check the summary and what it gets, add a note if you like, and press **Hand off**. **See the full job** shows the whole brief.
 
-The to-do shows it's working, then the result, with **What it did** and **Show changes**. **Ask for changes** sends it what to change. **Hand off…** in **…** starts over. **Hide** puts the result away.
+The to-do shows it's working, then the result, with **What it did** and **Show changes**. **Ask for changes** sends it what to change. **Hand off…** in **…** starts over. **Hide** puts the result away. A stuck to-do you hand off shows **Working…** instead of **Stuck** while the job runs.
 
 A job never sends anything for you. When it leaves a publish or deploy step for you, **Do it** on the to-do runs that step. A reply it wrote stays a draft you send yourself.
 

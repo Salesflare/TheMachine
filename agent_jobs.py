@@ -94,6 +94,31 @@ def stop_for_move(db, reason, at):
                       f"WHERE status IN ({','.join('?' * len(ACTIVE))}) AND place='local'", (reason, at, at, *ACTIVE)).rowcount
 
 
+WORKING = 'working'  # a shown preparation status: a job handed off after the run got stuck is still on it (shown_preparation)
+HANDED_BACK = 'handed_off'  # a shown preparation status: that job ended with a result, which is the to-do's now
+
+
+def shown_preparation(db, prep='p', card='p.suggestion_id'):
+    """SQL for a to-do's preparation status as every view shows it (card, chat, Telegram, push). A run that got stuck
+    (blocked) no longer holds once the owner hands the to-do to Claude Code or Codex after it: while that job runs it
+    is working (WORKING), and once it ends the job's own result decides: a result clears it (HANDED_BACK), a failed or
+    canceled job leaves it stuck. A run blocked after the job started is the newer word and stays. Without handing
+    off on this Machine (no agent_jobs table) it is the run's own status."""
+    if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='agent_jobs'").fetchone():
+        return f'{prep}.status'
+    return (f"CASE WHEN {prep}.status='blocked' THEN coalesce((SELECT CASE WHEN coalesce(j.started_at,j.updated_at)<={prep}.updated_at THEN NULL "
+            f"WHEN j.status IN ({','.join(repr(s) for s in ACTIVE)}) THEN '{WORKING}' WHEN j.status='result' THEN '{HANDED_BACK}' END "
+            f"FROM agent_jobs j WHERE j.suggestion_id={card} ORDER BY j.created_at DESC LIMIT 1),{prep}.status) ELSE {prep}.status END")
+
+
+def card_changed(db, suggestion_id):
+    """Its Telegram message follows a job starting or ending (shown_preparation): Stuck there goes once the job is on it."""
+    try:
+        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (str(suggestion_id),))
+    except sqlite3.OperationalError:
+        pass  # no deliveries table (a bare job store)
+
+
 def settings(config):
     value = config.get('agents')
     return value if isinstance(value, dict) else ({} if value is None else None)
@@ -1662,6 +1687,7 @@ class AgentJobs:
             db.execute('INSERT INTO agent_jobs(id,suggestion_id,tool,place,status,brief,asks,turns,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
                        (job_id, str(suggestion_id), tool['id'], tool['place'], 'sent', brief, '[]', 1, at, at))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, suggestion_id), job_id))
+            card_changed(db, suggestion_id)
         try:
             self.prepare_folder(job_id, brief, parts)
         except OSError as error:
@@ -1693,6 +1719,7 @@ class AgentJobs:
             db.execute("UPDATE agent_jobs SET status='sent',asks=?,turns=turns+1,progress=NULL,error=NULL,error_kind=NULL,outcome=NULL,"
                        'updated_at=?,started_at=NULL,finished_at=NULL WHERE id=?', (json.dumps(asks[-20:], ensure_ascii=False), now(), row['id']))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, row['suggestion_id']), row['id']))
+            card_changed(db, row['suggestion_id'])
         self.launch(row['id'], text, resume=row['session_id'])
         return self.get(row['id'])
 
@@ -1712,6 +1739,7 @@ class AgentJobs:
             db.execute("UPDATE agent_jobs SET status='sent',turns=turns+1,progress=NULL,error=NULL,error_kind=NULL,outcome=NULL,updated_at=?,started_at=NULL,finished_at=NULL WHERE id=?",
                        (now(), row['id']))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, row['suggestion_id']), row['id']))
+            card_changed(db, row['suggestion_id'])
         self.launch(row['id'], prompt, resume=resume, fresh=None if asks else row['brief'])
         return self.get(row['id'])
 
@@ -1974,7 +2002,7 @@ class AgentJobs:
                        "error=NULL,error_kind=NULL,draft_updated=?,updated_at=?,finished_at=?,answers=? WHERE id=?",
                        (session, summary, json.dumps(files), diff or None, 1 if updated else None, at, at,
                         json.dumps(answers[-20:], ensure_ascii=False), job_id))
-
+            card_changed(db, owner['suggestion_id'])
             if receipt:
                 db.execute('INSERT INTO agent_result_receipts(ticket_hash,report,acked) VALUES(?,?,0) ON CONFLICT(ticket_hash) DO UPDATE SET report=excluded.report,acked=0', receipt)
         return True
@@ -2018,6 +2046,10 @@ class AgentJobs:
             where = f" AND status IN ({','.join('?' * len(only_if))})" if only_if else ''
             changed = db.execute(f'UPDATE agent_jobs SET status=?,error=?,error_kind=?,progress=NULL,updated_at=?,finished_at=? WHERE id=?{where} AND (? IS NULL OR turns=?)',
                                  (status, error, error_kind, now(), now(), job_id, *(only_if or ()), turn, turn)).rowcount
+            if changed:
+                row = db.execute('SELECT suggestion_id FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
+                if row:
+                    card_changed(db, row[0])
             if changed and status == 'failed':  # the error reports: the tool and its error kind, never the job's text (error_feed.py)
                 try:
                     row = db.execute('SELECT tool FROM agent_jobs WHERE id=?', (job_id,)).fetchone()

@@ -8,6 +8,7 @@ import sqlite3
 import subprocess
 import uuid
 
+import agent_jobs
 import fleet
 import i18n
 import mail_cleanup
@@ -151,13 +152,19 @@ EDIT_ROWS = ('SELECT s.*,d.message_id,d.edit_failures,p.status preparation_statu
              'WHERE d.needs_edit=1 AND d.message_id IS NOT NULL')
 
 
+def shown_rows(db, query):
+    """query with its preparation status as the to-do shows it: not Stuck while a job handed off after it works on it
+    (agent_jobs.shown_preparation), the same on Telegram as on the card."""
+    return query.replace('p.status preparation_status', agent_jobs.shown_preparation(db, card='s.id') + ' preparation_status', 1)
+
+
 def deliver_one(store, config, edit_cards=True):
     # One existing OpenClaw bot, never a second getUpdates consumer.
     store.wake_snoozed()
     if edit_cards:
         reconcile_uncertain(store, config)
     with store.connect() as db:
-        edits = [dict(r) for r in db.execute(EDIT_ROWS + ' AND (d.edit_retry_at IS NULL OR d.edit_retry_at<=?)', (now(),))] if edit_cards else []
+        edits = [dict(r) for r in db.execute(shown_rows(db, EDIT_ROWS) + ' AND (d.edit_retry_at IS NULL OR d.edit_retry_at<=?)', (now(),))] if edit_cards else []
     for row in edits:
         try:
             with store.connect() as db:
@@ -167,7 +174,7 @@ def deliver_one(store, config, edit_cards=True):
                 db.execute('BEGIN IMMEDIATE')
                 # Clear only if the card still renders the same: a concurrent change to
                 # preparation status/reason or snooze time must get its own edit.
-                current = db.execute(EDIT_ROWS + ' AND s.id=?', (row['id'],)).fetchone()
+                current = db.execute(shown_rows(db, EDIT_ROWS) + ' AND s.id=?', (row['id'],)).fetchone()
                 current=dict(current) if current else None
                 if current:current.update(store.suggestion_result(current,db))
                 if current and card(current) == card(row) and controls(current) == controls(row) and current['requested_feedback']==row['requested_feedback']:
@@ -190,7 +197,7 @@ def deliver_one(store, config, edit_cards=True):
                    ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=3)).isoformat(),))
         retry_cutoff = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()
         store.settle_awaiting(db)
-        rows = db.execute("SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1",(retry_cutoff,now())).fetchall()
+        rows = db.execute(shown_rows(db, "SELECT s.*,d.reminder,d.message_id,d.previous_message_ids,d.last_notified_at,p.status preparation_status,p.reason preparation_reason,p.error preparation_error,p.questions preparation_questions,(SELECT choice FROM decisions WHERE id=p.decision_id) preparation_cause,"+FEEDBACK_COLUMN+" FROM suggestions s JOIN deliveries d ON s.id=d.suggestion_id LEFT JOIN preparations p ON s.id=p.suggestion_id WHERE d.status='queued' AND (d.error IS NULL OR d.updated_at<?) AND ((s.status='pending' AND s.handled_hint IS NULL) OR (d.reminder=1 AND s.status IN ('accepted','prepared','instructions') AND s.handled_hint IS NULL AND coalesce(json_extract(s.outcome,'$.state'),'') NOT IN ('already_done','waiting'))) AND ((d.reminder=1 AND s.early=0) OR s.deliver_after IS NULL OR s.deliver_after<=?) ORDER BY d.reminder DESC,s.created_at LIMIT 1"),(retry_cutoff,now())).fetchall()
         if not rows:
             return
         row = dict(rows[0])
@@ -263,7 +270,7 @@ def deliver_one(store, config, edit_cards=True):
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         if row['_result_notice']:
-            current=db.execute(EDIT_ROWS.replace('WHERE d.needs_edit=1 AND','WHERE')+' AND s.id=?',(row['id'],)).fetchone()
+            current=db.execute(shown_rows(db, EDIT_ROWS).replace('WHERE d.needs_edit=1 AND','WHERE')+' AND s.id=?',(row['id'],)).fetchone()
             newer_result=bool(current and (current['body']!=row['body'] or current['preparation_reason']!=row['preparation_reason']
                               or current['requested_feedback']!=row['requested_feedback'])
                               and (current['status']=='prepared' or current['preparation_status']=='blocked'))
@@ -280,7 +287,7 @@ def deliver_one(store, config, edit_cards=True):
             if message_id:
                 # A decision made while this send was in flight could not mark the (not yet
                 # known) message for editing; the fresh card would keep stale buttons.
-                sent = db.execute(EDIT_ROWS.replace('WHERE d.needs_edit=1 AND', 'WHERE') + ' AND s.id=?', (row['id'],)).fetchone()
+                sent = db.execute(shown_rows(db, EDIT_ROWS).replace('WHERE d.needs_edit=1 AND', 'WHERE') + ' AND s.id=?', (row['id'],)).fetchone()
                 sent=dict(sent) if sent else None
                 if sent:sent.update(store.suggestion_result(sent,db))
                 if sent and (card(sent) != card(row) or controls(sent) != controls(row) or sent['requested_feedback']!=row['requested_feedback']):

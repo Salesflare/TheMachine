@@ -12,7 +12,7 @@ order: 5
 1. Öffne bei der Aufgabe **…**, dann **Übergeben…**, und wähle **Codex** oder **Claude Code**. Nur die Tools, die du eingerichtet hast, erscheinen.
 2. Prüfe die Zusammenfassung und was mitgeht, füge auf Wunsch eine Notiz hinzu und tippe auf **Übergeben**. **Ganzen Auftrag ansehen** zeigt das komplette Briefing.
 
-Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen zeigen**. **Änderungen anfragen** sagt ihm, was es ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg.
+Die Aufgabe zeigt dann, dass daran gearbeitet wird, und das Ergebnis, wenn es fertig ist, mit **Was es getan hat** und **Änderungen zeigen**. **Änderungen anfragen** sagt ihm, was es ändern soll. **Übergeben…** im **…** fängt von vorn an; **Ausblenden** legt das Ergebnis weg. Eine Aufgabe, die **Hängt fest** zeigte, zeigt **Läuft…**, solange der Auftrag läuft.
 
 Ein Auftrag sendet nie etwas für dich. Lässt er dir einen Schritt zum Veröffentlichen oder Deployen übrig, führt **Ausführen** auf der Aufgabe diesen Schritt aus. Eine Antwort, die er geschrieben hat, bleibt ein Entwurf, den du selbst sendest.
 
