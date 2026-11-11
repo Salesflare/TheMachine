@@ -12,6 +12,11 @@ A review (finish_analysis stages, or graph placing a project) that moves such a 
 gives that message; without proof the project stays one stage before (gate), so a project is only done with its
 evidence linked on it. The owner can still mark it done by hand (Won, or a drag), which always stands.
 
+A project on no board can carry a condition too (2026-11-11): the owner's in Edit, or a review's through graph. When
+its proof comes in (finish_analysis stages or graph, with "done": true), the same check runs and the project is marked
+done (outcome 'won', which the dashboard calls Done for work that isn't a deal), with Undo under Recent changes. The
+owner's Reopen stands until a message newer than it proves it again.
+
 The same review run keeps an eye on the open ones (monitor, no loop of its own): no reply for NO_REPLY_DAYS, an
 overdue promise on it (the owner's, or theirs that they are late with). A blocker with a clear next step gets one
 to-do, only when the project has no open to-do already, and never one that sends anything: the owner sees it first.
@@ -31,11 +36,18 @@ MONITOR_LIMIT = 60      # projects with a condition looked at per review run
 SCHEMA = '''CREATE TABLE IF NOT EXISTS project_success(project_id INTEGER PRIMARY KEY,condition TEXT,proof TEXT NOT NULL DEFAULT 'message',
   condition_by TEXT,condition_at TEXT,evidence_event_id INTEGER,evidence_url TEXT,evidence_at TEXT,evidence_note TEXT,
   blocker TEXT,blocker_at TEXT,todo_id TEXT,updated_at TEXT)'''
+# marked_by 'evidence' when a proof marked a project on no board done (its Undo), 'owner' for Won or Done by hand;
+# reopened_at: the owner's Reopen, which stands until a newer message proves it again
+COLUMNS = ('marked_by TEXT', 'marked_at TEXT', 'reopened_at TEXT')
 URL = re.compile(r'https://[^\s"\'<>()\[\]]+')
 
 
 def ensure(db):
     db.execute(SCHEMA)
+    have = {r[1] for r in db.execute('PRAGMA table_info(project_success)')}
+    for column in COLUMNS:
+        if column.split()[0] not in have:
+            db.execute('ALTER TABLE project_success ADD COLUMN ' + column)
 
 
 def forget(db, project_id):
@@ -190,11 +202,27 @@ def gate(db, m, checked):
     main = [s['name'] for s in json.loads(board['stages'])]
     if str(m.get('stage') or '').strip().casefold() != main[-1].casefold():
         return m, None
+    verdict = _verdict(db, m, row, checked)
+    if verdict is None:
+        return m, None  # no condition: as before
+    if verdict['proven']:
+        return m, verdict
+    before = main[-2] if len(main) > 1 else main[-1]
+    at = (row['stage'] or '') if row and row['board_id'] == board['id'] else ''
+    hold = at if at and at in main[:-1] and main.index(at) > main.index(before) else before
+    if at.casefold() == main[-1].casefold():
+        hold = at
+    return {**m, 'stage': hold}, verdict
+
+
+def _verdict(db, m, row, checked):
+    """Whether an entry's message proves the project's condition: {'proven': True, 'proof', 'event_id', 'url'},
+    {'proven': False, 'why'}, or None when the project has no condition."""
     saved = _row(db, row['id']) if row else None
     condition = (saved['condition'] if saved and saved['condition_by'] == 'owner' else None) or graph.one_line(m.get('condition'), 140) or (
         saved['condition'] if saved else None)
     if not condition:
-        return m, None  # no condition: as before
+        return None
     # The proof the condition was saved with stands (a review can't swap a page check for a message); a new one's own
     proof = saved['proof'] if saved and saved['condition'] else (m.get('proof') if m.get('proof') in PROOFS else 'link' if m.get('url') else 'message')
     event_id = int(m['event_id']) if str(m.get('event_id') or '').isdigit() else None
@@ -208,13 +236,95 @@ def gate(db, m, checked):
         ok, said = checked.get(url, (False, 'no_url' if not url else 'unloaded')) if url else (False, 'no_url')
         why = None if ok else said
     if why is None:
-        return m, {'proven': True, 'proof': proof, 'event_id': event_id, 'url': _clean_url(m.get('url')) if proof == 'link' else None}
-    before = main[-2] if len(main) > 1 else main[-1]
-    at = (row['stage'] or '') if row and row['board_id'] == board['id'] else ''
-    hold = at if at and at in main[:-1] and main.index(at) > main.index(before) else before
-    if at.casefold() == main[-1].casefold():
-        hold = at
-    return {**m, 'stage': hold}, {'proven': False, 'why': why}
+        return {'proven': True, 'proof': proof, 'event_id': event_id, 'url': _clean_url(m.get('url')) if proof == 'link' else None}
+    return {'proven': False, 'why': why}
+
+
+def off_board(db, m):
+    """An entry about a project that is on no board, with none named: its condition, or done with its proof (done)."""
+    if m.get('board'):
+        return False
+    row = _project(db, m.get('project'))
+    return bool(row and not row['board_id'])
+
+
+def done_off_board(db, m, checked, source, now):
+    """A review's or agent's entry for a project on no board: a condition it suggests ("condition", "proof"), and with
+    "done": true the message that meets it (event_id, and "url" for a live page). Proven, the project is marked done
+    (outcome 'won'); not proven, it stays open and says why. The owner's Reopen after that message stands."""
+    ensure(db)
+    row = _project(db, m.get('project'))
+    if not row:
+        raise ValueError('No project by that name')
+    if not m.get('done'):
+        if not graph.one_line(m.get('condition'), 140):
+            raise ValueError('Say which board the project is on (board; with stages when the board is new), or for a project on no board '
+                             'its "condition" and "proof", and "done": true with the message that meets it')
+        set_condition(db, row['id'], m['condition'], m.get('proof') if m.get('proof') in PROOFS else None, source, now)
+        return {'node_id': 'project:' + str(row['id']), 'project': row['name'], 'condition': _row(db, row['id'])['condition']}
+    if not str(m.get('event_id') or '').isdigit():
+        raise ValueError('done gives the event_id of the message that shows it')
+    reason = graph.one_line(m.get('reason'), 160)
+    if not reason:
+        raise ValueError('reason: what happened, one short clause (up to 160 characters), like "Lee says the listing is live"')
+    verdict = _verdict(db, m, row, checked)
+    if verdict is None:
+        raise ValueError('done needs the project\'s Done when: add "condition" and "proof"')
+    if verdict.get('why') != 'no_message':
+        graph.label(db, [int(m['event_id'])], row['name'], source, now)  # the message that shows it is the project's
+    out = {'node_id': 'project:' + str(row['id']), 'project': row['name']}
+    if graph.one_line(m.get('condition'), 140):
+        set_condition(db, row['id'], m['condition'], m.get('proof') if m.get('proof') in PROOFS else None, source, now)
+    if not verdict['proven']:
+        _put(db, row['id'], now, evidence_note=verdict['why'])
+        return {**out, 'not_proven': verdict['why']}
+    saved = _row(db, row['id'])
+    at = db.execute('SELECT occurred_at FROM events WHERE id=?', (verdict['event_id'],)).fetchone()['occurred_at']
+    if row['outcome']:
+        return {**out, 'kept': 'It is ended already'}
+    if saved and saved['reopened_at'] and graph.parse_time(at) <= graph.parse_time(saved['reopened_at']):
+        return {**out, 'kept': 'The owner reopened it after this message'}
+    graph.set_outcome(db, out['node_id'], 'won', reason, now)
+    _proven(db, row['id'], verdict, now)
+    _put(db, row['id'], now, marked_by='evidence', marked_at=now)  # after set_outcome, which marks it the owner's
+    return {**out, 'outcome': 'won', 'deal': is_deal(db, row)}
+
+
+def card(db, row):
+    """What the project dialog shows of this: whether it is a deal, and its Done when ({'condition', 'proof'})."""
+    try:
+        found = db.execute('SELECT condition,proof FROM project_success WHERE project_id=?', (row['id'],)).fetchone()
+    except sqlite3.OperationalError:
+        found = None
+    return {'deal': is_deal(db, row), **({'condition': found['condition'], 'proof': found['proof']} if found and found['condition'] else {})}
+
+
+def is_deal(db, row):
+    """A deal ends Won or Lost; other work ends Done (the same outcome 'won' underneath). Boards keep no kind, so a
+    project is a deal when it has a value or an expected close, or its board holds one that has (a pipeline)."""
+    if row['value'] is not None or row['close_date']:
+        return True
+    return bool(row['board_id'] and db.execute('SELECT 1 FROM projects WHERE board_id=? AND (value IS NOT NULL OR close_date IS NOT NULL) LIMIT 1',
+                                               (row['board_id'],)).fetchone())
+
+
+def page(db, node_id):
+    """Done when on the page of a project on no board: done when it is marked done (Won or Done)."""
+    row = db.execute('SELECT id,outcome FROM projects WHERE id=?', (str(node_id).split(':', 1)[1],)).fetchone()
+    if not row:
+        return None
+    return view(db, row['id'], outcome=row['outcome'])
+
+
+def outcome_set(db, project, outcome, now):
+    """The owner's Won, Lost, Done or Reopen: theirs from now on (Reopen stands until a newer message proves it).
+    Says whether the project is a deal."""
+    ensure(db)
+    if _row(db, project['id']) and outcome:
+        _put(db, project['id'], now, marked_by='owner', marked_at=now)
+    elif _row(db, project['id']):
+        _put(db, project['id'], now, marked_by=None, marked_at=None, reopened_at=now)
+    return is_deal(db, project)
 
 
 def after_move(db, m, result, verdict, now):
@@ -228,16 +338,20 @@ def after_move(db, m, result, verdict, now):
     if not verdict or (result or {}).get('kept'):
         return
     if verdict['proven']:
-        record_proof(db, row['id'], verdict['event_id'], verdict['url'], now)
-        saved = _row(db, row['id'])
-        if saved and saved['todo_id'] and saved['condition']:
-            from machine.store import outcomes
-            try:  # the to-do made for its blocker has its result now: it closes, or looks done (outcomes.result_seen)
-                outcomes.project_proof(db, saved['todo_id'], saved['condition'], verdict['event_id'], now)
-            except sqlite3.OperationalError:
-                pass  # a bare graph without the assistant's tables
+        _proven(db, row['id'], verdict, now)
     else:
         _put(db, row['id'], now, evidence_note=verdict['why'])
+
+
+def _proven(db, project_id, verdict, now):
+    record_proof(db, project_id, verdict['event_id'], verdict['url'], now)
+    saved = _row(db, project_id)
+    if saved and saved['todo_id'] and saved['condition']:
+        from machine.store import outcomes
+        try:  # the to-do made for its blocker has its result now: it closes, or looks done (outcomes.result_seen)
+            outcomes.project_proof(db, saved['todo_id'], saved['condition'], verdict['event_id'], now)
+        except sqlite3.OperationalError:
+            pass  # a bare graph without the assistant's tables
 
 
 def record_proof(db, project_id, event_id, url, now):
@@ -289,6 +403,8 @@ def _open_todos(db, row):
 
 
 def _follow_ups_on(db, row, board):
+    if not board:
+        return False  # follow-ups are a board's (or a project on one's)
     try:
         import follow_ups
         settings, _ = follow_ups.effective(db, row)
@@ -329,17 +445,17 @@ def action(row, found, condition):
 
 
 def monitor(db, now, limit=MONITOR_LIMIT):
-    """Run with each review: the blocker on every open project with a condition, kept on it for its page, and the
-    to-dos that are needed ([action]): one per project at most, only when it has no open to-do."""
+    """Run with each review: the blocker on every open project with a condition, on a board or not, kept on it for its
+    page, and the to-dos that are needed ([action]): one per project at most, only when it has no open to-do."""
     ensure(db)
     actions = []
     for s in db.execute('SELECT s.*,p.name,p.board_id,p.stage,p.outcome,p.closed_at FROM project_success s JOIN projects p ON p.id=s.project_id '
-                        "WHERE s.condition IS NOT NULL AND s.condition<>'' AND p.closed_at IS NULL AND p.board_id IS NOT NULL AND p.outcome IS NULL "
+                        "WHERE s.condition IS NOT NULL AND s.condition<>'' AND p.closed_at IS NULL AND p.outcome IS NULL "
                         'ORDER BY s.updated_at LIMIT ?', (limit,)).fetchall():
-        board = db.execute('SELECT * FROM boards WHERE id=?', (s['board_id'],)).fetchone()
+        board = db.execute('SELECT * FROM boards WHERE id=?', (s['board_id'],)).fetchone() if s['board_id'] else None
         main = [x['name'] for x in json.loads(board['stages'])] if board else []
         row = db.execute('SELECT * FROM projects WHERE id=?', (s['project_id'],)).fetchone()
-        if not main or s['stage'] in (main[-1], graph.STALLED):
+        if board and (not main or s['stage'] in (main[-1], graph.STALLED)):
             found = None  # done, or stalled: nothing to chase
         else:
             found = blocker(db, row, board, now)
@@ -385,7 +501,8 @@ def view(db, project_id, stage=None, stages=None, stage_by=None, outcome=None):
     evidence = {'event_id': s['evidence_event_id'], 'url': s['evidence_url'], 'at': s['evidence_at']} if s['evidence_event_id'] else None
     done_by = None
     if done:
-        done_by = 'owner' if outcome == 'won' or stage_by == 'owner' or not evidence else 'evidence'
+        by_proof = s['marked_by'] == 'evidence' if outcome == 'won' else stage_by != 'owner'  # a proof marked it, or moved it there
+        done_by = 'evidence' if by_proof and evidence else 'owner'
     found = json.loads(s['blocker']) if s['blocker'] and not done else None
     if found and found.get('todo'):
         todo = db.execute('SELECT id,title FROM suggestions WHERE id=?', (found['todo'],)).fetchone() if graph._has_column(db, 'suggestions', 'title') else None

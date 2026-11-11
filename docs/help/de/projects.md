@@ -16,7 +16,7 @@ Gib ihm einen Namen, ein Board und eine Phase, eine Organisation (such in deinem
 ## Ein Projekt bearbeiten, gewinnen oder verlieren
 
 - **Bearbeiten** auf der Seite eines Projekts, oder **Bearbeiten** in seinem **⋯** auf dem Board (oder drück E), ändert alles oben Genannte.
-- **Gewonnen** oder **Verloren**, mit Grund. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach Stalled or declined. **Wieder öffnen** macht das rückgängig.
+- **Gewonnen** oder **Verloren**, mit Grund, für einen Deal: ein Projekt mit Wert oder erwartetem Abschluss, oder auf einem Board, wo eines das hat. Gewonnen verschiebt es in die letzte Phase des Boards, Verloren nach Stalled or declined. Andere Projekte enden mit **Erledigt**. **Wieder öffnen** macht das rückgängig.
 - **Archivieren** nimmt es vom Board und aus den Listen; eine neue Nachricht dazu holt es zurück.
 - **Löschen** entfernt es endgültig; seine Nachrichten und Personen bleiben.
 
@@ -70,9 +70,9 @@ Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht e
 
 ## Fertig, wenn
 
-**Fertig, wenn** unter **Bearbeiten** bei einem Projekt sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Prüfungen schlagen eine für Partner-Einträge vor.
+**Fertig, wenn** unter **Bearbeiten** bei jedem Projekt, auf einem Board oder nicht, sagt in einfachen Worten, was es abschließt, mit Beleg: **Eine Live-Seite** (The Machine öffnet den Link aus ihrer Nachricht und prüft, ob er auf dich verlinkt) oder **Ihre Nachricht**. Prüfungen schlagen eine für Partner-Einträge vor.
 
-Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite; **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
+Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite. Ein Projekt ohne Board wird stattdessen als erledigt markiert, mit **Rückgängig** in seinem **⋯** unter Letzte Änderungen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
 
 ## Pipeline
 

@@ -1096,6 +1096,9 @@ class ReviewStore:
                 for m in stages:
                     if not str(m.get('event_id') or '').isdigit() or int(m['event_id']) not in batch:
                         raise ValueError('A move\'s event_id must belong to this batch')
+                    if project_success.off_board(db, m):  # a project on no board: its condition, or done with its proof
+                        moved.append(project_success.done_off_board(db, m, checked, 'review', now()))
+                        continue
                     m, verdict = project_success.gate(db, m, checked)  # the last stage only with its proof
                     moved.append(graph.set_stage(db, m.get('project'), m.get('stage'), 'review', now(), board=m.get('board'), stages=m.get('stages'),
                                                  reason=m.get('reason'), event_id=m['event_id'], next_step=m.get('next'), org=m.get('org')))

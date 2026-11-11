@@ -5,7 +5,7 @@ the owner's midnight, so the Graph's lists can show that it does things, calmly.
 Read only, from the same rows as a page's Recent changes (record_log.py), so a marked row's page says what changed:
 a review's role (person_roles), where someone works (person_orgs), how two people are related (graph_relations),
 two identities joined (graph_merges), Work or Personal from a new rule (side_changes), a project moved by a review
-(project_moves) and a fact about them (fact_about). The owner's own edits are no news to them and stay out.
+(project_moves), a project on no board its proof marked done (project_success) and a fact about them (fact_about). The owner's own edits are no news to them and stay out.
 No table of its own, no model call."""
 from __future__ import annotations
 
@@ -67,6 +67,9 @@ def _changes(db, start):
         out.append((r[0], r[2], {'kind': 'side', 'side': r[1]}))
     for r in _rows(db, "SELECT project_id,stage,at FROM project_moves WHERE source!='owner' AND at>=? ORDER BY at DESC LIMIT ?", (loose, SCAN)):
         out.append(('project:' + str(r[0]), r[2], {'kind': 'move', 'stage': r[1]}))
+    for r in _rows(db, "SELECT s.project_id,s.marked_at,(p.value IS NOT NULL OR p.close_date IS NOT NULL) deal FROM project_success s JOIN projects p ON p.id=s.project_id "
+                       "WHERE s.marked_by='evidence' AND s.marked_at>=? ORDER BY s.marked_at DESC LIMIT ?", (loose, SCAN)):
+        out.append(('project:' + str(r[0]), r[1], {'kind': 'done', 'deal': bool(r[2])}))  # its proof marked a project on no board done
     for r in _rows(db, "SELECT a.node_id,f.text,f.created_at FROM fact_about a JOIN facts f ON f.id=a.fact_id WHERE a.removed_at IS NULL AND f.removed_at IS NULL "
                        "AND f.kind='fact' AND a.by!='owner' AND f.created_at>=? ORDER BY f.created_at DESC LIMIT ?", (loose, SCAN)):
         out.append((r[0], r[2], {'kind': 'fact', 'text': r[1]}))

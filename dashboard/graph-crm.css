@@ -172,6 +172,7 @@
 .ps-box{margin-top:8px;padding-top:8px;border-top:1px solid var(--c-line);display:grid;gap:2px;font-size:var(--fs-sm)}.ps-box:empty{display:none}
 .ps-box p{margin:0;overflow-wrap:anywhere}.ps-when{font-weight:600}.ps-proof,.ps-block{color:var(--c-text-2)}
 .ps-box a{color:inherit}
+.graph-stage>.ps-box:first-child{margin-top:0;padding-top:0;border-top:0}  /* a project on no board: the box on its own */
 .graph-stage button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:var(--c-text-2);font:inherit;text-decoration:underline;cursor:pointer}
 /* Events: by day, rows on hairlines, no boxes; each its source, who wrote it, when, and the start of the text. */
 .ge-day{font:var(--fw-medium) var(--fs-xs)/1.2 var(--sans);color:var(--faint);letter-spacing:.02em;margin:var(--sp-5) 0 var(--sp-1)}

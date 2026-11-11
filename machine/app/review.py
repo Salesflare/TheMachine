@@ -888,7 +888,11 @@ class ReviewApp:
             if isinstance(result, dict) and result.get('analysis_id'):
                 with self.store.connect() as db:
                     result['projects'] = graph.active_projects(db)  # reuse these names in finish_analysis and suggest
-                    result['boards'] = claim_reply.boards(db, result['analysis_id'], self.config)  # the boards, and where this claim's projects stand
+                    mine = claim_reply.claimed_projects(db, claim_reply.claim_ids(db, result['analysis_id']), self.config)
+                    result['boards'] = claim_reply.boards(db, result['analysis_id'], self.config, mine)  # the boards, and where this claim's projects stand
+                    off_board = claim_reply.done_when(db, mine)  # this claim's projects on no board with a done when
+                    if off_board:
+                        result['done_when'] = off_board
                 team = self.team_accounts()
                 if team:  # Work messages the Shared Graph needs a call on (finish_analysis team)
                     with self.store.connect() as db:

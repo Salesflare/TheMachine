@@ -256,6 +256,14 @@ time passed.
   `not_proven`. The owner's Won or drag still marks it done. With each review, `monitor` keeps a blocker on every open
   project with a condition (an overdue promise on it, no reply in 10+ days) and adds one plain to-do when it has no open
   to-do and follow-ups don't already chase it; nothing is drafted or sent.
+- Done when on a project on no board (2026-11-11). The owner sets it in Edit; a review may set one with graph
+  `{"project", "condition", "proof"}` (never over the owner's). `begin_analysis` lists the claim's ones as `done_when`.
+  A message that meets it goes in `finish_analysis` `stages` as `{"project", "done": true, "event_id", "reason", "url"}`
+  with no board: the same proof check, then `outcome` 'won' (`marked_by` 'evidence'), shown as Done or Won and in
+  Recent changes with Undo (the owner's Reopen, which stands until a newer message proves it). `monitor` and its one
+  to-do cover these projects too, and the to-do's done when is the condition.
+- Done or Won (`project_success.is_deal`). Boards keep no kind: a project is a deal when it has a value or an expected close, or
+  its board holds one that has. A deal ends Won or Lost; other work ends Done (the same outcome 'won' underneath).
 - The owner drags a tile, or picks a stage from its ⋯ menu on a phone. That move stands until a newer message moves the
   project again; an older message never undoes a newer move.
 - A tile shows how long the other side hasn't answered since the owner wrote ("No reply in 14 days", from 10 days) and

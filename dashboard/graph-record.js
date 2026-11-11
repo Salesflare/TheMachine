@@ -3,14 +3,14 @@
 const quoteLine=(id,quote,event)=>quote?html`<span class="role-why">“${quote}”${event?html` <button class="link" data-quote-event="${event}">Read</button>`:''}</span>`:'';
 // The review's quote is markup (html``), never a plain string, so its Read button shows as a button.
 const roleKv=n=>kv('To you',n.role?html`<b>${cap(n.role)}</b>${n.role_by==='review'?html`<span class="sub">A review read it in your messages${n.role_quote?html`: ${quoteLine(n.id,n.role_quote,n.role_event_id)}`:''}</span>`:''}`:html`<span class="muted">Not known yet</span>`,'','kv-role');
-// Where someone works: from their work email, or as a source stated it (their LinkedIn headline, a signature, their own words), with that line.
+// Where someone works: from their work email or a source (a headline, a signature, their words), with that line.
 const orgSaid=n=>n.org_by==='email'?'from their work email':n.org_by==='owner'?'you set it':n.org_by==='review'?`from ${n.org_via==='LinkedIn headline'?'their LinkedIn headline':'their '+(n.org_via||'message')}${n.org_at?', '+day(n.org_at):''}`:'';
 // The owner's own details for an organization: they win over the service's, and "Wrong company" drops a bad match for good.
 const ORG_FIELDS=[['name','Name',100],['website','Website',200],['linkedin_url','LinkedIn',200],['industry','Industry',120],['size','Size (people)',40],['location','Location',120],['founded','Founded',4],['about','About',600],['notes','Notes',4000]];
 // The owner's own notes on a person or organization, as typed (lines kept).
 const notesSection=t=>t?html`<section class="detail-section record-notes"><h4>Notes</h4><p>${t}</p></section>`:'';
-// No maxlength or pattern on the fields: a looked-up value can be longer than the owner may type, and the browser
-// would then block Save without a word. Only what the owner changed is checked, by orgCheck, with the error under its field.
+// No maxlength or pattern: a looked-up value can be longer than the owner may type, and Save would block silently.
+// Only what the owner changed is checked (orgCheck), the error under its field.
 const ORG_GROUPS=[['Profile',['name','industry','size','location','founded','about']],['Contact',['website','linkedin_url']],['Notes',['notes']]];
 const ORG_WIDTH={industry:'w-mid',size:'w-mid',location:'w-mid',founded:'w-short'};
 const orgField=(k,t,v)=>html`<label class="pf-field ${ORG_WIDTH[k]||''}"><span>${t}</span>${k==='about'||k==='notes'?html`<textarea name="${k}" rows="4" aria-describedby="org-err-${k}"${k==='notes'?html` aria-label="Notes"`:''}>${v||''}</textarea>`:html`<input name="${k}" value="${v??''}" aria-describedby="org-err-${k}" autocomplete="off"${k==='founded'?html` inputmode="numeric"`:''}${k==='name'?html` placeholder="Leave empty to use the name from their messages"`:''}>`}<small class="field-error" id="org-err-${k}"></small></label>`;
@@ -21,7 +21,7 @@ const orgActions=n=>html`<span class="org-actions"><button class="ghost" data-pr
 const orgCheck=changed=>ORG_FIELDS.flatMap(([k,,max])=>{const t=changed[k];if(!t)return[];
  if(k==='founded')return /^(1[5-9]\d\d|20\d\d)$/.test(t)?[]:[[k,'A year, like 2014']];return t.length>max?[[k,`Up to ${max} characters (now ${t.length})`]]:[]});
 const orgOpen=(f,open)=>{const a=f.closest('.graph-detail');f.hidden=!open;if(a){const cs=getComputedStyle(a);a.style.setProperty('--org-pt',cs.paddingTop);a.style.setProperty('--org-px',cs.paddingLeft);a.classList.toggle('org-editing',open)}if(!open){f.reset();f.matches('.person-form')?personErrors(f,[]):orgErrors(f,[])}orgStuck()};
-// The editing header, once stuck under the top bar: square corners and a solid backing behind the bar, so nothing scrolled under it shows.
+// The editing header, once stuck under the top bar: square corners and a solid backing, so nothing shows under it.
 const orgStuck=()=>{const h=document.querySelector('#people-view .graph-detail.org-editing>.name-row');if(h)h.classList.toggle('stuck',h.getBoundingClientRect().top<=parseFloat(getComputedStyle(h).top)+1)};
 addEventListener('scroll',orgStuck,{passive:true});
 // A field's error goes as soon as the owner edits it, not only on the next Save
@@ -31,17 +31,16 @@ const pfErrClear=el=>{const list=el.closest('.pf-list-field');  /* a list of pho
 document.addEventListener('input',e=>{const el=e.target;if(el.getAttribute?.('aria-invalid')==='true'&&el.closest('.pf-form'))pfErrClear(el)});
 const orgErrors=(f,errs)=>{for(const k of [...ORG_FIELDS.map(([k])=>k),'role']){const el=f.elements[k];if(!el)continue;const m=errs.find(([x])=>x===k);if(m)el.setAttribute('aria-invalid','true');else el.removeAttribute('aria-invalid');f.querySelector('#org-err-'+k).textContent=m?m[1]:''}
  const first=errs.length&&f.elements[errs[0][0]];if(first){first.focus({preventScroll:true});first.scrollIntoView({block:'center'})}};
-// A person's page. Header: photo, name, title · organization, where they are, and one plain line on how you're in touch.
-// Then Contact, With you and Related as their own sections, and how identities were joined as a quiet disclosure.
-// Edit (in the header, as on an organization's page) opens one form for everything; the owner's word wins over a
-// look-up and later automatic updates, and stays through merges and Undo (graph.person_edit).
+// A person's page: photo, name, title · organization, place, how you're in touch; then Contact, With you, Related, and
+// how identities were joined. Edit opens one form; the owner's word wins over look-ups and stays through merges and
+// Undo (graph.person_edit).
 const COUNTRY=c=>{try{return /^[A-Z]{2}$/.test(c)?new Intl.DisplayNames([],{type:'region'}).of(c):c}catch{return c}};
 const personPlace=n=>{const p=n.profile||{};return p.location||[p.city,COUNTRY(p.country)].filter(Boolean).join(', ')};
-// Facts their connectors read (their own Slack, X or LinkedIn profile, a contact, the CRM) come first; hover says where from.
+// Facts their connectors read (their Slack, X or LinkedIn, a contact, the CRM) come first; hover says where from.
 const FACT_FROM=p=>{const s=Object.values(p.sources||{}).map(x=>x.from);return s.length?'From '+[...new Set(s)].join(', '):''};
 const localTime=tz=>{try{if(!tz)return'';const at=z=>fmtHM(Date.now(),{timeZone:z}),theirs=at(tz);return theirs===at(undefined)?'':t('{} their time',theirs)}catch{return''}};  /* only when their clock differs from the owner's */
-// A person's title and organization as one line: "CTO · Acme", "Wife · Umicore", or just the one that's there (never
-// "CTO at Acme": a title can be a relationship). The same format as person_line on the Machine (Talk's records).
+// A person's title and organization as one line: "CTO · Acme", or the one that's there (never "CTO at Acme": a title
+// can be a relationship). As person_line on the Machine.
 const jobLine=(title,org)=>[title,org].filter(Boolean).join(' · ');
 const personJob=n=>{if(n.kind!=='person')return'';const p=n.profile||{},org=n.org&&n.org_name?html`<button class="node" data-node="${n.org}" title="${n.org_name}">${n.org_name}</button>`:p.company?p.company:'';
  const title=p.title||(!org&&n.headline)||'',job=orEmpty(html`${[title,org].filter(Boolean).map((x,i)=>html`${i?' · ':''}${x}`)}`),place=[personPlace(n),localTime(p.timezone)].filter(Boolean).join(' · '),from=FACT_FROM(p);
@@ -318,6 +317,7 @@ function rcText(n,x){switch(x.kind){
  case 'joined':return t('Joined with {}',x.shown);
  case 'side':return t(RC_SIDE[x.side]||'');
  case 'move':return t('Moved to {}',x.stage);
+ case 'done':return x.deal?t('Marked won'):t('Project marked done');
  case 'ai':return x.parts.map(p=>t(RC_AI[p]||'')).filter(Boolean).join(' · ')+(x.undone?' · '+t('undone'):'');
  default:return x.text||''}}
 function rcSource(s){if(!s)return'';
@@ -333,6 +333,7 @@ function rcMenu(n,x){const a=x.act||{},who=shortName(n),items=[];
  if(a.edit)items.push(html`<button type="button" role="menuitem" data-org-edit>${t('Edit')}</button>`);
  if(a.unrelate)items.push(html`<button type="button" role="menuitem" data-unrelate="${a.unrelate[0]}" data-related-to="${a.unrelate[1]}">${t('Remove')}</button>`);
  if(a.split)items.push(html`<button type="button" role="menuitem" data-same="0" data-a="${a.split[0]}" data-b="${a.split[1]}" data-split>${t('Undo')}<small>${t('Splits them for good')}</small></button>`);
+ if(a.reopen)items.push(html`<button type="button" role="menuitem" data-rc-reopen="${a.reopen}">${t('Undo')}<small>${t('Opens it again')}</small></button>`);
  if(a.stage)items.push(html`<button type="button" role="menuitem" data-rc-stage="${a.stage}">${t('Undo')}<small>${t('Back to {}',a.stage)}</small></button>`);
  if(a.ai_undo)items.push(html`<button type="button" role="menuitem" data-rc-ai-undo="${a.ai_undo}">${t('Undo')}</button>`);
  return items.length?html`<details class="fact-menu rc-menu"><summary aria-label="${t('Options for this change')}" title="${t('Options')}">⋯</summary><div class="fact-menu-list" role="menu">${items}</div></details>`:''}
@@ -343,6 +344,7 @@ $('#people-view').addEventListener('click',async e=>{const box=e.target.closest(
  if(e.target.closest('[data-rc-more]')){for(const li of box.querySelectorAll('.rc-list li[hidden]'))li.hidden=false;e.target.closest('[data-rc-more]').remove();return}
  const item=e.target.closest('.rc-menu [role=menuitem]');if(item)item.closest('details').open=false;
  const back=e.target.closest('[data-rc-stage]');if(back){back.disabled=true;try{await graphPost('graph_stage',{node_id:graphNode,stage:back.dataset.rcStage});toast(t('Moved back to {}.',back.dataset.rcStage));await people(graphNode,true)}catch(err){errCaught(err);back.disabled=false;toast(err.message,true)}return}
+ const reopen=e.target.closest('[data-rc-reopen]');if(reopen){reopen.disabled=true;try{await graphPost('project_outcome',{node_id:reopen.dataset.rcReopen,outcome:null,reason:''});toast(t('Reopened.'));await people(graphNode,true)}catch(err){errCaught(err);reopen.disabled=false;toast(err.message,true)}return}
  const ai=e.target.closest('[data-rc-ai-undo]');if(ai){ai.disabled=true;try{await sharePost('ai_undo',{id:+ai.dataset.rcAiUndo});toast(t('Undone.'));await people(graphNode,true)}catch(err){errCaught(err);ai.disabled=false;toast(err.message,true)}}},true);
 $('#people-view').addEventListener('toggle',e=>{if(e.target.matches?.('.rc-fold'))rcOpen=e.target.open?graphNode:''},true);
 // The timeline on a person, project or organization: every source in one list by day, each row its source, who wrote it,
