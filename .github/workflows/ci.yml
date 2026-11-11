@@ -48,8 +48,8 @@ jobs:
     # base; nothing when that is the commit itself, every test when there is none), with --wide: a function nearly
     # every test runs takes all of them there, where a pull request takes the quickest few. The nightly, weekly and manual runs
     # run every one. On our runner the files are split into shards of about equal time (scripts/test_shards.py, by each
-    # file's time in main's last full run; about 5 minutes of files each, at most CI_SHARDS, a repository variable, 4
-    # when unset), side by side on our runner's slots. GitHub's runners use one job.
+    # file's time in main's last full run; about 900 seconds of files each, some 2.5 minutes with 6 side by side, at
+    # most CI_SHARDS, a repository variable, 4 when unset), side by side on our runner's slots. GitHub's runners use one job.
     # Each run on main's commits names what it tested in an artifact (tested-full, tested-since-<sha>): what
     # scripts/ci_runs.py and scripts/release.py read.
     runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
@@ -105,7 +105,7 @@ jobs:
           fi
           echo "$marker" > "$RUNNER_TEMP/tested"
           echo "marker=$marker" >> "$GITHUB_OUTPUT"
-          python3 scripts/test_shards.py --shards "$SHARDS" --target 1800 --impact "$map" "$picked" > "$split"
+          python3 scripts/test_shards.py --shards "$SHARDS" --target 900 --impact "$map" "$picked" > "$split"
           echo "files=$(cat "$split")" >> "$GITHUB_OUTPUT"
           echo "shards=$(python3 -c 'import json, sys; print(json.dumps(list(json.load(open(sys.argv[1])))))' "$split")" >> "$GITHUB_OUTPUT"
           python3 -c 'import json, sys; [print(f"shard {k}: {len(v.split())} files") for k, v in json.load(open(sys.argv[1])).items()]' "$split"
@@ -137,27 +137,71 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          # shard 1 also scans every commit for secrets (below): the whole history
+          fetch-depth: ${{ matrix.shard == '1' && matrix.versions.openclaw != 'latest' && 0 || 1 }}
           persist-credentials: false
+      - name: Start the help, catalog and secrets checks beside the tests (shard 1)
+        # They were jobs of their own, each waiting minutes for a free slot on our runner behind other pull requests'
+        # shards to run for 15 seconds. Shard 1 starts them in the background here and reports them at its end.
+        id: checks
+        if: matrix.shard == '1' && matrix.versions.openclaw != 'latest'
+        env:
+          GITLEAKS_VERSION: '8.30.1'
+        run: |
+          checks="$RUNNER_TEMP/checks" && mkdir -p "$checks"
+          # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector,
+          # dashboard tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
+          # And no English text outside the catalogs: every string the dashboard, the server's messages and the
+          # plugin show is a key in i18n/en.json (scripts/i18n_extract.py --add adds them).
+          nohup bash -c 'python3 scripts/help_check.py && python3 scripts/i18n_extract.py --check; echo $? > "$1/help.rc"' \
+            _ "$checks" > "$checks/help.log" 2>&1 < /dev/null &
+          # Every reachable commit, scanned with Gitleaks
+          nohup bash -c 'set -e
+            archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+            base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+            curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/$archive" --output "$RUNNER_TEMP/$archive"
+            curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt" --output "$RUNNER_TEMP/checksums.txt"
+            (cd "$RUNNER_TEMP" && sha256sum --check --ignore-missing checksums.txt)
+            tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+            "$RUNNER_TEMP/gitleaks" git --redact --log-opts=--all --no-banner' > "$checks/secrets.log" 2>&1 < /dev/null \
+            && echo 0 > "$checks/secrets.rc" || echo 1 > "$checks/secrets.rc" &
+      - name: Keep Python, Node and OpenClaw between runs
+        # A slot's home is wiped after every job, so setup-python, setup-node and the OpenClaw install fetched all of
+        # it again each time (about 50 seconds a shard). The tool cache with them in it comes back from GitHub's cache
+        # instead, under a key of the exact versions. Only main's runs write it (below); a pull request reads main's.
+        id: tools
+        if: runner.environment == 'self-hosted' && matrix.versions.openclaw != 'latest'
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ${{ runner.tool_cache }}
+          key: tools-1-${{ runner.os }}-${{ runner.arch }}-python${{ matrix.versions.python }}-node${{ matrix.versions.node }}-openclaw${{ matrix.versions.openclaw }}-${{ hashFiles('openclaw-pin.json') }}-cryptography46.0.3-playwright1.63.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: ${{ matrix.versions.python }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.versions.node }}
-          cache: npm  # our runner wipes a slot's home after every job: npm's downloads come from GitHub's cache instead
+          # our runner wipes a slot's home after every job: npm's downloads come from GitHub's cache instead (not
+          # needed when the tool cache came back with OpenClaw and Playwright in it)
+          cache: ${{ steps.tools.outputs.cache-hit != 'true' && 'npm' || '' }}
           cache-dependency-path: package-lock.json
       - name: Keep Chromium between runs
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        id: chromium
+        uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ~/.cache/ms-playwright
           key: playwright-1.63.0-chromium-${{ runner.os }}-${{ runner.arch }}
       - name: Install OpenClaw and browser
+        env:
+          CACHED: ${{ steps.tools.outputs.cache-hit == 'true' }}
         run: |
-          # the runner's npm cache can predate a new pin (ETARGET offline): then ask the registry
-          npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} \
-            || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }}
+          if [ "$CACHED" != true ]; then
+            # the runner's npm cache can predate a new pin (ETARGET offline): then ask the registry
+            npm install --global --prefer-offline --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} playwright@1.63.0 \
+              || npm install --global --prefer-online --no-audit --no-fund openclaw@${{ matrix.versions.openclaw }} playwright@1.63.0
+          fi
           # our runner has Chromium's system libraries already, and a job there has no sudo
-          npx --yes --package=playwright@1.63.0 playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
+          playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
           printf 'OPENCLAW_PACKAGE_DIR=%s/openclaw\n' "$(npm root -g)" >> "$GITHUB_ENV"
       - name: Install the pinned Node packages
         run: npm ci --omit=dev --ignore-scripts --no-audit --no-fund
@@ -166,6 +210,19 @@ jobs:
           node --input-type=module -e 'const {chromium}=await import(process.env.OPENCLAW_PACKAGE_DIR+"/node_modules/playwright-core/index.mjs"); console.log("CHROMIUM_PATH="+chromium.executablePath())' >> "$GITHUB_ENV"
       - name: Install cryptography (the address for AIs needs it; tests/test_ai_reach.py)
         run: python -m pip install --quiet cryptography==46.0.3
+      - name: Save Python, Node and OpenClaw for the next runs
+        # main's runs only: a pull request's copy would be one more of the same in GitHub's 10 GB, pushing main's out
+        if: steps.tools.outcome == 'success' && steps.tools.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ${{ runner.tool_cache }}
+          key: ${{ steps.tools.outputs.cache-primary-key }}
+      - name: Save Chromium for the next runs
+        if: steps.chromium.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ steps.chromium.outputs.cache-primary-key }}
       - name: Record which functions each test runs
         # A full run records the test-impact map the pull requests pick their tests with (scripts/test_impact.py).
         if: needs.plan.outputs.full == 'true' && matrix.versions.openclaw != 'latest'
@@ -205,6 +262,16 @@ jobs:
           if-no-files-found: ignore
       - name: Check whitespace
         run: git diff --check
+      - name: Help articles, catalogs and secrets (started at the top of shard 1)
+        if: ${{ !cancelled() && steps.checks.outcome == 'success' }}
+        run: |
+          checks="$RUNNER_TEMP/checks" status=0
+          for name in help secrets; do
+            for _ in $(seq 600); do [ -s "$checks/$name.rc" ] && break; sleep 1; done
+            echo "::group::$name"; cat "$checks/$name.log"; echo "::endgroup::"
+            if [ "$(cat "$checks/$name.rc" 2>/dev/null)" != 0 ]; then echo "::error::The $name check failed (its log is above)"; status=1; fi
+          done
+          exit "$status"
 
   gate:
     # The check main's rules require, under the name it had before the shards: green only when the plan and every
@@ -266,7 +333,7 @@ jobs:
   nightly-alert:
     # A red nightly run opens an issue (or adds to the open one), so a test the selection missed is seen that morning;
     # the next green nightly run closes it. The weekly run (the full matrix, macOS and Windows) has its own issue.
-    needs: [plan, tests, help, secrets, portable]
+    needs: [plan, tests, portable]
     if: always() && github.event_name == 'schedule'
     runs-on: ${{ fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') }}
     timeout-minutes: 5
@@ -305,22 +372,6 @@ jobs:
               api(f'issues/{issue["number"]}', {'state': 'closed'}, method='PATCH')
           print('red' if red else 'green', len(found))
           EOF
-
-  help:
-    # The help articles (docs/help/, the help at themachine.computer/help) against the code: every connector, dashboard
-    # tab and Settings tab has one, and each names only buttons, routes and commands that still exist.
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          persist-credentials: false
-      - name: Check the help articles
-        run: python3 scripts/help_check.py
-      - name: No English text outside the catalogs
-        # Every string the dashboard, the server's messages and the plugin show is a key in i18n/en.json (and so in
-        # every language): a new hard-coded string fails here. scripts/i18n_extract.py --add adds them.
-        run: python3 scripts/i18n_extract.py --check
 
   portable:
     # macOS runs natively under launchd; Windows runs The Machine inside WSL2 (Linux), so this checks the portable core.
@@ -373,23 +424,3 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./install.ps1 -DryRun
-
-  secrets:
-    runs-on: ${{ (github.event_name == 'push' || github.event_name == 'pull_request' && !startsWith(github.head_ref, 'contrib/') || inputs.own_runner || github.event.schedule == '23 1 * * *') && fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') || 'ubuntu-24.04' }}
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Scan all reachable history with Gitleaks
-        env:
-          GITLEAKS_VERSION: '8.30.1'
-        run: |
-          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
-          curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/$archive" --output "$RUNNER_TEMP/$archive"
-          curl --fail --location --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt" --output "$RUNNER_TEMP/checksums.txt"
-          (cd "$RUNNER_TEMP" && sha256sum --check --ignore-missing checksums.txt)
-          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
-          "$RUNNER_TEMP/gitleaks" git --redact --log-opts=--all --no-banner

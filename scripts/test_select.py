@@ -115,6 +115,24 @@ def mentions(text, word, before, after):
     return False
 
 
+def mentions_name(text, path):
+    """text names path by its file name, written alone or after a folder that is path's own: 'docs/help/routines.md'
+    names docs/help/routines.md, not docs/help/de/routines.md (a translation of it); f'{lang}/routines.md' names both."""
+    name = Path(path).name
+    at = text.find(name)
+    while at >= 0:
+        prev, nxt = text[at - 1:at], text[at + len(name):at + len(name) + 1]
+        if not (prev and (prev.isalnum() or prev in '_.-')) and not (nxt and (nxt.isalnum() or nxt in '_-')):
+            start = at
+            while start > 0 and (text[start - 1].isalnum() or text[start - 1] in '_.-/'):
+                start -= 1
+            written = re.sub(r'^(?:\.{1,2}/)+', '', text[start:at + len(name)]).lstrip('/')
+            if '/' not in written or path == written or path.endswith('/' + written):
+                return True
+        at = text.find(name, at + 1)
+    return False
+
+
 def mentions_folder(text, folder):
     """The folder as a path: 'dashboard/x', ROOT / 'dashboard', joinpath('connectors'); not the bare word."""
     at = text.find(folder)
@@ -220,7 +238,7 @@ class Repo:
         folders = [str(p) for p in Path(path).parents if str(p) not in ('.', 'tests')]
         joined = [form for f in folders for form in ("' / '".join(f.split('/')), '" / "'.join(f.split('/'))) if '/' in f]
         found = {other for other, text in self.views.items() if other != path and (
-            name in text and mentions(text, name, '.-', '-') or path in text
+            path in text or name in text and mentions_name(text, path)
             or any(f in text and mentions_folder(text, f) for f in folders) or any(j in text for j in joined)
             or stem and stem in text and mentions(text, stem, '-', '-'))}
         self._named[path] = found
@@ -497,10 +515,14 @@ def moved_spans(old, base, new):
 
 # a line of a name -> method table: 'graph_role': 'graph_role_action', (maybe opening or closing it)
 TABLE_LINE = re.compile(r"""(?:[A-Za-z_]\w*\s*=\s*\{\s*)?(?:['"][\w.-]+['"]\s*:\s*['"][\w.-]+['"]\s*,?\s*)+\}?""")
+# a line of a set of names, one per line: 'family_plan_undo',
+SET_LINE = re.compile(r"""(?:['"][\w.-]+['"]\s*,\s*)+""")
 
 # a function more tests than this run past their start: on a pull request, the quickest few of them and those that
-# name it (scripts/test_select.py --wide, as a push to main runs, takes them all)
-EVERYWHERE, EVERYWHERE_KEEP = 60, 12
+# name it (scripts/test_select.py --wide, as a push to main runs, takes them all). 30, not 60: a dashboard function
+# every chat or card draw runs (whose side a chat line sits on) took 44 page tests, some 1200 test-seconds, where 12
+# of them meet any break of it all the same.
+EVERYWHERE, EVERYWHERE_KEEP = 30, 12
 
 JS_WORD = r'[A-Za-z_$][\w$]*'
 
@@ -584,6 +606,15 @@ def js_split(text):
 # document.addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;...})
 DELEGATED = re.compile(r"""\s*document\.addEventListener\(\s*'(?:click|change|input|submit|keydown)'\s*,\s*(?:async\s*)?(\w+)\s*=>\s*\{\s*"""
                        r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*(?:!\2\s*\)\s*return\s*[;}]|\2\s*\)\s*\{)""")
+
+
+def delegated(statement):
+    """statement (as written) is such a listener and does nothing else: its match, or None."""
+    listener = DELEGATED.match(statement)
+    if listener and statement[listener.end() - 1] == '{':  # if(b){...}: nothing after that block
+        close = block_end(statement, listener.end() - 1)
+        listener = listener if close and re.match(r'\s*;?\s*\}', statement[close + 1:]) else None
+    return listener if listener and js_declared(js_blank(statement)) is None else None
 
 
 def js_code(line):
@@ -824,6 +855,158 @@ def token_word(token):
     return re.compile('|'.join(forms))
 
 
+_STRINGS = {}
+
+
+def string_spans(path, text):
+    """The (start, end) offsets of the strings in a Python or JavaScript file (a template literal's text, not its ${}
+    parts), or None when that can't be told: then all of it counts."""
+    key = (path, len(text), hash(text))
+    if key in _STRINGS:
+        return _STRINGS[key]
+    spans = []
+    if path.endswith('.py'):
+        starts = [0] + [i + 1 for i, c in enumerate(text) if c == '\n']
+        try:
+            for tok in tokenize.generate_tokens(io.StringIO(text).readline):
+                if tok.type == tokenize.STRING or tokenize.tok_name.get(tok.type) == 'FSTRING_MIDDLE':
+                    spans.append((starts[tok.start[0] - 1] + tok.start[1], starts[tok.end[0] - 1] + tok.end[1]))
+        except (tokenize.TokenError, SyntaxError, IndentationError, IndexError):
+            spans = None
+    elif path.endswith(('.js', '.mjs', '.ts')):
+        # quotes, comments, and template literals with their ${} parts as code (nested as deep as they go)
+        i, n, stack, start = 0, len(text), [], None  # stack: '`' inside a template's text, '{' inside its ${}
+        while i < n:
+            c = text[i]
+            if stack and stack[-1] == '`':
+                if c == '\\':
+                    i += 2
+                    continue
+                if c == '`':
+                    spans.append((start, i))
+                    stack.pop()
+                elif text.startswith('${', i):
+                    spans.append((start, i))
+                    stack.append('{')
+                    i += 2
+                    continue
+                i += 1
+                continue
+            if c in '\'"':
+                end = i + 1
+                while end < n and text[end] != c and text[end] != '\n':
+                    end += 2 if text[end] == '\\' else 1
+                spans.append((i + 1, end))
+                i = end + 1
+                continue
+            if c == '`':
+                stack.append('`')
+                start = i + 1
+            elif text.startswith('//', i) and text[i - 1:i] not in (':', '\\'):
+                i = n if text.find('\n', i) < 0 else text.find('\n', i)
+                continue
+            elif text.startswith('/*', i):
+                i = n if text.find('*/', i + 2) < 0 else text.find('*/', i + 2) + 2
+                continue
+            elif c == '/' and re.search(r'(?:^|[(,=:\[!&|?{};+\-*%<>~^]|\breturn|\btypeof)\s*$', text[max(0, i - 12):i]):
+                # a regular expression (/[*_`]/g): its quotes and brackets are not code's, and a name in it is one
+                # it looks for (span class="elapsed"), as in a string
+                end, group = i + 1, False
+                while end < n and text[end] != '\n' and (group or text[end] != '/'):
+                    if text[end] == '\\':
+                        end += 1
+                    elif text[end] in '[]':
+                        group = text[end] == '['
+                    end += 1
+                spans.append((i + 1, end))
+                i = end + 1
+                continue
+            elif c == '{' and stack:
+                stack.append('{')
+            elif c == '}' and stack:
+                stack.pop()
+                if stack and stack[-1] == '`':
+                    start = i + 1
+            i += 1
+        if stack:
+            spans = None
+    else:
+        spans = None
+    spans = sorted(spans) if spans is not None else None
+    _STRINGS[key] = spans
+    return spans
+
+
+ASSERTED_PIECE, ASSERTED_RUN, ASSERTED_OFTEN = 4, 6, 3
+
+
+def asserts_any(path, text, sides, page):
+    """A test has a string (not its docstring) that the change cuts into, before or after it, that the page (all of its
+    parts, page) has at most ASSERTED_OFTEN times (one of many 'kind's going or coming turns no assertIn or
+    assertNotIn): so an assertion on it can turn. A string of ASSERTED_PIECE or more characters, whole; one with a backslash (a regular
+    expression, r'checkHead\\(\\)') also by its plain runs of ASSERTED_RUN or more. sides: [(text, [(start, end) of
+    what changed in it])]."""
+    pieces = set()
+    for string in python_strings(path, text).split('\n') if path.endswith('.py') else test_strings(path, text).split('\n'):
+        if len(string.strip()) >= ASSERTED_PIECE:
+            pieces.add(string.strip())
+        if '\\' in string:
+            pieces.update(p.strip() for p in re.split(r'\\.|[\[\](){}*+?|^$]', string) if len(p.strip()) >= ASSERTED_RUN)
+    if not pieces:
+        return False
+    longest = max(map(len, pieces))
+    # only the text around each change: a piece that cuts into it lies there whole
+    windows = [(part[max(0, a - longest):b + longest], max(0, a - longest), a, b) for part, spans in sides for a, b in spans]
+    counts = _PAGE_COUNTS.setdefault(page, {})
+    for piece in pieces:
+        for window, offset, a, b in windows:
+            if piece not in window:
+                continue
+            for m in re.finditer(re.escape(piece), window):
+                at, end = offset + m.start(), offset + m.end()
+                if at < b and a < end if a < b else at < a < end:
+                    if piece not in counts:
+                        counts[piece] = page.count(piece)
+                    if counts[piece] <= ASSERTED_OFTEN:
+                        return True
+                    break
+    return False
+
+
+_PAGE_COUNTS = {}
+
+
+def test_strings(path, text):
+    """A test's strings but its docstrings and comments, one per line: where it names a file it reads, not where it
+    says what it covers ('docs/help/routines.md "Templates"' in its docstring)."""
+    if path.endswith('.py'):
+        return python_strings(path, text)
+    spans = string_spans(path, text)
+    return text if spans is None else '\n'.join(text[a:b] for a, b in spans)
+
+
+def drawn_here(path, text, match):
+    """A class, id or attribute name word found in a file of code is one it draws with: in a string (markup, a
+    selector, a class list), as a dataset key or an object key ({elapsed: on}); not a variable or function that has the
+    same name (const elapsed = ...)."""
+    spans = string_spans(path, text)
+    if spans is None or match.group().startswith(('dataset', '<', 'createElement', 'new Option')):
+        return True
+    a = match.start()
+    lo, hi = 0, len(spans)
+    while lo < hi:  # the last span that starts at or before a
+        mid = (lo + hi) // 2
+        if spans[mid][0] <= a:
+            lo = mid + 1
+        else:
+            hi = mid
+    if lo and spans[lo - 1][0] <= a < spans[lo - 1][1]:
+        # '.more-actions', '#peek-dialog', '[data-x]': a selector finds such an element, it draws none (the code that
+        # draws it has it as a class, an id or an attribute)
+        return text[a - 1:a] not in ('.', '#', '[')
+    return bool(re.match(r'\s*:(?!:)', text[match.end():match.end() + 8]))
+
+
 def closed_dialogs(html, word):
     """The ids of the elements that start hidden (a closed <dialog>, a hidden panel) every place word finds in html
     sits in, the innermost one each, or None when one isn't in one. An include line (/*@include dashboard/x.js*/)
@@ -909,6 +1092,27 @@ def css_rules(text):
     return None if stack else rules
 
 
+def changed_selectors(old, new):
+    """The selectors of the rules a change from old to new touches, on either side, or None when the braces don't add
+    up. A rule counts from its first character on, not the line break before it: a whole line taken out or put in
+    before it doesn't change it. Where one side has nothing (the other has what was taken out or put in), only a rule
+    that cuts into it counts there."""
+    old_rules, new_rules = css_rules(old), css_rules(new)
+    if old_rules is None or new_rules is None:
+        return None
+    spans = changed_spans(old, new)
+    selectors = set()
+    for text, rules, ends in ((old, old_rules, [(s, e) for s, e, _, _ in spans]), (new, new_rules, [(s, e) for _, _, s, e in spans])):
+        for a, b in ends:
+            for start, end, selector, groups in rules:
+                for x, y in [(start, end), *groups]:
+                    x += len(text[x:y]) - len(text[x:y].lstrip())
+                    if (x < b and a < y) if a < b else x < a < y:
+                        selectors.add(selector)
+                        break
+    return selectors
+
+
 def css_tokens(selector):
     """For each selector in a list, the classes, ids and attribute names an element it styles has (not the ones in
     :not(), :has() and the like, which it may lack; :is(.a,.b) x counts as .a x and .b x); None when one of them names
@@ -960,8 +1164,16 @@ def folder_named(text, folder, rest):
         prev, after = text[at - 1:at], text[at + len(folder):at + len(folder) + 80]
         if not (prev and (prev.isalnum() or prev in '_.-')):
             if after.startswith('/'):
-                nxt = re.match(r'[\w.-]*', after[1:]).group()
-                if not nxt or rest and nxt == rest[0]:
+                # the way written on from the folder, as deep as it goes: it names this file while it agrees with
+                # rest, up to where it ends ('docs/' + name) or stops at a folder of it ('docs/help/'); not
+                # 'docs/help/routines.md' for docs/help/de/routines.md
+                written = re.match(r'(?:/[\w.-]*)+', after).group().split('/')[1:]
+                for i, nxt in enumerate(written):
+                    if not nxt:
+                        return True
+                    if i >= len(rest) or nxt != rest[i]:
+                        break
+                else:
                     return True
             elif prev in ('"', "'") and after[:1] == prev and text[max(0, at - 40):at - 1].rstrip().endswith(('/', 'joinpath(')):
                 deeper = re.match(r'''\s*/\s*['"]([\w.-]+)['"]''', after[1:])
@@ -974,7 +1186,7 @@ def folder_named(text, folder, rest):
 def names_exactly(text, path):
     """text names path: its path, its file name, a dashboard part's name, or (folder_named) its folder."""
     name = Path(path).name
-    if path in text or name in text and mentions(text, name, '.-', '-'):
+    if path in text or name in text and mentions_name(text, path):
         return True
     stem = Path(path).stem if path.startswith('dashboard/') and Path(path).suffix in ('.js', '.css', '.html') else None
     if stem and stem in text and mentions(text, stem, '-', '-'):
@@ -989,7 +1201,7 @@ def names_exactly(text, path):
 def names_file(text, path):
     """text names this file itself (its path or file name), not only a folder it's in."""
     name = Path(path).name
-    return path in text or name in text and mentions(text, name, '.-', '-')
+    return path in text or name in text and mentions_name(text, path)
 
 
 def python_strings(path, text):
@@ -1137,7 +1349,7 @@ def select_mapped(changed, repo, impact, base, why=None):
                 for test in few(impact.exercised(path, where[1]), where[1]):
                     add(test, f'ran {path}:{where[1]} ({why_text})')
             elif where[1]:
-                if where[0] == 'names' and TABLE_LINE.fullmatch(plain) and table_entries(path, found, text, plain, where[1], why_text):
+                if where[0] == 'names' and (TABLE_LINE.fullmatch(plain) or SET_LINE.fullmatch(plain)) and table_entries(path, found, text, plain, where[1], why_text):
                     continue
                 for name in where[1]:
                     names_in(path, name, why_text, depth, local=where[0] == 'local')
@@ -1149,8 +1361,11 @@ def select_mapped(changed, repo, impact, base, why=None):
         """Entries of a name -> method table ('graph_role': 'graph_role_action',) that changed: the tests that ran those
         methods or name those keys (a test, a dashboard part that sends it, Python that passes it), and those that read
         the whole table (that name it, or a table made from it at import). False when a key's users aren't all clear."""
-        for key, value in re.findall(r"""['"]([\w.-]+)['"]\s*:\s*['"]([\w.-]+)['"]""", plain):
-            for _, _, qual in found.funcs:
+        pairs = re.findall(r"""['"]([\w.-]+)['"]\s*:\s*['"]([\w.-]+)['"]""", plain)
+        if not pairs:  # a set's member: what passes that name, and what reads the set
+            pairs = [(key, None) for key in re.findall(r"""['"]([\w.-]+)['"]""", plain)]
+        for key, value in pairs:
+            for _, _, qual in found.funcs if value else ():
                 if qual == value or qual.endswith('.' + value):
                     for test in few(impact.exercised(path, qual), qual):
                         add(test, f'ran {path}:{qual} ({why_text})')
@@ -1161,7 +1376,7 @@ def select_mapped(changed, repo, impact, base, why=None):
             source, name = pending.pop()
             for other in users(source):
                 other_text = repo.text.get(other)
-                if other == source or other_text is None or name not in other_text or is_test(other):
+                if other_text is None or name not in other_text or is_test(other):  # its own file too: OWNER |= FAMILY
                     continue
                 bare, dotted = code_names(other, other_text)
                 where = scope_of(other, other_text)
@@ -1173,7 +1388,8 @@ def select_mapped(changed, repo, impact, base, why=None):
                     if at is None or at[0] == 'local':
                         continue
                     if at[0] == 'names':  # a table made from it at import (what it assigns, not a loop's names)
-                        for made in {m for m in at[1] - words if re.search(r'\b' + re.escape(m) + r'\s*(?::[^=\n]*)?=(?!=)', code)}:
+                        made = {m for m in at[1] - words if re.search(r'\b' + re.escape(m) + r'\s*(?::[^=\n]*)?[|&+-]?=(?!=)', code)}
+                        for made in made or at[1] - words:  # none on this line: a statement over several lines
                             words.add(made)
                             pending.append((other, made))
                     elif not re.search(r'\b' + re.escape(name) + r'(?:\[|\.get\()|\bin\s+(?:self\.|\w+\.)?' + re.escape(name) + r'\b', code):
@@ -1430,6 +1646,28 @@ def select_mapped(changed, repo, impact, base, why=None):
             if named.search(repo.text.get(test, '')):
                 add(test, f'names {name} ({why_text})')
 
+    def listener_lines(text, start, end, slide):
+        """The selectors of the listeners for clicks on what a selector finds that [start, end) of text is, whole lines
+        of them and comments; None when it is anything else. slide: an insertion, which can be moved on to whole lines
+        (a new line can end as the one before it does)."""
+        k = 0
+        while not ((start + k == 0 or text[start + k - 1] == '\n') and (start == end or text[end + k - 1:end + k] == '\n')):
+            if not slide or end + k >= len(text) or text[start + k] != text[end + k]:
+                return None
+            k += 1
+        start, end = start + k, end + k
+        found, at = [], 0
+        for statement in js_split(text):
+            a = text.index(statement, at)
+            at = a + len(statement)
+            a += len(statement) - len(statement.lstrip())
+            if a < end and start < at and js_blank(statement).strip():
+                listener = delegated(statement)
+                if a < start or at > end or not listener:
+                    return None
+                found.append(listener[3])
+        return found
+
     def js_part(path, new):
         """A dashboard part's change, by the map's browser half: the tests that ran the functions it touched. False when
         the map can't place it."""
@@ -1441,11 +1679,8 @@ def select_mapped(changed, repo, impact, base, why=None):
             # a new part: what uses what it declares (a new name: the parts that call it changed too), the tests that
             # name it, and a few page tests for what it does at load; a name another part declares runs every page test
             for statement in js_split(new):
-                listener = DELEGATED.match(statement)
-                if listener and statement[listener.end() - 1] == '{':  # if(b){...}: nothing after that block
-                    close = block_end(statement, listener.end() - 1)
-                    listener = listener if close and re.match(r'\s*;?\s*\}', statement[close + 1:]) else None
-                if listener and js_declared(js_blank(statement)) is None:
+                listener = delegated(statement)
+                if listener:
                     # a click on what has data-x: the tests that draw such elements (the change that draws them in
                     # this part runs its own)
                     if not drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
@@ -1495,6 +1730,12 @@ def select_mapped(changed, repo, impact, base, why=None):
             # whole lines put in between two others change no statement there (one that continues the line before is
             # in the new side's statement)
             between = start == end and (start == 0 or text[start - 1] == '\n')
+            # whole listeners for clicks on what a selector finds, put in, taken out or changed: what clicks such an
+            # element (the tests that draw it), not every test that loads the page
+            sides = [listener_lines(text, start, end, new_start == new_end), listener_lines(new, new_start, new_end, start == end)]
+            if None not in sides and any(sides) and all(
+                    drawn_by(css_tokens(selector), f'{path} listens for clicks on {selector}') for selector in set(sides[0] + sides[1])):
+                continue
             js_top(path, ([] if between else js_statement(top, start, end)) + js_statement(new, new_start, new_end), f'{path} changed', 0)
         return True
 
@@ -1519,7 +1760,7 @@ def select_mapped(changed, repo, impact, base, why=None):
                 continue
             if token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text and not token.startswith('<'):
                 continue
-            if word.search(text):
+            if any(is_test(other) or drawn_here(other, text, m) for m in word.finditer(text)):
                 files.append(other)
             if not is_test(other):  # a test draws no page
                 at = sorted({m.start() for b, rest in built if rest.search(text) for m in b.finditer(text)})
@@ -1535,16 +1776,9 @@ def select_mapped(changed, repo, impact, base, why=None):
         old = git_text(base, path) if base else None
         if new is None:
             return False
-        old_rules, new_rules = css_rules(old or ''), css_rules(new)
-        if old_rules is None or new_rules is None:
+        selectors = changed_selectors(old or '', new)
+        if selectors is None:
             return False
-        spans = changed_spans(old or '', new)
-        selectors = set()
-        for rules, ends in ((old_rules, [(s, e) for s, e, _, _ in spans]), (new_rules, [(s, e) for _, _, s, e in spans])):
-            for a, b in ends:
-                for start, end, selector, groups in rules:
-                    if any(x < max(b, a + 1) and a < y for x, y in [(start, end), *groups]):
-                        selectors.add(selector)
         for selector in sorted(selectors):
             if not drawn_by(css_tokens(selector), f'{path} styles it'):
                 return False
@@ -1600,18 +1834,19 @@ def select_mapped(changed, repo, impact, base, why=None):
                         continue
                     # each place the part uses it now, where the map's text has it too
                     place = placer(old_text, text)
-                    at = [place(found.start()) for found in word.finditer(text)]
+                    found_now = [found for found in word.finditer(text) if drawn_here(other, text, found)]
+                    at = [place(found.start()) for found in found_now]
                     if any(a is None or not word.match(old_text, a) for a in at):
                         # main moved those lines since the map: the places the map's text has it, when that has it
                         # in no fewer places than now
-                        at = [found.start() for found in word.finditer(old_text)]
-                        if len(at) < len(list(word.finditer(text))):
+                        at = [found.start() for found in word.finditer(old_text) if drawn_here(other, old_text, found)]
+                        if len(at) < len(found_now):
                             js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
                             continue
                     for a in at:
                         js_place(other, a, a + len(token), token, why_text, 0)
                 elif other.endswith('.py') and not other.startswith('tests/'):
-                    lines = [n for n, line in enumerate(text.split('\n'), 1) if word.search(line)]
+                    lines = sorted({text.count('\n', 0, m.start()) + 1 for m in word.finditer(text) if drawn_here(other, text, m)})
                     lines_in(other, lines, f'{other} uses {token} ({why_text})')
                 elif other == 'dashboard.html' or other.startswith('dashboard/') and other.endswith('.html'):
                     # in a closed dialog: drawn when the code that opens it runs
@@ -1646,6 +1881,18 @@ def select_mapped(changed, repo, impact, base, why=None):
             if not drawn_by([{holder}], f'{path} changed inside #{holder}'):
                 return False
         return True
+
+    def whole_page():
+        if 'page' not in js_texts:
+            js_texts['page'] = '\n'.join(repo.text.get(p, '') for p in repo.paths if p == 'dashboard.html' or p.startswith('dashboard/'))
+        return js_texts['page']
+
+    def page_lines(path):
+        """path before and after this change, with where they differ: [(old text, old spans), (new text, new spans)]."""
+        new = (ROOT / path).read_text(encoding='utf-8', errors='replace') if (ROOT / path).is_file() else ''
+        old = git_text(base, path) or ''
+        spans = changed_spans(old, new)
+        return [(old, [(a, b) for a, b, _, _ in spans]), (new, [(a, b) for _, _, a, b in spans])]
 
     def includes_only(path):
         """A change to dashboard.html that only adds or removes include lines of parts this change adds or removes too:
@@ -1750,7 +1997,8 @@ def select_mapped(changed, repo, impact, base, why=None):
             pending, visited = [path], {path}
             while pending:
                 current = pending.pop()
-                named = {o for o in repo.named_by(current) if names_exactly(repo.views.get(o, ''), current)}
+                named = {o for o in repo.named_by(current) if names_exactly(repo.views.get(o, ''), current)
+                         and not (current.startswith(INERT) and is_test(o) and not names_exactly(test_strings(o, repo.text.get(o, '')), current))}
                 if not named and current == path and not (path.startswith(INERT) or path in INERT_FILES):
                     if why is not None:
                         why['*'] = f'nothing names {path}'
@@ -1763,6 +2011,19 @@ def select_mapped(changed, repo, impact, base, why=None):
                         if not (browser and current != path and Path(other).name in impact.js_tests):
                             add(other, f'names {current}')
                     elif other in PAGE:
+                        if browser and path.endswith('.css'):
+                            # the rules it changed are placed (css_part): a Python test that asserts a rule's text
+                            # names its selector's class or id, so drawn_by has it already; the rest only build the page
+                            continue
+                        if browser:
+                            # the browser half placed the part's change: of the Python tests that build the page, the
+                            # ones that assert a text of a line it changed (assertIn("action:'check_now'", page))
+                            lines = page_lines(path)
+                            for user in repo.importers.get(other, ()) if lines is not None else ():
+                                if is_test(user) and asserts_any(user, repo.text.get(user, ''), lines, whole_page()):
+                                    add(user, f'imports {other} and asserts a text {path} changed')
+                            if lines is not None:
+                                continue
                         for user in repo.importers.get(other, ()):
                             if is_test(user):
                                 add(user, f'imports {other}, which names {current}')
