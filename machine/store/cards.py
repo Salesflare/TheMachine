@@ -16,7 +16,7 @@ import i18n
 import todo_org
 import locale_prefs
 import meeting_mail
-import outcomes
+from machine.store import outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
 from machine.sources.calendar import calendar_owned, expiry_moment

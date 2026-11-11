@@ -22,7 +22,7 @@ from machine.store import review_saves
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
-import outcomes
+from machine.store import outcomes
 import project_success
 import shared_graph
 from timeutil import local_tz, now

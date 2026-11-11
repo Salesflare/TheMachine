@@ -231,7 +231,7 @@ def after_move(db, m, result, verdict, now):
         record_proof(db, row['id'], verdict['event_id'], verdict['url'], now)
         saved = _row(db, row['id'])
         if saved and saved['todo_id'] and saved['condition']:
-            import outcomes
+            from machine.store import outcomes
             try:  # the to-do made for its blocker has its result now: it closes, or looks done (outcomes.result_seen)
                 outcomes.project_proof(db, saved['todo_id'], saved['condition'], verdict['event_id'], now)
             except sqlite3.OperationalError:

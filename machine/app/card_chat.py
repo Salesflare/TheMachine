@@ -57,7 +57,7 @@ from machine.store.cards import use_line
 from machine.store.machine_cards import parked_redo
 from machine.text import _address, clamp, encoded, shown_body, split_quoted_history
 from models import background_model, claude_plan_route
-import outcomes
+from machine.store import outcomes
 import recurring
 import talk_live
 from timeutil import local_tz, now

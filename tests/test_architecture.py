@@ -343,7 +343,7 @@ def sql_strings(found):
 STORE_PARTS = {'machine/store/cards.py', 'machine/store/core.py', 'machine/store/decisions.py', 'machine/store/events.py',
                'machine/store/facts.py', 'machine/store/first_look.py', 'machine/store/machine_cards.py', 'machine/store/profile.py', 'machine/store/promises.py',
                'machine/store/review.py', 'machine/store/views.py', 'machine/store/voices.py', 'machine/store/whats_new.py',
-               'machine/store/done_milestones.py',
+               'machine/store/done_milestones.py', 'machine/store/outcomes.py',
                'machine/main.py'}  # Store and App themselves, out of assistant.py
 
 
@@ -431,7 +431,9 @@ OVER_BUDGET = {}
 # 1,421,700 -> 1,406,533). The ceiling stays: the room is for what's queued.
 # 2026-11-10: main was over again (1,423,060). Go through's dialog (todos-clear-run.js and its rules) loads when first
 # needed; the header's Go through and its time stay (first load 1,423,060 -> 1,415,719). The ceiling stays.
-FIRST_LOAD_CEILING = 1_423_000
+# 2026-11-11: 1,423,000 -> 1,423,200 for a change to the first draw itself: an open to-do's Done when line (185 bytes,
+# the result that closes it, drawn with the to-do).
+FIRST_LOAD_CEILING = 1_423_200
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
 # whatsnew 12,000 (2026-11-10): its pictures are drawn in it (about 5 KB of SVG).

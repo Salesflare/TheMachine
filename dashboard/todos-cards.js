@@ -129,8 +129,7 @@ const waitsOnOthers=s=>!closed(s)&&s.status==='prepared'&&!looksDone(s)&&(()=>{t
 // made it, so there is no result to read, and its chat has no result that says what it waits on.
 const waitsAfterOwner=s=>waitsOnOthers(s)&&!!JSON.parse(s.outcome).until;
 // Brought back when the wait was over with nothing new (Store.return_waiting): what it still waits on, or ''
-// The result that counts as done (outcomes.py): a send alone doesn't close it. Said once: not when the body says it already.
-const doneWhenLine=s=>!closed(s)&&s.done_when&&!String(s.body||'').includes(s.done_when)?html`<p class="note done-when">${t('Done when: {}',sentence(s.done_when))}</p>`:'';
+const doneWhenLine=s=>!closed(s)&&s.done_when&&!(s.body||'').includes(s.done_when)?html`<p class="note done-when">${t('Done when: {}',sentence(s.done_when))}</p>`:'';
 const stillWaiting=s=>{if(s.status!=='pending')return '';try{const w=JSON.parse(s.outcome||'null');return w?.state==='still_waiting'&&w.waiting_on?t('Still waiting on: {}',sentence(w.waiting_on)):''}catch{return ''}};
 // Its one line of evidence: the hint's reason, else the result's first sentence (what shows it)
 function doneWhy(s){try{const h=JSON.parse(s.handled_hint||'null');if(h?.reason)return h.reason}catch{}

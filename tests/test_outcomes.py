@@ -10,7 +10,7 @@ import test_promises as tp
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
 a = ux.a
-import outcomes  # noqa: E402  (on the path once test_ux loaded the app)
+from machine.store import outcomes  # noqa: E402  (on the path once test_ux loaded the app)
 from machine.store.cards import return_waiting  # noqa: E402
 
 GMAIL = {'id': 'work', 'email': 'owner@example.com', 'service': 'gmail', 'transport': 'gog', 'boundary': 'work:Example'}
@@ -74,6 +74,7 @@ class Outcomes(unittest.TestCase):
         with self.assertRaises(ValueError):
             outcomes.clean('x' * (outcomes.MAX + 1))
         self.assertEqual(outcomes.clean(' Sam  signed\nit '), 'Sam signed it')
+        self.assertIn('add done_when to suggest', a.review_prompt('r1', []))  # the review knows the arg
 
     def test_a_send_without_a_result_line_still_closes(self):
         self.send(done_when=None)

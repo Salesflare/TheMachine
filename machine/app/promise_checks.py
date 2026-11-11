@@ -19,7 +19,7 @@ from machine.store.promises import fit_title, promise_card as promise_todo, prom
 from machine.store.review import CARD_OPEN, own_message
 from machine.text import encoded
 from models import background_model, openclaw_model
-import outcomes
+from machine.store import outcomes
 from timeutil import now
 
 

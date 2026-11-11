@@ -11,7 +11,7 @@ from machine.cards import undated_card
 from machine.store import review_saves
 from machine.store.review import bulk_kind
 from mail_senders import automated
-import outcomes
+from machine.store import outcomes
 import todo_areas
 
 LOG = logging.getLogger('personal-assistant')
