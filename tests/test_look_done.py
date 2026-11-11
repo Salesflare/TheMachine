@@ -165,11 +165,39 @@ class LookDone(unittest.TestCase):
         self.store.suggest('answered', 'Answer Sam on the renewal', 'Sam says the scope stays.', [3], card_id=self.sid, match=True)
         self.assertEqual((self.row()['status'], self.row().get('outcome')), ('pending', None))
 
-    def test_waiting_without_a_deadline_returns_after_a_week_and_too_late_stays_a_to_do(self):
-        self.assertEqual(wait_until(None, current=a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00'))[:10], '2026-11-16')
-        saved = self.waiting(due='2026-11-09')  # due today: no time left to wait
-        self.assertEqual((saved['status'], self.row()['status']), ('pending', 'pending'))
-        self.store.commit_page('work', {}, [ux.event(source='four', body='Another matter')])
+    def test_when_a_wait_comes_back(self):
+        at = a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00')  # Monday, after the morning digest
+        back = lambda due: a.dt.datetime.fromisoformat(wait_until(due, current=at)).astimezone(a.local_tz()).strftime('%Y-%m-%d %H:%M')
+        self.assertEqual(back(None), '2026-11-16 08:30')  # no deadline: a week
+        self.assertEqual(back('2026-11-12'), '2026-11-11 08:30')  # the morning before the deadline
+        self.assertEqual(back('2026-11-10'), '2026-11-10 08:30')  # that morning has passed: the deadline's own morning
+        self.assertEqual(back('2026-11-09'), '2026-11-16 08:30')  # due today: nothing to wait for before it, a week
+        self.assertEqual(back('2026-11-02'), '2026-11-16 08:30')  # past its deadline: the same
+
+    def test_a_due_or_late_to_do_handed_on_waits_instead_of_being_a_to_do(self):
+        # The owner's own to-do, snoozed and due today: they did their part and the review says the next step is someone
+        # else's. It used to stay a to-do that only said to wait, which the owner had to snooze again.
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET origin='owner',status='snoozed',snoozed_until='2026-11-09T12:00:00+00:00',due='2026-11-09',"
+                       "created_at='2026-10-01T09:00:00+00:00'")
+        saved = self.waiting(due=None)
+        row = self.row()
+        self.assertEqual((saved['status'], row['status'], row['snoozed_until'], row['due']), ('prepared', 'prepared', None, '2026-11-09'))
+        self.assertTrue(a.waits_on_others(row))
+        self.assertEqual(a.card(row).splitlines()[-1], 'Waiting on: Sam to answer the scope question.')
+        with self.store.connect() as db:
+            self.assertEqual(a.waiting_count(db), 0)
+        with patch_everywhere(a, 'now', return_value='2026-11-12T12:00:00+00:00'):  # its snooze time passes: it stays waiting
+            self.store.wake_snoozed()
+        self.assertTrue(a.waits_on_others(self.row()))
+        with patch_everywhere(a, 'now', return_value='2026-11-16T12:00:00+00:00'):  # no answer for a week: back, to chase them
+            self.store.wake_snoozed()
+        row = self.row()
+        self.assertEqual(row['status'], 'pending')
+        self.assertEqual(a.card(row).splitlines()[-1], 'Still waiting on: Sam to answer the scope question.')
+
+    def test_waiting_on_needs_an_open_to_do(self):
+        self.store.commit_page('work', {}, [ux.event(source='two', body='Earlier'), ux.event(source='four', body='Another matter')])
         with self.assertRaisesRegex(ValueError, 'waiting_on is for an open to-do'):
             self.store.suggest('new', 'Something else', 'Nothing here yet.', [3], match=True, separate=True, waiting_on='Sam to answer')
 

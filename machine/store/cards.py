@@ -147,12 +147,16 @@ WAIT_DAYS = 7  # a to-do that waits on someone else with no deadline comes back 
 
 def wait_until(due, digest_at='08:30', current=None):
     """When a to-do that waits on someone else comes back by itself so the owner can chase them: the morning before its
-    deadline, or after WAIT_DAYS without one. None when that is less than three hours away: too late to wait."""
+    deadline, or the deadline's own morning when that one is too soon (less than three hours away). A deadline that is
+    (nearly) here already gives no time to wait for anyone, and the owner just handed the step on: it waits WAIT_DAYS, as
+    without a deadline. Their answer brings it back sooner (update_card)."""
     current = current or dt.datetime.fromisoformat(now())
     hour, minute = (int(x) for x in digest_at.split(':'))
-    day = dt.date.fromisoformat(str(due)[:10]) - dt.timedelta(days=1) if due else current.astimezone(local_tz()).date() + dt.timedelta(days=WAIT_DAYS)
-    target = dt.datetime.combine(day, dt.time(hour, minute), local_tz())
-    return target.astimezone(dt.timezone.utc).isoformat() if target >= current + dt.timedelta(hours=3) else None
+    soonest = current + dt.timedelta(hours=3)
+    days = [dt.date.fromisoformat(str(due)[:10]) - dt.timedelta(days=d) for d in (1, 0)] if due else []
+    days.append(current.astimezone(local_tz()).date() + dt.timedelta(days=WAIT_DAYS))
+    target = next(t for t in (dt.datetime.combine(day, dt.time(hour, minute), local_tz()) for day in days) if t >= soonest)
+    return target.astimezone(dt.timezone.utc).isoformat()
 
 
 def return_waiting(db):
@@ -547,12 +551,10 @@ class CardsStore:
         """The review's word that the owner did their part of an open to-do and the next step is someone else's (they
         asked a question back, sent it on): nothing for the owner until that moves. It waits under Waiting on others
         (machine.cards.waits_on_others) with its deadline kept, and nothing is sent. A new message on it brings it back
-        as an open to-do (update_card), and so does the time to chase them (wait_until, return_waiting). None when that
-        time is here already: it stays a to-do."""
+        as an open to-do (update_card), and so does the time to chase them (wait_until, return_waiting), also when its
+        deadline is today or past: then a to-do the owner has to snooze would only say to wait."""
         stamp, sid, own = now(), card['id'], card['origin'] == 'owner'
         until = wait_until((card['due'] or due) if own else (due or card['due']), digest_at)
-        if not until:
-            return None
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",status='prepared',outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,feedback_until=NULL WHERE id=?',
@@ -619,10 +621,8 @@ class CardsStore:
                     'note': 'Kept on the closed card as evidence; nothing was sent to the owner. If this genuinely needs the owner again, '
                             'call suggest again with card_id and reopen:true.'}
         if waiting_on and not closed:
-            waits = self.wait_on_others(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, project, event_ids,
-                                        waiting_on, digest_at)
-            if waits:
-                return waits
+            return self.wait_on_others(db, card, suggested, body, ids, accounts, [evidence[i] for i in ids if i in evidence], due, project, event_ids,
+                                       waiting_on, digest_at)
         if due and (dt.date.fromisoformat(due) - dt.datetime.fromisoformat(stamp).astimezone(local_tz()).date()).days <= 3:
             when = 'now'
         deliver_after = delivery_time(when, digest_at, work=work, urgent=urgent)
