@@ -232,7 +232,10 @@ OTHER_WRITERS = {
     'agent_jobs': {'agent_remote.py', 'assistant.py', 'sandbox/load.py'},
     'agent_result_receipts': {'agent_remote.py'},
     'analyses': {'graph.py', 'machine/app/review.py', 'sandbox/load.py', 'work_removal.py'},
-    'board_backfills': {'sandbox/load.py'},
+    'board_backfill_asks': {'graph_board_reviews.py'},  # a review's board checks, moved out of graph.py (its line budget)
+    'board_backfills': {'graph_board_reviews.py', 'sandbox/load.py'},
+    'board_fit_undo': {'graph_board_reviews.py'},
+    'board_fits': {'graph_board_reviews.py'},
     'board_offers': {'assistant.py'},
     'boards': {'shared_graph.py'},
     'calendar_writes': {'machine/app/meeting_writes.py'},
@@ -248,7 +251,7 @@ OTHER_WRITERS = {
     'draft_edits': {'graph.py'},
     'edits_offered': {'machine/app/review.py'},
     'enrich_prefs': {'security_levels.py'},
-    'event_projects': {'project_split.py'},  # Split up moves threads between projects (graph.py is at its line budget)
+    'event_projects': {'graph_board_reviews.py', 'project_split.py'},  # Split up moves threads between projects (graph.py is at its line budget); graph_board_reviews: Add on a maybe
     'event_search': {'assistant.py'},
     'events': {'sandbox/load.py', 'work_removal.py'},
     'facts': {'learning_loop.py', 'skills_app.py'},
@@ -298,7 +301,7 @@ OTHER_WRITERS = {
                      'machine/app/profile.py', 'retention.py', 'skills_app.py', 'team_learnings.py'},
     'project_moves': {'crm_import.py', 'follow_ups.py'},
     'project_people': {'project_split.py'},  # Split up moves people between projects (graph.py is at its line budget)
-    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'project_split.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by; project_split: the projects it makes, on the original's board
+    'projects': {'crm.py', 'crm_import.py', 'follow_ups.py', 'graph_board_reviews.py', 'machine/app/graph_actions.py', 'project_about.py', 'project_org_checks.py', 'project_split.py', 'sandbox/load.py'},  # project_about: only its about_* columns; project_org_checks: org, org_by; project_split: the projects it makes, on the original's board
     'promises': {'graph.py', 'machine/app/mail.py', 'machine/app/promise_checks.py', 'sandbox/load.py'},
     'push_subscriptions': {'machine/app/notifications.py', 'machine/delivery/push.py', 'machine/export/hold.py'},
     'recap_items': {'machine/app/recap.py'},
@@ -487,7 +490,7 @@ PY_BYTE_BUDGET = 450 * 1024
 PY_RATCHET_SLACK = (500, 50_000)
 PY_OVER_BUDGET = {
     'fleet.py': (3_800, PY_BYTE_BUDGET),
-    'graph.py': (5_400, PY_BYTE_BUDGET),
+    'graph.py': (4_800, PY_BYTE_BUDGET),
     'next_actions.py': (2_650, PY_BYTE_BUDGET),
     'onboarding.py': (3_100, PY_BYTE_BUDGET),
     'shared_graph.py': (3_200, PY_BYTE_BUDGET),

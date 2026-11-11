@@ -194,7 +194,7 @@ def parse(db, answer, row, ids):
         if not keys or not name:
             continue
         if name.casefold() in used or db.execute('SELECT 1 FROM projects WHERE name=? COLLATE NOCASE', (name,)).fetchone():
-            name = clean_name(f"{row['name'][:max(10, NAME_CHARS - 2 - len(name))]}: {name}")  # as graph.split_plan names a taken one
+            name = clean_name(f"{row['name'][:max(10, NAME_CHARS - 2 - len(name))]}: {name}")  # as graph_board_reviews.split_plan names a taken one
         if name.casefold() in used:
             continue
         used.add(name.casefold())

@@ -17,6 +17,7 @@ import error_feed
 import fleet
 import fleet_reviews
 import graph
+import graph_board_reviews
 import project_org_checks
 import i18n
 import memory_use
@@ -428,9 +429,9 @@ class ReviewApp:
                 dig = None if recovery else self.first_dig(db, stamp)
                 dig = dig if dig and 'left' in dig else None
                 # Projects the owner just put on a board are sorted within minutes, with or without new signals
-                sort_due = bool(graph.unsorted_projects(db, 1)) or graph.fit_due(db, now())
+                sort_due = bool(graph_board_reviews.unsorted_projects(db, 1)) or graph_board_reviews.fit_due(db, now())
                 # A new board looks through the history in rounds a few minutes apart, while the model's limits have room
-                backfill_due = not sort_due and self.model_room() and not self.history_paced() and graph.backfill_due(db, now())
+                backfill_due = not sort_due and self.model_room() and not self.history_paced() and graph_board_reviews.backfill_due(db, now())
                 asked = getattr(self, 'review_asked', 0) > time.time() - REVIEW_ASKED_SECONDS  # the owner's Review now
                 gap = retry if recovery or failed else settings.get('sort_gap_seconds', 60) if sort_due else \
                     settings.get('backfill_gap_seconds', 180) if backfill_due else settings.get('gap_seconds', 600)
@@ -781,9 +782,9 @@ class ReviewApp:
         if args.get('_review_run'):  # a review that got "Boards to suggest" or "Boards to sort" answers them before it finishes
             with self.store.connect() as db:
                 graph.board_check_answer(db, args['_review_run'], args.get('boards'))
-                graph.sort_answer(db, args['_review_run'], args.get('sorted'))
-                graph.fit_answer(db, args['_review_run'], args.get('fits'))
-                graph.backfill_answer(db, args['_review_run'], args.get('fits'))
+                graph_board_reviews.sort_answer(db, args['_review_run'], args.get('sorted'))
+                graph_board_reviews.fit_answer(db, args['_review_run'], args.get('fits'))
+                graph_board_reviews.backfill_answer(db, args['_review_run'], args.get('fits'))
                 project_org_checks.org_check_answer(db, args['_review_run'], args.get('orgs'))  # "Project organizations to check"
         return self.store.finish_analysis(args['analysis_id'], args.get('summary', ''), args.get('_review_session'), args.get('_review_run'), args.get('reviewed_ids'), args.get('projects'),
                                          args.get('stages'), args.get('team'), args.get('replies'), args.get('read'), args.get('no_todo'))
