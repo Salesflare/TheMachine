@@ -1030,6 +1030,7 @@
  "Connected AIs": "Connected AIs",
  "Connected account": "Connected account",
  "Connected accounts": "Connected accounts",
+ "Connected since {}": "Connected since {}",
  "Connected · some conversations waiting": "Connected · some conversations waiting",
  "Connected · some syncs fail": "Connected · some syncs fail",
  "Connected · {} is slow at times": "Connected · {} is slow at times",

@@ -14,6 +14,8 @@ Vos messages LinkedIn. Il les lit dans un onglet du navigateur de votre Machine,
 
 Il tient aussi à jour les postes et entreprises de vos relations LinkedIn sur les personnes déjà dans votre Graph, à partir de votre liste de relations. Il n’ouvre pas leurs profils et n’ajoute personne. Quand le poste ou l’entreprise de quelqu’un change, sa chronologie l’indique, par exemple « Maintenant Head of Sales chez Acme, avant Sales Lead chez Acme ».
 
+Le poste vient de leur titre, comme « Head of Sales chez Acme » ou « VP Sales and Strategy », jamais d’un slogan. Il les retrouve par leur lien de profil, ou par nom et entreprise. Sans entreprise à comparer, un nom complet qu’une seule personne de votre Graph porte suffit. Leur page indique aussi depuis quand vous êtes en relation.
+
 Il lit très lentement : une page à la fois, à quelques minutes d’intervalle, quelques dizaines de pages par jour, seulement en journée. Environ 3 000 relations prennent quatre jours. Si LinkedIn freine, il s’arrête jusqu’au lendemain.
 
 ## Ce qu’il peut envoyer

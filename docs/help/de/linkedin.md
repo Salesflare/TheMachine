@@ -14,6 +14,8 @@ Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deine
 
 Es hält auch die Positionen und Firmen deiner LinkedIn-Kontakte bei den Personen aktuell, die schon in deinem Graph sind, aus deiner Kontaktliste. Es öffnet keine Profile und legt keine neuen Personen an. Ändert sich die Position oder Firma von jemandem, steht das in der Zeitleiste, etwa "Jetzt Head of Sales bei Acme, vorher Sales Lead bei Acme".
 
+Die Position kommt aus ihrem Profilslogan, etwa "Head of Sales bei Acme" oder "VP Sales and Strategy", nie aus einem Werbespruch. Es findet sie über ihren Profillink oder über Name und Firma. Gibt es keine Firma zum Vergleichen, reicht ein vollständiger Name, den nur eine Person in deinem Graph hat. Ihre Seite zeigt auch, seit wann ihr vernetzt seid.
+
 Es liest sehr langsam: eine Seite auf einmal, Minuten auseinander, ein paar Dutzend Seiten am Tag, nur tagsüber. Rund 3.000 Kontakte dauern etwa vier Tage. Bremst LinkedIn, hört es bis zum nächsten Tag auf.
 
 ## Was es senden kann

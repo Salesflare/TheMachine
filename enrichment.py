@@ -1268,7 +1268,7 @@ def telegram_photos_step(connect, now, ask, accounts, limit=WHATSAPP_PHOTOS_PER_
 # directory, the CRM), which beats a look-up's guess (person_profiles). Kept on this Machine, sealed like message
 # contents, never sent anywhere; Delete permanently removes them.
 FACT_FIELDS = {'title': 120, 'company': 120, 'headline': 220, 'bio': 400, 'location': 120, 'website': 200,
-               'timezone': 64, 'phone': 32, 'x': 15, 'linkedin_url': 200, 'birthday': 10}
+               'timezone': 64, 'phone': 32, 'x': 15, 'linkedin_url': 200, 'birthday': 10, 'linkedin_since': 10}
 STATED, RECORD = 2, 1  # their own words; a record about them. A look-up counts 0.
 VIEW_FACTS = ('headline', 'bio')  # their own longer words: read at view time, never copied into the graph
 KEPT_FACTS = ('birthday',)  # kept for what reads them (birthdays.py), not shown on the person's profile
@@ -1301,6 +1301,8 @@ def clean_fact(field, value):
     elif field == 'birthday':  # YYYY-MM-DD, or --MM-DD without the year
         import birthdays
         text = text if birthdays.birthday_value(text) else ''
+    elif field == 'linkedin_since':  # the day they connected on LinkedIn (linkedin_connections.py), YYYY-MM-DD
+        text = text if re.fullmatch(r'20\d\d-[01]\d-[0-3]\d', text) else ''
     elif field == 'timezone':
         try:
             import zoneinfo

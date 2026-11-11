@@ -14,6 +14,8 @@ Tus mensajes de LinkedIn. Los lee en una pestaña del navegador propio de tu Mac
 
 También mantiene al día los cargos y empresas de tus contactos de LinkedIn en las personas que ya están en tu Graph, desde tu lista de contactos. No abre sus perfiles ni añade personas nuevas. Cuando cambia el cargo o la empresa de alguien, su cronología lo dice, como "Ahora Head of Sales en Acme, antes Sales Lead en Acme".
 
+El cargo sale de su titular, como "Head of Sales en Acme" o "VP Sales and Strategy", nunca de un eslogan. Los encuentra por el enlace de su perfil, o por nombre y empresa. Sin empresa que comparar, basta un nombre completo que solo tenga una persona de tu Graph. Su página también muestra desde cuándo están conectados.
+
 Lee muy despacio: una página cada vez, con minutos de separación, unas pocas docenas de páginas al día, solo de día. Unos 3.000 contactos tardan unos cuatro días. Si LinkedIn pone freno, para hasta el día siguiente.
 
 ## Qué puede enviar

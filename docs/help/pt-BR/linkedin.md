@@ -14,6 +14,8 @@ Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com 
 
 Ela também mantém atualizados os cargos e empresas das suas conexões do LinkedIn nas pessoas que já estão no seu Graph, a partir da sua lista de conexões. Ela não abre os perfis nem cria pessoas novas. Quando o cargo ou a empresa de alguém muda, a linha do tempo da pessoa mostra, como "Agora Head of Sales em Acme, antes Sales Lead em Acme".
 
+O cargo vem do título do perfil, como "Head of Sales em Acme" ou "VP Sales and Strategy", nunca de um slogan. Ela encontra as pessoas pelo link do perfil, ou por nome e empresa. Sem empresa para comparar, basta um nome completo que só uma pessoa do seu Graph tem. A página da pessoa também mostra desde quando vocês estão conectados.
+
 Ela lê bem devagar: uma página por vez, com minutos de intervalo, algumas dezenas de páginas por dia, só durante o dia. Cerca de 3.000 conexões levam uns quatro dias. Se o LinkedIn frear, ela para até o dia seguinte.
 
 ## O que ela pode enviar
