@@ -10,7 +10,7 @@ order: 6
 
 - Cuándo estáis todos libres: "¿Cuándo estamos todos libres el sábado?". Solo horas ocupadas.
 - Tareas: pide a alguien de tu familia que haga algo. Lo acepta o lo rechaza.
-- Planes: propón un plan. Cada persona responde Me apunto o No puedo, con un enlace para añadirlo a su propio calendario. No se escribe nada en el calendario de nadie.
+- Planes: propón un plan. Cada persona responde Me apunto o No puedo ir. Me apunto lo añade a tu propio calendario de Google, sin invitar a nadie; Deshacer lo quita. Sin un calendario que The Machine pueda cambiar, recibes un enlace para añadirlo tú.
 
 Por un Family Fleet no pasan preguntas de trabajo.
 

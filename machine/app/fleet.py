@@ -12,6 +12,8 @@ import time
 import types
 import uuid
 
+import calendar_writes
+import family
 import fleet
 import fleet_learnings
 import graph
@@ -26,13 +28,13 @@ from machine.delivery.push import hold_handoff, hold_mail, mail_ready, push_reac
 from machine.delivery.telegram import fleet_telegram
 from machine.faults import code_version, restart_self, running_release
 from machine.model_usage import telegram_on
-from machine.sources.connectors import CONNECTOR_HELPERS, load_connector
+from machine.sources.connectors import CONNECTOR_HELPERS, load_connector, writable_calendars
 from machine.store.review import own_message
 import notify
 import security_levels
 import shared_graph
 import shared_graph_kept
-from sources import credential, SourceError
+from sources import credential, gog_read, SourceError
 import team_learnings
 from timeutil import in_hours, is_work_day, local_tz, now, WORK_HOURS
 import work_removal
@@ -249,7 +251,10 @@ class FleetApp:
         if not owner_dashboard and name == 'fleet_notice_decide':
             return self.fleet.decide_notice_from_telegram(str(args.get('id') or ''), args.get('choice'), args.get('message_id'))
         if not owner_dashboard:
-            return self.fleet.decide_from_telegram(str(args.get('id') or ''), args.get('choice'), args.get('message_id'))
+            done = self.fleet.decide_from_telegram(str(args.get('id') or ''), args.get('choice'), args.get('message_id'))
+            if done.get('status') == 'answered':  # the owner's own tap on "I'm in" just now: on their calendar too
+                self.family_plan_add(str(args.get('id') or ''))
+            return done
         if name == 'fleet_notice_decide':  # Confirm or Decline on the Fleet tab, on the terms that card showed
             return self.fleet.decide_notice(str(args.get('id') or ''), args.get('choice'), str(args.get('key') or ''), via='dashboard')
         if name == 'fleet_ask':
@@ -259,8 +264,12 @@ class FleetApp:
                 raise ValueError('Ask about a company, a domain, an email address or a name')
             return self.fleet.ask(kind, question, fleet=args.get('fleet') or 'work')
         if name == 'fleet_decide':  # text: a free question's answer as the owner edited it
-            return self.fleet.decide(args.get('id'), args.get('choice'), text=args.get('text') if isinstance(args.get('text'), str) else None,
+            done = self.fleet.decide(args.get('id'), args.get('choice'), text=args.get('text') if isinstance(args.get('text'), str) else None,
                                      note=args.get('note') if isinstance(args.get('note'), str) else None)
+            added = done.get('card_id') and self.family_plan_add(str(args.get('id') or ''))
+            return {**done, 'calendar': added} if added else done
+        if name == 'family_plan_undo':  # Undo on "Added to your calendar": the event goes, the to-do gets its link back
+            return self.family_plan_undo(str(args.get('id') or ''))
         if name == 'fleet_free':
             return self.fleet.ask_free(str(args.get('text') or ''), args.get('fleet') or 'work')
         if name == 'fleet_brief':
@@ -509,9 +518,62 @@ class FleetApp:
         except sqlite3.Error:
             return []
 
+    def family_plan_calendar(self, wait=True):
+        """The calendar "I'm in" adds a Family plan to: the owner's own Google calendar, on a sign-in that may write to it
+        and a connection that can do things. None: the plan's to-do keeps its "Add to my calendar" link."""
+        return next((c for c in writable_calendars(self.config, wait=wait) if c['own']), None)
+
+    def family_plan_add(self, ask_id, transport=None):
+        """The owner tapped "I'm in" on a Family plan: it goes on their own calendar with nobody invited (sendUpdates
+        none, no guests: calendar_write without guests), once per plan. Any failure leaves the yes as it is and the
+        to-do with its link. Returns {name, id} for the toast's Undo, else None."""
+        plan = self.fleet.family_plan(ask_id) if getattr(self, 'fleet', None) else None
+        target = plan and self.family_plan_calendar()
+        if not target:
+            return None
+        change = family.calendar_change(plan['question'], local_tz())
+        try:
+            done = self.calendar_write({**change, 'calendar': target['id'], 'request_id': family.plan_request(ask_id)}, transport)
+        except Exception as error:  # noqa: BLE001 - the yes stands; the link is the way to add it
+            LOG.info('family plan calendar error=%s', type(error).__name__)
+            return None
+        if done.get('status') != 'done' and not done.get('duplicate'):
+            return None
+        self.fleet.family_plan_on(ask_id, target['name'])
+        return {'name': target['name'], 'id': ask_id}
+
+    def family_plan_undo(self, ask_id, transport=None):
+        """Undo on a Family plan "I'm in" added: its event goes from the owner's calendar (nobody told), their yes stays,
+        and the to-do shows the "Add to my calendar" link again. Only the event that tap made; not one with guests now."""
+        request_id = family.plan_request(ask_id)
+        with self.store.connect() as db:
+            row = db.execute("SELECT account_id FROM calendar_writes WHERE id=? AND op='create' AND status='done'", (request_id,)).fetchone()
+        if not row:
+            raise ValueError(i18n.t('That plan isn’t on your calendar.'))
+        account = calendar_writes.account_for(self.config, row['account_id'])
+        transport = transport or calendar_writes.CalendarTransport(self.config, credential, gog_read)
+        google_id = calendar_writes.event_id(request_id)
+        try:
+            event = transport.event(account, google_id)
+        except Exception:  # noqa: BLE001
+            raise ValueError(i18n.t('I couldn’t check your calendar. Nothing was changed.')) from None
+        if event and event.get('status') != 'cancelled':
+            if any(not a.get('self') for a in event.get('attendees') or []):
+                raise ValueError(i18n.t('That event has guests now. Change it in the calendar itself. Nothing was changed.'))
+            status, _ = transport.write(account, 'events.delete', {'eventId': google_id})
+            if status not in (None, 404, 410):
+                raise ValueError(i18n.t('I couldn’t remove it. Check your calendar.'))
+        with self.store.connect() as db:
+            db.execute("UPDATE calendar_writes SET status='undone',updated_at=? WHERE id=?", (now(), request_id))
+        self.fleet.family_plan_on(ask_id)
+        self.sync_soon(row['account_id'])
+        return {'removed': True}
+
     def fleet_view(self):
         """The Fleet tab, with each member who is in the graph linked to their person there."""
         view = self.fleet.view()
+        if self.fleet.family_ref():  # "I'm in" on a plan says where it goes; never a grant check inside the view
+            view['plan_calendar'] = (self.family_plan_calendar(wait=False) or {}).get('name')
         try:
             view['shared'] = self.fleet.shared_view()  # shared connectors: what this Machine shares or holds, and OKs to give
         except (ValueError, OSError, KeyError, TypeError, fleet.Off) as error:

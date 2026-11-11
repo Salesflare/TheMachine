@@ -10,7 +10,7 @@ order: 6
 
 - Quando todos estão livres: "Quando todos nós estamos livres no sábado?" Só os horários ocupados.
 - Tarefas: peça para alguém da sua família fazer algo. A pessoa aceita ou recusa.
-- Planos: proponha um plano. Cada pessoa responde Tô dentro ou Não vou poder, com um link para adicionar à própria agenda. Nada é gravado na agenda de ninguém.
+- Planos: proponha um plano. Cada pessoa responde Eu topo ou Não vou conseguir. Eu topo adiciona à sua própria agenda do Google, sem convidar ninguém; Desfazer tira de novo. Sem uma agenda que a The Machine possa alterar, você recebe um link para adicionar por conta própria.
 
 Nenhuma pergunta de trabalho passa por um Fleet de Família.
 

@@ -10,7 +10,7 @@ order: 6
 
 - Quando sono tutti liberi: "Quando siamo tutti liberi sabato?" Solo gli orari occupati.
 - Attività: chiedi a qualcuno della tua famiglia di fare qualcosa. Accetta o rifiuta.
-- Piani: proponi un piano. Ognuno risponde Ci sono o Non posso, con un link per aggiungerlo al proprio calendario. Non viene scritto nulla nel calendario di nessuno.
+- Piani: proponi un piano. Ognuno risponde Ci sono o Non posso. Ci sono lo aggiunge al tuo calendario Google, senza invitare nessuno; Annulla lo toglie. Senza un calendario che The Machine può modificare, ricevi un link per aggiungerlo tu.
 
 Nessuna domanda di lavoro passa da una Fleet di Famiglia.
 
