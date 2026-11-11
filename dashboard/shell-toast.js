@@ -49,7 +49,7 @@ document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click'
   if(kind==='hop'){el.classList.add('m-hop');setTimeout(()=>el.classList.remove('m-hop'),650);return true}
   const src=el.dataset[kind==='look'?'look':'hand'];if(!load(src))return false;  // its frame loads first; the move comes a moment later
   if(kind==='look'){frame(el,open,src);el.classList.add('m-look');setTimeout(()=>{el.classList.remove('m-look');frame(el,src,open)},1100);return true}
-  el.classList.add('m-wave');for(const ms of [0,440])setTimeout(()=>frame(el,open,src),ms);for(const ms of [220,660])setTimeout(()=>frame(el,src,open),ms);
+  el.classList.add('m-wave');frame(el,open,src);setTimeout(()=>frame(el,open,src),440);for(const ms of [220,660])setTimeout(()=>frame(el,src,open),ms);
   setTimeout(()=>el.classList.remove('m-wave'),900);return true};
  const plan=ms=>{clearTimeout(t);t=setTimeout(tick,ms)};
  const tick=()=>{t=0;if(still.matches||document.hidden)return;const el=pick();if(!el)return;  // none in sight: the next redraw wakes it

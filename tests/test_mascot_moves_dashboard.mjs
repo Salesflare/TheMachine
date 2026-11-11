@@ -71,6 +71,16 @@ try{
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>false});document.dispatchEvent(new Event('visibilitychange'))});
   assert.ok(kinds(await run(page,20000)).length>=1,'moves again once the tab shows');
   await context.close()}
+ // A redraw right as a wave starts (the list polled in between) can't swallow it: the hand is up in the same step
+ {const {context,page}=await open();
+  await settled(page);
+  await page.evaluate(()=>new MutationObserver(ms=>{for(const m of ms){const el=m.target;if(el.isConnected&&el.matches('#suggestions img.m-wave')){const fresh=el.cloneNode();
+   fresh.className='sticker';fresh.setAttribute('src','brand/wave.webp');el.replaceWith(fresh)}}}).observe(document.body,{attributes:true,attributeFilter:['class'],subtree:true}));
+  const log=[];for(let i=0;i<8&&!log.some(e=>e.cls.includes('m-wave'));i++)log.push(...await run(page,30000));  // the moves come in a random order
+  const waves=log.filter(e=>e.cls.includes('m-wave'));
+  assert.ok(waves.length>=1,'it waves within four minutes');
+  for(const w of waves)assert.equal(w.src,'wave-hand.webp','the hand is up as the wave starts');
+  await context.close()}
  // Reduced motion: no blinks, no moves
  {const {context,page}=await open({still:true});
   await page.locator('#suggestions .first-look-empty img.sticker').waitFor();
