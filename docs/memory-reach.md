@@ -44,7 +44,7 @@ reached preparations until the next condense pass. It now takes that fact's plac
 swapped or a negation added or dropped. The old one stays behind it under Learning with Undo merge. No new model turn.
 Talk's recall matched exact words only: "flying" didn't find "flights", "seat" found only "seats". Words now match in
 their plain form (plurals, -ing, -ed: "booking" finds "booked"), and with embeddings on, the owner's facts and rules
-whose stored vector (`fact_vectors`, as a preparation or Ask stored it) is close to the words come after the word
+whose stored vector (`fact_vectors`) is close to the words come after the word
 matches, against one local embedding of the words with a 2 second timeout. No model turn, no fact embedded during the
 call, still at most three (`LEARNED`). Without embeddings a word with another stem ("flying", "flights") still doesn't
 match. Forgotten, ended and replaced facts stay out; a connected AI's never comes in.
@@ -111,7 +111,15 @@ read back as the owner's; each surface stays in its budget.
 Fixed with it: Ask in Work found a fact about a Personal person by its words or meaning (a preparation already left
 it out). It now leaves out a fact about people all on the other side, as `Store.facts_for` does
 (`fact_links.on_side`). And a removed fact kept its stored vector, as did the facts it had replaced: removing one
-now deletes those vectors (`Store.forget_fact`); one brought back is embedded again when a preparation needs it.
+now deletes those vectors (`Store.forget_fact`); one brought back is embedded again by the next background pass.
+
+A fact got its stored vector only once a preparation or Ask ranked it, so one said in passing ("I only fly KLM") was
+found by words only until then, by the main chat, Talk and the retained facts alike. The embedding worker now embeds
+it within a minute (`Store.embed_new_facts`): each pass reads the owner's current facts and draft rules that have no
+vector of the model in use, newest first, and embeds at most `FACT_VECTOR_BATCH` (8) in one local request, stored as
+a preparation stores them (only while the fact still says what was embedded). A pass with none waiting is one read.
+Never a removed or forgotten fact, nor a connected AI's (a preparation given one still embeds it, as before). Without
+embeddings nothing runs; an embedding error leaves them for the next pass, logged once per kind.
 
 What stays by design: the owner's own facts have no area of their own (`side` is a connected AI's only); one about no
 person holds in Work and Personal. A removed fact's row stays behind as a tombstone (it keeps a review from saving it
@@ -123,7 +131,7 @@ the owner removes it under Learning.
 
 - **Without embeddings**, the owner's main chat, Talk and Ask match what was learned by words in their plain form
   only: a word that changes its stem ("flights" for "fly") or another word for the same thing ("plane") finds it
-  only by meaning. A fact with no stored vector yet (no preparation or Ask ranked it since it was learned) is found
-  by words only, also with embeddings on.
+  only by meaning. With embeddings on, a fact learned in the last minute (before the background pass embeds it) is
+  found by words only.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
   through the to-dos and promises they list. By design.
