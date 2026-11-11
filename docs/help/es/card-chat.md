@@ -35,6 +35,8 @@ En un ordenador, Enter o Ctrl+Enter (Cmd+Enter en un Mac) envía, y Mayús+Enter
 
 Dilo en el chat, por ejemplo «No es la CEO» o «Ya no trabaja en la empresa». The Machine lo corrige donde se originó: un rol, una empresa, un cargo, la etapa de un proyecto, el proyecto de la tarea o una regla aprendida. El chat muestra entonces qué cambió, por ejemplo **Corregido: El rol de Ana es Head of Sales, según su firma de correo**, con **Deshacer**. Deshacer devuelve lo que había, salvo que haya cambiado desde entonces.
 
+Tus otros borradores basados en el valor equivocado se rehacen, uno por uno. Su chat muestra **Rehaciendo el borrador tras una corrección**. Los borradores que editaste o aprobaste, y los que ya se están enviando, quedan como están. La respuesta dice cuántos de cada uno.
+
 En una página de GBrain solo cambia la sección propia de The Machine; lo que escribiste ahí sigue siendo tuyo. Si no encuentra de dónde vino algo, aprende de tu nota como antes.
 
 ## Modelo y razonamiento

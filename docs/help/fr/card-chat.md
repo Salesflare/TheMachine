@@ -35,6 +35,8 @@ Sur ordinateur, Entrée ou Ctrl+Entrée (Cmd+Entrée sur Mac) envoie, et Maj+Ent
 
 Dites-le dans le chat, par exemple « Elle n'est pas CEO » ou « Il a quitté l'entreprise ». The Machine le corrige à la source : un rôle, une entreprise, un poste, l'étape d'un projet, le projet de la to-do ou une règle apprise. Le chat montre alors ce qui a changé, par exemple **Corrigé : Le rôle de Ana est Head of Sales, d’après sa signature d'e-mail**, avec **Annuler**. Annuler remet ce qui était là, sauf si cela a changé depuis.
 
+Vos autres brouillons fondés sur la valeur erronée sont refaits, un par un. Leur chat indique **Le brouillon est refait après une correction**. Les brouillons que vous avez modifiés ou approuvés, et ceux en cours d'envoi, restent tels quels. La réponse dit combien de chaque.
+
 Sur une page GBrain, seule la section de The Machine change ; ce que vous y avez écrit reste à vous. S'il ne trouve pas d'où vient l'information, il apprend de votre note comme avant.
 
 ## Modèle et réflexion

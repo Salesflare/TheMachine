@@ -264,6 +264,7 @@ If what you are about to submit differs from what they reviewed (another amount,
     if job.get('owner_step') and not job.get('finish'):
         opening+=OWNER_STEP_PREPARATION
     opening+=job.get('redo') or ''
+    opening+=job.get('redo_fix') or ''
     if job.get('finish'):
         opening+=github_route.finish_rule(job['finish'])
         prior=job['finish'].get('finish_result')
@@ -369,7 +370,9 @@ class PreparationApp:
                     card=db.execute('SELECT event_ids FROM suggestions WHERE id=?',(j['suggestion_id'],)).fetchone() if j['early'] else None
                     found=card and self.store.card_waiting_since(db,card)
                     waited[j['suggestion_id']]=found[0] if found else '~'
-            queued.sort(key=lambda j:(j['suggestion_id'] in following,not j['pressing'],waited.get(j['suggestion_id'],'')))
+            # A draft redone after a fix on another to-do (corrections.pending_work) goes after other work, before follow-ups
+            redoing=lambda j:str(j.get('decision_id') or '').startswith(corrections.REDO_PREFIX)
+            queued.sort(key=lambda j:(j['suggestion_id'] in following,redoing(j),not j['pressing'],waited.get(j['suggestion_id'],'')))
             late=follow_ups.late_ids(db,now()) if following else set()
             pauses=follow_ups.paused_ids(db,now()) if following else {}  # a paused board or project: no follow-up prepared in the background
             admitted=[]
@@ -394,6 +397,17 @@ class PreparationApp:
                     if paused:
                         held[job['suggestion_id']]={'why':'limit' if paused.get('limited') else 'budget','until':paused.get('until')}
                         continue
+                if redoing(job):  # one at a time, as background work, so a fix that touches many drafts never bursts
+                    if any(redoing(j) for j in active+admitted):
+                        held[job['suggestion_id']]={'why':'busy'}
+                        continue
+                    paused=self.background_pause(job='redo:'+job['job_id'],db=db)
+                    if paused:
+                        held[job['suggestion_id']]={'why':'limit' if paused.get('limited') else 'budget','until':paused.get('until')}
+                        continue
+                    self.background_started()
+                    admitted.append(job)
+                    continue
                 # A follow-up draft has its own pacing (follow_up_pause above, follow_ups.DRAFTING and PER_DAY): not the one
                 # ahead draft per tick
                 if job['early'] and job['suggestion_id'] not in following and job['status']=='queued' and job.get('session_job_id') in (None,job['job_id']):  # a fresh one, not a retry
@@ -471,6 +485,11 @@ class PreparationApp:
                 card=db.execute('SELECT early,owner_step FROM suggestions WHERE id=?',(job['suggestion_id'],)).fetchone()
                 job['ahead'],job['owner_step']=bool(card['early']),bool(card['owner_step'])
                 redo=None if job.get('finish') else parked_redo(db,job['suggestion_id'])
+                if str(job.get('decision_id') or '').startswith(corrections.REDO_PREFIX):  # redone after fixes on other to-dos
+                    notes=[r[0] for r in db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND source=? AND created_at>=coalesce("
+                        "(SELECT max(finished_at) FROM preparation_runs WHERE suggestion_id=? AND job_id!=?),'') ORDER BY rowid",
+                        (job['suggestion_id'],corrections.REDO_SOURCE,job['suggestion_id'],job['job_id']))]
+                    if notes:job['redo_fix']=corrections.redo_prompt(notes)
             if redo:  # Redo it on a fix an update set aside: the usual self-fix run from that commit, not an owner-only step
                 job['owner_step']=False
                 job['redo']=parked_fixes.redo_prompt(redo,next_actions.app_dir(self.config),next_actions.fix_dir(self.config),job['job_id'])

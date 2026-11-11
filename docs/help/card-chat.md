@@ -35,6 +35,8 @@ On a computer, Enter or Ctrl+Enter (Cmd+Enter on a Mac) sends and Shift+Enter st
 
 Say so in the chat, like "They're not the CEO" or "They left the company". The Machine fixes it at the source: a role, a company, a title, a project's stage, the to-do's project, or a rule it learned. The chat shows what changed, like "Fixed: Sam's role is Head of Sales, from their email signature", with **Undo**. Undo puts back the old value, unless it changed since.
 
+Your other drafts built on the wrong value are drafted again, one at a time. Their chat says **Redoing the draft after a fix**. Drafts you edited or approved, and ones going out, stay as they are. The reply says how many of each.
+
 On a GBrain page, only The Machine's own section changes. What you wrote there stays. When it can't tell where something came from, it learns from your note instead.
 
 ## Model and thinking

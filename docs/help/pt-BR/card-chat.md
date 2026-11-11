@@ -35,6 +35,8 @@ No computador, Enter ou Ctrl+Enter (Cmd+Enter no Mac) envia, e Shift+Enter come�
 
 Diga no chat, como "Ela não é a CEO" ou "Ele saiu da empresa". The Machine corrige na origem: um cargo, uma empresa, um título, a etapa de um projeto, o projeto da tarefa ou uma regra aprendida. O chat mostra então o que mudou, como **Corrigido: O papel de Ana é Head of Sales, de uma assinatura de e-mail dela**, com **Desfazer**. Desfazer devolve o que havia, a menos que tenha mudado desde então.
 
+Seus outros rascunhos baseados no valor errado são refeitos, um de cada vez. O chat deles mostra **Refazendo o rascunho após uma correção**. Rascunhos que você editou ou aprovou, e os que já estão sendo enviados, ficam como estão. A resposta diz quantos de cada.
+
 Em uma página do GBrain, só a seção da própria The Machine muda; o que você escreveu lá continua seu. Se não encontrar de onde algo veio, aprende com sua nota como antes.
 
 ## Modelo e raciocínio

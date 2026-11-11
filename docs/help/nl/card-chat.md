@@ -35,6 +35,8 @@ Op een computer verstuurt Enter of Ctrl+Enter (Cmd+Enter op een Mac) je bericht,
 
 Zeg het in de chat, zoals "Ze is niet de CEO" of "Hij werkt er niet meer". The Machine verbetert het waar het vandaan kwam: een rol, een bedrijf, een functie, de fase van een project, het project van de to-do, of een regel die het leerde. De chat toont dan wat er veranderde, zoals **Rechtgezet: De rol van Ana is Head of Sales, uit haar e-mailhandtekening**, met **Ongedaan maken**. Dat zet terug wat er stond, tenzij het intussen veranderde.
 
+Je andere concepten die op de foute waarde steunden, worden een voor een opnieuw gemaakt. Hun chat zegt dan **Concept wordt opnieuw gemaakt na een rechtzetting**. Concepten die je zelf aanpaste of goedkeurde, en die al vertrekken, blijven zoals ze zijn. Het antwoord zegt hoeveel van elk.
+
 Op een GBrain-pagina verandert alleen het eigen deel van The Machine; wat jij daar schreef, blijft van jou. Als het niet vindt waar iets vandaan kwam, leert het zoals voorheen van je notitie.
 
 ## Model en denkwerk
