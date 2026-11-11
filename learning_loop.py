@@ -42,7 +42,6 @@ MAX_CHANGES = 3
 WHY_MAX, TEXT_MAX, CLIP = 160, 240, 300
 KINDS = ('voice', 'draft', 'fact')
 RECENT = 20
-FACTS_MAX = 80
 
 
 def ensure(db):
@@ -306,14 +305,20 @@ def apply(db, run_id, voice_check, link=None):
                 db.execute("INSERT INTO rule_changes(at,kind,text,ref) VALUES(?,'voice',?,?)", (now(), f'{channel} voice: {text}', 'tune:' + run_id))
                 _record(db, run_id, 'voice', channel, json.dumps(dict(current)) if current else None, text, change['why'])
             else:
+                from machine.store import facts  # it imports this module
                 kind, text = change['kind'], change['text']
                 if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (kind, text)).fetchone():
                     continue
                 old = db.execute('SELECT id,text FROM facts WHERE id=? AND kind=? AND removed_at IS NULL', (change.get('replaces'), kind)).fetchone() \
                     if change.get('replaces') else None
-                if not old and db.execute('SELECT count(*) FROM facts WHERE removed_at IS NULL AND id NOT IN '  # facts about someone don't count
-                                          '(SELECT fact_id FROM fact_about WHERE removed_at IS NULL)').fetchone()[0] >= FACTS_MAX:
-                    continue
+                if not old:  # the same thing in other words, as remember_fact: said again, or the newer wording takes its place
+                    said, how = facts.said_before(db, kind, text)
+                    if said and how == 'less':
+                        db.execute('UPDATE facts SET confirmed_at=? WHERE id=?', (now(), said['id']))
+                        continue
+                    old = said if said and not said['kept_at'] else None
+                if not old:  # full: one not used lately makes room, as for a note's fact, never a lesson dropped
+                    facts.make_room(db, facts.general_count(db))
                 fact_id = db.execute('INSERT INTO facts(text,decision_id,suggestion_id,created_at,kind) VALUES(?,?,NULL,?,?)',
                                      (text, 'tune:' + run_id, now(), kind)).lastrowid
                 if old:
