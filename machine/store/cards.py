@@ -145,17 +145,30 @@ OWNER_WORDS_MAX, TITLE_OWNER_MAX = 2000, 200
 WAIT_DAYS = 7  # a to-do that waits on someone else with no deadline comes back after this long (as their promises: PROMISE_CHECK_DAYS)
 
 
-def wait_until(due, digest_at='08:30', current=None):
+def wait_until(due, digest_at='08:30', current=None, due_at=None):
     """When a to-do that waits on someone else comes back by itself so the owner can chase them: the morning before its
-    deadline, or the deadline's own morning when that one is too soon (less than three hours away). A deadline that is
-    (nearly) here already gives no time to wait for anyone, and the owner just handed the step on: it waits WAIT_DAYS, as
-    without a deadline. Their answer brings it back sooner (update_card)."""
+    deadline, or the deadline's own morning when that one is too soon (less than three hours away). A deadline later
+    today: at its time (due_at). One that has passed (a day-only deadline passes at the end of its day): the next
+    morning, the moment a nudge is due. Without a deadline: after WAIT_DAYS. Their answer brings it back sooner
+    (update_card)."""
     current = current or dt.datetime.fromisoformat(now())
     hour, minute = (int(x) for x in digest_at.split(':'))
+    morning = lambda day: dt.datetime.combine(day, dt.time(hour, minute), local_tz())
+    if not due:
+        target = morning(current.astimezone(local_tz()).date() + dt.timedelta(days=WAIT_DAYS))
+        return target.astimezone(dt.timezone.utc).isoformat()
+    day = dt.date.fromisoformat(str(due)[:10])
+    at = dt.datetime.fromisoformat(str(due_at)) if due_at else None
+    at = at if at is None or at.tzinfo else at.replace(tzinfo=local_tz())
+    ends = at or morning(day + dt.timedelta(days=1)).replace(hour=0, minute=0)  # when the deadline passes
     soonest = current + dt.timedelta(hours=3)
-    days = [dt.date.fromisoformat(str(due)[:10]) - dt.timedelta(days=d) for d in (1, 0)] if due else []
-    days.append(current.astimezone(local_tz()).date() + dt.timedelta(days=WAIT_DAYS))
-    target = next(t for t in (dt.datetime.combine(day, dt.time(hour, minute), local_tz()) for day in days) if t >= soonest)
+    target = next((t for t in (morning(day - dt.timedelta(days=1)), morning(day)) if soonest <= t <= ends), None)
+    if target is None and at is not None and at > current:
+        target = at
+    if target is None:  # passed: the first morning after it
+        after = max(current, ends)
+        target = morning(after.astimezone(local_tz()).date())
+        target = target if target > after else morning(after.astimezone(local_tz()).date() + dt.timedelta(days=1))
     return target.astimezone(dt.timezone.utc).isoformat()
 
 
@@ -554,7 +567,9 @@ class CardsStore:
         as an open to-do (update_card), and so does the time to chase them (wait_until, return_waiting), also when its
         deadline is today or past: then a to-do the owner has to snooze would only say to wait."""
         stamp, sid, own = now(), card['id'], card['origin'] == 'owner'
-        until = wait_until((card['due'] or due) if own else (due or card['due']), digest_at)
+        deadline = (card['due'] or due) if own else (due or card['due'])
+        # the card's time of day (an owner's "tomorrow 9:00") belongs to the card's own deadline only
+        until = wait_until(deadline, digest_at, due_at=card['due_at'] if deadline and deadline == card['due'] else None)
         db.execute('UPDATE suggestions SET ' + KEEP_OWNER_TITLE + ',body=?,event_ids=?,account_ids=?,source_line=?,'
                    + ('due=coalesce(due,?)' if own else 'due=coalesce(?,due)') + ",status='prepared',outcome=?,next_action=NULL,early=0,deliver_after=NULL,"
                    'snoozed_until=NULL,resume_status=NULL,awaiting=NULL,handled_hint=NULL,undo_until=NULL,completed_from=NULL,feedback_until=NULL WHERE id=?',

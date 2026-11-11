@@ -166,13 +166,19 @@ class LookDone(unittest.TestCase):
         self.assertEqual((self.row()['status'], self.row().get('outcome')), ('pending', None))
 
     def test_when_a_wait_comes_back(self):
-        at = a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00')  # Monday, after the morning digest
-        back = lambda due: a.dt.datetime.fromisoformat(wait_until(due, current=at)).astimezone(a.local_tz()).strftime('%Y-%m-%d %H:%M')
+        at = a.dt.datetime.fromisoformat('2026-11-09T10:00:00+00:00')  # Monday 11:00, after the morning digest
+        back = lambda due, due_at=None: a.dt.datetime.fromisoformat(wait_until(due, current=at, due_at=due_at)).astimezone(
+            a.local_tz()).strftime('%Y-%m-%d %H:%M')
         self.assertEqual(back(None), '2026-11-16 08:30')  # no deadline: a week
         self.assertEqual(back('2026-11-12'), '2026-11-11 08:30')  # the morning before the deadline
         self.assertEqual(back('2026-11-10'), '2026-11-10 08:30')  # that morning has passed: the deadline's own morning
-        self.assertEqual(back('2026-11-09'), '2026-11-16 08:30')  # due today: nothing to wait for before it, a week
-        self.assertEqual(back('2026-11-02'), '2026-11-16 08:30')  # past its deadline: the same
+        self.assertEqual(back('2026-11-09', '2026-11-09T15:00+00:00'), '2026-11-09 16:00')  # later today: at the deadline
+        self.assertEqual(back('2026-11-10', '2026-11-10T07:00+00:00'), '2026-11-10 08:00')  # before tomorrow's morning: at it
+        self.assertEqual(back('2026-11-09', '2026-11-09T08:00+00:00'), '2026-11-10 08:30')  # passed this morning: next morning
+        self.assertEqual(back('2026-11-09'), '2026-11-10 08:30')  # today, no time: it passes tonight, next morning
+        self.assertEqual(back('2026-11-02'), '2026-11-10 08:30')  # passed days ago: next morning
+        early = a.dt.datetime.fromisoformat('2026-11-09T05:00:00+00:00')  # 06:00, before the morning digest
+        self.assertEqual(wait_until('2026-11-02', current=early), '2026-11-09T07:30:00+00:00')  # this morning's slot
 
     def test_a_due_or_late_to_do_handed_on_waits_instead_of_being_a_to_do(self):
         # The owner's own to-do, snoozed and due today: they did their part and the review says the next step is someone
@@ -187,14 +193,25 @@ class LookDone(unittest.TestCase):
         self.assertEqual(a.card(row).splitlines()[-1], 'Waiting on: Sam to answer the scope question.')
         with self.store.connect() as db:
             self.assertEqual(a.waiting_count(db), 0)
-        with patch_everywhere(a, 'now', return_value='2026-11-12T12:00:00+00:00'):  # its snooze time passes: it stays waiting
+        with patch_everywhere(a, 'now', return_value='2026-11-09T12:00:00+00:00'):  # its snooze time passes: it stays waiting
             self.store.wake_snoozed()
         self.assertTrue(a.waits_on_others(self.row()))
-        with patch_everywhere(a, 'now', return_value='2026-11-16T12:00:00+00:00'):  # no answer for a week: back, to chase them
-            self.store.wake_snoozed()
+        with patch_everywhere(a, 'now', return_value='2026-11-10T08:00:00+00:00'):  # the deadline passed, no answer: back the
+            self.store.wake_snoozed()                                              # next morning, to nudge them
         row = self.row()
         self.assertEqual(row['status'], 'pending')
         self.assertEqual(a.card(row).splitlines()[-1], 'Still waiting on: Sam to answer the scope question.')
+
+    def test_a_wait_due_later_today_comes_back_at_the_deadline(self):
+        with self.store.connect() as db:  # the owner's own to-do, due today at 16:00
+            db.execute("UPDATE suggestions SET origin='owner',due='2026-11-09',due_at='2026-11-09T15:00+00:00',created_at='2026-10-01T09:00:00+00:00'")
+        self.waiting(due=None)
+        row = self.row()
+        self.assertTrue(a.waits_on_others(row))
+        self.assertEqual(json.loads(row['outcome'])['until'], '2026-11-09T15:00:00+00:00')
+        with patch_everywhere(a, 'now', return_value='2026-11-09T15:05:00+00:00'):
+            self.store.wake_snoozed()
+        self.assertEqual(self.row()['status'], 'pending')
 
     def test_waiting_on_needs_an_open_to_do(self):
         self.store.commit_page('work', {}, [ux.event(source='two', body='Earlier'), ux.event(source='four', body='Another matter')])
