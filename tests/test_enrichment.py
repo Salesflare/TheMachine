@@ -25,6 +25,11 @@ LEE = {'name': 'Lee Parker', 'linkedin_id': 'lee-parker-1', 'linkedin_url': 'htt
 PEOPLE = {('Lee Parker', 'globex.com'): LEE,
           ('Kai Novak', 'hooli.example'): {'name': 'Someone Else', 'position': 'CEO', 'company': {'name': 'Hooli', 'domain': 'hooli.example'}},
           ('Rae Quinn', 'initech.example'): {'name': 'Rae Quinn', 'position': 'CTO', 'company': {'name': 'Other', 'domain': 'other.example'}}}
+# Salesflare's lead API shape for a company, made up: its country_code names another country than its address.
+NORTHWIND = {'name': 'Northwind Robotics', 'domain': 'northwind.example', 'website': 'https://northwind.example', 'industry': 'Robotics',
+             'location': {'address': '12 Harbor Rd, Springfield,Illinois 62701,United States', 'city': 'springfield', 'state': 'illinois',
+                          'country_code': 'gb'},
+             'headquarters': 'Springfield, Illinois'}
 WORK = {'work': 'work:Acme', 'home': 'personal:me', 'chat': 'personal:whatsapp', 'slack': 'work:Acme'}
 
 
@@ -45,6 +50,9 @@ class Service(http.server.BaseHTTPRequestHandler):
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body); return
         if 'mismatch.example' in self.path:  # the service matched a page that merely links to this domain
             body = json.dumps({'name': 'Srsr company', 'website': 'https://mismatch.example/blog/post', 'about_us': 'srsr'}).encode()
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body); return
+        if 'northwind.example' in self.path:
+            body = json.dumps(NORTHWIND).encode()
             self.send_response(200); self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body); return
         if 'globex.com' not in self.path:
             self.send_response(404); self.end_headers(); return
@@ -95,6 +103,46 @@ class Enrichment(unittest.TestCase):
         self.assertEqual((preset['url'], preset['headers']), ('https://api.apollo.io/api/v1/organizations/enrich?domain={domain}', {'X-Api-Key': '{key}'}))
         self.assertIsNone(enrichment.settings({'enrichment': {'url': 'https://example.com/no-domain'}}))
         self.assertIsNone(enrichment.settings({}))
+
+    def test_an_organizations_country_is_the_one_its_address_names_not_the_lead_apis_country_code(self):
+        self.assertEqual(enrichment.normalise(NORTHWIND)['country'], 'us')
+        abroad = {'name': 'Fjordline', 'location': {'address': 'Strandkaien 3, 5013 Bergen, Norway', 'state': 'vestland', 'country_code': 'de'},
+                  'headquarters': 'Bergen, Vestland'}
+        self.assertEqual(enrichment.normalise(abroad)['country'], 'no')
+        # No country in the address: the US state, then the headquarters; the country_code only when nothing else says.
+        self.assertEqual(enrichment.normalise({'name': 'Redwood Labs', 'location': {'address': '1 Main St', 'state': 'washington', 'country_code': 'fr'}})['country'], 'us')
+        self.assertEqual(enrichment.normalise({'name': 'Maple Ops', 'location': {'country_code': 'gb'}, 'headquarters': 'Toronto, Ontario'})['country'], 'ca')
+        self.assertEqual(enrichment.normalise({'name': 'Remy', 'location': {'country_code': 'be'}, 'headquarters': 'Antwerp, Flemish Region'})['country'], 'be')
+        self.assertEqual(enrichment.normalise({'name': 'Peach Co', 'location': {'address': '9 Peachtree St, Atlanta, Georgia 30303'}})['country'], 'us')
+        self.assertEqual(enrichment.normalise({'name': 'Kartuli', 'headquarters': 'Tbilisi, Georgia'})['country'], 'ge')
+        self.assertEqual(enrichment.normalise({'name': 'Lyon Soft', 'location': {'address': '4 Rue Neuve, 69002 Lyon, France', 'country_code': 'fr'}})['country'], 'fr')
+        # Other services' country fields stay as they were.
+        self.assertEqual(enrichment.normalise({'name': 'Initech', 'country': 'United States'})['country'], 'United States')
+        self.assertEqual(enrichment.normalise({'name': 'Hooli', 'location': {'country': 'united states', 'name': 'palo alto, california'}})['country'], 'united states')
+        self.assertEqual(enrichment.normalise({'name': 'Vandelay', 'geo': {'countryCode': 'US'}, 'location': 'Bern, CH'})['country'], 'US')
+
+    def test_countries_found_before_the_fix_are_looked_up_once_more_within_the_budget(self):
+        self.add(tg.mail(3, 'Lee <lee@northwind.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Lee <lee@northwind.example>', ('SENT',)),
+                 tg.mail(3, 'Kim <kim@globex.com>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Kim <kim@globex.com>', ('SENT',)),
+                 tg.mail(3, 'Ann <ann@initech.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Ann <ann@initech.example>', ('SENT',)))
+        self.build()
+        earlier, now = (tg.NOW - tg.dt.timedelta(days=10)).isoformat(), tg.NOW.isoformat()
+        with self.store.connect() as db:
+            enrichment.save(db, 'northwind.example', 'found', {'name': 'Northwind Robotics', 'country': 'gb', 'logo': 'https://media.example/n.png'}, earlier)
+            enrichment.save(db, 'globex.com', 'found', {'name': 'Globex', 'logo': 'https://media.example/g.png'}, earlier)  # no country: nothing to fix
+            enrichment.save(db, 'initech.example', 'found', {'name': 'Initech', 'country': 'gb', 'logo': 'https://media.example/i.png'}, now)  # already checked
+            self.assertEqual(enrichment.due(db, now, 10, countries=False), [])  # another service: its countries are fine
+            self.assertEqual(enrichment.due(db, now, 0), [])  # never over the day's budget
+            self.assertEqual(enrichment.due(db, now, 10), ['northwind.example'])
+        lead = 'http://127.0.0.1:%d' % self.server.server_port  # this test's service stands in for the lead API
+        with patch.object(enrichment, 'LEADAPI', lead):
+            self.assertEqual(enrichment.step(self.store.connect, self.config, now), 1)
+            self.assertEqual(enrichment.step(self.store.connect, self.config, now), 0)  # once
+        self.assertEqual([p for p, _ in Service.seen], ['/enrich/companies?domain=northwind.example'])
+        self.build()
+        self.assertEqual(self.node('org:northwind.example')['profile']['country'], 'us')
+        with self.store.connect() as db:  # done for good: the start stays where it was
+            self.assertEqual(enrichment.due(db, (tg.NOW + tg.dt.timedelta(days=1)).isoformat(), 10), [])
 
     def test_a_logo_is_kept_only_as_a_plain_https_address(self):
         logo = 'https://media.licdn.com/dms/image/v2/C4D0BAQF/company-logo_200_200/0/1?e=2147483647&v=beta&t=abc'

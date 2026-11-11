@@ -40,6 +40,10 @@ PAIRED_PER_DAY = 1000
 # asked once more after LOGO_RETRY_DAYS, a few per pass after everything else that is due (logo_retries_due).
 LOGO_RETRY_DAYS = 7
 LOGO_RETRIES_PER_PASS = 5
+# Countries from Salesflare's lead API came from its country_code, which often names another country than the company's
+# address (org_country). Organizations found before this code first ran on the Machine, with a country, are looked up
+# once more, a few per pass after everything else that is due (country_rechecks_due), within the same daily budget.
+COUNTRY_RECHECKS_PER_PASS = 5
 PRESETS = {
     'apollo': {'url': 'https://api.apollo.io/api/v1/organizations/enrich?domain={domain}', 'headers': {'X-Api-Key': '{key}'}},
     'peopledatalabs': {'url': 'https://api.peopledatalabs.com/v5/company/enrich?website={domain}', 'headers': {'X-Api-Key': '{key}'},
@@ -137,9 +141,86 @@ def normalise(data, fields=None):
                     found = found[:limit - 1].rsplit(' ', 1)[0].rstrip(',.;:') + '…'
             if field == 'linkedin_url' and not found.startswith('http'):
                 found = 'https://www.linkedin.com/company/' + found.strip('/').rsplit('/', 1)[-1]
+            if field == 'country' and path == 'location.country_code':
+                found = org_country(data, found)
             profile[field] = found
             break
+    if 'country' not in profile and org_country(data, None):
+        profile['country'] = org_country(data, None)
     return profile if profile.get('name') or profile.get('industry') or profile.get('about') else None
+
+
+# Country names (and common other names) to their two letters, for an organization's address. Names only: a bare "CA"
+# could be California as well as Canada.
+COUNTRY_NAMES = (
+    'af:afghanistan;al:albania;dz:algeria;ad:andorra;ao:angola;ar:argentina;am:armenia;au:australia;at:austria;'
+    'az:azerbaijan;bs:bahamas;bh:bahrain;bd:bangladesh;bb:barbados;by:belarus;be:belgium;bz:belize;bj:benin;bt:bhutan;'
+    'bo:bolivia;ba:bosnia and herzegovina;bw:botswana;br:brazil;bn:brunei;bg:bulgaria;bf:burkina faso;bi:burundi;'
+    'kh:cambodia;cm:cameroon;ca:canada;cv:cape verde;td:chad;cl:chile;cn:china;co:colombia;cr:costa rica;'
+    'ci:ivory coast;ci:cote d ivoire;hr:croatia;cu:cuba;cy:cyprus;cz:czech republic;cz:czechia;dk:denmark;dj:djibouti;'
+    'do:dominican republic;ec:ecuador;eg:egypt;sv:el salvador;ee:estonia;et:ethiopia;fj:fiji;fi:finland;fr:france;'
+    'ga:gabon;gm:gambia;ge:georgia;de:germany;gh:ghana;gr:greece;gt:guatemala;gn:guinea;gy:guyana;ht:haiti;'
+    'hn:honduras;hk:hong kong;hu:hungary;is:iceland;in:india;id:indonesia;ir:iran;iq:iraq;ie:ireland;il:israel;'
+    'it:italy;jm:jamaica;jp:japan;jo:jordan;kz:kazakhstan;ke:kenya;kr:south korea;kr:korea;kr:republic of korea;'
+    'xk:kosovo;kw:kuwait;kg:kyrgyzstan;la:laos;lv:latvia;lb:lebanon;ls:lesotho;lr:liberia;ly:libya;li:liechtenstein;'
+    'lt:lithuania;lu:luxembourg;mo:macau;mo:macao;mg:madagascar;mw:malawi;my:malaysia;mv:maldives;ml:mali;mt:malta;'
+    'mr:mauritania;mu:mauritius;mx:mexico;md:moldova;mc:monaco;mn:mongolia;me:montenegro;ma:morocco;mz:mozambique;'
+    'mm:myanmar;na:namibia;np:nepal;nl:netherlands;nl:the netherlands;nl:holland;nz:new zealand;ni:nicaragua;'
+    'ne:niger;ng:nigeria;mk:north macedonia;mk:macedonia;no:norway;om:oman;pk:pakistan;ps:palestine;pa:panama;'
+    'pg:papua new guinea;py:paraguay;pe:peru;ph:philippines;pl:poland;pt:portugal;pr:puerto rico;qa:qatar;ro:romania;'
+    'ru:russia;ru:russian federation;rw:rwanda;sa:saudi arabia;sn:senegal;rs:serbia;sc:seychelles;sl:sierra leone;'
+    'sg:singapore;sk:slovakia;si:slovenia;so:somalia;za:south africa;es:spain;lk:sri lanka;sd:sudan;sr:suriname;'
+    'se:sweden;ch:switzerland;sy:syria;tw:taiwan;tj:tajikistan;tz:tanzania;th:thailand;tg:togo;tt:trinidad and tobago;'
+    'tn:tunisia;tr:turkey;tr:turkiye;tm:turkmenistan;ug:uganda;ua:ukraine;ae:united arab emirates;ae:uae;'
+    'gb:united kingdom;gb:uk;gb:great britain;gb:england;gb:scotland;gb:wales;gb:northern ireland;us:united states;'
+    'us:united states of america;us:usa;us:us;uy:uruguay;uz:uzbekistan;ve:venezuela;vn:vietnam;vn:viet nam;ye:yemen;'
+    'zm:zambia;zw:zimbabwe;gi:gibraltar;je:jersey;gg:guernsey;im:isle of man;ky:cayman islands;bm:bermuda;cw:curacao')
+# The regions an address or headquarters may end with instead of its country: US states, Canadian provinces and
+# Australian states.
+REGION_NAMES = (
+    'us:alabama;us:alaska;us:arizona;us:arkansas;us:california;us:colorado;us:connecticut;us:delaware;us:florida;'
+    'us:georgia;us:hawaii;us:idaho;us:illinois;us:indiana;us:iowa;us:kansas;us:kentucky;us:louisiana;us:maine;'
+    'us:maryland;us:massachusetts;us:michigan;us:minnesota;us:mississippi;us:missouri;us:montana;us:nebraska;'
+    'us:nevada;us:new hampshire;us:new jersey;us:new mexico;us:new york;us:north carolina;us:north dakota;us:ohio;'
+    'us:oklahoma;us:oregon;us:pennsylvania;us:rhode island;us:south carolina;us:south dakota;us:tennessee;us:texas;'
+    'us:utah;us:vermont;us:virginia;us:washington;us:west virginia;us:wisconsin;us:wyoming;us:district of columbia;'
+    'us:washington dc;us:washington d c;ca:ontario;ca:quebec;ca:british columbia;ca:alberta;ca:manitoba;'
+    'ca:saskatchewan;ca:nova scotia;ca:new brunswick;ca:newfoundland and labrador;ca:prince edward island;'
+    'au:new south wales;au:queensland;au:victoria;au:western australia;au:south australia;au:tasmania;'
+    'au:australian capital territory')
+COUNTRIES, REGIONS = ({name: code for code, name in (pair.split(':') for pair in names.split(';'))}
+                      for names in (COUNTRY_NAMES, REGION_NAMES))
+
+
+def place_name(text):
+    """A place as the tables above spell it: lower case, no accents, digits or punctuation ("Québec H2X 1Y4": quebec)."""
+    import unicodedata
+    text = unicodedata.normalize('NFKD', str(text or '')).encode('ascii', 'ignore').decode().casefold()
+    return ' '.join(re.sub(r'[^a-z]+', ' ', text).split())
+
+
+def place_country(place, region=None):
+    """The country a place's last parts name ("1 Main St, Springfield, Illinois 62701, United States": us), else None.
+    A region with a postal code is that region, not a country of the same name ("Atlanta, Georgia 30301")."""
+    for part in reversed(str(place or '').split(',')[-3:]):
+        name, numbered = place_name(part), bool(re.search(r'\d', part))
+        if name in COUNTRIES and not (numbered and name in REGIONS):
+            return COUNTRIES[name]
+        if name in REGIONS:
+            return REGIONS[name]
+    return REGIONS.get(place_name(region)) if region else None
+
+
+def org_country(data, code):
+    """An organization's country (two lower-case letters) from Salesflare's lead API answer: the one its address names,
+    else its state or headquarters. Its country_code only when they say nothing: it often names another country than
+    the address (an address in the United States came with gb)."""
+    location = data.get('location') if isinstance(data.get('location'), dict) else {}
+    found = place_country(location.get('address'), location.get('state')) or place_country(data.get('headquarters'))
+    if found:
+        return found
+    code = str(code or '').strip().lower()
+    return code if re.fullmatch(r'[a-z]{2}', code) else None
 
 
 def answer(cfg, url, secret, timeout):
@@ -263,10 +344,11 @@ def worth(domain, people):
     return score or 0.5
 
 
-def due(db, now, limit):
+def due(db, now, limit, countries=True):
     """Organization domains from the graph that were never looked up or are due again, those worth it most first
     (people the owner writes with both ways or meets, then the strongest); never ones only cold outreach, bulk
-    senders or free mail come from. A paying customer is always worth it."""
+    senders or free mail come from. A paying customer is always worth it. countries: also the one-time re-check of
+    countries from the lead API (country_rechecks_due); off for a Machine with another service."""
     current = dt.datetime.fromisoformat(now)
     fresh = (current - dt.timedelta(days=REFRESH_DAYS)).isoformat()
     retry = (current - dt.timedelta(hours=RETRY_HOURS)).isoformat()
@@ -279,7 +361,7 @@ def due(db, now, limit):
     if limit <= 0:
         return []
     if not rows:
-        return logo_retries_due(db, now, min(LOGO_RETRIES_PER_PASS, limit))
+        return retries_due(db, now, [], limit, countries)
     people = {}
     for org, info in db.execute("SELECT l.b,n.info FROM graph_links l JOIN graph_nodes n ON n.id=l.a WHERE l.kind='member' AND n.kind='person'"):
         try:
@@ -294,7 +376,15 @@ def due(db, now, limit):
         if score:
             ranked.append((-score, -(strength or 0), domain))
     picked = [domain for _, _, domain in sorted(ranked)[:limit]]
-    return picked + logo_retries_due(db, now, min(LOGO_RETRIES_PER_PASS, limit - len(picked)), picked)
+    return retries_due(db, now, picked, limit, countries)
+
+
+def retries_due(db, now, picked, limit, countries):
+    """What is due beyond the normal refresh, after `picked`: a logo asked for once more, then a country re-checked."""
+    picked = picked + logo_retries_due(db, now, min(LOGO_RETRIES_PER_PASS, limit - len(picked)), picked)
+    if countries:
+        picked += country_rechecks_due(db, now, min(COUNTRY_RECHECKS_PER_PASS, limit - len(picked)), picked)
+    return picked
 
 
 def logo_tables(db):
@@ -315,6 +405,24 @@ def logo_retries_due(db, now, limit, skip=()):
                       "AND NOT EXISTS(SELECT 1 FROM org_logo_retries r WHERE r.domain=p.domain) "
                       "AND NOT EXISTS(SELECT 1 FROM org_edits e WHERE e.domain=p.domain AND json_type(e.fields,'$.logo') IS NOT NULL) "
                       "GROUP BY p.domain ORDER BY s DESC,p.domain LIMIT ?", (before, limit + len(skip))).fetchall()
+    return [r[0] for r in rows if r[0] not in skip][:limit]
+
+
+def country_rechecks_due(db, now, limit, skip=()):
+    """Organizations found with a country before this code first ran here (enrich_prefs 'country_recheck', set then),
+    strongest first: looked up once more, since that country came from the lead API's country_code. A look-up moves
+    fetched_at past the start, so each is asked once."""
+    if limit <= 0:
+        return []
+    since = pref(db, 'country_recheck')
+    if since is None:
+        set_pref(db, 'country_recheck', now)
+        since = now
+    rows = db.execute("SELECT p.domain,max(n.strength) s FROM graph_nodes n,"
+                      "json_each(coalesce(json_extract(n.info,'$.domains'),json_array(json_extract(n.info,'$.domain')))) d "
+                      "JOIN org_profiles p ON p.domain=d.value WHERE n.kind='org' AND p.status='found' AND p.fetched_at<? "
+                      "AND json_extract(p.profile,'$.country') IS NOT NULL "
+                      "GROUP BY p.domain ORDER BY s DESC,p.domain LIMIT ?", (since, limit + len(skip))).fetchall()
     return [r[0] for r in rows if r[0] not in skip][:limit]
 
 
@@ -347,7 +455,8 @@ def step(connect, config, now, per_pass=None, paired=False):
     with connect() as db:
         today = now[:10]
         used = db.execute("SELECT count(*) FROM org_profiles WHERE substr(fetched_at,1,10)=? AND status!='wrong'", (today,)).fetchone()[0]
-        domains = due(db, now, max(0, min(per_pass, int(cfg.get('per_day') or (PAIRED_PER_DAY if paired else PER_DAY)) - used)))
+        domains = due(db, now, max(0, min(per_pass, int(cfg.get('per_day') or (PAIRED_PER_DAY if paired else PER_DAY)) - used)),
+                      countries=str(cfg['url']).startswith(LEADAPI + '/'))
     found = 0
     for domain in domains:
         try:
