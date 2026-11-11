@@ -113,6 +113,8 @@ try{
   assert.equal(await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').count(),1);
   await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
   await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
+  // the move's answer and its refresh first: a board drawn again under the next press took its click with it
+  await page.evaluate(()=>window.lastBoardMove);
   // Clicking a tile opens the project page, with its stage and moves
   calls=[];await page.locator('.tile[data-node="project:1"] .tile-next').click();await page.locator('.graph-stage').waitFor();
   assert.ok(nodeAsks.includes('project:1'));assert.match(await page.locator('.graph-stage').textContent(),/Contacted on Partner listings/);

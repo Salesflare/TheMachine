@@ -109,6 +109,7 @@ try{
    assert.equal(await page.locator('#facts [data-group="rules"] .fact-row').count(),7);
    assert.ok(await row.evaluate(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'row in view');
    assert.ok(await row.evaluate(e=>e.classList.contains('flash')),'row lit');
+   await page.evaluate(()=>render());assert.ok(await page.locator('#learned-31').evaluate(e=>e.classList.contains('flash')),'still lit when a refresh draws the list anew');
    if(shots){await page.waitForTimeout(300);await page.screenshot({path:`${shots}/learned-from-chat-${width}.png`})}
    // Back returns to the chat; Edit there opens the same row in its editor, with the text ready to change.
    await page.goBack();await log.locator('.chat-learned').first().waitFor();

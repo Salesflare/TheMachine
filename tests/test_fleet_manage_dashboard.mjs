@@ -61,6 +61,10 @@ try{
  assert.equal(await page.locator('.manage-invite-form').count(),0);  // behind Invite people until asked
  await page.locator('[data-manage-invite]').click();
  await page.locator('.manage-invite-form textarea').fill('a@acme.example\nb@acme.example');
+ // Invite stays put when the emails box loses focus (the press on Invite blurs it): it moved up and the click missed
+ // (measured from the form's top: the box scrolls into view smoothly meanwhile)
+ const inviteAt=()=>page.locator('.manage-invite-form button.primary').evaluate(b=>b.getBoundingClientRect().top-b.form.getBoundingClientRect().top),typed=await inviteAt();
+ await page.locator('.manage-invite-form textarea').blur();await page.waitForTimeout(250);assert.equal(await inviteAt(),typed,'Invite stays where it was');
  await page.locator('.manage-invite-form button.primary').click();
  assert.deepEqual(await posted(page,'invite'),{do:'invite',fleet:FL,emails:'a@acme.example\nb@acme.example',plan:'own',mail:true,origin:url});
  await page.locator('[data-manage-do="remove"][data-member="fm_2"]').click();

@@ -16,6 +16,8 @@
 .manage-field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .manage-field>span{font-weight:var(--fw-medium);font-size:var(--fs-sm)}
 .manage-field textarea{width:100%;resize:vertical;font:inherit}
+/* Its own height, not a to-do note's (taller only while focused): a press on Invite blurred it, Invite moved up and missed */
+.manage-field textarea,.manage-field textarea:focus,.manage-field textarea.filled{height:auto;min-height:84px;max-height:200px;field-sizing:content;transition:border-color .15s}
 .manage-invite-form .fleet-option,.manage-invite-form .actions{grid-column:1/-1;margin:0}
 .manage-sub{margin:16px 0 8px;font-size:var(--fs-sm);font-weight:var(--fw-medium)}
 .manage-invite-form .fleet-option{justify-content:flex-start;align-items:center}.manage-invite-form .fleet-option input{flex:0 0 auto;margin:0}
