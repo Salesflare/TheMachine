@@ -24,7 +24,7 @@ Before a follow-up or handoff, it checks for newer replies, also from a teammate
 - A step that commits something, like submit, pay or book, waits for your confirm, or for you to ask for it in the chat. Confirming one step leaves the others waiting: the to-do closes only when every step is done.
 - In a to-do's chat, a draft is never sent in the same message that wrote it.
 - Until you approve, the to-do waits under **For you** as **Prepared**, and the list says once that nothing goes out until you approve it. One that still needs something from you says **Needs you**. It says a draft went out only once it did.
-- A long draft shows its first 3 lines. **Show more** opens the rest; **Review and send** always shows all of it.
+- A long draft shows its first 3 lines. **Show more**, or a tap on the text, opens the rest; **Review and send** always shows all of it.
 
 It can send an email, a Slack direct message, or a WhatsApp, Telegram, LinkedIn or X message, depending on the source. Each connection's article says what it can send.
 
