@@ -23,6 +23,8 @@ Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una 
 
 **Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él. El spam nuevo va a la misma tarea mientras siga abierta.
 
+Desconocido quiere decir que nunca le escribiste, y un “Re:” solo cuenta como conversación en un hilo donde escribiste. Si vuelve a colarse correo de un remitente que marcaste como spam, en la tarea o en tu buzón, aparece en la siguiente tarea como **Marcado como spam antes**. Lo que tú mismo moviste a spam también le ayuda a reconocer correo parecido.
+
 Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 
 **Cumpleaños** crea una tarea para cada contacto cercano que cumple años hoy: personas a las que tú escribes, como amigos, familia y contactos habituales. Cada una trae una felicitación corta redactada donde sueles hablar con ellos, como su chat de WhatsApp o tu hilo de correo, en su idioma. Solo sale cuando tú la envías. Un día sin cumpleaños no crea ninguna tarea.

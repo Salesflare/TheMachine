@@ -23,6 +23,8 @@ Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een
 
 **Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het is er alleen voor mail die The Machine mag verplaatsen: Gmail met alleen leesrechten krijgt het niet. Het kijkt elk uur, zodat spam er meestal al staat voor jij eraan toekomt. Nieuwe spam komt op dezelfde to-do zolang die open staat.
 
+Onbekend wil zeggen dat je hen nooit schreef, en een “Re:” telt alleen als gesprek in een draad waarin jij schreef. Komt mail van een afzender die je als spam markeerde, op de to-do of in je mailbox, toch weer door, dan staat die op de volgende to-do als **Eerder als spam gemarkeerd**. Wat je zelf naar spam verplaatste, helpt ook om gelijkaardige mail te herkennen.
+
 Er verandert niets tot je bevestigt op de to-do. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
 
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
