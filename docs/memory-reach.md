@@ -72,12 +72,18 @@ owner removed ("no longer use it") or that ended (as history). At most 3 lines a
 session was already given in that state (the session's runs in `memory_use`), never one learned on this to-do or a
 connected AI's. Logged as `todo_chat`.
 
+A correction that swapped a plain word ("window seats" for "aisle seats") was left to the condense pass. It now takes
+the fact's place too (`graph_actions.swaps_word`): one content word swapped and every other word the same, in the same
+order ("now" or "instead" aside), about the same records. Guarded so another matter in the same frame stays apart: not
+the subject ("Lunch is at noon" and "Dinner is at noon"), not a word after a scope word ("on flights", "on trains") or
+in a list ("apples and pears"), not another form of the same word, and at least three other content words shared
+("You like tea" and "You like coffee" stay apart). The old one stays as history with Undo merge, and reaches a to-do it
+bears on as "Historical, not current". No model call.
+
 ## Still missing
 
 - **The owner's main chat** reads what was learned by words only (in their plain form, as Talk), not yet by meaning:
   "flying" doesn't find "flights".
 - **Routines** get no voice block, so a draft a routine leaves doesn't follow how the owner writes on that channel.
-- **A chat correction that swaps a plain word** ("window seats" for "aisle seats") is left to the condense pass,
-  which judges it by meaning; code only swaps numbers, names and negations.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
   through the to-dos and promises they list. By design.

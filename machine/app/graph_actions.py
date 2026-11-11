@@ -29,7 +29,7 @@ from machine.app.recall import recall
 from machine.config import LOG, WORKSPACE
 from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
-from machine.store.facts import fact_words, merge_originals, NEGATIONS, replaced_facts
+from machine.store.facts import FILLER, fact_words, merge_originals, NEGATIONS, replaced_facts
 from machine.store.review import own_message
 from machine.text import clamp
 from machine.web.handler import event_glance
@@ -83,10 +83,48 @@ def _values(text):
     return {w.casefold() for n, w in enumerate(words) if any(c.isdigit() for c in w) or (n and w[:1].isupper())}
 
 
+# A plain word swapped (swaps_word): words a correction adds that change nothing in the frame; words before the
+# subject; words that put what follows in a scope ("on flights", "for clients"), where another word is often another
+# matter, not another value; and words that join a list, where another item is one more, not a different one.
+AGAIN = {'now', 'instead', 'anymore', 'nowadays', 'currently', 'actually'}
+PERSONS = {'you', 'your', 'yours', 'i', 'my', 'me', 'we', 'our', 'us'}
+SCOPES = FILLER - PERSONS - {'and', 'or', 'is', 'are', 'be', 'use', 'using', 's'} | {'from', 'about', 'during', 'into', 'via', 'per', 'after', 'before'}
+LISTS = {'and', 'or', 'nor', 'plus'}
+SWAP_SHARED = 3  # content words the two share besides the swapped one: a specific frame, not a short one any two facts fit
+
+
+def swaps_word(new, old):
+    """Whether new says what old says with one plain word swapped and every other word the same, in the same order
+    ("You only book window seats on flights" for "You only book aisle seats on flights"). Guarded so another matter in
+    the same frame stays apart: never the subject (the first content word), a word in a scope or list position, a
+    number, a negation or filler, another form of the same word, or a frame with fewer than SWAP_SHARED content words.
+    Plain words: no model."""
+    a = [w for w in re.findall(r'\w+', str(new or '').casefold()) if w not in AGAIN]
+    b = [w for w in re.findall(r'\w+', str(old or '').casefold()) if w not in AGAIN]
+    diff = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
+    if len(a) != len(b) or len(diff) != 1:
+        return False
+    at = diff[0]
+    x, y = a[at], b[at]
+    if any(len(w) < 3 or w in FILLER or w in NEGATIONS or w in PERSONS or any(c.isdigit() for c in w) for w in (x, y)):
+        return False
+    if x.startswith(y[:max(3, min(len(x), len(y)) - 2)]) or y.startswith(x[:max(3, min(len(x), len(y)) - 2)]):
+        return False  # seat and seats, book and booked: the same word, said again
+    before = [w for w in a[:at] if w not in ('the', 'a', 'an')]
+    if not [w for w in before if w not in FILLER and w not in PERSONS]:
+        return False  # the subject: "Lunch is at noon" and "Dinner is at noon" are two matters
+    if before[-1] in SCOPES or before[-1] in LISTS or (at + 1 < len(a) and a[at + 1] in LISTS):
+        return False
+    return len((fact_words(new) & fact_words(old)) - PERSONS) >= SWAP_SHARED
+
+
 def corrects(new, old):
     """Whether new says the same thing as old with another value: most of the words shared, and what old said that new
     doesn't is a number or a name new swaps for its own ("Your office is in Brussels now" for "Your office is in
-    Ghent"), or new adds or drops a negation ("You don't drink coffee anymore"). Plain words: no model."""
+    Ghent"), or new adds or drops a negation ("You don't drink coffee anymore"), or one plain word is swapped with the
+    rest the same (swaps_word). Plain words: no model."""
+    if swaps_word(new, old):
+        return True
     wn, wo = fact_words(new), fact_words(old)
     shared = wn & wo
     if len(shared) < 2 or 2 * len(shared) < min(len(wn), len(wo)):
