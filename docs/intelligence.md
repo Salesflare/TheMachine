@@ -811,6 +811,7 @@ Memory comes in kinds, each with its own table and its own picker:
 | `signal` | messages: related ones in a preparation, the sources of an Ask (`events`) | closeness, or the search |
 | `skill` | the owner's skills (`skills`) | a match with the to-do, or the short index (always) |
 | `team_learning` | what teammates' Machines learned (`fleet_learn*`) | closeness |
+| `voice` | how the owner writes, per channel (`voices`, by channel) | a routine run that leaves a draft: All (always) and its channel's (match), in its message once the routine left one, else when it hands one in |
 
 A prompt reads them in one way: `recall(app, purpose, about, budget)` (`machine/app/recall.py`), with a purpose
 (`review`, `preparation`, `ask`, `routine`, `talk`, `todo_chat`, and `chat`: the owner's main chat, only when it asks), what it is about (the to-do, the run, the

@@ -19,7 +19,9 @@ import bring_in  # noqa: E402
 import memory_use  # noqa: E402
 from machine.app import ask_memory  # noqa: E402
 from machine.app import retained_facts  # noqa: E402
+from machine.app import recall as recall_module  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
+from machine.store import voices  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 10, 7, tzinfo=dt.timezone.utc)  # a Tuesday, 08:00 in Brussels
 TODAY = '2026-11-10'
@@ -424,6 +426,78 @@ class MemoryReach(unittest.TestCase):
             self.assertIn(text, message)
         with self.store.connect() as db:  # logged once the turn was admitted
             self.assertEqual({r[0] for r in db.execute("SELECT kind FROM memory_use WHERE purpose='routine'")}, {'fact', 'rule'})
+
+    def routine_message(self, words, made=None):
+        """A routine with these words (new, or made again), run now: (its id, the run's id, its turn's message). An
+        earlier run is over by then."""
+        with self.store.connect() as db:
+            db.execute("UPDATE routine_runs SET state='nothing',finished_at=? WHERE state='running'", (NOW.isoformat(),))
+            if made:  # its next run: another period
+                db.execute("UPDATE routine_runs SET period=period||'-'||id WHERE routine_id=?", (made,))
+        sent = []
+        for name, value in (('routines_now', lambda s: NOW.astimezone(s.routines_tz())),
+                            ('background_pause', lambda s, **k: None), ('background_spaced', lambda s: True), ('background_started', lambda s: None),
+                            ('preparation_gateway', lambda s, request: sent.append(request) or {'status': 'admitted'}),
+                            ('routine_spawn', lambda s, target, run_id: target(run_id))):
+            p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
+        made = made or self.app.action('routine_new', {'words': words}, owner_dashboard=True)['made']
+        self.app.action('routine_run_now', {'id': made}, owner_dashboard=True)
+        self.app.routines_step()
+        start = next(s for s in sent if s['action'] == 'start')
+        return made, start['job_id'], start['message']
+
+    def routine_hands_in(self, run, draft):
+        return self.app.action('routine_result', {'_routine_session': 'agent:main:assistant-review-routine-' + run, 'text': 'Made a draft.', 'draft': draft},
+                               owner_dashboard=False)
+
+    def test_a_routine_that_leaves_a_draft_writes_in_the_owners_voice_for_its_channel(self):
+        for channel, text in (('All', 'Short sentences, no exclamation marks.'), ('Email', 'Opens with Hi and the first name.\nSigns off with Cheers.'),
+                              ('Slack', 'all lowercase, no greeting.'), ('LinkedIn', 'One emoji at most.')):
+            self.store.save_voice(channel, text, 'owner')
+        # No run of it left a draft yet: its message has no voice, whatever its words (any language)
+        made, run, message = self.routine_message('elke werkdag om 8: een korte update voor het team')
+        self.assertNotIn(voices.VOICE_HEAD, message)
+        self.assertNotIn('Short sentences', message)
+        # It hands one in: the voice of the account it goes out from, and All; nothing saved until it follows it
+        draft = {'title': 'Update for the team', 'text': 'Hallo allemaal!', 'account': 'work'}
+        answer = self.routine_hands_in(run, draft)
+        self.assertFalse(answer['saved'])
+        self.assertIn('Signs off with Cheers.', answer['voice'])
+        self.assertIn('no exclamation marks', answer['voice'])
+        self.assertNotIn('all lowercase', answer['voice'])
+        self.assertLessEqual(len(answer['voice']), recall_module.ROUTINE_VOICE)
+        with self.store.connect() as db:
+            self.assertEqual({('All', 'always'), ('Email', 'match')},
+                             {tuple(r) for r in db.execute("SELECT row_id,how FROM memory_use WHERE purpose='routine' AND kind='voice' AND run_id=?", (run,))})
+            self.assertFalse(db.execute("SELECT 1 FROM events WHERE kind='routine.draft'").fetchone())
+        self.assertTrue(self.routine_hands_in(run, dict(draft, text='Hi all, a short update. Cheers'))['saved'])  # once per run
+        # Its next run had a draft before it: the voice is in its message, the account's channel
+        _, run, message = self.routine_message('', made)
+        self.assertIn(voices.VOICE_HEAD, message)
+        block = message[message.index(voices.VOICE_HEAD):]
+        self.assertIn('Signs off with Cheers.', block)
+        self.assertNotIn('all lowercase', block)
+        self.assertTrue(self.routine_hands_in(run, draft)['saved'])  # it had the voice: no second ask
+        # A service its draft names (a proper noun) goes first
+        _, run, _ = self.routine_message('elke werkdag om 9: de winst van de dag')
+        answer = self.routine_hands_in(run, {'title': 'Post in Slack: de winst van de week', 'text': 'goed bezig'})
+        self.assertIn('all lowercase', answer['voice'])
+        # A run that hands in no draft gets no voice
+        _, run, message = self.routine_message('elke werkdag om 10: tel de open tickets')
+        self.assertNotIn(voices.VOICE_HEAD, message)
+        self.assertTrue(self.routine_hands_in(run, None)['saved'])
+        with self.store.connect() as db:
+            self.assertFalse(db.execute("SELECT 1 FROM memory_use WHERE kind='voice' AND run_id=?", (run,)).fetchone())
+
+    def test_a_routines_voice_stays_in_its_budget(self):
+        for channel in ('All', 'Email'):
+            self.store.save_voice(channel, '\n'.join([f'{channel} line {n} ' + 'x' * 70 for n in range(4)]), 'owner')
+        text = recall(self.app, 'routine', {'run': 'r'}).text('voice', ['Email'])
+        self.assertLessEqual(len(text), recall_module.ROUTINE_VOICE)
+        self.assertIn('All line 0', text)
+        self.assertNotIn('Email line', text)  # a whole block or none: Email's doesn't fit next to All's
+        self.store.save_voice('All', '', 'owner')
+        self.assertEqual('', recall(self.app, 'routine', {'run': 'r'}).text('voice', ['Telegram']))  # no voice there: nothing
 
     def test_the_morning_digest_has_the_promise_a_review_read_in_the_mail(self):
         digest = self.app.digest(NOW)

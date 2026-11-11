@@ -20,6 +20,7 @@ from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
 from machine.text import clamp, encoded
 import i18n
+import memory_use
 import next_actions
 import team_learnings
 from timeutil import now
@@ -98,6 +99,11 @@ CONVERSATION_KEYS.update({kind: ('chat_id', 'conversation_id') for kind in ('wha
 
 
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')
+
+
+# A routine's draft (routines_app.routine_voice_lines): how the owner writes on the channel it may go out on.
+VOICE_HEAD = ('How the owner writes, per channel. A draft follows the block for the channel it goes out on, plus All; these come '
+              "from the owner's own messages and notes. Follow each line as written, no broader:")
 
 
 def voice_channel(name):
@@ -634,6 +640,23 @@ class VoicesStore:
                 db.executemany('INSERT OR IGNORE INTO edits_offered(edit_id,run_id,offered_at) VALUES(?,?,?)', [(r['id'], run_id, now()) for r in rows])
         return '\n'.join(f"- {EVENT_CHANNELS.get(DRAFT_EVENT_KINDS.get(r['kind']), r['kind'])}, \"{r['title']}\" (edit_id {r['id']})\n  Draft: {clip(r['before_body'])}\n  "
                          + ('They wrote themselves instead: ' if r['source'] == 'elsewhere' else 'They changed it to: ') + clip(r['after_body']) for r in rows)
+
+    def voice_text(self, channels, chars):
+        """The owner's voice for a draft that goes out on one of these channels (voice_channel names, most likely first):
+        All, then each channel's block, as many whole ones as fit chars; noted for the use log (memory_use kind voice,
+        its channel as row id). '' when none of them has a voice."""
+        have = {v['channel']: v for v in self.voices()}
+        out, size = [], len(VOICE_HEAD) + 1
+        for channel in dict.fromkeys(['All', *(voice_channel(c) for c in channels)]):
+            v = have.get(channel)
+            line = v and f"- {channel}:{voice_lines(v['text'])}"
+            if not line or size + len(line) + 1 > chars:
+                continue
+            out.append(line)
+            size += len(line) + 1
+            memory_use.note('voice', channel, line, 'always' if channel == 'All' else 'match', source='owner' if v['source'] == 'owner' else 'review',
+                            at=v['updated_at'])
+        return VOICE_HEAD + '\n' + '\n'.join(out) if out else ''
 
     def voices_text(self):
         return '\n'.join(f"- {v['channel']}:{voice_lines(v['text'])}" for v in self.voices())
