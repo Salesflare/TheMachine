@@ -1081,7 +1081,12 @@
  "Couldn’t load this page.": "Couldn’t load this page.",
  "Couldn’t load. Try again": "Couldn’t load. Try again",
  "Couldn’t make the image. Try again in a moment.": "Couldn’t make the image. Try again in a moment.",
+ "Couldn’t make the to-do. The next run tries again.": "Couldn’t make the to-do. The next run tries again.",
  "Couldn’t open that project.": "Couldn’t open that project.",
+ "Couldn’t put {} more on a to-do. The next run tries again.": {
+  "one": "Couldn’t put {} more on a to-do. The next run tries again.",
+  "other": "Couldn’t put {} more on a to-do. The next run tries again."
+ },
  "Couldn’t reach your Machine. Open the app to try again.": "Couldn’t reach your Machine. Open the app to try again.",
  "Couldn’t read": "Couldn’t read",
  "Couldn’t read that file.": "Couldn’t read that file.",
@@ -2403,6 +2408,14 @@
   "other": "Made a to-do with {} newsletters."
  },
  "Made with New to-do": "Made with New to-do",
+ "Made {} to-dos with {} emails that look like spam.": {
+  "one": "Made {} to-dos with {} emails that look like spam.",
+  "other": "Made {} to-dos with {} emails that look like spam."
+ },
+ "Made {} to-dos with {} newsletters.": {
+  "one": "Made {} to-dos with {} newsletters.",
+  "other": "Made {} to-dos with {} newsletters."
+ },
  "Mail and calendar": "Mail and calendar",
  "Mail from email warm-up tools, kept out of your Graph.": "Mail from email warm-up tools, kept out of your Graph.",
  "Mail from it comes under several names": "Mail from it comes under several names",

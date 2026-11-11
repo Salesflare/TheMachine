@@ -121,13 +121,13 @@ class Cleanup(unittest.TestCase):
     def act(self, name, owner=True, **args):
         return self.app.action(name, args, owner_dashboard=owner)
 
-    def mail(self, sender, title, hours_ago=3, body='', **metadata):
+    def mail(self, sender, title, hours_ago=3, body='', account='w', **metadata):
         self.n += 1
         meta = {'from': sender, 'labels': ['INBOX'], 'thread_id': f't{self.n}',
                 'source_url': f'https://mail.google.com/mail/u/?authuser=owner@acme.example#all/m{self.n}', **metadata}
         with self.store.connect() as db:
             db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) VALUES(?,?,?,?,?,?,?,?,?)',
-                       ('w', f'm{self.n}', 'gmail.message', stamp(hours_ago), title, body, json.dumps(meta), 'h', stamp(hours_ago)))
+                       (account, f'm{self.n}', 'gmail.message', stamp(hours_ago), title, body, json.dumps(meta), 'h', stamp(hours_ago)))
         return f'm{self.n}'
 
     def todos(self):
@@ -268,6 +268,39 @@ class Cleanup(unittest.TestCase):
         self.add('newsletters')
         self.assertEqual(self.todos(), [])
         self.assertEqual(self.runs()[0]['state'], 'nothing')
+
+    def test_the_result_counts_what_the_todos_list(self):
+        # a long list in one area and a short one in another: each to-do saves, and the result adds up what they list
+        self.app.config['accounts'].append({'id': 'p', 'email': 'owner@home.example', 'boundary': 'personal'})
+        for n in range(21):
+            self.mail(f'Sender Number {n} <news{n}@list{n}.example>', f'A rather long subject line for issue {n} of this list', account='p',
+                      list_unsubscribe=True)
+        for n in range(2):
+            self.mail(f'Work List {n} <w{n}@work{n}.example>', f'Work digest {n}', list_unsubscribe=True)
+        self.ways.update({f'm{n}': {'one_click': f'https://list.example/u/{n}'} for n in range(1, 24)})
+        self.add('newsletters')
+        todos = self.todos()
+        self.assertEqual(sorted(t['title'] for t in todos), ['2 newsletters: keep or unsubscribe?', '21 newsletters: keep or unsubscribe?'])
+        self.assertTrue(all(len(t['body']) <= mail_cleanup_app.BODY_MAX for t in todos))
+        with self.store.connect() as db:
+            self.assertEqual(sum(len(mc.items_of(db, t['id'])) for t in todos), 23)
+        run = self.runs()[0]
+        self.assertEqual((run['state'], run['result']), ('ready', 'Made 2 to-dos with 23 newsletters.'))
+
+    def test_a_todo_that_doesnt_save_is_said_and_read_again(self):
+        self.mail('Daily Deals <deals@shop.example>', 'Flash sale on lamps', list_unsubscribe=True)
+        self.ways['m1'] = {'one_click': 'https://shop.example/u/1'}
+        real = a.Store.suggest
+        with patch.object(a.Store, 'suggest', lambda s, *x, **k: (_ for _ in ()).throw(ValueError('no'))):
+            self.add('newsletters')
+        self.assertEqual(self.todos(), [])
+        run = self.runs()[0]
+        self.assertEqual((run['state'], run['why']), ('failed', 'Couldn’t make the to-do. The next run tries again.'))
+        with self.store.connect() as db:  # never "since" for the next run: it reads the same mail again
+            self.assertIsNone(routines.last_run(db, run['routine_id']))
+        self.assertEqual(a.Store.suggest, real)
+        self.assertEqual(mail_cleanup_app.MailCleanupApp.cleanup_said('newsletters', 4, 1, 7),
+                         'Made a to-do with 4 newsletters. Couldn’t put 7 more on a to-do. The next run tries again.')
 
     def test_adding_twice_keeps_one(self):
         self.marks = True

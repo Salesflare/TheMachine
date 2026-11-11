@@ -509,6 +509,17 @@ def report(db, run_id, text=None, nothing=False, why=None, stamp=None, used=None
         raise ValueError('This routine run is over: end the turn')
 
 
+def restate(db, run_id, state, text):
+    """A run's result said again after the fact (a cleanup run whose to-do came out other than it reported): ready with
+    text as its result, or nothing or failed with text as why (failed: its next run reads the same mail again). Only a
+    run that ended well."""
+    if state not in RUN_STATES[1:]:
+        raise ValueError('Unknown run state')
+    text = ' '.join(str(text or '').split())
+    db.execute("UPDATE routine_runs SET state=?,result=?,why=? WHERE id=? AND state IN ('ready','nothing')",
+               (state, text[:RESULT_MAX] if state == 'ready' else None, None if state == 'ready' else text[:WHY_MAX], str(run_id)))
+
+
 def held(db, run_id):
     """A run whose result waits for its Check (hold), or None."""
     return db.execute("SELECT * FROM routine_runs WHERE id=? AND state='running' AND (result IS NOT NULL OR why IS NOT NULL)",
