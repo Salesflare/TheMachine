@@ -445,6 +445,56 @@ def changed_spans(old, new):
     return spans
 
 
+def placer(old, text, loose=False):
+    """A function that takes an offset in text to the same place in old, where its line is one old has unchanged too
+    (None where it isn't): the map's commit and a pull request's base can be some commits apart. loose: a line that
+    changed since goes to its counterpart, in a run of as many changed lines on both sides (the same statement, edited
+    again), else to the start of the lines that replaced it there, or with last=True to their end."""
+    import bisect
+    import difflib
+    if old == text:
+        return lambda at: at
+    old_lines, lines = old.splitlines(keepends=True), text.splitlines(keepends=True)
+    old_at, at_ = [0], [0]
+    for line in old_lines:
+        old_at.append(old_at[-1] + len(line))
+    for line in lines:
+        at_.append(at_[-1] + len(line))
+    same, block = {}, {}
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old_lines, lines, autojunk=False).get_opcodes():
+        if tag == 'equal' or loose and tag == 'replace' and i2 - i1 == j2 - j1:
+            same.update({j1 + k: i1 + k for k in range(j2 - j1)})
+        elif loose and tag == 'replace':
+            block.update({j1 + k: (old_at[i1], old_at[i2] - 1) for k in range(j2 - j1)})
+    same[len(lines)] = len(old_lines)  # the end
+
+    def place(at, last=False):
+        line = bisect.bisect_right(at_, at) - 1
+        if line in block:
+            return block[line][last]
+        if line not in same:
+            return None
+        return old_at[same[line]] + min(at - at_[line], max(old_at[same[line] + 1] - old_at[same[line]] - 1, 0)) if same[line] < len(old_lines) else old_at[same[line]]
+    return place
+
+
+def moved_spans(old, base, new):
+    """changed_spans(base, new) with their old-side offsets in old (the map's text), or None when one sits where old
+    and base differ already."""
+    if base == old:
+        return changed_spans(old, new)
+    place, out = placer(old, base, loose=True), []
+    for start, end, new_start, new_end in changed_spans(base, new):
+        a, b = place(start), place(max(start, end - 1), last=True)
+        if a is None or b is None:
+            return None
+        out.append((a, b + (end > start or b > a), new_start, new_end))
+    return out
+
+
+# a line of a name -> method table: 'graph_role': 'graph_role_action', (maybe opening or closing it)
+TABLE_LINE = re.compile(r"""(?:[A-Za-z_]\w*\s*=\s*\{\s*)?(?:['"][\w.-]+['"]\s*:\s*['"][\w.-]+['"]\s*,?\s*)+\}?""")
+
 JS_WORD = r'[A-Za-z_$][\w$]*'
 
 
@@ -642,7 +692,12 @@ def without_comments(text):
 
 
 def token_word(token):
-    """A class, id or attribute name as code uses it: whole, and a data-x attribute as dataset.x too."""
+    """A class, id or attribute name as code uses it: whole, and a data-x attribute as dataset.x too. <tag: where
+    markup or code makes that element."""
+    if token.startswith('<'):
+        tag = re.escape(token[1:])
+        made = r'|\bnew Option\(' if token == '<option' else ''
+        return re.compile(r'<' + tag + r'(?![\w-])|createElement\(\s*[\'"`]' + tag + r'[\'"`]\s*\)' + made, re.I)
     forms = [r'(?<![\w-])' + re.escape(token) + r'(?![\w-])']
     if token.startswith('data-') and len(token) > 5:
         key = re.sub(r'-([a-z])', lambda m: m[1].upper(), token[5:])
@@ -651,18 +706,12 @@ def token_word(token):
 
 
 def closed_dialogs(html, word):
-    """The ids of the closed <dialog> elements every place word finds in html sits in, or None when one isn't in one."""
-    found = set()
-    for match in word.finditer(html):
-        start = html.rfind('<dialog', 0, match.start())
-        if start < 0 or html.find('</dialog>', start, match.start()) >= 0:
-            return None
-        tag = html[start:html.find('>', start) + 1]
-        dialog = re.search(r'\bid="([\w-]+)"', tag)
-        if not dialog or re.search(r'\sopen\b', tag):
-            return None
-        found.add(dialog[1])
-    return found
+    """The ids of the elements that start hidden (a closed <dialog>, a hidden panel) every place word finds in html
+    sits in, the innermost one each, or None when one isn't in one. An include line (/*@include dashboard/x.js*/)
+    names a file, not an element."""
+    html = re.sub(r'/\*@include [^*]*\*/|<!--@include [^>]*-->', lambda m: ' ' * len(m[0]), html)
+    spans = [(m.start(), m.end()) for m in word.finditer(html)]
+    return hidden_holders(html, spans) if spans else set()
 
 
 class _Elements(HTMLParser):
@@ -761,7 +810,11 @@ def css_tokens(selector):
         plain = re.sub(r':[\w-]+\((?:[^()]|\([^()]*\))*\)', ' ', piece)
         names = set(re.findall(r'[.#](-?[A-Za-z_][\w-]*)', plain)) | set(re.findall(r'\[\s*([A-Za-z_][\w-]*)', plain))
         if not names:
-            return None
+            # only a tag (option, select option): where markup or code makes that element; not the page's own frame
+            tag = re.match(r'([a-z][a-z0-9-]*)(?![\w-])', re.split(r'[\s>+~]+', plain.strip())[-1])
+            if not tag or tag[1] in ('html', 'body', 'head'):
+                return None
+            names = {'<' + tag[1]}
         out.append(names)
     return out
 
@@ -950,11 +1003,84 @@ def select_mapped(changed, repo, impact, base, why=None):
                 for test in impact.exercised(path, where[1]):
                     add(test, f'ran {path}:{where[1]} ({why_text})')
             elif where[1]:
+                if where[0] == 'names' and TABLE_LINE.fullmatch(plain) and table_entries(path, found, text, plain, where[1], why_text):
+                    continue
                 for name in where[1]:
                     names_in(path, name, why_text, depth, local=where[0] == 'local')
             else:
                 for test in impact.ran_any(path):
                     add(test, f'ran {path}, which runs code at import ({why_text})')
+
+    def table_entries(path, found, text, plain, names, why_text):
+        """Entries of a name -> method table ('graph_role': 'graph_role_action',) that changed: the tests that ran those
+        methods or name those keys (a test, a dashboard part that sends it, Python that passes it), and those that read
+        the whole table (that name it, or a table made from it at import). False when a key's users aren't all clear."""
+        for key, value in re.findall(r"""['"]([\w.-]+)['"]\s*:\s*['"]([\w.-]+)['"]""", plain):
+            for _, _, qual in found.funcs:
+                if qual == value or qual.endswith('.' + value):
+                    for test in impact.exercised(path, qual):
+                        add(test, f'ran {path}:{qual} ({why_text})')
+            if not string_users(key, path, f'{path} maps {key!r} ({why_text})'):
+                return False
+        words, pending = set(names), [(path, name) for name in names]
+        while pending:
+            source, name = pending.pop()
+            for other in users(source):
+                other_text = repo.text.get(other)
+                if other == source or other_text is None or name not in other_text or is_test(other):
+                    continue
+                bare, dotted = code_names(other, other_text)
+                where = scope_of(other, other_text)
+                if where is None:
+                    return False
+                for line in sorted(set(dotted.get(name, ())) | set(bare.get(name, ()))):
+                    at = where.at(line)
+                    code = other_text.split('\n')[line - 1]
+                    if at is None or at[0] == 'local':
+                        continue
+                    if at[0] == 'names':  # a table made from it at import
+                        for made in at[1] - words:
+                            words.add(made)
+                            pending.append((other, made))
+                    elif not re.search(r'\b' + re.escape(name) + r'(?:\[|\.get\()|\bin\s+(?:self\.|\w+\.)?' + re.escape(name) + r'\b', code):
+                        for test in impact.exercised(other, at[1]):  # it goes over the table: what it gives changes
+                            add(test, f'ran {other}:{at[1]}, which reads {name} ({why_text})')
+        for test in tests:
+            test_text = repo.text.get(test, '')
+            if any(re.search(r'\b' + re.escape(word) + r'\b', test_text) for word in words):
+                add(test, f'names {sorted(words)[0]} ({why_text})')
+        return True
+
+    def string_users(key, path, why_text):
+        """The tests that run code that has key as a whole string: False when one such place can't be told."""
+        quoted = re.compile(r"""(['"`])""" + re.escape(key) + r'\1')
+        for other in repo.paths:
+            other_text = repo.text.get(other)
+            if other == path or not other_text or key not in other_text or other.startswith(NOT_CODE):
+                continue
+            spots = [m.start() + 1 for m in quoted.finditer(other_text)]
+            if not spots:
+                continue
+            if is_test(other):
+                add(other, f'names {key!r} ({why_text})')
+            elif other.startswith('dashboard/') and other.endswith('.js'):
+                if other in changed:
+                    continue
+                old_text = js_old(other)[0]
+                if other not in impact.js or old_text is None:
+                    return False
+                place = placer(old_text, other_text)
+                at = [place(a) for a in spots]
+                if any(a is None for a in at):
+                    js_loaders(other, f'loads {other}, which sends {key!r} ({why_text})')
+                    continue
+                for a in at:
+                    js_place(other, a, a + len(key), key, why_text, 0)
+            elif other.endswith('.py'):
+                lines_in(other, sorted({other_text.count('\n', 0, a) + 1 for a in spots}), f'{other} names {key!r} ({why_text})')
+            elif Path(other).suffix in CODE:
+                return False
+        return True
 
     def old_functions(path):
         key = ('old', path)
@@ -1192,7 +1318,11 @@ def select_mapped(changed, repo, impact, base, why=None):
         text, funcs, top = js_old(path)
         if text is None:
             return False
-        for start, end, new_start, new_end in changed_spans(text, new):
+        # this change's own spans, placed in the map's text (main may have moved since the map: those changes aren't
+        # this one's); where that can't be told, every difference from the map's text
+        base_text = git_text(base, path)
+        spans = moved_spans(text, base_text, new) if base_text is not None else None
+        for start, end, new_start, new_end in (changed_spans(text, new) if spans is None else spans):
             inside = [f for f in funcs if (f[0] <= start and end <= f[1]) if start < end or f[0] < start < f[1]]
             if inside:
                 inner = min(inside, key=lambda f: f[1] - f[0])
@@ -1203,32 +1333,40 @@ def select_mapped(changed, repo, impact, base, why=None):
                 if f[0] < end and start < f[1]:
                     for test in impact.js_exercised(path, *f):
                         add(test, f'ran {path}:{f[0]}-{f[1]}')
-            js_top(path, js_statement(top, start, end) + js_statement(new, new_start, new_end), f'{path} changed', 0)
+            # whole lines put in between two others change no statement there (one that continues the line before is
+            # in the new side's statement)
+            between = start == end and (start == 0 or text[start - 1] == '\n')
+            js_top(path, ([] if between else js_statement(top, start, end)) + js_statement(new, new_start, new_end), f'{path} changed', 0)
         return True
 
     def css_token_sites(token):
-        """Where a class, id or attribute name is used outside stylesheets: (files, dynamic). dynamic: some code puts it
-        together ('cl-' + kind, `fb-${x}`), so a file that has it whole isn't every one that makes it."""
+        """Where a class, id or attribute name is used outside stylesheets: (files, built). built: {file: [offsets]}
+        where some code may put it together ('cl-' + kind, `fb-${x}`), so a file that has it whole isn't every one
+        that makes it: those places draw it too."""
         word = token_word(token)
         # data-x and aria-x name what follows: a data-${key} elsewhere doesn't make every data- name
-        cuts = [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
+        cuts = [] if token.startswith('<') else [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
         # 'chat-' + x or `chat-${x}` makes chat-back where 'back' is a string there too
         built = [(re.compile(r'(?<![\w-])' + re.escape(token[:i + 1]) + r"""(?:\$\{|['"`]\s*\+)"""),
                   re.compile(r"""['"`]""" + re.escape(token[i + 1:]) + r"""['"`]""")) for i in cuts]
         built += [(re.compile(r"""(?:\}|\+\s*['"`])""" + re.escape(token[i:]) + r'(?![\w-])'),
                    re.compile(r"""['"`]""" + re.escape(token[:i]) + r"""['"`]""")) for i in cuts]
-        files, dynamic = [], False
+        files, builders = [], {}
         for other in repo.paths:
             if Path(other).suffix not in ('.js', '.mjs', '.ts', '.html', '.py') or other.startswith(NOT_CODE):
                 continue
             text = repo.text.get(other)
-            if not text or token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text:
+            if not text or token.startswith('<') and not word.search(text):
+                continue
+            if token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text and not token.startswith('<'):
                 continue
             if word.search(text):
                 files.append(other)
-            if not is_test(other) and any(b.search(text) and rest.search(text) for b, rest in built):  # a test draws no page
-                dynamic = True
-        return files, dynamic
+            if not is_test(other):  # a test draws no page
+                at = sorted({m.start() for b, rest in built if rest.search(text) for m in b.finditer(text)})
+                if at:
+                    builders[other] = at
+        return files, builders
 
     def css_part(path, new):
         """A stylesheet part's change: the tests that run the code that draws what the changed rules style, found by a
@@ -1261,14 +1399,33 @@ def select_mapped(changed, repo, impact, base, why=None):
         for names in needs:
             best = None
             for token in sorted(names):
-                files, dynamic = css_token_sites(token)
+                files, builders = css_token_sites(token)
                 # only tests name it: the code that draws it puts it together some other way
-                if any(not is_test(f) for f in files) and not dynamic and (best is None or len(files) < len(best[1])):
-                    best = (token, files)
+                size = len(files) + sum(len(at) for at in builders.values())
+                if any(not is_test(f) for f in files) and (best is None or size < best[0]):
+                    best = (size, token, files, builders)
             if best is None:
                 return False
-            token, files = best
+            _, token, files, builders = best
             word = token_word(token)
+            for other, at in builders.items():
+                # where code may put the name together: the tests that run that code
+                text = repo.text.get(other, '')
+                if other.endswith('.js') and other.startswith('dashboard/') and other not in changed:
+                    old_text = js_old(other)[0]
+                    if other not in impact.js or old_text is None:
+                        return False
+                    place = placer(old_text, text)
+                    spots = [place(a) for a in at]
+                    if any(a is None for a in spots):
+                        js_loaders(other, f'loads {other}, which may put {token} together ({why_text})')
+                        continue
+                    for a in spots:
+                        js_place(other, a, a + 1, token, why_text, 0)
+                elif other.endswith('.py') and not other.startswith('tests/'):
+                    lines_in(other, sorted({text.count('\n', 0, a) + 1 for a in at}), f'{other} may put {token} together ({why_text})')
+                elif other not in changed:
+                    return False
             for other in files:
                 text = repo.text.get(other, '')
                 if is_test(other):
@@ -1279,11 +1436,17 @@ def select_mapped(changed, repo, impact, base, why=None):
                     if other not in impact.js:
                         return False
                     old_text = js_old(other)[0]
-                    if old_text is None or len(word.findall(old_text)) < len(word.findall(text)):
+                    if old_text is None:
                         js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
                         continue
-                    for found in word.finditer(old_text):
-                        js_place(other, found.start(), found.end(), token, why_text, 0)
+                    # each place the part uses it now, where the map's text has it too
+                    place = placer(old_text, text)
+                    at = [place(found.start()) for found in word.finditer(text)]
+                    if any(a is None or not word.match(old_text, a) for a in at):
+                        js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
+                        continue
+                    for a in at:
+                        js_place(other, a, a + len(token), token, why_text, 0)
                 elif other.endswith('.py') and not other.startswith('tests/'):
                     lines = [n for n, line in enumerate(text.split('\n'), 1) if word.search(line)]
                     lines_in(other, lines, f'{other} uses {token} ({why_text})')

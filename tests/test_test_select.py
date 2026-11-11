@@ -283,10 +283,15 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(rules[1][3], [(css.index('\n@media'), css.index('{.c') + 1)])
         self.assertEqual(select.css_tokens('.c .d,#e:not(.f)'), [{'c', 'd'}, {'e'}])
         self.assertEqual(select.css_tokens('.x button[aria-pressed="true"]'), [{'x', 'aria-pressed'}])
-        self.assertIsNone(select.css_tokens('.x,button:hover'))
+        # a rule with only a tag: where markup or code makes that element
+        self.assertEqual(select.css_tokens('.x,button:hover'), [{'x'}, {'<button'}])
+        self.assertEqual(select.css_tokens('option,select optgroup'), [{'<option'}, {'<optgroup'}])
+        self.assertTrue(all(select.token_word('<option').search(t) for t in ('`<option value=1>`', 'new Option(a)', "createElement('option')")))
+        self.assertFalse(select.token_word('<option').search('<options>'))
         self.assertEqual(select.css_tokens(':is(.model-pick,.select-like) svg'), [{'model-pick'}, {'select-like'}])
-        self.assertIsNone(select.css_tokens(':is(.a,button) svg'))
         self.assertIsNone(select.css_tokens(':root'))
+        self.assertIsNone(select.css_tokens('body'))
+        self.assertIsNone(select.css_tokens('*'))
         self.assertIsNone(select.css_tokens('@keyframes k'))
         self.assertIsNone(select.css_rules('.a{'))
         self.assertTrue(select.token_word('data-mail-check').search('b.dataset.mailCheck'))
@@ -294,6 +299,12 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(select.closed_dialogs(html, select.token_word('y')), {'d1'})
         self.assertIsNone(select.closed_dialogs(html, select.token_word('x')))  # one is on show at load
         self.assertIsNone(select.closed_dialogs(html, select.token_word('z')))  # an open dialog
+        # a hidden panel holds it too; an include line names a file, not an element
+        html = '<script>/*@include dashboard/p-x.js*/</script><div id="p-x" hidden><b class="w"></b></div>'
+        self.assertEqual(select.closed_dialogs(html, select.token_word('w')), {'p-x'})
+        self.assertEqual(select.closed_dialogs(html, select.token_word('p-x')), {'p-x'})
+        self.assertTrue(select.TABLE_LINE.fullmatch("'graph_role': 'graph_role_action', 'graph_same': 'graph_same_action',"))
+        self.assertFalse(select.TABLE_LINE.fullmatch("'graph_role': role_action(),"))
 
     def page_map(self, part, ran):
         """A map whose browser half knows part as it is now: one function, all of it, that the test ran ran; every page
@@ -357,6 +368,21 @@ class WithTheMap(unittest.TestCase):
         impact.load = {'dashboard/a.js': {(0, 10): [at[t] for t in page]}}
         self.assertEqual(impact.js_exercised('dashboard/a.js', 0, 10, [at[t] for t in page]), set(page))
 
+    def test_a_change_is_placed_in_the_maps_text_when_main_moved_since(self):
+        old = 'a\nfunction f(){\n  x()\n}\nb\n'
+        base = 'a\nadded since the map\nfunction f(){\n  x()\n}\nb\n'
+        new = base.replace('x()', 'y()')
+        spans = select.moved_spans(old, base, new)
+        self.assertEqual([old[a:b] for a, b, _, _ in spans], ['x'])  # only this change, where the map has it
+        self.assertEqual([new[a:b] for _, _, a, b in spans], ['y'])
+        # the change is on a line main changed since the map: its counterpart there (the same statement, edited again)
+        spans = select.moved_spans(old, base.replace('x()', 'z()'), new)
+        self.assertEqual([old[a:b] for a, b, _, _ in spans], ['x'])
+        # where main put more lines in its place: all of those
+        spans = select.moved_spans(old, base.replace('  x()', '  z()\n  w()'), new)
+        self.assertEqual({old[a:b] for a, b, _, _ in spans}, {'  x()\n'})
+        self.assertEqual(select.moved_spans(old, old, new.replace('added since the map\n', '')), select.changed_spans(old, new.replace('added since the map\n', '')))
+
     def test_markup_that_starts_hidden_is_shown_by_the_code_that_opens_it(self):
         html = '<main><p>on show</p><div id="panel" hidden><form><input id="q"><b>x</b></form></div>' \
                '<dialog id="d"><div><i>y</i></div></dialog><dialog id="o" open>z</dialog></main>'
@@ -412,6 +438,8 @@ class WithTheMap(unittest.TestCase):
         impact.js = {part: {'top': [at[t] for t in pages], 'funcs': funcs}}
         impact.js_tests = set(pages)
         select.map_text = lambda commit, p: old if p == part else None
+        git_text = self.patched['git_text']
+        select.git_text = lambda base, p: old if p == part else git_text(base, p)  # the branch left main at the map
         return part, impact, fmt, arrow, idle
 
     def test_a_dashboard_function_runs_the_page_tests_that_ran_it(self):

@@ -28,7 +28,8 @@ About the test runner:
   A function counts for the tests that ran it past their setUp, or after their page loaded (up to their first action),
   plus the three quickest that ran it only then; one that runs only at start counts for every test that ran it. A new
   dashboard part runs the tests that name it and a few page tests; a markup part's change inside a hidden panel or
-  closed dialog runs the tests of the code that opens it.
+  closed dialog runs the tests of the code that opens it. A rule with only a tag (`option`) goes by where code makes
+  that element; an entry of a name-to-method table (`ACTIONS`) by the tests that send that name or ran that method.
   Whatever the map can't place runs as without it: every test that imports or names a changed file. `scripts/test_select.py --why test_x.py changed.txt`
   says why a test was picked. A push to main runs the tests every change since the newest commit whose full run
   passed needs (`scripts/ci_runs.py`); every test runs nightly, and a red nightly run opens an issue. On CI the files
