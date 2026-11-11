@@ -67,8 +67,9 @@ class FakeGraph:
         verb, scope, url = ms_graph.url_for(method, params)  # the real allowlist: a wrong method or parameter fails here
         assert verb == 'GET', method
         self.calls.append((method, dict(params or {})))
-        if method in self.fail:
-            raise ms_graph.GraphError('graph_http', self.fail[method])
+        one = (method, (params or {}).get('chat') or (params or {}).get('channel'))  # a failure on one chat or channel
+        if method in self.fail or one in self.fail:
+            raise ms_graph.GraphError('graph_http', self.fail.get(one) or self.fail[method])
         if scope and scope not in self.granted and scope != 'User.Read':
             raise ms_graph.GraphError('microsoft_scope_not_granted', 403)
         p = params or {}
@@ -224,6 +225,54 @@ class TeamsTests(unittest.TestCase):
         self.now = '2026-11-08T12:00:00+00:00'  # past MEETING_DAYS: the meeting chat is what there is
         self.sync()
         self.assertEqual(self.store.state['meetings'], [])
+
+    def test_one_refused_chat_is_set_aside_and_the_rest_read(self):
+        self.fake.fail[('teams.chat.messages', CHAT_1)] = 403  # Graph refuses this one chat, not the sign-in
+        result = self.sync()
+        self.assertEqual([e['body'] for e in self.store.events], ['Notes in the deck'])  # the other chat is read
+        self.assertFalse(result['more'])
+        self.assertEqual(self.store.state['set_aside'], [CHAT_1])
+        self.assertNotIn(CHAT_1, self.store.state['cursors'])  # its cursor stays where it was
+        del self.fake.fail[('teams.chat.messages', CHAT_1)]
+        self.fake.messages[CHAT_1].insert(0, message('m4', '2026-11-05T12:30:00Z', user(SAM, 'Sam Sender'), 'Any news?'))
+        self.fake.chats[CHAT_1]['lastMessagePreview']['createdDateTime'] = '2026-11-05T12:30:00Z'
+        self.now = '2026-11-05T12:35:00+00:00'
+        self.sync()  # readable again: its next message is read, and it is no longer set aside
+        self.assertIn('Any news?', [e['body'] for e in self.store.events])
+        self.assertNotIn('set_aside', self.store.state)
+
+    def test_one_refused_channel_or_meeting_keeps_the_connection(self):
+        self.fake.granted = set(ALL_SCOPES)
+        self.fake.joined = [{'id': 'team-1', 'displayName': 'Acme'}]
+        self.fake.channels = {'team-1': [{'id': 'chan-1', 'displayName': 'Private', 'membershipType': 'private'},
+                                         {'id': 'chan-2', 'displayName': 'Sales', 'membershipType': 'standard'}]}
+        self.fake.channel_pages = {'chan-2': [[message('t1', '2026-11-05T08:00:00Z', user(SAM, 'Sam Sender'), 'Pipeline review')]]}
+        self.fake.fail[('teams.channel.messages', 'chan-1')] = 403
+        self.fake.fail['teams.meetings'] = 403  # a meeting another organization hosted
+        self.sync()
+        self.assertIn('Pipeline review', [e['body'] for e in self.store.events])
+        self.assertEqual(self.store.state['set_aside'], ['chan-1'])
+        self.assertNotIn('channels', self.store.state['missing'])  # one channel is not the admin's whole OK
+        self.assertEqual(self.store.state['meetings'], [])  # the meeting chat is what there is
+        self.assertFalse([e for e in self.store.events if e['kind'] != 'teams.message'])
+
+    def test_sign_in_failures_still_ask_to_reconnect(self):
+        self.fake.fail['teams.chat.messages'] = 401
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            self.sync()
+        self.assertEqual(caught.exception.status, 401)
+        self.fake.fail = {'teams.chats': 403}  # the chat list itself: not one chat, so the connection's
+        with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:
+            self.sync()
+        self.assertEqual(caught.exception.status, 403)
+
+    def test_history_steps_past_a_refused_chat(self):
+        state = {'chats': [CHAT_1, MEETING_CHAT]}
+        self.fake.fail[('teams.chat', CHAT_1)] = 403
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, '2026-11-05T09:30:00+00:00', '2026-10-01T00:00:00+00:00')
+        self.assertEqual((events, done, state['chats']), ([], False, [MEETING_CHAT]))
+        events, done = teams.history_page(self.config, ACCOUNT, self.helpers, state, '2026-11-05T09:30:00+00:00', '2026-10-01T00:00:00+00:00')
+        self.assertEqual([e['body'] for e in events], ['Notes in the deck'])
 
     def test_personal_account_refused(self):
         account = {**ACCOUNT, 'email': 'someone@outlook.com'}
