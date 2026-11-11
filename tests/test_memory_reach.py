@@ -21,6 +21,7 @@ from machine.app import ask_memory  # noqa: E402
 from machine.app import retained_facts  # noqa: E402
 from machine.app import recall as recall_module  # noqa: E402
 from machine.app.recall import recall  # noqa: E402
+from machine.store import facts  # noqa: E402
 from machine.store import voices  # noqa: E402
 
 NOW = dt.datetime(2026, 11, 10, 7, tzinfo=dt.timezone.utc)  # a Tuesday, 08:00 in Brussels
@@ -463,6 +464,55 @@ class MemoryReach(unittest.TestCase):
             self.app.action('forget_fact', {'id': next(f['id'] for f in self.store.facts() if f['text'] == klm)}, owner_dashboard=True)
             self.assertNotIn(klm, self.chat('plane trip next week')['found'])
             self.assertNotIn(klm, self.chat('flying')['found'])
+
+    def test_a_fact_said_in_passing_is_found_by_meaning_after_one_background_pass(self):
+        """No preparation or Ask ranked it: the embedding worker's next pass (embed_pass) gives it its vector, a few
+        facts per pass, never a forgotten one or a connected AI's."""
+        for n in range(12):  # more than one pass takes
+            self.store.remember_fact(f'Invoice batch {n} goes out on the first workday.', 'note-1')
+        self.app.action('feedback_reply', {'text': 'I only fly KLM', 'message_id': '801', 'timestamp': NOW.timestamp(), 'reply_to_id': ''})
+        klm = self.app.action('remember_fact', {'text': 'You only fly KLM.', '_owner_chat': True})['id']
+        gone = self.store.remember_fact('You fly from the small airport.', 'note-1')['id']
+        self.app.action('forget_fact', {'id': gone}, owner_dashboard=True)
+        with self.store.connect() as db:  # a connected AI's, kept out of the vectors as the chat keeps it out
+            ai = db.execute("INSERT INTO facts(text,decision_id,created_at,kind,source,side) VALUES('You fly first class on long trips.','ai:c1',?,'fact','ai:Claude','work')",
+                            (NOW.isoformat(),)).lastrowid
+        self.app.config = {**self.config, 'embeddings': SETTINGS}
+        with patch.object(a.embeddings, 'embed', side_effect=plane):
+            self.assertNotIn('KLM', self.chat('plane trip next week')['found'])  # no vector yet: words only
+        sent = []
+        def embed(settings, texts, timeout=120):
+            sent.append(list(texts))
+            return plane(settings, texts, timeout)
+        with patch.object(a.embeddings, 'embed', side_effect=embed), patch.object(a.embeddings, 'embed_pending', return_value=0), \
+                patch.object(self.app, 'passage_step', return_value=300, create=True), patch.object(self.app, 'history_embed_step', return_value=300, create=True):
+            self.assertEqual(self.app.embed_pass(SETTINGS), 5)  # a full batch: the next pass comes soon
+            self.assertEqual([len(batch) for batch in sent], [facts.FACT_VECTOR_BATCH])  # one request, bounded
+            self.assertIn('KLM', sent[0][0])  # newest first
+            self.assertIn('KLM', self.chat('plane trip next week')['found'])
+            while sent[-1]:  # the rest in later passes, then nothing waits: a read, no request
+                sent.append([])
+                self.app.embed_pass(SETTINGS)
+        own = {f['id'] for f in self.store.facts() if f['kind'] in ('fact', 'draft') and not facts.ai_fact_by(f)}
+        with self.store.connect() as db:
+            stored = {r[0] for r in db.execute('SELECT fact_id FROM fact_vectors')}
+        self.assertEqual(stored, own)
+        self.assertNotIn(gone, stored)
+        self.assertNotIn(ai, stored)
+        with patch.object(a.embeddings, 'embed', side_effect=AssertionError('nothing waits')):
+            self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
+        # edited: its old vector goes, and the next pass embeds the new text
+        self.store.edit_fact(klm, 'You only fly KLM or Brussels Airlines.')
+        with patch.object(a.embeddings, 'embed', side_effect=embed):
+            self.assertEqual(self.store.embed_new_facts(SETTINGS), 1)
+        self.assertIn('Brussels Airlines', sent[-1][0])
+        # the embedding server down: left for the next pass, logged once, never an error
+        self.store.remember_fact('You fly economy on short trips.', 'note-1')
+        with patch.object(a.embeddings, 'embed', side_effect=a.embeddings.EmbeddingError('unreachable')), self.assertLogs(a.LOG, 'INFO') as logs:
+            self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
+            self.assertEqual(self.store.embed_new_facts(SETTINGS), 0)
+        self.assertEqual([line.split(':', 2)[2] for line in logs.output], ['fact vectors wait error=unreachable'])
+        self.assertEqual(self.store.embed_new_facts(None), 0)  # embeddings off: nothing
 
     def test_the_owners_chat_without_embeddings_finds_by_words(self):
         klm = self.flights_learned()

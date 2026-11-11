@@ -27,6 +27,7 @@ import embeddings
 import graph
 from machine.store import graph_history
 from machine.store import history
+from machine.store.facts import FACT_VECTOR_BATCH
 from sources import SourceError, rate_limited, upstream_busy
 from timeutil import local_tz, now
 
@@ -325,10 +326,14 @@ class HistoryApp:
             return graph_history.advance(db, horizon, stamp)
 
     def embed_pass(self, settings):
-        """One pass of embedding_worker: vectors for new and changed signals, newest first, then history's at a slower
-        pace once none waits. Seconds until the next pass."""
+        """One pass of embedding_worker: vectors for facts just learned, edited or brought back (Store.embed_new_facts,
+        a few), for new and changed signals, newest first, then history's at a slower pace once none waits. Seconds
+        until the next pass."""
+        facts = self.store.embed_new_facts(settings)
         done = embeddings.embed_pending(self.store.connect, settings, 16)
-        return 5 if done == 16 else 60 if done else min(60, self.passage_step(settings), self.history_embed_step(settings))
+        if done == 16 or facts == FACT_VECTOR_BATCH:
+            return 5
+        return 60 if done else min(60, self.passage_step(settings), self.history_embed_step(settings))
 
     def passage_step(self, settings):
         """A few more passages for long signals (embedding_worker calls it only when no signal waits for its first

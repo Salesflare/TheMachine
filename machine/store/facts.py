@@ -59,6 +59,10 @@ FILLER = {'a', 'an', 'the', 'and', 'or', 'for', 'to', 'of', 'with', 'in', 'on', 
 
 NEGATIONS = {'not', 'no', 'never', 'don', 'doesn', 'isn', 'aren', 'won', 'without', 'nothing', 'none', 'nobody', 'stop', 'stopped'}
 
+FACT_VECTOR_BATCH = 8      # facts without a vector embedded per background pass: one short local request
+FACT_VECTOR_TIMEOUT = 30   # seconds for that request; slower, and the next pass tries again
+
+
 CLOSE_MEANING = 0.88  # cosine of two stored fact vectors: the condense pass is told they likely say the same
 
 
@@ -180,6 +184,13 @@ def suggestion_scope(account_ids, accounts, area=None):
         return 'personal'
     ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else (account_ids or [])
     return 'work' if any(a['id'] in ids and a.get('scope', 'work' if a.get('boundary', '').startswith('work:') else 'personal') == 'work' for a in accounts) else 'personal'
+
+
+def save_fact_vectors(db, key, facts, vectors):
+    """Store each fact's vector, only while the fact still says what was embedded: an edit during the request keeps
+    none, and the next pass embeds the new text."""
+    db.executemany('INSERT OR REPLACE INTO fact_vectors(fact_id,model,vector) SELECT id,?,? FROM facts WHERE id=? AND text=?',
+                   [(key, embeddings.pack(v), f['id'], f['text']) for f, v in zip(facts, vectors)])
 
 
 def fact_state(db, fact_id):
@@ -746,7 +757,7 @@ class FactsStore:
             if undo:
                 db.execute('UPDATE facts SET removed_at=NULL,merged_into=NULL WHERE merged_into=?', ('fact:' + str(int(fact_id)),))
             # its vector, and those of what it replaced (forgotten with it), go: nothing reads them, and nothing close in
-            # meaning to it is found again; one brought back later is embedded again when a preparation needs it
+            # meaning to it is found again; one brought back later is embedded again by the next background pass (embed_new_facts)
             db.execute("WITH RECURSIVE gone(id) AS (SELECT ? UNION SELECT f.id FROM facts f JOIN gone g ON f.merged_into='fact:'||g.id) "
                        'DELETE FROM fact_vectors WHERE fact_id IN (SELECT id FROM gone)', (int(fact_id),))
             if row['kind'] == 'draft':
@@ -916,12 +927,40 @@ class FactsStore:
         missing = [f for f in facts if f['id'] not in stored]
         vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing] + [asked], timeout)
         if missing:
-            with self.connect() as db:  # only while the fact still says what was embedded: an edit during the request keeps none
-                db.executemany('INSERT OR REPLACE INTO fact_vectors(fact_id,model,vector) SELECT id,?,? FROM facts WHERE id=? AND text=?',
-                               [(key, embeddings.pack(v), f['id'], f['text']) for f, v in zip(missing, vectors)])
+            with self.connect() as db:
+                save_fact_vectors(db, key, missing, vectors)
             stored.update({f['id']: v for f, v in zip(missing, vectors)})
         asked = vectors[-1]
         return sorted(((embeddings.cosine(asked, stored[f['id']]), f) for f in facts), key=lambda x: -x[0])
+
+    def embed_new_facts(self, settings, limit=FACT_VECTOR_BATCH, timeout=FACT_VECTOR_TIMEOUT):
+        """One small background pass (embedding_worker): the newest current facts and draft rules of the owner's own
+        that have no vector of this model yet (just learned, edited or brought back), at most limit, in one local
+        embedding request, stored as facts_ranked stores them. So the main chat, Talk and retained_facts find such a
+        fact by meaning within a minute, not only once a preparation ranks it. Never a removed or forgotten fact, nor a
+        connected AI's (only a preparation that is given one embeds it, as before). Only a read when none waits. An
+        embedding error leaves them for the next pass (logged once per kind). The number embedded."""
+        if not settings:
+            return 0
+        key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+        with self.connect() as db:
+            missing = [dict(r) for r in db.execute(
+                "SELECT f.id,f.text FROM facts f LEFT JOIN fact_vectors v ON v.fact_id=f.id AND v.model=? WHERE f.removed_at IS NULL "
+                "AND f.kind IN ('fact','draft') AND COALESCE(f.source,'') NOT LIKE 'ai:%' AND v.fact_id IS NULL ORDER BY f.id DESC LIMIT ?",
+                (key, int(limit)))]
+        if not missing:
+            return 0
+        try:
+            vectors = embeddings.embed(settings, [embeddings.document('none', f['text']) for f in missing], timeout)
+        except embeddings.EmbeddingError as error:  # the embedding server is down or busy: the next pass tries again
+            if getattr(self, '_fact_vector_error', None) != str(error):
+                LOG.info('fact vectors wait error=%s', error)
+            self._fact_vector_error = str(error)
+            return 0
+        self._fact_vector_error = None
+        with self.connect() as db:
+            save_fact_vectors(db, key, missing, vectors)
+        return len(missing)
 
     def condense_text(self, run_id=None, every_hours=20, least=6):
         """Everything learned, with ids, for a review to condense once in a while: when the list changed since the last pass.

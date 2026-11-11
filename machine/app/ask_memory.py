@@ -463,8 +463,8 @@ def matching(facts, words):
 
 def _meaning(store, words, facts, settings):
     """{fact id: cosine} of the facts with a stored vector close in meaning to the words (at least FACT_FLOOR): the
-    vectors a preparation or Ask already stored (fact_vectors), against one local embedding of the words, as
-    retained_facts.py reads them. A fact without a stored vector is matched by words only, and none is embedded here.
+    vectors already stored (fact_vectors: a preparation, Ask or the background pass, Store.embed_new_facts), against
+    one local embedding of the words, as retained_facts.py reads them. A fact without a stored vector is matched by words only, and none is embedded here.
     {} without embeddings, or when the embedding server is down or slow."""
     if not settings or not facts:
         return {}
