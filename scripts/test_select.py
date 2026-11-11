@@ -382,6 +382,7 @@ class Impact:
         self.js = data.get('js') or {}
         self.js_tests = {self.tests[i] for i in data.get('js_tests') or ()}
         self.seconds = data.get('seconds') or {}
+        self.wide = False  # a push to main: every test that ran a changed function (see few in select_mapped)
         # what tests ran only while setting up, and a part's functions they ran only while their page loaded
         self.setup = data.get('setup') or {}
         self.load = {part: {(a, b): ids for a, b, ids in spans} for part, spans in (data.get('load') or {}).items()}
@@ -483,6 +484,8 @@ def moved_spans(old, base, new):
     and base differ already."""
     if base == old:
         return changed_spans(old, new)
+    if new == old:  # the map was made with this change in (from its own branch): where it is now
+        return [(c, d, c, d) for _, _, c, d in changed_spans(base, new)]
     place, out = placer(old, base, loose=True), []
     for start, end, new_start, new_end in changed_spans(base, new):
         a, b = place(start), place(max(start, end - 1), last=True)
@@ -494,6 +497,10 @@ def moved_spans(old, base, new):
 
 # a line of a name -> method table: 'graph_role': 'graph_role_action', (maybe opening or closing it)
 TABLE_LINE = re.compile(r"""(?:[A-Za-z_]\w*\s*=\s*\{\s*)?(?:['"][\w.-]+['"]\s*:\s*['"][\w.-]+['"]\s*,?\s*)+\}?""")
+
+# a function more tests than this run past their start: on a pull request, the quickest few of them and those that
+# name it (scripts/test_select.py --wide, as a push to main runs, takes them all)
+EVERYWHERE, EVERYWHERE_KEEP = 60, 12
 
 JS_WORD = r'[A-Za-z_$][\w$]*'
 
@@ -576,7 +583,110 @@ def js_split(text):
 # A listener for clicks anywhere that does nothing unless the click is on what a selector finds:
 # document.addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;...})
 DELEGATED = re.compile(r"""\s*document\.addEventListener\(\s*'(?:click|change|input|submit|keydown)'\s*,\s*(?:async\s*)?(\w+)\s*=>\s*\{\s*"""
-                       r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*!\2\s*\)\s*return\s*[;}]""")
+                       r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*(?:!\2\s*\)\s*return\s*[;}]|\2\s*\)\s*\{)""")
+
+
+def js_brackets(text):
+    """The bracket pairs of JavaScript text, (open, close) offsets: strings, comments and the text of templates
+    skipped, their ${...} parts not."""
+    pairs, stack, i, n = [], [], 0, len(text)
+    modes = ['code']  # code, or template; a ${ in a template opens code that its } closes
+    while i < n:
+        c = text[i]
+        if modes[-1] == 'template':
+            if c == '\\':
+                i += 2
+                continue
+            if c == '`':
+                modes.pop()
+            elif text.startswith('${', i):
+                modes.append('code')
+                stack.append(('${', i + 1))
+                i += 2
+                continue
+            i += 1
+            continue
+        if c in '\'"':
+            j = i + 1
+            while j < n and text[j] != c and text[j] != '\n':
+                j += 2 if text[j] == '\\' else 1
+            i = j + 1
+            continue
+        if c == '`':
+            modes.append('template')
+        elif text.startswith('//', i):
+            j = text.find('\n', i)
+            i = n if j < 0 else j
+            continue
+        elif text.startswith('/*', i):
+            j = text.find('*/', i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        elif c in '([{':
+            stack.append((c, i))
+        elif c in ')]}':
+            if stack:
+                kind, at = stack.pop()
+                pairs.append((at, i))
+                if kind == '${':
+                    modes.pop()
+        i += 1
+    return pairs
+
+
+def in_function(text, start, end):
+    """Whether [start, end) of JavaScript text sits inside the body of a function there (an arrow's or a function's
+    {...}, or an arrow's expression in brackets)."""
+    if text is None:
+        return False
+    for at, close in sorted(js_brackets(text), key=lambda p: p[0] - p[1]):  # innermost first
+        if not (at < start and max(end, start + 1) <= close):
+            continue
+        if text[at] != '{':
+            continue
+        before = text[:at].rstrip()
+        if before.endswith('=>'):
+            return True
+        if before.endswith(')'):
+            opened = next((a for a, c in js_brackets(before + ' ') if c == len(before) - 1), None)
+            word = re.search(r'([\w$]+)\s*$', before[:opened]) if opened is not None else None
+            if word and word[1] not in ('if', 'for', 'while', 'switch', 'catch', 'with'):
+                return True
+    return False
+
+
+def block_end(text, at):
+    """Where the bracket at text[at] closes (strings, templates and comments skipped), or None."""
+    depth, i, quote = 0, at, None
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == '\\':
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in '\'"`':
+            quote = c
+        elif text.startswith('//', i):
+            i = text.find('\n', i)
+            if i < 0:
+                return None
+            continue
+        elif text.startswith('/*', i):
+            i = text.find('*/', i + 2)
+            if i < 0:
+                return None
+            i += 2
+            continue
+        elif c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return None
 
 
 def js_declared(statement):
@@ -593,8 +703,11 @@ def js_declared(statement):
     if match:
         return {match[1]}
     match = re.fullmatch(r'(?:export\s+)?(?:const|let|var)\s+(.+)', text, re.S)
+    plain = r"F|\{\}|\[\]|''|\"\"|``|-?[\d.]+|true|false|null|undefined|" + JS_WORD
     if not match:
-        return None
+        # NAME[key]=value or NAME.x.y=value with a value that runs nothing: what reads NAME
+        match = re.fullmatch(r'(' + JS_WORD + r')(?:\[\]|\.' + JS_WORD + r')+\s*=\s*(' + plain + r')', text)
+        return {match[1]} if match else None
     names = set()
     for part in match[1].split(','):
         target, eq, value = part.partition('=')
@@ -962,6 +1075,21 @@ def select_mapped(changed, repo, impact, base, why=None):
         if name not in reasons:
             reasons[name] = reason
 
+    def few(picked, name):
+        """A function more than EVERYWHERE tests run past their start (a render every page does, App.action): on a pull
+        request, the quickest EVERYWHERE_KEEP of them and those that name it. A push to main (--wide) runs them all."""
+        if impact.wide or len(picked) <= EVERYWHERE:
+            return picked
+        word = re.compile(r'(?<![\w$])' + re.escape(name.split('.')[-1]) + r'(?![\w$])') if name else None
+        return impact.quickest(picked, EVERYWHERE_KEEP) | {t for t in picked if word and word.search(repo.text.get(f'tests/{t}', ''))}
+
+    def js_function_name(part, at):
+        """The name of the function that starts at offset at of part, as the map's commit had it, or None."""
+        text = js_old(part)[0] or ''
+        found = re.match(r'(?:async\s+)?function\s*\*?\s*([\w$]+)', text[at:at + 120]) or \
+            re.search(r'([\w$]+)\s*[=:]\s*(?:async\s*)?$', text[max(0, at - 80):at])
+        return found[1] if found else None
+
     def scope_of(path, text):
         if path not in scopes:
             try:
@@ -1000,7 +1128,7 @@ def select_mapped(changed, repo, impact, base, why=None):
                     # a new function: what calls it
                     for name in {where[1].split('.<locals>.')[0].split('.')[-1]}:
                         names_in(path, name, why_text, depth)
-                for test in impact.exercised(path, where[1]):
+                for test in few(impact.exercised(path, where[1]), where[1]):
                     add(test, f'ran {path}:{where[1]} ({why_text})')
             elif where[1]:
                 if where[0] == 'names' and TABLE_LINE.fullmatch(plain) and table_entries(path, found, text, plain, where[1], why_text):
@@ -1018,7 +1146,7 @@ def select_mapped(changed, repo, impact, base, why=None):
         for key, value in re.findall(r"""['"]([\w.-]+)['"]\s*:\s*['"]([\w.-]+)['"]""", plain):
             for _, _, qual in found.funcs:
                 if qual == value or qual.endswith('.' + value):
-                    for test in impact.exercised(path, qual):
+                    for test in few(impact.exercised(path, qual), qual):
                         add(test, f'ran {path}:{qual} ({why_text})')
             if not string_users(key, path, f'{path} maps {key!r} ({why_text})'):
                 return False
@@ -1038,12 +1166,12 @@ def select_mapped(changed, repo, impact, base, why=None):
                     code = other_text.split('\n')[line - 1]
                     if at is None or at[0] == 'local':
                         continue
-                    if at[0] == 'names':  # a table made from it at import
-                        for made in at[1] - words:
+                    if at[0] == 'names':  # a table made from it at import (what it assigns, not a loop's names)
+                        for made in {m for m in at[1] - words if re.search(r'\b' + re.escape(m) + r'\s*(?::[^=\n]*)?=(?!=)', code)}:
                             words.add(made)
                             pending.append((other, made))
                     elif not re.search(r'\b' + re.escape(name) + r'(?:\[|\.get\()|\bin\s+(?:self\.|\w+\.)?' + re.escape(name) + r'\b', code):
-                        for test in impact.exercised(other, at[1]):  # it goes over the table: what it gives changes
+                        for test in few(impact.exercised(other, at[1]), at[1]):  # it goes over the table: what it gives changes
                             add(test, f'ran {other}:{at[1]}, which reads {name} ({why_text})')
         for test in tests:
             test_text = repo.text.get(test, '')
@@ -1233,7 +1361,7 @@ def select_mapped(changed, repo, impact, base, why=None):
         inner = [f for f in funcs if f[0] <= start < f[1]]
         if inner:
             f = min(inner, key=lambda f: f[1] - f[0])
-            for test in impact.js_exercised(other, *f):
+            for test in few(impact.js_exercised(other, *f), js_function_name(other, f[0])):
                 add(test, f'runs {other} code that uses {name} ({why_text})')
         else:
             js_top(other, js_statement(top, start, end), f'{other} uses {name}', depth + 1)
@@ -1303,6 +1431,9 @@ def select_mapped(changed, repo, impact, base, why=None):
             # name it, and a few page tests for what it does at load; a name another part declares runs every page test
             for statement in js_split(new):
                 listener = DELEGATED.match(statement)
+                if listener and statement[listener.end() - 1] == '{':  # if(b){...}: nothing after that block
+                    close = block_end(statement, listener.end() - 1)
+                    listener = listener if close and re.match(r'\s*;?\s*\}', statement[close + 1:]) else None
                 if listener and js_declared(js_blank(statement)) is None:
                     # a click on what has data-x: the tests that draw such elements (the change that draws them in
                     # this part runs its own)
@@ -1325,14 +1456,31 @@ def select_mapped(changed, repo, impact, base, why=None):
         for start, end, new_start, new_end in (changed_spans(text, new) if spans is None else spans):
             inside = [f for f in funcs if (f[0] <= start and end <= f[1]) if start < end or f[0] < start < f[1]]
             if inside:
+                # past the guard of a listener for clicks anywhere that acts only on what a selector finds: what
+                # clicks such an element (the tests that draw it), not every test that clicks
+                outer = max(inside, key=lambda f: f[1] - f[0])
+                line = text.rfind('\n', 0, outer[0]) + 1
+                listener = DELEGATED.match(text, line)
+                guarded = listener and min(outer[1], (block_end(text, listener.end() - 1) if text[listener.end() - 1] == '{' else None) or outer[1])
+                guarded = guarded if listener and (text[listener.end() - 1] != '{' or block_end(text, listener.end() - 1)) else None
+                if listener and line <= outer[0] < listener.end() <= start and end <= (guarded or 0):
+                    if drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
+                        for test in impact.quickest(impact.js_exercised(path, *outer)):
+                            add(test, f'ran {path}:{outer[0]}-{outer[1]}')
+                        continue
                 inner = min(inside, key=lambda f: f[1] - f[0])
-                for test in impact.js_exercised(path, *inner):
+                for test in few(impact.js_exercised(path, *inner), js_function_name(path, inner[0])):
                     add(test, f'ran {path}:{inner[0]}-{inner[1]}')
                 continue
             for f in funcs:
                 if f[0] < end and start < f[1]:
-                    for test in impact.js_exercised(path, *f):
+                    for test in few(impact.js_exercised(path, *f), js_function_name(path, f[0])):
                         add(test, f'ran {path}:{f[0]}-{f[1]}')
+            if in_function(top, start, end) and in_function(new, new_start, new_end):
+                # inside a function no test ran: no test runs it; the quickest that load the part see it parse
+                for test in impact.quickest(js_ran(impact.js.get(path, {}).get('top', ()))):
+                    add(test, f'loads {path}, whose code no test ran changed')
+                continue
             # whole lines put in between two others change no statement there (one that continues the line before is
             # in the new side's statement)
             between = start == end and (start == 0 or text[start - 1] == '\n')
@@ -1443,8 +1591,12 @@ def select_mapped(changed, repo, impact, base, why=None):
                     place = placer(old_text, text)
                     at = [place(found.start()) for found in word.finditer(text)]
                     if any(a is None or not word.match(old_text, a) for a in at):
-                        js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
-                        continue
+                        # main moved those lines since the map: the places the map's text has it, when that has it
+                        # in no fewer places than now
+                        at = [found.start() for found in word.finditer(old_text)]
+                        if len(at) < len(list(word.finditer(text))):
+                            js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
+                            continue
                     for a in at:
                         js_place(other, a, a + len(token), token, why_text, 0)
                 elif other.endswith('.py') and not other.startswith('tests/'):
@@ -1654,6 +1806,7 @@ def load_impact(path):
 
 def main(argv):
     show = impact = base = None
+    wide = False
     while argv[:1] and argv[0].startswith('--'):
         if argv[0] == '--why':
             show, argv = Path(argv[1]).name, argv[2:]
@@ -1661,11 +1814,15 @@ def main(argv):
             impact, argv = load_impact(argv[1]), argv[2:]
         elif argv[0] == '--base':
             base, argv = argv[1], argv[2:]
+        elif argv[0] == '--wide':
+            wide, argv = True, argv[1:]
         else:
             break
     source = argv[0] if argv else '-'
     lines = (sys.stdin if source == '-' else open(source, encoding='utf-8')).read().splitlines()
     why = {}
+    if impact is not None:
+        impact.wide = wide
     picked = select(lines, why=why, impact=impact, base=base)
     if show:
         print(f'{show}: ' + (why.get(show) or ('always' if show in ALWAYS else 'not picked')) + (' (all run)' if picked is None else ''))

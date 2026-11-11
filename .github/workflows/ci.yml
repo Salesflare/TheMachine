@@ -45,7 +45,8 @@ jobs:
     # with the test-impact map from main's last full run, the tests that ran each function it changes; without it,
     # what imports or names each changed file. All of them when that isn't clear. A push to main or a release tag runs
     # the tests for everything changed since the newest commit under it whose full run passed (scripts/ci_runs.py
-    # base; nothing when that is the commit itself, every test when there is none). The nightly, weekly and manual runs
+    # base; nothing when that is the commit itself, every test when there is none), with --wide: a function nearly
+    # every test runs takes all of them there, where a pull request takes the quickest few. The nightly, weekly and manual runs
     # run every one. On our runner the files are split into shards of about equal time (scripts/test_shards.py, by each
     # file's time in main's last full run; about 5 minutes of files each, at most CI_SHARDS, a repository variable, 4
     # when unset), side by side on our runner's slots. GitHub's runners use one job.
@@ -87,7 +88,7 @@ jobs:
               : > "$picked"
               marker="tested-since-$base"
             elif [ -n "$base" ] && git diff --name-only "$base" HEAD > "$changed" && [ -s "$changed" ] \
-                && python3 scripts/test_select.py --impact "$map" --base "$base" "$changed" > "$picked"; then
+                && python3 scripts/test_select.py --impact "$map" --wide --base "$base" "$changed" > "$picked"; then
               echo "Since $base, the newest commit under this one whose full run passed:"
               [ "$(head -n1 "$picked")" = ALL ] || marker="tested-since-$base"
             else

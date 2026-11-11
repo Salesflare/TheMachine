@@ -193,6 +193,22 @@ class WithTheMap(unittest.TestCase):
         self.assertLessEqual(set(select.ALWAYS) & names(TESTS), set(got))
         self.assertEqual(sorted(set(got) - select.ALWAYS - {'test_moving.py'}), [])
 
+    def test_a_function_nearly_every_test_runs_takes_a_few_on_a_pull_request(self):
+        path = 'i18n.py'
+        scopes = select.Scopes((ROOT / path).read_text(encoding='utf-8'))
+        start, end, qualname = next(f for f in scopes.funcs if '.' not in f[2] and f[1] - f[0] > 1)
+        self.change(path, [start + 1])
+        word = re.compile(r'(?<![\w$])' + re.escape(qualname) + r'(?![\w$])')
+        ran = sorted(Path(t).name for t in TESTS)[:select.EVERYWHERE + 20]
+        naming = {t for t in ran if word.search((ROOT / 'tests' / t).read_text(encoding='utf-8', errors='replace'))}
+        impact = self.impact({(path, qualname): ran})
+        impact.seconds = {t: i for i, t in enumerate(reversed(ran))}
+        got = set(select.select([path], repo=REPO, impact=impact, base='HEAD')) - select.ALWAYS
+        self.assertEqual(got - naming, set(ran[-select.EVERYWHERE_KEEP:]) - naming - select.ALWAYS)  # the quickest
+        self.assertLessEqual(naming - select.ALWAYS, got)
+        impact.wide = True  # a push to main: all of them
+        self.assertLessEqual(set(ran) - select.ALWAYS, set(select.select([path], repo=REPO, impact=impact, base='HEAD')))
+
     def test_a_test_the_map_does_not_know_follows_imports(self):
         path = 'machine/store/conversation.py'
         self.change(path, [1])
@@ -303,6 +319,17 @@ class WithTheMap(unittest.TestCase):
         html = '<script>/*@include dashboard/p-x.js*/</script><div id="p-x" hidden><b class="w"></b></div>'
         self.assertEqual(select.closed_dialogs(html, select.token_word('w')), {'p-x'})
         self.assertEqual(select.closed_dialogs(html, select.token_word('p-x')), {'p-x'})
+        # a listener for clicks anywhere, guarded by what was clicked: the guarded block ends at its own brace
+        t = "document.addEventListener('click',e=>{const b=e.target.closest?.('[data-run]');if(b){go(b,'}')};x()},true)"
+        found = select.DELEGATED.match(t)
+        self.assertEqual(found[3], '[data-run]')
+        self.assertEqual(select.block_end(t, found.end() - 1), t.index('};x()'))
+        # inside a function's body (also past a template in it), or at the top level
+        t = "$('#a').addEventListener('click',e=>{go(`x${y?html`<b>${z}</b>`:''}`);if(q){w()}});\nif(k){m()}\nfunction f(a){return a}"
+        self.assertEqual([select.in_function(t, t.index(x), t.index(x) + 1) for x in ('w()', 'm()', 'return', 'z}')], [True, False, True, True])
+        # a key set on a table at the top level touches what reads the table
+        self.assertEqual(select.js_declared(select.js_blank("SETTINGS_OF['x']='y'")), {'SETTINGS_OF'})
+        self.assertIsNone(select.js_declared(select.js_blank('x.y=go()')))
         self.assertTrue(select.TABLE_LINE.fullmatch("'graph_role': 'graph_role_action', 'graph_same': 'graph_same_action',"))
         self.assertFalse(select.TABLE_LINE.fullmatch("'graph_role': role_action(),"))
 
