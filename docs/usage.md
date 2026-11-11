@@ -96,7 +96,7 @@ It is served on `127.0.0.1:<port>` and reached through Tailscale Serve or Caddy;
 ### Reading a to-do
 
 - A to-do leads with one short status line under its title: where it stands and what's left for you ("Needs you: approve the reply", "Ready for you to check and submit", "Looks handled: …").
-- It shows a few lines of its text, with the rest behind **Show more** and **Read result**. Another open to-do it names is linked by its title.
+- It shows a few lines of its text, with the rest behind **Show more** (or a tap on the text) and **Read result**. Another open to-do it names is linked by its title.
 - It shows its main action and two more. The rest, such as **Hand off** to a teammate in a Fleet, sit under **More**. **Not needed** is one compact choice.
 
 **Questions for you**
