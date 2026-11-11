@@ -53,6 +53,14 @@ function messageHTML(o,id,i){
 // Details holds the headers, or a signal's technical part (an error's code locations); no toggle when there is neither.
 const meta=[[['From',o.from],['To',o.to],['Cc',o.cc]].filter(([,v])=>v).map(([k,v])=>html`<div><span>${k}</span> ${v}</div>`),o.details?html`<pre class="email-tech">${o.details}</pre>`:''].flat();
 return html`<div class="email-meta"><div class="email-from"><strong>${sender(o.from)||kindLabel(o.kind)}</strong><time>${fmtDHM(o.occurred_at,{weekday:'short',day:'numeric',month:'short'})}</time></div>${o.title?html`<div class="email-subject">${o.title}</div>`:''}${meta.some(Boolean)?html`<details class="email-headers"><summary>Details</summary>${meta}</details>`:''}</div>${(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:''}<div class="email-body" data-email-body="${i}"><p class="muted">Loading…</p></div>${o.kind==='calendar'&&!o.raw?html`<p class="email-open"><button type="button" class="link" data-open-meeting="${o.event_id}">${t('Notes and transcript')}</button></p>`:''}${o.url&&safeURL(o.url)?html`<p class="email-open"><a href="${o.url}" target="_blank" rel="noreferrer">${o.kind==='calendar'?t(calOpenLabel(o.url)):`Open in ${o.kind==='email'?(/^https:\/\/outlook\./.test(o.url||'')?'Outlook':'Gmail'):['phone','signal'].includes(o.kind)?'app':o.kind} ↗`}</a></p>`:''}`}
+// A link in an email opens outside: a new tab, or the phone's browser in the app. The app's WebView has no windows, so
+// a new-tab link goes to the top page, which the email's sandbox (no top navigation) blocks: the dashboard opens it.
+// Only http(s) and mailto, never the dashboard's own addresses; no opener, no referrer.
+const mailLink=href=>{try{const u=new URL(href);return ['http:','https:','mailto:'].includes(u.protocol)&&u.origin!==location.origin?u.href:''}catch{return ''}};
+function openMailLink(e){const a=e.target?.closest?.('a[href]');if(!a||e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+ if(/^#/.test(a.getAttribute('href')))return;  // a jump inside the email
+ e.preventDefault();const url=mailLink(a.href);if(!url)return;
+ const out=document.createElement('a');out.href=url;out.target='_blank';out.rel='noopener noreferrer';out.click()}
 async function fillMessage(container,o,id){
 const box=container.querySelector('.email-body');if(!box||box.dataset.filled)return;box.dataset.filled='1';
 const said=String(o.body||'').replace(/\r\n/g,'\n').split('\n').filter(l=>!(o.kind==='calendar'&&/^Participants: /.test(l))).join('\n').trim();  // an invite's raw guest addresses: the meeting's With has them by name
@@ -61,7 +69,7 @@ if(o.kind!=='email'||o.near){text();return}  // a message around the source read
 const view=await emailViewFor(id,o.event_id);if(!view.html){text();if(view.failed)emailRetry(container,box,o,id);return}
 const frame=document.createElement('iframe');frame.className='email-frame';frame.title='Email';frame.setAttribute('sandbox','allow-same-origin allow-popups allow-popups-to-escape-sandbox');frame.setAttribute('referrerpolicy','no-referrer');
 frame.style.visibility='hidden';const reveal=()=>{const doc=frame.contentDocument;if(doc?.body&&dark())try{darkenEmail(doc)}catch{}frame.style.visibility=''};setTimeout(reveal,1500);
-frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
+frame.addEventListener('load',()=>{reveal();const doc=frame.contentDocument;if(!doc)return;doc.addEventListener('click',openMailLink);const fit=()=>{frame.style.height=Math.min(Math.max(Math.ceil(doc.body.getBoundingClientRect().height),80),20000)+'px'};fit();new ResizeObserver(fit).observe(doc.body)});
 frame.srcdoc=emailDoc(view.html,view.images||{},id,o.event_id);box.replaceChildren(frame)}
 // The full email didn't come (Gmail or the Machine didn't answer): the saved text stays, with one line to try again.
 // Not when there is no full email to read (an email from another provider): that is the saved text alone.
