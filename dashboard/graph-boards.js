@@ -137,7 +137,7 @@ function boardRedraw(){const el=$('#people-view .proj-board');if(el){const x=el.
 function projectsViewSet(v){sideStore.set('projects-view',v);const view=$('#people-view');view.querySelector('.proj-list')?.toggleAttribute('hidden',v!=='list');view.querySelector('.proj-board')?.toggleAttribute('hidden',v!=='board');pageHead();tabsShow(view.querySelector('.stage-tabs'))}
 async function boardMove(node,stage){const b=boardNow(),p=b?.projects.find(x=>x.id===node);if(!p||p.stage===stage)return;const was=p.stage;
  Object.assign(p,{stage,by:'owner',at:new Date().toISOString(),event_id:null,days:0});boardRedraw();
- try{await graphPost('graph_stage',{node_id:node,stage});toast('Moved to '+stage+'.');await people('',true)}catch(err){errCaught(err);Object.assign(p,{stage:was});boardRedraw();toast(err.message,true)}}
+ try{await graphPost('graph_stage',{node_id:node,stage});toast('Moved to '+stage+'.');if(!graphNode)await people('',true)}  /* a page opened meanwhile stays open */catch(err){errCaught(err);Object.assign(p,{stage:was});boardRedraw();toast(err.message,true)}}
 $('#page-head').addEventListener('click',e=>{const b=e.target.closest('[data-proj-view]');if(b)projectsViewSet(b.dataset.projView)});
 // Mine, Needs me or All: one choice for the team's List and Board
 function teamPickSet(v){boardTeamPick=v;sideStore.set('board-team-pick',v);graphTabsPaint('projects');boardRedraw()}
