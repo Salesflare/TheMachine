@@ -192,6 +192,44 @@ class Merge(unittest.TestCase):
         self.assertEqual(got['seconds'], {'test_a.py': 3.4, 'test_b.py': 7.0})
 
 
+    def test_what_ran_only_while_starting_is_kept_apart(self):
+        """setUp's calls ("s") and a page's load ("L"): the map keeps, per function, the tests that ran it only then."""
+        with tempfile.TemporaryDirectory() as folder:
+            Path(folder, 'passed').write_text('test_a.py\ntest_b.py\ntest_c.mjs\n', encoding='utf-8')
+            Path(folder, 'test_a.py.1.rec').write_text('x.py\tf\ts\nx.py\tg\ts\nx.py\tg\n', encoding='utf-8')
+            Path(folder, 'test_b.py.2.rec').write_text('x.py\tf\n', encoding='utf-8')
+            Path(folder, 'test_c.mjs.3.jsrec').write_text(
+                'dashboard/a.js\t-1\t-1\t1\tL\ndashboard/a.js\t0\t10\t1\tL\ndashboard/a.js\t20\t30\t1\tL\n'
+                'dashboard/a.js\t20\t30\t1\ndashboard/a.js\t40\t50\t0\tL\n', encoding='utf-8')
+            out = Path(folder, 'map.json.gz')
+            impact.build(folder, out)
+            with gzip.open(out, 'rt', encoding='utf-8') as source:
+                got = json.load(source)
+            tests = got['tests']
+            ran = lambda ids: sorted(tests[i] for i in ids)
+            self.assertEqual(ran(got['files']['x.py']['f']), ['test_a.py', 'test_b.py'])
+            self.assertEqual({q: ran(ids) for q, ids in got['setup']['x.py'].items()}, {'f': ['test_a.py']})  # g ran in a test too
+            part = got['js']['dashboard/a.js']
+            self.assertEqual(ran(part['top']), ['test_c.mjs'])
+            self.assertEqual([[a, b, ran(ids)] for a, b, ids in part['funcs']], [[0, 10, ['test_c.mjs']], [20, 30, ['test_c.mjs']], [40, 50, []]])
+            self.assertEqual([[a, b, ran(ids)] for a, b, ids in got['load']['dashboard/a.js']], [[0, 10, ['test_c.mjs']]])
+            # merged with another shard's map, each test keeps what it ran only while starting
+            other = {'commit': '', 'tests': ['test_d.py'], 'files': {'x.py': {'g': [0]}}, 'setup': {'x.py': {'g': [0]}},
+                     'js': {}, 'load': {}}
+            merged = Path(folder, 'merged.json.gz')
+            impact.merge(merged, [out, self.write(folder, 'other.json.gz', other)])
+            with gzip.open(merged, 'rt', encoding='utf-8') as source:
+                got = json.load(source)
+            ran = lambda ids: sorted(got['tests'][i] for i in ids)
+            self.assertEqual({q: ran(ids) for q, ids in got['setup']['x.py'].items()}, {'f': ['test_a.py'], 'g': ['test_d.py']})
+            self.assertEqual([[a, b, ran(ids)] for a, b, ids in got['load']['dashboard/a.js']], [[0, 10, ['test_c.mjs']]])
+
+    def test_the_recorder_notes_what_setup_ran_apart(self):
+        source = impact.HOOK_SOURCE % {'root': '/nowhere', 'out': '/nowhere'}
+        compile(source, 'hook', 'exec')
+        self.assertIn("'\\ts' if state['phase'] else ''", source)
+        self.assertIn('mon.restart_events()', source)
+
 
 class Room(unittest.TestCase):
     """scripts/test.py starts a file only while the shared runner's load leaves room, with one file always going."""

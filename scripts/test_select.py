@@ -25,6 +25,7 @@ scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
 scripts/test_select.py --why tests/test_x.py changed.txt   (why that test was picked, or not)"""
 import ast
 import gzip
+from html.parser import HTMLParser
 import io
 import json
 from pathlib import Path
@@ -57,6 +58,9 @@ ALWAYS = {
 PAGE = {'dashboard_parts.py', 'machine/web/serving.py'}
 # More than this share of the files picked: run them all, the difference isn't worth a partial run.
 ENOUGH = 0.85
+# A change to a function tests ran past setting up (or after their page loaded) runs those tests, plus this many of the
+# quickest that ran it only while starting, so a change that breaks the start still meets one.
+STARTS = 3
 # Folders on the import path besides the root (scripts/test.py puts tests/ there; scripts and integrations add their own).
 IMPORT_ROOTS = ('', 'tests/', 'scripts/', 'integrations/')
 IMPORT = re.compile(r'^[ \t]*(?:import[ \t]+(?P<plain>[\w.]+(?:[ \t]+as[ \t]+\w+)?(?:[ \t]*,[ \t]*[\w.]+(?:[ \t]+as[ \t]+\w+)?)*)'
@@ -377,9 +381,31 @@ class Impact:
         self.commit = data.get('commit') or ''
         self.js = data.get('js') or {}
         self.js_tests = {self.tests[i] for i in data.get('js_tests') or ()}
+        self.seconds = data.get('seconds') or {}
+        self.wide = False  # a push to main: every test that ran a changed function (see few in select_mapped)
+        # what tests ran only while setting up, and a part's functions they ran only while their page loaded
+        self.setup = data.get('setup') or {}
+        self.load = {part: {(a, b): ids for a, b, ids in spans} for part, spans in (data.get('load') or {}).items()}
 
     def ran(self, path, qualname):
         return {self.tests[i] for i in self.files.get(path, {}).get(qualname, ())}
+
+    def quickest(self, names, count=STARTS):
+        return set(sorted(names, key=lambda name: (self.seconds.get(name, 1e9), name))[:count])
+
+    def _past_start(self, ran, only):
+        if not only or only >= ran:  # start code (or a map without phases): every test that ran it
+            return ran
+        return (ran - only) | self.quickest(only)
+
+    def exercised(self, path, qualname):
+        """The tests that ran a function past setting up, and a few that ran it only then; every test that ran it when
+        it only runs while tests set up."""
+        return self._past_start(self.ran(path, qualname), {self.tests[i] for i in self.setup.get(path, {}).get(qualname, ())})
+
+    def js_exercised(self, part, start, end, ids):
+        """The same for a dashboard part's function at [start, end): the tests that ran it after their page loaded."""
+        return self._past_start({self.tests[i] for i in ids}, {self.tests[i] for i in self.load.get(part, {}).get((start, end), ())})
 
     def ran_any(self, path):
         return {self.tests[i] for ids in self.files.get(path, {}).values() for i in ids}
@@ -419,6 +445,62 @@ def changed_spans(old, new):
                 spans.append((old_at[i1] + k1, old_at[i1] + k2, new_at[j1] + l1, new_at[j1] + l2))
     return spans
 
+
+def placer(old, text, loose=False):
+    """A function that takes an offset in text to the same place in old, where its line is one old has unchanged too
+    (None where it isn't): the map's commit and a pull request's base can be some commits apart. loose: a line that
+    changed since goes to its counterpart, in a run of as many changed lines on both sides (the same statement, edited
+    again), else to the start of the lines that replaced it there, or with last=True to their end."""
+    import bisect
+    import difflib
+    if old == text:
+        return lambda at: at
+    old_lines, lines = old.splitlines(keepends=True), text.splitlines(keepends=True)
+    old_at, at_ = [0], [0]
+    for line in old_lines:
+        old_at.append(old_at[-1] + len(line))
+    for line in lines:
+        at_.append(at_[-1] + len(line))
+    same, block = {}, {}
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, old_lines, lines, autojunk=False).get_opcodes():
+        if tag == 'equal' or loose and tag == 'replace' and i2 - i1 == j2 - j1:
+            same.update({j1 + k: i1 + k for k in range(j2 - j1)})
+        elif loose and tag == 'replace':
+            block.update({j1 + k: (old_at[i1], old_at[i2] - 1) for k in range(j2 - j1)})
+    same[len(lines)] = len(old_lines)  # the end
+
+    def place(at, last=False):
+        line = bisect.bisect_right(at_, at) - 1
+        if line in block:
+            return block[line][last]
+        if line not in same:
+            return None
+        return old_at[same[line]] + min(at - at_[line], max(old_at[same[line] + 1] - old_at[same[line]] - 1, 0)) if same[line] < len(old_lines) else old_at[same[line]]
+    return place
+
+
+def moved_spans(old, base, new):
+    """changed_spans(base, new) with their old-side offsets in old (the map's text), or None when one sits where old
+    and base differ already."""
+    if base == old:
+        return changed_spans(old, new)
+    if new == old:  # the map was made with this change in (from its own branch): where it is now
+        return [(c, d, c, d) for _, _, c, d in changed_spans(base, new)]
+    place, out = placer(old, base, loose=True), []
+    for start, end, new_start, new_end in changed_spans(base, new):
+        a, b = place(start), place(max(start, end - 1), last=True)
+        if a is None or b is None:
+            return None
+        out.append((a, b + (end > start or b > a), new_start, new_end))
+    return out
+
+
+# a line of a name -> method table: 'graph_role': 'graph_role_action', (maybe opening or closing it)
+TABLE_LINE = re.compile(r"""(?:[A-Za-z_]\w*\s*=\s*\{\s*)?(?:['"][\w.-]+['"]\s*:\s*['"][\w.-]+['"]\s*,?\s*)+\}?""")
+
+# a function more tests than this run past their start: on a pull request, the quickest few of them and those that
+# name it (scripts/test_select.py --wide, as a push to main runs, takes them all)
+EVERYWHERE, EVERYWHERE_KEEP = 60, 12
 
 JS_WORD = r'[A-Za-z_$][\w$]*'
 
@@ -501,7 +583,116 @@ def js_split(text):
 # A listener for clicks anywhere that does nothing unless the click is on what a selector finds:
 # document.addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;...})
 DELEGATED = re.compile(r"""\s*document\.addEventListener\(\s*'(?:click|change|input|submit|keydown)'\s*,\s*(?:async\s*)?(\w+)\s*=>\s*\{\s*"""
-                       r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*!\2\s*\)\s*return\s*[;}]""")
+                       r"""const\s+(\w+)\s*=\s*\1\.target\.closest(?:\?\.)?\(\s*'([^'\\]+)'\s*\)\s*;?\s*if\s*\(\s*(?:!\2\s*\)\s*return\s*[;}]|\2\s*\)\s*\{)""")
+
+
+def js_code(line):
+    """A line without its trailing // comment (a // in a string or a regex stays)."""
+    found = re.search(r"""\s//(?:[^'"`/]*)$""", line)
+    return line[:found.start()] if found else line
+
+
+def js_brackets(text):
+    """The bracket pairs of JavaScript text, (open, close) offsets: strings, comments and the text of templates
+    skipped, their ${...} parts not."""
+    pairs, stack, i, n = [], [], 0, len(text)
+    modes = ['code']  # code, or template; a ${ in a template opens code that its } closes
+    while i < n:
+        c = text[i]
+        if modes[-1] == 'template':
+            if c == '\\':
+                i += 2
+                continue
+            if c == '`':
+                modes.pop()
+            elif text.startswith('${', i):
+                modes.append('code')
+                stack.append(('${', i + 1))
+                i += 2
+                continue
+            i += 1
+            continue
+        if c in '\'"':
+            j = i + 1
+            while j < n and text[j] != c and text[j] != '\n':
+                j += 2 if text[j] == '\\' else 1
+            i = j + 1
+            continue
+        if c == '`':
+            modes.append('template')
+        elif text.startswith('//', i):
+            j = text.find('\n', i)
+            i = n if j < 0 else j
+            continue
+        elif text.startswith('/*', i):
+            j = text.find('*/', i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        elif c in '([{':
+            stack.append((c, i))
+        elif c in ')]}':
+            if stack:
+                kind, at = stack.pop()
+                pairs.append((at, i))
+                if kind == '${':
+                    modes.pop()
+        i += 1
+    return pairs
+
+
+def in_function(text, start, end):
+    """Whether [start, end) of JavaScript text sits inside the body of a function there (an arrow's or a function's
+    {...}, or an arrow's expression in brackets)."""
+    if text is None:
+        return False
+    for at, close in sorted(js_brackets(text), key=lambda p: p[0] - p[1]):  # innermost first
+        if not (at < start and max(end, start + 1) <= close):
+            continue
+        if text[at] != '{':
+            continue
+        before = text[:at].rstrip()
+        if before.endswith('=>'):
+            return True
+        if before.endswith(')'):
+            opened = next((a for a, c in js_brackets(before + ' ') if c == len(before) - 1), None)
+            word = re.search(r'([\w$]+)\s*$', before[:opened]) if opened is not None else None
+            if word and word[1] not in ('if', 'for', 'while', 'switch', 'catch', 'with'):
+                return True
+    return False
+
+
+def block_end(text, at):
+    """Where the bracket at text[at] closes (strings, templates and comments skipped), or None."""
+    depth, i, quote = 0, at, None
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == '\\':
+                i += 2
+                continue
+            if c == quote:
+                quote = None
+        elif c in '\'"`':
+            quote = c
+        elif text.startswith('//', i):
+            i = text.find('\n', i)
+            if i < 0:
+                return None
+            continue
+        elif text.startswith('/*', i):
+            i = text.find('*/', i + 2)
+            if i < 0:
+                return None
+            i += 2
+            continue
+        elif c in '([{':
+            depth += 1
+        elif c in ')]}':
+            depth -= 1
+            if depth == 0:
+                return i
+        i += 1
+    return None
 
 
 def js_declared(statement):
@@ -518,8 +709,11 @@ def js_declared(statement):
     if match:
         return {match[1]}
     match = re.fullmatch(r'(?:export\s+)?(?:const|let|var)\s+(.+)', text, re.S)
+    plain = r"F|\{\}|\[\]|''|\"\"|``|-?[\d.]+|true|false|null|undefined|" + JS_WORD
     if not match:
-        return None
+        # NAME[key]=value or NAME.x.y=value with a value that runs nothing: what reads NAME
+        match = re.fullmatch(r'(' + JS_WORD + r')(?:\[\]|\.' + JS_WORD + r')+\s*=\s*(' + plain + r')', text)
+        return {match[1]} if match else None
     names = set()
     for part in match[1].split(','):
         target, eq, value = part.partition('=')
@@ -617,7 +811,12 @@ def without_comments(text):
 
 
 def token_word(token):
-    """A class, id or attribute name as code uses it: whole, and a data-x attribute as dataset.x too."""
+    """A class, id or attribute name as code uses it: whole, and a data-x attribute as dataset.x too. <tag: where
+    markup or code makes that element."""
+    if token.startswith('<'):
+        tag = re.escape(token[1:])
+        made = r'|\bnew Option\(' if token == '<option' else ''
+        return re.compile(r'<' + tag + r'(?![\w-])|createElement\(\s*[\'"`]' + tag + r'[\'"`]\s*\)' + made, re.I)
     forms = [r'(?<![\w-])' + re.escape(token) + r'(?![\w-])']
     if token.startswith('data-') and len(token) > 5:
         key = re.sub(r'-([a-z])', lambda m: m[1].upper(), token[5:])
@@ -626,17 +825,57 @@ def token_word(token):
 
 
 def closed_dialogs(html, word):
-    """The ids of the closed <dialog> elements every place word finds in html sits in, or None when one isn't in one."""
+    """The ids of the elements that start hidden (a closed <dialog>, a hidden panel) every place word finds in html
+    sits in, the innermost one each, or None when one isn't in one. An include line (/*@include dashboard/x.js*/)
+    names a file, not an element."""
+    html = re.sub(r'/\*@include [^*]*\*/|<!--@include [^>]*-->', lambda m: ' ' * len(m[0]), html)
+    spans = [(m.start(), m.end()) for m in word.finditer(html)]
+    return hidden_holders(html, spans) if spans else set()
+
+
+class _Elements(HTMLParser):
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr'}
+
+    def __init__(self, text):
+        super().__init__(convert_charrefs=True)
+        self.starts = [0] + [i + 1 for i, c in enumerate(text) if c == '\n']
+        self.open, self.done, self.end = [], [], len(text)
+        self.feed(text)
+        self.close()
+        self.done += [(start, self.end, attrs) for _, start, attrs in self.open]
+
+    def at(self):
+        line, column = self.getpos()
+        return self.starts[line - 1] + column
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in self.VOID:
+            self.open.append((tag, self.at(), dict(attrs) | {'<': tag}))
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.open) - 1, -1, -1):
+            if self.open[i][0] == tag:
+                at = self.at()
+                for _, start, attrs in self.open[i:]:
+                    self.done.append((start, at + len(tag) + 3, attrs))
+                del self.open[i:]
+                return
+
+
+def hidden_holders(html, spans):
+    """The ids of the elements that start hidden (a hidden attribute, a <dialog> that isn't open) that each span of
+    html sits in, the innermost one each; None when a span isn't in one."""
+    try:
+        elements = _Elements(html).done
+    except Exception:  # markup the parser can't follow
+        return None
     found = set()
-    for match in word.finditer(html):
-        start = html.rfind('<dialog', 0, match.start())
-        if start < 0 or html.find('</dialog>', start, match.start()) >= 0:
+    for a, b in spans:
+        around = [(start, attrs) for start, end, attrs in elements if start <= a and max(b, a + 1) <= end
+                  and attrs.get('id') and ('hidden' in attrs or attrs['<'] == 'dialog' and 'open' not in attrs)]
+        if not around:
             return None
-        tag = html[start:html.find('>', start) + 1]
-        dialog = re.search(r'\bid="([\w-]+)"', tag)
-        if not dialog or re.search(r'\sopen\b', tag):
-            return None
-        found.add(dialog[1])
+        found.add(max(around, key=lambda e: e[0])[1]['id'])
     return found
 
 
@@ -690,7 +929,11 @@ def css_tokens(selector):
         plain = re.sub(r':[\w-]+\((?:[^()]|\([^()]*\))*\)', ' ', piece)
         names = set(re.findall(r'[.#](-?[A-Za-z_][\w-]*)', plain)) | set(re.findall(r'\[\s*([A-Za-z_][\w-]*)', plain))
         if not names:
-            return None
+            # only a tag (option, select option): where markup or code makes that element; not the page's own frame
+            tag = re.match(r'([a-z][a-z0-9-]*)(?![\w-])', re.split(r'[\s>+~]+', plain.strip())[-1])
+            if not tag or tag[1] in ('html', 'body', 'head'):
+                return None
+            names = {'<' + tag[1]}
         out.append(names)
     return out
 
@@ -838,6 +1081,21 @@ def select_mapped(changed, repo, impact, base, why=None):
         if name not in reasons:
             reasons[name] = reason
 
+    def few(picked, name):
+        """A function more than EVERYWHERE tests run past their start (a render every page does, App.action): on a pull
+        request, the quickest EVERYWHERE_KEEP of them and those that name it. A push to main (--wide) runs them all."""
+        if impact.wide or len(picked) <= EVERYWHERE:
+            return picked
+        word = re.compile(r'(?<![\w$])' + re.escape(name.split('.')[-1]) + r'(?![\w$])') if name else None
+        return impact.quickest(picked, EVERYWHERE_KEEP) | {t for t in picked if word and word.search(repo.text.get(f'tests/{t}', ''))}
+
+    def js_function_name(part, at):
+        """The name of the function that starts at offset at of part, as the map's commit had it, or None."""
+        text = js_old(part)[0] or ''
+        found = re.match(r'(?:async\s+)?function\s*\*?\s*([\w$]+)', text[at:at + 120]) or \
+            re.search(r'([\w$]+)\s*[=:]\s*(?:async\s*)?$', text[max(0, at - 80):at])
+        return found[1] if found else None
+
     def scope_of(path, text):
         if path not in scopes:
             try:
@@ -876,14 +1134,90 @@ def select_mapped(changed, repo, impact, base, why=None):
                     # a new function: what calls it
                     for name in {where[1].split('.<locals>.')[0].split('.')[-1]}:
                         names_in(path, name, why_text, depth)
-                for test in ran:
+                for test in few(impact.exercised(path, where[1]), where[1]):
                     add(test, f'ran {path}:{where[1]} ({why_text})')
             elif where[1]:
+                if where[0] == 'names' and TABLE_LINE.fullmatch(plain) and table_entries(path, found, text, plain, where[1], why_text):
+                    continue
                 for name in where[1]:
                     names_in(path, name, why_text, depth, local=where[0] == 'local')
             else:
                 for test in impact.ran_any(path):
                     add(test, f'ran {path}, which runs code at import ({why_text})')
+
+    def table_entries(path, found, text, plain, names, why_text):
+        """Entries of a name -> method table ('graph_role': 'graph_role_action',) that changed: the tests that ran those
+        methods or name those keys (a test, a dashboard part that sends it, Python that passes it), and those that read
+        the whole table (that name it, or a table made from it at import). False when a key's users aren't all clear."""
+        for key, value in re.findall(r"""['"]([\w.-]+)['"]\s*:\s*['"]([\w.-]+)['"]""", plain):
+            for _, _, qual in found.funcs:
+                if qual == value or qual.endswith('.' + value):
+                    for test in few(impact.exercised(path, qual), qual):
+                        add(test, f'ran {path}:{qual} ({why_text})')
+            if not string_users(key, path, f'{path} maps {key!r} ({why_text})'):
+                return False
+        words, pending = set(names), [(path, name) for name in names]
+        while pending:
+            source, name = pending.pop()
+            for other in users(source):
+                other_text = repo.text.get(other)
+                if other == source or other_text is None or name not in other_text or is_test(other):
+                    continue
+                bare, dotted = code_names(other, other_text)
+                where = scope_of(other, other_text)
+                if where is None:
+                    return False
+                for line in sorted(set(dotted.get(name, ())) | set(bare.get(name, ()))):
+                    at = where.at(line)
+                    code = other_text.split('\n')[line - 1]
+                    if at is None or at[0] == 'local':
+                        continue
+                    if at[0] == 'names':  # a table made from it at import (what it assigns, not a loop's names)
+                        for made in {m for m in at[1] - words if re.search(r'\b' + re.escape(m) + r'\s*(?::[^=\n]*)?=(?!=)', code)}:
+                            words.add(made)
+                            pending.append((other, made))
+                    elif not re.search(r'\b' + re.escape(name) + r'(?:\[|\.get\()|\bin\s+(?:self\.|\w+\.)?' + re.escape(name) + r'\b', code):
+                        for test in few(impact.exercised(other, at[1]), at[1]):  # it goes over the table: what it gives changes
+                            add(test, f'ran {other}:{at[1]}, which reads {name} ({why_text})')
+        for test in tests:
+            test_text = repo.text.get(test, '')
+            if any(re.search(r'\b' + re.escape(word) + r'\b', test_text) for word in words):
+                add(test, f'names {sorted(words)[0]} ({why_text})')
+        return True
+
+    def string_users(key, path, why_text):
+        """The tests that run code that has key as a whole string: False when one such place can't be told."""
+        if ('string', key) in seen:
+            return True
+        seen.add(('string', key))
+        quoted = re.compile(r"""(['"`])""" + re.escape(key) + r'\1')
+        for other in repo.paths:
+            other_text = repo.text.get(other)
+            if other == path or not other_text or key not in other_text or other.startswith(NOT_CODE):
+                continue
+            spots = [m.start() + 1 for m in quoted.finditer(other_text)]
+            if not spots:
+                continue
+            if is_test(other):
+                add(other, f'names {key!r} ({why_text})')
+            elif other.startswith('dashboard/') and other.endswith('.js'):
+                if other in changed:
+                    continue
+                old_text = js_old(other)[0]
+                if other not in impact.js or old_text is None:
+                    return False
+                place = placer(old_text, other_text)
+                at = [place(a) for a in spots]
+                if any(a is None for a in at):
+                    js_loaders(other, f'loads {other}, which sends {key!r} ({why_text})')
+                    continue
+                for a in at:
+                    js_place(other, a, a + len(key), key, why_text, 0)
+            elif other.endswith('.py'):
+                lines_in(other, sorted({other_text.count('\n', 0, a) + 1 for a in spots}), f'{other} names {key!r} ({why_text})')
+            elif Path(other).suffix in CODE:
+                return False
+        return True
 
     def old_functions(path):
         key = ('old', path)
@@ -1009,13 +1343,13 @@ def select_mapped(changed, repo, impact, base, why=None):
         b = len(text) if b < 0 else b
         while a > 0:
             previous = text.rfind('\n', 0, a - 1) + 1
-            if not re.match(r'[\s)\]}.?:,+\-*/&|]', text[a:a + 1]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[previous:a - 1]):
+            if not re.match(r'(?!//|/\*)[\s)\]}.?:,+\-*/&|]', text[a:a + 2]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', js_code(text[previous:a - 1])):
                 break
             a = previous
         while b < len(text):
             following = text.find('\n', b + 1)
             following = len(text) if following < 0 else following
-            if not re.match(r'[ \t)\]}.?:,+\-*/&|]', text[b + 1:b + 2]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', text[a:b]):
+            if not re.match(r'(?!//|/\*)[ \t)\]}.?:,+\-*/&|]', text[b + 1:b + 3]) and not re.search(r'[,(\[{=+\-*/&|?:]\s*$', js_code(text[a:b])):
                 break
             b = following
         return [piece for piece in re.split(r';|\n(?=[^\s)\]}.?:,])', js_blank(text[a:b])) if piece.strip()]
@@ -1035,7 +1369,8 @@ def select_mapped(changed, repo, impact, base, why=None):
         text, funcs, top = js_old(other)
         inner = [f for f in funcs if f[0] <= start < f[1]]
         if inner:
-            for test in js_ran(min(inner, key=lambda f: f[1] - f[0])[2]):
+            f = min(inner, key=lambda f: f[1] - f[0])
+            for test in few(impact.js_exercised(other, *f), js_function_name(other, f[0])):
                 add(test, f'runs {other} code that uses {name} ({why_text})')
         else:
             js_top(other, js_statement(top, start, end), f'{other} uses {name}', depth + 1)
@@ -1083,6 +1418,8 @@ def select_mapped(changed, repo, impact, base, why=None):
             if text is None:
                 continue
             for found in word.finditer(text):
+                if re.search(r'\b(?:const|let|var|function\*?|class)\s+$', text[max(0, found.start() - 12):found.start()]):
+                    continue  # where it is declared, not used: that statement didn't change with this
                 js_place(other, found.start(), found.end(), name, why_text, depth)
         handler = re.compile(r'\bon\w+=[^>]*\b' + re.escape(name) + r'\b')
         for other in repo.paths:
@@ -1101,58 +1438,94 @@ def select_mapped(changed, repo, impact, base, why=None):
         if path not in impact.js:
             if git_text(base, path) is not None:
                 return False
-            # a new part: what uses what it declares (a new name: the parts that call it changed too); a statement that
-            # does more at load, or a name another part declares, runs every page test
+            # a new part: what uses what it declares (a new name: the parts that call it changed too), the tests that
+            # name it, and a few page tests for what it does at load; a name another part declares runs every page test
             for statement in js_split(new):
                 listener = DELEGATED.match(statement)
+                if listener and statement[listener.end() - 1] == '{':  # if(b){...}: nothing after that block
+                    close = block_end(statement, listener.end() - 1)
+                    listener = listener if close and re.match(r'\s*;?\s*\}', statement[close + 1:]) else None
                 if listener and js_declared(js_blank(statement)) is None:
                     # a click on what has data-x: the tests that draw such elements (the change that draws them in
                     # this part runs its own)
                     if not drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
                         return False
                     continue
+                if js_declared(js_blank(statement)) is None:
+                    for test in impact.quickest(impact.js_tests):
+                        add(test, f'loads {path}, which is new')
+                    continue
                 js_top(path, [js_blank(statement)], f'{path} is new', 0)
             return path not in page_wide
         text, funcs, top = js_old(path)
         if text is None:
             return False
-        for start, end, new_start, new_end in changed_spans(text, new):
+        # this change's own spans, placed in the map's text (main may have moved since the map: those changes aren't
+        # this one's); where that can't be told, every difference from the map's text
+        base_text = git_text(base, path)
+        spans = moved_spans(text, base_text, new) if base_text is not None else None
+        for start, end, new_start, new_end in (changed_spans(text, new) if spans is None else spans):
             inside = [f for f in funcs if (f[0] <= start and end <= f[1]) if start < end or f[0] < start < f[1]]
             if inside:
+                # past the guard of a listener for clicks anywhere that acts only on what a selector finds: what
+                # clicks such an element (the tests that draw it), not every test that clicks
+                outer = max(inside, key=lambda f: f[1] - f[0])
+                line = text.rfind('\n', 0, outer[0]) + 1
+                listener = DELEGATED.match(text, line)
+                guarded = listener and min(outer[1], (block_end(text, listener.end() - 1) if text[listener.end() - 1] == '{' else None) or outer[1])
+                guarded = guarded if listener and (text[listener.end() - 1] != '{' or block_end(text, listener.end() - 1)) else None
+                if listener and line <= outer[0] < listener.end() <= start and end <= (guarded or 0):
+                    if drawn_by(css_tokens(listener[3]), f'{path} listens for clicks on {listener[3]}'):
+                        for test in impact.quickest(impact.js_exercised(path, *outer)):
+                            add(test, f'ran {path}:{outer[0]}-{outer[1]}')
+                        continue
                 inner = min(inside, key=lambda f: f[1] - f[0])
-                for test in js_ran(inner[2]):
+                for test in few(impact.js_exercised(path, *inner), js_function_name(path, inner[0])):
                     add(test, f'ran {path}:{inner[0]}-{inner[1]}')
                 continue
             for f in funcs:
                 if f[0] < end and start < f[1]:
-                    for test in js_ran(f[2]):
+                    for test in few(impact.js_exercised(path, *f), js_function_name(path, f[0])):
                         add(test, f'ran {path}:{f[0]}-{f[1]}')
-            js_top(path, js_statement(top, start, end) + js_statement(new, new_start, new_end), f'{path} changed', 0)
+            if in_function(top, start, end) and in_function(new, new_start, new_end):
+                # inside a function no test ran: no test runs it; the quickest that load the part see it parse
+                for test in impact.quickest(js_ran(impact.js.get(path, {}).get('top', ()))):
+                    add(test, f'loads {path}, whose code no test ran changed')
+                continue
+            # whole lines put in between two others change no statement there (one that continues the line before is
+            # in the new side's statement)
+            between = start == end and (start == 0 or text[start - 1] == '\n')
+            js_top(path, ([] if between else js_statement(top, start, end)) + js_statement(new, new_start, new_end), f'{path} changed', 0)
         return True
 
     def css_token_sites(token):
-        """Where a class, id or attribute name is used outside stylesheets: (files, dynamic). dynamic: some code puts it
-        together ('cl-' + kind, `fb-${x}`), so a file that has it whole isn't every one that makes it."""
+        """Where a class, id or attribute name is used outside stylesheets: (files, built). built: {file: [offsets]}
+        where some code may put it together ('cl-' + kind, `fb-${x}`), so a file that has it whole isn't every one
+        that makes it: those places draw it too."""
         word = token_word(token)
         # data-x and aria-x name what follows: a data-${key} elsewhere doesn't make every data- name
-        cuts = [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
+        cuts = [] if token.startswith('<') else [i for i, c in enumerate(token) if c == '-' and 0 < i < len(token) - 1 and token[:i] not in ('data', 'aria')]
         # 'chat-' + x or `chat-${x}` makes chat-back where 'back' is a string there too
         built = [(re.compile(r'(?<![\w-])' + re.escape(token[:i + 1]) + r"""(?:\$\{|['"`]\s*\+)"""),
                   re.compile(r"""['"`]""" + re.escape(token[i + 1:]) + r"""['"`]""")) for i in cuts]
         built += [(re.compile(r"""(?:\}|\+\s*['"`])""" + re.escape(token[i:]) + r'(?![\w-])'),
                    re.compile(r"""['"`]""" + re.escape(token[:i]) + r"""['"`]""")) for i in cuts]
-        files, dynamic = [], False
+        files, builders = [], {}
         for other in repo.paths:
             if Path(other).suffix not in ('.js', '.mjs', '.ts', '.html', '.py') or other.startswith(NOT_CODE):
                 continue
             text = repo.text.get(other)
-            if not text or token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text:
+            if not text or token.startswith('<') and not word.search(text):
+                continue
+            if token not in text and not any(token[:i + 1] in text or token[i:] in text for i in cuts) and 'dataset' not in text and not token.startswith('<'):
                 continue
             if word.search(text):
                 files.append(other)
-            if not is_test(other) and any(b.search(text) and rest.search(text) for b, rest in built):  # a test draws no page
-                dynamic = True
-        return files, dynamic
+            if not is_test(other):  # a test draws no page
+                at = sorted({m.start() for b, rest in built if rest.search(text) for m in b.finditer(text)})
+                if at:
+                    builders[other] = at
+        return files, builders
 
     def css_part(path, new):
         """A stylesheet part's change: the tests that run the code that draws what the changed rules style, found by a
@@ -1185,14 +1558,33 @@ def select_mapped(changed, repo, impact, base, why=None):
         for names in needs:
             best = None
             for token in sorted(names):
-                files, dynamic = css_token_sites(token)
+                files, builders = css_token_sites(token)
                 # only tests name it: the code that draws it puts it together some other way
-                if any(not is_test(f) for f in files) and not dynamic and (best is None or len(files) < len(best[1])):
-                    best = (token, files)
+                size = len(files) + sum(len(at) for at in builders.values())
+                if any(not is_test(f) for f in files) and (best is None or size < best[0]):
+                    best = (size, token, files, builders)
             if best is None:
                 return False
-            token, files = best
+            _, token, files, builders = best
             word = token_word(token)
+            for other, at in builders.items():
+                # where code may put the name together: the tests that run that code
+                text = repo.text.get(other, '')
+                if other.endswith('.js') and other.startswith('dashboard/') and other not in changed:
+                    old_text = js_old(other)[0]
+                    if other not in impact.js or old_text is None:
+                        return False
+                    place = placer(old_text, text)
+                    spots = [place(a) for a in at]
+                    if any(a is None for a in spots):
+                        js_loaders(other, f'loads {other}, which may put {token} together ({why_text})')
+                        continue
+                    for a in spots:
+                        js_place(other, a, a + 1, token, why_text, 0)
+                elif other.endswith('.py') and not other.startswith('tests/'):
+                    lines_in(other, sorted({text.count('\n', 0, a) + 1 for a in at}), f'{other} may put {token} together ({why_text})')
+                elif other not in changed:
+                    return False
             for other in files:
                 text = repo.text.get(other, '')
                 if is_test(other):
@@ -1203,11 +1595,21 @@ def select_mapped(changed, repo, impact, base, why=None):
                     if other not in impact.js:
                         return False
                     old_text = js_old(other)[0]
-                    if old_text is None or len(word.findall(old_text)) < len(word.findall(text)):
+                    if old_text is None:
                         js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
                         continue
-                    for found in word.finditer(old_text):
-                        js_place(other, found.start(), found.end(), token, why_text, 0)
+                    # each place the part uses it now, where the map's text has it too
+                    place = placer(old_text, text)
+                    at = [place(found.start()) for found in word.finditer(text)]
+                    if any(a is None or not word.match(old_text, a) for a in at):
+                        # main moved those lines since the map: the places the map's text has it, when that has it
+                        # in no fewer places than now
+                        at = [found.start() for found in word.finditer(old_text)]
+                        if len(at) < len(list(word.finditer(text))):
+                            js_loaders(other, f'loads {other}, which uses {token} ({why_text})')
+                            continue
+                    for a in at:
+                        js_place(other, a, a + len(token), token, why_text, 0)
                 elif other.endswith('.py') and not other.startswith('tests/'):
                     lines = [n for n, line in enumerate(text.split('\n'), 1) if word.search(line)]
                     lines_in(other, lines, f'{other} uses {token} ({why_text})')
@@ -1225,6 +1627,25 @@ def select_mapped(changed, repo, impact, base, why=None):
         return True
 
     dialogs_seen = set()
+
+    def html_part(path, new):
+        """A markup part's change inside elements that start hidden (a closed dialog, a hidden settings panel): the
+        tests that run the code that shows them. False when a change is on show at load."""
+        old = git_text(base, path)
+        if new is None or old is None:
+            return False
+        holders = set()
+        for text, ends in ((old, [(a, b) for a, b, _, _ in changed_spans(old, new)]),
+                           (new, [(a, b) for _, _, a, b in changed_spans(old, new)])):
+            found = hidden_holders(text, ends)
+            if found is None:
+                return False
+            holders |= found
+        for holder in sorted(holders - dialogs_seen):
+            dialogs_seen.add(holder)
+            if not drawn_by([{holder}], f'{path} changed inside #{holder}'):
+                return False
+        return True
 
     def includes_only(path):
         """A change to dashboard.html that only adds or removes include lines of parts this change adds or removes too:
@@ -1321,6 +1742,8 @@ def select_mapped(changed, repo, impact, base, why=None):
                 browser = css_part(path, new)
             elif path == 'dashboard.html':
                 browser = includes_only(path)
+            elif path.startswith('dashboard/') and path.endswith('.html') and base is not None:
+                browser = html_part(path, new)
             browser = browser and path not in page_wide
             # a data file, a dashboard part, a helper: what names it, as before, but a Python file that reads it reaches
             # the tests of the functions that read it, not every test that imports that file
@@ -1394,6 +1817,7 @@ def load_impact(path):
 
 def main(argv):
     show = impact = base = None
+    wide = False
     while argv[:1] and argv[0].startswith('--'):
         if argv[0] == '--why':
             show, argv = Path(argv[1]).name, argv[2:]
@@ -1401,11 +1825,15 @@ def main(argv):
             impact, argv = load_impact(argv[1]), argv[2:]
         elif argv[0] == '--base':
             base, argv = argv[1], argv[2:]
+        elif argv[0] == '--wide':
+            wide, argv = True, argv[1:]
         else:
             break
     source = argv[0] if argv else '-'
     lines = (sys.stdin if source == '-' else open(source, encoding='utf-8')).read().splitlines()
     why = {}
+    if impact is not None:
+        impact.wide = wide
     picked = select(lines, why=why, impact=impact, base=base)
     if show:
         print(f'{show}: ' + (why.get(show) or ('always' if show in ALWAYS else 'not picked')) + (' (all run)' if picked is None else ''))

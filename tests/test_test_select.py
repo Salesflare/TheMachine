@@ -193,6 +193,22 @@ class WithTheMap(unittest.TestCase):
         self.assertLessEqual(set(select.ALWAYS) & names(TESTS), set(got))
         self.assertEqual(sorted(set(got) - select.ALWAYS - {'test_moving.py'}), [])
 
+    def test_a_function_nearly_every_test_runs_takes_a_few_on_a_pull_request(self):
+        path = 'i18n.py'
+        scopes = select.Scopes((ROOT / path).read_text(encoding='utf-8'))
+        start, end, qualname = next(f for f in scopes.funcs if '.' not in f[2] and f[1] - f[0] > 1)
+        self.change(path, [start + 1])
+        word = re.compile(r'(?<![\w$])' + re.escape(qualname) + r'(?![\w$])')
+        ran = sorted(Path(t).name for t in TESTS)[:select.EVERYWHERE + 20]
+        naming = {t for t in ran if word.search((ROOT / 'tests' / t).read_text(encoding='utf-8', errors='replace'))}
+        impact = self.impact({(path, qualname): ran})
+        impact.seconds = {t: i for i, t in enumerate(reversed(ran))}
+        got = set(select.select([path], repo=REPO, impact=impact, base='HEAD')) - select.ALWAYS
+        self.assertEqual(got - naming, set(ran[-select.EVERYWHERE_KEEP:]) - naming - select.ALWAYS)  # the quickest
+        self.assertLessEqual(naming - select.ALWAYS, got)
+        impact.wide = True  # a push to main: all of them
+        self.assertLessEqual(set(ran) - select.ALWAYS, set(select.select([path], repo=REPO, impact=impact, base='HEAD')))
+
     def test_a_test_the_map_does_not_know_follows_imports(self):
         path = 'machine/store/conversation.py'
         self.change(path, [1])
@@ -283,10 +299,15 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(rules[1][3], [(css.index('\n@media'), css.index('{.c') + 1)])
         self.assertEqual(select.css_tokens('.c .d,#e:not(.f)'), [{'c', 'd'}, {'e'}])
         self.assertEqual(select.css_tokens('.x button[aria-pressed="true"]'), [{'x', 'aria-pressed'}])
-        self.assertIsNone(select.css_tokens('.x,button:hover'))
+        # a rule with only a tag: where markup or code makes that element
+        self.assertEqual(select.css_tokens('.x,button:hover'), [{'x'}, {'<button'}])
+        self.assertEqual(select.css_tokens('option,select optgroup'), [{'<option'}, {'<optgroup'}])
+        self.assertTrue(all(select.token_word('<option').search(t) for t in ('`<option value=1>`', 'new Option(a)', "createElement('option')")))
+        self.assertFalse(select.token_word('<option').search('<options>'))
         self.assertEqual(select.css_tokens(':is(.model-pick,.select-like) svg'), [{'model-pick'}, {'select-like'}])
-        self.assertIsNone(select.css_tokens(':is(.a,button) svg'))
         self.assertIsNone(select.css_tokens(':root'))
+        self.assertIsNone(select.css_tokens('body'))
+        self.assertIsNone(select.css_tokens('*'))
         self.assertIsNone(select.css_tokens('@keyframes k'))
         self.assertIsNone(select.css_rules('.a{'))
         self.assertTrue(select.token_word('data-mail-check').search('b.dataset.mailCheck'))
@@ -294,6 +315,23 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(select.closed_dialogs(html, select.token_word('y')), {'d1'})
         self.assertIsNone(select.closed_dialogs(html, select.token_word('x')))  # one is on show at load
         self.assertIsNone(select.closed_dialogs(html, select.token_word('z')))  # an open dialog
+        # a hidden panel holds it too; an include line names a file, not an element
+        html = '<script>/*@include dashboard/p-x.js*/</script><div id="p-x" hidden><b class="w"></b></div>'
+        self.assertEqual(select.closed_dialogs(html, select.token_word('w')), {'p-x'})
+        self.assertEqual(select.closed_dialogs(html, select.token_word('p-x')), {'p-x'})
+        # a listener for clicks anywhere, guarded by what was clicked: the guarded block ends at its own brace
+        t = "document.addEventListener('click',e=>{const b=e.target.closest?.('[data-run]');if(b){go(b,'}')};x()},true)"
+        found = select.DELEGATED.match(t)
+        self.assertEqual(found[3], '[data-run]')
+        self.assertEqual(select.block_end(t, found.end() - 1), t.index('};x()'))
+        # inside a function's body (also past a template in it), or at the top level
+        t = "$('#a').addEventListener('click',e=>{go(`x${y?html`<b>${z}</b>`:''}`);if(q){w()}});\nif(k){m()}\nfunction f(a){return a}"
+        self.assertEqual([select.in_function(t, t.index(x), t.index(x) + 1) for x in ('w()', 'm()', 'return', 'z}')], [True, False, True, True])
+        # a key set on a table at the top level touches what reads the table
+        self.assertEqual(select.js_declared(select.js_blank("SETTINGS_OF['x']='y'")), {'SETTINGS_OF'})
+        self.assertIsNone(select.js_declared(select.js_blank('x.y=go()')))
+        self.assertTrue(select.TABLE_LINE.fullmatch("'graph_role': 'graph_role_action', 'graph_same': 'graph_same_action',"))
+        self.assertFalse(select.TABLE_LINE.fullmatch("'graph_role': role_action(),"))
 
     def page_map(self, part, ran):
         """A map whose browser half knows part as it is now: one function, all of it, that the test ran ran; every page
@@ -340,6 +378,51 @@ class WithTheMap(unittest.TestCase):
         self.assertEqual(select.DELEGATED.match(statements[2])[3], '[data-q]')
         self.assertIsNone(select.DELEGATED.match("document.addEventListener('click',e=>{go(e)})"))
 
+    def test_a_function_tests_only_start_with_runs_where_tests_use_it(self):
+        impact = self.impact({('x.py', 'f'): ['test_moving.py', 'test_help.py', 'test_i18n.py', 'test_paging.py', 'test_still_needed.py'],
+                              ('x.py', 'boot'): ['test_moving.py', 'test_help.py']})
+        at = {name: i for i, name in enumerate(impact.tests)}
+        impact.seconds = {'test_help.py': 1.0, 'test_i18n.py': 2.0, 'test_paging.py': 3.0, 'test_still_needed.py': 4.0}
+        impact.setup = {'x.py': {'f': [at[t] for t in ('test_help.py', 'test_i18n.py', 'test_paging.py', 'test_still_needed.py')],
+                                 'boot': [at['test_moving.py'], at['test_help.py']]}}
+        # test_moving.py ran f past its setUp; of the four that only set up with it, the three quickest
+        self.assertEqual(impact.exercised('x.py', 'f'), {'test_moving.py', 'test_help.py', 'test_i18n.py', 'test_paging.py'})
+        # start code no test runs past its start: every test that ran it
+        self.assertEqual(impact.exercised('x.py', 'boot'), {'test_moving.py', 'test_help.py'})
+        page = ['test_accent_dashboard.mjs', 'test_activity_dashboard.mjs']
+        impact.load = {'dashboard/a.js': {(0, 10): [at[page[1]]]}}
+        self.assertEqual(impact.js_exercised('dashboard/a.js', 0, 10, [at[t] for t in page]), set(page))  # 1 quick one kept
+        impact.load = {'dashboard/a.js': {(0, 10): [at[t] for t in page]}}
+        self.assertEqual(impact.js_exercised('dashboard/a.js', 0, 10, [at[t] for t in page]), set(page))
+
+    def test_a_change_is_placed_in_the_maps_text_when_main_moved_since(self):
+        old = 'a\nfunction f(){\n  x()\n}\nb\n'
+        base = 'a\nadded since the map\nfunction f(){\n  x()\n}\nb\n'
+        new = base.replace('x()', 'y()')
+        spans = select.moved_spans(old, base, new)
+        self.assertEqual([old[a:b] for a, b, _, _ in spans], ['x'])  # only this change, where the map has it
+        self.assertEqual([new[a:b] for _, _, a, b in spans], ['y'])
+        # the change is on a line main changed since the map: its counterpart there (the same statement, edited again)
+        spans = select.moved_spans(old, base.replace('x()', 'z()'), new)
+        self.assertEqual([old[a:b] for a, b, _, _ in spans], ['x'])
+        # where main put more lines in its place: all of those
+        spans = select.moved_spans(old, base.replace('  x()', '  z()\n  w()'), new)
+        self.assertEqual({old[a:b] for a, b, _, _ in spans}, {'  x()\n'})
+        self.assertEqual(select.moved_spans(old, old, new.replace('added since the map\n', '')), select.changed_spans(old, new.replace('added since the map\n', '')))
+
+    def test_markup_that_starts_hidden_is_shown_by_the_code_that_opens_it(self):
+        html = '<main><p>on show</p><div id="panel" hidden><form><input id="q"><b>x</b></form></div>' \
+               '<dialog id="d"><div><i>y</i></div></dialog><dialog id="o" open>z</dialog></main>'
+        at = lambda text: (html.index(text), html.index(text) + len(text))
+        self.assertEqual(select.hidden_holders(html, [at('<b>x</b>'), at('<i>y</i>')]), {'panel', 'd'})
+        self.assertEqual(select.hidden_holders(html, [at('id="panel" hidden')]), {'panel'})
+        self.assertIsNone(select.hidden_holders(html, [at('on show')]))
+        self.assertIsNone(select.hidden_holders(html, [at('z')]))  # an open dialog
+        part = 'dashboard/settings-panels.html'
+        text = (ROOT / part).read_text(encoding='utf-8')
+        inner = text.index('id="addr-maybe"')
+        self.assertEqual(select.hidden_holders(text, [(inner, inner + 5)]), {'addr-maybe'})
+
     def test_include_lines_of_parts_the_change_adds_reach_only_those_parts(self):
         page, part = 'dashboard.html', 'dashboard/todos-mail-check.js'
         text = (ROOT / page).read_text(encoding='utf-8')
@@ -382,6 +465,8 @@ class WithTheMap(unittest.TestCase):
         impact.js = {part: {'top': [at[t] for t in pages], 'funcs': funcs}}
         impact.js_tests = set(pages)
         select.map_text = lambda commit, p: old if p == part else None
+        git_text = self.patched['git_text']
+        select.git_text = lambda base, p: old if p == part else git_text(base, p)  # the branch left main at the map
         return part, impact, fmt, arrow, idle
 
     def test_a_dashboard_function_runs_the_page_tests_that_ran_it(self):
