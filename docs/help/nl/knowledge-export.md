@@ -22,6 +22,7 @@ Op een gehoste Machine werkt het net zo, vanuit de Instellingen van je Machine z
 
 - Mensen, organisaties en projecten: elk een Markdown-pagina, met hoe ze met elkaar verbonden zijn.
 - Feiten en voorkeuren: wat je Machine weet, over jou en over hen.
+- Vroegere feiten: wat niet meer geldt (afgelopen, opzijgezet of vervangen), met wat het verving. Feiten die je verwijderde, blijven erbuiten.
 - Regels, hoe je schrijft en handtekeningen: wat je concepten volgen.
 - Skills: je handleidingen, aan en uit.
 - Context: teambriefings, samenvattingsregels, beloftes en open to-do's.

@@ -39,6 +39,13 @@ class Reader:
         who = self.find(name)['id']
         return [f['text'] for f in self.records['facts'] if who in f['about'] and topic in f['text'].casefold()]
 
+    def used_to(self, name, topic):
+        """What held before, as the README says: records/fact_history.jsonl, with what took its place by replaced_by."""
+        who = self.find(name)['id']
+        now = {f['id']: f['text'] for f in self.records['facts']}
+        return [[f['text'], f['status'], now.get(f['replaced_by'])] for f in self.records.get('fact_history', [])
+                if who in f['about'] and topic in f['text'].casefold()]
+
     def relation(self, a, b):
         a, b = self.find(a)['id'], self.find(b)['id']
         return [f"{self.by_id[r['from']]['name']} {r['label']} {self.by_id[r['to']]['name']}" for r in self.records['relationships']
@@ -90,6 +97,7 @@ def answers(root):
     return {
         'What does the owner prefer for meetings?': r.owner_prefers('meeting'),
         'What does Avery prefer for contact?': r.prefers('Avery', 'call'),
+        'What did Avery prefer before, and what replaced it?': r.used_to('Avery', 'call'),
         'Who is Bo and how do they relate to Avery?': r.relation('Bo', 'Avery'),
         'Where does Avery work?': r.works_at('Avery'),
         'What did the owner promise Avery, and by when?': r.promised('Avery'),

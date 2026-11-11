@@ -22,6 +22,7 @@ Su una Machine in hosting funziona allo stesso modo, dalle Impostazioni della tu
 
 - Persone, organizzazioni e progetti: una pagina Markdown ciascuno, con i loro legami.
 - Fatti e preferenze: ciò che la tua Machine sa, su di te e su di loro.
+- Fatti passati: ciò che non vale più (finito, messo da parte o sostituito), con ciò che lo ha sostituito. I fatti che hai rimosso restano fuori.
 - Regole, come scrivi e firme: ciò che seguono le tue bozze.
 - Skill: le tue guide, attive e no.
 - Contesto: brief del team, righe di riepilogo, promesse e attività aperte.

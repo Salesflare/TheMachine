@@ -44,7 +44,7 @@ Every record has a stable `id`; records point at each other by id.
 
 - Entities: `email:<address>` or another identity for a person, `org:<domain>` for an organization, `project:<n>` for a project.
 - Sources: `m-` and 16 hex characters, the same for the same message in every export.
-- Others: `fact-<n>`, `rule-<n>`, `promise-<n>`, `todo-<id>`, `skill-<slug>`, `brief-<fleet>`, `summary-<entity>-<n>`.
+- Others: `fact-<n>`, `rule-<n>` (one keeps its id when it moves to `fact_history.jsonl`), `style-<channel>`, `promise-<n>`, `todo-<id>`, `skill-<slug>`, `brief-<fleet>`, `summary-<entity>-<n>`.
 
 ## Records
 
@@ -57,7 +57,8 @@ by a connected AI). `sources` is a list of source ids.
 | `relationships.jsonl` | a link between two entities | `from`, `to` (entity ids), `kind` (member, project, together, relation), `label` (reads "from label to": works at, works on, often together with, or the owner's words), `strength`, `last_at`, `said_by`, `sources` |
 | `facts.jsonl` | something known | `id`, `text`, `sort` (fact, preference, commitment, event), `about` (entity ids; empty is the owner), `side`, `said_by`, `said_at`, `learned_at`, `valid_until`, `sources` |
 | `rules.jsonl` | a rule the owner's drafts follow | `id`, `text`, `applies_to`, `said_by`, `said_at`, `learned_at`, `sources` |
-| `writing_style.jsonl` | how the owner writes on one channel | `channel`, `text`, `said_by`, `updated_at` |
+| `fact_history.jsonl` | a fact or rule that no longer holds | `id` (`fact-<n>` or `rule-<n>`), `kind` (fact, rule), `status` (ended: past its end day or overturned by a newer message; set_aside: not used lately; merged: a newer one took its place; moved: into a skill, a writing style or a person's record), `text`, `sort`, `about`, `side`, `said_by`, `said_at`, `learned_at` (saved), `valid_until`, `ended_at`, `set_aside_at`, `merged_at`, `replaced_by` (the id of what took its place: a fact, rule, skill, writing style or entity; empty when that is not in the export), `sources`. One the owner forgot is never here, nor what was merged into it |
+| `writing_style.jsonl` | how the owner writes on one channel | `id` (`style-<channel>`), `channel`, `text`, `said_by`, `updated_at` |
 | `signatures.jsonl` | a mailbox's signature | `account`, `text`, `html`, `source`, `updated_at` |
 | `skills.jsonl` | a procedure | `id`, `slug`, `name`, `description`, `body` (Markdown steps), `status` (on, off), `origin`, `version`, `updated_at` |
 | `summaries.jsonl` | a summary line about an entity | `id`, `about`, `kind`, `text`, `said_by`, `sources`, `facts`, `promises` |
@@ -81,6 +82,8 @@ Several values in one cell are separated by `; `.
 
 - Never: passwords, keys, tokens, sign-ins. Text that looks like a key anywhere in the export reads
   `[removed: looked like a key]`.
+- Forgotten: a fact or rule the owner removed is not in the export, also not in `fact_history.jsonl`, and
+  neither is what was merged into it.
 - Message text: off by default. Then `sources` holds only ids, kinds, dates, mailbox and thread, enough to find the
   message in the owner's own mailbox.
 - Private and Careful: off by default. Then Only-you projects and what is only on them, private or sensitive threads

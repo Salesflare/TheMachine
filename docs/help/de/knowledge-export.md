@@ -22,6 +22,7 @@ Es funktioniert genauso auf einer gehosteten Machine und auf deinem eigenen Comp
 
 - Personen, Organisationen und Projekte: je eine Markdown-Seite, mit ihren Beziehungen.
 - Fakten und Vorlieben: was deine Machine weiß, über dich und über sie.
+- Frühere Fakten: was nicht mehr gilt (beendet, beiseitegelegt oder ersetzt), mit dem, was sie ersetzt hat. Fakten, die du entfernt hast, bleiben draußen.
 - Regeln, wie du schreibst, und Signaturen: wonach sich deine Entwürfe richten.
 - Skills: deine Anleitungen, an und aus.
 - Kontext: Team-Briefings, Zusammenfassungszeilen, Versprechen und offene Aufgaben.

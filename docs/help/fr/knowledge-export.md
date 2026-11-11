@@ -22,6 +22,7 @@ Sur une Machine hébergée, c’est pareil, depuis les Paramètres de votre Mach
 
 - Personnes, organisations et projets : une page Markdown pour chacun, avec leurs liens.
 - Faits et préférences : ce que votre Machine sait, sur vous et sur eux.
+- Faits passés : ce qui ne vaut plus (terminé, mis de côté ou remplacé), avec ce qui l’a remplacé. Les faits que vous avez retirés restent dehors.
 - Règles, votre façon d’écrire et signatures : ce que suivent vos brouillons.
 - Compétences : vos méthodes, actives ou non.
 - Contexte : briefs d’équipe, lignes de résumé, promesses et tâches ouvertes.

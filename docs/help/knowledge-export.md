@@ -22,6 +22,7 @@ It works the same on a hosted Machine and on your own computer.
 
 - People, organizations and projects: one Markdown page each, with how they relate.
 - Facts and preferences: what your Machine knows, about you and about them.
+- Past facts: what no longer holds (ended, set aside or replaced), with what replaced it. Facts you removed stay out.
 - Rules, how you write and signatures: what your drafts follow.
 - Skills: your how-tos, on and off.
 - Context: team briefs, summary lines, promises and open to-dos.
