@@ -63,6 +63,9 @@ try{
  await page.goto(base+'/#graph=people');await page.locator('[data-graph-panel="people"]:not([hidden])').waitFor();
  await page.evaluate(()=>{location.hash='#graph=projects';graphHashSync()});
  await page.locator('[data-graph-panel="projects"]:not([hidden])').waitFor({timeout:3000});assert.equal(await page.evaluate(()=>location.hash),'#graph=projects');
+ // A pane the owner switches to goes in the address, so a reload opens it
+ await page.evaluate(()=>showTab('people','orgs'));await page.locator('[data-graph-panel="orgs"]:not([hidden])').waitFor();
+ await page.waitForFunction(()=>location.hash==='#graph=orgs',null,{timeout:3000});
  await page.goto(base+'/#people');await page.locator('#people:not([hidden])').waitFor();
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
