@@ -24,7 +24,7 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 **Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. A to-do with a reply draft also looks done when you answered that conversation yourself, like in Gmail or Slack.
 
-A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline and says whom it is still waiting on.
+A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline, at the deadline when that is later today, or the next morning once it has passed, and says whom it is still waiting on.
 
 When a to-do is for a result someone else delivers, like a signed contract or a payment, it says **Done when:** that result. Sending your part doesn't close it: it waits in **Waiting on others** until a message shows the result, then closes by itself, with **Undo**. If nothing comes by the time to chase them, it comes back with **Write a short nudge** in its chat. Tell it in the chat what counts as done to change it.
 
