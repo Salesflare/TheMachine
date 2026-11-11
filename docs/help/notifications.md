@@ -66,9 +66,9 @@ Emails have Open links (and Snooze for what waits). They only open the dashboard
 It comes on work days at your **Morning digest** time, unless there's nothing to say. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:
 
 - a greeting with what matters today, like "Morning Sam, 2 replies are ready to send";
-- your meetings in one line;
 - at most three things to do, each with an Open link: drafts ready for you and promises due today first;
 - how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time.
+- your meetings in one line.
 
 The push says the same without links. Tap it to open today in the **Calendar**.
 
