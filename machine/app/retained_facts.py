@@ -230,6 +230,12 @@ def _closeness(db, probes, settings):
     return out
 
 
+def near(db, vector, settings, floor):
+    """{fact id: cosine} of the facts outside the current list at least floor from one vector (a chat question's,
+    ask_memory.for_chat), within MEANING_WORK comparisons (_closeness)."""
+    return {i: c for i, c in _closeness(db, [vector], settings).items() if c >= floor}
+
+
 def _close_for(db, found, probes, settings):
     """{fact id: best cosine} of these few facts (since_session's current ones), from their stored vectors."""
     if not probes or not found:

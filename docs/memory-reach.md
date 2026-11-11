@@ -30,7 +30,7 @@ made-up data, no model call), and what is still missing. How memory is picked fo
 | Preparation and draft | facts and rules (`facts_for`), set-aside and historical facts that bear on it (`retained`); the to-do's chat runs in that session, each turn with what changed since the session read the list (`new`) and its own smaller `retained` slice (`todo_chat`) | records, related signals, voice | facts and rules, `USER.md` |
 | Ask | facts on the question's records, others by meaning, or without embeddings the owner's own by words (`ask_memory.matching`) | promises, summaries, meetings | same as chat |
 | Talk | `recall` tool: learned facts by words in their plain form, then by meaning from stored vectors (`ask_memory.learned`) | search, open_record, promises | `recall`: learned facts and memory search |
-| Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then set-aside and historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
+| Owner's main chat | `assistant_memory` tool: their own facts and draft rules by words, then by meaning from stored vectors, then set-aside and historical ones (`recall` `chat`); facts about a person (`graph` node: `open.known`) | `graph`, `events` | `assistant_memory`, `USER.md`, `MEMORY.md` (OpenClaw) |
 | Routine | facts and rules block (`recall` `routine`); a run that leaves a draft: the voice for its channel | `events` and `graph` tools; voice | facts and rules block, `USER.md`, memory search, birthdays |
 | Morning digest | through the to-dos it lists | promises due today | through the to-dos it lists |
 
@@ -64,6 +64,16 @@ the question names them. At most 900 characters (about 225 tokens), logged as `c
 block: a turn that doesn't ask costs only the tool's definition (about 120 tokens, cached with the rest). The bridge
 sets the chat mark (`_owner_chat`); the service answers nothing without it.
 
+The chat's tool matched by words only, so "flights" or "plane trip" didn't find "You only fly KLM". With embeddings
+on it now also finds by meaning, as Talk: one local embedding of the question (2 second timeout, only when some fact
+has a stored vector), against the stored vectors (`fact_vectors`) of the current facts and draft rules (at least
+`FACT_FLOOR`) and of the set-aside, ended and replaced ones (`retained_facts.near`, within `MEANING_WORK`
+comparisons). Word matches still come first; no fact is embedded during the call and no model turn runs. Without
+embeddings, or when the embedding server fails, the words alone, as before. The same rules hold: never a forgotten
+fact (its vector may still be stored, it is never read), ended and replaced ones only as history, never a connected
+AI's, a person's fact only when named, and the same 900 characters. On a store with 5,000 facts the meaning scan adds
+about 60 ms to a call, plus the one embedding request.
+
 A to-do's chat answers in its preparation's session, so a fact learned after that preparation started reached it only
 on a redo. Each chat turn now gets what changed since the session read the list (`retained_facts.since_session`, the
 `new` block of `todo_chat`): a fact or rule learned, edited or brought back since, that bears on the to-do (all of
@@ -90,7 +100,9 @@ or the draft's title name (Slack, LinkedIn) only goes first. A run that hands in
 
 ## Still missing
 
-- **The owner's main chat** reads what was learned by words only (in their plain form, as Talk), not yet by meaning:
-  "flying" doesn't find "flights".
+- **Without embeddings**, the owner's main chat, Talk and Ask match what was learned by words in their plain form
+  only: a word that changes its stem ("flights" for "fly") or another word for the same thing ("plane") finds it
+  only by meaning. A fact with no stored vector yet (no preparation or Ask ranked it since it was learned) is found
+  by words only, also with embeddings on.
 - **The morning digest and weekly recap** are plain code with no model turn: what was learned reaches them only
   through the to-dos and promises they list. By design.
