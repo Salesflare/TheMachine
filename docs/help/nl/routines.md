@@ -33,7 +33,9 @@ Verjaardagen komen uit je agenda’s (de verjaardagen en de agenda Verjaardagen 
 
 Alleen **Bewaren** houdt ze bij, en alleen de verjaardag, op de pagina van elke persoon. Een verjaardag die je daar zelf invulde, blijft. Hij leest nooit vanzelf opnieuw: **Opnieuw importeren** op de to-do doet dat. De browser moet aangemeld zijn bij Facebook. Is hij dat niet, tik dan op **Inloggen bij Facebook** op de to-do en log daar in; daarna leest hij de pagina vanzelf. The Machine meldt zich nooit voor je aan.
 
-Vrienden die niemand in je Graph heeft, worden geteld, met een paar namen. **Voeg … toe als persoonlijke contacten** voegt ze allemaal tegelijk toe, ook na Bewaren: elk met naam en verjaardag, nooit gedeeld met een Work Fleet. Een naam die al iemand in je Graph heeft, of die iemand had die je definitief verwijderde, wordt overgeslagen. Verjaardagsherinneringen komen nog altijd alleen voor mensen naar wie je schrijft. **Ongedaan maken** op de to-do haalt precies die mensen weer weg.
+Vrienden die niemand in je Graph heeft, worden geteld, met een paar namen. **Voeg … toe als persoonlijke contacten** voegt ze allemaal tegelijk toe, ook na Bewaren: elk met naam en verjaardag, nooit gedeeld met een Work Fleet. Een naam die al iemand in je Graph heeft, of die iemand had die je definitief verwijderde, wordt overgeslagen. Verjaardagsherinneringen komen nog altijd alleen voor mensen naar wie je schrijft.
+
+**Ongedaan maken** op de to-do haalt precies die mensen weer weg, ook na **Opnieuw importeren**.
 
 Zolang haar woorden die van het sjabloon zijn, draait ze op eigen code, zonder je AI-abonnement (Spam opruimen gebruikt één korte beurt als er mail te lezen is). Een nieuwe naam houdt dat zo. Pas je haar woorden aan, dan draait ze zoals elke routine op jouw woorden.
 

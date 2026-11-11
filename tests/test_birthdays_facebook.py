@@ -269,7 +269,7 @@ class Import(unittest.TestCase):
         self.assertEqual(view['state'], 'preview')
         self.assertEqual((view['found'], view['matched'], view['new'], view['unmatched']), (5, 3, 2, 1))  # Jo's was known already
         self.assertEqual(view['ambiguous'], ['Pat Quinn'])
-        self.assertEqual({m['name'] for m in view['shown']}, {'Robin Vale', 'Sam Rivera', 'Jo Tanaka'})
+        self.assertEqual({m['name'] for m in view['shown']}, {'Robin Vale', 'Sam Rivera'})  # what Save writes: Jo's is a count
         with self.store.connect() as db:
             self.assertNotIn('email:sam@mail.example', enrichment.people_facts(db, ('birthday',)))  # nothing kept yet
         done = self.app.action('birthdays_facebook', {'suggestion_id': sid, 'step': 'save'}, owner_dashboard=True)
