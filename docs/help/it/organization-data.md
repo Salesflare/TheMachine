@@ -15,6 +15,8 @@ Viene inviato solo l'indirizzo web dell'organizzazione, mai i tuoi messaggi o ch
 
 Se la ricerca non trova un logo, o non c'è ricerca, il logo arriva dal sito dell'organizzazione stessa: l'icona indicata dalla sua home page. Viene salvato sulla tua Machine, così nessun servizio di loghi sa con chi hai a che fare. Un sito senza icona viene interpellato di nuovo dopo 30 giorni. Se la ricerca ha trovato l'organizzazione ma non un logo, viene ripetuta una volta dopo una settimana, e il logo che trova allora sostituisce l'icona del sito.
 
+Quando la ricerca le conosce, sotto la descrizione compaiono fino a 5 specializzazioni dell'organizzazione, e l'elenco delle organizzazioni si può filtrare per una di esse: **Filtra**, poi **Specializzazione**. Quando la ricerca di una persona porta con sé i dettagli della sua azienda, completano anche l'organizzazione, che così non ha bisogno di una ricerca propria. I dettagli cercati negli ultimi 90 giorni restano come sono.
+
 ## Correggi un dettaglio sbagliato
 
 Nella pagina dell'organizzazione:

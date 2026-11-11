@@ -15,6 +15,8 @@ Solo se envía la dirección web de la organización, nunca tus mensajes ni a qu
 
 Si la búsqueda no trae logo, o no hay búsqueda, el logo sale de la propia web de la organización: el icono que indica su página de inicio. Se guarda en tu Machine, así ningún servicio de logos sabe con quién tratas. A una web sin icono se le vuelve a preguntar a los 30 días. Si la búsqueda encontró la organización pero no su logo, se repite una vez más a la semana, y el logo que traiga entonces sustituye al icono de la web.
 
+Cuando la búsqueda las trae, bajo la descripción aparecen hasta 5 especialidades de la organización, y la lista de organizaciones se puede filtrar por una: **Filtrar** y luego **Especialidad**. Cuando la búsqueda de una persona trae los datos de su empresa, también completan la organización, que así no necesita una búsqueda propia. Los datos buscados en los últimos 90 días se quedan como están.
+
 ## Corrige uno equivocado
 
 En la página de la organización:

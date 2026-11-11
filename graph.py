@@ -1981,7 +1981,7 @@ def context_lines(db, event_ids, limit_chars=1500, skip_card=None, sides=None, s
             title = (view.get('profile') or {}).get('title')
             bits = ([view['role']] if view['role'] else ['no role yet']) + ([f'job title {title}'] if title else []) \
                 + ([f"at {org['name']}" + (f" ({'; '.join(org_bits)})" if org_bits else '')] if org else []) \
-                + [relation_text(r) for r in view['relations'][:2]] \
+                + enrichment.prep_bits(db, json.loads(row['info'] or '{}').get('identifiers') or [row['id']]) + [relation_text(r) for r in view['relations'][:2]] \
                 + [f"{view['closeness']} contact", f"last {'seen' if view['seen_only'] else 'contact'} {short_date(view['last_at'])}"]
             if view['usual_gap_days']:
                 gap = int(view['usual_gap_days'])
@@ -2222,7 +2222,7 @@ def detail(db, node_id, events=12):
         view['headline'] = headline(db, node_id) if json.loads(row['info'] or '{}').get('has_headline') else None
         own = enrichment.view_facts(db, json.loads(row['info'] or '{}').get('identifiers') or [node_id])  # their own words
         view['headline'] = view['headline'] or (own.get('headline') or {}).get('text')
-        view['bio'] = own.get('bio')
+        view.update(bio=own.get('bio'), **enrichment.more_about(db, json.loads(row['info'] or '{}').get('identifiers') or [node_id]))  # about, role history
         if view.get('org'):
             org = db.execute('SELECT name FROM graph_nodes WHERE id=?', (view['org'],)).fetchone()
             view['org_name'] = org['name'] if org else json.loads(row['info'] or '{}').get('org_name')  # one just named: at the next build
@@ -3512,7 +3512,7 @@ def person_shown(group, edited, looked_up, facts, photos):
     """A person's profile and contacts as their page shows them, the owner's own details over all: (profile or None, contacts)."""
     person_profile = next((json.loads(looked_up[i]) for i in group if i in looked_up), None)
     # Only a photo saved on this Machine shows (served by the dashboard), never the service's own link.
-    person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone')}
+    person_profile = {k: v for k, v in (person_profile or {}).items() if k not in ('photo', 'photo_gone', *enrichment.PERSON_MORE)}
     person_profile = enrichment.with_facts(person_profile, [facts[i] for i in group if i in facts])
     if photo_key := next((photos[i] for i in group if i in photos), None):
         person_profile['photo'] = 'api/person-photo?p=' + photo_key

@@ -22,7 +22,23 @@ LEE = {'name': 'Lee Parker', 'linkedin_id': 'lee-parker-1', 'linkedin_url': 'htt
        'about_me': 'I love selling.', 'social_followers': 900, 'social_connections': 500,
        'experience': [{'position': 'Head of Sales', 'company': {'name': 'Globex'}}], 'education': [{'school': 'Springfield U'}],
        'languages': ['English'], 'websites': ['https://lee.example']}
-PEOPLE = {('Lee Parker', 'globex.com'): LEE,
+# The lead API's fuller person shape: their about text, their roles (newest first, a board seat held alongside), and
+# their company's whole profile with its specialties. Made up.
+ARI = {'name': 'Ari Vance', 'position': 'VP Engineering', 'title': 'VP Engineering at Initech | Speaker',
+       'location': {'city': 'Austin', 'country_code': 'us'}, 'about_me': 'Building teams that ship. ' * 20,
+       'company': {'name': 'Initech', 'domain': 'initech.example', 'website': 'https://www.initech.example/', 'employees_num': 640,
+                   'size': '501-1000', 'industry': 'Computer Software', 'headquarters': 'Austin, Texas', 'about_us': 'Initech makes software.',
+                   'specialties': ['Cloud Computing', 'cloud computing', 'TPS Reports', 'x' * 80, 'Payroll', 'Compliance', 'APIs', 'Mobile'],
+                   'image_url': 'https://media.example/initech.png', 'social_followers': 12000, 'crunchbase_url': 'https://crunchbase.example/initech',
+                   'location': {'address': '1 Main St', 'city': 'Austin', 'country_code': 'us'}, 'type': 'Privately Held'},
+       'experience': [{'position': 'VP Engineering', 'company': {'name': 'Initech', 'image_url': 'https://media.example/i.png'},
+                       'start_time': 'Feb 2021', 'end_time': 'Present', 'duration': '4 yrs', 'location': 'Austin'},
+                      {'position': 'Board Member', 'company': {'name': 'Code Club'}, 'start_time': '2019', 'end_time': 'Present'},
+                      {'position': 'Engineering Manager', 'company': {'name': 'Hooli'}, 'start_time': '2016', 'end_time': '2021'},
+                      {'position': 'Software Engineer', 'company': {'name': 'Globex'}, 'start_time': 'Jun 2012', 'end_time': '2016'},
+                      {'position': 'Intern', 'company': {'name': 'Umbrella'}, 'start_time': '2011', 'end_time': '2012'}],
+       'education': [{'institution_name': 'Somewhere U', 'start_time': '2008', 'end_time': '2012'}], 'social_followers': 3000}
+PEOPLE = {('Lee Parker', 'globex.com'): LEE, ('Ari Vance', 'initech.example'): ARI,
           ('Kai Novak', 'hooli.example'): {'name': 'Someone Else', 'position': 'CEO', 'company': {'name': 'Hooli', 'domain': 'hooli.example'}},
           ('Rae Quinn', 'initech.example'): {'name': 'Rae Quinn', 'position': 'CTO', 'company': {'name': 'Other', 'domain': 'other.example'}}}
 # Salesflare's lead API shape for a company, made up: its country_code names another country than its address.
@@ -371,7 +387,8 @@ class Enrichment(unittest.TestCase):
     def test_a_person_answer_is_cut_down_to_what_the_dashboard_shows(self):
         self.assertEqual(enrichment.normalise_person(LEE, 'Lee Parker', 'globex.com'),
                          {'title': 'Head of Sales', 'company': 'Globex', 'company_domain': 'globex.com', 'photo': 'https://media.example/lee.jpg',
-                          'linkedin_url': 'https://www.linkedin.com/in/lee-parker-1', 'city': 'Springfield', 'country': 'US'})
+                          'linkedin_url': 'https://www.linkedin.com/in/lee-parker-1', 'city': 'Springfield', 'country': 'US', 'about': 'I love selling.',
+                          'org': {'name': 'Globex', 'employees': 120, 'website': 'globex.com'}})
         # Other services' shapes: People Data Labs, Hunter.
         pdl = enrichment.normalise_person({'data': {'full_name': 'lee parker', 'job_title': 'head of sales', 'job_company_name': 'globex',
                                                     'job_company_website': 'globex.com', 'linkedin_url': 'linkedin.com/in/leeparker',
@@ -426,7 +443,12 @@ class Enrichment(unittest.TestCase):
         self.assertEqual(enrichment.people_step(self.store.connect, config, now), 0)  # the others aren't known; done until due again
         with self.store.connect() as db:
             self.assertEqual(enrichment.people_status(db)['found'], 1)
-            self.assertEqual(enrichment.status(db, config)['found'], 0)  # the organizations' budget is untouched
+            self.assertEqual(enrichment.status(db, config)['found'], 1)  # Globex, filled in from Lee's answer ...
+            self.assertEqual(sorted(enrichment.due(db, now, 10)), ['initech.example', 'umbrella.example'])
+        with patch.object(enrichment, 'fetch', return_value=None) as fetch:  # ... outside the organizations' budget
+            enrichment.step(self.store.connect, {**config, 'enrichment': {**config['enrichment'], 'per_day': 2}}, now)
+        self.assertEqual(fetch.call_count, 2)
+        with self.store.connect() as db:
             db.execute('DELETE FROM person_profiles')
             enrichment.save_person(db, 'email:someone@else.example', 'none', None, now)  # today's one look-up
         capped = self.people_config(people_per_day=1)
@@ -880,6 +902,79 @@ class Enrichment(unittest.TestCase):
             self.assertEqual(tuple(db.execute("SELECT status,profile FROM person_profiles WHERE identifier='email:kim@initech.example'").fetchone()), ('none', '{"why": "unknown"}'))
         self.build()
         self.assertNotIn('profile', {k for k, v in self.node('email:kim@initech.example').items() if v})  # a miss shows nothing
+
+    def test_the_lead_apis_fuller_answer_keeps_a_few_short_things_more(self):
+        ari = enrichment.normalise_person(ARI, 'Ari Vance', 'initech.example')
+        self.assertTrue(len(ari['about']) <= 300 and ari['about'].endswith('…'))
+        # the current role's start; the two roles before it, not the board seat held alongside
+        self.assertEqual((ari['since'], ari['before']), ('2021-02', [{'title': 'Engineering Manager', 'company': 'Hooli'},
+                                                                    {'title': 'Software Engineer', 'company': 'Globex'}]))
+        org = ari['org']  # their company's own profile, cut down like an organization look-up
+        self.assertEqual(org['specialties'], ['Cloud Computing', 'TPS Reports', 'Payroll', 'Compliance', 'APIs'])
+        self.assertEqual((org['name'], org['employees'], org['industry'], org['logo']), ('Initech', 640, 'Computer Software', 'https://media.example/initech.png'))
+        self.assertFalse({'social_followers', 'crunchbase_url', 'education', 'duration'} & set(json.dumps(ari).replace('"', ' ').split()))
+        self.assertEqual(enrichment.normalise({'name': 'Acme', 'specialties': 'Cloud, AI'}), {'name': 'Acme'})  # only a list
+        for raw, want in (('Feb 2014', '2014-02'), ('September 2019', '2019-09'), ('2018', '2018'), ('2014-02-01', '2014-02'),
+                          ({'year': 2014, 'month': 2}, '2014-02'), ('Present', None), ('Smarch 2014', None), ('1850', None), (None, None)):
+            self.assertEqual(enrichment.started(raw), want, raw)
+        # No roles list, or none still going: nothing made up.
+        self.assertEqual(enrichment.career(None, 'CTO', 'Acme'), {})
+        self.assertEqual(enrichment.career([{'position': 'CTO', 'company': {'name': 'Acme'}, 'start_time': '2019', 'end_time': '2022'}], 'CTO', 'Acme'),
+                         {'before': [{'title': 'CTO', 'company': 'Acme'}]})
+        # Other services' shapes work as before: none of the new fields, no organization.
+        pdl = enrichment.normalise_person({'data': {'full_name': 'ari vance', 'job_title': 'vp', 'job_company_website': 'initech.example'}}, 'Ari Vance', 'initech.example')
+        self.assertEqual(pdl, {'title': 'vp', 'company_domain': 'initech.example'})
+
+    def test_a_person_look_up_fills_in_their_organization_unless_a_fresher_one_is_kept(self):
+        now = tg.NOW.isoformat()
+        ago = lambda days: (tg.NOW - enrichment.dt.timedelta(days=days)).isoformat()
+        ari = enrichment.normalise_person(ARI, 'Ari Vance', 'initech.example')
+        with self.store.connect() as db:
+            enrichment.save_person(db, 'email:ari@initech.example', 'found', ari, now)
+            kept = json.loads(db.execute("SELECT profile FROM person_profiles WHERE identifier='email:ari@initech.example'").fetchone()[0])
+            org = db.execute("SELECT status,profile,fetched_at FROM org_profiles WHERE domain='initech.example'").fetchone()
+            self.assertNotIn('org', kept)  # never kept on the person
+            self.assertEqual((org[0], json.loads(org[1])['specialties'][0], org[2]), ('found', 'Cloud Computing', now))
+            self.assertEqual(enrichment.due(db, now, 10), [])  # no look-up of its own needed
+            for status, at, profile, replaced in (('found', ago(30), {'name': 'Initech Corp'}, False),   # fresher: stays
+                                                  ('wrong', ago(200), None, False),                     # the owner's mark stays
+                                                  ('found', ago(120), {'name': 'Initech Corp'}, True),  # due again: refreshed
+                                                  ('none', ago(5), None, True), ('error', ago(1), None, True)):
+                db.execute('DELETE FROM org_profiles')
+                db.execute('INSERT INTO org_profiles(domain,status,profile,fetched_at) VALUES(?,?,?,?)',
+                           ('initech.example', status, json.dumps(profile) if profile else None, at))
+                self.assertEqual(enrichment.fill_org(db, 'initech.example', ari['org'], now), replaced, (status, at))
+                self.assertEqual(db.execute("SELECT fetched_at FROM org_profiles WHERE domain='initech.example'").fetchone()[0], now if replaced else at)
+            # Another company's profile, or a person found as no one, fills nothing in.
+            db.execute('DELETE FROM org_profiles')
+            self.assertFalse(enrichment.fill_org(db, 'initech.example', {**ari['org'], 'name': 'Zzz', 'website': 'https://other.example/x'}, now))
+            enrichment.save_person(db, 'email:ari@initech.example', 'none', {**ari, 'company_domain': None}, now)
+            self.assertIsNone(db.execute('SELECT 1 FROM org_profiles').fetchone())
+
+    def test_their_page_and_preparations_show_about_and_role_history(self):
+        self.add(tg.mail(3, 'Ari Vance <ari@initech.example>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', 'Ari Vance <ari@initech.example>', ('SENT',)))
+        self.build()
+        now = tg.NOW.isoformat()
+        self.assertEqual(enrichment.people_step(self.store.connect, self.people_config(), now), 1)
+        self.build()
+        node = self.node('email:ari@initech.example')
+        self.assertFalse({'about', 'since', 'before', 'org'} & set(node['profile']))  # read at view time, never copied into the graph
+        self.assertEqual(self.node('org:initech.example')['profile']['specialties'][:2], ['Cloud Computing', 'TPS Reports'])
+        with self.store.connect() as db:
+            page = graph.detail(db, 'email:ari@initech.example')
+            self.assertEqual((page['since'], page['before'][0], page['about_me'][:10]), ('2021-02', {'title': 'Engineering Manager', 'company': 'Hooli'}, 'Building t'))
+            events = [r[0] for r in db.execute("SELECT event_id FROM graph_events WHERE node_id='email:ari@initech.example'")]
+            lines = graph.context_lines(db, events)
+            self.assertIn('in this role since Feb 2021, before: Engineering Manager at Hooli, Software Engineer at Globex', lines)
+            self.assertIn('about (looked up): Building teams', lines)
+            self.assertLess(len(lines), 1500)
+            # Their own bio (a connector's) wins: the looked-up about text stays out of preparations.
+            enrichment.offer_facts(db, [(['email:ari@initech.example'], {'bio': 'Engineer and runner.'}, enrichment.STATED)], 'x', now)
+            self.assertNotIn('about (looked up)', graph.context_lines(db, events))
+            # Organizations filter by a specialty, as text.
+            orgs = lambda **f: [i['id'] for i in graph.page(db, 'orgs', filters=f)['items']]
+            self.assertEqual(orgs(specialty='tps'), ['org:initech.example'])
+            self.assertEqual((orgs(specialty='blockchain'), orgs(specialty='%')), ([], []))
 
 
 if __name__ == '__main__':

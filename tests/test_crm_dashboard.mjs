@@ -138,8 +138,9 @@ try{
   assert.deepEqual(await page.evaluate(()=>[...new DOMParser().parseFromString(String(crmChips('people')),'text/html').querySelectorAll('.chip')].map(c=>c.textContent)),['Closeness: Close','Last contact: in the last 30 days','Has an open project']);
   await page.evaluate(()=>document.querySelector('[data-graph-sub="orgs"]').click());await page.locator('#people-view [data-graph-panel="orgs"]').waitFor();
   await page.evaluate(()=>crmFilterOpen('orgs'));await page.locator('#crm-dialog[open]').waitFor();
-  assert.deepEqual(await page.locator('#crm-form .ed-field').evaluateAll(ls=>ls.map(l=>l.firstChild.textContent.trim())),['Industry','Size','Last contact','Country','Owner']);
+  assert.deepEqual(await page.locator('#crm-form .ed-field').evaluateAll(ls=>ls.map(l=>l.firstChild.textContent.trim())),['Industry','Specialty','Size','Last contact','Country','Owner']);
   assert.equal(await page.locator('#crm-form [name=industry]').getAttribute('placeholder'),'Any industry');
+  assert.equal(await page.locator('#crm-form [name=specialty]').getAttribute('placeholder'),'Any specialty');
   assert.deepEqual(await page.locator('#crm-form select[name=country] option').allTextContents(),['Any','Belgium','United States']);
   await fits(page,'orgs filter '+tag);await sheet('orgs','orgs-filter-empty');
   await page.locator('#crm-form [name=industry]').fill('Software');await page.locator('#crm-form select[name=size]').selectOption('11-50');

@@ -65,7 +65,9 @@ FIELDS = {
     'website': ['website', 'website_url', 'url', 'domain'],
     'type': ['type', 'company_type', 'ownership'],
     'logo': ['logo', 'logo_url', 'logoUrl', 'image_url', 'logo.url', 'image'],
+    'specialties': ['specialties'],  # a list: its first SPECIALTIES short ones (specialties())
 }
+SPECIALTIES, SPECIALTY_CHARS = 5, 60
 LEADAPI = 'https://leadapi.salesflare.com'
 LOGO = re.compile(r'https://[A-Za-z0-9.-]{1,200}\.[A-Za-z]{2,}(?::\d{2,5})?/[^\s"\'<>\\]{0,500}')
 WRAPPERS = ('organization', 'company', 'data', 'result')
@@ -123,6 +125,11 @@ def normalise(data, fields=None):
     for field, paths in FIELDS.items():
         for path in list((fields or {}).get(field) or []) + paths:
             found = value(data, path)
+            if field == 'specialties':
+                if kept := specialties(found):
+                    profile[field] = kept
+                    break
+                continue
             if found in (None, '', [], {}) or isinstance(found, (dict, list)):
                 continue
             if field == 'logo':
@@ -221,6 +228,18 @@ def org_country(data, code):
         return found
     code = str(code or '').strip().lower()
     return code if re.fullmatch(r'[a-z]{2}', code) else None
+
+
+def specialties(found):
+    """What an organization says it does best ("Cloud Computing", "AI"): its first SPECIALTIES short ones, once each."""
+    out = []
+    for item in found if isinstance(found, list) else ():
+        text = ' '.join(item.split()) if isinstance(item, str) else ''
+        if text and len(text) <= SPECIALTY_CHARS and text.casefold() not in {o.casefold() for o in out}:
+            out.append(text)
+        if len(out) == SPECIALTIES:
+            break
+    return out
 
 
 def answer(cfg, url, secret, timeout):
@@ -445,6 +464,24 @@ def save(db, domain, status, profile, now):
                (domain, status, json.dumps(profile) if profile else None, now))
 
 
+def fill_org(db, domain, org, now):
+    """An organization's profile from a person look-up that brought their company's along: saved as if its own
+    look-up found it (save, through usable), so it needs none. Only where nothing fresher is kept: never over a profile
+    found less than REFRESH_DAYS ago, a later one, or a company the owner marked wrong. True when saved."""
+    org = {k: v for k, v in org.items() if k in FIELDS} if isinstance(org, dict) else None
+    org = usable(domain, org) if org else None
+    if not org or not (org.get('name') or org.get('industry') or org.get('about')):
+        return False
+    fresh = (dt.datetime.fromisoformat(now) - dt.timedelta(days=REFRESH_DAYS)).isoformat()
+    row = db.execute('SELECT status,fetched_at FROM org_profiles WHERE domain=?', (domain,)).fetchone()
+    if row and (row[0] == 'wrong' or row[1] > now or (row[0] == 'found' and row[1] >= fresh)):
+        return False
+    save(db, domain, 'found', org, now)
+    day, _, count = (pref(db, 'org_fills') or '').partition(' ')  # not a look-up: kept out of the day's budget (step)
+    set_pref(db, 'org_fills', f'{now[:10]} {int(count) + 1 if day == now[:10] and count.isdigit() else 1}')
+    return True
+
+
 def step(connect, config, now, per_pass=None, paired=False):
     """Look up a few organizations. Returns how many got a profile; stops at the first service error. Paired with the
     Network: hosted's budget (PAIRED_PER_DAY, PAIRED_PER_PASS) unless per_day says otherwise."""
@@ -455,6 +492,8 @@ def step(connect, config, now, per_pass=None, paired=False):
     with connect() as db:
         today = now[:10]
         used = db.execute("SELECT count(*) FROM org_profiles WHERE substr(fetched_at,1,10)=? AND status!='wrong'", (today,)).fetchone()[0]
+        day, _, filled = (pref(db, 'org_fills') or '').partition(' ')
+        used -= int(filled) if day == today and filled.isdigit() else 0  # filled in from people's look-ups (fill_org)
         domains = due(db, now, max(0, min(per_pass, int(cfg.get('per_day') or (PAIRED_PER_DAY if paired else PER_DAY)) - used)),
                       countries=str(cfg['url']).startswith(LEADAPI + '/'))
     found = 0
@@ -523,7 +562,10 @@ def lookup(connect, config, domain, now):
 # budget. Only the technical skips, where a look-up can't work or would be wrong: no full name, only free mail (no
 # company to look in), a shared inbox or a no-reply sender. The owner's own colleagues are looked up too, at the
 # owner's own domain. What comes back is cut down to what the dashboard shows: job title, company, a photo (https
-# only), a LinkedIn address and city and country. Kept on this Machine only (person_profiles).
+# only), a LinkedIn address and city and country, and when the service has them, their about text (ABOUT_CHARS), when
+# they started in their current role and their two roles before it (career). Kept on this Machine only (person_profiles).
+# An answer that brings their company's whole profile along (Salesflare's lead API does) fills in that organization
+# too (fill_org), so it needs no look-up of its own.
 PEOPLE_PER_PASS = 5
 PEOPLE_PER_DAY = 50
 # A self-hosted Machine paired with the Network gets what a hosted one gets: 3,000 a day, 25 a pass (every ten minutes).
@@ -537,8 +579,14 @@ PERSON_FIELDS = {
     'linkedin_url': ['linkedin_url', 'linkedin.url', 'linkedin.handle', 'linkedin_username', 'linkedin'],
     'city': ['location.city', 'location_locality', 'geo.city', 'city'],
     'country': ['location.country_code', 'location_country', 'geo.countryCode', 'geo.country', 'country'],
+    'about': ['about_me'],
 }
-PERSON_NAME = ['name', 'full_name', 'name.fullName', 'fullName']  # only to check it is the same person; never kept
+ABOUT_CHARS = 300
+# Their about text and role history: read at view time (more_about), never copied into the graph.
+PERSON_MORE = ('about', 'since', 'before')
+PREVIOUS_ROLES = 2
+MONTHS = ('jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec')
+PERSON_NAME =['name', 'full_name', 'name.fullName', 'fullName']  # only to check it is the same person; never kept
 PERSON_WRAPPERS = ('person', 'data', 'result')
 LINKEDIN = re.compile(r'https://(?:[a-z]{2,3}\.)?linkedin\.com/in/[A-Za-z0-9_%-]{2,100}/?')
 
@@ -638,8 +686,8 @@ def normalise_person(data, asked_name, domain, fields=None, why=None):
                     continue
             elif field == 'country':
                 found = found.upper() if len(found) == 2 else found[:60]
-            elif len(found) > 120:
-                found = found[:119].rsplit(' ', 1)[0].rstrip(',.;:|') + '…'
+            else:
+                found = cut(found, ABOUT_CHARS if field == 'about' else 120)
             profile[field] = found
             break
     if profile.get('company_domain'):
@@ -647,10 +695,65 @@ def normalise_person(data, asked_name, domain, fields=None, why=None):
             why.append('another company')
             return None  # someone of the same name at another company
         profile['company_domain'] = domain
+        org = normalise(data['company']) if isinstance(data.get('company'), dict) else None
+        if org:
+            profile['org'] = org  # their company's own profile: saved for it by save_person (fill_org), not kept here
     if profile.get('title') or profile.get('company') or profile.get('photo'):
+        profile.update(career(data.get('experience'), profile.get('title'), profile.get('company')))
         return profile
     why.append('nothing to show')
     return None
+
+
+def cut(text, limit):
+    """One line of at most limit characters, cut at a word with an ellipsis."""
+    text = ' '.join(str(text).split())
+    return text if len(text) <= limit else text[:limit - 1].rsplit(' ', 1)[0].rstrip(',.;:|') + '…'
+
+
+def started(text):
+    """A role's start as "2014-02" (from "Feb 2014", "2014-02-01" or {"year", "month"}) or "2014", else None."""
+    if isinstance(text, dict):
+        text = f"{text.get('year') or ''}-{int(text['month']):02d}" if str(text.get('month') or '').isdigit() else str(text.get('year') or '')
+    text = str(text or '').strip().lower()
+    if m := re.fullmatch(r'([a-z]{3})[a-z]*\.? (\d{4})', text):
+        month, year = (MONTHS.index(m[1]) + 1 if m[1] in MONTHS else 0), m[2]
+    elif m := re.fullmatch(r'(\d{4})(?:-(\d{1,2})(?:-\d{1,2})?)?', text):
+        year, month = m[1], int(m[2] or 0)
+    else:
+        return None
+    if not 1950 <= int(year) <= 2100 or month > 12 or (m[0][:1].isalpha() and not month):
+        return None
+    return f'{year}-{month:02d}' if month else year
+
+
+def career(experience, title, company):
+    """{'since': when their current role started, 'before': their PREVIOUS_ROLES roles before it as
+    [{'title', 'company'}]} from a service's list of roles (newest first, like Salesflare's lead API); what it doesn't
+    say is left out. The current role is the first one still going that matches their title or company."""
+    roles = []
+    for item in experience if isinstance(experience, list) else ():
+        if not isinstance(item, dict):
+            continue
+        org = item.get('company')
+        org = org.get('name') if isinstance(org, dict) else org
+        role = next((v for v in (item.get(k) for k in ('position', 'role', 'title')) if isinstance(v, str) and v.strip()), '')
+        end = str(item.get('end_time') or item.get('end_date') or '').strip().lower()
+        roles.append({'title': cut(role, 120) if role else '', 'company': cut(org, 120) if isinstance(org, str) and org.strip() else '',
+                      'start': started(item.get('start_time') or item.get('start_date')), 'going': end in ('', 'present', 'now', 'current')})
+    def same(r):
+        return bool((title and r['title'].casefold() == cut(title, 120).casefold())
+                    or (company and r['company'].casefold() == cut(company, 120).casefold()))
+    now = next((i for i, r in enumerate(roles) if r['going'] and same(r)), 0 if roles and roles[0]['going'] else None)
+    out = {}
+    if now is not None and roles[now]['start']:
+        out['since'] = roles[now]['start']
+    current = (roles[now]['title'], roles[now]['company']) if now is not None else (None, None)
+    before = [{k: r[k] for k in ('title', 'company') if r[k]} for r in roles[(now + 1 if now is not None else 0):]
+              if r['title'] and not r['going'] and (r['title'], r['company']) != current]  # older ones; a seat held alongside isn't "before"
+    if before:
+        out['before'] = before[:PREVIOUS_ROLES]
+    return out
 
 
 def placeholder(url):
@@ -768,7 +871,13 @@ def backfill_since(db, now):
 
 def save_person(db, identifier, status, profile, now):
     """Stores a person look-up; an error keeps what was there. A photo link that has already expired is not kept
-    (photo_gone: looked up again after 30 days)."""
+    (photo_gone: looked up again after 30 days). Their company's profile, when the answer brought it, goes to that
+    organization (fill_org), never into theirs."""
+    if isinstance(profile, dict) and 'org' in profile:
+        profile = dict(profile)
+        org = profile.pop('org')
+        if status == 'found' and profile.get('company_domain'):
+            fill_org(db, profile['company_domain'], org, now)
     if profile and profile.get('photo') and link_expired(profile['photo'], now):
         profile = {**{k: v for k, v in profile.items() if k != 'photo'}, 'photo_gone': True}
     db.execute('INSERT INTO person_profiles(identifier,status,profile,fetched_at) VALUES(?,?,?,?) '
@@ -1540,6 +1649,43 @@ def view_facts(db, ids):
     best = best_facts([found[i] for i in ids if i in found])
     return {field: {'text': value, 'from': FACT_SOURCES.get(source, source), 'at': seen_at[:10]}
             for field, (value, rank, source, seen_at) in best.items()}
+
+
+def more_about(db, ids):
+    """What a look-up said of someone beyond the graph's profile (PERSON_MORE), for their page: {'about_me', 'since',
+    'before'}, each only when known. From the first of their identities with a profile, as graph.person_shown."""
+    marks = ','.join('?' for _ in ids)
+    found = {r[0]: r[1] for r in db.execute(f"SELECT identifier,profile FROM person_profiles WHERE status='found' AND profile IS NOT NULL "
+                                            f'AND identifier IN ({marks})', list(ids))} if ids else {}
+    try:
+        profile = next((json.loads(found[i]) for i in ids if i in found), None) or {}
+    except ValueError:
+        profile = {}
+    before = [{k: str(r[k]) for k in ('title', 'company') if r.get(k)} for r in profile.get('before') or () if isinstance(r, dict)]
+    out = {'about_me': profile.get('about'), 'since': profile.get('since'), 'before': [r for r in before if r][:PREVIOUS_ROLES]}
+    return {k: v for k, v in out.items() if v}
+
+
+def month_year(value):
+    """"Feb 2014" for 2014-02, "2014" for 2014: in English, for a model to read."""
+    year, _, month = str(value or '').partition('-')
+    return f'{MONTHS[int(month) - 1].capitalize()} {year}' if month.isdigit() and 1 <= int(month) <= 12 else year
+
+
+def prep_bits(db, ids):
+    """What a preparation adds about someone from a look-up, as short bits: their role history on one line, and their
+    about text only when they state no bio of their own (a connector's). At most about 400 characters a person."""
+    more = more_about(db, ids)
+    bits, role = [], []
+    if more.get('since'):
+        role.append('in this role since ' + month_year(more['since']))
+    if more.get('before'):
+        role.append('before: ' + ', '.join(' at '.join(x for x in (r.get('title'), r.get('company')) if x) for r in more['before']))
+    if role:
+        bits.append(', '.join(role))
+    if more.get('about_me') and not view_facts(db, ids).get('bio'):
+        bits.append('about (looked up): ' + more['about_me'])
+    return bits
 
 
 def slack_facts(user):

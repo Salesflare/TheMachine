@@ -55,7 +55,7 @@
 .kv>.acts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:0 2px;align-self:center}.kv>.acts button{padding:3px 8px;min-height:0;font-size:var(--fs-sm);font-weight:var(--fw-medium);white-space:nowrap}
 @media (max-width:480px){.kv:is(:has(.acts>:nth-child(2)),.kv-under){grid-template-columns:5.2rem minmax(0,1fr)}.kv:is(:has(.acts>:nth-child(2)),.kv-under)>.acts{grid-column:2;justify-content:flex-start;margin-left:-8px}}  /* kv-under: a long action, under the value on a phone */
 .person-page .joined{margin:18px 0 0;padding:12px 0 0;border-top:1px solid var(--border)}.person-page .joined summary{cursor:pointer;color:var(--faint)}
-.person-page .same-ask{margin-top:18px}.person-page .person-bio{margin:10px 0 0;color:var(--muted)}
+.person-page .same-ask{margin-top:18px}.person-page .person-bio{margin:10px 0 0;color:var(--muted)}.person-page .person-career{margin:6px 0 0;color:var(--muted)}.org-specialties{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.org-specialties .chip{white-space:normal}
 .org-editing .person-view,.org-editing .person-menu{display:none}@media (max-width:600px){.org-editing .person-head :is(.person-job,.person-place){display:none}}
 /* The person form: three groups; each field as wide as what goes in it */
 .pf-form{gap:18px;max-width:34rem;margin-top:14px}.pf-form fieldset{display:grid;gap:12px;margin:0;padding:0;border:0;min-width:0}

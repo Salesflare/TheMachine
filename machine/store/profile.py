@@ -338,12 +338,14 @@ class ProfileStore:
                                'linkedin_headline': graph.headline(db, r['id']) if json.loads(r['info'] or '{}').get('has_headline') else None,
                                'organisation': {'node_id': view['org'], 'name': org['name'], 'role': json.loads(org['info']).get('role'),
                                                 'profile': enrichment.summary(json.loads(org['info']).get('profile')),
+                                                'specialties': (json.loads(org['info']).get('profile') or {}).get('specialties'),
                                                 'others': [{'name': n['name'], 'role': n['role']} for n in graph.detail(db, view['org'], 0)['people_roles']
                                                            if n['id'] != r['id']][:5]} if org else None,
                                'projects': [n['name'] for n in graph.neighbours(db, r['id']) if n['kind'] == 'project'][:3],
                                'messages': graph.person_evidence(db, r['id'], owner)})
             orgs = [{'node_id': r['id'], 'name': r['name'], 'domain': json.loads(r['info']).get('domain'),
                      'about': (json.loads(r['info']).get('profile') or {}).get('about'), 'profile': enrichment.summary(json.loads(r['info']).get('profile')),
+                     'specialties': (json.loads(r['info']).get('profile') or {}).get('specialties'),  # up to 5 short ones: what it does
                      'people': [{'name': n['name'], 'role': n['role']} for n in graph.detail(db, r['id'], 0)['people_roles']][:6],
                      'messages': [m for n in graph.detail(db, r['id'], 0)['people_roles'][:2] for m in graph.person_evidence(db, n['id'], owner, 4)]}
                     for r in db.execute(f"SELECT * FROM graph_nodes WHERE kind='org' AND {live()}>=1 AND json_extract(info,'$.role') IS NULL AND coalesce(json_extract(info,'$.role_by'),'')!='owner' "

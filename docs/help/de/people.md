@@ -82,6 +82,8 @@ Eine Rückmeldung zählt, wenn der Mailserver sagt, dass es die Adresse nicht gi
 
 Personen mit einer Firmenadresse bekommen Position, Foto, LinkedIn und Stadt. Das wird nachgeschlagen wie [Organisationsdetails](organization-data.md). Auf einer gehosteten Machine werden nur ihr Name und die Domain der Firma gesendet. Ausschalten kannst du das in **Einstellungen** unter Sicherheit: **Arbeitskontakte nachschlagen**.
 
+Wenn das Nachschlagen sie kennt, zeigt ihre Seite auch ihren Über-mich-Text, seit wann sie in ihrer jetzigen Rolle sind und ihre zwei Rollen davor. Vorbereitungen lesen sie auch, den Über-mich-Text nur, wenn sie keine eigene Bio haben.
+
 Deine Verbindungen ergänzen mehr mit dem, was sie ohnehin lesen: Position, Telefon und Zeitzone aus Slack, Bio und Ort aus X, Headline und Foto aus LinkedIn, Positionen aus Google-Kontakten und Salesflare. Fahr mit der Maus über die Zeile unter dem Namen, um zu sehen, woher es kommt.
 
 WhatsApp- und Telegram-Bilder kommen über deine WhatsApp-Synchronisierung und deine Verbindung zu Telegram-Chats: bis zu 50 am Tag pro Dienst, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Alles bleibt auf deiner Machine.
