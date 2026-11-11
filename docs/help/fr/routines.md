@@ -17,11 +17,11 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30. Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
 
-**Tri des newsletters** crée une tâche avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
+**Tri des newsletters** crée une tâche par domaine (travail et personnel) avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
 
 Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arrivé par une adresse de groupe, comme un Google Group, est listé sous la personne qui l’a écrit et ne vous désabonne jamais du groupe.
 
-**Tri du spam** crée une tâche avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas.
+**Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il n’existe que pour les e-mails que The Machine peut déplacer : Gmail connecté en lecture seule ne l’a pas.
 
 Rien ne change avant votre confirmation sur la tâche. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 

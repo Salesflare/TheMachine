@@ -17,11 +17,11 @@ Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
 En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30. Su tarjeta muestra sus palabras como cualquier rutina, y **Editar** cambia sus palabras o su nombre.
 
-**Limpieza de newsletters** crea una tarea con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
+**Limpieza de newsletters** crea una tarea por área (trabajo y personal) con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
 
 Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una dirección de grupo, como un Google Group, aparece bajo quien lo escribió y nunca te da de baja del grupo.
 
-**Limpieza de spam** crea una tarea con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene.
+**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene.
 
 Nada cambia hasta que confirmas en la tarea. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 
