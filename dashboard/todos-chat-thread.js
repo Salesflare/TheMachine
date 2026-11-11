@@ -100,7 +100,7 @@ function chatParts(s){const t=document.createElement('template');setHTML(t,sugge
  if(backItem)rest.unshift(backItem);
  const status=card?.querySelector('.status-line:not(.ask-line):not(.done-line)')?.textContent.trim()||card?.querySelector('.card-badges .chip')?.textContent.trim()||'';
  const body=card?.querySelector('.body');body?.classList.remove('clamp');
- const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
+ const panel=html`${[...(card?.querySelectorAll('.merge-offer,.change-editor:not([class*="answer"]),.fleet-handoff-form')||[])].filter(n=>!n.querySelector('[id^="feedback-"],[data-rt-change]')).map(n=>nodeHTML(n))}${s.preparation_status==='blocked'?(s.preparation_browser?html`<p class="note">${browserLink(s.id,s.preparation_browser)}</p>`:''):['running','starting'].includes(s.preparation_status)?chatPeek(s):''}`;
  const outer=n=>n?nodeHTML(n):'';
  return {sends,single:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).length<2,going,sheet:outer(card?.querySelector('.agent-form')),lead:outer(lead),send:!!lead?.dataset.smart,copy:lead?.dataset.result==='copy',back:outer(back),rest:orEmpty(html`${rest.map(outer)}`),options:orEmpty(html`${[lead,...decide].filter(Boolean).slice(0,3).map(n=>{n.classList.remove('ghost','primary');n.classList.add(n===lead?'primary':'ghost');return nodeHTML(n)})}`),
   status,intro:orEmpty(nodeHTML(...body?.childNodes||[])),ask:outer(card?.querySelector('.ask-line')),agent:outer(card?.querySelector('.agent-job')),
@@ -141,7 +141,7 @@ const chatUndoVoice=(s,i)=>{clearTimeout(chatUndoTimer);chatUndoTimer=setTimeout
 const chatEventText=i=>String(i.mine&&CHAT_TAPS[i.text]||i.text||'').replace(/^You\s+(\S)/,(m,c)=>c.toUpperCase());
 const chatVia=v=>CHAT_VIA[v]||(v&&v!=='signal'?v[0].toUpperCase()+v.slice(1):'');
 // Whose side an item is on: the owner's messages and taps on the right, the Machine and the people it is about on the left.
-const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'||i.kind==='recipe'?'mid':'them';
+const chatSide=i=>i.kind==='you'||i.kind==='event'&&i.mine||i.kind==='source'&&i.mine?'you':i.kind==='event'||i.kind==='learned'||i.kind==='fixed'||i.kind==='recipe'||i.kind==='rc'?'mid':'them';
 // A wrong thing fixed where it came from (corrections.py): what is right now and where the wrong one came from, in the
 // owner's words, with Undo while it holds; an undone one stays, marked.
 function chatFixed(i){const sep=html`<span class="learned-sep" aria-hidden="true">·</span>`,what=Array.isArray(i.line)?window.t(...i.line):String(i.text||''),
@@ -169,6 +169,7 @@ function chatLog(s=chatOpen()){if(!chat)return html`<p class="chat-note">Loading
  items.sort((a,b)=>(a.at||0)-(b.at||0));
  // The same tap again and again (five snoozes in a row) is one line with a count, unfolded for the times
  const rows=[];for(const i of items){const l=rows.at(-1);if(i.kind==='event'&&l?.kind==='event'&&l.text===i.text&&!!l.mine===!!i.mine)l.times.push(i.at),l.at=i.at;else rows.push(i.kind==='event'?{...i,times:[i.at]}:i)}
+ if(s?.routine_change)lazyIn('routinetodos')?routineChangeRow(s,rows):lazyRun('routinetodos',paintChat);  // todos-routine-change.js
  const stamp=at=>{if(!at)return;const d=chatDayOf(at);if(d!==day){day=d;side='';out.push(html`<div class="chat-day">${d}</div>`)}};
  const tm=at=>at?html`<time class="chat-time" datetime="${new Date(at).toISOString()}" title="${localeDate(new Date(at),DL,{weekday:'short',month:'short',day:'numeric',year:'numeric'})+' '+chatHM(at)}">${chatHM(at)}</time>`:'';
  const push=(i,body)=>{const sd=chatSide(i);out.push(sd!==side?body:htmlEdit(body,c=>{const e=[...c.querySelectorAll('[class]')].find(n=>n.getAttribute('class').startsWith('chat-'));e?.setAttribute('class','cont '+e.getAttribute('class'))}));side=sd};
@@ -231,6 +232,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
   else if(i.kind==='learned')push(i,chatLearned(i));
   else if(i.kind==='fixed')push(i,chatFixed(i));  // no time of its own: it sits under its reply, and beside a wide centered line it would stick out sideways
   else if(i.kind==='recipe')push(i,lazyIn('recipe')?chatRecipe(i):(lazyRun('recipe',paintChat),''));
+  else if(i.kind==='rc')push(i,i.html);
   else if(i.kind==='you'){const to=i.to||'',show=to&&to!==lastTo;lastTo=to;
    const att=chatAttHTML(i.files);
    push(i,html`<div class="chat-msg you">${show?html`<div class="chat-to">to ${to}</div>`:''}${att}${i.text?html`<div class="bubble" translate="no">${chatMarkdown(i.text)}</div>`:''}${tm(i.at)}</div>`)}

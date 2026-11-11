@@ -65,7 +65,7 @@ Routines draaien één voor één en wachten als het gebruik van je AI-abonnemen
 
 Dit staat in het ⋯-menu van de routine. **Wanneer wijzigen** neemt een nieuw ritme in je eigen woorden, zoals "elke werkdag om 8". **Pauzeren** stopt de runs tot **Hervatten**; wat tijdens de pauze gemist werd, draait niet achteraf. **Stoppen** beëindigt een routine voorgoed.
 
-Gebruik je **Wijzigingen vragen** op een to-do van een routine en geldt je opmerking voor elke run, zoals "nooit emoji", dan biedt de to-do **Ook de routine aanpassen** aan. Die toont wat er in de woorden van de routine verandert, en de routine verandert pas als je op **Aanpassen** tikt. **Laat zo** laat de routine ongemoeid. Een correctie van alleen dat concept biedt niets aan.
+Gebruik je **Wijzigingen vragen** op een to-do van een routine, of schrijf je in de chat ervan, en geldt je opmerking voor elke run, zoals "nooit emoji", dan biedt de to-do **Ook de routine aanpassen** aan, op de to-do en in de chat onder het antwoord. Die toont wat er in de woorden van de routine verandert, en de routine verandert pas als je op **Aanpassen** tikt. **Laat zo** laat de routine ongemoeid. Een correctie van alleen dat concept biedt niets aan.
 
 ## Geavanceerd: scriptstappen
 

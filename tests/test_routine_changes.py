@@ -5,6 +5,7 @@ is or stale (the routine edited since): nothing changes."""
 import datetime as dt
 import importlib.util
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -97,7 +98,10 @@ class Changes(unittest.TestCase):
                 routine_changes.check(db, self.sid, job['job_id'], 'x' * 3000)
         self.assertNotIn('routine_change', self.view())  # a one-off note: the to-do works as before
         self.offer(job)
-        self.assertEqual(self.view()['routine_change'], {'name': 'Check what shipped', 'old': '', 'new': 'Never use emoji.'})
+        change = self.view()['routine_change']
+        at = change.pop('at')  # when the run on the note made it (ms): the chat shows it under that run's reply
+        self.assertEqual(change, {'name': 'Check what shipped', 'old': '', 'new': 'Never use emoji.'})
+        self.assertLess(abs(at - time.time() * 1000), 60000)
         self.assertEqual(self.routine()['instructions'], WORDS)  # offered, not saved
 
     def test_the_runs_prepare_with_routine_change_offers_it(self):

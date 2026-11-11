@@ -65,7 +65,7 @@ As rotinas rodam uma de cada vez e esperam quando o uso do seu plano de IA está
 
 Fica no menu ⋯ da rotina. **Mudar quando** aceita um novo ritmo com suas próprias palavras, como "todo dia útil às 8". **Pausar** para as execuções até **Retomar**; o que foi perdido durante a pausa não roda depois. **Parar** encerra uma rotina de vez.
 
-Quando você usa **Pedir mudanças** em uma tarefa de uma rotina e sua nota vale para toda execução, como "nunca use emoji", a tarefa oferece **Mudar também a rotina**. Ela mostra o que muda nas palavras da rotina, e a rotina só muda quando você toca em **Mudar**. **Deixar como está** a deixa como está. Uma correção só desse rascunho não oferece nada.
+Quando você usa **Pedir mudanças** em uma tarefa de uma rotina, ou escreve no chat dela, e sua nota vale para toda execução, como "nunca use emoji", a tarefa oferece **Mudar também a rotina**, na tarefa e no chat dela, abaixo da resposta. Ela mostra o que muda nas palavras da rotina, e a rotina só muda quando você toca em **Mudar**. **Deixar como está** a deixa como está. Uma correção só desse rascunho não oferece nada.
 
 ## Avançado: etapas de script
 

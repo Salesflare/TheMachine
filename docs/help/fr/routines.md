@@ -65,7 +65,7 @@ Les routines tournent une à la fois et attendent quand l’usage de votre forfa
 
 C’est dans le menu ⋯ de la routine. **Changer quand** prend un nouveau rythme dans vos propres mots, comme « chaque jour ouvré à 8 h ». **Mettre en pause** arrête les exécutions jusqu’à **Reprendre** ; ce qui a été manqué pendant la pause ne tourne pas ensuite. **Arrêter** met fin à une routine pour de bon.
 
-Quand vous utilisez **Demander des modifications** sur une tâche d’une routine et que votre note vaut pour chaque exécution, comme « jamais d’emoji », la tâche propose **Modifier aussi la routine**. Elle montre ce qui change dans les mots de la routine, et la routine ne change que quand vous touchez **Modifier**. **Laisser ainsi** la laisse telle quelle. Une correction de ce seul brouillon ne propose rien.
+Quand vous utilisez **Demander des modifications** sur une tâche d’une routine, ou écrivez dans son chat, et que votre note vaut pour chaque exécution, comme « jamais d’emoji », la tâche propose **Modifier aussi la routine**, sur la tâche et dans son chat sous la réponse. Elle montre ce qui change dans les mots de la routine, et la routine ne change que quand vous touchez **Modifier**. **Laisser ainsi** la laisse telle quelle. Une correction de ce seul brouillon ne propose rien.
 
 ## Avancé : étapes de script
 

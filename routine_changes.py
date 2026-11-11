@@ -5,6 +5,7 @@ or a message in its chat). The run that redoes the draft judges whether the note
 the owner confirms, through Edit's path (routines.change_instructions). When unsure, the run offers nothing; a one-off
 note works as before. One offer per to-do: a later note's offer replaces it. An offer made on older words (the routine
 was edited since) is not shown."""
+import datetime as dt
 import json
 import re
 
@@ -120,10 +121,18 @@ def _open(db, suggestion_id):
     return row, found
 
 
+def _ms(value):
+    try:
+        return int(dt.datetime.fromisoformat(str(value)).timestamp() * 1000)
+    except ValueError:
+        return 0
+
+
 def view(db, suggestion_id):
-    """The offer on a to-do ({'name', 'old', 'new'}), or None."""
+    """The offer on a to-do ({'name', 'old', 'new', 'at'}), or None. `at` (ms) is when the run on the note made it: the
+    to-do's chat shows the offer under that run's reply."""
     row, found = _open(db, suggestion_id)
-    return {'name': found['name'], **diff(found['instructions'], row['instructions'])} if row else None
+    return {'name': found['name'], **diff(found['instructions'], row['instructions']), 'at': _ms(row['created_at'])} if row else None
 
 
 def save(db, suggestion_id, stamp):

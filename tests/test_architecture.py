@@ -456,6 +456,11 @@ def budget(name):
     return BUDGETS.get(f'{folder}/*.{file.rpartition(".")[2]}', SCAN_LIMIT) if folder == 'dashboard' else SCAN_LIMIT
 
 
+# routinetodos 12,000 -> 14,000 (2026-11-11): Also change the routine in a to-do's chat too, and all its styles, which
+# moved here out of the first load (about 1.8 KB).
+LAZY_CEILING['routinetodos'] = 14_000
+
+
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
 # module that would go over is split first. PY_OVER_BUDGET lists today's bigger files with (lines, bytes) ceilings
 # that may only come down: a file that grows past its ceiling fails; one that shrinks more than PY_RATCHET_SLACK under
