@@ -21,6 +21,8 @@ const manage={mail:true,fleets:[{id:FL,name:'Acme',kind:'work',role:'owner',free
  invites:[{id:'fi_1',status:'open',name:'',email:'kim@acme.example',joined:'',plan:'own',until:'2026-11-13T09:00:00Z',at:'2026-11-13T09:00:00Z',link:'https://app.example.test/join/x',mail:'sent'}],
  joins:[{id:'jr_1',name:'Lou Park',email:'lou@acme.example',via:'domain'}]}]};
 let hosted=false;const posts=[];
+// the post a click sends, once it reaches the stand-in control plane (no fixed wait: a busy runner takes longer)
+const posted=async(page,what)=>{for(let i=0;i<200&&posts.at(-1)?.do!==what;i++)await page.waitForTimeout(25);return posts.at(-1)};
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0},account_url:ACCOUNT,...(hosted?{manage_url:'http://127.0.0.1/account'}:{})}));return}
@@ -55,13 +57,12 @@ try{
  await page.locator('[data-fleet-pane="manage"]').click();await page.locator('[data-manage-role="fm_2"]').waitFor();
  assert.match(await page.locator('[data-fleet-pane="manage"]').innerText(),/Manage\s*1/);  // the join request waits
  await page.locator('[data-manage-do="join-approve"]').click();
- await page.waitForTimeout(200);
- assert.deepEqual(posts.at(-1),{do:'join-approve',fleet:FL,member:'',plan:'',invite:'',request:'jr_1',origin:url});
+ assert.deepEqual(await posted(page,'join-approve'),{do:'join-approve',fleet:FL,member:'',plan:'',invite:'',request:'jr_1',origin:url});
  assert.equal(await page.locator('.manage-invite-form').count(),0);  // behind Invite people until asked
  await page.locator('[data-manage-invite]').click();
  await page.locator('.manage-invite-form textarea').fill('a@acme.example\nb@acme.example');
- await page.locator('.manage-invite-form button.primary').click();await page.waitForTimeout(200);
- assert.deepEqual(posts.at(-1),{do:'invite',fleet:FL,emails:'a@acme.example\nb@acme.example',plan:'own',mail:true,origin:url});
+ await page.locator('.manage-invite-form button.primary').click();
+ assert.deepEqual(await posted(page,'invite'),{do:'invite',fleet:FL,emails:'a@acme.example\nb@acme.example',plan:'own',mail:true,origin:url});
  await page.locator('[data-manage-do="remove"][data-member="fm_2"]').click();
  const form=page.locator('.manage-confirm form');await form.waitFor();
  assert.equal(await form.getAttribute('action'),'/_machine/account-hop');
