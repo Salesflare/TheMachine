@@ -24,6 +24,12 @@ What bears on the matter, without a model call or an embedding request:
 - its meaning, when embeddings are on: the fact's stored vector against the stored vectors of those signals, at
   least FLOOR. A fact without a stored vector is matched by records and words only.
 
+Every fact outside the current list counts, however many years of them there are: what may bear on the matter is found
+through indexes (FactsStore.index_facts), and only those are read and checked as above. Records: fact_about by node_id.
+Names and words: the facts' keyword index (fact_search, FTS5): a fact with a record's name, or with two of the words
+asked, which finds every fact the checks can pass. Meaning: the stored vectors of the facts outside the list, scanned
+like a message search (embeddings.related), within MEANING_WORK comparisons (_closeness).
+
 The block is a small fixed slice (CHARS, LINES), outside the current facts' own cap, and empty when nothing matches:
 the prompt is then the one it was. Set-aside facts go first, then history. A pick is not a use: facts.used_at is
 neither read nor written, so a set-aside fact stays set aside until the owner brings it back.
@@ -37,20 +43,22 @@ small delta (NEW_CHARS, NEW_LINES), and nothing when nothing changed:
   on this to-do (the session saw that note), never a connected AI's;
 - one the session was given that has since gone: removed by the owner ("no longer use"), or ended (as history). One a
   newer fact replaced, set aside or moved elsewhere still says nothing wrong, so it gets no line."""
+import itertools
 import json
+import math
 
 import embeddings
 import fact_links
 import memory_use
 from machine.app.review_facts import waiting
 from machine.config import LOG
-from machine.store.facts import FACTS_ALL_UNDER, ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
+from machine.store.facts import FACTS_ALL_UNDER, MATCH_WORDS, ai_fact_by, fact_line, key_words as words, suggestion_scope, word_match
 from timeutil import now
 
 CHARS = 600           # about 150 tokens, only when something matches
 CHAT_CHARS = 400      # a chat turn's message stays short
 LINES = 3
-CANDIDATES = 500      # the most lately removed facts looked at
+MEANING_WORK = 500_000  # vector comparisons per recall at most (_closeness): one to three seconds
 FLOOR = 0.45          # cosine of a fact to a signal: facts unrelated to one mostly score 0.1 to 0.35
 SIGNALS = 120         # the review's waiting signals looked at, the newest
 HEAD = ('Also learned earlier, outside the current list, matching this {what}. A plain line still holds (set aside only for '
@@ -63,6 +71,10 @@ NEW_LINES = 3
 NEW_HEAD = ('Changed in what was learned since this session read it. Where a line differs from what you were told earlier '
             'in this session, the line here is current.')
 GONE = 'The owner removed this; no longer use it'
+# A fact outside the current list that may come back: set aside, ended, or replaced in a condense (never one the owner
+# removed: forget_fact leaves merged_into empty). Written out in each query, so every query is fixed text; ids go in as
+# one JSON list (json_each).
+RETAINED = "kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')"
 
 
 def _chain(rows, fact_id, depth=10):
@@ -82,17 +94,25 @@ def _chain(rows, fact_id, depth=10):
     return None
 
 
-def candidates(db, today=None):
-    """[fact] of the facts outside the current list that may still come back, each with state ('aside' or 'history'),
-    day (when it left) and now_says (what replaced it, '' for none), the most lately removed first."""
+def _ids(items):
+    return json.dumps(sorted(items))
+
+
+def candidates(db, ids, today=None):
+    """[fact] of these facts that are outside the current list and may still come back, each with state ('aside' or
+    'history'), day (when it left) and now_says (what replaced it, '' for none), the most lately removed first."""
     today = today or now()[:10]
     rows = [dict(r) for r in db.execute(
-        "SELECT id,text,kind,fact_kind,valid_until,created_at,confirmed_at,removed_at,merged_into,source,side,suggestion_id FROM facts "
-        "WHERE kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%') "
-        'ORDER BY removed_at DESC,id DESC LIMIT ?', (CANDIDATES,))]
+        'SELECT id,text,kind,fact_kind,valid_until,created_at,confirmed_at,removed_at,merged_into,source,side,suggestion_id FROM facts '
+        "WHERE id IN (SELECT value FROM json_each(?)) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')", (_ids(ids),))]
+    if not rows:
+        return []
+    rows.sort(key=lambda r: (r['removed_at'], r['id']), reverse=True)
     current = {str(r[0]).casefold() for r in db.execute("SELECT text FROM facts WHERE removed_at IS NULL AND kind='fact'")}
+    expired = [f"expired:{r['id']}" for r in rows if r['merged_into'] == f"expired:{r['id']}"]
     reasons = {r['ref']: r['text'].split(' Updated: ', 1)[1] for r in db.execute(
-        "SELECT ref,text FROM rule_changes WHERE kind='condense' AND ref LIKE 'expired:%' AND text LIKE 'Ended: %' AND text LIKE '% Updated: %'")}
+        "SELECT ref,text FROM rule_changes WHERE kind='condense' AND ref IN (SELECT value FROM json_each(?)) AND text LIKE 'Ended: %' AND text LIKE '% Updated: %'",
+        (_ids(expired),))}
     lookup = lambda i: db.execute('SELECT id,text,removed_at,merged_into FROM facts WHERE id=?', (int(i),)).fetchone()
     out = []
     for f in rows:
@@ -136,8 +156,8 @@ def _names(db, nodes):
     return out
 
 
-def _says(text, name):
-    parts = [w for w, _ in fact_links.words(text)]
+def _says(parts, name):
+    """parts (a fact's words, fact_links.words) has this name's words in a row."""
     return any(tuple(parts[i:i + len(name)]) == name for i in range(len(parts) - len(name) + 1))
 
 
@@ -146,37 +166,111 @@ def _probes(db, signals, settings):
         return []
     return [embeddings.unpack(r[0]) for r in db.execute(
         'SELECT v.vector FROM events e JOIN event_vectors v ON v.event_id=e.id AND v.version=e.version '
-        f"WHERE e.id IN ({','.join('?' for _ in signals)}) AND v.model=? AND v.dims=?",
+        f"WHERE e.id IN ({','.join('?' for _ in signals)}) AND v.model=? AND v.dims=? ORDER BY e.id DESC",  # newest first (_closeness)
         (*signals, settings.get('model', ''), int(settings.get('dims', 256))))]
 
 
-def matches(db, found, nodes, text, signals, settings):
+def _tied(db, nodes):
+    """ids of the facts outside the current list about one of these records (fact_about_node)."""
+    return {r[0] for r in db.execute(
+        'SELECT a.fact_id FROM fact_about a JOIN facts f ON f.id=a.fact_id WHERE a.removed_at IS NULL AND a.node_id IN (SELECT value FROM json_each(?)) '
+        "AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')", (_ids(nodes),))}
+
+
+def _searched(db, term, prefix=False):
+    """ids of the facts outside the current list whose text has this word or name (fact_search, FTS5); prefix: a word
+    that starts with it. The index folds case and accents, so it finds every fact the exact checks (_says, word_match)
+    can pass, and some they don't."""
+    if not any(c.isalnum() for c in term):
+        return set()
+    return {r[0] for r in db.execute(
+        "SELECT id FROM facts WHERE id IN (SELECT rowid FROM fact_search WHERE fact_search MATCH ?) AND kind='fact' AND removed_at IS NOT NULL AND (merged_into='aside:'||id OR merged_into='expired:'||id OR merged_into LIKE 'fact:%')",
+        ('"' + term.replace('"', '""') + '"' + ('*' if prefix else ''),))}
+
+
+def starting(db, prefixes):
+    """ids of the facts outside the current list with a word that starts with one of these (a chat question's word
+    stems, ask_memory.for_chat), for candidates."""
+    return {i for p in prefixes for i in _searched(db, p, prefix=True)}
+
+
+def _worded(db, asked):
+    """ids of the facts outside the current list with at least MATCH_WORDS of the words asked: the only ones
+    word_match can pass."""
+    seen = {}
+    for word in asked:
+        for fact_id in _searched(db, word):
+            seen[fact_id] = seen.get(fact_id, 0) + 1
+    return {fact_id for fact_id, n in seen.items() if n >= MATCH_WORDS}
+
+
+def _closeness(db, probes, settings):
+    """{fact id: best cosine} of the facts outside the current list whose stored vector is at least FLOOR from one of
+    the probes. Each is compared with every probe while that stays within MEANING_WORK. Past it (thousands of facts
+    against a review's waiting signals), the most lately removed get half the work, every probe each, and the rest the
+    other half, against the first probes (the newest signals): never fewer than the 500 newest got before."""
+    if not probes:
+        return {}
+    key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+    total = db.execute("SELECT count(*) FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%')",
+                       (key,)).fetchone()[0]
+    full = total if total * len(probes) <= MEANING_WORK else MEANING_WORK // (2 * len(probes))
+    few = probes[:max(1, MEANING_WORK // 2 // max(1, total - full))]
+    sizes, out = {len(p) for p in probes}, {}
+    for n, (fact_id, blob) in enumerate(db.execute(
+            "SELECT v.fact_id,v.vector FROM fact_vectors v JOIN facts f ON f.id=v.fact_id WHERE v.model=? AND f.kind='fact' AND f.removed_at IS NOT NULL AND (f.merged_into='aside:'||f.id OR f.merged_into='expired:'||f.id OR f.merged_into LIKE 'fact:%') "
+            'ORDER BY f.removed_at DESC,f.id DESC', (key,))):
+        vector, against = embeddings.unpack(blob), probes if n < full else few
+        if sizes == {len(vector)}:
+            close = max(map(math.sumprod, itertools.repeat(vector), against))  # embeddings.cosine without a call per pair
+        else:
+            close = max(embeddings.cosine(vector, p) for p in against)
+        if close >= FLOOR:
+            out[fact_id] = close
+    return out
+
+
+def _close_for(db, found, probes, settings):
+    """{fact id: best cosine} of these few facts (since_session's current ones), from their stored vectors."""
+    if not probes or not found:
+        return {}
+    key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
+    return {r[0]: max(embeddings.cosine(embeddings.unpack(r[1]), p) for p in probes) for r in db.execute(
+        'SELECT fact_id,vector FROM fact_vectors WHERE model=? AND fact_id IN (SELECT value FROM json_each(?))', (key, _ids(f['id'] for f in found)))}
+
+
+def find(db, nodes, text, signals, settings):
+    """What may bear on the matter, through the indexes: (candidates, the records' names, the words asked, {fact id:
+    closeness}). matches says which really do."""
+    nodes = set(nodes or ())
+    names = _names(db, nodes) if nodes else []
+    asked = words(text)
+    close = _closeness(db, _probes(db, signals, settings), settings)
+    ids = _tied(db, nodes) | {i for _, name in names for i in _searched(db, ' '.join(name))} | _worded(db, asked) | set(close)
+    return candidates(db, ids), names, asked, close
+
+
+def matches(db, found, nodes, names, asked, close):
     """[(how, score, fact)] of the found ones that bear on the matter, best first: set aside before history, then by
     records, meaning and words. how: about, closeness or match (memory_use.HOWS)."""
     if not found:
         return []
-    ids = [f['id'] for f in found]
+    nodes = set(nodes or ())
     tied = {}
     if nodes:
-        for r in db.execute(f"SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN ({','.join('?' for _ in ids)})", ids):
+        for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (SELECT value FROM json_each(?))',
+                            (_ids(f['id'] for f in found),)):
             tied.setdefault(r['fact_id'], set()).add(r['node_id'])
-    names = _names(db, nodes) if nodes else []
-    asked = words(text)
-    probes = _probes(db, signals, settings)
-    stored = {}
-    if probes:
-        key = f"{settings.get('model', '')}:{int(settings.get('dims', 256))}"
-        stored = {r[0]: embeddings.unpack(r[1]) for r in db.execute(
-            f"SELECT fact_id,vector FROM fact_vectors WHERE model=? AND fact_id IN ({','.join('?' for _ in ids)})", (key, *ids))}
     out = []
     for f in found:
-        if tied.get(f['id'], set()) & set(nodes) or any(_says(f['text'], name) for _, name in names):
+        parts = [w for w, _ in fact_links.words(f['text'])] if names else []
+        if tied.get(f['id'], set()) & nodes or any(_says(parts, name) for _, name in names):
             out.append(('about', 1.0, f))
             continue
-        close = max((embeddings.cosine(stored[f['id']], p) for p in probes), default=0.0) if f['id'] in stored else 0.0
+        near = close.get(f['id'], 0.0)
         said = word_match(f['text'], asked)
-        if close >= FLOOR or said:
-            out.append(('closeness', close, f) if close >= FLOOR else ('match', said, f))
+        if near >= FLOOR or said:
+            out.append(('closeness', near, f) if near >= FLOOR else ('match', said, f))
     return sorted(out, key=lambda m: (m[2]['state'] != 'aside', -m[1]))
 
 
@@ -203,11 +297,19 @@ def for_todo(app, suggestion_id, limit=None):
             card = db.execute('SELECT title,body,event_ids,account_ids,area FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not card:
                 return ''
-            found = candidates(db)
+            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
+            try:
+                signals = [int(i) for i in json.loads(card['event_ids'] or '[]')][:20]
+            except (TypeError, ValueError):
+                signals = []
+            text = ' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))
+            nodes = fact_links.todo_records(db, suggestion_id)
+            found, names, asked, close = find(db, nodes, text, signals, embeddings.settings(app.config))
             if not found:
                 return ''
             about = {}
-            for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL'):
+            for r in db.execute('SELECT fact_id,node_id FROM fact_about WHERE removed_at IS NULL AND fact_id IN (SELECT value FROM json_each(?))',
+                                (_ids(f['id'] for f in found),)):
                 about.setdefault(r['fact_id'], []).append(r['node_id'])
             for f in found:
                 f['about'] = tuple(about.get(f['id'], ()))
@@ -215,13 +317,7 @@ def for_todo(app, suggestion_id, limit=None):
             area = suggestion_scope(card['account_ids'] or '[]', accounts, card['area'])
             who = fact_links.records(db, {n for f in found for n in f['about']})
             found = [f for f in found if f.get('side') in (None, area) and fact_links.on_side(f['about'], who, area)]
-            note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND feedback!='' ORDER BY created_at DESC LIMIT 1", (suggestion_id,)).fetchone()
-            try:
-                signals = [int(i) for i in json.loads(card['event_ids'] or '[]')][:20]
-            except (TypeError, ValueError):
-                signals = []
-            text = ' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))
-            found = matches(db, found, fact_links.todo_records(db, suggestion_id), text, signals, embeddings.settings(app.config))
+            found = matches(db, found, nodes, names, asked, close)
     except Exception as error:  # a busy database never costs the prompt the rest of its memory
         LOG.error('retained facts error=%s', type(error).__name__)
         return ''
@@ -232,16 +328,14 @@ def for_review(app, limit=None):
     """The retained facts that bear on the signals waiting for a review: by their records, meaning and subjects."""
     try:
         with app.store.connect() as db:
-            found = candidates(db)
-            if not found:
-                return ''
             signals = waiting(db, [a['id'] for a in app.config.get('accounts', [])], SIGNALS)
             if not signals:
                 return ''
             marks = ','.join('?' for _ in signals)
             nodes = {r[0] for r in db.execute(f'SELECT DISTINCT node_id FROM graph_events WHERE probable=0 AND event_id IN ({marks})', signals)}
             text = ' '.join(r[0] or '' for r in db.execute(f'SELECT title FROM events WHERE id IN ({marks})', signals))
-            found = matches(db, found, nodes, text, signals, embeddings.settings(app.config))
+            found, names, asked, close = find(db, nodes, text, signals, embeddings.settings(app.config))
+            found = matches(db, found, nodes, names, asked, close)
     except Exception as error:  # a busy database never costs the review its facts
         LOG.error('retained facts error=%s', type(error).__name__)
         return ''
@@ -304,7 +398,8 @@ def since_session(app, suggestion_id, session, limit=None):
                 except (TypeError, ValueError):
                     signals = []
                 text = ' '.join(filter(None, (card['title'], card['body'], note['feedback'] if note else '')))
-                picks = matches(db, new, fact_links.todo_records(db, suggestion_id), text, signals, embeddings.settings(app.config))
+                nodes, settings = fact_links.todo_records(db, suggestion_id), embeddings.settings(app.config)
+                picks = matches(db, new, nodes, _names(db, nodes) if nodes else [], words(text), _close_for(db, new, _probes(db, signals, settings), settings))
                 matched = {f['id'] for _, _, f in picks}  # while the list is short a preparation gets all of it: so does this
                 picks += [('recency', None, f) for f in sorted(new, key=lambda f: changed[f['id']], reverse=True) if f['kind'] in short and f['id'] not in matched]
     except Exception as error:  # a busy database never costs the chat turn its answer

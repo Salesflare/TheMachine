@@ -549,7 +549,8 @@ def for_chat(app, question, limit=CHAT_CHARS):
     current = sorted((f for f in app.store.facts() if _shared(asked, f['text']) and not ai_fact_by(f) and fact_weight(f, at) > 0), key=rank, reverse=True)
     with app.store.connect() as db:
         with_about(db, current)
-        old = [f for f in retained_facts.candidates(db) if _shared(asked, f['text'])]  # never one the owner removed
+        starts = {w[:-1] if w.endswith('y') and len(w) > 1 else w for w in asked}  # "party" is the stem of "parties"
+        old = [f for f in retained_facts.candidates(db, retained_facts.starting(db, starts)) if _shared(asked, f['text'])]  # never one the owner removed
         with_about(db, old)
         people = {n for f in current + old for n in f['about']}
         who = fact_links.records(db, people)

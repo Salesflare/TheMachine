@@ -864,6 +864,11 @@ nothing, and a log write that fails never fails the prompt.
     review: the waiting signals), shares at least two distinctive words and a third of its own with the to-do (title,
     body, the owner's latest note) or the waiting signals' subjects, or, with embeddings on, its stored vector is close
     (0.45 or more) to a stored vector of those signals. No embedding request, no model call.
+  - Every fact outside the list is looked at, however many years of them there are, through indexes: `fact_about` by
+    record, and `fact_search`, an FTS5 index of the facts' words kept by triggers (a fact with a record's name or two of
+    the words asked). Only those are read and checked. Meaning scans the stored vectors, at most 500,000 comparisons
+    per recall: past that, the most lately removed facts go against every signal and the rest against the newest
+    signals. A database from before the index gets it once at start, after a copy next to it (`.before-fact-index-…`).
   - A small fixed slice: at most 3 lines and 600 characters (400 in a to-do's chat turn), set-aside ones first,
     outside the current facts' own cap, and nothing when nothing matches. In a review it comes after the batch's facts,
     so the cached prefix stays the same. A to-do's preparation and its fact area follow `facts_for`'s.

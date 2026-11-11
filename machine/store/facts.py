@@ -410,8 +410,42 @@ def close_facts(db, ids):
     return close
 
 
+# Where machine/app/retained_facts.py looks, however many facts years of use leave outside the current list: a keyword
+# index of the facts' words (FTS5 over facts.text, kept by triggers like the messages' event_search) and the facts
+# about one record (fact_about by node_id). Facts are never sealed (message_seal.py), so the index holds what facts.text does.
+FACT_INDEX = (
+    "CREATE VIRTUAL TABLE IF NOT EXISTS fact_search USING fts5(text,content='facts',content_rowid='id')",
+    'CREATE TRIGGER IF NOT EXISTS fact_search_insert AFTER INSERT ON facts BEGIN '
+    'INSERT INTO fact_search(rowid,text) VALUES(new.id,new.text); END',
+    'CREATE TRIGGER IF NOT EXISTS fact_search_update AFTER UPDATE OF text ON facts BEGIN '
+    "INSERT INTO fact_search(fact_search,rowid,text) VALUES('delete',old.id,old.text); "
+    'INSERT INTO fact_search(rowid,text) VALUES(new.id,new.text); END',
+    'CREATE TRIGGER IF NOT EXISTS fact_search_delete AFTER DELETE ON facts BEGIN '
+    "INSERT INTO fact_search(fact_search,rowid,text) VALUES('delete',old.id,old.text); END",
+    'CREATE INDEX IF NOT EXISTS fact_about_node ON fact_about(node_id)')
+FACT_INDEX_NAMES = {'fact_search', 'fact_search_insert', 'fact_search_update', 'fact_search_delete', 'fact_about_node'}
+
+
 class FactsStore:
     """Store methods for the facts the Machine learned."""
+
+    def index_facts(self):
+        """The facts' index (FACT_INDEX), when a part of it is missing: a database from before it, or one whose facts
+        table was rebuilt. A copy of the database comes first when it has facts (copy_before); the index is then built
+        from the facts in one pass. Every start after that only reads the schema. True when it built it."""
+        with self.connect() as db:
+            marks = ','.join('?' for _ in FACT_INDEX_NAMES)
+            if {r[0] for r in db.execute(f'SELECT name FROM sqlite_master WHERE name IN ({marks})', sorted(FACT_INDEX_NAMES))} >= FACT_INDEX_NAMES:
+                return False
+            known = db.execute('SELECT 1 FROM facts LIMIT 1').fetchone()
+        if known:
+            self.copy_before('fact-index')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for sql in FACT_INDEX:
+                db.execute(sql)
+            db.execute("INSERT INTO fact_search(fact_search) VALUES('rebuild')")
+        return True
 
     def remember_fact(self, text, decision_id, kind=None, replaces=None, about=None, until=None, source=None, side=None, said=False):
         """Keep a lasting fact from one of the owner's own written notes, so later reviews and preparations use it.
