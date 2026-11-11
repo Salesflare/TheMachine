@@ -16,13 +16,22 @@ what the owner wrote on that page stays as they wrote it. A skill changes throug
 Every fix is kept in learning_changes (kind 'source') with what it replaced, so it shows in the to-do's chat as a quiet
 line ("Fixed: Ana's role is Head of Sales, from her email signature") and under What I've learned, Recent changes, with
 Undo. An undo puts back exactly what was there, unless that changed again since (the owner's later edit wins). A note
-fixed at the source is no signal for the learning loop any more: it adds no rule on top."""
+fixed at the source is no signal for the learning loop any more: it adds no rule on top.
+
+Other drafts built on the wrong thing are drafted again (pending_work, CorrectionsApp.correction_redo): every ready
+draft on another open to-do about the same person, organization or project, or whose text has the wrong value. Not one
+the owner edited, approved or that is going out: those stay as they are and are only counted. Each goes through the
+preparation queue like a Change, one at a time as background work, and its chat says why ("Redoing the draft after a
+fix: …")."""
 from __future__ import annotations
 
 import json
+import re
 
 import graph
+import i18n
 import learning_loop
+import next_actions
 import timeutil
 
 # The rule a to-do's preparation and chat turns get (assistant.preparation_prompt, chat_prompt).
@@ -36,7 +45,10 @@ PROMPT = ('When the owner\'s note says something The Machine has is wrong ("she\
           'their language, like "her email signature">. The chat shows each fix with Undo by itself: don\'t also save a fact or rule that says '
           'the same, and the reply says in one line what was wrong and that it is fixed. The Machine\'s part of a GBrain page follows by itself; '
           'what the owner wrote on a GBrain page stays theirs, so name that page in the reply. A wrong skill gets an update they approve '
-          '(assistant skills-propose --update <skill> --job <job id>). Only when no source says it, save a fact or rule as usual.')
+          '(assistant skills-propose --update <skill> --job <job id>). Only when no source says it, save a fact or rule as usual. '
+          'Give wrong=<the wrong words as a draft would say them> when that isn\'t just the old value (a rule\'s "Q3 template"). '
+          'fix_source also redoes the owner\'s other ready drafts it touches (redoing) and leaves the ones they edited or approved (left): '
+          'the reply says both counts in a few words, like "Redoing 3 other drafts with it; 1 you edited stays as it is".')
 KINDS = ('fact', 'role', 'org', 'title', 'location', 'stage', 'project')
 GRAPH_KINDS = ('role', 'org', 'title', 'location', 'stage', 'project')
 FROM_CHARS, VALUE_CHARS = 80, 120
@@ -227,10 +239,12 @@ def _same(kind, a, b):
     return a == b
 
 
-def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now):
+def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now, wrong=''):
     """Fix one wrong thing where it lives, from the owner's note (decision_id) on this to-do. value is what is right
     ('' takes it away, for a fact, a role, an organization or the to-do's project). came_from: where the wrong one came
-    from, in a few words in the owner's language ("her email signature"). Returns the change id and its line."""
+    from, in a few words in the owner's language ("her email signature"). wrong: the wrong words as a draft would say
+    them, when that isn't just the old value. Returns the change id and its line, and the other drafts it touches
+    (pending_work: redo, left)."""
     learning_loop.ensure(db)
     if not db.in_transaction:
         db.execute('BEGIN IMMEDIATE')
@@ -313,10 +327,114 @@ def fix(db, suggestion_id, decision_id, kind, target, value, came_from, now):
             graph.person_edit(db, row['id'], {kind: value}, now)
             line = _line('{}’s title is {}', name, value) if kind == 'title' else _line('{} is based in {}', name, value)
     after = _state(db, kind, where)
+    about = {'kind': kind, 'where': where, 'old': old, 'wrong': _clip(wrong, VALUE_CHARS),
+             'name': said['project'] if kind == 'stage' else name if kind in ('role', 'org', 'title', 'location') else None}
     change = learning_loop.record(db, 'fix:' + str(decision_id), 'source',
                                   json.dumps({'type': kind, 'where': where, 'line': line, 'after': after, 'suggestion_id': str(suggestion_id)}),
                                   json.dumps({'text': old, 'state': before}), _english(line, value), came_from or '')
-    return {'id': change, 'fixed': _english(line, value), **({'came_from': came_from} if came_from else {}), 'graph': kind in GRAPH_KINDS}
+    return {'id': change, 'fixed': _english(line, value), **({'came_from': came_from} if came_from else {}), 'graph': kind in GRAPH_KINDS,
+            **pending_work(db, suggestion_id, about)}
+
+
+# ------------------------------------------------------------------------------------------------ other drafts it touches
+
+REDO_PREFIX = 'correction:'  # the decision that redoes one other draft: correction:<change id>:<to-do id>
+REDO_SOURCE = 'correction'
+# An approved or sending step keeps its draft: only a cancelled one, or one done or sent for another draft, doesn't
+SETTLED_STEPS = ('cancelled', 'done', 'sent')
+
+
+def _drafts(next_action):
+    """The ready drafts on a to-do: what the owner would approve (a message, a calendar change, a final step)."""
+    try:
+        found = next_actions.visible_actions(next_action)
+    except (ValueError, TypeError, AttributeError):
+        return []
+    return [a for a in found if isinstance(a, dict) and a.get('kind') in next_actions.APPROVE_KINDS + next_actions.FINISH_KINDS]
+
+
+def _says(text, words):
+    """Does the text say these words, as words (not inside another word)?"""
+    words = ' '.join(str(words or '').split())
+    return len(words) >= 3 and re.search(r'(?<!\w)' + re.escape(words.casefold()) + r'(?!\w)', text) is not None
+
+
+def _linked(db, node_ids):
+    """The events and the addresses that put a to-do with these people, organizations or projects."""
+    node_ids = [str(n) for n in node_ids or []]
+    if not node_ids:
+        return set(), set()
+    marks = ','.join('?' for _ in node_ids)
+    events = {r['event_id'] for r in _rows(db, f'SELECT event_id FROM graph_events WHERE probable=0 AND node_id IN ({marks})', node_ids)}
+    addresses = {n.split(':', 1)[1].casefold() for n in node_ids if n.startswith('email:')}
+    return events, addresses
+
+
+def pending_work(db, suggestion_id, about):
+    """The other open to-dos whose ready draft was built on what a fix just changed: one about the same person or
+    organization (on its signals, or one of its recipients), on the same project (a stage), about the people a fixed
+    fact is about, or whose draft says the wrong value (with the person's name, for something about a person). No cap.
+    redo: the ones to draft again; left: how many the owner edited, approved or that are going out (they stay)."""
+    kind, where = about['kind'], about['where']
+    nodes, projects = [], set()
+    if kind in ('role', 'org', 'title', 'location'):
+        nodes = where.get('ids') or [where['id']]
+    elif kind == 'stage':
+        projects = {str(about.get('name') or '').casefold()}
+    elif kind == 'fact':
+        about_ids = [r['node_id'] for r in _rows(db, 'SELECT node_id FROM fact_about WHERE removed_at IS NULL AND fact_id=?', (int(where['id']),))]
+        nodes = [n for n in about_ids if not n.startswith('project:')]
+        ids = [int(n.split(':', 1)[1]) for n in about_ids if n.startswith('project:') and n.split(':', 1)[1].isdigit()]
+        projects = {r['name'].casefold() for r in _rows(db, f"SELECT name FROM projects WHERE id IN ({','.join('?' for _ in ids) or 'NULL'})", ids)}
+    events, addresses = _linked(db, nodes)
+    old = about.get('old') if kind in ('role', 'org', 'title', 'location') else None
+    name = about.get('name') if old else None
+    redo, left = [], 0
+    for card in _rows(db, "SELECT id,event_ids,project,next_action FROM suggestions WHERE status='prepared' AND id!=? AND next_action IS NOT NULL",
+                      (str(suggestion_id),)):
+        drafts = _drafts(card['next_action'])
+        if not drafts:
+            continue
+        text = ' '.join(f"{a.get('subject') or ''} {next_actions.draft_text(a) or ''} {a.get('preview') or ''}" for a in drafts).casefold()
+        sent_to = json.dumps([{k: a.get(k) for k in ('to', 'cc', 'bcc', 'to_name')} for a in drafts]).casefold()
+        try:
+            on = set(json.loads(card['event_ids'] or '[]')) & events
+        except (ValueError, TypeError):
+            on = set()
+        if not (on or any(a in sent_to for a in addresses) or (card['project'] or '').casefold() in projects - {''}
+                or (old and name and _says(text, old) and _says(text, name)) or _says(text, about.get('wrong'))):
+            continue
+        revisions = [a.get('revision') for a in drafts if a.get('revision')]
+        marks = ','.join('?' for _ in revisions) or 'NULL'
+        kept = (db.execute("SELECT 1 FROM draft_edits WHERE suggestion_id=? AND source!='agent' LIMIT 1", (card['id'],)).fetchone()
+                or db.execute(f"SELECT 1 FROM action_jobs WHERE suggestion_id=? AND (status NOT IN ({','.join('?' for _ in SETTLED_STEPS)}) "
+                              f"OR (status='sent' AND revision IN ({marks}))) LIMIT 1", (card['id'], *SETTLED_STEPS, *revisions)).fetchone())
+        if kept:
+            left += 1
+        else:
+            redo.append(card['id'])
+    return {'redo': redo, 'left': left}
+
+
+def redo_note(fixed):
+    """What the run that drafts it again reads (the decision's feedback; never shown as the owner's words)."""
+    return f'Redo the draft: the owner fixed what it was built on, on another to-do: {_clip(fixed, 300)}'
+
+
+def redo_prompt(notes):
+    """The line a run that redoes a draft after fixes gets (preparation_run_step)."""
+    fixes = '; '.join(_clip(n.split(': ', 2)[-1], 300) for n in notes)
+    return ('\nThe owner fixed what this to-do\'s draft was built on, on another to-do: ' + fixes + '. Draft it again with that and '
+            'keep the rest as it was. Only the draft changes: nothing is sent or changed anywhere.')
+
+
+def redo_chat_line(db, decision_id, feedback):
+    """The redone to-do's chat line: "Redoing the draft after a fix: <the fix>", in the owner's language."""
+    change = str(decision_id)[len(REDO_PREFIX):].split(':', 1)[0]
+    row = db.execute("SELECT target,after FROM learning_changes WHERE id=? AND kind='source'", (int(change),)).fetchone() if change.isdigit() else None
+    line = (json.loads(row['target']).get('line') if row else None)
+    fixed = i18n.t(*line) if line else row['after'] if row else _clip(str(feedback or '').split(': ', 2)[-1], 200)
+    return i18n.t('Redoing the draft after a fix: {}', fixed)
 
 
 def undo(db, row):

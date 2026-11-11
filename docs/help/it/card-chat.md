@@ -35,6 +35,8 @@ Su un computer, Invio o Ctrl+Invio (Cmd+Invio su Mac) invia e Maiusc+Invio va a 
 
 Dillo nella chat, per esempio "Non è la CEO" o "Ha lasciato l'azienda". The Machine lo corregge dove è nato: un ruolo, un'azienda, una qualifica, la fase di un progetto, il progetto del to-do o una regola imparata. La chat mostra poi cosa è cambiato, per esempio **Corretto: Il ruolo di Ana è Head of Sales, da una sua firma email**, con **Annulla**. Annulla rimette ciò che c'era, a meno che non sia cambiato nel frattempo.
 
+Le tue altre bozze basate sul valore sbagliato vengono rifatte, una alla volta. La loro chat mostra **La bozza viene rifatta dopo una correzione**. Le bozze che hai modificato o approvato, e quelle in invio, restano come sono. La risposta dice quante di ciascun tipo.
+
 Su una pagina GBrain cambia solo la sezione di The Machine; ciò che hai scritto tu resta tuo. Se non trova da dove viene qualcosa, impara dalla tua nota come prima.
 
 ## Modello e ragionamento

@@ -936,6 +936,24 @@ most five per note.
 - A note fixed this way is no signal for the learning loop, so no rule is added on top. When no source holds it, the
   note is learned as before.
 
+### Other drafts built on it
+
+A fix also redoes the owner's other ready drafts that were built on the wrong thing (`corrections.pending_work`), with
+no cap. A draft counts when its to-do is about the same person or organization (on its signals, or a recipient), on
+the same project (a stage), about the people a fixed fact is about, or its text says the wrong value (with the
+person's name, for something about a person). The chat turn can pass `wrong` for words a draft would use that aren't
+just the old value, like a rule's "Q3 template".
+
+- Each one gets a Change from no one (`Store._decide` `other`, source `correction`), in the fix's own transaction. It
+  isn't the owner's word: it authorizes nothing and teaches the learning loop nothing.
+- Kept as they are, and only counted (`left`): drafts the owner edited (`draft_edits`), approved, or that are sending
+  or sent.
+- The redo runs wait in the preparation queue after other work and before follow-ups, one at a time, as background
+  work under the usage budget. Each run is told the fix and that only the draft changes.
+- The redone to-do's chat says **Redoing the draft after a fix: …**. `fix_source` returns `redoing` and `left`, and the
+  correction's reply says both counts.
+- An undo of the fix doesn't redo the drafts again.
+
 ## Sharing learnings
 
 Now and then your Machine offers to share a few general learnings with The Machine team, so the product gets better for

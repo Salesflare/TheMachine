@@ -21,7 +21,7 @@ ANA = 'email:ana@acme.example'
 SAM = 'email:sam@globex.example'
 
 
-class Corrections(unittest.TestCase):
+class Fixture(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -67,6 +67,9 @@ class Corrections(unittest.TestCase):
 
     def undo(self, change_id):
         return self.app.action('learning_undo', {'id': change_id}, owner_dashboard=True)
+
+
+class Corrections(Fixture):
 
     def test_sources_say_where_each_thing_came_from(self):
         found = self.app.action('correction_sources', {'suggestion_id': 's1', 'words': 'Q3 template', 'node_ids': [ANA, 'project:' + str(self.project)]})
@@ -205,6 +208,115 @@ class Corrections(unittest.TestCase):
         self.assertIn("'correction_sources', 'fix_source'", plugin)
         self.assertNotIn('fix_source', a.DASHBOARD_ACTIONS)  # the agent's call, never the page's
         self.assertEqual(set(a.CorrectionsApp.ACTIONS), {'correction_sources', 'fix_source'})
+
+
+class OtherDrafts(Fixture):
+    """A fix redoes the owner's other ready drafts built on the wrong thing, with no cap, through the preparation queue
+    one at a time; it leaves the ones they edited, approved or that are going out, and the reply can say both counts."""
+
+    def setUp(self):
+        super().setUp()
+        stamp = a.now()
+        with self.store.connect() as db:
+            for n in range(1, 4):  # mail with Ana: what the Graph links her to
+                db.execute("INSERT INTO events(id,account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                           "VALUES(?,'g',?,'gmail.message',?,'Proposal','Body','{}','h',?)", (n, f'm{n}', stamp, stamp))
+                db.execute('INSERT INTO graph_events(node_id,event_id,at) VALUES(?,?,?)', (ANA, n, stamp))
+            db.execute("INSERT INTO events(id,account_id,source_id,kind,occurred_at,title,body,metadata,content_hash,ingested_at) "
+                       "VALUES(9,'g','m9','gmail.message',?,'Other','Body','{}','h',?)", (stamp, stamp))
+
+    def card(self, sid, body, events=(), status='prepared', to='team@example.invalid', project=None, subject='Re: proposal'):
+        draft = {'kind': 'email', 'label': 'Send', 'revision': 'r-' + sid, 'to': [to], 'subject': subject, 'body': body}
+        with self.store.connect() as db:
+            db.execute("INSERT INTO suggestions(id,dedupe_key,title,body,event_ids,account_ids,status,created_at,next_action,project) "
+                       "VALUES(?,?,?,'Drafted it.',?,'[]',?,?,?,?)", (sid, sid, 'To-do ' + sid, json.dumps(list(events)), status, a.now(), json.dumps(draft), project))
+            db.execute("INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,'sent',?)", (sid, a.now()))
+        return sid
+
+    def job(self, sid):
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM preparations WHERE suggestion_id=?', (sid,)).fetchone()
+            return dict(row) if row else None
+
+    def status(self, sid):
+        with self.store.connect() as db:
+            return db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
+
+    def test_every_draft_about_her_or_saying_the_wrong_value_is_redone_and_the_owners_own_stay(self):
+        about = [self.card(f'about{n}', 'Hi team, a short update.', events=[1 + n % 3]) for n in range(6)]  # no cap of 3
+        to_her = self.card('to-her', 'Hi, here is the proposal.', to='ana@acme.example')
+        says = self.card('says', 'Ana Silva, our contact and CEO at Acme, will sign.', events=[9])
+        other_ceo = self.card('other-ceo', 'Sam is the CEO there.', events=[9])  # the wrong value, but not about her
+        edited = self.card('edited', 'Hi team.', events=[1])
+        sending = self.card('sending', 'Hi team.', events=[2])
+        approved = self.card('approved', 'Hi team.', events=[3])
+        snoozed = self.card('snoozed', 'Hi team.', events=[1], status='snoozed')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO draft_edits(id,suggestion_id,old_revision,new_revision,kind,before_body,after_body,source,created_at) "
+                       "VALUES('e1','edited','x','r-edited','email','Before','Hi team.','dashboard',?)", (a.now(),))
+            for sid, state in ((sending, 'sending'), (approved, 'queued')):
+                db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                           "VALUES(?,?,?,'{}',?,?,?,'ap','dashboard','rfc')", ('j-' + sid, sid, 'r-' + sid, state, a.now(), a.now()))
+        done = self.fix(kind='role', target=ANA, value='Head of Sales', came_from='her email signature')
+        self.assertEqual((done['redoing'], done['left']), (8, 3))
+        for sid in [*about, to_her, says]:
+            self.assertEqual(self.status(sid), 'instructions', sid)
+            job = self.job(sid)
+            self.assertEqual((job['status'], job['decision_id']), ('queued', f'correction:{done["id"]}:{sid}'))
+        for sid, status in ((other_ceo, 'prepared'), (edited, 'prepared'), (sending, 'prepared'), (approved, 'prepared'),
+                            (snoozed, 'snoozed'), ('s1', 'pending'), ('s2', 'pending')):
+            self.assertEqual(self.status(sid), status, sid)
+            self.assertIsNone(self.job(sid), sid)
+        with self.store.connect() as db:  # the approved step is still there, untouched
+            self.assertEqual(db.execute("SELECT status FROM action_jobs WHERE id='j-approved'").fetchone()[0], 'queued')
+            # the redone to-do's chat says why, as an event line, never as the owner's words
+            items = self.app.card_chat_service(db, says)[0]
+            learned = [s['to_do'] for s in learning_loop.signals(db, '2000-01-01') if s['what'] == 'corrected in chat']
+        self.assertIn('Redoing the draft after a fix: Ana Silva’s role is Head of Sales', [i['text'] for i in items if i['kind'] == 'event'])
+        self.assertFalse([i for i in items if i['kind'] == 'you'])
+        self.assertNotIn('To-do says', learned)  # a redo teaches nothing
+        card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == says)
+        self.assertIsNone(card['latest_feedback'])  # not the owner's word: it authorizes nothing
+
+    def test_the_wrong_words_of_a_rule_and_a_projects_stage(self):
+        q3 = self.card('q3', 'Attached is the proposal in our Q3 template.', events=[9])
+        q4 = self.card('q4', 'Attached is the proposal in our Q4 template.', events=[9])
+        deal = self.card('deal', 'Glad we are moving ahead.', events=[9], project='Acme deal')
+        done = self.app.action('fix_source', {'suggestion_id': 's1', 'decision_id': 'd2', 'kind': 'fact', 'target': self.rule, 'value': '',
+                                               'wrong': 'Q3 template'})
+        self.assertEqual((done['redoing'], done['left']), (1, 0))
+        self.assertEqual((self.status(q3), self.status(q4)), ('instructions', 'prepared'))
+        done = self.fix(kind='stage', target='project:' + str(self.project), value='Proposal')
+        self.assertEqual(done['redoing'], 1)
+        self.assertEqual(self.status(deal), 'instructions')
+        with self.store.connect() as db:
+            lines = [i['text'] for i in self.app.card_chat_service(db, deal)[0] if i['kind'] == 'event']
+        self.assertIn('Redoing the draft after a fix: Acme deal moved to Proposal', lines)
+
+    def test_redos_wait_their_turn_one_at_a_time_and_each_run_is_told_the_fix(self):
+        for n in range(3):
+            self.card(f'about{n}', 'Hi team.', events=[1])
+        mine = self.card('mine', 'Hi.', events=[9])
+        self.fix(kind='role', target=ANA, value='Head of Sales')
+        self.store.decide(mine, 'other', 'Make it shorter', 'owner-note', 'dashboard')  # the owner's own ask, after the fix
+        calls = []
+        with patch.object(a.App, 'background_pause', return_value=None):
+            self.app.preparation_step(lambda r: calls.append(r) or {'status': 'admitted'})
+        with self.store.connect() as db:
+            started = [r[0] for r in db.execute("SELECT suggestion_id FROM preparations WHERE status IN ('starting','running') ORDER BY suggestion_id")]
+            holds = dict(self.store.preparation_holds)
+        self.assertEqual(len(started), 2)  # the owner's ask and one redo, though there is room for three
+        self.assertIn(mine, started)
+        self.assertEqual(sum(h == {'why': 'busy'} for h in holds.values()), 2)
+        redo = next(c for c in calls if c.get('action') == 'start' and c['job_id'] != self.job(mine)['job_id'])
+        self.assertIn('The owner fixed what this to-do\'s draft was built on, on another to-do: Ana Silva’s role is Head of Sales.', redo['message'])
+        self.assertIn('nothing is sent or changed anywhere', redo['message'])
+        mine_call = next(c for c in calls if c.get('action') == 'start' and c['job_id'] == self.job(mine)['job_id'])
+        self.assertNotIn('The owner fixed what this', mine_call['message'])
+
+    def test_the_fix_is_told_to_say_the_counts(self):
+        self.assertIn('redoing', corrections.PROMPT)
+        self.assertIn('wrong=', corrections.PROMPT)
 
 
 if __name__ == '__main__':

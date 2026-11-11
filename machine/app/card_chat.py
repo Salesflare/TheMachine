@@ -339,7 +339,7 @@ class CardChatApp:
         # A note that answered the to-do's question (decision_asks): the question shows as its own line, the note alone
         answered = {r['decision_id']: json.loads(r['questions']) for r in db.execute('SELECT decision_id,questions FROM decision_asks WHERE suggestion_id=?', (suggestion_id,))}
         loose = []  # notes saved before that: one a quick pick glued to its question comes apart below (chat_unglued)
-        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','handled','plan') "
+        for r in db.execute("SELECT id,choice,feedback,source,created_at FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram','fleet','expiry','placed','intercom','intercom_replies','handled','plan','correction') "
                             'ORDER BY rowid', (suggestion_id,)):
             at, via = chat_ms(r['created_at']), (' in Telegram' if r['source'] == 'telegram' else '')
             if r['source'] == 'expiry':  # its moment passed (Store.expire_passed); Undo takes this back like a tap
@@ -350,6 +350,9 @@ class CardChatApp:
                 continue
             if r['source'] == 'plan':  # a newer message overturned its plan (Store.plan_changed); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': i18n.t('Updated: {}', clamp(r['feedback'], 200)), 'choice': 'complete', 'at': at})
+                continue
+            if r['source'] == corrections.REDO_SOURCE:  # a fix on another to-do redoes this draft (corrections.pending_work)
+                owner.append({'kind': 'event', 'text': corrections.redo_chat_line(db, r['id'], r['feedback']), 'at': at})
                 continue
             if r['source'] == 'intercom_replies':  # drafted again as a reply in Intercom (Store.redraft_intercom_emails)
                 owner.append({'kind': 'event', 'text': i18n.t('Intercom replies are on: writing the reply there'), 'at': at})
