@@ -1081,7 +1081,12 @@
  "Couldn’t load this page.": "Impossibile caricare questa pagina.",
  "Couldn’t load. Try again": "Impossibile caricare. Riprova",
  "Couldn’t make the image. Try again in a moment.": "Non è stato possibile creare l’immagine. Riprova tra un momento.",
+ "Couldn’t make the to-do. The next run tries again.": "Non è stato possibile creare l’attività. La prossima esecuzione riproverà.",
  "Couldn’t open that project.": "Impossibile aprire quel progetto.",
+ "Couldn’t put {} more on a to-do. The next run tries again.": {
+  "one": "Non è stato possibile aggiungere {} altro a un’attività. La prossima esecuzione riproverà.",
+  "other": "Non è stato possibile aggiungerne altri {} a un’attività. La prossima esecuzione riproverà."
+ },
  "Couldn’t reach your Machine. Open the app to try again.": "Impossibile raggiungere la tua Machine. Apri l’app per riprovare.",
  "Couldn’t read": "Impossibile leggere",
  "Couldn’t read that file.": "Impossibile leggere quel file.",
@@ -2403,6 +2408,14 @@
   "other": "Creata un’attività con {} newsletter."
  },
  "Made with New to-do": "Creata con Nuova attività",
+ "Made {} to-dos with {} emails that look like spam.": {
+  "one": "Create {} attività con {} email che sembrano spam.",
+  "other": "Create {} attività con {} email che sembrano spam."
+ },
+ "Made {} to-dos with {} newsletters.": {
+  "one": "Create {} attività con {} newsletter.",
+  "other": "Create {} attività con {} newsletter."
+ },
  "Mail and calendar": "Email e calendario",
  "Mail from email warm-up tools, kept out of your Graph.": "Email da strumenti di warm-up, tenute fuori dal tuo Graph.",
  "Mail from it comes under several names": "La posta da qui arriva con diversi nomi",

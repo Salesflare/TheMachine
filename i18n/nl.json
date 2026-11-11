@@ -1081,7 +1081,12 @@
  "Couldn’t load this page.": "Deze pagina kon niet laden.",
  "Couldn’t load. Try again": "Laden mislukt. Probeer opnieuw",
  "Couldn’t make the image. Try again in a moment.": "De afbeelding maken lukte niet. Probeer het zo opnieuw.",
+ "Couldn’t make the to-do. The next run tries again.": "De to-do maken lukte niet. De volgende run probeert het opnieuw.",
  "Couldn’t open that project.": "Kon dat project niet openen.",
+ "Couldn’t put {} more on a to-do. The next run tries again.": {
+  "one": "Nog {} kon niet op een to-do. De volgende run probeert het opnieuw.",
+  "other": "Nog {} konden niet op een to-do. De volgende run probeert het opnieuw."
+ },
  "Couldn’t reach your Machine. Open the app to try again.": "Je Machine was niet bereikbaar. Open de app om het opnieuw te proberen.",
  "Couldn’t read": "Kon niet lezen",
  "Couldn’t read that file.": "Kon dat bestand niet lezen.",
@@ -2403,6 +2408,14 @@
   "other": "Een to-do gemaakt met {} nieuwsbrieven."
  },
  "Made with New to-do": "Gemaakt met Nieuwe to-do",
+ "Made {} to-dos with {} emails that look like spam.": {
+  "one": "{} to-do’s gemaakt met {} mails die op spam lijken.",
+  "other": "{} to-do’s gemaakt met {} mails die op spam lijken."
+ },
+ "Made {} to-dos with {} newsletters.": {
+  "one": "{} to-do’s gemaakt met {} nieuwsbrieven.",
+  "other": "{} to-do’s gemaakt met {} nieuwsbrieven."
+ },
  "Mail and calendar": "Mail en agenda",
  "Mail from email warm-up tools, kept out of your Graph.": "Mail van e-mail-warm-uptools, buiten je Graph gehouden.",
  "Mail from it comes under several names": "Mail ervan komt onder meerdere namen",

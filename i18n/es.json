@@ -1081,7 +1081,12 @@
  "Couldn’t load this page.": "No se pudo cargar esta página.",
  "Couldn’t load. Try again": "No se pudo cargar. Reintentar",
  "Couldn’t make the image. Try again in a moment.": "No se pudo crear la imagen. Vuelve a intentarlo en un momento.",
+ "Couldn’t make the to-do. The next run tries again.": "No se pudo crear la tarea. La próxima ejecución lo intentará de nuevo.",
  "Couldn’t open that project.": "No se pudo abrir ese proyecto.",
+ "Couldn’t put {} more on a to-do. The next run tries again.": {
+  "one": "No se pudo añadir {} más a una tarea. La próxima ejecución lo intentará de nuevo.",
+  "other": "No se pudieron añadir {} más a una tarea. La próxima ejecución lo intentará de nuevo."
+ },
  "Couldn’t reach your Machine. Open the app to try again.": "No se pudo contactar con tu Machine. Abre la app para intentarlo de nuevo.",
  "Couldn’t read": "No pude leer",
  "Couldn’t read that file.": "No se pudo leer ese archivo.",
@@ -2403,6 +2408,14 @@
   "other": "Tarea creada con {} newsletters."
  },
  "Made with New to-do": "Creada con Nueva tarea",
+ "Made {} to-dos with {} emails that look like spam.": {
+  "one": "{} tareas creadas con {} correos que parecen spam.",
+  "other": "{} tareas creadas con {} correos que parecen spam."
+ },
+ "Made {} to-dos with {} newsletters.": {
+  "one": "{} tareas creadas con {} newsletters.",
+  "other": "{} tareas creadas con {} newsletters."
+ },
  "Mail and calendar": "Correo y calendario",
  "Mail from email warm-up tools, kept out of your Graph.": "Correo de herramientas de calentamiento de email, fuera de tu Graph.",
  "Mail from it comes under several names": "El correo desde ella llega con varios nombres",

@@ -1081,7 +1081,12 @@
  "Couldn’t load this page.": "Não foi possível carregar esta página.",
  "Couldn’t load. Try again": "Não foi possível carregar. Tentar de novo",
  "Couldn’t make the image. Try again in a moment.": "Não foi possível criar a imagem. Tente de novo em instantes.",
+ "Couldn’t make the to-do. The next run tries again.": "Não deu para criar a tarefa. A próxima execução tenta de novo.",
  "Couldn’t open that project.": "Não foi possível abrir esse projeto.",
+ "Couldn’t put {} more on a to-do. The next run tries again.": {
+  "one": "Não deu para colocar mais {} em uma tarefa. A próxima execução tenta de novo.",
+  "other": "Não deu para colocar mais {} em uma tarefa. A próxima execução tenta de novo."
+ },
  "Couldn’t reach your Machine. Open the app to try again.": "Não foi possível acessar sua Machine. Abra o app para tentar de novo.",
  "Couldn’t read": "Não consegui ler",
  "Couldn’t read that file.": "Não foi possível ler esse arquivo.",
@@ -2403,6 +2408,14 @@
   "other": "Tarefa criada com {} newsletters."
  },
  "Made with New to-do": "Criada com Nova tarefa",
+ "Made {} to-dos with {} emails that look like spam.": {
+  "one": "{} tarefas criadas com {} e-mails que parecem spam.",
+  "other": "{} tarefas criadas com {} e-mails que parecem spam."
+ },
+ "Made {} to-dos with {} newsletters.": {
+  "one": "{} tarefas criadas com {} newsletters.",
+  "other": "{} tarefas criadas com {} newsletters."
+ },
  "Mail and calendar": "E-mail e agenda",
  "Mail from email warm-up tools, kept out of your Graph.": "E-mails de ferramentas de aquecimento de e-mail, mantidos fora do seu Graph.",
  "Mail from it comes under several names": "Os e-mails dele chegam com vários nomes",
