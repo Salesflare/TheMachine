@@ -28,7 +28,7 @@ const detail=id=>{if(id==='project:1')return {id,kind:'project',name:'Paperkite 
   project:{node_id:id,name:'Paperkite listing',board_id:1,stage:'Agreed',org:null,value:null,notes:'',people:[],archived:false,outcome:null,outcome_reason:null,deal:false},
   board:{board:'Partner listings',stage:'Agreed',next:null,moves:[],stages:stages.map(s=>s.name)}};
  const p=projects[id];
- return {id,kind:'project',name:p.name,strength:1,last_at:day(2),signals:3,state:'open',ids:[],links:[],recent:[],around:[],open:{},log:p.log,board:null,success:p.success,
+ return {id,kind:'project',name:p.name,strength:1,last_at:day(2),signals:3,state:'active',ids:[],links:[],recent:[],around:[],open:{},log:p.log,board:null,success:p.success,
   project:{node_id:id,name:p.name,board_id:null,stage:null,org:null,value:p.value,close_date:null,notes:'',people:[],archived:false,outcome:p.outcome,outcome_reason:p.outcome_reason||null,
    deal:p.value!=null,condition:p.success.condition,proof:p.success.proof}}};
 let calls=[];
@@ -60,6 +60,7 @@ try{
  for(const [w,h] of [[1440,900],[390,844]])for(const scheme of ['light','dark']){const {context,page}=await open(w,h,scheme);
   // A project on no board: its Done when box, with what holds it up and its to-do
   await project(page,'project:9');const box=page.locator('.graph-detail .ps-box');
+  assert.match(await page.locator('.graph-detail .graph-sub').first().textContent(),/^Steady · /);
   assert.equal(await box.locator('.ps-when').textContent(),'Done when: '+when);
   assert.equal(await box.locator('.ps-block').textContent(),'No reply in 12 days · To-do');
   await fits(page,`${w} ${scheme} page`);
@@ -76,7 +77,8 @@ try{
   // Marked done by its proof: the page says so, and Recent changes has Undo
   await project(page,'project:11');
   assert.match(await page.locator('.graph-detail .ps-proof.ok').textContent(),/^Proven /);
-  assert.equal(await page.locator('.graph-detail .proj-facts b').first().textContent(),'Done');
+  assert.match(await page.locator('.graph-detail .graph-sub').first().textContent(),/^Done · last signal /);
+  assert.equal(await page.locator('.graph-detail .proj-facts b').count(),0,'the proof box says it once');
   await page.locator('.record-log summary').first().click();
   assert.equal(await page.locator('.record-log .rc-text').first().textContent(),'Project marked done');
   await fits(page,`${w} ${scheme} done page`);
@@ -99,7 +101,7 @@ try{
   assert.equal(await page.locator('#toast').textContent(),'Project marked done.');
   // A deal on no board (it has a value) ends Won, and its Undo reopens it
   await project(page,'project:10');
-  assert.equal(await page.locator('.graph-detail .proj-facts b').first().textContent(),'Won');
+  assert.match(await page.locator('.graph-detail .graph-sub').first().textContent(),/^Won · /);
   await page.locator('.record-log summary').first().click();
   assert.equal(await page.locator('.record-log .rc-text').first().textContent(),'Marked won');
   calls=[];await page.locator('.record-log .rc-menu summary').first().click();await page.locator('.record-log [data-rc-reopen]').click();

@@ -2,6 +2,9 @@
 // and what a tap on them does. A project's page, a board's "Follow-ups on" line and their settings are in the Graph's
 // part (graph-followups-settings.js); the grouped to-do's fast review is in graph-followups-review.js (LAZY
 // 'followups'): both load when first needed (dashboard_parts.LAZY).
+// A project page's state: how it ended, else how busy it is. A proof its box shows is said there only, not again below it.
+const projState=n=>{const c=n.project;return c?.outcome?endWord(c.outcome,c.deal):heatLabel(n.state)};
+const shownProven=n=>{const s=n.success||n.board?.success;return !!(s?.done&&s.done_by==='evidence'&&s.evidence)};
 // The board's follow-ups as last loaded for the Graph (fuLoad): an edit clears them (graphPost).
 let fuKept=null;
 // The board's follow-ups as one to-do: "8 follow-ups ready for <board>" once one is written, else
