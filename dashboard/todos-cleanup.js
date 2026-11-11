@@ -11,7 +11,7 @@ function cleanupRow(s,news,i){const p=(cleanupPicks.get(s.id)||{})[i.n]||'',pick
   :i.state==='yours'&&i.link?cleanupOut(i.link,'Open unsubscribe page')
   :i.state==='failed'?html`<span class="cl-end bad">${t('Didn’t work')}</span>`:i.state==='unknown'?html`<span class="cl-end">${t('Sent, not confirmed')}</span>`:i.state==='working'?html`<span class="cl-end">${t('Working…')}</span>`:'';
  const what=html`<b translate="no">${i.from}</b>${i.count>1?html` <small>×${i.count}</small>`:''}<span class="cl-sub" translate="no">${i.why||i.title}</span>`;
- // its sender and subject open the mail in the viewer (openEvent), read only: nothing is marked read or picked; no kept mail, no link
+ // sender and subject open its kept mail in the viewer, read only
  return html`<li class="cl-row">${i.event?html`<button type="button" class="cl-what cl-open" data-cl-open="${i.event}" data-cl-title="${i.title||i.from}">${what}</button>`:html`<div class="cl-what">${what}</div>`}${end}</li>`}
 function cleanupBox(s){const c=s.cleanup,news=c.kind==='newsletters',picks=cleanupPicks.get(s.id)||{},go=Object.values(picks).filter(v=>v==='go').length,open=!closed(s)&&c.items.some(i=>i.state==='open');
  const lead=String(s.body||'').split('\n\n')[0];
