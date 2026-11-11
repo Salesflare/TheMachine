@@ -17,7 +17,7 @@ from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_tim
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
-from machine.faults import restart_self
+from machine.faults import loop_failed, restart_self
 from machine.sources.connectors import docs_transport, docs_write_transport, intercom_transport
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
@@ -121,7 +121,7 @@ class ActionRunsApp:
                 self.digest_step()
                 app_clear_step(self.store, self.config)  # notifications on phones for what no longer waits
             except Exception as error:
-                LOG.error('delivery error=%s', type(error).__name__)
+                loop_failed(LOG, 'delivery', error)
 
     def action_step(self,transport=None):
         transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config),docs_write_transport(self.config))
@@ -282,7 +282,7 @@ class ActionRunsApp:
             if time.monotonic() - promised >= 60:
                 promised = time.monotonic()
                 try:self.promise_step()
-                except Exception as error:LOG.error('promise check error=%s',type(error).__name__)
+                except Exception as error:loop_failed(LOG,'promise check',error)
             if time.monotonic() - handled >= 300:
                 handled = time.monotonic()
                 try:self.handled_step()  # open to-dos newer messages show done already (handled_check.py)
@@ -298,7 +298,7 @@ class ActionRunsApp:
                 try:self.follow_up_step()
                 except Exception as error:LOG.error('follow-up error=%s',type(error).__name__)
             try:self.action_step()
-            except Exception as error:LOG.error('approved action error=%s',type(error).__name__)
+            except Exception as error:loop_failed(LOG,'approved action',error)
             try:self.undo_step()
             except Exception as error:LOG.error('undo merge error=%s',type(error).__name__)
             try:self.merge_effect_step()

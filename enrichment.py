@@ -430,18 +430,19 @@ def logo_retries_due(db, now, limit, skip=()):
 def country_rechecks_due(db, now, limit, skip=()):
     """Organizations found with a country before this code first ran here (enrich_prefs 'country_recheck', set then),
     strongest first: looked up once more, since that country came from the lead API's country_code. A look-up moves
-    fetched_at past the start, so each is asked once."""
+    fetched_at past the start, so each is asked once. CROSS JOIN keeps the graph's organizations as the outer loop:
+    left to the planner, it can scan every profile and re-read the graph for each one, for a minute on a big graph.
+    The start is written after the read, so the write lock it takes is not held during it."""
     if limit <= 0:
         return []
-    since = pref(db, 'country_recheck')
-    if since is None:
-        set_pref(db, 'country_recheck', now)
-        since = now
-    rows = db.execute("SELECT p.domain,max(n.strength) s FROM graph_nodes n,"
-                      "json_each(coalesce(json_extract(n.info,'$.domains'),json_array(json_extract(n.info,'$.domain')))) d "
-                      "JOIN org_profiles p ON p.domain=d.value WHERE n.kind='org' AND p.status='found' AND p.fetched_at<? "
+    start = pref(db, 'country_recheck')
+    rows = db.execute("SELECT p.domain,max(n.strength) s FROM graph_nodes n "
+                      "CROSS JOIN json_each(coalesce(json_extract(n.info,'$.domains'),json_array(json_extract(n.info,'$.domain')))) d "
+                      "CROSS JOIN org_profiles p ON p.domain=d.value WHERE n.kind='org' AND p.status='found' AND p.fetched_at<? "
                       "AND json_extract(p.profile,'$.country') IS NOT NULL "
-                      "GROUP BY p.domain ORDER BY s DESC,p.domain LIMIT ?", (since, limit + len(skip))).fetchall()
+                      "GROUP BY p.domain ORDER BY s DESC,p.domain LIMIT ?", (start or now, limit + len(skip))).fetchall()
+    if start is None:
+        set_pref(db, 'country_recheck', now)
     return [r[0] for r in rows if r[0] not in skip][:limit]
 
 

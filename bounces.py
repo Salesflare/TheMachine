@@ -349,14 +349,13 @@ def clear(db, now, own=()):
     copied(db, own)
     cleared = []
     settled = (parse_time(now) - dt.timedelta(hours=CLEAR_HOURS)).isoformat()
-    for b in db.execute('SELECT * FROM email_bounces WHERE cleared_at IS NULL').fetchall():
+    flags = db.execute('SELECT * FROM email_bounces WHERE cleared_at IS NULL').fetchall()
+    later_mail = _mail_about(db, flags)
+    for b in flags:
         address = b['address']
         bounce_ids = {r[0] for r in db.execute('SELECT event_id FROM email_bounce_events WHERE address=?', (address,))}
         how = None
-        # from and to are kept in the clear; a mail that only copied the address comes from email_bounce_cc (copied)
-        for r in db.execute("SELECT id,occurred_at,metadata FROM events WHERE kind='gmail.message' AND deleted=0 AND occurred_at>? "
-                            "AND (instr(lower(json_extract(metadata,'$.from')),?)>0 OR instr(lower(json_extract(metadata,'$.to')),?)>0 "
-                            "OR id IN (SELECT event_id FROM email_bounce_cc WHERE address=?)) ORDER BY occurred_at", (b['bounced_at'], address, address, address)):
+        for r in later_mail.get(address, ()):
             if r['id'] in bounce_ids:
                 continue
             m = json.loads(r['metadata']) if isinstance(r['metadata'], str) else r['metadata']
@@ -374,6 +373,36 @@ def clear(db, now, own=()):
             db.execute('UPDATE email_bounces SET cleared_at=?,cleared_by=?,cleared_event=?,updated_at=? WHERE address=?', (how[2], how[0], how[1], now, address))
             cleared.append((address, how[0]))
     return cleared
+
+
+def _mail_about(db, flags):
+    """{address: [mail rows]} for the open flags: each mail since its bounce that comes from it, goes to it, or copied it
+    (email_bounce_cc), oldest first. One read of the mailbox for all of them: one read per flag held the write lock
+    of bounce_step for seconds with a few dozen flags, and every writer waited behind it."""
+    if not flags:
+        return {}
+    since = {b['address']: b['bounced_at'] for b in flags}
+    copies = {}
+    for address, event_id in db.execute('SELECT address,event_id FROM email_bounce_cc'):
+        if address in since:
+            copies.setdefault(event_id, set()).add(address)
+    found, wanted = {}, []
+    # from and to are kept in the clear; a mail that only copied the address comes from email_bounce_cc (copied)
+    for event_id, at, sender, to in db.execute("SELECT id,occurred_at,lower(json_extract(metadata,'$.from')),lower(json_extract(metadata,'$.to')) "
+                                               "FROM events WHERE kind='gmail.message' AND deleted=0 AND occurred_at>? ORDER BY occurred_at",
+                                               (min(since.values()),)):
+        about = {a for a in since if (sender and a in sender) or (to and a in to)} | copies.get(event_id, set())
+        about = sorted(a for a in about if at > since[a])
+        if about:
+            wanted.append((event_id, about))
+    rows = {}
+    for i in range(0, len(wanted), 500):
+        part = [event_id for event_id, _ in wanted[i:i + 500]]
+        rows.update((r['id'], r) for r in db.execute(f"SELECT id,occurred_at,metadata FROM events WHERE id IN ({','.join('?' * len(part))})", part))
+    for event_id, about in wanted:
+        for address in about:
+            found.setdefault(address, []).append(rows[event_id])
+    return found
 
 
 # ------------------------------------------------------------------ reading

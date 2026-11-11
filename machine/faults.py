@@ -273,6 +273,32 @@ def db_busy(error):
     return isinstance(error, sqlite3.OperationalError) and any(w in str(error).lower() for w in ('database is locked', 'database is busy', 'database table is locked'))
 
 
+BUSY_ERROR_AFTER = 120  # seconds: a loop that keeps finding the database busy this long logs it as an error again
+BUSY_GAP = 600  # seconds: a busy pass within this of the last one continues the same busy stretch
+_busy = {}  # loop name -> (first, last) monotonic times of its current busy stretch
+
+
+def loop_failed(log, name, error, at=None):
+    """Log a background loop's failed pass, from inside its except block. A database another writer held past the
+    busy timeout (db_busy) is a wait: logged as one, and tried again at the loop's next pass. Only when that goes on
+    for BUSY_ERROR_AFTER is it an error, so a lock that is never let go still shows. Anything else is an error as
+    before, as "<name> error=<kind>" (and at=), the text FaultLog takes the location from."""
+    clock = time.monotonic()
+    if db_busy(error):
+        first, last = _busy.get(name, (clock, clock))
+        first = clock if clock - last > BUSY_GAP else first
+        _busy[name] = (first, clock)
+        if clock - first < BUSY_ERROR_AFTER:
+            log.info('%s waits: database busy', name)
+            return
+    else:
+        _busy.pop(name, None)
+    if at is None:
+        log.error(f'{name} error=%s', type(error).__name__)
+    else:
+        log.error(f'{name} error=%s at=%s', type(error).__name__, at)
+
+
 def restart_self(delay=5):
     """Restart this service a few seconds from now, from outside its own process, so the merge result
     is saved first. Only when it runs under systemd or launchd; returns whether a restart was scheduled."""

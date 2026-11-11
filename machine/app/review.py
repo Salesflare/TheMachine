@@ -37,6 +37,7 @@ from machine.app.recall import recall
 from machine.app.senders import REPLY_CUT, REPLY_RESERVE
 from machine.browser import STEP_NAMES, transcript_tool_calls
 from machine.config import LOG, RULE_FILES
+from machine.faults import loop_failed
 from machine.prompts.profile import VOICE_TEXT
 from machine.prompts.review import FACT_KIND_HINT, review_prompt, source_notes
 from machine.sources.connectors import companies_prompt
@@ -737,7 +738,7 @@ class ReviewApp:
                 # The first look's next batch as soon as one ended, not a tick later (review_tick)
                 if self.review_step() in REVIEW_TERMINAL and self.review_tick() < REVIEW_TICK_SECONDS:
                     self.review_step()
-            except Exception as error:LOG.error('review worker error=%s',type(error).__name__)
+            except Exception as error:loop_failed(LOG,'review worker',error)
             if time.monotonic() - others < REVIEW_TICK_SECONDS:
                 continue  # the rest keeps its own pace while the first look is checked more often
             others = time.monotonic()

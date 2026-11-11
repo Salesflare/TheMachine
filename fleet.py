@@ -56,6 +56,7 @@ import urllib.request
 import graph
 from fleet_brief import BRIEF_SHOWN, assemble_brief, brief_items, brief_text, gmail_search, settled
 from machine import stamps
+from machine.faults import loop_failed
 from machine.timing import _REQUEST_TIMING
 import ms_graph
 from i18n import t
@@ -3424,7 +3425,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 stop.wait(min(60, 5 * away))
             except Exception as error:
                 backoff = min(300, (backoff or 5) * 2)
-                LOG.error('fleet error=%s at=%s', type(error).__name__, where(error))
+                loop_failed(LOG, 'fleet', error, where(error))
                 stop.wait(backoff)
 
     # -- for the dashboard and preparations

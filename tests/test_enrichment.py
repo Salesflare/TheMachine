@@ -1,6 +1,7 @@
 import http.client
 import http.server
 import json
+import sqlite3
 import threading
 import unittest
 import urllib.parse
@@ -159,6 +160,43 @@ class Enrichment(unittest.TestCase):
         self.assertEqual(self.node('org:northwind.example')['profile']['country'], 'us')
         with self.store.connect() as db:  # done for good: the start stays where it was
             self.assertEqual(enrichment.due(db, (tg.NOW + tg.dt.timedelta(days=1)).isoformat(), 10), [])
+
+    def test_the_country_recheck_neither_holds_the_write_lock_nor_reads_the_graph_once_per_profile(self):
+        orgs = [f'org{i}.example' for i in range(30)]
+        self.add(*[m for o in orgs for m in (tg.mail(3, f'Lee <lee@{o}>', 'sam@acme.com'), tg.mail(2, 'Sam <sam@acme.com>', f'Lee <lee@{o}>', ('SENT',)))])
+        self.build()
+        earlier, now = (tg.NOW - tg.dt.timedelta(days=10)).isoformat(), tg.NOW.isoformat()
+
+        def work(extra):
+            """VM steps of the first re-check pass with `extra` more found profiles of domains not in the graph; asserts
+            another connection can write while it reads."""
+            with self.store.connect() as db:
+                enrichment.pref(db, 'country_recheck')  # makes the table
+                db.execute('DELETE FROM enrich_prefs'); db.execute('DELETE FROM org_profiles')
+                for d in orgs + [f'other{i}.example' for i in range(extra)]:
+                    enrichment.save(db, d, 'found', {'name': 'Some Org', 'country': 'gb', 'logo': 'https://media.example/l.png'}, earlier)
+            steps, blocked = [0], []
+
+            def tick():
+                steps[0] += 1
+                if steps[0] in (5, 50):  # inside the read, past where the start is first kept
+                    other = sqlite3.connect(self.store.path, timeout=0)
+                    try:
+                        other.execute("CREATE TABLE IF NOT EXISTS probe(x)"); other.execute('INSERT INTO probe VALUES(1)'); other.commit()
+                    except sqlite3.OperationalError as error:
+                        blocked.append(str(error))
+                    finally:
+                        other.close()
+            with self.store.connect() as db:
+                db.set_progress_handler(tick, 100)
+                due = enrichment.country_rechecks_due(db, now, 5)
+                db.set_progress_handler(None, 0)
+            self.assertEqual((len(due), blocked), (5, []))  # other writers go on while it reads
+            with self.store.connect() as db:
+                self.assertEqual(enrichment.pref(db, 'country_recheck'), now)  # the start is still kept
+            return steps[0]
+        few, many = work(10), work(1000)
+        self.assertLess(many, few * 3, (few, many))
 
     def test_a_logo_is_kept_only_as_a_plain_https_address(self):
         logo = 'https://media.licdn.com/dms/image/v2/C4D0BAQF/company-logo_200_200/0/1?e=2147483647&v=beta&t=abc'

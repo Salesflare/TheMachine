@@ -233,6 +233,49 @@ class Recording(unittest.TestCase):
         self.app().bounce_step()
         self.assertEqual(self.flags()['sam@client.example']['at'], '2026-10-15T10:00:04+00:00')
 
+    def test_many_open_flags_do_not_keep_other_writers_waiting(self):
+        """The check for flags that work again runs under bounce_step's write lock: one read of the mail for all open
+        flags, not one per flag (a few dozen flags held every writer for seconds, every five minutes)."""
+        self.add(*[mail(f'm{i}', f'2026-10-14T{i // 60:02d}:{i % 60:02d}:00+00:00', who=f'p{i}@other.example') for i in range(300)])
+        self.add(mail('in1', '2026-10-15T09:00:00+00:00', who='flag1@client.example'))  # a reply: that flag clears
+
+        def work_under_the_lock(flags):
+            with self.store.connect() as db:
+                bounces.ensure(db)
+                db.execute('DELETE FROM email_bounces')
+                db.executemany('INSERT INTO email_bounces(address,kind,bounced_at,updated_at) VALUES(?,?,?,?)',
+                               [(f'flag{i}@client.example', 'hard', '2026-10-13T09:00:00+00:00', NOW) for i in range(flags)])
+            steps, blocked, clear = [0], [], bounces.clear
+
+            def counted(db, *args, **kwargs):
+                def tick():
+                    steps[0] += 1
+                    if not blocked:  # another writer meanwhile: the lock is held, it can't get in
+                        other = a.sqlite3.connect(self.store.path, timeout=0)
+                        try:
+                            other.execute('INSERT INTO email_bounce_scan(id,last_event) VALUES(1,0) ON CONFLICT(id) DO NOTHING')
+                            blocked.append(False)
+                        except a.sqlite3.OperationalError as error:
+                            blocked.append('locked' in str(error))
+                        finally:
+                            other.close()
+                    return 0
+                db.set_progress_handler(tick, 100)
+                try:
+                    return clear(db, *args, **kwargs)
+                finally:
+                    db.set_progress_handler(None, 0)
+            with patch.object(bounces, 'clear', counted):
+                self.app().bounce_step()
+            self.assertEqual(blocked, [True])
+            return steps[0]
+
+        few, many = work_under_the_lock(2), work_under_the_lock(40)
+        self.assertLess(many, few * 3, (few, many))  # one read per flag was about 20 times as much
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT cleared_by FROM email_bounces WHERE address='flag1@client.example'").fetchone()[0], 'reply')
+            self.assertEqual(db.execute('SELECT count(*) FROM email_bounces WHERE cleared_at IS NULL').fetchone()[0], 39)
+
     def test_soft_bounces_count_only_three_times_over_a_week(self):
         soft = lambda sid, at: report(sid, at, status='4.4.7', action='delayed')
         self.add(mail('out1', '2026-10-01T09:00:00+00:00', mine=True), soft('s1', '2026-10-01T10:00:00+00:00'), soft('s2', '2026-10-02T10:00:00+00:00'),

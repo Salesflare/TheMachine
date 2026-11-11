@@ -33,7 +33,7 @@ from machine.browser import (
 )
 from machine.chat import owner_time_line
 from machine.config import LOG, ROOT, RULE_FILES, WORKSPACE
-from machine.faults import fault_where
+from machine.faults import fault_where, loop_failed
 from machine.model_usage import node_bin, node_env
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES, VOICE_PRECISE
 from machine.prompts.review import FACT_KIND_HINT, FACTS_YOU, source_notes
@@ -457,7 +457,7 @@ class PreparationApp:
                 jobs.append(job)
         for job in jobs:
             try:self.preparation_run_step(job,runner)
-            except Exception as error:LOG.error('preparation error=%s',type(error).__name__)
+            except Exception as error:loop_failed(LOG,'preparation',error)
 
     def preparation_run_step(self, job, runner):
         """One start or status check for one admitted preparation."""
@@ -740,7 +740,7 @@ class PreparationApp:
     def preparation_worker(self):
         while not self.stop.wait(5):
             try:self.preparation_step()
-            except Exception as error:LOG.error('preparation error=%s',type(error).__name__)
+            except Exception as error:loop_failed(LOG,'preparation',error)
             try:self.release_finished_browser_lease()
             except Exception as error:LOG.error('browser lease error=%s',type(error).__name__)
             try:self.flag_browser_waits()
@@ -750,7 +750,7 @@ class PreparationApp:
             try:self.seal_attachments()
             except Exception as error:LOG.error('attachment seal error=%s',type(error).__name__)
             try:self.expire_step()
-            except Exception as error:LOG.error('expiry error=%s',type(error).__name__)
+            except Exception as error:loop_failed(LOG,'expiry',error)
             try:self.clash_step()
             except Exception as error:LOG.error('calendar clash error=%s',type(error).__name__)
 
