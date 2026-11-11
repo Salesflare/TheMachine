@@ -805,8 +805,9 @@ Memory comes in kinds, each with its own table and its own picker:
 | `team_learning` | what teammates' Machines learned (`fleet_learn*`) | closeness |
 
 A prompt reads them in one way: `recall(app, purpose, about, budget)` (`machine/app/recall.py`), with a purpose
-(`review`, `preparation`, `ask`; `talk` and `chat` read none yet), what it is about (the to-do, the run, the question)
-and the prompt's character budget. It gives the builder each block's text, which is the picker's text unchanged, and
+(`review`, `preparation`, `ask`, `routine`, `talk`; `chat` reads none yet), what it is about (the to-do, the run, the
+question) and the prompt's character budget. Which work reads what, by where it was learned:
+[memory-reach.md](memory-reach.md). It gives the builder each block's text, which is the picker's text unchanged, and
 keeps what each picker put in as items of one shape (`memory_use.Item`): kind, row id, the text in the prompt, the
 records it is about, where it came from, when, and how it was picked (with its score, for closeness).
 

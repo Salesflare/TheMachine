@@ -28,7 +28,7 @@ import embeddings
 import graph
 import memory_use
 import person_summary
-from machine.store.facts import ai_fact_by, fact_line, fact_weight
+from machine.store.facts import ai_fact_by, fact_line, fact_weight, fact_words, note_facts
 from machine.store.promises import promise_card, promise_state, who_named
 from machine.text import shown_body
 from timeutil import now
@@ -46,6 +46,7 @@ FACT_CHARS = 260
 SUMMARY_CHARS = 500
 MEETING_CHARS = 450   # of one meeting's notes: the part that matched
 FACT_FLOOR = 0.6           # cosine of a fact to the question: under it the fact is not about the question (unrelated ones reach 0.5)
+LEARNED = 3           # facts and rules Talk's recall gets for its words (learned)
 FACT_TIMEOUT = 4      # seconds for the question's vector; slower, and no fact is ranked
 NAMED = 2             # organizations and projects named in one question
 NAME_LETTERS = 4      # a name's first word counts alone from this many letters, when no other record has it
@@ -373,3 +374,27 @@ def read(memory, about, budget):
             used += len(text) + 1
             entries.update({e['tag']: e for e in text.entries})
     return ('\n'.join([INTRO, *parts]), entries) if parts else ('', {})
+
+
+def _stems(words):
+    """fact_words with a plural's s dropped, so "seat" finds "seats"."""
+    return {w[:-1] if len(w) > 3 and w.endswith('s') else w for w in words}
+
+
+def learned(store, words):
+    """What was learned that a few words are about, for Talk's recall (the `talk` recall's facts block): the owner's own
+    facts and rules, never a connected AI's, that share at least half of the words' content words, most shared first,
+    at most LEARNED. Plain word matching on the stored text: no embedding and no model call, so it works on every
+    Machine. Without it, what the owner said in a chat ("remember ...") never came back by voice: it is a fact here,
+    not in OpenClaw's memory files."""
+    asked = _stems(fact_words(words))
+    if not asked:
+        return []
+    at, scored = now(), []
+    for f in store.facts():
+        shared = len(asked & _stems(fact_words(f['text'])))
+        if shared and 2 * shared >= len(asked) and not ai_fact_by(f) and fact_weight(f, at) > 0:
+            scored.append((shared, str(f.get('last_use') or ''), f))
+    picked = [f for _, _, f in sorted(scored, key=lambda x: x[:2], reverse=True)[:LEARNED]]
+    note_facts(picked, 'match')
+    return picked

@@ -33,9 +33,11 @@ from zoneinfo import ZoneInfo
 
 import follow_ups
 import i18n
+from machine.app.recall import recall
 from machine.app.review import fit_events
 from machine.config import WORKSPACE
 from machine.text import encoded
+import memory_use
 import recurring
 import routine_changes
 import routine_imports
@@ -531,10 +533,22 @@ class RoutinesApp:
             lines.append(f'Also pass name: a short name for this routine, at most {routines.SHORT_MAX} characters, like Weekly '
                          'standup' + (f'. Its name is "{run["name"]}": pass it again unless it no longer fits.' if run['name_check'] == '1' else '.'))
         lines.append(self.routine_skill_lines(run))
+        lines.append(self.routine_learned_lines(run))
         lines.append(self.routine_cleanup_lines(run))  # an edited Newsletter or Spam cleanup (mail_cleanup_app.py)
         if last:
             lines.append(f'The last result ({last["started_at"][:10]}), so you can say what changed:\n{last["result"][:1500]}')
         return '\n'.join(x for x in lines if x)
+
+    def routine_learned_lines(self, run):
+        """What the Machine learned (the `routine` recall: facts and draft rules, the front of what a review gets), so a
+        run and its draft follow what the owner told it in a chat, on a to-do or in their notes. Its items go on the
+        run (_memory) and are logged once the turn is admitted. '' when nothing was learned yet."""
+        memory = recall(self, 'routine', {'run': run['id']})
+        facts, rules = memory.text('facts'), memory.text('rules')
+        run['_memory'] = memory.rows()
+        return '\n'.join(x for x in (
+            facts and 'What you learned about the owner and their world (it counts for this run):\n' + facts,
+            rules and 'How the owner wants things done (draft rules; follow them in a draft):\n' + rules) if x)
 
     def routine_since(self, run, now):
         """What's new is since the last run that ended well, or the last 24 hours on the first run (its own words may say otherwise)."""
@@ -688,6 +702,7 @@ class RoutinesApp:
                 self.background_started()
                 with self.store.connect() as db:
                     routines.admitted(db, run['id'], self.routines_stamp())
+                memory_use.record(self.store, 'routine', run.get('_memory'), run_id=run['id'])
 
     def routine_settle(self, run):
         """An admitted turn: once it ended its report has finished the run; still running means it ended without one."""
