@@ -95,7 +95,7 @@ def stop_for_move(db, reason, at):
 
 
 WORKING = 'working'  # a shown preparation status: a job handed off after the run got stuck is still on it (shown_preparation)
-HANDED_BACK = 'handed_off'  # a shown preparation status: that job ended with a result, which is the to-do's now
+HANDED_BACK = 'handed'  # a shown preparation status: that job ended with a result, which is the to-do's now
 
 
 def shown_preparation(db, prep='p', card='p.suggestion_id'):
@@ -109,14 +109,6 @@ def shown_preparation(db, prep='p', card='p.suggestion_id'):
     return (f"CASE WHEN {prep}.status='blocked' THEN coalesce((SELECT CASE WHEN coalesce(j.started_at,j.updated_at)<={prep}.updated_at THEN NULL "
             f"WHEN j.status IN ({','.join(repr(s) for s in ACTIVE)}) THEN '{WORKING}' WHEN j.status='result' THEN '{HANDED_BACK}' END "
             f"FROM agent_jobs j WHERE j.suggestion_id={card} ORDER BY j.created_at DESC LIMIT 1),{prep}.status) ELSE {prep}.status END")
-
-
-def card_changed(db, suggestion_id):
-    """Its Telegram message follows a job starting or ending (shown_preparation): Stuck there goes once the job is on it."""
-    try:
-        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (str(suggestion_id),))
-    except sqlite3.OperationalError:
-        pass  # no deliveries table (a bare job store)
 
 
 def settings(config):
@@ -1535,13 +1527,14 @@ def elsewhere_link(url, host=None):
 class AgentJobs:
     version = None  # the running code's version, set by the service (failed jobs in the error reports carry it)
 
-    def __init__(self, connect, config, root, card=None, close_card=None, revise=None, network=None):
+    def __init__(self, connect, config, root, card=None, close_card=None, revise=None, network=None, changed=None):
         """`connect`: the Store's connection. `root`: where job folders go. `card(suggestion_id)` gives what a brief is
         made of ({card, drafts, links, files, messages, task, note, about, history}); `close_card(suggestion_id)` marks the card done;
         `revise(suggestion_id, text)` puts a job's rewritten message in the card's draft (True when it did);
-        `network(body)` posts to the Network's /api/fleet/agent-results (remote Claude jobs, agent_remote.py)."""
+        `network(body)` posts to the Network's /api/fleet/agent-results (remote Claude jobs, agent_remote.py);
+        `changed(suggestion_id)` brings the card's Telegram message up to date when a job starts or ends (shown_preparation)."""
         self.connect, self.config, self.root = connect, config, Path(root)
-        self.card, self.close_card, self.revise, self._network = card, close_card, revise, network
+        self.card, self.close_card, self.revise, self._network, self.changed = card, close_card, revise, network, changed
         own = settings(config) or {}
         self.limit = threading.BoundedSemaphore(max(1, min(int(own.get('max_parallel') or 2), 8)))
         self.timeout = max(60, min(int(float(own.get('timeout_minutes') or 30) * 60), 6 * 3600))
@@ -1557,6 +1550,14 @@ class AgentJobs:
 
             if 'draft_revision' not in have:
                 db.execute('ALTER TABLE agent_jobs ADD COLUMN draft_revision TEXT')
+
+    def card_changed(self, suggestion_id):
+        """After a job started or ended: Stuck on its Telegram message goes once the job is on it (shown_preparation)."""
+        if self.changed:
+            try:
+                self.changed(str(suggestion_id))
+            except Exception as error:  # noqa: BLE001 - the job goes on; the message catches up with the next edit
+                LOG.warning('agent job card edit error=%s', type(error).__name__)
 
     def draft_revision(self, db, suggestion_id):
         row = db.execute('SELECT next_action FROM suggestions WHERE id=?', (str(suggestion_id),)).fetchone()
@@ -1687,7 +1688,7 @@ class AgentJobs:
             db.execute('INSERT INTO agent_jobs(id,suggestion_id,tool,place,status,brief,asks,turns,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
                        (job_id, str(suggestion_id), tool['id'], tool['place'], 'sent', brief, '[]', 1, at, at))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, suggestion_id), job_id))
-            card_changed(db, suggestion_id)
+        self.card_changed(suggestion_id)
         try:
             self.prepare_folder(job_id, brief, parts)
         except OSError as error:
@@ -1719,7 +1720,7 @@ class AgentJobs:
             db.execute("UPDATE agent_jobs SET status='sent',asks=?,turns=turns+1,progress=NULL,error=NULL,error_kind=NULL,outcome=NULL,"
                        'updated_at=?,started_at=NULL,finished_at=NULL WHERE id=?', (json.dumps(asks[-20:], ensure_ascii=False), now(), row['id']))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, row['suggestion_id']), row['id']))
-            card_changed(db, row['suggestion_id'])
+        self.card_changed(row['suggestion_id'])
         self.launch(row['id'], text, resume=row['session_id'])
         return self.get(row['id'])
 
@@ -1739,7 +1740,7 @@ class AgentJobs:
             db.execute("UPDATE agent_jobs SET status='sent',turns=turns+1,progress=NULL,error=NULL,error_kind=NULL,outcome=NULL,updated_at=?,started_at=NULL,finished_at=NULL WHERE id=?",
                        (now(), row['id']))
             db.execute('UPDATE agent_jobs SET draft_revision=? WHERE id=?', (self.draft_revision(db, row['suggestion_id']), row['id']))
-            card_changed(db, row['suggestion_id'])
+        self.card_changed(row['suggestion_id'])
         self.launch(row['id'], prompt, resume=resume, fresh=None if asks else row['brief'])
         return self.get(row['id'])
 
@@ -2002,9 +2003,10 @@ class AgentJobs:
                        "error=NULL,error_kind=NULL,draft_updated=?,updated_at=?,finished_at=?,answers=? WHERE id=?",
                        (session, summary, json.dumps(files), diff or None, 1 if updated else None, at, at,
                         json.dumps(answers[-20:], ensure_ascii=False), job_id))
-            card_changed(db, owner['suggestion_id'])
+
             if receipt:
                 db.execute('INSERT INTO agent_result_receipts(ticket_hash,report,acked) VALUES(?,?,0) ON CONFLICT(ticket_hash) DO UPDATE SET report=excluded.report,acked=0', receipt)
+        self.card_changed(owner['suggestion_id'])
         return True
 
     def take_draft(self, job_id, files, owner, text=None):
@@ -2046,16 +2048,15 @@ class AgentJobs:
             where = f" AND status IN ({','.join('?' * len(only_if))})" if only_if else ''
             changed = db.execute(f'UPDATE agent_jobs SET status=?,error=?,error_kind=?,progress=NULL,updated_at=?,finished_at=? WHERE id=?{where} AND (? IS NULL OR turns=?)',
                                  (status, error, error_kind, now(), now(), job_id, *(only_if or ()), turn, turn)).rowcount
-            if changed:
-                row = db.execute('SELECT suggestion_id FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
-                if row:
-                    card_changed(db, row[0])
+            card = db.execute('SELECT suggestion_id FROM agent_jobs WHERE id=?', (job_id,)).fetchone() if changed else None
             if changed and status == 'failed':  # the error reports: the tool and its error kind, never the job's text (error_feed.py)
                 try:
                     row = db.execute('SELECT tool FROM agent_jobs WHERE id=?', (job_id,)).fetchone()
                     error_feed.record(db, 'job', error_kind or 'failed', '', 'agent_jobs.py', row[0] if row else 'job', None, self.version)
                 except Exception:
                     pass  # recording an error must never cause one
+        if card:
+            self.card_changed(card[0])
 
     def recover(self):
         """After a restart: a local job that was running has stopped with the service; one still waiting for a slot

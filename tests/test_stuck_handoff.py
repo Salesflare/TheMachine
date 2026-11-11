@@ -23,7 +23,8 @@ class StuckThenHandedOff(unittest.TestCase):
         self.app.preparation_step(lambda r: {'status': 'admitted'})
         self.stuck(OLD)
         self.jobs = agent_jobs.AgentJobs(self.store.connect, {'accounts': [], 'agents': {}}, Path(self.temp.name) / 'agent-jobs',
-                                         card=lambda sid: {'card': {'id': sid, 'title': 'Prepare a useful draft', 'body': 'x'}})
+                                         card=lambda sid: {'card': {'id': sid, 'title': 'Prepare a useful draft', 'body': 'x'}},
+                                         changed=self.store.card_message_changed)
 
     accept = p.Preparation.accept
 

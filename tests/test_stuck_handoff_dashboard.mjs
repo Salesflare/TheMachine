@@ -6,7 +6,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modul
 
 // A to-do whose run got stuck, then handed to Codex from its chat. While the job runs the server shows its preparation as
 // working (agent_jobs.shown_preparation): the chip and the chat's status line both say Working…, never Stuck, and Try
-// again goes. Once the job's result is in (handed_off) nothing runs: never Preparing…, never Stuck. A to-do that is
+// again goes. Once the job's result is in (handed) nothing runs: never Preparing…, never Stuck. A to-do that is
 // still stuck says Stuck in both places.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),since=new Date(Date.now()-288e3).toISOString();
@@ -18,7 +18,7 @@ const cards=[
  {id:'b2b2b2b2b2b2b2b2',title:'Check the import log',body:'x',status:'accepted',scope:'work',created_at:now,event_ids:[2],
   preparation_status:'working',preparation_error:null,preparation_reason:null,agent_job:{...job,id:'aj_'+'2'.repeat(16),status:'running'}},
  {id:'c3c3c3c3c3c3c3c3',title:'Fix the export',body:'x',status:'accepted',scope:'work',created_at:now,event_ids:[3],
-  preparation_status:'handed_off',preparation_error:null,preparation_reason:null,agent_job:{...job,id:'aj_'+'3'.repeat(16),status:'result',summary:'Found the cause.',finished_at:now}},
+  preparation_status:'handed',preparation_error:null,preparation_reason:null,agent_job:{...job,id:'aj_'+'3'.repeat(16),status:'result',summary:'Found the cause.',finished_at:now}},
  {id:'d4d4d4d4d4d4d4d4',title:'Order the cable',body:'x',status:'accepted',scope:'work',created_at:now,event_ids:[4],
   preparation_status:'blocked',preparation_reason:'This didn’t finish, also on the second try.',preparation_error:'completion_unconfirmed'}];
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],

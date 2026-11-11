@@ -429,11 +429,7 @@ const askBlocked=s=>s.preparation_status==='blocked'&&!s.preparation_error&&!!St
 // disagree. A stopped run comes first: a card whose run stopped is not Preparing any more, whatever its status says.
 // Closed by itself once its moment passed (expired_at): Not needed, like a dismissed one, so it never reads as done by them
 const lapsed=s=>s.status==='completed'&&!!s.expired_at;
-// A stuck run's to-do handed to Claude Code or Codex after it: Working… while that job runs, not Stuck (agent_jobs.shown_preparation)
-const working=s=>s.preparation_status==='working'&&!closed(s)&&s.status!=='snoozed';
-// That job's result is in: nothing runs on it any more, so never Preparing… (it needs them to look)
-const handedBack=s=>s.preparation_status==='handed_off';
-const cardState=s=>lapsed(s)?'Not needed':working(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)?(handedBack(s)?label('pending'):'Preparing…'):label(s.status);
+const cardState=s=>lapsed(s)?'Not needed':s.preparation_status==='working'&&!closed(s)?'Working…':s.preparation_status==='blocked'&&!closed(s)&&s.status!=='snoozed'?(s.preparation_error==='stopped'?'Stopped':askBlocked(s)||moveAsk(s)||useAsk(s)||connectAsk(s)||s.preparation_browser&&!s.preparation_error?'Needs your help':'Stuck'):['accepted','instructions'].includes(s.status)&&s.preparation_status!=='handed'?'Preparing…':label(s.status);
 const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)return '';if(askBlocked(s))return s.preparation_questions?.length?s.preparation_questions.map(q=>q.question).join(' '):String(s.preparation_reason).trim();
  if(s.status!=='prepared'||s.preparation_status==='blocked'||smart.some(a=>a.kind!=='open'))return '';
  return needsAsk(s)};

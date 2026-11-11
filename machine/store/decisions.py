@@ -429,6 +429,12 @@ def _not_done(db, row, feedback, decision_id, source):
 class DecisionsStore:
     """Store methods for what the owner decides about a to-do and for preparing it."""
 
+    def card_message_changed(self, suggestion_id):
+        """A Claude Code or Codex job on the to-do started or ended: its Telegram message is edited to match
+        (agent_jobs.shown_preparation: Working…, not Stuck, while it runs)."""
+        with self.connect() as db:
+            db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (str(suggestion_id),))
+
     def waiting_steps(self, suggestion_id, action, finish_state=None):
         """The steps in a result that still wait for the owner: a send, merge, calendar change, final click or handoff
         they haven't approved yet. One they already approved (an action job for that exact revision that didn't fail)
