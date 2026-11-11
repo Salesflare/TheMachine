@@ -265,9 +265,9 @@ jobs:
 
   nightly-alert:
     # A red nightly run opens an issue (or adds to the open one), so a test the selection missed is seen that morning;
-    # the next green nightly run closes it.
-    needs: [plan, tests, help, secrets]
-    if: always() && github.event.schedule == '23 1 * * *'
+    # the next green nightly run closes it. The weekly run (the full matrix, macOS and Windows) has its own issue.
+    needs: [plan, tests, help, secrets, portable]
+    if: always() && github.event_name == 'schedule'
     runs-on: ${{ fromJSON(vars.CI_PR_RUNNER || '["self-hosted","linux","themachine-ci"]') }}
     timeout-minutes: 5
     permissions:
@@ -279,10 +279,12 @@ jobs:
           RED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           REPO: ${{ github.repository }}
+          NIGHTLY: ${{ github.event.schedule == '23 1 * * *' }}
         run: |
           python3 - <<'EOF'
           import json, os, urllib.request
-          title = 'Nightly full test run failed'
+          nightly = os.environ['NIGHTLY'] == 'true'
+          title = 'Nightly full test run failed' if nightly else 'Weekly full test run failed'
           def api(path, body=None, method=None):
               request = urllib.request.Request(f'https://api.github.com/repos/{os.environ["REPO"]}/{path}', method=method,
                                                data=json.dumps(body).encode() if body is not None else None,
@@ -295,7 +297,7 @@ jobs:
           if red and found:
               api(f'issues/{found[0]["number"]}/comments', {'body': f'Failed again: {run}'})
           elif red:
-              api('issues', {'title': title, 'body': f'Every test runs nightly on main; this run failed: {run}\n\n'
+              api('issues', {'title': title, 'body': f'Every test runs {"nightly" if nightly else "weekly, on every version, macOS and Windows,"} on main; this run failed: {run}\n\n'
                              'A test the selection on pull requests and pushes to main missed, or a flaky one. Until a full '
                              'run passes again, main tests everything changed since the last one that did.'})
           for issue in found if not red else ():
