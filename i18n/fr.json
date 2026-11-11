@@ -1030,6 +1030,7 @@
  "Connected AIs": "IA connectées",
  "Connected account": "Compte connecté",
  "Connected accounts": "Comptes connectés",
+ "Connected since {}": "En relation depuis {}",
  "Connected · some conversations waiting": "Connecté · des conversations en attente",
  "Connected · some syncs fail": "Connecté · certaines synchros échouent",
  "Connected · {} is slow at times": "Connecté · {} est parfois lent",

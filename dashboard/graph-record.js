@@ -59,7 +59,8 @@ const liShort=u=>u.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'');
 function personContact(n){const c=personContacts(n),p=n.profile||{};
  const rows=[...c.phones.map(x=>kv('Phone',html`<a href="tel:${x.value.replace(/[^\d+]/g,'')}">${phoneShown(x.value)}</a>`,copyBtn(x.value,'phone number'))),
   ...c.emails.map(x=>kv('Email',html`<a href="mailto:${x.value}">${breakable(x.value)}</a>${bounceNote(x.bounced_at)}`,copyBtn(x.value,'email address')))];
- if(/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''))rows.push(kv('LinkedIn',html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`));
+ const liLink=/^https:\/\/([a-z]{2,3}\.)?linkedin\.com\//.test(p.linkedin_url||''),liSince=/^\d{4}-\d\d-\d\d$/.test(p.linkedin_since||'')?t('Connected since {}',localeDate(new Date(p.linkedin_since+'T12:00'),DL,{month:'short',year:'numeric'})):'';  /* linkedin_connections.py */
+ if(liLink||liSince)rows.push(kv('LinkedIn',html`${liLink?html`<a href="${safeHref(p.linkedin_url)}" target="_blank" rel="noreferrer">${breakable(liShort(p.linkedin_url))} ↗</a>`:''}${liLink&&liSince?html`<br>`:''}${liSince?html`<small class="muted">${liSince}</small>`:''}`));
  if(/^[A-Za-z0-9_]{1,15}$/.test(p.x||''))rows.push(kv('X',html`<a href="https://x.com/${p.x}" target="_blank" rel="noreferrer">@${p.x} ↗</a>`));
  if(/^https?:\/\/[^\s]+$/.test(p.website||''))rows.push(kv('Website',html`<a href="${safeHref(p.website)}" target="_blank" rel="noreferrer">${breakable(liShort(p.website))} ↗</a>`));
  if(n.birthday&&!n.team_only)rows.push(bdayRow(n));

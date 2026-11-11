@@ -1,6 +1,6 @@
 // A new title or company LinkedIn shows (linkedin_connections.py) is a dated line in the person's timeline: "Now Head of
-// Sales at Acme, was Sales Lead at Acme", in their language, and the line fits at 390px. Light and dark, English and
-// Dutch. Made-up people, a local fixture server, nothing sent. SHOTS=<folder> saves screenshots.
+// Sales at Acme, was Sales Lead at Acme", in their language, and the line fits at 390px. Since when they're connected
+// shows under their LinkedIn link. Light and dark, English and Dutch. Made-up people, a local fixture server, nothing sent. SHOTS=<folder> saves screenshots.
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
@@ -12,7 +12,7 @@ const dashboard=await dashboardPage();
 const nl=await readFile(new URL('../i18n/nl.json',import.meta.url),'utf8'),en=await readFile(new URL('../i18n/en.json',import.meta.url),'utf8');
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
 const bo={id:'email:bo@acme.example',kind:'person',name:'Bo Tamsin',strength:2,last_at:day(1),signals:3,ids:['email:bo@acme.example'],links:[],recent:[],around:[],open:{},side:'work',
- profile:{title:'Head of Sales',company:'Acme',linkedin_url:'https://www.linkedin.com/in/bo-tamsin/',sources:{title:{from:'LinkedIn',at:day(2).slice(0,10),own:true},company:{from:'LinkedIn',at:day(2).slice(0,10),own:true}}},
+ profile:{title:'Head of Sales',company:'Acme',linkedin_url:'https://www.linkedin.com/in/bo-tamsin/',linkedin_since:'2021-03-04',sources:{title:{from:'LinkedIn',at:day(2).slice(0,10),own:true},company:{from:'LinkedIn',at:day(2).slice(0,10),own:true}}},
  changes:[{field:'job',old:{title:'Sales Lead',company:'Acme'},new:{title:'Head of Sales',company:'Acme',via:'LinkedIn'},at:day(2)},
   {field:'job',new:{company:'Acme',via:'LinkedIn'},at:day(40)}]};
 let lang='en';
@@ -51,6 +51,9 @@ try{
   assert.deepEqual(await lines.allTextContents(),language==='nl'?['Nu Head of Sales bij Acme, was Sales Lead bij Acme','Nu Acme']:['Now Head of Sales at Acme, was Sales Lead at Acme','Now Acme']);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll at '+width);
   if(shots){await lines.first().scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/job-change-${width}-${language}-${scheme}.png`})}
+  const li=page.locator('#people-view .person-contact .kv',{has:page.locator('a[href*="linkedin.com/in/bo-tamsin"]')});
+  assert.equal((await li.locator('small').textContent()).toLowerCase(),language==='nl'?'verbonden sinds mrt 2021':'connected since mar 2021');
+  if(shots){await li.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/connected-since-${width}-${language}-${scheme}.png`})}
   await context.close();
  }
  assert.deepEqual(errors,[]);

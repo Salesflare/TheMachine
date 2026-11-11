@@ -20,8 +20,8 @@ ACCOUNT = {'id': 'li', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'bo
 NOW = '2026-11-09T10:00:00+00:00'  # 11:00 in Amsterdam: waking hours
 
 
-def conn(name, headline, slug=None, member=None):
-    return {'name': name, 'headline': headline, 'slug': slug or '', 'member': member or '', 'connected_at': 1790000000000}
+def conn(name, headline, slug=None, member=None, at=1790000000000):
+    return {'name': name, 'headline': headline, 'slug': slug or '', 'member': member or '', 'connected_at': at}
 
 
 class Reader:
@@ -83,8 +83,26 @@ class LinkedInConnections(unittest.TestCase):
         self.assertEqual(lc.job('CTO @ Globex'), ('CTO', 'Globex'))
         self.assertEqual(lc.job('Accountmanager bij Initech'), ('Accountmanager', 'Initech'))
         self.assertEqual(lc.job('Engineer at Acme, ex-Globex'), ('Engineer', 'Acme'))
-        for vague in ('Founder, Acme', 'Helping SaaS teams grow', '', None, 'at Acme'):
+        for vague in ('Helping SaaS teams grow', '', None, 'at Acme'):
             self.assertEqual(lc.job(vague), (None, None), vague)
+
+    def test_a_role_without_at_is_the_title_and_a_slogan_never(self):
+        self.assertEqual(lc.job('VP Sales and Strategy | Digital Transformation'), ('VP Sales and Strategy', None))
+        self.assertEqual(lc.job('Founder & CEO'), ('Founder & CEO', None))
+        for headline in ('Oprichter', 'Accountmanager', 'Fondatrice - Conseil', 'Vertriebsleiter DACH', 'Directora de Ventas',
+                         'Responsabile commerciale', 'Engenheira de Software'):
+            self.assertEqual(lc.job(headline)[0], lc.SEPARATOR.split(headline)[0], headline)
+        for slogan in ('Helping sales teams close more deals', 'I help founders hire their first sales team', 'Passionate about sales!',
+                       'Building the future of work', 'Ik help ondernemers groeien', 'Ich helfe Gründern beim Vertrieb',
+                       'Coffee, code and cats', 'Making B2B sales human again | Founder', 'Head of Growth? Ask me how'):
+            self.assertEqual(lc.job(slogan), (None, None), slogan)
+
+    def test_role_comma_company_names_the_company_only_when_the_graph_knows_it(self):
+        self.assertEqual(lc.job('Founder, Acme', {'Acme'}), ('Founder', 'Acme'))
+        self.assertEqual(lc.job('Founder, Acme Labs | Speaker', {'Acme Labs NV'}), ('Founder', 'Acme Labs'))
+        self.assertEqual(lc.job('Founder, Acme'), ('Founder, Acme', None))  # an unknown company: their words as the title
+        self.assertEqual(lc.job('Founder, Acme', {'Globex'}), ('Founder, Acme', None))
+        self.assertEqual(lc.job('VP Sales, EMEA', {'Globex'}), ('VP Sales, EMEA', None))
 
     def test_matches_by_profile_link_then_name_and_company_and_never_makes_people(self):
         read = Reader([[conn('Bo Tamsin', 'VP Sales at Acme', slug='bo-tamsin'),
@@ -110,9 +128,79 @@ class LinkedInConnections(unittest.TestCase):
         self.assertFalse(any('eli' in i or 'dee' in i for i in kept))
         self.assertEqual((seen, at), ({'linkedin'}, {NOW}))  # where it came from and when LinkedIn last showed it
 
-    def test_a_name_alone_is_not_enough(self):
+    def test_a_name_alone_is_not_enough_when_another_connection_has_it(self):
         self.step(Reader([[conn('Ada Quill', 'Helping teams grow', slug='ada-q'), conn('Ada Quill', 'Engineer at Hooli', slug='ada-q2')]]))
         self.assertEqual(self.facts('email:ada@globex.example'), {})
+
+    def test_a_full_name_only_one_person_has_matches_without_a_company(self):
+        with self.store.connect() as db:
+            self.person(db, 'email:zoe@mail.example', 'Zoë  Brandt')
+            self.person(db, 'email:fay@mail.example', 'Fay Lindqvist', profile={'linkedin_url': 'https://www.linkedin.com/in/fay-other/'})
+            self.person(db, 'email:gus@globex.example', 'Gus Orlov', org='org:globex.example')
+            self.person(db, 'email:hal@mail.example', 'Hal')
+        read = Reader([[conn('zoe brandt', 'VP Sales and Strategy | Digital Transformation', slug='zoe-b'),  # case, accents, spacing
+                        conn('Dee Varga', 'Founder', slug='dee-v'),  # two people in the Graph have this name
+                        conn('Fay Lindqvist', 'CEO', slug='fay-l'),  # the Graph knows her by another profile
+                        conn('Gus Orlov', 'CTO at Hooli', slug='gus-o'),  # another company than the Graph knows
+                        conn('Hal', 'Engineer', slug='hal'),  # a first name only
+                        conn('Ivo Nemo', 'CEO', slug='ivo-n')]])  # nobody in the Graph
+        with self.store.connect() as db:
+            nodes = db.execute('SELECT count(*) FROM graph_nodes').fetchone()[0]
+        self.assertEqual(self.step(read)['matched'], 1)
+        zoe = self.facts('email:zoe@mail.example')
+        self.assertEqual((zoe['title'], zoe['linkedin_url']), ('VP Sales and Strategy', 'https://www.linkedin.com/in/zoe-b/'))
+        self.assertNotIn('company', zoe)
+        for node in ('email:dee@one.example', 'email:dee@two.example', 'email:fay@mail.example', 'email:gus@globex.example', 'email:hal@mail.example'):
+            self.assertEqual(self.facts(node), {}, node)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM graph_nodes').fetchone()[0], nodes)  # never a new person
+
+    def test_founder_comma_company_matches_and_keeps_the_company_only_when_known(self):
+        with self.store.connect() as db:
+            self.person(db, 'email:jo@one.example', 'Jo Pell', org='org:globex.example')
+            self.person(db, 'email:jo@two.example', 'Jo Pell')
+            self.person(db, 'email:kai@mail.example', 'Kai Ruud', org='org:globex.example')
+        self.step(Reader([[conn('Jo Pell', 'Founder, Globex | Speaker', slug='jo-p'), conn('Kai Ruud', 'Founder, Acme', slug='kai-r')]]))
+        jo = self.facts('email:jo@one.example')  # of the two, the one the Graph knows at Globex
+        self.assertEqual((jo['title'], jo['company']), ('Founder', 'Globex'))
+        self.assertEqual(self.facts('email:jo@two.example'), {})
+        kai = self.facts('email:kai@mail.example')  # Acme is unknown: the title in their words, no company, no line
+        self.assertEqual(kai['title'], 'Founder, Acme')
+        self.assertNotIn('company', kai)
+        self.assertEqual(self.changes('email:kai@mail.example'), [])
+
+    def test_the_connection_date_is_kept_once_not_a_line_each_pass(self):
+        bo = 'email:bo@acme.example'
+        march = int(dt.datetime(2021, 3, 4, 9, tzinfo=dt.timezone.utc).timestamp() * 1000)
+        self.step(Reader([[conn('Bo Tamsin', 'Sales Lead at Acme', slug='bo-tamsin', at=march)]]))
+        self.assertEqual(self.facts(bo)['linkedin_since'], '2021-03-04')
+        week = self.later(8 * 24 * 60)
+        self.step(Reader([[conn('Bo Tamsin', 'Sales Lead at Acme', slug='bo-tamsin', at=march)]]), at=week)
+        self.step(Reader([[conn('Bo Tamsin', 'Sales Lead at Acme', slug='bo-tamsin', at=None)]]), at=self.later(16 * 24 * 60))
+        self.assertEqual(self.facts(bo)['linkedin_since'], '2021-03-04')  # an answer without it keeps the one it had
+        self.assertEqual(self.changes(bo), [])
+        with self.store.connect() as db:
+            since = enrichment.people_facts(db, ('linkedin_since',), [bo])[bo]['linkedin_since']
+            shown = enrichment.with_facts({}, [enrichment.people_facts(db, None, [bo])[bo]])
+        self.assertEqual((since[2], since[3]), ('linkedin', week))  # LinkedIn, last shown on the pass that read it
+        self.assertEqual((shown['linkedin_since'], shown['sources']['linkedin_since']['from']), ('2021-03-04', 'LinkedIn'))
+        for odd in (0, -5, 'soon', 10 ** 20):
+            self.assertIsNone(lc.since({'connected_at': odd}), odd)
+        self.assertIsNone(enrichment.clean_fact('linkedin_since', '4 March 2021'))
+
+    def test_reading_the_same_headline_in_a_new_way_is_no_change(self):
+        ada = 'email:ada@globex.example'
+        with self.store.connect() as db:  # an earlier pass, under the old reading: the headline and link, no title or company
+            enrichment.offer_facts(db, [([ada], {'headline': 'Founder, Hooli', 'linkedin_url': 'https://www.linkedin.com/in/ada-q/'},
+                                         enrichment.STATED)], 'linkedin', NOW)
+            enrichment.offer_facts(db, [([ada], {'title': 'Product Lead', 'company': 'Globex'}, enrichment.STATED)], 'linkedin', NOW)
+            db.execute("UPDATE graph_nodes SET info=json_set(info,'$.profile.linkedin_url','https://www.linkedin.com/in/ada-q/') WHERE id=?", (ada,))
+        self.step(Reader([[conn('Ada Quill', 'Founder, Hooli', slug='ada-q')]]), at=self.later(8 * 24 * 60))
+        self.assertEqual(self.changes(ada), [])
+        self.assertEqual(self.facts(ada)['title'], 'Founder, Hooli')
+        self.step(Reader([[conn('Ada Quill', 'CEO, Hooli', slug='ada-q')]]), at=self.later(16 * 24 * 60))
+        line, = self.changes(ada)  # their headline itself changed: a line
+        self.assertEqual((line['old'], line['new']), ({'title': 'Founder, Hooli'}, {'title': 'CEO, Hooli', 'via': 'LinkedIn'}))
 
     def test_a_new_title_is_a_dated_line_on_their_page_once(self):
         bo = 'email:bo@acme.example'

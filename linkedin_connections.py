@@ -14,10 +14,13 @@ every REFRESH_DAYS. The same rules as LinkedIn history in PR #1065 (machine/app/
 pace_after): kept self-contained here until that merges; then the two should share one pace and one daily budget.
 
 Matching, never a new person: by profile link first (their vanity link or member id, against the links the Graph
-knows), else the same full name and company, and only when exactly one person fits. A connection that matches nobody
-is left alone and not kept. What matches is kept as their facts (enrichment.person_facts, source linkedin, their own
-words), so their page and the Graph show it with its date. A new title or company is a line on their page (crm
-record_changes, field job: "Now Head of Sales at Acme, was Sales Lead at Beta")."""
+knows), else the same full name and company, and only when exactly one person fits; without a company to compare,
+the full name alone when exactly one person in the Graph has it, none of them has another profile link and no other
+connection on the page has that name. A connection that matches nobody is left alone and not kept. What matches is
+kept as their facts (enrichment.person_facts, source linkedin, their own words), so their page and the Graph show it
+with its date, and since when they are connected (linkedin_since). A new title or company is a line on their page (crm
+record_changes, field job: "Now Head of Sales at Acme, was Sales Lead at Beta"), only when their headline itself
+changed: reading the same headline in a new way is no news."""
 from __future__ import annotations
 
 import datetime as dt
@@ -38,9 +41,34 @@ STOP_DAYS = 1     # after any failed or odd read
 MAX_START = 30000  # LinkedIn's own limit on connections: a pass never pages past it
 PREF = 'linkedin_connections:'  # + account id, in enrich_prefs: the pass and its pace
 # "Head of Sales at Acme | Helping teams grow": the part before the first separator, split on "at" (and its own word
-# in the other languages people write headlines in). Anything else ("Founder, Acme") gives no title or company.
+# in the other languages people write headlines in). Without one, that part is their title when it names a role
+# ("VP Sales and Strategy", "Founder, Acme"), with "Acme" as the company only when the Graph knows them there.
 AT = re.compile(r'\s+(?:at|@|bij|chez|bei|presso|en la|na)\s+|\s*@\s*', re.I)
 SEPARATOR = re.compile(r'\s+[|•·–—]\s+|\s+-\s+|\s*\|\s*')
+# A word that makes a role, in the languages people write headlines in (folded: no accents). A longer one also counts
+# inside a word ("Accountmanager", "Vertriebsleiter"); the short ones only on their own.
+ROLES = {
+    'founder', 'cofounder', 'ceo', 'cto', 'cfo', 'coo', 'cmo', 'cio', 'cpo', 'cro', 'chief', 'vp', 'svp', 'evp',
+    'president', 'head', 'director', 'manager', 'lead', 'engineer', 'sales', 'partner', 'owner', 'consultant',
+    'oprichter', 'medeoprichter', 'zaakvoerder', 'eigenaar', 'directeur', 'hoofd', 'verkoop', 'ingenieur', 'vennoot',
+    'fondateur', 'fondatrice', 'cofondateur', 'directrice', 'dirigeant', 'dirigeante', 'gerant', 'gerante', 'responsable',
+    'ingenieure', 'commercial', 'commerciale', 'associe', 'associee', 'proprietaire', 'consultante', 'presidente',
+    'grunder', 'grunderin', 'mitgrunder', 'geschaftsfuhrer', 'geschaftsfuhrerin', 'inhaber', 'inhaberin', 'leiter',
+    'leiterin', 'direktor', 'direktorin', 'vertrieb', 'berater', 'beraterin', 'vorstand',
+    'fundador', 'fundadora', 'cofundador', 'cofundadora', 'directora', 'gerente', 'jefe', 'jefa', 'ingeniero',
+    'ingeniera', 'ventas', 'socio', 'socia', 'propietario', 'propietaria', 'consultor', 'consultora',
+    'fondatore', 'cofondatore', 'direttore', 'direttrice', 'amministratore', 'capo', 'ingegnere', 'vendite', 'titolare',
+    'proprietario', 'consulente', 'diretor', 'diretora', 'chefe', 'lider', 'engenheiro', 'engenheira', 'vendas',
+    'dono', 'dona',
+}
+# Words of a slogan or a sentence about what they do ("Helping SaaS teams grow", "I build sales teams"): never a title.
+SLOGAN = {
+    'helping', 'helps', 'help', 'empowering', 'enabling', 'transforming', 'turning', 'making', 'driving', 'building',
+    'connecting', 'creating', 'bringing', 'unlocking', 'passionate', 'passion', 'obsessed', 'love', 'loving', 'mission',
+    'i', 'we', 'you', 'my', 'our', 'your', 'ik', 'wij', 'jij', 'mijn', 'onze', 'helpen', 'je', 'nous', 'vous', 'aide',
+    'aider', 'ich', 'wir', 'helfe', 'helfen', 'yo', 'ayudo', 'ayudando', 'io', 'aiuto', 'aiutando', 'eu', 'ajudo',
+    'ajudando',
+}
 
 
 def accounts(config):
@@ -49,16 +77,38 @@ def accounts(config):
             and abilities.signals_on(a) and not a.get('shared') and a.get('connections') is not False]
 
 
-def job(headline):
-    """(title, company) from a headline that says it ("Head of Sales at Acme"), else (None, None)."""
-    first = SEPARATOR.split(' '.join(str(headline or '').split()), maxsplit=1)[0]
+def role(text):
+    """True when this reads like a role ("VP Sales and Strategy", "Oprichter"): a role word, short, and no slogan."""
+    words = graph.folded_words(text).split()
+    if not words or len(words) > 8 or len(text) > 80 or re.search(r'[!?]', text) or SLOGAN.intersection(words):
+        return False
+    return any(w in ROLES or any(len(r) >= 5 and (w.startswith(r) or w.endswith(r)) for r in ROLES) for w in words)
+
+
+def job(headline, known=()):
+    """(title, company) from a headline: "Head of Sales at Acme" says both; a role without "at" is the title alone, and
+    "Founder, Acme" gives Acme only when it is one of `known` (the companies the Graph has for them). Else (None, None)."""
+    first = SEPARATOR.split(' '.join(str(headline or '').split()), maxsplit=1)[0].strip(' ,.;:')
     parts = AT.split(first, maxsplit=1)
     if len(parts) != 2:
-        return None, None
+        title, _, company = first.partition(', ')
+        company = re.split(r',\s|\s\(', company, maxsplit=1)[0].strip(' ,.;:')
+        if company and role(title) and not role(company) and any(same_company(company, k) for k in known):
+            return title, company
+        return (first, None) if 2 <= len(first) <= 120 and role(first) else (None, None)
     title, company = parts[0].strip(' ,.;:'), re.split(r',\s|\s\(', parts[1], maxsplit=1)[0].strip(' ,.;:')  # "Acme, ex-Globex": Acme
     if not (2 <= len(title) <= 120 and 2 <= len(company) <= 120):
         return None, None
     return title, company
+
+
+def since(raw):
+    """The day they connected (YYYY-MM-DD, UTC), from the list's connected_at (milliseconds), or None."""
+    try:
+        at = dt.datetime.fromtimestamp(int(raw.get('connected_at')) / 1000, dt.timezone.utc)
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
+    return at.date().isoformat() if at.year >= 2003 else None  # LinkedIn opened in 2003
 
 
 def profile_url(raw):
@@ -137,11 +187,11 @@ def same_company(a, b):
 
 
 def index(db):
-    """The Graph's people, to match connections against: {'links': {key: node ids}, 'names': {full name: [(node id,
-    companies)]}, 'nodes': {node id: identifiers}}."""
+    """The Graph's people, to match connections against: {'links': {key: node ids}, 'names': {full name: [node ids]},
+    'nodes': {node id: identifiers}, 'companies': {node id: companies}, 'linked': node ids with a profile link}."""
     orgs = {r[0]: r[1] for r in db.execute("SELECT id,name FROM graph_nodes WHERE kind='org'")}
     facts = enrichment.people_facts(db, ('linkedin_url', 'company'))
-    links, names, nodes = {}, {}, {}
+    links, names, nodes, companies, linked = {}, {}, {}, {}, set()
     for r in db.execute("SELECT id,name,info FROM graph_nodes WHERE kind='person' ORDER BY strength DESC,id"):
         try:
             info = json.loads(r[2] or '{}')
@@ -155,37 +205,48 @@ def index(db):
             key = graph.linkedin_key(url)
             if key:
                 links.setdefault(key, []).append(r[0])
+                linked.add(r[0])
+        said = {profile.get('company'), orgs.get(info.get('org'))} | {(facts.get(i) or {}).get('company', (None,))[0] for i in group}
+        companies[r[0]] = {c for c in said if c}
         full = graph.plain_name(r[1])
         if full:
-            companies = {profile.get('company'), orgs.get(info.get('org'))} | {(facts.get(i) or {}).get('company', (None,))[0] for i in group}
-            names.setdefault(full, []).append((r[0], {c for c in companies if c}))
-    return {'links': links, 'names': names, 'nodes': nodes}
+            names.setdefault(full, []).append(r[0])
+    return {'links': links, 'names': names, 'nodes': nodes, 'companies': companies, 'linked': linked}
 
 
-def match(found, raw, company):
-    """The one Graph person this connection is, or None: by profile link, else by full name and company."""
+def match(found, raw, twins=1):
+    """The one Graph person this connection is, or None: by profile link; else by full name and the company their
+    headline names; else, when there is no company to compare, by a full name only one person in the Graph has (and
+    no other link), and only `twins` (connections on this page with that name) is 1. Never by a first name alone."""
     for key in keys(raw):
         if found['links'].get(key):
             return found['links'][key][0]  # the strongest, when the Graph has them twice
     full = graph.plain_name(raw.get('name'))
-    if not full or not company:
+    people = found['names'].get(full, ()) if full else ()
+    said = [(node, job(raw.get('headline'), found['companies'].get(node, ()))[1]) for node in people]
+    fits = [node for node, company in said if company and any(same_company(company, c) for c in found['companies'].get(node, ()))]
+    if fits:
+        return fits[0] if len(fits) == 1 else None
+    if len(people) != 1 or twins != 1 or people[0] in found['linked']:
         return None
-    fits = [node for node, companies in found['names'].get(full, ()) if any(same_company(company, c) for c in companies)]
-    return fits[0] if len(fits) == 1 else None
+    node, company = said[0]
+    return node if not (company and found['companies'].get(node)) else None  # both name a company and they differ
 
 
 def apply(db, found, node, raw, title, company, current):
     """Keeps what LinkedIn shows on this person (their own words, STATED) and, when their title or company moved on, a
     line on their page. Returns (facts changed, changes noted)."""
     group = found['nodes'].get(node) or [node]
-    had = enrichment.people_facts(db, ('title', 'company'), group)
+    had = enrichment.people_facts(db, ('title', 'company', 'headline'), group)
     mine = {f: v[0] for f, v in (had.get(node) or {}).items() if v[2] == 'linkedin'}
+    had = {i: {f: v for f, v in facts.items() if f != 'headline'} for i, facts in had.items()}
     noted = 0
-    if title or company:
+    same = mine.get('headline') is not None and mine['headline'] == enrichment.clean_fact('headline', raw.get('headline') or '')
+    if (title or company) and not same:  # the same headline read anew (better parsing) is no change of job
         new = {'title': title, 'company': company}
-        if mine:  # LinkedIn showed them before: any change of their own title or company
+        if mine.get('title') or mine.get('company'):  # LinkedIn showed them before: any change of their own title or company
             old = {'title': mine.get('title'), 'company': mine.get('company')}
-            moved = folded(old['title']) != folded(title) or folded(old['company']) != folded(company)
+            moved = bool(title and folded(old['title']) != folded(title) or company and folded(old['company']) != folded(company))
         else:  # first seen here: only another company than the Graph has, never a differently worded title
             best = enrichment.best_facts([had[i] for i in group if i in had])
             org = db.execute("SELECT o.name FROM graph_nodes p JOIN graph_nodes o ON o.id=json_extract(p.info,'$.org') WHERE p.id=?", (node,)).fetchone()
@@ -197,7 +258,7 @@ def apply(db, found, node, raw, title, company, current):
                        json.dumps({**{k: v for k, v in new.items() if v}, 'via': 'LinkedIn'}), current)
             noted = 1
     offer = {'headline': raw.get('headline') or '', 'title': title or '', 'company': company or '',
-             'linkedin_url': profile_url(raw) or ''}
+             'linkedin_url': profile_url(raw) or '', 'linkedin_since': since(raw)}  # None: keeps the one it had
     return enrichment.offer_facts(db, [([node], offer, enrichment.STATED)], 'linkedin', current), noted
 
 
@@ -246,11 +307,12 @@ def step(connect, config, account, read=None, current=None):
     with connect() as db:
         db.execute('BEGIN IMMEDIATE')
         found = index(db)
-        for raw in rows:
-            title, company = job(raw.get('headline'))
-            node = match(found, raw, company)
+        names = [graph.plain_name(raw.get('name')) for raw in rows]
+        for raw, full in zip(rows, names):
+            node = match(found, raw, names.count(full))
             if not node:
                 continue
+            title, company = job(raw.get('headline'), found['companies'].get(node, ()))
             matched += 1
             facts, lines = apply(db, found, node, raw, title, company, stamp)
             changed, noted = changed + facts, noted + lines

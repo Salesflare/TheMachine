@@ -14,6 +14,8 @@ I tuoi messaggi LinkedIn. Li legge in una scheda del browser della tua Machine, 
 
 Tiene anche aggiornati i ruoli e le aziende dei tuoi collegamenti LinkedIn sulle persone già nel tuo Graph, dalla tua lista di collegamenti. Non apre i loro profili e non aggiunge persone nuove. Quando il ruolo o l’azienda di qualcuno cambia, la sua cronologia lo dice, come "Ora Head of Sales presso Acme, prima Sales Lead presso Acme".
 
+Il ruolo viene dal loro sommario, come "Head of Sales presso Acme" o "VP Sales and Strategy", mai da uno slogan. Li trova dal link del profilo, o da nome e azienda. Senza un’azienda da confrontare, basta un nome completo che ha una sola persona nel tuo Graph. La loro pagina mostra anche da quando siete collegati.
+
 Legge molto lentamente: una pagina alla volta, a minuti di distanza, qualche decina di pagine al giorno, solo di giorno. Circa 3.000 collegamenti richiedono quattro giorni. Se LinkedIn frena, si ferma fino al giorno dopo.
 
 ## Cosa può inviare

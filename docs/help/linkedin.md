@@ -14,6 +14,8 @@ Your LinkedIn messages. It reads them in your Machine's own browser, signed in a
 
 It also keeps the titles and companies of your LinkedIn connections up to date on the people already in your Graph, from your Connections list. It doesn't open their profiles or add new people. When someone's title or company changes, their timeline says so, like "Now Head of Sales at Acme, was Sales Lead at Acme".
 
+The title comes from their headline, like "Head of Sales at Acme" or "VP Sales and Strategy", never a slogan. It finds them by their profile link, or by name and company. Without a company to compare, a full name only one person in your Graph has is enough. Their page also shows since when you're connected.
+
 It reads very slowly: one page at a time, minutes apart, a few dozen pages a day, only during the day. About 3,000 connections take some four days. If LinkedIn pushes back, it stops until the next day.
 
 ## What it can send

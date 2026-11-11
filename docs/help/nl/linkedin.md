@@ -14,6 +14,8 @@ Je LinkedIn-berichten. Het leest ze in een tabblad van de eigen browser van je M
 
 Het houdt ook de functies en bedrijven van je LinkedIn-connecties bij op de mensen die al in je Graph staan, vanuit je lijst met connecties. Het opent hun profielen niet en voegt geen nieuwe mensen toe. Verandert iemands functie of bedrijf, dan staat dat in hun tijdlijn, zoals "Nu Head of Sales bij Acme, was Sales Lead bij Acme".
 
+De functie komt uit hun kopregel, zoals "Head of Sales bij Acme" of "VP Sales and Strategy", nooit uit een slogan. Het vindt hen via hun profiellink, of via naam en bedrijf. Is er geen bedrijf om te vergelijken, dan volstaat een volledige naam die maar één persoon in je Graph heeft. Hun pagina toont ook sinds wanneer jullie verbonden zijn.
+
 Het leest heel traag: één pagina tegelijk, minuten uit elkaar, een paar dozijn pagina's per dag, alleen overdag. Zo'n 3.000 connecties duren ongeveer vier dagen. Duwt LinkedIn terug, dan stopt het tot de volgende dag.
 
 ## Wat het kan versturen
