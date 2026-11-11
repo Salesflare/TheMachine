@@ -93,8 +93,10 @@ class BulkMail(unittest.TestCase):
         view = self.reviewed()['notice']
         self.assertTrue(view['title_only'])
         self.assertIn('new device', view['snippet'])
-        card = app.action('suggest', {'dedupe_key': 'notice', 'title': 'Check the new sign-in', 'body': 'Confirm it was you.',
-                                      'event_ids': [rows['notice']['id']], 'when': 'now'})
+        args = {'dedupe_key': 'notice', 'title': 'Check the new sign-in', 'body': 'Confirm it was you.', 'event_ids': [rows['notice']['id']], 'when': 'now'}
+        with self.assertRaisesRegex(ValueError, 'mail_asks'):  # automated mail alone: told back once (test_todo_automated_mail.py)
+            app.action('suggest', args)
+        card = app.action('suggest', {**args, 'mail_asks': 'Confirm the new sign-in was theirs'})
         self.assertTrue(card.get('id'))
 
     def test_many_title_lines_fit_in_one_turn(self):

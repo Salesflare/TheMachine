@@ -146,7 +146,8 @@ class ReadyOnArrival(unittest.TestCase):
     def test_with_nothing_ready_it_is_a_plain_hello(self):
         self.assertEqual(self.store.greeting('Alex Example'), {'name': 'Alex'})
         # A to-do nobody waits on (a newsletter) gives no line either
-        self.app.action('suggest', {'dedupe_key': 'n', 'title': 'Sale', 'body': 'Maybe.', 'event_ids': [self.ids['news0']], 'when': 'now'})
+        self.app.action('suggest', {'dedupe_key': 'n', 'title': 'Sale', 'body': 'Maybe.', 'event_ids': [self.ids['news0']], 'when': 'now',
+                                    'mail_asks': 'A sale'})
         self.assertEqual(self.store.greeting('Alex Example'), {'name': 'Alex'})
 
     def test_only_on_the_first_views(self):

@@ -69,7 +69,7 @@ def failed(message):
     step of the review, not a failed save."""
     content = message.get('content')
     text = ' '.join(str(c.get('text', '')) for c in content if isinstance(c, dict)) if isinstance(content, list) else str(content or '')
-    if review_saves.GUIDANCE in text:
+    if any(step in text for step in review_saves.STEPS):
         return False
     details = message.get('details') if isinstance(message.get('details'), dict) else {}
     if message.get('isError') is True or details.get('status') == 'failed':
