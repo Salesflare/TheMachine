@@ -900,8 +900,9 @@ conversation. It is separate from the review and never changes it.
 - It keeps the share of misses with a 95% confidence interval, overall (each stratum weighted by its size) and per
   stratum, and adjusts it by the evaluator's precision and recall: recall from the made-up signals of the last eight
   audits, precision from the owner's own labels once there are five (from the made-up ones before that).
-- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open**,
-  **Real miss** and **Not a miss**. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
+- **Learning, How it's going, Missed to-dos** shows the number, its range and the misses to check, each with **Open** (its line
+  opens it too, in the dashboard's own viewer; nothing when the message is no longer kept), **Real miss** and **Not a
+  miss**, and **Open to-do** once a Real miss has one. The labels stay in `missed_audit_items` and are never sent. The reasons it gives are
   sealed like other text derived from messages.
 - The audit itself makes no to-do and adds no rule. The owner's **Real miss** adds the message's to-do (`new_card` with
   it attached, unless a to-do already has it), with **Undo** on its toast; taking the label back (Undo, or Not a miss)

@@ -646,19 +646,27 @@ def made(db, event_id, card_id):
 
 def summary(db):
     """For Learning, How it's going: the last audit's estimate, the evaluator's accuracy, and the misses to check
-    (with each signal's link). None before the first audit."""
+    (with each signal's link). Each miss says whether its message can still be opened (open: kept and not deleted; the
+    dashboard opens it in its own viewer, with its title) and, once it is a Real miss, the to-do it has (card: the one
+    Real miss made, or one that already had it). None before the first audit."""
     if not _has(db, 'missed_audits'):
         return None
+    ensure(db)
     row = db.execute("SELECT * FROM missed_audits WHERE status='ok' ORDER BY started_at DESC LIMIT 1").fetchone()
     if not row:
         return None
     result = json.loads(row['result'] or '{}')
     misses = []
-    for r in db.execute('SELECT i.event_id,i.channel,i.area,i.what,i.reason,i.label,e.metadata FROM missed_audit_items i LEFT JOIN events e ON e.id=i.event_id '
+    for r in db.execute('SELECT i.event_id,i.channel,i.area,i.what,i.reason,i.label,e.id kept,e.deleted,e.kind,e.title,e.metadata,s.id made '
+                        'FROM missed_audit_items i LEFT JOIN events e ON e.id=i.event_id LEFT JOIN review_misses m ON m.event_id=i.event_id '
+                        "LEFT JOIN suggestions s ON s.id=m.suggestion_id AND s.status!='rejected' "
                         'WHERE i.audit_id=? AND i.work=1 ORDER BY i.label IS NOT NULL,i.event_id DESC', (row['id'],)):
         url = _metadata(r).get('source_url') if r['metadata'] else None
         misses.append({'event_id': r['event_id'], 'channel': r['channel'], 'area': r['area'], 'what': r['what'], 'reason': r['reason'] or '',
-                       'label': r['label'], 'url': url if isinstance(url, str) and url.startswith('https://') else None})
+                       'label': r['label'], 'url': url if isinstance(url, str) and url.startswith('https://') else None,
+                       'open': bool(r['kept'] and not r['deleted']), 'title': (r['title'] or '')[:200] if r['kept'] and not r['deleted'] else '',
+                       'meeting': r['kind'] == 'calendar.event',
+                       'card': (r['made'] or holder(db, r['event_id'])) if r['label'] == 'real' else None})
     cal = result.get('calibration') or {}
     return {'at': row['finished_at'], 'population': row['population'], 'sampled': row['sampled'], 'flagged': row['flagged'],
             'raw': result.get('raw'), 'adjusted': result.get('adjusted'),

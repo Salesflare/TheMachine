@@ -247,6 +247,22 @@ class Audit(unittest.TestCase):
             self.assertEqual(learning_loop.waiting(db, '2000-01-01'), 0)  # not a dismissal either
         self.assertIn('review_said', learning_loop.prompt('run'))
 
+    def test_each_miss_opens_its_message_and_links_its_to_do(self):
+        self.audited()
+        app, first, second, gone = self.app(), *self.ids['mail'][:3]
+        card = app.action('missed_work_label', {'event_id': first, 'label': 'real'}, owner_dashboard=True)['card']
+        own = app.new_card({'text': 'Send the deck', 'attach': [second]})
+        app.action('missed_work_label', {'event_id': second, 'label': 'real'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET deleted=1 WHERE id=?', (gone,))
+            misses = {m['event_id']: m for m in mw.summary(db)['misses']}
+        self.assertEqual((misses[first]['open'], misses[first]['title'], misses[first]['card']), (True, 'Hello', card['id']))
+        self.assertEqual(misses[second]['card'], own['id'])  # the to-do that already had it
+        self.assertEqual((misses[gone]['open'], misses[gone]['title'], misses[gone]['card']), (False, '', None))  # deleted: nothing to open
+        app.action('missed_work_label', {'event_id': first, 'label': ''}, owner_dashboard=True)
+        with self.store.connect() as db:
+            self.assertIsNone({m['event_id']: m for m in mw.summary(db)['misses']}[first]['card'])
+
     def test_a_to_do_the_owner_acted_on_stays_after_undo(self):
         self.audited()
         app, event = self.app(), self.ids['mail'][1]

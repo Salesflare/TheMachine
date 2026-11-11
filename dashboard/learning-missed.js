@@ -3,11 +3,15 @@
 // takes the owner's Real miss or Not a miss, kept on this Machine).
 const MW_CHANNEL={email:'Email',message:'Message',meeting:'Meeting'};
 const mwPct=v=>v==null?null:Math.round(100*v);
-const mwUrl=u=>typeof u==='string'&&/^https:\/\//.test(u)?u:null;  // only https links open, like the server keeps them
 function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est.rate==null)return [];
  const day=localeDate(new Date(m.at),DL,{day:'numeric',month:'short'});
- const row=x=>{const url=mwUrl(x.url),id=Number(x.event_id);return make('div',{class:'mw-row'},make('span',{class:'grow'},make('small',{},t(MW_CHANNEL[x.channel]||'Message')+' · '+(x.area==='Personal'?t('Personal'):x.area??'')),x.reason||''),
-  make('span',{class:'mw-acts'},url?make('a',{href:url,target:'_blank',rel:'noopener noreferrer'},t('Open')):'',
+ // each row opens its message in the dashboard's own viewer (openEvent: the email, the chat, the meeting) from Open or its
+ // summary, when it is still kept; nothing when it isn't. A Real miss links to its to-do.
+ const row=x=>{const id=Number(x.event_id),open=x.open?{type:'button','data-mw-open':id,'data-mw-title':x.title||''}:null;
+  return make('div',{class:'mw-row'},make('span',{class:'grow'},make('small',{},t(MW_CHANNEL[x.channel]||'Message')+' · '+(x.area==='Personal'?t('Personal'):x.area??'')),
+    open?make('button',{...open,class:'mw-what'},x.reason||t('Open')):x.reason||''),
+  make('span',{class:'mw-acts'},open?make('button',{...open,class:'mw-link'},t('Open')):'',
+   x.card?make('a',{href:'#card='+encodeURIComponent(x.card)},t('Open to-do')):'',
    make('button',{type:'button','data-mw-label':'real','data-mw-id':id,'aria-pressed':x.label==='real'},t('Real miss')),
    make('button',{type:'button','data-mw-label':'not','data-mw-id':id,'aria-pressed':x.label==='not'},t('Not a miss'))))};
 
@@ -19,7 +23,8 @@ const renderQuality=()=>$('#quality').replaceChildren(...qualityNodes(state.qual
 // Real miss also adds the to-do (missed_work_app.py), with Undo on its toast: the label goes and so does that to-do
 const mwPost=(id,label)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'missed_work_label',args:{event_id:id,label}})});
 function mwDone(r){state.missed_work=r.missed_work;renderQuality();if(r.removed||r.kept){toast(r.kept?t('Kept the to-do: it changed since.'):t('Undone.'));refresh();return true}return false}
-$('#quality').addEventListener('click',async e=>{const b=e.target.closest('[data-mw-label]');if(!b)return;const on=b.getAttribute('aria-pressed')==='true',id=Number(b.dataset.mwId);b.disabled=true;
+$('#quality').addEventListener('click',async e=>{const o=e.target.closest('[data-mw-open]');if(o){openEvent(o.dataset.mwOpen,o.dataset.mwTitle);return}
+ const b=e.target.closest('[data-mw-label]');if(!b)return;const on=b.getAttribute('aria-pressed')==='true',id=Number(b.dataset.mwId);b.disabled=true;
  try{const r=await mwPost(id,on?'':b.dataset.mwLabel);if(mwDone(r))return;
   if(r.card&&!r.card.existing){toast(t('Added to your to-dos.'));const tt=$('#toast'),u=make('button',{type:'button'},t('Undo'));
    u.onclick=async()=>{u.disabled=true;tt.classList.remove('show');try{mwDone(await mwPost(id,''))}catch(err){errCaught(err);toast(err.message,true)}};
