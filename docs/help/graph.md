@@ -3,7 +3,7 @@ title: The Graph
 area: graph
 summary: The people, organizations and projects in your messages, kept up to date by themselves.
 covers: tab:people
-code: graph.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
+code: graph.py, graph_updates.py, crm.py, crm_import.py, crm_fixes.py, crm_fields.py, dashboard.html
 order: 1
 ---
 Your Machine builds a map of who you deal with and what's going on, from your messages, meetings and decisions. Nothing to set up, and it stays on your Machine.
@@ -11,6 +11,10 @@ Your Machine builds a map of who you deal with and what's going on, from your me
 - [People](people.md): everyone you're in touch with, with a summary and timeline for each.
 - [Organizations](organizations.md): the companies they work at, with their people and projects.
 - [Projects](projects.md): what's going on, on boards with stages, like deals in a CRM.
+
+## Updated today
+
+A quiet line on top of each list says what your Machine updated today, like **Updated 4 people today**. Tap it to see who and what changed; a name opens their page with **Recent changes** open. A small dot marks each row and board tile it changed today. It counts only your Machine's own changes, from midnight.
 
 ## Filter and sort
 

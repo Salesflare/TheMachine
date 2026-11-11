@@ -27,6 +27,7 @@ import embeddings
 import enrichment
 import fleet
 import graph
+import graph_updates
 import locale_prefs
 from machine.actions import DASHBOARD_ACTIONS, OWNER_ACTIONS, UPLOAD_ACTIONS
 from machine.browser import browser_link, PANE_QUERY
@@ -729,6 +730,10 @@ def make_handler(app):
                         found['tags'] = crm_fields.tags_in_use(db)  # for the filter sheet
                         found['org_countries'] = crm.countries_in_use(db)  # the Organizations filter's Country
                         found['currency'] = app.currency()  # project values are in it
+                        try:  # what The Machine updated today: the quiet line on top of each list (graph_updates.py)
+                            found['updated_today'] = graph_updates.today(db)
+                        except (sqlite3.Error, ValueError) as error:
+                            LOG.info('updated today error=%s', type(error).__name__)
                         if app.fleet:
                             try:  # contacts teammates, friends and Family shared here, waiting for Add or Dismiss (contact_share.py)
                                 found['contacts_in'] = app.fleet.contacts_in()

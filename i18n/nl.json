@@ -5752,7 +5752,20 @@
  "Updated the draft below. Send it when it reads right.": "Het concept hieronder is bijgewerkt. Verstuur het als het goed klinkt.",
  "Updated the job title in {} to {}": "Functie bijgewerkt in {} naar {}",
  "Updated the phone in {} to {}": "Telefoon bijgewerkt in {} naar {}",
+ "Updated today": "Vandaag bijgewerkt",
  "Updated {}": "Bijgewerkt {}",
+ "Updated {} organizations today": {
+  "one": "{} organisatie vandaag bijgewerkt",
+  "other": "{} organisaties vandaag bijgewerkt"
+ },
+ "Updated {} people today": {
+  "one": "{} persoon vandaag bijgewerkt",
+  "other": "{} personen vandaag bijgewerkt"
+ },
+ "Updated {} projects today": {
+  "one": "{} project vandaag bijgewerkt",
+  "other": "{} projecten vandaag bijgewerkt"
+ },
  "Updated: {}": "Bijgewerkt: {}",
  "Updates contact details in Salesforce.": "Werkt contactgegevens bij in Salesforce.",
  "Updates install by themselves.": "Updates installeren zichzelf.",

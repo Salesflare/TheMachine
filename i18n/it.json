@@ -5752,7 +5752,20 @@
  "Updated the draft below. Send it when it reads right.": "Ho aggiornato la bozza qui sotto. Inviala quando ti suona bene.",
  "Updated the job title in {} to {}": "Ruolo aggiornato in {} a {}",
  "Updated the phone in {} to {}": "Telefono aggiornato in {} a {}",
+ "Updated today": "Aggiornato oggi",
  "Updated {}": "Aggiornato {}",
+ "Updated {} organizations today": {
+  "one": "{} organizzazione aggiornata oggi",
+  "other": "{} organizzazioni aggiornate oggi"
+ },
+ "Updated {} people today": {
+  "one": "{} persona aggiornata oggi",
+  "other": "{} persone aggiornate oggi"
+ },
+ "Updated {} projects today": {
+  "one": "{} progetto aggiornato oggi",
+  "other": "{} progetti aggiornati oggi"
+ },
  "Updated: {}": "Aggiornato: {}",
  "Updates contact details in Salesforce.": "Aggiorna i dati di contatto in Salesforce.",
  "Updates install by themselves.": "Gli aggiornamenti si installano da soli.",

@@ -80,7 +80,7 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
  if(forTeam!==graphTeam)return;  // Mine or Team changed while this loaded: the newer load draws
  if(!g.team)graphContactsIn=g.contacts_in||[];
  const team=!!g.team&&(graphTeam||graphPane==='held');const start=team?shareNote(g.sharing):'';
- if(!team){graphOwners=g.owners||[];graphLastImport=g.last_import||null;graphFields=g.crm_fields||[];graphTags=g.tags||[];graphCountries=g.org_countries||[];if(g.currency)graphCurrency=g.currency;tagsPaint()}
+ if(!team){graphOwners=g.owners||[];graphLastImport=g.last_import||null;graphFields=g.crm_fields||[];graphTags=g.tags||[];graphCountries=g.org_countries||[];if(g.currency)graphCurrency=g.currency;graphToday=g.updated_today||null;tagsPaint()}
  const back=graphScroll;  /* back from a person: a quiet refresh that wins the race restores it too */const lc=!team&&g.list_counts||Object.fromEntries(['people','quiet','new','orgs','warmup','projects','projects_done'].map(k=>[k,(g[k]||[]).length]));graphLocal=!team&&g.list_counts?null:g;  /* the team's lists come whole */
  const had=quiet&&new Map([...pagers].filter(([k,p])=>k.startsWith('graph:')&&p.items.length).map(([k,p])=>[k,p.items.length]));
  if(team||graphListsTeam||JSON.stringify(lc)!==JSON.stringify(graphLists)||!g.list_counts){pagerDrop('graph');graphLists=lc}graphListsTeam=team;
@@ -88,9 +88,9 @@ async function people(node=graphNode,quiet=false){graphLoadedAt=Date.now();if(!q
   {id:'projects',label:'Projects',html:projectsPane(g)},
   {id:'orgs',label:'Organizations',html:graphTabs('orgs')||graphEmpty('orgs',true)},
   ...(g.held?.length||graphPane==='held'?[{id:'held',label:'Held back',html:heldPane(g.held)}]:[])].filter(p=>p.html)
- :[{id:'people',label:'People',html:html`${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}${hiddenSenders(g.hidden_senders)}`},
-  {id:'projects',label:'Projects',html:projectsPane(g)},
-  {id:'orgs',label:'Organizations',html:html`${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`}].filter(p=>p.html);
+ :[{id:'people',label:'People',html:html`${todayLine('people')}${sameList(g.same_person)}${graphTabs('people')||graphEmpty('people',false,g.read)}${hiddenSenders(g.hidden_senders)}`},
+  {id:'projects',label:'Projects',html:(h=>h&&html`${todayLine('projects')}${h}`)(projectsPane(g))},
+  {id:'orgs',label:'Organizations',html:html`${todayLine('orgs')}${orgDoubles(g.org_doubles)}${graphTabs('orgs')||graphEmpty('orgs')}`}].filter(p=>p.html);
  const current=(panes.find(p=>p.id===graphPane)||panes.find(p=>p.id==='people')||panes[0])?.id;graphCountsSet(g.counts);if(version===graphRequest){graphShown=current||'';graphHashSync();graphSubSync()}
  // A refresh that starts the lists over loads as many rows as were there before it draws, so the page keeps its height
  if(had)for(const [k,n] of had){const p=pagers.get(k);if(!p||p.items.length||p.busy)continue;for(let i=0;i<10&&p.items.length<n&&p.next!=null&&!p.failed;i++){p.pending=pagerLoad(k,p,false);await p.pending}}
