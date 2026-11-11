@@ -16,9 +16,11 @@ few times at most (birthdays_facebook.fill_others); each read is one line in the
 import datetime as dt
 import logging
 import secrets
+import sqlite3
 import subprocess
 import sys
 import threading
+import time
 import urllib.request
 
 import birthdays_facebook
@@ -33,6 +35,7 @@ OFFERED = 'birthdays_facebook:offered'  # enrich_prefs: the to-do was offered on
 KIND = 'routine.facebook_birthdays'
 FILL_TRIES, FILL_WAIT = 10, 120  # an older to-do's fill at start: the browser may come up after the service
 FILL_AGAIN = 900  # a fill's read that came back short: the next one after this many seconds (birthdays_facebook.FILL_READS)
+POST_READ_SECONDS = 60  # the step after the page (matching, the preview): past this it stops and the to-do says it failed
 
 
 class BirthdaysFacebookApp:
@@ -103,7 +106,7 @@ class BirthdaysFacebookApp:
             if step == 'read':
                 if state == 'reading':
                     return {'state': 'reading'}
-                birthdays_facebook.put(db, sid, 'reading', {}, stamp)
+                birthdays_facebook.put(db, sid, 'reading', birthdays_facebook.carried(got[1]), stamp)  # Undo keeps who Add added
             elif step == 'save':
                 if state != 'preview':
                     raise ValueError('Import again first')
@@ -157,24 +160,49 @@ class BirthdaysFacebookApp:
             except (OSError, subprocess.SubprocessError):
                 pass  # the lease runs out by itself
 
+    def birthdays_facebook_preview(self, result):
+        """The step after the page: the preview, from the database read only (no write lock held), and bounded: past
+        POST_READ_SECONDS a query stops, and so does the step (TimeoutError)."""
+        deadline = time.monotonic() + POST_READ_SECONDS
+        with self.store.connect() as db:
+            db.set_progress_handler(lambda: time.monotonic() > deadline, 20000)
+            try:
+                return birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(), result.get('capped'),
+                                                  result.get('missing'), deadline=deadline)
+            except sqlite3.OperationalError:
+                if time.monotonic() > deadline:
+                    raise TimeoutError('the step after the read ran too long') from None
+                raise
+            finally:
+                db.set_progress_handler(None, 0)
+
     def birthdays_facebook_read(self, sid):
-        """The read itself, then the preview (or why there is none) on the to-do."""
-        state, data = 'failed', {}
+        """The read itself, then the preview (or why there is none) on the to-do, in one short write. What the to-do
+        keeps through Import again (birthdays_facebook.carried: who Add added, for Undo) stays, whatever comes of it. A
+        failure keeps a short reason (timeout, no browser, or the error's type)."""
+        state, data, reason = 'failed', {}, ''
         try:
             result = self.birthdays_facebook_fetch()
-            if result is not None and result.get('error') == 'signed-out':
+            if result is None:
+                reason = 'browser'
+            elif result.get('error') == 'signed-out':
                 state = 'signed_out'
-            elif result is not None:
-                with self.store.connect() as db:
-                    data = birthdays_facebook.preview(db, result.get('items'), dt.datetime.now().date(),
-                                                     result.get('capped'), result.get('missing'))
+            else:
+                data = self.birthdays_facebook_preview(result)
                 data['read'] = birthdays_facebook.report(result)
                 state = 'preview' if data['found'] else 'failed'
                 data = data if data['found'] else {'empty': True}
+        except TimeoutError:
+            reason = 'timeout'
         except Exception as error:  # noqa: BLE001 - whatever went wrong, the to-do says it didn't work
-            LOG.info('facebook birthdays read failed error=%s', type(error).__name__)
+            reason = type(error).__name__
+        if reason:
+            data = {'reason': reason}
+            LOG.info('facebook birthdays read failed reason=%s', reason)
         with self.store.connect() as db:
-            birthdays_facebook.put(db, sid, state, data, self.routines_stamp())
+            db.execute('BEGIN IMMEDIATE')
+            got = birthdays_facebook.get(db, sid)
+            birthdays_facebook.put(db, sid, state, {**birthdays_facebook.carried(got[1] if got else {}), **data}, self.routines_stamp())
         return state
 
     def birthdays_facebook_fill_old(self):

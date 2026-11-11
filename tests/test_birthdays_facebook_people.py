@@ -319,5 +319,73 @@ class AddPeople(unittest.TestCase):
             self.assertEqual(fb.get(db, sid)[1]['read'], {'capped': False, 'missing': [], 'woke': True, 'rounds': 0, 'ms': 0})
             self.assertEqual(fb.to_fill(db), [])
 
+    # Import again after Add: the to-do keeps who it added (Undo), and the read after it stays quick with every friend a
+    # person with a birthday. A step after the page that goes wrong or takes too long says so and keeps the same.
+
+    def kept(self, sid):
+        with self.store.connect() as db:
+            return fb.get(db, sid)[1]
+
+    def test_import_again_keeps_who_was_added_and_undo_still_takes_them_away(self):
+        sid = self.read()
+        self.assertEqual(self.step(sid, 'add')['added'], 2)
+        added = self.kept(sid)['added']
+        self.step(sid, 'save')
+        self.assertEqual(self.step(sid, 'read'), {'state': 'reading'})  # Import again
+        data = self.kept(sid)
+        self.assertEqual((data['added'], data['saved'], len(data['people'])), (added, 1, 1))
+        view = self.card(sid)
+        self.assertEqual((view['state'], view['added'], view['matched'], view['new']), ('preview', 2, 3, 0))  # theirs came from this import
+        with self.assertRaises(ValueError):
+            self.step(sid, 'add')  # still once
+        self.assertEqual(self.step(sid, 'undo_add'), {'state': 'preview', 'undone': 2})
+        self.assertEqual(set(self.people()), {'Sam Rivera', 'Pat Quinn'})
+
+    def test_a_step_after_the_page_that_fails_or_runs_long_says_so_and_keeps_the_todo(self):
+        sid = self.read()
+        self.step(sid, 'add')
+        added = self.kept(sid)['added']
+        with patch('birthdays_facebook_app.POST_READ_SECONDS', 0), self.assertLogs('personal-assistant', 'INFO') as logs:
+            self.step(sid, 'read')
+        data = self.kept(sid)
+        self.assertEqual((self.card(sid)['state'], data['reason'], data['added']), ('failed', 'timeout', added))
+        self.assertIn('reason=timeout', logs.output[-1])
+        with patch.object(fb, 'preview', side_effect=RuntimeError('boom')):
+            self.step(sid, 'read')  # Try again
+        data = self.kept(sid)
+        self.assertEqual((data['reason'], data['added'], len(data['others'])), ('RuntimeError', added, 2))
+        self.step(sid, 'read')
+        self.assertEqual(self.step(sid, 'undo_add')['undone'], 2)
+
+    def test_import_again_with_every_friend_a_person_with_a_birthday_is_quick(self):
+        names = [f'{f} {m} {l}' for f in FIRST for m in FIRST[:10] for l in LAST][:1300]
+        self.answer = {'items': [{'name': n, 'month': 1 + i % 12, 'day': 1 + i % 28} for i, n in enumerate(names)]}
+        sid = self.read()
+        self.assertEqual(self.step(sid, 'add')['added'], 1300)
+        with self.store.connect() as db:  # a few the owner knew another day for, or set by hand
+            nodes = {r['name']: r['id'] for r in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person' AND id LIKE 'manual:%'")}
+            enrichment.offer_facts(db, [([nodes[names[0]]], {'birthday': '--06-06'}, enrichment.RECORD)], 'google', NOW)
+            person_birthday.set_birthday(db, nodes[names[1]], {'month': 7, 'day': 7}, NOW)
+        self.build()
+        scans, people_scans = [], []
+        facts, owners = person_birthday._facts, birthdays.by_identifier
+        with patch.object(person_birthday, '_facts', lambda db, ids=None: (scans.append(ids) if ids is None else None) or facts(db, ids)), \
+                patch.object(birthdays, 'by_identifier', lambda *x, **k: people_scans.append(1) or owners(*x, **k)):
+            start = time.monotonic()
+            self.step(sid, 'read')  # Import again
+            read = time.monotonic() - start
+            view = self.card(sid)
+            self.assertEqual((view['state'], view['matched'], view['new'], view['added']), ('preview', 1300, 1, 1300))
+            start = time.monotonic()
+            self.assertEqual(self.step(sid, 'save')['saved'], 1)  # the one known for another day; the owner's stays
+            save = time.monotonic() - start
+        self.assertLessEqual((len(scans), len(people_scans)), (2, 2))  # every birthday and every person looked at once per step
+        self.assertLess(read + save, 20, f'Import again took {read:.1f} s, Save {save:.1f} s')
+        with self.store.connect() as db:
+            self.assertEqual(person_birthday.get(db, nodes[names[0]])['value'], '--01-01')
+            self.assertEqual(person_birthday.get(db, nodes[names[1]])['value'], '--07-07')
+        self.assertEqual(self.step(sid, 'undo_add')['undone'], 1300)
+
+
 if __name__ == '__main__':
     unittest.main()

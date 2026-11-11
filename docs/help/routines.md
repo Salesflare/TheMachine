@@ -35,7 +35,7 @@ Birthdays come from your calendars (Google’s birthday events and Birthdays cal
 
 Only **Save** keeps them, and only the birthday, on each person’s page. A birthday you set there stays. It never reads again by itself: **Import again** on the to-do does. The browser has to be signed in to Facebook. If it isn’t, tap **Sign in to Facebook** on the to-do and sign in there; once you’re in, it reads the page by itself. The Machine never signs in for you.
 
-Friends nobody in your Graph has are counted, with a few names. **Add … as personal contacts** adds them all at once, also after Save: each with their name and birthday, never shared with a Work Fleet. A name someone in your Graph already has, or someone you deleted permanently had, is skipped. Birthday reminders still only come for people you write to. **Undo** on the to-do takes exactly those people away again.
+Friends nobody in your Graph has are counted, with a few names. **Add … as personal contacts** adds them all at once, also after Save: each with their name and birthday, never shared with a Work Fleet. A name someone in your Graph already has, or someone you deleted permanently had, is skipped. Birthday reminders still only come for people you write to. **Undo** on the to-do takes exactly those people away again, also after **Import again**.
 
 While a template’s routine keeps the template’s words, it runs on its own code, without your AI plan (Spam cleanup uses one short turn when there is mail to read). A new name keeps that. Once you change its words, it runs like any routine on your words.
 

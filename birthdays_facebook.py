@@ -347,42 +347,75 @@ def match(db, names):
     return {'matched': matched, 'ambiguous': ambiguous, 'unmatched': unmatched, 'others': others}
 
 
-def owner_set(db, node_id):
-    """Whether the owner set or removed this person's birthday on their page (person_birthday.set_birthday): theirs stays."""
+def owner_set(db, ids):
+    """Which of these people (node ids) the owner set or removed the birthday of on their page
+    (person_birthday.set_birthday): theirs stays. One query for all of them."""
     enrichment.fact_tables(db)
-    return bool(db.execute("SELECT 1 FROM person_facts WHERE identifier=? AND field=? AND source=?",
-                           (node_id, person_birthday.FIELD, person_birthday.SOURCE)).fetchone())
+    return {r[0] for r in db.execute('SELECT identifier FROM person_facts WHERE field=? AND source=? AND identifier IN (SELECT value FROM json_each(?))',
+                                     (person_birthday.FIELD, person_birthday.SOURCE, json.dumps(sorted(set(ids)))))}
 
 
-def fresh(db, node_id, value):
-    """Whether this birthday is news for the person: nobody set theirs by hand, and the one their page shows
-    (person_birthday.get) is another day or none."""
-    if owner_set(db, node_id):
-        return False
-    got = person_birthday.get(db, node_id)
-    if got and got['source'] == person_birthday.SOURCE:
-        return False
-    return not got or birthdays.birthday_value(got['value']) != birthdays.birthday_value(value)
+def fresh(db, matched):
+    """The matched people ([{id, date}]) whose birthday is news: nobody set theirs by hand, and the one their page shows
+    (person_birthday.known, as person_birthday.get has it) is another day or none. All at once: every birthday and every
+    person is looked at once, not once per person (thousands of friends, each a person with a birthday)."""
+    ids = {m['id'] for m in matched or ()}
+    if not ids:
+        return set()
+    rows = db.execute("SELECT id,name,info,kind FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))", (json.dumps(sorted(ids)),)).fetchall()
+    node = {r['id']: r for r in rows}
+    for gone in ids - set(node):  # an id from an earlier preview, part of another person since (a merge): as person_birthday.get
+        row = graph.resolve(db, gone)
+        if row:
+            node[gone] = row
+    node = {i: r for i, r in node.items() if r['kind'] == 'person'}
+    people = {r['id']: {'id': r['id'], 'name': r['name'], 'info': json.loads(r['info'] or '{}')} for r in node.values()}
+    mine = owner_set(db, people)
+    have = person_birthday.known(db, people) if people else {}
+    out = set()
+    for m in matched:
+        person = node.get(m['id'])
+        if not person:
+            continue  # nobody in the Graph by now
+        got = have.get(person['id'])
+        if person['id'] in mine or (got and got['source'] == person_birthday.SOURCE):
+            continue
+        if not got or birthdays.birthday_value(got['value']) != birthdays.birthday_value(m['date']):
+            out.add(m['id'])
+    return out
 
 
-def preview(db, items, today=None, capped=False, missing=()):
+def due(deadline):
+    """A step with a deadline (time.monotonic()) that has passed it stops: TimeoutError."""
+    if deadline is not None and time.monotonic() > deadline:
+        raise TimeoutError('the step after the read ran too long')
+
+
+def preview(db, items, today=None, capped=False, missing=(), deadline=None):
     """What the owner sees before saving: {'found', 'matched', 'new', 'ambiguous', 'unmatched', 'capped', 'missing'}.
-    new: matched people whose birthday is new to the Machine (or another day than it knew), and not set by the owner."""
+    new: matched people whose birthday is new to the Machine (or another day than it knew), and not set by the owner.
+    deadline: past it (time.monotonic()), TimeoutError."""
     names = found(items, today)
+    due(deadline)
     out = match(db, names)
+    due(deadline)
     out['found'] = len(names)
     out['capped'] = bool(capped)  # the read stopped at its limits: the page may have had more
     out['missing'] = sorted({int(m) for m in missing or () if str(m).isdigit() and 1 <= int(m) <= 12})  # months it never saw
-    out['new'] = sum(1 for m in out['matched'] if fresh(db, m['id'], m['date']))
+    news = fresh(db, out['matched'])
+    out['new'] = sum(1 for m in out['matched'] if m['id'] in news)
+    due(deadline)
     return out
 
 
 def save(db, data, stamp):
     """The matched birthdays, each through the person's one birthday (person_birthday.offer, source facebook): one the
     owner set stays, one the Machine already knew for that day is left as it is. Returns the people saved: [{id, name}]."""
+    matched = [m for m in data.get('matched') or () if isinstance(m, dict) and m.get('id')]
+    news = fresh(db, matched)
     saved = []
-    for m in data.get('matched') or ():
-        if fresh(db, m['id'], m['date']) and person_birthday.offer(db, m['id'], m['date'], SOURCE, stamp):
+    for m in matched:
+        if m['id'] in news and person_birthday.offer(db, m['id'], m['date'], SOURCE, stamp):
             saved.append({'id': m['id'], 'name': m['name']})
     return saved
 
@@ -391,6 +424,15 @@ def put(db, suggestion_id, state, data, stamp):
     ensure(db)
     db.execute('INSERT INTO facebook_birthdays(suggestion_id,state,data,updated_at) VALUES(?,?,?,?) ON CONFLICT(suggestion_id) DO UPDATE SET '
                'state=excluded.state,data=excluded.data,updated_at=excluded.updated_at', (suggestion_id, state, json.dumps(data or {}), stamp))
+
+
+CARRIED = ('added', 'people', 'saved', 'others')  # what Import again keeps: who Add added (Undo), who Save saved, the friends for Add
+
+
+def carried(data):
+    """What a to-do keeps through Import again (CARRIED): into the read, and into its preview or failure."""
+    data = data if isinstance(data, dict) else {}
+    return {k: data[k] for k in CARRIED if k in data}
 
 
 def report(result):
