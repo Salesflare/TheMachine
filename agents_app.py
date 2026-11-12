@@ -57,7 +57,7 @@ class AgentsApp:
             return False
         current = json.loads(row['next_action'])
         actions = current.get('actions') if current.get('kind') == 'menu' else [current]
-        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply') and a.get('revision')]
+        editable = [a for a in actions or [] if isinstance(a, dict) and a.get('kind') in ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply') and a.get('revision')]
         if len(editable) != 1:
             return False
         return self.store.revise_draft(str(suggestion_id), editable[0]['revision'], 'agent', None, text, agent_job=job).get('status') == 'revised'

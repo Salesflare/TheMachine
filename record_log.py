@@ -26,7 +26,7 @@ LIMIT = 20   # lines per record, newest first; the page shows a few and the rest
 SLACK_ID = re.compile(r'\b[UW][A-Z0-9]{8,}\b')
 SERVICES = {'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'meeting', 'salesflare.meeting': 'meeting',
             'zoom.summary': 'meeting', 'meeting.notes': 'meeting', 'meeting.transcript': 'meeting', 'whatsapp.message': 'WhatsApp',
-            'slack.message': 'Slack', 'teams.message': 'Teams', 'linkedin.message': 'LinkedIn', 'telegram.message': 'Telegram',
+            'slack.message': 'Slack', 'teams.message': 'Teams', 'linkedin.message': 'LinkedIn', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
             'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
 
 

@@ -55,9 +55,9 @@ ROLES = ('user', 'assistant')
 SESSION_PREFIX = 'agent:main:assistant-talk-'
 UNDO_SECONDS = 10            # a send approved by voice waits this long, with Undo in the chat
 ASK_SECONDS = 180            # a confirm question older than this needs asking again
-SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply', 'doc_write')
+SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply', 'doc_write')
 CHANNELS = {'email': 'by email', 'linkedin': 'on LinkedIn', 'slack': 'on Slack', 'x': 'on X', 'whatsapp': 'on WhatsApp',
-            'telegram': 'on Telegram', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc', 'doc_write': 'in the doc'}
+            'telegram': 'on Telegram', 'signal': 'on Signal', 'intercom': 'in Intercom', 'doc_reply': 'as a comment in the doc', 'doc_write': 'in the doc'}
 # An open to-do's state, in plain words, as the dashboard's lists show it: For you (its chip says prepared, needs you or
 # preparing), Waiting on others, Later, in that order. Preparing is a chip in For you now, no list of its own.
 STATES = ('prepared', 'needs you', 'preparing', 'waiting on others', 'snoozed')

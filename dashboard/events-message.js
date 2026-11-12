@@ -74,8 +74,8 @@ p.querySelector('button').onclick=()=>{delete box.dataset.filled;setHTML(box,htm
 // A Slack thread shown after the channel's messages before it (thread: true, machine/store/conversation.py) starts
 // under an In thread line. Each sender has the avatar circle with their initials, as people have elsewhere.
 // One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
-const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
-const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
+const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Signal:'Signal',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
+const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Signal:'signal',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
 const isChat=o=>typeof o?.chat==='string';
 const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;

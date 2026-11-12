@@ -174,7 +174,7 @@ def area_hint(db, suggestion, accounts, here):
 
 
 # Chats read as one thread on the dashboard (events-email.js chatThreadHTML): the conversation named once, then turns.
-CHAT_KINDS = {'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm', 'fleet.message',
+CHAT_KINDS = {'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message', 'x.dm', 'fleet.message',
               'intercom.conversation', 'fleet.intercom'}
 
 

@@ -73,6 +73,31 @@ English strings the check skips, with why:
 - `Claude sends its result back through The Machine connector. Add it once in claude.ai, Settings, Connectors, Add custom connector:` names claude.ai's own menus, which read in English.
 - `Zoom in` is the browser viewer's zoom button, not the Zoom app.
 - `Zoom out` is the browser viewer's zoom button, not the Zoom app.
+- `Signal chats` names the Signal app, not a signal.
+- `Signal unlinked this Machine` names the Signal app, not a signal.
+- `Update The Machine for Signal` names the Signal app, not a signal.
+- `In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:` names the Signal app, not a signal.
+- `Signal unlinked this Machine. Link it again to keep reading.` names the Signal app, not a signal.
+- `Signal no longer accepts this Machine’s Signal client. Update The Machine.` names the Signal app, not a signal.
+- `Signal gives a new linked device no older messages, so this reads from when you linked it.` names the Signal app, not a signal.
+- `Send this Signal message?` names the Signal app, not a signal.
+- `Sent to {} on Signal` names the Signal app, not a signal.
+- `the Signal message` names the Signal app, not a signal.
+- `Signal message sent` names the Signal app, not a signal.
+- `Signal can’t be read right now, so I can’t find the chat. Put the message in the body and say in one line that they can send it on Signal themselves.` names the Signal app, not a signal.
+- `Your Signal chats, as a linked device.` names the Signal app, not a signal.
+- `Signal needs Java {} or later on this computer` names the Signal app, not a signal.
+- `Unsupported Signal fields; plain text only, no media` names the Signal app, not a signal.
+- `Use one of the owner’s Signal accounts` names the Signal app, not a signal.
+- `Provide the concrete Signal message, at most {} characters` names the Signal app, not a signal.
+- `Signal button labels must say Send, such as Send reply` names the Signal app, not a signal.
+- `Only an owner-approved Signal message can use the Signal transport` names the Signal app, not a signal.
+- `I couldn’t reach Signal on this computer. Nothing was sent; tap Send again.` names the Signal app, not a signal.
+- `Signal no longer accepts this Machine’s Signal client. Nothing was sent.` names the Signal app, not a signal.
+- `Signal is unlinked, or linked to another account. Nothing was sent.` names the Signal app, not a signal.
+- `I couldn’t find that Signal chat. Nothing was sent.` names the Signal app, not a signal.
+- `Signal was not linked{}` names the Signal app, not a signal.
+- `Could not start the Signal link ({})` names the Signal app, not a signal.
 
 ## Not checked, but use these
 

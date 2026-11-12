@@ -53,7 +53,7 @@ const sourceHtml=v=>{const t=sourceText(v),i=t.lastIndexOf(' · ');return html`<
 const syncError=v=>v==='android_feed_unavailable'?'Notification bridge unavailable':v==='android_offline'?'Phone disconnected':v==='android_notifications_unavailable'?'Phone notifications unavailable':v==='android_gateway_unavailable'?'Connection to The Machine unavailable':v?.startsWith('network')?'Connection problem':v==='timeout'?'Connection timed out':['slack:HTTP_429','slack_ratelimited'].includes(v)?'Slack rate limit':readableError(v);
 // Error codes like linkedin_read_failed, in words: the source's name and what went wrong.
 // Telegram chats stopped for a reason only the owner can fix: said on its card, never a silent gap (telegram_store.ERRORS)
-const TELEGRAM_STOP={telegram_logged_out:'Logged out of Telegram',telegram_app_blocked:'Telegram stopped accepting the app ID'};
+const TELEGRAM_STOP={telegram_logged_out:'Logged out of Telegram',telegram_app_blocked:'Telegram stopped accepting the app ID',signal_unlinked:'Signal unlinked this Machine',signal_outdated:'Update The Machine for Signal'};
 function readableError(v){if(!v)return 'Sync error';const m=/^([a-z]+)[_:](.+)$/.exec(v),name=m?service(m[1]):'',what=m?m[2]:v;
 // The service busy (google_meet_http:HTTP_503, docs_drive:HTTP_429): the service by its full name, which can have a _ in it
 const busy=/:HTTP_(5\d\d|429)$/.exec(v);if(busy){const k=Object.keys(SERVICE_NAMES).filter(s=>v.startsWith(s)).sort((a,b)=>b.length-a.length)[0],who=k?SERVICE_NAMES[k]:t('The source');
@@ -90,7 +90,7 @@ if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The sou
 if(/^(?:internal_error|fatal_error|service_unavailable)(?::|$)/.test(what))return t('{} had a problem on its side',name||t('The source'));
 if(/^request_timeout(?::|$)/.test(what))return t('{} was slow to answer',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
-const SERVICE_NAMES={gmail:'Email',imap:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',icloud_calendar:'iCloud Calendar',caldav:'Calendar',proton_calendar:'Proton Calendar',ics:'Calendar',exchange:'Exchange',slack:'Slack',salesflare:'Salesflare CRM',salesforce:'Salesforce',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'Machine health',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',teams:'Teams',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Microsoft OneDrive',shortcut:'Shortcut',x:'X'};
+const SERVICE_NAMES={gmail:'Email',imap:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',icloud_calendar:'iCloud Calendar',caldav:'Calendar',proton_calendar:'Proton Calendar',ics:'Calendar',exchange:'Exchange',slack:'Slack',salesflare:'Salesflare CRM',salesforce:'Salesforce',whatsapp:'WhatsApp',telegram:'Telegram chats',signal:'Signal chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'Machine health',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',teams:'Teams',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Microsoft OneDrive',shortcut:'Shortcut',x:'X'};
 // The tools underneath (gog, wacli, msgraph-cli, the OpenClaw feed) are never a name on screen: one of their keys from
 // data reads as nothing, and the line says the source instead (the same list as machine/names.py INTERNAL)
 const INTERNAL_NAME=/^(?:gog(?:cli)?|wacli|himalaya|msgraph(?:[-_]cli)?|openclaw|codex[-_]cli|gh|journald|maton|broker|api|rest|existing_\w+|[a-z]+[-_](?:feed|local|inbox|rest|store|mirror))(?:[-_][\w-]*)?$/i;
@@ -154,11 +154,11 @@ function doneWhy(s){try{const h=JSON.parse(s.handled_hint||'null');if(h?.reason)
 const ICONS={x:'<path d="M4 4l16 16M20 4L4 20"/>',plugin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',gateway:'<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01"/>',gmail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/>',calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',slack:'<path d="M10 3 8 21M16 3l-2 18M4 9h16M3.5 15h16"/>',salesflare:'<path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-5h6v5M9 11h.01M15 11h.01"/>',android:'<rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18h2"/>',whatsapp:'<path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1.2-4.2A8 8 0 1 1 20 12z"/>',telegram:'<path d="M21 4L3 11l6 2.5L11 20l3.5-4.5L19 19z"/><path d="M9 13.5L21 4"/>',linkedin:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 10v7M8 7h.01M12 17v-7M12 13a3 3 0 0 1 6 0v4"/>',github:'<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M18 10.2c0 4-6 3-10.5 6.3"/>',stripe:'<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>'};
 ICONS.docs=html`<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h4"/>`;ICONS.outlook=ICONS.gmail;ICONS.imap=ICONS.gmail;ICONS.outlook_calendar=ICONS.calendar;for(const k of ['icloud_calendar','caldav','proton_calendar','ics','exchange'])ICONS[k]=ICONS.calendar;ICONS.zoom=html`<rect x="3" y="6.5" width="12.5" height="11" rx="2"/><path d="m15.5 10.5 5-3v9l-5-3"/>`;ICONS.google_meet=ICONS.zoom;ICONS.teams=html`<path d="M4 5h12a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 4v-4H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/><path d="M7 9h8M7 12h5"/>`;
 const icon=s=>html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${raw(ICONS[s]||ICONS.plugin)}</svg></span>`;
-const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','telegram.message':'telegram','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway','machine.system_log':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
+const kindService=k=>({'calendar.event':'calendar','meeting.notes':'calendar','slack.message':'slack','android.notification':'android','whatsapp.message':'whatsapp','telegram.message':'telegram','signal.message':'signal','salesflare.email':'salesflare','salesflare.meeting':'salesflare','gateway.alert':'gateway','machine.system_log':'gateway'}[k]||(/^[a-z][a-z0-9_]*\./.test(k)&&k!=='gmail.message'?k.split('.')[0]:'gmail'));
 // The team brief's to-dos (fleet-brief-todo.js, LAZY 'brief'): loaded when one is on screen
 const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed',briefIn=s=>!!s.fleet_brief&&(lazyIn('brief')||(lazyRun('brief',render),false));
 const changing=new Set(),dismissing=new Set(),askPicks=new Map(),askMissing=new Map();  // by to-do: each question's answer so far; those Answer found without one
-const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','finish','handoff','calendar','doc_write'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
+const taskActions=s=>{const choices=s?.next_actions||(s?.next_action?.kind==='menu'?s.next_action.actions:s?.next_action?[s.next_action]:[]);const ready=choices.some(a=>['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','finish','handoff','calendar','doc_write'].includes(a.kind));return choices.filter(a=>a.kind!=='prepare'||(!ready&&!/^Draft (shorter|longer|another|alternative|follow-up)\b/i.test(a.label||'')))};
 // Messages to send: several go out together (openSendAll)
 const sendReady=s=>s?.status!=='prepared'?[]:taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)&&!sendBusy(a.state));
 // Who its messages go (or went) to, names and addresses: a search finds a to-do by recipient too (assistant.card_recipients)
@@ -176,7 +176,7 @@ const basedOnLine=s=>{const b=s.based_on;if(!b||typeof b!=='object')return '';
  const day=b.at?localeDate(new Date(b.at),DL,{weekday:'short',day:'numeric',month:'short'}):'';
  const label=html`${what}${day?html` · <span class="src-date">${day}</span>`:''}`;  // opens here, so no ↗ (that is for links out)
  return html`<p class="note gap-line based-on"><button type="button" class="link" data-id="${s.id}"${b.event_id!=null?html` data-held-read="${b.event_id}"`:html` data-original="read"`}>${label}</button></p>`};
-const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Slack:'slack',X:'x'};  // gap_note.py ELSEWHERE
+const GAP_CONNECT={WhatsApp:'whatsapp',LinkedIn:'linkedin',Telegram:'telegram',Signal:'signal',Slack:'slack',X:'x'};  // gap_note.py ELSEWHERE
 const gapLine=(s,hint)=>{const g=s.gap;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  if(!g||closed(s)||s.status==='snoozed'||hint||w.delegated||s.follow_up||withTeammate(s))return '';
  const via=g.channel==='email'?t('email'):g.channel,more=g.unsynced?.length?' '+t('They may have replied on {} (not synced).',gapOr(g.unsynced)):'';
@@ -224,7 +224,7 @@ const day=localDay(target)===today?t('Today'):localDay(target)===localDay(tomorr
 const when=day+' · '+fmtHM(target);
 return tg&&push?t('Telegram and notification {}',when):tg?t('Telegram {}',when):t('Notification {}',when);
 }
-const DRAFT_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','handoff','finish','calendar','doc_write'];
+const DRAFT_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','handoff','finish','calendar','doc_write'];
 // A calendar change on a card (kind calendar): what it adds, changes or deletes, on which calendar. Nobody is invited.
 const CAL_DO={create:'Add to {}',update:'Change on {}',delete:'Delete from {}'},CAL_DID={create:'Added to {}',update:'Changed on {}',delete:'Deleted from {}'};
 const CAL_DID_DOT={create:'Added to {}.',update:'Changed on {}.',delete:'Deleted from {}.'},CAL_DID_AT={create:'Added to {} at {}.',update:'Changed on {} at {}.',delete:'Deleted from {} at {}.'},CAL_DID_INV={create:'Added to {}, invited {}.',update:'Changed on {}, invited {}.',delete:'Deleted from {}, invited {}.'};
@@ -466,7 +466,7 @@ const askQuestion=(s,smart,hint)=>{if(closed(s)||s.status==='snoozed'||hint)retu
 // A result that needs the owner and says so with a question ("What is the new link?"): it waits on their answer, not on a tap
 const needsAsk=s=>{try{const o=JSON.parse(s.outcome||'{}'),q=String(o.needs||'').trim();return o.state==='needs_you'&&/\?$/.test(q)?q:''}catch{return ''}};
 // A draft's Send opens the preview first: the button says so.
-const sendLabel=a=>a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
+const sendLabel=a=>a.kind==='calendar'?CAL_LABEL[a.op]:a.kind==='doc_write'?DOC_LABEL[a.op]:a.kind==='doc_reply'?'Review and post':['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom'].includes(a.kind)&&/^Send\b/.test(a.label||'')?reviewSend(a.label):a.label;
 // "Send reply" reads "Review and send reply": a known label whole, "to Sam" by its pattern, else the start translated
 function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'),rest=label.replace(/^Send\b\s*/,''),to=/^to (.+)$/.exec(rest);
  return !rest?t('Review and send'):I18N.cat?.[whole]!=null||I18N.en[whole]!=null?t(whole):to?t('Review and send to {}',to[1]):t('Review and send')+' '+rest}
@@ -541,7 +541,7 @@ const projectTodos=n=>n.kind==='project'&&n.todos?.length?html`<div class="secti
 // for good, on every device, once its button is used or × closes it. render() picks the to-do (tipSend, tipChange).
 let tipSend='',tipChange='';const tipsGone=new Set();
 const firstTips=()=>(state.first_tips||[]).filter(x=>!tipsGone.has(x));
-const TIP_SEND_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
+const TIP_SEND_KINDS=['email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'];
 const sendTipFits=s=>s.status==='prepared'&&!closed(s)&&!s.handled_hint&&!withTeammate(s)&&taskActions(s).some(a=>TIP_SEND_KINDS.includes(a.kind)&&draftText(a)&&!sendBusy(a.state||s.action_status));
 function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})

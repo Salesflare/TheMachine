@@ -48,7 +48,7 @@ const talkAtEnd=el=>el.scrollTop+el.clientHeight>=el.scrollHeight-40;
 const talkMore=c=>{if(!c)return;if(c._end)c.scrollTop=c.scrollHeight;c.classList.toggle('fade-more',c.scrollHeight-c.scrollTop-c.clientHeight>2)};
 addEventListener('resize',()=>requestAnimationFrame(talkFit));visualViewport?.addEventListener('resize',()=>requestAnimationFrame(talkFit));
 function talkLeave(){if(!talkViewOn())return;if(talkBack==='settings')showSettings();else document.querySelector(`nav [data-tab="${talkBack}"]`)?.click()}
-function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
+function talkDraftHtml(s){const a=s.status==='prepared'?(s.next_actions||[]).find(a=>a.revision&&(['email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'].includes(a.kind)&&a.body||a.kind==='doc_write')):null;if(!a)return '';
  if(a.kind==='doc_write')return html`<div class="chat-draft current"><span hidden data-smart="${a.revision}"></span><div class="chat-draft-head"><span>${docHead(a)}</span></div><div class="chat-clamp dw">${docWriteHtml(a)}</div></div>`;
  const to=a.to_name||(Array.isArray(a.to)?a.to.join(', '):a.to||''),mail=a.kind==='email';
  return html`<div class="chat-draft current"><span hidden data-smart="${a.revision}"></span>${to?html`<div class="chat-draft-head"><span>${t('To: {}',to)}</span></div>`:''}${a.subject&&!a.reply&&!/^re:/i.test(a.subject)?html`<div class="chat-draft-subject">${a.subject}</div>`:''}<div class="chat-clamp${mail?html` mail-text`:''}">${mail?mailHtml(a.body):chatMarkdown(a.body)}</div></div>`}

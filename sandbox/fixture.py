@@ -51,6 +51,7 @@ ACCOUNTS = [  # the owner's sources, as in a config; ids say what they are, neve
     {'id': 'home-calendar', 'service': 'calendar', 'transport': 'gog', 'email': OWNER['personal_email'], 'client': 'default', 'calendar_id': 'primary', 'boundary': 'personal'},
     {'id': 'home-whatsapp', 'service': 'whatsapp', 'transport': 'wacli', 'email': '', 'display_name': 'WhatsApp', 'boundary': 'personal'},
     {'id': 'home-telegram', 'service': 'telegram', 'transport': 'telegram_mirror', 'email': '', 'display_name': 'Telegram chats', 'boundary': 'personal'},
+    {'id': 'home-signal', 'service': 'signal', 'transport': 'signal_mirror', 'email': '', 'display_name': 'Signal chats', 'boundary': 'personal'},
     {'id': 'home-phone', 'service': 'android', 'transport': 'openclaw-feed', 'email': '', 'display_name': 'Phone notifications', 'boundary': 'personal', 'node_id': 'sandbox-phone'},
 ]
 KIND_ACCOUNT = {  # profile key -> (account, event kind)
@@ -188,7 +189,13 @@ STORIES = [
     {'key': 'paint', 'family': True, 'status': 'pending', 'minutes': 16 * 24 * 60,
      'title': 'Pick a paint color for the hallway', 'body': 'Robin asks for a color for the hallway before the painter comes.',
      'chat': ('Robin Morgan', [(16 * 24 * 60 + 40, False, 'Can you pick a color for the hallway? The painter needs it.')])},
+    {'key': 'plants', 'signal': True, 'family': True, 'status': 'prepared', 'minutes': 240,
+     'title': 'Tell Dana if you can water the plants next week', 'body': 'Dana asked on Signal while they are away from Monday to Friday.',
+     'chat': ('Dana Kerrigan', [(260, False, 'Away Monday to Friday. Could you water the plants once or twice?'),
+                                (258, False, 'Key is under the blue pot.')]),
+     'draft': ('signal', 'Sure, I will stop by on Tuesday and Thursday.')},
 ]
+SIGNAL_CHAT = '5a5d1e00-0000-4000-8000-00000000da0a'  # Dana's made-up Signal account ID
 
 # Closed cards, one per earlier email: what the card said, by the email's topic (EMAIL_TOPICS order)
 CLOSED_TITLES = ['Send {company} the renewal quote', 'Fill in the security questionnaire for {company}', 'Send {company} the receipt',
@@ -550,7 +557,10 @@ def build(profile):
             for n, line in enumerate(lines):
                 m, who, text = (line[0], None if line[1] else chat, line[2]) if not group else line
                 key = f"story:{story['key']}:{n}"
-                if story.get('telegram'):
+                if story.get('signal'):
+                    add('home-signal', 'signal.message', m, chat, text, {'chat_name': chat, 'chat_id': SIGNAL_CHAT, 'chat_kind': 'dm', 'from_me': who is None,
+                        'from': who or 'You', **({'sender_id': SIGNAL_CHAT} if who else {}), 'message_id': f"{SIGNAL_CHAT if who else 'me'}:{1761000000000 + n}"}, key)
+                elif story.get('telegram'):
                     add('home-telegram', 'telegram.message', m, chat, text, {'chat_name': chat, 'chat_id': '7001', 'chat_kind': 'dm', 'from_me': who is None,
                         **({'sender_name': who, 'sender_id': '7001'} if who else {}), 'message_id': f"tg-{story['key']}-{n}"}, key)
                 else:
@@ -559,7 +569,7 @@ def build(profile):
                         **({'sender_display': who} if who else {}), 'message_id': f"wa-{story['key']}-{n}",
                         **({'media_type': 'image', 'photo_fixture': photo} if photo else {})}, key)
                 out.append(key)
-            account, source, to = ('home-telegram', 'Telegram from ' + chat, None) if story.get('telegram') else ('home-whatsapp', 'WhatsApp from Robin Morgan', None)
+            account, source, to = ('home-signal', 'Signal from ' + chat, None) if story.get('signal') else ('home-telegram', 'Telegram from ' + chat, None) if story.get('telegram') else ('home-whatsapp', 'WhatsApp from Robin Morgan', None)
         based_on = None
         if story.get('team_input'):
             m, who, channel, text = story['team_input']
@@ -588,6 +598,9 @@ def build(profile):
         elif kind == 'telegram':
             card['next_action'] = {'kind': 'telegram', 'account_id': 'home-telegram', 'to_name': chat, 'chat_id': '7001', 'body': body,
                                    'label': 'Send to ' + chat.split()[0], 'revision': f'rev{i:04d}'}
+        elif kind == 'signal':
+            card['next_action'] = {'kind': 'signal', 'account_id': 'home-signal', 'to_name': chat, 'chat_id': SIGNAL_CHAT, 'body': body,
+                                   'label': 'Send to ' + chat.split()[0], 'revision': f'rev{i:04d}', 'max_length': 4000}
         elif kind == 'whatsapp':
             card['next_action'] = {'kind': 'whatsapp', 'account_id': 'home-whatsapp', 'to_name': 'Morgan family', 'chat_id': 'morganfamily', 'body': body,
                                    'label': 'Send to Morgan family', 'revision': f'rev{i:04d}',

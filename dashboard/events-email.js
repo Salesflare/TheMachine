@@ -13,10 +13,10 @@ const eventIds=s=>{try{return Array.isArray(s.event_ids)?s.event_ids:JSON.parse(
 // Each service by its own logo (dashboard.html --i-*): where a to-do came from and what its prepared step goes out on.
 // An email or a calendar change by the account's service: Google's own logo; Outlook and the rest the plain envelope.
 const svcOf=id=>(state?.connectors||[]).find(c=>c.id===id)?.service||'';
-const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
+const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',telegram:'Telegram',signal:'Signal',linkedin:'LinkedIn',x:'X',intercom:'Intercom',gdocs:'Google Docs',file:'Doc',gcal:'Google Calendar',cal:'Calendar',handoff:'Hand off',browser:'Browser',github:'GitHub'};
 // On a button that already says what it does, the logo is only a picture (hidden from screen readers).
 const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||service(k)||'The source')}" title="${t(VIA_NAME[k]||service(k)||'The source')}"></i>`:'';
-const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
+const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'signal',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
 // Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
 const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';
@@ -24,7 +24,7 @@ const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['e
 // A to-do's source by its words ("Source: Slack …"), else the service of the account it came from (todos-logos.js MONO)
 const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim(),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf);
  if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':svc.includes('outlook')||(s.original_urls||[]).some(u=>/^https:\/\/outlook\./.test(u))?'outlook':'mail';
- const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i],
+ const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['signal',/^signal\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i],
   ['teams',/^(microsoft )?teams\b/i],['zoom',/^zoom\b/i],['google_meet',/^(google )?meet\b/i],['github',/^github\b/i],['stripe',/^stripe\b/i],['salesflare',/^salesflare\b/i],['salesforce',/^salesforce\b/i],['trello',/^trello\b/i],['shortcut',/^shortcut\b/i]].find(([,r])=>r.test(v));
  return named?named[0]:/^your fleet$/i.test(v)?'handoff':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):svc.map(x=>x==='calendar'?'':monoKey(x)).find(Boolean)||'chat'};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.

@@ -71,3 +71,9 @@ def hold_telegram(db, at):
     """The Telegram chats store's outbox (telegram_store.py): what waited to go out stops, with the same line."""
     import telegram_store
     return telegram_store.hold_outbox(db, MOVED_SEND, at) if _has(db, 'outbox') else 0
+
+
+def hold_signal(db, at):
+    """The Signal store's outbox (signal_store.py): what waited to go out stops, with the same line."""
+    import signal_store
+    return signal_store.hold_outbox(db, MOVED_SEND, at) if _has(db, 'signal_outbox') else 0

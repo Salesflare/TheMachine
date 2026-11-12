@@ -446,7 +446,9 @@ OVER_BUDGET = {}
 # 1,393,000 -> 1,394,000 (2026-11-12): main sat 288 bytes under it. Five calendar sources (iCloud, CalDAV, Proton, a
 # calendar link, Exchange) need their names, icons, marks and sync errors in words wherever a to-do or error line
 # shows them (+905); their connect sheets and cards load with Connections.
-FIRST_LOAD_CEILING = 1_394_000
+# 1,394,000 -> 1,395,000 (2026-11-12): Signal chats is a send and draft kind like WhatsApp in the to-do lists, the send
+# dialog and the viewer, which draw first (about 0.9 KB).
+FIRST_LOAD_CEILING = 1_395_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000

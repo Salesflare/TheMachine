@@ -470,6 +470,12 @@ from machine.sources.telegram import (
     telegram_event,
     telegram_photo_asker,
 )
+from machine.sources.signal_chats import (
+    Signal,
+    owner_signal_chats,
+    signal_event,
+    sync_signal,
+)
 from machine.sources.gmail import (
     Gmail,
     list_headers,

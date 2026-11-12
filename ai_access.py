@@ -94,7 +94,7 @@ COLUMNS = (('ai_connections', 'messages', 'INTEGER NOT NULL DEFAULT 0'), ('ai_wr
 # The tools: name -> (level it needs, description, input schema). The App answers them (ai_app.AiApp.ai_tool).
 _AREA = {'type': 'string', 'enum': ['work', 'personal'], 'description': 'Only Work or only Personal; left out: whatever this connection may see.'}
 _NODE = {'type': 'string', 'description': 'A person or organization id from search_graph'}
-CHANNELS = ('email', 'slack', 'whatsapp', 'telegram', 'linkedin', 'intercom', 'x')  # search_messages' channel (follow_ups.CHANNEL_KINDS)
+CHANNELS = ('email', 'slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'intercom', 'x')  # search_messages' channel (follow_ups.CHANNEL_KINDS)
 TOOLS = {
     'list_todos': ('read', "The owner's to-dos in The Machine: open ones by default, newest first.", {
         'type': 'object', 'properties': {

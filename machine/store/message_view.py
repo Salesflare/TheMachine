@@ -37,7 +37,7 @@ VIEWS =('email', 'chat', 'notification', 'card')
 
 BUILT_IN = {'gmail.message': 'email', 'ms_graph.message': 'email', 'outlook.message': 'email', 'imap.message': 'email',
             'salesflare.email': 'email', 'fleet.email': 'email',
-            'slack.message': 'chat', 'whatsapp.message': 'chat', 'telegram.message': 'chat', 'fleet.message': 'chat',
+            'slack.message': 'chat', 'whatsapp.message': 'chat', 'telegram.message': 'chat', 'signal.message': 'chat', 'fleet.message': 'chat',
             'fleet.intercom': 'chat',
             'android.notification': 'notification', 'gateway.alert': 'notification', 'machine.system_log': 'notification',
             'calendar.event': 'card', 'outlook.event': 'card', 'ms_graph.event': 'card', 'salesflare.meeting': 'card',

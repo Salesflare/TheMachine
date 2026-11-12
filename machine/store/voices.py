@@ -49,7 +49,7 @@ PROFILE_SKIP = re.compile(r'^(?:Sent (?:an? )?(?:image|photo|video|sticker|audio
                           r'\[(?:image|photo|video|sticker|audio|voice|document|gif|file)[^\]]*\]$|!\[)', re.I)
 
 
-OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
+OWN_KINDS = {'gmail.message': 'email', 'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal', 'linkedin.message': 'LinkedIn', 'x.dm': 'X DM'}
 
 
 # How the owner writes, per channel. A voice is a short block (a few lines); All holds what goes for every channel.
@@ -84,7 +84,7 @@ VOICE_MAX = 10
 VOICE_EXAMPLES = 6        # the owner's own recent messages a draft gets to match, same conversation first
 
 
-DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
+DRAFT_EVENT_KINDS = {'email': 'gmail.message', 'slack': 'slack.message', 'whatsapp': 'whatsapp.message', 'telegram': 'telegram.message', 'signal': 'signal.message', 'linkedin': 'linkedin.message', 'x': 'x.dm'}
 
 
 EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in OWN_KINDS.items()}
@@ -93,10 +93,10 @@ EVENT_CHANNELS = {kind: 'Email' if name == 'email' else name for kind, name in O
 ELSEWHERE_DAYS = 3        # the owner's own message in the draft's conversation this soon after it was ready replaced the draft
 # What shows a to-do the owner answered themselves (answered_elsewhere): its Looks done line, per channel
 ANSWERED_ELSEWHERE = {'gmail.message': 'Answered in the email thread', 'slack.message': 'Answered in Slack',
-                      'whatsapp.message': 'Answered on WhatsApp', 'telegram.message': 'Answered on Telegram',
+                      'whatsapp.message': 'Answered on WhatsApp', 'telegram.message': 'Answered on Telegram', 'signal.message': 'Answered on Signal',
                       'linkedin.message': 'Answered on LinkedIn', 'x.dm': 'Answered on X'}
 CONVERSATION_KEYS = {'gmail.message': ('thread_id',), 'slack.message': ('channel_id',)}  # conversation_of; the chats: chat_id or conversation_id
-CONVERSATION_KEYS.update({kind: ('chat_id', 'conversation_id') for kind in ('whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm')})
+CONVERSATION_KEYS.update({kind: ('chat_id', 'conversation_id') for kind in ('whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message', 'x.dm')})
 
 
 NOTE_KINDS = ('style', 'fact', 'continue', 'new_ask')

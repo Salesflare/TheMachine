@@ -23,6 +23,7 @@ from machine.delivery.push import (NOTICE_DECISION, notice_decision_refused, nud
                                    reminder_line, report_done)
 from machine.sources.calendar import calendar_write_events, calendar_write_ids
 from machine.sources.connectors import CONNECTOR_HELPERS, doc_comments, doc_write_files, load_connector
+from machine.sources.signal_chats import owner_signal_chats
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import mail_cleanup
@@ -211,6 +212,9 @@ class CardActionsApp:
             telegram_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'Telegram chat'} for r in db.execute(
                 "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='telegram.message' ORDER BY e.occurred_at",(row['event_ids'],))
                 for m in (json.loads(r[1]),) if m.get('chat_id')}
+            signal_chats={m['chat_id']:{'account_id':r[0],'name':m.get('chat_name') or 'Signal chat'} for r in db.execute(
+                "SELECT e.account_id,e.metadata FROM events e JOIN json_each(?) ids ON ids.value=e.id WHERE e.kind='signal.message' ORDER BY e.occurred_at",(row['event_ids'],))
+                for m in (json.loads(r[1]),) if m.get('chat_id')}
             # The task's Intercom conversations, with the customer's address: an email to them is checked against
             # replying in Intercom (next_actions.validate). One a handoff carried that this Machine doesn't read
             # (fleet.intercom) can't be replied to here.
@@ -223,13 +227,14 @@ class CardActionsApp:
             # The owner talks to this person on WhatsApp although the task came in another way: their existing chat.
             whatsapp_chats.update(owner_whatsapp_chats(self.config,db,args.get('next_actions',args.get('next_action')),whatsapp_chats))
             telegram_chats.update(owner_telegram_chats(self.config,db,args.get('next_actions',args.get('next_action')),telegram_chats))
+            signal_chats.update(owner_signal_chats(self.config,db,args.get('next_actions',args.get('next_action')),signal_chats))
             calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
             spots=reply_spots(self.config,db,row['event_ids'])  # a Slack reply in its message's thread, a WhatsApp one quoting it
             doc_files=doc_write_files(db,row['event_ids'],self.config,doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
         # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
         doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
                                        doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
-        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots)
+        action=next_actions.validate(args.get('next_actions',args.get('next_action')),self.config,json.loads(row['account_ids']),options,threads,x_threads,whatsapp_chats,intercom_conversations,calendar_events,docs,senders,replied_to(emails),telegram_chats,doc_context,spots,signal_chats)
         for item in next_actions.actions(action):
             if item['kind']=='handoff' and not (getattr(self,'fleet',None) and self.fleet.teammate(item)):
                 raise ValueError('Hand off through The Machine only to a teammate in a Work Fleet (their email as listed); use a Slack message or email for anyone else')

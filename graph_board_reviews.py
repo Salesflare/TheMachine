@@ -24,7 +24,7 @@ BACKFILL_MAX = 400
 BACKFILL_CHARS = 14000  # the block's size in one review
 BACKFILL_SHOWN_DAYS = 3  # the board says what it found for this long
 BACKFILL_GIVE_UP_DAYS = 7
-BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
+BACKFILL_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'signal.message', 'intercom.conversation', 'x.dm',
                   'ms_graph.message', 'outlook.message', 'calendar.event', 'salesflare.meeting', 'outlook.event', 'ms_graph.event')
 
 

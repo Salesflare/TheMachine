@@ -66,7 +66,7 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
-const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
+const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
  connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
@@ -358,7 +358,7 @@ async function connectFollow(run){const start=Date.now();await new Promise(r=>se
 function connectPoll(){clearTimeout(connectTimer);if(connectRun?.state==='done'&&(connectRun.restarting||connectRun.live)&&!connectRun.followed){connectRun.followed=true;if(connectRun.restarting)restartSoon();connectFollow(connectRun);return}
  if(!connectRun||connectRun.state!=='running')return;connectTimer=setTimeout(async()=>{try{connectRun={...connectRun,...await connectPost('connect_poll',{session:connectRun.session})};renderConnectRun()}
  catch(e){errCaught(e);connectRun={...connectRun,state:'failed',error:e.message};renderConnectRun()}connectPoll()},connectRun.question?3000:1000)}
-function connectCodeHTML(c){if(c.kind==='qr'&&Array.isArray(c.matrix))return html`<p class="connect-q">${t('In Telegram on your phone: Settings, Devices, Link Desktop Device. Then scan this code:')}</p>${qrSvg(c.matrix.filter(r=>/^[01]+$/.test(r)))}<p class="muted">${t('The code refreshes by itself.')}</p>`;
+function connectCodeHTML(c){if(c.kind==='qr'&&Array.isArray(c.matrix))return html`<p class="connect-q">${c.app==='signal'?t('In Signal on your phone: Settings, Linked devices, Link new device. Then scan this code:'):t('In Telegram on your phone: Settings, Devices, Link Desktop Device. Then scan this code:')}</p>${qrSvg(c.matrix.filter(r=>/^[01]+$/.test(r)))}<p class="muted">${t('The code refreshes by itself.')}</p>`;
  const how=c.kind==='pair'?'In WhatsApp on your phone: Settings, Linked devices, Link a device, then Link with phone number instead. Enter this code:':c.kind==='openai'?'Enter this code at OpenAI to sign in:':'Enter this code at GitHub to sign in:';
  return html`<p class="connect-q">${how}</p><p class="connect-code" translate="no">${c.code}</p><div class="actions code-actions"><button type="button" data-copy-command="${c.code}">Copy code</button>${c.url?html`<a class="btn-link primary" href="${safeHref(c.url)}" target="_blank" rel="noopener">${c.kind==='openai'?'Open OpenAI ↗':'Open GitHub ↗'}</a>`:''}</div><p class="muted">This goes on by itself once you’re in.</p>`}
 // LinkedIn or X, while its connect waits for the sign-in: that site's sign-in page opens in the Machine's browser and
@@ -471,10 +471,11 @@ function syncPlain(c){let st={};try{st=JSON.parse(c.state||'{}')||{}}catch{}cons
  const until=c.salesflare?.synced_until||(/^\d{4}-\d\d-\d\dT/.test(st.watermark||'')?st.watermark:'');if(until)out.push(t('Read up to {}',date(until)));
  if(c.service==='slack'&&c.conversations)out.push(t('{} of {} conversations read at least once',c.conversations_collected||0,c.conversations));
  return out}
-// Telegram chats: what it reads, and why it stopped with the way back (log in again, or the owner's own app ID)
-function telegramNote(c){const stop=c.error==='telegram_app_blocked'?t('Telegram stopped accepting this Machine’s app ID. Nothing is read or sent. Reconnect with your own app ID from my.telegram.org.')
- :c.error==='telegram_logged_out'?t('Telegram logged this Machine out. Reconnect to keep reading.'):'';
- return stop?html`<p class="alert">${stop} ${reconnectButton(c)}</p>`:''}
+// Why a chat stopped, the way back
+function chatNote(c){const e=c.error,stop=e==='telegram_app_blocked'?t('Telegram stopped accepting this Machine’s app ID. Nothing is read or sent. Reconnect with your own app ID from my.telegram.org.')
+ :e==='telegram_logged_out'?t('Telegram logged this Machine out. Reconnect to keep reading.'):e==='signal_unlinked'?t('Signal unlinked this Machine. Link it again to keep reading.')
+ :e==='signal_outdated'?t('Signal no longer accepts this Machine’s Signal client. Update The Machine.'):'';
+ return stop?html`<p class="alert">${stop} ${reconnectButton(c)}</p>`:c.service==='signal'?html`<p class="note">${t('Signal gives a new linked device no older messages, so this reads from when you linked it.')}</p>`:''}
 // Under Connected, on every card: what it brings in (c.what, the line + Add shows for it) and what it can do, each only
 // after the owner's OK (c.acts, assistant.py connector_says). Docs says its own, with Allow edits; who Intercom replies
 // as is under Details. One or two short lines, so the cards line up.
@@ -545,7 +546,7 @@ ${c.service==='slack'?html`<p class="note">${slackProgress(c)}${c.conversation_e
 ${c.service==='android'?html`<p class="note">${phone.transport==='direct_fallback'?'Using direct checks while the notification bridge is unavailable.':'Uses OpenClaw’s notification feed, plus a catch-up check of your phone.'} Checks run at most every 10 minutes, so notifications cleared in between may be missed.${phone.reconciliation_error&&phone.reconciliation_error!==c.error?html`<br><span class="error">Last phone check: ${syncError(phone.reconciliation_error)}</span>`:''}</p>`:''}
 ${c.service==='whatsapp'&&c.history?html`<p class="note">${t('Bringing in your chat history: {} messages so far.',Number(c.history).toLocaleString(DL))}</p>`:''}
 ${connBackfill(c)}
-${c.service==='telegram'?telegramNote(c):''}
+${chatNote(c)}
 <div class="conn-more">${synced?html`<details id="sync-recent-${c.id}" ${open.has('sync-recent-'+c.id)?html`open`:''}><summary>Recent syncs</summary>${syncRows(c.sync_activity)}${(c.sync_activity||[]).length?'':html`<p>No recent syncs recorded yet.</p>`}</details>`:''}<details id="sync-details-${c.id}" ${open.has('sync-details-'+c.id)?html`open`:''}><summary>Details</summary>${!synced?'':c.failures_24h?html`<p>${t(['{} failed sync in the last 24 hours.','{} failed syncs in the last 24 hours.'],c.failures_24h)}${c.error?'':' '+t('The last sync worked.')}</p>`:html`<p>No failed syncs in the last 24 hours.</p>`}${synced&&c.last_failure?html`<p>${t('Last failure: {}, {}',syncError(c.last_failure.error),humanTime(c.last_failure.at))}</p>`:''}${synced&&c.error&&c.failures?html`<p>${t(['{} failed attempt in a row','{} failed attempts in a row'],c.failures)}</p>`:''}${synced?syncPlain(c).map(l=>html`<p class="conn-plain">${l}</p>`):''}${c.service==='intercom'&&c.replies_as&&c.replies_as!=='you'?html`<p class="conn-plain conn-replies-as">${t('Replies as {}, only after you press Send.',c.replies_as)}</p>`:''}${connAbilities(c)}${photosRow(c)}${scopeRow(c)}${connActions(c)}</details></div></article>`;
 }
 // The connection cards (a refresh keeps the opened ones open) and the disconnected ones

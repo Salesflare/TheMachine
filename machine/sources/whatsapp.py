@@ -108,13 +108,13 @@ WHATSAPP_JID = r'(?:[0-9]+(?::[0-9]+)?@(?:s\.whatsapp\.net|lid)|[0-9]+(?:-[0-9]+
 
 
 def reply_spots(config, db, event_ids):
-    """The Slack and WhatsApp messages a to-do came from, newest first, for a reply to go in their thread or quote them
-    (next_actions.slack_thread, whatsapp_quote): the to-do's own messages, and a message a teammate's Machine carried
+    """The Slack, WhatsApp and Signal messages a to-do came from, newest first, for a reply to go in their thread or quote
+    them (next_actions.slack_thread, whatsapp_quote): the to-do's own messages, and a message a teammate's Machine carried
     (fleet.message) when this Machine has that same message itself (same moment and text). One carried that it
     doesn't have stays without a place ('service': None), so the draft says what it answers (next_actions.reply_context)."""
     accounts = {a['id']: a for a in config.get('accounts', [])}
     rows = db.execute("SELECT e.id,e.account_id,e.kind,e.body,e.metadata,e.occurred_at FROM events e JOIN json_each(?) ids ON ids.value=e.id "
-                      "WHERE e.kind IN ('slack.message','whatsapp.message','fleet.message') AND e.deleted=0 ORDER BY e.occurred_at DESC",
+                      "WHERE e.kind IN ('slack.message','whatsapp.message','signal.message','fleet.message') AND e.deleted=0 ORDER BY e.occurred_at DESC",
                       (event_ids or '[]',)).fetchall()
     spots = []
     for row in rows:
@@ -150,6 +150,11 @@ def reply_spots(config, db, event_ids):
             sender = m.get('sender_id') if isinstance(m.get('sender_id'), str) and re.fullmatch(WHATSAPP_JID, m['sender_id']) else None
             spots.append({'service': 'whatsapp', 'account_id': row['account_id'], 'chat_id': m['chat_id'], 'message_id': str(m['message_id']),
                           'sender_id': sender, 'group': str(m['chat_id']).endswith('@g.us'), 'later': later, 'when': row['occurred_at']})
+        elif row['kind'] == 'signal.message' and account.get('service') == 'signal' and m.get('chat_id') and m.get('message_id'):
+            later = db.execute("SELECT 1 FROM events WHERE account_id=? AND kind='signal.message' AND deleted=0 AND json_extract(metadata,'$.chat_id')=? "
+                               "AND occurred_at>? LIMIT 1", (row['account_id'], m['chat_id'], row['occurred_at'])).fetchone() is not None
+            spots.append({'service': 'signal', 'account_id': row['account_id'], 'chat_id': m['chat_id'], 'message_id': str(m['message_id']),
+                          'group': m.get('chat_kind') == 'group', 'later': later, 'when': row['occurred_at']})
     return spots
 
 

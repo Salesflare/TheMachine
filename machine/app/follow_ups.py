@@ -217,7 +217,7 @@ class FollowUpsApp:
             p = db.execute('SELECT * FROM projects WHERE id=?', (f['project_id'],)).fetchone()
             settings = (follow_ups.effective(db, p)[0] if p else None) or follow_ups.defaults()
             earlier = follow_ups.earlier_texts(db, f['project_id'])
-        channel = {'email': 'email', 'linkedin': 'LinkedIn', 'whatsapp': 'WhatsApp', 'slack': 'Slack', 'telegram': 'Telegram', 'intercom': 'Intercom'}[f['channel']]
+        channel = {'email': 'email', 'linkedin': 'LinkedIn', 'whatsapp': 'WhatsApp', 'slack': 'Slack', 'telegram': 'Telegram', 'signal': 'Signal', 'intercom': 'Intercom'}[f['channel']]
         lines = [f"\n\nAutomated follow-up {f['n']} (at most {f['of_max']}) on the project {p['name'] if p else ''}: the owner wrote last and nobody answered. "
                  f"Draft one short follow-up as a {channel} draft (kind {f['channel']}), in the same conversation as the last messages listed, "
                  'in the owner\'s voice: refer to the last exchange in a few words, add something useful or one easy question, no guilt and no "just '

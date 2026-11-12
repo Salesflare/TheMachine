@@ -67,7 +67,7 @@ VOICE_WORDS = (('Email', re.compile(r'\b(?:gmail|outlook)\b', re.I)), ('Slack', 
                ('WhatsApp', re.compile(r'\bwhatsapp\b', re.I)), ('Telegram', re.compile(r'\btelegram\b', re.I)),
                ('LinkedIn', re.compile(r'\blinkedin\b', re.I)), ('X DM', re.compile(r'\btwitter\b|\bX\b')))
 VOICE_SERVICES = {'gmail': 'Email', 'outlook': 'Email', 'microsoft': 'Email', 'imap': 'Email', 'slack': 'Slack', 'whatsapp': 'WhatsApp',
-                  'telegram': 'Telegram', 'linkedin': 'LinkedIn', 'x': 'X DM'}
+                  'telegram': 'Telegram', 'signal': 'Signal', 'linkedin': 'LinkedIn', 'x': 'X DM'}
 # What a run's failure says on the page: a short reason from the runner's categories, never provider text.
 WHY_FAILED = {'usage_limited': 'Your AI plan’s usage limit was reached.', 'runtime_timeout': 'It took too long.',
               'no_result': 'It finished without a result.', 'not_started': 'It couldn’t start today.',

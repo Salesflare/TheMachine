@@ -1,6 +1,6 @@
 // Go through (For you): one to-do at a time with its whole draft and the card's own actions.
 // Send posts the send dialog's confirm (sendConfirmed) for the revision on screen only. Header pace: clear_pace.py.
-const CR_MSG=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
+const CR_MSG=['email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'];
 const crDraft=s=>taskActions(s).find(a=>DRAFT_KINDS.includes(a.kind)&&!['handoff','email_demo'].includes(a.kind)&&!sendBusy(a.state||s.action_status)&&!(a.kind==='finish'&&(a.state||s.action_status)?.status==='done')&&!docMade(s,a));
 // 'send', 'dialog' (the send dialog decides), 'do', or '' (left out: also a result that asks the owner something, which
 // takes an answer and not a tap, so it is in neither the header's time nor the run)

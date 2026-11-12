@@ -5,7 +5,7 @@
 ## Architecture
 
 ```text
-Gmail · Google Calendar · Outlook · Slack · Salesflare CRM · Android notifications · WhatsApp · Telegram chats · OpenClaw Gateway
+Gmail · Google Calendar · Outlook · Slack · Salesflare CRM · Android notifications · WhatsApp · Telegram chats · Signal chats · OpenClaw Gateway
 plugins: Docs · GitHub · Google Meet · Intercom · LinkedIn · RSS · Shortcut · Stripe · Trello · X · Zoom
                 │  (read-only collectors, one thread and checkpoint per account)
                 ▼

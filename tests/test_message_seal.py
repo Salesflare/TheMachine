@@ -729,7 +729,8 @@ class Protected(unittest.TestCase):
 
 
 # Kept in a database of its own, never in the Machine's: checked there
-OTHER_DATABASES = {'telegram_store.py': "the Telegram account's own store, its text sealed by telegram_store itself"}
+OTHER_DATABASES = {'telegram_store.py': "the Telegram account's own store, its text sealed by telegram_store itself",
+                   'signal_store.py': "the Signal account's own store, its text sealed by signal_store itself"}
 # A migration's copy of a table, renamed to that table at once (machine/store/core.py): the same columns
 RENAMED = {'promises_next', 'events_monotonic'}
 MADE = re.compile(r'CREATE TABLE(?: IF NOT EXISTS)? (\w+)')

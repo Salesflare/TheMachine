@@ -12,7 +12,7 @@ import re
 
 SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Email', 'icloud_calendar': 'iCloud Calendar', 'caldav': 'Calendar',
             'proton_calendar': 'Proton Calendar', 'ics': 'Calendar', 'exchange': 'Exchange',
-            'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram',
+            'slack': 'Slack', 'teams': 'Microsoft Teams', 'salesflare': 'Salesflare', 'salesforce': 'Salesforce', 'android': 'Android', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal',
             'linkedin': 'LinkedIn', 'x': 'X', 'intercom': 'Intercom', 'zoom': 'Zoom', 'stripe': 'Stripe', 'github': 'GitHub',
             'trello': 'Trello', 'shortcut': 'Shortcut', 'docs': 'Docs', 'google_meet': 'Google Meet', 'rss': 'RSS',
             'gateway': 'Machine health'}
@@ -20,7 +20,7 @@ SERVICES = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook
 # config.example.json and everywhere `account.get('service', 'gmail')` reads it)
 TRANSPORT_SERVICES = {'gog': 'gmail', 'gogcli': 'gmail', 'wacli': 'whatsapp', 'wacli-local': 'whatsapp',
                       'existing_wacli_local_store': 'whatsapp', 'openclaw-feed': 'android', 'existing_openclaw_feed': 'android',
-                      'journald': 'gateway', 'telegram_mirror': 'telegram', 'telegram_mirror_store': 'telegram',
+                      'journald': 'gateway', 'telegram_mirror': 'telegram', 'telegram_mirror_store': 'telegram', 'signal_mirror': 'signal', 'signal_mirror_store': 'signal',
                       'himalaya': 'gmail', 'msgraph': 'outlook', 'msgraph-cli': 'outlook', 'gh': 'github',
                       'linkedin-inbox': 'linkedin', 'x-inbox': 'x', 'salesflare-rest': 'salesflare'}
 AGENTS = {'claude': 'Claude Code', 'claude_code': 'Claude Code', 'codex': 'Codex', 'codex-cli': 'Codex', 'codex_cli': 'Codex'}

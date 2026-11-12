@@ -49,7 +49,7 @@ LEFT_OUT = {
     },
     'message contents and their search index (only references go in)': {
         'chat_files', 'chats', 'event_passages', 'event_search', 'event_vector_skips', 'event_vectors', 'events_monotonic', 'messages', 'outbox',
-        'talk_lines', 'team_mail', 'android_inbox',
+        'talk_lines', 'team_mail', 'android_inbox', 'signal_chats', 'signal_messages', 'signal_outbox',
     },
     'teammates\' and other Machines\' data, not this Machine\'s learning': {
         'fleet_claims', 'fleet_handled', 'fleet_in', 'fleet_learn_read', 'fleet_learn_removed', 'fleet_learn_seen', 'fleet_learn_used',
@@ -77,7 +77,7 @@ LEFT_OUT = {
         'action_jobs', 'activity_accounts', 'activity_blocks', 'activity_seen', 'agent_jobs', 'agent_relayed', 'agent_result_receipts',
         'ai_activity', 'ai_writes', 'analyses', 'android_feed_health', 'android_receipts', 'board_backfill_asks', 'board_backfills',
         'board_backfills_queued', 'board_fit_undo', 'board_offers', 'bring_in_items', 'bring_in_lines', 'bring_in_state', 'calendar_clashes', 'calendar_writes', 'card_moves', 'card_uses', 'decision_asks', 'data_stamps', 'chat_fast_sessions',
-        'chat_stops', 'checkpoints', 'decision_annotations', 'decisions', 'deliveries', 'draft_edits', 'draft_saves', 'draft_seen',
+        'chat_stops', 'checkpoints', 'signal_state', 'decision_annotations', 'decisions', 'deliveries', 'draft_edits', 'draft_saves', 'draft_seen',
         'edits_offered', 'email_bounce_cc', 'email_bounce_cc_scan', 'email_bounce_events', 'email_bounce_scan', 'email_bounces', 'error_feed', 'fact_search', 'fact_vectors', 'fault_versions',
         'faults', 'feedback_prompts', 'first_look_ahead', 'gateway_starts', 'follow_up_advice', 'follow_up_basis', 'follow_up_cards', 'follow_up_changes',
         'follow_up_ends', 'follow_up_holds', 'follow_up_pace', 'follow_up_pauses', 'follow_up_sends', 'follow_up_threads',

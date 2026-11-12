@@ -1,0 +1,10 @@
+{
+  "about": "signal-cli (GPL-3.0-only, github.com/AsamK/signal-cli) for the Signal mirror (signal_mirror.py). The native build runs on Linux x86_64 without Java; elsewhere the Java build needs Java 25 or later. Each archive is checked against its sha256 before anything is unpacked.",
+  "repository": "AsamK/signal-cli",
+  "tag": "v0.14.9",
+  "license": "GPL-3.0-only",
+  "builds": {
+    "linux_amd64": {"archive": "signal-cli-0.14.9-Linux-native.tar.gz", "sha256": "a8fab78b5e8053abf3db5725272957ad11d1745b9a16848ddb2ace4743dfa5d5", "binary": "signal-cli"},
+    "java": {"archive": "signal-cli-0.14.9.tar.gz", "sha256": "c32b87f587198cbd277c9d71228716ee6047ee2b63e8e88728e8280d9407d65a", "binary": "signal-cli-0.14.9/bin/signal-cli", "java": 25}
+  }
+}

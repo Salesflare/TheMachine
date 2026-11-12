@@ -72,8 +72,8 @@ invalid receipt or timeout blocks it as well. The token is never included in rel
 
 - Messages go out through exact owner-approved Send actions. A complete Telegram draft can be sent directly from its
   to-do. Explicit owner requests use `send_now` where supported.
-- WhatsApp and Telegram chats keep a confirmation on the to-do. Telegram sends go through the mirror's outbox, keyed by
-  the approved action, and the mirror refuses a row without one.
+- WhatsApp, Telegram chats and Signal chats keep a confirmation on the to-do. Telegram and Signal sends go through their
+  mirror's outbox, keyed by the approved action, and the mirror refuses a row without one.
 - A send with an unknown outcome is reconciled, never blindly repeated.
 - Collectors only read by default. Configured CRM joins are an opt-in exception.
 
