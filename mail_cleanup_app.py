@@ -19,9 +19,10 @@ of its own, each item with what this Machine may already do and never with more 
   again), else the list's page for the owner to open. Mail a list relayed (a Google Group like info@) uses only its
   original sender's own ways, never the list's: that would take the owner, or the team, off the list
   (mail_cleanup.relay_ways);
-- spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify. Spam cleanup is only
-  offered, and only reads mail, in accounts it may do that in (cleanup_mark_accounts): hosted Gmail reads only, so it
-  gets none, never a row the owner would have to mark elsewhere.
+- spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify. Spam cleanup can only
+  be added, and only reads mail, in accounts it may do that in (cleanup_mark_accounts): hosted Gmail reads only, so it
+  gets none, never a row the owner would have to mark elsewhere. Its template still shows there, with why
+  (cleanup_spam_needs).
 Once every item is settled, the to-do is done by itself."""
 import datetime as dt
 import http.client
@@ -176,6 +177,13 @@ class MailCleanupApp:
         ids = [a['id'] for a in self.cleanup_accounts() if self.cleanup_can_mark(a)]
         self._cleanup_marks = (time.monotonic(), ids)
         return ids
+
+    def cleanup_spam_needs(self):
+        """Why Spam cleanup can't be added here, for its line on the Routines page, or None when it can: 'gmail' when a
+        Gmail account is connected read-only (no sign-in here grants gmail.modify), else 'mail'."""
+        if self.cleanup_mark_accounts():
+            return None
+        return 'gmail' if any(not next_actions.outlook(a) for a in self.cleanup_accounts()) else 'mail'
 
     def cleanup_since(self, db, routine_id):
         """What a run reads: mail since the last run that ended well, else the past day."""

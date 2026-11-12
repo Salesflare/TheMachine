@@ -325,7 +325,7 @@ class Birthdays(unittest.TestCase):
     def test_offered_as_a_template(self):
         self.assertIn('birthdays', routine_templates.TEMPLATES)
         with self.store.connect() as db:
-            self.assertIn('birthdays', [t['key'] for t in routine_templates.view(db, can_mark=False)])
+            self.assertIn('birthdays', [t['key'] for t in routine_templates.view(db, spam_needs='gmail')])
 
 
 if __name__ == '__main__':

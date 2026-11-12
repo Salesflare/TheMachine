@@ -415,13 +415,20 @@ class Cleanup(unittest.TestCase):
         self.assertEqual([(i['address'], i['plan']) for i in extra['cleanup']['items']], [('seo@ranks.example', 'spam')])
 
     def test_spam_cleanup_only_where_mail_can_move_to_spam(self):
-        # hosted Gmail reads only: no Spam cleanup to add, and one added before reads nothing and makes no to-do
-        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'digest', 'birthdays'])
+        # hosted Gmail reads only: Spam cleanup shows with why it can't be added, and one added before reads nothing and
+        # makes no to-do
+        templates = self.app.routines_view()['templates']
+        self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays'])
+        self.assertEqual([x.get('needs') for x in templates], [None, 'gmail', None, None])
         with self.assertRaises(ValueError):
             self.act('routine_template', key='spam')
+        with patch.object(self.app, 'cleanup_accounts', lambda: []):  # no mailbox at all
+            self.assertEqual(self.app.cleanup_spam_needs(), 'mail')
         self.marks = True
         self.app._cleanup_marks = None
-        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'spam', 'digest', 'birthdays'])
+        templates = self.app.routines_view()['templates']
+        self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays'])
+        self.assertNotIn('needs', templates[1])
         self.add('spam')
         self.marks = False
         self.app._cleanup_marks = None

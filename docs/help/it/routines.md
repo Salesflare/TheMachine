@@ -25,7 +25,9 @@ Pulizia spam viene proposta allo stesso modo quando in una settimana 5 o più em
 
 Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite un indirizzo di gruppo, come un Google Group, è elencata sotto chi l’ha scritta e non ti disiscrive mai dal gruppo.
 
-**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. C’è solo per la posta che The Machine può spostare: Gmail collegato in sola lettura non ce l’ha. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi. Il nuovo spam va nella stessa attività finché è aperta.
+**Pulizia spam** crea un’attività per area con la posta di mittenti sconosciuti che sembra spam, ognuna con **Spam** o **Non è spam**. Outlook sposta lo spam in Posta indesiderata e Gmail lo segna come spam. Controlla ogni ora, così lo spam di solito è lì prima che tu ci arrivi. Il nuovo spam va nella stessa attività finché è aperta.
+
+Funziona solo con la posta che The Machine può spostare. Gmail collegato in sola lettura, come su una Machine in hosting, non può: il modello lo dice al posto di **Aggiungi**.
 
 Sconosciuto vuol dire che non gli hai mai scritto, e un “Re:” conta come conversazione solo in un thread in cui hai scritto. Se passa di nuovo posta da un mittente che hai segnato come spam, nell’attività o nella tua casella, è nella prossima attività come **Già segnato come spam**. Quello che hai spostato tu nello spam la aiuta anche a riconoscere posta simile.
 

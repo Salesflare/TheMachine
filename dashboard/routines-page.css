@@ -64,4 +64,4 @@
 /* A template's edited routine: Back to the template after Cancel, on a line of its own when they don't fit */
 .rt-form-acts{flex-wrap:wrap}.rt-form-acts>button{flex:none}
 /* Templates (routine_templates.py): a name, one line, Add */
-.rt-tpl{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}.rt-tpl>div{flex:1;min-width:0}.rt-tpl h3{margin:0}.rt-tpl .rt-what{margin:2px 0 0;color:var(--c-text-2)}.rt-tpl>button{flex:none}
+.rt-tpl{display:flex;align-items:center;gap:var(--sp-4);padding:var(--sp-3) var(--sp-5)}.rt-tpl>div{flex:1;min-width:0}.rt-tpl h3{margin:0}.rt-tpl .rt-what{margin:2px 0 0;color:var(--c-text-2)}.rt-tpl>button{flex:none}.rt-tpl .rt-needs{margin:4px 0 0;color:var(--c-text-3);font-size:var(--fs-xs)}

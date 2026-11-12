@@ -92,12 +92,15 @@ def own(origin, text, steps=None):
     return key if key and not steps and is_own(key, text) else None
 
 
-def view(db, can_mark=True):
+def view(db, spam_needs=None):
     """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin. Spam
-    cleanup only when a mail account may move mail to spam (can_mark): read-only Gmail can't, so it isn't offered there."""
+    cleanup is always listed, so the owner knows it exists; spam_needs says why it can't be added when no mail account
+    may move mail to spam ('gmail': Gmail connected read-only, the hosted broker never asks gmail.modify; 'mail': no
+    mailbox it may move spam in), and the page shows that line in place of Add."""
     live = {r[0] for r in db.execute("SELECT origin FROM routines WHERE origin LIKE 'template:%' AND state IN ('on','paused')")}
-    return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': 'template:' + key in live}
-            for key, t in TEMPLATES.items() if key != 'spam' or can_mark]
+    return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': 'template:' + key in live,
+             **({'needs': spam_needs} if key == 'spam' and spam_needs else {})}
+            for key, t in TEMPLATES.items()]
 
 
 def live(db, key):
