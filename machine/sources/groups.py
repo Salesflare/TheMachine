@@ -3,13 +3,14 @@ from __future__ import annotations
 
 GROUPS = ('mail', 'chat', 'meetings', 'docs', 'customers', 'work', 'other')
 GROUP_OF = {'gmail': 'mail', 'calendar': 'mail', 'outlook': 'mail', 'outlook_calendar': 'mail', 'imap': 'mail',
+            'icloud_calendar': 'mail', 'caldav': 'mail', 'proton_calendar': 'mail', 'ics': 'mail', 'exchange': 'mail',
             'slack': 'chat', 'teams': 'chat', 'whatsapp': 'chat', 'telegram': 'chat', 'linkedin': 'chat', 'x': 'chat',
             'zoom': 'meetings', 'google_meet': 'meetings', 'docs': 'docs',
             'salesflare': 'customers', 'salesforce': 'customers', 'intercom': 'customers', 'stripe': 'customers',
             'github': 'work', 'shortcut': 'work', 'trello': 'work'}
 # Catch-all sources ("Other email": any other mail provider): last in their group, after the A to Z rows, in + Add and on
 # the Connections tabs (the source's `last`). A new catch-all is added here, never matched by its name.
-CATCH_ALL = frozenset({'imap'})
+CATCH_ALL = frozenset({'imap', 'caldav', 'ics'})  # Other email, Other calendar, Calendar link (ICS)
 
 
 def group_of(service, own=None):

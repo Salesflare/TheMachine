@@ -69,7 +69,7 @@ When a calendar can be changed from here, **New event** adds one (on a phone it'
 
 A to-do can offer a change too, like a pick-up to add. It shows exactly what changes, and only your **Add**, **Save** or **Delete** makes it.
 
-No meetings yet? Without a calendar, **Connect your calendar** opens Connections: connect [Google Calendar](google-calendar.md) or [Outlook Calendar](microsoft.md).
+No meetings yet? Without a calendar, **Connect your calendar** opens Connections: connect [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) or [another calendar](other-calendars.md).
 
 ## Clashes with your other calendar
 

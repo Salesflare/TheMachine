@@ -33,7 +33,7 @@ import sqlite3
 
 SCHEMA = ('CREATE TABLE IF NOT EXISTS calendar_clashes(dedupe_key TEXT PRIMARY KEY,suggestion_id TEXT,event_id INTEGER NOT NULL,'
           'other_id INTEGER NOT NULL,side TEXT NOT NULL,starts_at TEXT NOT NULL,created_at TEXT NOT NULL)')
-CALENDARS = ('calendar', 'outlook_calendar')
+CALENDARS = ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
 AHEAD_DAYS = 14  # how far ahead a clash is looked for
 PER_DAY = 3      # new clash to-dos a day, at most
 SIDES = ('work', 'personal')

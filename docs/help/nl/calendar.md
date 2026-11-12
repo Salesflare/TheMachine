@@ -69,7 +69,7 @@ Kan een agenda van hieruit gewijzigd worden, dan voegt **Nieuwe afspraak** er ee
 
 Een to-do kan ook een wijziging aanbieden, zoals een ophaalmoment om toe te voegen. Hij toont precies wat er verandert, en alleen jouw **Toevoegen**, **Opslaan** of **Verwijderen** voert het uit.
 
-Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen: koppel [Google Calendar](google-calendar.md) of [Outlook-agenda](microsoft.md).
+Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen: koppel [Google Calendar](google-calendar.md), [Outlook-agenda](microsoft.md) of [een andere agenda](other-calendars.md).
 
 ## Botsingen met je andere agenda
 

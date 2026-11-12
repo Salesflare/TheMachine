@@ -69,7 +69,7 @@ Quand un agenda peut être modifié d’ici, **Nouvel événement** en ajoute un
 
 Une tâche peut aussi proposer un changement, comme un trajet à ajouter. Elle montre exactement ce qui change, et seul votre **Ajouter**, **Enregistrer** ou **Supprimer** le fait.
 
-Pas encore de réunions ? Sans agenda, **Connecter votre agenda** ouvre Connexions : connectez [Google Agenda](google-calendar.md) ou [Outlook Calendar](microsoft.md).
+Pas encore de réunions ? Sans agenda, **Connecter votre agenda** ouvre Connexions : connectez [Google Agenda](google-calendar.md), [Outlook Calendar](microsoft.md) ou [un autre agenda](other-calendars.md).
 
 ## Conflits avec votre autre agenda
 

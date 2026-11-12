@@ -69,7 +69,7 @@ Cuando un calendario se puede cambiar desde aquí, **Nuevo evento** añade uno (
 
 Una tarea también puede ofrecer un cambio, como añadir una recogida. Muestra exactamente qué cambia, y solo tu **Añadir**, **Guardar** o **Eliminar** lo hace.
 
-¿Aún no hay reuniones? Sin calendario, **Conecta tu calendario** abre Conexiones: conecta [Google Calendar](google-calendar.md) o el [Calendario de Outlook](microsoft.md).
+¿Aún no hay reuniones? Sin calendario, **Conecta tu calendario** abre Conexiones: conecta [Google Calendar](google-calendar.md), el [Calendario de Outlook](microsoft.md) u [otro calendario](other-calendars.md).
 
 ## Coincidencias con tu otro calendario
 

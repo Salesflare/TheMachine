@@ -69,7 +69,7 @@ Quando uma agenda pode ser alterada daqui, **Novo evento** adiciona um (no celul
 
 Uma tarefa também pode sugerir uma mudança, como adicionar uma busca de alguém. Ela mostra exatamente o que muda, e só o seu **Adicionar**, **Salvar** ou **Excluir** faz a mudança.
 
-Ainda sem reuniões? Sem agenda, **Conecte seu calendário** abre Conexões: conecte o [Google Calendar](google-calendar.md) ou o [Outlook Calendar](microsoft.md).
+Ainda sem reuniões? Sem agenda, **Conecte seu calendário** abre Conexões: conecte o [Google Calendar](google-calendar.md), o [Outlook Calendar](microsoft.md) ou [outro calendário](other-calendars.md).
 
 ## Conflitos com sua outra agenda
 

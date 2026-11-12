@@ -316,7 +316,7 @@ class Discovery:
         for account in self.config.get('accounts', []):
             email = normal(account.get('email'))
             if '@' in email and ' ' not in email and email not in found and \
-                    (account.get('transport') in MAILBOXES or account.get('service') in ('gmail', 'calendar', 'outlook', 'outlook_calendar')):
+                    (account.get('transport') in MAILBOXES or account.get('service') in ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'icloud_calendar', 'caldav', 'exchange')):
                 found.append(email)
         return found
 

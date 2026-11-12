@@ -198,7 +198,7 @@ function calMonthGrid(days,byDay,today){const m=calMonth.getMonth(),phone=!DESK.
  return `<div class="cal-mg${phone?' dots':''}">${head}<div class="cal-mg-days">${cells}</div></div>`+(phone?calDayBlock(calPick,byDay(calPick),'',''):'')}
 function calRender(){const box=$('#calendar-view');if(!box||!state)return;const list=calList(),[from,to]=calRange(),{days,items}=calItems(from,to),byDay=k=>items.filter(i=>i.day===k),late=byDay('overdue'),today=localDay(new Date());
  $('#calendar').classList.toggle('week',!list);
- const cals=(state.connectors||[]).some(c=>['calendar','outlook_calendar'].includes(c.service)),failed=calFailedIn(from,to);
+ const cals=(state.connectors||[]).some(c=>['calendar','outlook_calendar','icloud_calendar','caldav','proton_calendar','ics','exchange'].includes(c.service)),failed=calFailedIn(from,to);
  // No calendar yet: a button that connects one (Connections, + Add, at Google or Outlook Calendar, by the mail connected)
  const connect=cls=>`<button type="button" class="${cls}" data-connect-open="${(state.connectors||[]).some(c=>c.service==='outlook')?'outlook_calendar':'calendar'}">${esc(t('Connect your calendar'))}</button>`;
  const note=failed?'<p class="cal-note">Meetings couldn’t load. To-dos and promises are here.</p>':!cals?`<p class="cal-note cal-connect"><span>No calendar connected, so no meetings yet.</span>${connect('ghost')}</p>`:'';

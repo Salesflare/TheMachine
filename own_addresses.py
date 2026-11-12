@@ -42,7 +42,7 @@ ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|co
                   r'engineering|product|founders|all|everyone|staff|general|enquiries|inquiries|reception|bookings?|events|'
                   r'community|media|pr|noreply|no-reply|mail|post|shop|store|webmaster|postmaster)(?:[._+-][a-z0-9]+)?@')
 MAIL_SERVICES = ('gmail', 'outlook', 'imap')
-CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
+CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
 # Where an address was found, as the short tags Settings shows on its row (one or two words each)
 LABELS = {'config': 'Settings file', 'account': 'Connected', 'alias': 'Alias', 'calendar': 'Calendar',
           'slack': 'Slack', 'intercom': 'Intercom', 'received': 'Inbox', 'named': 'Your name',
