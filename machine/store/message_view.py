@@ -13,21 +13,25 @@ A connector declares the view of each of its kinds in VIEWS (and the app its lin
 in BUILT_IN. tests/test_message_view.py fails any connector kind without one, and checks every view against the rules
 below on made-up data. The rules (docs/adding-a-source.md, "How a message reads"):
 
-1. No raw ids, Unix timestamps or internal type names on screen.
+1. No raw ids, Unix timestamps or internal type names on screen; never an app's package id (android_text_shown).
 2. Nothing said twice: the title, the header, the details and the body each say something the others don't.
 3. Markup renders: markdown, Slack's mrkdwn and HTML (sanitized). No literal ** or <url|label> brackets.
 4. People by name where a name is known, and the real author, not the bot that sent the notification. A bare address
    shows by the Graph's name for it wherever a sender shows (address_names); the address only when no name is known.
+   The source's own name for an address comes first (sender_name), and a relay or bot address never shows outside email.
 5. A short title, whole, never cut mid-word by the source.
 6. Long bodies fold behind Show more (the dashboard does that).
 7. "Open in …" sits left, under the content, for every kind.
 """
 import datetime as dt
+import email.utils
 import json
 import re
 import sqlite3
 
+from machine.sources.android import android_text_shown
 from machine.store import graph_identifiers
+from mail_senders import relay
 
 VIEWS =('email', 'chat', 'notification', 'card')
 
@@ -158,6 +162,31 @@ def address_names(db, addresses, labels=()):
     return names
 
 
+# Where a source puts a sender's name when its `from` is an address (or empty), in the order they are read
+NAME_KEYS = ('sender_display', 'from_name', 'contact_name', 'sender_name', 'user_name')
+
+
+def sender_name(kind, m):
+    """Who sent a message, by name (rule 4), for every source: the name in `from` ("Sam Lee <sam@x.example>"), else
+    the name the source gives beside it (NAME_KEYS: Intercom's from_name, a chat's sender_display), the address only
+    when there is no name. A relay or bot address (Intercom's operator+…@intercom.io, a noreply) stands in for someone
+    and never shows outside email: the conversation's customer by name when the source names one, else the bot or
+    teammate by the name the source gives ("Fin"), else nothing."""
+    raw = ' '.join(str(m.get('from') or '').split())
+    names = [n for n in (' '.join(str(m.get(k) or '').split()) for k in NAME_KEYS) if n and '@' not in n]
+    if '@' not in raw and '<' not in raw:
+        return raw or (names[0] if names else '')  # a name as is, or none
+    name, address = email.utils.parseaddr(raw)
+    name = name.strip().strip('"')
+    name = '' if '@' in name else name
+    if relay(address) and view_of(kind) != 'email':
+        customer = ' '.join(str(m.get('contact_name') or '').split())
+        contact = str(m.get('contact_email') or '').strip()
+        return ((customer if '@' not in customer else '') or (contact if '@' in contact and not relay(contact) else '')
+                or name or (names[0] if names else ''))
+    return name or (names[0] if names else '') or address
+
+
 def named(value, names):
     """A From/To/Cc field with each name-less address the graph knows a name for written "Name <address>" (`names`:
     address -> name, from Store.address_names), so the viewer and source lines say the name, the address only when
@@ -262,7 +291,11 @@ def shape_github(o, m):
 def shape_notification(o, m, title):
     app = m.get('app_name') or ''
     o['app_name'] = app
-    lines = [line for line in str(o['body'] or '').split('\n') if line.strip()]
+    package = m.get('package_name') or ''
+    raw_id = lambda text: bool(package) and not android_text_shown(text, package)  # a package id is no text (rule 1)
+    if raw_id(title):
+        o['title'] = title = ''
+    lines = [line for line in str(o['body'] or '').split('\n') if line.strip() and not raw_id(line)]
     text = lines[0] if lines else ''
     sub = '\n'.join(lines[1:]) if len(lines) > 1 else ''
     if same(title, app):

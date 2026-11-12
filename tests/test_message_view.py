@@ -67,8 +67,17 @@ SAMPLES = {
                                 **{'conversation_id': '9101', 'from': 'jordan@lake.example', 'from_name': 'Jordan Lake',
                                    'contact_name': 'Jordan Lake', 'created_at': 1794488400, 'channel': 'facebook',
                                    'source_url': 'https://app.intercom.example/a/inbox/w1/inbox/shared/all/conversation/9101'}),
+    # opened by Intercom's Operator bot: stored from its relay address, the customer named beside it
+    'intercom.conversation#bot': ev('ic', '9102', 'intercom.conversation', 'Question about invoices',
+                                    'Question about invoices\n1794488430 · Fin · comment: Happy to help. What is the invoice number?',
+                                    **{'conversation_id': '9102', 'from': 'operator+abc123@intercom.io', 'from_name': 'Fin',
+                                       'contact_email': 'sam@reed.example', 'contact_name': 'Sam Reed', 'created_at': 1794488400,
+                                       'source_url': 'https://app.intercom.example/a/inbox/w1/inbox/shared/all/conversation/9102'}),
     'android.notification': ev('phone', 'n1', 'android.notification', 'Your daily digest is ready', 'Your daily digest is ready',
                                **{'package_name': 'com.medium.reader', 'app_name': 'Medium'}),
+    # a group's summary notification, stored with its package id as the title (as older events were)
+    'android.notification#summary': ev('phone', 'n2', 'android.notification', 'com.acmeshop.app', '',
+                                       **{'package_name': 'com.acmeshop.app', 'app_name': 'com.acmeshop.app'}),
     'github.notification': ev('gh', 'n:1', 'github.notification', '[widgets] Exports stop at 10,000 rows when the report has filters',
                               'Issue in acme/widgets (open); why you got it: author.\n\n' + GH_ISSUE +
                               '\n\nLatest comment by sweeper[bot]:\nThis issue has had no activity for 30 days and will be closed.',
@@ -106,7 +115,7 @@ SAMPLES = {
 
 TIMESTAMP = re.compile(r'(?<!\d)1[5-9]\d{8}(?!\d)')
 INTERNAL = re.compile(r'\b(?:conversation_attribute_updated\w*|part_type|admin_assignee_id|why you got it|[a-z]+\.[a-z_]+\.?(?:message|notification|event))\b')
-RAW = re.compile(r'<[@#!][A-Z0-9^]|<https?://|\b[UWC]0[A-Z0-9]{8,10}\b')
+RAW = re.compile(r'<[@#!][A-Z0-9^]|<https?://|\b[UWC]0[A-Z0-9]{8,10}\b|\bcom\.\w+\.\w+|operator\+\S*@intercom\.io')
 
 
 def fixture(folder):
@@ -260,6 +269,20 @@ class Rules(unittest.TestCase):
     def test_a_notification_says_its_text_once(self):
         o = self.items['android.notification']
         self.assertEqual((o['view'], o['app_name'], o['title'], o['body'], o['from']), ('notification', 'Medium', 'Your daily digest is ready', '', ''))
+
+    def test_a_package_id_is_never_a_notifications_title_and_a_bot_address_never_a_sender(self):
+        o = self.items['android.notification#summary']
+        self.assertEqual((o['app_name'], o['title'], o['body']), ('Acmeshop', '', ''))
+        o = self.items['intercom.conversation#bot']
+        self.assertEqual(o['from'], 'Sam Reed')  # the customer of the conversation the bot opened
+        self.assertNotIn('intercom.io', json.dumps(shown(o)))
+        from machine.store.message_view import sender_name
+        self.assertEqual(sender_name('intercom.conversation', {'from': 'operator+x1@intercom.io', 'from_name': 'Fin'}), 'Fin')
+        self.assertEqual(sender_name('intercom.conversation', {'from': 'ann@x.example', 'from_name': 'Ann Ray'}), 'Ann Ray')
+        self.assertEqual(sender_name('intercom.conversation', {'from': 'ann@x.example', 'from_name': 'ann@x.example'}), 'ann@x.example')
+        self.assertEqual(sender_name('gmail.message', {'from': 'GitHub <noreply@github.example>'}), 'GitHub')
+        self.assertEqual(sender_name('gmail.message', {'from': 'noreply@shop.example'}), 'noreply@shop.example')  # email keeps its From
+        self.assertEqual(sender_name('slack.message', {'from': 'Kit Navarro <U0KITNAVA1>'}), 'Kit Navarro')
 
     def test_cards_drop_a_first_line_that_repeats_the_title(self):
         self.assertTrue(self.items['trello.action']['body'].startswith('Moved to Doing'))

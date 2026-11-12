@@ -148,10 +148,10 @@ APP = 'GitHub'                 # "Open in GitHub"; '' for "Open original"; or {'
 
 The rules every view keeps, whatever the source sends:
 
-1. No raw ids, Unix timestamps or internal type names on screen.
+1. No raw ids, Unix timestamps or internal type names on screen. An app's package id (`com.acme.shop`) is never a title, a subject or a sender: the app by its name, or nothing.
 2. Nothing said twice across the title, the header, Details and the body.
 3. Markup renders (markdown, Slack mrkdwn, sanitized HTML): no literal `**`, backticks or `<url|label>` brackets. Name a markdown kind in `MARKDOWN_KINDS`.
-4. People by name where a name exists, and the real author rather than the bot that sent the notification. An address the source sends without a name shows by the name the Graph knows for it, everywhere a sender shows (the viewer, a to-do's source line, the last check's list, a person's Graph timeline); the address only when no name is known.
+4. People by name where a name exists, and the real author rather than the bot that sent the notification. An address the source sends without a name shows by the name the Graph knows for it, everywhere a sender shows (the viewer, a to-do's source line, the last check's list, a person's Graph timeline); the address only when no name is known. When your `from` is an address, put the name the service gives next to it (`from_name`, `sender_display` or `contact_name`): `sender_name` in [`machine/store/message_view.py`](../machine/store/message_view.py) reads it. A relay or bot address (Intercom's `operator+…@intercom.io`, a noreply) never shows outside email: the customer by name when the source names one, else the bot or teammate by the name the service gives.
 5. A short title, whole: no `[repo]` prefixes, never cut mid-word.
 6. Long bodies fold behind Show more.
 7. "Open in …" sits left, under the content, for every kind.

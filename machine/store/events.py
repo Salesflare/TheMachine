@@ -16,7 +16,7 @@ import uuid
 import error_feed
 import graph
 from machine.config import LOG
-from machine.sources.android import ANDROID_APP_NAMES, android_app_name, android_app_shown
+from machine.sources.android import ANDROID_APP_NAMES, android_app_name, android_app_shown, android_text_shown
 from machine.sources.calendar import (
     all_day_span,
     calendar_edit_times,
@@ -229,7 +229,9 @@ class EventsStore:
                                      'notification_key_hash':key, 'source_account':'unknown', 'transport':'existing_openclaw_feed',
                                      'truncated':True, 'coverage':'Latest forwarded preview per notification; queue/phone gaps possible.',
                                      'updates_merged':0}}
-                    event['title'] = (raw.get('text') or event['metadata']['package_name'])[:1000]
+                    # no text (a group's summary notification): the app by name, never its package id
+                    package = event['metadata']['package_name']
+                    event['title'] = (android_text_shown(raw.get('text'), package) or android_app_shown(package))[:1000]
                     event['body'] = raw.get('text','')[:40000]
                     event['metadata'].update(is_active=True, change='posted',
                         security_code_omitted=raw.get('security_code_omitted',False),
