@@ -36,7 +36,7 @@ It works only with a work or school Microsoft account. Personal accounts have no
 
 On a hosted Machine:
 
-1. In the dashboard, open **Connections**, **+ Add** and pick **Microsoft Teams**.
+1. In the dashboard, open **Connections**, **+ Add** and pick **Microsoft Teams** (under Chat) or **Teams meetings** (under Meetings). Both are the same sign-in.
 2. Press **Sign in with Microsoft** and give the OK. You're back in the dashboard.
 3. For channels and meeting notes, send your admin the link the sign-in page shows. Once they approve, connect Teams again.
 

@@ -20,7 +20,9 @@ Each source also says in one line what it brings in and, if it can act, that it 
 
 Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each.
 
-**Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. It counts these on your Machine; nothing leaves it. No reason, no section. A connected source is never suggested.
+A source your Machine sees a reason for is marked **Suggested** in its own group, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
+
+Microsoft Teams shows twice: under **Chat** for its chats and under **Meetings** as **Teams meetings** for its meeting notes. Both use the same Microsoft sign-in, so connecting one connects the other.
 
 A source you already connected says so in the list, with its account. Pick it to add another one next to it: its form says so and links to the one you have.
 
