@@ -3,7 +3,7 @@ title: Microsoft Outlook y Calendar
 area: connections
 summary: Correo y reuniones de Outlook, para Microsoft 365 y Outlook.com. Solo envía un correo después de que lo apruebes.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ El correo de Otros y los boletines reciben primero un vistazo rápido: remitente
 - Cuando pospones una tarea sobre un correo, los mensajes del hilo pasan a una carpeta Snoozed en Outlook y vuelven cuando vuelve la tarea.
 
 El calendario nunca se cambia.
+
+## Fotos de colegas y contactos
+
+También se pide a Microsoft leer los perfiles básicos de tu organización (nombre, email y foto) y tus contactos de Outlook. Tu Machine solo los usa para fotos, cargos y empresas de personas que ya están en tu Graph, hasta 200 fotos al día. Si alguien no tiene foto, se vuelve a mirar a los 30 días.
+
+Puede que el admin de tu organización tenga que aprobar las fotos de colegas. Si no lo hace, Outlook se conecta igual, solo que sin esas fotos. Una cuenta conectada antes recibe una tarea: pulsa **Reconectar**, o **No hace falta** para cerrarla para siempre.
 
 ## Conéctalo
 

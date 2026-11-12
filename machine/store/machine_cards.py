@@ -10,6 +10,34 @@ import parked_fixes
 from machine import system_logs
 from timeutil import now
 
+# A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
+RECONNECT_KIND = 'machine.reconnect_ask'
+
+
+def reconnect_source(account, ask):
+    return f'reconnect:{ask}:{account}'
+
+
+def reconnect_lead(db, suggestion_id):
+    """{provider, email} of an open reconnect to-do, which its Reconnect opens the sign-in of, else None."""
+    row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+                     "WHERE s.id=? AND s.origin='machine' AND e.kind=?", (suggestion_id, RECONNECT_KIND)).fetchone()
+    try:
+        meta = json.loads(row['metadata'] or '{}') if row else {}
+    except ValueError:
+        return None
+    return {'provider': meta['provider'], 'email': meta.get('email') or ''} if isinstance(meta, dict) and meta.get('provider') else None
+
+
+def reconnected(db, account, ask, at):
+    """The account's reconnect to-do, if open, closes itself as done: its sign-in has what it asked for now."""
+    for row in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') WHERE e.kind=? "
+                          "AND e.source_id=? AND s.status IN ('pending','snoozed')", (RECONNECT_KIND, reconnect_source(account, ask))).fetchall():
+        db.execute("UPDATE suggestions SET status='completed',completed_from='pending',snoozed_until=NULL,resume_status=NULL,early=0 WHERE id=?", (row[0],))
+        db.execute('INSERT OR IGNORE INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES(?,?,?,?,?,?)',
+                   ('reconnected:' + row[0], row[0], 'complete', 'Reconnected: the sign-in has it now.', 'assistant', at))
+        db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL", (at, row[0]))
+
 
 def machine_fix_finding(db, suggestion_id):
     """The finding of an open to-do from the computer's logs whose safe fix Do it may run, else None."""
@@ -30,9 +58,10 @@ def parked_redo(db, suggestion_id):
 
 
 class MachineCardsStore:
-    def machine_card(self, account_id, kind, source_id, title, body, signal, metadata, digest=None, at=None):
+    def machine_card(self, account_id, kind, source_id, title, body, signal, metadata, digest=None, at=None, quiet=False):
         """A to-do of The Machine's own (an update's note, a problem in the computer's logs) with its signal, once per
-        source_id: the signal is already read, so no review makes a second one. Whether it is new."""
+        source_id: the signal is already read, so no review makes a second one. `quiet`: on the dashboard only, never
+        pushed or in a digest. Whether it is new."""
         stamp = now()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -44,6 +73,9 @@ class MachineCardsStore:
                 return False
             card = self.suggest(source_id, title[:90], body[:699], [cursor.lastrowid], when='now', owner_step=True, _db=db)
             db.execute("UPDATE suggestions SET origin='machine' WHERE id=?", (card['id'],))  # no thread to read, nothing to plan
+            if quiet:
+                db.execute("UPDATE deliveries SET status='cancelled',reminder=0,updated_at=? WHERE suggestion_id=? AND message_id IS NULL",
+                           (stamp, card['id']))
         return True
 
     def parked_fix_cards(self, account_id, items):
@@ -109,6 +141,11 @@ class MachineCardsStore:
             if card.get('origin') == 'machine' and card.get('status') in ('pending', 'accepted', 'instructions', 'prepared') \
                     and not card.get('machine_log') and parked_redo(db, card['id']):
                 card['parked_redo'] = 'redo' if card['status'] == 'pending' or json.loads(card.get('outcome') or '{}').get('state') == 'answered' else True
+            # a sign-in from before a newer feature, still open: Reconnect leads (reconnect_asks.py), Not needed closes it for good
+            if card.get('origin') == 'machine' and card.get('status') in ('pending', 'snoozed'):
+                lead = reconnect_lead(db, card['id'])
+                if lead:
+                    card['reconnect'] = lead
 
     def machine_fix(self, job):
         """Do it on a to-do from the computer's logs (its preparation starting from the owner's Do it): runs its one

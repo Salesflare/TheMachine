@@ -60,7 +60,9 @@ ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrit
            'Channel.ReadBasic.All': {'Channel.ReadBasic.All'}, 'ChannelMessage.Read.All': {'ChannelMessage.Read.All'},
            'OnlineMeetings.Read': {'OnlineMeetings.Read', 'OnlineMeetings.ReadWrite'},
            'OnlineMeetingTranscript.Read.All': {'OnlineMeetingTranscript.Read.All'},
-           'OnlineMeetingAiInsight.Read.All': {'OnlineMeetingAiInsight.Read.All'}}
+           'OnlineMeetingAiInsight.Read.All': {'OnlineMeetingAiInsight.Read.All'},
+           # People's photos (ms_photos.py), asked with Outlook's consent and optional there
+           'User.ReadBasic.All': {'User.ReadBasic.All', 'User.Read.All'}, 'Contacts.Read': {'Contacts.Read', 'Contacts.ReadWrite'}}
 
 # name -> (verb, path, scope)
 READ = {
@@ -102,6 +104,11 @@ READ = {
     'teams.transcript.content': ('GET', '/me/onlineMeetings/{meeting}/transcripts/{transcript}/content', 'OnlineMeetingTranscript.Read.All'),
     'teams.insights': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights', 'OnlineMeetingAiInsight.Read.All'),
     'teams.insight': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights/{insight}', 'OnlineMeetingAiInsight.Read.All'),
+    # People's photos (ms_photos.py): a colleague's small photo by address, the owner's Outlook contacts and theirs
+    'organization': ('GET', '/organization', 'User.Read'),  # the tenant's verified domains: who counts as a colleague
+    'users.photo': ('GET', '/users/{user}/photos/{size}/$value', 'User.ReadBasic.All'),
+    'contacts.list': ('GET', '/me/contacts', 'Contacts.Read'),
+    'contacts.photo': ('GET', '/me/contacts/{id}/photo/$value', 'Contacts.Read'),
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)
@@ -301,8 +308,19 @@ def _direct(config, account, scope):
 
 def scopes(config, credential, account):
     """The scopes the owner granted this account."""
+    return grant(config, credential, account)[0]
+
+
+def grant(config, credential, account):
+    """(granted scopes, offered scopes): what the owner granted this account, and what connecting it again would add
+    now (a broker's `offered`, like the photo scopes for an account connected before them; never for an own app)."""
     if account.get('transport') == 'broker':
-        return set(_broker(config, credential, {'email': account['email']}).get('scopes') or [])
+        answer = _broker(config, credential, {'email': account['email']})
+        return set(answer.get('scopes') or []), {s for s in answer.get('offered') or [] if isinstance(s, str)}
+    return _own_scopes(config, account), set()
+
+
+def _own_scopes(config, account):
     if account.get('transport') == 'graph':
         return set(_saved(credential_path(config, account)).get('scopes') or [])
     raise GraphError('unsupported_transport')
