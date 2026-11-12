@@ -44,7 +44,7 @@ function resetAt(text, now=Date.now()){
 }
 // Retain useful failure categories, never raw provider text, endpoints or parameters.
 function failure(result,status){
-  if(status==='ok'||status==='admitted'||status==='pending')return {};
+  if(status==='ok'||status==='admitted'||status==='pending'||status==='absent')return {};
   const text=[result?.error?.message,result?.error,result?.errorMessage,result?.summary].filter(v=>typeof v==='string').join(' ');
   let error=status==='timed_out'?'runtime_timeout':status==='aborted'?'runtime_aborted':status==='lost'?'runtime_lost':'runtime_error';
   let phase='runtime';
@@ -150,12 +150,17 @@ try {
     // A Gateway crash or restart ends a run without a terminal state for its id (restart recovery resumes the
     // session under a new run id). Once the run is past the queue, an exact session row whose complete set of
     // active runs doesn't hold ours proves it is gone. Omitted or null ids prove nothing: keep waiting.
+    // A review's session is its own (one run each): another run active in it is restart recovery carrying on this
+    // review (the service binds it to this run), so it is still pending. Gone with nothing running there is "absent",
+    // not lost yet: recovery resumes the session within about a minute of the Gateway's start, and the service waits
+    // for that before it stops the run (machine/app/review.py review_step, RESTART_RECOVERY_SECONDS). Nothing is released then.
     if (status==='pending' && request.probe===true) {
       try {
         const row=await callGatewayFromCli('sessions.describe',{timeout:'15000'},{key:session+sessionId,agentId:'main'},scope);
         const ids=(row?.session ?? row)?.activeRunIds;
         if (Array.isArray(ids) && !ids.includes(request.job_id)) {
-          status='lost'; result={error:'run not active in its session (Gateway restart?)'};
+          if (kind==='review') status=ids.length?'pending':'absent';
+          else { status='lost'; result={error:'run not active in its session (Gateway restart?)'}; }
         }
       } catch {}  // unknown: stay pending
     }

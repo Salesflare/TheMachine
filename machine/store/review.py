@@ -281,6 +281,21 @@ def review_pages(views, budget=REVIEW_PAGE_CHARS - 4000):
 REVIEW_SESSION_PREFIX = 'agent:main:assistant-review-signals-'
 
 
+SERVICE_RUN_ID = re.compile(r'[a-f0-9]{32}')
+
+
+def service_run(owner_session, owner_run=None):
+    """The service run a review's own session belongs to: its session key ends with that run's id, and every turn in it
+    works for that run. After a Gateway restart, OpenClaw's restart recovery resumes the session under a new run id;
+    that turn carries on the same run's review (its claim, its finish), not a review of its own. Other sessions keep
+    the run they name."""
+    if owner_session and owner_session.startswith(REVIEW_SESSION_PREFIX):
+        run = owner_session[len(REVIEW_SESSION_PREFIX):]
+        if SERVICE_RUN_ID.fullmatch(run):
+            return run
+    return owner_run
+
+
 REVIEW_TERMINAL = ('ok', 'error', 'aborted', 'lost', 'timed_out')
 
 
@@ -431,6 +446,7 @@ class ReviewStore:
                    'review_not_finished', 'run_interrupted'}
         if reason not in reasons:
             raise ValueError('Use a redacted review failure class')
+        owner_run = service_run(owner_session, owner_run)
         with self.connect() as db:
             db.execute("UPDATE analyses SET last_error=CASE WHEN ? IN ('review_not_finished','run_interrupted') AND last_error IS NOT NULL THEN last_error ELSE ? END,error_at=?,status=CASE WHEN ? THEN 'retryable' ELSE status END WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
                        (reason, reason, now(), int(terminal), owner_session, owner_run))
@@ -459,6 +475,7 @@ class ReviewStore:
 
     def begin_analysis(self, accounts, limit=40, owner_session=None, owner_run=None):
         accounts = list(dict.fromkeys(accounts))
+        owner_run = service_run(owner_session, owner_run)
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             # A retry resumes its own claim, not an unrelated task in the main transcript.
@@ -1056,6 +1073,7 @@ class ReviewStore:
 
     def finish_analysis(self, analysis_id, summary='', owner_session=None, owner_run=None, reviewed_ids=None, projects=None, stages=None, team=None, replies=None, read=None,
                         no_todo=None):
+        owner_run = service_run(owner_session, owner_run)
         # A move to a board's last stage proven by a live page: opened here, before the write transaction (project_success.py)
         checked = project_success.check_links(self.connect, self.accounts, stages if isinstance(stages, list) else [])
         with self.connect() as db:

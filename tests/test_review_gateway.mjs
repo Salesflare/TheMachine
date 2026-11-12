@@ -28,6 +28,14 @@ for(const row of [{session:{hasActiveRun:true}},{session:{activeRunIds:null}},{s
   r=await run({kind:'preparation',job_id:id,action:'status',probe:true},[{status:'timeout'},row]);assert.equal(r.result.status,'pending');
 }
 r=await run({kind:'preparation',job_id:id,action:'status'},[{status:'timeout'}]);assert.equal(r.calls.length,1);  // no probe while young
+// A review gone from its own session after a Gateway restart: restart recovery's turn running there carries it on
+// (pending), and with nothing running it is absent, not lost: the service waits for recovery. Nothing is released.
+r=await run({kind:'review',job_id:id,action:'status',probe:true},[{status:'timeout'},{session:{hasActiveRun:true,activeRunIds:['b'.repeat(32)]}}]);
+assert.equal(r.result.status,'pending');assert.equal(r.calls.length,2);
+r=await run({kind:'review',job_id:id,action:'status',probe:true},[{status:'timeout'},{session:{hasActiveRun:false,activeRunIds:[]}}]);
+assert.deepEqual(r.result,{run_id:id,status:'absent'});assert.equal(r.calls.length,2);  // no sessions.abort
+r=await run({kind:'review',job_id:id,action:'status',probe:true},[{status:'timeout'},{session:{activeRunIds:[id]}}]);
+assert.equal(r.result.status,'pending');
 for(const response of [{ok:true,status:'aborted',abortedRunId:'b'.repeat(32)},{ok:true,status:'no-active-run',warning:'cleanup pending'},new Error('offline')]){
   r=await run({kind:'review',job_id:id,action:'stop'},[response]);assert.equal(r.result.status,'unavailable');
 }
