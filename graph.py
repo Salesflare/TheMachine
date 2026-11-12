@@ -146,7 +146,6 @@ WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
 UNDATED = frozenset({'owner.card'})  # a record the owner made about someone: when it was made is no contact with them
 # A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
 PERSON_ID = re.compile(r'(?:email|wa|tg|sig|slack|li|x|gh|manual):\S+')
-SIGNAL_ACI = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')  # a person's Signal account ID
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
 # Cosine between local embeddings (see embeddings.py). Meaning alone groups by genre (every partnership
 # email reads alike), so a probable link also needs a shared person; tried on live data, 2026-10-18.
@@ -442,7 +441,7 @@ def touches(kind, m, owner, wrote_to):
     """[(identifier, name, weight, role)] for one signal. Roles: 'owner' (the owner wrote to them),
     'them' (they wrote to the owner directly), 'met' (a meeting with the owner), 'seen' (present).
     A system or relay address is never one of them."""
-    return [t for t in _touches(kind, relayed(kind, m), owner, wrote_to) if not (t[0].startswith('email:') and relay(t[0][6:]))]
+    return [t for t in (__import__('signal_store').touches(m, WEIGHTS) if kind == 'signal.message' else _touches(kind, relayed(kind, m), owner, wrote_to)) if not (t[0].startswith('email:') and relay(t[0][6:]))]
 
 
 def relayed(kind, m):
@@ -515,11 +514,6 @@ def _touches(kind, m, owner, wrote_to):
         if not chat.isdigit():
             return []
         return [('tg:' + chat, m.get('chat_name'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')]
-    if kind == 'signal.message':  # a person's Signal account ID: the chat's in a one-to-one, the sender's in a group
-        chat, mine, sender = str(m.get('chat_id') or ''), m.get('from_me') is True, str(m.get('sender_id') or '')
-        if m.get('chat_kind') == 'group':
-            return [] if mine or not SIGNAL_ACI.fullmatch(sender) else [('sig:' + sender, m.get('from'), 0.1, 'seen')]
-        return [('sig:' + chat, m.get('chat_name'), WEIGHTS['owner' if mine else 'them'], 'owner' if mine else 'them')] if SIGNAL_ACI.fullmatch(chat) else []
     if kind == 'teams.message':
         # Teams people are work addresses (connectors/teams.py): a 1:1 chat is the other person, a group or
         # meeting chat its sender, seen; a channel thread counts least

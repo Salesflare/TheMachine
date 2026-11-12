@@ -59,6 +59,15 @@ def re_chat(value):
     return bool(re.fullmatch(CHAT, str(value or '')))
 
 
+def touches(m, weights):
+    """A Signal message's person for the Graph (graph.touches), as Telegram's: the chat's account ID in a one-to-one,
+    the sender's in a group (seen), never the owner."""
+    chat, mine, sender = str(m.get('chat_id') or ''), m.get('from_me') is True, str(m.get('sender_id') or '')
+    if m.get('chat_kind') == 'group':
+        return [] if mine or not re_person(sender) else [('sig:' + sender, m.get('from'), 0.1, 'seen')]
+    return [('sig:' + chat, m.get('chat_name'), weights['owner' if mine else 'them'], 'owner' if mine else 'them')] if re_person(chat) else []
+
+
 def now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
 
