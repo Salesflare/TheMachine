@@ -97,8 +97,11 @@ const keptAll=(n,x)=>{const sig=keptSig(x),all=[...n.querySelectorAll(x.tagName)
 function heldTake(o,withMenus=true){if(o?.nodeType!==1)return null;const f=document.activeElement,menus=withMenus?[...o.querySelectorAll(MENUS_OPEN)]:[];if(withMenus&&o.matches(MENUS_OPEN))menus.unshift(o);
  const focus=f&&f!==o&&o.contains(f)&&(withMenus||f.matches('summary')||!f.closest(MENUS))?f:null;if(!menus.length&&!focus)return null;
  return {menus:menus.map(d=>({d,nth:keptAll(o,d).indexOf(d),style:d.querySelector(':scope>:not(summary)')?.getAttribute('style')})),focus,fnth:focus&&keptAll(o,focus).indexOf(focus)}}
+// A menu opened again here keeps the side it opened on: menuKept tells the toggle handler (graph-shared.js) not to place
+// it anew from the page as it is now, which flipped it above its ⋯ when the page had moved since it opened.
+const menuKept=new WeakSet();
 function heldPut(n,h){if(!h||n?.nodeType!==1)return;
- for(const m of h.menus){const d=keptAll(n,m.d)[m.nth];if(!d)continue;const l=d.querySelector(':scope>:not(summary)');if(l&&m.style)l.setAttribute('style',m.style);d.open=true}
+ for(const m of h.menus){const d=keptAll(n,m.d)[m.nth];if(!d)continue;const l=d.querySelector(':scope>:not(summary)');if(l&&m.style)l.setAttribute('style',m.style);if(!d.open){menuKept.add(d);d.open=true}}
  const x=h.focus&&keptAll(n,h.focus)[h.fnth];if(x)x.focus({preventScroll:true})}
 function keptKids(box,from,again){const kids=[...from.childNodes],ids=new Set(kids.map(n=>n.id).filter(Boolean)),byId=new Map(),used=new Set();
  for(const o of box.children)if(o.id&&!byId.has(o.id))byId.set(o.id,o);

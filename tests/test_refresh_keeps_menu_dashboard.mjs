@@ -67,7 +67,23 @@ try{
   await page.goto(`http://127.0.0.1:${port}/`);await page.locator('#promises-list').waitFor();
   await page.locator('#promises-head').click();
   const last=page.locator('#promises-list .promise').last();await last.scrollIntoViewIfNeeded();
-  await check('promise','#promises-list>div.promise:last-of-type>details.promise-menu','#promise-row-3',null,async()=>{promises[2]={...promises[2],due:day(2)}},async()=>{promises[2]={...promises[2],due:null}});
+  const PROMISE='#promises-list>div.promise:last-of-type>details.promise-menu';
+  await check('promise',PROMISE,'#promise-row-3',null,async()=>{promises[2]={...promises[2],due:day(2)}},async()=>{promises[2]={...promises[2],due:null}});
+  // The page moved after the menu opened under its ⋯ and there's no room under it now: a poll that draws its row again
+  // keeps it under its ⋯, where it opened. Before, the menu drawn again was placed anew and flipped above it.
+  const side=()=>page.evaluate(sel=>{const d=document.querySelector(sel),s=d.querySelector(':scope>summary').getBoundingClientRect(),l=d.querySelector(':scope>.fact-menu-list').getBoundingClientRect();
+   return {open:d.open,below:l.top>=s.bottom}},PROMISE);
+  const room=await page.addStyleTag({content:'#promises-list{margin-bottom:100vh}'});
+  await page.evaluate(sel=>scrollBy(0,document.querySelector(sel+'>summary').getBoundingClientRect().top-60),PROMISE);
+  await page.locator(PROMISE+'>summary').click();await page.locator(PROMISE+'[open]').waitFor();
+  assert.deepEqual(await side(),{open:true,below:true},`promise ${tag}: with room under it, the menu opens under its ⋯`);
+  await page.evaluate(sel=>scrollBy(0,document.querySelector(sel+'>summary').getBoundingClientRect().bottom-innerHeight+20),PROMISE);
+  await page.evaluate(()=>{window.__row=document.querySelector('#promise-row-3')});
+  promises[2]={...promises[2],due:day(2)};await poll(page);
+  assert.equal(await page.evaluate(()=>document.querySelector('#promise-row-3')!==window.__row),true,`promise ${tag}: the change draws its row again`);
+  const moved=await side();if(!moved.open||!moved.below)lost.push(`promise ${tag}: after the page moved, a poll that redrew its row flipped or closed it ${JSON.stringify(moved)}`);
+  await page.keyboard.press('Escape');promises[2]={...promises[2],due:null};await poll(page);
+  await room.evaluate(n=>n.remove());await page.evaluate(()=>scrollTo(0,0));
 
   // A to-do's More actions
   await page.locator(`#task-${CARD}`).scrollIntoViewIfNeeded();
