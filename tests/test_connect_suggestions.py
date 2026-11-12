@@ -110,6 +110,17 @@ class Groups(unittest.TestCase):
         self.assertTrue(groups.last('imap'))
         self.assertFalse(groups.last('gmail'))
 
+    def test_a_connected_sources_tab_is_its_catalog_group(self):
+        # Connections picks a card's tab by the status's group, the same one + Add shows the source in: every catalog source
+        from machine.store import views
+        found = onboarding.catalog({})
+        self.assertEqual({s['service']: views.source_group(s['service']) for s in found}, {s['service']: s['group'] for s in found})
+        with tempfile.TemporaryDirectory() as tmp:
+            store = a.Store(Path(tmp) / 'events.sqlite')
+            accounts = [{'id': s, 'service': s, 'boundary': 'work'} for s in ('linkedin', 'x', 'telegram', 'whatsapp', 'gmail', 'stripe')]
+            cards = {c['id']: c['group'] for c in store.snapshot(accounts)['connectors']}
+        self.assertEqual(cards, {'linkedin': 'chat', 'x': 'chat', 'telegram': 'chat', 'whatsapp': 'chat', 'gmail': 'mail', 'stripe': 'customers'})
+
     def test_an_unknown_source_is_other(self):
         self.assertEqual(groups.group_of('something_new'), 'other')
         self.assertEqual(groups.group_of('something_new', 'chat'), 'chat')  # a connector's own group

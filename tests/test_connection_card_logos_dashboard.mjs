@@ -6,11 +6,16 @@ const {chromium}=await import('./browser.mjs');
 
 // Connections, the tabs of connected sources: each card shows the same colored logo as its row in + Add (connectLogo,
 // dashboard/logos), by the catalog's name for its service (Salesflare: crm, Google Docs: docs signed in with Google),
-// and none is a broken image. A catch-all (Other email) keeps its line icon; Machine health shows the robot.
+// and none is a broken image. Each card sits on the tab of its source's group (the status's group, as in + Add). A catch-all (Other email) keeps its line icon; Machine health shows the robot.
 // Made-up data, a local fixture server. SHOTS=<folder> saves each tab at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
-const C=(id,service,name,extra={})=>({id,service,display_name:name,email:id+'@example.org',transport:'broker',boundary:'work',events:12,recent_events:3,last_success:now,...extra});
+// each source's group as the status gives it (views.source_group, the same as + Add): its tab is Mail and calendar, Chat or Other
+const GROUP={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',imap:'mail',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',
+ linkedin:'chat',x:'chat',zoom:'meetings',google_meet:'meetings',docs:'docs',salesflare:'customers',salesforce:'customers',stripe:'customers',
+ intercom:'customers',github:'work',trello:'work',shortcut:'work'};
+const TAB={mail:'Mail and calendar',chat:'Chat'};
+const C=(id,service,name,extra={})=>({id,service,group:GROUP[service]||'other',display_name:name,email:id+'@example.org',transport:'broker',boundary:'work',events:12,recent_events:3,last_success:now,...extra});
 // card id -> the logo file it must show (null: its line icon)
 const CARDS=[
  [C('gmail','gmail','Gmail'),'logos/gmail.svg'],[C('calendar','calendar','Google Calendar'),'logos/calendar.svg'],
@@ -54,6 +59,8 @@ try{
     if(i){i.loading='eager';if(!i.complete)await new Promise(r=>{i.onload=i.onerror=r})}
     return [a.dataset.conn,i?i.getAttribute('src'):null,i?i.naturalWidth>0:null]})));
    assert.ok(seen.length>0,`${tag}: ${pane} shows its cards`);
+   // a card's tab is its source's group: LinkedIn and X on Chat, a meeting, CRM or work tool on Other sources
+   assert.deepEqual(seen.map(([id])=>id).sort(),CARDS.filter(([c])=>(TAB[c.group]||'Other sources')===pane).map(([c])=>c.id).sort(),`${tag}: ${pane} holds its group's cards`);
    for(const [id,src,ok] of seen){const want=CARDS.find(([c])=>c.id===id)[1];
     assert.equal(src,want&&'brand/'+want,`${tag}: ${id} shows ${want||'its line icon'}`);
     if(src)assert.ok(ok,`${tag}: ${id}'s logo is not a broken image`)}

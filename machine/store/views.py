@@ -104,6 +104,12 @@ def shown_job(job):
 
 
 
+def source_group(service):
+    """A connected source's group, worked out as + Add's catalog does (onboarding.catalog): the dashboard picks its tab by it."""
+    import onboarding  # here: onboarding loads the connectors, which the store's other users don't need
+    return groups.group_of(service, onboarding.setup_of(service).get('group'))
+
+
 def covered_name(accounts, account):
     """The name of the owner's own connection that reads what this Fleet share reads, so the share rests; else None."""
     own = shared_connectors.covered_by(accounts, account)
@@ -894,6 +900,7 @@ class ViewsStore(ConversationStore):
                                              'boundary_by': account.get('boundary_by'),
                                              'service': account.get('service', 'gmail'),
                                              **({'last': True} if groups.last(account.get('service', 'gmail')) else {}),  # a catch-all: after the others
+                                             'group': source_group(account.get('service', 'gmail')),  # its + Add group, which picks its tab
                                              'poll_seconds':account.get('poll_seconds',300),
                                              'read_window': read_window(account),
                                              'display_name': names.account_name(account, accounts, UNNAMED.get(account.get('service'))),
