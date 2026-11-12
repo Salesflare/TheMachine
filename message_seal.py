@@ -89,6 +89,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'routines': ('name', 'instructions'), 'routine_runs': ('result', 'why'),  # a routine's words and what its run read (routines.py)
            'routine_changes': ('instructions',),  # a routine's new words, offered on one of its to-dos (routine_changes.py)
            'mail_cleanup_items': ('link',),  # a list's unsubscribe page, left for the owner to open (mail_cleanup.py)
+           'digest_items': ('feedback',),  # More or Less like this on a Daily digest's pick (reading_digest.py)
            'recap_items': ('line', 'data'),
            'graph_imports': ('undo',),  # an import's Undo: what it changed, which can hold a project's notes
            'crm_values': ('value',),  # custom field values the owner typed on a record (crm_fields.py)

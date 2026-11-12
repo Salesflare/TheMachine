@@ -141,6 +141,13 @@ def close_handled(db, row, decision_id, reason, stamp, undo_hours=24):
     db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
 
 
+def close_replaced(db, row, decision_id, reason, stamp):
+    """A newer one replaced this open to-do (a Daily digest's next one): its hint shows the reason, then it closes by
+    itself like close_handled, with Undo."""
+    db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': reason, 'at': stamp}), row['id']))
+    close_handled(db, row, decision_id, reason, stamp)
+
+
 def project_proof(db, todo_id, condition, event_id, stamp):
     """A project's proof came in: the to-do made for its blocker has its result (result_seen)."""
     row = db.execute('SELECT * FROM suggestions WHERE id=?', (todo_id,)).fetchone() if todo_id else None

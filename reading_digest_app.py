@@ -10,7 +10,6 @@ A new digest replaces the area's open one. A test run only shows its picks.
 On the to-do: More like this or Less like this per item (digest_feedback). On the routine's card: the interests the
 owner sees and edits (digest_interest). Nothing is sent to anyone and no mail changes: the digest only reads."""
 import datetime as dt
-import json
 import logging
 
 import help_chat
@@ -191,6 +190,5 @@ class ReadingDigestApp:
                     row = db.execute("SELECT * FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (old,)).fetchone()
                     if old == sid or not row or db.execute('SELECT 1 FROM decisions WHERE id=?', ('digest-replaced:' + old,)).fetchone():
                         continue
-                    db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': reason, 'at': stamp}), old))
-                    outcomes.close_handled(db, row, 'digest-replaced:' + old, reason, stamp)
+                    outcomes.close_replaced(db, row, 'digest-replaced:' + old, reason, stamp)
         return missed

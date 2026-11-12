@@ -104,9 +104,10 @@ def habits(db, accounts, now):
             h['read'] += not unread
             h['starred'] += 'STARRED' in labels
             h['dropped'] += unread and ('TRASH' in labels or 'INBOX' not in labels)
-    for address, feedback, n in db.execute("SELECT address,feedback,count(*) FROM digest_items WHERE feedback IN ('more','less') GROUP BY address,feedback"):
-        h = out.setdefault(address, dict.fromkeys(('n', 'read', 'starred', 'dropped', 'more', 'less'), 0))
-        h[feedback] += n
+    for row in db.execute('SELECT address,feedback FROM digest_items WHERE feedback IS NOT NULL'):  # sealed: counted here, not in SQL
+        if row['feedback'] in FEEDBACK:
+            h = out.setdefault(row['address'], dict.fromkeys(('n', 'read', 'starred', 'dropped', 'more', 'less'), 0))
+            h[row['feedback']] += 1
     return out
 
 
