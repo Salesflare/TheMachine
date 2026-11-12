@@ -4,6 +4,7 @@ Machine") that lands in the error reports. An email with no full copy to read st
 import http.client
 import importlib.util
 import json
+import sys
 import tempfile
 import threading
 import unittest
@@ -28,8 +29,10 @@ class EmailViewErrors(unittest.TestCase):
         servers, real = [], a.http.server.ThreadingHTTPServer
         def capture(*args, **kwargs):
             servers.append(real(*args, **kwargs)); return servers[-1]
+        # The service reads the agent's transcripts once at start (review_requeue); here that is no file, never the computer's own
         for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture), patch.object(a.signal, 'signal'),
-                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker')):
+                        patch.object(a.App, 'preparation_worker'), patch.object(a.App, 'delivery_worker'),
+                        patch.object(sys.modules['machine.app.serve'], 'AGENT_DB', Path(self.temp.name) / 'no-agent.sqlite')):
             patcher.start(); self.addCleanup(patcher.stop)
         thread = threading.Thread(target=self.app.serve, daemon=True); thread.start()
         while not servers:
