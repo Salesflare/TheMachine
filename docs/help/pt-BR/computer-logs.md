@@ -19,7 +19,9 @@ Um serviço que fica reiniciando, um que falhou várias vezes em um dia ou conti
 
 Um único reinício ou uma única execução com falha é normal e não gera aviso. O mesmo vale para um serviço que falhou algumas vezes e depois voltou a rodar bem.
 
-Navegadores que testes e agentes controlam (headless, Playwright, Puppeteer, CI) ficam em silêncio, assim como um programa que para enquanto o serviço dele está sendo parado ou reiniciado. Um programa que trava várias vezes gera uma só tarefa, que diz quantas vezes e quando.
+Navegadores que testes e agentes controlam (headless, Playwright, Puppeteer, CI) ficam em silêncio, assim como um programa que para enquanto o serviço dele está sendo parado ou reiniciado. O mesmo vale para execuções de desenvolvimento: o que um agente de código executa, testes e programas executados de uma pasta temporária ou de cache. Um programa que trava várias vezes gera uma só tarefa, que diz quantas vezes e quando.
+
+Um script aparece com o próprio nome, como backup.py, e não python3 ou node.
 
 ## O que você recebe
 

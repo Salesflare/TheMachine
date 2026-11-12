@@ -19,7 +19,9 @@ Ein Dienst, der immer wieder neu startet, einer, der an einem Tag mehrmals gesch
 
 Ein einzelner Neustart oder ein einzelner gescheiterter Lauf ist normal und bleibt still. Ebenso ein Dienst, der ein paar Mal gescheitert ist und danach wieder gut lief.
 
-Browser, die Tests und Agents steuern (headless, Playwright, Puppeteer, CI), bleiben still, ebenso ein Programm, das endet, während sein Dienst gestoppt oder neu gestartet wird. Ein Programm, das immer wieder abstürzt, ergibt eine Aufgabe, die sagt, wie oft und wann.
+Browser, die Tests und Agents steuern (headless, Playwright, Puppeteer, CI), bleiben still, ebenso ein Programm, das endet, während sein Dienst gestoppt oder neu gestartet wird. Das gilt auch für Entwicklerläufe: was ein Coding-Agent ausführt, Tests und Programme, die aus einem temporären Ordner oder Cache-Ordner laufen. Ein Programm, das immer wieder abstürzt, ergibt eine Aufgabe, die sagt, wie oft und wann.
+
+Ein Skript heißt nach seinem eigenen Namen, etwa backup.py, nicht python3 oder node.
 
 ## Was du bekommst
 
