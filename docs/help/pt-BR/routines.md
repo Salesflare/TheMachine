@@ -3,9 +3,9 @@ title: Rotinas
 area: cards
 summary: Trabalho que sua Machine faz sozinha, num ritmo, como um resumo de segunda-feira dos seus deals abertos. Ela só lê.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Criar uma
 
@@ -30,6 +30,12 @@ Recibos, pedidos e avisos de pagamento ficam de fora. Um e-mail que chega por um
 Desconhecido quer dizer que você nunca escreveu para a pessoa, e um “Re:” só conta como conversa numa conversa em que você escreveu. Se e-mail de um remetente que você marcou como spam, na tarefa ou na sua caixa, passar de novo, ele aparece na próxima tarefa como **Já marcado como spam**. O que você mesmo moveu para o spam também ajuda a reconhecer e-mails parecidos.
 
 Nada muda até você confirmar na tarefa. Toque num remetente para ler o e-mail antes: ele continua não lido e nada muda. Na Limpeza de spam, as imagens da web não carregam, então o remetente não vê que ele foi aberto. Remetentes já decididos não voltam. Um dia sem newsletters nem spam não cria tarefa, e essas tarefas nunca enviam notificação.
+
+**Resumo diário** escolhe uma vez por dia as poucas matérias das suas newsletters que valem seu tempo, em uma tarefa. Cada uma diz em uma linha por que importa para você. Toque para ler o e-mail, ou use **Abrir no seu e-mail**. Só newsletters: nunca e-mails de pessoas, recibos ou remetentes que você cancelou, e nunca o que você já leu. Quando nada se destaca, não há tarefa.
+
+Ele aprende o que importa para você pelo que você abre, marca com estrela ou arquiva sem ler, e por **Mais assim** e **Menos assim** em cada matéria. Os assuntos pelos quais ele escolhe ficam no cartão da rotina em **Mais de** e **Menos de**. Remova um com ×, ou adicione os seus. Os tracejados ele aprendeu sozinho. Um novo resumo substitui o que está aberto, e ele nunca envia uma notificação.
+
+Ele lê só o remetente, o assunto e o começo de cada newsletter nova, e faz uma pergunta curta à sua IA sobre elas, com um limite diário, para continuar barato. **Mudar quando** define o horário. Se você mudar as palavras, ele roda como qualquer rotina com as suas palavras.
 
 **Aniversários** cria uma tarefa para cada contato próximo que faz aniversário hoje: pessoas para quem você mesmo escreve, como amigos, família e contatos frequentes. Cada uma traz uma mensagem curta escrita onde vocês costumam conversar, como o chat do WhatsApp ou sua conversa por e-mail, no idioma da pessoa. Ela só sai quando você envia. Um dia sem aniversários não cria tarefa.
 

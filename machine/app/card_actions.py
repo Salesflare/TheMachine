@@ -26,6 +26,7 @@ from machine.sources.connectors import CONNECTOR_HELPERS, doc_comments, doc_writ
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import mail_cleanup
+import reading_digest
 from models import model_ready
 import next_actions
 from machine.store import outcomes
@@ -443,6 +444,8 @@ class CardActionsApp:
             with self.store.connect() as db:
                 if mail_cleanup.is_cleanup(db, args.get('suggestion_id')):
                     raise ValueError(i18n.t('Pick for each one on the to-do, then confirm.'))
+                if reading_digest.is_digest(db, args.get('suggestion_id')):
+                    raise ValueError(i18n.t('A digest is only for reading.'))
         terminal_job=None
         files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
         feedback=args.get('feedback', '')

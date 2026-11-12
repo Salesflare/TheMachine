@@ -3,9 +3,9 @@ title: Rutinas
 area: cards
 summary: Trabajo que tu Machine hace sola, con un ritmo, como un resumen del lunes de tus deals abiertos. Solo lee.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Crear una
 
@@ -30,6 +30,12 @@ Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una 
 Desconocido quiere decir que nunca le escribiste, y un “Re:” solo cuenta como conversación en un hilo donde escribiste. Si vuelve a colarse correo de un remitente que marcaste como spam, en la tarea o en tu buzón, aparece en la siguiente tarea como **Marcado como spam antes**. Lo que tú mismo moviste a spam también le ayuda a reconocer correo parecido.
 
 Nada cambia hasta que confirmas en la tarea. Toca un remitente para leer antes el correo: sigue sin leer y nada cambia. Desde Limpieza de spam no se cargan sus imágenes de la web, así el remitente no ve que se abrió. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
+
+**Resumen diario** elige una vez al día las pocas piezas de tus newsletters que valen tu tiempo, en una tarea. Cada una dice en una línea por qué te importa. Tócala para leer el correo, o usa **Abrir en tu correo**. Solo newsletters: nunca correo de personas, recibos ni remitentes de los que te diste de baja, y nunca lo que ya leíste. Cuando nada destaca, no hay tarea.
+
+Aprende lo que te importa de lo que abres, marcas con estrella o archivas sin leer, y de **Más como esto** y **Menos como esto** en cada pieza. Los temas por los que elige están en la tarjeta de la rutina bajo **Más de** y **Menos de**. Quita uno con ×, o añade los tuyos. Los de línea discontinua los aprendió por su cuenta. Un resumen nuevo reemplaza al abierto, y nunca envía una notificación.
+
+Solo lee el remitente, el asunto y el comienzo de cada newsletter nueva, y le hace a tu IA una pregunta corta sobre ellas, con un límite diario, para que siga siendo barato. **Cambiar cuándo** fija su hora. Si cambias sus palabras, se ejecuta como cualquier rutina con tus palabras.
 
 **Cumpleaños** crea una tarea para cada contacto cercano que cumple años hoy: personas a las que tú escribes, como amigos, familia y contactos habituales. Cada una trae una felicitación corta redactada donde sueles hablar con ellos, como su chat de WhatsApp o tu hilo de correo, en su idioma. Solo sale cuando tú la envías. Un día sin cumpleaños no crea ninguna tarea.
 

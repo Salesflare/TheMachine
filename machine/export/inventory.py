@@ -57,7 +57,7 @@ _BY_PART = {
         meet_pins meet_seen meet_sessions meet_prefs meeting_moves talk_lines moved_in'''),
     'todos': _names('''suggestions suggestion_keys card_moves card_uses decision_asks analyses review_runs review_save_failures first_look_ahead feedback_prompts
         recaps recap_items thread_snoozes slipped milestones chat_stops preparations preparation_runs preparation_calls
-        recurring_cards recurring_offers recurring_series routines routine_offers routine_runs routine_changes mail_cleanup_items mail_cleanup_senders facebook_birthdays task_pages follow_up_advice follow_up_basis follow_up_cards
+        recurring_cards recurring_offers recurring_series routines routine_offers routine_runs routine_changes mail_cleanup_items mail_cleanup_senders facebook_birthdays digest_items digest_spend task_pages follow_up_advice follow_up_basis follow_up_cards
         follow_up_changes follow_up_ends follow_up_holds follow_up_pace follow_up_pauses follow_up_rules follow_up_threads
         missed_audits missed_audit_items missed_audit_calibration review_misses project_success calendar_clashes gateway_starts'''),
     'drafts': _names('''draft_edits draft_saves draft_seen deliveries action_jobs calendar_writes meeting_writes handoff_mails
@@ -68,7 +68,7 @@ _BY_PART = {
         note_kinds memory_use'''),
     'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
         pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
-        whatsapp_photo_prefs team_learning_prefs'''),
+        whatsapp_photo_prefs team_learning_prefs digest_interests'''),
     'graph': _names('''graph_nodes graph_identifiers graph_edits graph_events graph_history graph_history_events graph_imports graph_links graph_merges graph_names graph_offers
         graph_org_asks graph_relations graph_resources graph_role_asks graph_same graph_state graph_unnamed manual_nodes
         hidden_domains identity_names forgotten_people forgotten_salt owner_numbers person_edits person_facts person_orgs

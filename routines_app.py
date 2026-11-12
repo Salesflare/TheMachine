@@ -281,6 +281,8 @@ class RoutinesApp:
             routine['edited'] = bool(key) and not routine_templates.own(routine['origin'], routine['instructions'], routine['steps'])
             if key and not routine['edited']:
                 routine['instructions'] = routine_templates.words(key)
+            if key == 'digest':  # what it picks for, on its card to see and edit (reading_digest_app.py)
+                routine['interests'] = self.digest_interests()
             routine['from_openclaw'] = str(routine.pop('origin') or '').startswith('openclaw:')
             routine.pop('accepted_at', None)
             for run in routine['runs'] + ([routine['test']] if routine['test'] else []):  # a run that didn't work says why

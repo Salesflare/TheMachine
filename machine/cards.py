@@ -614,7 +614,7 @@ def controls(row, root=''):
                  or (choice == 'retry' and redo))]
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
-    if row.get('cleanup') and row['status'] not in ('completed','rejected'):
+    if (row.get('cleanup') or row.get('digest')) and row['status'] not in ('completed','rejected'):
         # A routine template's cleanup (mail_cleanup.py): its picks and their confirm are on the to-do; nothing to Do
         choices = [(label, choice) for label, choice in choices if choice in ('complete','snooze','reject')]
     choices = [(t(label), choice) for label, choice in choices]

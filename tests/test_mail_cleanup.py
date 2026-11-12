@@ -416,12 +416,12 @@ class Cleanup(unittest.TestCase):
 
     def test_spam_cleanup_only_where_mail_can_move_to_spam(self):
         # hosted Gmail reads only: no Spam cleanup to add, and one added before reads nothing and makes no to-do
-        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'birthdays'])
+        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'digest', 'birthdays'])
         with self.assertRaises(ValueError):
             self.act('routine_template', key='spam')
         self.marks = True
         self.app._cleanup_marks = None
-        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'spam', 'birthdays'])
+        self.assertEqual([x['key'] for x in self.app.routines_view()['templates']], ['newsletters', 'spam', 'digest', 'birthdays'])
         self.add('spam')
         self.marks = False
         self.app._cleanup_marks = None

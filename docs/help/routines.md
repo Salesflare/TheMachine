@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Work your Machine does on its own, on a rhythm, like a Monday summary of your open deals. It only reads.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Make one
 
@@ -32,6 +32,12 @@ Receipts, orders and payment notices are left out. Mail that came through a grou
 Unknown means you never wrote to them, and a “Re:” only counts as a conversation in a thread you wrote in. When mail from a sender you marked as spam, on the to-do or in your mailbox, gets through again, it’s on the next to-do as **Marked as spam before**. What you moved to spam yourself also helps it spot similar mail.
 
 Nothing changes until you confirm on the to-do. Tap a sender to read the email first: it stays unread and nothing changes. From Spam cleanup, its images from the web don’t load, so the sender can’t see it was opened. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
+
+**Daily digest** picks the few newsletter pieces worth your time, once a day, in one to-do. Each one says in a line why it matters to you. Tap it to read the email, or use **Open in your mail**. Only newsletters: never mail from people, receipts or senders you unsubscribed from, and never what you already read. When nothing stands out, there is no to-do.
+
+It learns what you care about from what you open, star or archive unread, and from **More like this** and **Less like this** on each pick. The topics it picks for are on its routine’s card under **More of** and **Less of**. Remove one with ×, or add your own. Dashed ones it learned itself. A new digest replaces the open one, and it never sends a notification.
+
+It reads only the sender, subject and start of each new newsletter, and asks your AI one short question about them, with a daily cap, so it stays cheap. **Change when** sets its time. Once you change its words, it runs like any routine on your words.
 
 **Birthdays** makes a to-do for each close contact whose birthday is today: people you write to yourself, like friends, family and regular contacts. Each comes with a short greeting drafted where you usually talk with them, like their WhatsApp chat or your email thread, in their language. It goes out only when you send it. A day without birthdays makes no to-do.
 

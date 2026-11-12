@@ -71,7 +71,7 @@ function talkFocus(v,id){if(talk!==v||v.sid===id)return v.focusing;v.sid=id;v.as
 // looks done sits in Done and isn't here):
 // what needs the owner (For you) first. At most 30; counts has them all.
 const talkWho=s=>String((s.people||[])[0]?.name||'').slice(0,80);
-const TALK_STATE={ready:'prepared',needs:'needs you',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
+const TALK_STATE={ready:'prepared',needs:'needs you',read:'to read',preparing:'preparing',waiting:'waiting on others',later:'snoozed'};
 const talkNeeds=()=>talkTodos.filter(([,l])=>l==='ready'||l==='needs').map(([s])=>s);
 function talkList(){const counts={};for(const [,l] of talkTodos)counts[TALK_STATE[l]]=(counts[TALK_STATE[l]]||0)+1;
  return {todos:talkTodos.slice(0,30).map(([s,l])=>({id:s.id,state:TALK_STATE[l],title:String(s.title||'').slice(0,200),...(talkWho(s)?{from:talkWho(s)}:{}),...(s.handoff_still?.name?{with:String(s.handoff_still.name).slice(0,80)}:{})})),count:talkTodos.length,counts}}

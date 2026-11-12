@@ -12,6 +12,7 @@ import agent_jobs
 import fleet
 import i18n
 import mail_cleanup
+import reading_digest
 from machine.cards import card, controls, delivery_time
 from machine.config import LOG
 from machine.delivery.push import first_result, hold_mail, push_notify, push_reach, push_send, reply_waits, result_lead, shown_as_reminder
@@ -231,9 +232,9 @@ def deliver_one(store, config, edit_cards=True):
         # email. Its draft waits quietly in the list and the morning digest for the owner's Send. It doesn't count as
         # a ping either, so it never silences a real one.
         # A routine template's cleanup to-do (mail_cleanup.py: newsletters, spam) is quiet the same way: it waits in the
-        # list and the morning summary.
+        # list and the morning summary. So is the Daily digest (reading_digest.py): reading, never urgent.
         row['_quiet']=bool(db.execute("SELECT 1 FROM follow_up_cards WHERE suggestion_id=? AND state='open'",(row['id'],)).fetchone()) or \
-            mail_cleanup.is_cleanup(db,row['id'])
+            mail_cleanup.is_cleanup(db,row['id']) or reading_digest.is_digest(db,row['id'])
         row['_silent']=row['_quiet'] or bool(db.execute("SELECT 1 FROM deliveries WHERE suggestion_id!=? AND last_notified_at>? "
             "AND suggestion_id NOT IN (SELECT suggestion_id FROM follow_up_cards WHERE state='open')",
             (row['id'],(dt.datetime.fromisoformat(now())-dt.timedelta(minutes=3)).isoformat())).fetchone())

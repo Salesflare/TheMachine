@@ -3,9 +3,9 @@ title: Routinen
 area: cards
 summary: Arbeit, die deine Machine von selbst in einem Rhythmus erledigt, wie eine Montagsübersicht deiner offenen Deals. Sie liest nur.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Eine anlegen
 
@@ -32,6 +32,12 @@ Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine 
 Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in einem Verlauf als Gespräch, in dem du geschrieben hast. Kommt Mail von einem Absender, den du als Spam markiert hast (im To-do oder in deinem Postfach), wieder durch, steht sie im nächsten To-do als **Schon einmal als Spam markiert**. Was du selbst in den Spam verschoben hast, hilft auch, ähnliche Mail zu erkennen.
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Tippe auf einen Absender, um die Mail vorher zu lesen: Sie bleibt ungelesen, und nichts ändert sich. Aus Spam aufräumen laden ihre Bilder aus dem Web nicht, damit der Absender nicht sieht, dass sie geöffnet wurde. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
+
+**Tägliche Zusammenfassung** wählt einmal am Tag die wenigen Newsletter-Beiträge, die deine Zeit wert sind, in einer Aufgabe. Zu jedem steht in einer Zeile, warum er für dich wichtig ist. Tippe darauf, um die Mail zu lesen, oder nutze **In deiner Mail öffnen**. Nur Newsletter: nie Mail von Menschen, Belege oder Absender, die du abbestellt hast, und nie, was du schon gelesen hast. Sticht nichts heraus, gibt es keine Aufgabe.
+
+Sie lernt, was dich interessiert, aus dem, was du öffnest, markierst oder ungelesen archivierst, und aus **Mehr davon** und **Weniger davon** bei jedem Beitrag. Die Themen, nach denen sie wählt, stehen auf der Karte der Routine unter **Mehr zu** und **Weniger zu**. Entferne eins mit × oder füge eigene hinzu. Gestrichelte hat sie selbst gelernt. Eine neue Zusammenfassung ersetzt die offene, und sie schickt nie eine Benachrichtigung.
+
+Sie liest nur Absender, Betreff und Anfang jedes neuen Newsletters und stellt deiner KI eine kurze Frage dazu, mit einer Tagesgrenze, damit sie günstig bleibt. **Zeit ändern** legt die Uhrzeit fest. Änderst du ihre Worte, läuft sie wie jede Routine mit deinen Worten.
 
 **Geburtstage** macht eine Aufgabe für jeden engen Kontakt, der heute Geburtstag hat: Menschen, denen du selbst schreibst, wie Freunde, Familie und regelmäßige Kontakte. Jede hat einen kurzen Glückwunsch, entworfen dort, wo ihr meist schreibt, etwa im WhatsApp-Chat oder in deinem Mail-Verlauf, in ihrer Sprache. Er geht erst raus, wenn du ihn sendest. Ein Tag ohne Geburtstage macht keine Aufgabe.
 

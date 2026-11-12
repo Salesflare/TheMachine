@@ -438,7 +438,10 @@ OVER_BUDGET = {}
 # group's fast review (LAZY 'followups'), a project's follow-ups and Done when, a board's follow-ups line and the
 # follow-up settings dialog (the Graph's part) load when first needed (first load 1,421,711 -> 1,380,493). The
 # ceiling is that plus 10 KB, and FIRST_LOAD_ROOM keeps it close: room that opens up is taken in.
-FIRST_LOAD_CEILING = 1_391_000
+# 1,391,000 -> 1,392,000 (2026-11-12): main sat 9 bytes under it. A Daily digest's place in the list itself (its To
+# read chip, Done as its first button, not counted as needing the owner) is first draw (+561); its items load when
+# first needed (LAZY 'digest').
+FIRST_LOAD_CEILING = 1_392_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000
@@ -459,7 +462,7 @@ FIRST_LOAD_ROOM = 32_000
 # split 12,000 (2026-11-10): Split up's dialog, its preview and Undo (about 9.7 KB), loaded when first used.
 # routines 33,000 (2026-11-11): a routine form stays while its Save is on the way (was 31.7 KB of 32,000).
 # compose 6,000 (2026-11-12): a new email from a click on an address, in the send dialog (about 4.4 KB).
-LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):

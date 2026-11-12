@@ -63,6 +63,7 @@ from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
 import birthdays_facebook
 import mail_cleanup
+import reading_digest
 import bring_in
 import missed_work
 import next_actions
@@ -83,7 +84,7 @@ import whatsapp_images
 # a quiet Machine, between polls only Connections' sync tables do), the to-dos' own rows are the same and within
 # CARD_KEEP_S (what it works out from the clock: "3 days ago", Still needed?). CARD_TABLES: all it reads (a test checks
 # that). Kept as deep copies: the status changes what it is handed, never the kept copy.
-CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'email_bounces',
+CARD_TABLES = ('action_jobs', 'agent_jobs', 'calendar_clashes', 'chat_files', 'decision_annotations', 'decision_asks', 'decisions', 'digest_items', 'email_bounces',
                'events', 'facebook_birthdays', 'facts', 'feedback_prompts', 'fleet_meta', 'fleet_out', 'graph_events', 'graph_identifiers', 'graph_nodes',
                'identity_names', 'mail_cleanup_items', 'person_facts', 'preparation_calls', 'preparation_runs', 'preparations', 'projects',
                'promises', 'recap_items', 'recurring_series', 'routine_changes', 'routines', 'skill_clusters', 'skill_task_decided', 'skills',
@@ -469,6 +470,8 @@ class ViewsStore(ConversationStore):
             if act and suggestion.get('status')=='pending':extra['labels']={'accept':ROUTINE_ACT[act]}
         cleanup=mail_cleanup.view(db,suggestion['id'],[row['metadata'] for row in rows])
         if cleanup:extra['cleanup']=cleanup  # a routine template's to-do: Keep or Unsubscribe, Spam or Not spam, per item (mail_cleanup.py)
+        digest=reading_digest.view(db,suggestion['id'],[row['metadata'] for row in rows])
+        if digest:extra['digest']=digest  # the Daily digest: why each one matters, More or Less like this (reading_digest.py)
         facebook=birthdays_facebook.view(db,suggestion['id'])
         if facebook:extra['facebook_birthdays']=facebook  # Birthdays' import from Facebook: Import, the preview, Save (birthdays_facebook.py)
         proposal = (not pre or suggestion['id'] in pre['clusters']) and db.execute("SELECT * FROM skill_clusters WHERE suggestion_id=?", (suggestion['id'],)).fetchone()

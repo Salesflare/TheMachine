@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Werk dat je Machine zelf doet, op een ritme, zoals een maandagoverzicht van je open deals. Hij leest alleen.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Er een maken
 
@@ -30,6 +30,12 @@ Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een
 Onbekend wil zeggen dat je hen nooit schreef, en een “Re:” telt alleen als gesprek in een draad waarin jij schreef. Komt mail van een afzender die je als spam markeerde, op de to-do of in je mailbox, toch weer door, dan staat die op de volgende to-do als **Eerder als spam gemarkeerd**. Wat je zelf naar spam verplaatste, helpt ook om gelijkaardige mail te herkennen.
 
 Er verandert niets tot je bevestigt op de to-do. Tik op een afzender om de mail eerst te lezen: die blijft ongelezen en er verandert niets. Vanuit Spam opruimen laden de afbeeldingen van het web niet, zodat de afzender niet ziet dat de mail geopend is. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
+
+**Dagelijks overzicht** kiest één keer per dag de paar stukken uit je nieuwsbrieven die je tijd waard zijn, in één to-do. Bij elk staat in één regel waarom het voor jou ertoe doet. Tik erop om de mail te lezen, of gebruik **Openen in je mail**. Alleen nieuwsbrieven: nooit mail van mensen, bonnetjes of afzenders waarvoor je je hebt uitgeschreven, en nooit wat je al gelezen hebt. Springt er niets uit, dan komt er geen to-do.
+
+Het leert wat je belangrijk vindt uit wat je opent, een ster geeft of ongelezen archiveert, en uit **Meer zoals dit** en **Minder zoals dit** bij elk stuk. De onderwerpen waarop het kiest staan op de kaart van de routine onder **Meer over** en **Minder over**. Haal er een weg met ×, of voeg je eigen toe. Gestippelde heeft het zelf geleerd. Een nieuw overzicht vervangt het open overzicht, en het stuurt nooit een melding.
+
+Het leest alleen de afzender, het onderwerp en het begin van elke nieuwe nieuwsbrief, en stelt je AI er één korte vraag over, met een daglimiet, zodat het goedkoop blijft. **Tijdstip wijzigen** zet het tijdstip. Pas je de woorden aan, dan draait het als elke routine op jouw woorden.
 
 **Verjaardagen** maakt een to-do voor elk naast contact dat vandaag jarig is: mensen naar wie je zelf schrijft, zoals vrienden, familie en vaste contacten. Elke to-do heeft een korte felicitatie, opgesteld waar je meestal met hen praat, zoals hun WhatsApp-chat of je mailthread, in hun taal. Die gaat pas weg als jij hem verstuurt. Een dag zonder verjaardagen geeft geen to-do.
 

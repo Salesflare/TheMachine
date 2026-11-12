@@ -9,7 +9,9 @@ hour (HOURLY): plain code lists the mail by unknown senders that is new since it
 does one small model call (no tools, no agent) read just those. Each ends in at most one to-do with a
 choice per item (mail_cleanup.py), and nothing changes until the owner confirms there. Birthdays is plain code too
 (birthdays.py, birthdays_app.py): a to-do per close contact with a birthday today, its greeting drafted on their usual
-channel and sent only when the owner says so. A rename alone keeps this cheap path.
+channel and sent only when the owner says so. Daily digest (reading_digest.py, reading_digest_app.py): plain code lists
+the new unread newsletters, and only when there are any does one small model call pick the few worth reading, for the
+interests the owner sees and edits on its card. A rename alone keeps this cheap path.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
@@ -36,6 +38,9 @@ TEMPLATES = {
              'words': 'Find clear spam from unknown senders since the last run: cold sales pitches, scams, phishing and fake '
                       'invoices. Leave out newsletters I signed up for, receipts and real people. Put them in one to-do where '
                       'I pick Spam or Not spam for each.'},
+    'digest': {'name': 'Daily digest', 'what': 'Every morning, the few newsletter pieces worth your time, picked for what you care about.',
+               'words': 'Read my newsletters since the last run and pick the few pieces most worth my time, for what I care about. '
+                        'Put them in one to-do, each with one line on why it matters and a link to the original.'},
     'birthdays': {'name': 'Birthdays', 'what': 'Every morning, a to-do with a short greeting for each close contact who has a birthday.',
                   'words': 'Find my close contacts who have a birthday today. For each one, write a short greeting in their '
                            'language, where I usually talk with them, for me to send.'},
