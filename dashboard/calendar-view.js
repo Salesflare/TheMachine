@@ -50,7 +50,8 @@ function calRuns(mons){const out=[];for(const d of [...mons].sort((x,y)=>x-y)){c
 // The weeks next to the ones on show, and loaded weeks gone stale, come one at a time behind them, never as a burst
 // (2026-11-10: a Calendar open asked for 43 weeks within 3 s). The page draws once when they are all in.
 let calLater=[],calLaterRun=null;
-function calQueue(mons){for(const d of mons)if(!calLater.some(x=>+x===+d))calLater.push(d);
+// A week that ends before the calendar starts holds nothing, so it is never asked for.
+function calQueue(mons){for(const d of mons)if(!calLater.some(x=>+x===+d)&&!(calStarts&&localDay(calAdd(d,6))<calStarts.day))calLater.push(d);
  if(calLaterRun)return calLaterRun;
  calLaterRun=(async()=>{let changed=false;while(calLater.length){const d=calLater.shift(),k=localDay(d),before=JSON.stringify(calWeeks.get(k)?.meetings||null);
    await calFetchSpan([d]).catch(()=>{});if(JSON.stringify(calWeeks.get(k)?.meetings||null)!==before)changed=true}
