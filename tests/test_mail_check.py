@@ -200,6 +200,29 @@ class MailCheck(unittest.TestCase):
         self.assertEqual((channel['from'], channel['subject']), ('Rae Fenn', 'Can you look at #billing & ping @Rae Fenn?'))
         self.assertTrue(all(r['at'] for r in rows))
 
+    def test_a_payment_a_group_mail_and_a_support_chat_read_like_the_viewer(self):
+        """A payment saved with only its customer's address shows by their organization's name when no person's name is
+        known, a Google Group's mail by the person and the group as the viewer says it, and a support chat by its plain
+        words, never a part's raw time and type."""
+        paid, group, chat, mail_only = self.add(
+            other('work', 'stripe.event', 'Invoice paid: €49.00', 'Invoice paid', {'from': 'ops@orbit.example', 'customer_name': 'ops@orbit.example'}, 20),
+            mail("\"'Lena Fair' via sales@lumen.example readers\" <sales@lumen.example>", 'Partner listing question', 'g1'),
+            other('work', 'intercom.conversation', 'Export stops again',
+                  'Export stops again\n1762000100 · Fin · comment: Which plan are you on?\n1762000200 · kai@kestrel.example · comment: Growth.',
+                  {'conversation_id': 'c9', 'from': 'kai@kestrel.example', 'contact_email': 'kai@kestrel.example', 'created_at': 1762000000}, 22),
+            mail('ops@orbit.example', 'Receipt', 'r1'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:ops@orbit.example','person','ops@orbit.example',1,1,?)",
+                       (json.dumps({'org': 'org:orbit.example'}),))
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:orbit.example','org','Orbit',1,1,'{}')")
+        claim = self.store.begin_analysis(['work'], 120)
+        self.store.finish_analysis(claim['analysis_id'], 'Nothing new.', no_todo=[])
+        rows = {r['event']: r for r in self.view()['threads']}
+        self.assertEqual(rows[paid]['from'], 'Orbit')
+        self.assertEqual(rows[mail_only]['from'], 'ops@orbit.example')  # an email keeps its From
+        self.assertEqual(rows[group]['from'], 'Lena Fair via sales')
+        self.assertEqual(rows[chat]['subject'], 'Export stops again · Which plan are you on? · Growth.')
+
     def test_a_support_chat_shows_its_people_by_name_and_a_phone_notification_never_its_package_id(self):
         """An owner's list showed Intercom conversations by address (a customer's, and the Operator bot's
         operator+…@intercom.io) while Intercom gave their names, and a phone's group summary notification by its package
