@@ -458,7 +458,8 @@ FIRST_LOAD_ROOM = 32_000
 # the first load when a link fix put it over its ceiling.
 # split 12,000 (2026-11-10): Split up's dialog, its preview and Undo (about 9.7 KB), loaded when first used.
 # routines 33,000 (2026-11-11): a routine form stays while its Save is on the way (was 31.7 KB of 32,000).
-LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+# compose 6,000 (2026-11-12): a new email from a click on an address, in the send dialog (about 4.4 KB).
+LAZY_CEILING = {'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):
