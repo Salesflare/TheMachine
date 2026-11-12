@@ -314,6 +314,8 @@ class CardChatApp:
             # The new part leads; a reply's quoted history folds under it
             quoted = chat_text(split_quoted_history(v['body'] or '', v['title'])[1], chars=3000) if text is None else ''
             text = chat_excerpt(v['body'], v['title']) if text is None else text
+            if not text and kind == 'owner.card':  # the viewer drops words that repeat the title; the chat opens with them
+                text = chat_text(v['title'], chars=3000)
             if text or v['title']:
                 # The owner's own words (New to-do) carry the files they made it with
                 made = own_files.pop(suggestion_id, None) if kind == 'owner.card' else None

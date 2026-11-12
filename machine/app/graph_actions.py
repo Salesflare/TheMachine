@@ -32,6 +32,7 @@ from machine.sources.calendar import calendar_room, calendar_rooms
 from machine.store.cards import source_line, source_text
 from machine.store.facts import FILLER, fact_words, merge_originals, NEGATIONS, replaced_facts
 from machine.store.review import own_message
+from machine.store.views import address_names
 from machine.text import clamp
 from machine.web.handler import event_glance
 import meeting_notes
@@ -689,6 +690,13 @@ class GraphActionsApp:
                         row['share'] = labels[row['id']]
             except (sqlite3.Error, ValueError, KeyError, TypeError) as error:
                 LOG.info('shared graph timeline error=%s', type(error).__name__)
+        # who wrote it by name: an address alone only when the Graph knows no name for it
+        bare = [row for row in items + found['upcoming'] if '@' in str(row.get('from') or '')]
+        if bare:
+            with self.store.connect() as db:
+                names = address_names(db, {str(row['from']).strip().lower() for row in bare})
+            for row in bare:
+                row['from'] = names.get(str(row['from']).strip().lower(), row['from'])
         found['items'] = items
         return found
 

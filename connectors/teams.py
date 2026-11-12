@@ -40,6 +40,10 @@ import re
 import urllib.parse
 
 KINDS = {'teams.message': 'Teams message', 'teams.notes': 'Teams notes', 'teams.transcript': 'Teams transcript'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'teams.message': 'chat', 'teams.notes': 'card', 'teams.transcript': 'card'}
+APP = 'Teams'
 CHAT_SCOPE = 'Chat.Read'
 CHANNEL_SCOPES = ('Team.ReadBasic.All', 'Channel.ReadBasic.All', 'ChannelMessage.Read.All')
 MEETING_SCOPE, TRANSCRIPT_SCOPE, INSIGHT_SCOPE = 'OnlineMeetings.Read', 'OnlineMeetingTranscript.Read.All', 'OnlineMeetingAiInsight.Read.All'

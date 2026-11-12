@@ -25,11 +25,13 @@ const openEvent=(ev,title,local)=>openOriginal(ev,title,false,local);  // local:
 // One collected signal as it came in. A meeting opens as it does in the Calendar instead (openMeeting), unless its raw
 // invite is asked for (raw: Original invite in the meeting's details).
 async function openOriginal(ev,title,raw,local){const dialog=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
-let o;try{o=(await request('api/originals?event='+encodeURIComponent(ev))).originals[0]}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
+let o;try{[{originals:[o]}]=await Promise.all([request('api/originals?event='+encodeURIComponent(ev)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!o){setHTML($('#email-content'),html`<p class="muted">The original is no longer available.</p>`);return}
 if(o.kind==='calendar'&&!raw){openMeeting(ev,title);return}
-if(isChat(o)){setHTML($('#email-content'),chatThreadHTML([o]));return}  // a chat message as in its thread, its text once
-o.raw=!!raw;o.local=!!local;setHTML($('#email-content'),html`<div class="email" data-msg="0">${messageHTML(o,'',0)}</div>`);fillMessage($('#email-content [data-msg="0"]'),o,'')}
+// Titled by the message itself (an email's subject, a chat's conversation), not by the row it was opened from
+const shown=viewTitle(o)||title||t('Original');$('#email-title').textContent=shown;
+if(isChat(o)){setHTML($('#email-content'),chatThreadHTML([o],{titled:true}));return}  // a chat message as in its thread, its text once
+o.raw=!!raw;o.local=!!local;setHTML($('#email-content'),html`<div class="email" data-msg="0">${messageHTML(o,'',0,shown)}</div>`);fillMessage($('#email-content [data-msg="0"]'),o,'')}
 // A meeting, wherever it is opened (a timeline, Events, a to-do's source, a search): the Calendar's own details, with its
 // Notes, Transcript and Generate notes, and its invite one tap away. When the meeting can't be read that way, its invite.
 async function openMeeting(ev,title){let m=null;try{m=(await request('api/meeting?event='+encodeURIComponent(ev))).meeting}catch(e){errCaught(e)}
@@ -37,12 +39,12 @@ async function openMeeting(ev,title){let m=null;try{m=(await request('api/meetin
 $('#email-content').addEventListener('click',e=>{const b=e.target.closest('[data-open-meeting]');if(b)openMeeting(b.dataset.openMeeting,'')});
 // A conversation from the Graph: its messages in order, each who said it, when and the whole text.
 async function openConversation(row){const dialog=$('#email-dialog'),group='group' in row.dataset;$('#email-title').textContent=row.dataset.title||'Conversation';setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);dialog.showModal();
-let list;try{list=(await request('api/originals?events='+encodeURIComponent(row.dataset.events))).originals}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
+let list;try{[{originals:list}]=await Promise.all([request('api/originals?events='+encodeURIComponent(row.dataset.events)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML($('#email-content'),html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML($('#email-content'),html`<p class="muted">The messages are no longer available.</p>`);return}
 setHTML($('#email-content'),chatThreadHTML(list,{names:group,head:false,src:row.dataset.src}))}
 // A summary chip's sources: chats as conversations, the rest folded.
 async function openSources(ids,title){const dialog=$('#email-dialog'),box=$('#email-content');$('#email-title').textContent=title||t('Original');setHTML(box,html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
-let list;try{list=(await request('api/originals?events='+encodeURIComponent(ids))).originals}catch(e){errCaught(e);setHTML(box,html`<p class="muted">${e.message}</p>`);return}
+let list;try{[{originals:list}]=await Promise.all([request('api/originals?events='+encodeURIComponent(ids)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML(box,html`<p class="muted">${e.message}</p>`);return}
 if(!list.length){setHTML(box,html`<p class="muted">The messages are no longer available.</p>`);return}
 const rest=list.filter(o=>!isChat(o));
 setHTML(box,html`${chatThreads(list).map(c=>chatThreadHTML(c))}${rest.map(o=>emailRow(o,list.indexOf(o)))}`);

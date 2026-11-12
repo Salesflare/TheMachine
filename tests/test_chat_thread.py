@@ -113,7 +113,8 @@ class ChatThread(unittest.TestCase):
         self.assertEqual(item['turns'][1]['occurred_at'], '2026-11-05T10:55:00+00:00')
 
     def test_an_intercom_message_without_history_is_one_message(self):
-        self.assertEqual(a.chat_view('intercom.conversation', {'from_name': 'Juno Park'}, 'Just one question', DAY), {'chat': 'Juno Park'})
+        self.assertEqual(a.chat_view('intercom.conversation', {'from_name': 'Juno Park'}, 'Just one question', DAY),
+                         {'chat': 'Juno Park', 'turns': [{'from': 'Juno Park', 'role': 'customer', 'body': 'Just one question', 'occurred_at': DAY}]})
 
     def test_email_and_other_sources_carry_no_chat_fields(self):
         [item] = self.app.originals(self.cards['email'])

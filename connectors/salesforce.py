@@ -35,6 +35,10 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'salesforce.opportunity': 'CRM deal', 'salesforce.task': 'CRM task', 'salesforce.activity': 'CRM activity'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'salesforce.opportunity': 'card', 'salesforce.task': 'card', 'salesforce.activity': 'card'}
+APP = 'Salesforce'
 SETUP = {
     'label': 'Salesforce',
     'account': {'id': 'salesforce', 'service': 'salesforce', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},

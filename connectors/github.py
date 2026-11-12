@@ -17,6 +17,10 @@ import re
 import subprocess
 
 KINDS = {'github.notification': 'GitHub', 'github.ci': 'GitHub CI'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'github.notification': 'card', 'github.ci': 'card'}
+APP = 'GitHub'
 # For `assistant connect github`: the account it adds and what it asks (see docs/adding-a-source.md).
 SETUP = {'label': 'GitHub', 'what': 'Review requests, mentions, assignments and failed CI runs.',
          'account': {'id': 'github', 'service': 'github', 'transport': 'gh', 'boundary': 'work', 'poll_seconds': 600},
@@ -121,6 +125,7 @@ def sync(store, config, account, helpers, source=None):
                            'occurred_at': utc(n['updated_at']), 'title': f"[{repo.split('/')[-1]}] {subject.get('title', '')}"[:1000],
                            'body': body[:40000], 'deleted': False,
                            'metadata': {'repo': repo, 'reason': n.get('reason'), 'type': subject.get('type'), 'number': detail.get('number'),
+                                        'author': (detail.get('user') or {}).get('login') or '',  # who opened it, not who commented
                                         'state': status, 'from': author, 'from_me': author.lower() == me, 'source_url': url}})
         read += len(items)
         count += len(events)

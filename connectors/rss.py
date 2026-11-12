@@ -18,6 +18,10 @@ import xml.etree.ElementTree as ET
 from xml.parsers import expat
 
 KINDS = {'rss.item': 'feed'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'rss.item': 'card'}
+APP = ''
 # For `assistant connect rss`: the account it adds and what it asks (see docs/adding-a-source.md).
 SETUP = {'label': 'RSS feed', 'what': 'Posts from the feeds you follow.',
          'account': {'id': 'feed', 'service': 'rss', 'transport': 'http', 'boundary': 'work', 'poll_seconds': 1800},

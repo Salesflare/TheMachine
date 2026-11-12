@@ -164,7 +164,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   feedback, preparing a to-do, sends and merges with their undo), `machine/store/voices.py`, `machine/store/facts.py`
   and `machine/store/promises.py` (the `VoicesStore`, `FactsStore` and `PromisesStore` mixins),
   `machine/store/views.py`, `machine/store/profile.py` and `machine/store/first_look.py` (the `ViewsStore`,
-  `ProfileStore` and `FirstLookStore` mixins), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
+  `ProfileStore` and `FirstLookStore` mixins), `machine/store/message_view.py` (how each event kind reads in the message
+  viewer: its view, email, chat, notification or card, and the rules every source keeps there; connectors declare
+  `VIEWS` and `APP`), `machine/store/whats_new.py` (the `WhatsNewStore` mixin and `ENTRIES`: the
   pool of What's new candidates, the morning's pick of up to five (`pick_step`, run by `retention_worker`) and what a
   person saw; its dialog is
   `dashboard/shell-whats-new.js`), `machine/store/done_milestones.py` (the `DoneMilestonesStore` mixin and

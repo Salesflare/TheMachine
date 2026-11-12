@@ -19,6 +19,10 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'trello.action': 'Trello'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'trello.action': 'card'}
+APP = 'Trello'
 SETUP = {
     'label': 'Trello',
     'account': {'id': 'trello', 'service': 'trello', 'transport': 'api',
