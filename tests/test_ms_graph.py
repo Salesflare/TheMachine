@@ -241,6 +241,19 @@ class Calls(Base):
                     ms_graph.call(self.config, a.credential, self.mail, 'me')
         self.assertEqual(got.exception.retry_after, 420)
 
+    def test_a_failed_mail_read_names_its_graph_call_without_ids(self):
+        with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError(G, 504, 'busy', {}, io.BytesIO())):
+            with mock.patch.object(ms_graph, 'token', return_value='test'):
+                with self.assertRaises(a.SourceError) as got:
+                    a.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'id': 'msg-7f3a'}, 'scope')
+        self.assertEqual((got.exception.status, got.exception.route), (504, '/me/messages/{id}'))
+        self.assertEqual(str(got.exception), 'outlook:HTTP_504')  # the error feed's message stays the same
+        with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=TimeoutError()):
+            with mock.patch.object(ms_graph, 'token', return_value='test'):
+                with self.assertRaises(ms_graph.GraphError) as got:
+                    ms_graph.call(self.config, a.credential, self.mail, 'messages.mime', {'id': 'msg-7f3a'}, raw=True)
+        self.assertEqual(got.exception.route, '/me/messages/{id}/$value')
+
     def test_oversized_raw_response_never_becomes_a_successful_partial_file(self):
         with mock.patch.object(ms_graph, 'token', return_value='test'), mock.patch.object(ms_graph.urllib.request, 'urlopen', return_value=Response(b'x' * 40_000_001)):
             with self.assertRaises(ms_graph.GraphError):

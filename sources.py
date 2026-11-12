@@ -98,7 +98,7 @@ def gog_read(config, account, api, version, method, params, scope):
                 return ms_graph.calendar_call(config, credential, account, method.split('.', 1)[1], params)
             return ms_graph.gmail_call(config, credential, account, method, params)
         except ms_graph.GraphError as error:
-            raise SourceError(error.category, error.status, error.retry_after) from None
+            raise SourceError(error.category, error.status, error.retry_after, route=error.route) from None
     if account['transport'] == 'broker':
         try:
             return google_api.call(config, credential, account, method, params, scope)
