@@ -144,10 +144,10 @@ class ReviewSender(unittest.TestCase):
 
     def test_the_closest_senders_stay_when_the_block_is_full(self):
         analysis = self.claim()['analysis_id']
-        text = senders.lines(self.app, analysis, limit=len(senders.HEADER) + 150)
+        text = senders.lines(self.app, analysis, limit=len(senders.HEADER) + 190)
         self.assertIn('- Ann Example', text)
         self.assertNotIn('- Kim Home', text)
-        self.assertLessEqual(len(text), len(senders.HEADER) + 150)
+        self.assertLessEqual(len(text), len(senders.HEADER) + 190)
 
     def test_each_line_is_logged_as_a_record_read_of_that_review(self):
         result = self.claim()
@@ -166,6 +166,80 @@ class ReviewSender(unittest.TestCase):
             before = self.claim('run-2')
         self.assertEqual([e['id'] for e in before['events']], [e['id'] for e in result['events']])
         self.assertEqual(set(result) - set(before), {'senders'})
+
+
+CHECK_IN = 'Hi! It has been a while, how are you doing these days?'
+
+
+def linkedin(n, hours, conv, name, text):
+    return {'account_id': 'li', 'source_id': f'li{n}', 'kind': 'linkedin.message', 'occurred_at': (NOW - dt.timedelta(hours=hours)).isoformat(),
+            'title': name, 'body': text, 'deleted': False,
+            'metadata': {'conversation_id': conv, 'chat_name': name, 'from_me': False, 'from': name, 'group': False}}
+
+
+class CheckIns(unittest.TestCase):
+    """A personal check-in: the same words on LinkedIn from a former colleague the owner wrote with for months (their
+    closeness long faded) and from a stranger. Only the one the owner knows gets a line, saying they wrote with them,
+    so the review can tell a reply owed from an opener (AGENTS.md, Personal check-ins)."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        accounts = [ACCOUNTS[0], {'id': 'li', 'service': 'linkedin', 'boundary': 'work:Acme'}]
+        self.store = a.Store(Path(temp.name) / 'events.sqlite')
+        self.store.accounts = accounts
+        self.app = object.__new__(a.App)
+        self.app.store = self.store
+        self.app.fleet = None
+        self.app.config = {'accounts': accounts, 'database': str(Path(temp.name) / 'events.sqlite'), 'review_worker': {'enabled': True}}
+        started = patch_everywhere(a, 'now', lambda: NOW.isoformat())
+        started.start()
+        self.addCleanup(started.stop)
+        # months ago: mail back and forth with a former colleague, the owner writing on three days
+        old = [mail('work', 10 + i, 24 * (200 + 7 * i), 'Robin Vale <robin@formerco.example>', f'Project update {i}') for i in range(3)]
+        old += [mail('work', 20 + i, 24 * (200 + 7 * i) - 2, 'Sam <sam@acme.com>', f'Re: Project update {i}', to='Robin Vale <robin@formerco.example>',
+                     labels=('SENT',)) for i in range(3)]
+        self.store.commit_page('work', {}, old)
+        self.store.commit_page('li', {}, [linkedin(1, 3, 'conv-robin', 'Robin Vale', CHECK_IN), linkedin(2, 2, 'conv-casey', 'Casey Stone', CHECK_IN)])
+        with self.store.connect() as db:
+            db.execute("UPDATE events SET analyzed_version=version WHERE account_id='work'")  # read long ago
+            db.isolation_level = None
+            a.graph.build(db, self.app.config, NOW.isoformat())
+        with self.store.connect() as db:
+            self.ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
+
+    def claim(self):
+        with self.store.connect() as db:
+            db.execute("INSERT OR REPLACE INTO review_runs(run_id,status,started_at,updated_at,attempts,planned) VALUES('run-1','running',?,?,0,1)",
+                       (NOW.isoformat(), NOW.isoformat()))
+        return self.app.events_action('begin_analysis', {'account_ids': ['work', 'li'], 'limit': 40, '_review_session': a.REVIEW_SESSION_PREFIX + 'run-1',
+                                                         '_review_run': 'run-1'})
+
+    def test_a_known_contacts_check_in_gets_a_line_and_a_strangers_does_not(self):
+        result = self.claim()
+        self.assertEqual({e['id'] for e in result['events']}, {self.ids['li1'], self.ids['li2']})
+        lines = result.get('senders', '').split('\n')
+        robin = [line for line in lines if line.startswith('- Robin Vale')]
+        self.assertEqual(len(robin), 1, lines)
+        self.assertIn(f"(signal {self.ids['li1']})", robin[0])  # the LinkedIn message, joined to the mail by the full name
+        self.assertIn('the owner wrote on 3 days', robin[0])
+        self.assertNotIn('regular', robin[0])  # closeness faded: the past exchanges are what says they know each other
+        self.assertNotIn('Casey', result['senders'])
+        self.assertNotIn(str(self.ids['li2']), result['senders'])
+
+    def test_one_reply_to_a_stranger_is_no_relationship(self):
+        with self.store.connect() as db:  # only one of those days: like answering a pitch once
+            db.execute("DELETE FROM events WHERE source_id IN ('work21','work22')")
+            db.isolation_level = None
+            a.graph.build(db, self.app.config, NOW.isoformat())
+        self.assertNotIn('senders', self.claim())
+
+    def test_the_rule_reaches_the_review(self):
+        prompt = a.review_prompt('run-1', ['work', 'li'])
+        rule = next(line for line in prompt.splitlines() if line.startswith('Personal check-ins:'))
+        for needed in ('really knows', 'past exchanges', 'earlier_in_conversation', 'Reply to <name>', 'prepare_ahead:true', 'no_todo', 'never its words'):
+            self.assertIn(needed, rule)
+        self.assertIn('Personal check-ins', (ROOT / 'source-notes/linkedin.md').read_text())
 
 
 if __name__ == '__main__':

@@ -822,9 +822,12 @@ records it is about, where it came from, when, and how it was picked (with its s
 
 A review also learns who wrote its batch. When it claims its signals (`begin_analysis`), the reply carries `senders`
 (the `sender` block, `machine/app/senders.py`): one short line per sender the Graph knows something specific about,
-with their role and organization, how close they are and the first line of their summary. It reads stored rows only,
-no model call. A sender with no role, no summary and less than regular contact gets no line, and neither do the
-owner's own messages. A summary line goes in only when its area (Work, Personal) is that of the signals this person
+with their role and organization, how close they are, how often the owner wrote to and met them, and the first line of
+their summary. It reads stored rows only, no model call. A sender with no role, no summary, less than regular contact
+and no past exchange (the owner wrote to them on fewer than two days and never met them) gets no line, and neither do
+the owner's own messages. So someone the owner knows from before still shows once closeness has faded: a personal
+check-in from them gets a "Reply to" to-do with a drafted answer, while the same words from a stranger, usually an
+opener for a pitch, get none (the review prompt's Personal check-ins, `machine/prompts/review.py`). A summary line goes in only when its area (Work, Personal) is that of the signals this person
 sent in the batch. The block is at most 1,600 characters (about 400 tokens), closest senders first, and is left out
 whole when the reply, which also lists the projects and boards, would come within 2,000 characters of the 64,000
 where a tool result is cut. Each line is logged as a `record` read of that review.
