@@ -63,6 +63,11 @@ class SourceNames(unittest.TestCase):
             'Source: WhatsApp from 32470000002@s.whatsapp.net · Thu 22 Oct': 'Source: WhatsApp · Thu 22 Oct',
             'Source: Telegram from 700000001 · Thu 22 Oct': 'Source: Telegram · Thu 22 Oct',
             'Source: email from Sam Lee · Thu 22 Oct': 'Source: email from Sam Lee · Thu 22 Oct',
+            # older phone cards stored the app's package: its name instead
+            'Source: phone from com.whatsapp · Thu 22 Oct': 'Source: phone from WhatsApp · Thu 22 Oct',
+            'Source: phone from com.acme.mobile.android · Thu 22 Oct': 'Source: phone from Acme · Thu 22 Oct',
+            'Source: phone from Acme Bank · Thu 22 Oct': 'Source: phone from Acme Bank · Thu 22 Oct',
+            'Source: email from acme.example · Thu 22 Oct': 'Source: email from acme.example · Thu 22 Oct',  # only phone apps
         }
         for stored, want in cases.items():
             self.assertEqual(a.source_line_shown(stored, names), want)
