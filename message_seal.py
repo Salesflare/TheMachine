@@ -107,7 +107,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'gbrain_notes': ('text',),  # the owner's own notes on a GBrain page (gbrain.py)
            # a Work Fleet's team learnings, also a removed one kept so it is not learned again (fleet_learnings.py)
            'fleet_learnings': ('text',), 'fleet_learn_removed': ('text',),
-           'learned_fixes': ('text',),  # what the first look's summary said of someone, left off it (first_learned.py)
+           'learned_fixes': ('text',),  # what the first look's old summary said of someone, left off it
            'learning_changes': ('before', 'after', 'why'),  # a learned change, what it replaced and why (learning_loop.py)
            'fleet_log': ('what',),  # what was asked, answered or learned in a Fleet, a line each (fleet.py)
            # a line of the owner's OpenClaw notes offered as a fact, kept also once dismissed (bring_in.py)

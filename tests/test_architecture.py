@@ -464,7 +464,7 @@ FIRST_LOAD_ROOM = 32_000
 # compose 6,000 (2026-11-12): a new email from a click on an address, in the send dialog (about 4.4 KB).
 # ask 3,000 (2026-11-12): a to-do's questions, a pick and the one Answer that sends them all (about 1.4 KB), loaded on
 # the first pick or Answer; the questions themselves draw with the to-do.
-LAZY_CEILING = {'ask': 3_000, 'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learned': 12_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+LAZY_CEILING = {'ask': 3_000, 'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):
