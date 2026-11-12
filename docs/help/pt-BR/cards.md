@@ -122,6 +122,6 @@ Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua 
 
 - **Vence**: digite um dia ou um horário, como "amanhã", "próxima sex", "3 nov", "15:00", "2pm", "em 2 horas" ou "amanhã 9". Ela entende outros idiomas também ("over 2 uur", "morgen 9u"). O ícone do calendário tem opções rápidas, como ao adiar, e **Escolher data**.
 - **Mensagem**: anexe a mensagem de que ela trata: um e-mail, Slack, Teams, WhatsApp, Telegram ou qualquer outra mensagem que The Machine tenha. Busque por texto ou remetente. Cada resultado mostra de onde vem, quem enviou e quando.
-- **Arquivos**: toque no clipe na caixa, cole uma captura de tela ou solte arquivos no formulário. No celular, você também pode tirar uma foto. Até 5 arquivos, dos mesmos tipos e tamanhos do chat (veja [Adicionar arquivos](card-chat.md#add-files)). × remove um.
+- **Arquivos**: toque no clipe na caixa, cole uma captura de tela ou solte arquivos no formulário. No celular, a câmera ao lado tira uma foto. Até 5 arquivos, dos mesmos tipos e tamanhos do chat (veja [Adicionar arquivos](card-chat.md#add-files)). × remove um.
 
 Os arquivos ficam com a tarefa: aparecem nela e no chat dela, e a The Machine lê os arquivos quando trabalha nela. Só arquivos bastam: a The Machine lê o texto de um PDF ou arquivo de texto e preenche a tarefa a partir dele.

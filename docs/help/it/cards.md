@@ -122,6 +122,6 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 
 - **Scadenza**: scrivi un giorno o un'ora, come "domani", "ven prossimo", "3 nov", "15:00", "2pm", "tra 2 ore" o "domani 9". Capisce anche altre lingue ("over 2 uur", "morgen 9u"). L'icona del calendario ha scelte rapide, come quando posticipi, e **Scegli una data**.
 - **Messaggio**: allega il messaggio a cui si riferisce: un'email, Slack, Teams, WhatsApp, Telegram o qualsiasi altro messaggio che The Machine ha. Cerca per testo o mittente. Ogni risultato mostra da dove arriva, chi l'ha inviato e quando.
-- **File**: tocca la graffetta nel riquadro, incolla uno screenshot o trascina i file sul modulo. Su un telefono puoi anche scattare una foto. Fino a 5 file, degli stessi tipi e dimensioni della chat (vedi [Aggiungi file](card-chat.md#add-files)). × ne toglie uno.
+- **File**: tocca la graffetta nel riquadro, incolla uno screenshot o trascina i file sul modulo. Su un telefono, la fotocamera accanto scatta una foto. Fino a 5 file, degli stessi tipi e dimensioni della chat (vedi [Aggiungi file](card-chat.md#add-files)). × ne toglie uno.
 
 I file restano con l'attività: compaiono sull'attività e nella sua chat, e The Machine li legge quando ci lavora. Bastano i file: The Machine legge il testo di un PDF o di un file di testo e compila l’attività da lì.

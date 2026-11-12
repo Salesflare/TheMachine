@@ -107,7 +107,9 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
    both the same size and lined up with the text's edges, so the box reads the same empty, typed or grown. */
 #new-card .chat-box{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"text text text" "attach . send";align-items:center;row-gap:4px;column-gap:8px;padding:12px 10px 8px 14px}
 #new-card .chat-box textarea{grid-area:text;height:auto;min-height:44px;padding:0 4px 0 2px}
-#new-card .chat-box .chat-attach{grid-area:attach;align-self:center;margin:0 0 0 -6px}
+#new-card .chat-box .nc-attach{grid-area:attach;align-self:center;display:flex;align-items:center;gap:2px;margin:0 0 0 -6px}
+#new-card .chat-box .chat-attach{align-self:center;margin:0}
+#nc-camera{display:none}@media(pointer:coarse){#new-card .chat-box #nc-camera{display:grid}}
 #new-card .chat-box .chat-tools{grid-area:send;justify-self:end}
 /* On a phone the composer is a bottom sheet that stays above the keyboard, like the card chat's box. */
 @media(max-width:560px){

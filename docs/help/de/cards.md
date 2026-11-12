@@ -122,6 +122,6 @@ Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine 
 
 - **Fällig**: Gib einen Tag oder eine Uhrzeit ein, etwa „morgen“, „nächsten Fr“, „3. Nov“, „15:00“, „in 2 Stunden“ oder „morgen um 9 Uhr“. Englisch geht auch („in 2 hours“, „tomorrow 9“). Das Kalendersymbol hat Schnellauswahlen wie beim Zurückstellen und **Datum wählen**.
 - **Nachricht**: Häng die Nachricht an, um die es geht: eine E-Mail, Slack, Teams, WhatsApp, Telegram oder jede andere Nachricht, die The Machine hat. Gesucht wird nach Text oder Absender. Jeder Treffer zeigt, woher er kommt, wer ihn geschickt hat und wann.
-- **Dateien**: Tippe auf die Büroklammer im Feld, füge einen Screenshot ein oder zieh Dateien auf das Formular. Auf dem Handy kannst du auch ein Foto machen. Bis zu 5 Dateien, dieselben Arten und Größen wie im Chat (siehe [Dateien hinzufügen](card-chat.md#add-files)). × nimmt eine wieder weg.
+- **Dateien**: Tippe auf die Büroklammer im Feld, füge einen Screenshot ein oder zieh Dateien auf das Formular. Auf dem Handy macht die Kamera daneben ein Foto. Bis zu 5 Dateien, dieselben Arten und Größen wie im Chat (siehe [Dateien hinzufügen](card-chat.md#add-files)). × nimmt eine wieder weg.
 
 Die Dateien bleiben bei der Aufgabe: Sie erscheinen auf ihr und in ihrem Chat, und The Machine liest sie, wenn sie daran arbeitet. Dateien allein reichen: The Machine liest den Text eines PDFs oder einer Textdatei und füllt die Aufgabe daraus aus.

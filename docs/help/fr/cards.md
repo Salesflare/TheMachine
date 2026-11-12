@@ -122,6 +122,6 @@ Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie
 
 - **Échéance** : tapez un jour ou une heure, comme « demain », « ven. prochain », « 3 nov. », « 15:00 », « dans 2 heures » ou « demain 14h ». L’anglais marche aussi (« in 2 hours », « tomorrow 9 »). L’icône du calendrier propose des choix rapides, comme pour la mise en attente, et **Choisir une date**.
 - **Message** : joignez le message concerné : un e-mail, Slack, Teams, WhatsApp, Telegram ou tout autre message que The Machine a reçu. La recherche porte sur le texte ou l’expéditeur. Chaque résultat indique sa provenance, son expéditeur et sa date.
-- **Fichiers** : touchez le trombone dans le champ, collez une capture d’écran ou déposez des fichiers sur le formulaire. Sur un téléphone, vous pouvez aussi prendre une photo. Jusqu’à 5 fichiers, des mêmes types et tailles que dans le chat (voir [Ajouter des fichiers](card-chat.md#add-files)). × en retire un.
+- **Fichiers** : touchez le trombone dans le champ, collez une capture d’écran ou déposez des fichiers sur le formulaire. Sur un téléphone, l’appareil photo à côté prend une photo. Jusqu’à 5 fichiers, des mêmes types et tailles que dans le chat (voir [Ajouter des fichiers](card-chat.md#add-files)). × en retire un.
 
 Les fichiers restent avec la tâche : ils s’affichent sur la tâche et dans son chat, et The Machine les lit en travaillant dessus. Des fichiers seuls suffisent : The Machine lit le texte d’un PDF ou d’un fichier texte et remplit la tâche à partir de lui.
