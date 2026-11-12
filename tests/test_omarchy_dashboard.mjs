@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Omarchy theme (settings-omarchy.js): without Omarchy the row stays hidden. On the Omarchy computer itself (`here`)
 // it is on by default; elsewhere off until picked. On, it paints the theme's colors, follows a theme switch without a

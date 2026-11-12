@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 // Long lists load a page at a time. The sidebar and the drawer: Done opens on its 10 latest, Show more adds 20 (asking
 // the Machine for older ones when needed), folding starts over; other groups show 8 first. The main pane: Done loads 30
 // at a time as you scroll, with Show more as the fallback, and no hand-off to Feedback. The Graph pages: tabs with

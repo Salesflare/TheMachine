@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Recurring to-dos on the dashboard (dashboard/todos-repeat.js): one short line on a repeating to-do (with "missed 1"),
 // Repeat… under …, Skip this one in the Repeat box, the Repeat box (a rhythm, Custom… and Stop repeating), Repeats in New to-do,

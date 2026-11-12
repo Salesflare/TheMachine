@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // X and LinkedIn read only in set hours (read_window from the server). Outside them a source says when it reads again,
 // never "Waiting for a fresh sync", and isn't counted; once its hours open, staleness counts from the opening. A busy

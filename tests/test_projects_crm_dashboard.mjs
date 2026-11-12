@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Projects like a CRM: New project from the board header, a lane's + Add, a person's page and the command palette; Edit,
 // Won and Lost with why, Archive and Delete from a tile's ⋯ and the project page; a board to open on; the projects a

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Share board… on a board's ⋯ menu: a sheet with the Work Fleet's confirmed teammates, one line saying what they get
 // (its projects and their threads, deals too; personal never), and Share. The board header says who it's shared with;

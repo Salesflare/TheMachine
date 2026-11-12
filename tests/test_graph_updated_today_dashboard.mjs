@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // What The Machine updated today (graph_updates.py): one quiet line on top of People and Projects ("Updated 2 people
 // today"), none on a list it didn't touch, a still dot on each row and board tile it changed, and the line opens what

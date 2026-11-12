@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Snooze and Mark done answer at once. The Snooze message has Undo, which brings the to-do back (accept on a snoozed
 // to-do, as Unsnooze), and only while it is still snoozed. Mark done closes the to-do on screen before the Machine

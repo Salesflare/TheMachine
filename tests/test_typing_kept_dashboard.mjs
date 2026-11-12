@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Typing in a to-do's Ask for changes box while a status poll redraws the to-do (its text changed): the box stays the
 // same element, focused, with its text and caret, so a phone keyboard keeps its session (spell check doesn't drop out).

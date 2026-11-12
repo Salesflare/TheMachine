@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Read photos (whatsapp_images.py) on the dashboard: a to-do from a WhatsApp photo shows it as a thumbnail, its chat
 // shows it in the message, a tap opens it large and Escape closes it; only this Machine's own photos (inline data: or

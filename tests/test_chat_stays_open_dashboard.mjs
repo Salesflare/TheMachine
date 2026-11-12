@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // An open to-do chat stays open while its to-do moves: a message to a paused job, Do it, a message that restarts a
 // done one. Each moves the to-do to Preparing with a job that starts shortly, and the chat follows it there (its

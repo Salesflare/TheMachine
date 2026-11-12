@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The mascot next to "The Machine" blinks now and then: its closed-eyes frame for about 150ms every 4 to 9 seconds,
 // sometimes twice. On a computer the sidebar mascot and the one over the cards each keep their own timer and never blink

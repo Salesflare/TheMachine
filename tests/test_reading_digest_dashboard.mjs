@@ -3,9 +3,8 @@ import {createServer} from 'node:http';
 import {mkdir,readFile} from 'node:fs/promises';
 import {join,basename} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Daily digest (reading_digest.py): a template under Templates; its routine's card shows the topics it picks for
 // (More of, Less of), each removable, one field to add; its to-do lists each pick with why it matters, its mail to open,
@@ -91,6 +90,8 @@ try{
   await todo.scrollIntoViewIfNeeded();await shot('digest-todo');
   await todo.locator('[data-dg="dg1"][data-dg-n="1"][data-dg-to="less"]').click();  // a second tap takes it back
   assert.equal(await todo.locator('[data-dg-n="1"][data-dg-to="less"]').getAttribute('aria-pressed'),'false');
+  // the button flips at once, its post lands after: wait for the third before reading them
+  for(const until=Date.now()+5000;posts.filter(p=>p.action==='digest_feedback').length<3&&Date.now()<until;)await page.waitForTimeout(50);
   assert.deepEqual(posts.filter(p=>p.action==='digest_feedback').map(p=>[p.item,p.feedback]),[[0,'more'],[1,'less'],[1,'']]);
   await todo.locator('[data-dg-open="11"]').click();
   await page.frameLocator('#email-dialog iframe.email-frame').getByText('Field data from twelve towns.').waitFor();

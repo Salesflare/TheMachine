@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Promises heading on the To-dos list looks like the other folded sections' (Done / dismissed here): the same
 // serif font and size, the same indent, the count at the right edge. Light and dark, at 390 and on a desktop.

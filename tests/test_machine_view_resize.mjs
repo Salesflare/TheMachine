@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The dashboard's view of a desktop (deploy/browser/machine-view.js) frames the browser's window for the size it has.
 // When that size changes (the window or the dashboard's pane resized, Full size, the pane shown again) it frames it

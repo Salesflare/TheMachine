@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Promises list on the To-dos page: both directions, due chips, one ⋯ on every one still open with Do it (theirs:
 // Nudge), Mark done and Not happening (a to-do one too, its to-do closes with it), and "a to-do now" opens that to-do.

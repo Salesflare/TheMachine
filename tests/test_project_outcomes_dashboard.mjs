@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Outcomes for every project (project_success.py, 2026-11-11): a project on no board has Done when and Proof in its
 // dialog and its Done when box on its page; work that isn't a deal ends Done (outcome 'won' underneath), a deal Won or

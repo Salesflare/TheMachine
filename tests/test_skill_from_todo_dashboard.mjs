@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do whose run proposed a skill (proposed_skill): the card shows what is in it and leads with Create skill, or
 // Update skill with its before and after first. Never Copy draft or "can't be sent from here": a skill isn't a message.

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do whose run got stuck, then handed to Codex from its chat. While the job runs the server shows its preparation as
 // working (agent_jobs.shown_preparation): the chip and the chat's status line both say Working…, never Stuck, and Try

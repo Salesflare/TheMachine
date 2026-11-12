@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Fleet's to-dos come from api/fleet (some 80 KB on a busy Machine), which the to-do list fetched on every redraw at
 // most every 20 seconds. Off the Fleet tab it is fetched again only when the status's marker (fleet.stamp) changed; a

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A teammate's ask under To-dos: Share once, Always share and Decline are visible buttons (Never under More). A brief
 // ask is never a to-do: it waits quietly in its Fleet's pane (Brief requests), the latest per teammate, with Share once first and no nudge toward Always.

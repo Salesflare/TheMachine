@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The status poll (every 30 s) redraws the page. A ⋯ menu someone has open stays open and where it opened, with the
 // item they are on still focused, also when the row it sits in changed and was drawn again: on a promise, a to-do,

@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {focusOn} from './nav-click.mjs';
 import {settled} from './page-calls.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The command palette and the keyboard shortcuts (made-up data). ⌘K on a Mac and Ctrl+K elsewhere open and close it;
 // / opens it too; fuzzy match over one action registry, plus cards and the Graph's own search (api/graph?q=, stale

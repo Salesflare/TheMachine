@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A person's page reads at a glance: photo, name, title · organization, place and one plain line on how you're in touch;
 // then Contact (labeled rows in the normal font, tap to call or mail, Copy), With you (what they are to you, Work or

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Inviting family at the right moment (family_invites.py): a family to-do carries a quiet "Invite Sasha?" line. Invite
 // is a link to the account page's prefilled invite form (a new tab; nothing is sent from here) and marks it used; Not

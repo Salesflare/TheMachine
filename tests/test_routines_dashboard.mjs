@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Routines page (dashboard/routines-page.js): one short line when there are none, Run now in sight and the rest in the
 // ⋯ menu, Stop only on a second tap (the menu stays open for it), and a result that is text, never markup. A suggestion

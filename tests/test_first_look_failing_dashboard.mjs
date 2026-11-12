@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A first look whose tries fail: after one failure the line under its bar says it tries again shortly; from the third in
 // a row it says the tries keep failing, instead of "Nothing for you yet. Reading on." for hours (2026-10-27: a hosted

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A run stuck on messages from another area (preparation_blocked use_event_ids, Store.use_sources): never a dead Stuck.
 // The to-do says in one line what is blocked and leads with the one tap that unblocks it, "Use this email for this

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // New card and Rename on the dashboard. New card: a row under Find a to-do on a computer, "+" in the top bar on a
 // phone, C, "new" in Find a to-do, and the palette (Ctrl/⌘K) then "new"; one field, optional Work/Personal, due date, person and message (any kind); Enter adds it

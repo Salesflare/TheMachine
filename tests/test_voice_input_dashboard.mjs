@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Voice input (voice_input.py): the mic in the to-do chat's box, New to-do and Help. Tap to talk and tap Done, or hold
 // it; the recording bar shows Cancel, the clock and Done; the clip goes to the Machine as 16 kHz mono WAV; the text

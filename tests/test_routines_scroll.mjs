@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Routines page stays put while you edit (dashboard/routines-page.js rtPatch, rtKeep): on a phone, scrolled down to a
 // routine under long suggestions, Edit's Try it and the refreshes while its test runs only change that test run. Nothing

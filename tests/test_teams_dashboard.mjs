@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Microsoft Teams on a hosted Machine (connectors/teams.py): + Add has a Teams tile; its form signs in with Microsoft
 // (work only: no Work or personal question) and shows the Teams admin link (m365-admin-consent/teams). Its card says

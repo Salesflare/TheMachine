@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections: an Intercom card says what it brings in, and that it replies only after Send (who it replies as under
 // Details: the owner's own sign-in), or only what it brings in when it only reads (a Fleet share, a pasted token). Its count reads "conversations", never broken mid-word. SHOTS=<folder> saves screenshots.

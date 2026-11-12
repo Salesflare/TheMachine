@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Settings, General, Version and Settings, Model, Search by meaning (dashboard/settings-upkeep.js). Hosted: the control
 // plane's summary (/_machine/account version, meaning) with Update now and the switch, each a POST to its own

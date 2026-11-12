@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The dashboard with the keyboard only, the way someone without a mouse walks it. Suggestions lands on the first to-do;
 // J/K and ↓ ↑ go through the to-dos and the heads of the folded lists, so a page with everything folded is still

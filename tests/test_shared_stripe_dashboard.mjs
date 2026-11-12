@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Stripe for the team on the Fleet tab (shared_connectors.py): an admin without Stripe gets Connect Stripe, which opens
 // Connections, + Add at Sign in with Stripe; with it connected, Share Stripe ticks everyone; once shared, the admin reads

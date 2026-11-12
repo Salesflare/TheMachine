@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {settled} from './page-calls.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Ask from search (search_ask.py) in the palette, on made-up data: the usual results show at once; a question gets a
 // short answer above them that comes in a few words at a time, with its messages as rows that open the message;

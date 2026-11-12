@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The parts that load when first needed (dashboard_parts.py LAZY), served as the Machine serves them
 // (machine/web/serving.py dashboard_files): the page loads and is drawn whole without them (the load event doesn't wait

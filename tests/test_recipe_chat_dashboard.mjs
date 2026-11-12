@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A repeating to-do keeps its own way of doing it (recurring.py, method): its chat shows one quiet centered line
 // "Saved how to do this next time · Edit · Undo" under the reply. Edit opens the words in place (no other screen) and

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // One count for For you: the header ("5 to-dos for you"), the stat tile, the For you section and the sidebar's For you all
 // count the same items, Fleet asks among them. The sidebar once left the Fleet asks out (header 4, sidebar 2). The

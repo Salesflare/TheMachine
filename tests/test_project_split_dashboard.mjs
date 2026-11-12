@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Split up (project_split.py) on a project's page: Split up… in its ⋯ asks for a proposal (one call), the preview shows
 // each proposed project with its name, its line and its items, each with where it goes; the owner renames one, moves an

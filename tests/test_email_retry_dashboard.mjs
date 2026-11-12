@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's source email when Gmail doesn't answer (/api/email refuses with retry): the viewer shows the saved text,
 // one short "Couldn't load the full email. Try again" line and Open in Gmail, never "Loading…" for good. Try again

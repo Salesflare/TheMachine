@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A routine's to-do whose note holds for the routine's next runs too (routine_changes.py): it offers Also change the
 // routine; that shows what changes in the routine's words (Now / New, only the part that differs) and saves nothing

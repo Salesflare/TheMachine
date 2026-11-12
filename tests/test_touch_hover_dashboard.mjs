@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 // On a touch screen a tap leaves nothing highlighted in the drawer: no hover sticks to Graph's chevron or a row after
 // the finger lifts (hover styles are for a mouse only), and the chevron's box starts after the word Graph, never under
 // it. With a mouse, hovering the chevron lights the Graph row as one and only darkens the arrow.

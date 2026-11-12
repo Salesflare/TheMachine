@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's chat after the owner answered the question its run stopped on: the question is a small event line ("Asked:
 // …", The Machine's, in the middle like "Checked 6 things"), and the owner's bubble holds only their answer. The to-do's

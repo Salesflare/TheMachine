@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Talk's own actions (dashboard/todos-chat-talk.js), with OpenAI and the Machine as stand-ins:
 // - "do it" is the to-do's Do it (accept, browser work included), never Mark done; one already running is left to run;

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Share a contact (contact_share.py): ⋯, Share contact… on a person's page opens a dialog to pick one person and the
 // fields that go. A Personal contact keeps Preview off until "Share it anyway" is ticked. Preview shows the exact card,

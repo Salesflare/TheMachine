@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A connection's history on its card (machine/store/history.py, docs/help/history.md): how far back it reaches once it's
 // in ("History: back to November 2025."), "so far" while it comes in, and nothing before it starts. One line, in the

@@ -3,9 +3,8 @@ import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {execFileSync} from 'node:child_process';
 import {isDeepStrictEqual} from 'node:util';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The setup to-do at the top of To-dos (dashboard/setup-card.js): one small card, "Get more out of The Machine", a row per
 // step (the phone app, notifications, WhatsApp, the app on this computer, another account, more connections, then what

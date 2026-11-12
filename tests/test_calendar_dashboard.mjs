@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Calendar tab: the next seven days as an agenda (Overdue, Today, Tomorrow, then each day), with meetings from the
 // calendar (and their card), cards due or coming back, handoff check-ins and promises with a date. A row opens its card's

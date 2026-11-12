@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Moving a to-do to another area (todo_areas.py): Area under Details (Personal) opens the picker on Work, Move moves
 // it (Area says Work), the toast's Undo moves it back. A run that asked for the move (preparation_move_to) gets it as

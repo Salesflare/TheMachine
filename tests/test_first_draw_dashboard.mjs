@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A page's first drawing puts the to-dos on screen first: the parts out of sight (Learning, Connections, the other
 // tabs, the Updated line, the Done list, Settings' notifications) are drawn just after that first paint, not before it. Then they are all there, and a later

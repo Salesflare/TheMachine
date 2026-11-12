@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 // The tagline is a quiet line over the cards, not a headline: about body size, muted, on one line where it fits, with
 // the count readable under it
 const quietTagline=async(page,label)=>{const q=await page.evaluate(()=>{const t=document.querySelector('#page-head .page-title'),c=getComputedStyle(t),sub=document.querySelector('#page-head .page-sub');

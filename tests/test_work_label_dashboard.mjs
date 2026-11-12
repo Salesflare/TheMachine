@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections: a company reads as the Machine names it (api/status work_labels, work_or_personal.work_labels). A name
 // made from a domain (work:Moreaudesign for moreaudesign.io) reads plain Work, never the domain capitalized; a real

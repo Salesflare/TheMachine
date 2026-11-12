@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Fast for to-do chats (chat_model.py): a checkbox item at the end of a to-do chat's model menu, off by default. On,
 // the model button says Fast. A model without a fast option (Claude through a Claude plan here) keeps the item,

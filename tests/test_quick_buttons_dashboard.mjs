@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A web push's quick buttons (machine/delivery/push.py QUICK): Snooze (2 hours, or tomorrow on a reminder) and Mark done. A browser can't ask for
 // an unlock first, so sw.js never runs them itself: it keeps the tapped button under a random id (quickKeep) and opens

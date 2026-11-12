@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdirSync} from 'node:fs';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Routines page's field (dashboard/routines-page.js rtGrow) looks like a one-line field and grows with its words. With
 // classic scrollbars (Windows), a height a fraction of a pixel short of its text showed the scrollbar arrows in an empty

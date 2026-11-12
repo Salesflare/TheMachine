@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import zlib from 'node:zlib';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The card chat's composer: Stop takes the place of Send while a reply runs (chat_stop, then the reply so far stays
 // marked Stopped), and files join the next message from Add files, a paste or a drop. Each uploads at once

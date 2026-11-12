@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Calendar's real calendar views, next to the agenda (which stays the default). Week on a computer is a time grid:
 // hours down the side, Monday to Sunday, each meeting a block as long as it lasts, ones that overlap side by side,

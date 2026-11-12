@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The status sends only the Done list's first page of done to-dos. A chat or card link to an older done one (a
 // notification, Activity) asks the Machine for that one to-do and opens it, instead of "That to-do isn't here

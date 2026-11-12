@@ -13,9 +13,8 @@
 // tests/click-speed-baseline.json.
 import {createServer} from 'node:http';
 import {readFile, writeFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 export const FIXTURE=new URL('./click-speed-fixture.json',import.meta.url);
 export const LATENCY=40;

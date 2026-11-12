@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 // On a phone, opening the menu drawer leaves the page behind it exactly where it was: the same scroll position, the top
 // bar and the page header still at the top (also scrolled down, on Suggestions, Calendar and a Graph page), and the same
 // after it closes. The drawer's top takes the safe area (a notch, a camera cutout in the installed app) and no more: its

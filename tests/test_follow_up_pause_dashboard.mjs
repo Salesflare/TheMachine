@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Pause and Resume for follow-ups (follow_ups.pause, follow_up_pause): a paused board says "Follow-ups on" with a small
 // "Paused" chip and no next date, its tiles show the chip, and the settings panel has Pause (with an optional day to

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The model and thinking pickers (chat_model.py) under a to-do chat's message box, in Help and in Settings, Model: each
 // is a button that opens the app's own menu, not the browser's list. The chosen item has a check and Ultra's cost is a

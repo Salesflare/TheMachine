@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Settings, Apps, Connected AIs: one row per AI (the server folds an official app's sign-ins into one: ai_access.fold),
 // with its name, its tag and one line (access, area, end date, last use), the Messages switch and Change on the row.

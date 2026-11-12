@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Slow is not offline (shell-network.js, netSlow). A busy Machine can take 15 to 30 seconds for a call while it is
 // reachable the whole time. A call that waited long and then broke, or a gateway's 504, while the Machine answered

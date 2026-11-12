@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Card buttons: the next step, Snooze, Ask for changes (on a decision and on a ready draft) (Mark done tops its …), and a quiet … with
 // Hand off…, Repeat… and Not needed last. A draft's button says it opens the preview ("Review and send to …"), and Not needed is

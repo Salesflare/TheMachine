@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Someone with no contact at all (only a to-do made about them) shows no last contact on People, on their page and
 // on their organization's row: never "last contact never" or a made-up day. Someone with contact keeps theirs. SHOT_DIR=… saves screenshots.

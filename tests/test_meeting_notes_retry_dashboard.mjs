@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A meeting's notes and transcript that fail to load (The Machine restarting) load again by themselves: 2, 4, 8 and
 // 16 s later, and at once when the window gets the focus or the network is back. Only after that the dialog says it

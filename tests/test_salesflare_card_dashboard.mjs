@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // - The Salesflare card says what it brings in (its + Add line), how far its round of accounts is (stuck after a long while), and has Stop
 //   (then Start), Restart sync and a link to Salesflare's API keys; Stop posts connector_sync and the card says Stopped.

@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Feedback, What I've learned: a fact's sort and end day sit quietly under it ("Temporary · Until Nov 14"), a plain fact
 // shows neither, and facts past their end day are under Ended, each with Bring back. All mocked; FACT_SHOTS=dir saves screenshots.

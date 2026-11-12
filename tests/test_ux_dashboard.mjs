@@ -2,11 +2,10 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {execFileSync} from 'node:child_process';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick,scopeClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 // Playwright comes with OpenClaw; PLAYWRIGHT_CORE and CHROMIUM_PATH override the defaults.
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 import {forceReplyPayload} from '../openclaw-plugin/change-prompt.ts';
 // The Send preview's header rows as 'From: …' lines.
 // A card's rarer buttons wait under More: open it first when the button isn't in the row.

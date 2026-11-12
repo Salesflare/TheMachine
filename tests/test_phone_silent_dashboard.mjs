@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The notification feed answers while the phone is offline: the server marks the phone card android_offline with
 // silent_since (machine/sources/connectors.py silent_failure). The card says "Phone disconnected" with its fix, and Needs you says what to

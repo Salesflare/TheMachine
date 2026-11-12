@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A fresh hosted signup while ChatGPT connects (2026-11-04): the screen went "Taking a first look… 0 of 102 signals",
 // then back to "Connecting ChatGPT…" the same minute, and the count's total went 82, then 102. Once the first look

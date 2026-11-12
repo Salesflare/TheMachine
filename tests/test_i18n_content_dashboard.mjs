@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The UI translator (the i18n script in dashboard.html) translates the app's words, never what someone wrote: a card's
 // title and body, a chat message, an event's title. In Dutch "Change the intro." once read "the intro. wijzigen" (the

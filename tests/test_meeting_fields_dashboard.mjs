@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A meeting's details in the Calendar show its two records apart (meeting_notes.py): Notes first and open, then its
 // Transcript folded under "Transcript · 2h 03m" until Show. Each shows what was added to the meeting and the meeting

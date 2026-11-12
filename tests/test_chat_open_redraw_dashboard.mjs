@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Opening or closing a to-do's chat redraws only what it changes (the to-do list, the sidebar, the chat): Learning,
 // the Updated line and the rest of the page stay as they are drawn, when the data is the same. New data from a

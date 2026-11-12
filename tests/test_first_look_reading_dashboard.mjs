@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The first look's line while a batch is being read. A batch saves what it read at its end (2026-11-09: the first 20
 // took 98 s), so in between the line used to count a guess, a signal every few seconds ("Reading 11 of 132" with

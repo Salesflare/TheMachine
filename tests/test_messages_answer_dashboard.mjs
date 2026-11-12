@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {settled} from './page-calls.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Messages search, on made-up data: an English question about a booking whose code is in a Dutch mail. The results
 // keep the search's order (best match first, not newest first, and no Coming up split); the question gets a short

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A new owner's setup restarts the app a few times (a source added, reviews turned on). The hosted Machine answers
 // meanwhile with JSON {"restarting": true, "setting_up": ...} and Retry-After: 2. The dashboard then says "Setting up…"

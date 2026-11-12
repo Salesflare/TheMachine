@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A preparing to-do's status row (Preparing… and its clock, the browser links, the latest step, the live look at the
 // browser) fits a phone: it wraps instead of pushing the page wider than the screen (2026-10-29: "Preparing… 2:14

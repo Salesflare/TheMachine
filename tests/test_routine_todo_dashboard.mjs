@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do a routine made (its draft, routines_app.py routine_draft_todo; machine/store/views.py routine_view): its source line
 // says it is the routine's ("From your routine Check what shipped"), the name a link that opens that routine on the Routines

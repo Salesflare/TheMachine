@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A person's Birthday (person_birthday.py): a row under Contact, "December 9, 1990 · age 35" with where it came from,
 // and Edit in the row (a month and a day, the year optional; a day that isn't in its month says so and sends nothing).

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Graph › Projects as a board: Board is the default view, List one click away and remembered on this device. Chips switch
 // boards, a long column shows "Show N more", a tile opens its project page, a drag or the ⋯ menu moves it (graph_stage)

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Card chat: the card's title, its Chat › link or its "Asked" note opens #chat=<id>: a header with back, the title
 // and a ⋯ menu, the conversation from the service's card_chat strictly by time (the source first, the card itself as

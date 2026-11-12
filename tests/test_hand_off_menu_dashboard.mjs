@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The … menu's hand-off part (dashboard/todos-cards.js) in each mode: one way to hand off is a plain item with its whole
 // name (Ask to review, Hand off, Hand to <agent>), several open the "Hand off…" sheet. Ask to review alone once threw

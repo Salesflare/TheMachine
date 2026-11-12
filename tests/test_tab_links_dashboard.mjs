@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A link to a tab (#fleet, #todos, #messages, #graph, #learning, #connections) or a part of one (#fleet/sharing,
 // #settings/notify, #graph=orgs) opens it on the first load and on a hash change, and stays in the address, so a

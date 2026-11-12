@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Import birthdays from Facebook to-do's preview with friends nobody in the Graph has (todos-facebook-people.js,
 // birthdays_facebook.add): how many, a few names, and Add … as personal contacts next to Save, which stays the main
