@@ -121,6 +121,68 @@ class ReviewWorker(unittest.TestCase):
         self.store.finish_analysis(claim['analysis_id'],'Reviewed',a.REVIEW_SESSION_PREFIX+new,new)
         self.assertEqual(self.store.events(['work'],pending=True),[])
 
+    def errors(self):
+        with self.store.connect() as db:
+            a.error_feed.ensure(db)
+            return [dict(r) for r in db.execute("SELECT kind,location FROM error_feed WHERE source='review'")]
+
+    def test_a_review_a_gateway_restart_interrupted_is_carried_on_by_restart_recovery_not_reported_lost(self):
+        # A Gateway restart (an out-of-memory kill) ends the review's turn; OpenClaw's restart recovery resumes its
+        # session a minute later under a new run id. The probe found the run gone first and ended it as runtime_lost:
+        # an error report, a failed run in the back-off, and the recovered turn found the claim busy.
+        runner=Runner('admitted','absent','pending','absent','absent','lost')
+        self.step(runner,T)
+        old=self.runs()[0]['run_id'];session=a.REVIEW_SESSION_PREFIX+old
+        with patch_everywhere(a,'now',return_value=(T+dt.timedelta(seconds=30)).isoformat()):
+            claim=self.store.begin_analysis(['work','home'],120,session,old)
+        self.step(runner,T+dt.timedelta(minutes=3))  # the probe, right after the restart: gone, nothing runs there yet
+        self.assertEqual(runner.requests[1]['probe'],True)
+        run=self.runs()[0];self.assertEqual((run['status'],run['error']),('running','run_absent'))
+        recovered='81a266ed-aa86-4b3b-af8c-0de891960330'  # the turn restart recovery started in the same session
+        resumed=self.store.begin_analysis(['work','home'],120,session,recovered)
+        self.assertTrue(resumed.get('resumed'));self.assertEqual(resumed['analysis_id'],claim['analysis_id'])
+        self.step(runner,T+dt.timedelta(minutes=4))  # recovery's turn runs in the session: still this review
+        self.assertEqual((self.runs()[0]['status'],self.runs()[0]['error']),('running',None))
+        self.store.finish_analysis(claim['analysis_id'],'Reviewed',session,recovered)
+        self.assertEqual(self.store.events(['work'],pending=True),[])
+        self.step(runner,T+dt.timedelta(minutes=5))  # its turn ended: nothing runs in the session
+        self.step(runner,T+dt.timedelta(minutes=7))
+        self.assertEqual(runner.requests[-1]['action'],'status')  # within RESTART_RECOVERY_SECONDS of the first sighting
+        self.step(runner,T+dt.timedelta(minutes=8,seconds=1))
+        self.assertEqual(runner.requests[-1]['action'],'stop')
+        run=self.runs()[0];self.assertEqual((run['status'],run['error']),('ok',None))
+        self.assertEqual(self.errors(),[])
+
+    def test_a_review_no_restart_recovery_resumes_is_stopped_as_lost_after_the_wait(self):
+        runner=Runner('admitted','absent','absent','lost','admitted')
+        self.step(runner,T)
+        old=self.runs()[0]['run_id'];session=a.REVIEW_SESSION_PREFIX+old
+        with patch_everywhere(a,'now',return_value=(T+dt.timedelta(seconds=30)).isoformat()):
+            claim=self.store.begin_analysis(['work','home'],120,session,old)
+        self.step(runner,T+dt.timedelta(minutes=3))
+        self.step(runner,T+dt.timedelta(minutes=5))
+        self.assertEqual((runner.requests[-1]['action'],self.runs()[0]['status']),('status','running'))
+        self.step(runner,T+dt.timedelta(minutes=6,seconds=1))
+        self.assertEqual(runner.requests[-1]['action'],'stop')
+        run=self.runs()[0];self.assertEqual((run['status'],run['error']),('lost','runtime_lost'))
+        self.assertEqual([e['kind'] for e in self.errors()],['runtime_lost'])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM analyses WHERE id=?',(claim['analysis_id'],)).fetchone()[0],'retryable')
+        self.step(runner,T+dt.timedelta(minutes=8))  # the next run takes the batch over
+        self.assertEqual(runner.requests[-1]['action'],'start')
+
+    def test_a_turn_in_another_session_never_takes_a_review_claim_over(self):
+        # Only a turn in the review's own session carries it on: another session's run stays out (service_run)
+        runner=Runner('admitted')
+        self.step(runner,T)
+        old=self.runs()[0]['run_id']
+        claim=self.store.begin_analysis(['work','home'],120,a.REVIEW_SESSION_PREFIX+old,old)
+        other='b'*32
+        self.assertTrue(self.store.begin_analysis(['work','home'],120,a.REVIEW_SESSION_PREFIX+other,other).get('busy'))
+        with self.assertRaises(ValueError):
+            self.store.finish_analysis(claim['analysis_id'],'Reviewed',a.REVIEW_SESSION_PREFIX+other,other)
+        self.assertTrue(self.store.begin_analysis(['work','home'],120,'agent:main:main','x').get('busy'))
+
     def test_extended_outage_enters_recovery_and_reconciles_same_run_on_return(self):
         runner=Runner('admitted','unavailable','unavailable','lost','admitted')
         self.step(runner,T)

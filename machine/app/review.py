@@ -48,7 +48,7 @@ from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store.first_look import FIRST_ACTIONS, first_value
 from machine.store.review import (PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
-                                  service_review_ended)
+                                  service_review_ended, service_run)
 from machine.text import clamp, encoded, fold_previews
 import next_actions
 import shared_graph
@@ -62,6 +62,11 @@ REVIEW_TICK_SECONDS, FIRST_LOOK_TICK_SECONDS = 15, 4
 
 
 REVIEW_PROBE_SECONDS = 120  # the same for a review: old enough to be past the Gateway's queue
+
+
+# How long a review run gone from its session (a Gateway restart) waits for OpenClaw's restart recovery to resume the
+# session before it is stopped as lost: recovery marks and resumes it within about a minute of the Gateway's start.
+RESTART_RECOVERY_SECONDS = 180
 
 
 FIRST_LOOK_SIGNAL_SECONDS = 12  # about how long a first look takes per signal, for "first cards in about N min"
@@ -488,9 +493,13 @@ class ReviewApp:
                 db.execute('UPDATE review_runs SET attempts=attempts+1,updated_at=? WHERE run_id=?', (now(), run['run_id']))
         expired = (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds() > (
             settings.get('timeout_seconds', 1500) + settings.get('outage_grace_seconds', 600))
+        # Gone from its session (absent, below) for longer than restart recovery takes to resume it: stop it, which ends it
+        # as lost once the Gateway confirms nothing of it runs.
+        absent = run.get('error') == 'run_absent' and run.get('error_at') and \
+            (stamp - dt.datetime.fromisoformat(run['error_at'])).total_seconds() >= RESTART_RECOVERY_SECONDS
         # Stop/reconcile only this worker's exact run, never the main chat. Don't
         # release custody merely because a network request timed out.
-        action = 'stop' if expired or run['status'] == 'recovering' else 'start' if run['status'] == 'starting' else 'status'
+        action = 'stop' if expired or absent or run['status'] == 'recovering' else 'start' if run['status'] == 'starting' else 'status'
         request = {'kind': 'review', 'job_id': run['run_id'], 'action': action}
         if action == 'status' and (stamp - dt.datetime.fromisoformat(run['started_at'])).total_seconds() >= REVIEW_PROBE_SECONDS:
             # A Gateway restart ends a run without a terminal state for its id: the runner also checks the run is still
@@ -603,13 +612,19 @@ class ReviewApp:
                 # A first look's pass whose batch was saved is finished, whatever the runtime said after it (2026-10-27:
                 # a 9-hour first look). Its error code still goes to the error reports and the log.
                 status = 'ok' if error and self.store.first_look_run(run['run_id'], db) and self.store.review_batch_saved(db, run['run_id']) else result
+                # A run lost in a Gateway restart whose review OpenClaw's restart recovery then finished in the same session
+                # (service_run): every batch it claimed is saved. The review didn't die: no failure, no error report.
+                resumed = result == 'lost' and self.store.review_batch_saved(db, run['run_id'])
+                status = 'ok' if resumed else status
                 db.execute('UPDATE review_runs SET status=?,error=?,error_phase=?,last_error=coalesce(?,last_error),last_error_phase=coalesce(?,last_error_phase),error_at=CASE WHEN ? IS NOT NULL THEN ? ELSE error_at END,finished_at=?,updated_at=?,retry_at=NULL,unavailable_since=NULL WHERE run_id=?',
                            (status,None if status == 'ok' else error,None if status == 'ok' else phase,error,phase,error,now(),now(),now(),run['run_id']))
                 # Terminal runtime proof makes its unfinished claim immediately
                 # transferable. No event is marked reviewed by this recovery.
                 db.execute("UPDATE analyses SET status='retryable',last_error=coalesce(last_error,'run_interrupted'),error_at=? WHERE owner_session=? AND owner_run=? AND status IN ('running','retryable')",
                            (now(), REVIEW_SESSION_PREFIX + run['run_id'], run['run_id']))
-                if error:  # the error reports: its error code and phase, both from fixed lists (error_feed.py)
+                if resumed:
+                    LOG.info('review runtime outcome=lost resumed=ok')
+                elif error:  # the error reports: its error code and phase, both from fixed lists (error_feed.py)
                     error_feed.record(db, 'review', error, phase or '', 'assistant.py', 'review_step', None, self.store.code_version)
                     saved = db.execute("SELECT count(*) FROM analyses WHERE owner_run=? AND owner_session=? AND status='complete'",
                                        (run['run_id'],REVIEW_SESSION_PREFIX+run['run_id'])).fetchone()[0]
@@ -617,6 +632,14 @@ class ReviewApp:
                     LOG.warning('review runtime outcome=%s error=%s phase=%s saved_claims=%s' + (' reason=%s' if reason else '') + (' counted=ok' if status == 'ok' else ''),
                                 result, error, phase, saved, *([reason] if reason else []))
                 result = status
+            elif result == 'absent':
+                # Its turn is gone from its session and nothing else runs there: a Gateway restart. OpenClaw's restart
+                # recovery resumes the session under a new run id within seconds of the Gateway's start, and that turn
+                # carries on this review (service_run). Wait for it, from the first time it was seen gone; the action
+                # above stops the run once RESTART_RECOVERY_SECONDS passed without it (2026-11: runtime_lost on hosted
+                # Machines came right after Gateway restarts, while recovery was about to resume the session).
+                db.execute("UPDATE review_runs SET error='run_absent',error_phase=NULL,error_at=CASE WHEN error='run_absent' AND error_at IS NOT NULL THEN error_at ELSE ? END,retry_at=NULL,unavailable_since=NULL,updated_at=? WHERE run_id=?",
+                           (now(), now(), run['run_id']))
             elif result == 'unavailable':
                 db.execute("UPDATE review_runs SET status=CASE WHEN ? THEN 'recovering' ELSE status END,error='openclaw_unavailable',error_phase='connection',last_error='connection_error',last_error_phase='connection',error_at=?,unavailable_since=coalesce(unavailable_since,?),retry_at=?,updated_at=? WHERE run_id=?",
                            (int(expired), now(), now(), (stamp + dt.timedelta(seconds=60)).isoformat(), now(), run['run_id']))
@@ -779,6 +802,8 @@ class ReviewApp:
         return self.store.analysis_page(args['analysis_id'], args.get('page', 1), args.get('row_offset', 0))
 
     def finish_analysis_action(self, name, args, owner_dashboard=False):
+        if args.get('_review_session'):  # a turn restart recovery resumed answers for its session's run (service_run)
+            args = {**args, '_review_run': service_run(args['_review_session'], args.get('_review_run'))}
         if args.get('_review_run'):  # a review that got "Boards to suggest" or "Boards to sort" answers them before it finishes
             with self.store.connect() as db:
                 graph.board_check_answer(db, args['_review_run'], args.get('boards'))
