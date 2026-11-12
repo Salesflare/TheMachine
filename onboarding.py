@@ -335,8 +335,7 @@ WEB_NOTES = {
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
     'telegram': 'Next, you scan a QR code in Telegram.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
-    'shortcut': 'It only reads, never changes anything in Shortcut.',  # Get your token, right above the field, opens the page
-}
+    'shortcut': 'It only reads, never changes anything in Shortcut.'}  # Get your token (SETUP token_url) opens the page
 WEB_LEARN = {'telegram': 'telegram-chats', 'imap': 'imap'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password'}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']]}
@@ -361,10 +360,8 @@ def web_form(config, service):
     scope = service not in NO_SCOPE and setup.get('boundary') != 'workspace'
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
-    # Get your token: the service's own page for making the key, in a new tab (a connector's SETUP['token_url'])
-    token_url = setup.get('token_url') if isinstance(setup.get('token_url'), str) and setup['token_url'].startswith('https://') else None
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
-            'token_url': token_url, 'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
+            'token_url': setup.get('token_url') if str(setup.get('token_url') or '').startswith('https://') else None, 'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
             'auto': scope and service in ADDRESS_SCOPE, 'advanced': imap_setup.FIELDS if service == 'imap' else None}
 
 
@@ -2190,12 +2187,8 @@ def connect(config_path, name, ui, account_id=None, restart=True):
     if error and error.startswith(BUSY):
         ui.say(f'  ! not read yet: {hint(error) or error}. Saved; the first sync reads it.')
     elif error:
-        # A connector's own words for a check that failed (SETUP['errors']: prefix -> (what happened, what to do))
-        plain = next((pair for prefix, pair in (setup_of(service).get('errors') or {}).items() if error.startswith(prefix)), None)
-        if plain:
-            raise SetupError(*plain)
-        own = next((text for prefix, text in (setup_of(service).get('hints') or {}).items() if error.startswith(prefix)), '')
-        raise SetupError(f'{account["id"]} does not work yet: {error}', own or hint(error) or f'rerun: assistant connect {name}')
+        own = next((text for prefix, text in [*(setup_of(service).get('errors') or {}).items(), *(setup_of(service).get('hints') or {}).items()] if error.startswith(prefix)), '')
+        raise SetupError(*own) if isinstance(own, tuple) else SetupError(f'{account["id"]} does not work yet: {error}', own or hint(error) or f'rerun: assistant connect {name}')  # errors: its own words
     offer_phone_skip(config, account, ui)
     if not existing and getattr(ui, 'guess', False) and account.get('email'):
         boundary, by = guess_boundary(config, account['email'], account, getattr(ui, 'team_domains', ()), account.get('tenant_id'))
