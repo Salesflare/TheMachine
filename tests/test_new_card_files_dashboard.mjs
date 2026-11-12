@@ -67,8 +67,9 @@ try{
   assert.equal(await page.locator('#nc-camera').isVisible(),phone);
   assert.equal(await page.locator('#nc-camera-file').getAttribute('accept'),'image/*');
   assert.equal(await page.locator('#nc-camera-file').getAttribute('capture'),'environment');
-  if(phone){const box=await page.locator('#nc-camera').boundingBox(),clip=await page.locator('#nc-attach').boundingBox();
-   assert.ok(Math.abs(box.y-clip.y)<2&&box.x>clip.x&&box.x-clip.x<60,'the camera sits next to the paperclip');
+  // both read in one frame: on a phone the sheet is still sliding up (nc-up), so two reads apart can land frames apart
+  if(phone){const [box,clip]=await page.evaluate(()=>['#nc-camera','#nc-attach'].map(s=>document.querySelector(s).getBoundingClientRect().toJSON()));
+   assert.ok(Math.abs(box.y-clip.y)<2&&box.x>clip.x&&box.x-clip.x<60,`the camera sits next to the paperclip: camera ${box.x},${box.y}, paperclip ${clip.x},${clip.y}`);
    const cam=page.waitForEvent('filechooser');await page.locator('#nc-camera').click();const shotFile=await cam;
    assert.ok(!shotFile.isMultiple());await shotFile.setFiles([fileOf('image.jpg','image/jpeg',PNG)]);
    await page.locator('#nc-tray .chat-att:not(.up)').first().waitFor();assert.equal(ups().at(-1).args.name,'image.jpg');
