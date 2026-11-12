@@ -80,7 +80,7 @@ Eine Rückmeldung zählt, wenn der Mailserver sagt, dass es die Adresse nicht gi
 
 ## Position und Foto
 
-Personen mit einer Firmenadresse bekommen Position, Foto, LinkedIn und Stadt. Das wird nachgeschlagen wie [Organisationsdetails](organization-data.md). Auf einer gehosteten Machine werden nur ihr Name und die Domain der Firma gesendet. Ausschalten kannst du das in **Einstellungen** unter Sicherheit: **Arbeitskontakte nachschlagen**.
+Personen mit einer Firmenadresse bekommen Position, Foto, LinkedIn und Stadt. Das wird nachgeschlagen wie [Organisationsdetails](organization-data.md). Auf einer gehosteten Machine bekommt das Nachschlagen nur ihren Namen und die Domain der Firma. Für ein Foto bekommt Gravatar einen Hash ihrer Arbeitsadresse, nie die Adresse selbst. Ausschalten kannst du das in **Einstellungen** unter Sicherheit: **Arbeitskontakte nachschlagen**.
 
 Wenn das Nachschlagen sie kennt, zeigt ihre Seite auch ihren Über-mich-Text, seit wann sie in ihrer jetzigen Rolle sind und ihre zwei Rollen davor. Vorbereitungen lesen sie auch, den Über-mich-Text nur, wenn sie keine eigene Bio haben.
 

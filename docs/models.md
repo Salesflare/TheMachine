@@ -77,7 +77,7 @@ A mixed setup works well: a frontier model as `primary`, a local model as the la
 ## Privacy
 
 - Collected content stays in your SQLite database, but reviews and preparations send the signals they read to your model provider. Each review reads up to 120 signals; each Do it reads the to-do's full evidence.
-- A local model keeps inference local. Connected services, enrichment you chose (organization domains; for work contacts their name and company domain, or the address your service asks for), Fleet and Friends summaries, and Telegram and push delivery still use the network.
+- A local model keeps inference local. Connected services, enrichment you chose (organization domains; for work contacts their name and company domain, or the address your service asks for, and a hash of their work address for a Gravatar photo), Fleet and Friends summaries, and Telegram and push delivery still use the network.
 - To have someone forgotten, **Delete permanently** on their page removes them and what is tied to them, and keeps them from being added again ([Deleting someone](intelligence.md#deleting-someone)).
 
 ## Usage limits and cost

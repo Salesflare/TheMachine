@@ -80,7 +80,7 @@ A bounce counts when the mail server says the address doesn't exist, or after 3 
 
 ## Job title and photo
 
-People with a company address get a job title, photo, LinkedIn and city, looked up like [organization details](organization-data.md). Only their name and company domain are sent on a hosted Machine. Turn it off in **Settings**, under Security: **Look up work contacts**.
+People with a company address get a job title, photo, LinkedIn and city, looked up like [organization details](organization-data.md). On a hosted Machine the look-up gets only their name and company domain. For a photo, Gravatar gets a hash of their work address, never the address itself. Turn it off in **Settings**, under Security: **Look up work contacts**.
 
 When the look-up has them, their page also shows their about text, since when they're in their current role and their two roles before it. Preparations read them too, the about text only when they have no bio of their own.
 
