@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A handoff that ran out: the to-do's prepared result still waits on the teammate and leads with Review handoff. Do it
 // myself makes it the owner's own (fleet_handoff_mine, Store.handoff_mine_card): it leaves Waiting on others for For you
