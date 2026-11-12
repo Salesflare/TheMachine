@@ -18,6 +18,7 @@
  "+ New project",
  "+ your signature",
  "--asked is only for a run started by the owner’s own message asking for this skill; leave it out",
+ ".via-{}{--ico:{}}",
  ": Ann Lee (well), Bob Ray",
  ":'nothing decided'}${r.open?",
  "A change is {find, replace}, {after, insert} or {append}",

@@ -3,7 +3,11 @@
 // same brands as the colored logos in + Add, drawn in the text's color so they sit quietly in a line. Each is a file,
 // dashboard/logos/mono/<key>.svg (sources and terms in its NOTICE.md), loaded only when shown, as the mask of a
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
-const MONO='airbnb android bol calendar discord docs dropbox facebook gateway gbrain github gmail google_docs google_meet googlechrome googledrive googlekeep googlemaps googlemessages googlephotos googleplay googletasks hubspot instagram intercom linkedin medium messenger netflix notion openai outlook outlook_calendar paypal pinterest reddit revolut rss salesflare salesforce shortcut signal slack snapchat source spotify stripe tailscale teams telegram tiktok trello whatsapp x youtube zoom'.split(' ');
+const MONO=['airbnb','android','bol','calendar','discord','docs','dropbox','facebook','gateway','gbrain','github','gmail','google_docs',
+ 'google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos','googleplay','googletasks','hubspot',
+ 'instagram','intercom','linkedin','medium','messenger','netflix','notion','openai','outlook','outlook_calendar','paypal','pinterest','reddit',
+ 'revolut','rss','salesflare','salesforce','shortcut','signal','slack','snapchat','source','spotify','stripe','tailscale','teams','telegram',
+ 'tiktok','trello','whatsapp','x','youtube','zoom'];
 // Other names for a mark: a connector's own key, the older via- names; mail, cal and the rest are the line icons in
 // todos-chat.css (Other email is the plain envelope)
 const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};

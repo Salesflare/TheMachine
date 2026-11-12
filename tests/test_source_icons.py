@@ -16,7 +16,7 @@ NO_MARK_APPS = {'android', 'com.google.android.apps.wellbeing', 'com.kbc.mobile.
 
 
 def registry():
-    mono = re.search(r"const MONO='([a-z_ ]+)'\.split\(' '\);", JS).group(1).split()
+    mono = re.findall(r"'([a-z0-9_]+)'", re.search(r'const MONO=\[([^\]]*)\];', JS).group(1))
     alias = dict(re.findall(r"(\w+):'(\w+)'", re.search(r'const MONO_ALIAS=\{([^}]*)\}', JS).group(1)))
     apps = dict(re.findall(r"'([\w.]+)':'(\w+)'", re.search(r'const MONO_APPS=\{([^}]*)\}', JS, re.S).group(1)))
     return mono, alias, apps
