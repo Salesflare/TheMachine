@@ -67,7 +67,7 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
 const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
- connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex|signal)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
+ connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
 // teammate shares), matched by service as connect_sources counts them.

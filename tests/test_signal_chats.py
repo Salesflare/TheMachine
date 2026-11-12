@@ -413,10 +413,9 @@ class Catalog(unittest.TestCase):
         self.assertEqual(onboarding.label('signal'), 'Signal chats')
         self.assertIn('signal', onboarding.STEPS)
         logo = (ROOT / 'dashboard/logos/signal.svg').read_text()
-        self.assertIn('stroke="#1d1d1b"', logo)  # thin and one color, shown in the text's color like X's (.icon.brand.mono)
-        self.assertNotIn('fill="#', logo)
-        self.assertIn('`signal.svg`: Signal', (ROOT / 'dashboard/logos/NOTICE.md').read_text())
-        self.assertIn("codex|signal)$/.test(n)?' mono'", (ROOT / 'dashboard/connections-cards.js').read_text())
+        self.assertIn('fill="#3B45FD"', logo)  # the brand color on its card and in + Add, like WhatsApp's and Telegram's
+        self.assertIn('`signal.svg` | Signal | signal', (ROOT / 'dashboard/logos/NOTICE.md').read_text())
+        self.assertNotIn("|signal)$/.test(n)?' mono'", (ROOT / 'dashboard/connections-cards.js').read_text())
         self.assertRegex((ROOT / 'dashboard/todos-logos.js').read_text(), r"const MONO=\[[^\]]*'signal'")  # the thin one-color mark in rows
         self.assertTrue((ROOT / 'dashboard/logos/mono/signal.svg').is_file())
         self.assertRegex((ROOT / 'dashboard/connections-cards.js').read_text(), r'const LOGOS=/\^\([a-z_|]*\|signal\|')

@@ -25,6 +25,7 @@ Simple Icons lists them. One-color marks are drawn dark and inverted in the dark
 | `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
+| `signal.svg` | Signal | signal |
 | `stripe.svg` | Stripe | stripe |
 | `telegram.svg` | Telegram | telegram |
 | `trello.svg` | Trello | trello |
@@ -46,12 +47,6 @@ described in the Creative Commons 3.0 Attribution License. Android™ is a trade
 https://openai.com/brand/), unchanged apart from whitespace and a viewBox cropped to the mark. Used under the usage terms on that page: only where it
 relates to OpenAI's services (here, Codex), as provided, without implying endorsement. OpenAI and the OpenAI logo are
 trademarks of OpenAI.
-
-## Signal
-
-`signal.svg`: Signal's mark (a ring of dashes around a speech bubble), drawn as thin lines in one dark color, shown in
-the text's color on its card like X's and GitHub's (mono/signal.svg is the same drawing). Signal is a trademark of Signal
-Technology Foundation.
 
 ## Salesflare
 

@@ -64,8 +64,7 @@ for its one-color Slack and LinkedIn marks.
 so it is as thin as the line icons. Salesforce is a trademark of Salesforce, Inc.
 
 `signal.svg`: Signal's mark (a ring of dashes around a speech bubble), drawn here as thin lines so it is as thin as the
-line icons; the colored logo for its card is the same drawing (../signal.svg). Signal is a trademark of Signal Technology
-Foundation.
+line icons. Signal is a trademark of Signal Technology Foundation.
 
 `medium.svg`: Medium's mark (two ellipses and a bar) from Simple Icons 13.0 (CC0 1.0), the path as is; later releases
 show the app's tile instead, which reads as text at row size.
