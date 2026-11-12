@@ -94,6 +94,7 @@ Work records are shared by default:
 |---|---|---|
 | Exists | "Sam knows Lee at Globex, strong, last contact 3d" | Already, through "who knows someone" |
 | Record | Name, role, company, owner, project stage, next step | Yes, for Work people, organizations and projects |
+| Picture | A small re-drawn logo or a person's work photo ([Person photos](#person-photos)) | With a record that goes |
 | Timeline | One short line per message or meeting, written by the review | Yes, for client threads only |
 | Raw mail | The email itself and its attachments | Client threads only |
 
@@ -142,8 +143,8 @@ are judged.
 Only for an organization record that goes anyway, by the rules above (`shared_graph_logos.py`, `logo_image.py`).
 
 - **Pixels only.** The saved logo (PNG, or an `.ico` with PNG or BMP pictures) is decoded and drawn again as a new PNG of
-  at most 64 by 64 pixels and 8 KB, so no metadata, text or anything hidden in the file goes. JPEG and WebP logos (no
-  decoder in the standard library) and SVG (can hold script) never go. A picture the owner set never goes.
+  at most 64 by 64 pixels and 8 KB, so no metadata, text or anything hidden in the file goes. JPEG and WebP logos
+  and SVG (can hold script) never go. A picture the owner set never goes.
 - **No address.** The record carries the picture's hash (`logo_h`), never the site's address or domain; the domain
   stays hashed as before.
 - **Once.** The picture itself (`logo_img`) goes only in the blob that first brings it to the recipients, or after it
@@ -157,6 +158,27 @@ Only for an organization record that goes anyway, by the rules above (`shared_gr
 - **Served from the Machine.** The dashboard loads it from the Machine's own address (`api/person-photo`), never from
   anywhere else. Its own logo for an organization it knows comes first, then a teammate's LinkedIn logo, then this
   picture.
+
+### Person photos
+
+Only for a person record that goes anyway, by the rules above (Work only, never Personal), and the same way as a logo
+from an organization's own site: pixels only, at most 64 by 64 pixels and 8 KB, the hash in the record (`photo_h`), the
+picture (`photo_img`) once, after a change and weekly, within the same 200 KB per blob, checked and drawn again on
+arrival (`shared_graph_photos.py`).
+
+- **Only from work sources.** A photo goes only when the Machine can tell it came from a work contact's look-up
+  (`person_profiles`, tried when the photo was saved) or a contact photo from Google, Slack, LinkedIn, X, Salesflare or
+  Microsoft (`contact_photo_links.source`, saved when it was tried). A photo from WhatsApp or Telegram (`wa:`, `tg:`),
+  from the Facebook birthdays import, or one whose source can't be told never goes.
+- **The owner's choice stays theirs.** When the owner took a person's picture off, or set one of their own, no photo
+  of that person goes, neither theirs nor a found one.
+- **JPEG and PNG.** A JPEG is read by a small decoder of its own (`jpeg_image.py`: baseline and progressive, standard
+  library only), at a reduced size straight away; pictures over 800 by 800 pixels are skipped. WebP doesn't go.
+  Reading pictures has a time budget per round; one that waits goes in a later round without changing its record
+  (the hash names the saved photo, keyed with the graph secret).
+- **Shown here.** A teammate's photo shows for a person only teammates have (the Team view and their page). For a
+  person this Machine knows, its own photo comes first; a teammate's fills in only when it has none and the owner
+  didn't take it off.
 
 ## Shared by name
 
@@ -384,7 +406,7 @@ key, like the owner's own mail (`message_seal.DERIVED`).
 A record (JSON, inside a blob):
 
 ```
-person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, score, last, timeline: [{at, line}]}
+person:  {r, t: person, name, name_hand, role, role_hand, org: {name, d}, ids: [hash], d, photo_h + photo_img?, score, last, timeline: [{at, line}]}
 org:     {r, t: org, name, role, role_hand, d, logo | logo_h + logo_img?, score, last}
 project: {r, t: project, name, board, board_seen, stages, stage, stage_hand, stage_at, why, next, about, org: {name, d, logo}, people: [hash], score, last, timeline}
 mail:    {tag, subject, messages: [{at, from, to, cc, body, attachments: [{name, size, mime, file | too_large}]}]}

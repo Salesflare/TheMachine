@@ -28,6 +28,7 @@ Un admin può rendere obbligatorie per tutti l'**Email di lavoro** e il **Calend
 
 - Conversazioni con i clienti: email di lavoro con persone esterne alla tua azienda, con i loro allegati.
 - Persone, organizzazioni e progetti di lavoro, con una breve cronologia.
+- Una piccola copia del logo di un'organizzazione e della foto di lavoro di una persona: da una ricerca, Google, Slack, LinkedIn, X, Salesflare o Microsoft. Mai un'immagine da WhatsApp, Telegram o Facebook, né un'immagine che hai cambiato o tolto.
 - Su una bacheca del team, anche le riunioni di un progetto, le note di Zoom, le conversazioni di Intercom e le chat, perché sono sulla bacheca. Quelle sensibili, come le trattative, restano fuori, come le chat solo tra colleghi.
 
 ## Fuori dalla condivisione automatica

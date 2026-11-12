@@ -47,6 +47,20 @@ def marigold_logo():
     return {'logo_h': hashlib.sha256(png).hexdigest()[:32], 'logo_img': nc.b64(png)}
 
 
+def avatar(background, skin, hair):
+    """A made-up portrait (a head and shoulders on a color), as a teammate's Machine sends a person's work photo
+    (shared_graph_photos.py): a 64 pixel PNG of pixels only."""
+    rgba = bytearray()
+    for y in range(64):
+        for x in range(64):
+            head = math.hypot(x - 31.5, (y - 26) * 0.9) < 13
+            shoulders = y > 44 and math.hypot(x - 31.5, (y - 70) * 0.8) < 26
+            color = (hair if y < 22 and head else skin) if head else (60, 72, 96) if shoulders else background
+            rgba += bytes((*color, 255))
+    png = logo_image.encode_png(64, 64, bytes(rgba))
+    return {'photo_h': secrets.token_hex(16), 'photo_img': nc.b64(png)}
+
+
 PARTNERS = ['Contacted', 'Agreed', 'In review', 'Partly live', 'Live', 'Stalled or declined']
 PIPELINE = ['Qualified', 'Proposal', 'Negotiation', 'Won', 'Stalled or declined']
 
@@ -67,9 +81,11 @@ def shared(key):
                6.2, 1, [(1, 'Mila confirmed the rollout starts with the Ghent team'), (4, 'Priya sent the training schedule'),
                         (9, 'Mila asked for SSO before the rollout')], [rollout]),
         person(key, rid(), 'Kofi Hollowell', 'kofi@harborlinehealth.example', 'IT lead', 'Harborline Health', 'harborlinehealth.example',
-               3.1, 3, [(3, 'Kofi asked for the security questionnaire'), (12, 'Kofi joined the pilot call')]),
+               3.1, 3, [(3, 'Kofi asked for the security questionnaire'), (12, 'Kofi joined the pilot call')])
+        | avatar((125, 211, 252), (141, 85, 36), (35, 25, 20)),
         person(key, rid(), 'Rosalind Achterberg', 'rosalind@marigoldtravel.example', 'Founder', 'Marigold Travel', 'marigoldtravel.example',
-               2.4, 2, [(2, 'Rosalind wants a demo for her team next week'), (6, 'Rosalind found us through the partner page')]),
+               2.4, 2, [(2, 'Rosalind wants a demo for her team next week'), (6, 'Rosalind found us through the partner page')])
+        | avatar((253, 186, 116), (241, 194, 160), (120, 53, 15)),
         {'r': rid(), 't': 'org', 'name': 'Marigold Travel', 'role': 'Prospect', 'd': sg.keyed(key, 'domain:marigoldtravel.example'), 'score': 2.4,
          'last': ago(2)[:10], **marigold_logo()},
         project(key, rid(), 'Lanternfish', 'Partner listings', PARTNERS, 'Agreed', 2, 'Lanternfish said yes to a listing swap', 'Send them our listing copy',

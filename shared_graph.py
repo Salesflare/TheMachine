@@ -49,6 +49,7 @@ import project_about
 import security_levels
 import shared_graph_kept
 import shared_graph_logos as logos
+import shared_graph_photos as photos
 from shared_graph_logos import team_logo
 import shared_graph_boards
 import shared_graph_takeback
@@ -892,7 +893,8 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                       'org': {'name': org['name'], **({'d': keyed(key, 'domain:' + org_domain)} if org_domain else {})} if org else None,
                       'org_hand': info.get('org_by') == 'owner', 'ids': people[row['id']], 'd': [h for d in domains for h in every('domain:' + d)],
                       'score': round(row['strength'], 3), 'last': (last or row['last_at'] or '')[:10], 'timeline': timeline(row['id']),
-                      'threads': thread_tags(row['id']), **owner_pick(info), **crm_fields.shared(db, row)}
+                      'threads': thread_tags(row['id']), **owner_pick(info), **crm_fields.shared(db, row),
+                      **photos.person_photo(db, row['id'], info, lambda text: keyed(secret, text))}  # a work photo's thumbnail
     shared_orgs = {json.loads(db.execute('SELECT info FROM graph_nodes WHERE id=?', (p,)).fetchone()['info']).get('org') for p in people}
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='org'"):
         info = json.loads(row['info'] or '{}')
@@ -2846,8 +2848,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                             'signals': 0, 'team_only': True, 'role': rec['role'], 'closeness': graph.closeness(rec['score'])}
             if e['kind'] == 'project' and not view:
                 item.update(state='active', people=[])
-            if e['kind'] == 'org' and not (view.get('profile') or {}).get('logo') and (logo := logos.closest(e['sources'], pictures)):
-                item['profile'] = {**(item.get('profile') or {}), 'logo': logo}  # its own logo first, else the closest teammate's
+            photos.fill(db, item, view, e, pictures)  # its own logo or photo first, else the closest teammate's
             if e['kind'] == 'person' and not view and rec.get('org'):
                 item['org_name'] = rec['org'].get('name')
             if view and '@' in str(item.get('name') or '') and rec.get('name') and '@' not in rec['name']:
@@ -2928,7 +2929,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
         return {'id': entry['key'], 'kind': entry['kind'], 'name': rec['name'] or '?', 'role': rec['role'], 'team_only': True, 'links': [], 'recent': [],
                 'probable_ids': [], 'last_at': rec['last'], 'strength': round(rec['score'], 2), 'closeness': graph.closeness(rec['score']), 'signals': 0,
                 'org_name': org.get('name'), 'org': self._org_here(db, entry) if org.get('name') else None, 'state': 'active', 'stage': rec.get('stage'), 'board': rec.get('board'), 'next': rec.get('next'), 'team': section,
-                'team_fields': rec.get('fields') or [], 'tags': rec.get('tags') or [],
+                'team_fields': rec.get('fields') or [], 'tags': rec.get('tags') or [], **photos.profile(db, entry),
                 **({'about': {'text': rec['about'], 'by': 'team'}} if entry['kind'] == 'project' and rec.get('about') else {})}
 
     def _org_here(self, db, entry):
@@ -3083,11 +3084,9 @@ def _clean_record(r):
     tags = [_clean_text(t, 40) for t in (r.get('tags') or [])[:crm_fields.MAX_TAGS]] if isinstance(r.get('tags'), list) else []
     if any(tags):
         out['tags'] = [t for t in tags if t]
-    if r['t'] == 'person':
-        out.update(ids=hashes(r.get('ids')), d=hashes(r.get('d')))
-    elif r['t'] == 'org':
-        out['d'] = hashes(r.get('d'))
-        logos.clean(r, out)  # a LinkedIn logo, else its own site's logo's picture, checked and drawn again here
+    if r['t'] in ('person', 'org'):
+        out.update(d=hashes(r.get('d')), **({'ids': hashes(r.get('ids'))} if r['t'] == 'person' else {}))
+        logos.clean(r, out)  # an organization's logo (LinkedIn's, else its own site's) or a person's photo, checked and drawn again
     else:
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),

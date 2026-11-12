@@ -7,8 +7,8 @@ pixels, so only pixels travel, never the file's own bytes, its metadata or anyth
 decodes what came with the same strict rules (only an 8-bit RGB or RGBA PNG of at most 64 by 64 pixels, with nothing
 but its image chunks, nothing after its end) and draws it again before it keeps it.
 
-Sources it reads: PNG and .ico files (with PNG or BMP pictures inside). JPEG and WebP have no decoder in the standard
-library, and SVG can hold script: those are never sent. Standard library only."""
+Sources it reads: PNG and .ico files (with PNG or BMP pictures inside). JPEG and WebP logos are never sent (person
+photos read JPEG with jpeg_image.py, shared_graph_photos.py), and SVG can hold script. Standard library only."""
 import struct
 import zlib
 
@@ -266,6 +266,12 @@ def thumbnail(data, kind):
         w, h, rgba = decode(bytes(data), kind)
     except (Bad, IndexError, struct.error):
         return None
+    return draw(w, h, rgba)
+
+
+def draw(w, h, rgba):
+    """A new PNG of decoded pixels, at most SIDE pixels and MAX_BYTES, or None when it is blank or too big
+    (shared_graph_photos.py draws person photos with it too)."""
     if not any(rgba[i] for i in range(3, len(rgba), 4)):
         return None  # fully transparent: nothing to show
     for side in (SIDE, 48, 32):
