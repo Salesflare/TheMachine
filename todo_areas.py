@@ -117,6 +117,17 @@ def current(account_ids, accounts, pinned=None):
     return PERSONAL if mine or ids else None
 
 
+def machine_own(account_ids, accounts, pinned=None):
+    """Whether a to-do is only about the Machine itself: every account it has is the Machine's own (an owner:system
+    boundary: a gateway that keeps restarting, a source that stopped). Such a to-do is neither Work nor Personal, so
+    the To-dos filter shows it under All only. A pin (the area column) wins."""
+    if pinned:
+        return False
+    ids = json.loads(account_ids or '[]') if isinstance(account_ids, str) else list(account_ids or ())
+    kinds = {str(a.get('boundary') or '').partition(':')[0].lower() for a in accounts or () if a.get('id') in ids}
+    return bool(ids) and kinds == {'owner'} and all(any(a.get('id') == i for a in accounts or ()) for i in ids)
+
+
 def sources_area(source_accounts, accounts):
     """The one area every account a to-do's messages came in on is in: None when they span several areas, or one is
     in none (a work mailbox labeled personal, the Machine itself, an account no longer set up)."""

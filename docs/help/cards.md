@@ -32,7 +32,7 @@ A to-do nobody touched for a week asks once: **Still needed?** **Not needed** cl
 
 When nothing needs you, your Machine naps on an empty list. While it checks, it wakes up and says so. If a check failed or is late, its line says that, with **Check now** under it.
 
-**All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back.
+**All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back. An alert about your Machine itself, like a part that keeps restarting, is neither Work nor Personal and shows under All only.
 
 A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
 

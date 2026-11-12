@@ -533,7 +533,8 @@ class ViewsStore(ConversationStore):
             if waiting.get('sign_in'):extra['preparation_browser']['signin_url']=signin_link(self.config,suggestion['id'])
         if suggestion.get('status') in ('prepared','accepted','instructions'):self.browser_view(db,suggestion,extra)
         if self.accounts and suggestion.get('account_ids') is not None:
-            extra['scope']=suggestion_scope(suggestion['account_ids'], self.accounts, suggestion.get('area'))
+            # the To-dos filter: one only about the Machine itself is neither Work nor Personal, under All only (todo_areas.machine_own)
+            extra['scope']=None if todo_areas.machine_own(suggestion['account_ids'], self.accounts, suggestion.get('area')) else suggestion_scope(suggestion['account_ids'], self.accounts, suggestion.get('area'))
             extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts, suggestion.get('area'))  # More, Move to: the other areas
             if extra['area'] and suggestion.get('status') in gap_note.OPEN_STATUSES:
                 hint=area_hint(db,suggestion,self.accounts,extra['area'])  # Change area starts on where its people point
@@ -748,7 +749,8 @@ class ViewsStore(ConversationStore):
         rows = db.execute("SELECT s.id," + ("s.title,s.next_action," if titles else "") + "s.account_ids,s.area,coalesce((SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id AND d.choice IN ('complete','reject')),s.created_at) closed_at "
                           "FROM suggestions s WHERE s.status IN ('completed','rejected') ORDER BY closed_at DESC,s.id").fetchall()
         return [{'id': r['id'], 'title': (r['title'] or '') if titles else '', 'who': card_recipients(r['next_action']) if titles else '', 'closed_at': r['closed_at'],
-                 'scope': suggestion_scope(r['account_ids'], self.accounts, r['area']) if getattr(self, 'accounts', None) and r['account_ids'] is not None else None} for r in rows]
+                 'scope': suggestion_scope(r['account_ids'], self.accounts, r['area']) if getattr(self, 'accounts', None) and r['account_ids'] is not None
+                 and not todo_areas.machine_own(r['account_ids'], self.accounts, r['area']) else None} for r in rows]
 
     def done_counts(self, db):
         rows = self.done_rows(db)
