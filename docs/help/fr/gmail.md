@@ -13,6 +13,8 @@ Tous vos e-mails : les 7 derniers jours au moment de la connexion, puis tout ce 
 
 Les e-mails Promotions, newsletters, Mises à jour et Forums ont d’abord droit à un coup d’œil rapide : expéditeur, objet et quelques mots, beaucoup à la fois. Quand l’un d’eux compte, il est lu en entier et peut devenir une tâche. Rien n’est écarté sans être vu.
 
+Vos contacts Google et autres contacts (les personnes à qui vous avez écrit) aussi, en lecture seule : la photo, le poste, l’entreprise, le téléphone et l’anniversaire des personnes déjà dans votre Graph ([Personnes](people.md#job-title-and-photo)). Connecté avant qu’elle les demande ? Votre Machine vous demande une fois de **Reconnecter** Google. D’ici là, tout le reste fonctionne comme avant.
+
 ## Ce qu’il peut envoyer
 
 Un e-mail depuis une tâche, et seulement après votre accord. **Faire** prépare un brouillon ; **Vérifier et envoyer** l’ouvre, prêt à être modifié, et rien ne part avant que vous appuyiez sur **Envoyer maintenant**. **Se connecter avec Google** demande aussi à Google le droit d’envoyer. Avec votre propre app sur votre propre ordinateur, la connexion est en lecture seule jusqu’à ce que vous ajoutiez l’envoi vous-même.

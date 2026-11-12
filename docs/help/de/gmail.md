@@ -13,6 +13,8 @@ Alle deine Mails: die letzten 7 Tage beim Verbinden, danach alles Neue, eingehen
 
 Mails aus Werbung, Newslettern, Benachrichtigungen und Foren werden zuerst kurz angesehen: Absender, Betreff und ein paar Wörter, viele auf einmal. Wenn eine wichtig ist, wird sie ganz gelesen und kann zu einer Aufgabe werden. Nichts wird ungesehen übersprungen.
 
+Auch deine Google-Kontakte und weiteren Kontakte (Personen, denen du gemailt hast), nur lesend: Foto, Position, Firma, Telefon und Geburtstag von Personen, die schon in deinem Graph sind ([Personen](people.md#job-title-and-photo)). Schon vorher verbunden? Deine Machine bittet einmal darum, Google **neu zu verbinden**. Bis dahin funktioniert alles andere wie bisher.
+
 ## Was es senden kann
 
 Eine E-Mail aus einer Aufgabe, und nur, nachdem du sie freigegeben hast. **Ausführen** bereitet einen Entwurf vor. **Prüfen und senden** öffnet ihn, bereit zum Bearbeiten, und nichts geht raus, bis du auf **Jetzt senden** tippst. **Mit Google anmelden** bittet Google auch um das Senden. Mit deiner eigenen App auf deinem eigenen Computer ist die Anmeldung nur lesend, bis du das Senden selbst hinzufügst.

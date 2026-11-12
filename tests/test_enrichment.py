@@ -888,7 +888,8 @@ class Enrichment(unittest.TestCase):
         self.assertEqual(a.google_photo_accounts({'accounts': [
             {'id': 'g', 'service': 'gmail', 'transport': 'gog', 'email': 'Sam@acme.com'}, {'id': 'c', 'service': 'calendar', 'transport': 'gog', 'email': 'sam@acme.com'},
             {'id': 'h', 'service': 'gmail', 'transport': 'broker', 'email': 'h@acme.com'}, {'id': 's', 'service': 'gmail', 'transport': 'gog', 'email': 'x@y.example', 'shared': True}]}),
-            [{'id': 'g', 'service': 'gmail', 'transport': 'gog', 'email': 'Sam@acme.com'}])  # once per address, own gog sign-ins only
+            [{'id': 'g', 'service': 'gmail', 'transport': 'gog', 'email': 'Sam@acme.com'},
+             {'id': 'h', 'service': 'gmail', 'transport': 'broker', 'email': 'h@acme.com'}])  # once per address, own sign-ins only (tests/test_reconnect_asks.py: the broker's)
         with self.store.connect() as db:
             self.assertTrue(enrichment.contact_run_due(db, 'google:sam@acme.com', now))
             self.assertEqual(enrichment.offer_photos(db, offers, 'google', now), 1)  # Kim's address; the stranger isn't kept

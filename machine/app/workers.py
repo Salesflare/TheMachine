@@ -13,9 +13,11 @@ import embeddings
 import enrichment
 import error_feed
 import fact_ties
+import google_api
 import help_chat
 import help_topics
 import linkedin_connections
+from machine.app import reconnect_asks
 from machine.config import LOG
 from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
@@ -24,6 +26,7 @@ from machine.sources.telegram import telegram_photo_asker
 from machine.sources.whatsapp import whatsapp_photo_asker
 from machine.store import plain_keys
 from machine.store.review import bulk_kind
+import mail_grants
 import message_seal
 from models import background_model
 import next_actions
@@ -33,9 +36,11 @@ import team_learnings
 from timeutil import local_tz, now
 
 
-# Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has
-# (a hosted sign-in through the broker has no Contacts scope, so it is never asked). Read only, once a day per account.
-# The owner's contacts bring their birthdays along (the same scope), for the Birthdays template (birthdays.py).
+# Contact photos from the owner's Google contacts and Workspace directory, with the scopes the gog sign-in already has.
+# Read only, once a day per account. The owner's contacts bring their birthdays along (the same scope), for the
+# Birthdays template (birthdays.py). A sign-in through the broker (a hosted Machine's, or a paired one's) reads the
+# same contacts and other contacts with the read-only scopes its owner granted (BROKER_PHOTO_SCOPES), never the
+# directory; one from before those scopes reads nothing and asks once to reconnect (google_contacts_run).
 GOOGLE_PHOTO_LISTS = (
     ('people.connections.list', {'resourceName': 'people/me', 'pageSize': 1000, 'personFields': 'emailAddresses,phoneNumbers,photos,organizations,birthdays'},
      'https://www.googleapis.com/auth/contacts', 'connections'),
@@ -46,6 +51,8 @@ GOOGLE_PHOTO_LISTS = (
 
 
 GOOGLE_PHOTO_PAGES = 20
+BROKER_PHOTO_SCOPES = {'people.connections.list': 'https://www.googleapis.com/auth/contacts.readonly',
+                       'otherContacts.list': 'https://www.googleapis.com/auth/contacts.other.readonly'}
 
 
 # Background turns beyond the first look (profile, voices, roles, organizations) start at most one per this many
@@ -57,12 +64,12 @@ BACKGROUND_GAP_SECONDS = 600
 SNOOZE_SENDING_GRACE = dt.timedelta(minutes=15)
 
 
-def google_photo_offers(config, account, read=None, facts=None):
+def google_photo_offers(config, account, read=None, facts=None, lists=GOOGLE_PHOTO_LISTS):
     """(identifiers, link, chosen) for each of the account's contacts with a real photo. A list the sign-in can't read
     is skipped. With a list as `facts`, their job title, company and phone from the same pages go there too."""
     read = read or gog_read
     offers = []
-    for method, params, scope, key in GOOGLE_PHOTO_LISTS:
+    for method, params, scope, key in lists:
         token = None
         for _ in range(GOOGLE_PHOTO_PAGES):
             try:
@@ -79,13 +86,65 @@ def google_photo_offers(config, account, read=None, facts=None):
 
 
 def google_photo_accounts(config):
-    """The owner's own Google sign-ins through gog, once per address (never one shared from a Fleet)."""
+    """The owner's own Google sign-ins, through gog or the broker, once per address (never one shared from a Fleet)."""
     seen = {}
     for account in config.get('accounts', []):
-        if account.get('service', 'gmail') in ('gmail', 'calendar') and account.get('transport') == 'gog' and account.get('email') \
-                and not account.get('shared'):
+        if account.get('service', 'gmail') in ('gmail', 'calendar') and account.get('transport') in ('gog', 'broker') \
+                and account.get('email') and not account.get('shared'):
             seen.setdefault(account['email'].lower(), account)
     return list(seen.values())
+
+
+def broker_photo_lists(granted):
+    """The contact lists a broker sign-in reads, with the read-only scope each needs: those its owner granted."""
+    return [(m, p, BROKER_PHOTO_SCOPES[m], k) for m, p, _, k in GOOGLE_PHOTO_LISTS
+            if m in BROKER_PHOTO_SCOPES and BROKER_PHOTO_SCOPES[m] in granted]
+
+
+def grants_changed_at(config):
+    """When this Machine's broker sign-ins last changed (a reconnect saves a new one), or None."""
+    try:
+        return dt.datetime.fromtimestamp(mail_grants.path(config).stat().st_mtime, dt.timezone.utc).isoformat()
+    except (OSError, ValueError, TypeError, mail_grants.GrantError):
+        return None
+
+
+def google_contacts_due(db, config, account, at):
+    """Once a day per address; sooner for a broker account that asks to reconnect and was just signed in again."""
+    return enrichment.contact_run_due(db, 'google:' + account['email'].lower(), at) or (
+        account.get('transport') == 'broker' and reconnect_asks.signed_in_again(db, account['id'], reconnect_asks.GOOGLE_CONTACTS, grants_changed_at(config)))
+
+
+def google_contacts_run(connect, config, account, at, read=None, granted=None, offered=frozenset()):
+    """One account's read of its Google contacts: photos of the people this Machine knows, with their job titles,
+    companies, phones and birthdays. A broker account reads only the lists whose scope its owner granted (`granted`
+    and what its broker `offered`, asked of the broker when None). Lacking one the broker offers, it asks once to
+    reconnect (reconnect_asks; its to-do comes from reconnect_asks.todos); when the broker can't say, it tries the next
+    day. Quietly: no error, no log line. Returns how many facts changed."""
+    key, lists = 'google:' + account['email'].lower(), GOOGLE_PHOTO_LISTS
+    if account.get('transport') == 'broker':
+        if granted is None:
+            try:
+                granted, offered = google_api.grant(config, credential, account)
+            except google_api.BrokerError:
+                granted = None
+        if granted is not None:
+            lists = broker_photo_lists(set(granted))
+            missing = (set(BROKER_PHOTO_SCOPES.values()) & set(offered)) - set(granted)
+            with connect() as db:
+                reconnect_asks.note(db, account['id'], reconnect_asks.GOOGLE_CONTACTS, missing, at)
+        if granted is None or not lists:
+            with connect() as db:
+                enrichment.contact_run_done(db, key, at)
+            return 0
+    facts = []
+    offers = google_photo_offers(config, account, read=read, facts=facts, lists=lists)
+    with connect() as db:
+        enrichment.offer_photos(db, offers, 'google', at)
+        known = enrichment.graph_people(db)  # contacts the Machine knows, like their photos
+        found = enrichment.offer_facts(db, [(ids, f, r) for ids, f, r in facts if any(i in known for i in ids)], 'google', at)
+        enrichment.contact_run_done(db, key, at)
+    return found
 
 
 # Settings the app takes from config.json while it runs (App.follow_config), so turning reviews on needs no restart:
@@ -241,15 +300,10 @@ class WorkersApp:
                 photos += enrichment.site_logos_step(self.store.connect, now())  # organizations that show no logo: their own site's
                 for account in google_photo_accounts(self.config):
                     with self.store.connect() as db:
-                        due = enrichment.contact_run_due(db, 'google:' + account['email'].lower(), now())
+                        due = google_contacts_due(db, self.config, account, now())
                     if due and not self.stop.is_set():
-                        facts = []
-                        offers = google_photo_offers(self.config, account, facts=facts)
-                        with self.store.connect() as db:
-                            enrichment.offer_photos(db, offers, 'google', now())
-                            known = enrichment.graph_people(db)  # contacts the Machine knows, like their photos
-                            found += enrichment.offer_facts(db, [(ids, f, r) for ids, f, r in facts if any(i in known for i in ids)], 'google', now())
-                            enrichment.contact_run_done(db, 'google:' + account['email'].lower(), now())
+                        found += google_contacts_run(self.store.connect, self.config, account, now())
+                reconnect_asks.todos(self.store, self.config)  # a to-do for a sign-in that lacks what its service offers now
                 photos += enrichment.contact_photos_step(self.store.connect, now())
                 wa_accounts, ask = whatsapp_photo_asker(self.config)
                 if wa_accounts and not self.stop.is_set():

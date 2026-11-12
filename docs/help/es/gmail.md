@@ -13,6 +13,8 @@ Todo tu correo: los últimos 7 días al conectar y luego todo lo nuevo, recibido
 
 El correo de Promociones, los boletines, Notificaciones y Foros reciben primero un vistazo rápido: remitente, asunto y unas palabras, muchos a la vez. Cuando uno importa, se lee entero y puede convertirse en una tarea. No se salta nada sin verlo.
 
+También tus contactos de Google y otros contactos (personas a las que escribiste), solo lectura: la foto, el cargo, la empresa, el teléfono y el cumpleaños de personas que ya están en tu Graph ([Personas](people.md#job-title-and-photo)). ¿Conectado antes de que los pidiera? Tu Machine te pide una vez **Reconectar** Google. Hasta entonces todo lo demás funciona igual.
+
 ## Qué puede enviar
 
 Un correo desde una tarea, y solo después de que lo apruebes. **Hazlo** prepara un borrador; **Revisar y enviar** lo abre listo para editar, y no sale nada hasta que pulses **Enviar ahora**. **Iniciar sesión con Google** también pide a Google permiso para enviar. Con tu propia app en tu propio ordenador, el inicio de sesión es de solo lectura hasta que añadas tú el envío.

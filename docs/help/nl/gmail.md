@@ -13,6 +13,8 @@ Al je mail: de laatste 7 dagen als je koppelt, daarna alles wat nieuw is, inkome
 
 Mail in Promoties, nieuwsbrieven, Updates en Forums krijgt eerst een snelle blik: afzender, onderwerp en een paar woorden, veel tegelijk. Als er een belangrijk is, wordt die volledig gelezen en kan die een to-do worden. Niets wordt ongezien overgeslagen.
 
+Ook je Google-contacten en overige contacten (mensen die je mailde), alleen-lezen: de foto, functie, het bedrijf, telefoonnummer en de verjaardag van mensen die al in je Graph staan ([Mensen](people.md#job-title-and-photo)). Gekoppeld voordat hij erom vroeg? Je Machine vraagt één keer om Google **Opnieuw te verbinden**. Tot dan werkt al de rest zoals voorheen.
+
 ## Wat het kan versturen
 
 Een e-mail vanuit een to-do, en pas nadat je hem goedkeurt. **Doe het** bereidt een concept voor; **Nakijken en versturen** opent het, klaar om te bewerken, en er gaat niets weg tot je op **Nu versturen** drukt. **Inloggen met Google** vraagt Google ook om te mogen versturen. Met je eigen app op je eigen computer is de login alleen-lezen tot je versturen zelf toevoegt.

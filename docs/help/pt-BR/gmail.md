@@ -13,6 +13,8 @@ Todos os seus e-mails: os últimos 7 dias quando você conecta, depois tudo o qu
 
 E-mails de Promoções, newsletters, Atualizações e Fóruns recebem primeiro uma olhada rápida: remetente, assunto e algumas palavras, muitos de uma vez. Quando um importa, ele é lido por inteiro e pode virar uma tarefa. Nada é ignorado sem ser visto.
 
+Também seus contatos do Google e outros contatos (pessoas para quem você enviou e-mail), somente leitura: a foto, o cargo, a empresa, o telefone e o aniversário de pessoas que já estão no seu Graph ([Pessoas](people.md#job-title-and-photo)). Conectou antes de ela pedir? Sua Machine pede uma vez para **Reconectar** o Google. Até lá, todo o resto funciona como antes.
+
 ## O que ele pode enviar
 
 Um e-mail a partir de uma tarefa, e só depois que você aprova. **Fazer** prepara um rascunho. **Revisar e enviar** abre o rascunho pronto para editar, e nada sai até você tocar em **Enviar agora**. **Entrar com o Google** também pede permissão de envio ao Google. Com o seu próprio app no seu próprio computador, o login é só de leitura até você mesmo adicionar o envio.

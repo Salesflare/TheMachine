@@ -13,6 +13,8 @@ All your mail: the last 7 days when you connect, then everything new, in and out
 
 Promotions, newsletters, Updates and Forums mail get a quick look first: sender, subject and a few words, many at once. When one matters, it is read in full and can become a to-do. Nothing is skipped unseen.
 
+Your Google contacts and other contacts (people you emailed) too, read-only: the photo, job title, company, phone and birthday of people already in your Graph ([People](people.md#job-title-and-photo)). Connected before it asked for them? Your Machine asks once to **Reconnect** Google. Until then everything else works as before.
+
 ## What it can send
 
 An email from a to-do, and only after you approve it. **Do it** prepares a draft; **Review and send** opens it ready to edit, and nothing goes out until you press **Send now**. **Sign in with Google** asks Google for sending too. With your own app on your own computer, the sign-in is read-only until you add sending yourself.

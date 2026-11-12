@@ -58,6 +58,10 @@ READ = {
     'meet.conferenceRecords.transcripts.entries.list': (
         'GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/transcripts/{transcript}/entries'),
     'meet.conferenceRecords.smartNotes.list': ('GET', 'https://meet.googleapis.com/v2/conferenceRecords/{conference}/smartNotes'),
+    # The owner's contacts and other contacts, read-only (contacts.readonly, contacts.other.readonly): their photos and
+    # job titles (machine/app/workers.py google_contacts_run). {+name}: a resource name such as people/me, slash kept.
+    'people.connections.list': ('GET', 'https://people.googleapis.com/v1/{+resourceName}/connections'),
+    'otherContacts.list': ('GET', 'https://people.googleapis.com/v1/otherContacts'),
 }
 WRITE = {
     'gmail.users.messages.send': ('POST', 'https://gmail.googleapis.com/gmail/v1/users/{userId}/messages/send'),
@@ -76,7 +80,8 @@ WRITE = {
 }
 # Where requests may go: Google's API hosts, over HTTPS. A URL built from a method template and its parameters is
 # checked once more before it's opened, and the broker's address must be HTTPS too (it gets this machine's token).
-GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com', 'meet.googleapis.com'})
+GOOGLE_HOSTS = frozenset({'gmail.googleapis.com', 'www.googleapis.com', 'docs.googleapis.com', 'meet.googleapis.com', 'people.googleapis.com'})
+RESOURCE_NAME = re.compile(r'[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*')  # a {+name}: segments of plain characters, never . or ..
 _tokens: dict = {}
 _lock = threading.Lock()
 
@@ -147,7 +152,14 @@ def _broker(config, credential, payload, timeout=20, provider='google'):
 
 def scopes(config, credential, account, provider='google'):
     """The scopes the owner granted this account at the broker."""
-    return set(_broker(config, credential, {'email': account['email']}, provider=provider).get('scopes') or [])
+    return grant(config, credential, account, provider)[0]
+
+
+def grant(config, credential, account, provider='google'):
+    """(granted, offered): the scopes the owner granted this account at the broker, and those a connect there asks for
+    now (`offered`; none from a broker from before it said, so nothing asks to reconnect for scopes it can't give)."""
+    answer = _broker(config, credential, {'email': account['email']}, provider=provider)
+    return set(answer.get('scopes') or []), {s for s in answer.get('offered') or [] if isinstance(s, str)}
 
 
 def token(config, credential, account, scope, fresh=False, provider='google'):
@@ -178,9 +190,13 @@ def url_for(method, params, write=False):
     verb, template = known
     rest = dict(params or {})
     for name in [part.split('}')[0] for part in template.split('{')[1:]]:
-        if name not in rest:
+        plain = name.lstrip('+')
+        if plain not in rest:
             raise BrokerError('missing_google_parameter')
-        template = template.replace('{' + name + '}', urllib.parse.quote(str(rest.pop(name)), safe=''))
+        value = str(rest.pop(plain))
+        if name != plain and not RESOURCE_NAME.fullmatch(value):
+            raise BrokerError('missing_google_parameter')
+        template = template.replace('{' + name + '}', urllib.parse.quote(value, safe='/' if name != plain else ''))
     query = urllib.parse.urlencode({k: (str(v).lower() if isinstance(v, bool) else v) for k, v in rest.items()}, doseq=True)
     return verb, google_url(template + ('?' + query if query else ''))
 

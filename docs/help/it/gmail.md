@@ -13,6 +13,8 @@ Tutta la tua posta: gli ultimi 7 giorni quando la colleghi, poi tutto ciò che �
 
 La posta di Promozioni, newsletter, Aggiornamenti e Forum riceve prima un'occhiata veloce: mittente, oggetto e qualche parola, molte alla volta. Quando una conta, viene letta per intero e può diventare un'attività. Niente viene saltato senza essere visto.
 
+Anche i tuoi contatti Google e gli altri contatti (persone a cui hai scritto), in sola lettura: foto, ruolo, azienda, telefono e compleanno delle persone già nel tuo Graph ([Persone](people.md#job-title-and-photo)). Collegato prima che li chiedesse? La tua Machine ti chiede una volta di **Riconnettere** Google. Fino ad allora tutto il resto funziona come prima.
+
 ## Cosa può inviare
 
 Un'email da un'attività, e solo dopo la tua approvazione. **Fallo** prepara una bozza; **Rivedi e invia** la apre pronta da modificare, e non parte niente finché non premi **Invia ora**. **Accedi con Google** chiede a Google anche il permesso di inviare. Con la tua app sul tuo computer, l'accesso è di sola lettura finché non aggiungi tu l'invio.
