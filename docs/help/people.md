@@ -90,7 +90,7 @@ Your connections fill in more with what they already read: a title, phone and ti
 
 WhatsApp and Telegram pictures come through your WhatsApp sync and your Telegram chats connection: up to 50 a day each, only for people already in your Graph. Nothing is sent to them. A Facebook birthdays import adds the profile picture of someone without a photo when you save it ([Routines](routines.md)). It all stays on your Machine.
 
-In a Work Fleet's [Team Graph](team-graph.md), a small copy of a work photo goes with a person's shared record. Pictures from WhatsApp, Telegram or Facebook, and pictures you changed or removed, never go.
+In a Work Fleet's [Team Graph](team-graph.md), a small copy of a work photo goes with a person's shared record. Pictures from Google contacts, WhatsApp, Telegram or Facebook, and pictures you changed or removed, never go.
 
 ## About you
 

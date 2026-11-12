@@ -5,10 +5,12 @@ thumbnail of their photo, the way an organization's logo goes (shared_graph_logo
 new PNG of at most 64 by 64 pixels (logo_image.draw; JPEG read by jpeg_image.py), its hash in the record (photo_h),
 the picture itself (photo_img) only in the blob that first brings it or after it changed, and all again weekly.
 
-Only a photo from a work source goes: a work contact's look-up (person_profiles), or a contact photo from Google,
-Slack, LinkedIn, X, Salesflare or Microsoft (contact_photo_links.source). A photo is from there only when that row
-says it was saved then (the same time as the saved photo); a photo from WhatsApp or Telegram (wa:, tg:), from the
-Facebook birthdays import (kept under the person's own id), or one whose source can't be told never goes. Nor does
+Only a photo from a work source goes: a work contact's look-up (person_profiles), or a contact photo from Slack,
+LinkedIn, X, Salesflare or Microsoft (contact_photo_links.source). A photo is from there only when that row says it
+was saved then (the same time as the saved photo); a photo from WhatsApp or Telegram (wa:, tg:), from the Facebook
+birthdays import (kept under the person's own id), or one whose source can't be told never goes. Nor does a photo
+from Google contacts, other contacts or the directory: Google's user data policy (Limited Use) doesn't allow handing
+what its APIs give to other people, so it stays on the owner's own Machine. Nor does
 any photo of a person the owner set a picture for or took the picture off (person_edits photo): the owner's own
 choice of picture stays theirs.
 
@@ -28,8 +30,9 @@ import jpeg_image
 import logo_image
 import shared_graph_logos as logos
 
-# contact_photo_links.source of a work source (Microsoft's contact photos come as 'microsoft' or 'outlook')
-WORK_SOURCES = frozenset({'google', 'slack', 'linkedin', 'x', 'salesflare', 'microsoft', 'outlook'})
+# contact_photo_links.source of a work source (Microsoft's contact photos come as 'microsoft' or 'outlook'); never
+# 'google': Google's Limited Use rules keep what its APIs give with the owner
+WORK_SOURCES = frozenset({'slack', 'linkedin', 'x', 'salesflare', 'microsoft', 'outlook'})
 NEVER = ('wa:', 'tg:', 'pic:', 'logo:')  # chat apps, the owner's own pictures, organization logos
 READ_SECONDS = 20
 WINDOW = 600
