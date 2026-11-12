@@ -5273,6 +5273,7 @@
  "The browser": "Le navigateur",
  "The browser did not answer after submitting; could not confirm the sign-in": "Le navigateur n’a pas répondu après l’envoi ; impossible de confirmer la connexion",
  "The browser did not take that; open the browser to sign in there": "Le navigateur ne l’a pas accepté ; ouvrez le navigateur pour vous y connecter",
+ "The browser didn’t answer; it retries by itself": "Le navigateur n’a pas répondu ; il réessaie tout seul",
  "The browser is in front now.": "Le navigateur est maintenant au premier plan.",
  "The browser stopped answering; it restarts by itself": "Le navigateur ne répondait plus ; il redémarre tout seul",
  "The browser took too long to answer.": "Le navigateur a mis trop de temps à répondre.",

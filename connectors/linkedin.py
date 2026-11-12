@@ -59,8 +59,8 @@ class Source:
         try:
             result = subprocess.run([self.config.get('linkedin_inbox', str(READER)), *command], capture_output=True, text=True, timeout=timeout,
                                     env=browser_env(self.account))
-        except subprocess.TimeoutExpired:
-            raise SourceError('linkedin_read_timeout', retry_after=900) from None
+        except subprocess.TimeoutExpired:  # the reader never finished: the browser, not LinkedIn (its requests end by themselves)
+            raise SourceError('linkedin_browser_stalled', retry_after=900) from None
         except OSError as error:
             raise SourceError('linkedin_reader_missing:' + type(error).__name__) from None
         if result.returncode:
@@ -69,8 +69,10 @@ class Source:
                 raise SourceError('linkedin_browser_busy', retry_after=600)
             if 'signed out' in err or 'not signed in' in err:
                 raise SourceError('linkedin_signed_out', retry_after=3600)
-            if 'in time' in err:
+            if 'timeouterror' in err or 'signal timed out' in err:  # a LinkedIn request that took longer than its 12 seconds
                 raise SourceError('linkedin_read_timeout', retry_after=900)
+            if 'in time' in err:  # the browser's tab didn't answer (or didn't load): LinkedIn was never asked
+                raise SourceError('linkedin_browser_stalled', retry_after=900)
             if 'security check' in err:
                 raise SourceError('linkedin_security_check', retry_after=86400)
             code = self.helpers.browser_read_failure('linkedin', result.stderr)

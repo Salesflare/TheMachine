@@ -11,6 +11,10 @@ class CdpError(Exception):
     pass
 
 
+# How long a tab gets to answer before a script runs in it (evaluate wakes it first); a tab that is up answers at once.
+WAKE_SECONDS = 20
+
+
 def _http(base, path, method='GET', timeout=60):
     # The first request may start the browser (socket activation), so it gets time.
     request = urllib.request.Request(base.rstrip('/') + path, method=method)
@@ -143,10 +147,22 @@ def _call(base, target, method, params, timeout):
 
 
 def evaluate(base, target, fn, timeout_ms=90000):
-    """Run a JavaScript function (source text, possibly async) in the tab and return its JSON value."""
-    result = _call(base, target, 'Runtime.evaluate',
-                   {'expression': '(' + fn + ')()', 'awaitPromise': True, 'returnByValue': True,
-                    'timeout': timeout_ms}, timeout_ms / 1000 + 30)
+    """Run a JavaScript function (source text, possibly async) in the tab and return its JSON value.
+
+    The tab is woken first: a browser that stays up for hours (another program keeps it open) can hold a background
+    tab frozen, and a frozen tab runs the script but never settles its fetches, so the call would hang until it times
+    out. Waking a tab that isn't frozen changes nothing."""
+    with Session(base, target, WAKE_SECONDS) as session:
+        try:
+            session.call('Page.enable')
+            session.call('Page.setWebLifecycleState', {'state': 'active'})
+        except CdpError as e:
+            if 'in time' in str(e):  # the tab doesn't answer at all: no use waiting the whole evaluate for it
+                raise
+            # a page that can't be woken (no page yet, an older browser): evaluate as before
+        session.ws.sock.settimeout(timeout_ms / 1000 + 30)
+        result = session.call('Runtime.evaluate', {'expression': '(' + fn + ')()', 'awaitPromise': True,
+                                                   'returnByValue': True, 'timeout': timeout_ms})
     if result.get('exceptionDetails'):
         details = result['exceptionDetails']
         raise CdpError('script failed: ' + str((details.get('exception') or {}).get('description') or details.get('text'))[:200])

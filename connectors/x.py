@@ -76,8 +76,8 @@ class Source:
                                    '--primary', account.get('primary', account['handle']), '--since', str(int(since_ms)),
                                    *extra, '--state', json.dumps(state)], capture_output=True, text=True, timeout=480,
                                   env=browser_env(account))
-        except subprocess.TimeoutExpired:
-            raise SourceError('x_read_timeout', retry_after=900) from None
+        except subprocess.TimeoutExpired:  # the reader never finished: the browser, not X (its requests end by themselves)
+            raise SourceError('x_browser_stalled', retry_after=900) from None
         except OSError as error:
             raise SourceError('x_reader_missing:' + type(error).__name__) from None
         if done.returncode:
@@ -88,8 +88,10 @@ class Source:
                 raise SourceError('x_signed_out', retry_after=3600)
             if 'rate limit' in err:
                 raise SourceError('x_rate_limited', retry_after=1800)
-            if 'in time' in err:
+            if 'timeouterror' in err or 'signal timed out' in err:  # an X request that took longer than its own limit
                 raise SourceError('x_read_timeout', retry_after=900)
+            if 'in time' in err:  # the browser's tab didn't answer (or didn't load): X was never asked
+                raise SourceError('x_browser_stalled', retry_after=900)
             code = self.helpers.browser_read_failure('x', done.stderr)
             if code.endswith('_browser_unreachable'):  # the browser crashed or hung: start it again, retry soon
                 env = browser_env(self.account) or os.environ

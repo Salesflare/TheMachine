@@ -5273,6 +5273,7 @@
  "The browser": "De browser",
  "The browser did not answer after submitting; could not confirm the sign-in": "De browser antwoordde niet na het versturen; kon de login niet bevestigen",
  "The browser did not take that; open the browser to sign in there": "De browser nam dat niet aan; open de browser om daar in te loggen",
+ "The browser didn’t answer; it retries by itself": "De browser antwoordde niet; hij probeert het zelf opnieuw",
  "The browser is in front now.": "De browser staat nu vooraan.",
  "The browser stopped answering; it restarts by itself": "De browser reageert niet meer; hij herstart vanzelf",
  "The browser took too long to answer.": "De browser deed te lang over een antwoord.",
