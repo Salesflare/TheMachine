@@ -682,7 +682,8 @@ class DecisionsStore:
 
     def handoff_mine_card(self, suggestion_id):
         """Do it myself on a handoff that came back: the to-do is the owner's own now. Its prepared result no longer
-        waits on the teammate (out of Waiting on others) and the handoff step goes, so its own buttons lead."""
+        waits on the teammate (out of Waiting on others), the handoff step and the text about it go, and its title is its
+        own (own_title), so it reads and acts as the owner's own to-do. The handoff's note stays (annotate_requests)."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             row = db.execute('SELECT status,outcome,next_action,title,title_source FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
@@ -707,8 +708,12 @@ class DecisionsStore:
                 return bool(title and title != row['title'])
             action = (current if not dropped else {**current, 'actions': kept} if current.get('kind') == 'menu' and len(kept) > 1
                       else kept[0] if kept else None)
-            db.execute('UPDATE suggestions SET outcome=?,next_action=? WHERE id=?',
-                       (None if waiting else row['outcome'], encoded(action) if action else None, suggestion_id))
+            # The prepared text described the handoff ("Prepared a short handoff to Sam"): it goes. With a draft of its
+            # own left, that draft is still ready for the owner; else it is the owner's own step again, under Needs you,
+            # with Mark done leading (owner_step) and nothing prepared to read.
+            db.execute("UPDATE suggestions SET body='',outcome=?,next_action=?,status=?,owner_step=CASE WHEN ? THEN owner_step ELSE 1 END WHERE id=?",
+                       (row['outcome'] if action and not waiting else None, encoded(action) if action else None, 'prepared' if action else 'pending',
+                        1 if action else 0, suggestion_id))
             return True
 
     def _decide(self, db, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False):
