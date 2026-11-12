@@ -14,7 +14,7 @@ Haz clic en una dirección de correo, en la página de una persona en Graph o co
 
 ## Enviarlo
 
-Escribe el asunto y el mensaje, con negrita, listas y enlaces si quieres. No sale nada hasta que pulses **Enviar**.
+Escribe el asunto y el mensaje, con negrita, listas y enlaces si quieres. No sale nada hasta que pulses **Enviar ahora**.
 
 El correo sale entonces como cualquier borrador que apruebas: aparece como enviado en su propia tarea, en la página de la persona y en tu buzón. Si no puede salir, la tarea lo guarda, listo para enviarlo desde ahí.
 

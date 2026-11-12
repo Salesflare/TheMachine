@@ -14,7 +14,7 @@ async function openCompose(to,subject,href){if(composeBusy)return;composeBusy=tr
  sendBatch=null;sendTask=null;sendRevision=null;sendDraft={kind:'email',compose:true,to:[to],to_name:r.to_name||'',subject:subject||'',body:'',from:r.from};
  sendFrom=r.from.some(c=>c.from===r.default)?r.default:r.from[0].from;
  for(const id of ['send-step','send-recipients','send-bounce','send-files','send-ask','send-ask-open','send-edit','send-subject-label'])$('#'+id).hidden=id!=='send-subject-label';
- $('#send-title').textContent=t('New email');$('#send-act').hidden=false;$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-confirm').textContent=t('Send');
+ $('#send-title').textContent=t('New email');$('#send-act').hidden=false;$('#send-confirm').hidden=false;$('#send-confirm').disabled=false;$('#send-confirm').textContent=t('Send now');
  $('#send-cancel').textContent=t('Cancel');$('#send-error').textContent='';$('#send-preview').classList.remove('code');sendFine('');
  $('#send-mailapp').hidden=false;sendHeader=composeHead;$('#send-dialog').showModal();editSend(false);
  (subject?mailRich():$('#send-subject')).focus()}

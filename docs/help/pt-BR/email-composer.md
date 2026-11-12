@@ -14,7 +14,7 @@ Clique em um endereço de e-mail, na página de uma pessoa no Graph ou como link
 
 ## Enviar
 
-Escreva o assunto e a mensagem, com negrito, listas e links se quiser. Nada sai até você tocar em **Enviar**.
+Escreva o assunto e a mensagem, com negrito, listas e links se quiser. Nada sai até você tocar em **Enviar agora**.
 
 O e-mail sai então como qualquer rascunho que você aprova: aparece como enviado em uma tarefa própria, na página da pessoa e na sua caixa. Se não puder sair, a tarefa o guarda, pronto para enviar de lá.
 

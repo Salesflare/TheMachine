@@ -14,7 +14,7 @@ Klik op een e-mailadres, op de pagina van een persoon in Graph of als link in ee
 
 ## Versturen
 
-Schrijf het onderwerp en het bericht, met vet, lijsten en links als je wilt. Er gaat niets weg tot je op **Versturen** drukt.
+Schrijf het onderwerp en het bericht, met vet, lijsten en links als je wilt. Er gaat niets weg tot je op **Nu versturen** drukt.
 
 De e-mail gaat dan weg zoals elk concept dat je goedkeurt: hij staat als verstuurd in een eigen to-do, op de pagina van de persoon en in je mailbox. Lukt het versturen niet, dan bewaart de to-do hem, klaar om van daaruit te versturen.
 

@@ -62,12 +62,15 @@ try{
   assert.equal(await page.locator('#send-from>span').textContent(),work);
   assert.equal((await page.locator('#send-head dd').nth(1).textContent()).trim(),`Sam Lee <${sam}>`);
   assert.equal(await page.locator('#send-subject').inputValue(),'');assert.equal(await page.locator('#send-rich').isVisible(),true);
-  assert.equal(await page.locator('#send-confirm').textContent(),'Send');
+  assert.equal(await page.locator('#send-confirm').textContent(),'Send now');
   for(const hidden of ['#send-edit','#send-ask-open','#send-recipients','#send-files','#send-preview'])assert.equal(await page.locator(hidden).isVisible(),false,hidden);
   assert.equal(await page.locator('#send-mailapp a').textContent(),'Open in email');
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'send-subject');
   const fits=await page.evaluate(()=>{const d=document.querySelector('#send-dialog').getBoundingClientRect();return document.documentElement.scrollWidth<=innerWidth&&d.left>=0&&d.right<=innerWidth+0.5&&d.bottom<=innerHeight+0.5});
   assert.equal(fits,true,'fits at '+tag);
+  // Open in email sits close under the message, also on a phone's full-screen sheet
+  const gap=await page.evaluate(()=>{const r=document.querySelector('#send-rich').getBoundingClientRect(),a=document.querySelector('#send-mailapp').getBoundingClientRect();return Math.round(a.top-r.bottom)});
+  assert.ok(gap>=0&&gap<=12,`Open in email is ${gap}px under the message at ${tag}`);
   if(shots)await page.screenshot({path:`${shots}/compose-2-open-${tag}.png`});
   // Send without a subject or a message: it says what's missing, posts nothing
   await page.locator('#send-confirm').click();

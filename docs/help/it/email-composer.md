@@ -14,7 +14,7 @@ Fai clic su un indirizzo email, nella pagina di una persona in Graph o come link
 
 ## Inviarla
 
-Scrivi l’oggetto e il messaggio, con grassetto, elenchi e link se vuoi. Non parte nulla finché non premi **Invia**.
+Scrivi l’oggetto e il messaggio, con grassetto, elenchi e link se vuoi. Non parte nulla finché non premi **Invia ora**.
 
 L’email parte poi come ogni bozza che approvi: compare come inviata in un’attività sua, nella pagina della persona e nella tua casella. Se non può partire, l’attività la tiene, pronta da inviare da lì.
 

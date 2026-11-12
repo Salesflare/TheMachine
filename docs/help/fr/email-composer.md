@@ -14,7 +14,7 @@ Cliquez sur une adresse e-mail, sur la page d’une personne dans Graph ou en li
 
 ## L’envoyer
 
-Écrivez l’objet et le message, avec gras, listes et liens si vous voulez. Rien ne part avant que vous appuyiez sur **Envoyer**.
+Écrivez l’objet et le message, avec gras, listes et liens si vous voulez. Rien ne part avant que vous appuyiez sur **Envoyer maintenant**.
 
 L’e-mail part alors comme tout brouillon que vous approuvez : il apparaît comme envoyé dans sa propre tâche, sur la page de la personne et dans votre boîte mail. S’il ne peut pas partir, la tâche le garde, prêt à être envoyé de là.
 

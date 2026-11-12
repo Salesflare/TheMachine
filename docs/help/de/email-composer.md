@@ -14,7 +14,7 @@ Klick auf eine E-Mail-Adresse, auf der Seite einer Person in Graph oder als Link
 
 ## Senden
 
-Schreib Betreff und Nachricht, gern mit Fett, Listen und Links. Nichts geht raus, bis du **Senden** drückst.
+Schreib Betreff und Nachricht, gern mit Fett, Listen und Links. Nichts geht raus, bis du **Jetzt senden** drückst.
 
 Die E-Mail geht dann raus wie jeder Entwurf, den du freigibst: Sie erscheint als gesendet in einer eigenen Aufgabe, auf der Seite der Person und in deinem Postfach. Geht sie nicht raus, behält die Aufgabe sie, bereit zum Senden.
 

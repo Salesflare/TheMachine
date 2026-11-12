@@ -14,7 +14,7 @@ Click an email address, on a person's page in Graph or as a link in a to-do or a
 
 ## Send it
 
-Write the subject and the message, with bold, lists and links if you like. Nothing goes out until you press **Send**.
+Write the subject and the message, with bold, lists and links if you like. Nothing goes out until you press **Send now**.
 
 The email then goes out like any draft you approve: it shows as sent on its own to-do, on the person's page and in your mailbox. If it can't go out, the to-do keeps it, ready to send from there.
 

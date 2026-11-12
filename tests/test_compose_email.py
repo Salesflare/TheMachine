@@ -59,6 +59,24 @@ class ComposeEmail(unittest.TestCase):
         self.assertEqual(got['from'], [])  # the dashboard opens the mail app instead
         self.assertEqual([c['from'] for c in self.offer(self.app([off, OUT]), 'dana@family.example')['from']], ['owner@other.example'])
 
+    def test_an_other_email_mailbox_with_smtp_is_offered_and_sends_the_same_way(self):
+        smtp = {'id': 'other', 'email': 'owner@own.example', 'service': 'imap', 'transport': 'imap', 'boundary': 'personal',
+                'smtp_host': 'smtp.own.example', 'smtp_port': 465, 'smtp_security': 'ssl'}
+        read_only = {**smtp, 'id': 'ro', 'email': 'owner@ro.example', 'smtp_host': ''}  # no SMTP server: it only reads
+        refused = {**smtp, 'id': 'no', 'email': 'owner@no.example', 'smtp_refused': True}  # signing in to SMTP failed
+        app = self.app([WORK, smtp, read_only, refused])
+        got = self.offer(app, 'dana@family.example')
+        self.assertEqual([(c['account_id'], c['from'], c['area']) for c in got['from']],
+                         [('other', 'owner@own.example', 'Personal'), ('work', 'owner@acme.example', 'Work')])
+        made = app.compose_email_action('compose_email', {'to': 'dana@family.example', 'account_id': 'other', 'subject': 'Sunday',
+                                                          'body': 'Lunch at noon?'}, owner_dashboard=True)
+        with self.store.connect() as db:
+            draft = json.loads(db.execute('SELECT next_action FROM suggestions WHERE id=?', (made['suggestion_id'],)).fetchone()[0])
+        self.assertEqual((draft['account_id'], draft['from'], draft['to']), ('other', 'owner@own.example', ['dana@family.example']))
+        self.assertEqual(self.jobs(), [])
+        self.store.confirm_action(made['suggestion_id'], made['revision'], 'tap-1', 'dashboard')
+        self.assertEqual(self.jobs(), [(made['suggestion_id'], 'queued')])
+
     def test_send_makes_a_draft_on_its_own_todo_and_only_confirm_queues_it(self):
         app = self.app()
         made = app.compose_email_action('compose_email', {'to': 'sam@client.example', 'account_id': 'work', 'subject': '  Lunch   next week ',
