@@ -62,7 +62,7 @@ Les e-mails qui listent ce qui vous attend ont des liens Ouvrir et Mettre en att
 
 ## Le récap du matin
 
-Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :
+Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. Si elle est avant **Les mises en attente reviennent à**, il attend 5 minutes après, pour inclure les tâches qui reviennent ce matin-là. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :
 
 - un bonjour avec ce qui compte aujourd’hui, comme "Bonjour Sam, 2 réponses sont prêtes à envoyer" ou, pour une tâche, "Bonjour Sam, à valider : Envoyer le bon de commande" ;
 - au plus trois choses à faire, chacune avec un lien Ouvrir : d’abord les brouillons prêts et les promesses du jour ;

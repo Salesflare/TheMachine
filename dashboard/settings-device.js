@@ -128,6 +128,11 @@ const NOTIFY_KINDS=[['todo','New to-dos','Only what can’t wait: due today, a r
 const NOTIFY_COLS={push:'Push',telegram:'Telegram',email:'Email'};
 const notifyPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const notifyHM=t=>{try{return fmtHM('2000-01-01T'+t)}catch{return t}};
+// When the morning digest goes (notify.digest_time): its own time, but never before 5 minutes after the morning's
+// snoozes come back (Snoozes land at), unless that falls past midnight or outside the hours
+const digestTime=(own,h)=>{const m=/^(\d{2}):(\d{2})$/.exec(h?.morning||'');if(!m)return own;const x=+m[1]*60+ +m[2]+5;if(x>=1440)return own;
+ const later=String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0'),s=h.start,e=h.end;if(later<=own)return own;
+ if(s&&e&&s!==e&&!(s<e?s<=later&&later<e:later>=s||later<e))return own;return later};
 // Weekly recap (machine/app/recap_settings.py): weekly_recap in config.json, one switch for the recap wherever it comes
 const RECAP_DAYS=['Mondays after {}','Tuesdays after {}','Wednesdays after {}','Thursdays after {}','Fridays after {}','Saturdays after {}','Sundays after {}'];
 const recapRow=(r,cols)=>!r?'':html`<div class="notify-row" role="row"><span role="rowheader"><strong>Weekly recap</strong><small><span>${t(RECAP_DAYS[(r.weekday||5)-1]||RECAP_DAYS[4],notifyHM(r.at||'16:00'))}</span><span aria-hidden="true"> · </span><a class="learn" href="${HELP}weekly-recap" target="_blank" rel="noopener">Learn more</a></small></span>${cols.map((c,i)=>i<cols.length-1?html`<span class="notify-cell" role="cell"></span>`:html`<span class="notify-cell" role="cell">${r.saveable?html`<button type="button" class="lookup-switch" role="switch" aria-checked="${!!r.on}" aria-label="Weekly recap" data-recap-switch></button>`:html`<span class="notify-na">${r.on?'On':'Off'}</span>`}</span>`)}</div>`;
@@ -136,7 +141,7 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  const cols=['push',...(n.telegram?['telegram']:[]),...(n.email?['email']:[])],grid=$('#notify-grid');
  grid.style.setProperty('--notify-cols',cols.length);
  // the digest row's line: its time (set in Work hours below) and Preview, shown on the page, nothing sent
- const h=state.hours||{},digest=html`<span>Work days at ${notifyHM(h.digest_at||n.digest_at||'08:30')}</span><span aria-hidden="true"> · </span><button type="button" class="notify-link" data-notify-preview>${$('#notify-preview').hidden?'Preview':'Hide preview'}</button>`;
+ const h=state.hours||{},own=h.digest_at||n.digest_at||'08:30',at=digestTime(own,h),digest=html`<span>${at===own?t('Work days at {}',notifyHM(at)):t('Work days at {}, after snoozes land',notifyHM(at))}</span><span aria-hidden="true"> · </span><button type="button" class="notify-link" data-notify-preview>${$('#notify-preview').hidden?'Preview':'Hide preview'}</button>`;
  const cell=(kind,label,ch)=>{const p=n.prefs[kind]||{};if(!(ch in p))return html`<span class="notify-cell" role="cell"><span class="notify-na">–</span></span>`;
   return html`<span class="notify-cell" role="cell"><button type="button" class="lookup-switch" role="switch" aria-checked="${!!p[ch]}" aria-label="${label+': '+NOTIFY_COLS[ch]}" data-notify-kind="${kind}" data-notify-channel="${ch}"></button></span>`};
  putHTML(grid,html`<div class="notify-row" role="row"><span role="columnheader"></span>${cols.map(c=>html`<span class="notify-col" role="columnheader">${NOTIFY_COLS[c]}</span>`)}</div>${

@@ -10,7 +10,7 @@ Em **Configurações**, **Notificações**, em **Horário de trabalho**:
 
 - **Dias de trabalho**: tarefas de trabalho e itens de trabalho adiados esperam por um dia de trabalho.
 - **Mensagens das** e **Até**: nada é enviado para você fora desse horário, nem push, nem Telegram, nem e-mail.
-- **Itens adiados voltam às**: quando um item adiado por um dia ou mais volta.
+- **Itens adiados voltam às**: quando um item adiado por um dia ou mais volta. O resumo da manhã chega pelo menos 5 minutos depois, para incluí-los.
 - **Resumo da manhã**: quando chega o resumo da manhã.
 - **Fuso horário**: o seu, para tudo isso.
 

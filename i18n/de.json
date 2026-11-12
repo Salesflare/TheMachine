@@ -6285,6 +6285,7 @@
  "Work contacts.": "Arbeitskontakte.",
  "Work days": "Arbeitstage",
  "Work days at {}": "Arbeitstage um {}",
+ "Work days at {}, after snoozes land": "Arbeitstage um {}, nach dem Zurückgestellten",
  "Work days at {}. Skipped when there’s nothing.": "Arbeitstage um {}. Entfällt, wenn nichts da ist.",
  "Work days from your work hours": "Arbeitstage aus deinen Arbeitszeiten",
  "Work email": "Arbeits-E-Mail",

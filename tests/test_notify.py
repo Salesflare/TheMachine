@@ -413,6 +413,48 @@ class Notifications(unittest.TestCase):
         self.assertFalse(due(at(7, 0), digest='07:00'))  # before the hours: it waits for their start
         self.assertTrue(due(at(8, 0), digest='07:00'))
 
+    def test_the_digest_comes_after_the_morning_snoozes(self):
+        # The digest waits until 5 minutes after Snoozes land at, so the to-dos back that morning are in it; one set
+        # later keeps its own time; past midnight or outside the hours, its own time stays
+        self.assertEqual(notify.digest_time('08:30', '09:00', '08:00', '23:00'), '09:05')
+        self.assertEqual(notify.digest_time('09:05', '09:00', '08:00', '23:00'), '09:05')
+        self.assertEqual(notify.digest_time('10:00', '09:00', '08:00', '23:00'), '10:00')
+        self.assertEqual(notify.digest_time('07:00', '06:00', '08:00', '23:00'), '07:00')  # the start of hours still holds it (digest_due)
+        self.assertEqual(notify.digest_time('08:30', '23:58', '00:00', '00:00'), '08:30')
+        self.assertEqual(notify.digest_time('08:30', '17:58', '08:00', '18:00'), '08:30')
+        self.assertEqual(notify.digest_time('08:30', None), '08:30')
+        work_day = lambda local: local.isoweekday() <= 5
+        at = lambda h, m=0: a.dt.datetime(2026, 10, 12, h, m, tzinfo=UTC)
+        due = lambda local, digest='08:30', morning='09:00': notify.digest_due(local, digest, '08:00', '23:00', work_day, False, morning)
+        self.assertFalse(due(at(8, 30)))
+        self.assertFalse(due(at(9, 4)))
+        self.assertTrue(due(at(9, 5)))
+        self.assertTrue(due(at(10, 0), digest='10:00'))
+        self.assertFalse(due(at(9, 5), digest='10:00'))
+        self.assertTrue(due(at(8, 30), morning='07:00'))
+
+    def test_a_to_do_snoozed_until_tomorrow_is_in_the_next_morning_digest(self):
+        self.app.action('push_subscribe', SUB, owner_dashboard=True)
+        sid = self.card(title='Call the plumber back')
+        sunday = a.dt.datetime(2026, 10, 11, 20, 0, tzinfo=UTC)
+        with patch_everywhere(a, 'local_tz', return_value=UTC):
+            until = a.snooze_time('tomorrow', start=sunday.isoformat())
+        self.assertEqual(until, '2026-10-12T09:00:00+00:00')  # Snoozes land at, by default
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='pending' WHERE id=?", (until, sid))
+        step = lambda h, m: self.morning_step(a.dt.datetime(2026, 10, 12, h, m, tzinfo=UTC))
+        self.assertIsNone(step(8, 30))  # the digest time, but the snooze isn't back yet
+        self.assertIsNone(step(9, 0))
+        self.assertEqual(step(9, 5), ['push'])
+        self.assertIn('Call the plumber back', self.sent[-1]['payload']['body'])
+
+    def morning_step(self, current):
+        """One pass of the delivery loop at `current`: snoozes come back, then the digest (action_runs.delivery_worker)."""
+        with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'now', return_value=current.isoformat()), \
+                patch_everywhere(a, 'recap_meetings', return_value=[]):
+            self.store.wake_snoozed()
+            return self.app.digest_step(current=current, push=self.sender)
+
     def test_compose_says_nothing_when_empty_and_only_counts_when_careful(self):
         self.assertIsNone(notify.compose([], [], []))
         meetings = [{'at': '2026-10-12T09:30:00+00:00', 'title': 'Planning with the agency'}]
@@ -657,7 +699,7 @@ class Notifications(unittest.TestCase):
         with patch_everywhere(a, 'push_node', side_effect=AssertionError('no push')), patch_everywhere(a, 'telegram_request', side_effect=AssertionError('no Telegram')):
             preview = self.app.action('notify_preview', {}, owner_dashboard=True)
         self.assertIn('Answer the school', preview['text'])
-        morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=UTC)
+        morning = a.dt.datetime(2026, 10, 12, 9, 10, tzinfo=UTC)  # after the snoozes came back at 09:00
         told, mailed = [], []
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'credential', return_value='token'), patch.object(self.app, 'digest', return_value=notify.compose([], [], [{'title': 'Answer the school'}])):
             went = self.app.digest_step(current=morning, push=self.sender, telegram_send=told.append,
@@ -671,7 +713,7 @@ class Notifications(unittest.TestCase):
 
     def test_no_digest_when_there_is_nothing_or_it_is_turned_off(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
-        monday = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=UTC)
+        monday = a.dt.datetime(2026, 10, 12, 9, 10, tzinfo=UTC)
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch.object(self.app, 'digest', return_value=None):
             self.assertEqual(self.app.digest_step(current=monday, push=self.sender), [])
         self.app.action('notify_set', {'kind': 'digest', 'channel': 'push', 'on': False}, owner_dashboard=True)

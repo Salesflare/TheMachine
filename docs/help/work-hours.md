@@ -10,7 +10,7 @@ Choose when your Machine may reach you. In **Settings**, **Notifications**, unde
 
 - **Work days**: work to-dos and snoozed work wait for a work day.
 - **Messages from** and **Until**: nothing reaches you outside these hours: no notification, Telegram or email.
-- **Snoozes land at**: when a snooze of a day or more comes back.
+- **Snoozes land at**: when a snooze of a day or more comes back. The morning digest comes at least 5 minutes later, so they are in it.
 - **Morning digest**: when the morning summary comes.
 - **Time zone**: yours, for all of the above.
 

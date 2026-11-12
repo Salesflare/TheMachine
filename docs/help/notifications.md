@@ -63,7 +63,7 @@ Emails have Open links (and Snooze for what waits). They only open the dashboard
 
 ## The morning digest
 
-It comes on work days at your **Morning digest** time, unless there's nothing to say. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:
+It comes on work days at your **Morning digest** time, unless there's nothing to say. When that's earlier than **Snoozes land at**, it waits until 5 minutes after, so the to-dos coming back that morning are in it. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:
 
 - a greeting with what matters today, like "Morning Sam, 2 replies are ready to send" or, for one to-do, "Morning Sam, ready for your OK: Send the order form";
 - at most three things to do, each with an Open link: drafts ready for you and promises due today first;

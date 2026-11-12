@@ -10,7 +10,7 @@ In **Instellingen**, **Meldingen**, onder **Werkuren**:
 
 - **Werkdagen**: werk-to-do's en gesnoozed werk wachten op een werkdag.
 - **Berichten vanaf** en **Tot**: buiten deze uren krijg je niets, geen push, geen Telegram en geen e-mail.
-- **Gesnoozede items komen terug om**: wanneer een snooze van een dag of langer terugkomt.
+- **Gesnoozede items komen terug om**: wanneer een snooze van een dag of langer terugkomt. Het ochtendoverzicht komt minstens 5 minuten later, zodat ze erin staan.
 - **Ochtendoverzicht**: wanneer de samenvatting van de ochtend komt.
 - **Tijdzone**: die van jou, voor al het bovenstaande.
 

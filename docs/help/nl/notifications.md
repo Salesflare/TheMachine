@@ -62,7 +62,7 @@ Mails met wat op je wacht hebben de links Openen en Snoozen. Die openen alleen h
 
 ## Het ochtendoverzicht
 
-Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets te melden is. **Voorbeeld**, in de rij ervan, toont het zonder het te versturen. Standaard is het een push en een e-mail, kort genoeg om in één blik te lezen:
+Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets te melden is. Valt dat vóór **Gesnoozede items komen terug om**, dan wacht het tot 5 minuten daarna, zodat de to-do's die die ochtend terugkomen erin staan. **Voorbeeld**, in de rij ervan, toont het zonder het te versturen. Standaard is het een push en een e-mail, kort genoeg om in één blik te lezen:
 
 - een groet met wat vandaag telt, zoals "Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen" of, voor één to-do, "Goeiemorgen Sam, klaargezet voor je akkoord: Stuur het bestelformulier";
 - hoogstens drie dingen om te doen, elk met een link Openen: eerst klaargezette concepten en beloftes voor vandaag;
