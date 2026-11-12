@@ -44,6 +44,11 @@ const GE_SOON=3;
 // Teammates' records and threads are theirs, shown as text, never acted on. Nothing here goes outside the Fleet.
 let graphTeam=sideStore.get('graph-team')==='team',graphSharing=[],graphTeammates=[];
 const teamOn=()=>graphSharing.some(s=>s.confirmed);
+// Before an admin's OK: whose OK (s.admins); the Graph and Fleet look again every 5 s
+const teamWaits=l=>(l||[]).filter(s=>!s.confirmed&&!s.paused);let graphFleetStamp=null;
+const teamWaitLine=s=>{const n=s.admins||[];return n.length?t('Waiting for {} to share the team\'s data with you.',n.length>1?t('{} or {}',n.slice(0,-1).join(', '),n.at(-1)):n[0]):t('Waiting for an admin to share the team\'s data with you.')};
+const graphWaiting=()=>teamWaits(graphSharing).length+teamWaits(fleetData?.shared?.graph).length>0;
+setInterval(()=>{if(graphWaiting()&&!document.hidden&&(!$('#people').hidden||!$('#fleet').hidden))refreshWhenReady()},5e3);
 // A fact's sort and end day, quietly under it: "Temporary · Until Nov 14". A plain fact without an end shows nothing.
 const FACT_SORT={event:'Temporary',commitment:'Commitment',preference:'Preference'};
 const factUntil=d=>localeDate(new Date(d+'T12:00:00'),DL,{day:'numeric',month:'short',...(d.slice(0,4)!==String(new Date().getFullYear())?{year:'numeric'}:{})});

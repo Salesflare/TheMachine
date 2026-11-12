@@ -89,7 +89,8 @@ const fleetSig=()=>agoFree(fleetCardsOf(fleetData).join('\n'));  // "2 minutes a
 // Suggestions load the Fleet's open items in the background (at most every 20 seconds; off the Fleet tab only when
 // fleet.stamp changed) and re-render when they change.
 let fleetAt=0,fleetLoading=null,fleetStamp=null;
-function fleetSync(force){if(!state?.fleet?.on)return Promise.resolve();if(fleetLoading)return fleetLoading;if(!force&&Date.now()-fleetAt<20000)return Promise.resolve();
- const stamp=state.fleet.stamp;if(!force&&fleetData&&stamp!=null&&stamp===fleetStamp&&$('#fleet').hidden)return Promise.resolve();
+function fleetSync(force){if(!state?.fleet?.on)return Promise.resolve();if(fleetLoading)return fleetLoading;const stamp=state.fleet.stamp;
+ if(!force&&Date.now()-fleetAt<20000&&!(graphWaiting()&&stamp!==fleetStamp))return Promise.resolve();
+ if(!force&&fleetData&&stamp!=null&&stamp===fleetStamp&&$('#fleet').hidden)return Promise.resolve();
  const before=fleetSig();fleetLoading=request('api/fleet').then(d=>{fleetData=d;fleetAt=Date.now();fleetStamp=stamp;if(fleetSig()!==before)render();if(!$('#fleet').hidden&&!($('#fleet-view').contains(document.activeElement)&&document.activeElement.matches('input,select,textarea')))fleetView(false,true)}).catch(()=>{fleetAt=Date.now()}).finally(()=>{fleetLoading=null});return fleetLoading}
 const fleetOn=(type,fn)=>{for(const el of [$('#fleet-view'),$('#suggestions')])el.addEventListener(type,fn)};

@@ -90,6 +90,8 @@ Uniquement les Machines de vos collègues. Tout est chiffré de bout en bout, sc
 
 Un admin fait entrer chaque personne dans la Fleet une fois. Ensuite, partager avec elle ne demande plus d’accord. La demande s’affiche dans **Tâches** pour chaque admin, et la première réponse vaut pour toute l’équipe. Les membres ne la reçoivent jamais.
 
+D’ici là, le Graph et la Fleet de la nouvelle personne indiquent quels admins elle attend. **Les miens** et **Équipe** s’affichent quelques secondes après l’accord, sans recharger.
+
 Une nouvelle Machine d’une personne déjà membre reçoit le Graph de l’équipe après 24 heures. Les admins la voient en attendant et peuvent appuyer sur **Pas la sienne** pour l’exclure.
 
 ## Quand quelqu’un part

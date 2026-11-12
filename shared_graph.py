@@ -2797,7 +2797,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                         'new_devices': [{'member': m, 'name': r.get('name'), 'fp': r.get('fp'), 'from': until(r['since'], REKEY_HOLD)}
                                         for m, r in (self.meta('graph_rekey:' + group['id']) or {}).items()] if admin else [],
                         'people': self._sharing_people(group, me, found, trusted) if admin else [],
-                        'sending': self.graph_sending(group['id']) if admin else 0,
+                        'sending': self.graph_sending(group['id']) if admin else 0, 'admins': [] if me['member_id'] in found else self._waiting_on(group, me, trusted),
                         'teammates': len(set(found) - {me['member_id']})})  # 0: nothing goes until an admin OKs a teammate
         return out
 

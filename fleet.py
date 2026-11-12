@@ -2955,6 +2955,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             if graph_seen is None or found['graph'] > graph_seen:
                 try:
                     self.graph_fetch()
+                    self.graph_rung()  # an admin's OK for this Machine: it reads the directory and runs its round now
                 except (ValueError, OSError, KeyError, TypeError, Unavailable, Off) as error:
                     LOG.error('shared graph fetch error=%s', type(error).__name__)
         if isinstance(found.get('shared'), str) and found['shared'] != seen:

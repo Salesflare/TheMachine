@@ -152,6 +152,28 @@ class TakeBack:
         self.graph_out(group, me)
         return me['member_id'] in (self.meta('graph_removed:' + fleet) or {})
 
+    def graph_rung(self):
+        """The Network rang this Machine with something from the team's Graph (fleet.step). A Machine not confirmed yet in
+        a Work Fleet reads the directory now: an admin's OK is usually why it rang (their Machine sealed the graph key for
+        this one right after). Once confirmed, it runs its round at once, so its Graph shows the team's records and its
+        own Work goes within seconds of the OK, not at the next directory or round. Whether it was just confirmed."""
+        waiting = [g['id'] for g in self._work_groups() if (me := self._me_in(g)) and me['member_id'] not in self.confirmed(g)[0]]
+        if not waiting:
+            return False
+        groups = {g['id']: g for g in (self.directory(refresh=True).get('fleets') or []) if g.get('kind') == 'work' and self._me_in(g)}
+        now_in = [f for f in waiting if f in groups and self._me_in(groups[f])['member_id'] in self.confirmed(groups[f])[0]]
+        if not now_in:
+            return False
+        import shared_graph as sg
+        sg.LOG.info('shared graph confirmed by an admin fleets=%s', len(now_in))
+        self.graph_round(force=True)
+        return True
+
+    def _waiting_on(self, group, me, trusted):
+        """Not confirmed yet: the admins whose OK this Machine waits for, by name ("Waiting for <name> to share…")."""
+        return [n for m in group.get('members', []) if m.get('member_id') in trusted and m.get('member_id') != me['member_id']
+                and (n := str(m.get('name') or m.get('label') or '')[:80])][:3]
+
     def graph_taken_out(self, group, me, at):
         """An admin took this Machine out of the team's Graph (signed, at): what teammates shared with it goes from
         here, once per removal. Their records, threads and files, by-name shares among them, and the copies kept to

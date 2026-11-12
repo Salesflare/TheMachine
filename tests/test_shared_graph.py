@@ -1405,6 +1405,36 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual(rounds, [True, True])
         self.assertEqual(self.own.sharing()[0]['sending'], 0)
 
+    def test_someone_new_sees_whose_ok_they_wait_for_and_gets_the_team_s_graph_at_the_ring_after_it(self):
+        self.olive_mail()
+        self.rounds()
+        self.net.people['mem4'] = ('Noor', 'member')
+        noor = self.machine('mem4'); self.boxes.append(noor)
+        self.rounds()
+        waiting = noor.sharing()[0]
+        self.assertFalse(waiting['confirmed'])
+        self.assertEqual(sorted(waiting['admins']), ['Ada', 'Olive'])  # by name, the admins whose OK it waits for
+        self.assertFalse(noor.graph_rung())  # a ring before any OK changes nothing
+        self.own.soon = lambda run: run()  # the round after the OK, at once
+        self.ok(self.own, 'member', 'Noor')
+        # Noor's Machine does nothing but what the Network's ring starts (fleet.step): take what came, and graph_rung
+        noor.graph_fetch()
+        self.assertTrue(noor.graph_rung())
+        shown = noor.sharing()[0]
+        self.assertTrue(shown['confirmed'])
+        self.assertEqual(shown['admins'], [])
+        self.assertEqual([json.loads(r['body'])['name'] for r in self.team(noor) if r['kind'] == 'person'], ['Lee Park'])
+        self.assertFalse(noor.graph_rung())  # confirmed already: a later ring is only a fetch
+
+    def test_a_ring_from_the_team_s_graph_makes_the_machine_look_whether_it_was_just_confirmed(self):
+        calls = []
+        real = self.mem.relay.call
+        self.mem.relay.call = lambda method, path, body=None, timeout=40: {'graph': 7, 'asks': []} if path.startswith('/inbox') else real(method, path, body, timeout)
+        self.mem.last['shared'] = 1e18  # the rounds are not due: only what the ring starts runs
+        with patch.object(self.mem, 'graph_fetch', lambda: calls.append('fetch')), patch.object(self.mem, 'graph_rung', lambda: calls.append('rung')):
+            self.mem.step(wait=1)
+        self.assertEqual(calls, ['fetch', 'rung'])
+
     def test_a_round_that_never_ended_stops_saying_it_is_sharing(self):
         self.own.set_meta('graph_sending:' + FLEET, {'names': ['Noor'], 'at': ago(1)})
         self.assertEqual(self.own.sharing()[0]['sending'], 0)
