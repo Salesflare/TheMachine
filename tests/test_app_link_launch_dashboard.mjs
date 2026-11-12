@@ -12,12 +12,14 @@ const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs'
 const raw=await dashboardPage();
 const now=new Date().toISOString(),id=n=>n.toString(16).padStart(16,'a');
 let served='v1',current='v1',staleOnce=null;
+// holdOnLoad: the next page load's status waits for release() (a Machine slow to answer right after an update)
+let holdOnLoad=false,statusHeld=null,release=()=>{};
 const cards=()=>Array.from({length:14},(_,n)=>({id:id(n),title:'Another to-do '+n,body:'Some words. '.repeat(30),status:'pending',scope:'work',created_at:now,event_ids:[n+2]}));
 const status=()=>({suggestions:cards(),promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false},ui_version:current});
 const hits={page:0};
 const server=createServer(async(req,res)=>{for await(const _ of req);const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
- if(url.pathname==='/'){hits.page++;const v=staleOnce||served;staleOnce=null;res.setHeader('Content-Type','text/html');res.end(raw.replace('__CSRF__','c'.repeat(64)).replaceAll('__UI_VERSION__',v).replace('__BASE__','/').replace('__CACHE_SCOPE__','s'.repeat(32)));return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify(status()));return}
+ if(url.pathname==='/'){hits.page++;if(holdOnLoad){holdOnLoad=false;statusHeld=new Promise(r=>{release=()=>{statusHeld=null;r()}})}const v=staleOnce||served;staleOnce=null;res.setHeader('Content-Type','text/html');res.end(raw.replace('__CSRF__','c'.repeat(64)).replaceAll('__UI_VERSION__',v).replace('__BASE__','/').replace('__CACHE_SCOPE__','s'.repeat(32)));return}
+ if(url.pathname==='/api/status'){if(statusHeld)await statusHeld;res.end(JSON.stringify(status()));return}
  if(url.pathname==='/api/session'){res.end(JSON.stringify({csrf:'c'.repeat(64),cache_scope:'s'.repeat(32)}));return}
  if(url.pathname==='/api/cards/done'){res.end(JSON.stringify({cards:[],next:null,total:0}));return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -61,11 +63,16 @@ try{
  await page.clock.fastForward(20e3);await page.evaluate(()=>refresh());await page.clock.runFor(16e3);
  assert.equal(await page.evaluate(()=>window.__same),1,'no reload right after the link');
  assert.ok(await shown(page,10),'the to-do stays on screen');
- // later, left alone in the background, the update loads; a link after it still shows its to-do
- const loaded=page.waitForEvent('load');await page.clock.fastForward(60e3);await page.evaluate(()=>refresh()).catch(()=>{});await page.clock.runFor(16e3);await loaded;
- await page.clock.resume();await page.locator('#task-'+id(0)).waitFor();assert.equal(await page.evaluate(()=>UI_VERSION),'v2');
- await launch(page,link(13));await until(()=>shown(page,13),'after the update: the to-do');
- await page.waitForTimeout(1500);assert.ok(await shown(page,13),'the browser restoring the old place does not land over it');
+ // later, left alone in the background, the update loads; a link that comes in while it still loads its to-dos shows its
+ // to-do, never the place from before the update put back over it
+ holdOnLoad=true;const loaded=page.waitForEvent('load');await page.clock.fastForward(60e3);await page.evaluate(()=>refresh()).catch(()=>{});await page.clock.runFor(16e3);await loaded;
+ await page.clock.resume();await launch(page,link(13));await page.waitForTimeout(300);release();
+ await page.locator('#task-'+id(0)).waitFor();assert.equal(await page.evaluate(()=>UI_VERSION),'v2');
+ await until(()=>shown(page,13),'after the update, a link while it loaded: the to-do');
+ await page.waitForTimeout(1500);assert.ok(await shown(page,13),'the place from before the update does not come back over it');
+ // and a link once it has loaded still shows its to-do
+ await page.evaluate(()=>{scrollTo(0,0);linkedCardId=null});await launch(page,link(12));await until(()=>shown(page,12),'after the update: the to-do');
+ await page.waitForTimeout(1500);assert.ok(await shown(page,12),'the browser restoring the old place does not land over it');
  await page.close();
 
  // 4. Cold with an older copy of the page (the app's cache from before a release): the update loads with the link kept
