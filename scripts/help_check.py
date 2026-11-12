@@ -94,6 +94,7 @@ FEATURES = {
     'follow-ups': ('follow_ups.py', 'def schedule'),
     'talk-live': ('talk_live.py', 'def lines'),
     'recurring': ('recurring.py', 'def tick'),
+    'email-composer': ('machine/app/mail.py', 'def compose_email_action'),
 }
 # Features that exist in the code but have no article yet, each with the reason. Keep this short.
 PENDING = {

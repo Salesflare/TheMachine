@@ -654,6 +654,7 @@ from machine.actions import (
     AI_ACTIONS,
     CARD_ACTIONS,
     CHAT_ACTIONS,
+    COMPOSE_ACTIONS,
     CONNECT_ACTIONS,
     CONTACT_ACTIONS,
     CRM_ACTIONS,

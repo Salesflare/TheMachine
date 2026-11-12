@@ -39,7 +39,7 @@ function openSendAll(id){const ready=sendReady(state.suggestions.find(s=>s.id===
  sendBatch={id,list:ready.map(a=>a.revision),mail:ready.every(a=>a.kind==='email'),at:0,done:[]};openSend(id,ready[0].revision,1)}
 function sendStep(){const b=sendBatch;$('#send-step').hidden=!b;if(!b)return;const n=b.list.length;
  $('#send-step').textContent=t('{} of {}',b.at+1,n);$('#send-confirm').textContent=b.at<n-1?t('Next'):t(b.mail?'Send {} emails':'Send all {}',n)}
-function openSend(id,revision,step){if(!step)sendBatch=null;$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
+function openSend(id,revision,step){if(!step)sendBatch=null;$('#send-mailapp').hidden=true;$('#send-ask').hidden=true;$('#send-bounce').hidden=true;$('#send-act').hidden=false;$('#send-ask-open').hidden=true;
 const task=state.suggestions.find(s=>s.id===id),smart=taskActions(task),draft=revision?smart.find(a=>a.revision===revision):smart.find(a=>a.kind==='email');
 if(!task||task.status!=='prepared'||!SEND_KINDS.includes(draft?.kind)||(revision&&draft.revision!==revision)){toast('That draft changed. Review the current result.',true);return}
 // A new doc or a doc edit: all of it, before and after (todos-docwrite.js)
@@ -200,7 +200,7 @@ $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.the
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
 $('#send-cancel').onclick=()=>$('#send-dialog').close();
 // A closed send panel keeps nothing: the next one fills it again, and a sent or canceled draft never reads as typing
-$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;sendBatch=null;$('#send-step').hidden=true;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').replaceChildren();$('#send-error').textContent=''});
+$('#send-dialog').addEventListener('close',()=>{if($('#send-dialog').open)return;sendBatch=null;if(sendDraft?.compose)sendDraft=null;$('#send-mailapp').hidden=true;$('#send-step').hidden=true;for(const id of ['send-subject','send-body','send-ask-text'])$('#'+id).value='';$('#send-rich-body').replaceChildren();$('#send-error').textContent=''});
 // The subject wraps as it grows (field-sizing, or its height here where that's missing) but stays one line of text:
 // Enter adds no line break and a pasted one becomes a space.
 const subjectFit=()=>{const x=$('#send-subject');if(CSS.supports?.('field-sizing','content')||!x.offsetParent)return;x.style.height='auto';x.style.height=x.scrollHeight+'px'};
@@ -208,6 +208,7 @@ $('#send-subject').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing)e.preventDef
 $('#send-subject').oninput=e=>{const x=e.target,v=x.value.replace(/[ \t]*[\r\n]+[ \t]*/g,' ');if(v!==x.value){const at=x.selectionStart-(x.value.length-v.length);x.value=v;x.setSelectionRange(at,at)}subjectFit()};
 addEventListener('resize',()=>{if($('#send-dialog').open)subjectFit()});
 $('#send-confirm').onclick=async()=>{const b=$('#send-confirm');b.disabled=true;try{
+if(sendDraft?.compose){await composeSend(b);return}  // a new email (todos-compose.js, there while it's open)
 if(!$('#send-editor').hidden){const mail=sendDraft.kind==='email',typed=$('#send-body').value,body=mail?mailOut(draftText(sendDraft)):typed===plainDraft(draftText(sendDraft))?draftText(sendDraft):unplainDraft(typed,draftText(sendDraft)),subject=['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'].includes(sendDraft.kind)?undefined:$('#send-subject').value;
 if(body==null){b.disabled=false;return}
 if(body!==draftText(sendDraft)||subject!==sendDraft.subject){const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'revise_draft',args:{suggestion_id:sendTask,revision:sendRevision,body,subject}})});sendRevision=r.revision;
@@ -223,6 +224,15 @@ if(sendBatch){const sb=sendBatch,n=sb.list.length;sb.done[sb.at]={...sb.done[sb.
 await sendConfirmed(sendTask,sendRevision,sendDraft.kind,extra);
 $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging the fix…':sendDraft.kind==='finish'?'On it. I’ll report back.':sendDraft.kind==='calendar'?'Changing the calendar…':sendDraft.kind==='doc_write'?'Writing the doc…':'Sending your approved draft…');await refresh();
 }catch(e){errCaught(e);$('#send-error').textContent=e.offline&&!e.slow?t('Offline. Send again when you’re back online.'):e.message;b.disabled=false}};
+// An email address the dashboard shows as a link (a person's page, a link in a to-do or a chat) opens the composer
+// (todos-compose.js), not the mail app. A right-click, a middle-click or a modifier key keeps the link's own mailto, as
+// does Open in email in the composer. Only a plain address (a subject may come along); anything more stays a mailto.
+const composeLink=href=>{const m=/^mailto:([^?#]+)(?:\?([^#]*))?$/i.exec(href);if(!m)return null;let to,q;
+ try{to=decodeURIComponent(m[1]).trim();q=new URLSearchParams(m[2]||'')}catch{return null}
+ if(!/^[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+$/.test(to)||[...q.keys()].some(k=>k.toLowerCase()!=='subject'))return null;return{to,subject:q.get('subject')||''}};
+document.addEventListener('click',e=>{const a=e.target.closest?.('a[href^="mailto:" i]');
+ if(!a||e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||a.closest('#send-dialog'))return;
+ const m=composeLink(a.getAttribute('href'));if(!m)return;e.preventDefault();lazyRun('compose',()=>openCompose(m.to,m.subject,a.href))});
 // The one way a draft goes out from the dashboard: the send dialog's Send and Go through's (todos-clear.js), for exactly
 // the revision the owner saw. The server sends that revision or refuses (Store.confirm_action).
 async function sendConfirmed(id,revision,kind,extra={}){await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'confirm_action',args:{suggestion_id:id,revision,approval_id:crypto.randomUUID(),...extra}})});

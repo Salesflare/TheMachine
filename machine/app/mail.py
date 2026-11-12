@@ -12,7 +12,9 @@ import sqlite3
 import threading
 import time
 
+import abilities
 import handoff_mail
+from i18n import t
 from machine.app.promise_checks import activity_since
 from machine.cards import handoff_checkin
 from machine.sources.calendar import company_domains
@@ -25,10 +27,15 @@ import next_actions
 import own_addresses
 from sources import credential, gog_read, MAIL_SERVICES, SourceError
 import task_pages
+import todo_areas
+
+COMPOSE_ADDRESS = re.compile(r'[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+')
 
 
 class MailApp:
-    ACTIONS = {'mail_attachment': 'mail_attachment_action', **dict.fromkeys(task_pages.ACTIONS, 'task_page_action')}
+    # New email's two actions are their own reviewed set (machine.actions.COMPOSE_ACTIONS)
+    ACTIONS = {'mail_attachment': 'mail_attachment_action', **dict.fromkeys(task_pages.ACTIONS, 'task_page_action'),
+               'compose_from': 'compose_from_action', 'compose_email': 'compose_email_action'}
 
     @functools.cached_property
     def task_pages(self):
@@ -320,6 +327,90 @@ class MailApp:
 
     def mail_attachment_action(self, name, args, owner_dashboard=False):
         return self.mail_attachment({k: v for k, v in args.items() if k != '_folder'})
+
+    # -- New email: a click on an email address in the dashboard (docs/help/email-composer.md). The composer is the send
+    # dialog every draft uses; Send makes the email an ordinary draft on a to-do of its own (Store.owner_card, accepted,
+    # so no review or run reads it) and sends it with Store.confirm_action, the one way a draft goes out.
+    def compose_mailboxes(self):
+        """The owner's mailboxes a new email can go from: each one that sends what the owner approves, with Can do
+        things on, never one a Fleet shares (an Other email account too, once it can send)."""
+        return [a for a in self.config.get('accounts', []) if next_actions.mail_account(a) and a.get('email')
+                and not a.get('shared') and not abilities.refuse(self.config, a['id'])]
+
+    @staticmethod
+    def compose_address(value):
+        address = str(value or '').strip()
+        if len(address) > 254 or not COMPOSE_ADDRESS.fullmatch(address):
+            raise ValueError(t('Give their email address'))
+        return address
+
+    @staticmethod
+    def compose_person(db, address):
+        """The person in the Graph with this address: (node id, name), else (None, '')."""
+        row = db.execute("SELECT id,name FROM graph_nodes n WHERE kind='person' AND EXISTS (SELECT 1 FROM json_each(n.info,'$.emails') e "
+                         'WHERE lower(e.value)=?) ORDER BY id LIMIT 1', (address.lower(),)).fetchone()
+        return (row['id'], row['name'] or '') if row else (None, '')
+
+    def compose_from_action(self, name, args, owner_dashboard=False):
+        """What the composer offers for an address: the From choices (each mailbox and the aliases Gmail confirms it
+        sends as, own_addresses.senders), grouped by area, the one for the person's area first picked (owner_card_area:
+        Work for a work contact, Personal for a personal one), and their name from the Graph. No mailbox: no choices,
+        and the dashboard opens the mail app instead."""
+        if not owner_dashboard:
+            raise ValueError(t('Only the owner writes an email, from the dashboard'))
+        address = self.compose_address(args.get('to'))
+        able = self.compose_mailboxes()
+        accounts = self.config.get('accounts', [])
+        with self.store.connect() as db:
+            node, person = self.compose_person(db, address)
+            if not able:
+                return {'from': [], 'to_name': person, 'node_id': node}
+            senders = own_addresses.senders(db, self.config)
+            from machine.app.new_cards import owner_card_area  # noqa: PLC0415 - a sibling mixin
+            area, _ = owner_card_area(db, accounts, [node] if node else [], address)
+        home = next((a for a in accounts if a['id'] == area), None)
+        side = home and todo_areas.area_of_account(home)
+        pick = next((a for a in able if a['id'] == area), None) or next((a for a in able if side and todo_areas.area_of_account(a) == side), able[0])
+        found = todo_areas.areas(accounts)
+        firms = sum(x['id'] != todo_areas.PERSONAL for x in found)
+        label = lambda area: '' if not area else t('Personal') if area == todo_areas.PERSONAL else (
+            t('Work at {}', todo_areas.name(area, accounts)) if firms > 1 and todo_areas.name(area, accounts) else t('Work'))
+        choices, seen = [], set()
+        for a in sorted(able, key=lambda a: a['id'] != pick['id']):
+            for sender in [a['email'], *(x for x in senders.get(a['id']) or () if a.get('service', 'gmail') == 'gmail')]:
+                if sender and sender.lower() not in seen:
+                    seen.add(sender.lower())
+                    choices.append({'account_id': a['id'], 'from': sender, 'area': label(todo_areas.area_of_account(a))})
+        return {'from': choices, 'default': pick['email'], 'to_name': person, 'node_id': node}
+
+    def compose_email_action(self, name, args, owner_dashboard=False):
+        """Send in the composer: the email as a draft on a new to-do about the person (on their Graph page), checked like
+        any draft (next_actions.validate). Nothing is sent here: the dashboard then confirms exactly this revision
+        (confirm_action), with the alias picked as its sender."""
+        if not owner_dashboard:
+            raise ValueError(t('Only the owner writes an email, from the dashboard'))
+        address = self.compose_address(args.get('to'))
+        account = next((a for a in self.compose_mailboxes() if a['id'] == args.get('account_id')), None)
+        if not account:
+            raise ValueError(t('Pick a mailbox to send it from.'))
+        subject, body = ' '.join(str(args.get('subject') or '').split()), str(args.get('body') or '').strip()
+        if not subject:
+            raise ValueError(t('Add a subject first.'))
+        if not body:
+            raise ValueError(t('Write the message first.'))
+        with self.store.connect() as db:
+            node, person = self.compose_person(db, address)
+            senders = own_addresses.senders(db, self.config)
+        draft = next_actions.validate({'kind': 'email', 'label': 'Send', 'account_id': account['id'], 'to': [address],
+                                       'subject': subject, 'body': body}, self.config, [account['id']], senders=senders)
+        title = t('Email to {}: {}', person or address, subject)
+        work = str(account.get('boundary') or '').startswith('work:')
+        about = [{'id': node, 'name': person[:120], 'kind': 'person'}] if node else []
+        card = self.store.owner_card(title, account['id'], work=work, about=about, accepted=True)
+        self.store.prepare(card['id'], t('An email you wrote.'), next_action=draft, outcome={'state': 'needs_you', 'needs': 'send the email'})
+        if about and getattr(self, 'graph_dirty', None):
+            self.graph_dirty.set()  # the to-do shows on their page after the next build
+        return {'suggestion_id': card['id'], 'revision': draft['revision'], 'from_options': draft.get('from_options') or []}
 
     def task_page_action(self, name, args, owner_dashboard=False):
         # a task page for an email handoff: add, skip, stop sharing, mark done (task_pages.py)
