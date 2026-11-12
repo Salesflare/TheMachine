@@ -179,17 +179,32 @@ def doc_write_files(db, event_ids, config=None, area=None):
 
 def companies_prompt(config):
     """The review's line about the owner's companies (todo_areas.owner_companies), when they have more than one: mail
-    in one company's mailbox can be for another of theirs, and its to-do then goes there."""
-    found = todo_areas.owner_companies((config or {}).get('accounts') or [])
-    if len(found) < 2:
-        return ''
-    names = '; '.join(f"{c['id']} ({', '.join(c['domains']) or 'no mailbox'}{', its to-dos are Personal' if c['personal'] else ''})" for c in found)
-    return ('\n\nThe owner\'s companies: ' + names + '. Mail in one company\'s mailbox is sometimes for another of these (an '
-            'invoice, contract or notice for that company, forwarded by an accountant or sent to the wrong address). Judge it '
-            'by what the message is about and who it is for, with graph for the organizations and people on it, never by a '
-            'name in the text alone. When it is plainly for another of the owner\'s companies, add company=<its id> to suggest: '
-            'the to-do goes there from the start (that company\'s Work, or Personal when its to-dos are Personal). Leave it '
-            'out when it is for the mailbox\'s own company, or when unsure.')
+    in one company's mailbox can be for another of theirs, and its to-do then goes there. And work that came in on a
+    personal account (a chat app, a personal mailbox) is Work: with a company of the owner's whose to-dos are Work and a
+    Personal account, also with one company, the review is told it may add company=<id> for it (todo_areas.py). The
+    owner's own move stands (Store.suggest leaves a to-do with an area where it is)."""
+    accounts = (config or {}).get('accounts') or []
+    found = todo_areas.owner_companies(accounts)
+    out = ''
+    if len(found) >= 2:
+        names = '; '.join(f"{c['id']} ({', '.join(c['domains']) or 'no mailbox'}{', its to-dos are Personal' if c['personal'] else ''})" for c in found)
+        out += ('\n\nThe owner\'s companies: ' + names + '. Mail in one company\'s mailbox is sometimes for another of these (an '
+                'invoice, contract or notice for that company, forwarded by an accountant or sent to the wrong address). Judge it '
+                'by what the message is about and who it is for, with graph for the organizations and people on it, never by a '
+                'name in the text alone. When it is plainly for another of the owner\'s companies, add company=<its id> to suggest: '
+                'the to-do goes there from the start (that company\'s Work, or Personal when its to-dos are Personal). Leave it '
+                'out when it is for the mailbox\'s own company, or when unsure.')
+    work = [c['id'] for c in found if not c['personal']]
+    personal = todo_areas.accounts_in(todo_areas.PERSONAL, accounts)
+    if work and personal:
+        out += ('\n\nWork is Work, also when it comes in on a personal account (' + ', '.join(personal) + '): a matter of the '
+                'owner\'s work (a client, colleague, partner or supplier of theirs, a deal, a project, an invoice or order for '
+                'their business) that reached them in a personal chat or mailbox. Judge it by what the matter is about and who '
+                'it is with, with graph for the people and organizations on it, never by a word or a name in the text alone. '
+                'Then add company=<its id> to suggest (' + ', '.join(work) + '): the to-do is that company\'s Work from the '
+                'start, as after the owner\'s own move. Leave it out for the owner\'s own life (family, friends, home, their own '
+                'purchases), for a friend who also works with them writing about something private, and when unsure.')
+    return out
 
 
 def doc_write_prompt(config):
