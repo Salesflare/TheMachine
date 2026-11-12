@@ -1,6 +1,7 @@
 """The Shared Graph, continued (shared_graph.py, docs/shared-graph.md): removal, new devices and pause, what goes per
 thread, a live Fleet's cases, sharing by name, whose it is, and team learnings. The made-up Fleet, its fake Network and the
 helpers are tests/test_shared_graph.py's; these tests are a file of their own so the two halves run side by side."""
+import datetime as dt
 import json
 import sqlite3
 import time
@@ -175,6 +176,20 @@ class SharedGraphMore(base.SharedGraph):
         self.rounds(3)
         self.assertTrue(any(i['s']['t'] == 'member' and i['s'].get('device') and i['s']['member'] == 'mem3' for i in self.net.trust))
         self.assertIn(BODY, self.received(phone))
+
+    def test_two_admins_making_the_first_key_at_once_agree_on_one_even_when_sending_it_takes_a_second(self):
+        # Each admin's Machine made a key before it had the other's; sealing and sending it ends a second later
+        for box in self.boxes:
+            box.set_meta('graph_keys:' + FLEET, {})
+        start, clock = dt.datetime.now(dt.timezone.utc), iter(range(10 ** 6))
+        tick = lambda: (start + dt.timedelta(seconds=next(clock))).isoformat(timespec='seconds')
+        with patch.object(sg, 'now', side_effect=tick):
+            self.rounds()
+        made = {kv: k['at'] for box in (self.own, self.adm) for kv, k in box.graph_keys(FLEET).items() if k['by'] == box.member_id}
+        self.assertEqual(len(made), 2)
+        for box in self.boxes:  # every Machine dates each key when its admin made it, so the newest is the same one everywhere
+            self.assertEqual({kv: k['at'] for kv, k in box.graph_keys(FLEET).items()}, made)
+        self.assertEqual(len({box.graph_key(FLEET)[0] for box in self.boxes}), 1)  # one key: one hash per message
 
     def test_not_theirs_keeps_a_new_key_out(self):
         self.rounds()
