@@ -34,6 +34,8 @@ Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuot
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro. Un avviso sulla tua Machine stessa, come una parte che continua a riavviarsi, non è né Lavoro né Personale e compare solo in Tutti.
 
+La riga in cima all'elenco passa anche direttamente all'altra: **Solo personale · Lavoro · Mostra tutto**.
+
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](projects.md#a-projects-to-dos).
 
 **Area** in **Dettagli** sposta l'attività nella tua altra area. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.

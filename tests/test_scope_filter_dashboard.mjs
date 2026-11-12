@@ -51,10 +51,20 @@ try{
   await page.waitForFunction(()=>localStorage.getItem('scope-filter')===null);
   assert.deepEqual(saved,[{todo_scope:'personal'}]);assert.equal(locale.todo_scope,'personal');
   if(lang==='nl')await page.waitForFunction(()=>document.documentElement.lang==='nl');
-  assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?'Alleen privé · Alles tonen':'Personal only · Show all');
+  assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?'Alleen privé · Werk · Alles tonen':'Personal only · Work · Show all');
+  assert.equal(await note(page).locator('[data-scope="work"]').getAttribute('aria-label'),lang==='nl'?'Naar Werk':'Switch to Work');
   assert.equal(await shown(page),1);
   if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').innerText(),lang==='nl'?'1 to-do voor jou':'1 to-do for you');
   await shot(page,`${lang}-${width}x${height}-personal`);
+  // The line switches to the other area in place: the same filter as the sidebar's, kept on the Machine
+  assert.deepEqual((await callAfter(page,scopeSaved,()=>note(page).locator('[data-scope="work"]').click())).args,{todo_scope:'work'});
+  await note(page).getByText(lang==='nl'?'Alleen werk':'Work only',{exact:true}).waitFor();
+  assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?'Alleen werk · Privé · Alles tonen':'Work only · Personal · Show all');
+  assert.equal(await page.locator('.side-label [data-scope="work"]').getAttribute('aria-pressed'),'true');
+  assert.equal(await shown(page),2);
+  await shot(page,`${lang}-${width}x${height}-work`);
+  assert.deepEqual((await callAfter(page,scopeSaved,()=>note(page).locator('[data-scope="personal"]').click())).args,{todo_scope:'personal'});
+  await note(page).getByText(lang==='nl'?'Alleen privé':'Personal only',{exact:true}).waitFor();
   // Another device switches to Work: the next refresh shows it here too.
   locale={...locale,todo_scope:'work'};await page.evaluate(()=>refresh());
   await note(page).getByText(lang==='nl'?'Alleen werk':'Work only',{exact:true}).waitFor();
@@ -71,7 +81,7 @@ try{
   [context,page]=await open({width,height});
   if(lang==='nl')await page.waitForFunction(()=>document.documentElement.lang==='nl');
   await note(page).waitFor();
-  assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?"Geen privé-to-do's · Alles tonen":'No personal to-dos · Show all');
+  assert.equal((await note(page).innerText()).replace(/\s+/g,' ').trim(),lang==='nl'?"Geen privé-to-do's · Werk · Alles tonen":'No personal to-dos · Work · Show all');
   assert.equal(await page.locator('#suggestions .all-clear').count(),0);
   if(width>=1440)assert.equal(await page.locator('#page-head .page-sub').count(),0,'no All clear while a filter hides the rest');
   assert.deepEqual(saved,[],'a Machine that has a filter is never overwritten by a browser');

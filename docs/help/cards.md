@@ -34,6 +34,8 @@ When nothing needs you, your Machine naps on an empty list. While it checks, it 
 
 **All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back. An alert about your Machine itself, like a part that keeps restarting, is neither Work nor Personal and shows under All only.
 
+The line at the top of the list also switches straight to the other one: **Personal only · Work · Show all**.
+
 A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
 
 **Area** under **Details** moves a to-do to your other area. What it may read and send from moves with it. **Undo** on the note moves it back.
