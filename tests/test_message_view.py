@@ -39,6 +39,10 @@ SAMPLES = {
                              'Hi,\n\nThe stand comes in two sizes.\n\nAvery',
                              **{'from': 'avery@booths.example', 'to': 'robin@owner.example, nobody@unknown.example',
                                 'source_url': 'https://mail.google.com/mail/u/0/#all/g2'}),
+    'gmail.message#group': ev('mail', 'g3', 'gmail.message', 'Stand for the autumn fair',
+                              'Hi,\n\nIs there still a stand free?\n\nPat',
+                              **{'from': "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>", 'to': 'hello@team.example',
+                                 'source_url': 'https://mail.google.com/mail/u/0/#all/g3'}),
     'salesflare.email': ev('crm', 'email:1', 'salesflare.email', 'Checking in on your setup',
                            'From: Sam Rivera <sam@client.example>\nTo: Dana Reyes <dana@team.example>\nTo: Mira Holt <mira@team.example>\n\n'
                            'Hi Dana,\n\nHow is the setup going?\nAnything we can help with?\n\nThanks,\nSam',

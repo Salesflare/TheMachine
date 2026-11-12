@@ -77,7 +77,8 @@ try{
    if(await open.count())assert.ok(await open.evaluate(a=>{const b=document.getElementById('email-content'),r=b.getBoundingClientRect();return Math.abs(a.getBoundingClientRect().left-r.left-parseFloat(getComputedStyle(b).paddingLeft))<=2}),`${k}: the open link is not left-aligned`);
    // nothing widens the dialog: long code scrolls inside it
    assert.ok(await dialog.evaluate(d=>d.scrollWidth<=d.clientWidth+1),`${k} widens the dialog`);
-   if(o.view==='email'){assert.equal(await box.locator('.email-addr').count(),1,k);assert.equal(title,o.title,k)}
+   // the address once, quiet; none when the name already says it ("Pat Shop via hello@…")
+   if(o.view==='email'){assert.equal(await box.locator('.email-addr').count(),/ via \S+@/.test(o.from)?0:1,k);assert.equal(title,o.title,k)}
    if(o.view==='chat')assert.ok(await box.locator('.convo-say').count()>=1,k);
   }
   if(!other){const shown=k=>kinds.includes(k)?data[k]:undefined;  // only the kinds this run shows

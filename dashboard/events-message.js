@@ -24,8 +24,9 @@ const openLink=o=>!o.url||!safeURL(o.url)?'':html`<p class="email-open"><a class
 const attachmentsHTML=(o,id)=>(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:'';
 const srcIcon=o=>o.source?html`<span class="icon">${markIco(sourceMark(o.source,o.account_id,o.app))}</span>`:'';
 // An email: the sender by name with the address quiet, "to Dana, Mira" (Details has the full addresses), the date,
-// and the subject only when the dialog's title isn't it already.
-function mailHead(o,shown){const [f]=mailPeople(o.from),name=f?.name||sender(o.from),addr=f&&f.name&&!sameText(f.name,f.addr)?f.addr:'';
+// and the subject only when the dialog's title isn't it already. A name that already says the address ("Sam via
+// sales@…") has none after it.
+function mailHead(o,shown){const [f]=mailPeople(o.from),name=f?.name||sender(o.from),addr=f&&f.name&&!sameText(f.name,f.addr)&&!f.name.toLowerCase().includes(f.addr.toLowerCase())?f.addr:'';
  const to=mailPeople(o.to),cc=mailPeople(o.cc),list=ps=>ps.map(mailFirst).join(', ');
  const line=[to.length?t('to {}',list(to)):'',cc.length?t('cc {}',list(cc)):''].filter(Boolean).join(' · ');
  const full=[[t('To'),o.to],[t('Cc'),o.cc]].filter(([,v])=>v&&mailPeople(v).some(p=>p.name)).map(([k,v])=>html`<div><span>${k}</span> ${v}</div>`);
