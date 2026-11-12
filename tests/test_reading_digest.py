@@ -152,7 +152,7 @@ class Digest(unittest.TestCase):
                          [('Heat pumps beat gas in cold towns', 'Fits the office heating plan', 'Heat pumps'),
                           ('Small arms for small farms', 'Farm robots, cheap now', 'Farm robots')])
         self.assertEqual(items[0]['event'], third)
-        self.assertTrue(items[0]['url'].startswith('https://mail.google.com/'))
+        self.assertTrue(all(i['url'].startswith('https://mail.google.com/') for i in items), 'every pick links to its mail')
         self.assertEqual(extra['routine']['name'], 'Daily digest')  # From your routine: its card, with the interests
         self.assertEqual(self.runs()[0]['result'], 'Read 3 newsletters, picked 2.')
         # quiet, no Do it, only read
@@ -252,6 +252,11 @@ class Digest(unittest.TestCase):
         todos = self.todos()
         self.assertEqual([t['status'] for t in todos], ['completed', 'pending'])
         self.assertEqual(todos[0]['id'], old)
+        with self.store.connect() as db:  # closed by itself, not as the owner's Done, with Undo
+            decision = db.execute('SELECT source,feedback FROM decisions WHERE suggestion_id=?', (old,)).fetchone()
+            undo = db.execute('SELECT undo_until FROM suggestions WHERE id=?', (old,)).fetchone()[0]
+        self.assertEqual(tuple(decision), ('handled', 'newer digest'))
+        self.assertTrue(undo)
 
     def test_try_it_shows_the_picks_without_a_todo(self):
         self.add()  # nothing yet

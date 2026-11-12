@@ -24,8 +24,8 @@ const digest=()=>({id:'dg1',title:'Daily digest: 3 worth reading',status:'pendin
  routine:{id:'a1'.repeat(16),name:'Daily digest',live:true,act:null},
  digest:{items:[
   {n:0,from:'Climate Brief',title:'Heat pumps beat gas in cold towns',why:'New field data from towns colder than yours, with running costs.',topic:'Heat pumps',event:11,url:'https://mail.google.com/mail/u/?authuser=owner@example.com#all/m1',feedback:null},
-  {n:1,from:'Robot Letters',title:'Small arms for small farms',why:'A gripper for soft fruit now costs under a used tractor.',topic:'Farm robots',event:12,url:null,feedback:null},
-  {n:2,from:'Ledger Notes',title:'What lenders ask small firms this winter',why:'Three questions banks now ask before a credit line.',topic:'Small business finance',event:null,url:null,feedback:null}]}});
+  {n:1,from:'Robot Letters',title:'Small arms for small farms',why:'A gripper for soft fruit now costs under a used tractor.',topic:'Farm robots',event:12,url:'https://mail.google.com/mail/u/?authuser=owner@example.com#all/m2',feedback:null},
+  {n:2,from:'Ledger Notes',title:'What lenders ask small firms this winter',why:'Three questions banks now ask before a credit line.',topic:'Small business finance',event:null,url:'https://mail.google.com/mail/u/?authuser=owner@example.com#all/m3',feedback:null}]}});
 let templates,cards,interests,list;
 const ORIGINALS={11:{kind:'email',event_id:11,from:'Climate Brief <brief@climate.example>',to:'owner@example.com',occurred_at:now,title:'Heat pumps beat gas in cold towns',body:'Field data from twelve towns.'}};
 const reset=()=>{templates=TEMPLATES();interests=INTERESTS();cards=[digest()];list=[];posts.length=0};reset();
@@ -83,7 +83,8 @@ try{
   assert.equal(await text(todo.locator('.card-badges .chip').first()),'To read','a digest is calm reading, not Needs you');
   assert.equal(await page.locator('#badge-inbox').textContent(),'','a digest is not counted as needing the owner');
   assert.equal(await todo.locator('[data-dg-open]').count(),2,'only a pick with a kept mail opens it');
-  assert.equal(await todo.locator('a.dg-out').count(),1);
+  assert.equal(await todo.locator('a.dg-out').count(),3,'every pick from a mail links to it');
+  assert.equal(await text(todo.locator('button.primary[data-choice="complete"]')),'Done','Done finishes a digest');
   await todo.locator('[data-dg="dg1"][data-dg-n="0"][data-dg-to="more"]').click();
   assert.equal(await todo.locator('[data-dg-n="0"][data-dg-to="more"]').getAttribute('aria-pressed'),'true');
   await todo.locator('[data-dg="dg1"][data-dg-n="1"][data-dg-to="less"]').click();

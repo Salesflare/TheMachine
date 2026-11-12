@@ -10,6 +10,7 @@ A new digest replaces the area's open one. A test run only shows its picks.
 On the to-do: More like this or Less like this per item (digest_feedback). On the routine's card: the interests the
 owner sees and edits (digest_interest). Nothing is sent to anyone and no mail changes: the digest only reads."""
 import datetime as dt
+import json
 import logging
 
 import help_chat
@@ -17,6 +18,7 @@ import i18n
 import reading_digest
 import routines
 import todo_areas
+from machine.store import outcomes
 from models import background_model
 
 LOG = logging.getLogger('personal-assistant')
@@ -183,7 +185,12 @@ class ReadingDigestApp:
             with self.store.connect() as db:
                 reading_digest.ensure(db)
                 reading_digest.record(db, sid, mine, self.routines_stamp())
-            for old in older:
-                if old != sid:
-                    self.store.decide(old, 'complete', '', 'digest-replaced:' + old, 'dashboard')
+                # the area's older digest closes by itself, not as the owner's Done: "Closed by itself: newer digest", with Undo
+                reason, stamp = i18n.t('newer digest'), self.routines_stamp()
+                for old in older:
+                    row = db.execute("SELECT * FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (old,)).fetchone()
+                    if old == sid or not row or db.execute('SELECT 1 FROM decisions WHERE id=?', ('digest-replaced:' + old,)).fetchone():
+                        continue
+                    db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (json.dumps({'reason': reason, 'at': stamp}), old))
+                    outcomes.close_handled(db, row, 'digest-replaced:' + old, reason, stamp)
         return missed
