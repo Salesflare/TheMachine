@@ -39,6 +39,10 @@ SAMPLES = {
                              'Hi,\n\nThe stand comes in two sizes.\n\nAvery',
                              **{'from': 'avery@booths.example', 'to': 'robin@owner.example, nobody@unknown.example',
                                 'source_url': 'https://mail.google.com/mail/u/0/#all/g2'}),
+    'gmail.message#group': ev('mail', 'g3', 'gmail.message', 'Stand for the autumn fair',
+                              'Hi,\n\nIs there still a stand free?\n\nPat',
+                              **{'from': "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>", 'to': 'hello@team.example',
+                                 'source_url': 'https://mail.google.com/mail/u/0/#all/g3'}),
     'salesflare.email': ev('crm', 'email:1', 'salesflare.email', 'Checking in on your setup',
                            'From: Sam Rivera <sam@client.example>\nTo: Dana Reyes <dana@team.example>\nTo: Mira Holt <mira@team.example>\n\n'
                            'Hi Dana,\n\nHow is the setup going?\nAnything we can help with?\n\nThanks,\nSam',
@@ -223,6 +227,12 @@ class Rules(unittest.TestCase):
         self.assertEqual(o['to'], 'Dana Reyes <dana@team.example>, Mira Holt <mira@team.example>')
         self.assertTrue(o['body'].startswith('Hi Dana,'), o['body'])
         self.assertEqual(o['app'], 'Salesflare')
+
+    def test_a_google_group_sender_reads_as_people_say_it(self):
+        shown = lambda sender: message_view.shape('gmail.message', {'title': 'Hi', 'body': 'Hello', 'from': sender}, {})['from']
+        self.assertEqual(shown("\"'Pat Shop' via hello@team.example readers\" <hello@team.example>"), 'Pat Shop via hello@team.example <hello@team.example>')
+        self.assertEqual(shown("'Sam Lee' via Sales <sales@acme.example>"), 'Sam Lee via Sales <sales@acme.example>')
+        self.assertEqual(shown('Sam Lee <sam@acme.example>'), 'Sam Lee <sam@acme.example>')
 
     def test_a_header_like_line_inside_the_text_stays(self):
         self.assertEqual(message_view.header_lines('Hi\nTo: whom it may concern'), ({}, 'Hi\nTo: whom it may concern'))

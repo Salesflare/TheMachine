@@ -29,6 +29,7 @@ import json
 import re
 import sqlite3
 
+from machine.cards import group_sender
 from machine.sources.android import android_text_shown
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
@@ -216,6 +217,11 @@ def shape_email(o, m, title):
         for key in ('to', 'cc'):
             if found.get(key) and not o.get(key):
                 o[key] = ', '.join(found[key])[:500]
+    # A Google Group's "'Sam Lee' via Sales" <sales@…> as people say it: Sam Lee via Sales <sales@…>
+    name, cut, rest = str(o.get('from') or '').partition('<')
+    shown = group_sender(name.strip().strip('"'))
+    if shown != name.strip().strip('"'):
+        o['from'] = shown + (' <' + rest if cut else '')
     o['body'] = drop_repeats(o['body'], title)
 
 
