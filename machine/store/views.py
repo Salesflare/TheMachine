@@ -49,6 +49,7 @@ from machine.faults import FAULT_WHERE
 from machine.sources.connectors import crm_sync_health, docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
 from machine.sources import groups
 from machine.sources.android import android_app_shown
+from machine.sources.gmail import phone_link
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
@@ -451,6 +452,7 @@ class ViewsStore(ConversationStore):
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
+                           **({'phone_url': phone} if r['kind'] == 'gmail.message' and (phone := phone_link(url, m.get('thread_id'))) else {}),
                            'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
                            **({'photo': photo} if photo else {}),
                            **chat_view(r['kind'], m, body, r['occurred_at'])}, m))

@@ -15,10 +15,11 @@ const msgWhen=o=>html`<time datetime="${o.occurred_at}">${fmtDHM(o.occurred_at,{
 // The title a message opens under: an email's subject, a chat's conversation, a notification's own title or its app
 const viewTitle=o=>isChat(o)||o.view==='chat'?o.subject||chatTitle(o)||o.app||'':o.view==='notification'?o.title||o.app_name||'':o.title||'';
 // Where it opens outside, named as the to-do cards name it: "Open in Salesflare ↗"
+// (a Gmail message on a phone: its phone_url, the conversation on Gmail's mobile site; the desktop link lands in the inbox there)
 // with the source's own mono icon, as on the to-do cards (via-* in todos-chat.css)
 const OPEN_VIA={gmail:'gmail',slack:'slack',whatsapp:'whatsapp',telegram:'telegram',linkedin:'linkedin',x:'x',intercom:'intercom',github:'github',docs:'gdocs',calendar:'gcal'};
 const openVia=o=>'via-'+(OPEN_VIA[o.source?kindService(o.source):'']||(o.view==='email'||o.kind==='email'?'mail':'link'));
-const openLink=o=>!o.url||!safeURL(o.url)?'':html`<p class="email-open"><a class="read-original ${openVia(o)}" href="${o.url}" target="_blank" rel="noreferrer">${o.kind==='calendar'?t(calOpenLabel(o.url)):o.app?t('Open in {} ↗',o.app):o.kind==='email'?t('Open in {} ↗',/^https:\/\/outlook\./.test(o.url)?'Outlook':'Gmail'):t('Open original')}</a></p>`;
+const openLink=o=>!o.url||!safeURL(o.url)?'':html`<p class="email-open"><a class="read-original ${openVia(o)}" href="${onPhone()&&safeURL(o.phone_url||'')||o.url}" target="_blank" rel="noreferrer">${o.kind==='calendar'?t(calOpenLabel(o.url)):o.app?t('Open in {} ↗',o.app):o.kind==='email'?t('Open in {} ↗',/^https:\/\/outlook\./.test(o.url)?'Outlook':'Gmail'):t('Open original')}</a></p>`;
 const attachmentsHTML=(o,id)=>(o.attachments||[]).length?html`<div class="attachments">${o.attachments.map(a=>html`<a class="attachment" href="api/attachment?id=${id}&event=${encodeURIComponent(o.event_id)}&part=${encodeURIComponent(a.part)}" target="_blank" rel="noreferrer">📎 ${a.name}<small>${fileSize(a.size)}</small></a>`)}</div>`:'';
 const srcIcon=o=>o.source?html`<span class="icon">${markIco(sourceMark(o.source,o.account_id,o.app))}</span>`:'';
 // An email: the sender by name with the address quiet, "to Dana, Mira" (Details has the full addresses), the date,

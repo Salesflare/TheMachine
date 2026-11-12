@@ -3,6 +3,7 @@
 import base64
 import datetime as dt
 import html
+import re
 import time
 import urllib.parse
 
@@ -12,6 +13,19 @@ from machine.sources.rows import SKIPPED, Skips
 from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_history
 from sources import SourceError, gog_read
 from timeutil import now
+
+AUTHUSER = re.compile(r'^https://mail\.google\.com/mail/u/\?authuser=([^#&]+)#')
+THREAD = re.compile(r'[0-9a-f]{8,24}')
+
+
+def phone_link(url, thread):
+    """A Gmail message's link for a phone. On a phone mail.google.com serves its mobile site, which drops the desktop
+    link's #all/<message> and lands in the inbox; the mobile site opens a conversation as #cv/<label>/<thread> (the
+    thread's id, not the message's), in the account the link names. None when the link isn't Gmail's own."""
+    account = AUTHUSER.match(str(url or ''))
+    if not account or not THREAD.fullmatch(str(thread or '')):
+        return None
+    return f'https://mail.google.com/mail/mu/mp/?authuser={account[1]}#cv/All%20Mail/{thread}'
 
 
 class Gmail:
