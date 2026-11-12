@@ -34,6 +34,8 @@ Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mient
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver. Un aviso sobre tu propia Machine, como una parte que se reinicia una y otra vez, no es ni Trabajo ni Personal y solo aparece en Todo.
 
+La línea de arriba de la lista también cambia directamente a la otra: **Solo personal · Trabajo · Mostrar todo**.
+
 Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Proyecto** en **Detalles** lo cambia o lo quita. Consulta [las tareas de un proyecto](projects.md#a-projects-to-dos).
 
 **Área** en **Detalles** pasa la tarea a tu otra área. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.

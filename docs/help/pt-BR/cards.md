@@ -34,6 +34,8 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar. Um alerta sobre a própria Machine, como uma parte que reinicia sem parar, não é Trabalho nem Pessoal e só aparece em Todos.
 
+A linha no topo da lista também muda direto para a outra: **Só pessoal · Trabalho · Mostrar todas**.
+
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
 **Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
