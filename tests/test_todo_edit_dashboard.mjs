@@ -75,7 +75,9 @@ try{
   await page.locator('#send-confirm').click();await page.locator('#send-dialog').waitFor({state:'hidden'});
   assert.equal(posts.filter(p=>p.action==='revise_draft').at(-1).body,'Hi Noor,\n\nThe price is **€29** a seat. See [the pricing page](https://example.com/pricing).\n\nThanks,\nAlex');
   // and what is sent is exactly the edited text: the revision saved from it, then Send now confirms that revision
-  {const i=posts.findLastIndex(p=>p.action==='revise_draft'),j=posts.findLastIndex(p=>p.action==='confirm_action');assert.ok(i>=0&&j===i+1,'revise then confirm');assert.equal(posts[j].revision,'v2')}
+  // (the page's own calls, like draft_seen once the draft was in view 1.5 s, can land between the two: only the send's count)
+  {const sent=posts.filter(p=>p.action==='revise_draft'||p.action==='confirm_action').slice(-2);
+   assert.deepEqual(sent.map(p=>p.action),['revise_draft','confirm_action'],'revise then confirm');assert.equal(sent[1].revision,'v2')}
   // Ask for changes inside the dialog: the instruction saves as the to-do's Change, and the dialog closes
   await page.locator('#task-r1 [data-smart="v1"]').first().click();await page.locator('#send-dialog[open]').waitFor();
   await page.locator('#send-ask-open').click();await page.locator('#send-ask-text').fill('Make it shorter');
