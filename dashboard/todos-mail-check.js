@@ -22,7 +22,7 @@ function mailCheckWhy(r){if(r.todo){const [tmw,when]=r.held_until?heldAt(r.held_
 // how many new messages when more than one (the rows add up to the line's total), the subject or first words in a quieter
 // color, and the time. An email always names its sender and subject (Unknown sender when a chat or update has nothing).
 function mailCheckRow(r){const mail=!r.source||r.source==='email',who=(r.from&&sender(r.from))||(r.dm?t('Slack DM'):mail||!r.subject?t('Unknown sender'):''),what=r.subject||(mail?t('(no subject)'):''),at=checkClock(r.at);
- const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src"><span class="icon">${markIco(sourceMark(r.kind,r.account,r.app))}</span></span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''} <span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
+ const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src"><span class="icon">${markIco(sourceMark(r.kind,r.account,r.app))}</span></span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''}${who||r.n>1?' ':''}<span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
  return html`<li>${r.event!=null?html`<button type="button" class="mc-row" data-mc-event="${r.event}">${body}</button>`:body}</li>`}
 // The first MC_SHOWN rows, the rest behind "Show N more": every thread the check read can be seen
 const MC_SHOWN=10;let mailCheckAll=false;

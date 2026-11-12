@@ -30,6 +30,24 @@ ANDROID_APP_NAMES = {
     'com.google.android.apps.photos': 'Google Photos', 'com.google.android.apps.docs': 'Google Drive',
     'com.google.android.keep': 'Google Keep', 'com.google.android.apps.meetings': 'Google Meet', 'us.zoom.videomeetings': 'Zoom',
     'com.intercom.android': 'Intercom', 'com.stripe.android.dashboard': 'Stripe', 'com.github.android': 'GitHub',
+    # the phone's own apps, whose packages read as no name ("com.google.android.gms" is not "Google Gms")
+    'com.google.android.gms': 'Google Play services', 'com.google.android.odad': 'Google Play Protect',
+    'com.google.android.deskclock': 'Clock', 'com.android.deskclock': 'Clock', 'com.android.systemui': 'System UI',
+    'com.android.server.telecom': 'Phone', 'com.android.providers.downloads': 'Downloads', 'com.android.settings': 'Settings',
+    'com.google.android.permissioncontroller': 'Permissions', 'com.google.android.networkstack': 'Network',
+    'com.google.android.GoogleCamera': 'Camera', 'com.google.android.apps.weather': 'Weather', 'com.google.android.contacts': 'Contacts',
+    'com.google.android.apps.wear.companion': 'Pixel Watch', 'com.google.android.apps.wearables.maestro.companion': 'Pixel Buds',
+    # apps whose package names their maker or reads as something else ("com.ubercab", "com.transferwise.android")
+    'com.anthropic.claude': 'Claude', 'com.duolingo': 'Duolingo', 'com.fitbit.FitbitMobile': 'Fitbit', 'com.transferwise.android': 'Wise',
+    'com.revolut.revolut': 'Revolut', 'com.revolut.business': 'Revolut Business', 'com.strava': 'Strava', 'fr.vinted': 'Vinted',
+    'com.etsy.android': 'Etsy', 'com.waze': 'Waze', 'com.ubercab': 'Uber', 'com.ubercab.eats': 'Uber Eats', 'com.booking': 'Booking.com',
+    'com.shopify.arrive': 'Shop', 'de.komoot.android': 'komoot', 'com.lastpass.authenticator': 'LastPass Authenticator',
+    'com.lastpass.lpandroid': 'LastPass', 'com.bambuna.podcastaddict': 'Podcast Addict', 'com.producthuntmobile': 'Product Hunt',
+    'com.stremio.one': 'Stremio', 'com.medium.reader': 'Medium', 'com.pinterest': 'Pinterest', 'com.discord': 'Discord',
+    'com.bol.shop': 'bol', 'com.microsoft.skydrive': 'OneDrive', 'com.azure.authenticator': 'Microsoft Authenticator',
+    'com.seekingalpha.webwrapper': 'Seeking Alpha', 'net.dinglisch.android.taskerm': 'Tasker', 'org.kde.kdeconnect_tp': 'KDE Connect',
+    'com.amazon.mShop.android.shopping': 'Amazon', 'com.disney.disneyplus': 'Disney+', 'com.Splitwise.SplitwiseMobile': 'Splitwise',
+    'com.bshg.homeconnect.android.release': 'Home Connect', 'com.labs.merlinbirdid.app': 'Merlin Bird ID',
 }
 
 
@@ -40,27 +58,36 @@ def android_app_name(package):
 
 # The parts of a package name that say nothing about the app: its domain's end and platform words
 PACKAGE_NOISE = {'com', 'org', 'net', 'io', 'co', 'app', 'apps', 'android', 'mobile', 'phone', 'client', 'main', 'prod', 'release',
-                 'free', 'lite', 'ui', 'activity', 'launcher'}
+                 'free', 'lite', 'ui', 'activity', 'launcher', 'labs'}
 
 
 def android_app_shown(package, app_name=None):
-    """An app's name as people read it: its known label, else a name read from its package ("com.acme.mobile.android"
-    as "Acme", "nl.abn.ab" as "ABN"), never the raw reverse-domain string. The stored app_name stays as it is
-    (android_app_name) for an agent's exact matching; this is for lists people scan."""
+    """An app's name as people read it: its known label, else a name read from its package when the package says one
+    ("com.acme.mobile.android" as "Acme", "nl.abn.ab" as "ABN", "com.acme.AcmeMobile" as "Acme"), never the raw
+    reverse-domain string. A package that names its maker and its app in other words ("com.maker.someapp") goes by
+    its last word, the app's ("Someapp"), never the maker's: every phone row names its app. The stored app_name stays
+    as it is (android_app_name) for an agent's exact matching; this is for lists people scan."""
     package = str(package or '')
     if package in ANDROID_APP_NAMES:
         return ANDROID_APP_NAMES[package]
     name = str(app_name or '').strip()
-    if name and name != package and '.' not in name:
+    if name and name != package and not PACKAGE_SHAPE.fullmatch(name):
         return name
     parts = [p for p in re.split(r'[._]', package) if p]
     words = [p for p in parts[1:] if p.casefold() not in PACKAGE_NOISE and not p.isdigit()] or parts[-1:]
     if not words:
         return 'Unknown app'
+    if words[0].casefold() == 'google':
+        return 'Google ' + words[-1].capitalize()  # com.google.android.apps.fit
+    words = [w for w in words if len(w) > 2] or words  # "my", "ab": a country or a suffix, not the name
     word = words[0]
-    if word.casefold() == 'google' and len(words) > 1:
-        return 'Google ' + words[-1].capitalize()
+    if len(words) > 1 and not all(word.casefold() in w.casefold() for w in words[1:]):
+        word = words[-1]  # the maker and the app in other words: the app's own, last
     return word.upper() if len(word) <= 3 else word[:1].upper() + word[1:]
+
+
+# A label that is itself a package id ("com.acme.app"); "Booking.com" is a name
+PACKAGE_SHAPE = re.compile(r'[a-z]\w*(?:\.\w+)+')
 
 
 # A reverse-domain package id ("com.acme.shop", "nl.bank.app"): an app's id, never words to read

@@ -71,6 +71,8 @@ def recap_noise(db, since):
             where, rule = m.get('chat_name') or kind.split('.')[0].title() + ' group', {'chats': [m['chat_id']]}
         elif kind == 'android.notification' and m.get('package_name'):
             app = android_app_shown(m['package_name'], m.get('app_name'))  # com.Slack → Slack, com.linkedin.android → LinkedIn
+            if not app:
+                continue  # an app with no name to say: no offer that reads " notifications"
             where, rule = app + ' notifications', {'packages': [m['package_name']]}
         elif kind in ('gmail.message', 'salesflare.email') and sender and re.search(r'(?i)no-?reply|notification|alert|digest|news|mailer|updates?@', sender):
             where, rule = sender, {'senders': [sender.lower()]}
