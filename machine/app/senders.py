@@ -6,7 +6,9 @@ sender the Graph knows something specific about: who they are to the owner (role
 gist of their summary. It reads what is already stored (graph_nodes, person_summaries): no model call, no new table.
 
 Quality or nothing: a sender the Graph knows nothing specific about gets no line, and neither does the owner
-themself. A summary's line goes in only when its areas (Work, Personal) are those of the signals that person sent in
+themself. Someone the owner really dealt with before (wrote to on PAST_DAYS days or more, or met) is specific, also
+when that closeness has faded: their line says so in a few words, so a review tells a personal check-in from someone
+they know (it expects a reply) from the same words from a stranger (an opener), on every channel (the review prompt's Personal check-ins). A summary's line goes in only when its areas (Work, Personal) are those of the signals that person sent in
 this batch (person_summary.prep_lines), so one side's memory never reaches a signal of the other side.
 
 The block is short on purpose (SENDER_CHARS, about 400 tokens): the closest senders first, and a line that no longer
@@ -21,13 +23,14 @@ import person_summary
 SENDER_CHARS = 1600  # the whole block, its first line included: about 400 tokens a review
 GIST_CHARS = 160     # of a summary's first line
 SIGNALS_SHOWN = 4    # signal ids on a line, so the review knows which messages are theirs
+PAST_DAYS = 2        # days the owner wrote to someone before it counts as a past exchange (one reply to a pitch doesn't)
 # OpenClaw cuts a tool result at 64,000 characters (machine/store/review.py). The claim's reply also lists the
 # projects and boards, so the block goes in only while the whole reply stays under the cut: past it the block
 # would be cut off unread, and logged as read.
 REPLY_CUT = 64000
 REPLY_RESERVE = 2000
-HEADER = ('Who wrote these, from the Graph (who they are to the owner, how close, what is known; signals by id). '
-          'Senders not listed: nothing specific known. It is context for judging; what the message says still decides.')
+HEADER = ('Who wrote these, from the Graph (who they are to the owner, how close, past exchanges, what is known; signals by id). '
+          'Senders not listed: nothing specific known, no real exchange with the owner yet. It is context for judging; what the message says still decides.')
 
 
 def clip(text, limit):
@@ -74,18 +77,29 @@ def gist(db, node_id, sides):
     return next((clip(line, GIST_CHARS) for line in allowed[0] if all(line in other for other in allowed[1:])), '')
 
 
+def past(view):
+    """A few words on the owner's own exchanges with them ('the owner wrote on 9 days, met on 2'), '' when they never
+    wrote to or met them: what tells a relationship from a stranger, also once closeness has faded."""
+    wrote, met = view.get('wrote_days') or 0, view.get('met_days') or 0
+    bits = ([f'the owner wrote on {wrote} day' + ('s' if wrote != 1 else '')] if wrote else []) \
+        + ([f'met on {met} day' + ('s' if met != 1 else '')] if met else [])
+    return ', '.join(bits)
+
+
 def line(db, entry):
     """One sender's line, or '' when the Graph knows nothing specific about them: no role, no summary line this batch
-    may see, and less than a regular contact."""
+    may see, less than a regular contact and no past exchange with the owner (PAST_DAYS)."""
     view = graph.node_view(entry['row'])
     summary = gist(db, view['id'], entry['sides'])
-    if not view['role'] and not summary and view['closeness'] not in ('close', 'regular'):
+    known = (view.get('wrote_days') or 0) >= PAST_DAYS or (view.get('met_days') or 0) > 0
+    if not view['role'] and not summary and view['closeness'] not in ('close', 'regular') and not known:
         return ''
+    history = past(view)
     org = db.execute('SELECT name,info FROM graph_nodes WHERE id=?', (view['org'],)).fetchone() if view['org'] else None
     org_role = json.loads(org['info'] or '{}').get('role') if org else None
     bits = ([clip(view['role'], 80)] if view['role'] else []) \
         + ([f"at {clip(org['name'], 60)}" + (f' ({clip(org_role, 60)})' if org_role else '')] if org else []) \
-        + [f"{view['closeness']} contact" + (', gone quiet' if view['quiet'] else '')] \
+        + [f"{view['closeness']} contact" + (', gone quiet' if view['quiet'] else '') + (f' ({history})' if history else '')] \
         + ([f'summary: {summary}'] if summary else [])
     shown, more = entry['signals'][:SIGNALS_SHOWN], len(entry['signals']) - SIGNALS_SHOWN
     signals = ', '.join(str(i) for i in shown) + (f' and {more} more' if more > 0 else '')
