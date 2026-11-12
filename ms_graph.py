@@ -126,6 +126,10 @@ SETTLE_SECONDS = 900
 MAX_RESPONSE = 40_000_000  # Never save an oversized response as a successful partial file.
 _tokens: dict = {}
 _folders: dict = {}
+# A mailbox's own address, as /me answered it, per connection: the sync checks it before every round, and /me can fail for
+# hours while the mailbox itself reads fine. Asked again after this long, and at once on a reconnect (a new connection key).
+IDENTITY_SECONDS = 6 * 3600
+_identities: dict = {}
 _lock = threading.Lock()
 
 
@@ -638,8 +642,17 @@ def gmail_call(config, credential, account, method, params):
     """The Gmail reads the app makes, answered from Graph. The history cursor is a time: messages changed since."""
     params = dict(params or {})
     if method == 'gmail.users.getProfile':
-        me = call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'})
-        return {'emailAddress': identity(me), 'historyId': _iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
+        key = _connection_key(config, account)
+        with _lock:
+            known = _identities.get(key)
+        if known and known[1] > time.monotonic():
+            address = known[0]
+        else:
+            address = identity(call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'}))
+            if address:
+                with _lock:
+                    _identities[key] = (address, time.monotonic() + IDENTITY_SECONDS)
+        return {'emailAddress': address, 'historyId':_iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
     if method == 'gmail.users.settings.sendAs.get':
         return {'sendAsEmail': params.get('sendAsEmail'), 'signature': ''}  # Graph has no API for Outlook signatures
     if method == 'gmail.users.settings.sendAs.list':  # the mailbox's own addresses: its proxy addresses (User.Read)
