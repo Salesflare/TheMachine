@@ -6,7 +6,7 @@
 // Each part of Settings goes to a tab by its id; a part without one goes with the part before it (a heading with what
 // follows it). A tab with nothing to show is left out. Links: #settings, #settings/skills (or #settings=skills); the last tab is kept.
 const SETTINGS_TABS=[['account','Account'],['general','General'],['security','Security'],['activity','Activity'],['notify','Notifications'],['writing','Writing'],['skills','Skills'],['apps','Apps'],['model','Model']];
-const SETTINGS_OF={'settings-notify':'notify','settings-acct':'account','settings-addresses':'account','settings-domains':'account','settings-acct-end':'account',hours:'notify','settings-signatures':'writing','settings-voices':'writing','settings-skills':'skills','settings-model':'model','agents-settings':'model','settings-browser':'general','settings-fleet':'general','settings-account-block':'general','settings-locale':'general','settings-dictation':'general','settings-security':'security','settings-lookups':'security','settings-share':'security','settings-apps':'apps','settings-ai':'apps','settings-export':'general'};
+const SETTINGS_OF={'settings-notify':'notify','settings-acct':'account','settings-addresses':'account','settings-domains':'account','settings-acct-end':'account',hours:'notify','settings-signatures':'writing','settings-voices':'writing','settings-skills':'skills','settings-model':'model','agents-settings':'model','settings-browser':'general','settings-setup':'general','settings-fleet':'general','settings-account-block':'general','settings-locale':'general','settings-dictation':'general','settings-security':'security','settings-lookups':'security','settings-share':'security','settings-apps':'apps','settings-ai':'apps','settings-export':'general'};
 // Apps was AIs (#settings/ai) until 2026-11: an old link or a kept tab opens Apps
 const SETTINGS_OLD={hours:'notify',ai:'apps',ais:'apps'};
 let settingsTab=SETTINGS_OLD[localStorage.getItem('settings-tab')]||localStorage.getItem('settings-tab')||'account',settingsNow='';
@@ -26,6 +26,14 @@ function settingsOpen(tab){tab=SETTINGS_OLD[tab]||tab;if(SETTINGS_TABS.some(t=>t
 // Settings' panels load when first needed: Settings opens once they're in (and a Writing link's voice gets the focus)
 function showSettings(tab){if(lazyIn('settings'))return settingsOpen(tab);lazyRun('settings',()=>{settingsOpen(tab);voiceEditShow()})}
 $('#open-settings').onclick=()=>showSettings();
+// One setting by its id in Settings (a toast's Settings link, toastSettings in shell-toast.js): Settings opens on the
+// tab that holds it, scrolled to its row, with a brief highlight. The tab is the one settingsSync gave its part.
+const settingsTabOf=id=>document.getElementById(id)?.closest('#settings>[data-stab]')?.dataset.stab||SETTINGS_OF[id]||'';
+function settingsAt(id){lazyRun('settings',()=>{settingsOpen(settingsTabOf(id));requestAnimationFrame(()=>{const el=document.getElementById(id);if(!el||$('#settings').hidden)return;
+ const row=el.closest('.settings-list>div')||el.querySelector('.settings-list>div')||el;
+ row.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash');setTimeout(()=>row.classList.remove('flash'),2400);kbFocus(row.querySelector('button,[role=switch]')||row,false)})})}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-settings-at]');if(!a)return;e.preventDefault();$('#toast').classList.remove('show');settingsAt(a.dataset.settingsAt)});
 $('#settings-tabs').onclick=e=>{const b=e.target.closest('[data-settings-tab]');if(!b)return;showSettings(b.dataset.settingsTab)};
 $('nav').addEventListener('click',e=>{if(!e.target.closest('button')?.dataset.tab)return;$('#open-settings').setAttribute('aria-current','false');if(location.hash.startsWith('#settings'))history.replaceState(null,'',location.pathname+location.search)});
 // Feedback, Share learnings with The Machine team (team_learnings.py): a quiet card, then exactly what would be sent, item

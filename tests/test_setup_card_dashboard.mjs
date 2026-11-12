@@ -266,9 +266,19 @@ try{
   // The whole card: Undo too, and Settings has it once it is gone
   await page.locator('[data-setup-close]').click();await page.waitForFunction(()=>document.querySelector('#setup-card').hidden);
   assert.equal(await toastText(),'Hidden. Settings can show it again. Undo');
-  await shot(page,`restore-toast-${width}-${scheme}`);
-  await page.evaluate(()=>document.querySelector('#toast').classList.remove('show'));
-  await page.evaluate(()=>showSettings('general'));await page.locator('#settings-setup:not([hidden])').waitFor();
+  // Settings in it is a link to the very setting; the toast sits over none of the buttons of the to-do that moved up
+  // into the card's place, on a desktop as on a phone
+  assert.equal(await page.locator('#toast a[data-settings-at="settings-setup"]').getAttribute('href'),'#settings/general');
+  await page.waitForTimeout(900);
+  assert.deepEqual(await page.evaluate(()=>{const t=document.querySelector('#toast'),r=t.getBoundingClientRect();return [...document.querySelectorAll('main button,main a[href]')].filter(b=>!t.contains(b)&&b.offsetParent)
+   .map(b=>[b,b.getBoundingClientRect()]).filter(([,b])=>b.width&&b.right>r.left&&b.left<r.right&&b.bottom>r.top&&b.top<r.bottom).map(([b])=>b.textContent.trim())}),[],width+': the toast covers no button');
+  if(shots)await page.screenshot({path:`${shots}/restore-toast-${width}-${scheme}.png`});
+  await page.locator('#toast a[data-settings-at]').click();await page.locator('#settings-setup:not([hidden])').waitFor();
+  await page.waitForTimeout(700);  // the scroll to it
+  assert.deepEqual(await page.evaluate(()=>{const row=document.querySelector('#settings-setup .settings-list>div'),r=row.getBoundingClientRect();
+   return {tab:document.querySelector('#settings-tabs [aria-selected="true"]')?.dataset.settingsTab,hash:location.hash,lit:row.classList.contains('flash'),seen:r.top>=0&&r.bottom<=innerHeight,toast:document.querySelector('#toast').classList.contains('show')}}),
+   {tab:'general',hash:'#settings/general',lit:true,seen:true,toast:false},'the link lands on the setting, in view and lit for a moment');
+  if(shots)await page.screenshot({path:`${shots}/restore-landed-${width}-${scheme}.png`});
   const set=await page.evaluate(()=>{const r=document.querySelector('#settings-setup');return {text:r.innerText.replace(/\s+/g,' ').trim(),phone:!!document.querySelector('#device-phone'),general:document.querySelector('#settings').innerText.includes('Get the app')}});
   assert.deepEqual(set,{text:'Setup to-do Get more out of The Machine Bring back the steps you closed, at the top of To-dos. Show again',
    phone:false,general:false},'the phone app is in Settings, Apps only, not General');

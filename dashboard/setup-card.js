@@ -105,7 +105,7 @@ function setupSettings(on){let sec=$('#settings-setup');
  sec.hidden=false}
 const setupPost=(action,step)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args:{step}})});
 // After a ×: Undo in the toast for a while (the same as other dismissals), and where to find it again once the card is closed
-function setupUndoToast(step){toast(step==='card'?'Hidden. Settings can show it again.':'Hidden.');
+function setupUndoToast(step){if(step==='card')toastSettings('Hidden. {} can show it again.','settings-setup');else toast('Hidden.');
  $('#toast').append(htmlNodes(html` <button type="button" data-setup-undo="${step}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),10000)}
 async function setupDismiss(step){const s=state.setup_card;if(step==='card')s.closed=true;else s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();setupUndoToast(step);
  if(s.demo)return;

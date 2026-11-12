@@ -40,11 +40,11 @@ const taglinePool=(list,connectors,now=new Date())=>{const on=new Set(Array.isAr
 window.newTagline=()=>{const now=$('#tagline').textContent,rest=[...taglinePool(TAGLINES,state.connectors),...since()].filter(x=>x!==now);$('#tagline').textContent=rest[Math.floor(Math.random()*rest.length)]}}
 let toastTimer,manualBusy=false;
 function toastUnmerge(text,batch){toast(text);if(batch){$('#toast').append(htmlNodes(html` <button data-unmerge="${batch}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}}  // one Undo for Merge all
-/* On a phone or tablet the toast never covers buttons (a card's actions, the chat box): when its usual place at the
-   bottom has some, it goes just above them if that is near the bottom, else to the top under the bar. The page
-   footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
+/* The toast never covers buttons (a card's actions, the next to-do's after one closes, the chat box), on a phone or a
+   desktop alike: when its usual place at the bottom has some, it goes just above them if that is near the bottom, else
+   to the top under the bar. The page footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
 let toastLiftTimer;
-function toastLift(t){t.style.bottom='';t.style.top='';if(!matchMedia('(max-width:1023px)').matches||modalOpen())return;
+function toastLift(t){t.style.bottom='';t.style.top='';if(modalOpen())return;
  const vh=innerHeight,vw=innerWidth,h=t.offsetHeight,w=t.offsetWidth,x0=(vw-w)/2,x1=x0+w,base=parseFloat(getComputedStyle(t).bottom)||24;
  const hits=Array.from(document.querySelectorAll('button,a[href],input,textarea,select,[role=button],summary')).filter(el=>!t.contains(el)&&el.offsetParent!==null&&!el.closest('.site-footer,#topbar,[hidden]')&&getComputedStyle(el).visibility!=='hidden')
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height&&r.right>x0&&r.left<x1&&r.bottom>0&&r.top<vh);

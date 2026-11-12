@@ -1,5 +1,11 @@
 // The Machine slow to answer (shell-network.js, slowErr) is not a failure: said quietly, without Report a bug
 function toast(text,error=false,undoId=null){if(error&&text===NET_SLOW_TEXT)error=false;const t=$('#toast');delete t.dataset.about;t.replaceChildren(undoId||error?text+' ':text,undoId?make('button',{'data-undo':undoId},'Undo'):error?make('button',{type:'button','data-bug-report':''},'Report a bug'):'');t.classList.toggle('error',error);t.classList.add('show');toastLift(t);clearTimeout(toastLiftTimer);toastLiftTimer=setTimeout(()=>{if(t.classList.contains('show'))toastLift(t)},700);  /* again once what the action changed has drawn */clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),undoId?15000:text.length>90?9000:error?6000:2500)}
+// A toast that says Settings brings something back ("Hidden. {} can show it again."): the {} is Settings, a link to
+// that setting (id: its row's id in Settings; settingsAt in settings-shared.js). The key is a whole sentence in the
+// catalogs, so each language puts the link where it reads right. Shown long enough to reach the link.
+function toastSettings(key,id){const tab=settingsTabOf(id);toast(t(key,t('Settings')));
+ $('#toast').replaceChildren(htmlNodes(htmlT(key,html`<a href="#settings${tab?'/'+tab:''}" data-settings-at="${id}">${t('Settings')}</a>`)));
+ clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),8000)}
 // A notice about one to-do (Sent. Moved to Done., Marked done, Snoozed: the ones with Open or Undo for it, or marked
 // with data-about) goes when another to-do opens: it names no to-do, so over another one it would read as being about that one.
 function toastNotAbout(id){const t=$('#toast'),b=t.querySelector('[data-toast-open],[data-undo],[data-unsnooze],[data-quick-undo],[data-move-undo]'),d=b?.dataset,about=t.dataset.about||d&&(d.toastOpen||d.undo||d.unsnooze||d.quickUndo||d.id);
