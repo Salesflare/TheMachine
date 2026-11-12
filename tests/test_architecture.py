@@ -478,6 +478,9 @@ LAZY_CEILING['routinetodos'] = 15_000
 # graph 360,000 -> 384,000 (2026-11-11): a project's follow-ups and Done when, a board's follow-ups line and the
 # follow-up settings dialog, which only the Graph's pages open (about 17.6 KB), out of the first load.
 LAZY_CEILING.update(followups=28_000, graph=384_000)
+# connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
+# puts catch-all sources last (about 0.9 KB).
+LAZY_CEILING['connections'] = 110_000
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
