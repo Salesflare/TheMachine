@@ -2,6 +2,7 @@
 its emails and meetings as events, the feed and pipeline reads, and its sync (sync_salesflare). Moved out of
 assistant.py as is."""
 import datetime as dt
+import hashlib
 import http.client
 import json
 import logging
@@ -39,7 +40,7 @@ class Salesflare:
             raise SourceError('salesflare_join_disabled')
         return self.send(f'/accounts/{int(crm_id)}/users', None, [{'id': self.account['user_id']}])
 
-    def send(self, path, params, payload=None):
+    def token(self):
         values = {}
         for line in credential(self.config, self.account.get('credential', 'salesflare')).splitlines():
             if '=' in line and not line.lstrip().startswith('#'):
@@ -48,6 +49,14 @@ class Salesflare:
         token = values.get(self.account.get('credential_variable', 'SALESFLARE_STAGING_API_KEY'))
         if not token:
             raise SourceError('missing_salesflare_credential')
+        return token
+
+    def key_fingerprint(self):
+        """Which key this is, held in memory only (salesflare_confirm): a changed key is never taken as confirmed."""
+        return hashlib.sha256(self.token().encode()).hexdigest()
+
+    def send(self, path, params, payload=None):
+        token = self.token()
         url = self.account['api_base'] + path + ('?' + urllib.parse.urlencode(params, doseq=True) if params else '')
         request = urllib.request.Request(url, data=encoded(payload).encode() if payload is not None else None,
                                          method='POST' if payload is not None else 'GET',
@@ -55,9 +64,10 @@ class Salesflare:
                                                   'Content-Type': 'application/json'})
         started, route = time.monotonic(), route_of(path)
         # Account list queries ordered by activity are slow on a large team. A feed answers in a second, but now and
-        # then hangs until Salesflare's gateway gives up (504 after 120 s): a shorter wait frees the round sooner.
+        # then hangs until Salesflare's gateway gives up (504 after 120 s): a shorter wait frees the round sooner. The
+        # profile (/me) is as small and hangs the same way.
         timeout = self.account.get('timeout_seconds', 180)
-        if route == '/accounts/{id}/feed':
+        if route in ('/accounts/{id}/feed', '/me'):
             timeout = min(timeout, self.account.get('feed_timeout_seconds', SALESFLARE_FEED_TIMEOUT))
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -265,6 +275,36 @@ SALESFLARE_HICCUP = {500, 502, 503, 504}  # its gateway giving up on a slow quer
 SALESFLARE_FEED_ROUTE = '/accounts/{id}/feed'
 
 
+def salesflare_hiccup(error):
+    """Salesflare or the network giving up on one request (a 5xx, a timeout): the same read soon after answers."""
+    return error.category.startswith('network:') or error.status in SALESFLARE_HICCUP
+
+
+# Every sync first checks that the key still belongs to the owner (/me). On a large team that read hangs now and then
+# until Salesflare's gateway answers 504, like any other, and the sync failed for it though the key was confirmed
+# minutes before. A key confirmed within this long goes on through such a hiccup. Only a hiccup: a refusal or another
+# user still stops the sync, and a changed key is never taken as confirmed (its fingerprint, kept in memory only).
+SALESFLARE_PROFILE_TRUSTED = 3600  # seconds
+SALESFLARE_CONFIRMED = {}  # account id: (key fingerprint, time.monotonic() of its last confirmed /me)
+
+
+def salesflare_confirm(source, account):
+    fingerprint = getattr(source, 'key_fingerprint', lambda: None)()
+    try:
+        source.profile()
+    except SourceError as error:
+        seen = SALESFLARE_CONFIRMED.get(account['id'])
+        age = time.monotonic() - seen[1] if seen else None
+        if not (salesflare_hiccup(error) and fingerprint and seen and seen[0] == fingerprint
+                and age < SALESFLARE_PROFILE_TRUSTED):
+            raise
+        LOG.warning('salesflare profile check skipped account=%s error=%s route=%s confirmed=%ds ago', account['id'],
+                    error, error.route or '-', round(age))
+        return
+    if fingerprint:
+        SALESFLARE_CONFIRMED[account['id']] = (fingerprint, time.monotonic())
+
+
 # Salesflare refuses the feed for the whole team (a setting on its side, report s_f0d5d0200384ed92): every account of a
 # round answers 403 on the feed while the key's user is part of it. Asking each account again every round changes
 # nothing, so one account is asked until one read succeeds: every 10 minutes on the first day (the owner is likely
@@ -350,7 +390,7 @@ def sync_salesflare(store, config, account, source=None):
     if state.get('stopped'):  # the owner pressed Stop on its card: nothing is read until Start or Restart
         return {'mode': state.get('mode') or 'incremental', 'events': 0, 'stopped': True}
     source = source or Salesflare(config, account)
-    source.profile()
+    salesflare_confirm(source, account)
     stamp = dt.datetime.now(dt.timezone.utc)
     if feed_off_wait(state, stamp):
         # Nothing to ask until the next re-check. The sync itself worked (the key reads its profile), so it counts.
@@ -400,7 +440,7 @@ def sync_salesflare(store, config, account, source=None):
             emails = salesflare_feed(source, crm_id, 'email', since, until) if email_ids is None or crm_id in email_ids else []
             meetings = [(k, item) for k in ('meeting-live', 'meeting-phone') for item in salesflare_feed(source, crm_id, k, meeting_since, until)]
         except SourceError as error:
-            if error.category.startswith('network:') or error.status in SALESFLARE_HICCUP:
+            if salesflare_hiccup(error):
                 # One slow account must not block the window: Salesflare's feed now and then hangs until its gateway
                 # answers 504, and the same read a minute later answers at once (report s_f0d5d0200384ed92). So the
                 # accounts read before it are kept, this one goes to the back of the round (never asked again right
