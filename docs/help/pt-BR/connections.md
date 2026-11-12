@@ -12,7 +12,7 @@ A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outr
 
 Uma sincronização que falhou e que uma posterior já compensou aparece em cinza; só uma falha que ainda é a mais recente aparece como problema, com quando tenta de novo.
 
-Seus números mostram o que ela trouxe, o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
+Seus números mostram tudo o que ela trouxe, inclusive o [histórico](history.md), o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
 
 Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, que só faz isso depois que você toca em **Enviar** ou dá o seu OK.
 

@@ -1130,7 +1130,7 @@
  "Country: a two-letter code, like BE": "Land: ein Code aus zwei Buchstaben, etwa BE",
  "Country: {}": "Land: {}",
  "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Zahlen und Daten aus dem, was der Team-Graph schon teilt. Private und persönliche Threads zählen nie.",
- "Counts show new or changed messages and events, including the first import.": "Die Zahlen zeigen neue oder geänderte Nachrichten und Termine, auch beim ersten Import.",
+ "Counts include history. Last 24h shows new or changed messages and events.": "Die Zahlen enthalten den Verlauf. Letzte 24 Std. zeigt neue oder geänderte Nachrichten und Termine.",
  "Crashed ({})": "Abgestürzt ({})",
  "Create": "Erstellen",
  "Create a restricted key in Stripe with read access to Events, Customers and Account only.": "Erstelle in Stripe einen eingeschränkten Schlüssel mit Lesezugriff nur auf Events, Customers und Account.",

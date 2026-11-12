@@ -840,8 +840,11 @@ class ViewsStore(ConversationStore):
             for account in accounts:
                 row = db.execute('SELECT * FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
                 cutoff = (dt.datetime.fromisoformat(now()) - dt.timedelta(hours=24)).isoformat()
-                counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(ingested_at>=?) signals_24h FROM events WHERE account_id=? AND history=0',
-                                    (cutoff, account['id'])).fetchone()
+                # The card's total is everything kept from this source, history included (docs/help/history.md), from
+                # events_account_time alone; last 24h and not checked stay new signals only, from events_signal_counts.
+                counts = db.execute('SELECT (SELECT count(*) FROM events WHERE account_id=?1) total,sum(analyzed_version<version) pending,'
+                                    'sum(ingested_at>=?2) signals_24h FROM events WHERE account_id=?1 AND history=0',
+                                    (account['id'], cutoff)).fetchone()
                 state = json.loads(row['state']) if row else {}
                 channel_health = {}
                 if account.get('service') == 'android':

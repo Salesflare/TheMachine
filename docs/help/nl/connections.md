@@ -12,7 +12,7 @@ Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat**
 
 Een mislukte sync die een latere sync heeft goedgemaakt staat in grijs; alleen een mislukking die nog de laatste is, staat als probleem, met wanneer hij opnieuw probeert.
 
-De tellers tonen wat de bron binnenbracht, hoeveel er de laatste 24 uur bij kwam en wat nog niet is gecheckt. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
+De tellers tonen alles wat de bron binnenbracht, ook de [geschiedenis](history.md), hoeveel er de laatste 24 uur bij kwam en wat nog niet is gecheckt. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
 
 Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
 

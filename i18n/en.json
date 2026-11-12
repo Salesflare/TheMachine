@@ -1130,7 +1130,7 @@
  "Country: a two-letter code, like BE": "Country: a two-letter code, like BE",
  "Country: {}": "Country: {}",
  "Counts and dates from what the Team Graph already shares. Private and personal threads never count.": "Counts and dates from what the Team Graph already shares. Private and personal threads never count.",
- "Counts show new or changed messages and events, including the first import.": "Counts show new or changed messages and events, including the first import.",
+ "Counts include history. Last 24h shows new or changed messages and events.": "Counts include history. Last 24h shows new or changed messages and events.",
  "Crashed ({})": "Crashed ({})",
  "Create": "Create",
  "Create a restricted key in Stripe with read access to Events, Customers and Account only.": "Create a restricted key in Stripe with read access to Events, Customers and Account only.",
