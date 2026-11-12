@@ -26,7 +26,8 @@ try{
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-1111111111111111').waitFor();
- const rows=await page.locator('#suggestions .card .actions[data-fit]').count();
+ // rows drawn anew are fitted in the next animation frame (actionsSome), which can come after the to-do shows
+ const rows=await page.waitForFunction(()=>document.querySelectorAll('#suggestions .card .actions[data-fit]').length>=6,null,{timeout:5000}).then(()=>6,()=>page.locator('#suggestions .card .actions[data-fit]').count());
  assert.ok(rows>=6,'each to-do’s row is fitted: '+rows);
  // Count the measurings from here on (actionsSize is a page-wide function, so the observers call this one)
  await page.evaluate(()=>{window.sized=[];const was=actionsSize;window.actionsSize=a=>{sized.push(a.closest('article')?.id);was(a)}});
