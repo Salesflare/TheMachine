@@ -64,12 +64,12 @@ Os e-mails com o que espera por você têm links Abrir e Adiar. Eles só abrem o
 
 Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que não haja nada a dizer. **Prévia**, na linha dele, mostra sem enviar. Por padrão é um push e um e-mail, curtos para ler de relance:
 
-- um bom-dia com o que importa hoje, como "Bom dia, Sam: 2 respostas prontas para enviar";
+- um bom-dia com o que importa hoje, como "Bom dia, Sam: 2 respostas prontas para enviar" ou, para uma tarefa, "Bom dia, Sam. Para revisar: Enviar o formulário de pedido";
 - no máximo três coisas a fazer, cada uma com um link Abrir: primeiro os rascunhos para revisar e as promessas de hoje;
 - quantas mais podem esperar e quanto tempo levam no seu ritmo, como "Mais 12 podem esperar, cerca de 5 min para resolver." As tarefas que esperam a sua resposta não entram nesse tempo.
 - suas reuniões numa linha.
 
-Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela.
+Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela. Uma promessa abre a tarefa dela, ou a própria página se ainda não tiver uma.
 
 O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
 

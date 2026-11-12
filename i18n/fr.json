@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Silencieux : {}",
  "Good morning": "Bonjour",
  "Good morning, first meeting at {}": "Bonjour, première réunion à {}",
+ "Good morning, ready for your OK: {}": "Bonjour, à valider : {}",
  "Good morning, {} due today": "Bonjour, {} à faire aujourd’hui",
  "Good morning, {} new to-dos": {
   "one": "Bonjour, {} nouvelle tâche",
   "other": "Bonjour, {} nouvelles tâches"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Bonjour, {} à valider",
-  "other": "Bonjour, {} à valider"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Bonjour, {} réponse est prête à envoyer",
   "other": "Bonjour, {} réponses sont prêtes à envoyer"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Bonjour, {} tâche à valider",
+  "other": "Bonjour, {} tâches à valider"
  },
  "Good morning, {} waiting": {
   "one": "Bonjour, {} vous attend",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Récap du matin : {}",
  "Morning {}": "Bonjour {}",
  "Morning {}, first meeting at {}": "Bonjour {}, première réunion à {}",
+ "Morning {}, ready for your OK: {}": "Bonjour {}, à valider : {}",
  "Morning {}, {} due today": "Bonjour {}, {} à faire aujourd’hui",
  "Morning {}, {} new to-dos": {
   "one": "Bonjour {}, {} nouvelle tâche",
   "other": "Bonjour {}, {} nouvelles tâches"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Bonjour {}, {} à valider",
-  "other": "Bonjour {}, {} à valider"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Bonjour {}, {} réponse est prête à envoyer",
   "other": "Bonjour {}, {} réponses sont prêtes à envoyer"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Bonjour {}, {} tâche à valider",
+  "other": "Bonjour {}, {} tâches à valider"
  },
  "Morning {}, {} waiting": {
   "one": "Bonjour {}, {} vous attend",

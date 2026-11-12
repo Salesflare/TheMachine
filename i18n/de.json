@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Still geworden: {}",
  "Good morning": "Guten Morgen",
  "Good morning, first meeting at {}": "Guten Morgen, erster Termin um {}",
+ "Good morning, ready for your OK: {}": "Guten Morgen, wartet auf dein OK: {}",
  "Good morning, {} due today": "Guten Morgen, {} heute fällig",
  "Good morning, {} new to-dos": {
   "one": "Guten Morgen, {} neue Aufgabe",
   "other": "Guten Morgen, {} neue Aufgaben"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Guten Morgen, {} wartet auf dein OK",
-  "other": "Guten Morgen, {} warten auf dein OK"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Guten Morgen, {} Antwort ist bereit zum Senden",
   "other": "Guten Morgen, {} Antworten sind bereit zum Senden"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Guten Morgen, {} Aufgabe wartet auf dein OK",
+  "other": "Guten Morgen, {} Aufgaben warten auf dein OK"
  },
  "Good morning, {} waiting": {
   "one": "Guten Morgen, {} wartet",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Morgendliche Zusammenfassung: {}",
  "Morning {}": "Guten Morgen {}",
  "Morning {}, first meeting at {}": "Guten Morgen {}, erster Termin um {}",
+ "Morning {}, ready for your OK: {}": "Guten Morgen {}, wartet auf dein OK: {}",
  "Morning {}, {} due today": "Guten Morgen {}, {} heute fällig",
  "Morning {}, {} new to-dos": {
   "one": "Guten Morgen {}, {} neue Aufgabe",
   "other": "Guten Morgen {}, {} neue Aufgaben"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Guten Morgen {}, {} wartet auf dein OK",
-  "other": "Guten Morgen {}, {} warten auf dein OK"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Guten Morgen {}, {} Antwort ist bereit zum Senden",
   "other": "Guten Morgen {}, {} Antworten sind bereit zum Senden"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Guten Morgen {}, {} Aufgabe wartet auf dein OK",
+  "other": "Guten Morgen {}, {} Aufgaben warten auf dein OK"
  },
  "Morning {}, {} waiting": {
   "one": "Guten Morgen {}, {} wartet",

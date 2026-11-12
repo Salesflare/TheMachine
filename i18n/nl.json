@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Stil geworden: {}",
  "Good morning": "Goeiemorgen",
  "Good morning, first meeting at {}": "Goeiemorgen, eerste afspraak om {}",
+ "Good morning, ready for your OK: {}": "Goeiemorgen, klaargezet voor je akkoord: {}",
  "Good morning, {} due today": "Goeiemorgen, {} voor vandaag",
  "Good morning, {} new to-dos": {
   "one": "Goeiemorgen, {} nieuwe to-do",
   "other": "Goeiemorgen, {} nieuwe to-do’s"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Goeiemorgen, {} klaargezet voor je akkoord",
-  "other": "Goeiemorgen, {} klaargezet voor je akkoord"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Goeiemorgen, {} antwoord staat klaar om te versturen",
   "other": "Goeiemorgen, {} antwoorden staan klaar om te versturen"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Goeiemorgen, {} to-do klaargezet voor je akkoord",
+  "other": "Goeiemorgen, {} to-do’s klaargezet voor je akkoord"
  },
  "Good morning, {} waiting": {
   "one": "Goeiemorgen, {} wacht op je",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Ochtendoverzicht: {}",
  "Morning {}": "Goeiemorgen {}",
  "Morning {}, first meeting at {}": "Goeiemorgen {}, eerste afspraak om {}",
+ "Morning {}, ready for your OK: {}": "Goeiemorgen {}, klaargezet voor je akkoord: {}",
  "Morning {}, {} due today": "Goeiemorgen {}, {} voor vandaag",
  "Morning {}, {} new to-dos": {
   "one": "Goeiemorgen {}, {} nieuwe to-do",
   "other": "Goeiemorgen {}, {} nieuwe to-do’s"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Goeiemorgen {}, {} klaargezet voor je akkoord",
-  "other": "Goeiemorgen {}, {} klaargezet voor je akkoord"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Goeiemorgen {}, {} antwoord staat klaar om te versturen",
   "other": "Goeiemorgen {}, {} antwoorden staan klaar om te versturen"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Goeiemorgen {}, {} to-do klaargezet voor je akkoord",
+  "other": "Goeiemorgen {}, {} to-do’s klaargezet voor je akkoord"
  },
  "Morning {}, {} waiting": {
   "one": "Goeiemorgen {}, {} wacht op je",
