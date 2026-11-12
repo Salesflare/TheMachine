@@ -561,6 +561,8 @@ class Graph(unittest.TestCase):
         self.add(mail(3, 'Sam Stone <sam@acme.com>', 'Ann Stone <ann@home.example>, Pat <pat@client.com>, Lee <lee@globex.com>', ('SENT',)),
                  {'account_id': 'work', 'source_id': 'st1', 'kind': 'stripe.event', 'occurred_at': at(2), 'title': 'Payment failed', 'body': '', 'deleted': False,
                   'metadata': {'from': 'pat@client.com', 'customer_name': 'Client Ltd', 'type': 'invoice.payment_failed'}},
+                 {'account_id': 'work', 'source_id': 'st2', 'kind': 'stripe.event', 'occurred_at': at(2), 'title': 'Invoice paid', 'body': '', 'deleted': False,
+                  'metadata': {'from': 'ops@orbit.example', 'customer_name': 'ops@orbit.example', 'type': 'invoice.paid'}},  # saved with only an address
                  {'account_id': 'work', 'source_id': 'ic1', 'kind': 'intercom.conversation', 'occurred_at': at(2), 'title': 'Re: login', 'body': '', 'deleted': False,
                   'metadata': {'from': 'Kai <kai@acme.com>'}},
                  {'account_id': 'work', 'source_id': 'cr1', 'kind': 'salesflare.email', 'occurred_at': at(2), 'title': 'Hi', 'body': '', 'deleted': False,
@@ -573,6 +575,8 @@ class Graph(unittest.TestCase):
             self.assertIsNone(role(node))  # a source doesn't say what someone is to the owner
         hints = lambda node: self.node(node)['hints']
         self.assertEqual(hints('email:pat@client.com'), ['billed through Stripe as Client Ltd'])
+        self.assertEqual(hints('email:ops@orbit.example'), ['billed through Stripe'])
+        self.assertNotIn('@', self.node('org:orbit.example')['name'])  # an organization is never named by an address
         self.assertEqual(hints('email:lee@globex.com'), ['a Salesflare contact at Globex'])
         self.assertEqual(hints('email:ann@home.example'), ["shares the owner's surname"])
         self.assertEqual(hints('slack:U0TEAM1'), ["in the owner's Slack"])
