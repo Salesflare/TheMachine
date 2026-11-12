@@ -40,9 +40,9 @@ const taglinePool=(list,connectors,now=new Date())=>{const on=new Set(Array.isAr
 window.newTagline=()=>{const now=$('#tagline').textContent,rest=[...taglinePool(TAGLINES,state.connectors),...since()].filter(x=>x!==now);$('#tagline').textContent=rest[Math.floor(Math.random()*rest.length)]}}
 let toastTimer,manualBusy=false;
 function toastUnmerge(text,batch){toast(text);if(batch){$('#toast').append(htmlNodes(html` <button data-unmerge="${batch}">Undo</button>`));clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),15000)}}  // one Undo for Merge all
-/* The toast never covers buttons (a card's actions, the next to-do's after one closes, the chat box), on a phone or a
-   desktop alike: when its usual place at the bottom has some, it goes just above them if that is near the bottom, else
-   to the top under the bar. The page footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
+/* At any width the toast never covers buttons (a card's actions, the chat box): when its usual place at the
+   bottom has some, it goes just above them if that is near the bottom, else to the top under the bar. The page
+   footer's links don't count; under an open sheet nothing is in reach, so it stays put. */
 let toastLiftTimer;
 function toastLift(t){t.style.bottom='';t.style.top='';if(modalOpen())return;
  const vh=innerHeight,vw=innerWidth,h=t.offsetHeight,w=t.offsetWidth,x0=(vw-w)/2,x1=x0+w,base=parseFloat(getComputedStyle(t).bottom)||24;
