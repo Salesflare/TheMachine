@@ -40,7 +40,7 @@ Gmail or Microsoft mail, also on your own domain? Pick **Gmail** or **Outlook** 
 - **The mail server refused the password**: you changed it, or the app password was removed. Connect it again with the new one.
 - **The mail server refused the password for sending**: nothing was sent. Connect it again; if it keeps refusing, check the SMTP server in Server settings. Until then it only reads.
 - **Couldn’t reach the mail server**: it retries by itself. If it keeps failing, check the server name in Server settings.
-- **The mail server’s certificate is for another name**: shared hosting often answers with its own server name. Type the name shown in Server settings. The Machine never skips the certificate check.
+- **The mail server’s certificate is for** another name: shared hosting often answers with its own server name. Type the name shown in Server settings. The Machine never skips the certificate check.
 
 ## Remove it
 
