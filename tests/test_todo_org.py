@@ -4,6 +4,7 @@ review names it on suggest (org), or its project is with one the owner or a revi
 where someone on it works: their employer, or a project organization the Machine filled in from its people."""
 import unittest
 
+import enrichment
 import todo_org
 
 import test_graph as tg
@@ -52,6 +53,34 @@ class TodoOrg(unittest.TestCase):
         # A later review's word replaces it: about none now
         self.store.suggest('k3b', 'Accept the painting quote', 'Brushworks sent the quote; Pat agrees.', [quote, home], card_id=named, match=True, org='')
         self.assertNotIn('org_node', self.card(named))
+
+    def test_a_todos_chips_carry_the_photo_and_logo_the_graph_shows(self):
+        """Who and which organization a to-do is about show their picture on its chips: only a photo saved on this
+        Machine, a logo also as the https link the Graph shows; nothing when the Graph shows none or the owner took it off."""
+        self.add(mail(4, 'Pat <pat@bigcorp.example>', 'sam@acme.com', thread='p'), mail(3, 'Lee <lee@brushworks.example>', 'sam@acme.com', thread='q'))
+        with self.store.connect() as db:
+            db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
+                       ('email:lee@brushworks.example', 'a' * 32, 'image/png', b'\x89PNG\r\n\x1a\n', T))
+            db.execute('INSERT INTO person_photos(identifier,key,type,data,saved_at) VALUES(?,?,?,?,?)',
+                       ('logo:brushworks.example', 'b' * 32, 'image/png', b'\x89PNG\r\n\x1a\n', T))
+        self.build()
+        home, quote = self.event('pat@bigcorp.example'), self.event('lee@brushworks.example')
+        card = self.card(self.store.suggest('k1', 'Accept the painting quote', 'Brushworks sent the quote.', [quote], org='brushworks.example')['id'])
+        self.assertEqual(card['people'][0]['photo'], 'api/person-photo?p=' + 'a' * 32)
+        self.assertEqual(card['people'][0]['org']['logo'], 'api/person-photo?p=' + 'b' * 32)
+        self.assertEqual(card['org_node']['logo'], 'api/person-photo?p=' + 'b' * 32)
+        plain = self.card(self.store.suggest('k2', 'Wait for the painter', 'Pat writes.', [home], org='')['id'])
+        self.assertNotIn('photo', plain['people'][0])  # none saved: the chip keeps its icon
+        self.assertNotIn('logo', plain['people'][0]['org'])
+        with self.store.connect() as db:
+            self.assertIsNone(enrichment.node_picture('{"profile":{"photo":"https://media.example/p.jpg"}}', 'photo'))  # never the service's link
+            self.assertEqual(enrichment.node_picture('{"profile":{"logo":"https://logo.example/a.png"}}', 'logo'), 'https://logo.example/a.png')
+            self.assertIsNone(enrichment.node_picture('{"profile":{"logo":"javascript:alert(1)"}}', 'logo'))
+            self.assertIsNone(enrichment.node_picture('not json', 'logo'))
+            db.execute("INSERT INTO person_edits(identifier,fields,updated_at) VALUES('email:lee@brushworks.example','{\"photo\":\"none\"}',?)", (T,))
+        self.build()
+        card = self.card(self.store.suggest('k3', 'Pay the deposit', 'Lee asks for it.', [quote], org='brushworks.example', separate=True)['id'])
+        self.assertNotIn('photo', card['people'][0])  # the owner took it off
 
     def test_the_review_passes_its_word_and_says_none_when_it_gives_none(self):
         self.add(mail(4, 'Pat <pat@bigcorp.example>', 'sam@acme.com', thread='p'), mail(3, 'Lee <lee@brushworks.example>', 'sam@acme.com', thread='q'))

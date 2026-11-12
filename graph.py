@@ -2745,7 +2745,9 @@ def card_people(db, event_ids, limit=3):
     rows = list({r['id']: r for r in sorted(found, key=lambda r: r['event_id'] != ids[0])}.values())  # the one waiting on it leads
     people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
-               **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
+               **({'photo': photo} if (photo := enrichment.node_picture(r['info'], 'photo')) else {}),
+               **({'org': {'id': r['org_id'], 'name': r['org_name'], **({'logo': logo} if (logo := enrichment.node_picture(r['org_info'], 'logo')) else {})}}
+                  if r['org_id'] and r['org_name'] else {})} for r in rows]
     weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)
     return people[:limit], round(weight, 3)
 

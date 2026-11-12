@@ -105,6 +105,24 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual(state['mode'], 'incremental')
         self.assertNotIn('window', state)
 
+    def test_a_contacts_picture_on_salesflares_own_host_is_kept_for_people_in_what_was_read(self):
+        """A contact's picture from the account read anyway: only links on Salesflare's own image host, only for people
+        in a kept message or meeting, kept as a contact's photo link (not chosen by them), never fetched here."""
+        crm = FakeCRM()
+        crm.accounts[10]['customers'][0]['picture'] = 'https://lib.salesflare.com/pictures/ann.png'
+        crm.accounts[10]['customers'][1]['picture'] = 'https://lib.salesflare.com/pictures/bob.png'  # only in skipped mail
+        crm.accounts[20]['customers'][0]['picture'] = 'https://img.enrich.example/gail.png'  # another service's host
+        self.run_to_completion(crm)
+        with self.store.connect() as db:
+            rows = db.execute('SELECT identifier,url,chosen,source FROM contact_photo_links').fetchall()
+        self.assertEqual([tuple(r) for r in rows], [('email:ann@acme.example', 'https://lib.salesflare.com/pictures/ann.png', 0, 'salesflare')])
+        rows = {r['source_id']: r for r in self.store.events(['work-crm'])}
+        self.assertNotIn('picture', rows['email:e1']['metadata']['contacts'][0])  # the link stays out of the message
+        from machine.sources.salesflare import salesflare_picture
+        self.assertEqual(salesflare_picture('https://staginglib.salesflare.com/p/x.jpg'), 'https://staginglib.salesflare.com/p/x.jpg')
+        for other in ('http://lib.salesflare.com/p.png', 'https://lib.salesflare.com.evil.example/p.png', None, 5):
+            self.assertIsNone(salesflare_picture(other))
+
     def test_each_batch_commits_with_its_progress_and_replay_is_idempotent(self):
         crm = FakeCRM()
         first = a.sync_salesflare(self.store, {}, ACCOUNT, crm)

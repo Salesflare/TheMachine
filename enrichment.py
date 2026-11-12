@@ -1287,6 +1287,20 @@ def contact_photos_step(connect, now, limit=CONTACT_PHOTOS_PER_PASS, fetch=None)
     return saved
 
 
+SAVED_PICTURE = re.compile(r'api/person-photo\?p=[0-9a-f]{32}')
+LOGO_LINK = re.compile(r'https://[^\s"\'<>\\]{1,600}')
+
+
+def node_picture(info, field):
+    """The picture a person's (field 'photo') or organization's ('logo') Graph node shows, for a to-do's chip: only a
+    photo saved on this Machine; for a logo also the https link the Graph's lists show. None when it has none."""
+    try:
+        found = str(((json.loads(info or '{}') or {}).get('profile') or {}).get(field) or '')
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return found if SAVED_PICTURE.fullmatch(found) or (field == 'logo' and LOGO_LINK.fullmatch(found)) else None
+
+
 def without_photo(db, nodes):
     """Which of these people (graph_nodes rows with id and info) show no photo yet: none saved for any of their
     identifiers (a look-up, a contact, a chat app, an import), none on their page, and none the owner set or took off
