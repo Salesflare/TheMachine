@@ -1,4 +1,4 @@
-"""Any mailbox over IMAP (imap_mail.py, imap_presets.py, onboarding.step_imap): read-only, in Gmail's shapes, through the
+"""Any mailbox over IMAP (imap_mail.py, imap_presets.py, machine/sources/imap_setup.py): read-only, in Gmail's shapes, through the
 same sync. A fake IMAP server on this computer (TLS with a throwaway certificate, or STARTTLS) holds made-up mail; no
 other server is reached and nothing is ever sent. The password never shows in a log, an error, the config or the lines
 the dashboard shows."""
@@ -26,6 +26,7 @@ import imap_presets
 import onboarding
 import sources
 from machine import config as machine_config
+from machine.sources import imap_setup
 from test_ux import a
 
 PASSWORD = 'pw-Fake-7731-xyz'  # made up; the tests look for it everywhere it must not be
@@ -590,7 +591,7 @@ class Setup(Base):
         ui = FakeUI({'Email address': email_address, **(answers or {})}, password)
         lookup = mock.patch.object(imap_presets, 'lookup', return_value=found if found is not None else {})
         with lookup:
-            onboarding.step_imap(self.config, account, ui)
+            imap_setup.step(self.config, account, ui)
         return account, ui
 
     def test_telenet_style_settings_sign_in_on_the_fake_server(self):
@@ -634,7 +635,7 @@ class Setup(Base):
         answers = {'IMAP server': '127.0.0.1', 'IMAP port': str(self.server.port)}
         with self.assertRaises(onboarding.SetupError) as caught:
             self.step(USER, answers, password='pw-Wrong-0000')
-        self.assertEqual(caught.exception.message, onboarding.IMAP_REFUSED['imap_auth_failed'])
+        self.assertEqual(caught.exception.message, imap_setup.REFUSED['imap_auth_failed'])
         self.assertNotIn('pw-Wrong-0000', str(caught.exception))
         with self.assertRaises(onboarding.SetupError):
             self.step(USER, {**answers, 'IMAP security': 'None'})
@@ -656,7 +657,7 @@ class Setup(Base):
                    {'Password': PASSWORD})
         account = {'id': 'acme-imap', 'service': 'imap', 'transport': 'imap', 'boundary': 'work:Acme'}
         with mock.patch.object(imap_presets, 'lookup', return_value={}):
-            onboarding.step_imap(self.config, account, ui)
+            imap_setup.step(self.config, account, ui)
         self.assertEqual((account['imap_host'], account['imap_security'], account['sent_folder']), ('127.0.0.1', 'ssl', 'Sent'))
         self.assert_no_password(ui.view(), json.dumps(account))
 

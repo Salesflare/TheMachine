@@ -1,4 +1,4 @@
-"""The server settings for an email address, so most people type only their address and password (onboarding.step_imap).
+"""The server settings for an email address, so most people type only their address and password (machine/sources/imap_setup.py).
 
 In order, each a best effort that never blocks the setup: a small built-in table of known providers; the provider's own
 autoconfig file (autoconfig.<domain>, then <domain>/.well-known); Mozilla's ISPDB (Thunderbird's provider database);

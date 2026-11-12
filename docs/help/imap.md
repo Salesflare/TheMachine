@@ -3,7 +3,7 @@ title: Other email (IMAP)
 area: connections
 summary: Mail from any provider with IMAP, like iCloud, Yahoo, Fastmail, Telenet or your own domain. Reads only for now.
 covers: connector:imap
-code: imap_mail.py, imap_presets.py, onboarding.py
+code: imap_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
 ---
 ## What it reads

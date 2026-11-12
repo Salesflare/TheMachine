@@ -3,7 +3,7 @@ title: Andere e-mail (IMAP)
 area: connections
 summary: Mail van elke provider met IMAP, zoals iCloud, Yahoo, Fastmail, Telenet of je eigen domein. Leest voorlopig alleen.
 covers: connector:imap
-code: imap_mail.py, imap_presets.py, onboarding.py
+code: imap_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
 ---
 ## Wat het leest

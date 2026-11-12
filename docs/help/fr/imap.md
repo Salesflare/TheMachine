@@ -3,7 +3,7 @@ title: Autre e-mail (IMAP)
 area: connections
 summary: Les e-mails de tout fournisseur avec IMAP, comme iCloud, Yahoo, Fastmail, Telenet ou votre propre domaine. Lecture seule pour l’instant.
 covers: connector:imap
-code: imap_mail.py, imap_presets.py, onboarding.py
+code: imap_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
 ---
 ## Ce qu’elle lit
