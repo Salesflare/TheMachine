@@ -134,12 +134,14 @@ def request(url, method='GET', body=None, headers=None, prefix='caldav', redirec
 
 
 def parse_xml(data, prefix='caldav'):
-    """An XML answer from the network, read without a DOCTYPE: one with entities is refused outright."""
+    """An XML answer from the network, read by the parser that refuses any DTD (connectors/docs.parse_xml: no entity
+    expansion, no external entities)."""
+    from connectors.docs import parse_xml as hardened  # noqa: PLC0415 - the one hardened XML reader
     text = data.decode('utf-8', 'replace') if isinstance(data, bytes) else str(data or '')
     if re.search(r'<!(DOCTYPE|ENTITY)', text, re.I):
         raise CalendarError(prefix + '_bad_answer')
     try:
-        return ET.fromstring(text.encode('utf-8'))
+        return hardened(text.encode('utf-8'))
     except ET.ParseError:
         raise CalendarError(prefix + '_bad_answer') from None
 
