@@ -34,7 +34,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 const errors=[];
 const open=async(width,scheme)=>{
- const context=await browser.newContext({viewport:{width,height:width<500?844:900},deviceScaleFactor:width<500?2:1,colorScheme:scheme,timezoneId:'Europe/Brussels'});
+ const context=await browser.newContext({viewport:{width,height:width<500?844:900},deviceScaleFactor:width<500?2:1,colorScheme:scheme,timezoneId:Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC'});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
