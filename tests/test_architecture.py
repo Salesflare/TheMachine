@@ -438,7 +438,10 @@ OVER_BUDGET = {}
 # group's fast review (LAZY 'followups'), a project's follow-ups and Done when, a board's follow-ups line and the
 # follow-up settings dialog (the Graph's part) load when first needed (first load 1,421,711 -> 1,380,493). The
 # ceiling is that plus 10 KB, and FIRST_LOAD_ROOM keeps it close: room that opens up is taken in.
-FIRST_LOAD_CEILING = 1_391_000
+# 1,391,000 -> 1,392,000 (2026-11-12): main sat 9 bytes under it. A Daily digest's place in the list itself (its To
+# read chip, Done as its first button, not counted as needing the owner) is first draw (+561); its items load when
+# first needed (LAZY 'digest').
+FIRST_LOAD_CEILING = 1_392_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000
