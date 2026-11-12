@@ -436,6 +436,70 @@ def board_replies_waiting(db, event_ids, owner_slack_ids=()):
     return out
 
 
+def waiting_cards(db, rows, owner_slack_ids=()):
+    """Messages among rows that move an open to-do waiting on someone else (Waiting on others, or back as Still waiting
+    on): a message to or from the people it waits on, newer than its evidence and not on it yet. The owner's own
+    follow-up counts as much as their answer: either one changes what the to-do says. {event_id: {'card_id', 'title',
+    'waiting_on', 'yours'}}, yours when the owner sent it. The review shows it with the message (waiting_card) and
+    finish_analysis holds the review until the to-do is updated or the review says why it isn't about it."""
+    rows = [dict(r) for r in rows if r['kind'] in REPLY_KINDS and not r.get('deleted')]
+    if not rows:
+        return {}
+    cards = [c for c in db.execute("SELECT id,title,event_ids,outcome,status FROM suggestions WHERE handled_hint IS NULL AND "
+                                   "((status='prepared' AND json_extract(outcome,'$.state')='waiting') OR "
+                                   "(status='pending' AND json_extract(outcome,'$.state')='still_waiting'))").fetchall()]
+    if not cards:
+        return {}
+    people = {}
+    for r in rows:
+        try:
+            people[r['id']] = {p['id'] for p in graph.card_people(db, [r['id']], limit=10)[0]}
+        except (sqlite3.Error, ValueError, TypeError):
+            people[r['id']] = set()
+    found = {}
+    for card in cards:
+        ids = [int(i) for i in json.loads(card['event_ids'] or '[]')]
+        if not ids:
+            continue
+        try:
+            theirs = {p['id'] for p in graph.card_people(db, ids, limit=10)[0]}
+        except (sqlite3.Error, ValueError, TypeError):
+            continue
+        newest = db.execute('SELECT max(occurred_at) FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchone()[0] or ''
+        try:
+            who = str((json.loads(card['outcome'] or '{}') or {}).get('waiting_on') or '')[:200]
+        except (TypeError, ValueError):
+            who = ''
+        for r in rows:
+            if r['id'] in found or r['id'] in ids or r['occurred_at'] <= newest or not (theirs & people[r['id']]):
+                continue
+            found[r['id']] = {'card_id': card['id'], 'title': str(card['title'] or '')[:120], **({'waiting_on': who} if who else {}),
+                              'yours': own_message(r, owner_slack_ids)}
+    return found
+
+
+def waiting_cards_unmoved(db, items, reviewed, answered):
+    """The waiting to-dos a review's batch had messages for (waiting_cards, kept on its items as waits) that it left as
+    they were: none of those messages got onto the to-do (suggest with its card_id), it still waits (no looks_handled,
+    not done), and the review gave no reason in replies. [{'card_id', 'title', 'event_ids'}]."""
+    by_card = collections.defaultdict(list)
+    for item in items:
+        if item.get('waits') and item['id'] in reviewed and not item.get('excluded'):
+            by_card[item['waits']].append(item['id'])
+    out = []
+    for card_id, event_ids in by_card.items():
+        if any(i in answered for i in event_ids):
+            continue
+        card = db.execute('SELECT title,event_ids,status,outcome,handled_hint FROM suggestions WHERE id=?', (card_id,)).fetchone()
+        if not card or card['handled_hint'] or card['status'] not in ('prepared', 'pending'):
+            continue
+        state = (json.loads(card['outcome'] or '{}') or {}).get('state') if card['outcome'] else None
+        if state not in ('waiting', 'still_waiting') or set(event_ids) & {int(i) for i in json.loads(card['event_ids'] or '[]')}:
+            continue
+        out.append({'card_id': card_id, 'title': str(card['title'] or '')[:80], 'event_ids': sorted(event_ids)})
+    return out
+
+
 def remember_name(db, identifier, name, address):
     db.execute('INSERT OR REPLACE INTO identity_names(identifier,name,email,checked_at) VALUES(?,?,?,?)', (identifier, name, address, now()))
 
@@ -1091,13 +1155,16 @@ class ReviewStore:
         owned, teams = self.owner_threads(rows), self.team_inboxes(rows)
         with self.connect() as db:
             assigned = self.intercom_assignments(db, rows)
+            waits = waiting_cards(db, rows, self.owner_user_ids)
         pages = review_pages([{**review_view(r, earlier=context.get(r['id']), brief=True, owner_in_thread=r['id'] in owned, team_inbox=teams.get(r['id']),
                                              assigned=assigned.get(r['id'])),
                                **({'answers_your_card': replies[r['id']]} if r['id'] in replies else {}),
+                               **({'waiting_card': waits[r['id']]} if r['id'] in waits else {}),
                                **hints.get(r['id'], {})} for r in rows])
         page_of = {view['id']: n for n, page in enumerate(pages) for view in page}
         brief = {view['id'] for page in pages for view in page if view.get('title_only')}
-        return [{'id': r['id'], 'version': r['version'], 'page': page_of[r['id']], **({'brief': 1} if r['id'] in brief else {})} for r in rows], pages
+        return [{'id': r['id'], 'version': r['version'], 'page': page_of[r['id']], **({'brief': 1} if r['id'] in brief else {}),
+                 **({'waits': waits[r['id']]['card_id']} if r['id'] in waits else {})} for r in rows], pages
 
     review_result = staticmethod(review_result)  # the function above
 
@@ -1119,8 +1186,10 @@ class ReviewStore:
         owned, teams = self.owner_threads([rows[i] for i in ids if i in rows]), self.team_inboxes([rows[i] for i in ids if i in rows])
         with self.connect() as db:
             assigned = self.intercom_assignments(db, [rows[i] for i in ids if i in rows])
+            waits = waiting_cards(db, [rows[i] for i in ids if i in rows], self.owner_user_ids)
         views = [{**review_view(rows[i], earlier=context.get(i), brief=True, owner_in_thread=i in owned, team_inbox=teams.get(i), assigned=assigned.get(i)),
-                  **({'answers_your_card': replies[i]} if i in replies else {}), **hints.get(i, {})}
+                  **({'answers_your_card': replies[i]} if i in replies else {}),
+                  **({'waiting_card': waits[i]} if i in waits else {}), **hints.get(i, {})}
                  for i in ids if i in rows]
         row_offset = int(row_offset)
         if row_offset < 0 or row_offset > len(views):
@@ -1213,6 +1282,16 @@ class ReviewStore:
                                    'to say no: the decision is theirs. A stage, its next step or automated follow-ups never replace it. '
                                    'When one needs no answer (a thanks, a confirmation, a bounce, a decline that ends it), add it to '
                                    'finish_analysis replies [{"event_id", "why"}]. Then finish again.')
+            # A message to or from the people an open to-do waits on (waiting_card) changes what it says: the owner's own
+            # follow-up is the latest check-in it waits on, their answer brings it back or shows it done.
+            unmoved = waiting_cards_unmoved(db, items, reviewed, answered)
+            if unmoved:
+                raise ValueError('Not finished yet. These messages are with the people an open to-do waits on, and the to-do still says what it '
+                                 'said before them: ' + '; '.join(f"to-do {u['card_id']} \"{u['title']}\": event_ids {u['event_ids']}" for u in unmoved)
+                                 + '. When the owner followed up again and it still waits on them, suggest with its card_id, the newest message '
+                                   'in event_ids and waiting_on naming that latest follow-up. When they answered, suggest with its card_id '
+                                   '(it comes back) or call looks_handled when the answer shows it done. When a message is about something '
+                                   'else, add it to finish_analysis replies [{"event_id", "why"}]. Then finish again.')
             # The first look's reviewer sorts what it read (FIRST_LOOK_READ), so its ending can say it back in counts. Optional
             # and never a reason to refuse: an unknown group or an id from outside the batch is left out.
             sorted_as = {}
