@@ -88,7 +88,7 @@ class Compose(unittest.TestCase):
                          '• Due: Send the signed contract · [Open](https://m.example/#card=e1b2c3d4e5f60718&or=chat)\n\n'
                          'Personal\nDone today\n• Book the dentist\nOpen for tomorrow\n• Due: Pick up the parcel\n\n'
                          '6 to-dos still need you.\n\n'
-                         'Open The Machine: https://m.example/')
+                         'Open The Machine: https://m.example/#digest=evening')
         # each part copies on its own, as plain text: every to-do done, no links
         self.assertEqual(out['sections'], [
             {'area': 'work', 'copy': 'Done today\n• Send the order form\n• Reply to the supplier\n• Pay the invoice\n• File the expenses\n'
@@ -96,7 +96,7 @@ class Compose(unittest.TestCase):
             {'area': 'personal', 'copy': 'Done today\n• Book the dentist\nOpen for tomorrow\n• Due: Pick up the parcel'}])
         self.assertEqual(out['push'], {'title': 'Evening Robin, 5 to-dos done today',
                                        'body': 'Done: Send the order form, Reply to the supplier and 3 more\nTomorrow, first meeting at 10:00',
-                                       'url': 'https://m.example/#todos', 'tag': 'evening'})
+                                       'url': 'https://m.example/#digest=evening', 'tag': 'evening'})
         self.assertLessEqual(len(out['push']['body']), notify.APP_BODY)
         self.assertNotIn('—', out['text'])
         self.assertFalse(any(line.startswith('You') for line in out['text'].split('\n')))

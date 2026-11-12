@@ -55,7 +55,17 @@ class NotificationsApp:
     ACTIONS = {'notify_set': 'notify_action', 'notify_active': 'notify_action', 'notify_preview': 'notify_action',
                'push_test': 'push_test_action', 'app_push_register': 'app_push_action_handler',
                'app_push_unregister': 'app_push_action_handler', 'push_subscribe': 'push_subscribe_action',
-               'push_unsubscribe': 'push_subscribe_action', 'area_digest': 'area_digest_action'}
+               'push_unsubscribe': 'push_subscribe_action', 'area_digest': 'area_digest_action',
+               'digest_sent': 'digest_sent_action'}
+
+    def digest_sent_action(self, name, args, owner_dashboard=False):
+        # A tapped digest notification, or its email's link: the last morning or evening digest as it went
+        # (notify.digest_shown), {} when none is kept or the kind is neither. The owner's own dashboard only, as the
+        # area digest
+        if not owner_dashboard:
+            raise ValueError('The digest is read in the dashboard')
+        with self.store.connect() as db:
+            return notify.digest_shown(db, str(args.get('kind') or ''))
 
     def area_digest_action(self, name, args, owner_dashboard=False):
         # To-dos, Digest: each area's digest to read and copy (area_digests). The owner's own dashboard only: Personal
@@ -232,7 +242,7 @@ class NotificationsApp:
         digest = self.digest(current)
         went = self.digest_send(digest, prefs, 'digest', push, telegram_send, mail) if digest else []
         with self.store.connect() as db:
-            notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
+            notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went, digest)
         LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
         return went
 
@@ -335,7 +345,7 @@ class NotificationsApp:
         digest = self.evening_digest(current, day)
         went = self.digest_send(digest, prefs, 'evening', push, telegram_send, mail) if digest else []
         with self.store.connect() as db:
-            notify.digest_done(db, key, 'sent' if went else 'empty' if not digest else 'not_sent', went)
+            notify.digest_done(db, key, 'sent' if went else 'empty' if not digest else 'not_sent', went, digest)
         LOG.info('evening digest day=%s channels=%s', day, ','.join(went) or '-')
         return went
 

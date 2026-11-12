@@ -73,7 +73,7 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 
 Öffnen zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat. Ein Versprechen öffnet seine Aufgabe oder, solange es keine hat, seine eigene Seite.
 
-Der Push sagt dasselbe ohne Links. Tippst du darauf, öffnet sich heute im **Kalender**.
+Der Push sagt dasselbe ohne Links. Tippst du darauf oder auf den Link am Ende der E-Mail, liest du diese Zusammenfassung in **Aufgaben** noch einmal.
 
 Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe Text, den **Zusammenfassung** in den Aufgaben kopiert. Wenn Aufgabentext in Benachrichtigungen ausgeblendet ist, fehlen sie.
 
@@ -84,7 +84,7 @@ Sie kommt an Arbeitstagen einmal zu ihrer Uhrzeit unter **Arbeitszeiten**, stand
 - **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, wie viele noch, und deine Termine, etwa "3 Termine: Preisgespräch und 2 weitere.";
 - **Offen für morgen** (an einem Freitag dein nächster Arbeitstag): die ersten Termine und was fällig ist.
 
-Am Ende steht, wie viele Aufgaben dich noch brauchen. Tippst du auf den Push, öffnen sich deine Aufgaben. Willst du sie nicht, schalte ihre Zeile aus.
+Am Ende steht, wie viele Aufgaben dich noch brauchen. Tippst du auf den Push oder auf den Link am Ende der E-Mail, liest du sie noch einmal, mit **Arbeit kopieren** und **Privat kopieren**. Willst du sie nicht, schalte ihre Zeile aus.
 
 ## Datenschutz
 

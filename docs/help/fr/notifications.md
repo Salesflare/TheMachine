@@ -72,7 +72,7 @@ Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il 
 
 Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mise en attente ou dans une autre vue, son chat s’ouvre. Une promesse ouvre sa tâche, ou sa propre page si elle n’en a pas encore.
 
-Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
+Le push dit la même chose sans liens. Touchez-le, ou le lien à la fin de l’e-mail, pour relire ce récap dans **Tâches**.
 
 À la fin viennent vos récaps **Travail** et **Perso**, le même texte que copie **Récap** dans les tâches. Quand le texte des tâches est masqué dans les notifications, ils sont omis.
 
@@ -83,7 +83,7 @@ Il arrive une fois les jours de travail à son heure dans **Heures de travail**,
 - **Fait aujourd’hui** : jusqu’à trois tâches que vous ou votre Machine avez terminées, combien d’autres, et vos réunions, comme "3 réunions : Appel tarifs et 2 autres." ;
 - **À faire demain** (un vendredi, votre prochain jour de travail) : les premières réunions et ce qui arrive à échéance.
 
-Il se termine par le nombre de tâches qui vous attendent encore. Touchez la notification push pour ouvrir vos tâches. Pour ne plus le recevoir, désactivez sa ligne.
+Il se termine par le nombre de tâches qui vous attendent encore. Touchez la notification push, ou le lien à la fin de l’e-mail, pour le relire, avec **Copier Travail** et **Copier Perso**. Pour ne plus le recevoir, désactivez sa ligne.
 
 ## Confidentialité
 

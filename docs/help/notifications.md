@@ -73,7 +73,7 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 
 Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. A promise opens its to-do, or its own page when it has none yet.
 
-The push says the same without links. Tap it to open today in the **Calendar**.
+The push says the same without links. Tap it, or the link at the end of the email, to read this digest again in **To-dos**.
 
 At the end come your **Work** and **Personal** digests, the same text **Digest** in To-dos copies. When to-do text is hidden in notifications, they are left out.
 
@@ -84,7 +84,7 @@ It comes once on work days at its time in **Work hours**, by default 15 minutes 
 - **Done today**: up to three to-dos you or your Machine finished, how many more, and your meetings, like "3 meetings: Pricing call and 2 more.";
 - **Open for tomorrow** (on a Friday, your next work day): the first meetings and what's due.
 
-It ends with how many to-dos still need you. Tap the push to open your to-dos. To stop it, turn off its row.
+It ends with how many to-dos still need you. Tap the push, or the link at the end of the email, to read it again, with **Copy Work** and **Copy Personal**. To stop it, turn off its row.
 
 ## Privacy
 

@@ -9,4 +9,6 @@
 .ad-part+.ad-part{margin-top:18px}
 .ad-text{margin:0;padding:10px 12px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-sunken);color:var(--text);font:inherit;font-size:var(--fs-sm);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
 .ad-fine{margin:0;color:var(--c-text-3);font-size:var(--fs-sm)}
-#area-digest .actions{display:flex;justify-content:flex-end;margin-top:14px}
+#area-digest .actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:14px}
+#area-digest .ad-when{margin:-6px 0 10px}
+#area-digest .ad-text{max-height:none;overflow:visible}  /* read whole: the sheet scrolls, never a box inside it */
