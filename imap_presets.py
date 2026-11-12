@@ -7,11 +7,11 @@ company's own domain. Whatever it finds only fills in the form's server settings
 
 Gmail and Microsoft addresses, also on a company's own domain, are steered to their own connection (`oauth`): those
 sign in with Google or Microsoft and need no password. A server offered only in plaintext is never used."""
+import html
 import json
 import re
 import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as ElementTree
 
 TIMEOUT = 5  # seconds per lookup
 MAX_ANSWER = 65536
@@ -113,27 +113,31 @@ def _fetch(url):
 
 def parse_autoconfig(text, email):
     """Thunderbird's autoconfig XML: the first IMAP server and first SMTP server with TLS (SSL or STARTTLS); a plain
-    one is skipped. None when it has no usable IMAP server."""
-    try:
-        root = ElementTree.fromstring(text or '')
-    except ElementTree.ParseError:
+    one is skipped. None when it has no usable IMAP server. Read with a few patterns, never an XML parser: the answer
+    comes from the network, and a document with a DOCTYPE (entities) is refused outright."""
+    text = str(text or '')
+    if re.search(r'<!(DOCTYPE|ENTITY)', text, re.I):
         return None
     local = email.partition('@')[0]
 
+    def field(block, name):
+        found = re.search(rf'<{name}\b[^>]*>([^<]*)</{name}\s*>', block)
+        return html.unescape(found[1]).strip() if found else ''
+
     def pick(tag, kind):
-        for server in root.iter(tag):
-            if server.get('type') != kind:
+        for server in re.finditer(rf'<{tag}\b([^>]*)>(.*?)</{tag}\s*>', text, re.S):
+            if (re.search(r'\btype\s*=\s*["\']([^"\']*)["\']', server[1]) or [None, ''])[1] != kind:
                 continue
-            socket = (server.findtext('socketType') or '').strip().upper()
-            security = {'SSL': 'ssl', 'STARTTLS': 'starttls'}.get(socket)
-            host = (server.findtext('hostname') or '').strip().lower()
+            block = server[2]
+            security = {'SSL': 'ssl', 'STARTTLS': 'starttls'}.get(field(block, 'socketType').upper())
+            host = field(block, 'hostname').lower()
             try:
-                port = int((server.findtext('port') or '').strip())
+                port = int(field(block, 'port'))
             except ValueError:
                 continue
             if not security or not re.fullmatch(r'[a-z0-9.-]+', host) or not 0 < port < 65536:
                 continue
-            username = (server.findtext('username') or '%EMAILADDRESS%').strip()
+            username = field(block, 'username') or '%EMAILADDRESS%'
             return host, port, security, username.replace('%EMAILADDRESS%', email).replace('%EMAILLOCALPART%', local)
         return None
     imap, smtp = pick('incomingServer', 'imap'), pick('outgoingServer', 'smtp')
@@ -142,7 +146,7 @@ def parse_autoconfig(text, email):
     found = {'imap': imap[:3], 'smtp': smtp[:3] if smtp else None, 'username': 'email'}
     out = _shape(found, email, 'autoconfig')
     out['username'] = imap[3] if '%' not in imap[3] else email
-    name = (root.findtext('.//displayShortName') or '').strip()
+    name = field(text, 'displayShortName')
     if name and len(name) < 60:
         out['name'] = name
     return out

@@ -550,6 +550,9 @@ class Presets(unittest.TestCase):
         self.assertEqual(found['username'], 'alex@acme.test')
         plain = xml.replace('<socketType>SSL</socketType>', '<socketType>plain</socketType>')
         self.assertNotEqual((imap_presets.parse_autoconfig(plain, 'alex@acme.test') or {}).get('imap_security'), 'plain')
+        # entities never expand: a document with a DOCTYPE is not read at all
+        hostile = '<!DOCTYPE x [<!ENTITY a "aaaa">]>' + xml.replace('mail.acme.test', '&a;.acme.test')
+        self.assertIsNone(imap_presets.parse_autoconfig(hostile, 'alex@acme.test'))
         mx = lambda url: json.dumps({'Answer': [{'type': 15, 'data': '10 mx1.mail.ovh.net.'}]}) if 'dns' in url else None
         self.assertEqual(imap_presets.lookup('alex@shop.test', fetch=mx)['imap_host'], 'ssl0.ovh.net')
         self.assertEqual(imap_presets.lookup('alex@nowhere.test', fetch=lambda url: None), {})  # nothing found: typed by hand
