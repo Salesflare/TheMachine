@@ -138,7 +138,8 @@ function chatSteps(steps){const rows=new Map();
   const n=typeof s==='object'&&s.n>0?s.n:1,row=rows.get(label);row?row.n+=n:rows.set(label,{label,n})}
  return [...rows.values()]}
 const chatLong=(t,lines=4)=>String(t||'').split('\n').length>lines||String(t||'').length>lines*70;
-const chatViaIcon=(v,note)=>note?'note':/^(email|gmail|outlook|mail)/i.test(v||'')?'mail':/calendar/i.test(v||'')?'cal':'chat';
+// A source in the chat by its one-color mark (todos-logos.js): Gmail, Outlook, Slack and the rest by name, else mail or chat
+const chatViaIcon=(v,note)=>{const k=String(v||'').toLowerCase().trim();return note?'note':/^(gmail|outlook)\b/.test(k)?k.split(/\W/)[0]:/^(email|mail)/.test(k)?'mail':/calendar/.test(k)?'cal':monoKey(k)&&!['source','gateway'].includes(k)?k:'chat'};
 const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',whatsapp:'WhatsApp',telegram:'Telegram',x:'X',calendar:'Calendar',intercom:'Intercom',github:'GitHub',android:'Phone'};
 // The owner's own taps read as what they did, not a bare button name
 // (said without "You": the side already says who)

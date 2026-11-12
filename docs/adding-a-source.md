@@ -127,7 +127,8 @@ When an item changes, send it again with the same `source_id`: the service store
 
 ## 5. Dashboard and noise rules
 
-- The account appears under Connections with its health, last read and errors. It gets a generic icon unless you add one to `ICONS` in `dashboard/todos-cards.js`.
+- The account appears under Connections with its health, last read and errors.
+- Every source has a one-color mark for the small icons in rows (the last check above the to-dos, a to-do's source, search, a record's timeline, chat, learned styles): `dashboard/logos/mono/<service>.svg`, its key in `MONO` in [`dashboard/todos-logos.js`](../dashboard/todos-logos.js) and its source and terms in `dashboard/logos/mono/NOTICE.md`. Take it from the same mark as the colored logo (Simple Icons, CC0, when it has one; else a simplified one-color version), one color with no fill of its own, so it masks in the text's color. [`tests/test_source_icons.py`](../tests/test_source_icons.py) fails for a connector without one. The colored logo for + Add is separate (`dashboard/logos/`).
 - `exclude` rules (`senders`, `titles`, `text`) work on plugin events too. See Noise rules in [Configuration](configuration.md).
 - Every event opens in the dashboard's reader with its title, sender (`sender_display` or `from`, "You" when `from_me`) and body, so a readable plain-text `body` is all it needs.
 - To tell reviews how to read your source (what is noise, when it needs the owner, how a reply goes out), add `source-notes/<service>.md`: one bullet like the others there. Reviews and Do it runs get it only on Machines that have that source connected; `AGENTS.md` keeps the rules for every source.
@@ -168,4 +169,5 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 - [ ] Fixture tests for parsing, replays, expired cursors and errors.
 - [ ] `SETUP` with what `assistant connect` should ask, plus a supported read-only setup check.
 - [ ] Reading notes in `source-notes/<service>.md` when reviews need to know more than the event says.
+- [ ] A one-color mark in `dashboard/logos/mono/` and `MONO` (`test_source_icons.py`).
 - [ ] A help article in every language and every text it shows in every catalog, with `test_i18n.py` and `test_help.py` passing.

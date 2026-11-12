@@ -84,15 +84,15 @@ class MailCheck(unittest.TestCase):
         self.assertEqual(got['threads'][0]['todo'], 'Send Mila annual pricing')  # the thread with a to-do comes first
         self.assertEqual(rows['Re: Pricing for our team'], {'from': 'Mila Under', 'subject': 'Re: Pricing for our team', 'todo': 'Send Mila annual pricing',
                                                             'held_until': held['deliver_after'], 'source': 'email', 'kind': 'gmail.message',
-                                                            'event': pricing})  # who wrote to the owner, and their message opens, not the owner's reply
+                                                            'event': pricing, 'account': 'work'})  # who wrote to the owner, and their message opens, not the owner's reply
         self.assertEqual(rows['Re: Trial seats']['why'], 'Only cc’d, Robin is answering')
         self.assertEqual(rows['Re: Coffee next week'], {'from': 'Yara Oak', 'subject': 'Re: Coffee next week', 'why': 'Coffee already set for Thu 10:00',
-                                                        'source': 'email', 'kind': 'gmail.message', 'event': meeting})
+                                                        'source': 'email', 'kind': 'gmail.message', 'event': meeting, 'account': 'work'})
         # Quality or nothing: a two-word label and one reason given for three threads are left out, the thread still listed
         self.assertNotIn('why', rows['This week in tools'])
         self.assertTrue(all('why' not in rows[f'Note {i}'] for i in range(3)))
         self.assertEqual(len(got['threads']), 8)
-        self.assertEqual(rows['Body text.'], {'from': 'Sam Ridge', 'subject': 'Body text.', 'source': 'chat', 'kind': 'slack.message', 'event': chat})
+        self.assertEqual(rows['Body text.'], {'from': 'Sam Ridge', 'subject': 'Body text.', 'source': 'chat', 'kind': 'slack.message', 'event': chat, 'account': 'work'})
         self.assertIsNone(self.view(NOW + dt.timedelta(hours=check_now.MAIL_CHECK_HOURS, minutes=1)))  # an old check says nothing
 
     def test_a_reason_never_refuses_a_review_and_a_check_with_nothing_new_shows_the_last_one_that_had_something(self):
@@ -100,7 +100,7 @@ class MailCheck(unittest.TestCase):
         claim = self.store.begin_analysis(['work'], 120)
         done = self.store.finish_analysis(claim['analysis_id'], 'Nothing new', no_todo=[{'event_id': first}, {'why': 'x'}, 'bad', {'event_id': 'x', 'why': 'y'}])
         self.assertEqual(done['status'], 'complete')
-        self.assertEqual(self.view()['threads'], [{'from': 'Mila Under', 'subject': 'Question', 'source': 'email', 'kind': 'gmail.message', 'event': first}])
+        self.assertEqual(self.view()['threads'], [{'from': 'Mila Under', 'subject': 'Question', 'source': 'email', 'kind': 'gmail.message', 'event': first, 'account': 'work'}])
         self.clock = NOW + dt.timedelta(minutes=20)
         self.add(other('work', 'machine.system_log', 'Disk 80% full', 'Disk 80% full', {}),
                  other('work', 'slack.message', '#general: Owner', 'On my way', {'channel_id': 'C1', 'from_me': True}))
@@ -128,15 +128,15 @@ class MailCheck(unittest.TestCase):
         # the owner's own chat message and The Machine's own log aren't new; a chat's two messages are one row
         self.assertEqual((got['read'], got['counts'], got['todos']), (6, {'chat': 3, 'notification': 1, 'update': 1, 'email': 1}, 1))
         self.assertEqual(got['threads'][0], {'from': 'Rae Fenn', 'subject': 'Can you approve the Delta discount today?', 'source': 'chat',
-                                             'kind': 'slack.message', 'event': slack, 'todo': 'Approve the Delta discount'})
+                                             'kind': 'slack.message', 'event': slack, 'account': 'work', 'todo': 'Approve the Delta discount'})
         rows = {r['kind']: r for r in got['threads'][1:]}
         self.assertEqual(rows['whatsapp.message'], {'from': 'Ivo Lark', 'subject': 'Bringing snacks on Friday', 'source': 'chat', 'kind': 'whatsapp.message',
-                                                    'event': wa2, 'why': 'Group chat chatter, nothing asked of you', 'n': 2})  # the newest message, not the owner's
+                                                    'event': wa2, 'account': 'home', 'why': 'Group chat chatter, nothing asked of you', 'n': 2})  # the newest message, not the owner's
         self.assertEqual(rows['android.notification'], {'from': 'Parcels', 'subject': 'Parcel: Delivered to your door', 'source': 'notification',
-                                                        'kind': 'android.notification', 'event': phone, 'why': 'A delivery notice, the parcel is in'})
+                                                        'kind': 'android.notification', 'event': phone, 'account': 'phone', 'app': 'com.parcels.example', 'why': 'A delivery notice, the parcel is in'})
         self.assertEqual(rows['calendar.event'], {'from': 'Ola Brisk', 'subject': 'Planning review', 'source': 'update', 'kind': 'calendar.event',
-                                                  'event': cal, 'why': 'Your own meeting, nothing changed for you'})
-        self.assertEqual(rows['gmail.message'], {'from': 'Mila Under', 'subject': 'Contract draft', 'source': 'email', 'kind': 'gmail.message', 'event': letter})
+                                                  'event': cal, 'account': 'work', 'why': 'Your own meeting, nothing changed for you'})
+        self.assertEqual(rows['gmail.message'], {'from': 'Mila Under', 'subject': 'Contract draft', 'source': 'email', 'kind': 'gmail.message', 'event': letter, 'account': 'work'})
         self.assertNotIn(own_chat, [r['event'] for r in got['threads']])
         self.assertNotIn(log, [r['event'] for r in got['threads']])
         self.assertEqual(len(got['threads']), 5)
@@ -169,7 +169,9 @@ class MailCheck(unittest.TestCase):
         self.store.finish_analysis(claim['analysis_id'], 'Nothing new')
         got = self.view(times=True)
         rows = got['threads']
-        shown = json.dumps(rows)
+        # a phone notification's app is kept by its package only to pick its mark (the dashboard's MONO_APPS), never shown
+        self.assertEqual(rows[1]['app'], 'com.linkedin.android')
+        shown = json.dumps([{k: v for k, v in r.items() if k != 'app'} for r in rows])
         self.assertNotRegex(shown, r'U0[A-Z0-9]{8}')  # never a Slack member id
         self.assertNotIn('com.', shown)  # never a package name
         self.assertNotIn('<', shown)  # no Slack markup
@@ -216,7 +218,7 @@ class MailCheck(unittest.TestCase):
         self.addCleanup(raw.close)
         self.assertFalse(raw.execute("SELECT 1 FROM events WHERE body LIKE '%mat%' OR metadata LIKE '%Lee Moss%'").fetchone())
         self.assertEqual(self.view()['threads'], [{'from': 'Lee Moss', 'subject': 'The keys are under the mat', 'source': 'chat',
-                                                   'kind': 'telegram.message', 'event': chat, 'why': 'Just where the keys are'}])
+                                                   'kind': 'telegram.message', 'event': chat, 'account': 'home', 'why': 'Just where the keys are'}])
 
     def test_the_machines_own_mail_to_the_owner_is_never_reviewed_or_listed_and_their_own_sent_mail_is_read_but_no_new_mail(self):
         """The review read the morning summary and fix notices The Machine sent the owner, spent a model turn on each and

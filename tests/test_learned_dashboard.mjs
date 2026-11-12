@@ -59,7 +59,7 @@ try{
   assert.ok(gap>=20,'blocks have real space between them: '+gap);
   // A channel has its icon and 2 lines; More shows the rest, the full text stays in the page.
   const li=learned.locator('.voice-row[data-channel="LinkedIn"]');
-  assert.equal(await li.locator('.icon svg').count(),1);
+  assert.equal(await li.locator('.icon .via-ico.via-linkedin').count(),1);
   assert.equal(await li.locator('.voice-lines li:visible').count(),2);
   assert.equal(await li.locator('.voice-lines li').count(),5);
   await li.locator('[data-voice-more]').click();

@@ -358,11 +358,11 @@ $('#people-view').addEventListener('click',async e=>{const box=e.target.closest(
 $('#people-view').addEventListener('toggle',e=>{if(e.target.matches?.('.rc-fold'))rcOpen=e.target.open?graphNode:''},true);
 // The timeline on a person, project or organization: every source in one list by day, each row its source, who wrote it,
 // when, and the start of the text; cards, promises and project moves among them. Filter by source; Show more loads more.
-const GRAPH_SOURCE={docs:html`<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/>`,intercom:html`<path d="M5 5h14v10H9l-4 4z"/>`,zoom:html`<rect x="3" y="7" width="12" height="10" rx="2"/><path d="m15 11 6-3v8l-6-3z"/>`,
- telegram:html`<path d="m3 11 18-7-3 16-6-5-3 4v-6z"/>`,card:html`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/>`,
+const GRAPH_SOURCE={card:html`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/>`,
  promise:html`<path d="m5 12 4 4 10-10"/>`,move:html`<path d="M4 12h14M13 6l6 6-6 6"/>`};
 const graphSource=k=>k==='salesflare.email'?'gmail':k==='salesflare.meeting'?'calendar':kindService(k);
-const sourceIcon=(k,type)=>{const s=type&&type!=='event'?type:graphSource(k);return GRAPH_SOURCE[s]?html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${GRAPH_SOURCE[s]}</svg></span>`:icon(s)};
+// A message by its source's one-color mark (todos-logos.js); a to-do, promise or project move by its line icon
+const sourceIcon=(k,type)=>type&&type!=='event'&&GRAPH_SOURCE[type]?html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${GRAPH_SOURCE[type]}</svg></span>`:html`<span class="icon">${markIco(sourceMark(k))}</span>`;
 const SOURCE_NAME={gmail:'Email',salesflare:'Email',calendar:'Calendar',whatsapp:'WhatsApp',slack:'Slack',intercom:'Intercom',linkedin:'LinkedIn',android:'Phone',x:'X',github:'GitHub',stripe:'Stripe',zoom:'Zoom',telegram:'Telegram',docs:'Docs'};
 const TL_SOURCES={email:'Email',meetings:'Meetings',intercom:'Intercom',chats:'Chats',cards:'To-dos',projects:'Projects',other:'Other'};
 const dayLabel=d=>{const t=new Date(),y=new Date(t),m=new Date(t);y.setDate(t.getDate()-1);m.setDate(t.getDate()+1);const same=(a,b)=>a.toDateString()===b.toDateString();return same(d,t)?'Today':same(d,y)?'Yesterday':same(d,m)?'Tomorrow':localeDate(d,DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};

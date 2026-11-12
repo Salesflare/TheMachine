@@ -1,7 +1,7 @@
 // After a check that saw new messages (state.mail_check, check_now.mail_check), from every source it read (email,
 // chats, phone notifications, the rest): one line above the to-dos, "Checked 13 messages at 16:11 · nothing needs you",
 // so new messages with no to-do read as checked, not as broken. A tap opens one row per thread or chat: its source's
-// icon (the to-dos' own), who, the subject or first words, and its new to-do (held until when, if it waits) or the
+// one-color mark (todos-logos.js: Gmail or Outlook by its account, a phone notification by its app), who, the subject or first words, and its new to-do (held until when, if it waits) or the
 // check's reason it needed nothing; a row opens its newest message in the message viewer (openEvent).
 // A lazy part (dashboard_parts.LAZY): shell-render.js mailCheckSlot loads it only while state.mail_check read something,
 // and draws the list again once it's in (lazyRun).
@@ -22,7 +22,7 @@ function mailCheckWhy(r){if(r.todo){const [tmw,when]=r.held_until?heldAt(r.held_
 // how many new messages when more than one (the rows add up to the line's total), the subject or first words in a quieter
 // color, and the time. An email always names its sender and subject (Unknown sender when a chat or update has nothing).
 function mailCheckRow(r){const mail=!r.source||r.source==='email',who=r.from||(r.dm?t('Slack DM'):mail||!r.subject?t('Unknown sender'):''),what=r.subject||(mail?t('(no subject)'):''),at=checkClock(r.at);
- const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src">${icon(kindService(r.kind))}</span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''} <span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
+ const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src"><span class="icon">${markIco(sourceMark(r.kind,r.account,r.app))}</span></span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''} <span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
  return html`<li>${r.event!=null?html`<button type="button" class="mc-row" data-mc-event="${r.event}">${body}</button>`:body}</li>`}
 // The first MC_SHOWN rows, the rest behind "Show N more": every thread the check read can be seen
 const MC_SHOWN=10;let mailCheckAll=false;

@@ -4,7 +4,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // An open to-do shows where it came from on the to-do itself (not under Details), with that service's logo, and its
-// draft box leads with the logo of where the draft goes: Gmail for a Gmail account, the envelope for Outlook, Slack,
+// draft box leads with the logo of where the draft goes: Gmail for a Gmail account, Outlook's for Outlook, Slack,
 // a handoff. A step with no draft box above it carries the logo on its button instead; a to-do with nothing to send
 // has none. A closed to-do keeps its source under Details.
 const dashboard=await dashboardPage();
@@ -48,7 +48,9 @@ try{
   assert.equal(mail.inDetails,false);
   assert.deepEqual(mail.draft,{cls:'via-ico via-gmail',label:'Gmail'});
   assert.equal(mail.button.ico,'',mail.button.text);  // the draft above already shows where it goes
-  assert.deepEqual((await info('outlook')).draft,{cls:'via-ico via-mail',label:'Email'});
+  // Outlook mail by Outlook's one-color mark, on its source and on its draft
+  const outlook=await info('outlook');
+  assert.equal(outlook.src.via,'via-outlook');assert.deepEqual(outlook.draft,{cls:'via-ico via-outlook',label:'Outlook'});
   const slack=await info('slack');
   assert.equal(slack.src.via,'via-slack');assert.deepEqual(slack.draft,{cls:'via-ico via-slack',label:'Slack'});
   const hand=await info('handoff');
@@ -60,9 +62,9 @@ try{
   assert.equal(notes.src.via,'via-note',JSON.stringify(notes));assert.ok(notes.src.text.startsWith('Notes from Board meeting Q4'),notes.src.text);
   // The source opens the original, as it did under Details
   assert.equal(await page.locator('#task-mail>.card-source [data-original="read"]').count(),1);
-  // Every logo has its picture (a mask), in both places
-  for(const sel of ['#task-slack .draft .dm>.via-ico','#task-mail>.card-source .read-original'])
-   assert.match(await page.locator(sel).evaluate((e,p)=>getComputedStyle(e,p).maskImage||getComputedStyle(e,p).webkitMaskImage,sel.endsWith('original')?'::before':null),/^url\("data:image\/svg/,sel);
+  // Every logo has its picture (a mask: the source's one-color mark, dashboard/logos/mono), in both places
+  for(const [sel,file] of [['#task-slack .draft .dm>.via-ico','slack'],['#task-mail>.card-source .read-original','gmail'],['#task-outlook>.card-source .read-original','outlook']])
+   assert.match(await page.locator(sel).evaluate((e,p)=>getComputedStyle(e,p).maskImage||getComputedStyle(e,p).webkitMaskImage,sel.endsWith('original')?'::before':null),new RegExp(`^url\\("[^"]*/brand/logos/mono/${file}\\.svg"\\)`),sel);
   await context.close();
  }
  // A closed to-do keeps its source under Details (compact)
