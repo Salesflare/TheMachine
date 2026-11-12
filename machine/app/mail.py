@@ -33,6 +33,7 @@ COMPOSE_ADDRESS = re.compile(r'[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+')
 
 
 class MailApp:
+    # New email's two actions are their own reviewed set (machine.actions.COMPOSE_ACTIONS)
     ACTIONS = {'mail_attachment': 'mail_attachment_action', **dict.fromkeys(task_pages.ACTIONS, 'task_page_action'),
                'compose_from': 'compose_from_action', 'compose_email': 'compose_email_action'}
 
@@ -356,7 +357,7 @@ class MailApp:
         Work for a work contact, Personal for a personal one), and their name from the Graph. No mailbox: no choices,
         and the dashboard opens the mail app instead."""
         if not owner_dashboard:
-            raise ValueError('Only the owner writes an email, from the dashboard')
+            raise ValueError(t('Only the owner writes an email, from the dashboard'))
         address = self.compose_address(args.get('to'))
         able = self.compose_mailboxes()
         accounts = self.config.get('accounts', [])
@@ -387,7 +388,7 @@ class MailApp:
         any draft (next_actions.validate). Nothing is sent here: the dashboard then confirms exactly this revision
         (confirm_action), with the alias picked as its sender."""
         if not owner_dashboard:
-            raise ValueError('Only the owner writes an email, from the dashboard')
+            raise ValueError(t('Only the owner writes an email, from the dashboard'))
         address = self.compose_address(args.get('to'))
         account = next((a for a in self.compose_mailboxes() if a['id'] == args.get('account_id')), None)
         if not account:

@@ -3393,6 +3393,7 @@
  "Only the owner undoes a learned change, on the dashboard": "Solo el propietario deshace un cambio aprendido, en el panel",
  "Only the owner undoes a warm-up domain here, on the dashboard; reviews use graph with warmup": "Solo el propietario deshace aquí un dominio de retomar contacto, en el panel; las revisiones usan graph con warmup",
  "Only the owner uses voice input, on the dashboard": "Solo el propietario usa la entrada de voz, en el panel",
+ "Only the owner writes an email, from the dashboard": "Solo el propietario escribe un correo, desde el panel",
  "Only the people on it read this one": "Solo lo leen las personas incluidas",
  "Only the projects you own": "Solo los proyectos que son tuyos",
  "Only the teammates they chose see it.": "Solo lo ven los compañeros elegidos.",

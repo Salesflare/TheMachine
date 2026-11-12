@@ -43,8 +43,6 @@ OWNER_ACTIONS = {
     'browser_login_pages',
     'browser_logins',
     'card_chat',
-    'compose_email',
-    'compose_from',
     'confirm_action',
     'connector_contact_sync',
     'connector_sync',
@@ -399,6 +397,13 @@ MEET_ACTIONS = {
     'meet_setting',
 }
 OWNER_ACTIONS |= MEET_ACTIONS
+# New email (MailApp, docs/help/email-composer.md): the From choices for an address, and Send, which makes the email a
+# draft on a to-do of its own that only confirm_action sends. The owner's own, from the dashboard only.
+COMPOSE_ACTIONS = {
+    'compose_email',
+    'compose_from',
+}
+OWNER_ACTIONS |= COMPOSE_ACTIONS
 # Settings, Export: export everything and import an export (machine/app/export.py). The owner's own, from the dashboard only.
 EXPORT_ACTIONS = {
     'export_delete',

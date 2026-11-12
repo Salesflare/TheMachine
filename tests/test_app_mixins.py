@@ -93,7 +93,7 @@ class AppMixins(unittest.TestCase):
         # a mixin handles exactly the names of its reviewed set (plus the agent's own calls that went with them), so a
         # name added to one and not the other fails here
         self.assertEqual({n for n, m in a.SupportApp.ACTIONS.items() if m == 'support_dashboard_action'}, a.SUPPORT_ACTIONS)
-        self.assertEqual(set(a.MailApp.ACTIONS) - {'mail_attachment'}, set(a.task_pages.ACTIONS))
+        self.assertEqual(set(a.MailApp.ACTIONS) - {'mail_attachment'}, set(a.task_pages.ACTIONS) | a.COMPOSE_ACTIONS)
         self.assertEqual(set(a.SkillsApp.ACTIONS), a.SKILL_ACTIONS | {'skill_propose', 'skill_import_report'})
         self.assertEqual(set(a.AgentsApp.ACTIONS), a.AGENT_ACTIONS - {'set_agents'})  # App.action saves the settings
         self.assertEqual(set(a.GBrainApp.ACTIONS), a.GBRAIN_ACTIONS)
