@@ -27,7 +27,7 @@ import own_addresses
 from machine.store import outcomes
 import project_success
 import shared_graph
-from timeutil import local_tz, now
+from timeutil import in_hours, is_work_day, local_tz, now
 
 
 # Mail that comes from a system, not a person: by address (slipped, first-look order) and by Gmail's category labels
@@ -1366,3 +1366,19 @@ class ReviewStore:
                 db.execute('ROLLBACK TO project_blocker')
                 db.execute('RELEASE project_blocker')
                 LOG.warning('project blocker to-do error=%s', type(error).__name__)
+
+    def daily_blockers(self):
+        """The same check (project_blockers) once a day when no review ran it that day: no new messages, or reviews
+        paused, still catch a project that went quiet or an overdue promise on it. Plain code, no model; only on the
+        owner's work days and within their hours. The to-dos are the review's own (same keys, one per project, none
+        while it has an open or snoozed to-do), so a later review never makes a second one. True when it ran."""
+        local = dt.datetime.fromisoformat(now()).astimezone(local_tz())
+        if not is_work_day(local) or not in_hours(local):
+            return False
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            last = project_success.checked_on(db)
+            if last and dt.datetime.fromisoformat(last).astimezone(local_tz()).date() == local.date():
+                return False
+            self.project_blockers(db)
+        return True
