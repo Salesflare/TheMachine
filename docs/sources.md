@@ -101,6 +101,8 @@ Conversations you already belong to; it never joins channels or opens DMs. Per-c
 
 Only colleagues' emails that don't involve you (yours come from Gmail) and meetings with notes. With `join_pipelines`, it adds your own user to accounts linked to opportunities in those pipelines (a POST, never another user).
 
+Each sync first checks that the key still belongs to you. When Salesflare doesn't answer that check in time (a 5xx or a timeout) and the same key passed it within the last hour, the sync goes on. A refused key, another user or a new key still stops it. Feed reads and that check wait `feed_timeout_seconds` (60 by default).
+
 ### Android
 
 The plugin peeks OpenClaw's event queue for notifications from your phone node, with periodic direct reads to catch gaps. That queue holds 20 events, so once more than 10 wait, the oldest phone notifications the plugin has saved leave it; other events stay. Repeated updates merge into one episode; one-time codes are omitted. Not a complete history.

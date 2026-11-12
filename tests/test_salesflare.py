@@ -669,11 +669,47 @@ class SalesflareConnector(unittest.TestCase):
             raise TimeoutError()
         with patch('machine.sources.salesflare.credential', return_value='K=secret'), \
                 patch('machine.sources.salesflare.urllib.request.urlopen', side_effect=urlopen):
-            for path in ('/accounts/7/feed', '/accounts', '/accounts/7'):
+            for path in ('/accounts/7/feed', '/accounts', '/accounts/7', '/me'):
                 with self.assertRaises(sf.SourceError) as raised:
                     source.get(path, {'limit': 1})
                 self.assertEqual(raised.exception.route, sf.route_of(path))
-        self.assertEqual(waits, [('/accounts/{id}/feed', 60), ('/accounts', 180), ('/accounts/{id}', 180)])
+        self.assertEqual(waits, [('/accounts/{id}/feed', 60), ('/accounts', 180), ('/accounts/{id}', 180), ('/me', 60)])
+
+    def test_a_profile_hiccup_after_a_recent_confirmation_does_not_fail_the_sync(self):
+        # On a large team /me hangs now and then until Salesflare's gateway answers 504, like the other reads. A key
+        # confirmed minutes before goes on; a first check, a refusal, another user or a changed key still fail.
+        from machine.sources import salesflare as sf
+        self.addCleanup(sf.SALESFLARE_CONFIRMED.clear)
+        crm = FakeCRM()
+        crm.key_fingerprint = lambda: 'key-1'
+        hang = sf.SourceError('salesflare', 504, route='/me')
+        with patch.object(crm, 'profile', side_effect=hang), self.assertRaises(sf.SourceError):
+            a.sync_salesflare(self.store, {}, ACCOUNT, crm)  # never confirmed: fails as before
+        self.assertTrue(a.sync_salesflare(self.store, {}, ACCOUNT, crm)['more'])  # confirmed
+        with patch.object(crm, 'profile', side_effect=hang), self.assertLogs(sf.LOG, 'WARNING') as logged:
+            self.assertFalse(a.sync_salesflare(self.store, {}, ACCOUNT, crm)['more'])  # the round goes on and ends
+        self.assertRegex(logged.output[0], r'salesflare profile check skipped account=work-crm error=salesflare:HTTP_504 route=/me confirmed=\d+s ago')
+        with patch.object(crm, 'profile', side_effect=sf.SourceError('network:TimeoutError:salesflare_read', route='/me')):
+            a.sync_salesflare(self.store, {}, ACCOUNT, crm)  # a timeout is a hiccup too
+        for error in (sf.SourceError('salesflare', 401, route='/me'), sf.SourceError('account_identity_mismatch')):
+            with patch.object(crm, 'profile', side_effect=error), self.assertRaises(sf.SourceError):
+                a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        crm.key_fingerprint = lambda: 'key-2'  # the owner pasted another key
+        with patch.object(crm, 'profile', side_effect=hang), self.assertRaises(sf.SourceError):
+            a.sync_salesflare(self.store, {}, ACCOUNT, crm)
+        crm.key_fingerprint = lambda: 'key-1'
+        sf.SALESFLARE_CONFIRMED['work-crm'] = ('key-1', sf.time.monotonic() - sf.SALESFLARE_PROFILE_TRUSTED - 1)
+        with patch.object(crm, 'profile', side_effect=hang), self.assertRaises(sf.SourceError):
+            a.sync_salesflare(self.store, {}, ACCOUNT, crm)  # confirmed too long ago
+
+    def test_the_key_fingerprint_is_the_keys_and_never_the_key(self):
+        from machine.sources import salesflare as sf
+        source = sf.Salesflare({}, {**ACCOUNT, 'credential': 'salesflare', 'credential_variable': 'K'})
+        with patch('machine.sources.salesflare.credential', return_value='K=secret'):
+            first = source.key_fingerprint()
+        with patch('machine.sources.salesflare.credential', return_value='K=other'):
+            self.assertNotEqual(source.key_fingerprint(), first)
+        self.assertNotIn('secret', first)
 
 
 class SalesflareStopAndRestart(unittest.TestCase):
