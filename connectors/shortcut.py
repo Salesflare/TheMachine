@@ -17,16 +17,26 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'shortcut.move': 'Shortcut'}
+# Shortcut's own API Tokens page. Without a workspace in the address, Shortcut opens it in the workspace the owner
+# last used; the check names the workspace the token belongs to, so a token from another one shows right away.
+TOKEN_URL = 'https://app.shortcut.com/settings/account/api-tokens'
 SETUP = {
     'label': 'Shortcut',
     'what': 'Stories that change state, with their owners and deadlines.',
     'account': {'id': 'shortcut', 'service': 'shortcut', 'transport': 'api',
                 'boundary': 'work', 'credential': 'shortcut', 'poll_seconds': 300},
-    'ask': [('workspace', 'Shortcut workspace URL or slug')],
+    # No workspace to type: the token's own member check (GET /member) says which workspace it is.
     'secret': 'Shortcut API token',
-    'note': 'Create a token at https://app.shortcut.com/settings/account/api-tokens '
-            '(Settings > Account > API Tokens). Tokens have full account access; this connector only reads. '
-            'API documentation: https://developer.shortcut.com/api/rest/v3',
+    'token_url': TOKEN_URL,
+    'no_oauth': 'Shortcut has no OAuth for other apps, only personal API tokens.',
+    'note': 'Get a token at https://app.shortcut.com/settings/account/api-tokens and paste it here. '
+            'It only reads, never changes anything in Shortcut.',
+    # What the owner reads when the check turns the token down (onboarding.connect): plain words and what to do.
+    'errors': {'shortcut_http:HTTP_401': ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'),
+               'shortcut_http:HTTP_403': ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'),
+               'shortcut_credential_unavailable': ('That doesn’t look like a Shortcut token', 'copy it again from Shortcut and paste it here'),
+               'shortcut_network': ('Shortcut didn’t answer', 'try again in a minute'),
+               'account_identity_mismatch': ('That token is for another Shortcut workspace', 'add it as another Shortcut account')},
 }
 BASE = 'https://api.app.shortcut.com'
 PREFIX = '/api/v3/'
@@ -58,12 +68,13 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 class Source:
     def __init__(self, config, account, helpers):
         self.helpers, self.account = helpers, account
+        # Empty while connecting: verify() takes it from the token. Once saved, the token must stay in that workspace.
         workspace = account.get('workspace', '')
         if not isinstance(workspace, str):
             raise helpers.SourceError('shortcut_invalid_workspace')
         match = re.fullmatch(r'https://app\.shortcut\.com/([a-zA-Z0-9_-]+)(?:/[^?#]*)?/?', workspace)
         self.workspace = match[1] if match else workspace
-        if not re.fullmatch(r'[a-zA-Z0-9_-]+', self.workspace):
+        if self.workspace and not re.fullmatch(r'[a-zA-Z0-9_-]+', self.workspace):
             raise helpers.SourceError('shortcut_invalid_workspace')
         secret = helpers.credential(config, account.get('credential', 'shortcut'))
         if not isinstance(secret, str):
@@ -98,11 +109,21 @@ class Source:
             raise self.helpers.SourceError('shortcut_invalid_json') from None
 
     def verify(self):
+        """GET /member: who the token belongs to and in which workspace. A new account takes that workspace; a saved one
+        refuses a token from another. Keeps the workspace and the names to show on the account (never the token)."""
         member = self.get(PREFIX + 'member')
         if not isinstance(member, dict) or not member.get('id') or not isinstance(member.get('workspace2'), dict):
             raise self.helpers.SourceError('shortcut_invalid_member')
-        if member['workspace2'].get('url_slug') != self.workspace:
+        space = member['workspace2']
+        slug = space.get('url_slug')
+        if not isinstance(slug, str) or not re.fullmatch(r'[a-zA-Z0-9_-]+', slug):
+            raise self.helpers.SourceError('shortcut_invalid_member')
+        if self.workspace and slug != self.workspace:
             raise self.helpers.SourceError('account_identity_mismatch')
+        self.workspace = slug
+        name = ' '.join(plain(member.get('name') or member.get('mention_name')).split())[:100]
+        self.account.update(workspace=slug, workspace_name=' '.join(plain(space.get('name')).split())[:100] or slug,
+                            **({'member_name': name} if name else {}))
         return member
 
 

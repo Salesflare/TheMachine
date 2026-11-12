@@ -72,7 +72,7 @@ PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-000
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
             'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by', 'tenant_id',
-            'scope_check'} | imap_setup.IDENTITY
+            'scope_check', 'workspace', 'member_name'} | imap_setup.IDENTITY
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
@@ -335,6 +335,7 @@ WEB_NOTES = {
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
     'telegram': 'Next, you scan a QR code in Telegram.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
+    'shortcut': 'It only reads, never changes anything in Shortcut.',  # Get your token, right above the field, opens the page
 }
 WEB_LEARN = {'telegram': 'telegram-chats', 'imap': 'imap'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password'}
@@ -360,8 +361,10 @@ def web_form(config, service):
     scope = service not in NO_SCOPE and setup.get('boundary') != 'workspace'
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
+    # Get your token: the service's own page for making the key, in a new tab (a connector's SETUP['token_url'])
+    token_url = setup.get('token_url') if isinstance(setup.get('token_url'), str) and setup['token_url'].startswith('https://') else None
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
-            'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
+            'token_url': token_url, 'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
             'auto': scope and service in ADDRESS_SCOPE, 'advanced': imap_setup.FIELDS if service == 'imap' else None}
 
 
@@ -2187,6 +2190,10 @@ def connect(config_path, name, ui, account_id=None, restart=True):
     if error and error.startswith(BUSY):
         ui.say(f'  ! not read yet: {hint(error) or error}. Saved; the first sync reads it.')
     elif error:
+        # A connector's own words for a check that failed (SETUP['errors']: prefix -> (what happened, what to do))
+        plain = next((pair for prefix, pair in (setup_of(service).get('errors') or {}).items() if error.startswith(prefix)), None)
+        if plain:
+            raise SetupError(*plain)
         own = next((text for prefix, text in (setup_of(service).get('hints') or {}).items() if error.startswith(prefix)), '')
         raise SetupError(f'{account["id"]} does not work yet: {error}', own or hint(error) or f'rerun: assistant connect {name}')
     offer_phone_skip(config, account, ui)

@@ -283,7 +283,10 @@ class ConnectApp:
             except Exception as error:  # noqa: BLE001 - a restart reads it as before
                 LOG.warning('live connect not taken account=%s error=%s', account['id'], type(error).__name__)
                 live = False
-            session.update(account=account['id'], restarting=False if live else restart_self(3), live=live, state='done', guessed=guessed)
+            # who the key turned out to be, and in which workspace (Shortcut's member check), for the Connected line
+            who = {'name': account['member_name'], 'workspace': account.get('workspace_name') or account.get('workspace')} \
+                if account.get('member_name') and (account.get('workspace_name') or account.get('workspace')) else None
+            session.update(account=account['id'], restarting=False if live else restart_self(3), live=live, state='done', guessed=guessed, who=who)
         except onboarding.SetupError as error:
             session.update(state='cancelled' if session['ui'].cancelled else 'failed', error=error.message, fix=error.fix)
         except Exception as error:  # the step's own text could quote what was typed: only its kind
@@ -304,7 +307,7 @@ class ConnectApp:
         return {d for d in found if onboarding.company_of('a@' + d)}
 
     def connect_view(self, session):
-        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting', 'live', 'guessed')}}
+        view = {**session['ui'].view(), **{k: session.get(k) for k in ('state', 'source', 'label', 'error', 'fix', 'account', 'restarting', 'live', 'guessed', 'who')}}
         if session.get('hosted') and re.search(r'\bterminal\b|\bassistant connect\b', view.get('fix') or ''):
             view['fix'] = 'try again, or get help from your account page'  # a hosted machine has no terminal to run it in
         elif re.fullmatch(r'rerun(?: this when you have it|: assistant connect [\w-]+)', view.get('fix') or ''):
