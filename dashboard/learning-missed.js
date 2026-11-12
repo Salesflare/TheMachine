@@ -18,6 +18,13 @@ function missedNodes(m){if(!m)return [];const est=m.adjusted||m.raw;if(!est||est
  return [make('h3',{class:'q-h'},t('Missed to-dos')),make('p',{class:'learn-intro'},t('Each week I check a sample of messages that got no to-do. Last check {}.',day)),
   make('div',{class:'q-tiles mw-tiles'},qTile(mwPct(est.rate),'Likely missed',t(['Of {} message with no to-do','Of {} messages with no to-do'],Number(m.population||0).toLocaleString(DL)),make('small',{class:'q-was'},t('Between {}% and {}%',mwPct(est.low),mwPct(est.high))))),
   ...m.misses?.length?[make('div',{class:'list mw-list'},m.misses.map(row))]:[]]}
+// How it's going before enough decided to-dos (q.enough, QUALITY_ENOUGH in profile.py), when a share says nothing: one
+// line on what it will show and how far along it is, the mascot as on other empty states, and the Change notes by kind.
+function qualityWait(decided,enough,notes){const done=Math.min(decided,enough),line=t('{} of {} to-dos decided',done,enough);
+ return [make('div',{class:'empty all-clear q-wait'},make('img',{class:'sticker',src:'brand/thinking.webp',alt:''}),make('div',{},make('strong',{},t('Too early for numbers.')),
+  make('span',{},t('After {} decided to-dos, this shows how many were worth it, right the first try and sent as is.',enough)),
+  make('span',{class:'fl-bar',role:'progressbar','aria-label':line,'aria-valuemin':'0','aria-valuemax':String(enough),'aria-valuenow':String(done)},make('i',{style:{width:Math.round(100*done/enough)+'%'}})),
+  make('small',{class:'q-count'},line))),noteSplit(notes)].filter(x=>x!=='')}
 // How it's going and Missed to-dos, drawn again from state
 const renderQuality=()=>$('#quality').replaceChildren(...qualityNodes(state.quality),...missedNodes(state.missed_work));
 // Real miss also adds the to-do (missed_work_app.py), with Undo on its toast: the label goes and so does that to-do
