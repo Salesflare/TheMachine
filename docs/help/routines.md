@@ -27,7 +27,7 @@ Spam cleanup is offered the same way when 5 or more mails were moved to spam by 
 
 Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group.
 
-**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It’s only there for mail The Machine may move: Gmail connected read-only doesn’t get it. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
+**Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It only works with mail The Machine may move. Gmail connected read-only, as on a hosted Machine, can’t: the template says so in place of **Add**. Outlook works. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
 
 Unknown means you never wrote to them, and a “Re:” only counts as a conversation in a thread you wrote in. When mail from a sender you marked as spam, on the to-do or in your mailbox, gets through again, it’s on the next to-do as **Marked as spam before**. What you moved to spam yourself also helps it spot similar mail.
 
