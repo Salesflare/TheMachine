@@ -57,7 +57,7 @@ try{
  for(const [width,height] of [[1440,900],[390,844]])for(const scheme of ['light','dark']){reset();
   const {context,page}=await open({width,height,scheme});
   const c=await card(page);
-  assert.deepEqual(c,{shown:true,first:true,head:'Connect your mail to get your first to-dos.',buttons:[['Gmail','gmail'],['Outlook','outlook']],close:false,rows:[]});
+  assert.deepEqual(c,{shown:true,first:true,head:'Connect your mail to get your first to-dos.',buttons:[['Gmail','gmail'],['Outlook','outlook'],['Other email','imap']],close:false,rows:[]});
   assert.ok(await page.evaluate(()=>{const n=document.querySelector('#setup-card').getBoundingClientRect(),e=document.querySelector('#suggestions').getBoundingClientRect();
    return n.bottom<=e.top+1&&document.documentElement.scrollWidth<=innerWidth&&n.left>=0&&n.right<=innerWidth}),'above the list, fits the screen');
   // nothing to check without mail: no robot, no line, no Check now under the card
