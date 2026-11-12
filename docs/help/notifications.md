@@ -75,6 +75,8 @@ Open shows that to-do in your list, highlighted. One that's done, snoozed or in 
 
 The push says the same without links. Tap it to open today in the **Calendar**.
 
+At the end come your **Work** and **Personal** digests, the same text **Digest** in To-dos copies. When to-do text is hidden in notifications, they are left out.
+
 ## The evening digest
 
 It comes once on work days at its time in **Work hours**, by default 15 minutes before **Until**, the ways you picked in its row above. A day without a to-do done or a meeting held gets none. It starts with the day in a count, like "Evening Sam, 4 to-dos done today", then a **Work** part and a **Personal** part. A part with nothing in it is left out. Each has:

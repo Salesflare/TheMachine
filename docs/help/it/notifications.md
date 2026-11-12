@@ -74,6 +74,8 @@ Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o i
 
 La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
 
+Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo che copia **Riepilogo** nelle attività. Quando il testo delle attività è nascosto nelle notifiche, non ci sono.
+
 ## Il riepilogo della sera
 
 Arriva una volta nei giorni lavorativi alla sua ora in **Orario di lavoro**, di default 15 minuti prima di **Fino alle**, nei modi scelti nella sua riga qui sopra. Un giorno senza attività fatte né riunioni tenute non ne riceve. Inizia con la tua giornata in un numero, come "Buonasera Sam, oggi 4 attività fatte", poi una parte **Lavoro** e una parte **Personale**. Una parte vuota viene omessa. Ognuna ha:

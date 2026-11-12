@@ -16,6 +16,7 @@ from machine.delivery.push import (app_wake, cloud_target, mail_ready, phone_app
                                    reply_waits, waiting_count)
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
+from machine.store.facts import suggestion_scope
 from machine.store.promises import promise_text
 import notify
 import security_levels
@@ -24,12 +25,44 @@ import todo_areas
 from timeutil import clock, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 
 
+def done_today(db, start, current):
+    """The to-dos closed as done between start and current (UTC ISO), by the owner or by The Machine (its closing
+    decision, the one Undo takes back), not one that lapsed or was merged into another; the ones that matter first
+    (urgent, then something went out for it, then the latest)."""
+    rows = [dict(r) for r in db.execute(
+        "SELECT s.id,s.title,s.urgent,s.account_ids,s.area,c.choice closed_by,coalesce(c.created_at,(SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id)) done_at,"
+        "EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status IN ('sent','done')) went "
+        "FROM suggestions s LEFT JOIN decisions c ON c.id=s.closed_decision_id WHERE s.status='completed' AND s.expired_at IS NULL "
+        "AND s.id IN (SELECT suggestion_id FROM decisions WHERE created_at>=?)", (start,))]
+    return sorted((r for r in rows if start <= str(r['done_at'] or '') <= current and r['closed_by'] != 'merge'),
+                  key=lambda r: (int(r['urgent'] or 0), int(r['went'] or 0), str(r['done_at'])), reverse=True)
+
+
+def to_read(db):
+    """The ids of the to-dos that are something to read or sort, not to do: a Daily digest's (reading_digest.py) and a
+    cleanup's (mail_cleanup.py). An area's digest leaves them out."""
+    ids = set()
+    for table in ('digest_items', 'mail_cleanup_items'):
+        try:
+            ids |= {r[0] for r in db.execute(f'SELECT DISTINCT suggestion_id FROM {table}')}
+        except sqlite3.OperationalError:  # a database before that table
+            pass
+    return ids
+
+
 class NotificationsApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {'notify_set': 'notify_action', 'notify_active': 'notify_action', 'notify_preview': 'notify_action',
                'push_test': 'push_test_action', 'app_push_register': 'app_push_action_handler',
                'app_push_unregister': 'app_push_action_handler', 'push_subscribe': 'push_subscribe_action',
-               'push_unsubscribe': 'push_subscribe_action'}
+               'push_unsubscribe': 'push_subscribe_action', 'area_digest': 'area_digest_action'}
+
+    def area_digest_action(self, name, args, owner_dashboard=False):
+        # To-dos, Digest: each area's digest to read and copy (area_digests). The owner's own dashboard only: Personal
+        # never reaches anyone else
+        if not owner_dashboard:
+            raise ValueError('The digest is in the dashboard')
+        return self.area_digests()
 
     def notify_action(self, name, args, owner_dashboard=False):
         # Settings, Notifications (notify.py)
@@ -138,15 +171,47 @@ class NotificationsApp:
             total = waiting_count(db)
             per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)
+            show_work = security_levels.notify_text(db, True)  # a Careful Work Fleet keeps Work titles out of email
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
+        # Each area's digest after the rest: the email goes to the owner's own address only, so Personal goes along;
+        # Work as Work's own rules allow (a Careful Fleet: no Work titles in notifications)
+        areas = self.area_digests(current) if show else {}
+        if not show_work:
+            areas.pop('work', None)
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
-                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking)
+                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
+                                areas=[(a, areas.get(a, '')) for a in notify.AREAS])
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})
         return digest
+
+    def area_digests(self, current=None):
+        """Each area's digest as of `current` (notify.area_digest): {'work': text, 'personal': text}, '' for an area with
+        nothing worth listing. An area as the To-dos filter places a to-do (suggestion_scope); one only about the Machine
+        itself is in neither. Done: the to-dos closed as done today (done_today). Open: the ones still open in the
+        dashboard's order, without what waits on others or looks done, one set aside by Still needed?, and a Daily
+        digest or cleanup to-do (to read, not to do)."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        start = local.replace(hour=0, minute=0, second=0, microsecond=0)
+        utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
+        accounts = self.config.get('accounts', [])
+        with self.store.connect() as db:
+            skip = to_read(db) | still_needed.folded(db, utc(current), local_tz())
+            done = [r for r in done_today(db, utc(start), utc(current)) if r['id'] not in skip]
+            open_rows = notify.open_order([dict(r) for r in db.execute(
+                "SELECT id,title,status,due,due_at,created_at,account_ids,area FROM suggestions WHERE status IN ('pending','accepted','prepared','instructions') "
+                "AND NOT " + NOT_FOR_OWNER_SQL + " AND (deliver_after IS NULL OR deliver_after<=?) LIMIT 2000", (utc(current),)) if r['id'] not in skip], local)
+
+        def area(r):
+            if not accounts or r.get('account_ids') is None or todo_areas.machine_own(r['account_ids'], accounts, r.get('area')):
+                return None
+            return suggestion_scope(r['account_ids'], accounts, r.get('area'))
+        today = local.date().isoformat()
+        return {a: notify.area_digest([r for r in done if area(r) == a], [r for r in open_rows if area(r) == a], today) for a in notify.AREAS}
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
@@ -218,13 +283,7 @@ class NotificationsApp:
         ahead_end = following + dt.timedelta(days=1)
         utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
         with self.store.connect() as db:
-            rows = [dict(r) for r in db.execute(
-                "SELECT s.id,s.title,s.urgent,s.account_ids,s.area,c.choice closed_by,coalesce(c.created_at,(SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id)) done_at,"
-                "EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status IN ('sent','done')) went "
-                "FROM suggestions s LEFT JOIN decisions c ON c.id=s.closed_decision_id WHERE s.status='completed' AND s.expired_at IS NULL "
-                "AND s.id IN (SELECT suggestion_id FROM decisions WHERE created_at>=?)", (utc(start),))]
-            done = sorted((r for r in rows if utc(start) <= str(r['done_at'] or '') <= utc(current) and r['closed_by'] != 'merge'),
-                          key=lambda r: (int(r['urgent'] or 0), int(r['went'] or 0), str(r['done_at'])), reverse=True)
+            done = done_today(db, utc(start), utc(current))
             named = {(m['at'], m['title']) for m in recap_meetings(db, utc(start), utc(current), {})}
             held = [{**m, 'named': (m['at'], m['title']) in named} for m in recap_meetings(db, utc(start), utc(current), {}, routine=True)]
             ahead = recap_meetings(db, utc(following), utc(ahead_end), {})[:2]

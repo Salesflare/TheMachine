@@ -74,6 +74,8 @@ Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em
 
 O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
 
+No final vêm seus resumos de **Trabalho** e **Pessoal**, o mesmo texto que **Resumo** copia em Tarefas. Quando o texto das tarefas está oculto nas notificações, eles ficam de fora.
+
 ## O resumo do fim do dia
 
 Ele chega uma vez nos dias de trabalho no horário dele em **Horário de trabalho**, por padrão 15 minutos antes de **Até**, pelos meios que você escolher na linha dele acima. Um dia sem tarefa feita nem reunião realizada não recebe nenhum. Ele começa com o seu dia em um número, como "Boa noite, Sam: 4 tarefas feitas hoje", e depois uma parte **Trabalho** e uma parte **Pessoal**. Uma parte vazia fica de fora. Cada uma tem:

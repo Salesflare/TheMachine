@@ -1,0 +1,12 @@
+/*@lazy*/
+/* The To-dos digest (todos-area-digest.js): each area's text as it copies, with its Copy */
+#area-digest{width:min(520px,calc(100vw - 24px));padding:18px 18px 16px}
+#area-digest .snooze-heading{margin:0 0 12px}
+.ad-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px}
+#area-digest h3{margin:0;font-size:var(--fs-sm);font-weight:var(--fw-strong,600);color:var(--c-text-2)}
+.ad-copy{min-height:30px;margin:0;padding:3px 12px;border:1px solid var(--c-line-strong);border-radius:var(--r-pill);background:var(--c-surface);box-shadow:none;color:var(--text);font-size:var(--fs-sm)}
+.ad-copy:hover{background:var(--c-hover)}
+.ad-part+.ad-part{margin-top:18px}
+.ad-text{margin:0;padding:10px 12px;border:1px solid var(--c-line);border-radius:var(--r-sm);background:var(--c-sunken);color:var(--text);font:inherit;font-size:var(--fs-sm);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;user-select:text}
+.ad-fine{margin:0;color:var(--c-text-3);font-size:var(--fs-sm)}
+#area-digest .actions{display:flex;justify-content:flex-end;margin-top:14px}

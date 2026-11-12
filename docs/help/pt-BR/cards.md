@@ -36,6 +36,8 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 A linha no topo da lista também muda direto para a outra: **Só pessoal · Trabalho · Mostrar todas**.
 
+**Resumo** no topo da lista mostra o que foi feito hoje e o que ainda está em aberto, para Trabalho e Pessoal, ou só o que você filtra. **Copiar** copia para a área de transferência, como texto simples para colar onde quiser. Ele só aparece quando há algo para listar.
+
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
 **Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.

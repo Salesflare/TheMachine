@@ -36,6 +36,8 @@ When nothing needs you, your Machine naps on an empty list. While it checks, it 
 
 The line at the top of the list also switches straight to the other one: **Personal only · Work · Show all**.
 
+**Digest** at the top of the list shows what got done today and what is still open, for Work and Personal, or only the one you filter on. **Copy** puts it on your clipboard, as plain text to paste anywhere. It only shows when there is something to list.
+
 A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
 
 **Area** under **Details** moves a to-do to your other area. What it may read and send from moves with it. **Undo** on the note moves it back.
