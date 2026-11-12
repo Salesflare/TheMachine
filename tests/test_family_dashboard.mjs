@@ -31,6 +31,7 @@ const view={on:true,kinds:{relationships:'who knows someone',availability:'free/
  friends:{id:FR,username:'sam',in:[],out:[],blocked:[]},
  asked:[],log:[],notices:[]};
 const calls=[];
+const landed=async action=>{for(let i=0;i<100&&!calls.some(c=>c.action===action);i++)await new Promise(r=>setTimeout(r,50))};  // the call lands, also on a busy runner
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:1}}));return}
@@ -43,22 +44,24 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'
 try{
  for(const [scheme,width] of [['dark',390],['light',1000]]){
   const page=await (await browser.newContext({viewport:{width,height:900},colorScheme:scheme})).newPage();
+  // Each family form redraws the Fleet view after its call: the next form is filled only after that, or the redraw drops it
+  const acted=async(click,action)=>{const back=page.waitForResponse(r=>r.url().includes('/api/fleet'));await click();await landed(action);await back;await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>r())))};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('dialog',d=>d.accept());
   await page.goto('http://127.0.0.1:'+server.address().port);
   // A member's to-do waits under To-dos, as a Family card
   const card=page.locator('#fleet-q_'+'1'.repeat(16));await card.waitFor();
   assert.match(await card.innerText(),/Family/);assert.doesNotMatch(await card.innerText(),/Work/);
   assert.match(await card.innerText(),/Robin asks you to do something/);
-  calls.length=0;await card.locator('[data-choice-f="once"]').click();await page.waitForTimeout(200);
+  calls.length=0;await card.locator('[data-choice-f="once"]').click();await landed('fleet_decide');
   assert.deepEqual(calls.at(-1),{action:'fleet_decide',args:{id:'q_'+'1'.repeat(16),choice:'once'}});
   // A plan: I'm in says which calendar it goes on, nobody invited; the toast's Undo takes the event off again
   const plan=page.locator('#fleet-q_'+'2'.repeat(16));await plan.waitFor();
   assert.match(await plan.innerText(),/Alex proposes a plan/);assert.match(await plan.innerText(),/adds it to Home calendar\. Nobody is invited\./);
   await plan.locator('[data-choice-f="once"]').click();const undo=page.locator('#toast [data-plan-undo]');await undo.waitFor();
   assert.match(await page.locator('#toast').innerText(),/Answered\. Added to Home calendar\./);
-  calls.length=0;await undo.click();await page.waitForTimeout(200);
+  calls.length=0;await undo.click();await landed('family_plan_undo');
   assert.deepEqual(calls.find(c=>c.action==='family_plan_undo'),{action:'family_plan_undo',args:{id:'q_'+'2'.repeat(16)}});
-  assert.match(await page.locator('#toast').innerText(),/Removed from your calendar\./);
+  await page.locator('#toast',{hasText:'Removed from your calendar.'}).waitFor();  // after the answer, also on a busy runner
   await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-tabs').waitFor();
   // Every Fleet together, Work and Family, by when it was joined; then Friends, Sharing and Activity
   assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Home','Beta','Friends','Sharing','Activity']);
@@ -67,11 +70,11 @@ try{
   for(const want of [/When are we all free/,/Sat 24 Oct 08:00–11:00/,/waiting for Alex/,/Buy milk/,/Pick up Sam/,/In: Robin/,/Add to my calendar/])assert.match(text,want);
   assert.doesNotMatch(text,/Coming later/);
   assert.equal(await fam.locator('a.family-cal').first().getAttribute('href'),view.family.plans[0].link);
-  await fam.locator('.family-free-form [name=start]').fill('2026-10-24');await fam.locator('.family-free-form button').click();await page.waitForTimeout(200);
+  await fam.locator('.family-free-form [name=start]').fill('2026-10-24');await acted(()=>fam.locator('.family-free-form button').click(),'family_free');
   assert.deepEqual(calls.at(-1),{action:'family_free',args:{start:'2026-10-24',days:7}});
-  await fam.locator('.family-todo-form [name=title]').fill('Groceries');await fam.locator('.family-todo-form [name=due]').fill('2026-10-23');await fam.locator('.family-todo-form button').click();await page.waitForTimeout(200);
+  await fam.locator('.family-todo-form [name=title]').fill('Groceries');await fam.locator('.family-todo-form [name=due]').fill('2026-10-23');await acted(()=>fam.locator('.family-todo-form button').click(),'family_todo');
   assert.deepEqual(calls.at(-1),{action:'family_todo',args:{member_id:'fm_robin',title:'Groceries',due:'2026-10-23'}});
-  await fam.locator('.family-event-form [name=title]').fill('Zoo');await fam.locator('.family-event-form [name=start]').fill('2026-10-26T10:00');await fam.locator('.family-event-form button').click();await page.waitForTimeout(200);
+  await fam.locator('.family-event-form [name=title]').fill('Zoo');await fam.locator('.family-event-form [name=start]').fill('2026-10-26T10:00');await acted(()=>fam.locator('.family-event-form button').click(),'family_event');
   const ev=calls.at(-1);assert.equal(ev.action,'family_event');assert.match(ev.args.start,/^2026-10-26T10:00[+-]\d{2}:\d{2}$/);
   // The Family's rules: under Sharing, the same three pills per kind
   const sharing=page.locator('[data-pane="sharing"]');
