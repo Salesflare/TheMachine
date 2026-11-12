@@ -68,6 +68,7 @@ import next_actions
 import own_addresses
 import recurring
 import routine_changes
+import routine_offers
 import shared_connectors
 import skills
 from sources import CALENDAR_SERVICES, MAIL_SERVICES
@@ -906,6 +907,7 @@ class ViewsStore(ConversationStore):
             # Follow-ups going out spaced, per board: "Sending 3 of 8…", then "Sent 8" (follow_ups.progress)
             result['follow_up_progress'] = follow_ups.progress(db, now())
             result['recurring_offer'] = recurring.offer_view(db)  # "Make this a recurring to-do?", once (recurring.py)
+            result['routine_offer'] = routine_offers.view(db)  # "Turn on Newsletter cleanup?", once (routine_offers.py)
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events WHERE history=0', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
             result['review_runs'] = []

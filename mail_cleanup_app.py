@@ -41,6 +41,7 @@ import i18n
 import mail_cleanup
 import ms_graph
 import next_actions
+import routine_offers
 import routine_templates
 import routines
 import todo_areas
@@ -98,8 +99,42 @@ class MailCleanupApp:
     # action name -> the method that handles it, called as method(name, args, owner_dashboard) (App.action)
     ACTIONS = {
         'routine_cleanup': 'routine_cleanup_action',
+        'routine_offer': 'routine_offer_action',
         'routine_template': 'routine_template_action',
     }
+
+    # --- offering a template (routine_offers.py) -----------------------------------------------------------------------
+
+    def routine_offers_step(self):
+        """This week's newsletter and hand-marked spam counts, every LOOK_EVERY: plain code over mail already synced. The
+        mail is read outside any write; only the offers' rows are written."""
+        if time.time() - getattr(self, '_routine_offers_at', 0) < routine_offers.LOOK_EVERY:
+            return
+        self._routine_offers_at = time.time()
+        accounts = [a['id'] for a in self.cleanup_accounts()]
+        if not accounts:
+            return
+        with self.store.connect() as db:
+            counts = routine_offers.count(db, accounts, self.cleanup_mark_accounts(fresh=True), dt.datetime.now(dt.timezone.utc))
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            routine_offers.look(db, counts, self.routines_stamp())
+
+    def routine_offer_action(self, name, args, owner_dashboard):
+        """Turn it on (choice yes): the template's routine, as Templates' Add (routine_template_action); No thanks: never
+        offered again. Either way only on the owner's tap."""
+        if not owner_dashboard:
+            raise ValueError('Routines are made by the owner, on the dashboard')
+        key, yes = str(args.get('key') or ''), args.get('choice') == 'yes'
+        with self.store.connect() as db:
+            if not routine_offers.is_open(db, key):
+                raise ValueError('That suggestion is gone')
+        # the routine first: when it can't be added (no mail account may move spam any more), the offer stays as it was
+        made = self.routine_template_action('routine_template', {'key': key}, True).get('made') if yes else None
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            routine_offers.answer(db, key, yes, self.routines_stamp())
+        return {'key': key, 'added': made}
 
     # --- adding a template ---------------------------------------------------------------------------------------------
 

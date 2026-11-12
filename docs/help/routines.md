@@ -19,6 +19,8 @@ Without a time it runs at 8:00. The time is on your Machine's clock. Its first r
 
 Under **Templates** at the bottom of Routines, **Add** turns on a ready-made routine. It runs once right away, then every morning at 7:30 (Spam cleanup every hour). Its card shows its words like any routine, and **Edit** changes them or its name.
 
+When a lot of newsletters come in and Newsletter cleanup is off (25 or more in a week, from at least 5 senders), a line above your to-dos says how many came and what it would do, with **Turn it on** and **No thanks**. Spam cleanup is offered the same way when 5 or more mails were moved to spam by hand in a week. **Turn it on** adds it as **Add** does here. **No thanks** means it isn’t offered again, and a template you had before never is.
+
 **Newsletter cleanup** makes one to-do per area (work and personal) with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise it shows **Open unsubscribe page**.
 
 Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group.

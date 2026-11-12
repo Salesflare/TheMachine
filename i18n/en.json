@@ -5715,13 +5715,16 @@
  "Tuesdays after {}": "Tuesdays after {}",
  "Turn GBrain on first": "Turn GBrain on first",
  "Turn it off": "Turn it off",
+ "Turn it on": "Turn it on",
  "Turn off": "Turn off",
  "Turn off and remove shared data": "Turn off and remove shared data",
  "Turn off now": "Turn off now",
  "Turn off sharing for everyone?": "Turn off sharing for everyone?",
  "Turn off the old OpenClaw job?": "Turn off the old OpenClaw job?",
  "Turn on": "Turn on",
+ "Turn on Newsletter cleanup?": "Turn on Newsletter cleanup?",
  "Turn on Offer to share learnings first.": "Turn on Offer to share learnings first.",
+ "Turn on Spam cleanup?": "Turn on Spam cleanup?",
  "Turn on checks": "Turn on checks",
  "Turn on device code sign-in for Codex in ChatGPT security settings, at the bottom. Then try again.": "Turn on device code sign-in for Codex in ChatGPT security settings, at the bottom. Then try again.",
  "Turn on notifications": "Turn on notifications",
@@ -7193,6 +7196,10 @@
  },
  "{} looks like personal mail. Change it to Personal?": "{} looks like personal mail. Change it to Personal?",
  "{} looks like work mail. Change it to Work?": "{} looks like work mail. Change it to Work?",
+ "{} mails moved to spam by hand this week.": {
+  "one": "{} mail moved to spam by hand this week.",
+  "other": "{} mails moved to spam by hand this week."
+ },
  "{} marked {} done.": "{} marked {} done.",
  "{} matches": {
   "one": "{} match",
@@ -7280,6 +7287,10 @@
  "{} newsletters": {
   "one": "{} newsletter",
   "other": "{} newsletters"
+ },
+ "{} newsletters this week.": {
+  "one": "{} newsletter this week.",
+  "other": "{} newsletters this week."
  },
  "{} newsletters: keep or unsubscribe?": {
   "one": "{} newsletter: keep or unsubscribe?",

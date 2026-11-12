@@ -83,3 +83,15 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-rp-o
  try{const got=await repeatPost('recurring_offer',{key:o.key,choice:b.dataset.rpOffer,scope:scopeFilter==='work'||scopeFilter==='personal'?scopeFilter:null});state.recurring_offer=null;
   if(got.made){toast(repeatText(o.rule,o.anchor)+'.');await refresh()}else render()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+// "Turn on Newsletter cleanup?" (routine_offers.py): once, in the same place, when a lot of newsletters came in this week
+// (or a lot of mail went to spam by hand) and that template is off. Its count, what the template does, Turn it on or No
+// thanks. Only one offer at a time: a recurring one goes first.
+const RT_OFFER={newsletters:['Turn on Newsletter cleanup?',['{} newsletter this week.','{} newsletters this week.']],
+ spam:['Turn on Spam cleanup?',['{} mail moved to spam by hand this week.','{} mails moved to spam by hand this week.']]};
+const MAIL_ICON=html`<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/></svg>`;
+const routineOfferLine=()=>{const o=state.routine_offer,w=o&&RT_OFFER[o.key];if(!w||state.recurring_offer||chatOpen())return '';
+ return html`<div class="repeat-offer routine-offer" role="group" aria-label="${t(w[0])}"><p>${MAIL_ICON}<span><b>${t(w[0])}</b> ${t(w[1],o.n)} <span class="muted">${o.what}</span></span></p><div class="actions"><button type="button" class="ghost" data-ro-offer="yes">${t('Turn it on')}</button><button type="button" class="quiet" data-ro-offer="no">${t('No thanks')}</button></div></div>`};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-ro-offer]');const o=state.routine_offer;if(!b||!o)return;e.preventDefault();b.disabled=true;
+ try{const got=await repeatPost('routine_offer',{key:o.key,choice:b.dataset.roOffer});state.routine_offer=null;
+  if(got.added){toast(t('Routine added'));if(typeof routinesAt!=='undefined')routinesAt=0}render()}
+ catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
