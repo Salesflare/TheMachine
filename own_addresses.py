@@ -41,7 +41,7 @@ ROLE = re.compile(r'^(?:info|support|hello|hi|team|sales|billing|admin|office|co
                   r'legal|security|privacy|feedback|marketing|partners?|partnerships?|success|cs|service|orders|invoices?|ops|operations|dev|'
                   r'engineering|product|founders|all|everyone|staff|general|enquiries|inquiries|reception|bookings?|events|'
                   r'community|media|pr|noreply|no-reply|mail|post|shop|store|webmaster|postmaster)(?:[._+-][a-z0-9]+)?@')
-MAIL_SERVICES = ('gmail', 'outlook')
+MAIL_SERVICES = ('gmail', 'outlook', 'imap')
 CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
 # Where an address was found, as the short tags Settings shows on its row (one or two words each)
 LABELS = {'config': 'Settings file', 'account': 'Connected', 'alias': 'Alias', 'calendar': 'Calendar',

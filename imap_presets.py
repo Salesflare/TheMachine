@@ -1,0 +1,206 @@
+"""The server settings for an email address, so most people type only their address and password (machine/sources/imap_setup.py).
+
+In order, each a best effort that never blocks the setup: a small built-in table of known providers; the provider's own
+autoconfig file (autoconfig.<domain>, then <domain>/.well-known); Mozilla's ISPDB (Thunderbird's provider database);
+then the domain's mail servers (MX, through DNS over HTTPS) for hosting providers and for Google or Microsoft mail on a
+company's own domain. Whatever it finds only fills in the form's server settings, which the owner can always change.
+
+Gmail and Microsoft addresses, also on a company's own domain, are steered to their own connection (`oauth`): those
+sign in with Google or Microsoft and need no password. A server offered only in plaintext is never used."""
+import html
+import json
+import re
+import urllib.parse
+import urllib.request
+
+TIMEOUT = 5  # seconds per lookup
+MAX_ANSWER = 65536
+
+# Known providers: the domains of their addresses -> their settings. `username`: 'email' (the whole address) or
+# 'local' (the part before @). `help`: where to make the password a mail app needs, when the provider asks for one.
+PROVIDERS = {
+    'fastmail': {'domains': ('fastmail.com', 'fastmail.fm', 'fastmail.net', 'fastmail.org', 'fastmail.to', 'fastmail.us',
+                             'sent.com', 'messagingengine.com'),
+                 'imap': ('imap.fastmail.com', 993, 'ssl'), 'smtp': ('smtp.fastmail.com', 465, 'ssl'), 'username': 'email',
+                 'name': 'Fastmail', 'help': 'https://www.fastmail.help/hc/en-us/articles/360058752854'},
+    'icloud': {'domains': ('icloud.com', 'me.com', 'mac.com'),
+               'imap': ('imap.mail.me.com', 993, 'ssl'), 'smtp': ('smtp.mail.me.com', 587, 'starttls'), 'username': 'local',
+               'name': 'iCloud', 'help': 'https://support.apple.com/en-us/102654'},
+    'yahoo': {'domains': ('yahoo.com', 'yahoo.co.uk', 'yahoo.fr', 'yahoo.de', 'yahoo.es', 'yahoo.it', 'yahoo.com.br',
+                          'ymail.com', 'rocketmail.com'),
+              'imap': ('imap.mail.yahoo.com', 993, 'ssl'), 'smtp': ('smtp.mail.yahoo.com', 465, 'ssl'), 'username': 'email',
+              'name': 'Yahoo', 'help': 'https://help.yahoo.com/kb/SLN15241.html'},
+    'aol': {'domains': ('aol.com',), 'imap': ('imap.aol.com', 993, 'ssl'), 'smtp': ('smtp.aol.com', 465, 'ssl'),
+            'username': 'email', 'name': 'AOL'},
+    'gmx': {'domains': ('gmx.de', 'gmx.net', 'gmx.at', 'gmx.ch'), 'imap': ('imap.gmx.net', 993, 'ssl'),
+            'smtp': ('mail.gmx.net', 587, 'starttls'), 'username': 'email', 'name': 'GMX'},
+    'gmx_com': {'domains': ('gmx.com', 'gmx.us', 'gmx.co.uk', 'gmx.fr', 'gmx.es'), 'imap': ('imap.gmx.com', 993, 'ssl'),
+                'smtp': ('mail.gmx.com', 587, 'starttls'), 'username': 'email', 'name': 'GMX'},
+    'webde': {'domains': ('web.de',), 'imap': ('imap.web.de', 993, 'ssl'), 'smtp': ('smtp.web.de', 587, 'starttls'),
+              'username': 'email', 'name': 'WEB.DE'},
+    'zoho': {'domains': ('zoho.com', 'zohomail.com'), 'imap': ('imap.zoho.com', 993, 'ssl'), 'smtp': ('smtp.zoho.com', 465, 'ssl'),
+             'username': 'email', 'name': 'Zoho Mail'},
+    'zoho_eu': {'domains': ('zoho.eu', 'zohomail.eu'), 'imap': ('imap.zoho.eu', 993, 'ssl'), 'smtp': ('smtp.zoho.eu', 465, 'ssl'),
+                'username': 'email', 'name': 'Zoho Mail'},
+    # Telenet (Belgium), as its own help pages give it: IMAP over SSL on 993, authenticated SMTP with TLS on 587, the full
+    # address and the mail password
+    'telenet': {'domains': ('telenet.be',), 'imap': ('imap.telenet.be', 993, 'ssl'), 'smtp': ('smtp.telenet.be', 587, 'starttls'),
+                'username': 'email', 'name': 'Telenet', 'password': 'mail'},
+    # Proton Mail through Proton Mail Bridge on this computer, with the password Bridge shows
+    'proton': {'domains': ('proton.me', 'protonmail.com', 'protonmail.ch', 'pm.me'), 'imap': ('127.0.0.1', 1143, 'starttls'),
+               'smtp': ('127.0.0.1', 1025, 'starttls'), 'username': 'email', 'name': 'Proton Mail', 'password': 'bridge'},
+}
+# Hosting providers, known by the domain's mail servers (MX): mail on a domain of your own at OVHcloud, one.com, Combell
+MX_PROVIDERS = {
+    'ovh.net': {'imap': ('ssl0.ovh.net', 993, 'ssl'), 'smtp': ('ssl0.ovh.net', 465, 'ssl'), 'username': 'email', 'name': 'OVHcloud'},
+    'one.com': {'imap': ('imap.one.com', 993, 'ssl'), 'smtp': ('send.one.com', 465, 'ssl'), 'username': 'email', 'name': 'one.com'},
+    'mailprotect.be': {'imap': ('imap.mailprotect.be', 993, 'ssl'), 'smtp': ('smtp-auth.mailprotect.be', 465, 'ssl'),
+                       'username': 'email', 'name': 'Combell'},
+    'messagingengine.com': PROVIDERS['fastmail'],
+    'zoho.com': PROVIDERS['zoho'], 'zoho.eu': PROVIDERS['zoho_eu'],
+}
+# Mail that signs in with Google or Microsoft: its own connection, no password
+OAUTH_DOMAINS = {'gmail.com': 'gmail', 'googlemail.com': 'gmail'}
+OAUTH_MX = {'google.com': 'gmail', 'googlemail.com': 'gmail', 'outlook.com': 'outlook'}
+OAUTH_HOSTS = {'imap.gmail.com': 'gmail', 'outlook.office365.com': 'outlook', 'imap-mail.outlook.com': 'outlook'}
+MICROSOFT_CONSUMER = re.compile(r'(outlook|hotmail|live|msn|passport)\.[a-z]{2,3}(\.[a-z]{2})?')
+
+
+def domain_of(email):
+    return str(email or '').strip().lower().rpartition('@')[2]
+
+
+def _shape(found, email, source):
+    """A provider's entry as the account keys it fills in."""
+    username = email if found.get('username', 'email') == 'email' else email.partition('@')[0]
+    out = {'imap_host': found['imap'][0], 'imap_port': found['imap'][1], 'imap_security': found['imap'][2], 'username': username,
+           'from': source}
+    if found.get('smtp'):
+        out.update(smtp_host=found['smtp'][0], smtp_port=found['smtp'][1], smtp_security=found['smtp'][2])
+    for key in ('name', 'help', 'password'):
+        if found.get(key):
+            out[key] = found[key]
+    return out
+
+
+def builtin(email):
+    domain = domain_of(email)
+    for entry in PROVIDERS.values():
+        if domain in entry['domains']:
+            return _shape(entry, email, 'builtin')
+    return None
+
+
+def oauth_of(email):
+    """'gmail' or 'outlook' when the address is plainly Google's or Microsoft's own mail, else None."""
+    domain = domain_of(email)
+    if domain in OAUTH_DOMAINS:
+        return OAUTH_DOMAINS[domain]
+    return 'outlook' if MICROSOFT_CONSUMER.fullmatch(domain) else None
+
+
+def _fetch(url):
+    """An https answer's text, small; None when it isn't there."""
+    if not url.startswith('https://'):
+        return None
+    request = urllib.request.Request(url, headers={'User-Agent': 'TheMachine-mail-setup', 'Accept': '*/*'})
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as reply:
+            return reply.read(MAX_ANSWER + 1)[:MAX_ANSWER].decode('utf-8', 'replace')
+    except (OSError, ValueError):
+        return None
+
+
+def parse_autoconfig(text, email):
+    """Thunderbird's autoconfig XML: the first IMAP server and first SMTP server with TLS (SSL or STARTTLS); a plain
+    one is skipped. None when it has no usable IMAP server. Read with a few patterns, never an XML parser: the answer
+    comes from the network, and a document with a DOCTYPE (entities) is refused outright."""
+    text = str(text or '')
+    if re.search(r'<!(DOCTYPE|ENTITY)', text, re.I):
+        return None
+    local = email.partition('@')[0]
+
+    def field(block, name):
+        found = re.search(rf'<{name}\b[^>]*>([^<]*)</{name}\s*>', block)
+        return html.unescape(found[1]).strip() if found else ''
+
+    def pick(tag, kind):
+        for server in re.finditer(rf'<{tag}\b([^>]*)>(.*?)</{tag}\s*>', text, re.S):
+            if (re.search(r'\btype\s*=\s*["\']([^"\']*)["\']', server[1]) or [None, ''])[1] != kind:
+                continue
+            block = server[2]
+            security = {'SSL': 'ssl', 'STARTTLS': 'starttls'}.get(field(block, 'socketType').upper())
+            host = field(block, 'hostname').lower()
+            try:
+                port = int(field(block, 'port'))
+            except ValueError:
+                continue
+            if not security or not re.fullmatch(r'[a-z0-9.-]+', host) or not 0 < port < 65536:
+                continue
+            username = field(block, 'username') or '%EMAILADDRESS%'
+            return host, port, security, username.replace('%EMAILADDRESS%', email).replace('%EMAILLOCALPART%', local)
+        return None
+    imap, smtp = pick('incomingServer', 'imap'), pick('outgoingServer', 'smtp')
+    if not imap:
+        return None
+    found = {'imap': imap[:3], 'smtp': smtp[:3] if smtp else None, 'username': 'email'}
+    out = _shape(found, email, 'autoconfig')
+    out['username'] = imap[3] if '%' not in imap[3] else email
+    name = field(text, 'displayShortName')
+    if name and len(name) < 60:
+        out['name'] = name
+    return out
+
+
+def mx_hosts(domain, fetch=_fetch):
+    """The domain's mail servers, from DNS over HTTPS (only the domain is asked, never the address)."""
+    text = fetch('https://cloudflare-dns.com/dns-query?' + urllib.parse.urlencode({'name': domain, 'type': 'MX', 'ct': 'application/dns-json'}))
+    try:
+        answers = json.loads(text or '{}').get('Answer') or []
+    except ValueError:
+        return []
+    hosts = []
+    for answer in answers:
+        parts = str(answer.get('data') or '').split()
+        if answer.get('type') == 15 and len(parts) == 2:
+            hosts.append((int(parts[0]) if parts[0].isdigit() else 99, parts[1].rstrip('.').lower()))
+    return [h for _, h in sorted(hosts)]
+
+
+def _mx_match(host, table):
+    return next((v for suffix, v in table.items() if host == suffix or host.endswith('.' + suffix)), None)
+
+
+def lookup(email, fetch=_fetch, network=True):
+    """The settings for this address: {imap_host, imap_port, imap_security, username, smtp_*, name, help, password, from}
+    or {'oauth': 'gmail'|'outlook'} for mail that signs in with Google or Microsoft, or {} when nothing is known.
+    Every lookup is a best effort: a slow or missing answer is skipped."""
+    email = str(email or '').strip().lower()
+    domain = domain_of(email)
+    if not domain or not re.fullmatch(r'[a-z0-9.-]+\.[a-z]{2,}', domain):
+        return {}
+    oauth = oauth_of(email)
+    if oauth:
+        return {'oauth': oauth}
+    known = builtin(email)
+    if known or not network:
+        return known or {}
+    for url in (f'https://autoconfig.{domain}/mail/config-v1.1.xml?' + urllib.parse.urlencode({'emailaddress': email}),
+                f'https://{domain}/.well-known/autoconfig/mail/config-v1.1.xml',
+                f'https://autoconfig.thunderbird.net/v1.1/{domain}'):
+        found = parse_autoconfig(fetch(url), email)
+        if found:
+            if found['imap_host'] in OAUTH_HOSTS:
+                return {'oauth': OAUTH_HOSTS[found['imap_host']]}
+            return found
+    for host in mx_hosts(domain, fetch)[:3]:
+        if _mx_match(host, OAUTH_MX):
+            return {'oauth': _mx_match(host, OAUTH_MX)}
+        entry = _mx_match(host, MX_PROVIDERS)
+        if entry:
+            return _shape(entry, email, 'mx')
+        base = '.'.join(host.split('.')[-2:])
+        found = parse_autoconfig(fetch(f'https://autoconfig.thunderbird.net/v1.1/{base}'), email) if base != domain else None
+        if found:
+            return {**found, 'from': 'mx'}
+    return {}

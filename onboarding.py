@@ -34,7 +34,7 @@ import message_seal
 import portable
 import service
 import wacli_release
-from machine.sources import groups, teams_setup
+from machine.sources import groups, imap_setup, teams_setup
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
@@ -42,15 +42,15 @@ UNIT_NAME = service.UNIT_NAME
 CONNECTORS = {'gmail': 'work-gmail', 'calendar': 'work-calendar', 'slack': 'work-slack',
               'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'telegram': 'personal-telegram',
               'gateway': 'openclaw-gateway'}
-SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar',
+SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar', 'imap': 'imap',
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
             'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'gateway': 'gateway'}
-LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
+LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
           'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'Machine health'}
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',
-        'outlook': 'Your Outlook email, what comes in and what you send.',
+        'outlook': 'Your Outlook email, what comes in and what you send.', 'imap': 'Email from any provider: iCloud, Yahoo, Fastmail, your own domain.',
         'outlook_calendar': 'Your Outlook meetings, so you go in prepared and follow up.',
         'slack': 'Your direct messages, mentions and the threads you are in.',
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
@@ -72,7 +72,7 @@ PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-000
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
             'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by', 'tenant_id',
-            'scope_check'}
+            'scope_check'} | imap_setup.IDENTITY
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
@@ -126,7 +126,7 @@ HINTS = (
     *((code, 'the browser didn’t answer; it retries by itself') for code in ('x_browser_stalled', 'linkedin_browser_stalled')),
     ('network:', 'a network error; it retries by itself'),
     ('timeout', 'the source was slow to answer; it retries by itself'),
-)
+) + imap_setup.HINTS
 
 
 class SetupError(Exception):
@@ -333,12 +333,12 @@ WEB_NOTES = {
     'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
     'x': 'Next, you sign in to X on your Machine, right here.',
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
-    'telegram': 'Next, you scan a QR code in Telegram.',
+    'telegram': 'Next, you scan a QR code in Telegram.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
 }
-WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
-WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
-WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']]}
+WEB_LEARN = {'telegram': 'telegram-chats', 'imap': 'imap'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
+WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password'}
+WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']]}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b|config\.json')  # setup-file notes stay in the terminal
 NO_SCOPE = {'android', 'gateway', 'docs'}  # a device or the server itself; Docs follows the address it reads for
 
@@ -362,7 +362,7 @@ def web_form(config, service):
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
             'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
-            'auto': scope and service in ADDRESS_SCOPE}
+            'auto': scope and service in ADDRESS_SCOPE, 'advanced': imap_setup.FIELDS if service == 'imap' else None}
 
 
 def run(args, **kwargs):
@@ -944,8 +944,8 @@ def new_account(config, service, account_id=None, ui=None):
         first_ask = next(iter(setup_of(service).get('ask', [])), ('',))[0]
         account = {k: v for k, v in same[-1].items() if k not in IDENTITY and k != first_ask}
         template_id = None
-    elif service in MICROSOFT:
-        account = dict(MICROSOFT[service])
+    elif service in MICROSOFT or service == 'imap':
+        account = dict(MICROSOFT.get(service) or imap_setup.ACCOUNT)
         template_id = account['id']
     elif service in LABELS:
         name = next(k for k, v in SERVICES.items() if v == service)
@@ -1050,7 +1050,7 @@ def check(config, account):
     a = assistant()
     service = account.get('service', 'gmail')
     try:
-        if service in ('gmail', 'outlook'):
+        if service in ('gmail', 'outlook', 'imap'):
             a.Gmail(config, account).profile()
         elif service in ('calendar', 'outlook_calendar'):
             a.Calendar(config, account).profile()
@@ -2060,7 +2060,7 @@ def step_microsoft(config, account, ui):
     ui.say('  signed in' if getattr(ui, 'web', False) else '  signed in; the sign-in is saved to ' + str(path))
 
 
-STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'slack': step_slack, 'salesflare': step_salesflare,
+STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'imap': lambda *step: imap_setup.step(*step), 'slack': step_slack, 'salesflare': step_salesflare,
          'whatsapp': step_whatsapp, 'telegram': step_telegram, 'android': step_android, 'gateway': step_gateway}
 
 

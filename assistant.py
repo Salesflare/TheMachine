@@ -1152,7 +1152,7 @@ SOURCE_KIND['fleet.message'] = 'message'
 SOURCE_KIND['fleet.intercom'] = 'Intercom'  # an Intercom conversation a handoff carried, on a Machine that doesn't read it
 
 
-MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook'), ('calendar', 'outlook_calendar')
+MAIL_SERVICES, CALENDAR_SERVICES = ('gmail', 'outlook', 'imap'), ('calendar', 'outlook_calendar')
 
 
 def main():
