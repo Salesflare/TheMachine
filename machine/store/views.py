@@ -263,7 +263,11 @@ SOURCE_WHO = re.compile(r'^(?:Source: )?.+? (?:from|to) (.+?)(?: · [^·]+?)?(?:
 
 def source_lines_shown(db, cards):
     """The cards' source lines as source_line_shown writes them, Slack members by their names (slack_people_names),
-    and a sender stored by address by the name the graph knows for it (address_names)."""
+    and a sender stored by address by the name the graph knows for it (address_names). One saved before kinds nothing
+    names lost their line (cards.shown_source) says "signal": none."""
+    for c in cards:
+        if re.match(r'Source: signal\b', str(c.get('source_line') or '')):
+            c['source_line'] = None
     lines = [c.get('source_line') for c in cards if c.get('source_line')]
     names = slack_people_names(db, {m[1] for line in lines for m in SLACK_ID.finditer(str(line))})
     people = address_names(db, {a for line in lines if (m := SOURCE_WHO.match(str(line))) for a in message_view.bare_addresses(m[1])})

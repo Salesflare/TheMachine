@@ -11,7 +11,8 @@ const built=new Function('esc','sender','safeURL','fileSize','t','groupSender',f
 const at='2026-10-20T20:04:00Z';
 const bare=messageHTML({kind:'signal',from:'',occurred_at:at,title:'A signal',body:'Something happened'},'s1',1);
 assert.ok(!bare.includes('<summary>Details</summary>'),'no empty toggle');
-assert.ok(bare.includes('<strong translate="no">Signal</strong>'),'a source nobody sent is named by its kind label');
+// A source nobody sent or named reads "Original", never "Signal" (that is the chat app)
+assert.ok(bare.includes('<strong translate="no">Original</strong>'),'a source nobody sent or named reads Original');
 const fault=messageHTML({kind:'signal',from:'The Machine',occurred_at:at,title:'The Machine: ValueError in call',body:'Talking with your Fleet failed.',
   details:'Where (innermost last):\n  fleet.py:255 in call\n\nCode version: <abc>'},'s1',1);
 // Details holds only what isn't shown already: the sender is in the header, so only the technical part

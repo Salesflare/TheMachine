@@ -411,14 +411,19 @@ new MutationObserver(records=>{for(const m of records){const n=m.target.nodeType
 // A folding text (data-clamp, its Show more data-more with the same key) shows Show more and the fade over its last line
 // only when some of it is really cut off. Measured once drawn, before it is painted, and again when its width or the font
 // changes and after Show more or Show less: where its text ends against the bottom of its box, so a text that fills its
-// lines exactly stays whole at any display scaling (fractional pixels) and line height. A box out of sight keeps what it has.
+// lines exactly stays whole at any display scaling (fractional pixels) and line height. Never just one line folded away:
+// Show more takes about a line itself, so a text one line over shows whole too, unless another text under the same Show
+// more (a ready draft's) needs it anyway: then each folds that is cut at all. A box out of sight keeps what it has.
 const clampBox=el=>[el,...el.querySelectorAll(':scope>.db')].find(x=>getComputedStyle(x).maxHeight!=='none')||el;
+// How far its text runs past its fold, in lines (0 when it fits), or null out of sight
 function clampCut(el){if(!el.getClientRects().length)return null;const had=el.classList.contains('clamp');el.classList.add('clamp');
  const box=clampBox(el),r=document.createRange();r.selectNodeContents(box);const end=r.getBoundingClientRect().bottom,b=box.getBoundingClientRect(),cs=getComputedStyle(box);
- const cut=end>b.bottom-parseFloat(cs.paddingBottom)-parseFloat(cs.borderBottomWidth)+1;if(!had)el.classList.remove('clamp');return cut}
+ const ls=getComputedStyle(box.querySelector('p,div')||box),lh=parseFloat(ls.lineHeight)||parseFloat(ls.fontSize)*1.4;
+ const over=end-(b.bottom-parseFloat(cs.paddingBottom)-parseFloat(cs.borderBottomWidth))-1;if(!had)el.classList.remove('clamp');return over>0?over/lh:0}
 function clampKey(key){if(key==null)return;const k=CSS.escape(key),els=document.querySelectorAll(`[data-clamp="${k}"]`),btns=document.querySelectorAll(`button.more[data-more="${k}"]`);
  if(!els.length||!btns.length)return;const open=btns[0].getAttribute('aria-expanded')==='true';let any=false;
- for(const el of els){const cut=clampCut(el);if(cut==null){any=true;continue}any||=cut;el.classList.toggle('clamp',cut&&!open)}
+ const over=[...els].map(clampCut);any=over.some(o=>o==null||o>1);
+ els.forEach((el,i)=>{if(over[i]!=null)el.classList.toggle('clamp',any&&over[i]>0&&!open)});
  for(const b of btns)b.hidden=!any}
 const clampSeen=new ResizeObserver(rows=>{const keys=new Set();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){e._fitW=r.width;keys.add(e.dataset.clamp)}keys.forEach(clampKey)});
 let clampQueued=0;const clampNew=()=>{clampQueued=0;for(const e of document.querySelectorAll('[data-clamp]:not([data-cfit])')){e.dataset.cfit='';clampSeen.observe(e)}};

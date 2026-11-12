@@ -1,8 +1,9 @@
 // A lazy part (dashboard_parts.LAZY 'msgview'): how a message reads in the viewer, by its kind. events-email.js
 // openEmail, events-list.js openOriginal and openSources, and graph-record.js openTeamThread load it with
 // lazyPart('msgview') before they draw a message.
-// What a source is, when nobody sent it: never the raw kind ("calendar")
-const KIND_LABEL={calendar:'Meeting invite',email:'Email',phone:'Phone',signal:'Signal',note:'Note',message:'Message'};
+// What a source is, when nobody sent it: never the raw kind ("calendar"), and never "Signal" for a kind nothing names
+// (source_kind's 'signal'), which reads as the Signal app
+const KIND_LABEL={calendar:'Meeting invite',email:'Email',phone:'Phone',signal:'Original',note:'Note',message:'Message'};
 const kindLabel=k=>t(KIND_LABEL[k]||k||'Original');
 // A message reads by its view (machine/store/message_view.py: email, chat, notification or card), and says each thing
 // once: the dialog's title, the header, Details and the body never repeat each other (sameText). `shown`: the dialog's

@@ -792,7 +792,7 @@ class GraphActionsApp:
         found,_=self.related(accounts,ids,'',limit,signals_only=True)  # a preparation: never history
         rows={r['id']:r for r in self.store.events(accounts,event_ids=[i for i,_ in found])} if found else {}
         # source_line skips the owner's own to-dos (owner.card: the card says "Added by you"); here each one names what it is
-        where=lambda r:source_text(r) if r['kind']=='owner.card' else source_line([r])[8:]
+        where=lambda r:(source_line([r]) or 'Source: '+source_text(r))[8:]
         part=embeddings.starts(found)  # a long one that matched further on: where to read it
         lines=[f"- {i} ({rows[i]['account_id']}) {where(rows[i])} · {clamp(' '.join(rows[i]['title'].split()),100)}"+(f' · matches at body_offset {part[i]}' if i in part else '') for i,_ in found if i in rows]
         for (i,score),line in zip([f for f in found if f[0] in rows],lines):memory_use.note('signal',i,line,'closeness',source='signal',at=rows[i]['occurred_at'],score=score)
