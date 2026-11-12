@@ -11,9 +11,9 @@ const tileName=(name,board)=>{const m=/^(.+?)\s*(?::|\s[-–—])\s+(\S.*)$/.exe
  return m&&bn&&head.length>=Math.min(bn.length,6)&&bn.startsWith(head)?m[2]:name};
 const tileWhy=(p,by)=>{const last=p.last_at?html` · ${p.last_event_id?html`<button type="button" class="link" data-quote-event="${p.last_event_id}" title="Read its latest message">${sinceWhen(p.last_at)}</button>`:sinceTime(p.last_at)}`:'',tail=by?' · '+by:'';
  if(p.sort_failed)return html`<p class="tile-why failed">${p.sort_failed}${last}${tail}</p>`;
- if(p.sort_note)return html`<p class="tile-why">Not sorted: ${p.sort_note}${last}${tail}</p>`;
+ if(p.sort_note)return html`<p class="tile-why"><span>Not sorted: ${p.sort_note}${last}</span>${tail}</p>`;
  if(p.outcome)return html`<p class="tile-why ${p.outcome}">${endWord(p.outcome,isDeal(p,boardNow()))}${p.reason?': '+p.reason:''}${p.at?' · '+shortDay(p.at):''}${tail}</p>`;
- if(p.sorting)return html`<p class="tile-why sorting">Sorting from its messages…${tail}</p>`;const when=p.at?(p.event_id?html`<button type="button" class="link" data-quote-event="${p.event_id}" title="Read the message">${shortDay(p.at)}</button>`:shortDay(p.at)):'';
+ if(p.sorting)return html`<p class="tile-why sorting"><span>Sorting from its messages…</span>${tail}</p>`;const when=p.at?(p.event_id?html`<button type="button" class="link" data-quote-event="${p.event_id}" title="Read the message">${shortDay(p.at)}</button>`:shortDay(p.at)):'';
  const what=p.by==='owner'?t('Moved to {} by hand',p.stage):p.reason?(p.first?t('Added: {}',p.reason):t('Moved to {}: {}',p.stage,p.reason)):'';
  return what||when||by?html`<p class="tile-why">${what}${what&&when?' · ':''}${when}${(what||when)&&by?' · ':''}${by}</p>`:''};
 const stuckDays=p=>p.stage!==boardSide()&&(p.no_reply_days||0)>=10?p.no_reply_days:0;
