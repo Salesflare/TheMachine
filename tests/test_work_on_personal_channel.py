@@ -93,6 +93,34 @@ class Placing(unittest.TestCase):
                                     'body': 'The client asks for it.', 'event_ids': [1], 'card_id': sid, 'company': 'work:Acme'})
         self.assertEqual(self.scope(sid), 'personal')
 
+    def test_work_marked_by_the_review_or_a_move_still_replies_where_the_thread_lives(self):
+        placed = self.suggest(company='work:Acme')
+        moved = self.app.action('suggest', {'dedupe_key': 'chat:other', 'title': 'Confirm the pilot date',
+                                            'body': 'The client asks for a date.', 'event_ids': [2], 'separate': True})['id']
+        self.app.action('card_move', {'suggestion_id': moved, 'area': 'work:Acme', 'decision_id': 'm3'}, owner_dashboard=True)
+        for sid in (placed, moved):
+            row = self.row(sid)
+            self.assertEqual((self.scope(sid), json.loads(row['account_ids'])), ('work', ['acme-mail']))
+            # the run is told to answer in its own chat, from the account it came in on, and not to ask for a move
+            with self.store.connect() as db:
+                line = a.area_prompt(self.app.config, row['account_ids'], a.card_sources(db, sid), owner_started=True)
+            self.assertIn('A reply in one of its own chats goes in that chat, from the account it came in on (home-chat), also one labeled Personal', line)
+            self.assertIn('It stays Work.', line)
+            # and the WhatsApp reply in that chat is valid for the Work to-do
+            action = a.next_actions.validate({'kind': 'whatsapp', 'account_id': 'home-chat', 'chat_id': 'c1', 'body': 'Sent it, thanks!'},
+                                             self.app.config, json.loads(row['account_ids']), whatsapp_chats={'c1': {'account_id': 'home-chat', 'name': 'Sam'}})
+            self.assertEqual((action['kind'], action['account_id']), ('whatsapp', 'home-chat'))
+
+    def test_an_email_reply_after_a_move_to_work_goes_from_the_personal_mailbox_it_came_in_on(self):
+        replied = {'<order@shop.example>': {'account_id': 'home-mail', 'thread_id': 't9', 'homes': {}}}
+        draft = {'kind': 'email', 'account_id': 'home-mail', 'to': ['orders@shop.example'], 'subject': 'Re: Your order',
+                 'body': 'Thanks, the invoice is fine.', 'in_reply_to': '<order@shop.example>'}
+        action = a.next_actions.validate(draft, self.app.config, ['acme-mail'], replied=replied)
+        self.assertEqual((action['account_id'], action['from']), ('home-mail', 'robin@home.example'))
+        new = {k: v for k, v in draft.items() if k != 'in_reply_to'}
+        with self.assertRaises(ValueError):  # a new email is not its thread: it goes from the area's accounts
+            a.next_actions.validate(new, self.app.config, ['acme-mail'], replied=replied)
+
     def test_an_unmoved_card_is_placed_on_a_later_signal(self):
         sid = self.suggest()
         self.app.action('suggest', {'dedupe_key': 'chat:quote:2', 'title': 'Send the signed quote for the pilot',

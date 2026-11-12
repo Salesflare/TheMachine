@@ -105,7 +105,7 @@ def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=F
         name = next((a['label'] for a in found if a['id'] == here), here)
         held = lambda area: (': ' + todo_areas.holds(area, accounts)) if todo_areas.holds(area, accounts) else ''
         out = ('\n\nArea: this to-do is in ' + name + ' (its accounts' + (held(here) or ': none') + '). What it may read and send from follows its area (a Work to-do sends from that '
-               'company\'s accounts)' + (', apart from its own sources below' if outside else '') + '. When it needs another area, such as an email from the company\'s address, do not work around it '
+               'company\'s accounts), except a reply in one of its own threads or chats, which goes where that thread lives' +(', apart from its own sources below' if outside else '') + '. When it needs another area, such as an email from the company\'s address, do not work around it '
                'or say it can\'t be moved: record a blocker with assistant_signals preparation_blocked and move_to=<'
                + ' | '.join(f"{a['id']} ({a['label']}{held(a['id'])})" for a in others) + '>, and a reason that says why in one line. '
                'Ask for a move only to use an account that area has (listed with it), never for what the to-do is about: one about '
@@ -114,10 +114,21 @@ def area_prompt(config, account_ids, sources=(), owner_started=False, unplaced=F
                'carries on in a new run; otherwise the to-do shows the owner a button to move it. You never move it yourself. Once it '
                'moves, it carries on by itself. When two accounts in different areas could each do it and nothing says which, ask '
                'which account in questions instead, never to move it.')
-        homes = sorted({a['email'] for a in accounts if a['id'] in {x for _, x in sources or ()} - inside and next_actions.mail_account(a) and a.get('email')}) if here == todo_areas.PERSONAL else []
-        if homes:  # a matter of the owner's own life on a work mailbox: its reply goes where its thread is (next_actions.personal_reply_home)
+        theirs = {x for _, x in sources or ()} - inside
+        homes = sorted({a['email'] for a in accounts if a['id'] in theirs and next_actions.mail_account(a) and a.get('email')})
+        chats = sorted({a['id'] for a in accounts if a['id'] in theirs and not next_actions.mail_account(a)
+                        and todo_areas.area_of_account(a) is not None})
+        sides = {todo_areas.area_of_account(a) for a in accounts if a['id'] in theirs}
+        other = ('labeled Work' if here == todo_areas.PERSONAL else 'labeled Personal' if sides == {todo_areas.PERSONAL}
+                 else 'in another area')
+        move = 'to Work ' if here == todo_areas.PERSONAL else ''
+        # one rule for every to-do: a reply goes where its thread lives, whatever its area (next_actions.reply_home)
+        if homes:
             out += (' A reply in one of its own threads goes from the mailbox that thread came in on (' + ', '.join(homes) + '), also one '
-                    'labeled Work: set that account_id, and never ask to move this to-do to Work for it. It stays Personal.')
+                    + other + ': set that account_id, and never ask to move this to-do ' + move + 'for it. It stays ' + name + '.')
+        if chats:
+            out += (' A reply in one of its own chats goes in that chat, from the account it came in on (' + ', '.join(chats) + '), also one '
+                    + other + ', unless the owner asks for another channel: never ask to move this to-do for it. It stays ' + name + '.')
         if unplaced:
             out += (' The owner added it without picking an area, and it is only in ' + name + ' until it is placed: to find what it refers '
                     'to (a mail they sent, a thread), search every area\'s mail, the mailboxes themselves too (events with mailbox:true). '

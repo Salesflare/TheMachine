@@ -322,7 +322,7 @@ class PersonalReplyFromWorkMailbox(unittest.TestCase):
         self.assertNotIn('reply_elsewhere', action)
         self.assertEqual(todo_areas.current(['home-mail', 'home-chat'], self.config['accounts']), 'personal')  # still Personal
 
-    def test_only_its_own_thread_and_only_for_a_personal_to_do(self):
+    def test_only_its_own_thread(self):
         new = self.draft(subject='Hello', in_reply_to=None)
         new.pop('in_reply_to')
         with self.assertRaises(ValueError):  # a new email from the Work mailbox: not its thread
@@ -330,8 +330,10 @@ class PersonalReplyFromWorkMailbox(unittest.TestCase):
         with self.assertRaises(ValueError):  # a thread in another mailbox
             next_actions.validate(self.draft(account_id='side-mail'), self.config, ['home-mail'], replied=self.replied)
         beta = {'accounts': [*self.config['accounts'], *BETA]}
-        with self.assertRaises(ValueError):  # a Work to-do at another company keeps its company's mailboxes
-            next_actions.validate(self.draft(), beta, ['beta-mail'], replied=self.replied)
+        # one rule for every area: a Work to-do at another company replies in its own thread where that thread lives
+        self.assertEqual(next_actions.validate(self.draft(), beta, ['beta-mail'], replied=self.replied)['account_id'], 'acme-mail')
+        with self.assertRaises(ValueError):  # but a new email from there is not its thread
+            next_actions.validate(new, beta, ['beta-mail'], replied=self.replied)
 
     def test_the_run_is_told_to_reply_from_there_and_not_to_ask_for_a_move(self):
         line = a.area_prompt(self.config, '["home-mail", "home-chat"]', [(1, 'acme-mail')])
