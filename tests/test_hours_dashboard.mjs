@@ -11,11 +11,11 @@ const dashboard=await dashboardPage();
 let hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Amsterdam',digest_at:'08:30',evening_time:'22:45',saveable:true};
 // as hours() answers: the evening digest's time in effect, its own or 15 minutes before Until
 const evening=a=>a.evening_at||(([h,m])=>{const x=(h*60+ +m+1425)%1440;return String(x/60|0).padStart(2,'0')+':'+String(x%60).padStart(2,'0')})(a.end.split(':'));
-const saved=[],pairing=[];
+const saved=[],pairing=[];let locale=null;
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],connectors:[],hours}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],connectors:[],hours,...(locale?{locale}:{})}));return}
  if(url.pathname==='/pair/fixture'){res.setHeader('Content-Type','text/html');res.end('<title>Pair</title>');return}
  if(url.pathname==='/api/action'){let body='';req.on('data',c=>body+=c);req.on('end',()=>{const {action,args}=JSON.parse(body);
    if(action==='ai_pair_start'){pairing.push(action);res.end(JSON.stringify({url:'http://127.0.0.1:'+server.address().port+'/pair/fixture',code:'ABCD-EFGH',state:'waiting'}));return}
@@ -114,8 +114,16 @@ try{
  await page.reload();await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="notify"]').click();
  await page.locator('#hours-morning').fill('08:45');
  assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
- assert.match(await page.locator('#hours-digest-note').textContent(),/^Morning digest moved to (09:15|9:15\sAM), after snoozes land\.$/);
+ assert.equal(await page.locator('#hours-digest-note').textContent(),'Morning digest moved to 09:15, after snoozes land.');  // a 24-hour clock
  assert.equal(await page.locator('#hours-error').textContent(),'');  // a note under the field, not an error
+ // A 12-hour clock reads the note's time the way the dashboard writes every other time (fmtHM).
+ locale={locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'}};
+ await page.reload();await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="notify"]').click();
+ await page.locator('#hours-morning').fill('08:45');
+ assert.match(await page.locator('#hours-digest-note').textContent(),/^Morning digest moved to 9:15\sAM, after snoozes land\.$/);
+ locale=null;
+ await page.reload();await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="notify"]').click();
+ await page.locator('#hours-morning').fill('08:45');
  await page.locator('#hours-morning').fill('08:15');
  assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
  await page.locator('#hours-digest').fill('08:00');
