@@ -321,7 +321,7 @@ class Protected(unittest.TestCase):
             for statement in (fleet.SCHEMA + ';' + fleet_learnings.SCHEMA + ';' + LEARNED_FIXES).split(';'):
                 if statement.strip():
                     raw.execute(statement)
-            for name in [r[0] for r in raw.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'mc_learning_changes_%'")]:
+            for name in [r[0] for r in raw.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND (name LIKE 'mc_learning_changes_%' OR name LIKE 'mc_learned_fixes_%')")]:
                 raw.execute(f'DROP TRIGGER {name}')
             raw.execute("INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES('f1','a','process',?,0.9,'r','2026-11-01')", (LEARNED,))
             raw.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES('f1','b',?,'me','2026-11-01')", (LEARNED_TOO,))
