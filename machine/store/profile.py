@@ -119,6 +119,9 @@ def recap_day(value, with_time=False):
 # What quality_report reads (a to-do's first signal's kind too, which doesn't change), kept by their change counters
 QUALITY_TABLES = ('suggestions', 'decisions', 'note_kinds', 'action_jobs', 'draft_edits', 'rule_changes')
 QUALITY = stamps.Kept(4)
+# Decided to-dos (worth it or dismissed) before a share of them says anything: How it's going waits for this many in its
+# 30 days, and a review names a source only with this many.
+QUALITY_ENOUGH = 3
 
 
 def _quality_of(rows, days, since, end):
@@ -643,7 +646,7 @@ class ProfileStore:
         b = self.behaviour(days)
         return {**current, 'previous': {k: before[k] for k in ('hit_rate', 'first_time_rate', 'finished_rate', 'cards')},
                 'sent_as_written': b['sent_as_written'], 'sent_edited': b['sent_edited'], 'trend': self.quality_trend(),
-                'notes': self.note_kind_counts(days)}
+                'notes': self.note_kind_counts(days), 'enough': QUALITY_ENOUGH}
 
     def quality_trend(self, days=14, weeks=8):
         """Hit rate per local day and per week (from Monday), oldest first, so progress shows.
@@ -674,7 +677,7 @@ class ProfileStore:
         """Which sources' cards were worth it, for reviews. Only sources with enough decided cards."""
         q = self.quality(days)
         lines = [f"- {source}: {n['worth_it']} of {n['worth_it'] + n['dismissed']} worth it" for source, n in
-                 sorted(q['by_source'].items(), key=lambda x: -(x[1]['worth_it'] + x[1]['dismissed'])) if n['worth_it'] + n['dismissed'] >= 3]
+                 sorted(q['by_source'].items(), key=lambda x: -(x[1]['worth_it'] + x[1]['dismissed'])) if n['worth_it'] + n['dismissed'] >= QUALITY_ENOUGH]
         if not lines:
             return ''
         return f"Cards in the last {days} days by source (worth it = Do it, Send or done; the rest dismissed):\n" + '\n'.join(lines)

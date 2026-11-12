@@ -151,6 +151,8 @@ class HitRate(Base):
         with patch_everywhere(a, 'now', return_value='2026-10-15T10:00:00+00:00'):
             self.assertEqual(self.store.quality_trend()['first'], '2026-10-12')
         self.assertIn('trend', self.store.quality_report())
+        # how many decided to-dos How it's going waits for (QUALITY_ENOUGH), so the page says it and counts toward it
+        self.assertEqual(self.store.quality_report()['enough'], 3)
 
     def test_the_report_is_kept_between_polls_until_a_to_do_or_decision_changes(self):
         """Every status poll sends the quality report: worked out once, then kept until a to-do, a decision, a send or a

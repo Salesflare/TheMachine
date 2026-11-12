@@ -73,7 +73,7 @@ Learning shows what The Machine learned from you and how well its to-dos work. E
 - **Changes**: what it picked up from your edits, dismissals and chats, each with **Undo**. See [Writing](writing.md#it-keeps-learning).
 - **Decisions**: a timeline of your choices on to-dos.
 - **Shared**: learnings to share with The Machine team, and votes waiting for you, when there are any. See [Share learnings](share-learnings.md).
-- **How it's going**: four numbers for the last 30 days. Higher is better.
+- **How it's going**: four numbers for the last 30 days. Higher is better. They start after 3 decided to-dos (acted on or dismissed); until then it shows how many you've decided so far.
   - **Worth it**: of the to-dos you decided, how many you acted on (**Do it**, sent or done) instead of dismissing.
   - **First try**: of the to-dos you started with **Do it**, how many needed no correction afterward.
   - **Finished**: of the to-dos you started with **Do it**, how many finished without you asking it to keep going or try again.
