@@ -15,7 +15,9 @@ const person=(n,i)=>({id:'email:p'+i+'@example.org',kind:'person',name:n,strengt
 let graph={people:['Ann Example','Bo Sample','Cy Test'].map(person),quiet:[],new:[],
  projects:[{id:'project:1',kind:'project',name:'Renewal',state:'active',last_at:day,signals:3,people:['Ann Example']}],
  orgs:[{id:'org:example.org',kind:'org',name:'Example Org',signals:2,last_at:day}],warmup:[]};
-const conn=(id,service,extra={})=>({id,service,display_name:id,email:'owner@example.org',boundary:'work',last_success:now,state:'{}',...extra});
+// each source's group as the status gives it (views.source_group): its Connections tab
+const GROUP={gmail:'mail',calendar:'mail',slack:'chat',whatsapp:'chat',salesflare:'customers'};
+const conn=(id,service,extra={})=>({id,service,group:GROUP[service]||'other',display_name:id,email:'owner@example.org',boundary:'work',last_success:now,state:'{}',...extra});
 const connectors=[conn('mail','gmail'),conn('cal','calendar'),conn('team-chat','slack',{error:'slack_auth_failed'}),conn('wa','whatsapp'),conn('phone','android'),conn('crm','salesflare')];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');

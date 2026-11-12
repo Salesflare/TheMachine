@@ -7,10 +7,11 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.some(x=>x.s
 // Connections' sub-tabs: the sources by kind, then saved sign-ins and the reviews. A tab with a source that needs
 // the owner's help (orange) shows how many (amber ones retry or catch up by themselves); the first such tab opens
 // unless one was picked. Like every tab row, a number means something needs you: Sign-ins has none (a saved sign-in never needs anything), Friends only when waiting.
-const HEALTH_GROUPS={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',imap:'mail',slack:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',discord:'chat',teams:'chat'};  // Android sits in Other sources: most phones (iPhones) have no notification feed to give
-const healthGroup=s=>HEALTH_GROUPS[s]||'other';
-function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c.service)===g&&connectorTone(c)==='orange').length;
- const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c.service)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
+// A card's tab is its source's group in + Add (the status gives it: views.source_group), so a new source can't land on the wrong
+// tab: Mail and calendar, Chat, and Other sources for every other group. Android sits in Other: most phones have no feed to give.
+const HEALTH_TABS={mail:'mail',chat:'chat'},healthGroup=c=>HEALTH_TABS[c.group]||'other';
+function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c)===g&&connectorTone(c)==='orange').length;
+ const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
  panes.push({id:'add',label:'+ Add'});
  if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins'});panes.push({id:'reviews',label:'Checks'});
@@ -344,7 +345,7 @@ function renderConnectRun(){const r=connectRun,box=$('#connect-add'),q=r.questio
 // After a source is added the running service reads it at once (live), or restarts to: wait until it answers with the new account,
 // then move to that account's card, which shows how its first sync goes (the + Add pane says so until then).
 const connectCard=r=>r?.account&&(state.connectors||[]).find(c=>c.id===r.account)||null;
-function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if(!c)return;showHealthPane(healthGroup(c.service));
+function cardShow(id,flash){const c=(state.connectors||[]).find(x=>x.id===id);if(!c)return;showHealthPane(healthGroup(c));
  const el=[...document.querySelectorAll('#connectors>article')].find(a=>a.dataset.conn===id);if(!el)return;el.scrollIntoView({block:'center',behavior:'smooth'});
  if(flash){el.classList.add('conn-new');setTimeout(()=>el.classList.remove('conn-new'),4000)}}
 // Change on a guessed Work or Personal: its card, with Details open on the choice
@@ -533,7 +534,7 @@ function connSubtitle(c){const kind=c.service==='docs'&&c.docs_provider==='googl
 const LOGO_NAME={salesflare:'crm'},connLogo=c=>connectLogo({service:c.service},c.service==='docs'&&c.docs_provider==='google'?'google_docs':LOGO_NAME[c.service]||c.service);
 function connectorCard(c,open){
 const unit={calendar:'events',outlook_calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes',salesforce:'updates'}[c.service]||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
-return html`<article data-group="${healthGroup(c.service)}" data-conn="${c.id}"><div class="conn-head">${connLogo(c)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
+return html`<article data-group="${healthGroup(c)}" data-conn="${c.id}"><div class="conn-head">${connLogo(c)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
 <p class="connection-status">${connectorHealth(c).text}</p>
 ${connWhat(c)}
 ${synced?html`<div class="figures">${connFigures(c,unit).map(([n,label])=>html`<div><b>${(n||0).toLocaleString(DL)}</b><span>${t(label)}</span></div>`)}</div>

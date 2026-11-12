@@ -46,8 +46,8 @@ const SUGGESTED=[{name:'trello',why:'unfinished',count:0},{name:'stripe',why:'ma
 let suggested=SUGGESTED;
 // Connections, Mail and calendar tab: the catch-all card (Other email) after the others, though the config lists it first
 const now=new Date().toISOString();
-const CARDS=[{id:'imap',service:'imap',last:true,display_name:'Other email',email:'me@mail.example',transport:'imap',boundary:'personal',events:3,recent_events:1,last_success:now},
- {id:'gmail',service:'gmail',display_name:'Gmail',email:'me@gmail.example',transport:'broker',boundary:'personal',events:5,recent_events:2,last_success:now}];
+const CARDS=[{id:'imap',service:'imap',last:true,group:'mail',display_name:'Other email',email:'me@mail.example',transport:'imap',boundary:'personal',events:3,recent_events:1,last_success:now},
+ {id:'gmail',service:'gmail',group:'mail',display_name:'Gmail',email:'me@gmail.example',transport:'broker',boundary:'personal',events:5,recent_events:2,last_success:now}];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const logo=/^\/brand\/logos\/([a-z_]+\.(svg|png))$/.exec(url.pathname);  // the logos, so the shots show them
