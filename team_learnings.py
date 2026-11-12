@@ -40,6 +40,7 @@ import datetime as dt
 import hashlib
 import json
 import re
+import sqlite3
 import uuid
 from pathlib import Path
 
@@ -446,11 +447,19 @@ def _owner_facts(db):
 
 def personal_cards(db, ids, accounts):
     """Which of these to-dos are in the Personal area, the way their label says (machine.store.facts.suggestion_scope:
-    pinned Personal, or no Work account among their accounts)."""
+    pinned Personal, or no Work account among their accounts). One the owner added without an area that nothing placed
+    yet (owner_area_open) counts as Personal too: its area is a stand-in until the review reads it, so it stays private."""
     from machine.store.facts import suggestion_scope
+    from machine.store.decisions import owner_area_open
     ids = sorted({i for i in ids if i})
     rows = _rows(db, f"SELECT id,account_ids,area FROM suggestions WHERE id IN ({','.join('?' * len(ids)) or 'NULL'})", ids)
-    return {r['id'] for r in rows if suggestion_scope(r['account_ids'], accounts or [], r.get('area')) == 'personal'}
+    def unplaced(card_id):
+        try:
+            return bool(owner_area_open(db, card_id))
+        except (sqlite3.Error, TypeError, ValueError, IndexError):
+            return False
+    return {r['id'] for r in rows if suggestion_scope(r['account_ids'], accounts or [], r.get('area')) == 'personal'
+            or (not r.get('area') and unplaced(r['id']))}
 
 
 def _fact_card(db, ref):

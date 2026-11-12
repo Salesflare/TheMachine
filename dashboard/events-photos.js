@@ -18,13 +18,21 @@ document.head.append(Object.assign(document.createElement('style'),{id:'wa-photo
  #wa-photo-view[open]:not(#palette):not(#new-card){display:flex;align-items:center;justify-content:center}#wa-photo-view img{max-width:100vw;max-height:84dvh;border-radius:0}#wa-photo-view .wa-photo-close{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px}}
 `}));
 const PHOTO_DATA=/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
-const photoSrc=p=>PHOTO_DATA.test(p?.src||'')?p.src:/^wp_[0-9a-f]{20}$/.test(p?.id||'')?'api/whatsapp-photo?id='+p.id:'';
+// Images the owner added (chat_files.py: New to-do, a share, the chat) show the same way: a thumbnail, tap for full size.
+const photoSrc=p=>PHOTO_DATA.test(p?.src||'')?p.src:/^wp_[0-9a-f]{20}$/.test(p?.id||'')?'api/whatsapp-photo?id='+p.id:/^cf_[0-9a-f]{20}$/.test(p?.id||'')?'api/chat-file?id='+p.id:'';
 const photoThumb=p=>{const u=photoSrc(p);return u?html`<button type="button" class="wa-photo" data-photo="${u}" data-alt="${p.alt||''}" aria-label="${t('Open the photo')}"><img src="${u}" alt="${p.alt||t('Photo')}" loading="lazy" decoding="async"></button>`:''};
-const photoThumbs=list=>(list||[]).some(photoSrc)?html`<div class="wa-photos">${list.slice(0,4).map(photoThumb)}</div>`:'';
+const photoThumbs=(list,most=4)=>(list||[]).some(photoSrc)?html`<div class="wa-photos">${list.slice(0,most).map(photoThumb)}</div>`:'';
+// A file's name as the owner reads it, for every file they added: its own name, unless a camera, phone or screenshot
+// tool made one up (PXL_20261112_175613197.jpg, IMG_0042.jpg, Screenshot 2026-11-12 at 18.56.13.png, a pasted image):
+// then what it is, "Photo" for an image, else its kind ("PDF"). The file keeps its real name on download and in mail.
+const MADE_UP_NAME=/^(?:pxl|img|image|mvimg|dsc[fn]?|dcim|photo|pic|picture|screenshot|screen ?shot|scan|whatsapp image|signal|pasted image)?[\s_~().-]*(?:\d[\s\d_~().-]*(?:at[\s\d_~().-]*)?(?:wa\d+)?(?:\.[a-z]+)?)?$/i;
+const madeUpName=name=>{const stem=String(name||'').replace(/\.[a-z0-9]{1,5}$/i,'').trim();return !stem||/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(stem)||MADE_UP_NAME.test(stem)};
+const fileLabel=f=>!madeUpName(f?.name)?String(f.name):/^image\//.test(f?.type||'')?t('Photo'):((String(f?.name||'').match(/\.([a-z0-9]{1,5})$/i)||[])[1]||'').toUpperCase()||String(f?.name||'');
+const filePhotos=fs=>(fs||[]).filter(f=>/^image\//.test(f?.type||'')).map(f=>({id:f.id,alt:fileLabel(f)}));
 function openPhoto(u,alt){let d=$('#wa-photo-view');
  if(!d){d=Object.assign(document.createElement('dialog'),{id:'wa-photo-view'});d.setAttribute('aria-label',t('Photo'));document.body.append(d);
   d.addEventListener('click',e=>{if(e.target===d||e.target.closest('[data-photo-close]'))d.close()})}
- if(!PHOTO_DATA.test(u)&&!/^api\/whatsapp-photo\?id=wp_[0-9a-f]{20}$/.test(u))return;
+ if(!PHOTO_DATA.test(u)&&!/^api\/(?:whatsapp-photo\?id=wp|chat-file\?id=cf)_[0-9a-f]{20}$/.test(u))return;
  setHTML(d,html`<button type="button" class="wa-photo-close" data-photo-close aria-label="${t('Close the photo')}">×</button><img src="${u}" alt="${alt||t('Photo')}">`);d.showModal();d.querySelector('[data-photo-close]').focus()}
 document.addEventListener('click',e=>{const b=e.target.closest?.('button.wa-photo');if(!b)return;e.preventDefault();e.stopPropagation();openPhoto(b.dataset.photo,b.dataset.alt)},true);
 // The WhatsApp connection's switches, under Details like its other switches (whatsapp_images_app.whatsapp_photos_action):

@@ -38,7 +38,7 @@ Une tâche liée à un projet affiche le nom du projet sur la ligne sous son tit
 
 **Domaine** sous **Détails** déplace la tâche vers votre autre espace. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
 
-Quand une tâche a besoin d’un autre espace pour avancer et que tous les messages dont elle vient s’y trouvent, elle s’y déplace toute seule et continue. Sinon, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule. Une tâche ajoutée sans choisir Travail ou Perso se déplace toute seule dès qu’elle sait où elle va.
+Quand une tâche a besoin d’un autre espace pour avancer et que tous les messages dont elle vient s’y trouvent, elle s’y déplace toute seule et continue. Sinon, elle le demande avec un bouton **Déplacer vers Travail**. Rien ne bouge avant que vous appuyiez ; ensuite, elle continue toute seule. Une tâche ajoutée sans choisir Travail ou Perso se déplace toute seule dès qu’elle sait où elle va. D’ici là, elle n’indique ni Travail ni Perso et reste privée.
 
 Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle vient, même dans la boîte d’une autre entreprise. Si elle a besoin d’autres messages d’un autre espace, elle le demande avec **Utiliser cet e-mail pour cette tâche** ; un appui les ajoute et elle continue. Le courrier pour une autre de vos entreprises va dès le départ dans les tâches de cette entreprise. Une tâche de votre vie privée, comme votre famille qui écrit à votre adresse pro, est Perso dès le départ.
 
@@ -122,4 +122,4 @@ Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie
 - **Message** : joignez le message concerné : un e-mail, Slack, Teams, WhatsApp, Telegram ou tout autre message que The Machine a reçu. La recherche porte sur le texte ou l’expéditeur. Chaque résultat indique sa provenance, son expéditeur et sa date.
 - **Fichiers** : touchez le trombone dans le champ, collez une capture d’écran ou déposez des fichiers sur le formulaire. Sur un téléphone, vous pouvez aussi prendre une photo. Jusqu’à 5 fichiers, des mêmes types et tailles que dans le chat (voir [Ajouter des fichiers](card-chat.md#add-files)). × en retire un.
 
-Les fichiers restent avec la tâche : ils s’affichent sur la tâche et dans son chat, et The Machine les lit en travaillant dessus. Des fichiers seuls suffisent : The Machine lit le texte d’un PDF ou d’un fichier texte et remplit la tâche à partir de lui.
+Les fichiers restent avec la tâche : ils s’affichent sur la tâche et dans son chat, et The Machine les lit en travaillant dessus. Des fichiers seuls suffisent : The Machine lit le texte d’un PDF ou d’un fichier texte et remplit la tâche à partir de lui. Une photo s’affiche en petite image : touche-la pour la voir en grand.

@@ -38,7 +38,7 @@ Een to-do bij een project toont de naam van het project in de regel onder de tit
 
 **Gebied** onder **Details** verplaatst de to-do naar je andere gebied. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
 
-Heeft een to-do een ander gebied nodig om verder te kunnen en komen de berichten waaruit hij ontstond allemaal daarvandaan, dan verhuist hij zelf en gaat hij verder. Anders vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder. Een to-do die je zonder Werk of Privé toevoegde, verhuist zelf zodra hij weet waar hij hoort.
+Heeft een to-do een ander gebied nodig om verder te kunnen en komen de berichten waaruit hij ontstond allemaal daarvandaan, dan verhuist hij zelf en gaat hij verder. Anders vraagt hij het met een knop **Naar Werk verplaatsen**. Er verhuist niets tot je erop tikt; daarna gaat hij zelf verder. Een to-do die je zonder Werk of Privé toevoegde, verhuist zelf zodra hij weet waar hij hoort. Tot dan staat er geen Werk of Privé bij, en blijft hij privé.
 
 Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf. Een to-do uit je eigen leven, zoals familie die naar je werkadres mailt, is meteen Privé.
 
@@ -122,4 +122,4 @@ Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste 
 - **Bericht**: voeg het bericht toe waarover het gaat: een e-mail, Slack, Teams, WhatsApp, Telegram of elk ander bericht dat The Machine heeft. Zoek op tekst of afzender. Elk resultaat toont waar het vandaan komt, wie het stuurde en wanneer.
 - **Bestanden**: tik op de paperclip in het vak, plak een screenshot of sleep bestanden naar het formulier. Op een telefoon kun je ook een foto maken. Maximaal 5 bestanden, dezelfde soorten en groottes als in de chat (zie [Bestanden toevoegen](card-chat.md#add-files)). × haalt er een weg.
 
-De bestanden blijven bij de to-do: ze staan erop en in de chat ervan, en The Machine leest ze als hij eraan werkt. Alleen bestanden is genoeg: The Machine leest de tekst van een pdf of tekstbestand en vult de to-do daarmee in.
+De bestanden blijven bij de to-do: ze staan erop en in de chat ervan, en The Machine leest ze als hij eraan werkt. Alleen bestanden is genoeg: The Machine leest de tekst van een pdf of tekstbestand en vult de to-do daarmee in. Een foto staat er als klein plaatje: tik erop om hem groot te zien.

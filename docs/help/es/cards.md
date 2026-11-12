@@ -38,7 +38,7 @@ Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su tí
 
 **Área** en **Detalles** pasa la tarea a tu otra área. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
 
-Cuando una tarea necesita otra área para seguir y todos los mensajes de los que salió están allí, se mueve sola y sigue. Si no, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va.
+Cuando una tarea necesita otra área para seguir y todos los mensajes de los que salió están allí, se mueve sola y sigue. Si no, lo pide con un botón **Mover a Trabajo**. Nada se mueve hasta que lo tocas; después sigue sola. Una tarea que añadiste sin elegir Trabajo o Personal se mueve sola en cuanto sabe dónde va. Hasta entonces no dice Trabajo ni Personal, y queda privada.
 
 Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
 
@@ -122,4 +122,4 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 - **Mensaje**: adjunta el mensaje del que trata: un correo, Slack, Teams, WhatsApp, Telegram o cualquier otro mensaje que tenga The Machine. Busca por texto o remitente. Cada resultado muestra de dónde viene, quién lo envió y cuándo.
 - **Archivos**: toca el clip en el cuadro, pega una captura de pantalla o suelta archivos en el formulario. En un teléfono también puedes hacer una foto. Hasta 5 archivos, de los mismos tipos y tamaños que en el chat (consulta [Añade archivos](card-chat.md#add-files)). × quita uno.
 
-Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella. Basta con archivos: The Machine lee el texto de un PDF o de un archivo de texto y completa la tarea con él.
+Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella. Basta con archivos: The Machine lee el texto de un PDF o de un archivo de texto y completa la tarea con él. Una foto se ve como una imagen pequeña: tócala para verla en grande.

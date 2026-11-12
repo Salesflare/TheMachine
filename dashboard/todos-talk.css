@@ -62,7 +62,7 @@ body:has(#talk-view:not([hidden])) .site-footer{display:none}
 .chat-layout.chat-drop .chat-box{border-color:var(--c-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent) 25%,transparent)}
 .chat-drop-hint{display:none}.chat-layout.chat-drop .chat-drop-hint{display:block;margin:0 0 8px;font-size:var(--chat-meta);color:var(--c-accent);font-weight:600;text-align:center}
 .chat-you-files{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 6px}.chat-you-files .chat-files{margin:0;justify-content:flex-end}
-.chat-you-img{display:block;max-width:min(240px,100%);border-radius:14px;overflow:hidden;border:1px solid var(--c-line)}.chat-you-img img{display:block;max-width:100%;max-height:240px;object-fit:cover}
+.chat-you-img{display:block;max-width:min(240px,100%)}.chat-you-img .wa-photo{width:auto;height:auto;max-width:100%;border-radius:14px;border-color:var(--c-line)}.chat-you-img .wa-photo img{width:auto;height:auto;max-width:100%;max-height:240px;object-fit:cover}
 /* On a computer the list and the thread each scroll on their own inside the window; the page itself stays put */
 @media(min-width:861px){
   html:has(body.chat-open #inbox:not([hidden])),body.chat-open:has(#inbox:not([hidden])){height:100dvh;overflow:hidden}

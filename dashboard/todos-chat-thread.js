@@ -311,9 +311,10 @@ function chatSendState(){const t=$('#chat-input'),b=$('[data-chat-send]'),x=$('[
  // With Talk live here, an empty box shows the wave where Send goes (as Send has nothing to send then)
  const w=$('.chat-compose [data-talk]'),talkHere=!!w&&talkOk();if(w)w.hidden=!talkHere||has||stop;
  b.disabled=!has||!ready;b.hidden=stop||talkHere&&!has;if(x){x.hidden=!stop;if(!stop)x.disabled=false}}
-// Files the owner added (chat_files.py), on their message or on the to-do they made: images as pictures, the rest as chips
-function chatAttHTML(fs){fs=fs||[];if(!fs.length)return '';const imgs=fs.filter(f=>/^image\//.test(f.type)),docs=fs.filter(f=>!/^image\//.test(f.type)),url=f=>'api/chat-file?id='+encodeURIComponent(f.id);
- return html`<div class="chat-you-files">${imgs.map(f=>html`<a class="chat-you-img" href="${safeHref(url(f))}" target="_blank" rel="noopener" title="${f.name}"><img src="${safeHref(url(f))}" alt="${f.name}" loading="lazy"></a>`)}${docs.length?html`<div class="chat-files">${docs.map(f=>html`<a class="agent-file via-file" href="${safeHref(url(f))}" target="_blank" rel="noopener" download="${f.name}">${f.name}</a>`)}</div>`:''}</div>`}
+// Files the owner added (chat_files.py), on their message or on the to-do they made: images as pictures that open full
+// size (events-photos.js), the rest as chips; each by fileLabel, as on the to-do
+function chatAttHTML(fs){fs=fs||[];if(!fs.length)return '';const docs=fs.filter(f=>!/^image\//.test(f.type)),url=f=>'api/chat-file?id='+encodeURIComponent(f.id);
+ return html`<div class="chat-you-files">${filePhotos(fs).map(p=>html`<span class="chat-you-img">${photoThumb(p)}</span>`)}${docs.length?html`<div class="chat-files">${docs.map(f=>html`<a class="agent-file via-file" href="${safeHref(url(f))}" target="_blank" rel="noopener" download="${f.name}">${fileLabel(f)}</a>`)}</div>`:''}</div>`}
 // Files added to the next message (chat_files.py): from Add files, a paste or a drop, each uploaded at once and sent
 // with the message. The same limits as the service's: they say so before anything uploads.
 const CHAT_IMAGE=/\.(png|jpe?g|gif|webp)$/i,CHAT_EXT=/\.(png|jpe?g|gif|webp|pdf|txt|md|csv|tsv|json|log|rtf|eml|ics|docx|xlsx|pptx|odt|ods)$/i;
@@ -324,7 +325,7 @@ const STOP=html`<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" wi
 const FILE_ICO=html`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.8h8l4.2 4.2V21.2H6z M14 2.8V7h4.2"/></svg>`;
 let chatPending=[];
 const chatSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
-const chatTrayHTML=(list=chatPending,attr='att-remove')=>html`${list.map(f=>{const img=f.type.startsWith('image/')&&f.url;return html`<div class="chat-att${img?html` img`:''}${f.state==='up'?html` up`:''}" title="${f.name}">${img?html`<img src="${safeHref(f.url)}" alt="${f.name}">`:html`<span class="chat-att-ico">${FILE_ICO}</span>`}<span class="chat-att-name">${f.name}<small>${f.state==='up'?'Uploading…':chatSize(f.size)}</small></span><button type="button" class="chat-att-x" data-${attr}="${f.key}" aria-label="Remove ${f.name}" title="Remove">×</button></div>`})}`;
+const chatTrayHTML=(list=chatPending,attr='att-remove')=>html`${list.map(f=>{const img=f.type.startsWith('image/')&&f.url,label=fileLabel(f);return html`<div class="chat-att${img?html` img`:''}${f.state==='up'?html` up`:''}" title="${label}">${img?html`<img src="${safeHref(f.url)}" alt="${label}">`:html`<span class="chat-att-ico">${FILE_ICO}</span>`}<span class="chat-att-name">${label}<small>${f.state==='up'?'Uploading…':chatSize(f.size)}</small></span><button type="button" class="chat-att-x" data-${attr}="${f.key}" aria-label="Remove ${label}" title="Remove">×</button></div>`})}`;
 function chatTray(){const t=$('#chat-tray');if(t){setHTML(t,chatTrayHTML());t.hidden=!chatPending.length}chatSendState()}
 function chatFileError(msg){const e=$('#chat-file-error');if(!e){if(msg)toast(msg,true);return}e.textContent=msg||'';e.hidden=!msg}
 const chatDataUrl=f=>new Promise((ok,fail)=>{const r=new FileReader();r.onload=()=>ok(String(r.result));r.onerror=()=>fail(Error('That file couldn’t be read'));r.readAsDataURL(f)});

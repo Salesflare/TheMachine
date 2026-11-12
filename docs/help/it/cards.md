@@ -38,7 +38,7 @@ Un'attività su un progetto mostra il nome del progetto nella riga sotto il tito
 
 **Area** in **Dettagli** sposta l'attività nella tua altra area. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
 
-Quando un'attività ha bisogno di un'altra area per andare avanti e i messaggi da cui nasce sono tutti lì, si sposta da sola e continua. Altrimenti lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola. Un'attività aggiunta senza scegliere Lavoro o Personale si sposta da sola appena sa dove va.
+Quando un'attività ha bisogno di un'altra area per andare avanti e i messaggi da cui nasce sono tutti lì, si sposta da sola e continua. Altrimenti lo chiede con un pulsante **Sposta in Lavoro**. Niente si sposta finché non lo tocchi; poi continua da sola. Un'attività aggiunta senza scegliere Lavoro o Personale si sposta da sola appena sa dove va. Fino ad allora non indica né Lavoro né Personale e resta privata.
 
 Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche nella casella di un'altra azienda. Se le servono altri messaggi da un'altra area, lo chiede con **Usa questa email per questa attività**; un tocco li aggiunge e continua. La posta per un'altra delle tue aziende va subito tra le attività di quell'azienda. Un'attività della tua vita privata, come la famiglia che scrive al tuo indirizzo di lavoro, è Personale fin dall'inizio.
 
@@ -122,4 +122,4 @@ Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo
 - **Messaggio**: allega il messaggio a cui si riferisce: un'email, Slack, Teams, WhatsApp, Telegram o qualsiasi altro messaggio che The Machine ha. Cerca per testo o mittente. Ogni risultato mostra da dove arriva, chi l'ha inviato e quando.
 - **File**: tocca la graffetta nel riquadro, incolla uno screenshot o trascina i file sul modulo. Su un telefono puoi anche scattare una foto. Fino a 5 file, degli stessi tipi e dimensioni della chat (vedi [Aggiungi file](card-chat.md#add-files)). × ne toglie uno.
 
-I file restano con l'attività: compaiono sull'attività e nella sua chat, e The Machine li legge quando ci lavora. Bastano i file: The Machine legge il testo di un PDF o di un file di testo e compila l’attività da lì.
+I file restano con l'attività: compaiono sull'attività e nella sua chat, e The Machine li legge quando ci lavora. Bastano i file: The Machine legge il testo di un PDF o di un file di testo e compila l’attività da lì. Una foto appare come una piccola immagine: toccala per vederla a schermo intero.

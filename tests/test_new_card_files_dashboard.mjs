@@ -9,7 +9,8 @@ const {chromium}=await import('./browser.mjs');
 // screenshot or a drop on the form adds them. Each uploads at once under the form's draft key (chat_upload with draft,
 // X-Upload: chat-file) and waits in a tray with a remove button; too big or unknown files say so before anything
 // uploads, and a refused upload says why. Adding the to-do sends the draft key and the file ids with card_new; closing
-// the form takes the uploads back. The card shows its files, and its chat shows them with the owner's own words.
+// the form takes the uploads back. The card shows its files (images as thumbnails), and its chat shows them with the
+// owner's own words.
 // SHOT_DIR=<folder> also saves screenshots; DASHBOARD=<file> runs another dashboard.html (for before shots).
 const dashboard=await dashboardPage(process.env.DASHBOARD);
 const shotsOnly=!!process.env.DASHBOARD;
@@ -52,6 +53,13 @@ try{
   await page.goto(base);await page.locator('#task-'+'c1'.repeat(8)).waitFor();
   await page.evaluate(()=>ncOpen());const dialog=page.locator('#new-card');await dialog.waitFor();
   if(shotsOnly){await page.locator('#nc-text').fill('Check the venue quote against the brief');await shot('before-new');await context.close();continue}
+  // A name a camera, phone or screenshot tool made up reads as what the file is; a name someone gave it stays
+  assert.deepEqual(await page.evaluate(()=>[['PXL_20261112_175613197.jpg','image/jpeg'],['PXL_20261112_175613197.PORTRAIT.jpg','image/jpeg'],['IMG_0042.JPG','image/jpeg'],
+   ['IMG-20261112-WA0003.jpg','image/jpeg'],['Screenshot 2026-11-12 at 18.56.13.png','image/png'],['Screenshot_20261112-185613.png','image/png'],
+   ['WhatsApp Image 2026-11-12 at 18.56.13.jpeg','image/jpeg'],['image.png','image/png'],['3F2504E0-4F89-11D3-9A0C-0305E82C3301.jpg','image/jpeg'],
+   ['Scan_20261112.pdf','application/pdf'],['Whiteboard.png','image/png'],['Photo of the venue.jpg','image/jpeg'],['Quote 2026.pdf','application/pdf']]
+   .map(([name,type])=>fileLabel({name,type}))),
+   ['Photo','Photo','Photo','Photo','Photo','Photo','Photo','Photo','Photo','PDF','Whiteboard.png','Photo of the venue.jpg','Quote 2026.pdf']);
   // The paperclip opens the file picker (on a phone: files, photos or the camera); every type the chat takes
   assert.ok(await page.locator('#nc-attach').isVisible());
   assert.equal(await page.locator('#nc-file').getAttribute('accept'),await page.evaluate(()=>CHAT_ACCEPT));
@@ -108,8 +116,14 @@ try{
   // The card shows its files; its chat shows them with the owner's own words
   const card=page.locator('#task-'+NEW);await card.waitFor();
   await card.locator('.card-files a',{hasText:'Quote.pdf'}).waitFor();
-  assert.equal(await card.locator('.card-files a').count(),4);
+  assert.equal(await card.locator('.card-files a').count(),1,'only the PDF is a chip');
   assert.match(await card.locator('.card-files a',{hasText:'Quote.pdf'}).getAttribute('href'),/^api\/chat-file\?id=cf_/);
+  // Its images are thumbnails (the pasted one called a photo, never its made-up name), and a tap opens one full size
+  assert.deepEqual(await card.locator('.wa-photo img').evaluateAll(l=>l.map(i=>i.alt)),['Whiteboard.png','Photo','dropped.png']);
+  assert.match(await card.locator('.wa-photo img').first().getAttribute('src'),/^api\/chat-file\?id=cf_/);
+  await card.locator('.wa-photo').first().click();await page.locator('#wa-photo-view img').waitFor();
+  assert.match(await page.locator('#wa-photo-view img').getAttribute('src'),/^api\/chat-file\?id=cf_/);
+  await page.keyboard.press('Escape');await page.locator('#wa-photo-view').waitFor({state:'hidden'});
   await card.scrollIntoViewIfNeeded();await shot('card-files');
   await page.evaluate(id=>chatGo(id),NEW);
   await page.locator('#chat-log .chat-source.you .chat-you-img').first().waitFor();
