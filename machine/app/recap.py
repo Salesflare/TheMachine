@@ -18,7 +18,7 @@ from machine.config import LOG
 from machine.delivery.push import app_wake, push_node, quick_web
 from machine.delivery.telegram import DeliveryNotSent, telegram_request
 from machine.model_usage import telegram_account, telegram_on
-from machine.sources.android import android_app_name
+from machine.sources.android import android_app_shown
 from machine.sources.calendar import calendar_keys, calendar_owned
 from machine import names as display_names
 from machine.sources.connectors import UNNAMED
@@ -70,9 +70,8 @@ def recap_noise(db, since):
         elif kind == 'telegram.message' and m.get('chat_kind') == 'group' and m.get('chat_id'):
             where, rule = m.get('chat_name') or 'Telegram group', {'chats': [m['chat_id']]}
         elif kind == 'android.notification' and m.get('package_name'):
-            app = str(m.get('app_name') or android_app_name(m['package_name']))
-            app = app.rsplit('.', 1)[-1] if re.fullmatch(r'[\w]+(?:\.[\w]+)+', app) else app  # com.Slack → Slack
-            where, rule = app[:1].upper() + app[1:] + ' notifications', {'packages': [m['package_name']]}
+            app = android_app_shown(m['package_name'], m.get('app_name'))  # com.Slack → Slack, com.linkedin.android → LinkedIn
+            where, rule = app + ' notifications', {'packages': [m['package_name']]}
         elif kind in ('gmail.message', 'salesflare.email') and sender and re.search(r'(?i)no-?reply|notification|alert|digest|news|mailer|updates?@', sender):
             where, rule = sender, {'senders': [sender.lower()]}
         else:

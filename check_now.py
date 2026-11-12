@@ -21,7 +21,10 @@ import threading
 import time
 
 import abilities
+import graph
+from machine.sources.android import android_app_shown
 from machine.sources.gmail import machine_notice
+from machine.sources.slack import slack_named, slack_plain
 
 REST_SECONDS = 60             # after a check ends, a new press within this long shows it instead of starting another
 READ_WAIT = 180               # the sources' reads, at most this long
@@ -59,8 +62,8 @@ CHAT_KINDS = ('slack.message', 'whatsapp.message', 'telegram.message', 'teams.me
               'intercom.conversation', 'sms.message', 'signal.message', 'fleet.message')
 OWN_KINDS = ('machine.', 'gateway.')  # The Machine's own logs and alerts: nothing that came in
 MAIL_CHECK_HOURS = 12        # the To-dos page says what the last check of new messages found for this long after it
-MAIL_CHECK_THREADS = 40      # its list shows at most this many threads
-SAME_WHY = 3                 # one reason given for this many threads of one check is a label, not a reason
+MAIL_CHECK_THREADS = 120     # its list sends every thread: a review reads at most RUN_SIGNAL_BUDGET (120) messages
+SAME_WHY = 3                # one reason given for this many threads of one check is a label, not a reason
 
 
 def source_group(kind):
@@ -76,8 +79,9 @@ def mail_check(db, current=None, own=()):
     """What the last check that saw new messages found, from every source it read (email, chats, phone notifications,
     the rest), for the line on To-dos (docs/help/cards.md#last-check): when it ran, how many new messages of each kind
     (`counts`, `read` in all), how many new to-dos it made and how many of those are held until later, and one row per
-    thread or chat: its kind and newest message (to open it), who, the subject or the message's first words, and either
-    its new to-do or why it needed nothing (the review's finish_analysis no_todo, as stored: no model call here).
+    thread or chat: its kind and newest message (to open it) and when, who (by name: an app's name, never its package; a
+    Slack member's name, never their id), the subject or the message's first words in plain text, how many new messages
+    it holds when more than one (`n`: the rows add up to `read`), and either its new to-do or why it needed nothing (the review's finish_analysis no_todo, as stored: no model call here).
     Quality or nothing: a reason under three words, or the same one for SAME_WHY threads, is left out. The owner's own
     chat messages (from_me) and The Machine's own logs (OWN_KINDS) aren't new. `own`: the owner's addresses, so a
     thread shows who wrote to them rather than their own reply. None without such a check in the last MAIL_CHECK_HOURS."""
@@ -98,7 +102,8 @@ def mail_check(db, current=None, own=()):
         # nothing new for them: a thread only they wrote in is left out, and only messages to them count
         mail = [r for r in found if not str(r['kind']).startswith(OWN_KINDS) and not machine_notice(r['kind'], _meta(r['metadata']))]
         if any(not _from_owner(_meta(r['metadata']), own) for r in mail):
-            return _mail_view(db, review, items, {i['id'] for i in batch}, mail, current, own)
+            # a Slack member by name, never by id (slack_named): the sender, a DM's other person, a mention
+            return _mail_view(db, review, items, {i['id'] for i in batch}, slack_named(db, [dict(r) for r in mail]), current, own)
     return None
 
 
@@ -133,17 +138,64 @@ def _sender(value):
     return (name.strip().strip('"') or address).strip(), address.lower()
 
 
+def _slack_dm(row, meta):
+    return row['kind'] == 'slack.message' and (meta.get('conversation_type') == 'im' or str(meta.get('channel_name') or '').startswith('DM'))
+
+
+def _no_id(who):
+    """A name to show, or '' when all there is is a Slack member id or a stand-in for one: never shown."""
+    return '' if graph.SLACK_MEMBER.search(who) or graph.SOMEONE_ON_SLACK in who else who
+
+
 def _who_and_what(row, meta):
-    """A message that isn't email: who it's from and its first words (a chat), the app and what it said (a phone
-    notification), or who and its title (an update)."""
-    group, title, body = source_group(row['kind']), ' '.join(str(row['title'] or '').split()), _snippet(row['body'])
+    """A message that isn't email: who it's from and its first words (a chat), the app by name and what it said (a
+    phone notification), or who and its title (an update). Slack's link and mention markup reads as plain words, and a
+    Slack member is named (slack_named ran) or left out, never shown by id: a DM with no name is '' (a "Slack DM")."""
+    group, title, body = source_group(row['kind']), _snippet(row['title'], 1000), _snippet(row['body'])
+    if row['kind'] == 'slack.message':
+        title, body = _snippet(slack_plain(row['title']), 1000), _snippet(slack_plain(row['body']))
     if group == 'notification':
-        return str(meta.get('app_name') or meta.get('package_name') or ''), _snippet(f'{title}: {body}' if title and body else title or body)
+        app = android_app_shown(meta['package_name'], meta.get('app_name')) if meta.get('package_name') else str(meta.get('app_name') or '')
+        # the phone's feed puts the same words in both: say them once
+        said = body if title and body.startswith(title[:40]) else f'{title}: {body}' if title and body else title or body
+        return app, _snippet(said)
     who = str(meta.get('from') or meta.get('sender_display') or meta.get('sender_name') or meta.get('user_name') or '')
-    who = _sender(who)[0] if '<' in who or '@' in who else ' '.join(who.split())  # "Sam <U123>", an address, or a name as is
+    who = _no_id(_sender(who)[0] if '<' in who or '@' in who else ' '.join(who.split()))  # "Sam <U123>", an address, or a name as is
     if group == 'chat':
-        return who or str(meta.get('chat_name') or meta.get('channel_name') or title), body or _snippet(title)
+        if not who and not _slack_dm(row, meta):
+            place = str(meta.get('chat_name') or '') or (('#' + str(meta['channel_name'])) if meta.get('channel_name') else '') or title
+            who = _no_id(' '.join(place.split()))
+        return who, body or _snippet(title)
     return who, _snippet(title) or body
+
+
+ECHO_APPS = {  # a phone app whose messages also come in directly: its notification about one is that message again
+    'com.linkedin.android': ('linkedin.',), 'com.whatsapp': ('whatsapp.',), 'com.whatsapp.w4b': ('whatsapp.',),
+    'org.telegram.messenger': ('telegram.',), 'com.Slack': ('slack.',), 'com.microsoft.teams': ('teams.',),
+    'com.google.android.gm': EMAIL_KINDS, 'com.microsoft.office.outlook': EMAIL_KINDS, 'com.twitter.android': ('x.',),
+    'org.thoughtcrime.securesms': ('signal.',), 'com.intercom.android': ('intercom.',),
+}
+
+
+def _plain(text):
+    return ' '.join(str(text or '').casefold().split())
+
+
+def _echo(note, threads):
+    """A phone notification that only repeats a message this check also read directly (LinkedIn's "1 new message:
+    Sam - Hi there" next to Sam's LinkedIn message): its words hold the start of that message, and its sender's name
+    when the message is short."""
+    kinds = ECHO_APPS.get(note.get('package'))
+    if not kinds or 'todo' in note:
+        return False
+    said = note['said']
+    for thread in threads:
+        if thread is note or thread['source'] == 'notification' or not str(thread['kind']).startswith(kinds):
+            continue
+        name = _plain(thread['from'])
+        if any(head in said and (len(head) >= 12 or (name and name in said)) for head in thread['heads']):
+            return True
+    return False
 
 
 def _mail_view(db, review, items, batch, mail, current, own):
@@ -152,7 +204,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
         meta = _meta(row['metadata'])
         group, mine = source_group(row['kind']), _from_owner(meta, own)
         thread = threads.setdefault(_thread_key(row['account_id'], row['kind'], meta, row['id']),
-                                    {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'source': group, 'in': 0})
+                                    {'ids': [], 'from': '', 'subject': '', 'why': None, 'later': False, 'source': group, 'in': 0, 'heads': set()})
         thread['ids'].append(row['id'])
         thread['in'] += not mine
         thread['last'] = row['occurred_at']  # rows come oldest first
@@ -163,9 +215,18 @@ def _mail_view(db, review, items, batch, mail, current, own):
             if name and (address not in own or not thread['from']):
                 thread['from'] = name
             thread['subject'] = (row['title'] or '').strip() or thread['subject']
-        elif not mine or not thread['from']:
+            words = [thread['subject'], row['body']]
+        else:
             who, what = _who_and_what(row, meta)
-            thread['from'], thread['subject'] = who or thread['from'], what or thread['subject']
+            if not mine or not thread['from']:
+                thread['from'], thread['subject'] = who or thread['from'], what or thread['subject']
+            words = [what]
+            if group == 'notification':
+                thread['package'], thread['said'] = meta.get('package_name'), _plain(f"{row['title'] or ''} {row['body'] or ''}")
+            if _slack_dm(row, meta):
+                thread['dm'] = True
+        if not mine:
+            thread['heads'].update(h for h in (_plain(w)[:24] for w in words) if len(h) >= 4)
         item = items[row['id']]
         if item.get('no_todo'):
             thread['why'] = item['no_todo']
@@ -192,14 +253,21 @@ def _mail_view(db, review, items, batch, mail, current, own):
             thread.setdefault('held_until', later)
     # only the owner wrote in it: no new mail for them, unless their own mail made a to-do (a promise they made)
     threads = {key: thread for key, thread in threads.items() if thread['in'] or 'todo' in thread}
-    said = collections.Counter(' '.join(t['why'].casefold().split()).rstrip('.') for t in threads.values() if t['why'])
+    # a phone notification that repeats a message read directly is that message: one row, counted once
+    threads = {key: thread for key, thread in threads.items() if not _echo(thread, list(threads.values()))}
+    said =collections.Counter(' '.join(t['why'].casefold().split()).rstrip('.') for t in threads.values() if t['why'])
     rows = []
     # to-dos first, then the newest thread first
     for thread in sorted(sorted(threads.values(), key=lambda t: t['last'], reverse=True), key=lambda t: 'todo' in t, reverse=True):
         why = thread['why']
         if why and (len(why.split()) < 3 or said[' '.join(why.casefold().split()).rstrip('.')] >= SAME_WHY):
             why = None
-        row = {'from': thread['from'], 'subject': thread['subject'][:160], 'source': thread['source'], 'kind': thread['kind'], 'event': thread['open']}
+        row = {'from': thread['from'], 'subject': thread['subject'][:160], 'source': thread['source'], 'kind': thread['kind'], 'event': thread['open'],
+               'at': thread['last']}
+        if thread['in'] > 1:
+            row['n'] = thread['in']  # its new messages: the rows add up to the line's total
+        if thread.get('dm') and not thread['from']:
+            row['dm'] = True  # a Slack DM whose other person has no name yet: "Slack DM", never their id
         if 'todo' in thread:
             row['todo'] = thread['todo']
             if thread.get('held_until'):

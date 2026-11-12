@@ -597,6 +597,31 @@ def slack_ids_named(db, text, names=None):
     return graph.slack_text_named(text, names if names is not None else slack_name_table(db, found))
 
 
+def _slack_link(match):
+    target, label = match[1], (match[2] or '').strip()
+    if target.startswith('#'):
+        return '#' + (label or 'channel')
+    if target.startswith('@'):
+        return '@' + (label or graph.SOMEONE_ON_SLACK)
+    if target.startswith('!'):
+        return '@' + (label or target[1:].split('^')[0])
+    if label:
+        return label
+    if target.startswith('mailto:'):
+        return target[7:]
+    parts = urllib.parse.urlsplit(target)
+    return (parts.netloc.removeprefix('www.') + ('/…' if parts.path.strip('/') or parts.query else '')) if parts.netloc else target
+
+
+def slack_plain(text):
+    """Slack's mrkdwn as words people read in a list: "<https://x.example/a|the doc>" as "the doc", a bare link as
+    "x.example/…", "<#C1|deals>" as "#deals", "<!here>" as "@here", *bold*, _italic_ and ~struck~ without their marks,
+    and &amp; &lt; &gt; as the characters. Mentions are named first (slack_ids_named); one left is not shown as an id."""
+    text = re.sub(r'<([^<>|\s]+)(?:\|([^<>]*))?>', _slack_link, str(text or ''))
+    text = re.sub(r'(?<![\w*_~])([*_~])(?=\S)([^*_~\n]*?\S)\1(?![\w*_~])', r'\2', text)
+    return html.unescape(text)
+
+
 # Keys whose values are ids an agent passes back (event_id, channel_id, user_id, ...): kept as they are.
 SLACK_KEPT_KEY = re.compile(r'(^|_)(id|ids|ts|user|channel|cursor|url|key)$')
 

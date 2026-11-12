@@ -301,11 +301,21 @@ LAST_CHECK = {'minutes': (24, 19), 'todo_events': ['story:pricing:2'], 'emails':
      'That fixed it, the full export works now. Thanks!\n\nMatteo', 30, 'Thanks for the fix, nothing to answer'),
     ('check:news:0', 'Fieldnote Weekly <digest@fieldnote.example>', 'alex@lumenlabs.example', '', 'This week in sales tools',
      'Five new tools, two price changes and a guide to cleaner pipelines.', 33, 'Newsletter, nothing in it needs a reply'),
+    ('check:receipt:0', 'Harbor Rail <tickets@harborrail.example>', 'alex@lumenlabs.example', '', 'Your ticket to Lyon on Thursday',
+     'Seat 42, coach 7. Departs 08:12.', 35, 'A ticket receipt, the trip is booked'),
+    ('check:webinar:0', 'Pipeline Live <events@pipelinelive.example>', 'alex@lumenlabs.example', '', 'Starting in one hour: forecasting that holds up',
+     'Join with the link below.', 37, 'A webinar reminder you never signed up for'),
+    ('check:ooo:0', 'Femi Adeyemi <femi@kestrelenergy.example>', 'alex@lumenlabs.example', '', 'Out of office: back Monday',
+     'I am away until Monday with no email.', 39, 'An out-of-office reply, nothing to do'),
 ], 'chats': [  # key, account, kind, who, chat or channel, text, minutes ago, the review's reason
+    ('check:wa:1', 'home-whatsapp', 'whatsapp.message', 'Jamie Morgan', 'Jamie Morgan', 'Boarding now', 34, 'Just letting you know they landed'),
     ('check:wa:0', 'home-whatsapp', 'whatsapp.message', 'Jamie Morgan', 'Jamie Morgan', 'Landed! Taking the train home, see you at 7', 25,
      'Just letting you know they landed'),
     ('check:slack:0', 'work-slack', 'slack.message', 'Tomasz Nowak', 'general', 'Office is closed Friday for the move, the new keys are at the desk', 27,
      'Office news for everyone, nothing to do'),
+], 'phone': [  # key, the app's package (shown by its name, android_app_shown), what the notification said, minutes ago, the review's reason
+    ('check:phone:0', 'com.android.vending', 'Updates ready: 3 apps were updated', 29, 'App updates, nothing to do'),
+    ('check:phone:1', 'com.parcelpal.mobile.android', 'Your parcel is in the locker on Station Street', 31, 'A delivery notice, the parcel is in'),
 ]}
 
 
@@ -322,7 +332,10 @@ def last_check_data():
                  'message_ts': f'1762{minutes:06d}.000300'})
         events.append({'key': key, 'account_id': account, 'kind': kind, 'minutes_ago': minutes, 'title': chat if kind == 'whatsapp.message' else f'#{chat}: {who}',
                        'body': text, 'metadata': meta})
-    reasons = {key: why for key, *_, why in LAST_CHECK['emails'] + LAST_CHECK['chats']}
+    for key, package, text, minutes, _ in LAST_CHECK['phone']:  # stored as the phone's feed stores an app it has no label for
+        events.append({'key': key, 'account_id': 'home-phone', 'kind': 'android.notification', 'minutes_ago': minutes, 'title': text, 'body': text,
+                       'metadata': {'package_name': package, 'app_name': package, 'notification_key_hash': key.replace(':', '-'), 'truncated': True}})
+    reasons = {key: why for key, *_, why in LAST_CHECK['emails'] + LAST_CHECK['chats'] + LAST_CHECK['phone']}
     return events, {'minutes': list(LAST_CHECK['minutes']), 'events': [e['key'] for e in events] + LAST_CHECK['todo_events'], 'why': reasons}
 
 

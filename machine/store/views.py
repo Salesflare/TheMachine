@@ -47,6 +47,7 @@ from machine.chat import chat_result_files
 from machine.config import WORKSPACE
 from machine.faults import FAULT_WHERE
 from machine.sources.connectors import crm_sync_health, docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
+from machine.sources.android import android_app_shown
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
 from machine.store import history as history_store
@@ -416,6 +417,8 @@ class ViewsStore(ConversationStore):
             m = json.loads(r['metadata'])
             url = m.get('source_url')
             mine = m.get('from_me') or (r['kind'] == 'gmail.message' and _address(m.get('from')) in own)  # also from another address of theirs
+            if r['kind'] == 'android.notification':
+                m['app_name'] = android_app_shown(m.get('package_name'), m.get('app_name'))  # its app by name, never the package
             who = 'You' if mine else (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
                    or (('#' + m['channel_name']) if m.get('channel_name') else '') or '')
             body, details = r['body'], None

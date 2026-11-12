@@ -4677,6 +4677,7 @@
  "Skipped. The next one comes {}.": "Pulada. A próxima vem {}.",
  "Skipped: {}.": "Ignorados: {}.",
  "Slack": "Slack",
+ "Slack DM": "DM do Slack",
  "Slack DM with {} (a source)": "DM do Slack com {}",
  "Slack answered for another account": "O Slack respondeu por outra conta",
  "Slack button labels must say Send, such as Send to Sam": "Os rótulos de botão do Slack precisam dizer Send, como Send to Sam",

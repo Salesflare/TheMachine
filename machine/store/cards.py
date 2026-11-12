@@ -19,6 +19,7 @@ import meeting_mail
 from machine.store import outcomes
 from machine.cards import current_title, delivery_time, group_sender
 from machine.config import LOG
+from machine.sources.android import android_app_shown
 from machine.sources.calendar import calendar_owned, expiry_moment
 from machine.sources.connectors import load_connector
 from machine.store.review import CARD_OPEN, own_message
@@ -335,6 +336,8 @@ def source_text(row):
         return ('your routine ' + name if name else 'your routine') + f' · {when}'
     if row['kind'] == 'intercom.conversation':  # the customer by name, as an email shows its sender
         m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
+    if row['kind'] == 'android.notification' and m.get('package_name'):  # the app by name, never its package
+        m = {**m, 'app_name': android_app_shown(m['package_name'], m.get('app_name'))}
     who = (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
            or (('#' + m['channel_name']) if m.get('channel_name') else '') or (m.get('crm_account') or {}).get('name') or '')
     who = group_sender(re.sub(r'\s*<[^>]+>', '', str(who)).strip().strip('"')) or None
