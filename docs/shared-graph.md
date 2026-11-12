@@ -42,6 +42,15 @@ a meeting a teammate logged) never go from it (`secondhand`). They go from their
 choices, and never come back to them as a teammate's. A teammate's thread the owner is on themselves isn't shown among
 the team's items in a page's Timeline (Mine · Team), and each timeline line shows once.
 
+**One line per event** (`shared_graph_lines.py`). The same email reaches several teammates, and each Machine writes
+its own line about it, in its owner's language. Each line goes with `k`, the message's own id hashed with the Fleet's
+graph key inside the sealed record (teammates' Machines can match it, the Network can't; nothing new is in the clear),
+and `lang`. The viewer's Machine shows one line per event: lines with the same `k`, or, from a Machine that sends no
+`k`, lines from different teammates within three minutes on the same record. It picks the line in the viewer's
+language, then one that says who did what, and names every teammate it came from ("via Sam, Kim, and Lee"). The
+review writes each line as who did what, by first name: the whole thread goes to the team, so there is nothing to
+hide behind a vague line.
+
 Inside a connection that is on, each thread is still sorted ([Threads](#threads)), and **Keep private** on a thread or
 record still wins.
 
@@ -167,9 +176,12 @@ picture (`photo_img`) once, after a change and weekly, within the same 200 KB pe
 arrival (`shared_graph_photos.py`).
 
 - **Only from work sources.** A photo goes only when the Machine can tell it came from a work contact's look-up
-  (`person_profiles`, tried when the photo was saved) or a contact photo from Google, Slack, LinkedIn, X, Salesflare or
+  (`person_profiles`, tried when the photo was saved) or a contact photo from Slack, LinkedIn, X, Salesflare or
   Microsoft (`contact_photo_links.source`, saved when it was tried). A photo from WhatsApp or Telegram (`wa:`, `tg:`),
   from the Facebook birthdays import, or one whose source can't be told never goes.
+- **Nothing from Google contacts.** Google's user data policy (Limited Use) doesn't allow handing what its APIs give to
+  other people. A photo from Google contacts, other contacts or the directory stays on the owner's Machine, and so do
+  the job title, company, phone and birthday read there (`person_facts`, which no shared record carries).
 - **The owner's choice stays theirs.** When the owner took a person's picture off, or set one of their own, no photo
   of that person goes, neither theirs nor a found one.
 - **JPEG and PNG.** A JPEG is read by a small decoder of its own (`jpeg_image.py`: baseline and progressive, standard

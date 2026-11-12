@@ -49,6 +49,15 @@ Wenn eine Person etwas lernt, lernen es alle. Wenn deine Machine eine Work-Aufga
 
 Alle in der Fleet können eine Erkenntnis **Entfernen**. Dann ist sie für alle weg und wird nicht neu erstellt. Zum Stoppen schalte **Anbieten, Erkenntnisse zu teilen** in Einstellungen, Sicherheit aus. Work Fleets mit Vorsichtig bekommen keine.
 
+## Team-Briefing
+
+Wähle im Fleet-Tab unter **Teilen** bei **Team-Briefing** **Täglich** oder **Wöchentlich**. Deine Machine fragt dann die Machines deines Teams nach Zahlen und Daten. Was dich braucht, landet in den Aufgaben unter Arbeit: ein Kunde, der auf eine Antwort wartet, eine Firma, die still geworden ist, zwei von euch, die denselben Leuten schreiben, oder ein gemeinsamer Termin.
+
+- Firma und Teammitglieder verlinken auf ihre Seiten. **Details** zeigt, wer im Team in Kontakt ist, und ihre letzten Threads, nur was der [Team-Graph](team-graph.md) teilt.
+- **Das Team fragen** schickt ihm eine Frage dazu. Ihre Antworten stehen an der Aufgabe.
+- **Nicht nötig** schließt sie, und das Briefing lernt daraus. Sie kommt nur mit etwas Neuem wieder.
+- Antwortet jemand oder übernimmt es, schließt sich die Aufgabe von selbst. Gibt es schon eine Aufgabe zu dieser Firma, kommt es dazu.
+
 ## Brief-Anfragen
 
 Ein Teammitglied mit eingeschaltetem Team-Brief fragt deine Machine jeden Morgen nach Zahlen und Terminen. In einer Work Fleet antwortet deine Machine von selbst, nur mit dem, was der [Team-Graph](team-graph.md) schon mit deinem Team teilt. Private und persönliche Threads zählen nie, und nichts geht raus, solange das Teilen im Team-Graph deiner Fleet aus ist. Jede Antwort erscheint im Fleet-Tab unter **Aktivität**. Daraus wird nie eine Aufgabe oder Benachrichtigung.

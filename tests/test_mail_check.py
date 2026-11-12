@@ -200,6 +200,43 @@ class MailCheck(unittest.TestCase):
         self.assertEqual((channel['from'], channel['subject']), ('Rae Fenn', 'Can you look at #billing & ping @Rae Fenn?'))
         self.assertTrue(all(r['at'] for r in rows))
 
+    def test_a_support_chat_shows_its_people_by_name_and_a_phone_notification_never_its_package_id(self):
+        """An owner's list showed Intercom conversations by address (a customer's, and the Operator bot's
+        operator+…@intercom.io) while Intercom gave their names, and a phone's group summary notification by its package
+        id as the subject ("com.acme.shop"). Now: the name the source gives, the customer of a bot-opened conversation,
+        the bot by name when there is no customer, and a notification with no words of its own shows only its app."""
+        convo = lambda cid, meta, minutes: other('work', 'intercom.conversation', 'Exports stop at 1,000 rows', 'Exports stop at 1,000 rows',
+                                                 {'conversation_id': cid, **meta}, minutes)
+        phone = lambda package, app, title, body, minutes: other('phone', 'android.notification', title, body,
+                                                                 {'package_name': package, 'app_name': app}, minutes)
+        bot = 'operator+abc123@intercom.io'
+        ids = self.add(
+            convo('c1', {'from': 'rae@delta.example', 'from_name': 'Rae Fenn', 'contact_email': 'rae@delta.example', 'contact_name': 'Rae Fenn'}, 20),
+            convo('c2', {'from': bot, 'from_name': 'Fin', 'contact_email': 'ola@north.example', 'contact_name': 'Ola Brisk'}, 21),
+            convo('c3', {'from': bot, 'from_name': 'Fin', 'contact_email': '', 'contact_name': ''}, 22),
+            convo('c4', {'from': 'lead@mossgate.example', 'from_name': 'lead@mossgate.example', 'contact_email': 'lead@mossgate.example',
+                         'contact_name': 'lead@mossgate.example'}, 23),
+            phone('com.acmeshop.app', 'com.acmeshop.app', 'com.acmeshop.app', '', 24),
+            phone('com.google.android.apps.wellbeing', 'Digital Wellbeing', 'com.google.android.apps.wellbeing', '', 25),
+            phone('com.acmeshop.app', 'com.acmeshop.app', 'Small gifts for every budget', 'Small gifts for every budget', 26))
+        claim = self.store.begin_analysis(['work', 'phone'], 120)
+        self.store.finish_analysis(claim['analysis_id'], 'Nothing new')
+        rows = {r['event']: r for r in self.view()['threads']}
+        self.assertEqual([rows[i]['from'] for i in ids[:4]], ['Rae Fenn', 'Ola Brisk', 'Fin', 'lead@mossgate.example'])
+        self.assertEqual([(rows[i]['from'], rows[i]['subject']) for i in ids[4:]],
+                         [('Acmeshop', ''), ('Digital Wellbeing', ''), ('Acmeshop', 'Small gifts for every budget')])
+        shown = json.dumps([{k: v for k, v in r.items() if k != 'app'} for r in rows.values()])
+        self.assertNotIn('intercom.io', shown)
+        self.assertNotRegex(shown, r'\bcom\.\w+\.')  # never a package id
+        # stored anew, such a notification's title is its app by name, never the package
+        from machine.sources.android import android_event
+        made = android_event({'id': 'phone'}, {'key': 'k1', 'packageName': 'com.acmeshop.app', 'postTimeMs': 1762700000000})
+        self.assertEqual(made['title'], 'Acmeshop')
+        events, _ = self.store.android_feed_batch({'id': 'phone'}, [{'id': 'r1', 'received_at': NOW.isoformat(), 'payload': json.dumps(
+            {'id': 'n1', 'notification_key_hash': 'h1', 'package_name': 'com.acmeshop.app', 'at_ms': 1762700000000, 'change': 'posted', 'text': ''})}],
+            read_existing=False, settle=False)
+        self.assertEqual([e['title'] for e in events], ['Acmeshop'])
+
     def test_slack_markup_reads_as_plain_words_and_an_app_without_a_known_label_gets_a_name(self):
         from machine.sources.android import android_app_shown
         from machine.sources.slack import slack_plain

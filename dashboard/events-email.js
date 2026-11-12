@@ -26,7 +26,7 @@ const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?
  if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':svc.includes('outlook')||(s.original_urls||[]).some(u=>/^https:\/\/outlook\./.test(u))?'outlook':'mail';
  const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i],
   ['teams',/^(microsoft )?teams\b/i],['zoom',/^zoom\b/i],['google_meet',/^(google )?meet\b/i],['github',/^github\b/i],['stripe',/^stripe\b/i],['salesflare',/^salesflare\b/i],['salesforce',/^salesforce\b/i],['trello',/^trello\b/i],['shortcut',/^shortcut\b/i]].find(([,r])=>r.test(v));
- return named?named[0]:/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):svc.map(x=>x==='calendar'?'':monoKey(x)).find(Boolean)||'chat'};
+ return named?named[0]:/^your fleet$/i.test(v)?'handoff':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):svc.map(x=>x==='calendar'?'':monoKey(x)).find(Boolean)||'chat'};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals

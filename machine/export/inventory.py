@@ -76,7 +76,7 @@ _BY_PART = {
         org_profiles org_logo_retries org_logo_tries projects project_moves project_org_backfill project_org_checks project_org_fills
         project_splits project_people event_projects boards board_backfill_asks board_backfills board_backfills_queued board_fit_undo
         board_fits board_offers board_suggestions side_changes side_rule self_record_backups crm_fields crm_tags crm_values
-        record_changes record_owners contact_photo_links contact_photo_runs telegram_photo_asks whatsapp_photo_asks mail_hidden
+        record_changes record_owners contact_photo_links contact_photo_runs reconnect_asks ms_photo_asks ms_photo_accounts telegram_photo_asks whatsapp_photo_asks mail_hidden
         mail_shown'''),
     'skills': _names('skills skill_hints skill_task_decided skill_clusters help_topics'),
     'agents': _names('''agent_jobs agent_result_receipts agent_key_pins agent_relayed chat_models chat_fast_sessions'''),

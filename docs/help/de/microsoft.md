@@ -3,7 +3,7 @@ title: Microsoft Outlook und Kalender
 area: connections
 summary: Outlook-Mails und Meetings, für Microsoft 365 und Outlook.com. Sendet eine E-Mail erst, nachdem du sie freigegeben hast.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ Mails unter Sonstige und Newsletter werden zuerst kurz angesehen: Absender, Betr
 - Wenn du eine Aufgabe zu einer E-Mail zurückstellst, wandern die Nachrichten des Threads in Outlook in einen Ordner Snoozed und kommen zurück, wenn die Aufgabe zurückkommt.
 
 Der Kalender wird nie geändert.
+
+## Fotos von Kollegen und Kontakten
+
+Microsoft wird auch um die Basisprofile in deiner Organisation (Name, E-Mail und Foto) und deine Outlook-Kontakte gebeten. Deine Machine nutzt sie nur für Fotos, Positionen und Firmen von Personen, die schon in deinem Graph sind, bis zu 200 Fotos am Tag. Wer kein Foto hat, wird nach 30 Tagen erneut geprüft.
+
+Eventuell muss der Admin deiner Organisation die Fotos der Kollegen freigeben. Tut er das nicht, verbindet sich Outlook trotzdem, nur ohne diese Fotos. Ein Konto, das schon vorher verbunden war, bekommt eine Aufgabe: Drück **Neu verbinden** oder **Nicht nötig**, um sie dauerhaft zu schließen.
 
 ## Verbinden
 

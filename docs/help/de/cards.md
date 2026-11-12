@@ -34,6 +34,8 @@ Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerche
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen. Eine Meldung über deine Machine selbst, etwa ein Teil, der immer wieder neu startet, ist weder Arbeit noch Privat und steht nur unter Alle.
 
+Die Zeile oben in der Liste wechselt auch direkt zur anderen: **Nur privat · Arbeit · Alle anzeigen**.
+
 Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt** unter **Details** ändert es oder entfernt es. Siehe [Aufgaben eines Projekts](projects.md#a-projects-to-dos).
 
 **Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
@@ -111,6 +113,8 @@ Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa
 Folgt der Entwurf dem Hinweis von jemand anderem in einer anderen Nachricht, etwa dem Vorschlag einer Kollegin in Slack, sagt eine Zeile unter der Aufgabe das, etwa „Laut Sam in #ops“. Tippe darauf, um diese Nachricht hier zu lesen, mit In Slack oder Gmail öffnen darin. Ist diese Nachricht die Quelle der Aufgabe selbst, zeigt die Quellzeile sie schon, also gibt es keine zweite Zeile.
 
 Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, hat eine dünne Linie daneben.
+
+Eine Antwort in einem Slack-Thread zeigt auch, was vor dem Thread gesagt wurde. Ein Link der Aufgabe zu ihrer eigenen Nachricht öffnet sie auch hier, mit **In Slack öffnen** unten.
 
 **Details** zeigt ihren Namen, ihr Projekt und ihren Bereich (tippe auf eins, um es zu ändern), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging; die Nachricht, aus der sie stammt, steht unter ihren **Details**.
 

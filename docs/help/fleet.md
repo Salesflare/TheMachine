@@ -49,6 +49,15 @@ Your Machine uses the learnings that fit when it prepares a Work to-do for this 
 
 Anyone in the Fleet can **Remove** a learning: it's gone for everyone and isn't made again. To stop them, turn off **Offer to share learnings** in Settings, Security. Careful Work Fleets get none.
 
+## Team brief
+
+Pick **Daily** or **Weekly** for **Team brief** in the Fleet tab, under **Sharing**. Your Machine then asks your teammates' Machines for counts and dates. What needs you lands in To-dos, under Work: a customer waiting for a reply, a company that went quiet, two of you writing the same people, or a shared meeting.
+
+- The company and teammates link to their pages. **Details** shows who on the team is in touch and their latest threads, only what the [Team Graph](team-graph.md) shares.
+- **Ask the team** sends them a question about it. Their answers show on the to-do.
+- **Not needed** closes it, and the brief learns. It comes back only with something new.
+- When someone replies or takes it on, the to-do closes by itself. One about a company you already have a to-do for joins that to-do.
+
 ## Brief requests
 
 A teammate with the team brief on asks your Machine for counts and dates each morning. In a Work Fleet your Machine answers by itself, with only what the [Team Graph](team-graph.md) already shares, and nothing while Team Graph sharing is off. Each answer shows in the Fleet tab, under **Activity**, never as a to-do or notification.

@@ -283,11 +283,13 @@ class Microsoft:
         try:
             return self.api.call(self.config, self.helpers.credential, self.signin, method, params, **write)
         except self.api.GraphError as error:
+            # which call failed, as its path template (/drives/{drive}/items/{id}): never an id, a name or a token
+            route = ((self.api.WRITE if write.get('write') else self.api.READ).get(method) or (None, None))[1]
             if error.category == 'microsoft_scope_not_granted' or error.status == 403:
-                raise self.helpers.SourceError('docs_not_connected', error.status) from None
+                raise self.helpers.SourceError('docs_not_connected', error.status, route=route) from None
             if 'signin_expired' in error.category or error.status == 401:
-                raise self.helpers.SourceError('docs_signin_expired', error.status, retry_after=3600) from None
-            raise self.helpers.SourceError('docs_microsoft', error.status, retry_after=error.retry_after) from None
+                raise self.helpers.SourceError('docs_signin_expired', error.status, retry_after=3600, route=route) from None
+            raise self.helpers.SourceError('docs_microsoft', error.status, retry_after=error.retry_after, route=route) from None
 
     def me(self):
         drive = self.call('drive.get', {'$select': 'id,owner'})

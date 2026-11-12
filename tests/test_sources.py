@@ -25,7 +25,10 @@ class Errors(unittest.TestCase):
         for busy in (E('gmail', 503), E('network:reset'), E('timeout'), E('slack_network'), E('broker_unreachable')):
             with self.subTest(error=str(busy)):
                 self.assertTrue(sources.transient(busy))
-        for bug in (E('gmail', 401), E('invalid_json'), ValueError('x')):
+        after_busy = E('docs_microsoft', 400)
+        after_busy.after_busy = True
+        self.assertTrue(sources.transient(after_busy))
+        for bug in (E('gmail', 401), E('gmail', 400), E('invalid_json'), ValueError('x')):
             with self.subTest(error=str(bug)):
                 self.assertFalse(sources.transient(bug))
 

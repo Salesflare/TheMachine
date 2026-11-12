@@ -227,32 +227,43 @@ def salesflare_meeting_event(account, info, contacts, item):
             'deleted': False}
 
 
-def salesflare_recent_stamps(source, field, since, mark=None, page=10, max_pages=200):
-    """{CRM account ID: its last email/meeting date as listed} for the accounts whose date is on or after `since`,
-    newest first. A list ordered by activity is a heavy query on Salesflare's side, so the pages are small (10) and the
-    listing stops at the first account older than `since`, or at the last round's mark ({'at': date, 'id': account}):
-    the newest account it read. Everything newer than the mark is new since; a quiet round asks one page."""
+SALESFLARE_LIST_MARGIN = dt.timedelta(minutes=1)  # the date filter reaches this far below the window, for rounding
+
+
+def salesflare_recent_stamps(source, field, since, mark=None, page=100, max_pages=50):
+    """{CRM account ID: its last email/meeting date as listed} for the accounts whose date is on or after `since` and
+    newer than the last round's mark ({'at': date, 'id': account}: the newest account it read), newest first.
+    Sorting the accounts by that date is the heavy part on Salesflare's side (a 10-row page now and then runs into its
+    gateway's 2-minute limit), so the list is filtered by the date instead and ordered by ID: only what changed since
+    comes back, and an account whose date moves while the pages are read shifts nothing it hasn't passed yet. A quiet
+    round asks one short page."""
     mark_at = salesflare_time_or_none((mark or {}).get('at')) if (mark or {}).get('at') else None
+    lowest = max(since, mark_at) if mark_at else since
+    rule = {'id': 'account.' + field, 'operator': 'greater_or_equal',
+            'value': [(lowest - SALESFLARE_LIST_MARGIN).astimezone(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')]}
+    query = json.dumps({'condition': 'AND', 'rules': [rule]}, separators=(',', ':'))
     found = {}
     for number in range(max_pages):
-        rows = source.get('/accounts', {'order_by': field + ' desc', 'limit': page, 'offset': number * page, 'details': 'false'})
+        rows = source.get('/accounts', {'q': query, 'order_by': 'id', 'limit': page, 'offset': number * page, 'details': 'false'})
         if not isinstance(rows, list):
             raise SourceError('salesflare_invalid_page')
         for row in rows:
-            stamp = row.get(field)
+            stamp = row.get(field) if isinstance(row, dict) else None
             parsed = salesflare_time_or_none(stamp) if stamp else None
             if not stamp or (parsed and parsed < since):
-                return found
+                continue  # the filter's margin, or an account without the date
             if mark_at and parsed and (parsed < mark_at or (parsed == mark_at and row.get('id') == mark.get('id'))):
-                return found  # reached what the last round read
+                continue  # what the last round read
             # An unreadable date still lists the account: reading it once too often beats missing it.
-            found.setdefault(row['id'], str(stamp))
+            found.setdefault(row['id'], (parsed, str(stamp)))
         if len(rows) < page:
-            return found
+            newest = sorted(found.items(), key=lambda pair: pair[1][0] or dt.datetime.min.replace(tzinfo=dt.timezone.utc),
+                            reverse=True)
+            return {crm_id: stamp for crm_id, (_, stamp) in newest}
     raise SourceError('salesflare_window_limit')  # never claim a complete scan
 
 
-def salesflare_recent_accounts(source, field, since, mark=None, page=10, max_pages=200):
+def salesflare_recent_accounts(source, field, since, mark=None, page=100, max_pages=50):
     """CRM account IDs whose last email/meeting date is on or after `since` (and newer than `mark`)."""
     return list(salesflare_recent_stamps(source, field, since, mark, page, max_pages))
 

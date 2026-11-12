@@ -121,12 +121,8 @@ fleetOn('change',async e=>{const t=e.target.closest('[data-net-addr]');if(!t)ret
 fleetOn('change',async e=>{const t=e.target.closest('[data-net-toggle]');if(!t)return;t.disabled=true;
  try{await fleetPost('fleet_network',{do:t.dataset.netToggle});await fleetView()}catch(err){errCaught(err);t.checked=!t.checked;toast(err.message,true)}finally{t.disabled=false}});
 fleetOn('keydown',e=>{const go=(e.key==='Enter'||e.key===' ')&&e.target.matches?.('[data-ho-go]')&&e.target;if(go){e.preventDefault();location.hash=go.dataset.hoGo}});
-fleetOn('click',async e=>{const more=e.target.closest('[data-brief-more]');if(more){more.closest('.fleet-brief').querySelectorAll('.fleet-brief-more').forEach(li=>li.hidden=false);more.remove();return}
- const hoMore=e.target.closest('[data-ho-more]');if(hoMore){hoMore.closest('.fleet-handoffs').querySelectorAll('.fleet-ho-more').forEach(li=>li.hidden=false);hoMore.remove();return}
- const hoGo=e.target.closest('[data-ho-go]');if(hoGo){location.hash=hoGo.dataset.hoGo;return}  // the whole row opens its card
- const ask=e.target.closest('[data-brief-ask]');if(ask){const input=document.querySelector(`.fleet-free-form[data-fleet="${CSS.escape(ask.dataset.fleet)}"] input[name=text]`);if(!input)return;input.value=ask.dataset.briefAsk;input.focus();input.scrollIntoView({block:'center',behavior:'smooth'});return}
- const hide=e.target.closest('[data-brief-hide]');if(!hide)return;hide.disabled=true;
- try{await fleetPost('fleet_brief_hide',{fleet:hide.dataset.fleet,key:hide.dataset.briefHide});hide.closest('li').remove();toast('Hidden from this brief.');await fleetView()}catch(err){errCaught(err);hide.disabled=false;toast(err.message,true)}});
+fleetOn('click',async e=>{const hoMore=e.target.closest('[data-ho-more]');if(hoMore){hoMore.closest('.fleet-handoffs').querySelectorAll('.fleet-ho-more').forEach(li=>li.hidden=false);hoMore.remove();return}
+ const hoGo=e.target.closest('[data-ho-go]');if(hoGo)location.hash=hoGo.dataset.hoGo});  // the whole row opens its card
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-send]');if(!b)return;const text=document.getElementById('fleet-free-'+b.dataset.fleetSend)?.value.trim();if(!text){toast('Write an answer first, or decline.',true);return}b.disabled=true;
  try{await fleetPost('fleet_decide',{id:b.dataset.fleetSend,choice:'once',text});toast('Sent.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-notice]');if(!b)return;b.disabled=true;
@@ -185,14 +181,14 @@ $('#suggestions').addEventListener('submit',async e=>{const t=e.target;if(!t.cla
 $('#settings-take-line').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await fleetPost('fleet_handoff_take_line',{on});if(state.fleet)state.fleet.take_line=r.take_line;b.setAttribute('aria-checked',String(r.take_line));notice(r.take_line?'Handoff emails offer their own Machine.':'Handoff emails leave out their own Machine.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};
 // #fleet=<question> from a phone notification or Telegram: the Fleet tab at that question; &choice= asks to confirm it.
-// #fleet-brief=<fleet> (the brief's notification; without a Fleet, a phone's older wakeup): the Fleet tab at that team brief, in its pane
+// #fleet-brief=<fleet> (Telegram, older notifications): To-dos
 // #fleet and #fleet/<pane> (#fleet/sharing, #fleet/activity) are links to the tab: they stay in the address, as #todos does.
-function openFleetLink(){const brief=/^#fleet-brief(?:=(fl_[0-9a-f]{16}))?$/.exec(location.hash),sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=brief||sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!brief&&!m[1];
+function openFleetLink(){if(/^#fleet-brief(=fl_[0-9a-f]{16})?$/.test(location.hash)){history.replaceState(null,'',location.pathname+location.search+'#todos');openTabLink();return}const sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!m[1];
  // before the status comes (a tapped notification on a slow start): the Fleet tab at once, its own data fills it; a question's card waits for its to-dos
  if(!m||(card||state.suggestions)&&!state.fleet?.on)return;
  if(!tab)history.replaceState(null,'',location.pathname+location.search);else if(!$('#fleet').hidden&&(!sub||sub[1]===fleetPane))return;  // on screen already: a refresh leaves it be
  if(card||$('#fleet').hidden)document.querySelector(`nav [data-tab="${card?'inbox':'fleet'}"]`).click();
- (card?fleetSync(true):fleetShown).then(()=>{if(sub){showFleetPane(sub[1]);return}const c=brief?brief[1]&&document.getElementById('fleet-brief-'+brief[1])||$('#fleet-view .fleet-brief'):m[1]&&document.getElementById('fleet-'+m[1]);if(!c)return;fleetReveal(c);c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+ (card?fleetSync(true):fleetShown).then(()=>{if(sub){showFleetPane(sub[1]);return}const c=m[1]&&document.getElementById('fleet-'+m[1]);if(!c)return;fleetReveal(c);c.scrollIntoView({block:'center',behavior:'smooth'});c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
   const w=m[2]&&fleetData?.waiting.find(x=>x.id===m[1]);if(w&&confirm(`${m[2]==='once'?'Share once':'Decline'}? ${w.name} asks: ${w.question}`))c.querySelector(`[data-choice-f="${m[2]}"]`)?.click()})}
 // A shared pane is in the tab's views, which load when first needed: until they're in there is none to fill.
 function sharedLoad(fleet,quiet){if(lazyIn('fleet'))return sharedFill(fleet,quiet)}

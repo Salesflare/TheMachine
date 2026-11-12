@@ -49,6 +49,15 @@ Quando una persona impara, imparano tutti. Quando la tua Machine scrive o prepar
 
 Chiunque nella Fleet può premere **Rimuovi** su un apprendimento. Sparisce per tutti e non viene creato di nuovo. Per fermarli, disattiva **Proponi di condividere apprendimenti** in Impostazioni, Sicurezza. Le Fleet di lavoro Prudenti non ne ricevono.
 
+## Brief del team
+
+Scegli **Giornaliero** o **Settimanale** per **Brief del team** nella scheda Fleet, sotto **Condivisione**. La tua Machine chiede allora alle Machine del team conteggi e date. Ciò che ha bisogno di te arriva in Attività, sotto Lavoro: un cliente che aspetta una risposta, un’azienda che si è fatta silenziosa, due di voi che scrivono alle stesse persone o una riunione in comune.
+
+- L’azienda e i colleghi rimandano alle loro pagine. **Dettagli** mostra chi nel team è in contatto e i loro ultimi thread, solo ciò che il [Team Graph](team-graph.md) condivide.
+- **Chiedi al team** gli manda una domanda al riguardo. Le risposte compaiono sull’attività.
+- **Non serve** la chiude, e il brief ne tiene conto. Torna solo con qualcosa di nuovo.
+- Quando qualcuno risponde o se ne occupa, l’attività si chiude da sola. Se hai già un’attività su quell’azienda, si unisce a quella.
+
 ## Richieste di brief
 
 Un collega con il brief del team attivo chiede ogni mattina numeri e date alla tua Machine. In una Fleet di lavoro la tua Machine risponde da sola, solo con ciò che il [Graph del team](team-graph.md) già condivide. Mai thread privati o personali, e non parte niente se la condivisione del Graph del team è disattivata. Ogni risposta compare sotto **Movimenti**. Non diventa mai un’attività né una notifica.

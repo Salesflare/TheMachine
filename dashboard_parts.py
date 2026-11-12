@@ -47,6 +47,7 @@ LAZY = {
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
     'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
+    'brief': ('fleet-brief-todo.js',),
     'game': ('todos-game.js',),
     'followups': ('graph-followups-review.js',),
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-followups-settings.js',

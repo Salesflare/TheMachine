@@ -49,6 +49,15 @@ Quand une personne apprend, tout le monde apprend. Quand votre Machine rédige o
 
 Tout membre de la Fleet peut **Retirer** un apprentissage. Il disparaît pour tout le monde et n’est pas recréé. Pour arrêter, désactivez **Proposer de partager des apprentissages** dans Paramètres, Sécurité. Les Fleets Travail Prudentes n’en ont aucun.
 
+## Brief d’équipe
+
+Choisis **Quotidienne** ou **Hebdomadaire** pour **Brief d’équipe** dans l’onglet Fleet, sous **Partage**. Ta Machine demande alors aux Machines de ton équipe des chiffres et des dates. Ce qui a besoin de toi arrive dans Tâches, sous Travail : un client qui attend une réponse, une entreprise devenue silencieuse, deux d’entre vous qui écrivent aux mêmes personnes, ou une réunion commune.
+
+- L’entreprise et les coéquipiers renvoient à leur page. **Détails** montre qui dans l’équipe est en contact et leurs derniers fils, seulement ce que partage le [Team Graph](team-graph.md).
+- **Demander à l’équipe** lui envoie une question à ce sujet. Leurs réponses s’affichent sur la tâche.
+- **Pas nécessaire** la ferme, et le brief en tient compte. Elle ne revient qu’avec du nouveau.
+- Quand quelqu’un répond ou s’en charge, la tâche se ferme d’elle-même. Si tu as déjà une tâche sur cette entreprise, elle s’y ajoute.
+
 ## Demandes de brief
 
 Un collègue qui a activé le brief d’équipe demande chaque matin à votre Machine des chiffres et des dates. Dans une Fleet Travail, votre Machine répond d’elle-même, avec seulement ce que le [Graph d’équipe](team-graph.md) partage déjà avec votre équipe. Les fils privés et perso ne comptent jamais, et rien ne part tant que le partage du Graph d’équipe de votre Fleet est désactivé. Chaque réponse apparaît dans l’onglet Fleet, sous **Activité**. Cela ne devient jamais une tâche ni une notification.

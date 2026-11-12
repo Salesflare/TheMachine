@@ -181,7 +181,7 @@ SENT_SIGNED = ('<html><body><div>Reply number {}.</div><div>Cheers,</div><div>Al
 
 class Base(unittest.TestCase):
     def setUp(self):
-        ms_graph._tokens.clear(); ms_graph._folders.clear(); ms_graph._series.clear()
+        ms_graph._tokens.clear(); ms_graph._folders.clear(); ms_graph._identities.clear(); ms_graph._series.clear()
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         token = Path(self.temp.name) / 'broker-token'; token.write_text('machine-token\n')
         self.mail = {'id': 'acme-outlook', 'service': 'outlook', 'transport': 'broker', 'email': 'alex@acme.test', 'boundary': 'work:Acme'}
@@ -240,6 +240,19 @@ class Calls(Base):
                 with self.assertRaises(ms_graph.GraphError) as got:
                     ms_graph.call(self.config, a.credential, self.mail, 'me')
         self.assertEqual(got.exception.retry_after, 420)
+
+    def test_a_failed_mail_read_names_its_graph_call_without_ids(self):
+        with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=urllib.error.HTTPError(G, 504, 'busy', {}, io.BytesIO())):
+            with mock.patch.object(ms_graph, 'token', return_value='test'):
+                with self.assertRaises(a.SourceError) as got:
+                    a.gog_read(self.config, self.mail, 'gmail', 'v1', 'gmail.users.messages.get', {'id': 'msg-7f3a'}, 'scope')
+        self.assertEqual((got.exception.status, got.exception.route), (504, '/me/messages/{id}'))
+        self.assertEqual(str(got.exception), 'outlook:HTTP_504')  # the error feed's message stays the same
+        with mock.patch.object(ms_graph.urllib.request, 'urlopen', side_effect=TimeoutError()):
+            with mock.patch.object(ms_graph, 'token', return_value='test'):
+                with self.assertRaises(ms_graph.GraphError) as got:
+                    ms_graph.call(self.config, a.credential, self.mail, 'messages.mime', {'id': 'msg-7f3a'}, raw=True)
+        self.assertEqual(got.exception.route, '/me/messages/{id}/$value')
 
     def test_oversized_raw_response_never_becomes_a_successful_partial_file(self):
         with mock.patch.object(ms_graph, 'token', return_value='test'), mock.patch.object(ms_graph.urllib.request, 'urlopen', return_value=Response(b'x' * 40_000_001)):
@@ -321,6 +334,20 @@ class MailSync(Base):
             labels = json.loads(db.execute("SELECT metadata FROM events WHERE source_id='m1'").fetchone()[0])['labels']
         self.assertIn('TRASH', labels)
         self.assertEqual(self.store.checkpoint('acme-outlook')['history_id'], '2099-01-02T08:00:00Z')
+
+    def test_a_failing_me_does_not_stop_a_mailbox_already_checked(self):
+        """Graph's /me can fail for hours while the mailbox reads fine: the identity checked once holds for the connection,
+        a reconnect checks again, and a mailbox never checked still fails closed."""
+        self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m1@client.test>'))
+        a.sync_gmail(self.store, self.config, self.mail)
+        self.fake.fail['GET /me'] = 504
+        a.sync_gmail(self.store, self.config, self.mail)  # reads on: no /me asked
+        self.assertEqual(self.store.checkpoint('acme-outlook')['mode'], 'incremental')
+        with self.assertRaises(a.SourceError) as got:
+            a.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
+        self.assertEqual(got.exception.status, 504)
+        with self.assertRaises(a.SourceError):
+            a.Gmail(self.config, {**self.mail, 'email': 'other@acme.test'}).profile()
 
     def test_a_card_reads_attachments_from_the_message_itself(self):
         body = (b'From: bo@client.test\r\nTo: alex@acme.test\r\nSubject: Invoice\r\nMIME-Version: 1.0\r\n'
@@ -761,7 +788,7 @@ class OwnApp(unittest.TestCase):
     """Self-hosted: the owner's own app registration, a device-code sign-in, and a rotating refresh token."""
 
     def setUp(self):
-        ms_graph._tokens.clear(); ms_graph._folders.clear()
+        ms_graph._tokens.clear(); ms_graph._folders.clear(); ms_graph._identities.clear()
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name) / 'microsoft-alex-acme-test'
         self.account = {'id': 'acme-outlook', 'service': 'outlook', 'transport': 'graph', 'email': 'alex@acme.test',

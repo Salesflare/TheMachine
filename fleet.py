@@ -46,6 +46,7 @@ import logging
 import re
 import secrets
 import socket
+import sqlite3
 import threading
 import time
 import traceback
@@ -60,6 +61,7 @@ from machine.faults import loop_failed
 from machine.timing import _REQUEST_TIMING
 import ms_graph
 from i18n import t
+import fleet_brief_todos
 import fleet_requests
 import fleet_reviews
 import fleet_rounds
@@ -1547,7 +1549,7 @@ def answer_text(kind, answer):
 # ---------------------------------------------------------------- the Fleet on this Machine
 
 class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews, friends.Friends, contact_share.ContactShare, discovery.Discovery, family.Family, shared_connectors.SharedConnectors,
-            shared_graph.SharedGraph, meet.Meet, meet_link.MeetLink):
+            shared_graph.SharedGraph, meet.Meet, meet_link.MeetLink, fleet_brief_todos.BriefTodos):
     def __init__(self, connect, config, token, relay=None):
         self.connect, self.config = connect, config
         self.relay = relay or NetworkClient(settings(config)['url'], token, endpoints(config), connect=connect)
@@ -2391,7 +2393,9 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             raise ValueError('Ask a question of at least a few words')
         if fleet in FLEET_NAMES and len([r for r in self.work_fleets() if self.teammates(r)]) > 1:
             raise ValueError('Pick the Fleet to ask')
-        return self.ask_context('anything', question, 'free:', fleet)[0]
+        sent, context = self.ask_context('anything', question, 'free:', fleet)
+        self.brief_todo_asked(self.ref(fleet), question['text'], context)  # a brief line's own question: on its to-do
+        return sent
 
     def take_answer(self, item):
         receipt = item.get('receipt')
@@ -2517,9 +2521,15 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             else:
                 count = self._brief_answers(ref, period)
                 stale = (dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(row['built_at'])).total_seconds() > BRIEF_REBUILD
-                if count != row['answers'] or (stale and not row['told_at']):
+                # rebuilt while it settles, and after that while a to-do of it is open: a reply or claim settles that to-do
+                if count != row['answers'] or (stale and (not row['told_at'] or self.brief_todos_open(ref))):
                     self.build_brief(ref, period, row['every'], json.loads(row['view']).get('since') or since)
             self.tell_brief(ref, period, settings['tell'], local)
+            try:
+                # its lines as to-dos, once it is told (fleet_brief_todos.py); silent when the summary pings: one ping, to To-dos
+                self.brief_todos_sync(ref, quiet=bool(settings['tell'] and self.notify_brief))
+            except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
+                LOG.warning('fleet brief todos error=%s', type(error).__name__)
         with self.connect() as db:
             db.execute('DELETE FROM fleet_briefs WHERE built_at<?', ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=NOTICE_DAYS)).isoformat(timespec='seconds'),))
         return asked
@@ -2665,6 +2675,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         self.set_meta('brief_hidden', kept)
         if key.startswith('several:'):
             self.learn_brief(fleet, json.loads(row['view']), key)
+        self.brief_todo_settle(fleet, key)  # its to-do closes the same way (fleet_brief_todos.py)
         return {'hidden': key}
 
     # -- handling (claims)
@@ -3577,6 +3588,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         self.annotate_reviews(db, suggestions)
         self.annotate_meet(db, suggestions)  # a time another Machine agreed: Book it (meet.py)
         self.annotate_links(db, suggestions)  # a booking link in the email draft, a time picked on it (meet_link.py)
+        self.annotate_brief(db, suggestions)  # a team brief line on its to-do (fleet_brief_todos.py)
 
     def lines(self, suggestion_id):
         """What teammates' Machines said about this card's meeting, for a preparation; who it can be handed to; and the

@@ -49,6 +49,15 @@ Als één persoon iets leert, leert iedereen het. Als je Machine een werk-to-do 
 
 Iedereen in de Fleet kan een inzicht **Verwijderen**. Het is dan weg voor iedereen en wordt niet opnieuw gemaakt. Om te stoppen, zet je **Aanbieden om inzichten te delen** uit in Instellingen, Beveiliging. Voorzichtige Werk-Fleets krijgen er geen.
 
+## Teambriefing
+
+Kies **Dagelijks** of **Wekelijks** bij **Teambriefing** in het Fleet-tabblad, onder **Delen**. Je Machine vraagt dan de Machines van je team om aantallen en datums. Wat jou nodig heeft, komt in To-do's, onder Werk: een klant die op antwoord wacht, een bedrijf dat stil werd, twee van jullie die dezelfde mensen mailen, of een gedeelde meeting.
+
+- Het bedrijf en je teamgenoten linken naar hun pagina. **Details** toont wie van het team contact heeft en hun laatste threads, alleen wat de [Team Graph](team-graph.md) deelt.
+- **Het team vragen** stuurt hun een vraag erover. Hun antwoorden staan op de to-do.
+- **Niet nodig** sluit hem, en de briefing leert ervan. Hij komt alleen terug met iets nieuws.
+- Antwoordt iemand of neemt iemand het op zich, dan sluit de to-do vanzelf. Heb je al een to-do over dat bedrijf, dan komt het daarbij.
+
 ## Briefverzoeken
 
 Een teamgenoot met de teambrief aan vraagt je Machine elke ochtend om aantallen en datums. In een Werk-Fleet antwoordt hij zelf, met alleen wat de [Team-Graph](team-graph.md) al met je team deelt. Privé- en persoonlijke threads tellen nooit mee, en er gaat niets weg zolang delen via de Team-Graph uit staat. Elk antwoord staat in het tabblad Fleet, onder **Activiteit**. Het wordt nooit een to-do of een melding.

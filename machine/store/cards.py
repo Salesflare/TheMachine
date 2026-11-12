@@ -319,7 +319,8 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
 def source_line(rows, db=None):
     """One readable line about where a suggestion comes from, for the card. With db, a meeting's notes name the meeting
     ("notes from Board meeting Q4"), and lead over the same notes by mail (meeting_mail.lead)."""
-    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix')]  # the owner's own words ("Added by you"), an update's note
+    # the owner's own words ("Added by you"), an update's note, a reconnect ask (its text names the account; no source)
+    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix', 'machine.reconnect_ask')]
     if not rows:
         return None
     rows, meeting = meeting_mail.lead(db, rows)
@@ -356,6 +357,8 @@ def source_text(row):
     if row['kind'] == 'routine.draft':  # a routine's draft (routines_app.py): the routine by its name, never "signal from"
         name = ' '.join(str(m.get('sender_display') or '').split())
         return ('your routine ' + name if name else 'your routine') + f' · {when}'
+    if row['kind'] == 'fleet.brief':  # a team brief line (fleet_brief_todos.py): "From your Fleet", never "signal from"
+        return f'your Fleet · {when}'
     if row['kind'] == 'intercom.conversation':  # the customer by name, as an email shows its sender
         m = {**m, 'sender_display': m.get('sender_display') or m.get('contact_name') or m.get('from_name')}
     if row['kind'] == 'android.notification' and m.get('package_name'):  # the app by name, never its package
@@ -432,7 +435,7 @@ class CardsStore:
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,
-                company=None, personal=False, waiting_on=None, org=None):
+                company=None, personal=False, waiting_on=None, org=None, quiet=False):
         """A new card, or with match (the review) the existing card about the same matter brought up to date:
         card_id names the card the reviewer judged to be the same matter, separate says it is a different one.
         waiting_on: the review's word that the owner did their part of that open card and the next step is someone
@@ -447,14 +450,15 @@ class CardsStore:
         mailbox; so is evidence whose people are all from the owner's own life (own_life_evidence). The to-do is
         Personal from the start (todo_areas.personal_accounts), never a Work Fleet's.
         org: the review's word on which organization the matter is about (graph.card_org: its node id, domain or name;
-        '' for none). Only the matter decides it, never who is on it; None leaves it as it was (not said)."""
+        '' for none). Only the matter decides it, never who is on it; None leaves it as it was (not said).
+        quiet: a new card is not sent by itself (delivery not_sent); a ping about it already went (the team brief's summary)."""
         if _db is None:
             with self.connect() as db:
                 db.execute('BEGIN IMMEDIATE')
                 return self.suggest(dedupe_key, title, body, event_ids, when, digest_at, work, urgent, due, ahead, awaiting, project,
                                     card_id, separate, reopen, match, _db=db, suggestion_id=suggestion_id, owner_step=owner_step,
                                     expires_at=expires_at, expires_what=expires_what, company=company, personal=personal, waiting_on=waiting_on,
-                                    org=org)
+                                    org=org, quiet=quiet)
         if not dedupe_key or not title or not body or not event_ids:
             raise ValueError('Evidence, title, body and stable dedupe_key are required')
         if waiting_on is not None:
@@ -585,7 +589,7 @@ class CardsStore:
             if company:  # pinned there, as a move is: a later signal on another company's mailbox doesn't pull it back
                 db.execute('UPDATE suggestions SET area=? WHERE id=?', (company, suggestion_id))
             db.execute('INSERT INTO deliveries(suggestion_id,status,updated_at) VALUES(?,?,?)',
-                       (suggestion_id, 'previewed' if preview else 'queued', now()))
+                       (suggestion_id, 'previewed' if preview else 'not_sent' if quiet else 'queued', now()))
             if preview and wanted:
                 db.execute('INSERT OR IGNORE INTO first_look_ahead(suggestion_id,created_at) VALUES(?,?)', (suggestion_id, now()))
             if watch:

@@ -611,14 +611,15 @@ def controls(row, root=''):
         # Only the owner can do this step (a visit, a pickup): Mark done leads; Plan it is what The Machine can do around it.
         # An update's note: Done, Snooze; a problem in the computer's logs also Not needed (machine_log: it never comes
         # back), and with a safe fix Do it (machine_fix). A fix an update set aside (parked_redo) has Redo it while nothing
-        # runs on it, which starts the usual self-fix run, and Try again when that run got stuck.
+        # runs on it, which starts the usual self-fix run, and Try again when that run got stuck. A sign-in from before a
+        # newer feature (reconnect: the dashboard's Reconnect leads) has Not needed too, for good.
         redo = row.get('origin') == 'machine' and row.get('parked_redo')
         fix = row.get('origin') == 'machine' and row.get('machine_fix')
         lead = [('Do it','accept')] if fix else [('Redo it','accept')] if redo and (row['status'] == 'pending' or answered_only(row)) \
             and row.get('preparation_status') != 'blocked' else []
         choices = lead + [('Mark done','complete')] + [
             ('Plan it' if choice == 'accept' else label, choice) for label, choice in choices if choice != 'complete'
-            and (row.get('origin') != 'machine' or choice == 'snooze' or (choice == 'reject' and row.get('machine_log'))
+            and (row.get('origin') != 'machine' or choice == 'snooze' or (choice == 'reject' and (row.get('machine_log') or row.get('reconnect')))
                  or (choice == 'retry' and redo))]
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]

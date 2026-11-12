@@ -3,7 +3,7 @@ title: Microsoft Outlook et Calendar
 area: connections
 summary: Les e-mails et réunions Outlook, pour Microsoft 365 et Outlook.com. N’envoie un e-mail qu’après votre accord.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ Les e-mails du dossier Autres et les newsletters ont d’abord droit à un coup 
 - Quand vous mettez en attente une tâche liée à un e-mail, les messages du fil vont dans un dossier Snoozed dans Outlook et reviennent en même temps que la tâche.
 
 L’agenda n’est jamais modifié.
+
+## Photos des collègues et des contacts
+
+Microsoft est aussi sollicité pour lire les profils de base de votre organisation (nom, e-mail et photo) et vos contacts Outlook. Votre Machine ne s’en sert que pour les photos, postes et entreprises des personnes déjà dans votre Graph, jusqu’à 200 photos par jour. Une personne sans photo est revérifiée après 30 jours.
+
+L’admin de votre organisation devra peut-être approuver les photos des collègues. Sinon, Outlook se connecte quand même, simplement sans ces photos. Un compte connecté avant cela reçoit une tâche : appuyez sur **Reconnecter**, ou sur **Pas nécessaire** pour la fermer définitivement.
 
 ## Le connecter
 

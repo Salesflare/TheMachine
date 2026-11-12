@@ -60,7 +60,9 @@ ANSWERS = {'User.Read': {'User.Read'}, 'Mail.Read': {'Mail.Read', 'Mail.ReadWrit
            'Channel.ReadBasic.All': {'Channel.ReadBasic.All'}, 'ChannelMessage.Read.All': {'ChannelMessage.Read.All'},
            'OnlineMeetings.Read': {'OnlineMeetings.Read', 'OnlineMeetings.ReadWrite'},
            'OnlineMeetingTranscript.Read.All': {'OnlineMeetingTranscript.Read.All'},
-           'OnlineMeetingAiInsight.Read.All': {'OnlineMeetingAiInsight.Read.All'}}
+           'OnlineMeetingAiInsight.Read.All': {'OnlineMeetingAiInsight.Read.All'},
+           # People's photos (ms_photos.py), asked with Outlook's consent and optional there
+           'User.ReadBasic.All': {'User.ReadBasic.All', 'User.Read.All'}, 'Contacts.Read': {'Contacts.Read', 'Contacts.ReadWrite'}}
 
 # name -> (verb, path, scope)
 READ = {
@@ -102,6 +104,11 @@ READ = {
     'teams.transcript.content': ('GET', '/me/onlineMeetings/{meeting}/transcripts/{transcript}/content', 'OnlineMeetingTranscript.Read.All'),
     'teams.insights': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights', 'OnlineMeetingAiInsight.Read.All'),
     'teams.insight': ('GET', '/copilot/users/{user}/onlineMeetings/{meeting}/aiInsights/{insight}', 'OnlineMeetingAiInsight.Read.All'),
+    # People's photos (ms_photos.py): a colleague's small photo by address, the owner's Outlook contacts and theirs
+    'organization': ('GET', '/organization', 'User.Read'),  # the tenant's verified domains: who counts as a colleague
+    'users.photo': ('GET', '/users/{user}/photos/{size}/$value', 'User.ReadBasic.All'),
+    'contacts.list': ('GET', '/me/contacts', 'Contacts.Read'),
+    'contacts.photo': ('GET', '/me/contacts/{id}/photo/$value', 'Contacts.Read'),
 }
 WRITE = {
     'messages.create': ('POST', '/me/messages', 'Mail.ReadWrite'),        # a draft from MIME (never sent by itself)
@@ -126,15 +133,20 @@ SETTLE_SECONDS = 900
 MAX_RESPONSE = 40_000_000  # Never save an oversized response as a successful partial file.
 _tokens: dict = {}
 _folders: dict = {}
+# A mailbox's own address, as /me answered it, per connection: the sync checks it before every round, and /me can fail for
+# hours while the mailbox itself reads fine. Asked again after this long, and at once on a reconnect (a new connection key).
+IDENTITY_SECONDS = 6 * 3600
+_identities: dict = {}
 _lock = threading.Lock()
 
 
 class GraphError(Exception):
-    """A content-free failure: `status` is Graph's, the broker's or the sign-in's HTTP status, None when unreachable."""
+    """A content-free failure: `status` is Graph's, the broker's or the sign-in's HTTP status, None when unreachable.
+    `route` is the call that failed as its path template (/me/messages/{id}/$value), never an id: set by call()."""
 
-    def __init__(self, category, status=None, retry_after=None):
+    def __init__(self, category, status=None, retry_after=None, route=None):
         super().__init__(category)
-        self.category, self.status, self.retry_after = category, status, retry_after
+        self.category, self.status, self.retry_after, self.route = category, status, retry_after, route
 
 
 def _post_json(url, payload, headers, timeout=20):
@@ -296,8 +308,19 @@ def _direct(config, account, scope):
 
 def scopes(config, credential, account):
     """The scopes the owner granted this account."""
+    return grant(config, credential, account)[0]
+
+
+def grant(config, credential, account):
+    """(granted scopes, offered scopes): what the owner granted this account, and what connecting it again would add
+    now (a broker's `offered`, like the photo scopes for an account connected before them; never for an own app)."""
     if account.get('transport') == 'broker':
-        return set(_broker(config, credential, {'email': account['email']}).get('scopes') or [])
+        answer = _broker(config, credential, {'email': account['email']})
+        return set(answer.get('scopes') or []), {s for s in answer.get('offered') or [] if isinstance(s, str)}
+    return _own_scopes(config, account), set()
+
+
+def _own_scopes(config, account):
     if account.get('transport') == 'graph':
         return set(_saved(credential_path(config, account)).get('scopes') or [])
     raise GraphError('unsupported_transport')
@@ -375,6 +398,8 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
     """One Graph call as the account's owner: the parsed JSON answer ({} when empty), or bytes with raw=True.
     `body` is JSON, or bytes sent as `content_type`."""
     verb, scope, url = url_for(method, params, write)
+    # which call failed, for the sync log: an outage fails every call, one message Graph can't serve fails its own
+    route = (WRITE if write else READ)[method][1]
     if isinstance(body, (bytes, bytearray)):
         data, kind = bytes(body), content_type or 'application/octet-stream'
     elif body is not None:
@@ -398,9 +423,10 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
             error.close()
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
-            raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None) from None
+            raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None,
+                             route=route) from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
-            raise GraphError('timeout') from None
+            raise GraphError('timeout', route=route) from None
         except ValueError:
             raise GraphError('invalid_json') from None
 
@@ -634,8 +660,17 @@ def gmail_call(config, credential, account, method, params):
     """The Gmail reads the app makes, answered from Graph. The history cursor is a time: messages changed since."""
     params = dict(params or {})
     if method == 'gmail.users.getProfile':
-        me = call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'})
-        return {'emailAddress': identity(me), 'historyId': _iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
+        key = _connection_key(config, account)
+        with _lock:
+            known = _identities.get(key)
+        if known and known[1] > time.monotonic():
+            address = known[0]
+        else:
+            address = identity(call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'}))
+            if address:
+                with _lock:
+                    _identities[key] = (address, time.monotonic() + IDENTITY_SECONDS)
+        return {'emailAddress': address, 'historyId':_iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
     if method == 'gmail.users.settings.sendAs.get':
         return {'sendAsEmail': params.get('sendAsEmail'), 'signature': ''}  # Graph has no API for Outlook signatures
     if method == 'gmail.users.settings.sendAs.list':  # the mailbox's own addresses: its proxy addresses (User.Read)

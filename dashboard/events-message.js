@@ -69,28 +69,33 @@ setHTML(p,html`${t('Couldn’t load the full email.')} <button type="button" cla
 p.querySelector('button').onclick=()=>{delete box.dataset.filled;setHTML(box,html`<p class="muted">Loading…</p>`);fillMessage(container,o,id)}}
 // Chats (Slack, WhatsApp, Telegram, Intercom and the rest: event_views' chat) read as one thread, oldest first: the
 // conversation named once on top, a day line when the day changes, each sender's run of messages under their name and
-// time once, a light time inside a run only after a pause. The to-do's own message is tinted when the thread holds more.
+// time once, a light time inside a run only after a pause. The to-do's own message is outlined when the thread holds more.
+// A Slack thread shown after the channel's messages before it (thread: true, machine/store/conversation.py) starts
+// under an In thread line. Each sender has the avatar circle with their initials, as people have elsewhere.
 // One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
 const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
 const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
 const isChat=o=>typeof o?.chat==='string';
 const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;
+const senderInitials=name=>{const w=String(name||'').trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));return((w[0]?.[0]||[...String(name||'?')][0])+(w.length>1?w.at(-1)[0]:'')).toUpperCase()};
 function chatThreadHTML(items,{main,names=true,head=true,src,earlier,titled}={}){
 const dayOf=at=>{const d=new Date(at);return localeDate(d,DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
 const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
-const days=[];let prev=null;
+const days=[];let prev=null,plain=false,inThread=false;
 // The owner's side on the right: their own messages, and in a support chat (Intercom) the team's and its bot's, each named
 for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',mark=main!=null&&o.event_id===main&&msgs.length>1;
  if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
+ if(o.thread&&plain&&!inThread){days.at(-1).turns.push({thread:true});prev=null}
+ inThread||=Boolean(o.thread);plain||=!inThread;
  const who=!you&&names?sender(o.from):'',turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${chatMarkdown(String(o.body||'').replace(/\r\n/g,'\n').trim())}${o.photo?photoThumbs([o.photo]):''}`;
- if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${[...who][0].toUpperCase()}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''} · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
+ if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''} · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
  else if(at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at"><time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`);
  turns.at(-1).says.push(html`<div class="convo-say${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${say}</div>`);prev=o}
 // titled: the dialog's title names the conversation already, so the line above it names only the app (and its channel)
 const first=items.find(o=>o.event_id===main)||items[0]||{},app=THREAD_APP[first.kind]||first.app||src,title=titled?app:head?chatTitle(first):'';
 const url=[first,...[...items].reverse()].find(o=>o?.url&&safeURL(o.url))?.url;
-return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span>${first.via?html`<span class="msg-via">${t('via {}',first.via)}</span>`:''}</p>`:''}${earlier?earlierButton():''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source read-original ${openVia(first)}" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
+return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span>${first.via?html`<span class="msg-via">${t('via {}',first.via)}</span>`:''}</p>`:''}${earlier?earlierButton():''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>x.thread?html`<p class="convo-day convo-thread">${t('In thread')}</p>`:html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source read-original ${openVia(first)}" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
 // A to-do's chat sources by conversation: the to-do's own conversation first, each one thread.
 function chatThreads(list){const by=new Map();for(const o of list.filter(isChat)){const k=o.kind+'\u0000'+o.chat;if(!by.has(k))by.set(k,[]);by.get(k).push(o)}return [...by.values()]}
 // A to-do's source opens with what was said around it (api/originals' around, machine/store/conversation.py): the

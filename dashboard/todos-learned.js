@@ -145,8 +145,10 @@ function scopeSync(l){if(!l||!('todo_scope' in l)||scopeSaving)return;const v=l.
 // rest of the page is drawn just after that frame is painted.
 function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCardId=null;scopeFilter=v;scopeSynced=v;scopeSave(v);
  const was=state,kept=drawnWhole===was;render('view');if(kept)requestAnimationFrame(()=>setTimeout(()=>{if(state===was)render()}))}  // a refresh meanwhile drew it all
-// When a filter is on, the list says so at its top, with the way back to All.
-const scopeNote=empty=>scopeFilter==='all'?'':html`<p class="scope-note" role="status"><span>${scopeFilter==='work'?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="all">Show all</button></p>`;
+// When a filter is on, the list says so at its top, with the other area and the way back to All: the same filter as the
+// sidebar's, switched in place ("Personal only · Work · Show all").
+const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
+ return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});

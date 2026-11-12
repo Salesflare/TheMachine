@@ -4595,7 +4595,7 @@ def delete_person(db, node_id, config, now):
         db.execute(f'DELETE FROM {table} WHERE a IN ({marks}) OR b IN ({marks})', ids + ids)
     db.execute(f'DELETE FROM graph_events WHERE node_id IN ({marks})', ids)
     db.execute(f'DELETE FROM graph_names WHERE node_id IN ({marks})', ids)
-    for table in ('identity_names', 'manual_nodes', 'person_roles', 'person_orgs', 'person_edits', 'graph_role_asks', 'graph_org_asks', 'person_profiles', 'person_photos', 'person_photo_tries', 'contact_photo_links', 'whatsapp_photo_asks', 'telegram_photo_asks', 'person_facts', 'role_corrections'):
+    for table in ('identity_names', 'manual_nodes', 'person_roles', 'person_orgs', 'person_edits', 'graph_role_asks', 'graph_org_asks', 'person_profiles', 'person_photos', 'person_photo_tries', 'contact_photo_links', 'whatsapp_photo_asks', 'telegram_photo_asks', 'ms_photo_asks', 'person_facts', 'role_corrections'):
         if _table(db, table):
             db.execute(f'DELETE FROM {table} WHERE identifier IN ({marks})', ids)
     if emails:

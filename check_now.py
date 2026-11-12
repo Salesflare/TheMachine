@@ -22,7 +22,7 @@ import time
 
 import abilities
 import graph
-from machine.sources.android import android_app_shown
+from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_plain
 from machine.store import message_view
@@ -156,12 +156,17 @@ def _who_and_what(row, meta):
     if row['kind'] == 'slack.message':
         title, body = _snippet(slack_plain(row['title']), 1000), _snippet(slack_plain(row['body']))
     if group == 'notification':
-        app = android_app_shown(meta['package_name'], meta.get('app_name')) if meta.get('package_name') else str(meta.get('app_name') or '')
+        package = meta.get('package_name') or ''
+        app = android_app_shown(package, meta.get('app_name')) if package else str(meta.get('app_name') or '')
+        # never a package id ("com.acme.shop", a group's summary notification) or the app's name again
+        if package:
+            shown = lambda t: t if android_text_shown(t, package, meta.get('app_name')) and not message_view.same(t, app) else ''
+            title, body = shown(title), shown(body)
         # the phone's feed puts the same words in both: say them once
         said = body if title and body.startswith(title[:40]) else f'{title}: {body}' if title and body else title or body
         return app, _snippet(said)
-    who = str(meta.get('from') or meta.get('sender_display') or meta.get('sender_name') or meta.get('user_name') or '')
-    who = _no_id(_sender(who)[0] if '<' in who or '@' in who else ' '.join(who.split()))  # "Sam <U123>", an address, or a name as is
+    # by name, never a relay or bot address (an Intercom conversation names its customer), the address only when no name
+    who = _no_id(message_view.sender_name(row['kind'], meta))
     if group == 'chat':
         if not who and not _slack_dm(row, meta):
             place = str(meta.get('chat_name') or '') or (('#' + str(meta['channel_name'])) if meta.get('channel_name') else '') or title
@@ -213,7 +218,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
             thread['open'], thread['kind'] = row['id'], row['kind']  # its newest message to the owner opens
             thread['account'] = row['account_id']  # its mark: Gmail or Outlook by the account it came in on
         if group == 'email':
-            name, address = _sender(meta.get('from'))
+            name, address = message_view.sender_name(row['kind'], meta), _sender(meta.get('from'))[1]
             if name and (address not in own or not thread['from']):
                 thread['from'] = name
             thread['subject'] = (row['title'] or '').strip() or thread['subject']

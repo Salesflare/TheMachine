@@ -27,8 +27,8 @@ Um admin pode exigir o **E-mail de trabalho** e o **Calendário de trabalho** de
 ## O que vai para a equipe
 
 - Conversas com clientes: e-mails com pessoas de fora da sua empresa sobre trabalho, com os anexos.
-- Pessoas, organizações e projetos de trabalho, com uma linha do tempo curta.
-- Uma cópia pequena do logo de uma organização e da foto de trabalho de uma pessoa: de uma busca, Google, Slack, LinkedIn, X, Salesflare ou Microsoft. Nunca uma imagem do WhatsApp, Telegram ou Facebook, nem uma imagem que você mudou ou removeu.
+- Pessoas, organizações e projetos de trabalho, com uma linha do tempo curta. Na **Linha do tempo** de uma página, **Equipe** mostra cada evento uma só vez, no seu idioma quando a Machine de um colega o escreveu assim, com todos de quem ele vem: "via Sam, Kim e Lee".
+- Uma cópia pequena do logo de uma organização e da foto de trabalho de uma pessoa: de uma busca, Slack, LinkedIn, X, Salesflare ou Microsoft. Nunca uma imagem dos contatos do Google, do WhatsApp, Telegram ou Facebook, nem uma imagem que você mudou ou removeu.
 - Em um quadro de Equipe, também as reuniões, as notas do Zoom, as conversas do Intercom e os chats de um projeto, por estarem no quadro. Os sensíveis, como negócios, ficam de fora, assim como os chats só entre colegas.
 
 ## Fora do compartilhamento automático

@@ -34,6 +34,8 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar. Um alerta sobre a própria Machine, como uma parte que reinicia sem parar, não é Trabalho nem Pessoal e só aparece em Todos.
 
+A linha no topo da lista também muda direto para a outra: **Só pessoal · Trabalho · Mostrar todas**.
+
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
 **Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
@@ -111,6 +113,8 @@ Acima do rascunho, uma linha discreta mostra a mensagem de onde ela veio, com o 
 Quando o rascunho segue o que outra pessoa disse em outra mensagem, como a sugestão de um colega no Slack, uma linha abaixo da tarefa diz isso, como "Com base em Sam no #ops". Toque nela para ler essa mensagem aqui, com Abrir no Slack ou no Gmail dentro dela. Quando essa mensagem é a própria origem da tarefa, a linha de origem já a mostra, então não aparece uma segunda linha.
 
 Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa tem uma linha fina ao lado.
+
+Uma resposta em uma thread do Slack também mostra o que foi dito antes da thread. Um link da tarefa para a própria mensagem também a abre aqui, com **Abrir no Slack** embaixo.
 
 **Detalhes** mostra o nome, o projeto e a área dela (toque em um para mudar), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado; a mensagem de onde ela veio fica nos **Detalhes**.
 

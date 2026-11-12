@@ -34,6 +34,8 @@ Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuot
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro. Un avviso sulla tua Machine stessa, come una parte che continua a riavviarsi, non è né Lavoro né Personale e compare solo in Tutti.
 
+La riga in cima all'elenco passa anche direttamente all'altra: **Solo personale · Lavoro · Mostra tutto**.
+
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](projects.md#a-projects-to-dos).
 
 **Area** in **Dettagli** sposta l'attività nella tua altra area. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.
@@ -111,6 +113,8 @@ Sopra la bozza, una riga discreta indica il messaggio da cui viene, con il logo 
 Quando la bozza segue l'indicazione di qualcun altro in un altro messaggio, come il suggerimento di un collega su Slack, una riga sotto l'attività lo dice, come "Secondo Sam in #ops". Toccala per leggere quel messaggio qui, con Apri in Slack o Gmail all'interno. Se quel messaggio è la fonte dell'attività stessa, la riga della fonte lo mostra già e non c'è una seconda riga.
 
 Una chat (Slack, WhatsApp, Telegram, Intercom…) si legge come un'unica conversazione, dal più vecchio, ogni messaggio una volta; il messaggio di cui parla l'attività ha una linea sottile accanto.
+
+Una risposta in un thread di Slack mostra anche cosa è stato detto prima del thread. Un link dell'attività al suo messaggio lo apre anche qui, con **Apri in Slack** in fondo.
 
 **Dettagli** mostra nome, progetto e area (toccane uno per cambiarlo), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito; il messaggio da cui viene è nei suoi **Dettagli**.
 

@@ -16,6 +16,7 @@ import fact_ties
 import help_chat
 import help_topics
 import linkedin_connections
+from machine.app import reconnect_asks
 from machine.config import LOG
 from machine.faults import restart_self
 from machine.sources.calendar import calendar_owned
@@ -26,6 +27,7 @@ from machine.store import plain_keys
 from machine.store.review import bulk_kind
 import message_seal
 from models import background_model
+import ms_photos
 import next_actions
 import retention
 from sources import credential, gog_read, SourceError
@@ -86,6 +88,11 @@ def google_photo_accounts(config):
                 and not account.get('shared'):
             seen.setdefault(account['email'].lower(), account)
     return list(seen.values())
+
+
+def outlook_photos_ask(db, account, missing, at):
+    """Outlook's colleague and contact photos (ms_photos.py): reconnect once for the scopes its broker offers now."""
+    reconnect_asks.note(db, account, reconnect_asks.OUTLOOK_PHOTOS, missing, at)
 
 
 # Settings the app takes from config.json while it runs (App.follow_config), so turning reviews on needs no restart:
@@ -251,6 +258,9 @@ class WorkersApp:
                             found += enrichment.offer_facts(db, [(ids, f, r) for ids, f, r in facts if any(i in known for i in ids)], 'google', now())
                             enrichment.contact_run_done(db, 'google:' + account['email'].lower(), now())
                 photos += enrichment.contact_photos_step(self.store.connect, now())
+                saved, changed = ms_photos.step(self.store.connect, self.config, credential, now(), stop=self.stop.is_set, ask=outlook_photos_ask)
+                photos, found = photos + saved, found + changed
+                reconnect_asks.todos(self.store, self.config)  # a to-do for a sign-in that lacks what its service offers now
                 wa_accounts, ask = whatsapp_photo_asker(self.config)
                 if wa_accounts and not self.stop.is_set():
                     photos += enrichment.whatsapp_photos_step(self.store.connect, now(), ask, wa_accounts)

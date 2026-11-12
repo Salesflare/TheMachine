@@ -431,7 +431,9 @@ class ViewsStore(ConversationStore):
                 m['app_name'] = android_app_shown(m.get('package_name'), m.get('app_name'))  # its app by name, never the package
             # A chat message is said by a person, never by its channel or chat (an unnamed Slack sender stays blank)
             chat = r['kind'] in CHAT_KINDS
-            who = 'You' if mine else (m.get('sender_display') or m.get('from') or ('' if chat else m.get('chat_name') or m.get('app_name')
+            # an email's From as it is (the viewer mutes the address); any other message's sender by name, never a relay address
+            sent_by = m.get('from') if message_view.view_of(r['kind']) == 'email' else message_view.sender_name(r['kind'], m)
+            who = 'You' if mine else (m.get('sender_display') or sent_by or ('' if chat else m.get('chat_name') or m.get('app_name')
                    or (('#' + m['channel_name']) if m.get('channel_name') else '')) or '')
             body, details = r['body'], None
             if r['kind'] == 'machine.fault' and '\n' + FAULT_WHERE in body:  # code locations go under Details

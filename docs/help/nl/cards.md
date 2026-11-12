@@ -34,6 +34,8 @@ Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hi
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan. Een melding over je Machine zelf, zoals een onderdeel dat steeds opnieuw start, is geen Werk en geen Privé en staat alleen onder Alle.
 
+De regel bovenaan de lijst schakelt ook meteen naar de andere: **Alleen privé · Werk · Alles tonen**.
+
 Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project** onder **Details** wijzigt het of haalt het weg. Zie [de to-do's van een project](projects.md#a-projects-to-dos).
 
 **Gebied** onder **Details** verplaatst de to-do naar je andere gebied. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
@@ -111,6 +113,8 @@ Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het
 Volgt het concept wat iemand anders in een ander bericht zei, zoals een voorstel van een collega in Slack, dan zegt een regel onder de to-do dat, zoals "Op basis van Sam in #ops". Tik erop om dat bericht hier te lezen, met Openen in Slack of Gmail erin. Is dat bericht de bron van de to-do zelf, dan toont de bronregel het al en komt er geen tweede regel.
 
 Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat heeft een dun lijntje ernaast.
+
+Een antwoord in een Slack-thread toont ook wat er vóór de thread gezegd werd. Een link van de to-do naar zijn eigen bericht opent het ook hier, met **Openen in Slack** onderaan.
 
 **Details** toont zijn naam, project en gebied (tik erop om het te wijzigen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is; het bericht waar hij uit komt staat onder zijn **Details**.
 

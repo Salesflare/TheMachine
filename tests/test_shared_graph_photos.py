@@ -130,6 +130,22 @@ class SharedGraphPhotos(base.SharedGraph):
         with self.mem.store.connect() as db:
             self.assertIsNone(sgl.photo(db, shown[-32:]))
 
+    def test_nothing_from_google_contacts_goes(self):
+        # Google's Limited Use rules: a contact's photo, job title, phone or birthday read from Google stays with the owner
+        self.olive_mail()
+        with self.own.store.connect() as db:
+            contact_photo(db, LEE, jpeg(portrait(32, 32)), ago(1), 'google')
+            a.enrichment.offer_facts(db, [([LEE], {'title': 'Chief Example Officer', 'company': 'Example Co', 'phone': '+15550100',
+                                                   'birthday': '1990-04-02'}, a.enrichment.RECORD)], 'google', ago(1))
+        self.add(self.own)
+        bodies = []
+        with self.spy(self.own, bodies):
+            self.rounds(2)
+        sent = ' '.join(b for k, b in bodies)
+        self.assertIn('Lee Park', sent)  # the record went
+        for word in ('photo_h', 'photo_img', 'Chief Example Officer', 'Example Co', '+15550100', '1990-04-02', '04-02'):
+            self.assertNotIn(word, sent)
+
     def test_only_a_photo_from_a_work_source_goes(self):
         self.olive_mail()
         node, info = self.lee(self.own)
@@ -137,9 +153,10 @@ class SharedGraphPhotos(base.SharedGraph):
         with_ids = {**info, 'identifiers': [*info.get('identifiers', []), 'wa:3255501', 'tg:77', 'slack:U1']}
         cases = {
             'the look-up': (lambda db: looked_up(db, LEE, picture, ago(1)), True),
-            'Google contacts': (lambda db: contact_photo(db, LEE, picture, ago(1), 'google'), True),
+            'Google contacts (Limited Use: it stays with the owner)': (lambda db: contact_photo(db, LEE, picture, ago(1), 'google'), False),
             'Slack': (lambda db: contact_photo(db, 'slack:U1', picture, ago(1), 'slack'), True),
             'LinkedIn': (lambda db: contact_photo(db, LEE, picture, ago(1), 'linkedin'), True),
+            'Microsoft': (lambda db: contact_photo(db, LEE, picture, ago(1), 'microsoft'), True),
             'Salesflare, a PNG': (lambda db: (contact_photo(db, LEE, png(40, 40), ago(1, 1), 'salesflare'),
                                               db.execute("UPDATE person_photos SET type='image/png'")), True),
             'WhatsApp': (lambda db: save_photo(db, 'wa:3255501', picture, ago(1)), False),
@@ -150,7 +167,7 @@ class SharedGraphPhotos(base.SharedGraph):
                                                                           a.enrichment.keep_photo(db, node, (picture, 'image/jpeg'), ago(1))), False),
             'an unknown source': (lambda db: contact_photo(db, LEE, picture, ago(1), 'somewhere'), False),
             'no record of where it came from': (lambda db: save_photo(db, LEE, picture, ago(1)), False),
-            'offered again since (another source)': (lambda db: contact_photo(db, LEE, picture, ago(2), 'google', tried=ago(1)), False),
+            'offered again since (another source)': (lambda db: contact_photo(db, LEE, picture, ago(2), 'linkedin', tried=ago(1)), False),
             'WebP': (lambda db: looked_up(db, LEE, b'RIFF\x00\x00\x00\x00WEBPVP8 ', ago(1), 'image/webp'), False),
             'the owner took it off': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, None, a.now())), False),
             'the owner set a picture': (lambda db: (looked_up(db, LEE, picture, ago(1)), graph.set_picture(db, node, png(16, 16), a.now())), False),
