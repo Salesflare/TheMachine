@@ -9,10 +9,36 @@ arrives everywhere at once; one teammate's own lines are each a fact already). T
 viewer's language, then the one that says who did what (it names someone on the record or in the team), then the
 fullest, and it says every teammate it came from: "via Sam, Kim and Lee"."""
 import datetime as dt
+import re
 
 import graph
+import locale_prefs
 
 WINDOW = dt.timedelta(minutes=3)  # one message, as several teammates' mailboxes have it
+HEX = re.compile(r'[a-f0-9]{32}')
+
+
+def unique_lines(found):
+    """Timeline lines with each fact once, the newest kept (found: newest first)."""
+    seen, out = set(), []
+    for x in found:
+        key = ' '.join(str(x.get('line') or '').split()).casefold()
+        if key not in seen:
+            seen.add(key)
+            out.append(x)
+    return out
+
+
+def marks(k, reviewed):
+    """What a line this Machine sends says beside its text: k, the message's Fleet-keyed hash, and for a review's
+    line the language it was written in (the review writes in the owner's language)."""
+    return {**({'k': k} if k else {}), **({'lang': locale_prefs.language()} if reviewed else {})}
+
+
+def cleaned(x):
+    """A teammate's line's k and lang, only in their fixed form."""
+    return {**({'k': x['k']} if HEX.fullmatch(str(x.get('k'))) else {}),
+            **({'lang': locale_prefs.code(x['lang'])} if locale_prefs.code(x.get('lang')) else {})}
 
 
 def event_key(kind, metadata, at):
@@ -61,8 +87,10 @@ def _rank(line, lang, names):
 
 def merge(lines, lang, names=()):
     """lines: [{at, line, member, who, score, k?, lang?, tag?}] from every teammate, any order. Returns the Timeline
-    lines, newest first: [{at, line, via: [first names, the closest teammate first], tag?}], each event once."""
-    names = {str(n).casefold() for n in names if n}
+    lines, newest first: [{at, line, via: [first names, the closest teammate first], tag?}], each event once. lang:
+    the viewer's (None: the owner's UI language now)."""
+    lang = lang or locale_prefs.language()
+    names ={str(n).casefold() for n in names if n}
     groups = []
     for x in sorted(lines, key=lambda x: str(x.get('at') or ''), reverse=True):
         group = next((g for g in groups if _same(g, x)), None)

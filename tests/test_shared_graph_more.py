@@ -1053,7 +1053,7 @@ class SharedGraphMore(base.SharedGraph):
         self.add(self.adm, same('adm', 'work', 'own1@acme.example, adm2@acme.example'))
         self.judge(self.own, ('work-7', 'client', 'Olive closed Lee\'s account recovery request'))
         self.judge(self.adm, ('work-7', 'client', 'Lee kreeg antwoord'))
-        with patch.object(sg.locale_prefs, 'language', side_effect=lambda: 'nl' if self.publishing == 'adm2' else 'en'):
+        with patch.object(sg.shared_graph_lines.locale_prefs, 'language', side_effect=lambda: 'nl' if self.publishing == 'adm2' else 'en'):
             for _ in range(2):
                 for box in self.boxes:
                     self.publishing = box.member_id
@@ -1069,7 +1069,7 @@ class SharedGraphMore(base.SharedGraph):
             self.assertEqual(len(entry['sources']), 2)
             # the thread itself shows as one of each teammate's; its lines are what the Timeline has when it doesn't
             entry = {**entry, 'sources': [{**s, 'record': {**s['record'], 'threads': []}} for s in entry['sources']]}
-            with patch.object(sg.locale_prefs, 'language', return_value='en'):
+            with patch.object(sg.shared_graph_lines.locale_prefs, 'language', return_value='en'):
                 section = self.mem.team_section(db, entry)
         self.assertEqual([(x['line'], sorted(x['via'])) for x in section['timeline']], [("Olive closed Lee's account recovery request", ['Ada', 'Olive'])])
 
