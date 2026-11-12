@@ -1285,21 +1285,21 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                 continue  # the same email in two mailboxes counts once
             seen_message_ids.add(m['message-id'])
         crm = m.get('crm_account') if isinstance(m.get('crm_account'), dict) else None
-        if crm and crm.get('domain') and crm.get('name'):
+        if crm and crm.get('domain') and crm.get('name') and '@' not in str(crm['name']):  # an address is no organization's name
             crm_names[str(crm['domain']).lower()] = str(crm['name'])
         if kind in ('salesflare.email', 'salesflare.meeting', 'salesforce.opportunity', 'salesforce.task', 'salesforce.activity'):
             for c in m.get('contacts') or ():
                 if isinstance(c, dict) and '@' in str(c.get('email') or ''):
                     appears['email:' + str(c['email']).lower()].add(f"a {kind.split('.')[0].title()} contact" + (' at ' + str(crm['name']) if crm and crm.get('name') else ''))
         elif kind in ('stripe.event', 'intercom.conversation'):
+            billed = ' '.join(str(m.get('customer_name') or '').split()) if kind == 'stripe.event' else ''  # with "@": no name, no organization's
             for _, addr in addresses(relayed(kind, m).get('from'))[:1]:
                 if addr.rsplit('@', 1)[1] in owner.domains or relay(addr):
                     continue  # a teammate answering support or sending an invoice
-                appears['email:' + addr].add(('billed through Stripe' + (' as ' + str(m['customer_name']) if m.get('customer_name') else ''))
+                appears['email:' + addr].add(('billed through Stripe' + (' as ' + billed if billed and '@' not in billed else ''))
                                              if kind == 'stripe.event' else 'wrote to support (Intercom)')
-                domain = addr.rsplit('@', 1)[1]
-                if kind == 'stripe.event' and m.get('customer_name') and domain not in FREEMAIL:
-                    paying_names.setdefault(domain, str(m['customer_name']))
+                if billed and '@' not in billed and addr.rsplit('@', 1)[1] not in FREEMAIL:
+                    paying_names.setdefault(addr.rsplit('@', 1)[1], billed)
         if event_id in unsubscribes:
             continue
         if kind == 'gmail.message' and (m.get('list_unsubscribe') or m.get('list_id') or automated(m)):
