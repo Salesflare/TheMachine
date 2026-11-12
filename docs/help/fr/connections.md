@@ -10,6 +10,8 @@ order: 1
 
 L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
 
+Une synchro échouée qu’une synchro suivante a rattrapée s’affiche en gris ; seul un échec qui reste le dernier s’affiche comme un problème, avec l’heure du prochain essai.
+
 Ses compteurs indiquent ce qu’elle a apporté, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore vérifié. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
 
 Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand elle peut agir, qu’elle ne le fait qu’après que vous avez appuyé sur **Envoyer** ou donné votre accord.

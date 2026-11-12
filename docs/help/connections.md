@@ -10,6 +10,8 @@ order: 1
 
 The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. **Details** shows **Recent syncs** in plain words (like "Caught up") and what to do.
 
+A failed sync that a later one made up for is shown in gray; only a failure that is still the latest one is shown as a problem, with when it tries again.
+
 Its counts show what it brought in, what came in the last 24 hours and what isn't checked yet. A calendar counts its events.
 
 Each source also says in one line what it brings in and, if it can act, that it acts only after you press **Send** or OK it.

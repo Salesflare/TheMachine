@@ -444,7 +444,7 @@ X and LinkedIn often refuse sign-ins, or keep asking for checks, from data-cente
 
 - After an expired Google sign-in, use the exact reconnect command shown on Connections, on the computer that runs this collector. It pins the account and client, and the same gog file keyring the service uses.
 - While the source waits after a sign-in failure, the collector checks for a renewed sign-in every 15 seconds. It doesn't sleep through the retry hour first. Ordinary throttling and network backoff stay as they are.
-- A successful committed sync clears the current warning; the failure stays in Recent syncs and Details. Coming back to the dashboard or getting a connection again refreshes it at once.
+- A successful committed sync clears the current warning; the failure stays in Recent syncs and Details. There a failure a later sync made up for reads calm, without its Retry time; times read like the rest of the dashboard (Today 08:18, the year only when it isn't this one). Coming back to the dashboard or getting a connection again refreshes it at once.
 
 ### Browser recovery
 
