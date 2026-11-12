@@ -528,9 +528,12 @@ const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'
 // Under the name: the kind of source and Work or personal. The Machine's own health (owner:system) has neither to say.
 function connSubtitle(c){const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===(c.display_name||c.email)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
  return parts.length?html`<small>${parts.join(' · ')}</small>`:''}
+// A connected source's card shows the same logo as its row in + Add (connectLogo, dashboard/logos): the catalog's name for
+// its service (Salesflare is crm there, Google Docs is docs signed in with Google). A catch-all (Other email) keeps its line icon.
+const LOGO_NAME={salesflare:'crm'},connLogo=c=>connectLogo({service:c.service},c.service==='docs'&&c.docs_provider==='google'?'google_docs':LOGO_NAME[c.service]||c.service);
 function connectorCard(c,open){
 const unit={calendar:'events',outlook_calendar:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes',salesforce:'updates'}[c.service]||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
-return html`<article data-group="${healthGroup(c.service)}" data-conn="${c.id}"><div class="conn-head">${icon(c.service)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
+return html`<article data-group="${healthGroup(c.service)}" data-conn="${c.id}"><div class="conn-head">${connLogo(c)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
 <p class="connection-status">${connectorHealth(c).text}</p>
 ${connWhat(c)}
 ${synced?html`<div class="figures">${connFigures(c,unit).map(([n,label])=>html`<div><b>${(n||0).toLocaleString(DL)}</b><span>${t(label)}</span></div>`)}</div>
