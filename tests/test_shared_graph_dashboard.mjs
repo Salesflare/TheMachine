@@ -51,6 +51,9 @@ const calls=[],opened=[];
 let connWait=0,connFail=false;  // a slow or failing save of a connection's switch
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ // the page's own images (the logo, the empty states' stickers), as machine/config.py's BRAND_ASSETS serves them
+ const art=url.pathname.match(/^\/brand\/([a-z0-9-]+\.(png|webp))$/);
+ if(art){try{const b=await readFile(new URL('../brand/'+({'avatar.png':'app-icon-192.png','favicon-32.png':'app-icon-192.png'}[art[1]]||art[1]),import.meta.url));res.setHeader('Content-Type','image/'+art[2]);return res.end(b)}catch{res.statusCode=404;return res.end()}}
  if(url.pathname==='/api/status')return res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0,stamp:fleetStamp}}));
  if(url.pathname==='/api/graph'){
   if(url.searchParams.get('node'))return res.end(JSON.stringify(detail()));
@@ -75,14 +78,20 @@ try{
  // Just joined, not confirmed by an admin's Machine yet: no Mine / Team; the Graph's lists and the Fleet say whose OK it
  // waits for, by name. Once an admin OKs it, Mine / Team shows within seconds, without a reload. Light and dark.
  for(const [width,scheme] of [[390,'light'],[1440,'light'],[390,'dark'],[1440,'dark']]){
-  const was={...sharing[0]},shared=fleet.shared.prompts;
+  const was={...sharing[0]},shared=fleet.shared.prompts,crew=fleet.fleets[0].people;
   Object.assign(sharing[0],{confirmed:false,admin:false,admins:['Olive Park','Ada Stone'],teammates:0,people:[],new_devices:[]});fleet.shared.prompts=[];
+  // a plain member who just joined; the two admins it waits for are in People with their badge
+  fleet.fleets[0].people=[{member_id:'me',name:'Sam Doe',role:'member',me:true,email:'sam@acme.example'},
+   {member_id:'m_olive',name:'Olive Park',role:'owner',email:'olive@acme.example'},{member_id:'m_ada',name:'Ada Stone',role:'admin',email:'ada@acme.example'}];
   const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=projects');
   const note=page.locator('[data-graph-panel="projects"] .team-wait');await note.waitFor();
-  assert.equal(await note.innerText(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show here then.");
+  // an empty list says it in place of its empty state; a list with rows has it above them
+  assert.equal((await note.innerText()).replace(/\s+/g,' ').trim(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show here then.");
+  assert.equal(await page.locator('[data-graph-panel="projects"]').getByText('No projects yet.').count(),0);
+  assert.ok(await page.locator('[data-graph-panel="projects"] img.sticker').evaluate(i=>i.complete&&i.naturalWidth>0),'the sticker loads');
   assert.equal(await page.locator('[data-graph-team]').count(),0);
   assert.equal(await page.locator('[data-graph-panel="people"] .team-wait').count(),1);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
@@ -90,6 +99,8 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#fleet');
   const wait=page.locator('.graph-own.team-wait');await wait.waitFor();
   assert.equal(await wait.innerText(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show in your Graph then.");
+  assert.match(await page.locator('#fleet-m-m_ada').innerText(),/Ada Stone\s*admin/);
+  assert.doesNotMatch(await page.locator('#fleet-m-me').innerText(),/owner|admin/);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/fleet-waiting-${width}-${scheme}.png`});
   // The admin OKs: the Machine's directory changes (status fleet.stamp), and Mine / Team shows without a reload
   await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=projects');
@@ -100,7 +111,7 @@ try{
   assert.ok(Date.now()-asked<8000,'Mine / Team within seconds of the OK');
   assert.deepEqual(errors,[]);
   await context.close();
-  fleet.shared.prompts=shared;fleetStamp=null;
+  fleet.shared.prompts=shared;fleet.fleets[0].people=crew;fleetStamp=null;
  }
  // The admin's side: the new member's OK waits under To-dos as well as in the Fleet tab, light and dark
  for(const [width,scheme] of [[390,'light'],[1440,'light'],[390,'dark'],[1440,'dark']]){

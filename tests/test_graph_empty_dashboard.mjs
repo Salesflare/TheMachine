@@ -33,7 +33,7 @@ try{
   await navClick(page.locator('.side-sub a[data-graph-sub="projects"]'));
   await page.locator('#people-view [data-graph-panel="projects"]:not([hidden]) .graph-empty').waitFor();
   assert.equal(await shown(page).getAttribute('data-graph-panel'),'projects',tag);
-  assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'No projects yet. Checks name them from your messages and to-dos.',tag);
+  assert.equal((await shown(page).innerText()).replace(/\s+/g,' ').trim(),'No projects yet. Your Machine finds them in your messages and to-dos.',tag);
   if(!mobile)assert.match(await page.locator('#page-head').innerText(),/Projects[\s\S]*\+ New project/,tag);  // a phone's head has no room for + New
   assert.equal(await page.locator('.side-sub a[data-graph-sub="projects"][aria-current="page"]').count(),1,`the Projects row is the current one ${tag}`);
   const help=()=>page.locator('#help-link').getAttribute('href');  // the footer's Help opens the page of the list on screen
