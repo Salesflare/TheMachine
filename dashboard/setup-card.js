@@ -130,7 +130,7 @@ async function setupClick(e){const b=e.target.closest('button');if(!b)return;con
   s.dismissed=[...new Set([...(s.dismissed||[]),step])];setupRender();await setupPost('setup_dismiss',step).catch(errCaught);
   if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}
   catch(err){errCaught(err);toast(err.message,true);b.disabled=false}return}
- if(hint?.reconnect){reconnectAccount(String(hint.reconnect.account||''));return}  // reconnect_asks: its card's Reconnect
+ if(hint?.reconnect){lazyRun('connections',()=>reconnectAccount(String(hint.reconnect.account||'')));return}  // reconnect_asks: its card's Reconnect
  if(hint){const u=String(hint.href||'');if(/^https:\/\//.test(u))window.open(u,'_blank','noopener');else if(/^#connect(?:=[a-z_]+|ions=add)$/.test(u))location.hash=u;return}
  if(step==='phone'){const u=setupStore();if(u)window.open(u,'_blank','noopener');return}
  if(step==='whatsapp'){location.hash='#connect=whatsapp';return}

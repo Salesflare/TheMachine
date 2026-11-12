@@ -47,11 +47,6 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-connect-op
 function showHealthPane(id){healthPane=id;healthPicked=true;localStorage.setItem('health-pane',id);if(lazyIn('connections'))renderHealthTabs()}
 // The way into Connections' views, which load when first needed: each waits for them (offline: says so) and goes on.
 async function connectAdd(force){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectAddNow(force)}
-// Reconnect for one account from outside Connections (a setup to-do row, machine/app/reconnect_asks.py): the Reconnect
-// its card has, pressed, so it runs the same sign-in
-async function reconnectAccount(id){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}
- const c=(state.connectors||[]).find(x=>x.id===id),box=c&&make('div',{hidden:''});if(!box)return;box.append(htmlNodes(reconnectButton(c)));document.body.append(box);
- box.querySelector('button,a')?.click();box.remove()}
 async function connectOpen(name){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectOpenNow(name)}
 function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow())}
 // Reconnect buttons elsewhere (cards, Needs you) work before the views are in: the click waits for them, then goes on.

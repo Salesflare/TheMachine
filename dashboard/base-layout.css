@@ -108,3 +108,7 @@ a.btn-link[hidden]{display:none}
 .stat.t-amber b{color:var(--amber)}.stat.t-lavender b{color:var(--lavender)}.stat.t-mint b{color:var(--mint)}
 /*@lazy*/
 .connect-guess{margin:6px 0 0;color:var(--muted);font-size:.88rem}.connect-guess button.link{min-height:0;margin:0;padding:0 2px;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+/* Reconnect to add something (reconnectAsks): why, Reconnect, and its × at the end of the line */
+.note.conn-ask{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:8px 0 0;font-size:.85rem;line-height:1.45}.conn-ask>span{flex:1 1 12em;min-width:0}
+.conn-ask-x{display:grid;place-items:center;flex:none;width:24px;height:24px;min-height:0;margin:0 -4px 0 0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--faint);cursor:pointer}
+.conn-ask-x:hover{background:var(--c-hover);color:var(--text)}.conn-ask-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}

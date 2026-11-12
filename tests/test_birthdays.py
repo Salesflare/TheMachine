@@ -91,7 +91,8 @@ class Sources(unittest.TestCase):
 
     def test_outlook_birthdays_calendar_is_read_with_calendars_read(self):
         self.assertEqual(ms_graph.READ['calendars.list'], ('GET', '/me/calendars', 'Calendars.Read'))
-        self.assertNotIn('Contacts.Read', ms_graph.ANSWERS)  # no new scope
+        # no scope of its own: Contacts.Read is only Outlook contacts' photos and facts (ms_photos.py)
+        self.assertEqual({m for m, r in ms_graph.READ.items() if r[2] == 'Contacts.Read'}, {'contacts.list', 'contacts.photo'})
 
 
 class Birthdays(unittest.TestCase):

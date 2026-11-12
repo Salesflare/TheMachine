@@ -4,7 +4,7 @@ setup to-do (setup_card.py), both closed for good by either ×, which is the set
 It goes by itself once the sign-in has what the feature needs. Never a push, an email or a to-do of its own.
 
 Whoever finds out what a sign-in lacks notes it here (note): the enrichment worker for Google contacts
-(workers.google_contacts_run) and for Outlook's colleague and contact photos (ms_photos.check). A new kind of ask is a key with its sentence in `reason`."""
+(workers.google_contacts_run). A new kind of ask is a key with its sentence in `reason`."""
 from __future__ import annotations
 
 import hashlib
@@ -51,11 +51,13 @@ def hint_id(account, ask):
 
 
 def open_asks(store, config):
-    """{account id: [{id, reason}]} of the owner's own accounts still in config whose ask wasn't closed."""
+    """{account id: [{id, reason}]} of the owner's own accounts still in config whose ask wasn't closed. Only reads (the
+    status poll never waits for the write lock): no table yet is no asks."""
     own = {a['id'] for a in config.get('accounts') or [] if isinstance(a, dict) and a.get('id') and not a.get('shared')}
+    if not own:
+        return {}
     try:
         with store.connect() as db:
-            ensure(db)
             rows = db.execute('SELECT account,ask FROM reconnect_asks ORDER BY since').fetchall()
             closed = {r[0][len('setup:hint-'):] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'setup:hint-reconnect-%'")}
     except sqlite3.Error:

@@ -561,3 +561,7 @@ function drawConnectors(){const expandedSync=new Set([...document.querySelectorA
 // now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
 // tests, the demo) this part runs before shell-render.js, which draws it itself.
 if(self.LAZY_FILES?.connections&&drawnWhole)try{drawConnectors();renderHealthTabs()}catch(e){errCaught(e);console.error(e)}
+// Reconnect for one account from outside Connections (a setup to-do row, machine/app/reconnect_asks.py): the Reconnect
+// its card has, pressed, so it runs the same sign-in
+function reconnectAccount(id){const c=(state.connectors||[]).find(x=>x.id===id),box=c&&make('div',{hidden:''});if(!box)return;
+ box.append(htmlNodes(reconnectButton(c)));document.body.append(box);box.querySelector('button,a')?.click();box.remove()}
