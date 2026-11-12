@@ -42,12 +42,14 @@ import shared_graph_private
 from shared_graph_private import (ADDRESS, AUTOMATED_LABELS, ITEM_KINDS, MAIL_KINDS, addresses, automated_message, conversation_of,  # noqa: F401
                                   item_people, thread_of, unit_of, _kept_conversations)
 from machine.timing import _REQUEST_TIMING
+import locale_prefs
 import network_crypto as nc
 import own_addresses
 import person_birthday
 import project_about
 import security_levels
 import shared_graph_kept
+import shared_graph_lines
 import shared_graph_logos as logos
 import shared_graph_photos as photos
 from shared_graph_logos import team_logo
@@ -766,7 +768,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     keys = key if isinstance(key, list) else [key]
     key = keys[0]
     every = lambda value: [keyed(k, value) for k in keys]  # with every graph key held: teammates on another one still match
-    views, threads, by_thread, this_week = {}, collections.defaultdict(list), {}, {}
+    views, threads, by_thread, this_week, same_event = {}, collections.defaultdict(list), {}, {}, {}
     thread_views = collections.defaultdict(set)
     wrote = {}  # {event id: (when, the owner's own)} for the shared messages
     waiting = set()  # messages of threads that went before and wait to be sorted again
@@ -788,9 +790,13 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             if e['kind'] in graph.MESSAGE_KINDS:  # who wrote last on a shared message: a board's "no reply in 10+ days"
                 labels = e['metadata'].get('labels')
                 wrote[e['id']] = (e['occurred_at'], e['metadata'].get('from_me') is True or (isinstance(labels, list) and 'SENT' in labels))
+            same = shared_graph_lines.event_key(e['kind'], e['metadata'], e['occurred_at'])
+            if same:  # the same message as a teammate's Machine has it: one Timeline line for both (shared_graph_lines)
+                same_event[e['id']] = keyed(key, 'event|' + same)
     if held is not None:
         held.update(keyed(secret, 'thread|' + t) for t, seen in thread_views.items() if seen and seen <= {'pending', 'wait'})
     lines = {r['event_id']: r['line'] for r in db.execute('SELECT event_id,line FROM share_lines')}
+    written = locale_prefs.language()
     names = slack_names_of(db, [e for items in threads.values() for e in items])
     titles = {}  # a line for what has none from the review: all of a board shared by name, and boards' meetings and chats
     on_boards = scope.item_events
@@ -830,7 +836,9 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         for (event_id, at) in db.execute('SELECT event_id,at FROM graph_events WHERE node_id=? AND probable=0 ORDER BY at DESC LIMIT 400', (node_id,)):
             view = views.get(event_id)
             if view == 'team' and (lines.get(event_id) or event_id in titles):  # a title: its whole timeline, also what has no line
-                found.append({'at': at, 'line': lines.get(event_id) or titles[event_id], **thread_tag(event_id)})
+                found.append({'at': at, 'line': lines.get(event_id) or titles[event_id], **thread_tag(event_id),
+                              **({'k': same_event[event_id]} if event_id in same_event else {}),
+                              **({'lang': written} if lines.get(event_id) else {})})  # the review writes in the owner's language
             found = unique_lines(found)  # one line per fact: the review writes a thread's line on each of its messages
             if len(found) >= limit:
                 break
@@ -2900,14 +2908,17 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                 continue  # all this teammate has of it is the owner's own mail
             sources.append(s)
             threads += found
-            lines += [{**x, 'via': who} for x in s['record'].get('timeline') or [] if x.get('tag') not in {f['tag'] for f in found}  # a thread shown: not its line
+            lines += [{**x, 'member': (s['fleet'], s['member']), 'who': who, 'score': s['record'].get('score') or 0}
+                      for x in s['record'].get('timeline') or [] if x.get('tag') not in {f['tag'] for f in found}  # a thread shown: not its line
                       and not any(str(x.get('line') or '').casefold().endswith(': ' + str(f['subject']).casefold()) for f in found if f['subject'])]
-        lines.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         threads.sort(key=lambda x: str(x.get('at') or ''), reverse=True)
         people = [{'member': s['member'], 'fleet': s['fleet'], 'name': _first_name(s['name']), 'left': s['left'],
                    'score': s['record'].get('score') or 0} for s in sorted(sources, key=lambda s: -(s['record'].get('score') or 0))]
         rec = resolve({**entry, 'sources': sources})
-        return {'via': via(sources), 'people': people, 'timeline': unique_lines(lines)[:TIMELINE_PROJECT], 'threads': threads[:40],
+        # each event once, however many teammates had it, in the owner's language where one of them wrote it so
+        named = [p['name'] for p in people] + [_first_name(s['record'].get('name')) for s in sources]
+        merged = shared_graph_lines.merge(lines, locale_prefs.language(), named)
+        return {'via': via(sources), 'people': people, 'timeline': merged[:TIMELINE_PROJECT], 'threads': threads[:40],
                 'fields': rec.get('fields') or [], 'tags': rec.get('tags') or []}
 
     def team_for(self, db, node_id):
@@ -3068,7 +3079,9 @@ def _clean_record(r):
            'last': text('last', 10), 'kv': text('kv', 16),
            **({'owner_pick': r['owner_pick']} if isinstance(r.get('owner_pick'), str) and MEMBER_ID.fullmatch(r['owner_pick']) else {}),
            'timeline': [{'at': _clean_text(x.get('at'), 25), 'line': _clean_text(x.get('line'), 160), **({'private': True} if x.get('private') else {}),
-                         **({'tag': x['tag']} if HEX.fullmatch(str(x.get('tag'))) else {})}
+                         **({'tag': x['tag']} if HEX.fullmatch(str(x.get('tag'))) else {}),
+                         **({'k': x['k']} if HEX.fullmatch(str(x.get('k'))) else {}),
+                         **({'lang': locale_prefs.code(x['lang'])} if locale_prefs.code(x.get('lang')) else {})}
                         for x in (r.get('timeline') or [])[:TIMELINE_PROJECT if r.get('t') == 'project' else TIMELINE] if isinstance(x, dict) and _clean_text(x.get('line'), 160)]}
     if org:
         out['org'] = {'name': _clean_text(org.get('name'), 100), **({'d': hashes(org['d'] if isinstance(org.get('d'), list) else [org.get('d')])} if org.get('d') else {}),

@@ -27,7 +27,7 @@ Un admin peut exiger l’**E-mail pro** et l’**Agenda pro** de chacun sur le d
 ## Ce qui part vers l’équipe
 
 - Les fils clients : les e-mails de travail avec des personnes extérieures à votre entreprise, avec leurs pièces jointes.
-- Les personnes, organisations et projets de travail, avec une courte chronologie.
+- Les personnes, organisations et projets de travail, avec une courte chronologie. Dans la **Chronologie** d'une page, **Équipe** montre chaque événement une seule fois, dans votre langue quand la Machine d'un coéquipier l'a écrit ainsi, avec tous ceux dont il vient : « via Sam, Kim et Lee ».
 - Une petite copie du logo d’une organisation et de la photo professionnelle d’une personne : issue d’une recherche, de Slack, LinkedIn, X, Salesflare ou Microsoft. Jamais une image des contacts Google, de WhatsApp, Telegram ou Facebook, ni une image que vous avez changée ou retirée.
 - Sur un tableau d’équipe, les réunions d’un projet, les notes Zoom, les conversations Intercom et les chats aussi, parce qu’ils sont sur le tableau. Les éléments sensibles, comme les deals, restent exclus, tout comme les chats entre collègues uniquement.
 

@@ -42,6 +42,15 @@ a meeting a teammate logged) never go from it (`secondhand`). They go from their
 choices, and never come back to them as a teammate's. A teammate's thread the owner is on themselves isn't shown among
 the team's items in a page's Timeline (Mine · Team), and each timeline line shows once.
 
+**One line per event** (`shared_graph_lines.py`). The same email reaches several teammates, and each Machine writes
+its own line about it, in its owner's language. Each line goes with `k`, the message's own id hashed with the Fleet's
+graph key inside the sealed record (teammates' Machines can match it, the Network can't; nothing new is in the clear),
+and `lang`. The viewer's Machine shows one line per event: lines with the same `k`, or, from a Machine that sends no
+`k`, lines from different teammates within three minutes on the same record. It picks the line in the viewer's
+language, then one that says who did what, and names every teammate it came from ("via Sam, Kim, and Lee"). The
+review writes each line as who did what, by first name: the whole thread goes to the team, so there is nothing to
+hide behind a vague line.
+
 Inside a connection that is on, each thread is still sorted ([Threads](#threads)), and **Keep private** on a thread or
 record still wins.
 

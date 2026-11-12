@@ -27,7 +27,7 @@ Een beheerder kan ieders **Werkmail** en **Werkagenda** op het eigen domein van 
 ## Wat er naar het team gaat
 
 - Threads met klanten: e-mail met mensen buiten je bedrijf over werk, met de bijlagen.
-- Werkpersonen, organisaties en projecten, met een korte tijdlijn.
+- Werkpersonen, organisaties en projecten, met een korte tijdlijn. In de **Tijdlijn** van een pagina toont **Team** elke gebeurtenis één keer, in jouw taal als de Machine van een teamgenoot ze zo schreef, met iedereen van wie ze komt: "via Sam, Kim en Lee".
 - Een kleine kopie van het logo van een organisatie en van de werkfoto van een persoon: uit een opzoeking, Slack, LinkedIn, X, Salesflare of Microsoft. Nooit een foto uit Google-contacten, WhatsApp, Telegram of Facebook, of een foto die je veranderd of verwijderd hebt.
 - Op een Teambord ook de afspraken, Zoom-notities, Intercom-gesprekken en chats van een project, omdat ze op het bord staan. Gevoelige, zoals deals, blijven erbuiten, net als chats met alleen collega's.
 

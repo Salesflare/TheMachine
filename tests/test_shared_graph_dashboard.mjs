@@ -41,7 +41,7 @@ const robin={id:'team:'+'d'.repeat(32),kind:'person',name:'Robin Shore',strength
 let share={share:'team',fixed:false,why:'Client'};
 const detail=()=>({...lee,links:[],open:{you_promised:[],they_promised:[],cards:[],facts:[]},around:[],keep_private:false,
  recent:[{id:41,kind:'gmail.message',account_id:'work',from:'Lee Client',from_me:false,occurred_at:at,title:'Renewal',preview:'Can you send the quote?',share}],
- team:{via:'via Ada',people:[{fleet:FL,member:'m_ada',name:'Ada',score:2,left:false}],threads:[{id:TID,subject:'Rollout timeline',at,messages:1,via:'Ada'},{id:FL+':m_ada:'+'a'.repeat(32),subject:'Due diligence call',at,messages:1,via:'Ada',kind:'meetings'},{id:FL+':m_ada:'+'b'.repeat(32),subject:'Can we test the API?',at,messages:3,via:'Ada',kind:'intercom'}],timeline:[{at,line:'Lee asked for the renewal quote',via:'Ada'}]}});
+ team:{via:'via Ada',people:[{fleet:FL,member:'m_ada',name:'Ada',score:2,left:false}],threads:[{id:TID,subject:'Rollout timeline',at,messages:1,via:'Ada'},{id:FL+':m_ada:'+'a'.repeat(32),subject:'Due diligence call',at,messages:1,via:'Ada',kind:'meetings'},{id:FL+':m_ada:'+'b'.repeat(32),subject:'Can we test the API?',at,messages:3,via:'Ada',kind:'intercom'}],timeline:[{at,line:'Lee asked for the renewal quote',via:'Ada'},{at,line:'Lee signed the order form',via:['Ada','Kim','Tom']}]}});
 const fleet={on:true,kinds:{},kind_rules:{},no_details:[],scoped:[],scopes:{},waiting:[],asked:[],log:[],notices:[],
  fleets:[{id:FL,kind:'work',label:'Work Fleet',name:'Acme',asks:[],people:[{member_id:'me',name:'Sam Doe',role:'owner',me:true,email:'sam@acme.example'},
   {member_id:'m_kim',name:'Kim Lee',role:'member',email:'kim@acme.example'}],members:[],rules:{},exceptions:{}}],
@@ -191,6 +191,9 @@ try{
   // The team's line and threads are in the Timeline, each saying who it came from, under Mine · Team
   const tl=page.locator('.graph-timeline');assert.equal(await page.locator('.team-block').count(),0);
   assert.match(await tl.locator('.ge-team',{hasText:'Lee asked for the renewal quote'}).innerText(),/via Ada/);
+  // one event several teammates had is one line that names them all
+  assert.equal(await tl.locator('.ge-team',{hasText:'Lee signed the order form'}).count(),1);
+  assert.match(await tl.locator('.ge-team',{hasText:'Lee signed the order form'}).innerText(),/via Ada, Kim,? and Tom$/);
   // A shared board's whole timeline: a meeting and an Intercom conversation say what they are
   assert.equal(await tl.locator('[data-team-thread]',{hasText:'Due diligence call'}).getAttribute('aria-label'),'Calendar: Due diligence call');
   assert.match(await tl.locator('[data-team-thread]',{hasText:'Can we test the API?'}).innerText(),/3 messages · \d\d?:\d\d( [AP]M)? · via Ada/);

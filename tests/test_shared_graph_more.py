@@ -1044,6 +1044,35 @@ class SharedGraphMore(base.SharedGraph):
             section = self.mem.team_section(db, entry)
         self.assertEqual(len(section['timeline']), 1)  # the same fact from two teammates, once
 
+    def test_one_email_two_teammates_had_is_one_line_in_the_viewers_language_via_both(self):
+        # Lee wrote Olive and Ada in one email; each Machine wrote its own line about it, Ada's in Dutch
+        same = lambda box, account, to: {**mail(account, 7, 'Lee Park <lee@client.example>', to, 'Recovery', BODY, 1, 't-' + box),
+                                         'metadata': {'from': 'Lee Park <lee@client.example>', 'to': to, 'labels': ['INBOX'],
+                                                      'message-id': '<recovery-7@client.example>', 'thread_id': 't-' + box}}
+        self.add(self.own, same('own', 'work', 'own1@acme.example, adm2@acme.example'))
+        self.add(self.adm, same('adm', 'work', 'own1@acme.example, adm2@acme.example'))
+        self.judge(self.own, ('work-7', 'client', 'Olive closed Lee\'s account recovery request'))
+        self.judge(self.adm, ('work-7', 'client', 'Lee kreeg antwoord'))
+        with patch.object(sg.locale_prefs, 'language', side_effect=lambda: 'nl' if self.publishing == 'adm2' else 'en'):
+            for _ in range(2):
+                for box in self.boxes:
+                    self.publishing = box.member_id
+                    box.directory(refresh=True)
+                    box.shared_round()
+                    box.graph_round(force=True)
+        sent = {r['member']: json.loads(r['body'])['timeline'] for r in self.team(self.mem) if json.loads(r['body'])['t'] == 'person'}
+        self.assertEqual({m: [x['lang'] for x in t] for m, t in sent.items()}, {'own1': ['en'], 'adm2': ['nl']})
+        self.assertEqual(sent['own1'][0]['k'], sent['adm2'][0]['k'])  # one message, one Fleet-keyed hash, no message id itself
+        self.assertNotIn('recovery-7', json.dumps(sent))
+        with self.mem.store.connect() as db:
+            entry = next(e for e in self.mem.team_graph(db) if e['kind'] == 'person')
+            self.assertEqual(len(entry['sources']), 2)
+            # the thread itself shows as one of each teammate's; its lines are what the Timeline has when it doesn't
+            entry = {**entry, 'sources': [{**s, 'record': {**s['record'], 'threads': []}} for s in entry['sources']]}
+            with patch.object(sg.locale_prefs, 'language', return_value='en'):
+                section = self.mem.team_section(db, entry)
+        self.assertEqual([(x['line'], sorted(x['via'])) for x in section['timeline']], [("Olive closed Lee's account recovery request", ['Ada', 'Olive'])])
+
     def test_a_line_about_a_thread_the_timeline_shows_is_left_to_the_thread_which_has_its_newest_message_start(self):
         self.add(self.own, mail('work', 1, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Rescheduling', 'Can we move it?', 3, 't-r'),
                  mail('work', 2, '"Lee Park" <lee@client.example>', 'own1@acme.example', 'Re: Rescheduling', 'November 25\n\n  works.', 2, 't-r'))

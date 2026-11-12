@@ -11,6 +11,12 @@ SHRINKS = ('timeline', 'threads', 'people')  # what a record lists of the thread
 SOURCED = ('why', 'next', 'org')            # what a record says from one source, or about someone else
 
 
+def _same(item):
+    """A timeline line as what it says, without the event hash and language a newer Machine adds (shared_graph_lines):
+    a line that went before them is still on the record."""
+    return {k: v for k, v in item.items() if k not in ('k', 'lang')} if isinstance(item, dict) else item
+
+
 def shrunk(sent, had, current):
     """What is left of the records the team has, for a take-back (graph_take_back): (hashes {rid: hash} of what the
     team has after it, the records that changed, the ids of those that are gone). sent: {rid: record} as they went;
@@ -32,7 +38,8 @@ def shrunk(sent, had, current):
         after = dict(was)
         for field in SHRINKS:
             if isinstance(was.get(field), list):
-                after[field] = [x for x in was[field] if x in (would.get(field) or [])]
+                now = [_same(x) for x in would.get(field) or []]
+                after[field] = [x for x in was[field] if _same(x) in now]
         for field in SOURCED:
             if was.get(field) is not None and was.get(field) != would.get(field):
                 after[field] = None
