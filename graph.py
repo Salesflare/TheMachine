@@ -1167,6 +1167,15 @@ def _edits(db):
     return row[0] if row else 0
 
 
+def link_people(db, event_id, person_ids, at):
+    """Link these people to one event now, in the caller's write: the graph_events rows a build makes for them ('about',
+    direct). A build computing from an older read would drop them when it publishes: graph_edits makes it compute again."""
+    added = db.executemany("INSERT OR IGNORE INTO graph_events(node_id,event_id,at,probable,direct) "
+                           "SELECT id,?,?,0,1 FROM graph_nodes WHERE id=? AND kind='person'", [(event_id, at, i) for i in person_ids]).rowcount
+    if added and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='graph_edits'").fetchone():
+        db.execute('UPDATE graph_edits SET n=n+1 WHERE id=1')
+
+
 def _metadata(text):
     try:
         m = json.loads(text)
