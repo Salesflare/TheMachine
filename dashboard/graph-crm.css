@@ -195,6 +195,8 @@
 .ge-preview.fade{-webkit-mask:linear-gradient(#000,#000) 0 0/100% 1.45em no-repeat,linear-gradient(90deg,#000 50%,transparent) 0 1.45em/100% 1.45em no-repeat;mask:linear-gradient(#000,#000) 0 0/100% 1.45em no-repeat,linear-gradient(90deg,#000 50%,transparent) 0 1.45em/100% 1.45em no-repeat}
 .ge-note{margin:2px 0 0;font-size:var(--fs-xs);color:var(--faint)}
 .ge-head .ge-meta{flex:none;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}.ge-head .ge-meta:only-child{flex:1;line-height:1.4}
+/* a team line from several teammates: the line keeps its width, the time and who it came from go under it when narrow */
+.ge-team .ge-head{flex-wrap:wrap;row-gap:0}.ge-team .ge-head h4{flex:1 1 14em}.ge-team .ge-head .ge-meta{flex:0 1 auto;min-width:0;line-height:1.4}
 .ge-lines{margin:2px 0 0;padding:0;list-style:none;font-size:var(--fs-sm);line-height:1.45;color:var(--muted)}
 .ge-lines li{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ge-lines b{font-weight:var(--fw-medium)}
 /*@eager*/

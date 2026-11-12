@@ -29,7 +29,7 @@ Ein Admin kann unter **Von der Fleet verlangt** die **Arbeits-E-Mail** und den *
 ## Was ans Team geht
 
 - Kunden-Threads: E-Mails mit Personen außerhalb deiner Firma über Arbeit, mit ihren Anhängen.
-- Arbeitskontakte, Organisationen und Projekte, mit einem kurzen Verlauf.
+- Arbeitskontakte, Organisationen und Projekte, mit einem kurzen Verlauf. Im **Verlauf** einer Seite zeigt **Team** jedes Ereignis einmal, in deiner Sprache, wenn die Machine eines Teammitglieds es so geschrieben hat, mit allen, von denen es kommt: „über Sam, Kim und Lee“.
 - Eine kleine Kopie des Logos einer Organisation und des Arbeitsfotos einer Person: aus einer Suche, Slack, LinkedIn, X, Salesflare oder Microsoft. Nie ein Bild aus Google-Kontakten, WhatsApp, Telegram oder Facebook und nie ein Bild, das du geändert oder entfernt hast.
 - Auf einem Team-Board auch die Meetings, Zoom-Notizen, Intercom-Unterhaltungen und Chats eines Projekts, weil sie auf dem Board sind. Sensible, etwa Deals, bleiben draußen, ebenso Chats nur unter Kollegen.
 - Deine Zahlen und Daten für das [Team-Briefing](fleet.md#brief-requests) eines Teammitglieds, nur aus diesen.
