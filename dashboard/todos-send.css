@@ -30,15 +30,15 @@
 .card :is(.card-foot,.card-source) .read-original::before,.card :is(.card-foot,.card-source) .read-original>span{flex:none;margin-top:calc((1lh - 14px)/2)}.card :is(.card-foot,.card-source) .read-original>span.src{flex:0 1 auto;min-width:0;margin-top:0}.src-date{white-space:nowrap}.card :is(.card-foot,.card-source) .read-original>span{margin-top:0}  /* icon and arrow sit on the first line when the source wraps; no underline, so the arrow never gets one */
 @media (hover:hover){.card :is(.card-foot,.card-source) .read-original:hover{color:var(--text)}}
 .card .foot-links{display:inline-flex;gap:14px;margin-left:auto}.card .foot-links button{margin:0;padding:0;border:0;background:none;min-height:0;font-size:inherit;font-weight:600;color:var(--muted)}.card .foot-links button:hover{color:var(--text)}
-/* A first-use tip (firstTip): one quiet line under the buttons, a small mint dot, the buttons it names in ink, × to close. */
-.card .first-tip{display:flex;align-items:flex-start;gap:8px;margin:10px 0 0;font-size:var(--fs-sm);line-height:1.45;color:var(--muted)}
-.card .first-tip::before{content:'';flex:none;width:6px;height:6px;margin-top:calc(.725em - 3px);border-radius:50%;background:var(--c-accent)}
+/* A first-use tip (firstTip): a light mint box under the buttons, a lightbulb, its button names in ink, × top-right. */
+.card .first-tip{display:flex;align-items:flex-start;gap:10px;margin:14px 0 0;padding:10px 12px;border:1px solid color-mix(in srgb,var(--c-accent) 22%,transparent);border-radius:var(--r-md);background:color-mix(in srgb,var(--c-accent-tint) 60%,transparent);font-size:var(--fs-sm);line-height:1.45;color:var(--muted)}
+.card .first-tip .tip-icon{flex:none;width:16px;height:16px;margin-top:calc(.725em - 8px);fill:none;stroke:var(--c-accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .card .first-tip .tip-text{flex:1 1 auto;min-width:0}
 .card .first-tip .tip-act{display:inline;min-height:0;min-width:0;margin:0;padding:0;border:0;background:none;box-shadow:none;font:inherit;font-weight:var(--fw-medium);color:var(--text);text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 30%,transparent);text-underline-offset:3px;cursor:pointer}
 .card .first-tip .tip-act:hover{text-decoration-color:currentColor}
-.card .first-tip .tip-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;min-width:0;margin:-2px -6px -2px 0;padding:0;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--faint);font-size:16px;line-height:1;cursor:pointer}
-.card .first-tip .tip-x:hover{background:var(--sunken);color:var(--text)}
-@media(max-width:640px){.card .first-tip .tip-x{width:32px;height:32px;margin:-6px -8px -6px 0}}
+.card .first-tip .tip-x{flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:0;min-width:0;margin:-4px -6px -4px 0;padding:0;border:0;border-radius:6px;background:none;box-shadow:none;color:var(--faint);font-size:16px;line-height:1;cursor:pointer}
+.card .first-tip .tip-x:hover{background:color-mix(in srgb,var(--c-accent) 16%,transparent);color:var(--text)}
+@media(max-width:640px){.card .first-tip .tip-x{width:32px;height:32px;margin:-8px -8px -8px 0}}
 /* Button tiles: equal height, the primary action in mint first; on a phone three per row, the rest share the next row. */
 .card .actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .card .actions:not(.result-actions)>:is(button,a.open){flex:0 0 auto;min-width:104px;min-height:40px;margin:0;padding:8px 16px;display:inline-flex;align-items:center;justify-content:center;text-align:center;border:0;border-radius:12px;font-size:.92rem;font-weight:500;line-height:1.25;white-space:normal;text-decoration:none;color:var(--text)}
