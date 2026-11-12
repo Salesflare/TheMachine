@@ -89,12 +89,32 @@ async () => {
       if (!body && (m.renderContent || []).length) body = '[attachment]';
       return {urn: m.entityUrn, originToken: m.originToken || null, from: s.name, fromMe: s.me, at: m.deliveredAt, subject: txt(m.subject) || null, text: body}; };
     const root = j => j.data?.data || j.data || {};
+    const odd = (what) => Object.assign(Error(what), {code: 'odd-answer'});
+    // One request's worth of a conversation's messages back to `floor`. LinkedIn's message pages start at the
+    // conversation's FIRST message and go forward (nextCursor; prevCursor stays empty), so in a long thread a new reply
+    // is never on the first page. The first step reads the newest messages instead, as LinkedIn's own thread view does;
+    // only when even the oldest of those is inside the window does it walk the pages from the start, forward.
+    // at: the previous step's {walk, cursor}, or null. Returns {messages, next: {walk, cursor} | null when done}.
+    const step = async (urn, at, floor, count) => {
+      if (!at?.walk) {
+        const mj = await gql(P.ids.messages, '(conversationUrn:' + enc(urn) + ')'); absorb(mj);
+        const messages = (mj.included || []).filter(x => /messenger\.Message$/.test(x.$type)).map(msg);
+        return {messages, next: !messages.length || messages.some(m => (m.at || 0) < floor) ? null : {walk: true, cursor: null}};
+      }
+      const mj = await gql(P.ids.message_pages, '(conversationUrn:' + enc(urn) + ',count:' + count + (at.cursor ? ',nextCursor:' + enc(at.cursor) : '') + ')'); absorb(mj);
+      const page = root(mj).messengerMessagesByConversation;
+      if (!page?.metadata) throw odd('missing message paging metadata');
+      const messages = (mj.included || []).filter(x => /messenger\.Message$/.test(x.$type)).map(msg);
+      const cursor = page.metadata.nextCursor;
+      if (!messages.length || !cursor) return {messages, next: null};  // past the newest message: an empty page
+      if (cursor === at.cursor) throw odd('message cursor did not advance');
+      return {messages, next: {walk: true, cursor}};
+    };
     if (P.mode === 'history') {
       // Older messages, one small request per run (besides /me): a page of conversations active since P.since, or one
-      // page of the first queued conversation's messages, newest first. Only messages from P.since to P.until return.
+      // step through the first queued conversation's messages (step above). Only messages from P.since to P.until return.
       // Anything unexpected throws, so the caller stops for a day instead of trying again.
       const S = {queue: [], cursor: null, listed: false, ...(P.state || {})}, out = [];
-      const odd = (what) => Object.assign(Error(what), {code: 'odd-answer'});
       if (!S.queue.length) {
         if (S.listed && !S.cursor) return {messages: [], done: true, state: S};
         const cp = await gql(P.ids.conversation_pages, '(mailboxUrn:' + enc(meUrn) + ',category:INBOX,count:' + P.count + (S.cursor ? ',nextCursor:' + enc(S.cursor) : '') + ')');
@@ -114,16 +134,10 @@ async () => {
         return {messages: [], done: !S.queue.length && !S.cursor, state: S};
       }
       const c = S.queue[0];
-      const mj = await gql(P.ids.message_pages, '(conversationUrn:' + enc(c.urn) + ',count:' + P.count + (c.cursor ? ',prevCursor:' + enc(c.cursor) : '') + ')'); absorb(mj);
-      const page = root(mj).messengerMessagesByConversation;
-      if (!page?.metadata) throw odd('missing message paging metadata');
-      const messages = (mj.included || []).filter(x => /messenger\.Message$/.test(x.$type)).map(msg);
-      messages.filter(m => (m.at || 0) >= P.since && (m.at || 0) < P.until)
+      const s = await step(c.urn, c, P.since, P.count);
+      s.messages.filter(m => (m.at || 0) >= P.since && (m.at || 0) < P.until)
         .forEach(m => out.push({...m, conversation: c.urn, with: c.with, headline: c.headline, group: c.group, categories: c.categories}));
-      const next = page.metadata.prevCursor;
-      if (!next || !messages.length || messages.some(m => (m.at || 0) < P.since)) S.queue.shift();
-      else if (next === c.cursor) throw odd('message cursor did not advance');
-      else c.cursor = next;
+      if (s.next) Object.assign(c, s.next); else S.queue.shift();
       return {messages: out, done: !S.queue.length && !S.cursor, state: S};
     }
     if (P.mode === 'connections') {
@@ -181,17 +195,10 @@ async () => {
       for (const c of convs.filter(c => (c.lastActivityAt || 0) >= P.since && !c.categories.includes('SPAM'))) {
         if (progress[c.urn]?.done) continue;
         while (budget<5 && !(budget && late())) {
-          const previous=progress[c.urn]?.cursor;
-          const mj = await gql(P.ids.message_pages,'(conversationUrn:'+enc(c.urn)+',count:20'+(previous?',prevCursor:'+enc(previous):'')+')'); absorb(mj);budget++;
-          const page=root(mj).messengerMessagesByConversation;
-          if (!page?.metadata) throw Error('missing message paging metadata');
-          const messages=(mj.included || []).filter(x => /messenger\.Message$/.test(x.$type)).map(msg);
-          messages.filter(m=>(m.at||0)>=P.since).forEach(m=>out.push({...m,conversation:c.urn,with:c.with,headline:c.headline,group:c.group,categories:c.categories,unread:!c.read}));
-          const cursor=page.metadata.prevCursor;
-          const done=!cursor || messages.some(m=>(m.at||0)<P.since);
-          if (cursor && cursor===previous && !done) throw Error('message cursor did not advance');
-          progress[c.urn]={cursor:done?null:cursor,done};
-          if(done)break;
+          const s=await step(c.urn,progress[c.urn],P.since,20);budget++;
+          s.messages.filter(m=>(m.at||0)>=P.since).forEach(m=>out.push({...m,conversation:c.urn,with:c.with,headline:c.headline,group:c.group,categories:c.categories,unread:!c.read}));
+          progress[c.urn]=s.next||{done:true};
+          if(!s.next)break;
         }
         if (!progress[c.urn]?.done) {pending=true;break;}
         if(budget>=5 || late()){pending=convs.some(c=>(c.lastActivityAt||0)>=P.since&&!c.categories.includes('SPAM')&&!progress[c.urn]?.done);break;}

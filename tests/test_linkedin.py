@@ -445,6 +445,9 @@ class Tabs(unittest.TestCase):
 
 FAKE_LINKEDIN = r"""
 // LinkedIn's messaging API as the reader's in-page script sees it, from a made-up fixture; then the script itself.
+// As LinkedIn answers (checked on a real account): a conversation's message pages start at its FIRST message and go
+// forward with nextCursor (always set; past the end a page is empty), prevCursor stays empty; the plain messages
+// query answers the newest 20.
 const [fixture, script] = process.argv.slice(-2), F = JSON.parse(fixture), asked = [];
 globalThis.location = {host: 'www.linkedin.com'};
 globalThis.document = {readyState: 'complete', cookie: 'JSESSIONID="ajax:1"'};
@@ -455,7 +458,12 @@ globalThis.fetch = async (u) => {
   const vars = decodeURIComponent(u.split('&variables=')[1]);
   const cat = vars.match(/category:([A-Z_]+)/);
   if (cat) return F.lists[cat[1]] ? ok(F.lists[cat[1]]) : {ok: false, status: 400, json: async () => ({})};
-  return ok(F.messages[vars.match(/conversationUrn:(.*\)),count/)[1]]);
+  const urn = vars.match(/conversationUrn:(urn:li:msg_conversation:\([^)]*\))/)[1], all = F.messages[urn] || [];
+  const count = vars.match(/,count:(\d+)/);
+  if (!count) return ok({data: {data: {messengerMessagesBySyncToken: {metadata: {}}}}, included: all.slice(-20)});
+  const start = Number((vars.match(/nextCursor:at(\d+)/) || [0, 0])[1]), n = Number(count[1]);
+  return ok({data: {data: {messengerMessagesByConversation: {metadata: {nextCursor: 'at' + Math.min(all.length, start + n), prevCursor: null}}}},
+             included: all.slice(start, start + n)});
 };
 eval(script)().then(r => console.log(JSON.stringify({r, asked})));
 """
@@ -487,12 +495,12 @@ class ReaderScope(unittest.TestCase):
                 'included': convs + people}
 
     def thread(self, conv, *messages):
-        return {'data': {'data': {'messengerMessagesByConversation': {'metadata': {'prevCursor': 'older'}}}},
-                'included': [{'$type': 'com.linkedin.messenger.Message', 'entityUrn': 'urn:li:msg_message:(' + conv['entityUrn'][-6:] + ',' + str(at) + ')',
-                              '*sender': sender, 'body': {'text': text}, 'deliveredAt': at} for sender, at, text in messages]}
+        """A conversation's messages as LinkedIn keeps them, oldest first."""
+        return sorted(({'$type': 'com.linkedin.messenger.Message', 'entityUrn': 'urn:li:msg_message:(' + conv['entityUrn'][-6:] + ',' + str(at) + ')',
+                        '*sender': sender, 'body': {'text': text}, 'deliveredAt': at} for sender, at, text in messages), key=lambda m: m['deliveredAt'])
 
-    def sync(self, lists, messages, side, state=None):
-        params = {'mode': 'sync', 'which': '', 'since': self.SINCE, 'text': '', 'ids': self.reader.DEFAULT_IDS, 'state': state or {}, 'side': side}
+    def sync(self, lists, messages, side, state=None, **extra):
+        params = {'mode': 'sync', 'which': '', 'since': self.SINCE, 'text': '', 'ids': self.reader.DEFAULT_IDS, 'state': state or {}, 'side': side, **extra}
         out = subprocess.run(['node', '-e', FAKE_LINKEDIN, '--', json.dumps({'lists': lists, 'messages': messages}),
                               self.reader.JS.replace('__PARAMS__', json.dumps(params))], capture_output=True, text=True, timeout=60)
         self.assertEqual(out.returncode, 0, out.stderr)
@@ -531,6 +539,49 @@ class ReaderScope(unittest.TestCase):
         lists['INBOX'] = self.page([self.conv('2-QUIET==', self.SINCE - self.DAY, ['INBOX'])])
         res, asked = self.sync(lists, messages, side=self.reader.SIDE_CATEGORIES, state=res['state'])
         self.assertEqual((res['messages'], res['more'], len(asked)), ([], False, 1))
+
+    def long_thread(self, conv, old, new):
+        """`old` messages months back, then `new` ones since the floor, the last at the conversation's last activity."""
+        return self.thread(conv, *[(self.ME if i % 2 else self.OTHER, self.SINCE - 200 * self.DAY + i * self.DAY, 'Earlier %d' % i) for i in range(old)],
+                           *[(self.OTHER, conv['lastActivityAt'] - (new - 1 - i) * 60000, 'New %d' % i) for i in range(new)])
+
+    def test_a_reply_at_the_end_of_a_long_inbox_thread_is_read(self):
+        # The reported miss: an old thread of more than a page, a reply after months. Its first page holds the thread's
+        # first messages, all older than the window, so reading only that page said caught up without the reply.
+        conv = self.conv('2-LONG==', self.SINCE + 8 * 3600000, ['INBOX', 'PRIMARY_INBOX'])
+        messages = {conv['entityUrn']: self.long_thread(conv, 30, 1)}
+        res, _ = self.sync({'INBOX': self.page([conv])}, messages, side=[])
+        self.assertEqual([(m['text'], m['fromMe']) for m in res['messages']], [('New 0', False)])
+        self.assertEqual((res['more'], res['state']['coverage_complete']), (False, True))
+
+    def test_more_new_messages_than_the_newest_page_walks_the_thread_once(self):
+        conv = self.conv('2-BUSY==', self.SINCE + 8 * 3600000, ['INBOX'])
+        messages = {conv['entityUrn']: self.long_thread(conv, 10, 25)}
+        res, _ = self.sync({'INBOX': self.page([conv])}, messages, side=[])
+        texts = [m['text'] for m in res['messages']]
+        self.assertEqual(sorted(set(texts)), sorted('New %d' % i for i in range(25)))  # the 20 newest and the 5 before them
+        self.assertEqual(res['more'], False)
+        # Out of budget halfway: the walk's cursor is kept and the next run goes on from there.
+        many = [self.conv('2-M%d==' % i, self.SINCE + i * 3600000, ['INBOX']) for i in range(1, 4)]
+        messages = {c['entityUrn']: self.long_thread(c, 10, 70) for c in many}
+        res, _ = self.sync({'INBOX': self.page(many)}, messages, side=[])
+        self.assertTrue(res['more'])
+        walking = [p for p in res['state']['progress'].values() if p.get('walk')]
+        self.assertEqual(len(walking), 1)
+        self.assertTrue(walking[0]['cursor'])
+
+    def test_history_reads_the_window_of_a_long_thread(self):
+        conv = self.conv('2-HIST==', self.SINCE - 2 * self.DAY, ['INBOX'])
+        messages = {conv['entityUrn']: self.long_thread(conv, 5, 30)}
+        lists, state, got = {'INBOX': self.page([conv])}, {}, []
+        for _ in range(10):
+            res, _ = self.sync(lists, messages, side=[], mode='history', since=self.SINCE - 30 * self.DAY, until=self.SINCE, count=10, state=state)
+            got += [m['text'] for m in res['messages']]
+            state = res['state']
+            if res['done']:
+                break
+        self.assertTrue(res['done'])
+        self.assertEqual(sorted(set(got)), sorted('New %d' % i for i in range(30)))
 
     def test_the_reader_passes_the_other_categories_to_sync(self):
         with patch.object(self.reader, 'run', return_value={'messages': []}) as run, patch('builtins.print'):
