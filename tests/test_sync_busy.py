@@ -78,6 +78,22 @@ class ServiceBusy(unittest.TestCase):
             self.assertEqual(db.execute('SELECT error FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()[0],
                              'google_meet_http:HTTP_503')  # the connection says the service had a problem, retrying
 
+    def test_a_400_on_the_quick_retry_after_a_504_waits_unreported(self):
+        account = {'id': 'work-docs', 'service': 'docs', 'poll_seconds': 300}
+        app, sync = self.app([assistant.SourceError('docs_microsoft', 504), assistant.SourceError('docs_microsoft', 400)])
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
+            app.collector(account)
+        self.assertEqual(self.waits[:2], [assistant.QUICK_RETRY_SECONDS, 300])
+        self.assertEqual(self.feed(app), 0)
+
+    def test_a_400_on_its_own_is_reported_at_once(self):
+        account = {'id': 'work-docs', 'service': 'docs', 'poll_seconds': 300}
+        app, sync = self.app([assistant.SourceError('docs_microsoft', 400)])
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
+            app.collector(account)
+        self.assertNotIn(assistant.QUICK_RETRY_SECONDS, self.waits)
+        self.assertEqual(self.feed(app), 1)
+
     def test_a_down_notification_bridge_is_read_with_a_growing_wait(self):
         account = {'id': 'phone', 'service': 'android', 'transport': 'openclaw-feed', 'poll_seconds': 15}
         down = lambda: assistant.SourceError('android_feed_unavailable', retry_after=15)
