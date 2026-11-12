@@ -502,7 +502,6 @@ LAZY_CEILING.update(followups=28_000, graph=384_000)
 # connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
 # puts catch-all sources last (about 0.9 KB).
 LAZY_CEILING['connections'] = 110_000
-<<<<<<< HEAD
 # connections 110,000 -> 111,000 (2026-11-12): Signal chats' QR step, its two stop notes and its no-older-messages note
 # on the card (about 0.35 KB), after the calendar sources took the room.
 LAZY_CEILING['connections'] = 111_000
