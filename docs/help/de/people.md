@@ -88,6 +88,8 @@ Deine Verbindungen ergänzen mehr mit dem, was sie ohnehin lesen: Position, Tele
 
 WhatsApp- und Telegram-Bilder kommen über deine WhatsApp-Synchronisierung und deine Verbindung zu Telegram-Chats: bis zu 50 am Tag pro Dienst, nur für Personen, die schon in deinem Graph sind. An die Personen wird nichts gesendet. Ein Import der Facebook-Geburtstage ergänzt beim Speichern das Profilbild von Personen ohne Foto ([Routinen](routines.md)). Alles bleibt auf deiner Machine.
 
+Im [Team-Graph](team-graph.md) einer Work Fleet geht eine kleine Kopie eines Arbeitsfotos mit dem geteilten Eintrag einer Person mit. Bilder aus WhatsApp, Telegram oder Facebook und Bilder, die du geändert oder entfernt hast, gehen nie mit.
+
 ## Über dich
 
 Deine eigenen Adressen und Nummern, auch Aliasse, sind immer du, nie jemand in deinem Graph. Wenn du nach dir selbst suchst oder eine Person mit einer deiner Adressen hinzufügst, öffnet sich **Über dich**, und ein Import überspringt deine eigene Zeile.

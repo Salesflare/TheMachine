@@ -11,7 +11,9 @@ At most LOGO_BLOB_BYTES of pictures go in one blob; the rest wait for the next r
 
 A receiving Machine checks a picture and draws it again (logo_image.received) before it keeps it in the teammate's
 record (team_records, sealed at rest and removed with it), and serves it from its own address (api/person-photo).
-Its own logo for an organization it knows comes first, then a teammate's LinkedIn logo, then this picture."""
+Its own logo for an organization it knows comes first, then a teammate's LinkedIn logo, then this picture.
+
+A person's photo goes the same way (photo_h, photo_img; shared_graph_photos.py says which photos may go)."""
 import hashlib
 import json
 import re
@@ -72,15 +74,25 @@ def org_logo(db, logo):
     return {'logo_h': thumb[0]} if thumb else {}
 
 
+def field(rec):
+    """Which picture a record carries: an organization's logo or a person's photo (shared_graph_photos.py), or None.
+    Both go the same way: a hash in the record, the picture once (logo_h/logo_img, photo_h/photo_img)."""
+    return 'logo' if rec.get('logo_h') else 'photo' if rec.get('photo_h') else None
+
+
+def _h(rec):
+    return rec.get('logo_h') or rec.get('photo_h')
+
+
 def _attach(records, sent, budget):
-    """records with the picture of each logo `sent` doesn't have yet, within budget (bytes): (records, {rid: logo_h}
-    attached, bytes left)."""
+    """records with the picture of each logo or photo `sent` doesn't have yet, within budget (bytes): (records,
+    {rid: hash} attached, bytes left)."""
     out, attached = [], {}
     for rec in records:
-        h = rec.get('logo_h')
+        h = _h(rec)
         png = _OUT.get(h) if h and sent.get(rec['r']) != h else None
         if png and len(png) <= budget:
-            rec = {**rec, 'logo_img': nc.b64(png)}
+            rec = {**rec, field(rec) + '_img': nc.b64(png)}
             attached[rec['r']] = h
             budget -= len(png)
         out.append(rec)
@@ -88,8 +100,8 @@ def _attach(records, sent, budget):
 
 
 def _kept(records, sent, attached):
-    """What the recipients have of each record's logo picture after a blob: only for records that still carry it."""
-    return {rid: h for rid, h in {**sent, **attached}.items() if (records.get(rid) or {}).get('logo_h') == h}
+    """What the recipients have of each record's picture after a blob: only for records that still carry it."""
+    return {rid: h for rid, h in {**sent, **attached}.items() if _h(records.get(rid) or {}) == h}
 
 
 def snapshot_records(records, st, to, kv):
@@ -106,7 +118,7 @@ def delta_records(records, changed, st):
     picture goes; its logo state for st)."""
     sent = dict(st.get('logos') or {})
     out, attached, left = _attach([records[r] for r in changed], sent, LOGO_BLOB_BYTES)
-    waiting = [records[r] for r, rec in records.items() if r not in changed and rec.get('logo_h') in _OUT and sent.get(r) != rec['logo_h']]
+    waiting = [records[r] for r, rec in records.items() if r not in changed and _h(rec) in _OUT and sent.get(r) != _h(rec)]
     waiting, more, _ = _attach(waiting, sent, left)
     attached.update(more)
     return out + [r for r in waiting if r['r'] in more], bool(more), {'logos': _kept(records, sent, attached)}
@@ -114,14 +126,15 @@ def delta_records(records, changed, st):
 
 # -- receiving
 def clean(r, out):
-    """A teammate's organization record's logo, into its cleaned record: a LinkedIn logo's address, else its own
-    site's logo's picture, checked and drawn again here."""
-    if team_logo(r.get('logo')):
+    """A teammate's organization record's logo (a LinkedIn logo's address, else its own site's logo's picture) or
+    person record's photo, into its cleaned record; a picture checked and drawn again here."""
+    if r['t'] == 'org' and team_logo(r.get('logo')):
         out['logo'] = r['logo']
-    if out.get('logo') or not HEX.fullmatch(str(r.get('logo_h'))):
+    name = {'org': 'logo', 'person': 'photo'}.get(r['t'])
+    if not name or out.get('logo') or not HEX.fullmatch(str(r.get(name + '_h'))):
         return
-    out['logo_h'] = r['logo_h']
-    text = r.get('logo_img')
+    out[name + '_h'] = r[name + '_h']
+    text = r.get(name + '_img')
     if not isinstance(text, str) or len(text) > logo_image.MAX_BYTES * 4 // 3 + 4:
         return
     try:
@@ -129,44 +142,47 @@ def clean(r, out):
     except ValueError:
         return
     if png:
-        out.update(logo_img=nc.b64(png), logo_key=hashlib.sha256(png).hexdigest()[:32])
+        out.update({name + '_img': nc.b64(png), name + '_key': hashlib.sha256(png).hexdigest()[:32]})
 
 
 def had(db, fleet, member):
-    """{logo_h: (picture, key)} of a teammate's organization logo pictures this Machine keeps."""
+    """{hash: (picture, key)} of a teammate's organization logo and person photo pictures this Machine keeps."""
     out = {}
-    for row in db.execute("SELECT body FROM team_records WHERE fleet=? AND member=? AND kind='org'", (fleet, member)):
+    for row in db.execute("SELECT body FROM team_records WHERE fleet=? AND member=? AND kind IN ('org','person')", (fleet, member)):
         body = json.loads(row['body'])
-        if body.get('logo_h') and body.get('logo_img'):
-            out[body['logo_h']] = (body['logo_img'], body.get('logo_key'))
+        name = field(body)
+        if name and body.get(name + '_img'):
+            out[body[name + '_h']] = (body[name + '_img'], body.get(name + '_key'))
     return out
 
 
 def carry(record, kept):
     """A record that came again without its picture (it went before) keeps the one this Machine has of it."""
-    if record.get('logo_h') and 'logo_img' not in record and record['logo_h'] in (kept or {}):
-        record['logo_img'], record['logo_key'] = kept[record['logo_h']]
+    name = field(record)
+    if name and name + '_img' not in record and record[name + '_h'] in (kept or {}):
+        record[name + '_img'], record[name + '_key'] = kept[record[name + '_h']]
     return record
 
 
 def pictures(db):
-    """{'png': {key: PNG}, 'by_d': {domain hash: key}} of teammates' organization logo pictures, kept until
-    team_records changes."""
+    """{'png': {key: PNG}, 'by_d': {domain hash: key}} of teammates' organization logo and person photo pictures
+    (by_d: logos only), kept until team_records changes."""
     def build():
         out = {'png': {}, 'by_d': {}}
         try:
-            rows = db.execute("SELECT body FROM team_records WHERE kind='org'").fetchall()
+            rows = db.execute("SELECT body FROM team_records WHERE kind IN ('org','person')").fetchall()
         except sqlite3.OperationalError:
             return out
         for row in rows:
             body = json.loads(row['body'])
-            key, img = body.get('logo_key'), body.get('logo_img')
-            if HEX.fullmatch(str(key)) and isinstance(img, str):
+            name = field(body)
+            key, img = body.get(f'{name}_key'), body.get(f'{name}_img')
+            if name and HEX.fullmatch(str(key)) and isinstance(img, str):
                 out['png'][key] = nc.unb64(img)
-                for h in body.get('d') or ():
+                for h in (body.get('d') or ()) if name == 'logo' else ():
                     out['by_d'].setdefault(h, key)
         return out
-    return shared_graph_kept.KEPT.get(('team logos',), stamps.stamp(db, ('team_records',)), build)
+    return shared_graph_kept.KEPT.get(('team pictures',), stamps.stamp(db, ('team_records',)), build)
 
 
 def url(key):
@@ -189,10 +205,11 @@ def by_domain(db, org):
 
 def without_pictures(items):
     """Teammates' records [(fleet, member, record)] without the pictures themselves: photo() serves them."""
-    return [(f, m, {k: v for k, v in body.items() if k != 'logo_img'}) for f, m, body in items]
+    return [(f, m, {k: v for k, v in body.items() if k not in ('logo_img', 'photo_img')}) for f, m, body in items]
 
 
 def photo(db, key):
-    """(PNG, type) of a teammate's organization logo picture by its key, for the dashboard (api/person-photo), or None."""
+    """(PNG, type) of a teammate's organization logo or person photo picture by its key, for the dashboard
+    (api/person-photo), or None."""
     png = pictures(db)['png'].get(key) if HEX.fullmatch(str(key or '')) else None
     return (png, 'image/png') if png else None
