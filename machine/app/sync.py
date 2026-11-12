@@ -23,7 +23,7 @@ from machine.sources.salesflare import salesflare_progress, sync_salesflare
 from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_import_plan,
                                    slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
                                    slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_refused,
-                                   slack_set_aside, slack_turn_done, SLACK_HICCUP_LABELS)
+                                   slack_set_aside, slack_turn_done, slack_hiccup)
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, transient, upstream_busy
@@ -89,7 +89,7 @@ def slack_read_failed(store, config, account, state, channel, scan, params, erro
                     channel.get('type'), label, channel['refused'])
         # With none left that Slack lets it read, the connection itself says so.
         return not all(c.get('error') for c in state['channels'])
-    elif not rate_limited(error) and (transient(error) or label == 'invalid_json' or label[len('slack_'):] in SLACK_HICCUP_LABELS):
+    elif slack_hiccup(error):
         # Slack or the network, as far as anyone can tell: the same page again next time. When it keeps failing at
         # this one conversation, the others get their turn and it comes back after its usual rest.
         scan['failed'] = int(scan.get('failed') or 0) + 1
