@@ -16,9 +16,11 @@ Nada en Shortcut. Solo lee, aunque los tokens de Shortcut pueden hacer más.
 
 ## Conéctalo
 
-1. En Shortcut, abre Settings, Account, API Tokens y crea un token.
-2. En una Machine alojada: abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes** y abre Shortcut. En tu propio ordenador: **Conexiones**, **+ Añadir**, Shortcut, o `assistant connect shortcut`.
-3. Indica la dirección o el slug de tu espacio de trabajo y pega el token; luego pulsa **Conectar**.
+1. En una Machine alojada: abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes** y abre Shortcut. En tu propio ordenador: **Conexiones**, **+ Añadir**, Shortcut, o `assistant connect shortcut`.
+2. Pulsa **Obtén tu token**. Shortcut abre su página API Tokens en una pestaña nueva: crea un token y cópialo.
+3. Pégalo y pulsa **Conectar**. Comprueba el token al momento y muestra como quién se conectó y en qué espacio de trabajo.
+
+¿Estás en más de un espacio de trabajo de Shortcut? Un token pertenece a uno solo, así que cambia primero a ese en Shortcut.
 
 ## Quítalo
 

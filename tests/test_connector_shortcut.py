@@ -214,7 +214,7 @@ class ShortcutTests(unittest.TestCase):
         self.assertFalse(self.store.checkpoint(ACCOUNT['id'])['coverage_complete'])
 
     def test_credentials_workspace_and_redirect_protection(self):
-        for value in ('', 'https://example.invalid/workspace', '../member', 'bad slug'):
+        for value in ('https://example.invalid/workspace', '../member', 'bad slug', 3):
             with self.subTest(value=value), self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_workspace$'):
                 shortcut.Source({}, {**ACCOUNT, 'workspace': value}, self.helpers)
         for value in ('', 'bad\nheader', 'token with spaces'):
@@ -243,8 +243,78 @@ class ShortcutTests(unittest.TestCase):
         self.pages = [{'data': [], 'total': 0}]
         self.assertFalse(self.sync()['more'])
         self.assertEqual(self.store.checkpoint(ACCOUNT['id'])['since'], NOW)
-        self.assertEqual(shortcut.SETUP['ask'], [('workspace', 'Shortcut workspace URL or slug')])
-        self.assertIn('https://app.shortcut.com/settings/account/api-tokens', shortcut.SETUP['note'])
+        # One step: only the token. Its own member check says which workspace it is.
+        self.assertNotIn('ask', shortcut.SETUP)
+        self.assertEqual(shortcut.SETUP['token_url'], 'https://app.shortcut.com/settings/account/api-tokens')
+        self.assertIn(shortcut.SETUP['token_url'], shortcut.SETUP['note'])
+        self.assertNotIn('—', shortcut.SETUP['note'])
+
+    def test_a_new_account_takes_the_workspace_and_names_from_the_token(self):
+        self.member.update(name='Example Member', mention_name='example')
+        self.member['workspace2']['name'] = 'Example Workspace'
+        account = {**shortcut.SETUP['account']}
+        shortcut.check({}, account, self.helpers)
+        self.assertEqual((account['workspace'], account['workspace_name'], account['member_name']),
+                         ('example-workspace', 'Example Workspace', 'Example Member'))
+        self.assertNotIn('fixture-token', json.dumps(account))
+        # Saved: a token from another workspace is refused, never switched to
+        self.member['workspace2']['url_slug'] = 'other-workspace'
+        with self.assertRaisesRegex(a.SourceError, '^account_identity_mismatch$'):
+            shortcut.check({}, account, self.helpers)
+        self.assertEqual(account['workspace'], 'example-workspace')
+        for slug in (None, '', '../x', 'bad slug'):
+            self.member['workspace2']['url_slug'] = slug
+            with self.subTest(slug=slug), self.assertRaisesRegex(a.SourceError, '^shortcut_invalid_member$'):
+                shortcut.check({}, {**shortcut.SETUP['account']}, self.helpers)
+
+    def connect(self, token):
+        import onboarding
+        folder = Path(self.temp.name)
+        config_path = folder / 'config.json'
+        config_path.write_text(json.dumps({'database': str(folder / 'db.sqlite'), 'accounts': [], 'credentials': {}}))
+
+        class UI(onboarding.UI):
+            interactive, explains = True, False
+            def __init__(self):
+                self.said, self.asked = [], []
+            def say(self, text=''):
+                self.said.append(str(text))
+            def ask(self, prompt, default=''):
+                self.asked.append(prompt)
+                return 'work:Example' if 'part of your life' in prompt.lower() else default
+            def secret(self, prompt):
+                return token if prompt.startswith('Shortcut API token') else ''
+            def yes(self, prompt, default=True):
+                return default
+            def choose(self, prompt, options):
+                self.asked.append(prompt)
+                return options[0][0]
+
+        ui = UI()
+        return onboarding, config_path, ui, lambda: onboarding.connect(config_path, 'shortcut', ui, restart=False)
+
+    def test_connect_asks_only_for_the_token_and_keeps_it_private(self):
+        self.member.update(name='Example Member')
+        self.member['workspace2']['name'] = 'Example Workspace'
+        onboarding, config_path, ui, run = self.connect('fixture-token')
+        with patch.object(onboarding, 'assistant', return_value=a):
+            account = run()
+        self.assertFalse([q for q in ui.asked if 'workspace' in q.lower()])
+        self.assertEqual((account['workspace'], account['member_name']), ('example-workspace', 'Example Member'))
+        self.assertNotIn('fixture-token', config_path.read_text())
+        self.assertNotIn('fixture-token', '\n'.join(ui.said))
+        form = onboarding.web_form({'accounts': []}, 'shortcut')
+        self.assertEqual((form['ask'], form['secret'], form['token_url']),
+                         ([], 'Shortcut API token', 'https://app.shortcut.com/settings/account/api-tokens'))
+
+    def test_a_refused_token_says_so_in_plain_words(self):
+        self.member = urllib.error.HTTPError('unused', 401, 'fixture-token refused', {}, None)
+        onboarding, _, ui, run = self.connect('fixture-token')
+        with patch.object(onboarding, 'assistant', return_value=a), self.assertRaises(onboarding.SetupError) as caught:
+            run()
+        self.assertEqual((caught.exception.message, caught.exception.fix),
+                         ('Shortcut didn’t accept that token', 'copy it again from Shortcut and paste it here'))
+        self.assertNotIn('fixture-token', caught.exception.message + caught.exception.fix + '\n'.join(ui.said))
 
 
 if __name__ == '__main__':

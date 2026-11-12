@@ -29,7 +29,7 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `google_meet` (plugin) | None: Connect Google Meet signs in with Meet's own Google app (`meetings.space.readonly`, `documents.readonly`), apart from Gmail (`transport` `broker`) | `email`, `bootstrap_days` (7, at most 30); config `google_meet_broker` |
 | `teams` (plugin) | None: Connect Microsoft Teams (hosted) adds Teams scopes to the Microsoft sign-in for that address, or signs in for Teams alone (`transport` `broker`). Work or school accounts only | `email`, `bootstrap_days` (7); config `teams_consent` |
 | `docs` (plugin) | The owner's own Google (broker) or Microsoft sign-in for that address, plus a separate consent for files | `email`, `transport` (borrowed from the mail account), `provider` (`google` or `microsoft`, else from the mail account), `boundary` |
-| `shortcut` (plugin) | A Shortcut API token | `workspace`, `credential` |
+| `shortcut` (plugin) | A Shortcut API token | `credential` (`workspace` is filled in from the token) |
 | `rss` (plugin) | none | `url` |
 
 Add a plugin account with `assistant connect github` (or `stripe`, `intercom`, `x`, `linkedin`, `trello`, `google_meet`, `shortcut`, `rss`): it asks for the fields that connector needs. The dashboard does the same under Connections, **+ Add** (see [Usage](usage.md#adding-a-source)). You can also add accounts to `config.json` by hand, using the keys above (each connector's header has a full example), and restart the service.
@@ -299,7 +299,7 @@ The example plugin; see [Adding a source](adding-a-source.md).
 
 ### Shortcut
 
-Story moves between workflow states (`shortcut.move`), with their owners and deadlines (`connectors/shortcut.py`). Connect it with `assistant connect shortcut`: the workspace URL or slug and an API token.
+Story moves between workflow states (`shortcut.move`), with their owners and deadlines (`connectors/shortcut.py`). Connect it with `assistant connect shortcut`: only an API token, from Shortcut's API Tokens page (https://app.shortcut.com/settings/account/api-tokens). The token's own member check (`GET /api/v3/member`) fills in the workspace, and the account stays with that workspace.
 
 - Shortcut tokens have full account access (there is no read-only scope). This connector only reads: GET-only story search and story history, and it checks that the token belongs to the chosen workspace.
 - It starts with the last seven days, searches with a one-day overlap and commits its paging checkpoints. The story's current context may be newer than a single move.

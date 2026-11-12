@@ -16,9 +16,11 @@ Niets in Shortcut. Het leest alleen, ook al kunnen Shortcut-tokens meer.
 
 ## Koppelen
 
-1. Open in Shortcut Settings, Account, API Tokens en maak een token aan.
-2. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen** en open Shortcut. Op je eigen computer: **Koppelingen**, **+ Toevoegen**, Shortcut, of `assistant connect shortcut`.
-3. Geef het adres of de slug van je workspace, plak het token en druk op **Verbinden**.
+1. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen** en open Shortcut. Op je eigen computer: **Koppelingen**, **+ Toevoegen**, Shortcut, of `assistant connect shortcut`.
+2. Druk op **Haal je token op**. Shortcut opent zijn pagina API Tokens in een nieuw tabblad: maak een token aan en kopieer het.
+3. Plak het en druk op **Verbinden**. Het token wordt meteen gecontroleerd, en je ziet als wie en in welke workspace het gekoppeld is.
+
+In meer dan één Shortcut-workspace? Een token hoort bij één workspace, dus schakel eerst in Shortcut naar die workspace.
 
 ## Verwijderen
 

@@ -16,9 +16,11 @@ Niente in Shortcut. Legge soltanto, anche se i token di Shortcut possono fare di
 
 ## Collegalo
 
-1. In Shortcut, apri Settings, Account, API Tokens e crea un token.
-2. Su una Machine in hosting: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Shortcut. Sul tuo computer: **Connessioni**, **+ Aggiungi**, Shortcut, oppure `assistant connect shortcut`.
-3. Indica l'indirizzo o lo slug del tuo workspace e incolla il token, poi premi **Collegati**.
+1. Su una Machine in hosting: apri la tua pagina di configurazione su app.themachine.computer/setup, vai su **Altre fonti** e apri Shortcut. Sul tuo computer: **Connessioni**, **+ Aggiungi**, Shortcut, oppure `assistant connect shortcut`.
+2. Premi **Ottieni il tuo token**. Shortcut apre la sua pagina API Tokens in una nuova scheda: crea un token e copialo.
+3. Incollalo e premi **Collegati**. Il token viene controllato subito, con il nome e il workspace collegati.
+
+In più di un workspace Shortcut? Un token appartiene a un solo workspace, quindi passa prima a quello in Shortcut.
 
 ## Rimuovilo
 

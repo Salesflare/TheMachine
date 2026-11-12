@@ -16,9 +16,11 @@ Nothing. It only reads, even though a Shortcut token allows more.
 
 ## Connect it
 
-1. In Shortcut, open Settings, Account, API Tokens, and create a token.
-2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources** and open Shortcut. On your own computer: **Connections**, **+ Add**, Shortcut, or `assistant connect shortcut`.
-3. Enter your workspace's name, as in its web address, paste the token and press **Connect**.
+1. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources** and open Shortcut. On your own computer: **Connections**, **+ Add**, Shortcut, or `assistant connect shortcut`.
+2. Press **Get your token**. Shortcut opens its API Tokens page in a new tab: create a token and copy it.
+3. Paste it and press **Connect**. It checks the token right away and shows who it connected as, in which workspace.
+
+In more than one Shortcut workspace? A token belongs to one workspace, so switch to that one in Shortcut first.
 
 ## Remove it
 
