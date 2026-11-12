@@ -84,6 +84,8 @@ Tocca il titolo, o **Nome** in **Dettagli**, per rinominarla. Il tuo titolo rest
 
 Un'attività chiusa può tornare con **Riapri**. Torna anche da sola quando succede qualcosa di nuovo, come un nuovo messaggio dall'altra persona. La tua risposta non la fa tornare.
 
+Una fattura che devi ancora pagare tu, da qualsiasi paese, diventa un’attività con l’importo, la scadenza e i dati di pagamento della fattura. Quelle pagate in automatico, come un addebito diretto o una carta salvata, no. Se un’email successiva mostra che è pagata, ad esempio il mittente conferma di aver ricevuto il pagamento, l’attività si chiude da sola. **Annulla** la riporta indietro per un giorno.
+
 Un'attività che contava solo fino a un certo momento, come una conferma prima di una riunione, si chiude da sola quando quel momento è passato. Passa tra quelle fatte con "Non serve più" e quando era. **Annulla** la riporta indietro per un giorno.
 
 Prima che un messaggio o un passaggio per qualcuno appaia pronto, la tua Machine controlla le tue chat recenti con le persone coinvolte, anche di gruppo, e aspetta che Slack le legga. Se un messaggio successivo mostra che è già fatto, ad esempio la persona è stata già chiesta e ha detto sì, l’attività si chiude da sola. **Annulla** la riporta indietro per un giorno.

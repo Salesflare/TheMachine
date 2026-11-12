@@ -249,6 +249,10 @@ class StoreCore:
             if 'done_when' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_when TEXT')
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_when_by TEXT')
+            # A bill to pay by hand, in the review's words (family_done.bill_fields): {"payee", "invoice", "amount"}, sealed.
+            # Matches the same bill on another Family member's Machine when it has no IBAN and reference (family_done.sources)
+            if 'bill' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN bill TEXT')
             # The teammate the review offers the to-do to, as the Fleet member ({"fleet", "member_id"}): its Hand off starts with them
             if 'handoff_to' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN handoff_to TEXT')

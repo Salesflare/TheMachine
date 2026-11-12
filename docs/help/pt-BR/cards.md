@@ -84,6 +84,8 @@ Toque no título, ou em **Nome** em **Detalhes**, para renomear a tarefa. Seu t�
 
 Uma tarefa fechada pode voltar com **Reabrir**. Ela também volta sozinha quando acontece algo novo, como uma nova mensagem da pessoa. Uma resposta sua não faz a tarefa voltar.
 
+Uma conta que você ainda precisa pagar, de qualquer país, vira uma tarefa com o valor, o vencimento e os dados de pagamento da conta. As pagas automaticamente, como débito automático ou um cartão salvo, não. Se um e-mail posterior mostra que foi paga, por exemplo o remetente confirma que recebeu seu pagamento, a tarefa fecha sozinha. **Desfazer** traz a tarefa de volta por um dia.
+
 Uma tarefa que só importava até um certo momento, como uma confirmação antes de uma reunião, fecha sozinha quando esse momento passa. Ela vai para as feitas com "Não precisa mais" e quando foi. **Desfazer** traz a tarefa de volta por um dia.
 
 Antes que uma mensagem ou um repasse para alguém apareça como pronto, sua Machine confere suas conversas recentes com as pessoas envolvidas, em grupo também, e espera o Slack lê-las. Se uma mensagem posterior mostra que já está feito, por exemplo a pessoa já foi chamada e disse sim, a tarefa fecha sozinha. **Desfazer** traz a tarefa de volta por um dia.

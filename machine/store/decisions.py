@@ -483,6 +483,38 @@ class DecisionsStore:
                 return {'saved': True, 'closed': True, 'note': 'It waited for this result: it closed by itself, with Undo for a day.'}
         return {'saved': True}
 
+    def bill_paid(self, suggestion_id, reason, event_ids, undo_hours=24):
+        """A newer message shows an open bill to-do paid (the payee confirms the payment came in, a receipt for it, the
+        debit went through): nothing is left to do, so it closes by itself as Done, "Closed by itself: <reason>", with
+        Undo for a day (outcomes.close_handled), instead of looking done for a day first. Only on messages that came in
+        after the to-do was made and after the owner's own last word on it; once per set of messages. Not while a send
+        of it is under way. Anything else it can't say falls back to looks_handled."""
+        reason = ' '.join(str(reason or '').split())
+        ids = sorted({int(i) for i in event_ids or []})
+        if not 5 <= len(reason) <= 200 or not ids:
+            raise ValueError('Give a short plain reason (5-200 characters) and the event_ids that show it paid')
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown suggestion')
+            if row['status'] not in ('pending', 'accepted', 'instructions', 'prepared', 'snoozed'):
+                return {'skipped': 'already closed'}
+            marks = ','.join('?' * len(ids))
+            found = db.execute(f'SELECT count(*),max(ingested_at) FROM events WHERE deleted=0 AND id IN ({marks})', ids).fetchone()
+            if found[0] != len(ids):
+                raise ValueError('Every event must exist and be live')
+            newest = found[1] or ''
+            said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND source IN ('dashboard','telegram')", (suggestion_id,)).fetchone()[0]
+            decision_id = 'paid:' + hashlib.sha256(f'{suggestion_id}:{ids}'.encode()).hexdigest()[:32]
+            if (newest > row['created_at'] and not (said and newest <= said)
+                    and not db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone()
+                    and not db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (suggestion_id,)).fetchone()):
+                outcomes.close_handled(db, row, decision_id, reason, now(), undo_hours)
+                db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?', (suggestion_id,))
+                return {'closed': True, 'note': 'Paid: it closed by itself, with Undo for a day.'}
+        return self.looks_handled(suggestion_id, reason, ids)
+
     def plan_changed(self, suggestion_id, reason, event_ids, undo_hours=24):
         """A newer message overturned the plan an open to-do was built on (the party moved to another venue, the booking
         was dropped, they no longer need it): the to-do closes by itself as Not needed, its chat says "Updated: <reason>",

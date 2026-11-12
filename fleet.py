@@ -2840,7 +2840,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                     return
             sources = lambda card, ref: family_done.sources(db, card) if ref in families else self.shared_messages(db, card, ref)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=HANDLED_DAYS)).isoformat()
-            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
+            closed = db.execute("SELECT s.id,s.status,s.event_ids,s.title,s.body,s.next_action,s.area,s.bill FROM suggestions s WHERE s.status IN ('completed','rejected') AND "
                                 '(SELECT max(created_at) FROM decisions d WHERE d.suggestion_id=s.id)>=? ORDER BY s.created_at DESC LIMIT 300', (since,)).fetchall()
             out = {r['key']: dict(r) for r in db.execute('SELECT * FROM fleet_handled')}
             announce, keep = [], set()
