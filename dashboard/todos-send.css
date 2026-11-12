@@ -126,8 +126,9 @@
 /* The hand-off sheet, on the card and in the chat's message box place */
 .agent-sheet{display:flex;flex-direction:column;gap:10px;margin:14px 0 0;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
 .agent-sheet-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}.agent-sheet-title,.agent-one{font-weight:600;color:var(--text)}
-.agent-switch{display:inline-flex;padding:2px;border-radius:999px;background:var(--tile)}.agent-switch label{display:block;margin:0;cursor:pointer}
-.agent-switch input{position:absolute;opacity:0;pointer-events:none}.agent-switch span{display:block;padding:3px 12px;border-radius:999px;font-size:.87rem;font-weight:600;color:var(--muted);white-space:nowrap}
+/* Wraps onto a second row when the names don't fit (a phone, a narrow window): every choice stays in sight */
+.agent-switch{display:inline-flex;flex-wrap:wrap;max-width:100%;box-sizing:border-box;padding:2px;border-radius:15px;background:var(--tile)}.agent-switch label{display:block;min-width:0;max-width:100%;margin:0;cursor:pointer}
+.agent-switch input{position:absolute;opacity:0;pointer-events:none}.agent-switch span{display:block;padding:3px 12px;border-radius:999px;font-size:.87rem;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .agent-switch input:checked+span{background:var(--surface);color:var(--text);box-shadow:0 1px 2px #0002}.agent-switch input:focus-visible+span{outline:2px solid var(--lavender);outline-offset:1px}
 .agent-what{margin:0;font-size:.92rem;line-height:1.45;color:var(--muted);overflow-wrap:anywhere}
 .handoff-parts{margin:0;padding:8px 12px;border:1px solid var(--border);border-radius:10px;display:grid;gap:6px;min-width:0}.handoff-parts legend{padding:0 4px;font-size:.84rem;color:var(--muted)}
