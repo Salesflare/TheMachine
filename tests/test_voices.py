@@ -16,6 +16,7 @@ from seams import patch_everywhere  # noqa: E402
 spec = importlib.util.spec_from_file_location('voices_assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+from machine.store import outcomes  # noqa: E402
 
 
 def mail(source_id, at, body, thread='t1', sender='Sam <sam@example.com>', to='Owner <owner@example.com>', labels=('INBOX',)):
@@ -275,6 +276,23 @@ class Voices(unittest.TestCase):
         self.assertEqual(hint['event_ids'], [out3])
         self.assertEqual(a.todo_state(row), 'looks done')
         self.assertEqual(row['status'], 'prepared')  # only a hint: nothing closed, the owner can say Not done
+        self.assertEqual(self.store.answered_elsewhere(), [])  # once
+
+    def test_their_reply_on_a_to_do_with_a_done_when_waits_for_the_result(self):
+        """A to-do whose point is a result (its done when) isn't done by the owner's own reply in the thread, just as a
+        send from the card isn't: it waits for that result under Waiting on others, without a Looks done hint."""
+        self.ready(self.sid, {'kind': 'email', 'label': 'Send', 'account_id': 'work', 'thread_id': 't1', 'to': ['sam@example.com'],
+                              'subject': 'Re: Contract', 'body': 'Dear Sam,\n\nStill looking for it.', 'revision': 'r1'})
+        with self.store.connect() as db:
+            outcomes.set_done_when(db, self.sid, 'Sam has the signed contract', 'run')
+        self.store.commit_page('work', {}, [mail('out3', '2026-10-03T11:00:00+00:00', 'Hey Sam,\n\nwould a scan do for now?', **SENT)])
+        self.assertEqual(self.store.answered_elsewhere(), [self.sid])
+        self.assertIsNone(self.hint(self.sid))
+        with self.store.connect() as db:
+            row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
+        self.assertEqual(a.todo_state(row), 'waiting on others')
+        self.assertEqual(json.loads(row['outcome'])['waiting_on'], 'Sam has the signed contract')
+        self.assertIsNone(row['next_action'])
         self.assertEqual(self.store.answered_elsewhere(), [])  # once
 
     def test_not_done_stands_until_a_newer_message_of_theirs(self):
