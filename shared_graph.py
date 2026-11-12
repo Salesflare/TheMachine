@@ -100,6 +100,7 @@ def _source(kind):
     return ('meetings' if kind in ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript') else 'intercom' if kind == 'intercom.conversation'
             else 'email' if kind in MAIL_KINDS else 'docs' if kind in graph.DOC_KINDS else 'chats')
 HEX = re.compile(r'[a-f0-9]{32}')
+ISO_AT = re.compile(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00')  # now()'s form
 # One fixed statement per table that holds a Fleet's shared Graph: what goes when a Fleet's sharing is purged or left.
 FLEET_DELETE = {
     'team_records': 'DELETE FROM team_records WHERE fleet=?',
@@ -2037,7 +2038,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             sent = set()
         missing = [m for m in others if m not in sent]
         if missing or not keys[kv].get('to'):
-            header = self._put(group, me, 'key', {'kv': kv, 'key': key}, others) if others else None
+            header = self._put(group, me, 'key', {'kv': kv, 'key': key, 'at': keys[kv]['at']}, others) if others else None
             keys[kv]['to'] = sorted(set(keys[kv].get('to', [])) | set(header['to'] if header else []))
         self.set_meta('graph_keys:' + fleet, keys)
 
@@ -2384,7 +2385,11 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                     row = db.execute('SELECT value FROM fleet_meta WHERE key=?', ('graph_keys:' + fleet,)).fetchone()
                     keys = (json.loads(row[0]) if row else None) or {}
                     if kv not in keys:  # the same connection: set_meta's own would wait for this one
-                        keys[kv] = {'key': key, 'at': header['at'], 'by': sender, 'to': header.get('to', [])}
+                        # dated when the admin made it, as their Machine has it (sending may end a second later, or a
+                        # reseal much later): every Machine then takes the same newest key (graph_key), so the same hashes
+                        made = body.get('at')
+                        made = made if isinstance(made, str) and ISO_AT.fullmatch(made) and made <= str(header['at']) else header['at']
+                        keys[kv] = {'key': key, 'at': made, 'by': sender, 'to': header.get('to', [])}
                         db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)', ('graph_keys:' + fleet, json.dumps(keys)))
                 return
             if kind == 'snapshot':

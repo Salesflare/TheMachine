@@ -450,9 +450,11 @@ onto another blob.
 
 ### Kinds
 
-- **key**: from a confirmed admin, the Fleet graph key `{kv, key}`. The first confirmed admin Machine that finds none
+- **key**: from a confirmed admin, the Fleet graph key `{kv, key, at}`. The first confirmed admin Machine that finds none
   makes one. Any confirmed admin seals it again for a newly confirmed member and makes a new version when someone it was
-  sealed for left. Receivers keep every version and match with all of them; publishers use the newest.
+  sealed for left. Receivers keep every version and match with all of them; publishers use the newest. Each version is
+  dated when its admin made it (`at`, never later than the blob), so when two admins made one at once every Machine
+  takes the same newest (then the higher `kv`) and hashes the same message the same way.
 - **snapshot**: all of a Machine's shared records and the tags of its shared threads. Replaces what came before from that
   Machine. Sent when the recipients or the key change, and daily.
 - **delta**: changed and removed records since the last blob, with `prev` (the previous seq). A receiver that missed one
