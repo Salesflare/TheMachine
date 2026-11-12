@@ -15,6 +15,7 @@ const dashboard=await dashboardPage();
 const now=new Date(),ago=d=>new Date(now-d*864e5).toISOString();
 const id=n=>(n+'').padStart(2,'0').repeat(8);
 const QUESTION='what’s the regenboog discount code?';
+const MARKUP='<img src=x onerror="window.__pwned=1">';
 const ANSWER='The code is FEEST10: 10% off a kids’ party at Speelpark de Regenboog, entered at the last step before paying.';
 const BOOKING={id:51,account_id:'home',kind:'gmail.message',title:'Bevestiging van je jaarabonnement',occurred_at:ago(80),
  body:'Bedankt voor je bestelling. 10% korting op een kinderfeestje bij Speelpark de Regenboog. Gebruik de kortingscode FEEST10 bij het afrekenen.',metadata:{from:'Speelpark de Regenboog <info@regenboog.example>'}};
@@ -33,7 +34,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
   res.end(JSON.stringify({originals:m?[{event_id:m.id,kind:'email',from:m.metadata.from,occurred_at:m.occurred_at,subject:m.title,body:m.body}]:[]}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body||'{}');
   if(r.action==='search_ask'){asks.push(r.args);
-   res.end(JSON.stringify(mode==='off'?{off:true}:mode==='unanswered'?{answer:'These messages don’t say.',sources:[]}:
+   res.end(JSON.stringify(mode==='off'?{off:true}:mode==='markup'?{answer:MARKUP,sources:[{id:51,kind:'gmail.message',title:MARKUP,at:BOOKING.occurred_at}]}:mode==='unanswered'?{answer:'These messages don’t say.',sources:[]}:
     {answer:ANSWER,sources:[{id:51,kind:'gmail.message',title:BOOKING.title,from:'Speelpark de Regenboog',at:BOOKING.occurred_at}]}));return}
   res.end('{}');return}
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
@@ -80,6 +81,10 @@ try{
   assert.equal(asks.length,2,'not asked for one account');assert.ok(await page.locator('#ev-answer').isHidden());
   mode='off';await page.locator('#account').selectOption('all');await settled(()=>asks.length===3,true,'asked');
   await page.evaluate(()=>new Promise(r=>setTimeout(r,80)));assert.ok(await page.locator('#ev-answer').isHidden(),'no model: nothing');
+  // An answer or a source title with markup in it shows as text: nothing in it runs or becomes an element
+  mode='markup';await searchFor(page,'what did the mail with the image say?');await page.locator('#ev-answer p:not([role=status])').waitFor();
+  assert.equal(await page.locator('#ev-answer p').textContent(),MARKUP);assert.match(await page.locator('#ev-answer .ev-src').textContent(),/^<img /);
+  assert.equal(await page.locator('#ev-answer img').count(),0);assert.equal(await page.evaluate(()=>window.__pwned),undefined);
   await context.close()}
  for(const [w,h] of [[390,844],[1440,900]])for(const scheme of ['light','dark']){const {context,page}=await open(w,h,scheme);
   await searchFor(page,QUESTION);await page.locator('#ev-answer p:not([role=status])').waitFor();
