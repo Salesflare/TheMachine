@@ -584,6 +584,8 @@ class SyncApp:
                 try:
                     result = self.sync_retrying(account, source)
                     LOG.info('sync account=%s mode=%s read=%d filtered=%d skipped=%d', account['id'], result['mode'], result['events'], result.get('filtered', 0), result.get('skipped', 0))
+                    if result.get('waiting'):  # Outlook messages Graph failed to serve: read again next round, never dropped
+                        LOG.info('sync account=%s waiting=%d since=%s', account['id'], result['waiting'], result.get('waiting_since'))
                     state = self.store.checkpoint(account['id'])
                     if not result.get('stopped') and (result.get('more') or state.get('mode', result['mode']) != 'incremental' or state.get('page_token')):  # a plugin's checkpoint may not keep a mode
                         delay = account.get('poll_seconds', 3600) if account.get('service') == 'x' else 30 if account.get('service') == 'linkedin' else 0 if source else 5

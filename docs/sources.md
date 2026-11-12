@@ -482,6 +482,7 @@ X and LinkedIn often refuse sign-ins, or keep asking for checks, from data-cente
 - Microsoft access tokens and folder lookups are cached per account, connection and credential file version. Reconnecting, or a rotated credential file, makes old cache entries unused.
 - Attachment lists follow every Graph page. A response over 40 MB fails clearly rather than leaving a partial file.
 - Graph throttling keeps the wait Microsoft asks for (`Retry-After`).
+- Graph can fail a share of one mailbox's requests for hours (a 5xx or no answer) and serve each on another try. In a mail round each read is tried up to three times with a short wait (a short `Retry-After` when Graph gives one), within four minutes per round. A message that still fails waits in the checkpoint and is read in the next round; what the round did read is kept and the cursor moves on. A waiting message is never dropped: the log shows how many wait and since when. A round that got anything from Graph counts as a success; one that got nothing is a passing failure, reported only when it keeps happening. A healthy mailbox costs no extra requests, and a message is not read again unless it changed.
 - Removing a tag a signature may not have, when it is a void tag such as `<meta>` or `<input>`, keeps the ordinary HTML after it.
 
 ### Google sign-in recovery

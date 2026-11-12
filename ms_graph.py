@@ -28,6 +28,7 @@ the same sync, cards, drafts and attachments as a Gmail one."""
 from __future__ import annotations
 
 import base64
+import contextlib
 import datetime as dt
 import email.header
 import email.parser
@@ -38,6 +39,7 @@ import portable
 import json
 import mail_grants
 import os
+import random
 import re
 import threading
 import time
@@ -140,6 +142,50 @@ _folders: dict = {}
 IDENTITY_SECONDS = 6 * 3600
 _identities: dict = {}
 _lock = threading.Lock()
+# Graph can fail a share of one mailbox's reads (5xx, or no answer) for hours and serve each of them on another try.
+# Inside a sync round's budget() a read is tried up to READ_TRIES times, with a short jittered wait (Graph's own
+# Retry-After when that is short), never past the round's deadline. Outside one, and for every write, a call is tried
+# once as before: a send is never repeated, and someone waiting on a screen gets the answer at once.
+READ_TRIES = 3
+RETRY_STATUSES = (500, 502, 503, 504)
+RETRY_WAIT_MAX = 10  # a longer Retry-After goes to the sync, which waits it out between rounds
+_round = threading.local()
+
+
+@contextlib.contextmanager
+def budget(seconds):
+    """A sync round's time for Graph on this thread: reads retry inside it (call), and left() says what remains."""
+    previous = getattr(_round, 'deadline', None)
+    _round.deadline = time.monotonic() + seconds
+    try:
+        yield
+    finally:
+        _round.deadline = previous
+
+
+def left():
+    """Seconds left in this thread's budget(), or None outside one."""
+    deadline = getattr(_round, 'deadline', None)
+    return None if deadline is None else deadline - time.monotonic()
+
+
+def _pause(seconds):
+    time.sleep(seconds)
+
+
+def _again(status, headers, failed):
+    """How long to wait before trying a read once more after its `failed`th failure (status None: no answer), or None."""
+    remaining = left()
+    if remaining is None or failed >= READ_TRIES or (status is not None and status not in RETRY_STATUSES and status != 429):
+        return None
+    try:
+        asked = float((headers or {}).get('Retry-After')) if status else None
+    except (TypeError, ValueError):
+        asked = None
+    if status == 429 and asked is None:
+        return None
+    wait = asked if asked is not None else random.uniform(0.5, 1.5) * 2 ** (failed - 1)
+    return wait if wait <= RETRY_WAIT_MAX and wait < remaining else None
 
 
 class GraphError(Exception):
@@ -408,26 +454,40 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
         data, kind = json.dumps(body).encode(), 'application/json'
     else:
         data, kind = None, None
-    for attempt in (0, 1):
-        access = token(config, credential, account, scope, fresh=bool(attempt))
+    refreshed, failed = False, 0
+    while True:
+        access = token(config, credential, account, scope, fresh=refreshed)
         request = urllib.request.Request(url, method=verb, data=data, headers={
             'Authorization': 'Bearer ' + access, 'Accept': '*/*' if raw else 'application/json',
             'Prefer': 'IdType="ImmutableId"' + ''.join(', ' + h for h in (headers or {}).get('Prefer', [])),
             **({'If-Match': str(headers['If-Match'])} if (headers or {}).get('If-Match') else {}),
             **({'Content-Type': kind} if kind else {})})
+        remaining = left()
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
+            # inside a round's budget a read never waits much past it
+            with urllib.request.urlopen(request, timeout=timeout if remaining is None else max(5, min(timeout, remaining))) as response:
                 payload = response.read(MAX_RESPONSE + 1)
                 if len(payload) > MAX_RESPONSE:
                     raise GraphError('response_too_large')
                 return payload if raw else json.loads(payload or b'{}')
         except urllib.error.HTTPError as error:
             error.close()
-            if error.code == 401 and not attempt and not write:
+            if error.code == 401 and not refreshed and not write:
+                refreshed = True
                 continue  # the access token expired early: one fresh one, for reads only
+            failed += 1
+            wait = None if write else _again(error.code, error.headers, failed)
+            if wait is not None:
+                _pause(wait)
+                continue
             raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None,
                              route=route) from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
+            failed += 1
+            wait = None if write else _again(None, None, failed)
+            if wait is not None:
+                _pause(wait)
+                continue
             raise GraphError('timeout', route=route) from None
         except ValueError:
             raise GraphError('invalid_json') from None
@@ -768,9 +828,11 @@ def gmail_call(config, credential, account, method, params):
                 '$select': 'id,lastModifiedDateTime', '$top': int(params.get('maxResults') or 100)})
         history = []
         for m in page.get('value', []):
-            history.append({'labelsAdded': [{'message': {'id': m['id']}}]})
-            if m.get('lastModifiedDateTime') and _stamp(m['lastModifiedDateTime']) > _stamp(latest):
-                latest = _iso(_stamp(m['lastModifiedDateTime']))
+            # `modified`, the change's time as the cursor writes it: a round that read it doesn't read it again (sync_gmail)
+            modified = _iso(_stamp(m['lastModifiedDateTime'])) if m.get('lastModifiedDateTime') else None
+            history.append({'labelsAdded': [{'message': {'id': m['id'], **({'modified': modified} if modified else {})}}]})
+            if modified and _stamp(modified) > _stamp(latest):
+                latest = modified
         out = {'history': history, 'historyId': latest}
         if page.get('@odata.nextLink'):
             out['nextPageToken'] = page['@odata.nextLink'] + ' ' + latest
