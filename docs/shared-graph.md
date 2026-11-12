@@ -167,9 +167,12 @@ picture (`photo_img`) once, after a change and weekly, within the same 200 KB pe
 arrival (`shared_graph_photos.py`).
 
 - **Only from work sources.** A photo goes only when the Machine can tell it came from a work contact's look-up
-  (`person_profiles`, tried when the photo was saved) or a contact photo from Google, Slack, LinkedIn, X, Salesflare or
+  (`person_profiles`, tried when the photo was saved) or a contact photo from Slack, LinkedIn, X, Salesflare or
   Microsoft (`contact_photo_links.source`, saved when it was tried). A photo from WhatsApp or Telegram (`wa:`, `tg:`),
   from the Facebook birthdays import, or one whose source can't be told never goes.
+- **Nothing from Google contacts.** Google's user data policy (Limited Use) doesn't allow handing what its APIs give to
+  other people. A photo from Google contacts, other contacts or the directory stays on the owner's Machine, and so do
+  the job title, company, phone and birthday read there (`person_facts`, which no shared record carries).
 - **The owner's choice stays theirs.** When the owner took a person's picture off, or set one of their own, no photo
   of that person goes, neither theirs nor a found one.
 - **JPEG and PNG.** A JPEG is read by a small decoder of its own (`jpeg_image.py`: baseline and progressive, standard

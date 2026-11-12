@@ -30,7 +30,7 @@ An admin can require everyone's **Work email** and **Work calendar** at the Flee
 
 - Client threads: work email with people outside your company, with attachments.
 - Work people, organizations and projects, with a short timeline.
-- A small copy of an organization's logo and of a person's work photo: from a look-up, Google, Slack, LinkedIn, X, Salesflare or Microsoft. Never a WhatsApp, Telegram or Facebook picture, or a picture you changed or removed.
+- A small copy of an organization's logo and of a person's work photo: from a look-up, Slack, LinkedIn, X, Salesflare or Microsoft. Never a Google contacts, WhatsApp, Telegram or Facebook picture, or a picture you changed or removed.
 - On a Team board, a project's meetings, Zoom notes, Intercom conversations and chats. Sensitive ones, like deals, and colleague-only chats stay out.
 - Counts and dates for a teammate's [team brief](fleet.md#brief-requests).
 - Answers when a teammate asks who knows someone or wants meeting context. See [Fleets](fleet.md#answered-by-itself-in-a-work-fleet).
