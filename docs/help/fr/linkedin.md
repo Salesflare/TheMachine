@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Ce qu’il lit
 
-Vos messages LinkedIn. Il les lit dans un onglet du navigateur de votre Machine, connecté avec votre compte, de temps en temps pendant la journée. Il n’utilise pas de clé API et ne marque rien comme lu.
+Vos messages LinkedIn. Il les lit dans un onglet du navigateur de votre Machine, connecté avec votre compte, de temps en temps pendant la journée. Il n’utilise pas de clé API et ne marque rien comme lu. Les réponses dans les conversations que vous avez archivées et les demandes de message arrivent aussi ; le spam reste dehors.
 
 ## Postes et entreprises
 

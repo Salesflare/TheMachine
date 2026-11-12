@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Qué lee
 
-Tus mensajes de LinkedIn. Los lee en una pestaña del navegador propio de tu Machine, con tu sesión iniciada, de vez en cuando durante el día. No usa ninguna clave de API y no marca nada como leído.
+Tus mensajes de LinkedIn. Los lee en una pestaña del navegador propio de tu Machine, con tu sesión iniciada, de vez en cuando durante el día. No usa ninguna clave de API y no marca nada como leído. También llegan las respuestas en conversaciones que archivaste y las solicitudes de mensaje; el spam se queda fuera.
 
 ## Cargos y empresas
 

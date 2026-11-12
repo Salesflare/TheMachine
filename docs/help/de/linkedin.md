@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Was es liest
 
-Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deiner Machine, mit dir angemeldet, ab und zu während deiner wachen Stunden. Es nutzt keinen API-Schlüssel und markiert nichts als gelesen.
+Deine LinkedIn-Nachrichten. Es liest sie in einem Tab des eigenen Browsers deiner Machine, mit dir angemeldet, ab und zu während deiner wachen Stunden. Es nutzt keinen API-Schlüssel und markiert nichts als gelesen. Antworten in Unterhaltungen, die du archiviert hast, und Nachrichtenanfragen kommen auch an; Spam bleibt draußen.
 
 ## Positionen und Firmen
 

@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Wat het leest
 
-Je LinkedIn-berichten. Het leest ze in een tabblad van de eigen browser van je Machine, ingelogd als jou, af en toe tijdens de uren dat je wakker bent. Het gebruikt geen API-sleutel en markeert niets als gelezen.
+Je LinkedIn-berichten. Het leest ze in een tabblad van de eigen browser van je Machine, ingelogd als jou, af en toe tijdens de uren dat je wakker bent. Het gebruikt geen API-sleutel en markeert niets als gelezen. Antwoorden in gesprekken die je hebt gearchiveerd en berichtverzoeken komen ook binnen; spam blijft buiten.
 
 ## Functies en bedrijven
 
