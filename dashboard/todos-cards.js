@@ -285,6 +285,11 @@ const SECONDARY={pending:['snooze','reject','complete','accept','change','handof
 const CHIP_ICON={person:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.4 3.4-5.2 6.5-5.2s5.7 1.8 6.5 5.2"/></svg>',
  org:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20V5.5h8V20M14 9.5h4V20M4 20h16M9 9h2M9 12.5h2M9 16h2"/></svg>',
  project:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/></svg>'};
+// Their photo or logo, when the Graph shows one (graph.node_picture): over the icon, which stays when the picture can't load.
+// A photo is only one saved on this Machine; a logo can also be the https link the Graph's lists show (no referrer).
+const CHIP_PIC=/^api\/person-photo\?p=[0-9a-f]{32}$/,CHIP_LOGO=/^https:\/\/[^\s"'<>\\]+$/;
+const chipIcon=(kind,pic)=>{const u=CHIP_PIC.test(pic||'')||kind==='org'&&CHIP_LOGO.test(pic||'')?pic:'';
+ return u?html`<span class="chip-pic ${kind}" aria-hidden="true">${raw(CHIP_ICON[kind])}<img src="${u}" alt="" width="16" height="16" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>`:raw(CHIP_ICON[kind])};
 const whoFirst=s=>{const p=(s.people||[])[0];if(!p?.id||!p.name)return null;let w={};try{w=JSON.parse(s.awaiting||'{}')||{}}catch{}
  const waited=s.handoff_wait?.name||w.name;return waited&&(s.people||[]).find(x=>x.name===waited)||p};
 // The organization chip shows only when the to-do is about that organization: the review named it (org_node), or the
@@ -294,8 +299,8 @@ const whoFirst=s=>{const p=(s.people||[])[0];if(!p?.id||!p.name)return null;let 
 const cardOrg=s=>{if(s.org_node?.id)return s.org_node;if(s.project_node?.org?.id)return s.project_node.org;const first=whoFirst(s);
  return s.scope==='work'&&!s.org_said&&first?.org?.id?first.org:null};
 const whoChip=s=>{const first=whoFirst(s);if(!first)return orgChip(s);
- const short=String(first.name).split(' ')[0];return html`<a class="chip scope who" href="${graphHash(first.id)}" title="Open ${first.name}" aria-label="Open ${first.name}">${raw(CHIP_ICON.person)}<span class="who-full">${first.name}</span>${short!==first.name?html`<span class="who-short">${short}</span>`:''}</a>${orgChip(s,first)}`};
-const orgChip=(s,first)=>{const o=cardOrg(s);return o?.name&&o.name!==first?.name&&o.name.toLowerCase()!==String(s.project_node?.name||'').toLowerCase()?html`<a class="chip scope who org" href="${graphHash(o.id)}" title="Open ${o.name}" aria-label="Open ${o.name}">${raw(CHIP_ICON.org)}<span>${o.name}</span></a>`:''};
+ const short=String(first.name).split(' ')[0];return html`<a class="chip scope who" href="${graphHash(first.id)}" title="Open ${first.name}" aria-label="Open ${first.name}">${chipIcon('person',first.photo)}<span class="who-full">${first.name}</span>${short!==first.name?html`<span class="who-short">${short}</span>`:''}</a>${orgChip(s,first)}`};
+const orgChip=(s,first)=>{const o=cardOrg(s);return o?.name&&o.name!==first?.name&&o.name.toLowerCase()!==String(s.project_node?.name||'').toLowerCase()?html`<a class="chip scope who org" href="${graphHash(o.id)}" title="Open ${o.name}" aria-label="Open ${o.name}">${chipIcon('org',o.logo)}<span>${o.name}</span></a>`:''};
 // A to-do a teammate has now: Take it back makes it yours again; Hand off to someone else gives it to another one
 // (and takes it back from them, see handoffEditor). Both sit in sight, beside the to-do's own buttons.
 const canReassign=s=>!closed(s)&&!s.handled_hint&&!!state?.fleet?.on&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!handingOff.has(s.id)&&!redirect(s);

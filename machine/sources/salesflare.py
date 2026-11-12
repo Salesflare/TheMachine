@@ -155,6 +155,22 @@ def salesflare_context(account, crm):
     return info, contacts
 
 
+# A contact's picture as Salesflare keeps it on its own image hosts. A link to anyone else's host (another enrichment
+# service, a CDN) is left alone: downloading it would tell that host who the owner deals with.
+SALESFLARE_PICTURE = re.compile(r'https://(?:staging)?lib\.salesflare\.com/[^\s"\'<>\\]{1,500}')
+
+
+def salesflare_picture(value):
+    return value if isinstance(value, str) and SALESFLARE_PICTURE.fullmatch(value) else None
+
+
+def salesflare_pictures(crm):
+    """(identifiers, link, chosen) for each of an account's contacts with a picture on Salesflare's own host: a picture
+    on their CRM record, so not one they chose themselves."""
+    return [(['email:' + str(p['email']).strip().lower()], link, False) for p in crm.get('customers') or []
+            if isinstance(p, dict) and '@' in str(p.get('email') or '') and (link := salesflare_picture(p.get('picture')))]
+
+
 def salesflare_link(account, crm_id):
     return f"{account['app_base']}/#/accounts/{crm_id}/info/view"
 
@@ -419,6 +435,7 @@ def sync_salesflare(store, config, account, source=None):
     meeting_since = dt.datetime.fromisoformat(window.get('meeting_since', window['since']))
     email_ids = set(window['email_ids']) if 'email_ids' in window else None  # older frozen windows: read both
     events, skipped, excluded, titles = [], 0, set(), []  # titles: each contact's job title in the CRM, a record about them
+    pictures = []  # each contact's picture on Salesflare's own host (salesflare_picture), saved later like a contact's photo
     batch = window['pending'][:account.get('accounts_per_batch', 5)]
     read_before, refused_before = window.get('read', 0), len(window.get('no_access') or [])
     for crm_id in batch:
@@ -429,6 +446,7 @@ def sync_salesflare(store, config, account, source=None):
             part_of = {True: 'true', False: 'false'}.get(crm.get('part_of'), 'missing') if isinstance(crm, dict) else 'missing'
             info, contacts = salesflare_context(account, crm)
             titles += [(['email:' + c['email']], {'title': c['role']}, enrichment.RECORD) for c in contacts.values() if c['email'] and c['role']]
+            pictures += salesflare_pictures(crm)
             if crm.get('part_of') is False and account.get('join_pipelines'):
                 pipeline = salesflare_in_pipelines(source, crm_id, account['join_pipelines'])
                 if pipeline:
@@ -552,7 +570,11 @@ def sync_salesflare(store, config, account, source=None):
     store.commit_page(account['id'], state, events, excluded_source_ids=excluded)
     involved = {'email:' + str(c.get('email')).lower() for e in events for c in e['metadata'].get('contacts') or ()}
     titles = [t for t in titles if t[0][0] in involved]  # only people in what was kept, as for their messages
-    if titles:
+    pictures = [p for p in pictures if p[0][0] in involved]
+    if titles or pictures:
         with store.connect() as db:
-            enrichment.offer_facts(db, titles, 'salesflare', now())
+            enrichment.offer_facts(db, titles, 'salesflare', now()) if titles else None
+            # Their picture link only, kept on this Machine: the enrichment worker downloads it once, small, for people
+            # without a photo (enrichment.contact_photos_step); a photo the person chose elsewhere wins.
+            enrichment.offer_photos(db, pictures, 'salesflare', now(), known_only=False) if pictures else None
     return {'mode': state['mode'], 'events': len(events), 'filtered': skipped, 'more': bool(state.get('window'))}

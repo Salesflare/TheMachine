@@ -2733,6 +2733,19 @@ def open_line(items, skip=()):
     return '; '.join(bits)
 
 
+LOGO_LINK = re.compile(r'https://[^\s"\'<>\\]{1,600}')
+
+
+def node_picture(info, field):
+    """The picture a person's (field 'photo') or organization's ('logo') Graph node shows, for a to-do's chip: only a
+    photo saved on this Machine; for a logo also the https link the Graph's lists show. None when it has none."""
+    try:
+        found = str(((json.loads(info or '{}') or {}).get('profile') or {}).get(field) or '')
+    except (ValueError, TypeError, AttributeError):
+        return None
+    return found if PICTURE.fullmatch(found) or (field == 'logo' and LOGO_LINK.fullmatch(found)) else None
+
+
 def card_people(db, event_ids, limit=3):
     """Who a card is directly about, with their role: its main source's people (its first event) first, the rest closest
     first; and a weight to rank cards by: how close they are, more when their organization pays the owner (Stripe)."""
@@ -2745,7 +2758,9 @@ def card_people(db, event_ids, limit=3):
     rows = list({r['id']: r for r in sorted(found, key=lambda r: r['event_id'] != ids[0])}.values())  # the one waiting on it leads
     people = [{'id': r['id'], 'name': (EMAIL_ONLY.fullmatch(r['name'] or '') and address_shown('email:' + r['name'].lower())) or handle_shown(r['name']), 'role': json.loads(r['info']).get('role'),
                'paying': bool(r['org_info'] and json.loads(r['org_info']).get('paying')),
-               **({'org': {'id': r['org_id'], 'name': r['org_name']}} if r['org_id'] and r['org_name'] else {})} for r in rows]
+               **({'photo': photo} if (photo := node_picture(r['info'], 'photo')) else {}),
+               **({'org': {'id': r['org_id'], 'name': r['org_name'], **({'logo': logo} if (logo := node_picture(r['org_info'], 'logo')) else {})}}
+                  if r['org_id'] and r['org_name'] else {})} for r in rows]
     weight = max((r['strength'] + (2 if p['paying'] else 0) for r, p in zip(rows, people)), default=0.0)
     return people[:limit], round(weight, 3)
 

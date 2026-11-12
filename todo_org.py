@@ -33,8 +33,14 @@ def card_org_view(db, node_id):
     """{'id', 'name'} of the organization a to-do is about (card_org), for its chip; None when it is gone since."""
     if not node_id:
         return None
-    row = db.execute("SELECT id,name FROM graph_nodes WHERE id=? AND kind='org'", (crm.canonical(db, node_id),)).fetchone()
-    return {'id': row['id'], 'name': row['name']} if row and row['name'] else None
+    row = db.execute("SELECT id,name,info FROM graph_nodes WHERE id=? AND kind='org'", (crm.canonical(db, node_id),)).fetchone()
+    return with_logo({'id': row['id'], 'name': row['name']}, row['info']) if row and row['name'] else None
+
+
+def with_logo(org, info):
+    """The organization's chip with its logo, when its Graph node shows one (graph.node_picture)."""
+    logo = graph.node_picture(info, 'logo')
+    return {**org, 'logo': logo} if logo else org
 
 
 def project_org_view(db, project_node):
@@ -47,4 +53,7 @@ def project_org_view(db, project_node):
     if not row or not row['org'] or row['org_by'] not in ('owner', 'review'):
         return None
     org = graph.project_org(db, row['org'])
-    return {'id': org['id'], 'name': org['name']} if org and org.get('id') and org.get('name') else None
+    if not org or not org.get('id') or not org.get('name'):
+        return None
+    node = db.execute("SELECT info FROM graph_nodes WHERE id=? AND kind='org'", (org['id'],)).fetchone()
+    return with_logo({'id': org['id'], 'name': org['name']}, node['info'] if node else None)
