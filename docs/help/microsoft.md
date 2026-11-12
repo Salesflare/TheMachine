@@ -3,7 +3,7 @@ title: Microsoft Outlook and Calendar
 area: connections
 summary: Outlook mail and meetings, for Microsoft 365 and Outlook.com. Sends an email only after you approve it.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ Mail in Other and newsletters get a quick look first: sender, subject and a few 
 - When you snooze a to-do about an email, the thread's messages move to a Snoozed folder in Outlook and come back when the to-do does.
 
 The calendar is never changed.
+
+## Photos of colleagues and contacts
+
+Microsoft is also asked to read basic profiles in your organization (name, email and photo) and your Outlook contacts. Your Machine uses them only for photos, job titles and companies of people already in your Graph, up to 200 photos a day. Someone without a photo is checked again after 30 days.
+
+Your organization's admin may have to approve the colleague photos. If they don't, Outlook still connects, just without these photos. An account connected before this asks once under **Connections**: press **Reconnect**, or **×** to hide it for good.
 
 ## Connect it
 

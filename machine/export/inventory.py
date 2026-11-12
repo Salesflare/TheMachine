@@ -76,7 +76,7 @@ _BY_PART = {
         org_profiles org_logo_retries org_logo_tries projects project_moves project_org_backfill project_org_checks project_org_fills
         project_splits project_people event_projects boards board_backfill_asks board_backfills board_backfills_queued board_fit_undo
         board_fits board_offers board_suggestions side_changes side_rule self_record_backups crm_fields crm_tags crm_values
-        record_changes record_owners contact_photo_links contact_photo_runs telegram_photo_asks whatsapp_photo_asks mail_hidden
+        record_changes record_owners contact_photo_links contact_photo_runs ms_photo_asks ms_photo_accounts telegram_photo_asks whatsapp_photo_asks mail_hidden
         mail_shown'''),
     'skills': _names('skills skill_hints skill_task_decided skill_clusters help_topics'),
     'agents': _names('''agent_jobs agent_result_receipts agent_key_pins agent_relayed chat_models chat_fast_sessions'''),
@@ -89,7 +89,7 @@ _BY_PART = {
         team_files team_mail team_pending team_records team_sources team_wants team_learnings team_learning_votes
         contact_shares contact_marks family_invite_log family_invite_offers ai_clients ai_codes ai_connections ai_tokens
         ai_folded ai_writes ai_activity'''),
-    'activity': _names('''activity_accounts activity_blocks activity_seen faults fault_versions error_feed retention_runs
+    'activity': _names('''activity_accounts activity_blocks activity_seen faults fault_versions error_feed reconnect_asks retention_runs
         store_fixes plain_key_pass data_stamps profile_runs notify_queue notify_digests notify_app_lines notify_app_devices push_subscriptions'''),
     'index': _names('event_search event_vectors event_passages event_vector_skips fact_vectors fact_search'),
 }

@@ -494,6 +494,9 @@ LAZY_CEILING.update(followups=28_000, graph=384_000)
 # connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
 # puts catch-all sources last (about 0.9 KB).
 LAZY_CEILING['connections'] = 110_000
+# connections 110,000 -> 111,500 (2026-11-12): a card's "Reconnect to add something" line with its × and the setup
+# row's Reconnect (machine/app/reconnect_asks.py), for Outlook's and Google's contact photos (about 1.0 KB).
+LAZY_CEILING['connections'] = 111_500
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new

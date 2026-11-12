@@ -3,7 +3,7 @@ title: Microsoft Outlook en agenda
 area: connections
 summary: Mail en afspraken in Outlook, voor Microsoft 365 en Outlook.com. Verstuurt een e-mail pas nadat je hem goedkeurt.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ Mail in Overige en nieuwsbrieven krijgen eerst een snelle blik: afzender, onderw
 - Als je een to-do over een e-mail snoozet, gaan de berichten van de thread naar een map Snoozed in Outlook en komen ze terug wanneer de to-do terugkomt.
 
 De agenda wordt nooit gewijzigd.
+
+## Foto’s van collega’s en contacten
+
+Microsoft wordt ook gevraagd om de basisprofielen in je organisatie (naam, e-mail en foto) en je Outlook-contacten te lezen. Je Machine gebruikt ze alleen voor foto’s, functies en bedrijven van mensen die al in je Graph staan, tot 200 foto’s per dag. Wie geen foto heeft, wordt na 30 dagen opnieuw bekeken.
+
+Mogelijk moet de admin van je organisatie de foto’s van collega’s goedkeuren. Doet die dat niet, dan koppelt Outlook toch, alleen zonder die foto’s. Een account dat al eerder gekoppeld was, vraagt het één keer onder **Koppelingen**: druk op **Opnieuw verbinden**, of op **×** om het voorgoed te verbergen.
 
 ## Koppelen
 

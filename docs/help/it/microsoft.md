@@ -3,7 +3,7 @@ title: Microsoft Outlook e Calendario
 area: connections
 summary: Email e riunioni di Outlook, per Microsoft 365 e Outlook.com. Invia un'email solo dopo la tua approvazione.
 covers: connector:outlook, connector:outlook_calendar
-code: ms_graph.py, onboarding.py
+code: ms_graph.py, ms_photos.py, onboarding.py
 site: Connect Microsoft, Copy link, I'm the admin: approve now, Disconnect, Sign in with Microsoft, Use your own app
 order: 12
 ---
@@ -21,6 +21,12 @@ La posta in Altra e le newsletter ricevono prima una rapida occhiata: mittente, 
 - Quando posticipi un'attività su un'email, i messaggi del thread vanno in una cartella Posticipati in Outlook e tornano quando torna l'attività.
 
 Il calendario non viene mai cambiato.
+
+## Foto di colleghi e contatti
+
+A Microsoft viene chiesto anche di leggere i profili di base della tua organizzazione (nome, email e foto) e i tuoi contatti di Outlook. La tua Machine li usa solo per foto, ruoli e aziende delle persone già nel tuo Graph, fino a 200 foto al giorno. Chi non ha una foto viene ricontrollato dopo 30 giorni.
+
+Potrebbe servire l’approvazione dell’admin della tua organizzazione per le foto dei colleghi. Senza, Outlook si collega comunque, solo senza queste foto. Un account collegato prima lo chiede una volta in **Connessioni**: premi **Riconnetti**, oppure **×** per nasconderlo per sempre.
 
 ## Collegalo
 
