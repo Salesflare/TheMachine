@@ -212,12 +212,8 @@ def owner_card_people(db, event_id, about, stamp):
     instead of waiting for the next build. Organizations and projects stay as before. A build already computing from an
     older read would drop these rows when it publishes: graph_edits makes it compute again (graph.Outdated)."""
     ids = [str(p['id']) for p in about if p.get('kind') == 'person'][:5]
-    if not ids:
-        return
-    added = db.executemany("INSERT OR IGNORE INTO graph_events(node_id,event_id,at,probable,direct) "
-                           "SELECT id,?,?,0,1 FROM graph_nodes WHERE id=? AND kind='person'", [(event_id, stamp, i) for i in ids]).rowcount
-    if added and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='graph_edits'").fetchone():
-        db.execute('UPDATE graph_edits SET n=n+1 WHERE id=1')
+    if ids:
+        graph.link_people(db, event_id, ids, stamp)
 
 
 def owner_card_of(db, rows):
