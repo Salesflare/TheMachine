@@ -1730,6 +1730,7 @@
    "body": "Does your API support webhooks for deal stage changes?",
    "metadata": {
     "from": "ayla@orchardstreetbakery.example",
+    "from_name": "Ayla Penrose",
     "state": "open",
     "priority": false,
     "conversation_id": "9029",

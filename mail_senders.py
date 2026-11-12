@@ -92,7 +92,7 @@ SHARED_WORDS = frozenset('''info infos contact contacts hello hallo hi hey suppo
     sales verkoop vente ventes vendas ventas vertrieb office kantoor bureau buero admin administratie administration administracion amministrazione
     team orders order bestelling bestellingen bestellung commandes pedidos ordini shop store webshop winkel boutique tienda loja negozio
     booking bookings reservations reservation reservering reserveringen reserveren reservierung reservas prenotazioni verhuur rental vermietung
-    events mail email post inbox enquiries inquiries enquiry kontakt contacto contato contatto contactos
+    events mail email post inbox webmaster postmaster enquiries inquiries enquiry kontakt contacto contato contatto contactos
     accounts accounting finance boekhouding buchhaltung billing facturatie invoices hr jobs careers vacatures press pers partners
     receptie reception rezeption accueil onthaal secretariaat sekretariat secretariat secretaria segreteria welcome welkom general algemeen'''.split())
 
@@ -107,6 +107,16 @@ def shared_address(address, label=''):
         return True
     letters = re.sub(r'[^a-z0-9]', '', local)
     return len(letters) >= 4 and letters == re.sub(r'[^a-z0-9]', '', str(label or '').lower())
+
+
+def address_name(address):
+    """A name read from an address that came with none, else '': its local part when it reads as one (ayla@ is "Ayla",
+    jane.doe@ "Jane Doe"). Never a shared inbox's (info@) or a mailing system's (noreply@)."""
+    local, _, domain = str(address or '').lower().partition('@')
+    words = re.split(r'[._-]+', local.partition('+')[0])
+    if len(words) > 3 or len(words[0]) < 3 or not all(re.fullmatch(r'[a-z]{2,}', w) for w in words) or shared_address(address, domain.split('.')[0]) or bulk(address):
+        return ''
+    return ' '.join(w.capitalize() for w in words)
 
 
 def mass_mail(m, sender, name, company, wrote_to):
