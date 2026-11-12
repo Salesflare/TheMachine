@@ -5,6 +5,7 @@ review's word is suggestions.org (machine/store/cards.py)."""
 import re
 
 import crm
+import enrichment
 import graph
 
 
@@ -38,8 +39,8 @@ def card_org_view(db, node_id):
 
 
 def with_logo(org, info):
-    """The organization's chip with its logo, when its Graph node shows one (graph.node_picture)."""
-    logo = graph.node_picture(info, 'logo')
+    """The organization's chip with its logo, when its Graph node shows one (enrichment.node_picture)."""
+    logo = enrichment.node_picture(info, 'logo')
     return {**org, 'logo': logo} if logo else org
 
 

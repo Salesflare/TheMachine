@@ -4,7 +4,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // A to-do's chips show who and which organization it is about with their photo or logo when the Graph has one
-// (graph.node_picture): a photo only when saved on this Machine, a logo also as an https link. Without one, or with any
+// (enrichment.node_picture): a photo only when saved on this Machine, a logo also as an https link. Without one, or with any
 // other link, the chip keeps its icon. A picture never makes the chip taller.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
@@ -35,10 +35,12 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#task-a1a1a1a1a1a1a1a1').waitFor();
   const pic=async(id,org)=>{const chip=page.locator(`#task-${id} .card-badges a.chip.who${org?'.org':':not(.org)'}`);
-   return {img:await chip.locator('.chip-pic img').getAttribute('src').catch(()=>null),icon:await chip.locator('svg.ci').count(),h:Math.round((await chip.boundingBox()).height)}};
+   const img=chip.locator('img.chip-pic');
+   return {img:await img.count()?await img.getAttribute('src'):null,icon:await chip.locator('svg.ci').count(),h:Math.round((await chip.boundingBox()).height)}};
   const lee=await pic('a1a1a1a1a1a1a1a1'),brush=await pic('a1a1a1a1a1a1a1a1',true);
   assert.equal(lee.img,PHOTO);assert.equal(brush.img,LOGO);
-  await page.waitForFunction(()=>[...document.querySelectorAll('#task-a1a1a1a1a1a1a1a1 .chip-pic img')].every(i=>i.complete&&i.naturalWidth>0));
+  await page.waitForFunction(()=>[...document.querySelectorAll('#task-a1a1a1a1a1a1a1a1 img.chip-pic')].every(i=>i.complete&&i.naturalWidth>0));
+  assert.equal(lee.icon,0);  // the photo takes the icon's place
   assert.equal((await pic('b1b1b1b1b1b1b1b1')).img,null);  // no photo: the person icon
   assert.equal((await pic('b1b1b1b1b1b1b1b1',true)).img,'https://logo.invalid/b.png');  // a logo link, as the Graph's lists show it
   const kim=await pic('c1c1c1c1c1c1c1c1'),globex=await pic('c1c1c1c1c1c1c1c1',true);

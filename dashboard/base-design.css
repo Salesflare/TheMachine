@@ -135,7 +135,7 @@ article h3{font-size:var(--fs-lg);line-height:1.35;letter-spacing:-.005em;color:
 .card-badges .chip,.card-badges .chip.scope{font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);letter-spacing:0;padding:1px 9px 1px 8px;min-height:0}
 .chip svg.ci,a.chip.who svg.ci{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
 a.chip.who,.chip.project-chip a{gap:4px}.chip.project-chip a{display:inline-flex;align-items:center}.chip.project-chip a>span{overflow:hidden;text-overflow:ellipsis}
-a.chip.who .chip-pic{position:relative;flex:none;display:inline-grid;place-items:center;width:16px;height:16px;margin:-2px 0 -2px -3px;border-radius:50%;overflow:hidden}a.chip.who .chip-pic.org{border-radius:4px}a.chip.who .chip-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}a.chip.who .chip-pic.org img{object-fit:contain;background:#fff}
+.chip-pic{flex:none;width:16px;height:16px;margin:-2px 0 -2px -3px;border-radius:50%;object-fit:cover}.chip-pic.org{border-radius:4px;object-fit:contain;background:#fff}
 .card-badges .chip.project-chip{padding-right:3px;gap:0}
 .chip.project-chip .project-pick{display:inline-grid;place-items:center;width:16px;height:16px;padding:0;margin-left:1px;border-radius:50%;opacity:.75}
 .chip.project-chip .project-pick:hover{opacity:1;background:var(--tile-hover,#ffffff14)}.chip.project-chip .project-pick svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}

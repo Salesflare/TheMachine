@@ -4,6 +4,7 @@ review names it on suggest (org), or its project is with one the owner or a revi
 where someone on it works: their employer, or a project organization the Machine filled in from its people."""
 import unittest
 
+import enrichment
 import todo_org
 
 import test_graph as tg
@@ -72,10 +73,10 @@ class TodoOrg(unittest.TestCase):
         self.assertNotIn('photo', plain['people'][0])  # none saved: the chip keeps its icon
         self.assertNotIn('logo', plain['people'][0]['org'])
         with self.store.connect() as db:
-            self.assertIsNone(graph.node_picture('{"profile":{"photo":"https://media.example/p.jpg"}}', 'photo'))  # never the service's link
-            self.assertEqual(graph.node_picture('{"profile":{"logo":"https://logo.example/a.png"}}', 'logo'), 'https://logo.example/a.png')
-            self.assertIsNone(graph.node_picture('{"profile":{"logo":"javascript:alert(1)"}}', 'logo'))
-            self.assertIsNone(graph.node_picture('not json', 'logo'))
+            self.assertIsNone(enrichment.node_picture('{"profile":{"photo":"https://media.example/p.jpg"}}', 'photo'))  # never the service's link
+            self.assertEqual(enrichment.node_picture('{"profile":{"logo":"https://logo.example/a.png"}}', 'logo'), 'https://logo.example/a.png')
+            self.assertIsNone(enrichment.node_picture('{"profile":{"logo":"javascript:alert(1)"}}', 'logo'))
+            self.assertIsNone(enrichment.node_picture('not json', 'logo'))
             db.execute("INSERT INTO person_edits(identifier,fields,updated_at) VALUES('email:lee@brushworks.example','{\"photo\":\"none\"}',?)", (T,))
         self.build()
         card = self.card(self.store.suggest('k3', 'Pay the deposit', 'Lee asks for it.', [quote], org='brushworks.example', separate=True)['id'])
