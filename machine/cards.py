@@ -6,6 +6,7 @@ import re
 
 import i18n
 import locale_prefs
+from machine.sources.android import android_app_shown
 from machine.sources.slack import SLACK_ID
 import next_actions
 from timeutil import WORK_HOURS, clock, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
@@ -239,6 +240,8 @@ def source_line_shown(line, names=None):
         head = kind if SLACK_ID.search(person) or CHAT_HANDLE.fullmatch(person) or not person else f'{kind} DM with {chat_plain_name(person)}'
     else:
         who = group_sender(named(who).strip())
+        if kind == 'phone' and re.fullmatch(r'[a-z]\w*(?:\.\w+)+', who):  # an app by its package (older cards): by its name, or none
+            who = android_app_shown(who)
         channel = re.fullmatch(r'#[\w.-]+', who) and not SLACK_ID.search(who)  # "#general": a channel by its name stays
         raw = not channel and (SLACK_ID.search(who) or CHAT_HANDLE.fullmatch(who) or SOURCE_RAW.fullmatch(who))
         head = kind if raw or not who else f'{kind} {how} {who if channel else chat_plain_name(who)}'
