@@ -24,7 +24,9 @@ Una fuente que ya conectaste lo indica en la lista, con su cuenta. Elígela para
 
 La lista está agrupada (**Correo y calendario**, **Chat**, **Reuniones**, **Documentos y archivos**, **Clientes**, **Proyectos y código**, **Otras**), de la A a la Z en cada grupo.
 
-**Sugerido para ti** aparece arriba cuando tu Machine ve un motivo para una fuente, con ese motivo en una línea: correos de Stripe, reuniones de Zoom en tu calendario, mensajes con enlaces a Google Docs o una configuración que no terminó. Lo cuenta en tu Machine; nada sale de ella. Sin motivo, no hay sección. Nunca sugiere una fuente ya conectada.
+Una fuente para la que tu Machine ve un motivo aparece marcada como **Sugerido** en su propio grupo, con ese motivo en una línea: correos de Stripe, reuniones de Zoom en tu calendario, mensajes con enlaces a Google Docs o una configuración que no terminó. Lo cuenta en tu Machine; nada sale de ella. Nunca sugiere una fuente ya conectada.
+
+Microsoft Teams aparece dos veces: en **Chat** para sus chats y en **Reuniones** como **Reuniones de Teams** para sus notas de reuniones. Las dos usan el mismo inicio de sesión de Microsoft, así que conectar una conecta la otra.
 
 **Reconectar** en una fuente y en **Te necesita** abre el mismo formulario. En tu propio ordenador, `assistant connect` hace lo mismo en un terminal.
 

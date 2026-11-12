@@ -24,7 +24,9 @@ Una fonte già collegata lo indica nell’elenco, con il suo account. Sceglila p
 
 L’elenco è diviso in gruppi (**Email e calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**), dalla A alla Z in ciascuno.
 
-**Suggerito per te** compare in alto quando la tua Machine vede un motivo per una fonte, con quel motivo in una riga: email da Stripe, riunioni Zoom nel tuo calendario, messaggi che rimandano a Google Docs, o una configurazione non finita. Li conta sulla tua Machine; non esce nulla. Nessun motivo, nessuna sezione. Una fonte già collegata non viene mai suggerita.
+Una fonte per cui la tua Machine vede un motivo è segnata come **Suggerito** nel suo gruppo, con quel motivo in una riga: email da Stripe, riunioni Zoom nel tuo calendario, messaggi che rimandano a Google Docs, o una configurazione non finita. Li conta sulla tua Machine; non esce nulla. Una fonte già collegata non viene mai suggerita.
+
+Microsoft Teams compare due volte: sotto **Chat** per le chat e sotto **Riunioni** come **Riunioni Teams** per le note delle riunioni. Usano lo stesso accesso Microsoft, quindi collegarne una collega anche l’altra.
 
 **Riconnetti** su una fonte e in **Serve il tuo intervento** apre lo stesso modulo. Sul tuo computer, `assistant connect` fa lo stesso in un terminale.
 
