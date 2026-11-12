@@ -7497,6 +7497,38 @@
     "notification_key_hash": "check-phone-1",
     "truncated": true
    }
+  },
+  {
+   "key": "check:phone:2",
+   "account_id": "home-phone",
+   "kind": "android.notification",
+   "minutes_ago": 32,
+   "title": "com.parcelpal.mobile.android",
+   "body": "com.parcelpal.mobile.android",
+   "metadata": {
+    "package_name": "com.parcelpal.mobile.android",
+    "app_name": "com.parcelpal.mobile.android",
+    "notification_key_hash": "check-phone-2",
+    "truncated": true
+   }
+  },
+  {
+   "key": "check:intercom:0",
+   "account_id": "work-intercom",
+   "kind": "intercom.conversation",
+   "minutes_ago": 36,
+   "title": "Can I export my pipeline to a spreadsheet?",
+   "body": "Can I export my pipeline to a spreadsheet?",
+   "metadata": {
+    "conversation_id": "770036",
+    "from": "operator+demo1@noreply.intercom.example",
+    "from_name": "Fin",
+    "contact_email": "wren@saltmarshmedia.example",
+    "contact_name": "Wren Calloway",
+    "state": "closed",
+    "last_author_type": "bot",
+    "source_url": "https://app.intercom.example/a/inbox/demo/inbox/shared/all/conversation/770036"
+   }
   }
  ],
  "cards": [
@@ -9519,6 +9551,8 @@
    "check:slack:0",
    "check:phone:0",
    "check:phone:1",
+   "check:phone:2",
+   "check:intercom:0",
    "story:pricing:2"
   ],
   "why": {
@@ -9533,7 +9567,8 @@
    "check:wa:0": "Just letting you know they landed",
    "check:slack:0": "Office news for everyone, nothing to do",
    "check:phone:0": "App updates, nothing to do",
-   "check:phone:1": "A delivery notice, the parcel is in"
+   "check:phone:1": "A delivery notice, the parcel is in",
+   "check:intercom:0": "Fin answered with the export steps, nothing left to do"
   }
  }
 }

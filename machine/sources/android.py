@@ -63,6 +63,19 @@ def android_app_shown(package, app_name=None):
     return word.upper() if len(word) <= 3 else word[:1].upper() + word[1:]
 
 
+# A reverse-domain package id ("com.acme.shop", "nl.bank.app"): an app's id, never words to read
+PACKAGE_ID = re.compile(r'(?:com|org|net|io|co|app|dev|me|ai|tv|eu|uk|us|nl|be|de|fr|it|es|pt|ch|at|se|no|dk|fi|pl|br|in|jp|au|ca)'
+                        r'\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+')
+
+
+def android_text_shown(text, package='', app_name=''):
+    """A notification's title or text as people read it: '' when it is only an app's package id (a group's summary
+    notification has no title of its own, and older events stored the package there) or the app's raw name."""
+    text = ' '.join(str(text or '').split())
+    raw = {str(v).casefold() for v in (package, app_name) if v}
+    return '' if text.casefold() in raw or PACKAGE_ID.fullmatch(text) else text
+
+
 class Android:
     def __init__(self, config, account):
         self.config, self.account = config, account
@@ -91,7 +104,8 @@ def android_event(account, raw):
     if (not isinstance(raw.get('key'), str) or not isinstance(raw.get('packageName'), str)
             or not isinstance(raw.get('postTimeMs'), int)):
         raise SourceError('android_invalid_notification')
-    title = str(raw.get('title') or raw['packageName'])
+    # No title (a group's summary notification): the app by name, never its package id
+    title = android_text_shown(raw.get('title'), raw['packageName']) or android_app_shown(raw['packageName'])
     body = '\n'.join(str(raw.get(k) or '') for k in ('text', 'subText')).strip()
     # OTP values are credentials, not useful long-lived assistant context.
     sensitive = bool(re.search(r'(?i)verification code|security code|one.time (?:code|password)|\bOTP\b|verificatiecode', title + ' ' + body))
