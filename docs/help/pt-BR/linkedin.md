@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## O que ela lê
 
-Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com login feito como você, de vez em quando durante o dia. Ela não usa chave de API e não marca nada como lido.
+Suas mensagens do LinkedIn. Ela lê em uma aba do navegador da sua Machine, com login feito como você, de vez em quando durante o dia. Ela não usa chave de API e não marca nada como lido. Respostas em conversas que você arquivou e solicitações de mensagem também chegam; spam fica de fora.
 
 ## Cargos e empresas
 

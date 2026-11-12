@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## What it reads
 
-Your LinkedIn messages. It reads them in your Machine's own browser, signed in as you, now and then during waking hours. It marks nothing as read.
+Your LinkedIn messages. It reads them in your Machine's own browser, signed in as you, now and then during waking hours. It marks nothing as read. Replies in conversations you archived and message requests come in too; spam stays out.
 
 ## Titles and companies
 

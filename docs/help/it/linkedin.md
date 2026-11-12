@@ -8,7 +8,7 @@ site: Connect, More sources, Remove
 ---
 ## Cosa legge
 
-I tuoi messaggi LinkedIn. Li legge in una scheda del browser della tua Machine, con il tuo accesso, di tanto in tanto durante le ore di veglia. Non usa chiavi API e non segna nulla come letto.
+I tuoi messaggi LinkedIn. Li legge in una scheda del browser della tua Machine, con il tuo accesso, di tanto in tanto durante le ore di veglia. Non usa chiavi API e non segna nulla come letto. Arrivano anche le risposte nelle conversazioni che hai archiviato e le richieste di messaggio; lo spam resta fuori.
 
 ## Ruoli e aziende
 

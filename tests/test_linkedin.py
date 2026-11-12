@@ -1,5 +1,6 @@
 """LinkedIn connector plugin and the owner-approved LinkedIn Send. No live calls."""
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -109,6 +110,21 @@ class LinkedInSource(unittest.TestCase):
         self.assertEqual(src.calls[0][0], src.calls[1][0])
         self.assertEqual(src.calls[1][1], {'cursor': 'page2'})
         self.assertTrue(self.store.checkpoint('li')['coverage_complete'])
+
+    def test_a_scan_by_an_older_reader_reads_back_once_without_duplicates(self):
+        # Caught up by a reader that only listed INBOX: the next scan goes back bootstrap_days once, the one after doesn't.
+        current = int(a.dt.datetime.fromisoformat(NOW).timestamp() * 1000)
+        self.store.commit_page('li', {'mode': 'incremental', 'completed_ms': current - 600000, 'coverage_complete': True, 'page': {}},
+                               [li.event(ACCOUNT, raw(), H)])
+        src = Source([raw(), raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M9==)', at=current - 3 * 86400000, text='Late reply')])
+        with patch_everywhere(a, 'now', return_value=NOW):
+            self.assertEqual(li.sync(self.store, {}, ACCOUNT, H, src)['events'], 2)
+            li.sync(self.store, {}, ACCOUNT, H, src)
+        self.assertEqual(src.calls[0], current - 7 * 86400000)
+        self.assertEqual(src.calls[1], current - 3600000)
+        self.assertEqual(self.store.checkpoint('li')['read_scope'], li.READ_SCOPE)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0], 2)
 
     def test_review_context_source_line_and_promises(self):
         self.store.commit_page('li', {}, [li.event(ACCOUNT, raw(urn='urn:li:msg_message:(urn:li:fsd_profile:ME,2-M0==)', at=1791870000000, text='Hello?'), H),
@@ -425,6 +441,101 @@ class Tabs(unittest.TestCase):
                 with patch.object(reader, 'oc', slow), self.assertRaises(reader.Fail):
                     reader.with_tab('https://example.test', lambda target: None)
                 self.assertEqual(tabs, {'OWNER', 'UNRELATED'}, name)
+
+
+FAKE_LINKEDIN = r"""
+// LinkedIn's messaging API as the reader's in-page script sees it, from a made-up fixture; then the script itself.
+const [fixture, script] = process.argv.slice(-2), F = JSON.parse(fixture), asked = [];
+globalThis.location = {host: 'www.linkedin.com'};
+globalThis.document = {readyState: 'complete', cookie: 'JSESSIONID="ajax:1"'};
+globalThis.fetch = async (u) => {
+  asked.push(u);
+  const ok = (j) => ({ok: true, status: 200, json: async () => j});
+  if (u === '/voyager/api/me') return ok({data: {'*miniProfile': 'urn:li:fs_miniProfile:ME'}});
+  const vars = decodeURIComponent(u.split('&variables=')[1]);
+  const cat = vars.match(/category:([A-Z_]+)/);
+  if (cat) return F.lists[cat[1]] ? ok(F.lists[cat[1]]) : {ok: false, status: 400, json: async () => ({})};
+  return ok(F.messages[vars.match(/conversationUrn:(.*\)),count/)[1]]);
+};
+eval(script)().then(r => console.log(JSON.stringify({r, asked})));
+"""
+
+
+@unittest.skipUnless(shutil.which('node'), 'node is not installed')
+class ReaderScope(unittest.TestCase):
+    """The reader's sync script against a made-up LinkedIn: a reply in an old, archived conversation (LinkedIn keeps it
+    under ARCHIVE, without INBOX) must be read, not reported as caught up."""
+    ME, OTHER = 'urn:li:msg_messagingParticipant:urn:li:fsd_profile:ME', 'urn:li:msg_messagingParticipant:urn:li:fsd_profile:OTHER'
+    SINCE, DAY = 1794400000000, 86400000
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('linkedin_inbox_scope', Path(__file__).parent.parent / 'integrations' / 'linkedin_inbox.py')
+        cls.reader = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.reader)
+
+    def conv(self, tail, at, categories):
+        return {'$type': 'com.linkedin.messenger.Conversation', 'entityUrn': 'urn:li:msg_conversation:(urn:li:fsd_profile:ME,' + tail + ')',
+                'lastActivityAt': at, 'categories': categories, '*conversationParticipants': [self.ME, self.OTHER], 'groupChat': False, 'read': False}
+
+    def page(self, convs, cursor=None):
+        people = [{'$type': 'com.linkedin.messenger.MessagingParticipant', 'entityUrn': u,
+                   'participantType': {'member': {'firstName': {'text': name}, 'lastName': {'text': 'Example'}}}}
+                  for u, name in ((self.ME, 'Owner'), (self.OTHER, 'Ada'))]
+        return {'data': {'data': {'messengerConversationsByCategory': {'metadata': {'nextCursor': cursor}, '*elements': [c['entityUrn'] for c in convs]}}},
+                'included': convs + people}
+
+    def thread(self, conv, *messages):
+        return {'data': {'data': {'messengerMessagesByConversation': {'metadata': {'prevCursor': 'older'}}}},
+                'included': [{'$type': 'com.linkedin.messenger.Message', 'entityUrn': 'urn:li:msg_message:(' + conv['entityUrn'][-6:] + ',' + str(at) + ')',
+                              '*sender': sender, 'body': {'text': text}, 'deliveredAt': at} for sender, at, text in messages]}
+
+    def sync(self, lists, messages, side, state=None):
+        params = {'mode': 'sync', 'which': '', 'since': self.SINCE, 'text': '', 'ids': self.reader.DEFAULT_IDS, 'state': state or {}, 'side': side}
+        out = subprocess.run(['node', '-e', FAKE_LINKEDIN, '--', json.dumps({'lists': lists, 'messages': messages}),
+                              self.reader.JS.replace('__PARAMS__', json.dumps(params))], capture_output=True, text=True, timeout=60)
+        self.assertEqual(out.returncode, 0, out.stderr)
+        got = json.loads(out.stdout)
+        self.assertNotIn('error', got['r'], got['r'])
+        return got['r'], [u for u in got['asked'] if 'category:' in u]  # the conversation lists it asked for
+
+    def test_a_reply_in_an_archived_conversation_is_read_once(self):
+        quiet = self.conv('2-QUIET==', self.SINCE - self.DAY, ['INBOX', 'PRIMARY_INBOX'])
+        replied = self.conv('2-OLDTHREAD==', self.SINCE + 8 * 3600000, ['ARCHIVE'])
+        stale = self.conv('2-STALE==', self.SINCE - 100 * self.DAY, ['ARCHIVE'])
+        lists = {'INBOX': self.page([quiet], cursor='inbox-2'), 'ARCHIVE': self.page([replied, stale], cursor='archive-2')}  # no MESSAGE_REQUEST: refused
+        messages = {replied['entityUrn']: self.thread(replied, (self.OTHER, self.SINCE + 8 * 3600000, 'Sorry for the late answer'),
+                                                     (self.ME, self.SINCE - 120 * self.DAY, 'Shall we meet?')),
+                    quiet['entityUrn']: self.thread(quiet, (self.OTHER, self.SINCE - self.DAY, 'Thanks')),
+                    stale['entityUrn']: self.thread(stale, (self.ME, self.SINCE - 100 * self.DAY, 'Hi'))}
+        # Before: only INBOX was listed, so the scan said caught up without the reply.
+        before, _ = self.sync(lists, messages, side=[])
+        self.assertEqual((before['messages'], before['more'], before['state']['coverage_complete']), ([], False, True))
+        res, _ = self.sync(lists, messages, side=self.reader.SIDE_CATEGORIES)
+        self.assertEqual([(m['text'], m['fromMe'], m['conversation'], m['categories']) for m in res['messages']],
+                         [('Sorry for the late answer', False, replied['entityUrn'], ['ARCHIVE'])])
+        self.assertEqual(res['messages'][0]['with'], 'Ada Example')
+        self.assertEqual((res['more'], res['state']), (False, {'cursor': None, 'progress': {}, 'coverage_complete': True}))
+
+    def test_an_old_archived_conversation_never_ends_the_inbox_paging(self):
+        busy = [self.conv('2-B%d==' % i, self.SINCE + i * 60000, ['INBOX']) for i in range(1, 3)]
+        lists = {'INBOX': self.page(busy, cursor='inbox-2'), 'ARCHIVE': self.page([self.conv('2-STALE==', self.SINCE - 100 * self.DAY, ['ARCHIVE'])]),
+                 'MESSAGE_REQUEST': self.page([])}
+        messages = {c['entityUrn']: self.thread(c, (self.OTHER, c['lastActivityAt'], 'New'), (self.ME, self.SINCE - self.DAY, 'Hi')) for c in busy}
+        res, asked = self.sync(lists, messages, side=self.reader.SIDE_CATEGORIES)
+        self.assertEqual(len(res['messages']), 2)
+        self.assertEqual((res['more'], res['state']['cursor']), (True, 'inbox-2'))
+        self.assertEqual(len(asked), 3)  # INBOX, ARCHIVE, MESSAGE_REQUEST
+        # The inbox's next page: the other categories were already checked for this scan.
+        lists['INBOX'] = self.page([self.conv('2-QUIET==', self.SINCE - self.DAY, ['INBOX'])])
+        res, asked = self.sync(lists, messages, side=self.reader.SIDE_CATEGORIES, state=res['state'])
+        self.assertEqual((res['messages'], res['more'], len(asked)), ([], False, 1))
+
+    def test_the_reader_passes_the_other_categories_to_sync(self):
+        with patch.object(self.reader, 'run', return_value={'messages': []}) as run, patch('builtins.print'):
+            self.reader.cmd_sync(type('Args', (), {'since': 5, 'state': '{}'})())
+        self.assertEqual(run.call_args.kwargs['side'], ['ARCHIVE', 'MESSAGE_REQUEST'])
 
 
 class ReadWindow(unittest.TestCase):

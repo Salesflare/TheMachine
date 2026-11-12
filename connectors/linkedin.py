@@ -31,6 +31,9 @@ from pathlib import Path
 # Reads only from start to end hour, local time (an account's active_hours overrides it); the dashboard says when it reads again.
 READ_HOURS = (7, 22)
 KINDS = {'linkedin.message': 'LinkedIn'}
+# What a sync scan reads; raise it when that grows, and the next scan reads back bootstrap_days once (2: archived
+# conversations and message requests with recent activity, not only INBOX).
+READ_SCOPE = 2
 # For `assistant connect linkedin`: the account it adds (see docs/adding-a-source.md).
 SETUP = {'label': 'LinkedIn', 'what': 'Your LinkedIn messages.',
          'account': {'id': 'me-linkedin', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'boundary': 'work', 'poll_seconds': 3600},
@@ -178,6 +181,11 @@ def sync(store, config, account, helpers, source=None):
     # however long an outage lasts; only a completed scan moves it (with an hour of overlap).
     first = int((current - dt.timedelta(days=int(config.get('bootstrap_days', 7)))).timestamp() * 1000)
     since = state.get('scan_since_ms') or (max(0, state['completed_ms'] - 3600000) if state.get('completed_ms') else min(state.get('since_ms') or first, first))
+    # A scan by an older reader looked at fewer conversations (READ_SCOPE): the next new scan goes back bootstrap_days
+    # once, so what it missed comes in. Messages already kept stay as they are (same source ids).
+    rescan = state.get('read_scope') != READ_SCOPE and not state.get('scan_since_ms')
+    if rescan:
+        since = min(since, first)
     page = source.page(since, state.get('page') or {})
     skipped = helpers.Skips('linkedin_invalid_message')
     found = events(account, page, helpers, skipped)
@@ -187,6 +195,7 @@ def sync(store, config, account, helpers, source=None):
     state.update(mode='incremental', latest_ms=latest, since_ms=since, read_messages=len(found), page=page['state'],
                  scan_since_ms=since if more else None, scan_until_ms=scan_until if more else None,
                  completed_ms=state.get('completed_ms', 0) if more else scan_until, coverage_complete=not more,
+                 read_scope=READ_SCOPE if rescan or state.get('read_scope') == READ_SCOPE else None,
                  coverage='Paged inbox catch-up in progress.' if more else 'Inbox conversations and message pages caught up; spam excluded.')
     skipped.note(state)
     store.commit_page(account['id'], state, found)

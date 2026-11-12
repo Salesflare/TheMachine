@@ -48,6 +48,9 @@ IDS_FILE = Path.home() / '.config/linkedin-inbox/query-ids.json'
 # What My Network > Connections asks for (`connections`); a newer one LinkedIn rolls out answers 400 and stops the day.
 CONNECTIONS_DECORATION = 'com.linkedin.voyager.dash.deco.web.mynetwork.ConnectionListWithProfile-16'
 SENDS_LOG = Path.home() / '.local/share/linkedin-inbox/sends.jsonl'
+# Categories outside INBOX that `sync` also checks for recent activity (one page each per scan): an archived
+# conversation stays ARCHIVE without INBOX, and a message request may not be in INBOX either.
+SIDE_CATEGORIES = ['ARCHIVE', 'MESSAGE_REQUEST']
 
 JS = r"""
 async () => {
@@ -144,11 +147,18 @@ async () => {
       if (urns.length && !out.length) throw Object.assign(Error('connections without profiles'), {code: 'odd-answer'});
       return {connections: out, more: urns.length >= P.count};
     }
-    let conversationPage;
+    let conversationPage, inbox = new Set();
     if (P.mode === 'sync') {
       conversationPage=await gql(P.ids.conversation_pages,'(mailboxUrn:'+enc(meUrn)+',category:INBOX,count:20'+(P.state?.cursor?',nextCursor:'+enc(P.state.cursor):'')+')');
       if (!root(conversationPage).messengerConversationsByCategory?.metadata) throw Error('missing conversation paging metadata');
       absorb(conversationPage);
+      inbox = new Set((conversationPage.included || []).filter(x => /messenger\.Conversation$/.test(x.$type)).map(x => x.entityUrn));
+      // A reply can land in a conversation LinkedIn files outside INBOX (an archived one keeps ARCHIVE without INBOX):
+      // with a scan's first inbox page, the newest page of each of those too. Only their recent ones are read below.
+      if (!P.state?.cursor) for (const cat of P.side || []) {
+        try { absorb(await gql(P.ids.conversation_pages, '(mailboxUrn:' + enc(meUrn) + ',category:' + cat + ',count:20)')); }
+        catch (e) { if (e.code !== 'query-failed') throw e; }  // a category LinkedIn refuses: the inbox still reads
+      }
     } else absorb(await gql(P.ids.conversations, '(mailboxUrn:' + enc(meUrn) + ')'));
     let convs = Object.values(byUrn).filter(x => /messenger\.Conversation$/.test(x.$type))
       .sort((a, b) => (b.lastActivityAt || 0) - (a.lastActivityAt || 0))
@@ -187,7 +197,8 @@ async () => {
         if(budget>=5 || late()){pending=convs.some(c=>(c.lastActivityAt||0)>=P.since&&!c.categories.includes('SPAM')&&!progress[c.urn]?.done);break;}
       }
       const cursor=root(conversationPage).messengerConversationsByCategory.metadata.nextCursor;
-      const reachedFloor=convs.some(c=>(c.lastActivityAt||0)<P.since);
+      // Only the inbox page decides whether its next page is needed; the other categories' older conversations don't.
+      const reachedFloor=convs.some(c=>inbox.has(c.urn)&&(c.lastActivityAt||0)<P.since);
       const more=pending || (!!cursor && !reachedFloor);
       if (!pending && cursor===P.state?.cursor && more) throw Error('conversation cursor did not advance');
       const profiles=Object.fromEntries(convs.filter(c=>c.profile&&out.some(m=>m.conversation===c.urn)).map(c=>[c.urn,c.profile]));
@@ -659,7 +670,7 @@ def send_locked(a):
 
 def cmd_sync(a):
     state=json.loads(a.state or '{}')
-    res = run('sync', since=a.since,state=state)
+    res = run('sync', since=a.since, state=state, side=SIDE_CATEGORIES)
     print(json.dumps(res, ensure_ascii=False))
 
 
