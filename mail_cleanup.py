@@ -32,6 +32,7 @@ import urllib.parse
 
 import graph
 import i18n
+from machine.cards import group_sender
 from machine.store.review_wait import People, mail_wait
 
 KINDS = ('newsletters', 'spam')
@@ -184,8 +185,9 @@ def asked(db, kind):
 
 
 def _item(r, m, name, address, count=1, via=''):
+    # a Google Group's "'Ann' via Sales" as people say it: Ann via Sales
     return {'account': r['account_id'], 'event': r['id'], 'message': r['source_id'], 'thread': m.get('thread_id') or '',
-            'mail': r['kind'], 'from': name or address, 'address': address, 'title': ' '.join(str(r['title'] or '').split())[:120],
+            'mail': r['kind'], 'from': group_sender(name) or address, 'address': address, 'title': ' '.join(str(r['title'] or '').split())[:120],
             'count': count, **({'via': via} if via else {})}
 
 

@@ -69,6 +69,14 @@ class Relayed(unittest.TestCase):
                       {'from': 'Shop <news@shop.example>', 'reply-to': 'help@shop.example', 'list_id': '<abc.list-id.mailer.example>'}):
             self.assertEqual(mc.relay_of(plain), '', plain)
 
+    def test_a_row_names_a_group_sender_as_people_say_it(self):
+        # spam rows take the sender as the mail shows it: Google Groups' quotes and " readers" never reach the row
+        row = {'account_id': 'w', 'id': 1, 'source_id': 'm1', 'kind': 'gmail.message', 'title': 'Hi'}
+        name, address = mc.sender({'from': GROUP['from']})
+        self.assertEqual(mc._item(row, {}, name, address)['from'], 'Pat Shop via hello@team.example')
+        self.assertEqual(mc._item(row, {}, 'Pat Shop', 'orders@shop.example')['from'], 'Pat Shop')
+        self.assertEqual(mc._item(row, {}, '', 'orders@shop.example')['from'], 'orders@shop.example')
+
     def test_a_groups_own_unsubscribe_is_never_chosen(self):
         self.assertEqual(mc.unsubscribe_ways_of(GROUP), {})
         # every way a relay shows itself, alone, with only the group's unsubscribe: still none

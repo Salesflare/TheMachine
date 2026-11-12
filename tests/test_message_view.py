@@ -224,6 +224,12 @@ class Rules(unittest.TestCase):
         self.assertTrue(o['body'].startswith('Hi Dana,'), o['body'])
         self.assertEqual(o['app'], 'Salesflare')
 
+    def test_a_google_group_sender_reads_as_people_say_it(self):
+        shown = lambda sender: message_view.shape('gmail.message', {'title': 'Hi', 'body': 'Hello', 'from': sender}, {})['from']
+        self.assertEqual(shown("\"'Pat Shop' via hello@team.example readers\" <hello@team.example>"), 'Pat Shop via hello@team.example <hello@team.example>')
+        self.assertEqual(shown("'Sam Lee' via Sales <sales@acme.example>"), 'Sam Lee via Sales <sales@acme.example>')
+        self.assertEqual(shown('Sam Lee <sam@acme.example>'), 'Sam Lee <sam@acme.example>')
+
     def test_a_header_like_line_inside_the_text_stays(self):
         self.assertEqual(message_view.header_lines('Hi\nTo: whom it may concern'), ({}, 'Hi\nTo: whom it may concern'))
         self.assertEqual(message_view.header_lines('To: the team\nplease read'), ({}, 'To: the team\nplease read'))
