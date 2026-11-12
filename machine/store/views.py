@@ -455,13 +455,22 @@ class ViewsStore(ConversationStore):
                            **({'photo': photo} if photo else {}),
                            **chat_view(r['kind'], m, body, r['occurred_at'])}, m))
         mail = [o for o in result if o.get('view') == 'email']
-        bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc')))
+        rest = [o for o in result if o.get('view') != 'email']
+        # outside email a sender is only a name: a chat's, its turns' and a payment's by the graph's name for the address
+        said = [o.get('from') for o in rest] + [o.get('chat') for o in rest] + [t.get('from') for o in rest for t in o.get('turns') or ()]
+        bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc')), *said)
         if bare:  # people by the name the graph knows for them, the address only when none is known
             with self.connect() as db:
                 names = address_names(db, bare)
             for o in mail:
                 for key in ('from', 'to', 'cc'):
                     o[key] = message_view.named(o.get(key), names)
+            for o in rest:
+                for key in ('from', 'chat'):
+                    if o.get(key):
+                        o[key] = message_view.name_only(o[key], names)
+                for t in o.get('turns') or ():
+                    t['from'] = message_view.name_only(t.get('from'), names)
         return result
 
     def suggestion_result(self, suggestion, db, pre=None):
