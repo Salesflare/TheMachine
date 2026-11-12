@@ -241,9 +241,10 @@ async function calMore(dir){if(calBusy)return calBusy;const up=dir==='up',a=up?c
 const calIO=window.IntersectionObserver?new IntersectionObserver(es=>{for(const e of es){const dir=e.target.dataset.calMore;if(!e.isIntersecting||calMoreFailed[dir]||dir==='up'&&!calUp)continue;calMore(dir)}},{rootMargin:'300px 0px'}):null;
 function calObserve(box){if(!calIO)return;calIO.disconnect();box.querySelectorAll('[data-cal-more]:not([data-cal-manual])').forEach(el=>calIO.observe(el))}
 const calUpSeen=()=>{const el=$('#calendar-view [data-cal-more="up"]');return el&&el.getBoundingClientRect().bottom>-300};
-// Which way the agenda moves, and its week in the header and the address as it scrolls
-let calScrollTick=0,calUrlTimer=0;
-addEventListener('scroll',()=>{if($('#calendar').hidden||calScrollTick)return;calScrollTick=requestAnimationFrame(()=>{calScrollTick=0;const y=scrollY;calUp=y<calLastY;calLastY=y;if(!calList())return;
+// Which way the agenda moves, and its week in the header and the address as it scrolls. While a jump (Today, a
+// view switch) draws, the scrolling it causes never moves the week back to where the agenda was.
+let calScrollTick=0,calUrlTimer=0,calJump=0;
+addEventListener('scroll',()=>{if($('#calendar').hidden||calScrollTick)return;calScrollTick=requestAnimationFrame(()=>{calScrollTick=0;const y=scrollY;calUp=y<calLastY;calLastY=y;if(!calList()||calJump)return;
  const top=calAnchor($('#calendar-view'));if(!top)return;const mon=calMonday(calOf(top.day));if(+mon===+calAt)return;calAt=mon;calQueue([mon,calAdd(mon,7)]);pageHead();clearTimeout(calUrlTimer);calUrlTimer=setTimeout(()=>{if(!$('#calendar').hidden)calPush(true)},300)})},{passive:true});
 // At the very top a page can't scroll up, so a wheel or a pull down there asks for earlier days; on a phone's three
 // days a sideways swipe moves three days on or back
@@ -268,7 +269,7 @@ const calSetAll=day=>{calAt=calMonday(day);calMonth=calFirst(day);calStart=calMi
 // brings the day to the top.
 async function calShowNow(day){if(calList()){const mon=calAt,thisWeek=+mon===+calMonday(new Date());day=day||(thisWeek?calDay(0):mon);const end=calAdd(calMonday(day),7);
   if(day<calAdd(calFrom,-7)||day>calTo){calFrom=day;calTo=calAdd(day,7)}else{if(day<calFrom)calFrom=day;if(end>calTo)calTo=end}calMoreFailed={}}
- if(!calList()&&scrollY)scrollTo({top:0});calRender();await calFetch();calRender();if(calList())await calScrollTo(day)}
+ if(!calList()&&scrollY)scrollTo({top:0});calJump++;try{calRender();await calFetch();calRender();if(calList())await calScrollTo(day)}finally{calJump--}}
 function calGo(n){if(calMode==='month')calMonth=n?new Date(calMonth.getFullYear(),calMonth.getMonth()+n,1):calFirst(new Date());
  else if(calThree())calStart=n?calAdd(calStart,3*n):calDay(0);
  else calAt=n?calAdd(calAt,7*n):calMonday(new Date());
