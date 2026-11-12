@@ -122,6 +122,6 @@ A "Waiting on" to-do links your last message to them, the one you're waiting on:
 
 - **Due**: type a day or time, like "tomorrow", "next Fri", "3 Nov", "2pm" or "in 2 hours", in your own language too. The calendar icon has quick picks and **Choose date**.
 - **Message**: attach the message it's about: an email, Slack, Teams, WhatsApp, Telegram or any other message The Machine has. Search by text or sender. Each result shows where it's from, who sent it and when.
-- **Files**: tap the paperclip, paste a screenshot or drop files on the form. On a phone you can take a photo. Up to 5 files, like in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
+- **Files**: tap the paperclip, paste a screenshot or drop files on the form. On a phone, the camera next to it takes a photo. Up to 5 files, like in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
 
 The files stay with the to-do, and The Machine reads them when it works on it. Files alone are enough: it fills in the to-do from a PDF or text file. A photo shows as a small picture: tap it to see it full size.

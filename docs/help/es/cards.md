@@ -122,6 +122,6 @@ Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a 
 
 - **Vence**: escribe un día o una hora, como "mañana", "el viernes que viene", "3 nov", "15:00", "2pm", "en 2 horas" o "mañana 9". También entiende otros idiomas ("over 2 uur", "morgen 9u"). El icono del calendario tiene opciones rápidas, como al posponer, y **Elegir fecha**.
 - **Mensaje**: adjunta el mensaje del que trata: un correo, Slack, Teams, WhatsApp, Telegram o cualquier otro mensaje que tenga The Machine. Busca por texto o remitente. Cada resultado muestra de dónde viene, quién lo envió y cuándo.
-- **Archivos**: toca el clip en el cuadro, pega una captura de pantalla o suelta archivos en el formulario. En un teléfono también puedes hacer una foto. Hasta 5 archivos, de los mismos tipos y tamaños que en el chat (consulta [Añade archivos](card-chat.md#add-files)). × quita uno.
+- **Archivos**: toca el clip en el cuadro, pega una captura de pantalla o suelta archivos en el formulario. En un teléfono, la cámara de al lado hace una foto. Hasta 5 archivos, de los mismos tipos y tamaños que en el chat (consulta [Añade archivos](card-chat.md#add-files)). × quita uno.
 
 Los archivos se quedan con la tarea: se ven en ella y en su chat, y The Machine los lee cuando trabaja en ella. Basta con archivos: The Machine lee el texto de un PDF o de un archivo de texto y completa la tarea con él. Una foto se ve como una imagen pequeña: tócala para verla en grande.

@@ -63,6 +63,17 @@ try{
   // The paperclip opens the file picker (on a phone: files, photos or the camera); every type the chat takes
   assert.ok(await page.locator('#nc-attach').isVisible());
   assert.equal(await page.locator('#nc-file').getAttribute('accept'),await page.evaluate(()=>CHAT_ACCEPT));
+  // On a touch screen a camera beside it takes a photo with the back camera; a computer shows only the paperclip
+  assert.equal(await page.locator('#nc-camera').isVisible(),phone);
+  assert.equal(await page.locator('#nc-camera-file').getAttribute('accept'),'image/*');
+  assert.equal(await page.locator('#nc-camera-file').getAttribute('capture'),'environment');
+  if(phone){const box=await page.locator('#nc-camera').boundingBox(),clip=await page.locator('#nc-attach').boundingBox();
+   assert.ok(Math.abs(box.y-clip.y)<2&&box.x>clip.x&&box.x-clip.x<60,'the camera sits next to the paperclip');
+   const cam=page.waitForEvent('filechooser');await page.locator('#nc-camera').click();const shotFile=await cam;
+   assert.ok(!shotFile.isMultiple());await shotFile.setFiles([fileOf('image.jpg','image/jpeg',PNG)]);
+   await page.locator('#nc-tray .chat-att:not(.up)').first().waitFor();assert.equal(ups().at(-1).args.name,'image.jpg');
+   await shot('new-camera');await page.locator('#nc-tray [data-nc-remove]').first().click();
+   for(let i=0;i<50&&!actions.some(a=>a.action==='chat_file_remove');i++)await page.waitForTimeout(100);actions.length=0;uploaded={}}
   const chooser=page.waitForEvent('filechooser');await page.locator('#nc-attach').click();
   await (await chooser).setFiles([fileOf('Whiteboard.png','image/png',PNG),fileOf('Quote.pdf','application/pdf',Buffer.from('%PDF-1.4\n'+'x'.repeat(30000)))]);
   await page.locator('#nc-tray .chat-att:not(.up)').nth(1).waitFor();
