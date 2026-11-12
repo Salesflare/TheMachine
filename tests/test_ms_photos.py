@@ -176,7 +176,8 @@ class MicrosoftPhotos(unittest.TestCase):
         [card] = self.todos()
         self.assertEqual((card['title'], card['status'], card['origin']),
                          ('Reconnect Microsoft to show your colleagues’ and contacts’ photos', 'pending', 'machine'))
-        self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com'})  # Reconnect opens its sign-in
+        # Reconnect opens its sign-in: a hosted Machine's by provider, a self-hosted one's by its source under + Add
+        self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com', 'account': 'mail', 'source': 'outlook'})
         self.assertEqual(card['body'], 'Reconnect sam@acme.com to show colleagues’ and contacts’ photos. Read-only.')
         self.assertIsNone(card['source_line'])  # its text names the account: no "Signal · date" line
         with self.store.connect() as db:
@@ -189,6 +190,31 @@ class MicrosoftPhotos(unittest.TestCase):
         fake.granted, fake.offered = {'User.Read', 'Mail.ReadWrite'}, {'Contacts.Read'}
         self.step(fake, now=later(days=2))
         self.assertEqual([c['status'] for c in self.todos()], ['completed'])  # created once, never again
+
+    def test_a_personal_account_is_asked_only_for_its_contacts(self):
+        # Outlook.com has no colleagues: the broker offers both scopes, but reconnecting can only bring contacts' photos
+        personal = {**OUTLOOK, 'email': 'sam@outlook.com'}
+        config = {'accounts': [personal]}
+        fake = Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=('User.ReadBasic.All', 'Contacts.Read'))
+        self.step(fake, config=config)
+        [card] = self.todos()
+        self.assertEqual((card['title'], card['body']), ('Reconnect Microsoft to show your contacts’ photos',
+                                                         'Reconnect sam@outlook.com to show your contacts’ photos. Read-only.'))
+        fake.granted, fake.offered = {'User.Read', 'Mail.ReadWrite', 'Contacts.Read'}, {'User.ReadBasic.All'}
+        self.step(fake, now=later(minutes=20), config=config)
+        self.assertEqual([c['status'] for c in self.todos()], ['completed'])  # contacts granted: nothing left it can bring
+
+    def test_a_to_do_that_asked_a_personal_account_for_colleagues_gets_the_right_words(self):
+        personal = {**OUTLOOK, 'email': 'sam@hotmail.com'}
+        with self.store.connect() as db:
+            workers.outlook_photos_ask(db, 'mail', ['Contacts.Read', 'User.ReadBasic.All'], NOW)
+        with mock.patch.object(ms_graph, 'personal', return_value=False):  # as made before personal accounts were told apart
+            reconnect_asks.todos(self.store, {'accounts': [personal]})
+        self.assertIn('colleagues', self.todos()[0]['title'])
+        reconnect_asks.todos(self.store, {'accounts': [personal]})
+        [card] = self.todos()
+        self.assertEqual((card['title'], card['status']), ('Reconnect Microsoft to show your contacts’ photos', 'pending'))
+        self.assertEqual(card['body'], 'Reconnect sam@hotmail.com to show your contacts’ photos. Read-only.')
 
     def test_not_needed_is_for_good(self):
         fake = Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=('Contacts.Read',))

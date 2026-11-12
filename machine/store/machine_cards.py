@@ -12,6 +12,7 @@ from timeutil import now
 
 # A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
 RECONNECT_KIND = 'machine.reconnect_ask'
+RECONNECT_SOURCES = {'microsoft': 'outlook'}  # a sign-in's source under + Add, which a self-hosted Machine's Reconnect redoes
 
 
 def reconnect_source(account, ask):
@@ -19,14 +20,19 @@ def reconnect_source(account, ask):
 
 
 def reconnect_lead(db, suggestion_id):
-    """{provider, email} of an open reconnect to-do, which its Reconnect opens the sign-in of, else None."""
-    row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+    """{provider, email, account, source} of an open reconnect to-do, which its Reconnect opens the sign-in of, else
+    None. A hosted Machine's dashboard opens `provider`'s sign-in under + Add; a self-hosted one (no account page) signs
+    in its `source` again, the way its Connections card's Reconnect does."""
+    row = db.execute("SELECT e.metadata,e.account_id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
                      "WHERE s.id=? AND s.origin='machine' AND e.kind=?", (suggestion_id, RECONNECT_KIND)).fetchone()
     try:
         meta = json.loads(row['metadata'] or '{}') if row else {}
     except ValueError:
         return None
-    return {'provider': meta['provider'], 'email': meta.get('email') or ''} if isinstance(meta, dict) and meta.get('provider') else None
+    if not isinstance(meta, dict) or not meta.get('provider'):
+        return None
+    return {'provider': meta['provider'], 'email': meta.get('email') or '', 'account': row['account_id'] or '',
+            'source': RECONNECT_SOURCES.get(meta['provider'], meta['provider'])}
 
 
 def reconnected(db, account, ask, at):

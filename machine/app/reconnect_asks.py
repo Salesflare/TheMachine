@@ -1,6 +1,7 @@
 """Reconnect to add something: an account signed in before a newer feature asked for more (Outlook's colleague and
 contact photos), now that its sign-in service offers it. One to-do per account and feature in For you, in the account's
-area: Reconnect leads and opens that account's sign-in; it closes itself as done once the sign-in has what the feature
+area, in words that fit the account (a personal Outlook.com one has no colleagues: only its contacts' photos):
+Reconnect leads and opens that account's sign-in (a hosted Machine's own, or a paired self-hosted one's); it closes itself as done once the sign-in has what the feature
 needs, and Not needed closes it for good. Created once, never again, and never pushed or mailed: it waits on the dashboard.
 
 Whoever finds out what a sign-in lacks notes it here (note), only for what its sign-in service offers now (a broker's
@@ -11,19 +12,31 @@ from __future__ import annotations
 import sqlite3
 
 import i18n
+import ms_graph
 from machine.store.machine_cards import RECONNECT_KIND, reconnect_source, reconnected
 
 OUTLOOK_PHOTOS = 'outlook-photos'
 PROVIDERS = {OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
 
 
-def title(ask):
-    """The to-do's title in the owner's language: what reconnecting brings, never a bare "Reconnect"."""
+def personal(ask, account):
+    """An Outlook.com account (not Microsoft 365): it has no colleagues, so reconnecting brings only its contacts' photos
+    (ms_photos.check never asks it for colleagues)."""
+    return PROVIDERS.get(ask) == 'microsoft' and ms_graph.personal(account or {})
+
+
+def title(ask, own=False):
+    """The to-do's title in the owner's language: what reconnecting brings, never a bare "Reconnect". own: a personal
+    account's (personal)."""
+    if ask == OUTLOOK_PHOTOS and own:
+        return i18n.t('Reconnect Microsoft to show your contacts’ photos')
     return {OUTLOOK_PHOTOS: i18n.t('Reconnect Microsoft to show your colleagues’ and contacts’ photos')}.get(ask, '')
 
 
-def summary(ask, email):
+def summary(ask, email, own=False):
     """The to-do's one line under its title: which account, and why."""
+    if ask == OUTLOOK_PHOTOS and own:
+        return i18n.t('Reconnect {} to show your contacts’ photos. Read-only.', email)
     return {OUTLOOK_PHOTOS: i18n.t('Reconnect {} to show colleagues’ and contacts’ photos. Read-only.',
                                    email)}.get(ask, '')
 
@@ -54,6 +67,7 @@ def todos(store, config):
             ensure(db)
             rows = db.execute('SELECT r.account,r.ask FROM reconnect_asks r WHERE NOT EXISTS(SELECT 1 FROM events e WHERE e.kind=? '
                               "AND e.source_id='reconnect:'||r.ask||':'||r.account) ORDER BY r.since", (RECONNECT_KIND,)).fetchall()
+            reword(db, own)
     except sqlite3.Error:
         return 0
     made = 0
@@ -61,7 +75,22 @@ def todos(store, config):
         account, provider = own.get(account_id), PROVIDERS.get(ask)
         if not account or not provider or not title(ask):
             continue
-        email = str(account.get('email') or '')
-        made += store.machine_card(account_id, RECONNECT_KIND, reconnect_source(account_id, ask), title(ask), summary(ask, email),
-                                   summary(ask, email), {'ask': ask, 'provider': provider, 'email': email}, quiet=True)
+        email, mine = str(account.get('email') or ''), personal(ask, account)
+        made += store.machine_card(account_id, RECONNECT_KIND, reconnect_source(account_id, ask), title(ask, mine), summary(ask, email, mine),
+                                   summary(ask, email, mine), {'ask': ask, 'provider': provider, 'email': email}, quiet=True)
     return made
+
+
+def reword(db, own):
+    """An open to-do whose words no longer fit what reconnecting brings (one that asked a personal account for its
+    colleagues' photos) gets the right ones, in place, unless the owner renamed it."""
+    for card, account_id, source, old in db.execute(
+            "SELECT s.id,e.account_id,e.source_id,s.title FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+            "WHERE e.kind=? AND s.status IN ('pending','snoozed') AND coalesce(s.title_source,'')!='user'", (RECONNECT_KIND,)).fetchall():
+        ask, account = str(source).split(':')[1], own.get(account_id)
+        if not account or not title(ask):
+            continue
+        mine = personal(ask, account)
+        new, line = title(ask, mine), summary(ask, str(account.get('email') or ''), mine)
+        if new[:90] != old:
+            db.execute('UPDATE suggestions SET title=?,body=? WHERE id=?', (new[:90], line[:699], card))
