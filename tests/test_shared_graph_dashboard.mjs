@@ -33,6 +33,7 @@ const overview={sorted:{client:1113,sensitive:265,internal:41,personal:262,unsur
  by_hand:[{...T(71,'Board pack draft','Vandelay','Only you: you chose this','private'),share:'only_you',shared_with:['Kim Lee']}],records:[{node_id:'org:initech',name:'Initech',kind:'org'}],
  rules:[{key:'@stark.example',choice:'private',name:'Stark',at}],preview:{threads:1113,orgs:[{name:'Northwind',key:'@northwind.example',threads:84},{name:'Globex',key:'@globex.example',threads:61},{name:'Umbrella',key:'@umbrella.example',threads:12}],more:212}};
 let noTeam=false;  // nobody OK'd yet: nothing from the team, and nothing goes
+let fleetStamp=null;  // the status's Fleet change marker: it moves when an admin's OK reached this Machine
 const TID=FL+':m_ada:'+'e'.repeat(32),FILE='f'.repeat(32);
 const thread={subject:'Rollout timeline',at,via:'Ada',messages:[{at,from:'Ada <ada@acme.example>',body:'Here is the plan.',attachments:[{name:'rollout-plan.pdf',size:182000,file:FILE},{name:'all-hands.mp4',size:48000000,too_large:true}]}]};
 const lee={id:'email:lee@client.example',kind:'person',name:'Lee Client',strength:3,closeness:'close',last_at:day,signals:2,ids:['lee@client.example'],via:'via Ada'};
@@ -50,7 +51,7 @@ const calls=[],opened=[];
 let connWait=0,connFail=false;  // a slow or failing save of a connection's switch
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
- if(url.pathname==='/api/status')return res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));
+ if(url.pathname==='/api/status')return res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0,stamp:fleetStamp}}));
  if(url.pathname==='/api/graph'){
   if(url.searchParams.get('node'))return res.end(JSON.stringify(detail()));
   if(url.searchParams.get('thread')===TID)return res.end(JSON.stringify(thread));
@@ -71,6 +72,50 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 try{
+ // Just joined, not confirmed by an admin's Machine yet: no Mine / Team; the Graph's lists and the Fleet say whose OK it
+ // waits for, by name. Once an admin OKs it, Mine / Team shows within seconds, without a reload. Light and dark.
+ for(const [width,scheme] of [[390,'light'],[1440,'light'],[390,'dark'],[1440,'dark']]){
+  const was={...sharing[0]},shared=fleet.shared.prompts;
+  Object.assign(sharing[0],{confirmed:false,admin:false,admins:['Olive Park','Ada Stone'],teammates:0,people:[],new_devices:[]});fleet.shared.prompts=[];
+  const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=projects');
+  const note=page.locator('[data-graph-panel="projects"] .team-wait');await note.waitFor();
+  assert.equal(await note.innerText(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show here then.");
+  assert.equal(await page.locator('[data-graph-team]').count(),0);
+  assert.equal(await page.locator('[data-graph-panel="people"] .team-wait').count(),1);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/graph-waiting-${width}-${scheme}.png`});
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#fleet');
+  const wait=page.locator('.graph-own.team-wait');await wait.waitFor();
+  assert.equal(await wait.innerText(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show in your Graph then.");
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/fleet-waiting-${width}-${scheme}.png`});
+  // The admin OKs: the Machine's directory changes (status fleet.stamp), and Mine / Team shows without a reload
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#graph=projects');
+  await note.waitFor();
+  const asked=Date.now();Object.assign(sharing[0],was);fleetStamp='ok-'+width+scheme;
+  await page.locator('[data-graph-team]').first().waitFor({timeout:15000});
+  await page.locator('#people .team-wait').first().waitFor({state:'detached',timeout:5000});
+  assert.ok(Date.now()-asked<8000,'Mine / Team within seconds of the OK');
+  assert.deepEqual(errors,[]);
+  await context.close();
+  fleet.shared.prompts=shared;fleetStamp=null;
+ }
+ // The admin's side: the new member's OK waits under To-dos as well as in the Fleet tab, light and dark
+ for(const [width,scheme] of [[390,'light'],[1440,'light'],[390,'dark'],[1440,'dark']]){
+  const context=await browser.newContext({viewport:{width,height:900},colorScheme:scheme});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:'+server.address().port+'/');
+  await page.locator('#suggestions #fleet-share-p1').waitFor();
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/admin-ask-todos-${width}-${scheme}.png`});
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#fleet');
+  await page.locator('#fleet-view [data-share-ok="p1"]').first().waitFor();
+  if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/admin-ask-fleet-${width}-${scheme}.png`});
+  assert.deepEqual(errors,[]);
+  await context.close();
+ }
  // Before an admin OKs a teammate's Machine: Team says nothing came yet and when sharing starts, not that it already does
  for(const width of [390,1440]){
   noTeam=true;sharing[0].teammates=0;

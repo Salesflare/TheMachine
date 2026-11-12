@@ -90,6 +90,8 @@ Solo le Machine dei tuoi colleghi. Tutto è crittografato end-to-end, sigillato 
 
 Un admin fa entrare ogni persona nella Fleet una volta. Dopo, condividere con lei non richiede altre conferme. La richiesta compare in **Attività** per ogni admin, e la prima risposta vale per tutto il team. I membri non la ricevono mai.
 
+Fino ad allora, il Graph e la Fleet della nuova persona mostrano quali admin sta aspettando. **Miei** e **Team** compaiono pochi secondi dopo la conferma, senza ricaricare.
+
 Una nuova Machine di qualcuno che è già dentro riceve il Graph del team dopo 24 ore. Nel frattempo gli admin la vedono e possono toccare **Non è sua** per tenerla fuori.
 
 ## Quando qualcuno se ne va

@@ -93,6 +93,8 @@ Nur die Machines deiner Teammitglieder. Alles ist Ende-zu-Ende verschlüsselt, v
 
 Ein Admin lässt jede Person einmal in die Fleet. Danach braucht das Teilen mit ihr kein weiteres OK. Die Frage steht für jeden Admin unter **Aufgaben**, und die erste Antwort gilt für das ganze Team. Mitglieder bekommen sie nie.
 
+Bis dahin zeigen Graph und Fleet der neuen Person, auf welche Admins sie wartet. **Meine** und **Team** erscheinen wenige Sekunden nach dem OK, ohne Neuladen.
+
 Eine neue Machine einer Person, die schon dabei ist, bekommt den Graph des Teams nach 24 Stunden. Admins sehen sie in der Zwischenzeit und können auf **Nicht ihres** tippen, um sie draußen zu halten.
 
 ## Wenn jemand geht

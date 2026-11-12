@@ -93,6 +93,8 @@ Only your teammates' Machines. It's encrypted end to end. The Machine Network pa
 
 An admin lets each person in once. The ask shows under **To-dos** for every admin, and the first answer counts. After that, sharing needs no more OKs.
 
+Until then, the new person's Graph and Fleet say which admins they're waiting for. **Mine** and **Team** show a few seconds after the OK, without a reload.
+
 A new Machine of someone already in gets the team's Graph after 24 hours. Meanwhile admins can tap **Not theirs** to keep it out.
 
 ## When someone leaves

@@ -7,7 +7,7 @@ function sharedStatus(g,d){
  if(!g)return 'Sharing starts once your Machine is confirmed in this Fleet.';
  if(g.paused?.default)return 'Off. It\'s experimental, so it starts off until an admin turns it on.';
  if(g.paused)return t('Off for everyone, turned off by {}. Nothing new goes.',g.paused.by)+(g.paused.removed?' '+t('What went was removed from the team\'s Machines.'):'');
- if(!g.confirmed)return 'Nothing goes until an admin confirms your Machine.';
+ if(!g.confirmed)return teamWaitLine(g)+' '+t('Nothing goes until then.');
  if(g.off==='off')return 'Your Work isn\'t shared now. What went before stays with the team.';
  if(g.teammates===0)return 'Nothing goes until a teammate\'s Machine is confirmed.';
  if(!g.started)return 'Starts within the hour. Keep anything private first.';
