@@ -3,9 +3,8 @@ import {createServer} from 'node:http';
 import {mkdir,readFile} from 'node:fs/promises';
 import {join,basename} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Daily digest (reading_digest.py): a template under Templates; its routine's card shows the topics it picks for
 // (More of, Less of), each removable, one field to add; its to-do lists each pick with why it matters, its mail to open,

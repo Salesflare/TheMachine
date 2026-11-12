@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections, the tabs of connected sources: each card shows the same colored logo as its row in + Add (connectLogo,
 // dashboard/logos), by the catalog's name for its service (Salesflare: crm, Google Docs: docs signed in with Google),
