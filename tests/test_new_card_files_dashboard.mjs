@@ -67,7 +67,9 @@ try{
   assert.equal(await page.locator('#nc-camera').isVisible(),phone);
   assert.equal(await page.locator('#nc-camera-file').getAttribute('accept'),'image/*');
   assert.equal(await page.locator('#nc-camera-file').getAttribute('capture'),'environment');
-  if(phone){const box=await page.locator('#nc-camera').boundingBox(),clip=await page.locator('#nc-attach').boundingBox();
+  // On a phone the sheet slides up as it opens: measure both once it is still, in one go, never mid-slide
+  if(phone){const [box,clip]=await page.evaluate(async()=>{await Promise.all(document.querySelector('#new-card').getAnimations().map(a=>a.finished));
+    return ['#nc-camera','#nc-attach'].map(s=>document.querySelector(s).getBoundingClientRect().toJSON())});
    assert.ok(Math.abs(box.y-clip.y)<2&&box.x>clip.x&&box.x-clip.x<60,'the camera sits next to the paperclip');
    const cam=page.waitForEvent('filechooser');await page.locator('#nc-camera').click();const shotFile=await cam;
    assert.ok(!shotFile.isMultiple());await shotFile.setFiles([fileOf('image.jpg','image/jpeg',PNG)]);
