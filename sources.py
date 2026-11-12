@@ -41,10 +41,11 @@ def upstream_busy(error):
 
 def transient(error):
     """A sync failure that is no bug: the service busy (upstream_busy), or the network (network:..., *_network,
-    *_unreachable, a timeout), or a browser reader's own hiccup (a tab that didn't answer, the browser busy with another
-    read, one slow request). Retried; only reported when it keeps happening (TRANSIENT_REPORT_AFTER)."""
+    *_unreachable, a timeout), a browser reader's own hiccup (a tab that didn't answer, the browser busy with another
+    read, one slow request), or a 400 on the quick retry right after the service was busy (after_busy, set by
+    App.sync_retrying). Retried; only reported when it keeps happening (TRANSIENT_REPORT_AFTER)."""
     category = str(getattr(error, 'category', '') or '')
-    return upstream_busy(error) or category.startswith('network:') or category == 'timeout' or \
+    return upstream_busy(error) or getattr(error, 'after_busy', False) or category.startswith('network:') or category == 'timeout' or \
         bool(re.fullmatch(r'[a-z0-9_]*_(?:network|unreachable|browser_stalled|browser_busy|read_timeout)', category))
 
 

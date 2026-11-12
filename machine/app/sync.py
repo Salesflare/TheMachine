@@ -704,12 +704,16 @@ class SyncApp:
     def sync_retrying(self, account, source=None):
         """One sync of the account; when the service answers 429 or a transient 5xx, one more try shortly after (its
         Retry-After when that is short, else QUICK_RETRY_SECONDS). A second failure goes to the caller. Not for Slack's
-        rate limit: its reads keep their own round (Slack.read_went), and a quick extra read would spend the next one."""
+        rate limit: its reads keep their own round (Slack.read_went), and a quick extra read would spend the next one.
+        A 400 on that quick retry is still the service's hiccup (Graph answered one right after its own 504, and the next
+        round read fine from the same checkpoint): marked after_busy, so it is only reported when it keeps happening."""
         for attempt in (0, 1):
             try:
                 with self.sync_lock(account['id']):
                     return sync_slack(self.store, self.config, account, source) if source else sync_source(self.store, self.config, account)
             except SourceError as error:
+                if attempt and error.status == 400:
+                    error.after_busy = True
                 wait = error.retry_after or QUICK_RETRY_SECONDS
                 if attempt or not upstream_busy(error) or (source and rate_limited(error)) or wait > QUICK_RETRY_MAX \
                         or self.stop.is_set():

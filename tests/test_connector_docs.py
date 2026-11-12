@@ -345,6 +345,16 @@ class Microsoft(unittest.TestCase):
         with self.assertRaises(docs.ElementTree.ParseError):
             docs.parse_xml(b'<!DOCTYPE x SYSTEM "file:///etc/passwd"><x/>')
 
+    def test_a_failed_call_names_its_endpoint_without_ids(self):
+        import ms_graph
+        source = docs.Microsoft(self.config, ACCOUNT, helpers_for())
+        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 400)), self.assertRaises(a.SourceError) as raised:
+            source.item('d1', 'i1')
+        self.assertEqual((str(raised.exception), raised.exception.route), ('docs_microsoft:HTTP_400', '/drives/{drive}/items/{id}'))
+        with patch.object(ms_graph, 'call', side_effect=ms_graph.GraphError('outlook', 403)), self.assertRaises(a.SourceError) as raised:
+            source.delta('t1')
+        self.assertEqual((raised.exception.category, raised.exception.route), ('docs_not_connected', '/me/drive/root/delta'))
+
     def test_downloads_only_from_microsofts_file_hosts(self):
         source = docs.Microsoft(self.config, ACCOUNT, helpers_for())
         for link in ('https://evil.example/f', 'http://acme-my.sharepoint.com/f', 'https://sharepoint.com.evil.example/f'):
