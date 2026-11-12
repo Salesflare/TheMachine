@@ -61,16 +61,6 @@ async function repeatSkip(id,b){if(b)b.disabled=true;b?.closest('details')?.remo
  catch(err){errCaught(err);if(b)b.disabled=false;toast(err.message,true)}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-repeat]');if(b){e.preventDefault();repeatPick(b.dataset.repeat,b);return}
  const k=e.target.closest('[data-repeat-skip]');if(k){e.preventDefault();repeatSkip(k.dataset.repeatSkip,k)}});
-// New to-do's Repeats chip and its choices (new-todo.js): from the due date when one is set, else today
-const ncRepeatBase=()=>ncISO(nc.due||new Date());
-const ncRepeatChip=()=>nc.repeat?html`<button type="button" class="set" data-nc="repeat">${repeatText(nc.repeat,ncRepeatBase())}<span class="x" data-nc-drop="repeat:0" aria-label="${t('Doesn’t repeat')}">×</span></button>`:html`<button type="button" data-nc="repeat" aria-expanded="${nc.pick==='repeat'}">${t('Repeats')}</button>`;
-function ncRepeatPick(box){setHTML(box,rpListHTML(ncRepeatBase(),nc.repeat));
- const set=rule=>{nc.repeat=rule;ncPick(null);$('#nc-text').focus()};
- box.querySelector('[data-rp]')?.focus();
- box.querySelector('.rp-list').addEventListener('click',e=>{const b=e.target.closest('[data-rp]');if(!b)return;if(b.dataset.rp==='custom'){repeatCustom(box,rule=>set(rule));return}set(repeatOptions(ncRepeatBase())[+b.dataset.rp][0])});
- box.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();ncPick(null);$('#nc-text').focus()}})}
-// A due date moved after "Monthly on the first Monday": the same kind of day from the new date
-function ncRepeatFollow(){if(nc.repeat?.nth!=null&&nc.due)nc.repeat={...nc.repeat,nth:rpNth(nc.due)}}
 // The to-do's chat: "repeat this every first Monday", "make it repeat monthly", "stop repeating" set it at once
 const REPEAT_SAID=/^\s*(?:please\s+)?(?:(?:make|let|have)\s+(?:this|it)\s+)?(?:repeat|recur)(?:s|ing)?\b|^\s*(?:please\s+)?(?:stop|don'?t|do not)\s+(?:repeat|recurr?)/i;
 async function repeatFromChat(s,text){if(!REPEAT_SAID.test(text)||closed(s))return false;

@@ -17,16 +17,6 @@ function meetBlock(s){const m=s.meet;if(!m||closed(s)&&m.state!=='booked')return
  return html`<p class="note meet-line" data-meet-state="${m.state}">${(m.state==='proposed'||m.state==='picked')&&m.when?html`<b>${m.when}</b> · ${t('{} min',m.minutes)}${m.video?` · ${m.video}?`:''}<br>`:''}${line}</p>`}
 function meetActions(s){const id=s.id,m=s.meet;
  return html`<div class="actions">${m.mine_ok?'':html`<button class="primary" data-meet-do="book" data-meet-id="${id}">Book it</button>`}${m.role==='link'?'':html`<button class="ghost" data-meet-do="other" data-meet-id="${id}">Other time</button>`}<button class="quiet" data-meet-do="skip" data-meet-id="${id}"${m.role==='link'?html` data-meet-link="1"`:''}>Not needed</button></div>`}
-function meetSetting(m){if(!m)return'';
- const opt=(key,value,label)=>html`<option value="${value}"${String(m[key])===String(value)?html` selected`:''}>${label}</option>`;
- // A Settings-style row per choice: the label on the left, its select on the right, all selects one width
- const sel=(key,label,options)=>html`<label class="meet-pref"><span class="grow"><strong>${label}</strong></span><select data-meet-pref="${key}"${key!=='allow'&&key!=='brand'&&m.allow==='off'?html` disabled`:''}>${options}</select></label>`;
- return html`<div class="meet-setting"><div class="section-head"><h2>Scheduling with other Machines</h2><p>When someone with a Machine asks to meet, your Machines find a time. Only free or busy is shared, and nothing is booked until you both tap Book it. <a class="learn" href="${HELP}friends#scheduling-with-other-machines" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list net-list meet-prefs">${
-  sel('allow','What other Machines may ask mine',[opt('allow','freebusy','Free/busy for scheduling'),opt('allow','off','Off')])}${
-  sel('minutes','Meeting length',[15,30,45,60,90].map(n=>opt('minutes',n,t('{} min',n))))}${
-  sel('buffer','Buffer',[0,5,10,15,30].map(n=>opt('buffer',n,n?t('{} min',n):'None')))}${
-  sel('prefer','Preferred times',[opt('prefer','any','Any time'),opt('prefer','morning','Mornings'),opt('prefer','afternoon','Afternoons')])}${
-  sel('brand','Footer on booking links',[opt('brand',true,'On'),opt('brand',false,'Off')])}</div></div>`}
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-meet-do]');if(!b)return;b.disabled=true;
  try{const r=await fleetPost('meet_decide',{suggestion_id:b.dataset.meetId,choice:b.dataset.meetDo});
   toast(b.dataset.meetDo==='skip'?(b.dataset.meetLink?'Closed. The booking link is off.':'Closed. Their Machine is told.'):b.dataset.meetDo==='other'?'Looking for another time.':r?.state==='booked'?'Booked. The invite is on its way.':'Done. Waiting for them to tap Book it.');await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});

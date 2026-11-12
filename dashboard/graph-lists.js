@@ -114,3 +114,17 @@ document.addEventListener('click',e=>{for(const d of document.querySelectorAll('
 const graphSection=(title,note,items)=>items?.length?html`<div class="section-head"><h2>${title}</h2><span class="count">${items.length}</span>${note?html`<p>${note}</p>`:''}</div><div class="graph-list">${items.map(graphItem)}</div>`:'';
 // Why two people look like one (graph.py likely_same): its parts, each in the language
 const sameWhy=w=>String(w||'').split(', ').map(x=>{const m=/^both at (.+)$/.exec(x);return m?t('both at {}',m[1]):t(x)}).join(', ');
+const fleetGroups=n=>[...new Set((n.fleet?.in||[]).map(x=>({work:'Fleet',family:'Family',friends:'Friend'})[x.kind]||x.label))].join(' · ');
+const fleetLine=n=>[n.fleet?.machine?'Has a Machine':'',...(n.fleet?.in||[]).map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)].filter(Boolean).join(' · ');
+const fleetChip=(n,where)=>n.fleet?.in?.length?html`<span class="chip fleet-chip${where?' fleet-chip-'+where:''}" style="--c:var(--mint)" title="${fleetLine(n)}"><span class="ct">${fleetGroups(n)}</span></span>`:'';
+function fleetAskRow(n){if(!state?.fleet?.on||!['person','org'].includes(n.kind)||n.fleet?.in?.some(x=>x.kind==='work'))return'';const about=n.kind==='org'?(n.domain||n.name):/^email:/.test(n.id)?n.id.slice(6):n.name;
+ return html`<p class="graph-sub detail-fleet-ask"><button type="button" class="link" data-fleet-ask="${about}">Ask the Fleet who knows ${n.name||about}</button></p>`}
+function sharePop(chip){const s=JSON.parse(chip.dataset.share||'{}'),on=graphSharing.find(x=>x.confirmed),fleet=on?.fleet,before=on?.started===false;const team=s.share==='team';
+ sharePopAt(chip,html`<p class="share-pop-why">${s.why||(team?'Shared with your team':'Only you')}</p>${s.people?.length?html`<p class="share-pop-why">Shared with ${namesLine(s.people)}</p>`:''}${s.fixed?'':html`<div class="actions"><button type="button" class="${team?'ghost':'primary'}" data-pop-set="${chip.dataset.shareEvent}" data-share="${team?'only_you':'team'}"${before?html` data-before="1"`:''}>${team?(before?'Keep private':'Unshare'):'Share with the team'}</button>${!team&&graphTeammates.length?html`<button type="button" class="ghost" data-pop-people="${chip.dataset.shareEvent}">Share with…</button>`:''}</div>`}${team&&!s.fixed&&!before?html`<p class="fleet-fine muted">Unsharing deletes teammates' copies. Someone may have read it already.</p>`:''}${fleet?html`<p class="fleet-fine"><a href="#shared=${fleet}">See what's shared</a></p>`:''}`)}
+// A summary chip's sources: chats as conversations, the rest folded.
+async function openSources(ids,title){const dialog=$('#email-dialog'),box=$('#email-content');$('#email-title').textContent=title||t('Original');setHTML(box,html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
+let list;try{[{originals:list}]=await Promise.all([request('api/originals?events='+encodeURIComponent(ids)),lazyPart('msgview')])}catch(e){errCaught(e);setHTML(box,html`<p class="muted">${e.message}</p>`);return}
+if(!list.length){setHTML(box,html`<p class="muted">The messages are no longer available.</p>`);return}
+const rest=list.filter(o=>!isChat(o));
+setHTML(box,html`${chatThreads(list).map(c=>chatThreadHTML(c))}${rest.map(o=>emailRow(o,list.indexOf(o)))}`);
+box.querySelectorAll('details.email').forEach(d=>d.addEventListener('toggle',()=>{if(d.open)fillMessage(d,list[+d.dataset.msg],'')}));}

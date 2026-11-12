@@ -1,3 +1,26 @@
+// Handoffs in one Work Fleet: the ones you handed to a teammate (asked, from fleet_out, as on the card's own line) and the
+// ones a teammate hands you that wait under Suggestions. Open first; accepted and done ones after, quieter, three shown.
+const HO_Q=/^Can you take this on: ([\s\S]*?)\? Their summary: “([\s\S]*?)”([\s\S]*)$/;
+function fleetHandoffs(f,work,inFleet){const cards=new Set((state?.suggestions||[]).map(s=>s.id));
+ const what=q=>{const m=HO_Q.exec(q||'');return m?[m[1]+(m[2]?`: “${m[2]}”`:''),m[3].trim()].filter(Boolean).join(' '):String(q||'')};
+ const stage=a=>{const [st,...note]=String(a.answer||'').split(': ');const n=note.join(': ');
+  if(a.withdrawn)return['Taken back','muted',true];
+  if(['asked','waiting'].includes(a.status))return[a.no_ping?t('Waiting, they won’t get a ping'):t(a.delivered===false?'Waiting for an answer, not delivered yet':'Waiting for an answer'),'amber',false];
+  if(a.status==='expired')return['No answer in time','orange',false];
+  if(a.status==='declined'||st==='declined')return['Declined','orange',false,n];
+  if(st==='done')return['Done','muted',true];
+  if(st.startsWith('accepted'))return[st==='accepted'?'Accepted':'Accepted with a change','mint',true,n];
+  return[st||a.status,'muted',true,n]};
+ const rows=[
+  ...(f.waiting||[]).filter(w=>w.kind==='handoff'&&inFleet(w,work)).map(w=>({who:'From '+w.name,text:what(w.question),st:['Waits for you','amber',false],at:w.at,href:/^q_[a-f0-9]{16}$/.test(w.id)?'#fleet='+w.id:''})),
+  ...(f.asked||[]).filter(a=>a.kind==='handoff'&&inFleet(a,work)).map(a=>{const card=String(a.context||'').slice(8);return{who:'To '+a.name,text:what(a.question),st:stage(a),at:a.answered_at||a.at,href:cards.has(card)?'#card='+card:''}})];
+ if(!rows.length)return'';
+ const open=rows.filter(r=>!r.st[2]),quiet=rows.filter(r=>r.st[2]),shown=3;
+ const row=(r,k)=>{const more=r.st[2]&&k>=shown,text=r.text+(r.st[3]?` · “${r.st[3].replace(/^“|”$/g,'')}”`:'');
+  return html`<li class="fleet-ho${r.href?html` tap`:''}${r.st[2]?html` quiet`:''}${more?html` fleet-ho-more`:''}"${more?html` hidden`:''}${r.href?html` tabindex="0" role="link" aria-label="${t('{}: open the to-do',r.who)}" data-ho-go="${r.href}"`:''}><div class="fleet-ho-top"><strong>${r.who}</strong>${chip(r.st[0],r.st[1])}</div><p class="fleet-ho-sum" title="${text}">${time(r.at,true)} · ${text}</p></li>`};
+ return html`<div class="fleet-box fleet-handoffs"><h3>Handoffs</h3><ul class="fleet-ho-list">${open.map(row)}${quiet.map(row)}</ul>${quiet.length>shown?html`<button type="button" class="quiet fleet-brief-show" data-ho-more>Show ${quiet.length-shown} more</button>`:''}</div>`}
+function fleetIntroOffers(f,work,inFleet){const offers=(f.intro_offers||[]).filter(o=>inFleet(o,work));
+ return offers.length?html`<div class="list">${offers.map(o=>html`<article><p>${htmlT('{} knows someone at {}.',html`<strong>${o.name}</strong>`,o.about)}</p><form class="fleet-ask fleet-intro-form" data-fleet="${o.fleet}" data-member="${o.member_id}" data-about="${o.about}"><input name="note" maxlength="300" placeholder="Why, in a line (optional; they see it)" aria-label="Why"><button class="primary">Ask ${o.name} for an intro</button></form></article>`)}</div>`:''}
 // Fleet, Family and Friends members in the Graph, from what the Network directory already shows every member (graph.with_fleet).
 const inGraph=p=>p?.graph_node?html` <a href="#people" class="fp-graph" data-graph-open="${p.graph_node}" title="Open ${p.label||p.name||'them'} in your Graph" aria-label="Open ${p.label||p.name||'them'} in your Graph">Profile</a>`:'';  // their page in the owner's own Graph; the Team Graph is the box below
 // What a Fleet costs, leaving it and starting one stay on the account (quotes, confirmations, Stripe), each its own
@@ -164,3 +187,13 @@ function fleetDraw(view){const f=fleetData;if(!f.on){view._fleetHTML=null;setHTM
  if(/^shared-/.test(current))sharedLoad(current.slice(7),true);
  for(const draft of drafts){const form=[...view.querySelectorAll('form')].find(f=>f.className+'|'+(f.dataset.fleet||'')===draft.key);if(form)for(const [name,value]of draft.values){const input=form.elements.namedItem(name);if(input&&'value'in input)input.value=value}}
 }
+function meetSetting(m){if(!m)return'';
+ const opt=(key,value,label)=>html`<option value="${value}"${String(m[key])===String(value)?html` selected`:''}>${label}</option>`;
+ // A Settings-style row per choice: the label on the left, its select on the right, all selects one width
+ const sel=(key,label,options)=>html`<label class="meet-pref"><span class="grow"><strong>${label}</strong></span><select data-meet-pref="${key}"${key!=='allow'&&key!=='brand'&&m.allow==='off'?html` disabled`:''}>${options}</select></label>`;
+ return html`<div class="meet-setting"><div class="section-head"><h2>Scheduling with other Machines</h2><p>When someone with a Machine asks to meet, your Machines find a time. Only free or busy is shared, and nothing is booked until you both tap Book it. <a class="learn" href="${HELP}friends#scheduling-with-other-machines" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list net-list meet-prefs">${
+  sel('allow','What other Machines may ask mine',[opt('allow','freebusy','Free/busy for scheduling'),opt('allow','off','Off')])}${
+  sel('minutes','Meeting length',[15,30,45,60,90].map(n=>opt('minutes',n,t('{} min',n))))}${
+  sel('buffer','Buffer',[0,5,10,15,30].map(n=>opt('buffer',n,n?t('{} min',n):'None')))}${
+  sel('prefer','Preferred times',[opt('prefer','any','Any time'),opt('prefer','morning','Mornings'),opt('prefer','afternoon','Afternoons')])}${
+  sel('brand','Footer on booking links',[opt('brand',true,'On'),opt('brand',false,'Off')])}</div></div>`}

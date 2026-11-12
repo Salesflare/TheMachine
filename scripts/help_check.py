@@ -61,7 +61,7 @@ FEATURES = {
     'promises': ('dashboard.html', 'You promised'),
     'telegram': ('machine/delivery/telegram.py', 'telegram_owner'),
     'chatgpt': ('docs/models.md', 'ChatGPT'),
-    'mistral': ('dashboard/settings-models.js', "m.provider==='mistral'"),
+    'mistral': ('dashboard/settings-notify.js', "m.provider==='mistral'"),
     'phone-app': ('manifest.webmanifest', '"name"'),
     'mobile-app': ('notify.py', 'def app_push'),
     'weekly-recap': ('machine/app/recap.py', 'def weekly_recap'),

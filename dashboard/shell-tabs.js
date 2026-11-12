@@ -27,46 +27,6 @@ function pushRoute(tag){let m;if(/^[a-f0-9]{16}$/.test(tag))return '#chat='+tag;
 function openPushLink(changed){const m=/^#chat=([A-Za-z0-9_-]{1,64})$/.exec(location.hash);if(!m||/^[a-f0-9]{16}$/.test(m[1]))return false;
  history.replaceState(null,'',location.pathname+location.search+pushRoute(m[1]));if(!changed&&location.hash.startsWith('#calendar?'))lazyRun('calendar',()=>calRoute());return true}  // a hash change reaches calRoute itself
 window.addEventListener('hashchange',()=>{openPushLink(true);openChatLink();openSnoozeLink();openQuickLink();openResultLink();openCardLink();openFleetLink();openSharedLink();openTabLink();openConnectLink()});
-function noteSplit(n){if(!n)return'';const parts=[['style','style'],['fact','missing facts'],['continue','keep going'],['new_ask','new asks'],['unsorted','not sorted']].filter(([k])=>n[k]);
-return parts.length?make('div',{class:'notes-split'},make('span',{},'What your Change notes asked for'),make('div',{},parts.map(([k,t])=>make('span',{class:`chip t-${{style:'lavender',fact:'amber',continue:'orange',new_ask:'mint',unsorted:'muted'}[k]}`},`${n[k]} ${t}`)))):''}
-// How it's going (Learning): the last 30 days in four numbers, each saying what it counts (assistant.py quality():
-// Worth it = acted on (Do it, Send or Done) of those decided, dismissed ones being the rest; First try and Finished count
-// to-dos started with Do it; Sent as is = drafts sent without an edit, a Change or Try again first). Higher is better for
-// all four. Then Worth it week by week (8 weeks, each bar its own %), the Change notes by kind, and Worth it per source.
-const qPct=(a,b)=>b?Math.round(100*a/b):null;
-function qWas(v,prev){if(v==null||prev==null)return'';return make('small',{class:'q-was'},v>prev?t('Up from {}% the 30 days before',prev):v<prev?t('Down from {}% the 30 days before',prev):t('Same as the 30 days before'))}
-function qTile(value,name,means,was=''){return make('div',{class:'q-tile'},make('span',{class:'q-name'},t(name)),make('b',{},value==null?'–':value+'%'),make('small',{class:'q-means'},means),was)}
-// Before enough decided to-dos (q.enough, QUALITY_ENOUGH in profile.py): qualityWait (learning-missed.js)
-function qualityNodes(q){const decided=q?(q.worth_it||0)+(q.dismissed||0):0,enough=q?.enough||3;if(decided<enough)return qualityWait(decided,enough,q?.notes);
- const sent=(q.sent_as_written||0)+(q.sent_edited||0),few=t('Not enough to-dos yet');
- const tiles=[qTile(q.hit_rate,'Worth it',decided?t(['Of {} to-do you decided: acted on, not dismissed','Of {} to-dos you decided: acted on, not dismissed'],decided):few,qWas(q.hit_rate,q.previous?.hit_rate)),
-  qTile(q.first_time_rate,'First try',q.do_it?t(['Of {} to-do started with Do it: no correction needed','Of {} to-dos started with Do it: no correction needed'],q.do_it):few,qWas(q.first_time_rate,q.previous?.first_time_rate)),
-  qTile(q.finished_rate,'Finished',q.do_it?t(['Of {} to-do started with Do it: finished without a nudge','Of {} to-dos started with Do it: finished without a nudge'],q.do_it):few,qWas(q.finished_rate,q.previous?.finished_rate)),
-  qTile(qPct(q.sent_as_written||0,sent),'Sent as is',sent?t(['Of {} draft sent: no edit or Change first','Of {} drafts sent: no edit or Change first'],sent):t('No drafts sent yet'))];
- const src=Object.entries(q.by_source||{}).sort((a,b)=>(b[1].worth_it+b[1].dismissed)-(a[1].worth_it+a[1].dismissed));
- const srcRow=([k,n])=>{const d=n.worth_it+n.dismissed;return make('div',SOURCE_TIPS[k]?{title:SOURCE_TIPS[k]}:{},make('span',{class:'grow'},k,SOURCE_TIPS[k]?make('small',{},SOURCE_TIPS[k]):''),make('span',{class:'q-n'},d?[t('{} of {}',n.worth_it,d)+' ',make('b',{},qPct(n.worth_it,d)+'%')]:t('None decided yet')))};
- return [make('p',{class:'learn-intro'},t('Last 30 days. Higher is better.')),make('div',{class:'q-tiles'},tiles),trendChart(q.trend),noteSplit(q.notes),
-  ...src.some(([,n])=>n.worth_it+n.dismissed)?[make('h3',{class:'q-h'},t('Worth it per source')),make('p',{class:'learn-intro'},t('Where to-dos came from, and how many you acted on of those you decided.')),make('div',{class:'list quality-sources'},make('div',{class:'q-head'},make('span',{class:'grow'},t('Source')),make('span',{},t('Acted on'))),src.map(srcRow))]:[]].filter(x=>x!=='')}
-// Worth it over time, from the first decided to-do on, never empty periods before it: under 14 days one bar per day,
-// then one per week from the first week, at most the last 8. Each bar's height and the number above it are that period's %,
-// the day or week under it; how many were decided is under it on a computer, and always in the hover and aria label.
-// An empty period inside the range is a thin baseline. Fewer than two periods with decisions: one plain line instead.
-function trendChart(trend){const first=trend?.first,today=trend?.daily?.at(-1)?.start;if(!first||!today)return '';
- const at=s=>new Date(s+'T12:00'),ymdOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,age=Math.round((at(today)-at(first))/864e5)+1,byDay=age<14;
- const monday=ymdOf((d=>{d.setDate(d.getDate()-(d.getDay()+6)%7);return d})(at(first)));
- const all=byDay?trend.daily:trend.weekly,rows=all.filter(r=>r.start>=(byDay?first:monday)),dated=n=>rows.filter(r=>r.worth_it+r.dismissed).length>=n;
- if(!dated(2))return make('p',{class:'trend-wait'},t('The chart starts after a few more days.'));
- const full=r=>localeDate(at(r.start),DL,byDay?{weekday:'short',day:'numeric',month:'short'}:{day:'numeric',month:'short'});
- // The label under a bar stays on one line: a weekday and date ("Mon 26", stacked on a phone), or a week's date with its
- // month only where it starts or changes ("Sep 7", "14", "21", "Oct 5")
- // A first week that starts mid-week shows its first day, as "Since" says ("20 Sept", not "14 Sept")
- const from=(r,i)=>at(!byDay&&!i&&r.start<first?first:r.start);
- const label=(r,i)=>{const d=from(r,i);if(byDay)return [make('span',{},localeDate(d,DL,{weekday:'short'})),' ',make('span',{},localeDate(d,DL,{day:'numeric'}))];
-  return i&&from(rows[i-1],i-1).getMonth()===d.getMonth()?localeDate(d,DL,{day:'numeric'}):localeDate(d,DL,{day:'numeric',month:'short'})};
- const col=(r,i)=>{const n=r.worth_it+r.dismissed,name=byDay?full(r):t('Week of {}',full({start:ymdOf(from(r,i))})),tip=n?t('{}: {}% worth it, {} decided',name,r.hit_rate,n):t('{}: nothing decided',name);
-  return make('div',{role:'listitem','aria-label':tip,title:tip},make('small',{class:'v'},n?r.hit_rate+'%':''),make('span',{class:'bar'},make('em',n?{style:{height:Math.max(2,r.hit_rate)+'%'}}:{class:'none'})),make('span',{class:'w'},label(r,i)),make('span',{class:'n'},n?t('{} decided',n):''))};
- const since=rows[0].start<=first,sub=byDay?t('Since {}. Each bar is that day’s Worth it.',full({start:first})):since?t('Since {}. Each bar is that week’s Worth it.',localeDate(at(first),DL,{day:'numeric',month:'short'})):t('Last 8 weeks. Each bar is that week’s Worth it.');
- return make('figure',{class:'trend'},make('figcaption',{},make('strong',{},t(byDay?'Worth it, day by day':'Worth it, week by week')),make('small',{},sub)),make('div',{class:'bars'+(byDay?' days':''),role:'list'},rows.map(col)))}
 let refreshes=0;
 // A redraw keeps the field someone is in: focus and caret back on the same field (by id) when the redraw replaced it
 function focusKept(draw){const a=document.activeElement,id=a&&a!==document.body&&a.id,sel=id&&a.matches?.(TYPED)?[a.selectionStart,a.selectionEnd]:null;draw();
