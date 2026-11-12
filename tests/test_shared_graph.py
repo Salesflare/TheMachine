@@ -1032,6 +1032,31 @@ class SharedGraph(unittest.TestCase):
         self.assertEqual((project['board'], project['stage'], project['timeline'], project['threads']), ('Hiring', 'Screening', [], []))
         self.assertNotIn('Standup', [json.loads(r['body']).get('subject') for r in self.team(self.mem, 'team_mail')])
 
+    def test_a_teammates_board_keeps_the_owners_order_days_and_unanswered_mail_from_shared_threads_only(self):
+        """A shared board on a teammate's Machine sorts like the owner's (newest move first), counts each project's days in
+        its stage, and how long the owner's last message went unanswered: only from shared threads, so a sensitive
+        thread's timing never goes."""
+        def sent(n, title, days, thread):
+            m = mail('work', n, 'Olive <own1@acme.example>', 'lee@client.example', title, 'Any news?', days, thread)
+            m['metadata']['labels'] = ['SENT']
+            return m
+        self.olive_mail()
+        self.add(self.own, sent(9, 'Re: Renewal quote', 1, 't-renewal'), sent(10, 'Re: A personal note', 1, 't-health'))
+        self.board(self.own, 'Renewals', 'team', {'Renewal: Lee': ['work-1', 'work-9'], 'Note: Lee': ['work-3', 'work-10']})
+        with self.own.store.connect() as db:
+            db.execute("UPDATE projects SET stage_at=? WHERE name='Renewal: Lee'", (ago(5),))
+            db.execute("UPDATE projects SET stage_at=? WHERE name='Note: Lee'", (ago(2),))
+        self.rounds()
+        records = self.projects_of(self.mem)
+        self.assertTrue(records['Renewal: Lee']['waiting'])
+        self.assertIsNone(records['Note: Lee'].get('waiting'))  # its thread is sensitive: nothing of it goes
+        with self.mem.store.connect() as db:
+            board = next(b for b in self.mem.team_overview(db, {})['boards'] if b['name'] == 'Renewals')
+        self.assertEqual([p['name'] for p in board['projects']], ['Note: Lee', 'Renewal: Lee'])
+        tiles = {p['name']: p for p in board['projects']}
+        self.assertEqual((tiles['Renewal: Lee']['days'], tiles['Note: Lee']['days']), (5, 2))
+        self.assertEqual((tiles['Renewal: Lee']['no_reply_days'], tiles['Note: Lee']['no_reply_days']), (1, None))
+
     def test_the_first_share_goes_an_hour_after_the_owner_is_told_with_no_start_now(self):
         told = []
         self.own.tell = lambda text, anchor: told.append((text, anchor))

@@ -92,7 +92,7 @@ def boards(db, now):
             found = todos[node]
             card = found[0] if found else None
             items.append({'id': node, 'name': p['name'], 'stage': p['stage'] if p['stage'] in names else names[0], 'reason': p['stage_reason'],
-                          'by': p['stage_by'], **graph_board_reviews.sort_view(db, p), 'at': p['stage_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
+                          'by': p['stage_by'], **graph_board_reviews.sort_view(db, p), 'at': p['stage_at'], 'since': p['stage_at'] or p['created_at'], 'event_id': p['stage_event_id'], 'next': p['next_step'],
                           'first': p['id'] not in moved, 'days': max(0, (today - since).days), 'closed': bool(p['closed_at']),
                           'visibility': p['visibility'], 'no_reply_days': max(0, (today - graph.parse_time(mine_since)).days) if mine_since else None,
                           'org': {**org, 'node_id': org['id']} if org else None, 'card': {'id': card[0], 'title': card[1]} if card else None,

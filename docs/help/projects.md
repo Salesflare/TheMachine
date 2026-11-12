@@ -86,10 +86,12 @@ Values are in euros unless your Machine is set to another currency. With **Owner
 
 In **Team**, boards your teammates share show next to yours, the ones with most of your projects first. The header says whose board it is and who has it: the whole team ("Ada's board, shared with the team"), or only the teammates they chose ("Ada shared this board with you").
 
-Each project says what happened last, with its date: the newest line shared with the team, or its last move when that came later. Its owner's name shows when a stage has projects of more than one teammate.
+Each project says what happened last, with its date: the newest line shared with the team, or its last move when that came later. On a board with projects of more than one teammate, that line ends with whose it is ("by Ada").
 
 A teammate's board can have fewer projects than they see: a project they kept private, or with a personal conversation on it, never leaves their Machine. Someone who is Personal to them stays off the projects that go. On your own board, the header says "Shared with the team" and how many stay with you, and those projects have a lock.
 
 **Mine**, **Needs me** and **All** pick what a shared board shows, and the Team list of projects with it. Mine is what you're on: a thread of it, a project you own, or a to-do of yours about it. Needs me is what waits on you: an open to-do about it, or a thread where the newest message was written to you.
 
-Each project has its own card, as on your own board, and the rest of a stage folds into **Show N more**. None of this changes what's shared.
+Each project looks as it does on its owner's board, in the same order: its organization, days in the stage, next step and "No reply in N days". A next step or reason from a message that stays with them doesn't show. The rest of a stage folds into **Show N more**. None of this changes what's shared.
+
+On any board, a project named after its board shows without the board's name ("Listings: Acme" reads "Acme" on Listings).

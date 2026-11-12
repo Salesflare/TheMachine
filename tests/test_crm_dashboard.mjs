@@ -91,7 +91,7 @@ try{
   // a tap that keeps exactly those, and Clear
   await page.evaluate(()=>projectsViewSet('board'));await page.locator('#people-view .proj-board [data-crm-filter="projects"]').waitFor();
   assert.equal(await page.locator('#people-view [data-board-mine]').count(),0);
-  assert.equal(await page.locator('#people-view .tile[data-node="project:1"] .tile-owner').textContent(),'Kim Vale');
+  assert.match(await page.locator('#people-view .tile[data-node="project:1"] .tile-why').textContent(),/by Kim Vale$/);  // never a bare name
   await shot(page,`board-owners-${tag}`);
   let asked=lists.length;await page.evaluate(()=>crmSet('projects',{owner:'me'}));await page.waitForFunction(()=>!document.querySelector('#people-view .tile[data-node="project:1"]'));
   await until(()=>lists.slice(asked).some(l=>l.list==='projects'&&l.ids==='1'&&l.owner==='me'),'the board asks which projects Owner: you keeps');
