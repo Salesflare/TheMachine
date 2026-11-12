@@ -76,6 +76,19 @@ class ReviewSavesApp:
                 return False
         return mail
 
+    def handoff_target(self, email, personal):
+        """The review's handoff_to (a teammate's email from its Teammates list) as the Fleet member it is: {'fleet',
+        'member_id'}, or None when there is none. One that isn't such a teammate is told back before anything is saved."""
+        email = str(email or '').strip().lower()
+        if not email:
+            return None
+        fleets = getattr(self, 'fleet', None)
+        found = fleets.teammate({'to_email': email}) if fleets and not personal and email in fleets.handoff_people() else None
+        if not found:
+            raise ValueError('handoff_to is the email of a teammate under Teammates, each with their own Machine, on a work '
+                             'to-do. Leave it out when the to-do is not one to hand to them.')
+        return {'fleet': found[0], 'member_id': found[1]['member_id']}
+
     def save_failed(self, event_ids, error):
         LOG.warning('suggest failed error=%s', type(error).__name__)
         try:
@@ -111,6 +124,7 @@ class ReviewSavesApp:
         if args.get('based_on') is not None:
             with self.store.connect() as db:
                 self.store.based_on_check(db, args['based_on'])
+        handoff_to = self.handoff_target(args.get('handoff_to'), personal)  # checked before anything is saved
         saved = self.store.suggest(args['dedupe_key'], title, body, args['event_ids'], args.get('when') or 'digest',
                                    self.config.get('digest_at', '08:30'),work=work,urgent=args.get('urgent') is True,due=args.get('due'),
                                    ahead=args.get('prepare_ahead') is True and self.config.get('prepare_ahead', True) is not False
@@ -141,6 +155,9 @@ class ReviewSavesApp:
         if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and not saved.get('attached'):
             with self.store.connect() as db:  # what the owner may want to say in its chat: each update says it again
                 self.store.set_chat_asks(db, saved['id'], args.get('asks'))
+        if isinstance(saved, dict) and saved.get('id') and not saved.get('duplicate') and not saved.get('attached'):
+            with self.store.connect() as db:  # who its Hand off starts with: the teammate the review offers it to, or none
+                self.store.set_handoff_to(db, saved['id'], handoff_to)
         if isinstance(saved, dict) and saved.get('id') and done_when:
             with self.store.connect() as db:  # the result that counts as done: a send alone doesn't close it (outcomes.py)
                 outcomes.set_done_when(db, saved['id'], done_when, 'review')

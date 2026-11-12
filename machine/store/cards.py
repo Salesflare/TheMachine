@@ -750,6 +750,11 @@ class CardsStore:
                    (event_id, encoded(ids), source_line([rows[i] for i in ids if i in rows], db), suggestion_id))
         return {'based_on': event_id}
 
+    def set_handoff_to(self, db, suggestion_id, target):
+        """The teammate the review offers the to-do to ({'fleet', 'member_id'}, checked by the caller), or None: its Hand
+        off starts with them (FleetRequests.handoff_draft). Each update replaces it, so it never outlives what the to-do says."""
+        db.execute('UPDATE suggestions SET handoff_to=? WHERE id=?', (json.dumps(target) if target else None, suggestion_id))
+
     def fill_owner_card(self, db, card, title, body, ids, accounts, evidence, due, ahead, project, event_ids):
         """The review's pass over a card the owner made: a clearer title (unless they renamed it), a body with the next
         step, people, threads and project, and a draft prepared ahead when it helps. Their words (owner_words), their

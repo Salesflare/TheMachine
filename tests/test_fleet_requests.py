@@ -343,6 +343,40 @@ class Requests(unittest.TestCase):
         self.assertNotEqual(draft['summary'], 'Hi Ann')
         self.assertEqual([m['member_id'] for m in draft['fleets'][0]['members']], ['pat1', 'kim1'])
 
+    def reviewed(self, key='k-review', body='Robin asked twice for a person to look at the export.', **args):
+        """A work to-do as the review saves it (suggest), on a teammate's shared email."""
+        self.handed_card(key='k-src')
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute('SELECT id FROM events')]
+        return self.app.action('suggest', {'dedupe_key': key, 'title': 'Get Robin an answer about the export', 'body': body,
+                                           'event_ids': ids[:1], 'when': 'now', 'newer_checked': ids, **args})
+
+    def first_in_hand_off(self, card):
+        return self.fleet.handoff_draft(card)['fleets'][0]['members'][0]['member_id']
+
+    def test_the_hand_off_starts_with_the_teammate_the_review_offers_it_to(self):
+        self.with_kim()
+        card = self.reviewed(body='Robin asked twice for a person. I can hand this to Kim’s Machine to look into it.', handoff_to='KIM@acme.example')['id']
+        self.assertEqual(json.loads(self.card_row(card)['handoff_to']), {'fleet': self.ref, 'member_id': 'kim1'})  # the member, not a name
+        self.assertEqual(self.first_in_hand_off(card), 'kim1')  # the to-do names Kim, the form opens on Kim
+        self.reviewed(body='Robin asked twice for a person to look at the export.', card_id=card, dedupe_key='k-review-2')
+        self.assertIsNone(self.card_row(card)['handoff_to'])  # an update without it: none, never a stale one
+        self.assertEqual(self.first_in_hand_off(card), 'pat1')
+
+    def test_a_handoff_to_that_is_no_teammate_with_a_machine_is_told_back_before_saving(self):
+        self.with_kim()
+        for email in ('robin@client.example', TEAM):  # someone outside, a teammate without their own Machine
+            with self.subTest(email=email), self.assertRaisesRegex(ValueError, 'handoff_to is the email of a teammate'):
+                self.reviewed(key='k-' + email, handoff_to=email)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM suggestions WHERE dedupe_key LIKE 'k-%@%'").fetchone()[0], 0)
+
+    def test_an_older_to_do_that_names_a_teammates_machine_starts_its_hand_off_with_them(self):
+        self.with_kim()
+        named = self.handed_card(key='k-named', body="Robin asked twice for a person. I can hand this to Kim's Machine to look into it.")
+        self.assertEqual(self.first_in_hand_off(named), 'kim1')
+        self.assertEqual(self.first_in_hand_off(self.handed_card(key='k-plain')), 'pat1')  # names nobody: as listed
+
     def redirected(self, replace):
         """Handed to Pat, then the owner asked for Kim instead: the handoff text for Kim waits on the card for review."""
         self.with_kim()
