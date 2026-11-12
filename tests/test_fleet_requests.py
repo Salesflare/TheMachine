@@ -753,6 +753,27 @@ class Requests(unittest.TestCase):
             self.fleet.annotate(db, shown)
         self.assertEqual(shown[0]['fleet_handoff'], {'name': 'Kim Doe', 'stage': 'declined', 'note': 'Not mine', 'back': False})
 
+    def test_do_it_myself_on_a_handoff_that_ran_out_makes_it_the_owners_own_to_do(self):
+        """The prepared result still waited on the teammate and led with Review handoff: Do it myself takes both off,
+        so the to-do leaves Waiting on others and its own buttons lead."""
+        self.with_kim()
+        self.fleet.wake_card = lambda card_id, key, at: self.store.handoff_back(card_id, key, key.removeprefix('fleet-handoff-back-'), at)
+        handoff = {'kind': 'handoff', 'label': 'Hand off to Kim', 'to_email': 'kim@acme.example', 'to_name': 'Kim Doe', 'body': self.HANDOFF_TEXT, 'revision': 'r1'}
+        mail = {'kind': 'email', 'to': 'robin@acme.example', 'subject': 'Export', 'body': 'Looking at it.', 'revision': 'r2'}
+        card = self.ready_card([handoff, mail], 'k-mine')
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (json.dumps({'state': 'waiting', 'waiting_on': 'Kim Doe'}), card))
+        self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
+        with self.store.connect() as db:
+            ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
+        self.fleet.take_answer({'id': ask_id, 'status': 'expired'})
+        self.app.action('fleet_handoff_mine', {'suggestion_id': card}, owner_dashboard=True)
+        row = self.card_row(card)
+        self.assertEqual(row['status'], 'prepared')
+        self.assertIsNone(row['outcome'])  # not waiting on Kim any more
+        self.assertEqual(json.loads(row['next_action'])['kind'], 'email')  # the handoff step is gone; the own step leads
+        self.assertFalse(self.store.handoff_mine_card(card))  # once: nothing left to change
+
     def test_a_change_after_the_handoff_came_back_makes_the_card_the_owners_again(self):
         self.with_kim()
         self.fleet.wake_card = lambda card_id, key, at: self.store.handoff_back(card_id, key, key.removeprefix('fleet-handoff-back-'), at)

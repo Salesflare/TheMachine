@@ -40,7 +40,7 @@ A to-do goes to each teammate once: while Pat has it, handing it to Pat again sa
 
 ## When they decline
 
-They can say why: not theirs, already done, or no time this week. Then pick **Do it myself**, **Hand off to someone else** or **Mark done**.
+They can say why: not theirs, already done, or no time this week. Then pick **Do it myself**, **Hand off to someone else** or **Mark done**. The same goes when they don't answer in time. **Do it myself** makes it your own to-do again, under For you.
 
 ## Someone outside the Network
 

@@ -309,7 +309,10 @@ class FleetApp:
                 self.store.decide(card, 'reject', i18n.t('Not mine'), 'fleet-not-mine-' + secrets.token_hex(6), 'dashboard')
             return done
         if name == 'fleet_handoff_mine':  # Do it myself, on a card a teammate handed back
-            return self.fleet.handoff_mine(str(args.get('suggestion_id') or ''))
+            card = str(args.get('suggestion_id') or '')
+            done = self.fleet.handoff_mine(card)
+            self.store.handoff_mine_card(card)  # out of Waiting on others, without the handoff step: its own buttons lead
+            return done
         if name == 'fleet_handoff_take_back':  # Take it back, while a teammate still has it: the owner's again, back from Later
             card = str(args.get('suggestion_id') or '')
             done = self.fleet.take_back(card)

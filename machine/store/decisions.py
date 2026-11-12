@@ -653,6 +653,33 @@ class DecisionsStore:
                 return self._decide(db, suggestion_id, 'reopen', '', decision_id, 'fleet')
             return {'skipped': True, 'reason': 'newer_card_choice'}
 
+    def handoff_mine_card(self, suggestion_id):
+        """Do it myself on a handoff that came back: the to-do is the owner's own now. Its prepared result no longer
+        waits on the teammate (out of Waiting on others) and the handoff step goes, so its own buttons lead."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT status,outcome,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row or row['status'] != 'prepared':
+                return False
+            try:
+                outcome = json.loads(row['outcome'] or 'null')
+            except (TypeError, ValueError):
+                outcome = None
+            waiting = isinstance(outcome, dict) and outcome.get('state') == 'waiting'
+            try:
+                current = json.loads(row['next_action'] or 'null')
+            except (TypeError, ValueError):
+                current = None
+            kept = [a for a in next_actions.actions(current) if a.get('kind') != 'handoff'] if current else []
+            dropped = bool(current) and len(kept) != len(next_actions.actions(current))
+            if not waiting and not dropped:
+                return False
+            action = (current if not dropped else {**current, 'actions': kept} if current.get('kind') == 'menu' and len(kept) > 1
+                      else kept[0] if kept else None)
+            db.execute('UPDATE suggestions SET outcome=?,next_action=? WHERE id=?',
+                       (None if waiting else row['outcome'], encoded(action) if action else None, suggestion_id))
+            return True
+
     def _decide(self, db, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False):
         # The caller owns one IMMEDIATE transaction, including any prompt validation.
         if choice not in ['accept', 'reject', 'snooze', 'other', 'complete', 'reopen', 'undo', 'retry', 'not_done'] or not decision_id:
