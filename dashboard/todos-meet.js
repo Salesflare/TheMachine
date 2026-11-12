@@ -19,8 +19,9 @@ function meetActions(s){const id=s.id,m=s.meet;
  return html`<div class="actions">${m.mine_ok?'':html`<button class="primary" data-meet-do="book" data-meet-id="${id}">Book it</button>`}${m.role==='link'?'':html`<button class="ghost" data-meet-do="other" data-meet-id="${id}">Other time</button>`}<button class="quiet" data-meet-do="skip" data-meet-id="${id}"${m.role==='link'?html` data-meet-link="1"`:''}>Not needed</button></div>`}
 function meetSetting(m){if(!m)return'';
  const opt=(key,value,label)=>html`<option value="${value}"${String(m[key])===String(value)?html` selected`:''}>${label}</option>`;
- const sel=(key,label,options)=>html`<label class="meet-pref"><span>${label}</span><select data-meet-pref="${key}"${key!=='allow'&&key!=='brand'&&m.allow==='off'?html` disabled`:''}>${options}</select></label>`;
- return html`<div class="meet-setting"><h3>Scheduling with other Machines</h3><p class="muted">When someone with a Machine asks to meet, your Machines find a time. Only free or busy is shared, and nothing is booked until you both tap Book it. <a class="learn" href="${HELP}friends#scheduling-with-other-machines" target="_blank" rel="noopener">Learn more</a></p><div class="meet-prefs">${
+ // A Settings-style row per choice: the label on the left, its select on the right, all selects one width
+ const sel=(key,label,options)=>html`<label class="meet-pref"><span class="grow"><strong>${label}</strong></span><select data-meet-pref="${key}"${key!=='allow'&&key!=='brand'&&m.allow==='off'?html` disabled`:''}>${options}</select></label>`;
+ return html`<div class="meet-setting"><div class="section-head"><h2>Scheduling with other Machines</h2><p>When someone with a Machine asks to meet, your Machines find a time. Only free or busy is shared, and nothing is booked until you both tap Book it. <a class="learn" href="${HELP}friends#scheduling-with-other-machines" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list net-list meet-prefs">${
   sel('allow','What other Machines may ask mine',[opt('allow','freebusy','Free/busy for scheduling'),opt('allow','off','Off')])}${
   sel('minutes','Meeting length',[15,30,45,60,90].map(n=>opt('minutes',n,t('{} min',n))))}${
   sel('buffer','Buffer',[0,5,10,15,30].map(n=>opt('buffer',n,n?t('{} min',n):'None')))}${

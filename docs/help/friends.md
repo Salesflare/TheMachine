@@ -18,7 +18,7 @@ In **Fleet**, under **Network**:
 - "Check which of my contacts have a Machine" suggests people you know.
 - "Let people who have my email find me" lets them find you.
 
-Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email and your connected addresses, except shared ones like info@, which stay off until you turn them on.
+Both are on by default, and off at the Careful security level. Turn either off any time; your choice stays. People can find you by your sign-in email (always on) and your connected addresses, each with its own switch under **Findable by**, except shared ones like info@, which stay off until you turn them on.
 
 People you know show up right away when you turn it on, and as they join later. Each one comes with Connect, Not now or **Never suggest**. Once you're friends, they're no longer suggested. **Leave the Network** takes you off it.
 

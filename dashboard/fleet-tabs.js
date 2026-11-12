@@ -87,6 +87,24 @@ fleetOn('change',async e=>{const t=e.target;try{
   if(sc){b.querySelector('.fleet-scope-now').textContent=fleetScopeText(sc)?' ('+fleetScopeText(sc)+')':'';if(t.dataset.scope&&t.type!=='checkbox')t.value=sc[t.dataset.scope].join(', ')}}toast('Saved.')}catch(err){errCaught(err);toast(err.message,true);await fleetView()}});
 // Answers to your free questions show as they arrive, while the Fleet tab is open and you aren't typing in it.
 setInterval(()=>{if(!$('#fleet').hidden&&!$('#fleet-view').contains(document.activeElement)&&(fleetData?.free||[]).some(q=>q.answers.some(x=>x.state==='waiting')))fleetView()},30000);
+// The Network pane (its cards under To-dos stay in fleet-requests.js): drawn only with the Fleet tab, so its styles load with it
+function networkSection(f){const net=f.network;if(!net||!f.friends?.id)return'';
+ // Laid out like a Settings tab: a row per switch (label, one short line, the switch), then Scheduling, then Leave apart at the bottom
+ const sw=(on,label,doOn,doOff,note)=>html`<div class="net-row"><span class="grow"><strong>${label}</strong>${note?html`<small>${note}</small>`:''}</span><input type="checkbox" class="lookup-switch" role="switch" aria-label="${label}" data-net-toggle="${on?doOff:doOn}"${on?html` checked`:''}></div>`;
+ const rest=(net.people||[]).filter(p=>p.status==='new'&&!p.reasons.length||p.status==='later'),waiting=(net.people||[]).filter(p=>p.status==='requested');
+ const addrs=net.discoverable?(net.addresses||[]):[];
+ const findNote=net.find&&net.last?t('Suggests people you know. Last checked {}.',netDay(net.last)):t('Suggests people you know.');
+ const seenNote=!net.discoverable?t('Nobody can find you now.'):!addrs.length?'':t('Only the addresses below find you.');
+ const addrTags=a=>[a.account?t('Sign-in email'):'',a.on&&!a.findable?t('(not yet)'):'',a.shared?t('Shared address'):'',a.phone&&a.source!=='config'?t(a.source==='whatsapp'?'WhatsApp':'About you'):''].filter(Boolean);
+ // The sign-in email always finds them: it says so instead of a switch that can't move
+ const addrRow=a=>{const shown=a.phone?phoneShown(a.email):a.email,tags=addrTags(a);
+  return html`<li class="net-addr"><span class="grow"><span class="net-addr-at">${shown}</span>${tags.length?html`<small>${tags.map(x=>html`<span>${x}</span>`)}</small>`:''}</span>${a.account?html`<span class="net-fixed">${t('Always on')}</span>`:html`<input type="checkbox" class="lookup-switch" role="switch" aria-label="${shown}" data-net-addr="${a.email}"${a.on?html` checked`:''}>`}</li>`};
+ let h=html`<div id="fleet-network"><div class="section-head"><h2>Network</h2><p>See which of your contacts have a Machine, and let people who know you find you. Your address book is never revealed. <a class="learn" href="${HELP}friends#find-people-you-know" target="_blank" rel="noopener">Learn more</a></p></div><div class="list settings-list net-list net-switches">${sw(!!net.find,'Check which of my contacts have a Machine','find_on','find_off',findNote)}${sw(!!net.discoverable,(net.addresses||[]).some(a=>a.phone)?'Let people who have my email or number find me':'Let people who have my email find me','discoverable_on','discoverable_off',seenNote)}${addrs.length?html`<div class="net-addrs"><span class="net-addrs-head">Findable by</span><ul>${addrs.map(addrRow)}</ul></div>`:''}</div>`;
+ if(rest.length)h=html`${h}${html`<h3 class="net-sub">Your contacts with a Machine</h3><ul class="fleet-people list net-people">${rest.map(p=>html`<li class="fp-row"><span class="fp-who"><strong>${p.name}</strong> <small class="muted">@${p.username}</small></span><span class="actions">${p.hint==='colleague'?netBtn('Connect','connect',p.email,'colleague'):html`${netBtn('Friend','connect',p.email,'friend')}${netBtn('Family','connect',p.email,'family')}`}${netBtn('Never','never',p.email)}</span></li>`)}</ul>`}`;
+ if(waiting.length)h=html`${h}${html`<p class="muted net-waiting">Waiting for ${waiting.map(p=>p.name).join(', ')} to accept.</p>`}`;
+ h=html`${h}${meetSetting(f.meet)}`;
+ h=html`${h}${html`<div class="acct-danger net-leave">${netBtn('Leave the Network','leave','','','acct-quiet','Leave the Network? Every friendship ends and nobody can find you. Your Fleets stay.')}</div></div>`}`;
+ return h}
 // The Fleet tab drawn from fleetData (fleetView in fleet-shared.js fetches it first, and loads this part).
 function fleetDraw(view){const f=fleetData;if(!f.on){view._fleetHTML=null;setHTML(view,html`<p class="muted">This Machine is not in a Fleet. Pair it with your account to join your team's. <a href="${HELP}fleet" target="_blank" rel="noopener">Learn more</a></p>`);return}
  // Several Work Fleets: each its own section, with its own people, rules and Ask; questions go to one Fleet at a time.

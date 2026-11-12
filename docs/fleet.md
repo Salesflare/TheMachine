@@ -625,16 +625,15 @@ the Fleet tab under **Network**.
 
 Two switches in the Fleet tab under **Network**. Both are on by default at the Standard security level, and off at
 Careful (your own level, or a Careful Work Fleet you're in). Your choice stays until you pick a security level again. A
-Machine that had them off by default before turns them on once and says so ("Now findable by people who have your
-email", with **Turn off**).
+Machine that had them off by default before turns them on once.
 
 - **Check which of my contacts have a Machine** looks daily for your contacts on the Network, and every 15 minutes for
   someone new. Addresses are blinded with a secret only your Machine holds before anything leaves it (a private set
   intersection), so the Network never sees your address book; your Machine learns only which contacts matched. At most
   3,000 addresses a day.
 - **Let people who have my email find me** makes your account email findable that way, only by people who already have
-  it, plus the addresses of your connected mail and calendar accounts. The Fleet tab lists them under **Findable by**;
-  untick any. Shared addresses (info@, a mailbox shared from a Fleet, an address a teammate also has, one marked as the
+  it, plus the addresses of your connected mail and calendar accounts. The Fleet tab lists them under **Findable by**,
+  each with its own switch; the sign-in email is always on. Shared addresses (info@, a mailbox shared from a Fleet, an address a teammate also has, one marked as the
   team's) start off, marked "Shared address". An address two accounts list finds neither. It needs a username.
 
 How the matching works and what the Network learns: [What the Network sees](network.md#what-the-network-sees).

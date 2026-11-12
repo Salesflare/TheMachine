@@ -15,7 +15,7 @@ const base={on:true,kinds:{},ask_meetings:false,kind_rules:{},no_details:[],scop
  fleets:[{id:FR,kind:'friends',label:'Friends',name:'Friends',asks:[],people:[{member_id:'fp_me',name:'Sam Doe',me:true}],members:[]}],
  friends:{id:FR,username:'sam',in:[],out:[],blocked:[]},waiting:[],asked:[],log:[],notices:[],splits:[]};
 const ask={...base,network:{find:null,discoverable:null,asked:false,last:null,people:[]}};
-const found={...base,network:{find:true,discoverable:true,asked:true,last:'2026-10-20T10:00:00Z',people:[
+const found={...base,meet:{allow:'freebusy',minutes:30,buffer:10,prefer:'any',brand:true},network:{find:true,discoverable:true,asked:true,last:'2026-10-20T10:00:00Z',people:[
  {email:'nia@nia.example',username:'nia',name:'Nia North',hint:'personal',role:null,relation:null,status:'new',found_at:'x',reasons:[{kind:'meeting',at:soon,title:'Picnic'}]},
  {email:'sam@acme.example',username:'samb',name:'Sam Beam',hint:'colleague',role:null,relation:null,status:'new',found_at:'x',reasons:[{kind:'card',card:'s1',title:'Send the quote'}]},
  {email:'zed@zed.example',username:'zed',name:'Zed Zee',hint:'personal',role:null,relation:null,status:'new',found_at:'x',reasons:[]}],
@@ -62,38 +62,50 @@ try{
   const block=page.locator('#fleet-network');
   assert.match(await block.innerText(),/Check which of my contacts have a Machine/);assert.match(await block.innerText(),/Zed Zee/);
   assert.ok(await block.locator('[data-net-toggle="find_off"]').isChecked());
-  // Which addresses find them: the account one fixed, each connected one can be turned off
+  // Which addresses find them: the sign-in one says Always on (no switch that can't move), each connected one has its switch
   assert.match(await block.locator('.net-addrs').innerText(),/Findable by/);
-  assert.ok(await block.locator('[data-net-addr="sam@work.example"]').isDisabled());
+  const acct=block.locator('.net-addr',{hasText:'sam@work.example'});
+  assert.equal(await acct.locator('input').count(),0);assert.match(await acct.innerText(),/Sign-in email/);assert.match(await acct.innerText(),/Always on/);
   assert.equal(await block.locator('[data-net-addr="sam@other.example"]').isChecked(),false);
   assert.equal(await block.locator('[data-net-addr="info@work.example"]').isChecked(),false);  // shared: off unless turned on
-  assert.match(await block.locator('label:has([data-net-addr="info@work.example"])').innerText(),/Shared address/);
-  assert.doesNotMatch(await block.locator('label:has([data-net-addr="sam@other.example"])').innerText(),/Shared address/);
+  assert.match(await block.locator('.net-addr:has([data-net-addr="info@work.example"])').innerText(),/Shared address/);
+  assert.doesNotMatch(await block.locator('.net-addr:has([data-net-addr="sam@other.example"])').innerText(),/Shared address/);
   // The owner's own numbers: each with its switch and where it came from; the main switch says "or number"
   assert.match(await block.locator('.net-switches').innerText(),/Let people who have my email or number find me/);
-  assert.match(await block.locator('label:has([data-net-addr="+12025550101"])').innerText(),/^\s*\+1 202 555 0101\s+WhatsApp$/);  // grouped for reading
-  if(width<600){const [head,first,second]=await block.locator('.net-addrs > *').evaluateAll(x=>x.slice(0,3).map(e=>e.getBoundingClientRect().left));
-   assert.ok(first<second+1&&first>second-1&&head<=first,'Findable by on its own line, the list aligned under it')}
-  assert.match(await block.locator('label:has([data-net-addr="+12025550100"])').innerText(),/About you/);
+  assert.match(await block.locator('.net-addr:has([data-net-addr="+12025550101"])').innerText(),/^\s*\+1 202 555 0101\s+WhatsApp\s*$/);  // grouped for reading
+  // Laid out like Settings: one heading style for both sections, the two switches stacked with a line each, every
+  // switch and select on one right edge, the selects one width, and Leave apart at the very bottom
+  const lay=await block.evaluate(el=>{const r=x=>x.getBoundingClientRect(),heads=[...el.querySelectorAll('.section-head h2')].map(h=>{const s=getComputedStyle(h);return s.fontFamily+s.fontSize+s.fontWeight});
+   const rows=[...el.querySelectorAll('.net-row')],sels=[...el.querySelectorAll('[data-meet-pref]')],sw=[...el.querySelectorAll('.net-row input,.net-addr input')];
+   const leave=el.querySelector('[data-net-do="leave"]'),last=el.lastElementChild;
+   return {heads,stacked:rows.length===2&&r(rows[1]).top>=r(rows[0]).bottom-1,notes:rows.map(x=>!!x.querySelector('small')?.textContent.trim()),
+    rights:[...new Set([...sw,...sels].map(x=>Math.round(r(x).right)))].length,sizes:[...new Set(sw.map(x=>Math.round(r(x).width)+'x'+Math.round(r(x).height)))].length,widths:[...new Set(sels.map(x=>Math.round(r(x).width)))].length,
+    leaveLast:last.contains(leave)&&r(leave).top>r(el.querySelector('.meet-setting')).bottom+20}});
+  assert.equal(lay.heads.length,2);assert.equal(lay.heads[0],lay.heads[1],'Network and Scheduling headings match');
+  assert.ok(lay.stacked,`${scheme} ${width}px switches stacked`);assert.deepEqual(lay.notes,[true,true]);
+  assert.equal(lay.rights,1,`${scheme} ${width}px switches and selects end on one edge`);assert.equal(lay.widths,1,`${scheme} ${width}px selects one width`);
+  assert.equal(lay.sizes,1,`${scheme} ${width}px one switch size throughout`);
+  assert.ok(lay.leaveLast,'Leave the Network apart at the bottom');
+  assert.match(await block.locator('.net-addr:has([data-net-addr="+12025550100"])').innerText(),/About you/);
   assert.equal(await block.locator('[data-net-addr="+12025550100"]').isChecked(),false);
   calls.length=0;await block.locator('[data-net-addr="+12025550101"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'+12025550101'}});
   calls.length=0;await block.locator('[data-net-addr="sam.doe-with-a-long-address@personal-mail.example"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'address_off',email:'sam.doe-with-a-long-address@personal-mail.example'}});
-  assert.equal(await block.locator('.net-default').count(),0);  // turned on by the owner: no line
   calls.length=0;await block.locator('[data-net-toggle="discoverable_off"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off'}});
   calls.length=0;await block.locator('[data-net-do="leave"]').click();
   assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'leave',email:'',relation:''}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px Fleet tab scrolls sideways`);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-${scheme}-${width}.png`,fullPage:true});
-  // Turned on by default (Standard): one quiet line with Turn off, no card under To-dos
+  // Turned on by default (Standard): no extra line about it (the switch is the state), no card under To-dos
   shown={...found,network:{...found.network,asked:false,default_at:new Date().toISOString(),people:[]}};
   await page.reload();await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('[data-fleet-pane="network"]').click();
-  const line=page.locator('#fleet-network .net-default');await line.waitFor();
-  assert.match(await line.innerText(),/Now findable by people who have your email\./);
-  calls.length=0;await line.locator('[data-net-do="discoverable_off"]').click();
-  assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off',email:'',relation:''}});
+  const line=page.locator('#fleet-network .net-row:has([data-net-toggle="discoverable_off"])');await line.waitFor();
+  assert.match(await line.innerText(),/Only the addresses below find you\./);
+  assert.doesNotMatch(await page.locator('#fleet-network').innerText(),/Now findable|Turn off|by default/);
+  calls.length=0;await line.locator('[data-net-toggle="discoverable_off"]').click();
+  assert.deepEqual(await firstCall(),{action:'fleet_network',args:{do:'discoverable_off'}});
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${scheme} ${width}px default line scrolls sideways`);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/network-default-${scheme}-${width}.png`,fullPage:true});
   await navClick(page.locator('nav [data-tab="inbox"]'));
