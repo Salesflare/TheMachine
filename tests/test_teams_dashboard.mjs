@@ -25,7 +25,7 @@ const server=createServer(async(req,res)=>{
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:CP+'/setup',paired:true,sources:[
    {name:'outlook',service:'outlook',label:'Outlook',what:'Your Outlook email.',connected:0,broker:true,hosted_signin:'microsoft'},
-   {name:'teams',service:'teams',label:'Microsoft Teams',what:'Chats, meeting chats and meeting notes from Teams. Reads only.',connected:0,broker:true,hosted_signin:'microsoft_teams'}]}));return}
+   {name:'teams',service:'teams',group:'chat',label:'Microsoft Teams',what:'Chats, meeting chats and meeting notes from Teams. Reads only.',connected:0,broker:true,hosted_signin:'microsoft_teams'}]}));return}
   res.end('{}');return}
  res.end(url.pathname==='/api/events'?'[]':'{}');
 });
@@ -42,9 +42,12 @@ try{
   const tag=`${width}-${scheme}`;
   // + Add: the Teams tile and its form
   await page.goto(base+'/#connections=add');
-  const tile=page.locator('#connect-add [data-connect-signin="teams"]');await tile.waitFor();
-  assert.match(await tile.innerText(),/Microsoft Teams/);
+  // two tiles, one sign-in: its chats under Chat, Teams meetings under Meetings
+  const tiles=page.locator('#connect-add [data-connect-signin="teams"]');await tiles.first().waitFor();
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connect-add [data-connect-signin="teams"]')].map(n=>[n.closest('.connect-group').querySelector('h4').textContent,n.innerText.replace(/\s+/g,' ').trim()])),
+   [['Chat','Microsoft Teams Chats and meeting chats from Teams. Reads only. ›'],['Meetings','Teams meetings Meeting notes and transcripts from Teams. Reads only. ›']]);
   if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/teams-add-${tag}.png`});
+  const tile=tiles.nth(width>500?0:1);  // either one signs in the same way
   await tile.click();
   const go=page.getByRole('button',{name:'Sign in with Microsoft'});await go.waitFor();
   const form=page.locator('#connect-add');

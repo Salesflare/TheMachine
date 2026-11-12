@@ -24,7 +24,9 @@ Uma fonte que você já conectou mostra isso na lista, com a conta. Escolha-a pa
 
 A lista é agrupada (**E-mail e agenda**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo.
 
-**Sugerido para você** aparece no topo quando sua Machine vê um motivo para uma fonte, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. Ela conta isso na sua Machine; nada sai dela. Sem motivo, sem seção. Uma fonte conectada nunca é sugerida.
+Uma fonte para a qual sua Machine vê um motivo aparece marcada como **Sugerido** no próprio grupo, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. Ela conta isso na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
+
+O Microsoft Teams aparece duas vezes: em **Chat** para os chats e em **Reuniões** como **Reuniões do Teams** para as notas de reuniões. Os dois usam o mesmo login da Microsoft, então conectar um conecta o outro.
 
 **Reconectar** em uma fonte e em **Precisa de você** abre o mesmo formulário. No seu próprio computador, `assistant connect` faz o mesmo em um terminal.
 

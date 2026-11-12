@@ -36,7 +36,7 @@ Solo funciona con una cuenta de Microsoft profesional o educativa. Las cuentas p
 
 En una Machine alojada:
 
-1. En el panel, abre **Conexiones**, **+ Añadir** y elige **Microsoft Teams**.
+1. En el panel, abre **Conexiones**, **+ Añadir** y elige **Microsoft Teams** (en Chat) o **Reuniones de Teams** (en Reuniones). Las dos son el mismo inicio de sesión.
 2. Pulsa **Iniciar sesión con Microsoft** y da el OK. Vuelves al panel.
 3. Para los canales y las notas de reuniones, envía a tu admin el enlace que muestra la página de inicio de sesión. Cuando lo apruebe, conecta Teams de nuevo.
 

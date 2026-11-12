@@ -36,7 +36,7 @@ Só funciona com uma conta Microsoft corporativa ou de estudante. Contas pessoai
 
 Numa Machine hospedada:
 
-1. No painel, abra **Conexões**, **+ Adicionar** e escolha **Microsoft Teams**.
+1. No painel, abra **Conexões**, **+ Adicionar** e escolha **Microsoft Teams** (em Chat) ou **Reuniões do Teams** (em Reuniões). Os dois são o mesmo login.
 2. Clique em **Entrar com Microsoft** e dê o OK. Você volta para o painel.
 3. Para canais e notas de reuniões, mande ao seu admin o link que a página de login mostra. Quando ele aprovar, conecte o Teams de novo.
 

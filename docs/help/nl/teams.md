@@ -36,7 +36,7 @@ Het werkt alleen met een Microsoft-werk- of schoolaccount. Persoonlijke accounts
 
 Op een gehoste Machine:
 
-1. Open in het dashboard **Koppelingen**, **+ Toevoegen** en kies **Microsoft Teams**.
+1. Open in het dashboard **Koppelingen**, **+ Toevoegen** en kies **Microsoft Teams** (onder Chat) of **Teams-meetings** (onder Afspraken). Beide zijn dezelfde aanmelding.
 2. Druk op **Inloggen met Microsoft** en geef het OK. Daarna ben je terug in het dashboard.
 3. Voor kanalen en meetingnotities stuur je je beheerder de link die de inlogpagina toont. Zodra die goedkeurt, koppel je Teams opnieuw.
 

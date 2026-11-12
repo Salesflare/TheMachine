@@ -63,8 +63,10 @@ the file is removed and the source falls back to its line icon.
 | `outlook.svg`, `outlook_calendar.svg` | Outlook mail and Outlook Calendar (one icon, Outlook's) | `outlook_48x1.svg` from the Microsoft 365 product icons, https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/outlook_48x1.svg | https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks: without a written license, use only as Microsoft's published guidelines allow |
 | `docs.svg` | Microsoft OneDrive (Word, OneDrive and SharePoint) | `onedrive_48x1.svg`, same set: https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/onedrive_48x1.svg | as Outlook |
 | `teams.svg` | Microsoft Teams | `teams_48x1.svg`, same set: https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/teams_48x1.svg | as Outlook |
+| `salesforce.svg` | Salesforce | The Salesforce cloud logo on https://www.salesforce.com, https://c1.sfdcstatic.com/content/dam/sfdc-docs/www/logos/logo-salesforce.svg | https://www.salesforce.com/company/legal/intellectual/: Salesforce's marks need its written permission |
 | `zoom.png` | Zoom | `Color-Bloom-Rounded-Square.png` (64 px), from the Zoom Brand Center logo library, https://brand.zoom.com/api/logo-library-page/8/main-logo-assets; Zoom publishes no SVG of it there | https://brand.zoom.com/document/21#/-/partner-branding/zoom-trademark-guidelines: use of Zoom's marks needs Zoom's written agreement |
 
 The SVGs keep the official artwork; only whitespace, comments and gradient ids were shortened and coordinates rounded to
-two decimals, and the Slack and LinkedIn class styles became plain fill attributes. Slack, LinkedIn, Microsoft, Outlook,
-OneDrive, Microsoft Teams and Zoom are trademarks of their owners.
+two decimals, and the Slack and LinkedIn class styles became plain fill attributes; Salesforce's lost only its size
+attributes and whitespace. Slack, LinkedIn, Microsoft, Outlook, OneDrive, Microsoft Teams, Salesforce and Zoom are
+trademarks of their owners.

@@ -22,7 +22,9 @@ Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn s
 
 Die Liste ist gruppiert (**Mail und Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**), von A bis Z in jeder Gruppe.
 
-**Vorgeschlagen für dich** steht oben, wenn deine Machine einen Grund für eine Quelle sieht, mit diesem Grund in einer Zeile: Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine Einrichtung, die nicht abgeschlossen wurde. Sie zählt das auf deiner Machine; nichts verlässt sie. Kein Grund, kein Abschnitt. Eine verbundene Quelle wird nie vorgeschlagen.
+Eine Quelle, für die deine Machine einen Grund sieht, ist in ihrer eigenen Gruppe als **Vorgeschlagen** markiert, mit diesem Grund in einer Zeile: Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine Einrichtung, die nicht abgeschlossen wurde. Sie zählt das auf deiner Machine; nichts verlässt sie. Eine verbundene Quelle wird nie vorgeschlagen.
+
+Microsoft Teams steht zweimal da: unter **Chat** für die Chats und unter **Meetings** als **Teams-Meetings** für die Meeting-Notizen. Beide nutzen dieselbe Microsoft-Anmeldung, also verbindet eine auch die andere.
 
 Eine Quelle, die du schon verbunden hast, zeigt das in der Liste, mit ihrem Konto. Wähl sie, um eine weitere daneben hinzuzufügen: ihr Formular sagt das und verlinkt die bestehende.
 

@@ -48,13 +48,13 @@ function connectDraw(box,kind,h,focus){const was=box.dataset.view;setHTML(box,h)
   scrollTo(scrollX,g.y);tile?.focus({preventScroll:true});placeNote();return}
  viewTop(box,focus&&box.querySelector(focus))}
 $('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.connect-sources>button.connect-source');if(tile)connectGrid={y:scrollY,sig:placeSig(tile)}},true);
-// The list: Suggested for you first, at most 3 (connect_suggested: only tiles with a signal, each with its why),
-// then every other source under its group (onboarding.GROUPS), A to Z within it. A group with nothing to show is left out.
+// The list: every source under its group (onboarding.GROUPS), A to Z within it. A group with nothing to show is left out.
+// Suggested ones (connect_suggested, at most 3, never a connected one) stay in their group, tagged Suggested, with their why.
 const CONNECT_GROUPS=[['mail','Mail and calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
 const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why==='mail'?t(['{} email from {} in 30 days','{} emails from {} in 30 days'],s.count,x.label)
  :s.why==='meetings'?t(['{} {} meeting on your calendar','{} {} meetings on your calendar'],s.count,x.label):s.why==='links'?t(['{} message links to {}','{} messages link to {}'],s.count,x.label):'';
-// A row: the source's logo (dashboard/logos/, else a line icon below), its name, why it is suggested or what it
-// brings in, never cut off, and › (↗: opens elsewhere). Connected: a check on the icon, still tappable for a second
+// A row: the source's logo (dashboard/logos/, else a line icon below), its name (and a Suggested tag), why it is
+// suggested or what it brings in, never cut off, and › (↗: opens elsewhere). Connected: a check on the icon, still tappable for a second
 // account. `note`: a status line of its own (Codex, GBrain).
 Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-5v-2"/>',
  zoom:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/>',docs:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
@@ -64,7 +64,7 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
-const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|intercom|linkedin|outlook|outlook_calendar|rss|shortcut|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
+const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|intercom|linkedin|outlook|outlook_calendar|rss|salesforce|shortcut|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
  connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
@@ -75,21 +75,25 @@ function connectHaveNote(x){const have=connectHave(x);if(!have.length)return '';
  return html`<p class="fine connect-note connect-have"><span>${connectHaveLine(x)}</span> <button type="button" class="browser-link" data-connect-card="${have[0].id}">${t('Open its card')}</button><br><span>${t('This adds a new connection. Existing ones stay.')}</span></p>`}
 function connectInner(x,why,ext,note=connectHaveLine(x)){const on=x.connected?html`<span class="cs-on" title="${t('{} connected',x.connected)}" aria-label="${t('{} connected',x.connected)}">✓</span>`:'';
  const line=why?html`<small class="why">${why}</small>`:x.what?html`<small class="what">${x.what}</small>`:'';
- return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><b>${x.label}</b>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
+ return html`<span class="cs-icon">${connectLogo(x)}${on}</span><span class="cs-text"><span class="cs-head"><b>${x.label}</b>${why?html`<span class="cs-tag">${t('Suggested')}</span>`:''}</span>${line}${note?html`<small class="count">${note}</small>`:''}</span><span class="cs-go" aria-hidden="true">${ext?'↗':'›'}</span>`}
 function connectTile(x,why){
  if(x.hosted_signin&&connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${connectInner(x,why)}</button>`;
  if(x.account_page&&connectList.manage_url)return html`<a class="connect-source" href="${safeHref(connectList.manage_url+'#'+x.account_page)}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`;
  if(x.signin&&!connectList.manage_url)return html`<button type="button" class="connect-source" data-connect-signin="${x.name}">${connectInner(x,why)}</button>`;
  return x.broker?(connectList.manage_url?html`<a class="connect-source" href="${safeHref(connectList.manage_url+(BROKER_LINK[x.service]||'#sources'))}" target="_blank" rel="noopener">${connectInner(x,why,true)}</a>`:''):html`<button type="button" class="connect-source" data-connect="${x.name}">${connectInner(x,why)}</button>`}
 function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return renderConnectRun();if(connectSignin)return renderConnectSignin();if(connectForm)return renderConnectForm();if(connectGbrain)return renderGbrain();if(!connectList)return;
- const by=new Map(connectList.sources.map(x=>[x.name,x])),picks=[];
- for(const s of connectList.suggested||[]){const x=by.get(s.name),why=x&&!x.connected&&connectWhy(s,x),tile=why&&picks.length<3&&connectTile(x,why);if(tile)picks.push([s.name,tile])}
- const picked=new Set(picks.map(([n])=>n)),groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),add=(g,label,tile)=>{if(tile)(groups.get(g)||groups.get('other')).push([label,tile])};
- for(const x of connectList.sources)if(!picked.has(x.name))add(x.group,x.label,connectTile(x));
+ const by=new Map(connectList.sources.map(x=>[x.name,x])),why=new Map();
+ for(const s of connectList.suggested||[]){const x=by.get(s.name),w=x&&!x.connected&&why.size<3&&connectWhy(s,x);if(w)why.set(s.name,w)}
+ const groups=new Map(CONNECT_GROUPS.map(([k])=>[k,[]])),add=(g,label,tile)=>{if(tile)(groups.get(g)||groups.get('other')).push([label,tile])};
+ // Teams: one Microsoft sign-in, two tiles. Its chats under Chat, its meeting notes under Meetings as Teams meetings; either
+ // one connects both, and both show it connected. Its card on Connections keeps the whole line (connectors/teams.py).
+ for(const x of connectList.sources){const teams=x.service==='teams'&&x.group==='chat';
+  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Reads only.')}:x,why.get(x.name)));
+  if(teams)add('meetings',t('Teams meetings'),connectTile({...x,label:t('Teams meetings'),what:t('Meeting notes and transcripts from Teams. Reads only.')}))}
  add('work','Codex',codexTile());add('other','GBrain',gbrainTile());
- const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles,cls='')=>html`<section class="connect-group${cls}"><h4>${h}</h4><div class="connect-sources">${tiles}</div></section>`;
+ const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles)=>html`<section class="connect-group"><h4>${h}</h4><div class="connect-sources">${tiles}</div></section>`;
  const rest=CONNECT_GROUPS.map(([k,h])=>{const g=groups.get(k).sort((a,b)=>order.compare(a[0],b[0]));return g.length?list(t(h),g.map(([,tile])=>tile)):''});
- connectDraw(box,'grid',html`${connectList.saveable||connectList.manage_url?'':html`<p class="sub-note">Pick a source to connect.${html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p>`}${picks.length?list(t('Suggested for you'),picks.map(([,tile])=>tile),' suggested'):''}${rest}`)}
+ connectDraw(box,'grid',html`${connectList.saveable||connectList.manage_url?'':html`<p class="sub-note">Pick a source to connect.${html` This service can’t save its settings: use <code>assistant connect</code> in a terminal.`}</p>`}${rest}`)}
 // Codex (codex_signin.py): its own tile. It signs in with Codex's own device code, shown here: a hosted Machine's control
 // plane runs that sign-in on its server (POST /_machine/connect, like GitHub), a self-hosted Machine runs it itself.
 const CODEX_DEVICE=/^https:\/\/auth\.openai\.com\/codex\/device[\w/.-]*$/;

@@ -36,7 +36,7 @@ Il fonctionne seulement avec un compte Microsoft professionnel ou scolaire. Les 
 
 Sur une Machine hébergée :
 
-1. Dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter** et choisissez **Microsoft Teams**.
+1. Dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter** et choisissez **Microsoft Teams** (sous Chat) ou **Réunions Teams** (sous Réunions). Les deux sont la même connexion.
 2. Appuyez sur **Se connecter avec Microsoft** et donnez votre accord. Vous revenez au tableau de bord.
 3. Pour les canaux et les notes de réunion, envoyez à votre admin le lien affiché sur la page de connexion. Une fois approuvé, connectez Teams à nouveau.
 
