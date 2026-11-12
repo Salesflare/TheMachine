@@ -61,7 +61,9 @@ open to-do gets a quiet line: "Robin did this · Sat, Nov 7", with **Done** and 
 itself. Still needed hides the line until they reopen theirs and do it again.
 
 - Same to-do means the same email (its Message-ID, whoever it went to), the same bill (an IBAN with a structured
-  payment reference, Belgian +++…+++ or RF, both checked; an account number alone, like rent, never matches) or the
+  payment reference, Belgian +++…+++ or RF, both checked; an account number alone, like rent, never matches; a bill
+  paid another way, like ACH, a sort code, a check or a pay link, matches on its sender's domain, invoice number and
+  amount together) or the
   same online form (its link: Google, Microsoft, Typeform, Tally or Jotform). So a reminder that comes as a new email
   still matches the to-do done from the first one. A form link that is in more than 5 of your emails, like a newsletter
   footer, never matches.

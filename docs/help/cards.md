@@ -84,6 +84,8 @@ Tap the title, or **Name** under **Details**, to rename it. Your title stays.
 
 **Reopen** brings a closed to-do back. It also comes back by itself when something new happens, like a new message from them, but not for your own reply.
 
+A bill you still have to pay yourself, from any country, becomes a to-do with the amount, the due date and the payment details the bill gives. Bills paid automatically, like a direct debit or a card on file, don't. When a later email shows it paid, like the sender confirming your payment came in, the to-do closes by itself. **Undo** brings it back for a day.
+
 A to-do that only mattered until a set time, like a confirmation before a meeting, closes by itself after that time. It moves to **Done / dismissed** as "No longer needed". **Undo** brings it back for a day.
 
 Before a message or handoff for someone shows as ready, your Machine checks your recent chats with the people in it, group chats too, and waits for Slack to read them. When a later message shows it is done already, like they were asked and said yes, the to-do closes by itself. **Undo** brings it back for a day.

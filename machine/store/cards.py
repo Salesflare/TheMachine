@@ -11,6 +11,7 @@ import sqlite3
 import uuid
 
 import chat_files
+import family_done
 import graph
 import i18n
 import todo_org
@@ -364,6 +365,23 @@ def set_chat_asks(db, suggestion_id, asks):
     db.execute('UPDATE suggestions SET chat_asks=? WHERE id=?', (encoded(lines) if lines else None, suggestion_id))
 
 
+# Told back to the review (model-facing, like review_saves.AUTOMATED_ONLY), never shown on the dashboard
+BILL_SHAPE = 'bill is {"payee", "invoice", "amount"}: who the bill is from, its invoice number and its amount, each as written'
+
+
+def check_bill(value):
+    """A review's bill on suggest as the JSON to keep (family_done.bill_fields), checked before anything is saved."""
+    if not family_done.bill_shape(value):
+        raise ValueError(BILL_SHAPE)
+    return family_done.bill_fields(value)
+
+
+def set_bill(db, suggestion_id, bill):
+    """The bill a review read for a to-do (family_done.bill_fields JSON), sealed like its text: a Family member's to-do
+    for the same bill matches on it when it has no IBAN and reference (family_done.bill_key)."""
+    db.execute('UPDATE suggestions SET bill=? WHERE id=?', (bill, suggestion_id))
+
+
 def offer_merge(db, own, other_id):
     """The review thinks the owner's card is the same as another one. Nothing merges: the card asks them."""
     other = db.execute('SELECT id,status FROM suggestions WHERE id=?', (other_id,)).fetchone()
@@ -397,6 +415,9 @@ class CardsStore:
 
     def set_chat_asks(self, db, suggestion_id, asks):
         return set_chat_asks(db, suggestion_id, asks)
+
+    def set_bill(self, db, suggestion_id, bill):
+        return set_bill(db, suggestion_id, bill)
 
     def suggest(self, dedupe_key, title, body, event_ids, when='now', digest_at='08:30', work=False, urgent=False, due=None, ahead=False, awaiting=None, project=None,
                 card_id=None, separate=False, reopen=False, match=False, _db=None, suggestion_id=None, owner_step=None, expires_at=None, expires_what=None,

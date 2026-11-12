@@ -84,6 +84,8 @@ Tik op de titel, of op **Naam** onder **Details**, om hem te hernoemen. Je titel
 
 Een gesloten to-do kan terugkomen met **Heropenen**. Hij komt ook vanzelf terug als er iets nieuws gebeurt, zoals een nieuw bericht van de ander. Je eigen antwoord brengt hem niet terug.
 
+Een rekening die je nog zelf moet betalen, uit elk land, wordt een to-do met het bedrag, de vervaldag en de betaalgegevens van de rekening. Rekeningen die vanzelf betaald worden, zoals met domiciliëring of een opgeslagen kaart, niet. Toont een latere mail dat ze betaald is, bijvoorbeeld omdat de afzender je betaling bevestigt, dan sluit de to-do vanzelf. **Ongedaan maken** brengt hem een dag lang terug.
+
 Een to-do die maar tot een bepaald moment telde, zoals een bevestiging voor een vergadering, sluit vanzelf zodra dat moment voorbij is. Hij gaat naar **Gedaan / afgewezen** met "Niet meer nodig" en wanneer het was. **Ongedaan maken** brengt hem een dag lang terug.
 
 Voordat een bericht of overdracht voor iemand klaarstaat, kijkt je Machine je recente chats met de betrokkenen na, ook groepschats, en wacht tot Slack ze gelezen heeft. Toont een later bericht dat het al gedaan is, bijvoorbeeld omdat het al gevraagd is en ze ja zeiden, dan sluit de to-do vanzelf. **Ongedaan maken** brengt hem een dag lang terug.

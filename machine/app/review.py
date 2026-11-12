@@ -832,6 +832,8 @@ class ReviewApp:
     def looks_handled_action(self, name, args, owner_dashboard=False):
         if args.get('plan_changed') is True:  # a newer message overturned its plan: it closes by itself (Store.plan_changed)
             return self.store.plan_changed(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
+        if args.get('paid') is True:  # a newer message shows a bill to-do paid: it closes by itself (Store.bill_paid)
+            return self.store.bill_paid(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
         return self.store.looks_handled(args['suggestion_id'], args.get('reason'), args.get('event_ids') or [])
 
     def handoff_on_it_action(self, name, args, owner_dashboard=False):

@@ -8,6 +8,7 @@ import sqlite3
 from calendar_clashes import with_others
 from machine.app.preparation import activity_lines
 from machine.cards import undated_card
+from machine.store.cards import check_bill
 from machine.store import review_saves
 from machine.store.review import bulk_kind
 from mail_senders import automated
@@ -21,7 +22,7 @@ LOG = logging.getLogger('personal-assistant')
 # (what the mail asks, in a few words) says the review judged it so. Costs a step only for these few to-dos.
 AUTOMATED_ONLY = (review_saves.AUTOMATED_GUIDANCE + ' (a booking, receipt, notification or newsletter), with no message from a '
                   'person. Such mail informs a to-do; on its own it makes one only when the mail itself asks the owner to act '
-                  '(an invoice to pay by hand, a card or plan that runs out). A step you work out from it, like moving the '
+                  '(a bill to pay by hand, a card or plan that runs out). A step you work out from it, like moving the '
                   'owner\'s own plans around a booking, is no to-do: they made both and move their own. Judge what the mail '
                   'asks, never its wording. When it does ask, suggest again with mail_asks: what it asks, in a few words.')
 
@@ -119,6 +120,7 @@ class ReviewSavesApp:
                                  'care of it, a meeting covered it, a later message settled it) or no longer the owner\'s, make no to-do. '
                                  'Otherwise suggest again with newer_checked: [these event ids], saying in the body what is still open.')
         done_when = outcomes.clean(args.get('done_when'))  # checked before anything is saved
+        bill = check_bill(args.get('bill'))  # a bill to pay by hand: matches it on a Family member's Machine
         # A title or summary that says "today" or "tomorrow" is wrong the day after: saved with the day itself
         (title, body), stale = undated_card(str(args['title'] or ''), str(args['body'] or ''))
         if args.get('based_on') is not None:
@@ -161,6 +163,9 @@ class ReviewSavesApp:
         if isinstance(saved, dict) and saved.get('id') and done_when:
             with self.store.connect() as db:  # the result that counts as done: a send alone doesn't close it (outcomes.py)
                 outcomes.set_done_when(db, saved['id'], done_when, 'review')
+        if isinstance(saved, dict) and saved.get('id') and bill:
+            with self.store.connect() as db:  # sealed like the to-do's own text (message_seal.DERIVED)
+                self.store.set_bill(db, saved['id'], bill)
         unknown = self.store.no_role_yet(args['event_ids'])
         if isinstance(saved, dict) and unknown:  # name them now, while the evidence is open
             saved['no_role_yet'] = unknown

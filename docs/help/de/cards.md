@@ -84,6 +84,8 @@ Tippe auf den Titel oder auf **Name** unter **Details**, um sie umzubenennen. De
 
 Eine geschlossene Aufgabe kommt mit **Wieder öffnen** zurück. Sie kommt auch von selbst zurück, wenn etwas Neues passiert, etwa eine neue Nachricht von der Person. Deine eigene Antwort holt sie nicht zurück.
 
+Eine Rechnung, die du noch selbst bezahlen musst, aus jedem Land, wird eine Aufgabe mit Betrag, Fälligkeitsdatum und den Zahlungsangaben der Rechnung. Rechnungen, die automatisch bezahlt werden, etwa per Lastschrift oder hinterlegter Karte, nicht. Zeigt eine spätere E-Mail, dass sie bezahlt ist, etwa weil der Absender deine Zahlung bestätigt, schließt sich die Aufgabe von selbst. **Rückgängig** holt sie einen Tag lang zurück.
+
 Eine Aufgabe, die nur bis zu einem bestimmten Zeitpunkt zählte, etwa eine Bestätigung vor einem Meeting, schließt sich von selbst, sobald dieser Zeitpunkt vorbei ist. Sie wandert zu **Erledigt / verworfen** mit „Nicht mehr nötig“ und wann es war. **Rückgängig** holt sie einen Tag lang zurück.
 
 Bevor eine Nachricht oder Übergabe an jemanden als bereit erscheint, prüft deine Machine deine letzten Chats mit den Beteiligten, auch Gruppenchats, und wartet, bis Slack sie gelesen hat. Zeigt eine spätere Nachricht, dass es schon erledigt ist, etwa weil die Person gefragt wurde und zugesagt hat, schließt sich die Aufgabe von selbst. **Rückgängig** holt sie einen Tag lang zurück.

@@ -88,7 +88,7 @@ ATTACHMENTS_LISTED = 10  # names kept per message
 
 def attachment_names(payload):
     """The files a message carries, by name and type only (never their bytes): the review can't open them, so this
-    tells it a statement or invoice is in a file (AGENTS.md, "Invoices to pay by hand") and a to-do's own run reads
+    tells it a statement or invoice is in a file (AGENTS.md, "Bills to pay by hand") and a to-do's own run reads
     it. Pictures shown inline in the body (a logo, a signature) are left out."""
     found = []
 

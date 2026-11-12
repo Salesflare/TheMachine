@@ -31,7 +31,7 @@ Network identity on import, and your teammates and friends see a key-change noti
 - **Handling claims** (which of you handles an email several teammates got) are hashes of the Fleet's secret and the
   email's Message-ID, with no Message-ID, address or content in them. The Network hands out that secret, so equal
   hashes reveal matching claims, and it can test a Message-ID it got elsewhere. In a Family, a to-do marked done is
-  shared the same way, by Message-ID or by a bill's IBAN and payment reference, which it could test too. Claims are
+  shared the same way, by Message-ID or by a bill's IBAN and payment reference (or its sender's domain, invoice number and amount), which it could test too. Claims are
   therefore not end-to-end encrypted. The secret can't open sealed questions or sign as a Machine. A secret the Network doesn't know is on the
   roadmap.
 - **Finding people you know** ([Fleets](fleet.md)): on by default at the Standard security level, off at Careful, and

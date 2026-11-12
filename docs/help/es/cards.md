@@ -84,6 +84,8 @@ Toca el título, o **Nombre** en **Detalles**, para renombrarla. Tu título se q
 
 Una tarea cerrada puede volver con **Reabrir**. También vuelve sola cuando pasa algo nuevo, como un mensaje nuevo de esa persona. Tu propia respuesta no la hace volver.
 
+Una factura que aún tienes que pagar tú, de cualquier país, se convierte en una tarea con el importe, la fecha de vencimiento y los datos de pago de la factura. Las que se pagan solas, como una domiciliación o una tarjeta guardada, no. Si un correo posterior muestra que está pagada, por ejemplo el remitente confirma que recibió tu pago, la tarea se cierra sola. **Deshacer** la recupera durante un día.
+
 Una tarea que solo importaba hasta un momento concreto, como una confirmación antes de una reunión, se cierra sola cuando ese momento pasa. Pasa a las hechas con "Ya no hace falta" y cuándo fue. **Deshacer** la recupera durante un día.
 
 Antes de que un mensaje o un traspaso para alguien aparezca como listo, tu Machine revisa tus chats recientes con esas personas, también los de grupo, y espera a que Slack los lea. Si un mensaje posterior muestra que ya está hecho, por ejemplo porque ya se lo pidieron y dijo que sí, la tarea se cierra sola. **Deshacer** la recupera durante un día.

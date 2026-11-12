@@ -84,6 +84,8 @@ Appuyez sur le titre, ou sur **Nom** sous **Détails**, pour la renommer. Votre 
 
 Une tâche fermée peut revenir avec **Rouvrir**. Elle revient aussi d’elle-même quand il se passe quelque chose de nouveau, comme un nouveau message de la personne. Votre propre réponse ne la fait pas revenir.
 
+Une facture que tu dois encore payer toi-même, de n’importe quel pays, devient une tâche avec le montant, l’échéance et les coordonnées de paiement de la facture. Celles payées automatiquement, comme un prélèvement ou une carte enregistrée, non. Si un e-mail plus récent montre qu’elle est payée, par exemple l’expéditeur confirme avoir reçu ton paiement, la tâche se ferme d’elle-même. **Annuler** la fait revenir pendant un jour.
+
 Une tâche qui ne comptait que jusqu’à un moment précis, comme une confirmation avant une réunion, se ferme d’elle-même une fois ce moment passé. Elle passe dans les tâches terminées avec « Plus nécessaire » et la date. **Annuler** la fait revenir pendant un jour.
 
 Avant qu’un message ou une passation pour quelqu’un apparaisse comme prêt, ta Machine vérifie tes discussions récentes avec les personnes concernées, en groupe aussi, et attend que Slack les ait lues. Si un message plus récent montre que c’est déjà fait, par exemple la personne a été sollicitée et a dit oui, la tâche se ferme d’elle-même. **Annuler** la fait revenir pendant un jour.
