@@ -5479,6 +5479,7 @@
  "The decrypted export could not be read": "The decrypted export could not be read",
  "The decrypted export is not in the import folder": "The decrypted export is not in the import folder",
  "The details repeat the original email, which never goes on a task page. Leave them out, or shorten them.": "The details repeat the original email, which never goes on a task page. Leave them out, or shorten them.",
+ "The digest is read in the dashboard": "The digest is read in the dashboard",
  "The doc changed since this was drafted. Nothing was changed; ask for a new draft.": "The doc changed since this was drafted. Nothing was changed; ask for a new draft.",
  "The draft changed since. Changes go in where they still fit.": "The draft changed since. Changes go in where they still fit.",
  "The draft is ready to send:": "The draft is ready to send:",

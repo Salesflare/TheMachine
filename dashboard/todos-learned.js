@@ -150,14 +150,10 @@ function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCard
 const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
  return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
-// Digest: one row at the top of the list that opens the area's digest to read and copy (todos-area-digest.js): what got
-// done today and what is still open, in Work and Personal, or the filter's one. Only when there is something to list:
-// an open to-do in that area, or one done today (not a Daily digest or a cleanup, which are to read).
-const adOpenStates=['pending','accepted','prepared','instructions'];
-function adWorth(){const day=new Date().toDateString();
- return (state?.suggestions||[]).some(s=>(s.scope==='work'||s.scope==='personal')&&(scopeFilter==='all'||s.scope===scopeFilter)&&!s.digest&&!s.cleanup
-  &&(adOpenStates.includes(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))}
-const digestEntry=()=>adWorth()?html`<p class="ad-entry"><button type="button" data-area-digest><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>${scopeFilter==='work'?t('Work digest'):scopeFilter==='personal'?t('Personal digest'):t('Digest')}</span><span class="ad-sub">${t('Done today and still open')}</span><span class="ad-go" aria-hidden="true">›</span></button></p>`:'';
+// Digest: a row atop the list opening the area's digest (todos-area-digest.js), when an area to-do is open or done today
+const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString();
+ return (state?.suggestions||[]).some(s=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup&&(/^(pending|accepted|prepared|instructions)$/.test(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))
+  ?html`<p class="ad-entry"><button type="button" data-area-digest><b>${f==='work'?t('Work digest'):f==='personal'?t('Personal digest'):t('Digest')}</b><span>${t('Done today and still open')}</span>›</button></p>`:''};
 document.addEventListener('click',e=>{if(e.target.closest('[data-area-digest]'))lazyRun('areadigest',()=>areaDigestOpen())});
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});

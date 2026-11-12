@@ -103,13 +103,8 @@ body main{padding-top:0}
 .scope-note span{color:var(--text);font-weight:var(--fw-medium,500)}
 .scope-note button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .scope-note button.link:hover{color:var(--text)}
-/* Digest: one quiet row at the top of the list that opens the area's digest (digestEntry, todos-area-digest.js) */
-.ad-entry{margin:0 0 12px}
-.ad-entry button{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;margin:0;padding:8px 12px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-surface);box-shadow:none;color:var(--text);font:inherit;font-size:var(--fs-sm);font-weight:var(--fw-medium,500);text-align:start;cursor:pointer}
-.ad-entry button:hover{background:var(--c-hover)}
-.ad-entry svg{flex:none;color:var(--c-text-3)}
-.ad-entry .ad-sub{flex:1;min-width:0;overflow:hidden;color:var(--c-text-3);font-weight:400;white-space:nowrap;text-overflow:ellipsis}
-.ad-entry .ad-go{flex:none;color:var(--c-text-3);font-size:var(--fs-md)}
+.ad-entry{margin:0 0 12px}.ad-entry button{display:flex;gap:8px;width:100%;min-height:40px;margin:0;padding:8px 12px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-surface);box-shadow:none;color:var(--c-text-3);font:inherit;font-size:var(--fs-sm)}.ad-entry button:hover{background:var(--c-hover)}
+.ad-entry b{color:var(--text);font-weight:var(--fw-medium,500)}.ad-entry span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:start}
 /* All clear: the title's line says it, so the block below is only the robot and its line */
 #suggestions .all-clear:not(.first-look-empty){padding-top:24px}
 /* The first look's ending: what it read, then one or two next steps */

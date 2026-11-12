@@ -5479,6 +5479,7 @@
  "The decrypted export could not be read": "No se pudo leer la exportación descifrada",
  "The decrypted export is not in the import folder": "La exportación descifrada no está en la carpeta de importación",
  "The details repeat the original email, which never goes on a task page. Leave them out, or shorten them.": "Los detalles repiten el correo original, que nunca va en una página de tarea. Quítalos o acórtalos.",
+ "The digest is read in the dashboard": "El resumen se lee en el panel",
  "The doc changed since this was drafted. Nothing was changed; ask for a new draft.": "El documento cambió desde este borrador. No se cambió nada; pide un borrador nuevo.",
  "The draft changed since. Changes go in where they still fit.": "El borrador cambió desde entonces. Los cambios entran donde aún encajan.",
  "The draft is ready to send:": "El borrador está listo para enviar:",

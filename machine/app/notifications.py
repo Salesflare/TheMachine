@@ -61,7 +61,7 @@ class NotificationsApp:
         # To-dos, Digest: each area's digest to read and copy (area_digests). The owner's own dashboard only: Personal
         # never reaches anyone else
         if not owner_dashboard:
-            raise ValueError('The digest is in the dashboard')
+            raise ValueError('The digest is read in the dashboard')
         return self.area_digests()
 
     def notify_action(self, name, args, owner_dashboard=False):

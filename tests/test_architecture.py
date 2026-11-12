@@ -502,6 +502,7 @@ LAZY_CEILING.update(followups=28_000, graph=384_000)
 # connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
 # puts catch-all sources last (about 0.9 KB).
 LAZY_CEILING['connections'] = 110_000
+<<<<<<< HEAD
 # connections 110,000 -> 111,000 (2026-11-12): Signal chats' QR step, its two stop notes and its no-older-messages note
 # on the card (about 0.35 KB), after the calendar sources took the room.
 LAZY_CEILING['connections'] = 111_000
@@ -520,6 +521,7 @@ LAZY_CEILING['settings'] = 140_000
 # 386,000: what only their pages draw (about 4.8 and 2.9 KB).
 LAZY_CEILING.update(newtodo=26_000, palette=20_000, compose=34_000, signin=18_000, voice=16_000, emailframe=10_000,
                     talk=56_000, settings=151_000, learning=42_000, fleet=100_000, graph=386_000)
+LAZY_CEILING['areadigest'] = 4_000  # the Work and Personal digest view with its Copy buttons
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
