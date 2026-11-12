@@ -93,6 +93,33 @@ SEND_RETRY_AFTER = dt.timedelta(minutes=30)
 MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 
 
+def own_title(db, suggestion_id, title):
+    """A handed-off to-do's title once it is the owner's own again (Do it myself): "Waiting on Sam: send the quote"
+    becomes "Send the quote". From what was promised when the to-do came from someone else's promise; else the owner's
+    language's own "Waiting on {}: {}", only for the teammate it went to. Anything else stays: None."""
+    from machine.store.promises import fit_title, promise_title, promise_who_named, PROMISE_TITLE_MAX
+    title = ' '.join(str(title or '').split())
+    whos = {r['name'] for r in db.execute("SELECT name FROM fleet_out WHERE context=? AND name IS NOT NULL", ('handoff:' + str(suggestion_id),))}
+    try:
+        promise = db.execute("SELECT * FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1", (suggestion_id,)).fetchone()
+    except sqlite3.OperationalError:  # no promises yet
+        promise = None
+    if promise:
+        whos |= {promise['who'], promise_who_named(db, dict(promise))['who']}
+    whos = {' '.join(str(w).split()) for w in whos} - {''}
+    whos |= {w.split()[0] for w in whos}
+    own = lambda what: fit_title(what[:1].upper() + what[1:], PROMISE_TITLE_MAX) if what else None
+    if promise and promise['what']:
+        what = ' '.join(str(promise['what']).split())
+        if title in {promise_title(dict(promise), i18n.t('Waiting on {}: {}', w, what)) for w in whos}:
+            return own(what)
+    head, mid, tail = (i18n.t('Waiting on {}: {}', '\0', '\0').split('\0') + ['', ''])[:3]
+    match = re.fullmatch(re.escape(head) + '(.+?)' + re.escape(mid) + '(.+)' + re.escape(tail), title)
+    if match and match.group(1).casefold() in {w.casefold() for w in whos}:
+        return own(match.group(2).strip())
+    return None
+
+
 def send_retry_ok(job, kind):
     """An unconfirmed message send the owner may retry: it was checked for SEND_RETRY_AFTER without a trace."""
     return (job['status'] == 'uncertain' and kind in MESSAGE_KINDS
@@ -658,9 +685,13 @@ class DecisionsStore:
         waits on the teammate (out of Waiting on others) and the handoff step goes, so its own buttons lead."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = db.execute('SELECT status,outcome,next_action FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            row = db.execute('SELECT status,outcome,next_action,title,title_source FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row or row['status'] != 'prepared':
                 return False
+            title = own_title(db, suggestion_id, row['title']) if row['title_source'] != 'user' else None
+            if title and title != row['title']:
+                db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, suggestion_id))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             try:
                 outcome = json.loads(row['outcome'] or 'null')
             except (TypeError, ValueError):
@@ -673,7 +704,7 @@ class DecisionsStore:
             kept = [a for a in next_actions.actions(current) if a.get('kind') != 'handoff'] if current else []
             dropped = bool(current) and len(kept) != len(next_actions.actions(current))
             if not waiting and not dropped:
-                return False
+                return bool(title and title != row['title'])
             action = (current if not dropped else {**current, 'actions': kept} if current.get('kind') == 'menu' and len(kept) > 1
                       else kept[0] if kept else None)
             db.execute('UPDATE suggestions SET outcome=?,next_action=? WHERE id=?',

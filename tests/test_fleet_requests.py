@@ -9,6 +9,8 @@ from unittest.mock import patch
 import test_fleet as tf
 from test_fleet import a, fleet, NOW, TEAM, mail
 from seams import patch_everywhere  # noqa: E402
+from machine.store.decisions import own_title  # noqa: E402
+from machine.store.promises import fit_title, promise_title  # noqa: E402
 
 fleet_requests = fleet.fleet_requests
 WORK = {**tf.WORK, 'transport': 'gog'}
@@ -762,7 +764,7 @@ class Requests(unittest.TestCase):
         mail = {'kind': 'email', 'to': 'robin@acme.example', 'subject': 'Export', 'body': 'Looking at it.', 'revision': 'r2'}
         card = self.ready_card([handoff, mail], 'k-mine')
         with self.store.connect() as db:
-            db.execute('UPDATE suggestions SET outcome=? WHERE id=?', (json.dumps({'state': 'waiting', 'waiting_on': 'Kim Doe'}), card))
+            db.execute('UPDATE suggestions SET outcome=?,title=? WHERE id=?', (json.dumps({'state': 'waiting', 'waiting_on': 'Kim Doe'}), 'Waiting on Kim: log the export bug', card))
         self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
         with self.store.connect() as db:
             ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
@@ -772,7 +774,25 @@ class Requests(unittest.TestCase):
         self.assertEqual(row['status'], 'prepared')
         self.assertIsNone(row['outcome'])  # not waiting on Kim any more
         self.assertEqual(json.loads(row['next_action'])['kind'], 'email')  # the handoff step is gone; the own step leads
+        self.assertEqual(row['title'], 'Log the export bug')  # the owner's own to-do, not waiting on Kim
         self.assertFalse(self.store.handoff_mine_card(card))  # once: nothing left to change
+        with self.store.connect() as db:  # a title the owner wrote, or one about someone else, stays as it is
+            self.assertIsNone(own_title(db, card, 'Waiting on Pat: log the export bug'))
+            db.execute("UPDATE suggestions SET title='Waiting on Kim: my words',title_source='user' WHERE id=?", (card,))
+        self.store.handoff_mine_card(card)
+        self.assertEqual(self.card_row(card)['title'], 'Waiting on Kim: my words')
+
+    def test_do_it_myself_on_a_promise_to_do_takes_its_title_from_what_was_promised(self):
+        """A to-do from someone else's promise: its own title is what they promised, whole, not the cut one."""
+        card = self.ready_card([], 'k-promise')
+        what = 'log the export bug, link the issue in the tracker and check whether the nightly export still leaks any rows'
+        with self.store.connect() as db:
+            db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,suggestion_id,created_at,updated_at) "
+                       "VALUES('theirs','Kim Doe',?,?,1,'a',?,?,?,?)", (what, NOW.isoformat(), 'carded', card, NOW.isoformat(), NOW.isoformat()))
+            cut = promise_title({'direction': 'theirs'}, 'Waiting on Kim Doe: ' + what)
+            self.assertTrue(cut.endswith('…'))
+            self.assertEqual(own_title(db, card, cut), fit_title('L' + what[1:], 90))
+            self.assertIsNone(own_title(db, card, 'Export leaks rows'))  # a title the review wrote otherwise stays
 
     def test_a_change_after_the_handoff_came_back_makes_the_card_the_owners_again(self):
         self.with_kim()

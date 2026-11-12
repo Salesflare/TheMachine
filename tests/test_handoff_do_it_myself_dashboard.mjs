@@ -5,8 +5,8 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
 // A handoff that ran out: the to-do's prepared result still waits on the teammate and leads with Review handoff. Do it
-// myself makes it the owner's own (fleet_handoff_mine, Store.handoff_mine_card): it leaves Waiting on others for For you,
-// and its own buttons lead (Mark done), not the handoff. At 390 and 1440, light and dark; SHOTS=<dir> for screenshots.
+// myself makes it the owner's own (fleet_handoff_mine, Store.handoff_mine_card): it leaves Waiting on others for For you
+// with its own title and its own buttons leading (Mark done), not the handoff; the toast says where it went. At 390 and 1440, light and dark; SHOTS=<dir> for screenshots.
 // No network beyond this fake server; made-up data only.
 const dashboard=await dashboardPage();
 const handoff={kind:'handoff',label:'Hand off to Kim',revision:'h00000000001',to_email:'kim@acme.example',to_name:'Kim Doe',body:'Can you log the export bug and link the issue?'};
@@ -21,7 +21,7 @@ const server=createServer(async(req,res)=>{res.setHeader('Content-Type','applica
  if(req.url==='/api/status'){res.end(JSON.stringify(state));return}
  if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   // what the service does now: the handoff note stays, the result no longer waits on them, the handoff step goes
-  if(call.action==='fleet_handoff_mine')Object.assign(card,{fleet_handoff:{...card.fleet_handoff,back:false},outcome:null,next_actions:[]});
+  if(call.action==='fleet_handoff_mine')Object.assign(card,{title:'Log the export bug',fleet_handoff:{...card.fleet_handoff,back:false},outcome:null,next_actions:[]});
   res.end(JSON.stringify({ok:true}));return}
  if(req.url.startsWith('/api/fleet')){res.end(JSON.stringify(view));return}
  res.statusCode=404;res.end('{}')});
@@ -47,7 +47,9 @@ try{
   assert.equal(await primary.count(),1);
   assert.equal(await primary.innerText(),'Mark done');  // its own to-do button leads
   assert.equal(await c.locator('[data-fleet-handoff].primary,[data-handoff-mine]').count(),0);  // no Review handoff, no Do it myself again
-  assert.doesNotMatch(await c.innerText(),/Waiting on: /);
+  assert.doesNotMatch(await c.innerText(),/Waiting on/);  // neither the line nor the title
+  assert.match(await c.innerText(),/^Log the export bug/);  // its own title
+  assert.equal(await page.locator('#toast').innerText(),'Moved to For you.');
   assert.match(await c.innerText(),/Kim Doe didn’t answer in time\./);  // the note stays
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'scrolls sideways');
   if(process.env.SHOTS){await c.scrollIntoViewIfNeeded();await page.screenshot({path:`${process.env.SHOTS}/do-it-myself-${width}-${scheme}.png`})}
