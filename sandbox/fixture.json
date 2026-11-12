@@ -7356,6 +7356,76 @@
    }
   },
   {
+   "key": "check:receipt:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 35,
+   "title": "Your ticket to Lyon on Thursday",
+   "body": "Seat 42, coach 7. Departs 08:12.",
+   "metadata": {
+    "from": "Harbor Rail <tickets@harborrail.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-receipt-0",
+    "message-id": "<check.receipt.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:webinar:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 37,
+   "title": "Starting in one hour: forecasting that holds up",
+   "body": "Join with the link below.",
+   "metadata": {
+    "from": "Pipeline Live <events@pipelinelive.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-webinar-0",
+    "message-id": "<check.webinar.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:ooo:0",
+   "account_id": "work-gmail",
+   "kind": "gmail.message",
+   "minutes_ago": 39,
+   "title": "Out of office: back Monday",
+   "body": "I am away until Monday with no email.",
+   "metadata": {
+    "from": "Femi Adeyemi <femi@kestrelenergy.example>",
+    "to": "alex@lumenlabs.example",
+    "labels": [
+     "INBOX",
+     "UNREAD"
+    ],
+    "thread_id": "t-check-ooo-0",
+    "message-id": "<check.ooo.0@mail.example>"
+   }
+  },
+  {
+   "key": "check:wa:1",
+   "account_id": "home-whatsapp",
+   "kind": "whatsapp.message",
+   "minutes_ago": 34,
+   "title": "Jamie Morgan",
+   "body": "Boarding now",
+   "metadata": {
+    "chat_name": "Jamie Morgan",
+    "chat_id": "jamiemorgan",
+    "from_me": false,
+    "group": false,
+    "sender_display": "Jamie Morgan",
+    "message_id": "wa-check-wa-1"
+   }
+  },
+  {
    "key": "check:wa:0",
    "account_id": "home-whatsapp",
    "kind": "whatsapp.message",
@@ -7385,6 +7455,34 @@
     "sender_display": "Tomasz Nowak",
     "user_id": "U2200",
     "message_ts": "1762000027.000300"
+   }
+  },
+  {
+   "key": "check:phone:0",
+   "account_id": "home-phone",
+   "kind": "android.notification",
+   "minutes_ago": 29,
+   "title": "Updates ready: 3 apps were updated",
+   "body": "Updates ready: 3 apps were updated",
+   "metadata": {
+    "package_name": "com.android.vending",
+    "app_name": "com.android.vending",
+    "notification_key_hash": "check-phone-0",
+    "truncated": true
+   }
+  },
+  {
+   "key": "check:phone:1",
+   "account_id": "home-phone",
+   "kind": "android.notification",
+   "minutes_ago": 31,
+   "title": "Your parcel is in the locker on Station Street",
+   "body": "Your parcel is in the locker on Station Street",
+   "metadata": {
+    "package_name": "com.parcelpal.mobile.android",
+    "app_name": "com.parcelpal.mobile.android",
+    "notification_key_hash": "check-phone-1",
+    "truncated": true
    }
   }
  ],
@@ -9400,8 +9498,14 @@
    "check:meet:0",
    "check:thanks:0",
    "check:news:0",
+   "check:receipt:0",
+   "check:webinar:0",
+   "check:ooo:0",
+   "check:wa:1",
    "check:wa:0",
    "check:slack:0",
+   "check:phone:0",
+   "check:phone:1",
    "story:pricing:2"
   ],
   "why": {
@@ -9409,8 +9513,14 @@
    "check:meet:0": "Coffee already set for Thursday 10:00",
    "check:thanks:0": "Thanks for the fix, nothing to answer",
    "check:news:0": "Newsletter, nothing in it needs a reply",
+   "check:receipt:0": "A ticket receipt, the trip is booked",
+   "check:webinar:0": "A webinar reminder you never signed up for",
+   "check:ooo:0": "An out-of-office reply, nothing to do",
+   "check:wa:1": "Just letting you know they landed",
    "check:wa:0": "Just letting you know they landed",
-   "check:slack:0": "Office news for everyone, nothing to do"
+   "check:slack:0": "Office news for everyone, nothing to do",
+   "check:phone:0": "App updates, nothing to do",
+   "check:phone:1": "A delivery notice, the parcel is in"
   }
  }
 }

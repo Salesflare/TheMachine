@@ -60,7 +60,7 @@ LinkedIn, X y Salesflare siguen su propio ritmo.
 
 Tras una revisión que leyó mensajes nuevos, una línea encima de tus tareas dice lo que encontró en todas las fuentes, como «13 mensajes revisados a las 16:11 · nada te necesita» o «· 2 tareas nuevas». Cuando una tarea nueva espera un momento mejor, como tu resumen de la mañana, dice hasta cuándo: «1 tarea en espera hasta mañana 08:30».
 
-Toca la línea para ver cada conversación, chat y notificación, con el icono de su fuente: quién escribió, el asunto o las primeras palabras, y su tarea nueva o por qué no hacía falta nada, como «Solo en copia, responde un compañero» o «Reunión ya fijada para el jueves». Una conversación no muestra motivo cuando la revisión solo dio uno vago. Toca uno para leerlo. La línea se queda 12 horas después de la revisión.
+Toca la línea para ver cada conversación, chat y notificación, con el icono de su fuente: quién escribió, el asunto o las primeras palabras, y su tarea nueva o por qué no hacía falta nada, como «Solo en copia, responde un compañero» o «Reunión ya fijada para el jueves». Una conversación no muestra motivo cuando la revisión solo dio uno vago. Toca uno para leerlo. Se ven los 10 primeros, y un toque debajo muestra el resto. Un número tras un nombre, como (3), es cuántos mensajes nuevos tiene ese chat. Una notificación del móvil sobre un mensaje que ya está en la lista sale solo una vez. La línea se queda 12 horas después de la revisión.
 
 Solo cuenta el correo que te llega. Tus propias respuestas se leen por contexto y promesas, pero no son correo nuevo. Los correos que tu Machine te envía, como tu resumen de la mañana o un aviso de arreglo, nunca se leen ni se listan. Los correos sobre pagos, tu prueba o una invitación se leen como siempre.
 

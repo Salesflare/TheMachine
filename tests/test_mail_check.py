@@ -51,9 +51,15 @@ class MailCheck(unittest.TestCase):
         with self.store.connect() as db:
             return [db.execute('SELECT id FROM events WHERE source_id=?', (e['source_id'],)).fetchone()[0] for e in events]
 
-    def view(self, at=NOW):
+    def view(self, at=NOW, times=False):
+        """The view, each row's time (its newest message) left out unless `times`: every row has one."""
         with self.store.connect() as db:
-            return check_now.mail_check(db, at, own=[OWNER])
+            got = check_now.mail_check(db, at, own=[OWNER])
+        for row in (got or {}).get('threads', []):
+            self.assertTrue(row['at'])
+            if not times:
+                del row['at']
+        return got
 
     def test_a_check_says_what_it_read_its_new_to_do_held_until_later_and_why_each_other_thread_needed_nothing(self):
         cc, meeting, vague, pricing, reply, chat = self.add(
@@ -125,7 +131,7 @@ class MailCheck(unittest.TestCase):
                                              'kind': 'slack.message', 'event': slack, 'todo': 'Approve the Delta discount'})
         rows = {r['kind']: r for r in got['threads'][1:]}
         self.assertEqual(rows['whatsapp.message'], {'from': 'Ivo Lark', 'subject': 'Bringing snacks on Friday', 'source': 'chat', 'kind': 'whatsapp.message',
-                                                    'event': wa2, 'why': 'Group chat chatter, nothing asked of you'})  # the newest message, not the owner's
+                                                    'event': wa2, 'why': 'Group chat chatter, nothing asked of you', 'n': 2})  # the newest message, not the owner's
         self.assertEqual(rows['android.notification'], {'from': 'Parcels', 'subject': 'Parcel: Delivered to your door', 'source': 'notification',
                                                         'kind': 'android.notification', 'event': phone, 'why': 'A delivery notice, the parcel is in'})
         self.assertEqual(rows['calendar.event'], {'from': 'Ola Brisk', 'subject': 'Planning review', 'source': 'update', 'kind': 'calendar.event',
@@ -135,6 +141,69 @@ class MailCheck(unittest.TestCase):
         self.assertNotIn(log, [r['event'] for r in got['threads']])
         self.assertEqual(len(got['threads']), 5)
         self.assertNotIn(wa1, [r['event'] for r in got['threads']])
+
+    def test_rows_read_like_an_inbox_apps_by_name_slack_by_name_never_an_id_and_a_phone_echo_once(self):
+        """An owner's list showed phone apps by package ("com.linkedin.android"), a Slack DM as "DM U0…" with "<@U0…>" and
+        "<https://…>" in its words, a LinkedIn notification right above the LinkedIn message it was about, and a total
+        its rows didn't add up to. Now: apps by name, Slack members by name (or a "Slack DM" with no id), plain words,
+        the echo once, and each row's count of new messages."""
+        phone = lambda package, title, body, minutes=30: other('phone', 'android.notification', title, body,
+                                                                {'package_name': package, 'app_name': package}, minutes)
+        with self.store.connect() as db:
+            db.execute("INSERT INTO identity_names(identifier,name,email,checked_at) VALUES('slack:U0FENNRAE12','Rae Fenn',NULL,?)", (NOW.isoformat(),))
+        dm = {'channel_id': 'D1', 'channel_name': 'DM U0ABCDE1234', 'conversation_type': 'im', 'user_id': 'U0ABCDE1234'}
+        ids = self.add(
+            phone('com.linkedin.android', '1 new message: Ola Brisk', '1 new message: Ola Brisk - Hi there, we last spoke at the fair in May about a p'),
+            other('work', 'linkedin.message', 'Ola Brisk', 'Hi there, we last spoke at the fair in May about a pilot for your team.',
+                  {'conversation_id': 'li1', 'sender_display': 'Ola Brisk'}, 31),
+            phone('com.linkedin.android', 'Ivo Lark viewed your profile', 'Ivo Lark viewed your profile', 20),
+            phone('com.kbc.mobile.android.phone.kbc', 'Payment received', 'Payment received: 12,00 EUR', 21),
+            phone('computer.themachine.app', 'Done: Post the launch note', 'Done: Post the launch note', 22),
+            phone('com.acme.mobile.android', 'Your order shipped', 'Your order shipped', 23),
+            phone('com.whatsapp', 'Noor Pell', 'Noor Pell: the train is late', 24),
+            other('work', 'slack.message', '#DM U0ABCDE1234: Ping', 'Ping <@U0ABCDE1234> about <https://docs.example/a/b> and <https://plan.example/x|the plan>, *today*', dm, 25),
+            other('work', 'slack.message', '#DM U0ABCDE1234: ok', 'ok   thx', dm, 15),
+            other('work', 'slack.message', '#support: x', 'Can you look at <#C77|billing> &amp; ping <@U0FENNRAE12>?',
+                  {'channel_id': 'C9', 'channel_name': 'support', 'user_id': 'U0FENNRAE12'}, 26))
+        claim = self.store.begin_analysis(['work', 'phone'], 120)
+        self.store.finish_analysis(claim['analysis_id'], 'Nothing new')
+        got = self.view(times=True)
+        rows = got['threads']
+        shown = json.dumps(rows)
+        self.assertNotRegex(shown, r'U0[A-Z0-9]{8}')  # never a Slack member id
+        self.assertNotIn('com.', shown)  # never a package name
+        self.assertNotIn('<', shown)  # no Slack markup
+        by_app = {r['from']: r['subject'] for r in rows if r['source'] == 'notification'}
+        self.assertEqual(by_app, {'LinkedIn': 'Ivo Lark viewed your profile', 'KBC Mobile': 'Payment received: 12,00 EUR',
+                                  'The Machine': 'Done: Post the launch note', 'Acme': 'Your order shipped', 'WhatsApp': 'Noor Pell: the train is late'})
+        # LinkedIn's notification about Ola's message is that message: one row, counted once
+        self.assertEqual([r['from'] for r in rows if r['kind'] == 'linkedin.message'], ['Ola Brisk'])
+        self.assertNotIn(ids[0], [r['event'] for r in rows])
+        self.assertEqual(got['read'], 9)
+        self.assertEqual(sum(r.get('n', 1) for r in rows), got['read'])  # the rows add up to the line's total
+        dm_row, = [r for r in rows if r['kind'] == 'slack.message' and r.get('dm')]
+        self.assertEqual({k: dm_row[k] for k in ('from', 'subject', 'n', 'event')}, {'from': '', 'subject': 'ok thx', 'n': 2, 'event': ids[8]})
+        channel, = [r for r in rows if r['kind'] == 'slack.message' and not r.get('dm')]
+        self.assertEqual((channel['from'], channel['subject']), ('Rae Fenn', 'Can you look at #billing & ping @Rae Fenn?'))
+        self.assertTrue(all(r['at'] for r in rows))
+
+    def test_slack_markup_reads_as_plain_words_and_an_app_without_a_known_label_gets_a_name(self):
+        from machine.sources.android import android_app_shown
+        from machine.sources.slack import slack_plain
+        self.assertEqual(slack_plain('Ping <@U0ABCDE1234> about <https://docs.example/a/b> and <https://plan.example/x|the plan>, *today*'),
+                         'Ping @someone on Slack about docs.example/… and the plan, today')
+        self.assertEqual(slack_plain('<!here> see <#C1|deals>, <mailto:sam@x.example|Sam> or <https://www.x.example> &lt;3 _soon_ ~no~'),
+                         '@here see #deals, Sam or x.example <3 soon no')
+        self.assertEqual(slack_plain('2*3*4 and snake_case_name stay'), '2*3*4 and snake_case_name stay')
+        self.assertEqual([android_app_shown(p) for p in ('com.linkedin.android', 'com.android.vending', 'computer.themachine.app',
+                                                         'com.kbc.mobile.android.phone.kbc', 'com.acme.mobile.android', 'nl.abn.ab', 'com.google.android.apps.fit', '')],
+                         ['LinkedIn', 'Google Play', 'The Machine', 'KBC Mobile', 'Acme', 'ABN', 'Google Fit', 'Unknown app'])
+        self.assertEqual(android_app_shown('com.acme.app', 'Acme Shop'), 'Acme Shop')  # a label the phone gave wins
+        # the same name on a to-do's source line
+        from machine.store.cards import source_text
+        line = source_text({'kind': 'android.notification', 'occurred_at': NOW.isoformat(),
+                            'metadata': {'package_name': 'com.linkedin.android', 'app_name': 'com.linkedin.android'}})
+        self.assertIn(' from LinkedIn · ', line)
 
     def test_on_a_sealed_database_the_words_stay_sealed_at_rest_and_the_app_reads_them(self):
         # message_protection on: a chat's words and the review's reason are blobs in the file, and the view opens them

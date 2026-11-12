@@ -18,13 +18,21 @@ function mailCheckLine(m){const [tmw,when]=m.held&&m.held_until?heldAt(m.held_un
 function mailCheckWhy(r){if(r.todo){const [tmw,when]=r.held_until?heldAt(r.held_until):[];
   return html`<span class="mc-why mc-todo"><b>${when?t(tmw?'Held until tomorrow {}':'Held until {}',when):t('New to-do')}</b> <span translate="no">${r.todo}</span></span>`}
  return r.later?html`<span class="mc-why">${t('Read again in the next check')}</span>`:r.why?html`<span class="mc-why" translate="no">${r.why}</span>`:''}
-// An email always names its sender and subject; a chat, a notification or an update shows what it has (Unknown sender when that's nothing)
-function mailCheckRow(r){const mail=!r.source||r.source==='email',who=r.from||(mail||!r.subject?t('Unknown sender'):''),what=r.subject||(mail?t('(no subject)'):'');
- const body=html`<span class="mc-who">${r.kind?html`<span class="mc-src">${icon(kindService(r.kind))}</span>`:''}${who?html`<b translate="no">${who}</b> `:''}<span translate="no">${what}</span></span>${mailCheckWhy(r)}`;
+// Read like an inbox: the source's icon, who (a person, or an app by name; a Slack DM with no name yet as "Slack DM"),
+// how many new messages when more than one (the rows add up to the line's total), the subject or first words in a quieter
+// color, and the time. An email always names its sender and subject (Unknown sender when a chat or update has nothing).
+function mailCheckRow(r){const mail=!r.source||r.source==='email',who=r.from||(r.dm?t('Slack DM'):mail||!r.subject?t('Unknown sender'):''),what=r.subject||(mail?t('(no subject)'):''),at=checkClock(r.at);
+ const body=html`<span class="mc-top"><span class="mc-who">${r.kind?html`<span class="mc-src">${icon(kindService(r.kind))}</span>`:''}${who?html`<b translate="no">${who}</b>`:''}${r.n>1?html`<span class="mc-n" title="${t(['{} message','{} messages'],r.n)}"> (${r.n})</span>`:''} <span class="mc-what" translate="no">${what}</span></span>${at?html`<time class="mc-at">${at}</time>`:''}</span>${mailCheckWhy(r)}`;
  return html`<li>${r.event!=null?html`<button type="button" class="mc-row" data-mc-event="${r.event}">${body}</button>`:body}</li>`}
+// The first MC_SHOWN rows, the rest behind "Show N more": every thread the check read can be seen
+const MC_SHOWN=10;let mailCheckAll=false;
 function mailCheckBlock(){const m=state?.mail_check;if(!m?.read||chatOpen()||firstLookInfo(state.review_live||{}))return '';
- return html`<div class="mail-check"><button type="button" class="mc-line" data-mail-check aria-expanded="${mailCheckOpen}">${raw(CHEVRON)}<span>${mailCheckLine(m)}</span></button>${mailCheckOpen?html`<ul class="mc-list">${m.threads.map(mailCheckRow)}${m.more?html`<li class="mc-more">${t(['And {} more thread','And {} more threads'],m.more)}</li>`:''}</ul>`:''}</div>`}
+ const rows=m.threads||[],hidden=mailCheckAll||rows.length<=MC_SHOWN+1?0:rows.length-MC_SHOWN;
+ return html`<div class="mail-check"><button type="button" class="mc-line" data-mail-check aria-expanded="${mailCheckOpen}">${raw(CHEVRON)}<span>${mailCheckLine(m)}</span></button>${mailCheckOpen?html`<ul class="mc-list">${(hidden?rows.slice(0,MC_SHOWN):rows).map(mailCheckRow)}${hidden?html`<li class="mc-more"><button type="button" class="mc-all" data-mc-all>${t('Show {} more',hidden)}</button></li>`:m.more?html`<li class="mc-more">${t(['And {} more thread','And {} more threads'],m.more)}</li>`:''}</ul>`:''}</div>`}
 document.addEventListener('click',e=>{const row=e.target.closest('#suggestions [data-mc-event]');if(!row)return;
  openEvent(row.dataset.mcEvent,row.querySelector('.mc-who')?.textContent.replace(/\s+/g,' ').trim()||'')});
-document.addEventListener('click',e=>{const b=e.target.closest('#suggestions [data-mail-check]');if(!b)return;mailCheckOpen=!mailCheckOpen;
- const box=b.closest('.mail-check'),next=mailCheckBlock();if(!box||!next)return;box.replaceWith(htmlNodes(next));$('#suggestions [data-mail-check]')?.focus()});
+document.addEventListener('click',e=>{const b=e.target.closest('#suggestions [data-mail-check],#suggestions [data-mc-all]');if(!b)return;
+ const all=b.hasAttribute('data-mc-all');if(all)mailCheckAll=true;else{mailCheckOpen=!mailCheckOpen;mailCheckAll=false}
+ const box=b.closest('.mail-check'),next=mailCheckBlock();if(!box||!next)return;box.replaceWith(htmlNodes(next));
+ // after Show more, focus moves to the first row it showed
+ (all?document.querySelectorAll('#suggestions .mc-list > li')[MC_SHOWN]?.querySelector('button'):$('#suggestions [data-mail-check]'))?.focus()});

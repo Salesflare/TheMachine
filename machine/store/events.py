@@ -16,7 +16,7 @@ import uuid
 import error_feed
 import graph
 from machine.config import LOG
-from machine.sources.android import ANDROID_APP_NAMES, android_app_name
+from machine.sources.android import ANDROID_APP_NAMES, android_app_name, android_app_shown
 from machine.sources.calendar import (
     all_day_span,
     calendar_edit_times,
@@ -451,7 +451,7 @@ class EventsStore:
             rows = slack_named(db, rows)
         for row in rows:
             if row.get('kind') == 'android.notification':
-                row['metadata']['app_name'] = android_app_name(row['metadata'].get('package_name', 'Unknown app'))
+                row['metadata']['app_name'] = android_app_shown(row['metadata'].get('package_name'))  # "LinkedIn", never "com.linkedin.android"
         return rows
 
     def move_meeting_transcripts(self, db):

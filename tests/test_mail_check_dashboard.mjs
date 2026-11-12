@@ -110,6 +110,31 @@ try{
   const out=lines.map(([lang,text])=>{span.textContent=text;return [lang,text,b.getBoundingClientRect().height]});span.textContent=kept;return out},lines);
  const one=heights[0][2];
  for(const [lang,text,h] of heights)assert.ok(h<=one+1,`${lang} wraps at 390: "${text}" (${h}px, one line is ${one}px)`);
+ // A long check reads like an inbox and hides nothing: the first 10 rows, "Show N more" for the rest, a row's new
+ // messages as "(3)" so the rows add up to the line's total, the time, and a Slack DM with no name yet as "Slack DM"
+ const long={...quiet,read:16,counts:{email:12,chat:4},threads:[
+  {from:'',dm:true,subject:'Will check tonight',source:'chat',kind:'slack.message',event:41,at:at(-20)},
+  {from:'Noor Pell',n:3,subject:'Bringing snacks on Friday',source:'chat',kind:'whatsapp.message',event:42,at:at(-25)},
+  ...Array.from({length:11},(_,i)=>em('Sender '+i,'Note '+i,50+i,{at:at(-30-i)})),
+  {from:'LinkedIn',subject:'Ola Brisk sent you a message',source:'notification',kind:'android.notification',event:70,at:at(-60)}]};
+ assert.equal(long.threads.reduce((n,r)=>n+(r.n||1),0),long.read,'the fixture adds up');
+ mail=long;await page.evaluate(()=>refresh());
+ await page.waitForFunction(()=>/16 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
+ assert.equal(await page.locator('#suggestions .mc-list li .mc-row').count(),10,'the first 10');
+ assert.equal((await rows()).at(-1),'Show 4 more');
+ assert.equal((await rows())[0],'Slack DM Will check tonight 16:00');
+ assert.equal((await rows())[1],'Noor Pell (3) Bringing snacks on Friday 15:55');
+ assert.ok(!(await rows()).some(r=>/\bU0[A-Z0-9]{6,}|com\.\w+\.\w+/.test(r)),'never an id or a package name');
+ const whoColor=await page.evaluate(()=>{const r=document.querySelector('#suggestions .mc-row');return [getComputedStyle(r.querySelector('.mc-who b')).color,getComputedStyle(r.querySelector('.mc-what')).color]});
+ assert.notEqual(whoColor[0],whoColor[1],'the words are quieter than who');
+ await page.locator('#suggestions [data-mc-all]').click();
+ await page.waitForFunction(()=>document.querySelectorAll('#suggestions .mc-list li .mc-row').length===14);
+ assert.equal((await rows()).at(-1),'LinkedIn Ola Brisk sent you a message 15:20');
+ assert.equal(await page.evaluate(()=>document.activeElement?.dataset.mcEvent),'58','focus on the first row it showed');
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=390),'no sideways scroll with times');
+ // folded and opened again: the first 10 again
+ await page.locator('#suggestions .mc-line').click();await page.locator('#suggestions .mc-line').click();
+ assert.equal(await page.locator('#suggestions .mc-list li .mc-row').count(),10);
  // No check with new messages in the last hours: no line
  mail=null;await page.evaluate(()=>refresh());await page.locator('#suggestions .mail-check').waitFor({state:'detached'});
  // A thread's words are data: markup in them stays text

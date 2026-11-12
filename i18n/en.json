@@ -4677,6 +4677,7 @@
  "Skipped. The next one comes {}.": "Skipped. The next one comes {}.",
  "Skipped: {}.": "Skipped: {}.",
  "Slack": "Slack",
+ "Slack DM": "Slack DM",
  "Slack DM with {} (a source)": "Slack DM with {}",
  "Slack answered for another account": "Slack answered for another account",
  "Slack button labels must say Send, such as Send to Sam": "Slack button labels must say Send, such as Send to Sam",

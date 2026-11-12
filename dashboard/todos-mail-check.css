@@ -8,12 +8,19 @@
 .mail-check .mc-list{list-style:none;margin:4px 0 0 20px;padding:0;border-left:1px solid var(--border)}
 .mail-check .mc-list li{padding:6px 0 6px 12px}
 .mail-check .mc-row{display:block;width:100%;min-width:0;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
-.mail-check .mc-row:hover .mc-who>span:last-child{text-decoration:underline}
+.mail-check .mc-row:hover .mc-what{text-decoration:underline}
+/* one line like an inbox: who in the text color, the words quieter, the time at the end */
+.mail-check .mc-top{display:flex;align-items:baseline;gap:10px;min-width:0}
 .mail-check .mc-who,.mail-check .mc-why{display:block;margin:0;overflow-wrap:anywhere}
-.mail-check .mc-who{color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mail-check .mc-who{flex:1;min-width:0;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mail-check .mc-who b{font-weight:var(--fw-medium,600)}
+.mail-check .mc-n{color:var(--faint);font-variant-numeric:tabular-nums}
+.mail-check .mc-what{color:var(--muted)}
+.mail-check .mc-at{flex:none;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}
 .mail-check .mc-src .icon{display:inline-grid;width:16px;height:16px;margin:0 6px 0 0;vertical-align:-3px;border:0;border-radius:0;background:none;color:var(--faint)}
 .mail-check .mc-src .icon svg{width:14px;height:14px}
 .mail-check .mc-why{font-size:var(--fs-xs);color:var(--muted)}
 .mail-check .mc-todo b{font-weight:var(--fw-medium,600);color:var(--text)}
 .mail-check .mc-more{font-size:var(--fs-xs);color:var(--faint)}
+.mail-check .mc-all{min-height:24px;margin:0;padding:0;border:0;background:none;box-shadow:none;color:var(--muted);font:inherit;text-decoration:underline;text-decoration-color:var(--border-strong);text-underline-offset:3px;cursor:pointer}
+.mail-check .mc-all:hover{color:var(--text)}

@@ -21,12 +21,46 @@ ANDROID_APP_NAMES = {
     'com.openai.chatgpt': 'ChatGPT', 'com.tailscale.ipn': 'Tailscale', 'org.telegram.messenger': 'Telegram',
     'com.whatsapp': 'WhatsApp', 'com.whatsapp.w4b': 'WhatsApp Business',
     'com.android.chrome': 'Chrome', 'com.google.android.calendar': 'Google Calendar',
+    'computer.themachine.app': 'The Machine', 'com.android.vending': 'Google Play', 'com.linkedin.android': 'LinkedIn',
+    'com.kbc.mobile.android.phone.kbc': 'KBC Mobile', 'com.Slack': 'Slack', 'com.microsoft.teams': 'Teams',
+    'com.microsoft.office.outlook': 'Outlook', 'com.google.android.apps.messaging': 'Messages',
+    'com.google.android.dialer': 'Phone', 'com.instagram.android': 'Instagram', 'com.facebook.orca': 'Messenger',
+    'com.facebook.katana': 'Facebook', 'com.twitter.android': 'X', 'org.thoughtcrime.securesms': 'Signal',
+    'com.spotify.music': 'Spotify', 'com.google.android.youtube': 'YouTube', 'com.google.android.apps.maps': 'Google Maps',
+    'com.google.android.apps.photos': 'Google Photos', 'com.google.android.apps.docs': 'Google Drive',
+    'com.google.android.keep': 'Google Keep', 'com.google.android.apps.meetings': 'Google Meet', 'us.zoom.videomeetings': 'Zoom',
+    'com.intercom.android': 'Intercom', 'com.stripe.android.dashboard': 'Stripe', 'com.github.android': 'GitHub',
 }
 
 
 def android_app_name(package):
     # Exact known package labels only; unknown apps retain their package ID.
     return ANDROID_APP_NAMES.get(package, package)
+
+
+# The parts of a package name that say nothing about the app: its domain's end and platform words
+PACKAGE_NOISE = {'com', 'org', 'net', 'io', 'co', 'app', 'apps', 'android', 'mobile', 'phone', 'client', 'main', 'prod', 'release',
+                 'free', 'lite', 'ui', 'activity', 'launcher'}
+
+
+def android_app_shown(package, app_name=None):
+    """An app's name as people read it: its known label, else a name read from its package ("com.acme.mobile.android"
+    as "Acme", "nl.abn.ab" as "ABN"), never the raw reverse-domain string. The stored app_name stays as it is
+    (android_app_name) for an agent's exact matching; this is for lists people scan."""
+    package = str(package or '')
+    if package in ANDROID_APP_NAMES:
+        return ANDROID_APP_NAMES[package]
+    name = str(app_name or '').strip()
+    if name and name != package and '.' not in name:
+        return name
+    parts = [p for p in re.split(r'[._]', package) if p]
+    words = [p for p in parts[1:] if p.casefold() not in PACKAGE_NOISE and not p.isdigit()] or parts[-1:]
+    if not words:
+        return 'Unknown app'
+    word = words[0]
+    if word.casefold() == 'google' and len(words) > 1:
+        return 'Google ' + words[-1].capitalize()
+    return word.upper() if len(word) <= 3 else word[:1].upper() + word[1:]
 
 
 class Android:
