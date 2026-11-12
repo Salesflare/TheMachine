@@ -9,9 +9,9 @@ import imap_mail
 import imap_presets
 
 ACCOUNT = {'id': 'work-imap', 'service': 'imap', 'transport': 'imap', 'boundary': 'work:Acme'}
-FIELDS = [['imap_host', 'IMAP server'], ['imap_port', 'IMAP port'], ['imap_security', 'IMAP security', ['SSL/TLS', 'STARTTLS']],
-          ['username', 'Username'], ['smtp_host', 'SMTP server'], ['smtp_port', 'SMTP port'],
-          ['smtp_security', 'SMTP security', ['SSL/TLS', 'STARTTLS']]]
+FIELDS = [['username', 'Username'],  # its own row; then one row per server (dashboard/connections-cards.js)
+          ['imap_host', 'IMAP server'], ['imap_port', 'IMAP port'], ['imap_security', 'IMAP security', ['SSL/TLS', 'STARTTLS']],
+          ['smtp_host', 'SMTP server'], ['smtp_port', 'SMTP port'], ['smtp_security', 'SMTP security', ['SSL/TLS', 'STARTTLS']]]
 STARTTLS_PORTS = (25, 143, 587, 1025, 1143, 2525)
 IDENTITY = {'sent_folder', 'imap_host', 'imap_port', 'imap_security', 'username', 'smtp_host', 'smtp_port',
             'smtp_security'}  # a mailbox's own server settings: never copied to another one (onboarding.new_account)

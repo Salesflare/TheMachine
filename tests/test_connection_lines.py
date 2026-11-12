@@ -20,6 +20,9 @@ class ConnectionLines(unittest.TestCase):
                 self.assertTrue(what and what.endswith('.') and len(what) <= 80, what)
                 self.assertNotIn('—', what)
 
+    def test_other_email_card_reads_like_gmail_not_setup_copy(self):
+        self.assertEqual(self.says({'id': 'x', 'service': 'imap'})['what'], onboarding.WHAT['gmail'])
+
     def test_what_it_can_do_only_where_it_can(self):
         cases = [
             ({'service': 'gmail', 'transport': 'gog'}, 'send'),

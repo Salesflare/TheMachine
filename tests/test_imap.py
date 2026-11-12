@@ -651,7 +651,8 @@ class Setup(Base):
         form = onboarding.web_form(self.config, 'imap')
         self.assertEqual(form['ask'], [['email', 'Email address']])
         self.assertEqual(form['secret'], 'Password')
-        self.assertEqual([f[1] for f in form['advanced']][:3], ['IMAP server', 'IMAP port', 'IMAP security'])
+        self.assertEqual([f[1] for f in form['advanced']], ['Username', 'IMAP server', 'IMAP port', 'IMAP security',
+                                                           'SMTP server', 'SMTP port', 'SMTP security'])  # by role
         ui = onboarding.WebUI(wait=1)
         ui.prefill({'Email address': USER, 'IMAP server': '127.0.0.1', 'IMAP port': str(self.server.port)},
                    {'Password': PASSWORD})

@@ -119,14 +119,15 @@ def crm_sync_health(account, state):
 # A connection's card, under Connected: what it brings in (the line + Add shows for it: onboarding.WHAT, a connector's
 # SETUP['what']) and what it can do, each only after the owner's OK: 'send' (email), 'reply' (a chat, LinkedIn, X or
 # Intercom message), 'calendar' (add or change an event). A connection a Fleet shares only reads. Docs says its own.
-# With Can do things off (abilities.py) it says none.
+# With Can do things off (abilities.py) it says none. Other email's + Add line names providers (setup copy), so its
+# card says Gmail's.
 REPLY_SERVICES = abilities.REPLY_SERVICES
 
 
 def connector_says(account, service):
     import onboarding
     try:
-        what = onboarding.setup_of(service).get('what')
+        what = onboarding.setup_of('gmail' if service == 'imap' else service).get('what')
     except Exception:  # noqa: BLE001 - a card without its line, never a status without cards
         what = None
     acts = ''
