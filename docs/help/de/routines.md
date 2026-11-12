@@ -29,7 +29,7 @@ Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine 
 
 **Spam aufräumen** macht ein To-do pro Bereich mit Mail von unbekannten Absendern, die nach Spam aussieht, jeweils mit **Spam** oder **Kein Spam**. Outlook verschiebt Spam in Junk-E-Mail, Gmail markiert ihn als Spam. Er prüft jede Stunde, damit Spam meist schon da ist, bevor du dazu kommst. Neuer Spam kommt auf dasselbe To-do, solange es offen ist.
 
-Er geht nur mit Mail, die The Machine verschieben darf. Gmail mit nur Leserechten, wie auf einer gehosteten Machine, geht nicht: Die Vorlage sagt das statt **Hinzufügen**. Outlook geht.
+Er geht nur mit Mail, die The Machine verschieben darf. Gmail mit nur Leserechten, wie auf einer gehosteten Machine, geht nicht: Die Vorlage sagt das statt **Hinzufügen**.
 
 Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in einem Verlauf als Gespräch, in dem du geschrieben hast. Kommt Mail von einem Absender, den du als Spam markiert hast (im To-do oder in deinem Postfach), wieder durch, steht sie im nächsten To-do als **Schon einmal als Spam markiert**. Was du selbst in den Spam verschoben hast, hilft auch, ähnliche Mail zu erkennen.
 

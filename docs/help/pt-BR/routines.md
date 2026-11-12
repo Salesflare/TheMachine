@@ -27,7 +27,7 @@ Recibos, pedidos e avisos de pagamento ficam de fora. Um e-mail que chega por um
 
 **Limpeza de spam** cria uma tarefa por área com e-mails de remetentes desconhecidos que parecem spam, cada um com **Spam** ou **Não é spam**. O Outlook move o spam para Lixo eletrônico e o Gmail marca como spam. Ela verifica a cada hora, então o spam costuma estar lá antes de você chegar nele. Spam novo vai para a mesma tarefa enquanto ela estiver aberta.
 
-Só funciona com e-mails que a The Machine pode mover. O Gmail conectado só para leitura, como numa Machine hospedada, não pode: o modelo diz isso no lugar de **Adicionar**. O Outlook funciona.
+Só funciona com e-mails que a The Machine pode mover. O Gmail conectado só para leitura, como numa Machine hospedada, não pode: o modelo diz isso no lugar de **Adicionar**.
 
 Desconhecido quer dizer que você nunca escreveu para a pessoa, e um “Re:” só conta como conversa numa conversa em que você escreveu. Se e-mail de um remetente que você marcou como spam, na tarefa ou na sua caixa, passar de novo, ele aparece na próxima tarefa como **Já marcado como spam**. O que você mesmo moveu para o spam também ajuda a reconhecer e-mails parecidos.
 

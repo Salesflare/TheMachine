@@ -1777,7 +1777,7 @@
  "Gmail could not give the message ({})": "Gmail no pudo dar el mensaje ({})",
  "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail no pudo confirmar que este buzón puede enviar como {}. No se envió nada.",
  "Gmail has no signature for this address.": "Gmail no tiene firma para esta dirección.",
- "Gmail is connected read-only here, so spam can’t be moved. Outlook works.": "Aquí Gmail está conectado solo para lectura, así que el spam no se puede mover. Outlook sí funciona.",
+ "Gmail is connected read-only here, so spam can’t be moved.": "Aquí Gmail está conectado solo para lectura, así que el spam no se puede mover.",
  "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.": "Gmail está conectado en modo solo lectura. Hay que activar el permiso de envío para esta cuenta; no se envió nada.",
  "Gmail send-as": "Gmail enviar como",
  "Gmail sender identity could not be verified. Nothing was sent.": "No se pudo verificar la identidad del remitente de Gmail. No se envió nada.",

@@ -40,7 +40,7 @@ const rtTrying=r=>html`<article class="rt rt-s rt-try" data-rt="${r.id}"><h3>${r
  <div class="actions"><button type="button" class="primary" data-rt-do="accept">${t('Add')}</button><button type="button" class="quiet" data-rt-do="change">${t('Change')}</button><button type="button" class="quiet" data-rt-do="no">${t('Cancel')}</button></div></article>`;
 // Templates (routine_templates.py): ready-made routines, one tap to add; an added one leaves the list. One this Machine
 // can't run (Spam cleanup without a mailbox it may move spam in) shows why in place of Add: no sign-in here grants it
-const RT_NEEDS={gmail:'Gmail is connected read-only here, so spam can’t be moved. Outlook works.',mail:'Needs a mailbox where spam can be moved, like Outlook.'};
+const RT_NEEDS={gmail:'Gmail is connected read-only here, so spam can’t be moved.',mail:'Needs a mailbox where spam can be moved, like Outlook.'};
 const rtTemplate=x=>html`<article class="rt rt-tpl"><div><h3>${x.name}</h3><p class="rt-what">${x.what}</p>${x.needs?html`<p class="rt-needs">${t(RT_NEEDS[x.needs]||RT_NEEDS.mail)}</p>`:''}</div>${x.needs?'':html`<button type="button" class="ghost" data-rt-tpl="${x.key}">${t('Add')}</button>`}</article>`;
 const rtSection=(name,label,cards,fine)=>html`<section class="rt-sec rt-${name}" aria-label="${label}"><h2>${label}</h2>${fine?html`<p class="fine">${fine}</p>`:''}${cards}</section>`;
 // A refresh while Edit, Change or Change when is open only patches that card's test run (rtPatch), and redraws other cards

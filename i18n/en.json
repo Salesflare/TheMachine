@@ -1777,7 +1777,7 @@
  "Gmail could not give the message ({})": "Gmail could not give the message ({})",
  "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.",
  "Gmail has no signature for this address.": "Gmail has no signature for this address.",
- "Gmail is connected read-only here, so spam can’t be moved. Outlook works.": "Gmail is connected read-only here, so spam can’t be moved. Outlook works.",
+ "Gmail is connected read-only here, so spam can’t be moved.": "Gmail is connected read-only here, so spam can’t be moved.",
  "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.": "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.",
  "Gmail send-as": "Gmail send-as",
  "Gmail sender identity could not be verified. Nothing was sent.": "Gmail sender identity could not be verified. Nothing was sent.",

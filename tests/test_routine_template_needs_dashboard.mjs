@@ -34,7 +34,7 @@ try{
   assert.deepEqual(await cards.locator('h3').allInnerTexts(),['Newsletter cleanup','Spam cleanup','Birthdays']);
   const spam=cards.nth(1);
   if(kind){
-   assert.equal((await spam.locator('.rt-needs').innerText()).trim(),kind==='gmail'?'Gmail is connected read-only here, so spam can’t be moved. Outlook works.':'Needs a mailbox where spam can be moved, like Outlook.');
+   assert.equal((await spam.locator('.rt-needs').innerText()).trim(),kind==='gmail'?'Gmail is connected read-only here, so spam can’t be moved.':'Needs a mailbox where spam can be moved, like Outlook.');
    assert.equal(await spam.locator('button').count(),0,'no Add it could not keep');
   }else{
    assert.equal(await spam.locator('.rt-needs').count(),0);
