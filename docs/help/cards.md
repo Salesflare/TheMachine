@@ -38,7 +38,7 @@ A to-do on a project shows the project's name under its title. Tap it to open th
 
 **Area** under **Details** moves a to-do to your other area. What it may read and send from moves with it. **Undo** on the note moves it back.
 
-When a to-do needs your other area to go on and the messages it came from are all there, it moves there by itself and goes on. Otherwise it shows **Move to Work**, and nothing moves until you tap it. A to-do you added without picking Work or Personal moves by itself once it finds where it belongs.
+When a to-do needs your other area to go on and the messages it came from are all there, it moves there by itself and goes on. Otherwise it shows **Move to Work**, and nothing moves until you tap it. A to-do you added without picking Work or Personal moves by itself once it finds where it belongs. Until then it says neither Work nor Personal, and it stays private.
 
 A to-do can always read the messages it came from. When it needs other messages from your other area, it asks with **Use this email for this to-do**. A work mailbox you labeled Personal counts as Personal. Mail for another of your companies goes to that company's to-dos, and a to-do about your own life, like family writing to your work address, is Personal from the start.
 
@@ -124,4 +124,4 @@ A "Waiting on" to-do links your last message to them, the one you're waiting on:
 - **Message**: attach the message it's about: an email, Slack, Teams, WhatsApp, Telegram or any other message The Machine has. Search by text or sender. Each result shows where it's from, who sent it and when.
 - **Files**: tap the paperclip, paste a screenshot or drop files on the form. On a phone you can take a photo. Up to 5 files, like in the chat (see [Add files](card-chat.md#add-files)). × takes one back.
 
-The files stay with the to-do, and The Machine reads them when it works on it. Files alone are enough: it fills in the to-do from a PDF or text file.
+The files stay with the to-do, and The Machine reads them when it works on it. Files alone are enough: it fills in the to-do from a PDF or text file. A photo shows as a small picture: tap it to see it full size.

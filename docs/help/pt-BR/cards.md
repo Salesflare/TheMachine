@@ -38,7 +38,7 @@ Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; el
 
 **Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
 
-Quando uma tarefa precisa de outra área para seguir e todas as mensagens de onde ela veio estão lá, ela muda sozinha e continua. Se não, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha. Uma tarefa que você adicionou sem escolher Trabalho ou Pessoal muda sozinha assim que sabe onde fica.
+Quando uma tarefa precisa de outra área para seguir e todas as mensagens de onde ela veio estão lá, ela muda sozinha e continua. Se não, ela pede com um botão **Mover para Trabalho**. Nada muda até você tocar; depois ela continua sozinha. Uma tarefa que você adicionou sem escolher Trabalho ou Pessoal muda sozinha assim que sabe onde fica. Até lá, ela não diz Trabalho nem Pessoal e fica privada.
 
 Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa. Uma tarefa da sua vida pessoal, como a família escrevendo para o seu endereço de trabalho, é Pessoal desde o início.
 
@@ -124,4 +124,4 @@ Uma tarefa "Aguardando" (alguém prometeu algo a você) traz um link para a sua 
 - **Mensagem**: anexe a mensagem de que ela trata: um e-mail, Slack, Teams, WhatsApp, Telegram ou qualquer outra mensagem que The Machine tenha. Busque por texto ou remetente. Cada resultado mostra de onde vem, quem enviou e quando.
 - **Arquivos**: toque no clipe na caixa, cole uma captura de tela ou solte arquivos no formulário. No celular, você também pode tirar uma foto. Até 5 arquivos, dos mesmos tipos e tamanhos do chat (veja [Adicionar arquivos](card-chat.md#add-files)). × remove um.
 
-Os arquivos ficam com a tarefa: aparecem nela e no chat dela, e a The Machine lê os arquivos quando trabalha nela. Só arquivos bastam: a The Machine lê o texto de um PDF ou arquivo de texto e preenche a tarefa a partir dele.
+Os arquivos ficam com a tarefa: aparecem nela e no chat dela, e a The Machine lê os arquivos quando trabalha nela. Só arquivos bastam: a The Machine lê o texto de um PDF ou arquivo de texto e preenche a tarefa a partir dele. Uma foto aparece como uma imagem pequena: toque nela para ver em tamanho cheio.

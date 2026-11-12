@@ -38,7 +38,7 @@ Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Ti
 
 **Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.
 
-Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, und kamen ihre Nachrichten alle von dort, verschiebt sie sich von selbst und macht weiter. Sonst fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter. Eine Aufgabe, die du ohne Arbeit oder Privat angelegt hast, verschiebt sich von selbst, sobald sie weiß, wohin sie gehört.
+Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, und kamen ihre Nachrichten alle von dort, verschiebt sie sich von selbst und macht weiter. Sonst fragt sie mit einer Schaltfläche **Nach Arbeit verschieben**. Nichts wird verschoben, bevor du tippst; danach macht sie von selbst weiter. Eine Aufgabe, die du ohne Arbeit oder Privat angelegt hast, verschiebt sich von selbst, sobald sie weiß, wohin sie gehört. Bis dahin steht weder Arbeit noch Privat daran, und sie bleibt privat.
 
 Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer lesen, auch im Postfach einer anderen Firma. Braucht sie andere Nachrichten aus einem anderen Bereich, fragt sie mit **Diese E-Mail für diese Aufgabe verwenden**; ein Tippen fügt sie hinzu und sie macht weiter. Mail für eine andere deiner Firmen landet gleich bei den Aufgaben dieser Firma. Eine Aufgabe aus deinem eigenen Leben, etwa Familie, die an deine Arbeitsadresse schreibt, ist von Anfang an Privat.
 
@@ -124,4 +124,4 @@ Eine „Wartet auf“-Aufgabe (jemand hat dir etwas versprochen) verlinkt deine 
 - **Nachricht**: Häng die Nachricht an, um die es geht: eine E-Mail, Slack, Teams, WhatsApp, Telegram oder jede andere Nachricht, die The Machine hat. Gesucht wird nach Text oder Absender. Jeder Treffer zeigt, woher er kommt, wer ihn geschickt hat und wann.
 - **Dateien**: Tippe auf die Büroklammer im Feld, füge einen Screenshot ein oder zieh Dateien auf das Formular. Auf dem Handy kannst du auch ein Foto machen. Bis zu 5 Dateien, dieselben Arten und Größen wie im Chat (siehe [Dateien hinzufügen](card-chat.md#add-files)). × nimmt eine wieder weg.
 
-Die Dateien bleiben bei der Aufgabe: Sie erscheinen auf ihr und in ihrem Chat, und The Machine liest sie, wenn sie daran arbeitet. Dateien allein reichen: The Machine liest den Text eines PDFs oder einer Textdatei und füllt die Aufgabe daraus aus.
+Die Dateien bleiben bei der Aufgabe: Sie erscheinen auf ihr und in ihrem Chat, und The Machine liest sie, wenn sie daran arbeitet. Dateien allein reichen: The Machine liest den Text eines PDFs oder einer Textdatei und füllt die Aufgabe daraus aus. Ein Foto erscheint als kleines Bild: Tippe darauf, um es groß zu sehen.

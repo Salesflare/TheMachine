@@ -56,7 +56,7 @@ from machine.store import graph_identifiers
 from machine import names, stamps
 from machine.store.cards import source_kind, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
-from machine.store.decisions import handoff_wait, send_retry_ok, skill_update_view, UNDO_MERGE
+from machine.store.decisions import handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
@@ -533,8 +533,11 @@ class ViewsStore(ConversationStore):
             if waiting.get('sign_in'):extra['preparation_browser']['signin_url']=signin_link(self.config,suggestion['id'])
         if suggestion.get('status') in ('prepared','accepted','instructions'):self.browser_view(db,suggestion,extra)
         if self.accounts and suggestion.get('account_ids') is not None:
-            # the To-dos filter: one only about the Machine itself is neither Work nor Personal, under All only (todo_areas.machine_own)
-            extra['scope']=None if todo_areas.machine_own(suggestion['account_ids'], self.accounts, suggestion.get('area')) else suggestion_scope(suggestion['account_ids'], self.accounts, suggestion.get('area'))
+            # the To-dos filter: one only about the Machine itself is neither Work nor Personal, under All only (todo_areas.machine_own).
+            # Nor is one the owner added without an area that nothing placed yet (owner_area_open: the review places it by
+            # what it is about, minutes later): the area it starts in is a stand-in, not a word on it
+            unplaced=suggestion.get('origin')=='owner' and not suggestion.get('area') and bool(owner_area_open(db,suggestion['id']))
+            extra['scope']=None if unplaced or todo_areas.machine_own(suggestion['account_ids'], self.accounts, suggestion.get('area')) else suggestion_scope(suggestion['account_ids'], self.accounts, suggestion.get('area'))
             extra['area']=todo_areas.current(suggestion['account_ids'], self.accounts, suggestion.get('area'))  # More, Move to: the other areas
             if extra['area'] and suggestion.get('status') in gap_note.OPEN_STATUSES:
                 hint=area_hint(db,suggestion,self.accounts,extra['area'])  # Change area starts on where its people point

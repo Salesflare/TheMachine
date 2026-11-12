@@ -104,6 +104,11 @@ class BothAreas(Base):
         made = self.new()
         card = self.card(made['id'])
         self.assertEqual(json.loads(card['account_ids']), ['acme-mail'])  # their first connection with an area, never the Gateway log
+        # That area is a stand-in until the review reads it: the to-do says neither Work nor Personal, and stays private
+        self.assertIsNone(card['scope'])
+        import team_learnings
+        with self.store.connect() as db:
+            self.assertEqual(team_learnings.personal_cards(db, [made['id']], self.store.accounts), {made['id']})
         event = self.owner_event(made)
         self.assertEqual(json.loads(event['metadata'])['area_open'], ['personal', 'work:Acme'])
         rule = a.review_view(event)['owner_card']['rule']
@@ -117,6 +122,14 @@ class BothAreas(Base):
         self.assertEqual((json.loads(card['account_ids']), self.row(made['id'])['area'], card['scope']), (['home-mail'], 'personal', 'personal'))
         with self.store.connect() as db:
             self.assertEqual(a.owner_area_open(db, made['id']), [])
+
+    def test_placed_by_the_review_as_work_it_says_work(self):
+        made = self.new()
+        self.fill(made['id'], [made['event_id']], company='work:Acme')
+        self.assertEqual(self.card(made['id'])['scope'], 'work')
+        import team_learnings
+        with self.store.connect() as db:
+            self.assertEqual(team_learnings.personal_cards(db, [made['id']], self.store.accounts), set())
 
     def test_the_mail_it_follows_up_on_places_it(self):
         made = self.new(scope=None)

@@ -138,6 +138,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .nc-drop-hint{display:none}#new-card.nc-drop .nc-drop-hint{display:block;margin:0 0 8px;font-size:.82rem;color:var(--c-accent,var(--mint));font-weight:600;text-align:center}
 #new-card.nc-drop .chat-box{border-color:var(--c-accent,var(--mint));box-shadow:0 0 0 3px color-mix(in srgb,var(--c-accent,var(--mint)) 22%,transparent)}
 .card .card-files{margin:8px 0 0}
+.card .wa-photo{width:80px;height:80px}
 /* An owner's card: quiet "Added by you"; their own words open its chat. */
 .card .added-by{color:var(--muted);font-size:.8rem;margin-right:8px}
 @media(max-width:560px){.card .meta-side:has(.added-by)>time{display:none}}

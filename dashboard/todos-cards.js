@@ -1,5 +1,7 @@
-// The files the owner made the to-do with (New to-do): a chip each, opened from the Machine; a WhatsApp photo it came from
-const cardFiles=s=>html`${(s.files||[]).length?html`<div class="chat-files card-files">${s.files.map(f=>html`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener"${/^image\//.test(f.type)?'':html` download="${f.name}"`}>${f.name}</a>`)}</div>`:''}${photoThumbs(s.photos)}`;  // and a WhatsApp photo it came from (events-photos.js)
+// The files the owner made the to-do with (New to-do, a share): an image as a thumbnail that opens full size, like a
+// WhatsApp photo it came from (events-photos.js), any other file as a chip that downloads it; each by fileLabel
+const cardFiles=s=>{const docs=(s.files||[]).filter(f=>!/^image\//.test(f.type||''));
+ return html`${photoThumbs([...filePhotos(s.files),...(s.photos||[]).slice(0,4)],9)}${docs.length?html`<div class="chat-files card-files">${docs.map(f=>html`<a class="agent-file via-file" href="api/chat-file?id=${encodeURIComponent(f.id)}" target="_blank" rel="noopener" download="${f.name}">${fileLabel(f)}</a>`)}</div>`:''}`};
 // What a to-do's body says beyond its title (machine/text.py body_after_title, the same rule): '' when it only repeats
 // the title (New to-do's own words, before the review fills it in), the rest when its first line or sentence is the
 // title (Talk's title, then a note), else all of it. Case, spacing and punctuation don't count; a title cut short (…)
