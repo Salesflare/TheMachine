@@ -376,7 +376,7 @@ For developers: a feature adds its own entries with `actionAdd({id, group, label
 
 **What comes back**
 
-- A task it finds already done or no longer needed comes back as "Looks done already", with **Mark done** first.
+- A task it finds already done or no longer needed comes back as "Looks done already", with **Mark done** first. After a day it closes by itself, with **Undo**.
 - When it only answered your question, explained or made a plan, the to-do says "Answered. Nothing done yet." and **Do it** leads again.
 - Emails come back as a draft with a **Send** button. Read result on the dashboard shows the draft too.
 - In Telegram the to-do shows the draft itself (to, cc, subject, text), so **Send** there sends exactly that revision, and **Edit** opens it in the dashboard. A draft too long for the to-do, or one where you still pick the recipient, first shows a full preview and sends on **Send now**.

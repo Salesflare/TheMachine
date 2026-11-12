@@ -199,6 +199,34 @@ class HandledElsewhere(unittest.TestCase):
         self.assertNotEqual(yes, later)
         self.assertFalse(self.store.close_handled(sid, 'again', [later]))  # once
 
+    def test_a_to_do_without_a_message_to_send_closes_when_the_owner_settled_it_in_its_conversation(self):
+        """An answer the owner owes, with nothing drafted: they answered in the DM itself. The same short turn reads it."""
+        sid = self.store.suggest('work:ana-off', 'Answer Ana about tomorrow', 'Ana is off tomorrow.', [self.event('U0ANA00001', DM)])['id']
+        app, calls = self.app(), []
+        app.handled_check_model = lambda config, text: (calls.append(text), '[]')[1]
+        self.assertEqual(app.handled_step(), 0)  # judged open: it stays
+        self.assertIn('what the to-do says (no message drafted)', calls[0])
+        self.assertIn('Of course. Let me inform Sam too', calls[0])
+        self.assertIn('from the owner', calls[0])
+        app.handled_step()
+        self.assertEqual(len(calls), 1)  # judged once
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0], 'pending')
+        app._handled_judged = {}
+        app.handled_check_model = lambda config, text: json.dumps([{'todo': sid, 'state': 'done', 'event_id': self.ask, 'reason': 'Answered Ana in Slack'}])
+        self.assertEqual(app.handled_step(), 1)
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (sid,)).fetchone()[0], 'completed')
+
+    def test_a_to_do_that_looks_done_or_waits_on_others_is_not_read_again(self):
+        sid = self.store.suggest('work:ana-off', 'Answer Ana about tomorrow', 'Ana is off tomorrow.', [self.event('U0ANA00001', DM)])['id']
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',outcome=? WHERE id=?", (json.dumps({'state': 'waiting', 'waiting_on': 'Ana'}), sid))
+        app, calls = self.app(), []
+        app.handled_check_model = lambda config, text: (calls.append(text), '[]')[1]
+        app.handled_step()
+        self.assertEqual(calls, [])
+
 
 if __name__ == '__main__':
     unittest.main()

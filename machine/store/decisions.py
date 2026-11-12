@@ -25,6 +25,8 @@ from machine.cards import (
     current_title,
     handoff_checkin,
     looks_done,
+    LOOKS_DONE_SQL,
+    looks_done_at,
     outcome_state,
     snooze_time,
     title_kept,
@@ -37,6 +39,9 @@ from machine.store import outcomes
 import skills
 from timeutil import local_tz, now
 import todo_areas
+
+
+LOOKS_DONE_HOURS = 24  # how long a to-do looks done before it closes by itself (Store.close_looks_done)
 
 
 NOTHING_SENT = re.compile(r'\s*Nothing (?:was |has been )?(?:sent|submitted|posted)(?: or (?:changed|submitted|posted|sent))?(?: yet)?\.?\s*$', re.I)
@@ -452,7 +457,8 @@ class DecisionsStore:
             return kept_steps(db, suggestion_id, job_id, action, do_now)
 
     def looks_handled(self, suggestion_id, reason, event_ids):
-        """A later signal suggests an open card is already done. Only a hint: the owner still closes it. A to-do whose
+        """A later signal suggests an open card is already done. It looks done for a day, with Reopen, then closes by
+        itself (close_looks_done). A to-do whose
         owner did their part and that waits for this result (outcomes.py) closes by itself, with Undo for a day."""
         reason = ' '.join(str(reason or '').split())
         if not 5 <= len(reason) <= 200 or not event_ids:
@@ -654,6 +660,13 @@ class DecisionsStore:
             db.execute('UPDATE suggestions SET status=?,snoozed_until=?,resume_status=?,undo_until=NULL,feedback_until=NULL WHERE id=?',
                        (restored,previous.get('snoozed_until'),previous.get('resume_status'),suggestion_id))
             db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))  # theirs now: it stays
+            if str(row['closed_decision_id']).startswith(('handled:','looks-done:')):
+                # It closed because it looked done: Undo says it isn't, like Not done, so it is a normal to-do again
+                previous_state=outcome_state(dict(row))
+                if restored=='prepared' and previous_state=='already_done':
+                    restored='pending'
+                db.execute("UPDATE suggestions SET handled_hint=NULL,status=?,outcome=CASE WHEN ?='pending' AND ?='already_done' THEN NULL ELSE outcome END WHERE id=?",
+                           (restored,restored,previous_state or '',suggestion_id))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL',(suggestion_id,))
             prior=previous.get('preparation') or {}
             if restored in ('accepted','instructions') and prior.get('status') == 'blocked' and db.execute(
@@ -709,6 +722,11 @@ class DecisionsStore:
             db.execute('UPDATE suggestions SET status=?,completed_from=?,snoozed_until=NULL,resume_status=NULL,feedback_until=NULL,feedback_request_id=NULL,undo_until=NULL WHERE id=?',
                        (restored,restored,suggestion_id))
             db.execute('UPDATE suggestions SET expires_at=NULL,expired_at=NULL WHERE id=? AND expired_at IS NOT NULL',(suggestion_id,))
+            if str(row['closed_decision_id']).startswith(('handled:','looks-done:')):  # it closed as looking done: it isn't
+                if restored=='prepared' and outcome_state(dict(row))=='already_done':
+                    restored='pending'
+                    db.execute("UPDATE suggestions SET status='pending',completed_from='pending',outcome=NULL WHERE id=?",(suggestion_id,))
+                db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?',(suggestion_id,))
             db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
             if restored in ('accepted','instructions'):
                 self.queue_preparation(db,suggestion_id,decision_id,resume_action=True)
@@ -805,6 +823,49 @@ class DecisionsStore:
                     continue  # a send on its way settles first
                 close_by_itself(db, row, decision_id, taken[0][1], 'intercom', stamp, undo_hours)
                 closed.append(sid)
+        return closed
+
+    def close_looks_done(self, hours=LOOKS_DONE_HOURS, undo_hours=24):
+        """A to-do that has looked done (looks_done: a later signal showed it handled, or its run found it done) for
+        `hours` without the owner taking it back closes by itself: Done, "Closed by itself: <what showed it>", with
+        Undo for a day. So the list only holds what is really open, also on a Machine whose owner never goes through
+        Looks done. Once per sign: after an Undo, Reopen or Not done that same sign never closes it again. Not while a
+        send of it is under way. The first run after an update closes the ones that stood long enough already.
+        Returns the closed ids."""
+        stamp, closed = now(), []
+        cutoff = (dt.datetime.fromisoformat(stamp) - dt.timedelta(hours=hours)).isoformat()
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared') AND "
+                              + LOOKS_DONE_SQL + ' LIMIT 1').fetchone():
+                return closed  # nothing looks done: no write lock taken
+            db.execute('BEGIN IMMEDIATE')
+            rows = db.execute("SELECT * FROM suggestions WHERE status IN ('pending','accepted','instructions','prepared') AND " + LOOKS_DONE_SQL).fetchall()
+            for row in rows:
+                row = dict(row)
+                if not looks_done(row):
+                    continue
+                since = looks_done_at(db, row) or ''
+                if not since or since > cutoff:
+                    continue  # still fresh: the owner gets a day to say Not done
+                decision_id = 'looks-done:' + hashlib.sha256(f"{row['id']}:{since}".encode()).hexdigest()[:32]
+                if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue
+                # The owner's own word since that sign stands: theirs to close
+                if db.execute("SELECT 1 FROM decisions WHERE suggestion_id=? AND choice IN ('reopen','undo','not_done') AND created_at>=?",
+                              (row['id'], since)).fetchone():
+                    continue
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (row['id'],)).fetchone():
+                    continue  # a send on its way settles first
+                try:
+                    said = json.loads(row.get('handled_hint') or 'null') or {}
+                except ValueError:
+                    said = {}
+                why = ' '.join(str((said.get('reason') if isinstance(said, dict) else '') or first_sentence(row['body']) or '').split())[:200]
+                close_by_itself(db, row, decision_id, why or i18n.t('Looks done'), 'handled', stamp, undo_hours)
+                db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
+                closed.append(row['id'])
+        if closed:
+            LOG.info('looks done closed=%s', len(closed))
         return closed
 
     def close_handled(self, suggestion_id, reason, event_ids, undo_hours=24):

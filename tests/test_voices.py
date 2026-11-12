@@ -257,9 +257,9 @@ class Voices(unittest.TestCase):
             value = db.execute('SELECT handled_hint FROM suggestions WHERE id=?', (sid,)).fetchone()[0]
         return json.loads(value) if value else None
 
-    def test_a_draft_answered_from_gmail_makes_the_to_do_look_done(self):
-        """The owner replied in the draft's thread from Gmail itself: the to-do looks done (Done, with Reopen), with their
-        message as what shows it. Their reply from before the to-do was made (the review saw it) and one in another
+    def test_a_draft_answered_from_gmail_closes_the_to_do(self):
+        """The owner replied in the draft's thread from Gmail itself: the to-do closes by itself (Done, with Undo), with
+        their message as what shows it. Their reply from before the to-do was made (the review saw it) and one in another
         thread don't count."""
         self.ready(self.sid, {'kind': 'email', 'label': 'Send', 'account_id': 'work', 'thread_id': 't1', 'to': ['sam@example.com'],
                               'subject': 'Re: Contract', 'body': 'Dear Sam,\n\nThe contract is attached.', 'revision': 'r1'})
@@ -273,9 +273,12 @@ class Voices(unittest.TestCase):
         with self.store.connect() as db:
             out3 = db.execute("SELECT id FROM events WHERE source_id='out3'").fetchone()[0]
             row = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (self.sid,)).fetchone())
-        self.assertEqual(hint['event_ids'], [out3])
-        self.assertEqual(a.todo_state(row), 'looks done')
-        self.assertEqual(row['status'], 'prepared')  # only a hint: nothing closed, the owner can say Not done
+        self.assertEqual(hint['event_ids'], [out3])  # Done shows "Done: Answered in the email thread" under the title
+        self.assertEqual(a.todo_state(row), 'done')
+        self.assertTrue(row['undo_until'])
+        with self.store.connect() as db:
+            self.assertEqual(tuple(db.execute("SELECT source,feedback FROM decisions WHERE suggestion_id=? AND choice='complete'", (self.sid,)).fetchone()),
+                             ('handled', 'Answered in the email thread'))
         self.assertEqual(self.store.answered_elsewhere(), [])  # once
 
     def test_their_reply_on_a_to_do_with_a_done_when_waits_for_the_result(self):
@@ -295,16 +298,19 @@ class Voices(unittest.TestCase):
         self.assertIsNone(row['next_action'])
         self.assertEqual(self.store.answered_elsewhere(), [])  # once
 
-    def test_not_done_stands_until_a_newer_message_of_theirs(self):
+    def test_undo_stands_until_a_newer_message_of_theirs(self):
         self.ready(self.chat_sid, {'kind': 'whatsapp', 'label': 'Send reply', 'account_id': 'phone', 'chat_id': 'c1', 'body': 'Yes, see you.', 'revision': 'r1'})
         self.store.commit_page('phone', {}, [chat('w4', '2026-10-01T10:00:00+00:00', 'Sent a photo', mine=True)])
         self.assertEqual(self.store.answered_elsewhere(), [])  # a photo says nothing
         self.store.commit_page('phone', {}, [chat('w5', '2026-10-01T10:05:00+00:00', 'ja ik kom', mine=True)])
         self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
         self.assertEqual(self.hint(self.chat_sid)['reason'], 'Answered on WhatsApp')
-        self.store.decide(self.chat_sid, 'not_done', '', 'nd1', 'dashboard')
-        self.assertIsNone(self.hint(self.chat_sid))
-        self.assertEqual(self.store.answered_elsewhere(), [])  # they saw that message and said Not done
+        self.store.decide(self.chat_sid, 'undo', '', 'u1', 'dashboard')
+        self.assertIsNone(self.hint(self.chat_sid))  # a normal to-do again, back on the list
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM suggestions WHERE id=?', (self.chat_sid,)).fetchone()[0], 'prepared')
+        self.assertEqual(self.store.answered_elsewhere(), [])  # they saw that message and took it back
+        self.assertEqual(self.store.close_looks_done(), [])
         self.store.commit_page('phone', {}, [chat('w6', '2026-10-01T18:00:00+00:00', 'top, tot zo', mine=True)])
         self.assertEqual(self.store.answered_elsewhere(), [self.chat_sid])
 

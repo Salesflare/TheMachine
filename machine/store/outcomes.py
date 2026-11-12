@@ -126,13 +126,19 @@ def result_seen(db, row, reason, event_ids, stamp, undo_hours=24):
                                                 (row['id'],)).fetchone():
         decision_id = 'handled:' + hashlib.sha256(f"{row['id']}:{sorted(int(i) for i in ids)}".encode()).hexdigest()[:32]
         if not db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
-            from machine.store.decisions import close_by_itself
-            close_by_itself(db, row, decision_id, ' '.join(str(reason).split())[:200], 'handled', stamp, undo_hours)
-            db.execute('UPDATE suggestions SET early=0,handled_hint=NULL WHERE id=?', (row['id'],))
+            close_handled(db, row, decision_id, reason, stamp, undo_hours)
+            db.execute('UPDATE suggestions SET handled_hint=NULL WHERE id=?', (row['id'],))
             return 'closed'
     db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?', (encoded({'reason': reason, 'event_ids': ids, 'at': stamp}), row['id']))
     db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
     return 'hint'
+
+
+def close_handled(db, row, decision_id, reason, stamp, undo_hours=24):
+    """Close an open to-do that a signal shows done: Done, "Closed by itself: <reason>", with Undo for undo_hours."""
+    from machine.store.decisions import close_by_itself
+    close_by_itself(db, row, decision_id, ' '.join(str(reason).split())[:200], 'handled', stamp, undo_hours)
+    db.execute('UPDATE suggestions SET early=0 WHERE id=?', (row['id'],))
 
 
 def project_proof(db, todo_id, condition, event_id, stamp):

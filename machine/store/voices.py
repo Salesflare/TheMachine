@@ -582,12 +582,13 @@ class VoicesStore:
 
     def answered_elsewhere(self):
         """An open to-do with a reply draft the owner answered themselves in that conversation (from Gmail, Slack,
-        WhatsApp..., not from the card) looks done: the same hint a review gives with looks_handled, so it sits in Done
-        with Reopen. One with a done when (outcomes.py) isn't done by their reply, as by a send from the card
+        WhatsApp..., not from the card) is done: their reply was its step. It closes by itself (Done, "Closed by itself:
+        Answered in the email thread", with Undo for a day), once for that message, and Done shows that line under its
+        title. One with a done when (outcomes.py) isn't done by their reply, as by a send from the card
         (settle_sent): it waits for that result under Waiting on others, and a review reading the answer closes it.
         Their message counts when it came after what the to-do is about and after the to-do was made (or reached the
         Machine after that, so the review that made it never saw it). The Machine's own sends, reactions and media
-        don't count, and a Not done after that message stands. Returns the ids marked or set waiting."""
+        don't count, and a Not done, Undo or Reopen after that message stands. Returns the ids closed or set waiting."""
         ids, marked = sorted(self.owner_user_ids), []
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -616,7 +617,8 @@ class VoicesStore:
                 # Only in its conversations (the keys are kept in the clear), and after a Not done only what came in since
                 where = ' OR '.join(f"json_extract(metadata,'$.{key}') IN ({','.join('?' * len(conversations))})" for key in CONVERSATION_KEYS[kind])
                 keys = [c for _, c in conversations] * len(CONVERSATION_KEYS[kind])
-                said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice='not_done'", (row['id'],)).fetchone()[0]
+                said = db.execute("SELECT max(created_at) FROM decisions WHERE suggestion_id=? AND choice IN ('not_done','undo','reopen')",
+                                  (row['id'],)).fetchone()[0]
                 found = next((e for e in db.execute(f'SELECT id,account_id,source_id,body,metadata FROM events WHERE deleted=0 AND kind=? AND ({predicate}) AND ({where}) '
                                                     'AND occurred_at>? AND (occurred_at>? OR ingested_at>?) AND ingested_at>? ORDER BY occurred_at,id LIMIT 50',
                                                     (kind, *params, *keys, newest or row['created_at'], row['created_at'], row['created_at'], said or ''))
@@ -629,9 +631,14 @@ class VoicesStore:
                     outcomes.wait_for_result(db, row, '', now())
                     marked.append(row['id'])
                     continue
-                db.execute('UPDATE suggestions SET handled_hint=? WHERE id=? AND handled_hint IS NULL',
-                           (encoded({'reason': i18n.t(ANSWERED_ELSEWHERE[kind]), 'event_ids': [found['id']], 'at': now()}), row['id']))
-                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (row['id'],))
+                # Their own reply is the to-do's step done: it closes by itself (once for this message, Undo for a day)
+                decision_id = 'handled:' + hashlib.sha256(f"{row['id']}:{[int(found['id'])]}".encode()).hexdigest()[:32]
+                if db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue  # closed for this message before and the owner took it back
+                reason, stamp = i18n.t(ANSWERED_ELSEWHERE[kind]), now()
+                db.execute('UPDATE suggestions SET handled_hint=? WHERE id=?',  # Done shows what closed it under the title
+                           (encoded({'reason': reason, 'event_ids': [found['id']], 'at': stamp}), row['id']))
+                outcomes.close_handled(db, row, decision_id, reason, stamp)
                 marked.append(row['id'])
         return marked
 
