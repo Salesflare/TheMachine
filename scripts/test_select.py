@@ -50,7 +50,7 @@ INERT_FILES = {'LICENSE', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'TRADEM
 ALWAYS = {
     'test_architecture.py', 'test_dashboard_parts.py', 'test_message_seal.py', 'test_export_complete.py', 'test_error_feed.py',
     'test_seams.py', 'test_owner_boundary.py', 'test_us_english.py', 'test_owner_names.py', 'test_connectors.py',
-    'test_test_select.py',
+    'test_test_select.py', 'test_source_icons.py',
 }
 # Python that only puts the dashboard page together from its parts and serves it: a part's change reaches the Python
 # tests that look at the page, and those name dashboard_parts or the page (they're picked by name), not every test that
