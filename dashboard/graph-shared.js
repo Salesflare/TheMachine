@@ -10,7 +10,7 @@ const cap=t=>t?t[0].toUpperCase()+t.slice(1):t;
 // While a search shows, the list it covers is kept as it was (tab, sort, pages loaded, scroll): emptying the box brings it back at once.
 let graphKept=null;
 document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const d=document.querySelector('.graph-sort[open],details.fact-menu[open],details.board-menu[open],details.tile-menu[open]');if(d){d.open=false;d.querySelector('summary').focus()}});
-document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list,:scope>.graph-sort-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
+document.addEventListener('toggle',e=>{const d=e.target;if(!(d instanceof HTMLDetailsElement)||menuKept.delete(d)||!d.open)return;const l=d.querySelector(':scope>.fact-menu-list,:scope>.graph-sort-list');if(!l)return;l.style.left=l.style.right=l.style.top=l.style.bottom='';
  // A menu stays on screen: it moves in from an edge, and opens upward when there's no room under its button but there is above it
  let r=l.getBoundingClientRect();if(r.right>innerWidth-8){l.style.left='auto';l.style.right='0';r=l.getBoundingClientRect()}if(r.left<8){l.style.right='auto';l.style.left=(8-d.getBoundingClientRect().left)+'px'}
  const s=d.querySelector(':scope>summary')?.getBoundingClientRect();if(s&&r.bottom>innerHeight-8&&s.top-r.height-8>8){l.style.top='auto';l.style.bottom='calc(100% + 4px)'}},true);

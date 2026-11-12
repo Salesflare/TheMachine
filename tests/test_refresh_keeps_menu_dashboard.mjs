@@ -36,6 +36,13 @@ const shots=process.env.SHOT_DIR;if(shots)await mkdir(shots,{recursive:true});
 const look=(page,sel)=>page.evaluate(sel=>{const d=document.querySelector(sel),l=d?.querySelector(':scope>[role=menu],:scope>[role=group],:scope>.fact-menu-list,:scope>.more-menu'),r=l?.getBoundingClientRect(),f=document.activeElement;
  return {open:!!d?.open,at:d?.open&&r?[Math.round(r.top),Math.round(r.left)]:null,focus:d&&d.contains(f)?(f.textContent||'').replace(/\s+/g,' ').trim().slice(0,40):null}},sel);
 const poll=page=>page.evaluate(async()=>{graphLoadedAt=0;await refresh(true)});
+// Open a menu and wait until the page has placed it: the placement (under its ⋯, or above it when there's no room
+// under it) runs on the toggle event, a task of its own that can come after [open] is set and after the next steps
+// here. Measured before it, a menu reads as under its ⋯ and then "moves" by itself. This listener comes after the
+// page's own, so the menu has its place once it has seen the event.
+const openMenu=async(page,sel)=>{
+ await page.evaluate(()=>{window.__placed=null;window.__onToggle??=e=>{if(e.target.open)window.__placed=e.target};document.addEventListener('toggle',window.__onToggle,true)});
+ await page.locator(sel+'>summary').click();await page.waitForFunction(sel=>{const d=document.querySelector(sel);return !!d?.open&&window.__placed===d},sel)};
 const errors=[],results=[],lost=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -48,7 +55,7 @@ try{
   // except on a Graph page, which waits with its redraw while a menu is open). Then close it and change the row back:
   // focus stays on its ⋯ through that redraw too.
   const check=async(name,sel,row,open,change,back)=>{
-   await page.locator(sel+'>summary').click();await page.locator(sel+'[open]').waitFor();
+   await openMenu(page,sel);
    await page.locator(sel).locator('button').nth(1).focus();
    const before=await look(page,sel);assert.ok(before.open&&before.focus,`${name} ${tag}: the menu is open with focus on an item`);
    await poll(page);await open?.();
@@ -67,7 +74,23 @@ try{
   await page.goto(`http://127.0.0.1:${port}/`);await page.locator('#promises-list').waitFor();
   await page.locator('#promises-head').click();
   const last=page.locator('#promises-list .promise').last();await last.scrollIntoViewIfNeeded();
-  await check('promise','#promises-list>div.promise:last-of-type>details.promise-menu','#promise-row-3',null,async()=>{promises[2]={...promises[2],due:day(2)}},async()=>{promises[2]={...promises[2],due:null}});
+  const PROMISE='#promises-list>div.promise:last-of-type>details.promise-menu';
+  await check('promise',PROMISE,'#promise-row-3',null,async()=>{promises[2]={...promises[2],due:day(2)}},async()=>{promises[2]={...promises[2],due:null}});
+  // The page moved after the menu opened under its ⋯ and there's no room under it now: a poll that draws its row again
+  // keeps it under its ⋯, where it opened. Before, the menu drawn again was placed anew and flipped above it.
+  const side=()=>page.evaluate(sel=>{const d=document.querySelector(sel),s=d.querySelector(':scope>summary').getBoundingClientRect(),l=d.querySelector(':scope>.fact-menu-list').getBoundingClientRect();
+   return {open:d.open,below:l.top>=s.bottom}},PROMISE);
+  const room=await page.addStyleTag({content:'#promises-list{margin-bottom:100vh}'});
+  await page.evaluate(sel=>scrollBy(0,document.querySelector(sel+'>summary').getBoundingClientRect().top-60),PROMISE);
+  await openMenu(page,PROMISE);
+  assert.deepEqual(await side(),{open:true,below:true},`promise ${tag}: with room under it, the menu opens under its ⋯`);
+  await page.evaluate(sel=>scrollBy(0,document.querySelector(sel+'>summary').getBoundingClientRect().bottom-innerHeight+20),PROMISE);
+  await page.evaluate(()=>{window.__row=document.querySelector('#promise-row-3')});
+  promises[2]={...promises[2],due:day(2)};await poll(page);
+  assert.equal(await page.evaluate(()=>document.querySelector('#promise-row-3')!==window.__row),true,`promise ${tag}: the change draws its row again`);
+  const moved=await side();if(!moved.open||!moved.below)lost.push(`promise ${tag}: after the page moved, a poll that redrew its row flipped or closed it ${JSON.stringify(moved)}`);
+  await page.keyboard.press('Escape');promises[2]={...promises[2],due:null};await poll(page);
+  await room.evaluate(n=>n.remove());await page.evaluate(()=>scrollTo(0,0));
 
   // A to-do's More actions
   await page.locator(`#task-${CARD}`).scrollIntoViewIfNeeded();
