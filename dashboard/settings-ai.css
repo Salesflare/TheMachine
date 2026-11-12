@@ -14,6 +14,3 @@
 .settings-list>.ai-edit{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-top:0;border-top:0}
 .ai-msg-note{color:var(--muted);font-size:var(--fs-xs)}
 @media(max-width:560px){.settings-list>.ai-conn{flex-wrap:wrap}.ai-end{flex-basis:100%;justify-content:flex-end}}
-/* A setting a toast's link landed on (settingsAt): lit for a moment */
-#settings .flash{animation:setting-flash 2.2s ease-out}@keyframes setting-flash{0%,45%{background:color-mix(in srgb,var(--mint) 18%,transparent)}100%{background:transparent}}
-@media(prefers-reduced-motion:reduce){#settings .flash{animation:none}}
