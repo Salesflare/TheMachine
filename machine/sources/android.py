@@ -64,9 +64,9 @@ PACKAGE_NOISE = {'com', 'org', 'net', 'io', 'co', 'app', 'apps', 'android', 'mob
 def android_app_shown(package, app_name=None):
     """An app's name as people read it: its known label, else a name read from its package when the package says one
     ("com.acme.mobile.android" as "Acme", "nl.abn.ab" as "ABN", "com.acme.AcmeMobile" as "Acme"), never the raw
-    reverse-domain string. A package that names its maker and its app in other words ("com.maker.someapp") gives '':
-    no name rather than the maker's or a wrong one; the row shows the phone. The stored app_name stays as it is
-    (android_app_name) for an agent's exact matching; this is for lists people scan."""
+    reverse-domain string. A package that names its maker and its app in other words ("com.maker.someapp") goes by
+    its last word, the app's ("Someapp"), never the maker's: every phone row names its app. The stored app_name stays
+    as it is (android_app_name) for an agent's exact matching; this is for lists people scan."""
     package = str(package or '')
     if package in ANDROID_APP_NAMES:
         return ANDROID_APP_NAMES[package]
@@ -78,11 +78,11 @@ def android_app_shown(package, app_name=None):
     if not words:
         return 'Unknown app'
     if words[0].casefold() == 'google':
-        return 'Google ' + words[-1].capitalize() if len(words) == 2 else ''  # com.google.android.apps.fit
+        return 'Google ' + words[-1].capitalize()  # com.google.android.apps.fit
     words = [w for w in words if len(w) > 2] or words  # "my", "ab": a country or a suffix, not the name
     word = words[0]
     if len(words) > 1 and not all(word.casefold() in w.casefold() for w in words[1:]):
-        return ''  # the maker and the app in other words: which is the name is a guess
+        word = words[-1]  # the maker and the app in other words: the app's own, last
     return word.upper() if len(word) <= 3 else word[:1].upper() + word[1:]
 
 

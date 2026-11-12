@@ -250,14 +250,14 @@ class MailCheck(unittest.TestCase):
                          ['LinkedIn', 'Google Play', 'The Machine', 'KBC Mobile', 'Acme', 'ABN', 'Google Fit', 'Unknown app'])
         self.assertEqual(android_app_shown('com.acme.app', 'Acme Shop'), 'Acme Shop')  # a label the phone gave wins
         self.assertEqual(android_app_shown('com.acme.app', 'Acme.com'), 'Acme.com')  # a name with a dot in it is still a name
-        # a package that names its maker and its app in other words gives no name rather than the maker's; the brand
-        # repeated is one name; the phone's own apps and apps whose package reads as something else by the table
+        # a package that names its maker and its app in other words goes by the app's word, never the maker's or none;
+        # the brand repeated is one name; the phone's own apps and apps whose package reads as something else by the table
         self.assertEqual([android_app_shown(p) for p in ('com.makerstudio.tidyhome', 'mobi.agency.client.newsapp', 'com.acme.AcmeMobile',
                                                          'com.shop.my', 'com.google.android.gms', 'com.google.android.deskclock',
-                                                         'com.ubercab', 'com.anthropic.claude')],
-                         ['', '', 'Acme', 'Shop', 'Google Play services', 'Clock', 'Uber', 'Claude'])
+                                                         'com.ubercab', 'com.anthropic.claude', 'com.google.android.apps.health.data')],
+                         ['Tidyhome', 'Newsapp', 'Acme', 'Shop', 'Google Play services', 'Clock', 'Uber', 'Claude', 'Google Data'])
         self.assertEqual(android_app_shown('com.makerstudio.tidyhome', 'Tidy Home'), 'Tidy Home')
-        self.assertEqual(android_app_shown('com.makerstudio.tidyhome', 'com.makerstudio.tidyhome'), '')
+        self.assertEqual(android_app_shown('com.makerstudio.tidyhome', 'com.makerstudio.tidyhome'), 'Tidyhome')
         # the same name on a to-do's source line
         from machine.store.cards import source_text
         line = source_text({'kind': 'android.notification', 'occurred_at': NOW.isoformat(),
