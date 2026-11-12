@@ -61,7 +61,7 @@
 :is(.card,.rt) .actions .more-menu button:hover{background:var(--tile)}.card .actions .more-menu button.quiet{color:var(--muted)}
 /* Hand off: labels above full-width fields, even spacing. */
 .agent-sheet.fleet-handoff-form textarea.handoff-task,.agent-sheet.fleet-handoff-form textarea.handoff-task:focus{max-height:min(240px,40vh);font-size:1rem;color:var(--text)}
-.fleet-handoff-form .handoff-email,.fleet-handoff-form .handoff-pick{width:100%;max-width:none;box-sizing:border-box;margin:0;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font:inherit;font-size:.95rem;color:var(--text)}.fleet-handoff-form .handoff-pick{width:auto;min-width:0;max-width:100%;border-radius:999px;text-overflow:ellipsis}
+.fleet-handoff-form .handoff-email,.fleet-handoff-form .handoff-pick{width:100%;max-width:none;box-sizing:border-box;margin:0;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:12px;background-color:var(--bg);font:inherit;font-size:.95rem;color:var(--text)}.fleet-handoff-form .handoff-pick{width:auto;min-width:0;max-width:100%;padding-right:34px;border-radius:999px;text-overflow:ellipsis}  /* the dashboard's select chevron stays: it reads as a choice */
 .agent-get .chip-x{margin:0 -4px 0 2px;padding:0 4px;min-height:0;border:0;background:none;color:var(--faint);font-size:1rem;line-height:1;cursor:pointer}.agent-get .chip-x:hover{color:var(--text)}
 /* Not needed: one compact choice. A reason is optional; Confirm decides. */
 .card .dismiss-q{margin:0 0 8px;font-weight:600}.card .dismiss-q small{font-weight:400;color:var(--faint)}
