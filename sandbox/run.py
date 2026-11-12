@@ -430,13 +430,15 @@ def seed_brief(app, fixture):
                  'quiet': [], 'replied': [], 'meetings': [{**company(6), 'day': (today + dt.timedelta(days=1)).isoformat(), 'key': 'b' * 64}],
                  'unanswered': [{**company(3), 'key': 'c' * 64, 'at': ago(3)}, {**company(3), 'key': 'd' * 64, 'at': ago(2)}]}
         second = {'touched': [{**company(2), 'count': 1, 'last': ago(4)}], 'replied': [],
-                  'quiet': [{**company(7), 'last': ago(40)}], 'unanswered': [{**company(5), 'key': 'e' * 64, 'at': ago(4)}],
+                  'quiet': [{**company(7), 'last': ago(40), 'known': 'customer'}], 'unanswered': [{**company(5), 'key': 'e' * 64, 'at': ago(4), 'known': 'customer'}],
                   'meetings': [{**company(6), 'day': (today + dt.timedelta(days=1)).isoformat(), 'key': 'f' * 64}]}
         view = fleet.assemble_brief(own, [(team[0], fleet.clean_brief(first)), (team[1], fleet.clean_brief(second))])
         view.update(period=today.isoformat(), every='day', since=since, fleet=ref, fleet_name=fixture['network']['work']['name'], asked=2, missing=[], declined=[])
+        stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
         with app.fleet.connect() as db:
-            db.execute('INSERT OR REPLACE INTO fleet_briefs(fleet,period,every,view,answers,built_at) VALUES(?,?,?,?,?,?)',
-                       (ref, today.isoformat(), 'day', json.dumps(view), 2, dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')))
+            db.execute('INSERT OR REPLACE INTO fleet_briefs(fleet,period,every,view,answers,built_at,told_at) VALUES(?,?,?,?,?,?,?)',
+                       (ref, today.isoformat(), 'day', json.dumps(view), 2, stamp, stamp))
+        app.fleet.brief_todos_sync(ref, force=True)  # told: its lines are to-dos (fleet_brief_todos.py)
 
 
 def main():

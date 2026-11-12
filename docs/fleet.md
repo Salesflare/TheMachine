@@ -270,12 +270,20 @@ went to two or more of you, to a shared address of the team (sales@, info@, a gr
 is in touch with, or from a customer. Each line says which. Mail only you got, from someone only you know, stays in
 To-dos. Cold sales, newsletters and notifications never count.
 
-**On the dashboard.** Five lines show (**Show more** for the rest), each with **Ask** (a question for the Fleet), **Open**
-(that company's mail, when it came to you) and **Not needed**. Not needed on a "both in touch" line is remembered: the
+**In To-dos** (fleet_brief_todos.py). Once a brief is told, each line is a Work to-do in For you, with the company as
+its organization and the line's why under its title (teammates linked to their person pages). It has **Ask** (the
+Fleet's free question, prefilled and editable; the answers show on the to-do, which then offers **Done**), **Open** (that
+company's mail, when it came to you) and **Not needed**. Details shows when a waiting email came in, who on the team is
+in touch, the team's latest threads with that company as the Team Graph shares them (subject, sender, date, whose; never
+a private, personal or sensitive thread, never a preview) and your own newest work email from them. A line about a
+company you already have an open to-do for (its organization, or its mail on that to-do) joins that to-do instead, as a
+note with Ask. While a brief to-do is open the brief is rebuilt every half hour: a line the newer brief no longer has
+(someone replied or claimed it, you are back in touch) closes its to-do by itself. Not needed on the to-do, on the old
+`fleet_brief_hide` action or a to-do closed as not needed hides the line; on a "both in touch" line it is remembered: the
 same people of the team on the same threads with that company aren't flagged again (also as those threads go on), a
-new separate thread is. When nothing needs the team it says so in one line. It
-is told once, within your work hours, once everyone answered or two hours passed. Teammates who haven't answered are
-listed. It is put together by plain code, never a model.
+new separate thread is. A closed line comes back only with something new (another first email, another last contact).
+The brief's own notification and Telegram link open To-dos. It is told once, within your work hours, once everyone
+answered or two hours passed. It is put together by plain code, never a model.
 
 **What each Machine shares** is aggregate only: company names and domains, counts, last-touch dates, hashes of emails
 and meetings keyed with the Fleet's secret, which members an email went to (as hashes), the name of a shared address

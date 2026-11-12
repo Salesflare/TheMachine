@@ -14,6 +14,7 @@ import uuid
 
 import family
 import fleet
+import fleet_brief_todos
 import fleet_learnings
 import graph
 import handoff_mail
@@ -106,6 +107,7 @@ class FleetApp:
                 card_id, 'reject', why or i18n.t('Teammate not reached'), key or 'fleet-silent-undo-' + secrets.token_hex(6), 'fleet')
             self.fleet.own_event = lambda event: own_or_joined(event, self.store.owner_user_ids)  # silent acceptance: only what the owner did
             self.fleet.notify_brief = self.fleet_notify_brief
+            self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)  # a brief line's to-do (fleet_brief_todos.py)
             self.fleet.remove_work = self.fleet_remove_work
             # Shared connectors (shared_connectors.py): kept in config.json, checked with the connector's own profile read
             self.fleet.save_config = self.fleet_save_config
@@ -284,8 +286,18 @@ class FleetApp:
             return self.fleet.share_replace(str(args.get('fleet') or ''), str(args.get('service') or ''), args.get('token'))
         if name == 'fleet_share_stop':
             return self.fleet.share_stop(str(args.get('fleet') or ''), str(args.get('service') or ''))
-        if name == 'fleet_brief_hide':  # Not needed on one line of the team brief
+        if name == 'fleet_brief_hide':  # Not needed on one line of the team brief (its to-do closes too)
             return self.fleet.hide_brief_item(str(args.get('fleet') or ''), args.get('key'))
+        if name == 'fleet_brief_todo':  # Ask or Not needed on a team brief line's to-do (fleet_brief_todos.py)
+            card = str(args.get('suggestion_id') or '')
+            if args.get('do') == 'ask':
+                return self.fleet.brief_todo_ask(card, str(args.get('text') or ''))
+            if args.get('do') != 'skip':
+                raise ValueError('Pick Ask or Not needed')
+            done = self.fleet.brief_todo_skip(card)
+            if done['close']:  # the brief's own to-do: closed as the owner's Not needed; one it only joined stays
+                self.store.decide(card, 'reject', i18n.t('Not needed'), 'fleet-brief-skip-' + secrets.token_hex(6), 'dashboard')
+            return done
         if name == 'fleet_intro':  # ask one teammate who knows someone there for an intro
             return self.fleet.ask_intro(str(args.get('fleet') or ''), str(args.get('member_id') or ''), str(args.get('about') or ''),
                                         str(args.get('note') or ''))

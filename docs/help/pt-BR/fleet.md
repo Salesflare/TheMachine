@@ -49,6 +49,15 @@ Quando uma pessoa aprende, todos aprendem. Quando sua Machine escreve ou prepara
 
 Qualquer pessoa no Fleet pode **Remover** um aprendizado. Ele some para todos e não é criado de novo. Para parar, desative **Oferecer compartilhar aprendizados** em Configurações, Segurança. Fleets de Trabalho Cuidadosos não recebem nenhum.
 
+## Resumo da equipe
+
+Escolha **Diário** ou **Semanal** em **Resumo da equipe**, na aba Fleet, em **Compartilhamento**. Sua Machine então pede às Machines da equipe contagens e datas. O que precisa de você chega em Tarefas, em Trabalho: um cliente esperando resposta, uma empresa que ficou em silêncio, dois de vocês escrevendo para as mesmas pessoas ou uma reunião em comum.
+
+- A empresa e os colegas levam às suas páginas. **Detalhes** mostra quem da equipe está em contato e as últimas conversas deles, só o que o [Team Graph](team-graph.md) compartilha.
+- **Perguntar** envia à equipe uma pergunta sobre isso. As respostas aparecem na tarefa.
+- **Não precisa** fecha a tarefa, e o resumo aprende. Ela só volta com algo novo.
+- Quando alguém responde ou assume, a tarefa fecha sozinha. Se você já tem uma tarefa sobre essa empresa, ela entra nessa tarefa.
+
 ## Pedidos de resumo da equipe
 
 Um colega com o resumo da equipe ativado pede à sua Machine números e datas toda manhã. Em um Fleet de Trabalho, ela responde sozinha, só com o que o [Graph da equipe](team-graph.md) já compartilha. Conversas privadas e pessoais nunca contam, e nada vai enquanto o compartilhamento do Graph da equipe está desligado. Cada resposta fica na aba Fleet, em **Atividade**. Isso nunca vira uma tarefa nem uma notificação.

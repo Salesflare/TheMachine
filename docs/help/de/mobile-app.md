@@ -19,7 +19,7 @@ Auf einer gehosteten Machine meldet sich die App mit deinem Konto an. Auf einer 
 
 ## Benachrichtigungen
 
-Beim ersten Öffnen fragt die App, ob sie Benachrichtigungen senden darf. Tippe auf eine, um zu öffnen, worum es geht: Eine Aufgabe öffnet ihren Chat, der Morgen öffnet heute im **Kalender**, das Team-Briefing öffnet das Briefing dieser Fleet, und eine Frage aus der Fleet öffnet ihre Aufgabe. Kein Text einer Aufgabe geht über Apple, Google oder den Dienst von The Machine: Sie tragen nur eine feste Zeile, etwa „Eine Aufgabe braucht dich“.
+Beim ersten Öffnen fragt die App, ob sie Benachrichtigungen senden darf. Tippe auf eine, um zu öffnen, worum es geht: Eine Aufgabe öffnet ihren Chat, der Morgen öffnet heute im **Kalender**, das Team-Briefing öffnet die Aufgaben, und eine Frage aus der Fleet öffnet ihre Aufgabe. Kein Text einer Aufgabe geht über Apple, Google oder den Dienst von The Machine: Sie tragen nur eine feste Zeile, etwa „Eine Aufgabe braucht dich“.
 
 Die App fragt dann deine eigene Machine nach dem Titel und dem nächsten Schritt der Aufgabe, etwa „Sam antworten“ mit „An Sam senden: Dienstag 10:00 passt“. Der Morgen bekommt, was wartet, und die Uhrzeit deines ersten Termins, das Team-Briefing seine ersten Punkte, Neues aus der Fleet, was passiert ist. Erreicht sie deine Machine nicht, bleibt die feste Zeile. Auf Android steht da, wie viele warten, etwa „2 Aufgaben brauchen dich“.
 

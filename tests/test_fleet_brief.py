@@ -500,7 +500,7 @@ class Items(unittest.TestCase):
         hidden = fleet.brief_items(self.VIEW, self.TODAY, hidden={'unanswered:globex.example'})
         self.assertEqual(hidden[0]['key'], 'unanswered:initech.example')
         many = {'quiet': [{'org': f'Co {n}', 'domain': f'c{n}.example', 'last': '2026-09-01', 'who': ['Pat', 'You']} for n in range(8)]}
-        self.assertIn('…and 3 more in the Fleet tab.', fleet.brief_text(many, self.TODAY))
+        self.assertIn('…and 3 more in To-dos.', fleet.brief_text(many, self.TODAY))
         waiting = fleet.brief_text({**self.VIEW, 'missing': ['Sasha Example (sasha@other.example)', 'Kim Ito']}, self.TODAY)
         self.assertIn('Still to answer: Sasha and Kim.', waiting)
         self.assertNotIn('@', waiting)

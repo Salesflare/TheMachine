@@ -5,8 +5,8 @@ const {chromium}=await import('./browser.mjs');
 
 // Where a tapped notification lands. The phone app opens the dashboard at #chat=<the push's tag> (mobile/www/inject.js;
 // Android without a tag for several at once: the kind), the web push at its url. Each kind opens its own view, never a
-// to-do chat that isn't there: a to-do its chat, the morning the Calendar's agenda, the team brief that Fleet's brief in
-// its pane, a Fleet question its card, a Fleet notice its line, the week's recap and a test To-dos. Each case starts
+// to-do chat that isn't there: a to-do its chat, the morning the Calendar's agenda, the team brief To-dos (its lines are
+// to-dos there), a Fleet question its card, a Fleet notice its line, the week's recap and a test To-dos. Each case starts
 // somewhere else (a chat open, another Fleet pane), and every target must be on screen.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),FL='fl_'+'a'.repeat(16),FL2='fl_'+'b'.repeat(16),Q='q_'+'1'.repeat(16),N='fn_'+'2'.repeat(16),TODO='a1a1a1a1a1a1a1a1';
@@ -56,8 +56,8 @@ try{
   const cases=[
    ['a new to-do, a result, a reminder',TODO,async()=>{await landed(`.chat-layout[data-chat="${TODO}"] .chat-title`,'the to-do');assert.equal(new URL(page.url()).hash,'#chat='+TODO)}],
    ['the morning','digest',async()=>{await landed('#calendar','the Calendar');assert.ok(await tab('calendar'));assert.match(new URL(page.url()).hash,/^#calendar\?(.*&)?view=agenda/)}],
-   ['the team brief',`fleet-brief-${FL2}`,async()=>{await landed(`#fleet-brief-${FL2}`,'that Fleet’s brief');assert.ok(await tab('fleet'))}],
-   ['the team brief from an older Machine','fleet-brief',async()=>{await landed('#fleet-view .fleet-brief','a brief');assert.ok(await tab('fleet'))}],
+   ['the team brief',`fleet-brief-${FL2}`,async()=>{await landed('#suggestions','To-dos');assert.ok(await tab('inbox'))}],
+   ['the team brief from an older Machine','fleet-brief',async()=>{await landed('#suggestions','To-dos');assert.ok(await tab('inbox'))}],
    ['a Fleet question',`fleet-${Q}`,async()=>{await landed(`#fleet-${Q}`,'the question’s card');assert.ok(await tab('inbox'))}],
    ['a Fleet notice',`fleet-${N}`,async()=>{await landed(`#fleet-${N}`,'the notice');assert.ok(await tab('fleet'))}],
    ['several Fleet questions (Android: the kind)','fleet',async()=>{await landed('#fleet-view .fleet-pane:not([hidden])','the Fleet tab')}],
@@ -65,20 +65,20 @@ try{
    ['a test','push-test',async()=>{await landed('#suggestions','To-dos');assert.equal(await page.locator('.chat-layout').count(),0)}],
    ['several new to-dos (Android: the kind)','todo',async()=>{await landed('#suggestions','To-dos');assert.equal(await page.locator('.chat-layout').count(),0)}]];
   for(const [what,tag,check] of cases){
-   if(tag.startsWith('fleet-brief'))await page.evaluate(()=>localStorage.setItem('fleet-pane','sharing'));  // the brief's pane isn't the one last open
    await tap(tag);await check();
    assert.doesNotMatch(new URL(page.url()).hash,/^#chat=(?![a-f0-9]{16}$)/,`${label} ${what}: no chat link left that isn't a to-do`);
    if(shots&&['digest',`fleet-brief-${FL2}`,`fleet-${Q}`,'recap-2026-W45'].includes(tag)){await page.waitForTimeout(400);await page.screenshot({path:`${shots}/${label}-${tag.replace(/_.*/,'')}.png`})}}
-  // the web push's own links: the brief's (#fleet-brief=<fleet>) opens that brief in its pane too
-  await page.evaluate(()=>localStorage.setItem('fleet-pane','sharing'));await elsewhere();
-  await page.evaluate(fl=>{location.hash='fleet-brief='+fl},FL2);await landed(`#fleet-brief-${FL2}`,'the web brief link');
+  // the web push's and Telegram's own links: the brief's (#fleet-brief=<fleet>) opens To-dos too
+  await elsewhere();
+  await page.evaluate(fl=>{location.hash='fleet-brief='+fl},FL2);await landed('#suggestions','the web brief link');assert.ok(await tab('inbox'));
+  assert.equal(new URL(page.url()).hash,'#todos');
   await elsewhere();await page.evaluate(()=>{location.hash='calendar?view=agenda'});await landed('#calendar','the web morning link');
   // a tap that starts the app: the page loads with the tag already in its address
   await page.goto(base+'#chat=digest');await landed('#calendar','the morning on a cold start');
-  await page.goto(base+'#chat=fleet-brief-'+FL);await landed(`#fleet-brief-${FL}`,'the brief on a cold start');
+  await page.goto(base+'#chat=fleet-brief-'+FL);await landed('#suggestions','the brief on a cold start');
   // A slow status (a big Machine): the tapped view opens at once, its own data fills it, the to-dos come later
   slow=12000;
-  for(const [hash,sel,why] of [['#chat=digest','#calendar','the morning'],[`#chat=fleet-brief-${FL2}`,`#fleet-brief-${FL2}`,'the brief'],['#chat=fleet','#fleet-view .fleet-pane:not([hidden])','the Fleet tab']]){
+  for(const [hash,sel,why] of [['#chat=digest','#calendar','the morning'],['#chat=fleet','#fleet-view .fleet-pane:not([hidden])','the Fleet tab']]){
    await page.evaluate(()=>localStorage.setItem('fleet-pane','sharing'));
    await page.goto('about:blank');const t0=Date.now();await page.goto(base+hash,{waitUntil:'domcontentloaded'});await landed(sel,why+' before the status');
    assert.ok(Date.now()-t0<slow-1000,`${label} ${why}: on screen in ${Date.now()-t0} ms, not after the status`);

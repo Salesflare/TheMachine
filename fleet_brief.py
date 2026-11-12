@@ -234,7 +234,7 @@ def settled(learned, x):
     return all(set(t) & marks for t in x.get('threads') or ())
 
 
-def brief_items(view, today=None, hidden=(), opener=None, learned=None):
+def brief_items(view, today=None, hidden=(), opener=None, learned=None, limit=12):
     """The brief as a few ranked lines worth reading: who is waiting on the team and for how long, where several of you
     are on the same company or meeting, and companies that went quiet that a teammate knows. Each item has a stable key
     (for Not needed), a title, why it matters and, where the Fleet can help, a question to ask it. `opener(domain)` links
@@ -259,21 +259,22 @@ def brief_items(view, today=None, hidden=(), opener=None, learned=None):
         items.append({'key': 'unanswered:' + x['domain'], 'kind': 'waiting', 'score': 100 + min(days, 14) * 5 + (20 if several else 0),
                       'title': t('{} is waiting for a reply', company(x)) + (t(' ({} emails)', count) if count > 1 else ''),
                       'why': f"{waited}, {why}", 'ask': t('Who is answering {}?', company(x)),
-                      'open': opener(x['domain']) if 'You' in who else ''})
+                      'open': opener(x['domain']) if 'You' in who else '', **_raw(x, x.get('since'), who + [w for w in also if w not in who], short)})
     for x in view.get('meetings') or []:
         d = _brief_date(x.get('day'))
         soon = d is not None and 0 <= (d - today).days <= 3
         items.append({'key': 'meeting:' + x['domain'] + ':' + str(x.get('day')), 'kind': 'meeting', 'score': (80 if soon else 50) + len(x['who']),
                       'title': t('{} meet {} {} (a meeting in the brief)', _cap(people(x['who'])), company(x), _on_day(x.get('day'), today)).rstrip(),
                       'why': t('the same meeting, so agree who leads') if x.get('same') else t('separate meetings, worth lining up'),
-                      'ask': t('Who leads with {}?', company(x))})
+                      'ask': t('Who leads with {}?', company(x)), **_raw(x, x.get('day'), x.get('who') or [], short)})
     for x in view.get('several') or []:
         who = [w['name'] for w in x.get('who') or []]
         if settled(learned or {}, x):
             continue
         items.append({'key': 'several:' + x['domain'], 'kind': 'overlap', 'score': 60 + len(who),
                       'title': t('{} are all in touch with {}', _cap(people(who)), company(x)) if len(who) > 2 else t('{} are both in touch with {}', _cap(people(who)), company(x)),
-                      'why': t('last contact {}, so keep it to one thread', _on_day(x.get('last'), today)), 'ask': t('Who leads with {}?', company(x))})
+                      'why': t('last contact {}, so keep it to one thread', _on_day(x.get('last'), today)), 'ask': t('Who leads with {}?', company(x)),
+                      **_raw(x, x.get('last'), who, short)})
     for x in view.get('quiet') or []:
         who = x.get('who') or []
         if len(who) < 2 and not x.get('known'):  # one of you, a company the team doesn't know (a brief from before 2026-10-21)
@@ -283,20 +284,28 @@ def brief_items(view, today=None, hidden=(), opener=None, learned=None):
         items.append({'key': 'quiet:' + x['domain'], 'kind': 'quiet', 'score': 40 + (10 if len(who) > 1 else 0),
                       'title': t('{} went quiet', company(x)),
                       'why': ', '.join([t('last contact {}', _on_day(x.get('last'), today))] + why),
-                      'ask': t('Anyone in touch with {} lately?', company(x))})
+                      'ask': t('Anyone in touch with {} lately?', company(x)), **_raw(x, x.get('last'), who, short)})
     hidden = set(hidden)
     items = [i for i in items if i['key'] not in hidden]
     items.sort(key=lambda i: -i['score'])
-    return items[:12]
+    return items[:limit] if limit else items
+
+
+def _raw(x, at, who, short):
+    """What a brief line's to-do needs besides its words (fleet_brief_todos.py): the company, the day it hangs on (the
+    first waiting email, the meeting, the last contact) and the people of the team on it ('You' for the owner), each
+    with how the line names them. Only what the brief view already holds."""
+    return {'org': company(x), 'domain': str(x.get('domain') or ''), 'at': str(at or '')[:10], 'known': x.get('known') or '',
+            'team': [{'label': w, 'name': (short or {}).get(w, w)} for w in who if w and w != 'You'], 'mine': 'You' in who}
 
 
 def brief_text(view, today=None, hidden=(), learned=None):
-    """The brief as plain lines, for the Telegram message (the Fleet tab draws brief_items itself)."""
+    """The brief as plain lines, for the Telegram message (To-dos carry brief_items as to-dos: fleet_brief_todos.py)."""
     head = (t('Your Fleet this week') if view.get('every') == 'week' else t('Your Fleet today')) + (f" · {view['fleet_name']}" if view.get('fleet_name') else '')
     items = brief_items(view, today, hidden, learned=learned)
     lines = [head] + [f"• {i['title']}. {_cap(i['why'])}." for i in items[:BRIEF_SHOWN]]
     if len(items) > BRIEF_SHOWN:
-        lines.append(t('…and {} more in the Fleet tab.', len(items) - BRIEF_SHOWN))
+        lines.append(t('…and {} more in To-dos.', len(items) - BRIEF_SHOWN))
     if not items:
         lines.append(t('Nothing that needs the team.'))
     told = view.get('from') or []
