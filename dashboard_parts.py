@@ -37,13 +37,18 @@ KINDS = ('js', 'css', 'html')
 # they're in before anything of the group draws. tests/test_dashboard_parts.py checks that every rule in a lazy run
 # names a class, id or data- attribute only the group's scripts write.
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
+# The page fetches them in this order: what a tap on To-dos opens comes first (New to-do, Search, Send, a sign-in).
 LAZY = {
+    'newtodo': ('new-todo-dialog.js',),
+    'palette': ('shell-palette.js',),
+    'compose': ('todos-send.js', 'todos-compose.js'),
+    'signin': ('connections-signin-dialog.js',),
+    'emailframe': ('events-email-frame.js',),
+    'msgview': ('events-message.js',),
+    'voice': ('todos-chat-voice-rec.js',),
     'ask': ('todos-ask.js',),
     'calendar': ('calendar-view.css', 'calendar-view.js'),
     'clearrun': ('todos-clear.css', 'todos-clear-run.js'),
-    'compose': ('todos-compose.js',),
-    'emailframe': ('events-email-frame.js',),
-    'msgview': ('events-message.js',),
     'connections': ('base-layout.css', 'connections-cards.js'),
     'fleet': ('fleet-manage.css', 'fleet-rules.js', 'fleet-sharing.js', 'fleet-tabs.js', 'fleet-manage.js'),
     'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
@@ -55,15 +60,15 @@ LAZY = {
     'help': ('help-panel.js',),
     'split': ('graph-split.css', 'graph-split.js'),
     'settings': ('settings-ai.css', 'settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-ai.js',
-                 'settings-export.js', 'settings-upkeep.js', 'settings-apps.js'),
-    'learning': ('learning-missed.css', 'learning-bring.js', 'learning-missed.js'),
+                 'settings-export.js', 'settings-notify.js', 'settings-upkeep.js', 'settings-apps.js'),
+    'learning': ('learning-missed.css', 'learning-bring.js', 'learning-share.js', 'learning-missed.js'),
     'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
     'milestone': ('todos-milestone.css', 'todos-milestone.js'),
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
     'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js', 'todos-facebook-birthdays.js'),
     'digest': ('todos-digest.css', 'todos-digest.js'),
-    'talk': ('todos-chat-talk-live.js',),
+    'talk': ('todos-chat-talk-view.js', 'todos-chat-talk-live.js'),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }
 LAZY_RUN = re.compile(r'/\*@lazy\*/\n.*?(?:/\*@eager\*/\n|\Z)', re.S)

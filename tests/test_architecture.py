@@ -448,7 +448,13 @@ OVER_BUDGET = {}
 # shows them (+905); their connect sheets and cards load with Connections.
 # 1,394,000 -> 1,395,000 (2026-11-12): Signal chats is a send and draft kind like WhatsApp in the to-do lists, the send
 # dialog and the viewer, which draw first (about 0.9 KB).
-FIRST_LOAD_CEILING = 1_395_000
+# 1,395,000 -> 1,250,000 (2026-11-12): main sat at it. What a tap opens and To-dos doesn't draw loads when first
+# needed, the parts a tap on To-dos opens first: New to-do's dialog (LAZY 'newtodo'), Search and Ask (LAZY 'palette'),
+# the send dialog (with the composer, LAZY 'compose'), the sign-in dialog (LAZY 'signin'), a to-do's messages (with
+# their frame, LAZY 'emailframe') and voice recording (LAZY 'voice'); also Talk's bar and view (LAZY 'talk'), Settings'
+# Notifications and Model panels, Learning's Share learnings and votes, and what only the Fleet, Graph and Learning
+# parts draw (first load about 1,394,000 -> 1,243,221). The ceiling is about that plus 7 KB.
+FIRST_LOAD_CEILING = 1_250_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000
@@ -504,6 +510,16 @@ LAZY_CEILING['brief'] = 7_000
 # settings 136,000 -> 140,000 (2026-11-12): Work hours' Morning digest follows Snoozes land at, with its note under the
 # field (about 1.8 KB); main was 4 bytes under the old ceiling.
 LAZY_CEILING['settings'] = 140_000
+# 2026-11-12: out of the first load (FIRST_LOAD_CEILING 1,248,000), each part about this much bigger or new:
+# newtodo 26,000: New to-do's dialog (about 24.7 KB). palette 20,000: Search and Ask (about 18.8 KB).
+# compose 6,000 -> 34,000: the send dialog and a doc write's review (about 28.3 KB).
+# signin 18,000: the sign-in dialog (about 16.3 KB). voice 16,000: recording and writing it out (about 14.8 KB).
+# emailframe 6,000 -> 10,000: the messages dialog (about 4.4 KB). talk 52,000 -> 56,000: Talk's bar and view (about 11 KB).
+# settings 140,000 -> 151,000: Notifications and Model (about 10.6 KB). learning 24,000 -> 42,000: Share learnings and
+# votes, and the quality charts only Learning draws (about 17.8 KB). fleet 96,000 -> 100,000 and graph 384,000 ->
+# 386,000: what only their pages draw (about 4.8 and 2.9 KB).
+LAZY_CEILING.update(newtodo=26_000, palette=20_000, compose=34_000, signin=18_000, voice=16_000, emailframe=10_000,
+                    talk=56_000, settings=151_000, learning=42_000, fleet=100_000, graph=386_000)
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new

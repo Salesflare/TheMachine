@@ -13,7 +13,7 @@ const {chromium}=await import('./browser.mjs');
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
 // draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
-// opens once it's in.
+// opens once it's in, and so do New to-do and Search.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -50,7 +50,8 @@ try{
   // one at a time: the next is asked for once the one before is in (it's held, so none other comes)
   for(const until=Date.now()+20000;!asked.length;){assert.ok(Date.now()<until,'the parts are asked for once the page is drawn');await new Promise(r=>setTimeout(r,50))}
   await new Promise(r=>setTimeout(r,1500));assert.equal(asked.length,1,'one part at a time');
-  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof splOpen+typeof frOpen+typeof fuOpen),'undefined'.repeat(9));
+  assert.equal(await p.evaluate(()=>typeof helpOpen+typeof openGame+typeof pjOpen+typeof routinesLoad+typeof talkStart+typeof openClearRun+typeof splOpen+typeof frOpen+typeof fuOpen
+   +typeof ncOpen+typeof palShow+typeof sendOpen+typeof signinOpen+typeof emailOpen+typeof micStart+typeof talkPaint+typeof renderNotify+typeof renderShare),'undefined'.repeat(18));
   const graphRules=()=>p.evaluate(()=>[document.querySelector('style[data-lazy-css="graph-pages.css"]').textContent.includes('.graph-list{'),getComputedStyle(document.body.appendChild(Object.assign(document.createElement('div'),{className:'graph-list'}))).display]);
   assert.deepEqual(await graphRules(),[false,'block']);
   await p.locator('#suggestions .all-clear .poke').click();
@@ -114,6 +115,17 @@ try{
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-settings-'));){assert.ok(Date.now()<until,'the settings part is asked for');await new Promise(r=>setTimeout(r,50))}
   assert.equal(await p.locator('#settings').isHidden(),true);
   release();hold=null;holdOnly=null;await p.waitForFunction(()=>!document.querySelector('#settings').hidden&&settingsNow==='writing'&&document.querySelector('#voices').innerHTML!=='');
+  await context.close()}
+ // New to-do and Search tapped while their parts are on their way: each opens once its part is in
+ for(const [group,open,shown] of [['newtodo',()=>newTodo(),'#new-card[open]'],['palette',()=>palOpen({todos:true}),'#palette[open]']]){
+  let release;hold=new Promise(r=>release=r);holdOnly='lazy-'+group+'-';asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push(group+': '+e.message+' '+e.stack));
+  await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+  await p.evaluate(open);
+  for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-'+group+'-'));){assert.ok(Date.now()<until,'the '+group+' part is asked for');await new Promise(r=>setTimeout(r,50))}
+  assert.equal(await p.locator(shown).count(),0);
+  release();hold=null;holdOnly=null;await p.locator(shown).waitFor();
   await context.close()}
  // A link straight to someone in the Graph, its part held back: the Graph opens on them, and draws them once the part is in
  {let release;hold=new Promise(r=>release=r);asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});

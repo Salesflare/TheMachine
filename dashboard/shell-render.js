@@ -17,7 +17,7 @@ let drawnWhole=null;
 // own data, cleared at 0. Work or Personal alone leaves it as All has it; a push sets it the same way (sw.js, waiting_count).
 function appBadge(n){try{if(navigator.setAppBadge)(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch{}}
 function render(view){const first=!drawnWhole&&!view&&/^(#todos|#chat=[a-f0-9]{16})?$/.test(location.hash);  // a page's first drawing on To-dos (below)
-scopeSync(state.locale);try{talkFromStatus();talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first)renderNotify();fixedLoad();try{palAskShow()}catch{}
+scopeSync(state.locale);try{talkFromStatus();if(lazyIn('talk'))talkViewPaint()}catch{}applyLocale(state.locale);renderNeedsYou();if(!first&&lazyIn('settings'))renderNotify();fixedLoad();try{palAskShow()}catch{}
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
@@ -79,7 +79,7 @@ const decisionRow=d=>{const a=make('article',{},make('h3',{},d.title||state.sugg
  a.style.setProperty('--c',`var(--${({mint:'mint',muted:'faint',lavender:'lavender',amber:'amber'})[choiceTone[d.choice]||'muted']})`);return a};
 // Learning's own parts are drawn when its file is in (learning-missed.js draws them then)
 const learnIn=lazyIn('learning'),settingsIn=lazyIn('settings'),connIn=lazyIn('connections');if(learnIn)renderQuality();
-if(learnIn&&learnEdit==null)setHTML($('#facts'),learnedList());if(learnIn)setHTML($('#learn-changes'),learnChanges());renderShare();renderVotes();  // an open editor keeps what was typed until Save or Cancel
+if(learnIn&&learnEdit==null)setHTML($('#facts'),learnedList());if(learnIn)setHTML($('#learn-changes'),learnChanges());if(learnIn){renderShare();renderVotes()}  // an open editor keeps what was typed until Save or Cancel
 $('#decisions').replaceChildren(...clipNodes('decisions',clipRows(state.decisions,decisionRow),()=>[make('p',{class:'muted'},'No decisions yet.')],5));if(learnIn)learnTabs();
 if(connIn)drawConnectors();
 if(state.manage_url){$('#manage').href=state.manage_url;$('#manage').hidden=false;$('#sign-out').hidden=false;$('#report-problem').href=new URL('/support',state.manage_url).href;$('#report-problem').removeAttribute('target');$('#connect-more').replaceChildren(make('div',{class:'connect-pills'},make('a',{class:'manage',href:'#connect=google'},'Connect Google'),make('a',{class:'manage',href:'#connect=microsoft'},'Connect Microsoft'),make('a',{class:'manage',href:'#connections=add','data-connect-open':'imap'},'Connect other email'),

@@ -1,26 +1,3 @@
-// Handoffs in one Work Fleet: the ones you handed to a teammate (asked, from fleet_out, as on the card's own line) and the
-// ones a teammate hands you that wait under Suggestions. Open first; accepted and done ones after, quieter, three shown.
-const HO_Q=/^Can you take this on: ([\s\S]*?)\? Their summary: “([\s\S]*?)”([\s\S]*)$/;
-function fleetHandoffs(f,work,inFleet){const cards=new Set((state?.suggestions||[]).map(s=>s.id));
- const what=q=>{const m=HO_Q.exec(q||'');return m?[m[1]+(m[2]?`: “${m[2]}”`:''),m[3].trim()].filter(Boolean).join(' '):String(q||'')};
- const stage=a=>{const [st,...note]=String(a.answer||'').split(': ');const n=note.join(': ');
-  if(a.withdrawn)return['Taken back','muted',true];
-  if(['asked','waiting'].includes(a.status))return[a.no_ping?t('Waiting, they won’t get a ping'):t(a.delivered===false?'Waiting for an answer, not delivered yet':'Waiting for an answer'),'amber',false];
-  if(a.status==='expired')return['No answer in time','orange',false];
-  if(a.status==='declined'||st==='declined')return['Declined','orange',false,n];
-  if(st==='done')return['Done','muted',true];
-  if(st.startsWith('accepted'))return[st==='accepted'?'Accepted':'Accepted with a change','mint',true,n];
-  return[st||a.status,'muted',true,n]};
- const rows=[
-  ...(f.waiting||[]).filter(w=>w.kind==='handoff'&&inFleet(w,work)).map(w=>({who:'From '+w.name,text:what(w.question),st:['Waits for you','amber',false],at:w.at,href:/^q_[a-f0-9]{16}$/.test(w.id)?'#fleet='+w.id:''})),
-  ...(f.asked||[]).filter(a=>a.kind==='handoff'&&inFleet(a,work)).map(a=>{const card=String(a.context||'').slice(8);return{who:'To '+a.name,text:what(a.question),st:stage(a),at:a.answered_at||a.at,href:cards.has(card)?'#card='+card:''}})];
- if(!rows.length)return'';
- const open=rows.filter(r=>!r.st[2]),quiet=rows.filter(r=>r.st[2]),shown=3;
- const row=(r,k)=>{const more=r.st[2]&&k>=shown,text=r.text+(r.st[3]?` · “${r.st[3].replace(/^“|”$/g,'')}”`:'');
-  return html`<li class="fleet-ho${r.href?html` tap`:''}${r.st[2]?html` quiet`:''}${more?html` fleet-ho-more`:''}"${more?html` hidden`:''}${r.href?html` tabindex="0" role="link" aria-label="${t('{}: open the to-do',r.who)}" data-ho-go="${r.href}"`:''}><div class="fleet-ho-top"><strong>${r.who}</strong>${chip(r.st[0],r.st[1])}</div><p class="fleet-ho-sum" title="${text}">${time(r.at,true)} · ${text}</p></li>`};
- return html`<div class="fleet-box fleet-handoffs"><h3>Handoffs</h3><ul class="fleet-ho-list">${open.map(row)}${quiet.map(row)}</ul>${quiet.length>shown?html`<button type="button" class="quiet fleet-brief-show" data-ho-more>Show ${quiet.length-shown} more</button>`:''}</div>`}
-function fleetIntroOffers(f,work,inFleet){const offers=(f.intro_offers||[]).filter(o=>inFleet(o,work));
- return offers.length?html`<div class="list">${offers.map(o=>html`<article><p>${htmlT('{} knows someone at {}.',html`<strong>${o.name}</strong>`,o.about)}</p><form class="fleet-ask fleet-intro-form" data-fleet="${o.fleet}" data-member="${o.member_id}" data-about="${o.about}"><input name="note" maxlength="300" placeholder="Why, in a line (optional; they see it)" aria-label="Why"><button class="primary">Ask ${o.name} for an intro</button></form></article>`)}</div>`:''}
 // Back from a check-in while a teammate still has it: no Do it (that would prepare it all over again); Mark done leads
 const withTeammate=s=>!closed(s)&&s.status!=='snoozed'&&!s.handled_hint&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s);
 // A new handoff text on a card a teammate still has (the owner asked to hand it to someone else): it waits for their review.

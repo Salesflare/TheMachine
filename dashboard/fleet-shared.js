@@ -80,8 +80,6 @@ function sharePopClose(){$('#share-pop')?.remove()}
 function sharePopAt(anchor,body){sharePopClose();const p=document.createElement('div');p.id='share-pop';p.className='share-pop';p.setAttribute('role','dialog');p.setAttribute('aria-label','Sharing');setHTML(p,body);document.body.append(p);
  const r=anchor?.getBoundingClientRect?.();if(r&&r.width){const w=Math.min(300,innerWidth-32);p.style.width=w+'px';p.style.left=Math.max(16,Math.min(r.right-w,innerWidth-w-16))+'px';const below=r.bottom+6+p.offsetHeight<innerHeight;p.style.top=(below?r.bottom+6:Math.max(16,r.top-6-p.offsetHeight))+'px'}else p.classList.add('floating');
  p.querySelector('button')?.focus();return p}
-function sharePop(chip){const s=JSON.parse(chip.dataset.share||'{}'),on=graphSharing.find(x=>x.confirmed),fleet=on?.fleet,before=on?.started===false;const team=s.share==='team';
- sharePopAt(chip,html`<p class="share-pop-why">${s.why||(team?'Shared with your team':'Only you')}</p>${s.people?.length?html`<p class="share-pop-why">Shared with ${namesLine(s.people)}</p>`:''}${s.fixed?'':html`<div class="actions"><button type="button" class="${team?'ghost':'primary'}" data-pop-set="${chip.dataset.shareEvent}" data-share="${team?'only_you':'team'}"${before?html` data-before="1"`:''}>${team?(before?'Keep private':'Unshare'):'Share with the team'}</button>${!team&&graphTeammates.length?html`<button type="button" class="ghost" data-pop-people="${chip.dataset.shareEvent}">Share with…</button>`:''}</div>`}${team&&!s.fixed&&!before?html`<p class="fleet-fine muted">Unsharing deletes teammates' copies. Someone may have read it already.</p>`:''}${fleet?html`<p class="fleet-fine"><a href="#shared=${fleet}">See what's shared</a></p>`:''}`)}
 function sharePopSuggest(anchor,sug){const priv=sug.choice==='private';
  sharePopAt(anchor||$('#toast'),html`<p>${priv?`Always keep threads with ${sug.name} private?`:`Always share client threads with ${sug.name}?`}</p><div class="actions"><button type="button" class="primary" data-pop-rule="${sug.key}" data-name="${sug.name}" data-choice="${priv?'private':'team'}">Yes</button><button type="button" class="ghost" data-pop-close>No</button></div>`)}
 document.addEventListener('click',async e=>{const p=$('#share-pop');if(!p)return;
@@ -94,11 +92,6 @@ document.addEventListener('click',async e=>{const p=$('#share-pop');if(!p)return
   else{const c=b.dataset.choice;await graphPost('graph_rule',{key:b.dataset.popRule,choice:c,name:b.dataset.name});sharePopClose();toast(c==='private'?`Threads with ${b.dataset.name} stay with you.`:`Client threads with ${b.dataset.name} go to the team.`);await graphPeople(graphNode,true)}}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#share-pop'))sharePopClose()});
-const fleetGroups=n=>[...new Set((n.fleet?.in||[]).map(x=>({work:'Fleet',family:'Family',friends:'Friend'})[x.kind]||x.label))].join(' · ');
-const fleetLine=n=>[n.fleet?.machine?'Has a Machine':'',...(n.fleet?.in||[]).map(x=>x.kind==='work'&&x.fleet_name?`${x.label} (${x.fleet_name})`:x.label)].filter(Boolean).join(' · ');
-const fleetChip=(n,where)=>n.fleet?.in?.length?html`<span class="chip fleet-chip${where?' fleet-chip-'+where:''}" style="--c:var(--mint)" title="${fleetLine(n)}"><span class="ct">${fleetGroups(n)}</span></span>`:'';
-function fleetAskRow(n){if(!state?.fleet?.on||!['person','org'].includes(n.kind)||n.fleet?.in?.some(x=>x.kind==='work'))return'';const about=n.kind==='org'?(n.domain||n.name):/^email:/.test(n.id)?n.id.slice(6):n.name;
- return html`<p class="graph-sub detail-fleet-ask"><button type="button" class="link" data-fleet-ask="${about}">Ask the Fleet who knows ${n.name||about}</button></p>`}
 let fleetData=null,fleetShown=Promise.resolve(),fleetViewVersion=0,fleetPane=localStorage.getItem('fleet-pane')||'';
 // The Fleet tab shows one view at a time; switching is instant (no reload) and remembered.
 function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[data-pane="${CSS.escape(id)}"]`))return;fleetPane=id;localStorage.setItem('fleet-pane',id);

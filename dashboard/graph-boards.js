@@ -345,7 +345,7 @@ $('#record-dialog').addEventListener('close',e=>{if(!e.currentTarget.open)rec=nu
 document.addEventListener('click',async e=>{const n=e.target.closest('[data-graph-new]');if(n){e.preventDefault();return n.dataset.graphNew==='project'?pjOpen({}):recOpen(n.dataset.graphNew)}
  const t=e.target.closest('[data-card-here],[data-same-as],[data-org-delete]');if(!t||!t.closest('#people-view'))return;e.preventDefault();t.closest('details')?.removeAttribute('open');
  const name=$('#people-view .graph-detail>.name-row h3')?.textContent||'';
- if(t.hasAttribute('data-card-here'))return ncOpen({about:[{id:graphNode,name}]});
+ if(t.hasAttribute('data-card-here'))return newTodo({about:[{id:graphNode,name}]});
  if(t.hasAttribute('data-same-as'))return recOpen('same',{id:graphNode,name});
  if(!confirm(`Delete ${name}? Its notes and details go too.`))return;t.disabled=true;
  try{await graphPost('graph_org_delete',{node_id:graphNode});toast(`Deleted ${name}.`);graphBack('orgs')}catch(err){errCaught(err);t.disabled=false;toast(err.message,true)}});

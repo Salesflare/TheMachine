@@ -41,4 +41,4 @@ $('#settings-meaning').addEventListener('click',e=>{const b=e.target.closest('#m
 // Served as a part that loads when first needed (dashboard_parts.LAZY), with Settings' other panels: a page
 // drawn before they came draws Settings' panels now (render skipped them). Inline (the tests, the demo) these parts run
 // before shell-render.js, which draws them itself.
-if(self.LAZY_FILES?.settings&&drawnWhole)try{renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderVoices();renderSkills();appsRender()}catch(e){errCaught(e);console.error(e)}
+if(self.LAZY_FILES?.settings&&drawnWhole)try{renderHours();renderLocale();renderAgents();renderSignatures();renderLookups();renderAddresses();renderSecurity();renderVoices();renderSkills();appsRender();renderNotify();renderModelPanel()}catch(e){errCaught(e);console.error(e)}
