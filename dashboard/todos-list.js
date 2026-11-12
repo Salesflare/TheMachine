@@ -194,7 +194,7 @@ $('#send-ask-save').onclick=async()=>{const text=$('#send-ask-text').value.trim(
  b.disabled=true;try{await saveDecision(sendTask,'other',text);$('#send-dialog').close()}catch(e){errCaught(e);$('#send-error').textContent=e.message}finally{b.disabled=false}};
 $('#send-ask-text').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)&&!e.isComposing){e.preventDefault();$('#send-ask-save').click()}});
 const showTheme=window.showTheme=()=>$('#theme-toggle').setAttribute('aria-checked',String(document.documentElement.dataset.theme==='light'));
-{const lines=['Reads everything. Sends nothing you didn’t approve.','All rights reserved. All decisions yours.','Powered by coffee (yours) and electricity (mine).','No inboxes were harmed in the making of this list.','Handcrafted by one human and one very patient robot.'];
+{const lines=['Reads everything. Sends nothing you didn’t approve.','All rights reserved. All decisions yours.','Powered by coffee (yours) and electricity (mine).','No inboxes were harmed.'];
 const day=Math.floor(Date.now()/864e5);$('#copyright').textContent=`© ${new Date().getFullYear()} The Machine. ${lines[day%lines.length]}`}
 $('#theme-toggle').onclick=()=>{chooseTheme(document.documentElement.dataset.theme==='light'?'dark':'light');showTheme()};showTheme();
 matchMedia('(prefers-color-scheme: light)').addEventListener('change',showTheme);
