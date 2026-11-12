@@ -1668,7 +1668,7 @@ def sendable(accounts):
         if a.get('shared') and not (isinstance(a.get('shared'), dict) and a['shared'].get('origin')):
             continue
         service = a.get('service', 'gmail')
-        if service in ('gmail', 'outlook') and next_actions.mail_account(a):
+        if service in ('gmail', 'outlook', 'imap') and next_actions.mail_account(a):
             out.add('email')
         elif service == 'intercom' and next_actions.intercom_replies_on(a):
             out.add('intercom')

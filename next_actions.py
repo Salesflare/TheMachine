@@ -15,7 +15,7 @@ import contextlib
 import hashlib
 import google_api
 import mail_attachments
-import ms_graph
+import ms_graph, smtp_mail
 import signatures
 import html
 import i18n
@@ -38,10 +38,10 @@ SEND_SCOPES = {'https://www.googleapis.com/auth/gmail.send',
 
 
 def mail_account(account):
-    """A mailbox that can send what the owner approves: Gmail (gog or broker) or Outlook (broker or own app)."""
+    """A mailbox that can send what the owner approves: Gmail (gog or broker), Outlook (broker or own app) or Other email."""
     service = account.get('service', 'gmail')
     return (service == 'gmail' and account.get('transport') in ('gog', 'broker')) or (
-        service == 'outlook' and account.get('transport') in ('broker', 'graph'))
+        service == 'outlook' and account.get('transport') in ('broker', 'graph')) or smtp_mail.sends(account)
 
 
 def sending_account(config, account_ids):
@@ -503,7 +503,7 @@ def reply_origin(result, account, config, replied):
         result['reply_elsewhere'] = str(home.get('email') or original['account_id'])
         return
     thread = str(original.get('thread_id') or '')
-    if re.fullmatch(r'[A-Za-z0-9+/=_-]{1,400}' if outlook(account) else r'[a-fA-F0-9]{1,64}', thread):
+    if re.fullmatch(r'[A-Za-z0-9+/=_-]{1,400}' if outlook(account) else r't[a-f0-9]{24}' if account.get('service') == 'imap' else r'[a-fA-F0-9]{1,64}', thread):
         result['thread_id'] = thread
     if outlook(account) and re.fullmatch(r'[A-Za-z0-9+/=_-]{1,400}', str(original.get('id') or '')):
         result['reply_to_id'] = original['id']
@@ -657,7 +657,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
             if value.get(field):
                 text = value[field]
                 # A Gmail thread ID is hex; an Outlook conversation ID is base64
-                pattern = (r'[A-Za-z0-9+/=_-]{1,400}' if outlook(account) else r'[a-fA-F0-9]{1,64}') if field == 'thread_id' else r'<[^\s<>\r\n]+>' if field == 'in_reply_to' else r'<[^\s<>\r\n]+>(?: <[^\s<>\r\n]+>)*'
+                pattern = (r'[A-Za-z0-9+/=_-]{1,400}' if outlook(account) else r't[a-f0-9]{24}' if account.get('service') == 'imap' else r'[a-fA-F0-9]{1,64}') if field == 'thread_id' else r'<[^\s<>\r\n]+>' if field == 'in_reply_to' else r'<[^\s<>\r\n]+>(?: <[^\s<>\r\n]+>)*'
                 if not isinstance(text, str) or len(text) > 1000 or not re.fullmatch(pattern, text):
                     raise ValueError('Invalid email thread header')
                 result[field] = text
@@ -667,11 +667,11 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         # From: the mailbox address, or an alias of the owner's that Gmail confirms this mailbox sends as (senders,
         # own_addresses.senders). The service picks it, never the draft; the owner can change it in the review.
         offered = [a for a in (senders or {}).get(account['id']) or () if a and a.lower() != account['email'].lower()]
-        if offered and not outlook(account):
+        if offered and account.get('service', 'gmail') == 'gmail':
             result['from_options'] = [account['email'], *offered]
             result['from'] = pick_sender(account['email'], result['from_options'],
                                          (replied or {}).get(str(result.get('in_reply_to') or '').strip()))
-        days = value.get('snooze_days', 3 if result.get('thread_id') else 0)
+        days = 0 if account.get('service') == 'imap' else value.get('snooze_days', 3 if result.get('thread_id') else 0)  # IMAP: never moved
         if isinstance(days, bool) or not isinstance(days, int) or not 0 <= days <= 14:
             raise ValueError('snooze_days is a whole number of days from 0 (no snooze) to 14')
         if days and not result.get('thread_id'):
@@ -1268,8 +1268,8 @@ class EmailTransport:
         account = self.account(action)
         if reads_as_reply(action) and not action.get('in_reply_to'):
             raise ValueError(i18n.t(UNLINKED_REPLY))  # never a reply quietly sent as a new thread
-        if outlook(account):
-            return self.outlook_preflight(action, account)
+        if account.get('service') in ('outlook', 'imap'):  # Other email: through its own mail server (smtp_mail.py)
+            return self.outlook_preflight(action, account) if outlook(account) else smtp_mail.preflight(self, action, account)
         if not (granted_scopes(self.config, self.credential, account) & SEND_SCOPES):
             raise ValueError('Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.')
         profile = self.read(self.config, account, 'gmail', 'v1', 'gmail.users.getProfile',
@@ -1296,8 +1296,8 @@ class EmailTransport:
         key = action['from'].lower()
         if key not in self.signatures:  # Loaded by preflight, before the send is admitted.
             own = signatures.get(self.config, account['id'])
-            if outlook(account):
-                # Graph has no signature API: the one the owner set, else the one their sent mail ends with.
+            if outlook(account) or account.get('service') == 'imap':
+                # Graph and IMAP have no signature API: the one the owner set, else the one their sent mail ends with.
                 self.signatures[key] = (own or self.detect_signature(account) or {}).get('html', '')
             elif own and own.get('source') == 'owner' and own['html'].strip():
                 self.signatures[key] = own['html']  # the owner's override of Gmail's own
@@ -1310,9 +1310,9 @@ class EmailTransport:
     def detect_signature(self, account):
         """Find an Outlook signature in the last sent messages and keep it; None when Outlook can't be read now."""
         try:
-            found = signatures.detect(ms_graph.sent_bodies(self.config, self.credential, account),
-                                      (str(self.config.get('owner_name') or '').split() or [''])[0])
-        except ms_graph.GraphError:
+            found = signatures.detect((smtp_mail.sent_bodies if account.get('service') == 'imap' else ms_graph.sent_bodies)(
+                self.config, self.credential, account), (str(self.config.get('owner_name') or '').split() or [''])[0])
+        except (ms_graph.GraphError, smtp_mail.imap_mail.ImapError):
             return None
         try:
             return signatures.save(self.config, account['id'], found, 'detected')
@@ -1410,8 +1410,8 @@ class EmailTransport:
 
     def send(self, action, job):
         account = self.account(action)
-        if outlook(account):
-            return self.outlook_send(action, job, account)
+        if account.get('service') in ('outlook', 'imap'):
+            return self.outlook_send(action, job, account) if outlook(account) else smtp_mail.send(self, action, job, account)
         request = {'raw': base64.urlsafe_b64encode(mime_bytes(action, job, self.signature(action, account), self.config)).decode().rstrip('=')}
         if action.get('thread_id'):
             request['threadId'] = action['thread_id']
