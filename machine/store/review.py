@@ -16,6 +16,7 @@ import graph_board_reviews
 import project_org_checks
 from machine.config import LOG
 import meeting_mail
+import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
@@ -123,6 +124,65 @@ def intercom_assignment(metadata, ids, emails):
     return 'team' if metadata.get('team_assignee_id') else 'nobody'
 
 
+REPLY_ONLY = ('intercom', 'email')  # a to-do whose steps are only a reply to the customer: the team's reply does it
+
+
+def stamp_of(value):
+    try:
+        return dt.datetime.fromisoformat(str(value)).timestamp()
+    except ValueError:
+        return None
+
+
+def reply_does_it(todo, metadata):
+    """True when all a to-do asks is a reply to this conversation's customer: its steps are a drafted reply here (or by
+    mail to the customer, without files) and nothing else, and it waits for no result (done_when). A to-do with no
+    drafted step, or with anything beyond the reply (a quote, a file, a step elsewhere), isn't done by a reply."""
+    if todo.get('done_when'):
+        return False
+    try:
+        steps = next_actions.actions(json.loads(todo.get('next_action') or 'null'))
+    except (ValueError, TypeError, AttributeError):
+        return False
+    customer = str(metadata.get('contact_email') or '').lower()
+    replies = 0
+    for step in steps:
+        kind = step.get('kind') if isinstance(step, dict) else None
+        if kind == 'open':
+            continue  # only a link to the conversation
+        if kind not in REPLY_ONLY or step.get('attachments'):
+            return False
+        if kind == 'intercom' and str(step.get('conversation_id') or '') != str(metadata.get('conversation_id') or ''):
+            return False
+        if kind == 'email' and (not customer or customer not in json.dumps(step.get('to') or '').lower()):
+            return False
+        replies += 1
+    return replies > 0
+
+
+def intercom_handled(metadata, todo, owner_ids):
+    """('closed' | 'answered', who, when) when Intercom shows for certain that the team handled a to-do's conversation
+    after the to-do was made, else None. who: '' for the owner, else the teammate's name as Intercom gives it ('' when
+    it has none). Closed: someone on the team closed it since, and it is still closed. Answered: someone on the team
+    replied to the customer since, the customer hasn't written again after that, and a reply is all the to-do asks
+    (reply_does_it). A note, a snooze, an assignment, a bot, Fin or an automatic message is never either
+    (connectors/intercom.py handled_facts)."""
+    made = stamp_of(todo.get('created_at'))
+    if made is None:
+        return None
+
+    def who(fact):
+        return '' if str(fact.get('admin_id') or '') in owner_ids else ' '.join(str(fact.get('name') or '').split())[:100]
+    closed = metadata.get('team_closed')
+    if metadata.get('state') == 'closed' and isinstance(closed, dict) and type(closed.get('at')) is int and closed['at'] > made:
+        return ('closed', who(closed), closed['at'])
+    reply, customer = metadata.get('team_reply'), metadata.get('customer_at')
+    if (isinstance(reply, dict) and type(reply.get('at')) is int and reply['at'] > made
+            and (customer is None or (type(customer) is int and customer <= reply['at'])) and reply_does_it(todo, metadata)):
+        return ('answered', who(reply), reply['at'])
+    return None
+
+
 def signal_weight(row):
     """How much of a review's signal budget a signal takes: BRIEF_WEIGHT for bulk mail (a title line), else 1."""
     metadata = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
@@ -162,7 +222,8 @@ REVIEW_METADATA_SKIP = {
     'in-reply-to', 'date', 'mailbox_user_id', 'source_account', 'bucket_minutes', 'unit', 'lines_shown',
     'parts_returned', 'message_id', 'chat_id', 'sender_id', 'channel_id', 'message_ts', 'thread_ts', 'user_id',
     'bot_id', 'conversation_id', 'created_at', 'updated_at', 'post_time_ms', 'source_url', 'thread_id',
-    'admin_assignee_id', 'team_assignee_id', 'assignee_name', 'assignee_email', 'admin_emails', 'list_id'}
+    'admin_assignee_id', 'team_assignee_id', 'assignee_name', 'assignee_email', 'admin_emails', 'list_id',
+    'team_closed', 'team_reply', 'customer_at'}
 
 
 def compact_metadata(metadata, budget=2500):

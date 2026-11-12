@@ -20,6 +20,8 @@ Un’attività da una conversazione Intercom mostra da dove viene: **Leggi il me
 
 Diventano attività solo le conversazioni assegnate a te, o ancora a nessuno, anche quelle in una inbox del team senza nessuno assegnato. Quando qualcuno del team prende una conversazione in Intercom, la sua attività aperta si chiude da sola, con **Annulla**. Su un Intercom condiviso con te, le tue conversazioni sono quelle assegnate all’admin con cui scrivi.
 
+Un’attività da Intercom si chiude da sola anche quando qualcuno del team chiude la conversazione in Intercom, o risponde e il cliente non ha più scritto, se l’attività chiedeva solo una risposta. Una nota, un posticipo o la risposta di un bot non contano mai.
+
 Quando Intercom non può rispondere dalla tua Machine (condiviso con te solo in lettura, risposte non attive o non collegato), la bozza parte via email. L’attività dice perché, e la sua revisione chiede **Inviare via email invece?** Per rispondere tu in Intercom, tocca **Collega il tuo Intercom** sull’attività e accedi. Poi l’attività viene riscritta come risposta in Intercom. Non parte nulla prima che tu lo invii.
 
 Il tuo Intercom e uno condiviso con te per lo stesso workspace non leggono entrambi: quello condiviso resta in pausa e le sue conversazioni passano al tuo, ognuna una volta.

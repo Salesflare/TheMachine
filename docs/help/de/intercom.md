@@ -20,6 +20,8 @@ Eine Aufgabe aus einem Intercom-Gespräch zeigt, woher sie kommt: **Nachricht le
 
 Nur Gespräche, die dir oder noch niemandem zugewiesen sind, werden zu Aufgaben, auch solche in einem Team-Posteingang ohne Zuweisung. Übernimmt jemand aus dem Team ein Gespräch in Intercom, schließt sich die offene Aufgabe von selbst, mit **Rückgängig**. Bei einem mit dir geteilten Intercom sind deine Gespräche die, die dem Admin zugewiesen sind, als der du schreibst.
 
+Eine Intercom-Aufgabe schließt sich auch, sobald jemand aus dem Team das Gespräch in Intercom schließt, oder darauf antwortet und der Kunde seitdem nicht mehr geschrieben hat, wenn die Aufgabe nur eine Antwort verlangte. Eine Notiz, ein Zurückstellen oder die Antwort eines Bots zählt nie.
+
 Kann Intercom nicht von deiner Machine aus antworten (nur zum Lesen mit dir geteilt, Antworten nicht eingeschaltet oder nicht verbunden), geht der Entwurf per E-Mail. Die Aufgabe sagt warum, und ihre Prüfung fragt **Stattdessen per E-Mail senden?** Um selbst in Intercom zu antworten, tippe auf der Aufgabe auf **Eigenes Intercom verbinden** und melde dich an. Danach wird die Aufgabe neu als Antwort in Intercom geschrieben. Nichts geht raus, bevor du es sendest.
 
 Dein eigenes Intercom und ein mit dir geteiltes für denselben Workspace lesen nicht beide: Das geteilte ruht, und seine Gespräche gehen zu deinem, jedes einmal.

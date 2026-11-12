@@ -20,6 +20,8 @@ Une tâche venue d’une conversation Intercom montre son origine : **Lire le me
 
 Seules les conversations attribuées à vous, ou encore à personne, deviennent des tâches, y compris celles d’une boîte d’équipe sans personne attribué. Quand un membre de l’équipe prend une conversation dans Intercom, sa tâche ouverte se ferme d’elle-même, avec **Annuler**. Sur un Intercom partagé avec vous, vos conversations sont celles attribuées à l’admin sous lequel vous écrivez.
 
+Une tâche Intercom se ferme aussi d’elle-même quand un membre de l’équipe ferme la conversation dans Intercom, ou y répond sans que le client ait réécrit depuis, si la tâche ne demandait qu’une réponse. Une note, une mise en attente ou la réponse d’un bot ne comptent jamais.
+
 Quand Intercom ne peut pas répondre depuis votre Machine (partagé avec vous en lecture seule, réponses non activées, ou non connecté), le brouillon part par e-mail. La tâche dit pourquoi, et sa revue demande **Envoyer plutôt par e-mail ?** Pour répondre vous-même dans Intercom, appuyez sur **Connectez votre propre Intercom** sur la tâche et connectez-vous. La tâche est alors réécrite comme réponse dans Intercom. Rien ne part avant que vous l’envoyiez.
 
 Votre propre Intercom et un Intercom partagé avec vous pour le même espace de travail ne lisent pas tous les deux : le partagé se met en pause, et ses conversations passent au vôtre, chacune une seule fois.

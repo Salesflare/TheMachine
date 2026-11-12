@@ -36,6 +36,7 @@ from machine.store.cards import return_waiting, source_line
 from machine.text import encoded, first_sentence
 import next_actions
 from machine.store import outcomes
+from machine.store.review import intercom_handled
 import skills
 from timeutil import local_tz, now
 import todo_areas
@@ -824,6 +825,74 @@ class DecisionsStore:
                 close_by_itself(db, row, decision_id, taken[0][1], 'intercom', stamp, undo_hours)
                 closed.append(sid)
         return closed
+
+    def intercom_only(self, db, row):
+        """The Intercom conversations a to-do was made from, when they are all its evidence (other evidence, a mail or the
+        owner's own words, is theirs to judge): [event rows], else []."""
+        ids = json.loads(row['event_ids'] or '[]')
+        events = db.execute('SELECT id,account_id,kind,metadata FROM events WHERE id IN (' + ','.join('?' * len(ids)) + ')', ids).fetchall() if ids else []
+        return events if events and all(e['kind'] == 'intercom.conversation' for e in events) else []
+
+    def close_handled_intercom(self, undo_hours=24):
+        """Open to-dos made only from Intercom conversations that Intercom shows handled since the to-do was made close by
+        themselves: Done, "Closed in Intercom" or "Answered in Intercom" (by whom, when a teammate), with Undo for a day.
+        Only for certain (review.intercom_handled): someone on the team closed it, or replied and the customer hasn't
+        written since, and a reply is all the to-do asks. Never a note, a snooze, an assignment, a bot or Fin. Once per
+        close or reply: after an Undo that one stays, a newer one closes it again. Not while a send of it is under way.
+        The first run after an update is the one-time sweep (the sync rereads open to-dos' conversations once). Only
+        reads, without a write lock, until one is found. Returns the closed ids."""
+        stamp, found, owners = now(), [], {}
+        with self.connect() as db:
+            if not db.execute("SELECT 1 FROM events WHERE kind='intercom.conversation' LIMIT 1").fetchone():
+                return []
+            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') "
+                              "AND EXISTS(SELECT 1 FROM json_each(s.event_ids) j JOIN events e ON e.id=j.value WHERE e.kind='intercom.conversation')").fetchall()
+            for row in rows:
+                events, facts = self.intercom_only(db, row), []
+                for e in events:
+                    if e['account_id'] not in owners:
+                        owners[e['account_id']] = self.intercom_owner(db, e['account_id'])[0]
+                    facts.append(intercom_handled(json.loads(e['metadata'] or '{}'), dict(row), owners[e['account_id']]))
+                if not facts or not all(facts):
+                    continue
+                how = 'closed' if all(f[0] == 'closed' for f in facts) else 'answered'
+                names = sorted({f[1] for f in facts})
+                decision_id = f'intercom-{how}:' + hashlib.sha256(f"{row['id']}:{sorted((e['id'], f[2]) for e, f in zip(events, facts))}".encode()).hexdigest()[:32]
+                found.append((row['id'], decision_id, names[0] if len(names) == 1 else ''))
+        closed = []
+        if not found:
+            return closed
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for sid, decision_id, name in found:
+                row = db.execute("SELECT * FROM suggestions WHERE id=? AND status IN ('pending','accepted','instructions','prepared','snoozed')", (sid,)).fetchone()
+                if not row or db.execute('SELECT 1 FROM decisions WHERE id=?', (decision_id,)).fetchone():
+                    continue  # closed already, or closed for this before and the owner took it back
+                if db.execute("SELECT 1 FROM action_jobs WHERE suggestion_id=? AND status IN ('sending','uncertain')", (sid,)).fetchone():
+                    continue  # a send on its way settles first
+                close_by_itself(db, row, decision_id, name, 'intercom', stamp, undo_hours)
+                db.execute('UPDATE suggestions SET early=0 WHERE id=?', (sid,))
+                closed.append(sid)
+        if closed:
+            LOG.info('intercom handled closed=%s', len(closed))
+        return closed
+
+    def intercom_rereads(self, account_id, limit=50):
+        """The conversations of open to-dos in an Intercom account synced before handled_facts existed (no customer_at
+        yet), newest first: the sync reads them again once (connectors/intercom.py)."""
+        with self.connect() as db:
+            rows = db.execute("SELECT DISTINCT e.source_id,e.metadata FROM suggestions s JOIN json_each(s.event_ids) j JOIN events e ON e.id=j.value "
+                              "WHERE s.status IN ('pending','accepted','instructions','prepared','snoozed') AND e.kind='intercom.conversation' "
+                              "AND e.account_id=? ORDER BY e.occurred_at DESC", (account_id,)).fetchall()
+        wanted = []
+        for r in rows:
+            try:
+                fresh = 'customer_at' in json.loads(r['metadata'] or '{}')
+            except (ValueError, TypeError):
+                fresh = False
+            if not fresh and r['source_id'] not in wanted:
+                wanted.append(r['source_id'])
+        return wanted[:limit]
 
     def close_looks_done(self, hours=LOOKS_DONE_HOURS, undo_hours=24):
         """A to-do that has looked done (looks_done: a later signal showed it handled, or its run found it done) for

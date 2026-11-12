@@ -151,6 +151,8 @@ Only events worth a look are stored: failed payments, disputes, ended subscripti
 
 Conversations updated in the last seven days (`bootstrap_days`), read in frozen search windows whose cursor commits with the conversations. Polls overlap six hours, the whole window is reread daily, and an expired cursor replays its window.
 
+Each conversation also keeps who on the team last closed or answered it and when the customer last wrote (admins only: bots, Fin and notes never count). An open to-do made only from Intercom closes by itself, with Undo, once someone on the team closed the conversation after the to-do was made, or answered it there and the customer hasn't written since, when a reply was all the to-do asked. The first sync after an update reads the conversations of open to-dos once more (up to 50) to fill this in.
+
 **Read-only by design:**
 
 - REST with API version 2.11, and only `GET /me`, `GET /conversations/<id>` and the conversation search (a read-only POST). Anything else is refused before the token is read, so reading never writes.

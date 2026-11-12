@@ -362,6 +362,15 @@ class CardChatApp:
             if r['source'] == 'intercom_replies':  # drafted again as a reply in Intercom (Store.redraft_intercom_emails)
                 owner.append({'kind': 'event', 'text': i18n.t('Intercom replies are on: writing the reply there'), 'at': at})
                 continue
+            if r['source'] == 'intercom' and r['id'].startswith(('intercom-closed:', 'intercom-answered:')):
+                # the team closed or answered it in Intercom (Store.close_handled_intercom); Undo takes this back like a tap
+                who = clamp(r['feedback'] or '', 100)
+                if r['id'].startswith('intercom-closed:'):
+                    text = i18n.t('Closed in Intercom by {}', who) if who else i18n.t('Closed in Intercom')
+                else:
+                    text = i18n.t('Answered in Intercom by {}', who) if who else i18n.t('Answered in Intercom')
+                owner.append({'kind': 'event', 'text': text, 'choice': 'complete', 'at': at})
+                continue
             if r['source'] == 'intercom':  # a teammate was assigned the conversation (Store.close_taken_intercom)
                 owner.append({'kind': 'event', 'text': i18n.t('Closed by itself: {} took it in Intercom', r['feedback']) if r['feedback']
                               else i18n.t('Closed by itself: a teammate took it in Intercom'), 'choice': 'complete', 'at': at})
