@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {dashboardPage} from './dashboard-page.mjs';
@@ -21,9 +22,15 @@ assert.equal(run.status,0,run.stderr);
 const data=JSON.parse(run.stdout);
 const dashboard=await dashboardPage(),shots=process.env.MESSAGE_CONTEXT_SHOTS;
 const now=new Date().toISOString();
-const SRC={slack:'Source: Slack DM from Kai Moreno',whatsapp:'Source: WhatsApp from Garden club',email:'Source: email from Avery Stone'};
-const TITLE={slack:'Look into the missing bug report to-do',whatsapp:'Pick up the ladder from Bo on Friday',email:'Tell Avery if the booth lighting is a go'};
+const SRC={slack:'Source: Slack DM from Kai Moreno',whatsapp:'Source: WhatsApp from Garden club',email:'Source: email from Avery Stone',thread:'Source: Slack DM from Rui Costa'};
+const TITLE={slack:'Look into the missing bug report to-do',whatsapp:'Pick up the ladder from Bo on Friday',email:'Tell Avery if the booth lighting is a go',thread:'Log the release blocker'};
 const cards=Object.entries(data).map(([k,v])=>({id:v.id,title:TITLE[k],body:'',status:'pending',scope:'work',created_at:now,event_ids:v.originals.map(o=>o.event_id),source_line:SRC[k]}));
+// The thread reply's to-do is ready with a link to its own message (the review's "Open original discussion"): that one
+// reads it here, in the viewer; a link elsewhere still leaves
+const own=data.thread.originals[0].url;
+Object.assign(cards.find(c=>c.id===data.thread.id),{status:'prepared',body:'Rui answered your four points.',original_urls:[own],
+ next_action:{kind:'menu',actions:[{kind:'open',url:own+'?thread_ts=1',label:'Open original discussion',revision:1},{kind:'open',url:'https://docs.example/spec',label:'Open the spec',revision:2}]},
+ next_actions:[{kind:'open',url:own+'?thread_ts=1',label:'Open original discussion',revision:1},{kind:'open',url:'https://docs.example/spec',label:'Open the spec',revision:2}]});
 const byId=Object.fromEntries(Object.values(data).map(v=>[v.id,v]));
 const asked=[];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -33,6 +40,8 @@ const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fix
   if(before){asked.push(before);res.end(JSON.stringify(String(v.earlier?.from)===before?{around:v.earlier.around}:{error:'Original not available'}));return}
   res.end(JSON.stringify({originals:v.originals,around:v.around}));return}
  if(url.pathname==='/api/email'){res.end(JSON.stringify({html:''}));return}
+ const mark=url.pathname.match(/^\/brand\/logos\/mono\/([a-z0-9-]+)\.svg$/);  // the sources' one-color marks, as the Machine serves them
+ if(mark){try{res.setHeader('Content-Type','image/svg+xml');res.end(readFileSync(new URL(`../dashboard/logos/mono/${mark[1]}.svg`,import.meta.url)))}catch{res.statusCode=404;res.end()}return}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
@@ -87,6 +96,31 @@ try{
   await rows.first().locator(':scope>summary').click();await rows.first().locator('.email-text').waitFor();
   assert.match(await rows.first().locator('.email-text').innerText(),/2,400 for three days/);
   if(shots){await shot('email-open')}
+  // A reply in a thread opens with what it answers: the questions before the thread, the answers that start it, then itself
+  await open('thread');await shot('thread');
+  const lists=await box.locator('.convo-say').allInnerTexts();
+  assert.equal(lists.length,4);assert.match(lists[0],/^Four questions about the digest/);assert.match(lists[2],/^(1\. )?yes, in notifications/);  // a numbered list may draw its numbers itself
+  assert.match(await box.locator('.convo-main').innerText(),/release blocker/);assert.doesNotMatch(await box.innerText(),/lunch at noon/);
+  // In thread starts the thread after the channel's messages; the to-do's own bubble lines up with the other incoming ones
+  assert.deepEqual(await box.evaluate(n=>[...n.querySelectorAll('.convo-thread,.convo-say')].map(e=>e.matches('.convo-thread')?'thread':'say')),['say','say','thread','say','say']);
+  const lefts=await box.locator('.convo-turn:not(.me) .convo-say').evaluateAll(l=>l.map(e=>Math.round(e.getBoundingClientRect().left)));
+  assert.equal(new Set(lefts).size,1,`incoming bubbles start at ${lefts}`);
+  // each sender's initials sit in a circle, and the app's mark shows next to the conversation and on Open in Slack
+  assert.equal(await box.locator('.convo-av').first().getAttribute('data-av'),'RC');
+  assert.equal(await box.locator('.convo-av').first().evaluate(e=>getComputedStyle(e).borderRadius),'50%');
+  await page.waitForFunction(()=>[...document.querySelectorAll('#email-content .convo-chat .via-ico')].some(e=>getComputedStyle(e).maskImage.includes('slack')));
+  if(width===390){await dialog.evaluate(d=>d.scrollTop=0);await shot('thread-top')}
+  await dialog.evaluate(d=>d.close());
+  // The card's link to its own conversation opens the viewer, not Slack; Open in Slack stays at the viewer's foot
+  const card=page.locator('#task-'+data.thread.id);await card.scrollIntoViewIfNeeded();
+  const here=card.locator('[data-original="read"]',{hasText:'Open original discussion'});
+  if(!await here.isVisible())await card.locator('details.more-actions>summary').click();
+  if(width===390){await page.waitForTimeout(400);await shot('thread-menu')}
+  assert.equal(await here.evaluate(n=>n.tagName),'BUTTON');assert.doesNotMatch(await here.innerText(),/↗/);
+  assert.equal(await card.locator('a[href="https://docs.example/spec"]').count(),1,'a link elsewhere still opens outside');
+  await here.click();await box.locator('.convo-main').waitFor();await page.waitForTimeout(150);
+  assert.equal(await dialog.evaluate(d=>d.open),true);assert.equal(await box.locator('a.convo-source').innerText(),'Open in Slack ↗');
+  await shot('thread-from-menu');await dialog.evaluate(d=>d.close());
   await context.close();
  }
  assert.deepEqual(errors,[]);

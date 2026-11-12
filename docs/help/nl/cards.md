@@ -114,6 +114,8 @@ Volgt het concept wat iemand anders in een ander bericht zei, zoals een voorstel
 
 Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat heeft een dun lijntje ernaast.
 
+Een antwoord in een Slack-thread toont ook wat er vóór de thread gezegd werd. Een link van de to-do naar zijn eigen bericht opent het ook hier, met **Openen in Slack** onderaan.
+
 **Details** toont zijn naam, project en gebied (tik erop om het te wijzigen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is; het bericht waar hij uit komt staat onder zijn **Details**.
 
 Een to-do "Wacht op" (iemand heeft je iets beloofd) linkt naar je eigen laatste bericht aan die persoon, het bericht waarop je een antwoord verwacht: "E-mail aan Pat · di".

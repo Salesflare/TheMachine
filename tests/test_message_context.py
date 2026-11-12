@@ -32,6 +32,14 @@ SLACK_DM = [  # (when, from the owner, text); the to-do's message is the one mar
     (DAY + '13:26', False, 'Let me know if you need the tester’s device details'),
 ]
 ANCHOR = 6
+LISTS = [  # (when, from the owner, text): questions, numbered answers, then a numbered reply in a thread under the answers
+    (DAY + '15:36', False, 'Four questions about the digest:\n1. Should it go in notifications?\n2. Tasks too?\n3. A limit per day?\n4. Shown on phones?'),
+    (DAY + '15:37', False, 'No rush on these'),
+    (DAY + '15:38', True, '1. yes, in notifications\n2. good question, tasks are in it too\n3. good idea\n4. could get busy, let’s think about it'),
+    (DAY + '15:39', False, 'Unrelated: lunch at noon?'),
+    (DAY + '15:40', True, 'Sure'),
+    (DAY + '15:45', False, '1. then the settings screen needs a rework\n2. leave it for now\n3. I’ll log a release blocker\n4. a maximum could work, I’ll look into it'),
+]
 
 
 def fixture(folder):
@@ -51,6 +59,12 @@ def fixture(folder):
              # a reply in a thread under an earlier DM message: its own thread, not the DM's run
              slack(51, DAY + '13:10', False, 'Testers list attached in this thread', thread=dm[1]['metadata']['message_ts'])]
     store.commit_page('work-slack', {}, dm + noise, None)
+    lists = [slack(60 + i, at, me, text, channel='D0LISTS') for i, (at, me, text) in enumerate(LISTS)]
+    for m in lists:
+        m['metadata'].update(channel_name='DM Rui Costa', conversation_type='dm', sender_display='' if m['metadata']['from_me'] else 'Rui Costa')
+        m['title'] = '#DM Rui Costa: ' + m['body']
+    lists[-1]['metadata']['thread_ts'] = lists[2]['metadata']['message_ts']
+    store.commit_page('work-slack', {}, lists, None)
 
     def whatsapp(i, at, who, text, account='home-wa', chat='1203@g.us'):
         return {'account_id': account, 'source_id': f'{account}-wa{i}', 'kind': 'whatsapp.message', 'occurred_at': DAY + at + ':00+00:00',
@@ -77,7 +91,8 @@ def fixture(folder):
         ids = {r['source_id']: r['id'] for r in db.execute('SELECT id,source_id FROM events')}
     cards = {'slack': store.suggest('slack-card', 'Look into the missing bug report to-do', 'Kai asked.', [ids[dm[ANCHOR]['source_id']]])['id'],
              'whatsapp': store.suggest('wa-card', 'Pick up the ladder from Bo on Friday', 'Promised in the group.', [ids['home-wa-wa4']])['id'],
-             'email': store.suggest('mail-card', 'Tell Avery if the booth lighting is a go', 'Avery asked.', [ids['m3']])['id']}
+             'email': store.suggest('mail-card', 'Tell Avery if the booth lighting is a go', 'Avery asked.', [ids['m3']])['id'],
+             'thread': store.suggest('lists-card', 'Log the release blocker', 'Rui answered.', [ids[lists[-1]['source_id']]])['id']}
     app = object.__new__(a.App)
     app.store = store
     app.config = {'accounts': [{'id': 'work', 'service': 'gmail', 'email': 'alex@lumen.example'}], 'database': str(Path(folder) / 'events.sqlite')}
@@ -109,6 +124,7 @@ class MessageContext(unittest.TestCase):
         around = self.app.message_context(self.cards['slack'])
         self.assertEqual(bodies(around['before']), [t for _, _, t in SLACK_DM[1:ANCHOR]])  # not yesterday's, not the channel, not the thread reply
         self.assertEqual(bodies(around['after']), [t for _, _, t in SLACK_DM[ANCHOR + 1:]])
+        self.assertFalse(any(v.get('thread') for v in around['before'] + around['after']))  # a channel message: no thread line
         self.assertTrue(around['earlier'])
         self.assertEqual({(i['chat'], i['dm']) for i in around['before']}, {('Kai Moreno', True)})
         self.assertEqual(around['before'][3]['from'], 'You')
@@ -124,12 +140,55 @@ class MessageContext(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(ValueError):
                 self.app.message_context(self.cards['slack'], self.ids[source])
 
-    def test_a_slack_thread_reply_shows_its_thread(self):
+    def test_a_slack_thread_reply_shows_its_thread_and_the_channel_before_it(self):
         reply = self.ids['D0TESTER:1793700051.000100']
         sid = self.app.store.suggest('thread-card', 'Send the testers list', 'In a thread.', [reply])['id']
         around = self.app.message_context(sid)
-        self.assertEqual(bodies(around['before']), [SLACK_DM[1][2]])  # its parent only
+        # its thread's first message, and what was said before that one (at least three when there are any)
+        self.assertEqual(bodies(around['before']), [SLACK_DM[0][2], SLACK_DM[1][2]])
         self.assertEqual(around['after'], [])
+        self.assertFalse(around['earlier'])
+
+    def test_a_thread_reply_reads_with_the_questions_it_answers(self):
+        """The reported shape: questions in a DM, the owner's numbered answers, and the other person's numbered reply in
+        a thread under those answers. The reply opens with the questions, the answers, then itself."""
+        around = self.app.message_context(self.cards['thread'])
+        self.assertEqual(bodies(around['before']), [t for _, _, t in LISTS[:3]])  # not the unrelated messages after the answers
+        self.assertEqual(around['after'], [])
+        self.assertFalse(around['earlier'])
+        # the thread's own messages are marked, so the viewer shows where the thread begins
+        self.assertEqual([bool(v.get('thread')) for v in around['before']], [False, False, True])
+
+    def test_show_earlier_on_a_thread_reply_pages_the_channel_before_its_thread(self):
+        reply = self.ids['D0TESTER:1793700051.000100']
+        sid = self.app.store.suggest('thread-card', 'Send the testers list', 'In a thread.', [reply])['id']
+        with self.app.store.connect() as db:
+            db.execute("UPDATE events SET occurred_at=? WHERE source_id='D0TESTER:1793700000.000100'", (DAY + '12:50:00+00:00',))
+        self.app.store.commit_page('work-slack', {}, [{'account_id': 'work-slack', 'source_id': f'D0TESTER:17936{i:05d}.000100', 'kind': 'slack.message',
+                                                       'occurred_at': f'2026-11-0{i}T09:00:00+00:00', 'title': 'Old', 'body': f'Old {i}', 'deleted': False,
+                                                       'metadata': {'channel_id': 'D0TESTER', 'message_ts': f'17936{i:05d}.000100', 'thread_ts': f'17936{i:05d}.000100'}}
+                                                      for i in (1, 2, 3)], None)
+        around = self.app.message_context(sid)
+        self.assertEqual(bodies(around['before'])[-2:], [SLACK_DM[0][2], SLACK_DM[1][2]])
+        self.assertEqual(len(around['before']), 4)  # at least three before the thread's first message
+        self.assertTrue(around['earlier'])
+        older = self.app.message_context(sid, around['before'][0]['event_id'])
+        self.assertEqual(bodies(older['before']), ['Old 1'])
+        self.assertFalse(older['earlier'])
+        with self.assertRaises(ValueError):
+            self.app.message_context(sid, self.ids['C0MOBILE:1793700050.000100'])
+
+    def test_a_teams_chat_shows_what_was_said_before(self):
+        def teams(i, at, text, chat='19:chat@thread.v2'):
+            return {'account_id': 'work-teams', 'source_id': f'teams:{i}', 'kind': 'teams.message', 'occurred_at': DAY + at + ':00+00:00',
+                    'title': 'Launch: ' + text, 'body': text, 'deleted': False,
+                    'metadata': {'chat_id': chat, 'chat_kind': 'group', 'chat_name': 'Launch', 'message_id': str(i), 'from': 'Ana Ruiz', 'sender_display': 'Ana Ruiz'}}
+        self.app.store.commit_page('work-teams', {}, [teams(1, '09:00', 'Which date works?'), teams(2, '09:05', 'Tuesday or Thursday'),
+                                                      teams(3, '09:06', 'Other chat', chat='19:other@thread.v2'), teams(4, '09:10', 'Thursday then')], None)
+        with self.app.store.connect() as db:
+            event = db.execute("SELECT id FROM events WHERE source_id='teams:4'").fetchone()[0]
+        sid = self.app.store.suggest('teams-card', 'Book Thursday', 'Ana said.', [event])['id']
+        self.assertEqual(bodies(self.app.message_context(sid)['before']), ['Which date works?', 'Tuesday or Thursday'])
 
     def test_a_chat_keeps_at_least_three_before_across_days(self):
         first_today = self.ids['D0TESTER:1793700001.000100']

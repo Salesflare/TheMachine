@@ -114,6 +114,8 @@ Quando la bozza segue l'indicazione di qualcun altro in un altro messaggio, come
 
 Una chat (Slack, WhatsApp, Telegram, Intercom…) si legge come un'unica conversazione, dal più vecchio, ogni messaggio una volta; il messaggio di cui parla l'attività ha una linea sottile accanto.
 
+Una risposta in un thread di Slack mostra anche cosa è stato detto prima del thread. Un link dell'attività al suo messaggio lo apre anche qui, con **Apri in Slack** in fondo.
+
 **Dettagli** mostra nome, progetto e area (toccane uno per cambiarlo), la tua ultima nota e il risultato di un agente di codice. **Chat ›** alla fine di quella riga apre la chat. Un'attività fatta resta breve: il titolo, una riga e cosa è partito; il messaggio da cui viene è nei suoi **Dettagli**.
 
 Un'attività "In attesa di" (qualcuno ti ha promesso qualcosa) ha il link al tuo ultimo messaggio a quella persona, quello a cui aspetti risposta: "Email a Pat · mar".
