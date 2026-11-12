@@ -18,6 +18,7 @@ import learning_loop
 from machine.config import LOG
 from machine.prompts.profile import VOICE_CHARS, VOICE_LINES
 from machine.sources.slack import slack_ids_named
+from machine.store import outcomes
 from machine.text import clamp, encoded
 import i18n
 import memory_use
@@ -582,13 +583,15 @@ class VoicesStore:
     def answered_elsewhere(self):
         """An open to-do with a reply draft the owner answered themselves in that conversation (from Gmail, Slack,
         WhatsApp..., not from the card) looks done: the same hint a review gives with looks_handled, so it sits in Done
-        with Reopen. Their message counts when it came after what the to-do is about and after the to-do was made (or
-        reached the Machine after that, so the review that made it never saw it). The Machine's own sends, reactions
-        and media don't count, and a Not done after that message stands. Returns the ids marked."""
+        with Reopen. One with a done when (outcomes.py) isn't done by their reply, as by a send from the card
+        (settle_sent): it waits for that result under Waiting on others, and a review reading the answer closes it.
+        Their message counts when it came after what the to-do is about and after the to-do was made (or reached the
+        Machine after that, so the review that made it never saw it). The Machine's own sends, reactions and media
+        don't count, and a Not done after that message stands. Returns the ids marked or set waiting."""
         ids, marked = sorted(self.owner_user_ids), []
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            rows = db.execute("SELECT s.id,s.created_at,s.event_ids,s.next_action FROM suggestions s WHERE s.status IN ('pending','prepared') "
+            rows = db.execute("SELECT s.* FROM suggestions s WHERE s.status IN ('pending','prepared') "
                               'AND s.handled_hint IS NULL AND s.next_action IS NOT NULL '
                               "AND NOT EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status NOT IN ('cancelled','blocked'))").fetchall()
             sent = None
@@ -621,6 +624,10 @@ class VoicesStore:
                               and (kind != 'slack.message' or str(m.get('channel_id') or '').startswith('D') or str(m.get('thread_ts') or '') in threads)
                               and (text := own_text(e['body'])) and not PROFILE_SKIP.match(text) and not sent.wrote(e, text)), None)
                 if not found:
+                    continue
+                if row['done_when']:  # their part went out, the result it is for hasn't come yet
+                    outcomes.wait_for_result(db, row, '', now())
+                    marked.append(row['id'])
                     continue
                 db.execute('UPDATE suggestions SET handled_hint=? WHERE id=? AND handled_hint IS NULL',
                            (encoded({'reason': i18n.t(ANSWERED_ELSEWHERE[kind]), 'event_ids': [found['id']], 'at': now()}), row['id']))
