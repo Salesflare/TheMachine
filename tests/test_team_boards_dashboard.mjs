@@ -65,6 +65,12 @@ try{
   // A project named after its board drops the board's name on it (no repeats), and keeps it in full on hover
   const inkwell=page.locator('.tile[data-node="project:5"] .tile-name');
   assert.equal((await inkwell.textContent()).trim(),'Inkwell');assert.equal(await inkwell.getAttribute('title'),'Pilot program: Inkwell');
+  // Hovered, a tile shows ⋯ beside its age badge, which stays (as on a teammate's tile)
+  if(w>600){const t1=page.locator('.tile[data-node="project:1"]');await t1.hover();
+   await page.waitForFunction(()=>getComputedStyle(document.querySelector('.tile[data-node="project:1"] .tile-menu')).opacity==='1');
+   const [age,menu]=await Promise.all([t1.locator('.tile-age').boundingBox(),t1.locator('.tile-menu summary').boundingBox()]);
+   assert.equal(await t1.locator('.tile-age').evaluate(e=>getComputedStyle(e).visibility),'visible');
+   assert.ok(age.x+age.width<=menu.x,`the age badge sits clear of ⋯ ${JSON.stringify({age,menu})}`);await page.mouse.move(0,0)}
   await fits(page,w+' mine');await shot(page,`owner-board-${w}-${scheme}`);
   // A teammate's board: whose it is and that the team has it; each project its own card, a long stage cut like the owner's
   await toTeam(page);
