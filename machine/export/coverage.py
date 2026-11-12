@@ -62,7 +62,7 @@ LEFT_OUT = {
     'settings, kept by the full export': {
         'enrich_prefs', 'error_feed_prefs', 'follow_up_rules', 'handoff_mail_prefs', 'meet_prefs', 'notify_prefs', 'pacing_prefs',
         'security_prefs', 'team_learning_prefs', 'voice_prefs', 'whatsapp_photo_prefs', 'own_address_choices', 'own_addresses',
-        'own_domains', 'own_address_fetched', 'chat_models',
+        'own_domains', 'own_address_fetched', 'chat_models', 'digest_interests',
     },
     'photos and logos (images, not knowledge)': {
         'contact_photo_links', 'contact_photo_runs', 'org_logo_retries', 'org_logo_tries', 'person_photo_tries', 'person_photos',
@@ -87,7 +87,7 @@ LEFT_OUT = {
         'merge_effects', 'milestones', 'missed_audit_calibration', 'missed_audit_items', 'missed_audits', 'moved_in', 'note_kinds', 'notify_app_lines',
         'notify_digests', 'notify_queue', 'pacing_starts', 'person_summary_runs', 'preparation_calls', 'preparation_runs', 'preparations',
         'profile_runs', 'project_org_backfill', 'project_org_checks', 'project_splits', 'project_success', 'promise_log', 'promises_next', 'recap_items', 'recaps', 'record_changes', 'review_misses',
-        'recurring_cards', 'recurring_offers', 'recurring_series', 'mail_cleanup_items', 'mail_cleanup_senders', 'facebook_birthdays', 'retention_runs', 'routine_changes', 'routine_offers', 'routine_runs', 'routines', 'review_runs', 'review_save_failures', 'rule_changes', 'self_record_backups',
+        'recurring_cards', 'recurring_offers', 'recurring_series', 'mail_cleanup_items', 'mail_cleanup_senders', 'facebook_birthdays', 'digest_items', 'digest_spend', 'retention_runs', 'routine_changes', 'routine_offers', 'routine_runs', 'routines', 'review_runs', 'review_save_failures', 'rule_changes', 'self_record_backups',
         'skill_task_decided', 'slipped', 'state', 'store_fixes', 'plain_key_pass', 'suggestion_keys', 'sync_activity', 'sync_daily', 'task_pages',
         'thread_snoozes', 'voice_merges',
     },

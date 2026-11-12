@@ -60,6 +60,7 @@ LAZY = {
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
     'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js', 'todos-facebook-birthdays.js'),
+    'digest': ('todos-digest.css', 'todos-digest.js'),
     'talk': ('todos-chat-talk-live.js',),
     'whatsnew': ('shell-whats-new.css', 'shell-whats-new.js'),
 }

@@ -3,9 +3,9 @@ title: Routine
 area: cards
 summary: Lavoro che la tua Machine fa da sola, con un ritmo, come un riepilogo del lunedì dei tuoi deal aperti. Legge soltanto.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## Crearne una
 
@@ -30,6 +30,12 @@ Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite
 Sconosciuto vuol dire che non gli hai mai scritto, e un “Re:” conta come conversazione solo in un thread in cui hai scritto. Se passa di nuovo posta da un mittente che hai segnato come spam, nell’attività o nella tua casella, è nella prossima attività come **Già segnato come spam**. Quello che hai spostato tu nello spam la aiuta anche a riconoscere posta simile.
 
 Nulla cambia finché non confermi sull’attività. Tocca un mittente per leggere prima l’email: resta da leggere e non cambia nulla. Da Pulizia spam le sue immagini dal web non si caricano, così il mittente non vede che è stata aperta. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
+
+**Riepilogo giornaliero** sceglie una volta al giorno i pochi articoli delle tue newsletter che valgono il tuo tempo, in un’attività. Per ognuno c’è una riga sul perché conta per te. Toccalo per leggere l’email, oppure usa **Apri nella tua posta**. Solo newsletter: mai posta di persone, ricevute o mittenti da cui ti sei disiscritto, e mai quello che hai già letto. Quando niente spicca, nessuna attività.
+
+Impara cosa ti interessa da ciò che apri, metti in evidenza o archivi senza leggere, e da **Altri così** e **Meno così** su ogni articolo. Gli argomenti su cui sceglie sono sulla scheda della routine sotto **Più su** e **Meno su**. Togline uno con ×, o aggiungi i tuoi. Quelli tratteggiati li ha imparati da solo. Un nuovo riepilogo sostituisce quello aperto, e non invia mai una notifica.
+
+Legge solo mittente, oggetto e inizio di ogni nuova newsletter, e fa alla tua IA una breve domanda su di esse, con un limite giornaliero, così resta economico. **Cambia quando** ne imposta l’orario. Se cambi le sue parole, gira come ogni routine sulle tue parole.
 
 **Compleanni** crea un’attività per ogni contatto stretto che compie gli anni oggi: le persone a cui scrivi tu, come amici, famiglia e contatti abituali. Ognuna ha un breve augurio scritto dove di solito parlate, come la loro chat WhatsApp o il tuo thread email, nella loro lingua. Parte solo quando lo invii tu. Un giorno senza compleanni non crea attività.
 

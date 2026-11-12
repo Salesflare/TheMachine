@@ -3,9 +3,9 @@ title: Routines
 area: cards
 summary: Du travail que votre Machine fait seule, à un rythme, comme un résumé du lundi de vos deals ouverts. Elle ne fait que lire.
 covers: tab:routines
-code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, dashboard/routines-page.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
+code: routines.py, routines_app.py, routine_recipe.py, routine_imports.py, routine_patterns.py, routine_changes.py, routine_templates.py, mail_cleanup.py, mail_cleanup_app.py, birthdays.py, birthdays_app.py, birthdays_facebook.py, birthdays_facebook_app.py, reading_digest.py, reading_digest_app.py, dashboard/routines-page.js, dashboard/todos-digest.js, dashboard/todos-cleanup.js, dashboard/todos-facebook-birthdays.js, dashboard/todos-facebook-people.js
 order: 10
-keywords: routine, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
+keywords: routine, daily digest, interests, automation, scheduled, every week, every morning, report, suggested, digest, newsletter, birthday, facebook birthdays, import birthdays
 ---
 ## En créer une
 
@@ -30,6 +30,12 @@ Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arr
 Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte comme conversation que dans un fil où vous avez écrit. Si un e-mail d’un expéditeur que vous avez signalé comme spam, sur la tâche ou dans votre boîte, passe encore, il est sur la tâche suivante avec **Déjà signalé comme spam**. Ce que vous avez déplacé vous-même dans le spam l’aide aussi à repérer des e-mails semblables.
 
 Rien ne change avant votre confirmation sur la tâche. Touchez un expéditeur pour lire d’abord l’e-mail : il reste non lu et rien ne change. Depuis Tri du spam, ses images du web ne se chargent pas : l’expéditeur ne voit pas qu’il a été ouvert. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
+
+**Récap du jour** choisit une fois par jour les quelques articles de vos newsletters qui valent votre temps, dans une tâche. Chacun dit en une ligne pourquoi il compte pour vous. Touchez-le pour lire l’e-mail, ou utilisez **Ouvrir dans votre messagerie**. Seulement des newsletters : jamais d’e-mails de personnes, de reçus ou d’expéditeurs dont vous vous êtes désabonné, et jamais ce que vous avez déjà lu. Quand rien ne ressort, pas de tâche.
+
+Il apprend ce qui vous intéresse à partir de ce que vous ouvrez, marquez d’une étoile ou archivez sans lire, et de **Plus comme ça** et **Moins comme ça** sur chaque article. Les sujets sur lesquels il choisit sont sur la carte de la routine sous **Plus de** et **Moins de**. Retirez-en un avec ×, ou ajoutez les vôtres. Ceux en pointillés, il les a appris lui-même. Un nouveau récap remplace celui qui est ouvert, et il n’envoie jamais de notification.
+
+Il ne lit que l’expéditeur, l’objet et le début de chaque nouvelle newsletter, et pose une courte question à votre IA à leur sujet, avec une limite par jour, pour rester économique. **Changer l’heure** fixe son heure. Si vous changez ses mots, il s’exécute comme toute routine sur vos mots.
 
 **Anniversaires** crée une tâche pour chaque proche dont c’est l’anniversaire aujourd’hui : les personnes à qui vous écrivez vous-même, comme vos amis, votre famille et vos contacts réguliers. Chacune a un court message rédigé là où vous échangez d’habitude, comme leur chat WhatsApp ou votre fil d’e-mails, dans leur langue. Il ne part que quand vous l’envoyez. Un jour sans anniversaire ne crée aucune tâche.
 

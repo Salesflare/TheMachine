@@ -141,6 +141,7 @@ from meet_app import MeetApp
 from recurring_app import RecurringApp
 from routines_app import RoutinesApp
 from mail_cleanup_app import MailCleanupApp  # noqa: F401  (composed in machine/main.py)
+from reading_digest_app import ReadingDigestApp  # noqa: F401  (composed in machine/main.py)
 from birthdays_app import BirthdaysApp  # noqa: F401  (composed in machine/main.py)
 from birthdays_facebook_app import BirthdaysFacebookApp  # noqa: F401  (composed in machine/main.py)
 from shared_graph_app import SharedGraphApp

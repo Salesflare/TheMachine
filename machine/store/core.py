@@ -36,6 +36,7 @@ from machine import stamps
 from machine.text import QUOTED_HISTORY_KEPT, encoded, open_copy, seal_copy, trim_quoted_history
 from machine.timing import _REQUEST_TIMING, aside
 import mail_cleanup
+import reading_digest
 import meet_link
 import memory_use
 import message_seal
@@ -518,6 +519,7 @@ class StoreCore:
             recurring.ensure(db)  # recurring to-dos (recurring.py): new tables only
             routines.ensure(db)  # routines (routines.py): new tables only
             mail_cleanup.ensure(db)  # a routine template's cleanup to-dos (mail_cleanup.py): new tables only
+            reading_digest.ensure(db)  # the Daily digest template's to-dos and interests (reading_digest.py): new tables only
             memory_use.ensure(db)  # what prompts read of what was learned (memory_use.py): a new table, empty
             # The question(s) a note of the owner's answered (Store._decide): its own line in the chat, the run's question
             db.execute('CREATE TABLE IF NOT EXISTS decision_asks(decision_id TEXT PRIMARY KEY,suggestion_id TEXT NOT NULL,'
