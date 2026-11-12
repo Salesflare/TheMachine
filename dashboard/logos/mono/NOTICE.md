@@ -1,8 +1,8 @@
 # One-color source marks
 
 The small marks in the rows that list messages and sources (the last check above the to-dos, a to-do's source line,
-search, a record's timeline, chat sources, Connections' cards): one color, the text's own, so they sit quietly in a line
-of text. The colored logos for Connections, **+ Add** are in the folder above. The registry that names them is
+search, a record's timeline, chat sources, learned styles): one color, the text's own, so they sit quietly in a line
+of text. The colored logos for Connections' cards and **+ Add** are in the folder above. The registry that names them is
 `dashboard/todos-logos.js` (MONO); `tests/test_source_icons.py` fails when a connector has none.
 
 Each mark is a trademark of its owner, used only to name that service. They are **not covered by the AGPL** that covers
@@ -35,7 +35,6 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `hubspot.svg` | HubSpot | hubspot |
 | `instagram.svg` | Instagram | instagram |
 | `intercom.svg` | Intercom | intercom |
-| `medium.svg` | Medium | medium |
 | `messenger.svg` | Messenger | messenger |
 | `netflix.svg` | Netflix | netflix |
 | `notion.svg` | Notion | notion |
@@ -63,6 +62,9 @@ for its one-color Slack and LinkedIn marks.
 `salesforce.svg`: Salesforce's cloud from Simple Icons 15.0 (CC0 1.0; later releases dropped it), drawn as an outline
 so it is as thin as the line icons. Salesforce is a trademark of Salesforce, Inc.
 
+`medium.svg`: Medium's mark (two ellipses and a bar) from Simple Icons 13.0 (CC0 1.0), the path as is; later releases
+show the app's tile instead, which reads as text at row size.
+
 ## From the colored logos
 
 `salesflare.svg`: the Salesflare mark from `../crm.svg` in one color. Salesflare is a trademark of Salesflare BV.
@@ -83,8 +85,8 @@ service.
 | `docs.svg` | OneDrive (Word, OneDrive and SharePoint) |
 | `gateway.svg` | The Machine (its own health) |
 | `gbrain.svg` | GBrain |
-| `outlook.svg` | Outlook |
-| `outlook_calendar.svg` | Outlook Calendar |
+| `outlook.svg` | Outlook (its "O" beside an envelope) |
+| `outlook_calendar.svg` | Outlook Calendar (its "O" beside a calendar) |
 | `source.svg` | Any other source |
-| `teams.svg` | Microsoft Teams |
+| `teams.svg` | Microsoft Teams (its "T" beside a person) |
 | `zoom.svg` | Zoom |
