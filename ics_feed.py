@@ -15,7 +15,6 @@ import time
 import caldav_calendar
 from caldav_calendar import CalendarError
 import ical
-from timeutil import local_tz
 
 POLL_SECONDS = 900  # a feed is asked at most this often; Proton says its links take hours to update anyway
 _seen = {}  # account id -> {'at': monotonic time of the last ask, 'etag', 'modified', 'text'} (this process only)
@@ -82,7 +81,7 @@ def calendar_call(config, credential, account, method, params):
     owner = caldav_calendar.owner_addresses(account)
 
     def read_slice(start, end, _first):
-        return ical.window_items([text], start, end, owner, local_tz())
+        return ical.window_items([text], start, end, owner, caldav_calendar.local_tz())
     return caldav_calendar.page_of(params, read_slice, lambda: _marker(text))
 
 

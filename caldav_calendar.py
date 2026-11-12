@@ -25,7 +25,6 @@ import urllib.parse
 import xml.etree.ElementTree as ET
 
 import ical
-from timeutil import local_tz
 
 TIMEOUT = 30
 MAX_ANSWER = 20_000_000  # bytes read from one answer
@@ -131,6 +130,13 @@ def request(url, method='GET', body=None, headers=None, prefix='caldav', redirec
             raise CalendarError(prefix + '_too_big')
         return reply.status, {**answer, 'url': url}, data
     raise CalendarError(prefix + '_redirect_refused')
+
+
+
+def local_tz():
+    """The owner's time zone, looked up on use: the installer imports setup before it checks ASSISTANT_TIMEZONE."""
+    from timeutil import local_tz as zone  # noqa: PLC0415 - timeutil reads the zone when it loads
+    return zone()
 
 
 def parse_xml(data, prefix='caldav'):

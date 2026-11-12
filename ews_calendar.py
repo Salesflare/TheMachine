@@ -30,7 +30,6 @@ from xml.sax.saxutils import escape
 import caldav_calendar
 from caldav_calendar import CalendarError
 import ical
-from timeutil import local_tz
 
 TIMEOUT = 60
 MAX_ANSWER = 30_000_000
@@ -326,7 +325,7 @@ def _utc(text):
 
 def _all_day(stamp):
     """An all-day meeting's date: Exchange gives local midnight as UTC; the owner's zone, else the nearest midnight."""
-    local = stamp.astimezone(local_tz())
+    local = stamp.astimezone(caldav_calendar.local_tz())
     if (local.hour, local.minute) == (0, 0):
         return local.date()
     return (stamp + dt.timedelta(hours=12)).date()

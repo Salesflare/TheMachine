@@ -5,7 +5,7 @@ Outlook and iCloud calendars, school and sports feeds).
 Python only, nothing to install. It reads VEVENTs with their time zones (an IANA name, a Windows one, or the feed's own
 VTIMEZONE offset), and expands a recurring event into its occurrences in a window, as Google's singleEvents does:
 RRULE (DAILY, WEEKLY, MONTHLY, YEARLY with INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY, BYMONTH, BYSETPOS), RDATE,
-EXDATE, and an occurrence changed or cancelled on its own (RECURRENCE-ID). A rule it can't follow (by hour, by week
+EXDATE, and an occurrence changed or canceled on its own (RECURRENCE-ID). A rule it can't follow (by hour, by week
 number) gives its first occurrence only. Each event comes out in the shape machine/sources/calendar.calendar_event reads.
 
 The text comes from the network: it is only ever parsed as lines, nothing in it is fetched or run, and every loop has
@@ -433,7 +433,7 @@ def _base(event, zones, default, owner):
             break
     item = {'summary': text_of(event, 'SUMMARY') or '(untitled event)', 'description': text_of(event, 'DESCRIPTION')[:40000],
             'location': text_of(event, 'LOCATION') or None, 'organizer': organizer, 'attendees': attendees,
-            'status': 'cancelled' if text_of(event, 'STATUS').upper() == 'CANCELLED' else 'confirmed', 'updated': updated,
+            'status': 'cancelled' if text_of(event, 'STATUS').lower() == 'cancelled' else 'confirmed', 'updated': updated,
             'iCalUID': text_of(event, 'UID')[:500] or None}
     if text_of(event, 'TRANSP').upper() == 'TRANSPARENT':
         item['transparency'] = 'transparent'
