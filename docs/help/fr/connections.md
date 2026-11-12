@@ -12,7 +12,7 @@ L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** e
 
 Une synchro échouée qu’une synchro suivante a rattrapée s’affiche en gris ; seul un échec qui reste le dernier s’affiche comme un problème, avec l’heure du prochain essai.
 
-Ses compteurs indiquent ce qu’elle a apporté, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore vérifié. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
+Ses compteurs indiquent tout ce qu’elle a apporté, son [historique](history.md) compris, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore vérifié. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
 
 Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand elle peut agir, qu’elle ne le fait qu’après que vous avez appuyé sur **Envoyer** ou donné votre accord.
 

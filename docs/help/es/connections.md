@@ -12,7 +12,7 @@ La pestaña **Conexiones** agrupa tus fuentes en **Correo y calendario**, **Chat
 
 Una sincronización fallida que una posterior ya compensó se muestra en gris; solo un fallo que sigue siendo el último se muestra como problema, con cuándo vuelve a intentarlo.
 
-Sus cifras muestran lo que trajo, lo que llegó en las últimas 24 h y lo que aún no se ha revisado. Un calendario cuenta eventos: todos, los de los próximos 7 días y los de las últimas 24 h.
+Sus cifras muestran todo lo que trajo, también su [historial](history.md), lo que llegó en las últimas 24 h y lo que aún no se ha revisado. Un calendario cuenta eventos: todos, los de los próximos 7 días y los de las últimas 24 h.
 
 Debajo de su estado, cada fuente dice en una línea lo que trae y, cuando puede actuar, que solo lo hace después de que pulses **Enviar** o des el visto bueno.
 

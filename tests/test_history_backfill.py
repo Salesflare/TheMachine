@@ -148,6 +148,13 @@ class TheLine(Base):
         connector = next(c for c in self.store_status()['connectors'] if c['id'] == MAIL['id'])
         self.assertEqual(connector['signals_24h'], 1)  # history in today is no "new" signal
 
+    def test_the_cards_total_counts_history_and_its_other_numbers_do_not(self):
+        # The card said "1 message" beside "History: back to March 2026" while the Machine kept 2: its total is all of it
+        with self.store.connect() as db:
+            db.execute('UPDATE events SET ingested_at=? WHERE id=?', (NOW, self.old))  # history that came in today
+        card = next(c for c in self.store_status()['connectors'] if c['id'] == MAIL['id'])
+        self.assertEqual((card['total'], card['signals_24h'], card['pending']), (2, 1, 1))
+
     def store_status(self):
         return self.store.snapshot([MAIL])
 

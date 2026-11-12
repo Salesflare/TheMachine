@@ -12,7 +12,7 @@ Der Tab **Verbindungen** gruppiert deine Quellen in **Mail und Kalender**, **Cha
 
 Ein fehlgeschlagener Sync, den ein späterer ausgeglichen hat, steht in Grau; nur ein Fehler, der noch der letzte ist, steht als Problem da, mit dem Zeitpunkt des nächsten Versuchs.
 
-Ihre Zahlen zeigen, was sie hereingeholt hat, was in den letzten 24 Std. dazukam und was noch nicht geprüft ist. Ein Kalender zählt Termine: alle, die der nächsten 7 Tage und der letzten 24 Std.
+Ihre Zahlen zeigen alles, was sie hereingeholt hat, auch ihren [Verlauf](history.md), was in den letzten 24 Std. dazukam und was noch nicht geprüft ist. Ein Kalender zählt Termine: alle, die der nächsten 7 Tage und der letzten 24 Std.
 
 Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn sie etwas tun kann, dass sie es erst tut, wenn du auf **Senden** drückst oder zustimmst.
 
