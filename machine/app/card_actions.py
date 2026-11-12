@@ -459,6 +459,11 @@ class CardActionsApp:
             self.agents.card_closed(args['suggestion_id'])  # its Claude Code or Codex result did the job
         if args['choice'] == 'complete':
             self.task_pages.card_closed(args['suggestion_id'])  # its task page shows it done (task_pages.py)
+        if args['choice'] in ('complete', 'reject') and getattr(self, 'fleet', None) and not result.get('skipped'):
+            try:  # a team brief line on it: Not needed teaches the brief, as its own Not needed does (fleet_brief_todos.py)
+                self.fleet.brief_todo_closed(args['suggestion_id'], args['choice'])
+            except Exception as error:  # noqa: BLE001 - the decision stands
+                LOG.warning('fleet brief todo closed error=%s', type(error).__name__)
         if args['choice'] == 'accept':
             try:self.apply_skill_clusters()
             except Exception as error:LOG.error('skill from notes error=%s',type(error).__name__)

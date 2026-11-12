@@ -127,7 +127,7 @@ function fleetDraw(view){const f=fleetData;if(!f.on){view._fleetHTML=null;setHTM
   if(work.members.length){
    h=html`${h}${box('Who knows someone?','Their Machines say how well they know someone there and when they last talked. Names only if they allow it.',
     html`${html`<form class="fleet-ask fleet-ask-form" data-fleet="${work.id}"><input name="about" maxlength="120" placeholder="Company, domain, email or name" aria-label="Who knows someone at"><button class="primary">Ask ${several?work.name:'the Fleet'}</button></form>`}${fleetIntroOffers(f,work,inFleet)}${asked.length?html`<div class="list">${asked.map(a=>html`<article><p><strong>${a.name}</strong> · ${a.question}</p><p class="muted">${a.status==='answered'?a.answer:a.status==='waiting'?'Waiting for them to allow it':a.status==='asked'?(a.delivered===false?'Not delivered yet':'Asked'):a.status}</p></article>`)}</div>`:''}`)}`;
-   h=html`${h}${html`${fleetHandoffs(f,work,inFleet)}${fleetBrief(f,work)}${box('Ask anything','',fleetFree(f,work,several))}${fleetLearnings(work)}`}`}
+   h=html`${h}${html`${fleetHandoffs(f,work,inFleet)}${box('Ask anything','',fleetFree(f,work,several))}${fleetLearnings(work)}`}`}
   else h=html`${h}${fleetIntroOffers(f,work,inFleet)}`;
   h=html`${h}${fleetBriefAsks(f,work,inFleet)}`;
   panes.push({id:'fleet-'+work.id,label:work.name,html:html`${h}${html`</div>`}`,at:work.joined_at});

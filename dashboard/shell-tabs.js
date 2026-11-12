@@ -20,7 +20,7 @@ $('nav').addEventListener('click',e=>{const t=e.target.closest('button')?.datase
 // its chat; the other tags (assistant.py push_send, app_wake) and a bare kind (several at once) open their own view.
 function pushRoute(tag){let m;if(/^[a-f0-9]{16}$/.test(tag))return '#chat='+tag;
  if(tag==='digest')return '#calendar?view=agenda';  // the morning: today's meetings and what's due
- if((m=/^fleet-brief(?:-(fl_[0-9a-f]{16}))?$/.exec(tag)))return '#fleet-brief'+(m[1]?'='+m[1]:'');
+ if(/^fleet-brief(-fl_[0-9a-f]{16})?$/.test(tag))return '#todos';
  if((m=/^fleet-((?:q|fn)_[a-f0-9]{16})$/.exec(tag)))return '#fleet='+m[1];
  if(tag==='fleet'||tag.startsWith('fleet-'))return '#fleet';
  return '#todos'}  // the week's recap, a test, new to-dos, results and reminders together
