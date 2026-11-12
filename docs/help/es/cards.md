@@ -114,6 +114,8 @@ Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la suger
 
 Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea tiene una línea fina al lado.
 
+Una respuesta en un hilo de Slack también muestra lo que se dijo antes del hilo. Un enlace de la tarea a su propio mensaje también lo abre aquí, con **Abrir en Slack** abajo.
+
 **Detalles** muestra su nombre, proyecto y área (toca uno para cambiarlo), tu última nota y el resultado de un agente de código. **Chat ›** al final de esa línea abre el chat. Una tarea hecha se queda corta: su título, una línea y lo que se envió; el mensaje del que viene está en sus **Detalles**.
 
 Una tarea "Esperando a" (alguien te prometió algo) enlaza tu último mensaje a esa persona, el que espera respuesta: "Email a Pat · mar".

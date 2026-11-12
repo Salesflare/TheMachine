@@ -88,8 +88,9 @@ try{
  // A tap on a row opens its message in the viewer
  await page.locator('#suggestions [data-mc-event="21"]').click();
  await page.locator('#email-dialog[open]').waitFor();
- assert.deepEqual(opened,['21']);
+ // the dialog opens before its request reaches this server: check what was asked once the message shows
  await page.waitForFunction(()=>/chapter 4/.test(document.querySelector('#email-content')?.textContent||''));
+ assert.deepEqual(opened,['21']);
  await page.keyboard.press('Escape');await page.locator('#email-dialog[open]').waitFor({state:'detached'});
  // Many sources: still one total, the detail is in the list
  mail=many;await page.evaluate(()=>refresh());

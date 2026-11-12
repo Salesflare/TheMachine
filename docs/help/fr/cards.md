@@ -114,6 +114,8 @@ Quand le brouillon suit l’avis de quelqu’un d’autre dans un autre message,
 
 Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche a un fin trait à côté.
 
+Une réponse dans un fil Slack montre aussi ce qui a été dit avant le fil. Un lien de la tâche vers son propre message l'ouvre aussi ici, avec **Ouvrir dans Slack** en bas.
+
 **Détails** montre son nom, son projet et son espace (appuyez sur l’un d’eux pour le changer), votre dernière note et le résultat d’un agent de code. **Chat ›** au bout de cette ligne ouvre le chat. Une tâche terminée reste courte : son titre, une ligne et ce qui est parti ; le message d’origine est dans ses **Détails**.
 
 Une tâche « En attente de » (quelqu’un vous a promis quelque chose) renvoie vers votre dernier message à cette personne, celui auquel vous attendez une réponse : « E-mail à Pat · mar. ».
