@@ -30,15 +30,15 @@ class Hours(unittest.TestCase):
         self.addCleanup(a.set_timezone, 'Europe/Amsterdam')
 
     def test_defaults_keep_the_old_fixed_hours(self):
-        self.assertEqual(a.work_hours(), {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '09:00'})
+        self.assertEqual(a.work_hours(), {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '08:00'})
         self.assertEqual(a.work_hours({}), a.WORK_HOURS_DEFAULT)
         local = lambda h, mi=0: dt.datetime(2026, 10, 14, h, mi, tzinfo=BXL)
         self.assertEqual([a.in_hours(local(h, m)) for h, m in [(7, 59), (8, 0), (22, 59), (23, 0), (2, 0)]], [False, True, True, False, False])
         with patch_everywhere(a, 'now', return_value=at(2026, 10, 9, 15)):  # Friday
-            self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 12, 9))
-            self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 10, 9))
-            self.assertEqual(a.thread_return_time(1), at(2026, 10, 12, 9))
-            self.assertEqual(a.snooze_choices(True)[1], ['tomorrow', 'Monday · 9:00'])
+            self.assertEqual(a.snooze_time('tomorrow', work=True), at(2026, 10, 12, 8))
+            self.assertEqual(a.snooze_time('tomorrow'), at(2026, 10, 10, 8))
+            self.assertEqual(a.thread_return_time(1), at(2026, 10, 12, 8))
+            self.assertEqual(a.snooze_choices(True)[1], ['tomorrow', 'Monday · 8:00'])
         saturday = dt.datetime(2026, 10, 10, 16, tzinfo=BXL)
         self.assertEqual(a.delivery_time('now', current=saturday, work=True), at(2026, 10, 12, 8, 30))
 
@@ -104,13 +104,13 @@ class Saving(unittest.TestCase):
         saved = app.action('set_work_hours', {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30',
                                               'digest_at': '9:00', 'timezone': 'Europe/London'}, owner_dashboard=True)
         self.assertEqual(saved, {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30', 'timezone': 'Europe/London',
-                                 'digest_at': '09:00', 'evening_at': None, 'evening_time': '17:45', 'saveable': True})
+                                 'digest_at': '09:35', 'evening_at': None, 'evening_time': '17:45', 'saveable': True})  # set before the snoozes: 5 minutes after them
         written = json.loads(path.read_text())
         self.assertEqual(written['work_hours'], {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30'})
-        self.assertEqual((written['timezone'], written['digest_at'], written['other']), ('Europe/London', '09:00', {'kept': True}))
+        self.assertEqual((written['timezone'], written['digest_at'], written['other']), ('Europe/London', '09:35', {'kept': True}))
         self.assertEqual(oct(path.stat().st_mode & 0o777), '0o600')
         self.assertEqual(json.loads(path.with_name('config.json.bak').read_text())['digest_at'], '08:30')
-        self.assertEqual((a.WORK_HOURS['days'], a.local_tz().key, app.config['digest_at']), ([1, 2, 3, 4], 'Europe/London', '09:00'))
+        self.assertEqual((a.WORK_HOURS['days'], a.local_tz().key, app.config['digest_at']), ([1, 2, 3, 4], 'Europe/London', '09:35'))
         self.assertEqual(app.action('status', {'full': True})['hours']['morning'], '09:30')
         # the evening digest's own time, saved with the rest; none follows Until again
         self.assertEqual(app.action('set_work_hours', {'evening_at': '7:30'}, owner_dashboard=True)['evening_at'], '07:30')
@@ -142,6 +142,16 @@ class Saving(unittest.TestCase):
         self.assertEqual(deliver(18), [])  # 08:00-23:00 would have sent it
         self.assertEqual(deliver(8), [])
         self.assertEqual(deliver(10), ['send'])
+
+    def test_a_digest_before_the_snoozes_is_saved_after_them_at_start(self):
+        path = self.config_file({'work_hours': {'morning': '09:00'}})
+        with patch_everywhere(a, 'Store'), patch_everywhere(a, 'credential'), patch_everywhere(a, 'owner_credential'), patch.object(a.fleet, 'settings', return_value=None):
+            app = a.App(json.loads(path.read_text()), path)
+            self.assertEqual((app.config['digest_at'], json.loads(path.read_text())['digest_at']), ('09:05', '09:05'))
+            stamp = path.stat().st_mtime_ns
+            a.App(json.loads(path.read_text()), path)  # once: a digest already after them stays as it is
+        self.assertEqual(path.stat().st_mtime_ns, stamp)
+        self.assertEqual(json.loads(path.read_text())['other'], {'kept': True})
 
     def test_without_a_config_file_it_says_so(self):
         app = self.app(None)
@@ -179,7 +189,7 @@ class Cli(unittest.TestCase):
         self.assertNotIn('work_hours', json.loads(self.path.read_text()))
         out, run = self.run_cli('hours', '--days', 'sun-thu', '--start', '7:30', '--end', '16:00', '--json')
         self.assertEqual(json.loads(out)['days'], [1, 2, 3, 4, 7])
-        self.assertEqual(json.loads(self.path.read_text())['work_hours'], {'days': [1, 2, 3, 4, 7], 'start': '07:30', 'end': '16:00', 'morning': '09:00'})
+        self.assertEqual(json.loads(self.path.read_text())['work_hours'], {'days': [1, 2, 3, 4, 7], 'start': '07:30', 'end': '16:00', 'morning': '08:00'})
         if self.cli.assistant.shutil.which('systemctl'):
             self.assertEqual(run.call_args[0][0], ['systemctl', '--user', 'restart', 'personal-assistant.service'])
         out, run = self.run_cli('hours', '--morning', '08:45', '--no-restart')

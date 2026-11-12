@@ -234,7 +234,7 @@ dialog::backdrop{background:#15171bb3;backdrop-filter:blur(3px)}
 .hours input,.hours select{display:block;width:100%;margin-top:4px;min-height:42px;background:var(--sunken)}
 .hours-zone{display:block;margin-bottom:6px}#hours-detect{margin:2px 0 4px}
 a.learn{color:inherit;text-decoration:underline;text-decoration-color:var(--c-line-strong);text-underline-offset:2px;white-space:nowrap}a.learn:hover{text-decoration-color:currentColor}
-.hours .fine{font-size:.85rem;color:var(--muted);margin:8px 0}#hours-error:empty{display:none}#hours-error{color:var(--orange)}
+.hours .fine{font-size:.85rem;color:var(--muted);margin:8px 0}.hours-note{display:block;margin-top:4px;font-size:.85rem;color:var(--muted)}.hours-note:empty{display:none}#hours-error:empty{display:none}#hours-error{color:var(--orange)}
 dialog input{display:block;width:100%;margin-top:8px}
 
 @media(max-width:720px){.search{grid-template-columns:1fr}}

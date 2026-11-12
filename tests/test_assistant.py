@@ -477,13 +477,13 @@ class Invariants(unittest.TestCase):
         sid=self.store.suggest('snooze','One','A draft',[1])['id']
         self.store.decide(sid,'accept','','accept','telegram');self.store.prepare(sid,'Prepared')
         with patch_everywhere(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
-            self.assertEqual(assistant.snooze_time('tomorrow'),'2026-10-25T08:00:00+00:00')
+            self.assertEqual(assistant.snooze_time('tomorrow'),'2026-10-25T07:00:00+00:00')  # 08:00, Snoozes land at
             self.assertEqual(assistant.snooze_time('2h'),'2026-10-24T22:00:00+00:00')
-            self.assertEqual(assistant.snooze_time('3d'),'2026-10-27T08:00:00+00:00')
-            self.assertEqual(assistant.snooze_time('1w'),'2026-10-31T08:00:00+00:00')
+            self.assertEqual(assistant.snooze_time('3d'),'2026-10-27T07:00:00+00:00')
+            self.assertEqual(assistant.snooze_time('1w'),'2026-10-31T07:00:00+00:00')
         with patch_everywhere(assistant,'now',return_value='2026-03-27T22:00:00+00:00'):
-            self.assertEqual(assistant.snooze_time('3d'),'2026-03-30T07:00:00+00:00')
-            self.assertEqual(assistant.snooze_time('1w'),'2026-04-03T07:00:00+00:00')
+            self.assertEqual(assistant.snooze_time('3d'),'2026-03-30T06:00:00+00:00')
+            self.assertEqual(assistant.snooze_time('1w'),'2026-04-03T06:00:00+00:00')
         with patch_everywhere(assistant,'now',return_value='2026-10-24T20:00:00+00:00'):
             self.store.decide(sid,'snooze','','snooze','dashboard',snoozed_until='2026-10-25T09:30:00+01:00')
             self.assertEqual(self.store.snapshot([])['suggestions'][0]['snoozed_until'],'2026-10-25T08:30:00+00:00')

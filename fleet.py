@@ -2502,7 +2502,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             return 0
         local = self.local_now()
         period, since = self.brief_period(local, settings['every'])
-        morning = self.hours['morning']() if self.hours.get('morning') else '09:00'
+        morning = self.hours['morning']() if self.hours.get('morning') else '08:00'
         asked = 0
         for ref in self.work_fleets():
             if not self.teammates(ref):
