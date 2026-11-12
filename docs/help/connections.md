@@ -18,9 +18,9 @@ Each source also says in one line what it brings in and, if it can act, that it 
 
 ## Add one
 
-Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each.
+Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each. A catch-all like **Other email** comes last in its group.
 
-A source your Machine sees a reason for is marked **Suggested** in its own group, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
+**Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. The source also stays in its own group, marked **Suggested**. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
 
 Microsoft Teams shows twice: under **Chat** for its chats and under **Meetings** as **Teams meetings** for its meeting notes. Both use the same Microsoft sign-in, so connecting one connects the other.
 

@@ -47,6 +47,7 @@ from machine.chat import chat_result_files
 from machine.config import WORKSPACE
 from machine.faults import FAULT_WHERE
 from machine.sources.connectors import crm_sync_health, docs_health, read_window, silent_failure, UNNAMED, whatsapp_history
+from machine.sources import groups
 from machine.sources.android import android_app_shown
 from machine.sources.salesflare import salesflare_progress
 from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_name_table, slack_named
@@ -889,6 +890,7 @@ class ViewsStore(ConversationStore):
                                              'failures_24h':failures_24h,'id': account['id'], 'email': account.get('email', ''), 'boundary': account['boundary'],
                                              'boundary_by': account.get('boundary_by'),
                                              'service': account.get('service', 'gmail'),
+                                             **({'last': True} if groups.last(account.get('service', 'gmail')) else {}),  # a catch-all: after the others
                                              'poll_seconds':account.get('poll_seconds',300),
                                              'read_window': read_window(account),
                                              'display_name': names.account_name(account, accounts, UNNAMED.get(account.get('service'))),

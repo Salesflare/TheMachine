@@ -20,9 +20,9 @@ Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn s
 
 Öffne **+ Hinzufügen** und wähle eine Quelle. Sie zeigt ein kurzes Formular, wie auf deiner Einrichtungsseite: was sie braucht (einen Schlüssel, eine Adresse), und **Arbeit** mit ihrer Firma oder **Privat**. Tippe auf **Verbinden**. Eine Quelle mit Anmeldung, etwa LinkedIn oder X, öffnet ihre Anmeldung auf deiner Machine und macht von selbst weiter, sobald du drin bist. GitHub, WhatsApp und Codex zeigen einen Code zum Eingeben, und Telegram-Chats einen QR-Code zum Scannen.
 
-Die Liste ist gruppiert (**Mail und Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**), von A bis Z in jeder Gruppe.
+Die Liste ist gruppiert (**Mail und Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**), von A bis Z in jeder Gruppe. Ein Sammeleintrag wie **Andere E-Mail** steht zuletzt in seiner Gruppe.
 
-Eine Quelle, für die deine Machine einen Grund sieht, ist in ihrer eigenen Gruppe als **Vorgeschlagen** markiert, mit diesem Grund in einer Zeile: Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine Einrichtung, die nicht abgeschlossen wurde. Sie zählt das auf deiner Machine; nichts verlässt sie. Eine verbundene Quelle wird nie vorgeschlagen.
+**Vorgeschlagen für dich** steht oben, wenn deine Machine einen Grund für eine Quelle sieht, mit diesem Grund in einer Zeile: Mails von Stripe, Zoom-Meetings in deinem Kalender, Nachrichten mit Links zu Google Docs oder eine Einrichtung, die nicht abgeschlossen wurde. Die Quelle bleibt auch in ihrer eigenen Gruppe, als **Vorgeschlagen** markiert. Sie zählt das auf deiner Machine; nichts verlässt sie. Eine verbundene Quelle wird nie vorgeschlagen.
 
 Microsoft Teams steht zweimal da: unter **Chat** für die Chats und unter **Meetings** als **Teams-Meetings** für die Meeting-Notizen. Beide nutzen dieselbe Microsoft-Anmeldung, also verbindet eine auch die andere.
 
