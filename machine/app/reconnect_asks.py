@@ -13,7 +13,7 @@ import sqlite3
 
 import i18n
 import ms_graph
-from machine.store.machine_cards import RECONNECT_KIND, reconnect_source, reconnected
+from machine.store.machine_cards import RECONNECT_KIND, reconnect_reword, reconnect_source, reconnected
 
 OUTLOOK_PHOTOS = 'outlook-photos'
 PROVIDERS = {OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
@@ -93,4 +93,4 @@ def reword(db, own):
         mine = personal(ask, account)
         new, line = title(ask, mine), summary(ask, str(account.get('email') or ''), mine)
         if new[:90] != old:
-            db.execute('UPDATE suggestions SET title=?,body=? WHERE id=?', (new[:90], line[:699], card))
+            reconnect_reword(db, card, new, line)

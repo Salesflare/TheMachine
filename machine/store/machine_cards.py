@@ -35,6 +35,11 @@ def reconnect_lead(db, suggestion_id):
             'source': RECONNECT_SOURCES.get(meta['provider'], meta['provider'])}
 
 
+def reconnect_reword(db, suggestion_id, title, body):
+    """An open reconnect to-do's words, made again to fit what reconnecting brings now (reconnect_asks.reword)."""
+    db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status IN ('pending','snoozed')", (title[:90], body[:699], suggestion_id))
+
+
 def reconnected(db, account, ask, at):
     """The account's reconnect to-do, if open, closes itself as done: its sign-in has what it asked for now."""
     for row in db.execute("SELECT s.id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') WHERE e.kind=? "
