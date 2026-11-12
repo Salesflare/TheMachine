@@ -395,6 +395,12 @@ def own_message(event, owner_slack_ids=()):
 CARD_OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
 
 
+# The "boards to suggest" block's size in one review at most: with hundreds of projects on no board (and a name for
+# every person on them) it grew past what the whole review prompt may be, and every review then failed.
+BOARDS_CHARS = 6000
+SUGGESTED_BEFORE = 'Suggested before (don\'t suggest these again): '
+
+
 REPLY_KINDS = ('gmail.message', 'ms_graph.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message')
 
 
@@ -1040,11 +1046,13 @@ class ReviewStore:
         with self.connect() as db:
             return org_check_text(db, run_id)
 
-    def boards_text(self, run_id, every_hours=24, limit=300, per=12):
+    def boards_text(self, run_id, every_hours=24, limit=300, per=12, chars=BOARDS_CHARS):
         """Open projects on no board (and in no open suggestion), for one review a day to look over for board
         suggestions: while fewer than graph.MAX_OPEN_SUGGESTIONS are open and three or more are on no board. A project
         whose messages are with several organizations lists them with their message ids, so a review can split it into
-        one project per counterpart first. Until a review answers it (finish_analysis boards), the next one gets it again."""
+        one project per counterpart first. Until a review answers it (finish_analysis boards), the next one gets it again.
+        chars: the room the review prompt has for it. The newest projects that fit go in; when not even three fit, there
+        is no check this time and nothing is recorded as offered (a review that never saw it can't answer it)."""
         with self.connect() as db:
             open_ = [json.loads(r['projects']) for r in db.execute("SELECT projects FROM board_suggestions WHERE state='open'")]
             if len(open_) >= graph.MAX_OPEN_SUGGESTIONS:
@@ -1058,7 +1066,7 @@ class ReviewStore:
                     if r['id'] not in taken]
             if len(rows) < 3:
                 return ''
-            lines = []
+            lines, size = [], 0
             for r in rows:
                 node = 'project:' + str(r['id'])
                 people = [p['name'] for p in db.execute("SELECT n.name FROM graph_links l JOIN graph_nodes n ON n.id=l.a WHERE l.b=? AND l.kind='project' "
@@ -1075,10 +1083,17 @@ class ReviewStore:
                     names = {n['id']: n['name'] for n in db.execute('SELECT id,name FROM graph_nodes WHERE id IN (SELECT value FROM json_each(?))', (json.dumps(list(by_org)),))}
                     line += f"; its messages are with {len(by_org)} organizations: " + '; '.join(
                         f"{names.get(o, o[4:])} (messages {', '.join(map(str, ids))})" for o, ids in list(by_org.items())[:per])
+                if size + len(line) + 1 > chars:
+                    break
                 lines.append(line)
+                size += len(line) + 1
+            if len(lines) < 3:
+                return ''
             said = [r['name'] for r in db.execute('SELECT name FROM board_suggestions ORDER BY id DESC LIMIT 30')]
+            while said and size + len(SUGGESTED_BEFORE) + len(', '.join(said)) > chars:
+                said.pop()  # the oldest suggestions go first
             if said:
-                lines.append('Suggested before (don\'t suggest these again): ' + ', '.join(said))
+                lines.append(SUGGESTED_BEFORE + ', '.join(said))
             db.execute('INSERT OR REPLACE INTO board_offers(id,run_id,offered_at) VALUES(1,?,?)', (run_id, now()))
         return '\n'.join(lines)
 

@@ -47,7 +47,7 @@ from machine.store.cards import active_preview
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store.first_look import FIRST_ACTIONS, first_value
-from machine.store.review import (PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
+from machine.store.review import (BOARDS_CHARS, PREVIEW_DAYS, REVIEW_PAGE_CHARS, REVIEW_SESSION_PREFIX, REVIEW_TERMINAL, review_view,
                                   service_review_ended, service_run)
 from machine.text import clamp, encoded, fold_previews
 import next_actions
@@ -165,6 +165,31 @@ KIND_WORDS = {'gmail.message': ('email', 'emails'), 'calendar.event': ('meeting'
 
 REVIEW_FAILURES = {'runtime_error','runtime_timeout','runtime_aborted','runtime_lost',
                    'model_idle_timeout','bridge_error','rate_limited','usage_limited','connection_error','prompt_too_long'}
+
+
+# Room the review prompt keeps for the blocks added after it (drafts to learn from, condensing, teammates).
+PROMPT_RESERVE = 4000
+
+
+# Context a review can do without, left out in this order (only while the prompt is still over its limit) instead of
+# failing every review with prompt_too_long: what the owner did with recent to-dos, the open promises, the facts picked
+# for this batch. The instructions, the batch and the blocks a review must answer (sorting, fits) always stay.
+REVIEW_TRIM = {'preferences': ('history',), 'promises': ('promises',), 'batch_facts': ('batch_facts', 'retained')}
+
+
+def fit_review_parts(build, parts, limit, memory=None):
+    """parts with the REVIEW_TRIM blocks emptied, one at a time, until build(parts) fits limit characters (or none is
+    left to empty). A block left out is dropped from memory too, so it isn't logged as read. Logs which went, never
+    their text."""
+    for key, blocks in REVIEW_TRIM.items():
+        if len(build(parts)) <= limit:
+            break
+        if parts.get(key):
+            LOG.warning('review prompt over limit: left out %s chars=%s', key, len(parts[key]))
+            parts = {**parts, key: ''}
+            for block in blocks if memory is not None else ():
+                memory.drop(block)
+    return parts
 
 
 REVIEW_FAILURE_PHASES = {'runtime','model','bridge','connection','queue','provider','tool','gateway_draining'}
@@ -509,14 +534,19 @@ class ReviewApp:
         if request['action'] == 'start':
             self.store.note_rule_files(RULE_FILES)
             memory = recall(self, 'review', {'run': run['run_id']}, PROMPT_LIMIT)  # what was learned, as one list of what it read
-            request['message'] = review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], memory.text('history'), memory.text('facts'),
-                                               self.store.slipped(run['run_id']), memory.text('promises'),
-                                               self.store.unnamed_text(run['run_id']), self.store.role_text(run['run_id']), self.store.notes_to_learn(),
-                                               self.waiting_handoffs_text(), self.split_notes_text(), self.store.boards_text(run['run_id']),
-                                               self.store.sort_text(run['run_id']), source_notes(account_services(self.config)) + companies_prompt(self.config),
-                                               self.store.fit_text(run['run_id']), self.backfill_text(run['run_id']), self.store.first_look_run(run['run_id']),
-                                               batch_facts='\n\n'.join(filter(None, (memory.text('batch_facts'), memory.text('retained')))),  # both differ per batch
-                                               orgs=self.store.org_check_text(run['run_id']))
+            parts = dict(preferences=memory.text('history'), facts=memory.text('facts'), slipped=self.store.slipped(run['run_id']),
+                         promises=memory.text('promises'), unnamed=self.store.unnamed_text(run['run_id']), roles=self.store.role_text(run['run_id']),
+                         notes=self.store.notes_to_learn(), handoffs=self.waiting_handoffs_text(), splits=self.split_notes_text(),
+                         sorting=self.store.sort_text(run['run_id']), sources=source_notes(account_services(self.config)) + companies_prompt(self.config),
+                         fitting=self.store.fit_text(run['run_id']), backfill=self.backfill_text(run['run_id']), first_look=self.store.first_look_run(run['run_id']),
+                         batch_facts='\n\n'.join(filter(None, (memory.text('batch_facts'), memory.text('retained')))),  # both differ per batch
+                         orgs=self.store.org_check_text(run['run_id']))
+            build = lambda parts: review_prompt(run['run_id'], [a['id'] for a in self.config['accounts']], **parts)
+            parts = fit_review_parts(build, parts, PROMPT_LIMIT - PROMPT_RESERVE, memory)
+            # The once-a-day board check takes the room that is left, so it never pushes the prompt over the limit
+            room = min(BOARDS_CHARS, PROMPT_LIMIT - PROMPT_RESERVE - len(build(parts)))
+            parts['boards'] = self.store.boards_text(run['run_id'], chars=room) if room > 0 else ''
+            request['message'] = build(parts)
             try:  # drafts the owner rewrote, or answered themselves instead: lasting habits go into that channel's voice
                 lines = self.store.edits_to_learn()
                 if lines:
@@ -573,12 +603,13 @@ class ReviewApp:
             if getattr(self, 'fleet', None):
                 try:  # who a task can go to through The Machine (Hand it off)
                     people = sorted(self.fleet.handoff_people().items(), key=lambda p: p[1])[:20]
-                    if people:
-                        request['message'] += ("\n\nTeammates in the owner's Work Fleet, each with their own Machine: "
-                                               + '; '.join(f'{n} <{e}>' for e, n in people)
-                                               + ". A task that is one of theirs is offered as a handoff to their Machine (Hand it off): add "
-                                               "handoff_to (their email above) to suggest, so the to-do's Hand off starts with them. Name "
-                                               "a teammate as the one to hand it to only with handoff_to.")
+                    block = ("\n\nTeammates in the owner's Work Fleet, each with their own Machine: "
+                             + '; '.join(f'{n} <{e}>' for e, n in people)
+                             + ". A task that is one of theirs is offered as a handoff to their Machine (Hand it off): add "
+                             "handoff_to (their email above) to suggest, so the to-do's Hand off starts with them. Name "
+                             "a teammate as the one to hand it to only with handoff_to.")
+                    if people and len(request['message']) + len(block) <= PROMPT_LIMIT:
+                        request['message'] += block
                 except Exception as error:
                     LOG.error('fleet teammates error=%s', type(error).__name__)
         # Offering learning context is not delivery: a Gateway outage must leave it eligible on retry.
