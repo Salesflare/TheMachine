@@ -197,12 +197,12 @@ const sigEditing=f=>editingIn(f||$('#signatures'));
 const sigSized=new ResizeObserver(rows=>{for(const r of rows)r.target._fit?.()});  // drawn while Settings was hidden: sized once shown
 const SIG_TOOLS=[['bold','<b>B</b>','Bold'],['italic','<i>I</i>','Italic'],['underline','<u>U</u>','Underline'],['link','Link','Link'],['image','Image','Image by address'],['color','','Text color'],['clear','Clear','Clear formatting'],['html','&lt;/&gt; HTML','Edit the HTML']];
 const sigState=s=>s.source==='owner'?'Custom':s.source&&s.html?'Imported':'None';
-const sigFrom=s=>s.service==='outlook'?'Found in your Outlook sent mail':'Imported from Gmail';
+const sigFrom=s=>s.service==='outlook'?'Found in your Outlook sent mail':s.service==='imap'?'Found in your sent mail':'Imported from Gmail';
 function sigCard(s){const off=s.saveable?'':' disabled';
  return html`<form class="sig-form" data-account="${s.account_id}" data-service="${s.service}" novalidate><div class="sig-head"><strong class="ell">${s.email||s.account_id}</strong><small class="muted">${s.service==='outlook'?'Outlook':'Gmail'} · <span class="sig-state">${sigState(s)}</span></small></div>
  <div class="sig-tools" role="toolbar" aria-label="Formatting">${SIG_TOOLS.map(([k,t,l])=>k==='color'?html`<label class="sig-color" title="${l}"><span aria-hidden="true">A</span><input type="color" value="#222222" data-sig-tool="color" aria-label="${l}"${off}></label>`:html`<button type="button" data-sig-tool="${k}" title="${l}" aria-label="${l}"${k==='html'?html` aria-pressed="false"`:''}${off}>${k==='html'?html`<span class="sig-code">&lt;/&gt; </span>HTML`:raw(t)}</button>`)}</div>
  <iframe class="sig-paper" sandbox="allow-same-origin" title="Signature for ${s.email||s.account_id}"></iframe><textarea class="sig-source" rows="6" maxlength="60000" aria-label="Signature HTML" spellcheck="false" hidden></textarea>
- <p class="sig-note muted">${s.source&&s.source!=='owner'&&s.html?sigFrom(s)+' · ':''}<button type="button" class="link" data-sig-import${off}>${s.source&&s.source!=='owner'?'Re-import':s.service==='outlook'?'Find in sent mail':'Import from Gmail'}</button>${s.source==='owner'?html` · <button type="button" class="link" data-sig-mailbox${off}>Use mailbox signature</button>`:''}</p>
+ <p class="sig-note muted">${s.source&&s.source!=='owner'&&s.html?sigFrom(s)+' · ':''}<button type="button" class="link" data-sig-import${off}>${s.source&&s.source!=='owner'?'Re-import':['outlook','imap'].includes(s.service)?'Find in sent mail':'Import from Gmail'}</button>${s.source==='owner'?html` · <button type="button" class="link" data-sig-mailbox${off}>Use mailbox signature</button>`:''}</p>
  <p role="status"></p><div class="actions sig-save" hidden><button class="primary"${off}>Save</button><button type="button" class="ghost" data-sig-cancel>Cancel</button></div></form>`}
 const sigNode=s=>{const tp=document.createElement('template');setHTML(tp,sigCard(s));return tp.content};  // a fresh form, to replace an edited one
 const sigDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))==='dark';
@@ -331,7 +331,7 @@ function renderSignatures(){const list=state.signatures||[],box=$('#settings-sig
 const sigPost=(action,args)=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 async function sigImport(id,auto){const form=()=>$(`#signatures .sig-form[data-account="${CSS.escape(id)}"]`),say=t=>{const o=form()?.querySelector('[role=status]');if(o)o.textContent=t};
  const button=form()?.querySelector('[data-sig-import]');if(button)button.disabled=true;
- try{const r=await sigPost('detect_signature',{account_id:id}),none=form()?.dataset.service==='outlook'?'No signature repeats in your recent sent mail.':'Gmail has no signature for this address.';
+ try{const r=await sigPost('detect_signature',{account_id:id}),none=['outlook','imap'].includes(form()?.dataset.service)?'No signature repeats in your recent sent mail.':'Gmail has no signature for this address.';
   if((state.signatures||[]).find(s=>s.account_id===id)?.source==='owner'){  // the owner's own stays until they save the imported one
    const f=form();if(!f)return;if(!r.found){say(none);return}const src=f.querySelector('.sig-source');if(src.hidden)sigLoad(f,r.html);else src.value=r.html;sigChanged(f);say('Imported. Save to use it.');return}
   const s=(r.signatures||[]).find(x=>x.account_id===id),f=form();if(s)state.signatures=(state.signatures||[]).map(x=>x.account_id===id?s:x);  /* only this one: imports run side by side */

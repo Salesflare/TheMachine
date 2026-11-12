@@ -19,6 +19,7 @@ import sys
 import google_api
 import imap_mail
 import ms_graph
+import smtp_mail
 
 # The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
 UPSTREAM_BUSY = {429, 500, 502, 503, 504}
@@ -122,23 +123,23 @@ def gog_read(config, account, api, version, method, params, scope):
 # Outlook mail and calendar: they flow through the same sync, cards and sends as Gmail and Google Calendar, and their
 # messages are stored with the same 'gmail.message' kind (it means "an email" everywhere in the app).
 MICROSOFT_SERVICES = ('outlook', 'outlook_calendar')
-# Any other mailbox over IMAP ('imap', imap_mail.py) flows through the same sync the same way. It reads only for now:
-# mail_account leaves it out, so nothing is sent from it.
+# Any other mailbox over IMAP ('imap', imap_mail.py) flows through the same sync the same way, and sends through its own
+# SMTP server (smtp_mail.py).
 MAIL_SERVICES = ('gmail', 'outlook', 'imap')
 CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
 
 
 def mail_account(account):
-    """An owner's mailbox we can read and send from: Gmail (gog or broker) or Outlook (broker or own app)."""
+    """An owner's mailbox we can read and send from: Gmail (gog or broker), Outlook (broker or own app) or Other email."""
     service = account.get('service', 'gmail')
     return (service == 'gmail' and account.get('transport') in ('gog', 'broker')) or (
-        service == 'outlook' and account.get('transport') in ('broker', 'graph'))
+        service == 'outlook' and account.get('transport') in ('broker', 'graph')) or smtp_mail.sends(account)
 
 
 def mailbox_name(config, action):
-    """Gmail or Outlook: what an email action's account is, for the owner's messages."""
+    """Gmail, Outlook or Your mail server: what an email action's account is, for the owner's messages."""
     account = next((a for a in config.get('accounts', []) if a.get('id') == action.get('account_id')), {})
-    return 'Outlook' if account.get('service') == 'outlook' else 'Gmail'
+    return {'outlook': 'Outlook', 'imap': 'Your mail server'}.get(account.get('service'), 'Gmail')
 
 
 def gog_signin_command(config, account):

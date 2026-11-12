@@ -4,6 +4,7 @@ flows through the same sync, history import, review, threads and cards, stored a
 
 Python's own imaplib, nothing to install. Reads only: every folder is opened read-only (EXAMINE) and bodies are fetched
 with BODY.PEEK, so nothing is marked read. INBOX and the Sent folder (RFC 6154 \\Sent, else a usual name) are read.
+The one change ever made is a copy of an email The Machine sent, put in the Sent folder (smtp_mail.py).
 
 A message's id is <folder key><UIDVALIDITY>-<UID> (i1700000000-42 in INBOX, s…-7 in Sent): no message text, and it
 says where to fetch it. The history cursor is each folder's UIDVALIDITY and next UID. A folder whose UIDVALIDITY changed

@@ -24,6 +24,7 @@ from unittest import mock
 import imap_mail
 import imap_presets
 import onboarding
+import smtp_mail
 import sources
 from machine import config as machine_config
 from machine.sources import imap_setup
@@ -69,7 +70,7 @@ def imap_day(text):
 
 
 class FakeImap(socketserver.ThreadingTCPServer):
-    """A small IMAP4rev1 server: LOGIN / AUTHENTICATE PLAIN, LIST, EXAMINE, UID SEARCH, UID FETCH, NOOP, LOGOUT.
+    """A small IMAP4rev1 server: LOGIN / AUTHENTICATE PLAIN, LIST, EXAMINE, UID SEARCH, UID FETCH, APPEND, NOOP, LOGOUT.
     mode: 'ssl' (TLS from the first byte), 'starttls', 'plain' (no STARTTLS on offer) or 'silent' (never greets)."""
     daemon_threads = allow_reuse_address = True
 
@@ -120,6 +121,13 @@ class Handler(socketserver.StreamRequestHandler):
             if not line:
                 return
             literal = re.search(rb'\{(\d+)\}\r\n$', line)
+            if literal and line.split(b' ')[1:2] == [b'APPEND']:  # a message: kept as it came
+                self.send('+ go on\r\n')
+                data = self.rfile.read(int(literal[1]))
+                self.rfile.readline()
+                self.server.commands.append(('APPEND', self.tls))
+                self.do_APPEND(line.split(b' ')[0].decode(), line[:literal.start()], data)
+                continue
             if literal:  # a literal argument: say go on, then read it and the rest of the line
                 self.send('+ go on\r\n')
                 line = line[:literal.start()] + b' "' + self.rfile.read(int(literal[1])) + b'"' + self.rfile.readline()
@@ -181,6 +189,14 @@ class Handler(socketserver.StreamRequestHandler):
         for name, folder in self.server.folders.items():
             self.send(f'* LIST (\\HasNoChildren{" " + folder.flags if folder.flags else ""}) "/" "{name}"\r\n')
         self.send(f'{tag} OK done\r\n')
+
+    def do_APPEND(self, tag, head, data):
+        folder = self.server.folders.get(tokens(head)[2].decode())
+        if not self.user or folder is None:
+            self.send(f'{tag} NO no such folder\r\n')
+            return
+        uid = folder.add(data, dt.datetime.now(dt.timezone.utc), ['\\Seen'])
+        self.send(f'{tag} OK [APPENDUID {folder.validity} {uid}] appended\r\n')
 
     def do_SELECT(self, tag, rest):
         self.send(f'{tag} NO read-only, please\r\n')  # the Machine only ever EXAMINEs
@@ -590,7 +606,7 @@ class Setup(Base):
         account = {'id': 'acme-imap', 'service': 'imap', 'transport': 'imap', 'boundary': 'work:Acme'}
         ui = FakeUI({'Email address': email_address, **(answers or {})}, password)
         lookup = mock.patch.object(imap_presets, 'lookup', return_value=found if found is not None else {})
-        with lookup:
+        with lookup, mock.patch.object(smtp_mail, 'check'):  # no SMTP server is reached (test_smtp.py has a fake one)
             imap_setup.step(self.config, account, ui)
         return account, ui
 

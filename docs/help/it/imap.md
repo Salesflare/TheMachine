@@ -1,20 +1,20 @@
 ---
 title: Altra email (IMAP)
 area: connections
-summary: La posta di qualsiasi provider con IMAP, come iCloud, Yahoo, Fastmail, Telenet o il tuo dominio. Per ora legge soltanto.
+summary: La posta di qualsiasi provider con IMAP, come iCloud, Yahoo, Fastmail, Telenet o il tuo dominio.
 covers: connector:imap
-code: imap_mail.py, imap_presets.py, machine/sources/imap_setup.py
+code: imap_mail.py, smtp_mail.py, imap_presets.py, machine/sources/imap_setup.py
 order: 13
 ---
 ## Cosa legge
 
 La tua posta in arrivo e la cartella Inviata: gli ultimi 7 giorni quando colleghi, poi tutto ciò che è nuovo. Conta anche la posta che invii: così impara come scrivi e cosa hai promesso. Le altre cartelle non vengono lette.
 
-Nella tua casella non cambia nulla. La posta non viene segnata come letta.
+Nella tua casella non cambia nulla, tranne una copia di ciò che The Machine invia, nella cartella Inviata. La posta non viene segnata come letta.
 
 ## Cosa può fare
 
-Per ora legge soltanto: non può ancora inviare da questa casella. Una risposta preparata per te la copi tu nel tuo programma di posta.
+Invia un’email solo quando premi Invia, tramite il server di posta del tuo provider (SMTP) con la stessa password. Una copia va nella cartella Inviata. Le risposte restano nella loro conversazione, e la tua firma è quella delle Impostazioni, altrimenti quella con cui finisce la tua posta inviata.
 
 ## Collegala
 
@@ -30,13 +30,14 @@ Molti provider chiedono una password per le app di posta, non la tua password no
 - Telenet: la tua normale password della posta Telenet.
 - Proton Mail: avvia Proton Mail Bridge sullo stesso computer e usa la password che mostra Bridge.
 
-Le impostazioni del server vengono compilate per la maggior parte dei provider. Il tuo non è stato trovato? Apri **Impostazioni del server** e inserisci quello che il tuo provider indica per le app di posta: server IMAP, porta e sicurezza (SSL/TLS o STARTTLS). The Machine non si collega mai senza TLS.
+Le impostazioni del server vengono compilate per la maggior parte dei provider. Il tuo non è stato trovato? Apri **Impostazioni del server** e inserisci quello che il tuo provider indica per le app di posta: server IMAP e SMTP, le loro porte e la sicurezza (SSL/TLS o STARTTLS). The Machine non si collega mai senza TLS.
 
 Gmail o posta Microsoft, anche sul tuo dominio? Scegli invece **Gmail** o **Outlook**. Accedono senza password.
 
 ## Se si ferma
 
 - **Il server di posta ha rifiutato la password**: l’hai cambiata, o la password per app è stata rimossa. Collegala di nuovo con quella nuova.
+- **Il server di posta ha rifiutato la password per l’invio**: non è stato inviato nulla. Ricollegala; se continua a rifiutarla, controlla il server SMTP in Impostazioni del server. Fino ad allora legge soltanto.
 - **Il server di posta non è raggiungibile**: riprova da sola. Se continua a non riuscire, controlla il nome del server in Impostazioni del server.
 
 ## Rimuovila

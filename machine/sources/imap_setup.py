@@ -1,12 +1,14 @@
 """Setting up any other mailbox over IMAP (imap_mail.py): the + Add form asks the address and password; its Server
 settings, folded away, fill in or change what imap_presets.py finds (onboarding.web_form shows FIELDS). The
-password is checked by signing in before anything is saved. Moved out of onboarding.py (its line budget). onboarding
+password is checked by signing in before anything is saved, to the IMAP server and to the SMTP server it sends through
+(smtp_mail.py): a mailbox whose SMTP server refuses still connects, and only reads. Moved out of onboarding.py (its line budget). onboarding
 imports this module, so this one imports onboarding where it is used."""
 import re
 from pathlib import Path
 
 import imap_mail
 import imap_presets
+import smtp_mail
 
 ACCOUNT = {'id': 'work-imap', 'service': 'imap', 'transport': 'imap', 'boundary': 'work:Acme'}
 FIELDS = [['username', 'Username'],  # its own row; then one row per server (dashboard/connections-cards.js)
@@ -14,7 +16,7 @@ FIELDS = [['username', 'Username'],  # its own row; then one row per server (das
           ['smtp_host', 'SMTP server'], ['smtp_port', 'SMTP port'], ['smtp_security', 'SMTP security', ['SSL/TLS', 'STARTTLS']]]
 STARTTLS_PORTS = (25, 143, 587, 1025, 1143, 2525)
 IDENTITY = {'sent_folder', 'imap_host', 'imap_port', 'imap_security', 'username', 'smtp_host', 'smtp_port',
-            'smtp_security'}  # a mailbox's own server settings: never copied to another one (onboarding.new_account)
+            'smtp_security', 'smtp_refused'}  # a mailbox's own server settings: never copied to another one (onboarding.new_account)
 HINTS = (  # onboarding.hint: what to do about a sync error
     ('imap_auth_failed', 'the mail server refused the password: connect it again (many providers need an app password)'),
     ('imap_tls_failed', 'no secure connection to the mail server: check its name, port and security'),
@@ -121,6 +123,12 @@ def step(config, account, ui):
         else:
             fix = 'check the server name, port and security in Server settings'
         raise onboarding.SetupError(what, fix) from None
+    try:
+        smtp_mail.check(config, None, account, password)
+        account.pop('smtp_refused', None)
+    except smtp_mail.SmtpError as error:
+        account['smtp_refused'] = True  # reads; sending waits for a sign-in the SMTP server takes
+        ui.say(f"  sending: {REFUSED.get(error.category.replace('smtp_', 'imap_'), 'the mail server for sending didn’t answer as expected')}: reading only")
     if sent:
         account['sent_folder'] = sent
     else:

@@ -1,9 +1,10 @@
 """Mail signatures in the service (signatures.py keeps them): Settings' view of each mailbox's signature, the one the
-mailbox itself has (Gmail's own, or Outlook's from its sent mail) and the owner's changes. Moved out of assistant.App
+mailbox itself has (Gmail's own, or Outlook's or Other email's from its sent mail) and the owner's changes. Moved out of assistant.App
 as is. A mixin of assistant.App (APP_MIXINS)."""
 import ms_graph
 import next_actions
 import signatures
+import smtp_mail
 from sources import credential, gog_read
 
 
@@ -23,12 +24,14 @@ class SignaturesApp:
     def mailbox_signature(self, account):
         """The signature the mailbox itself has, cleaned: Gmail's own (sendAs, read with gmail.readonly, the scope the
         send check already uses), or for Outlook, which has no signature API, the one its sent mail ends with."""
-        if account.get('service') == 'outlook':
+        if account.get('service') in ('outlook', 'imap'):
             try:
-                return signatures.detect(ms_graph.sent_bodies(self.config, credential, account),
-                                         (str(self.config.get('owner_name') or '').split() or [''])[0]), 'detected'
+                return signatures.detect((smtp_mail.sent_bodies if account['service'] == 'imap' else ms_graph.sent_bodies)(
+                    self.config, credential, account), (str(self.config.get('owner_name') or '').split() or [''])[0]), 'detected'
             except ms_graph.GraphError as error:
                 raise ValueError(f'Outlook could not be read now ({error})') from None
+            except smtp_mail.imap_mail.ImapError:
+                raise ValueError('The mail server could not be read now; try again in a minute') from None
         try:
             send_as = (getattr(self, 'mail_read', None) or gog_read)(
                 self.config, account, 'gmail', 'v1', 'gmail.users.settings.sendAs.get',
