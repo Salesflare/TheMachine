@@ -31,7 +31,9 @@ const most=(el,{words,lines})=>{const lh=parseFloat(getComputedStyle(el).lineHei
  let lo=1,hi=words.length;while(lo<hi){const m=Math.ceil((lo+hi)/2);if(n(m)<=lines)lo=m;else hi=m-1}return lo};
 const look=(page,id)=>page.locator('#task-'+id).evaluate(c=>{const masked=el=>!!el&&getComputedStyle(el).maskImage!=='none'&&getComputedStyle(el).webkitMaskImage!=='none';
  const db=c.querySelector('.draft .db'),body=c.querySelector('.body');
- return {more:[...c.querySelectorAll('button.more')].filter(b=>b.checkVisibility()).map(b=>b.textContent),fade:masked(body)||masked(db)}});
+ // hidden: some of its text is out of its box (scrollHeight past clientHeight): never without a Show more to open it
+ const cut=el=>!!el&&el.scrollHeight>el.clientHeight+1;
+ return {more:[...c.querySelectorAll('button.more')].filter(b=>b.checkVisibility()).map(b=>b.textContent),fade:masked(body)||masked(db),hidden:cut(body)||cut(db)}});
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -48,18 +50,18 @@ try{
   fit={body,draft};extra=mobile?20:1;await open();
   const fb=await look(page,'fitbody'),cb=await look(page,'cutbody'),fd=await look(page,'fitdraft'),cd=await look(page,'cutdraft');
   if(shots)await page.screenshot({path:`${shots}/clamp-${width}-${scale}x-${scheme}.png`,fullPage:true});
-  assert.deepEqual(fb,{more:[],fade:false},why+': a summary one line over its 2 shows whole');
-  assert.deepEqual(cb,{more:['Show more'],fade:true},why+': one word more is cut');
-  assert.deepEqual(fd,{more:[],fade:false},why+': a draft one line over its 3 shows whole');
-  assert.deepEqual(cd,{more:['Show more'],fade:true},why+': one word more is cut');
+  assert.deepEqual(fb,{more:[],fade:false,hidden:false},why+': a summary one line over its 2 shows whole');
+  assert.deepEqual(cb,{more:['Show more'],fade:true,hidden:true},why+': one word more is cut');
+  assert.deepEqual(fd,{more:[],fade:false,hidden:false},why+': a draft one line over its 3 shows whole');
+  assert.deepEqual(cd,{more:['Show more'],fade:true,hidden:true},why+': one word more is cut');
   // Show more still opens it whole, and Show less folds it again
-  await page.locator('#task-cutbody button.more').click();assert.deepEqual(await look(page,'cutbody'),{more:['Show less'],fade:false},why+': opened');
-  await page.locator('#task-cutbody button.more').click();assert.deepEqual(await look(page,'cutbody'),{more:['Show more'],fade:true},why+': folded');
+  await page.locator('#task-cutbody button.more').click();assert.deepEqual(await look(page,'cutbody'),{more:['Show less'],fade:false,hidden:false},why+': opened');
+  await page.locator('#task-cutbody button.more').click();assert.deepEqual(await look(page,'cutbody'),{more:['Show more'],fade:true,hidden:true},why+': folded');
   // Narrower: what fit at this width no longer does, and is measured again
   if(!mobile){await page.setViewportSize({width:640,height});await page.waitForTimeout(200);
-   assert.deepEqual(await look(page,'fitbody'),{more:['Show more'],fade:true},why+': narrower, cut');
+   assert.deepEqual(await look(page,'fitbody'),{more:['Show more'],fade:true,hidden:true},why+': narrower, cut');
    await page.setViewportSize({width,height});await page.waitForTimeout(200);
-   assert.deepEqual(await look(page,'fitbody'),{more:[],fade:false},why+': wide again, whole')}
+   assert.deepEqual(await look(page,'fitbody'),{more:[],fade:false,hidden:false},why+': wide again, whole')}
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
