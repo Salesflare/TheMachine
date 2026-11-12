@@ -493,7 +493,7 @@ class AppPush(unittest.TestCase):
     def test_the_morning_digest_wakes_the_phone_with_its_body(self):
         self.register()
         self.card('Reply to Sam about Tuesday')
-        morning = a.dt.datetime(2026, 10, 12, 8, 40, tzinfo=a.dt.timezone.utc)
+        morning = a.dt.datetime(2026, 10, 12, 9, 10, tzinfo=a.dt.timezone.utc)
         with patch_everywhere(a, 'local_tz', return_value=a.dt.timezone.utc):
             self.app.digest_step(current=morning, push=self.sender)
         notice = a.app_notice(self.store, self.config, 'digest')

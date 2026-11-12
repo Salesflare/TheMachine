@@ -372,11 +372,34 @@ def waiting_mail(lines, root=''):
 
 
 # -- the morning digest
-def digest_due(local, digest_at, start, end, work_day, sent_today):
-    """Whether the digest goes now: a work day, at its time (or the start of hours when it is set earlier), within
-    hours, at most DIGEST_LATE after, once a day."""
+AFTER_SNOOZES = dt.timedelta(minutes=5)  # the digest goes at least this long after the morning's snoozes came back
+
+
+def digest_time(digest_at, morning=None, start=None, end=None):
+    """When the morning digest goes ('HH:MM'): its own time, but never before AFTER_SNOOZES past the morning snooze time
+    (work_hours.morning, where Tomorrow, 3 days and 1 week land), so the to-dos that came back that morning are in it.
+    A digest set later keeps its time. When that would fall past midnight or outside the hours, its own time stays.
+    The dashboard shows the same time (settings-device.js, digestTime)."""
+    if not morning:
+        return digest_at
+    hour, minute = (int(x) for x in morning.split(':'))
+    after = hour * 60 + minute + int(AFTER_SNOOZES.total_seconds() // 60)
+    if after >= 24 * 60:
+        return digest_at
+    later = '%02d:%02d' % divmod(after, 60)
+    if later <= digest_at:
+        return digest_at
+    if start and end and start != end and not (start <= later < end if start < end else later >= start or later < end):
+        return digest_at
+    return later
+
+
+def digest_due(local, digest_at, start, end, work_day, sent_today, morning=None):
+    """Whether the digest goes now: a work day, at its time (digest_time: after the morning's snoozes came back; or the
+    start of hours when it is set earlier), within hours, at most DIGEST_LATE after, once a day."""
     if sent_today or not work_day(local):
         return False
+    digest_at = digest_time(digest_at, morning, start, end)
     at = max(digest_at, start) if start < end else digest_at
     hour, minute = (int(x) for x in at.split(':'))
     target = local.replace(hour=hour, minute=minute, second=0, microsecond=0)

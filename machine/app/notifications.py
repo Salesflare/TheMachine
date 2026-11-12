@@ -158,7 +158,7 @@ class NotificationsApp:
             if not any(prefs.values()):
                 return None
             sent = notify.digest_sent(db, day)
-        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, sent):
+        if not notify.digest_due(local, self.config.get('digest_at', '08:30'), WORK_HOURS['start'], WORK_HOURS['end'], is_work_day, sent, WORK_HOURS['morning']):
             return None
         with self.store.connect() as db:
             if not notify.digest_claim(db, day, now()):

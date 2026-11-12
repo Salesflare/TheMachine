@@ -51,6 +51,10 @@ try{
   await page.locator('[data-notify-preview]').click();
   await page.locator('#notify-preview:not([hidden])',{hasText:'Planning with the agency'}).waitFor();
   assert.equal(await page.locator('[data-notify-preview]').innerText(),'Hide preview');
+  // The digest set at 08:30 waits until 5 minutes after Snoozes land at (09:00), and says so (notify.digest_time)
+  assert.match(await page.locator('#notify-grid [data-notify-preview]').locator('xpath=..').innerText(),/^Work days at 0?9:05, after snoozes land/);
+  assert.deepEqual(await page.evaluate(()=>[digestTime('08:30',{morning:'09:00',start:'08:00',end:'18:00'}),digestTime('10:00',{morning:'09:00',start:'08:00',end:'18:00'}),
+   digestTime('08:30',{morning:'17:58',start:'08:00',end:'18:00'}),digestTime('08:30',{morning:'23:58',start:'00:00',end:'00:00'}),digestTime('08:30',{})]),['09:05','10:00','08:30','08:30','08:30']);
   // Preview sits in the digest row of the grid; the card below is only This device
   assert.equal(await page.locator('#notify-grid [data-notify-preview]').count(),1);
   assert.deepEqual(await page.locator('#notify-more strong').allInnerTexts(),['This device']);

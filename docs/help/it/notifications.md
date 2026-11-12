@@ -62,7 +62,7 @@ Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la d
 
 ## Il riepilogo del mattino
 
-Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:
+Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. Se è prima di **I posticipi arrivano alle**, aspetta fino a 5 minuti dopo, così include le attività che tornano quella mattina. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:
 
 - un saluto con ciò che conta oggi, come "Buongiorno Sam, 2 risposte sono pronte da inviare" o, per un'attività, "Buongiorno Sam, da approvare: Invia il modulo d'ordine";
 - al massimo tre cose da fare, ognuna con un link Apri: prima le bozze pronte e le promesse in scadenza oggi;

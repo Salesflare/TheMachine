@@ -63,7 +63,7 @@ E-Mails mit dem, was auf dich wartet, haben die Links Öffnen und Zurückstellen
 
 ## Die morgendliche Zusammenfassung
 
-Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung**, außer es gibt nichts zu sagen. **Vorschau** in ihrer Zeile zeigt sie, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail, kurz genug für einen Blick:
+Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung**, außer es gibt nichts zu sagen. Liegt diese vor **Zurückgestelltes kommt um**, wartet sie bis 5 Minuten danach, damit die Aufgaben, die an dem Morgen zurückkommen, darin stehen. **Vorschau** in ihrer Zeile zeigt sie, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail, kurz genug für einen Blick:
 
 - ein Gruß mit dem, was heute zählt, etwa "Guten Morgen Sam, 2 Antworten sind bereit zum Senden" oder, bei einer Aufgabe, "Guten Morgen Sam, wartet auf dein OK: Schick das Bestellformular";
 - höchstens drei Dinge zu tun, jedes mit einem Link Öffnen: zuerst fertige Entwürfe und heute fällige Versprechen;

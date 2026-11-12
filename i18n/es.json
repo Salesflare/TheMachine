@@ -6286,6 +6286,7 @@
  "Work contacts.": "Contactos de trabajo.",
  "Work days": "Días laborables",
  "Work days at {}": "Días laborables a las {}",
+ "Work days at {}, after snoozes land": "Días laborables a las {}, después de lo pospuesto",
  "Work days at {}. Skipped when there’s nothing.": "Días laborables a las {}. Se omite si no hay nada.",
  "Work days from your work hours": "Días laborables según tu horario laboral",
  "Work email": "Correo de trabajo",

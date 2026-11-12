@@ -129,7 +129,7 @@ class Repeats(unittest.TestCase):
     # -- C: the morning digest email covers what it lists
     def test_the_digest_email_clears_the_held_lines_it_covered(self):
         mails = []
-        t0 = a.dt.datetime(2026, 10, 12, 8, 30, tzinfo=UTC)
+        t0 = a.dt.datetime(2026, 10, 12, 9, 5, tzinfo=UTC)
         other = self.store.suggest('venue', 'Book the venue', 'The venue asks for a date.', [1])['id']
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='prepared',deliver_after=NULL")

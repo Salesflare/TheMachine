@@ -10,7 +10,7 @@ Dans **Paramètres**, **Notifications**, sous **Heures de travail** :
 
 - **Jours de travail** : les tâches de travail et le travail mis en attente attendent un jour de travail.
 - **Messages de** et **Jusqu’à** : rien ne vous est envoyé en dehors de ces heures, ni push, ni Telegram, ni e-mail.
-- **Les mises en attente reviennent à** : quand revient une mise en attente d’un jour ou plus.
+- **Les mises en attente reviennent à** : quand revient une mise en attente d’un jour ou plus. Le récap du matin arrive au moins 5 minutes après, pour les inclure.
 - **Récap du matin** : quand arrive le résumé du matin.
 - **Fuseau horaire** : le vôtre, pour tout ce qui précède.
 

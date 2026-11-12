@@ -10,7 +10,7 @@ In **Einstellungen**, **Benachrichtigungen**, unter **Arbeitszeiten**:
 
 - **Arbeitstage**: Arbeitsaufgaben und zurückgestellte Arbeit warten auf einen Arbeitstag.
 - **Nachrichten ab** und **Bis**: Außerhalb dieser Zeiten wird dir nichts geschickt, weder Push noch Telegram noch E-Mail.
-- **Zurückgestelltes kommt um**: wann etwas zurückkommt, das um einen Tag oder länger zurückgestellt wurde.
+- **Zurückgestelltes kommt um**: wann etwas zurückkommt, das um einen Tag oder länger zurückgestellt wurde. Die morgendliche Zusammenfassung kommt mindestens 5 Minuten später, damit es darin steht.
 - **Morgendliche Zusammenfassung**: wann die morgendliche Zusammenfassung kommt.
 - **Zeitzone**: deine, für alles oben Genannte.
 
