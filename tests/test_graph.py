@@ -248,6 +248,7 @@ class Graph(unittest.TestCase):
         self.assertEqual(people.get('email:zq.rt@kilnworks.example'), 'zq.rt@kilnworks.example')
         self.assertEqual(people.get('email:jdoe@kilnworks.example'), 'jdoe@kilnworks.example')
         self.assertEqual(graph.mail_senders.address_name('jane.doe@shop.example', set()), 'Jane Doe')
+        self.assertEqual(graph.mail_senders.address_name('kim.lv@shop.example', set()), 'Kim')  # two letters are no surname
         self.assertEqual([graph.mail_senders.address_name(a + '@shop.example', {'info', 'shop'}) for a in ('info', 'noreply', 'j.doe', 'shop', 'jdoe')],
                          ['', '', '', '', ''])
 
