@@ -70,11 +70,24 @@ def use_line(n, mail):
         ('Added the message to this to-do' if n == 1 else 'Added the messages to this to-do')
 
 
-def source_kind(kind):
+def source_label(kind):
+    """What a kind of event is called ("email", "Slack"), or None for one nothing names."""
     if kind in SOURCE_KIND:
         return SOURCE_KIND[kind]
     plugin = load_connector(str(kind).split('.')[0]) if '.' in str(kind) else None
-    return (getattr(plugin, 'KINDS', None) or {}).get(kind, 'signal')
+    return (getattr(plugin, 'KINDS', None) or {}).get(kind)
+
+
+def source_kind(kind):
+    """source_label, or 'signal' for a kind nothing names (the model's word; a to-do's source line never shows it)."""
+    return source_label(kind) or 'signal'
+
+
+def shown_source(row):
+    """Whether a to-do's source line can say what this event is: a kind with a name, or a routine's own (by the
+    routine's name), or a Fleet brief's ("your Fleet"). Any other (a test, a kind nothing names) gives no line rather
+    than a vague "signal"."""
+    return str(row['kind']).startswith('routine.') or row['kind'] == 'fleet.brief' or source_label(row['kind']) is not None
 
 
 def awaiting_key(event, owner_slack_ids=()):
@@ -112,7 +125,8 @@ def awaiting_match(watch, event, owner_slack_ids=()):
 SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
                'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
-               'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine'}
+               'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine', 'machine.fault': 'The Machine',
+               'meeting.notes': 'meeting notes', 'meeting.transcript': 'transcript'}
 
 
 def own_life_evidence(db, event_ids):
@@ -319,8 +333,8 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
 def source_line(rows, db=None):
     """One readable line about where a suggestion comes from, for the card. With db, a meeting's notes name the meeting
     ("notes from Board meeting Q4"), and lead over the same notes by mail (meeting_mail.lead)."""
-    # the owner's own words ("Added by you"), an update's note, a reconnect ask (its text names the account; no source)
-    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix', 'machine.reconnect_ask')]
+    # the owner's own words ("Added by you"), an update's note, and what no line can name (shown_source)
+    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix') and shown_source(r)]
     if not rows:
         return None
     rows, meeting = meeting_mail.lead(db, rows)
@@ -354,7 +368,7 @@ def source_text(row):
     if row['kind'] == 'owner.card':
         return f'to-do the owner added · {when}'
     m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-    if row['kind'] == 'routine.draft':  # a routine's draft (routines_app.py): the routine by its name, never "signal from"
+    if str(row['kind']).startswith('routine.'):  # a routine's draft or its own to-do: the routine by its name, never "signal from"
         name = ' '.join(str(m.get('sender_display') or '').split())
         return ('your routine ' + name if name else 'your routine') + f' · {when}'
     if row['kind'] == 'fleet.brief':  # a team brief line (fleet_brief_todos.py): "From your Fleet", never "signal from"
