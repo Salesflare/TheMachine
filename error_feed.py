@@ -134,7 +134,7 @@ advancing opportunities join disabled method ratelimited browser busy reader sig
 search board action summary user host conference artifact maton shared replies off region profile conversation
 conversations parts identity mismatch entry encoding transport source content message person mention account scope
 notifications notification offline snapshot query unreachable stopped collector unsupported download no too large
-response timestamp media payment redirect required answered'''.split())
+response timestamp media payment redirect required answered stalled'''.split())
 # An HTTP status said in words, as the control plane takes no 3-digit numbers: 401 and 429 stay told apart
 HTTP_STATUS = re.compile(r'(?i)(?<![A-Za-z])HTTP(?:[ _]?Error)?[ _:]*([1-5]\d\d)\b')
 REASONS = {400: 'bad request', 401: 'unauthorized', 402: 'payment required', 403: 'forbidden', 404: 'not found',
