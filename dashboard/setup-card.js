@@ -75,7 +75,7 @@ const SETUP_MAIL=['gmail','outlook','imap'],SETUP_CHATS=['slack','whatsapp','tel
 const setupMailFirst=()=>{const s=state?.setup_card;if(!s||s.demo||DEV.framed||!state.suggestions)return false;
  if((state.connectors||[]).some(c=>SETUP_MAIL.includes(c.service)||SETUP_CHATS.includes(c.service)))return false;
  return setupStep()?.action!=='Connect mail'};
-const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your mail to get your first to-dos.')}</strong></div><div class="setup-mail actions"><button type="button" class="primary" data-connect-open="gmail">${t('Gmail')}</button><button type="button" data-connect-open="outlook">${t('Outlook')}</button></div>`;
+const setupMailHTML=()=>html`<div class="setup-head"><strong>${t('Connect your mail to get your first to-dos.')}</strong></div><div class="setup-mail actions"><button type="button" class="primary" data-connect-open="gmail">${t('Gmail')}</button><button type="button" data-connect-open="outlook">${t('Outlook')}</button><button type="button" data-connect-open="imap">${t('Other email')}</button></div>`;
 const SETUP_CHEVRON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg>';
 // On a phone with a known store (setupStore), Get it is a plain link to that store: straight there, no code, no popup.
 function setupHTML(rows,quiet){const desk=!DEV.mobile,hidden=setupHidden(),store=DEV.mobile&&!state.setup_card?.demo?setupStore():null;

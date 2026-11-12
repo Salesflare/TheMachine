@@ -63,7 +63,7 @@ summary:hover{color:var(--cream)}
 #finished-list article h3{font-size:.98rem;color:var(--text)}
 #finished-list .body{color:var(--muted);font-size:.92rem}
 .signin-command{user-select:all;overflow-wrap:anywhere}
-.signin-fallback{margin:2px 0 8px;font-size:.85rem}.signin-fallback summary{cursor:pointer;color:var(--muted)}.conn-actions{margin-top:8px}
+.signin-fallback{margin:2px 0 8px;font-size:.85rem}.signin-fallback summary{cursor:pointer;color:var(--muted)}.conn-actions{margin-top:8px}@media(min-width:561px){.conn-actions>button.ghost:first-child{margin-left:-12px}}
 pre{white-space:pre-wrap;font:.76rem/1.5 var(--mono);color:var(--muted);background:var(--sunken);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0 0;max-height:240px;overflow:auto}
 
 /* Events */
@@ -121,7 +121,7 @@ details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer
 /* A stuck run's technical details under the to-do's Details */.tech-log{font-size:.82rem}.tech-log .tech-head{margin:0 0 4px;color:var(--muted);font-size:var(--fs-xs);font-weight:600}.tech-log pre{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .conn-more{margin-top:auto;padding-top:6px}
 .conn-more details p{margin:4px 0;font-size:.85rem}
-.conn-scope select{margin-left:6px;font:inherit}
+.conn-scope label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.conn-scope select{margin:0;font:inherit}
 .conn-abilities{display:grid;gap:6px;margin:8px 0}.conn-ability{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.85rem;color:var(--muted);cursor:pointer}.conn-ability .lookup-switch{min-height:0;box-shadow:inset 0 0 0 1px var(--border)}.conn-ability .lookup-switch[aria-checked=true]{background:var(--mint)}
 /* Fleet cards (under Suggestions): the follow-up split as a 2-column grid, stacked on a phone. */
 /* Fleet and Network buttons: whole words; on a phone one row by width (an ask with three: two-rows) */

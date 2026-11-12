@@ -5,7 +5,7 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Connections on a hosted Machine. The row under the cards: Connect Google, Connect Microsoft and Add another source are
+// Connections on a hosted Machine. The row under the cards: Connect Google, Connect Microsoft, Connect other email and Add another source are
 // whole pills (never split over two lines) and the ask for a missing source is its own line under them. A calendar's
 // card counts events (kept, next 7 days, last 24h), never messages or "not checked".
 // SHOTS=<folder> saves each width and theme.
@@ -36,7 +36,7 @@ try{
    const pills=[...more.querySelectorAll('a.manage')].map(a=>({text:a.textContent,lines:a.getClientRects().length,h:a.getBoundingClientRect().height,bottom:a.getBoundingClientRect().bottom,right:a.getBoundingClientRect().right}));
    const ask=more.querySelector('.connect-ask'),r=ask?.getBoundingClientRect();
    return {pills,ask:ask&&{text:ask.textContent,top:r.top,lines:ask.getClientRects().length},width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}});
-  assert.deepEqual(row.pills.map(p=>p.text),['Connect Google','Connect Microsoft','Add another source'],tag);
+  assert.deepEqual(row.pills.map(p=>p.text),['Connect Google','Connect Microsoft','Connect other email','Add another source'],tag);
   for(const p of row.pills){assert.equal(p.lines,1,`${tag}: "${p.text}" is one box`);assert.ok(p.h<40,`${tag}: "${p.text}" is one line (${p.h}px)`);assert.ok(p.right<=row.width,`${tag}: "${p.text}" fits`)}
   assert.equal(row.ask?.text,'Missing a source? Ask for it.',tag);
   assert.ok(row.ask.top>=Math.max(...row.pills.map(p=>p.bottom)),`${tag}: the ask is under the pills`);
