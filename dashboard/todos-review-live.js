@@ -93,7 +93,7 @@ function flNext(d){const steps=[...(d.connect||[]).map(c=>({key:'connect',servic
   ...(d.next||[]).filter(k=>k==='calendar'||k==='inbox').map(k=>({key:k,label:t(FL_NEXT[k])}))];
  const last=typeof palAskable==='function'&&palAskable()?'ask':typeof talkOk==='function'&&talkOk()?'talk':'todo';
  return [...steps,{key:last,label:t(FL_NEXT[last])}].slice(0,2)}
-// Where what it learned lives (Learning, What I've learned: how they write, facts, rules), one link on either ending
+// Where what it learned lives
 const flLearned=()=>html`<a class="link fl-learned" href="#learning=learned">${t('See what I’ve learned')}</a>`;
 function firstLookEnd(){const d=state.first_look_done;if(!d||d.todos>0)return '';const kinds=flList(d.kinds,FL_KINDS),read=flList(d.read,FL_READ);
  const line=!kinds?t('Nothing came in from the past week yet.'):read?t('Read {} from the past week: {}.',kinds,read):t('Read {} from the past week.',kinds);
