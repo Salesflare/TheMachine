@@ -114,6 +114,8 @@ Conversations you already belong to; it never joins channels or opens DMs. Per-c
 
 Only colleagues' emails that don't involve you (yours come from Gmail) and meetings with notes. With `join_pipelines`, it adds your own user to accounts linked to opportunities in those pipelines (a POST, never another user).
 
+A round lists accounts by their last email and last meeting date, 10 at a time, newest first, and stops at the newest account the last round read. Only accounts whose date changed are read (the account and its feed); a quiet round makes one list call per field and nothing else. Notes added later don't change a meeting's date, so a meeting read without notes (or with notes on its first day) has its account read again about 2 hours, a day, 3 days and a week after the meeting. The first round, **Restart sync** and a weekly round read the whole week.
+
 Each sync first checks that the key still belongs to you. When Salesflare doesn't answer that check in time (a 5xx or a timeout) and the same key passed it within the last hour, the sync goes on. A refused key, another user or a new key still stops it. Feed reads and that check wait `feed_timeout_seconds` (60 by default).
 
 ### Android
