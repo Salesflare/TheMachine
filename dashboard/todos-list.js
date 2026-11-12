@@ -227,9 +227,9 @@ $('#send-dialog').close();toast(sendDraft.kind==='merge'?'Testing and merging th
 // An email address the dashboard shows as a link (a person's page, a link in a to-do or a chat) opens the composer
 // (todos-compose.js), not the mail app. A right-click, a middle-click or a modifier key keeps the link's own mailto, as
 // does Open in email in the composer. Only a plain address (a subject may come along); anything more stays a mailto.
-const composeLink=href=>{const m=/^mailto:([^?#]+)(?:\?([^#]*))?$/i.exec(String(href||''));if(!m)return null;let to,q;
+const composeLink=href=>{const m=/^mailto:([^?#]+)(?:\?([^#]*))?$/i.exec(href);if(!m)return null;let to,q;
  try{to=decodeURIComponent(m[1]).trim();q=new URLSearchParams(m[2]||'')}catch{return null}
- if(!/^[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+$/.test(to)||[...q.keys()].some(k=>k.toLowerCase()!=='subject'))return null;return {to,subject:q.get('subject')||''}};
+ if(!/^[^\s<>@,;"]+@[^\s<>@,;"]+\.[^\s<>@,;"]+$/.test(to)||[...q.keys()].some(k=>k.toLowerCase()!=='subject'))return null;return{to,subject:q.get('subject')||''}};
 document.addEventListener('click',e=>{const a=e.target.closest?.('a[href^="mailto:" i]');
  if(!a||e.defaultPrevented||e.button||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||a.closest('#send-dialog'))return;
  const m=composeLink(a.getAttribute('href'));if(!m)return;e.preventDefault();lazyRun('compose',()=>openCompose(m.to,m.subject,a.href))});
