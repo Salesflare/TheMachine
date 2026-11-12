@@ -252,6 +252,28 @@ class Rules(unittest.TestCase):
             [i] = [r[0] for r in db.execute('SELECT id FROM events')]
         self.assertEqual(store.event_views([i])[0]['from'], '')
 
+    def test_a_sender_known_only_by_address_shows_by_the_graphs_name_outside_email_too(self):
+        sender_name = message_view.sender_name
+        self.assertEqual(sender_name('stripe.event', {'from': 'billing@harbor.example', 'customer_name': 'Harbor Ltd'}), 'Harbor Ltd')
+        self.assertEqual(sender_name('stripe.event', {'from': 'billing@harbor.example', 'customer_name': 'billing@harbor.example'}),
+                         'billing@harbor.example')
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        app, _ = fixture(temp.name)  # the graph knows avery@booths.example as Avery Stone
+        store = app.store
+        pay = ev('st', 'st9', 'stripe.event', 'Invoice paid', 'Invoice paid', **{'from': 'avery@booths.example'})
+        chat = ev('ic', '9109', 'intercom.conversation', 'Hi', 'Hi\n1794488500 · avery@booths.example · comment: thanks',
+                  **{'conversation_id': '9109', 'from': 'avery@booths.example', 'contact_email': 'avery@booths.example', 'created_at': 1794488400})
+        store.commit_page('st', {}, [pay], None)
+        store.commit_page('ic', {}, [chat], None)
+        with store.connect() as db:
+            ids = [db.execute('SELECT id FROM events WHERE source_id=?', (s,)).fetchone()[0] for s in ('st9', '9109')]
+        paid, talk = store.event_views(ids)
+        self.assertEqual(paid['from'], 'Avery Stone')
+        self.assertEqual((talk['from'], talk['chat']), ('Avery Stone', 'Avery Stone'))
+        self.assertTrue(talk['turns'])
+        self.assertNotIn('avery@booths.example', [t['from'] for t in talk['turns']])
+
     def test_intercom_is_a_chat_with_sides_and_no_system_parts(self):
         o = self.items['intercom.conversation']
         self.assertEqual((o['chat'], o['via']), ('Jordan Lake', 'Facebook'))

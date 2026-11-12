@@ -164,7 +164,7 @@ def address_names(db, addresses, labels=()):
 
 
 # Where a source puts a sender's name when its `from` is an address (or empty), in the order they are read
-NAME_KEYS = ('sender_display', 'from_name', 'contact_name', 'sender_name', 'user_name')
+NAME_KEYS = ('sender_display', 'from_name', 'contact_name', 'sender_name', 'user_name', 'customer_name')
 
 
 def sender_name(kind, m):
@@ -197,6 +197,13 @@ def named(value, names):
         name = m and names.get(m[1].lower())
         return (' ' if part[:1] == ' ' else '') + f'{name} <{m[1]}>' if name else part
     return ','.join(one(part) for part in str(value or '').split(',')) if value else value
+
+
+def name_only(value, names):
+    """A sender outside email (a chat's, a payment's) that is only an address, by the name the graph knows for it
+    (`names`, from address_names); the address when none is known."""
+    m = BARE.fullmatch(str(value or ''))
+    return names.get(m[1].lower(), value) if m else value
 
 
 def shape_email(o, m, title):
