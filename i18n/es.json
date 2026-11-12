@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Sin contacto reciente: {}",
  "Good morning": "Buenos días",
  "Good morning, first meeting at {}": "Buenos días: primera reunión a las {}",
+ "Good morning, ready for your OK: {}": "Buenos días. Para revisar: {}",
  "Good morning, {} due today": "Buenos días: {} para hoy",
  "Good morning, {} new to-dos": {
   "one": "Buenos días: {} tarea nueva",
   "other": "Buenos días: {} tareas nuevas"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Buenos días: {} para revisar",
-  "other": "Buenos días: {} para revisar"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Buenos días: {} respuesta lista para enviar",
   "other": "Buenos días: {} respuestas listas para enviar"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Buenos días: {} tarea para revisar",
+  "other": "Buenos días: {} tareas para revisar"
  },
  "Good morning, {} waiting": {
   "one": "Buenos días: {} espera",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Resumen matutino: {}",
  "Morning {}": "Buenos días, {}",
  "Morning {}, first meeting at {}": "Buenos días, {}: primera reunión a las {}",
+ "Morning {}, ready for your OK: {}": "Buenos días, {}. Para revisar: {}",
  "Morning {}, {} due today": "Buenos días, {}: {} para hoy",
  "Morning {}, {} new to-dos": {
   "one": "Buenos días, {}: {} tarea nueva",
   "other": "Buenos días, {}: {} tareas nuevas"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Buenos días, {}: {} para revisar",
-  "other": "Buenos días, {}: {} para revisar"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Buenos días, {}: {} respuesta lista para enviar",
   "other": "Buenos días, {}: {} respuestas listas para enviar"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Buenos días, {}: {} tarea para revisar",
+  "other": "Buenos días, {}: {} tareas para revisar"
  },
  "Morning {}, {} waiting": {
   "one": "Buenos días, {}: {} espera",

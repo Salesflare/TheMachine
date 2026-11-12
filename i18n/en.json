@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Gone quiet: {}",
  "Good morning": "Good morning",
  "Good morning, first meeting at {}": "Good morning, first meeting at {}",
+ "Good morning, ready for your OK: {}": "Good morning, ready for your OK: {}",
  "Good morning, {} due today": "Good morning, {} due today",
  "Good morning, {} new to-dos": {
   "one": "Good morning, {} new to-do",
   "other": "Good morning, {} new to-dos"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Good morning, {} ready for your OK",
-  "other": "Good morning, {} ready for your OK"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Good morning, {} reply is ready to send",
   "other": "Good morning, {} replies are ready to send"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Good morning, {} to-do ready for your OK",
+  "other": "Good morning, {} to-dos ready for your OK"
  },
  "Good morning, {} waiting": {
   "one": "Good morning, {} waiting",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Morning digest: {}",
  "Morning {}": "Morning {}",
  "Morning {}, first meeting at {}": "Morning {}, first meeting at {}",
+ "Morning {}, ready for your OK: {}": "Morning {}, ready for your OK: {}",
  "Morning {}, {} due today": "Morning {}, {} due today",
  "Morning {}, {} new to-dos": {
   "one": "Morning {}, {} new to-do",
   "other": "Morning {}, {} new to-dos"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Morning {}, {} ready for your OK",
-  "other": "Morning {}, {} ready for your OK"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Morning {}, {} reply is ready to send",
   "other": "Morning {}, {} replies are ready to send"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Morning {}, {} to-do ready for your OK",
+  "other": "Morning {}, {} to-dos ready for your OK"
  },
  "Morning {}, {} waiting": {
   "one": "Morning {}, {} waiting",

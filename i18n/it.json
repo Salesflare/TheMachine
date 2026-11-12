@@ -1778,18 +1778,19 @@
  "Gone quiet: {}": "Silenzio da un po’: {}",
  "Good morning": "Buongiorno",
  "Good morning, first meeting at {}": "Buongiorno, prima riunione alle {}",
+ "Good morning, ready for your OK: {}": "Buongiorno, da approvare: {}",
  "Good morning, {} due today": "Buongiorno, {} in scadenza oggi",
  "Good morning, {} new to-dos": {
   "one": "Buongiorno, {} nuova attività",
   "other": "Buongiorno, {} nuove attività"
  },
- "Good morning, {} ready for your OK": {
-  "one": "Buongiorno, {} da approvare",
-  "other": "Buongiorno, {} da approvare"
- },
  "Good morning, {} replies are ready to send": {
   "one": "Buongiorno, {} risposta è pronta da inviare",
   "other": "Buongiorno, {} risposte sono pronte da inviare"
+ },
+ "Good morning, {} to-dos ready for your OK": {
+  "one": "Buongiorno, {} attività da approvare",
+  "other": "Buongiorno, {} attività da approvare"
  },
  "Good morning, {} waiting": {
   "one": "Buongiorno, {} in attesa",
@@ -2622,18 +2623,19 @@
  "Morning digest: {}": "Riepilogo del mattino: {}",
  "Morning {}": "Buongiorno {}",
  "Morning {}, first meeting at {}": "Buongiorno {}, prima riunione alle {}",
+ "Morning {}, ready for your OK: {}": "Buongiorno {}, da approvare: {}",
  "Morning {}, {} due today": "Buongiorno {}, {} in scadenza oggi",
  "Morning {}, {} new to-dos": {
   "one": "Buongiorno {}, {} nuova attività",
   "other": "Buongiorno {}, {} nuove attività"
  },
- "Morning {}, {} ready for your OK": {
-  "one": "Buongiorno {}, {} da approvare",
-  "other": "Buongiorno {}, {} da approvare"
- },
  "Morning {}, {} replies are ready to send": {
   "one": "Buongiorno {}, {} risposta è pronta da inviare",
   "other": "Buongiorno {}, {} risposte sono pronte da inviare"
+ },
+ "Morning {}, {} to-dos ready for your OK": {
+  "one": "Buongiorno {}, {} attività da approvare",
+  "other": "Buongiorno {}, {} attività da approvare"
  },
  "Morning {}, {} waiting": {
   "one": "Buongiorno {}, {} in attesa",

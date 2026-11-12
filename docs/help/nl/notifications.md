@@ -64,12 +64,12 @@ Mails met wat op je wacht hebben de links Openen en Snoozen. Die openen alleen h
 
 Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets te melden is. **Voorbeeld**, in de rij ervan, toont het zonder het te versturen. Standaard is het een push en een e-mail, kort genoeg om in één blik te lezen:
 
-- een groet met wat vandaag telt, zoals "Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen";
+- een groet met wat vandaag telt, zoals "Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen" of, voor één to-do, "Goeiemorgen Sam, klaargezet voor je akkoord: Stuur het bestelformulier";
 - hoogstens drie dingen om te doen, elk met een link Openen: eerst klaargezette concepten en beloftes voor vandaag;
 - hoeveel er nog kan wachten en hoe lang dat op jouw tempo duurt, zoals "12 andere kunnen wachten, ongeveer 5 min werk." To-do's die op je antwoord wachten, tellen niet mee in die tijd.
 - je afspraken in één regel.
 
-Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat.
+Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat. Een belofte opent haar to-do, of haar eigen pagina als er nog geen is.
 
 De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
 

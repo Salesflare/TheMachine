@@ -472,7 +472,11 @@ class Notifications(unittest.TestCase):
         # One true line, in this order: replies ready to send, drafts for an OK, due today, a pile of ten or more,
         # the first meeting, what is new; nothing of that: the greeting alone. Made-up names.
         self.assertEqual(notify.headline('Robin', ready=2, replies=2), 'Morning Robin, 2 replies are ready to send')
-        self.assertEqual(notify.headline('Robin', ready=2, replies=1, due=1), 'Morning Robin, 2 ready for your OK')
+        self.assertEqual(notify.headline('Robin', ready=2, replies=1, due=1), 'Morning Robin, 2 to-dos ready for your OK')
+        # one ready: the line names it; without its title (Careful) the count still says what kind
+        self.assertEqual(notify.headline('Robin', ready=1, title='Send the signed order form'), 'Morning Robin, ready for your OK: Send the signed order form')
+        self.assertEqual(notify.headline('', ready=1, title='Send ' + 'the order form ' * 9), 'Good morning, ready for your OK: Send the order form the order form the order…')
+        self.assertEqual(notify.headline('', ready=1), 'Good morning, 1 to-do ready for your OK')
         self.assertEqual(notify.headline('', due=1, piled=30, minutes=15), 'Good morning, 1 due today')
         self.assertEqual(notify.headline('Robin', piled=12, minutes=5, first_at='10:00'), 'Morning Robin, 12 waiting, about 5 min to clear')
         self.assertEqual(notify.headline('Robin', piled=9, first_at='10:00', new=3), 'Morning Robin, first meeting at 10:00')
@@ -495,6 +499,35 @@ class Notifications(unittest.TestCase):
         self.assertNotIn('#chat=', notify.LINKS.sub('', out['text']))
         self.assertNotIn('[Open]', out['push']['body'])
         self.assertEqual(out['push']['url'], 'https://m.example/' + notify.DIGEST_VIEW)
+
+    def test_the_summary_names_the_one_ready_and_links_every_listed_line(self):
+        # A morning summary opened with "Good morning, 1 ready for your OK" and listed one ready to-do and two promises due
+        # today: only the first line had an Open link (a promise's id isn't a to-do's). Made-up data.
+        ready = [{'id': 'a1b2c3d4e5f60718', 'title': 'Fix the venue booking form'}]
+        promised = [{'id': 'promise:7', 'title': 'Double-check the pilot recap for Wren', 'covers': 'b1b2c3d4e5f60718'},
+                    {'id': 'promise:8', 'title': 'Send the rate card to Jonah', 'covers': None}]
+        out = notify.compose([], [], [], 'https://m.example/', total=8, ready=ready, promised=promised)
+        self.assertEqual(out['subject'], 'Good morning, ready for your OK: Fix the venue booking form')
+        self.assertEqual(out['text'].split('\n')[2:5], [
+            '• Fix the venue booking form · [Open](https://m.example/#card=a1b2c3d4e5f60718&or=chat)',
+            '• Double-check the pilot recap for Wren · [Open](https://m.example/#card=b1b2c3d4e5f60718&or=chat)',
+            '• Send the rate card to Jonah · [Open](https://m.example/#promise/8)'])  # no to-do yet: the promise's own page
+        # Telegram drops every link alike
+        self.assertNotIn('[Open]', notify.LINKS.sub('', out['text']))
+        # the push's title names it, so its body doesn't again, and the count still leaves it out
+        self.assertEqual(out['push']['title'], out['subject'])
+        self.assertEqual(out['push']['body'], 'Double-check the pilot recap for Wren\nSend the rate card to Jonah\n7 more can wait, about 4 min to clear.')
+        # a promise whose to-do is the ready one: listed once, as the ready one
+        same = notify.compose([], [], [], 'https://m.example/', total=1, ready=ready,
+                              promised=[{'id': 'promise:9', 'title': 'Fix the booking form for Wren', 'covers': 'a1b2c3d4e5f60718'}])
+        self.assertEqual(same['text'].count('#card=a1b2c3d4e5f60718'), 1)
+        self.assertNotIn('for Wren', same['text'])
+        # two ready: the count with what kind; Careful: no titles, so the count
+        two = notify.compose([], [], [], 'https://m.example/', total=2, ready=ready + [{'id': 'c1b2c3d4e5f60718', 'title': 'Answer the supplier'}])
+        self.assertEqual(two['subject'], 'Good morning, 2 to-dos ready for your OK')
+        careful = notify.compose([], [], [], 'https://m.example/', show_text=False, total=1, ready=ready)
+        self.assertEqual(careful['subject'], 'Good morning, 1 to-do ready for your OK')
+        self.assertNotIn('venue', careful['text'] + careful['push']['body'])
 
     def test_a_waiting_pile_gets_its_digest_in_the_dashboards_order(self):
         # It was skipped every morning while 17-19 to-dos waited: no meetings, nothing due or new overnight. A pile that
@@ -541,8 +574,8 @@ class Notifications(unittest.TestCase):
         top = ready + [{'id': 'n1', 'title': 'Book the venue'}, {'id': 'w1', 'title': 'Pay the invoice'}]
         out = notify.compose([], [], new, 'https://m.example/', total=5, top=top, ready=ready,
                              promised=[{'id': 'promise:1', 'title': 'Send the recap for Wren'}])
-        self.assertTrue(out['text'].startswith('Good morning, 2 ready for your OK\n\n• Reply to Sam about the pilot\n• Answer the supplier\n'
-                                               '• Send the recap for Wren\n\n3 more can wait, about 2 min to clear.\n\n'), out['text'])
+        self.assertTrue(out['text'].startswith('Good morning, 2 to-dos ready for your OK\n\n• Reply to Sam about the pilot\n• Answer the supplier\n'
+                                               '• Send the recap for Wren · [Open](https://m.example/#promise/1)\n\n3 more can wait, about 2 min to clear.\n\n'), out['text'])
         self.assertEqual(out['text'].count('Reply to Sam about the pilot'), 1)
         self.assertEqual(out['push']['body'], 'Reply to Sam about the pilot\nAnswer the supplier\nSend the recap for Wren\n3 more can wait, about 2 min to clear.')
         # a promise alone (its to-do not made yet) still gets a summary
@@ -601,14 +634,19 @@ class Notifications(unittest.TestCase):
                            (direction, who, what, due, current.isoformat(), event, current.isoformat(), current.isoformat()))
         with patch_everywhere(a, 'local_tz', return_value=UTC), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(current)
-        self.assertTrue(digest['text'].startswith('Good morning, 1 ready for your OK\n\n• Reply to Sam about the pilot · [Open]('), digest['text'])
-        self.assertIn('\n• Send the pilot recap for Wren\n', digest['text'])
-        self.assertEqual(digest['text'].count('Reply to Sam about the pilot'), 1)
+        self.assertTrue(digest['text'].startswith('Good morning, ready for your OK: Reply to Sam about the pilot\n\n'
+                                                  '• Reply to Sam about the pilot · [Open]('), digest['text'])
+        # the promise's line opens the to-do made from it
+        self.assertIn(f'\n• Send the pilot recap for Wren · [Open](https://the-machine.example/assistant/#card={recap}&or=chat)\n', digest['text'])
+        self.assertEqual(digest['text'].count('• Reply to Sam about the pilot'), 1)
         self.assertEqual(digest['text'].count('Book the venue'), 1)
         self.assertNotIn('Send Wren the pilot recap', digest['text'])  # the promise's own to-do: listed as the promise
         self.assertNotIn('rate limits', digest['text'])  # tomorrow's
         self.assertNotIn('contract', digest['text'])  # someone else's
-        self.assertEqual(digest['push']['body'], 'Reply to Sam about the pilot\nSend the pilot recap for Wren\nBook the venue\n1 more can wait, about 1 min to clear.')
+        # the push's title names the ready one: its body goes on with the rest. The promise's to-do is listed (as the
+        # promise), so nothing more is said to wait
+        self.assertEqual(digest['push']['body'], 'Send the pilot recap for Wren\nBook the venue')
+        self.assertNotIn('more can wait', digest['text'])
 
     def test_the_digest_goes_once_on_the_chosen_channels_and_the_preview_sends_nothing(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)

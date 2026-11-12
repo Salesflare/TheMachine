@@ -83,6 +83,7 @@ AWAY_DAYS = 3  # no dashboard visit (or decision) in this many days: only the mo
 VISIT_EVERY = 600  # seconds: the kept visit time moves at most this often
 OWNER_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # decisions that show the owner is around
 PILE = 10  # this many waiting: the morning summary's headline names the pile and the time to clear it
+HEAD_TITLE = 50  # the one to-do the morning summary's headline names: at most this long
 LINKS = re.compile(r' · \[[^\]\n]+\]\([^)\s]+\)')  # a summary line's Open link: Telegram gets the line without it
 
 
@@ -495,15 +496,19 @@ def asks(outcome):
         return False
 
 
-def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', new=0):
+def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', new=0, title=''):
     """The morning summary's first line (the email's subject, the push's title): a greeting with the owner's first name
     and the one thing that makes today matter, only when it is true ("Morning Sam, 2 replies are ready to send"). With
     nothing worth saying: the greeting alone. In order: drafts ready for their OK, what is due today, a pile of PILE or
-    more (and the time to clear it), the first meeting, what is new. Whole sentences per case, for the catalogs."""
+    more (and the time to clear it), the first meeting, what is new. Whole sentences per case, for the catalogs.
+    title: the one to-do ready for their OK, named so the line says what waits ("Morning Sam, ready for your OK: Send
+    the signed order form"); left out (more than one, or no titles shown) the count says what kind ("2 to-dos ready")."""
     if ready and replies >= ready:
         return t('Morning {}, {} replies are ready to send', name, ready) if name else t('Good morning, {} replies are ready to send', ready)
+    if ready == 1 and title:
+        return t('Morning {}, ready for your OK: {}', name, clip(title, HEAD_TITLE)) if name else t('Good morning, ready for your OK: {}', clip(title, HEAD_TITLE))
     if ready:
-        return t('Morning {}, {} ready for your OK', name, ready) if name else t('Good morning, {} ready for your OK', ready)
+        return t('Morning {}, {} to-dos ready for your OK', name, ready) if name else t('Good morning, {} to-dos ready for your OK', ready)
     if due:
         return t('Morning {}, {} due today', name, due) if name else t('Good morning, {} due today', due)
     if piled >= PILE and minutes:
@@ -540,12 +545,22 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
     key = lambda i: i.get('id') or ('title', i['title'])
+    waiting_ids = {i['id'] for i in [*ready, *due, *overnight, *(top or [])] if i.get('id')}
+
+    def counts(item):
+        """Whether a listed line is one of the waiting to-dos: a promise is when its to-do waits too (covers)."""
+        if item is None:
+            return False
+        ident = str(item.get('id') or '')
+        return item.get('covers') in waiting_ids if ident.startswith('promise:') else True
 
     def once(items):
         fresh = [i for i in items if key(i) not in seen]
         seen.update(key(i) for i in fresh)
         return fresh
-    ready, promised = once(list(ready)), once(list(promised))
+    ready = once(list(ready))
+    # a promise whose to-do is already listed as ready: that line says it (the same to-do twice read as two things)
+    promised = once([p for p in promised if not (p.get('covers') and p['covers'] in seen)])
     seen.update(p['covers'] for p in promised if p.get('covers'))  # a promise's own to-do: listed with the promise
     due, overnight, rest = once(list(due)), once(list(overnight)), once(list(top or []))
     todos = ready + due + overnight + rest
@@ -559,13 +574,13 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         picks.append((None, clock(meetings[0]['at']) + ' ' + meetings[0]['title']))
     picks += [(i, i['title']) for i in overnight + rest]
     picks = picks[:3] if show_text else []
-    listed = sum(1 for i, _ in picks if i is not None and not str(i.get('id') or '').startswith('promise:'))
+    listed = sum(1 for i, _ in picks if counts(i))
     more = max(0, total - listed)
     asking = set(asking)
 
     def about(count, shown):
         """Minutes for `count` waiting to-dos beside the ones in `shown`, without those that ask something (0: none)."""
-        quick = count - len(asking - {str(i.get('id') or '') for i, _ in shown if i is not None})
+        quick = count - len(asking - {str(i.get('covers') or i.get('id') or '') for i, _ in shown if i is not None})
         return clear_pace.minutes(quick, per) if quick > 0 else 0
 
     def waits(count, shown, beside):
@@ -574,17 +589,27 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             return t('{} more can wait, about {} min to clear.', count, took) if took else t('{} more can wait.', count)
         return t('{} waiting, about {} min to clear.', count, took) if took else t('{} waiting.', count)
     first_at = clock(meetings[0]['at']) if meetings else ''
+    # one ready for the owner's OK: the headline names it, so it says what waits ("1 ready for your OK" didn't)
+    named = ready[0] if len(ready) == 1 and show_text else None
     head = headline(name, len(ready), sum(1 for r in ready if r.get('id') in set(replies)), len(due) + len(promised),
-                    total, about(total, []), first_at, len(overnight))
+                    total, about(total, []), first_at, len(overnight), title=named['title'] if named else '')
     about_meeting = bool(first_at) and not (ready or due or promised or total >= PILE)  # headline's own order
     opening = t('{} meetings today, the first at {}.', len(meetings), first_at) if meetings else ''
     tail = waits(more, picks, bool(picks)) if more else ''
 
     def link(item):
         """Open: the to-do in the dashboard's list, in view and highlighted (#card=); one no longer there (done,
-        snoozed, another scope) opens its chat instead (&or=chat, openCardLink)."""
-        ident = str((item or {}).get('id') or '')
-        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+        snoozed, another scope) opens its chat instead (&or=chat, openCardLink). A promise opens the to-do made from it
+        (covers), else its own page (#promise/<id>, as the Graph links it): every listed to-do or promise has one."""
+        if not root or not item:
+            return ''
+        ident = str(item.get('id') or '')
+        if ident.startswith('promise:'):
+            ident = str(item.get('covers') or '')
+            number = item['id'][len('promise:'):]
+            if not re.fullmatch(r'[a-f0-9]{16}', ident) and re.fullmatch(r'\d+', number):
+                return f" · [{t('Open')}]({root}#promise/{number})"
+        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if re.fullmatch(r'[a-f0-9]{16}', ident) else ''
     # The headline's own list right under it, then how many more wait, then the day's meetings: a meeting line between
     # "3 due today" and its list read as if the list were the meeting's
     lines = [head, '']
@@ -597,14 +622,15 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     if root:
         lines.append(t('Open The Machine: {}', root))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
-    # for them all, and the count then says what was left out.
+    # for them all, and the count then says what was left out. The one the title names isn't said again under it.
     shown = [(item, clip(text, 40) if item is not None else t('First meeting at {}', first_at)) for item, text in picks
-             if item is not None or not about_meeting]
+             if (item is not None or not about_meeting) and (named is None or item is not named)]
     for keep in range(len(shown), -1, -1):
-        counted = sum(1 for i, _ in shown[:keep] if i is not None and not str(i.get('id') or '').startswith('promise:'))
+        counted = sum(1 for i, _ in shown[:keep] if counts(i)) + bool(named)
         left = max(0, total - counted)
-        last = waits(left, shown[:keep], bool(keep)) if left else ''
-        parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [last, opening]) if x] or [head]
+        said = shown[:keep] + ([(named, '')] if named else [])
+        last = waits(left, said, bool(said)) if left else ''
+        parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [last, opening]) if x] or [clip(named['title'], 40) if named else head]
         if len('\n'.join(parts)) <= APP_BODY:
             break
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
