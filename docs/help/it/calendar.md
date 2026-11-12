@@ -69,7 +69,7 @@ Quando un calendario si può modificare da qui, **Nuovo evento** ne aggiunge uno
 
 Anche un’attività può proporre una modifica, come un ritiro da aggiungere. Mostra esattamente cosa cambia, e lo fa solo il tuo **Aggiungi**, **Salva** o **Elimina**.
 
-Ancora nessuna riunione? Senza calendario, **Collega il tuo calendario** apre Connessioni: collega [Google Calendar](google-calendar.md) o [Outlook Calendar](microsoft.md).
+Ancora nessuna riunione? Senza calendario, **Collega il tuo calendario** apre Connessioni: collega [Google Calendar](google-calendar.md), [Outlook Calendar](microsoft.md) o [un altro calendario](other-calendars.md).
 
 ## Sovrapposizioni con l’altro calendario
 

@@ -12,7 +12,7 @@ WEBMAIL = {'gmail', 'googlemail', 'outlook', 'hotmail', 'live', 'msn', 'yahoo', 
            'scarlet', 'pandora', 'ziggo', 'kpnmail', 'xs4all', 'btinternet', 'comcast', 'sbcglobal', 'bigpond'}
 # Sources that sign in as an address: Work or Personal comes from that address once it is known (guess_boundary), so
 # + Add asks neither. A Google Workspace or Microsoft work address is on the company's own domain; a consumer one is not.
-ADDRESS_SCOPE = ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'imap')
+ADDRESS_SCOPE = ('gmail', 'calendar', 'outlook', 'outlook_calendar', 'imap', 'icloud_calendar', 'caldav', 'exchange')
 CONSUMER_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad'  # Microsoft's tenant for Outlook.com accounts (ms_graph.py)
 TENANT_ID = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 

@@ -20,7 +20,9 @@ Simple Icons lists them. One-color marks are drawn dark and inverted in the dark
 | `gmail.svg` | Gmail | gmail |
 | `google_docs.svg` | Google Docs | googledocs |
 | `google_meet.svg` | Google Meet | googlemeet |
+| `icloud_calendar.svg` | iCloud Calendar | icloud |
 | `intercom.svg` | Intercom | intercom |
+| `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
 | `stripe.svg` | Stripe | stripe |

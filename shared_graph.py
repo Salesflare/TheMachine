@@ -1580,7 +1580,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
 
     # -- what feeds the team's Graph: per connection, and what the Fleet requires
     MAIL_SERVICES = ('gmail', 'outlook', 'imap', 'microsoft', 'ms_graph', 'salesflare', 'intercom')
-    CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'google_calendar', 'microsoft_calendar')
+    CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'google_calendar', 'microsoft_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
 
     def graph_policy(self, group, trusted=None):
         """What this Fleet's admins require every member to share: a list, some of ft.REQUIRABLE."""

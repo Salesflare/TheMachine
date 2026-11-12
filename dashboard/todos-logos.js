@@ -5,12 +5,13 @@
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
 const MONO=['airbnb','android','bol','calendar','discord','docs','dropbox','facebook','gateway','gbrain','github','gmail','google_docs',
  'google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos','googleplay','googletasks','hubspot',
- 'instagram','intercom','linkedin','medium','messenger','netflix','notion','openai','outlook','outlook_calendar','paypal','pinterest','reddit',
+ 'icloud_calendar','instagram','intercom','linkedin','medium','messenger','netflix','notion','openai','outlook','outlook_calendar','paypal','pinterest','proton_calendar','reddit',
  'revolut','rss','salesflare','salesforce','shortcut','signal','slack','snapchat','source','spotify','stripe','tailscale','teams','telegram',
  'tiktok','trello','whatsapp','x','youtube','zoom'];
 // Other names for a mark: a connector's own key, the older via- names; mail, cal and the rest are the line icons in
-// todos-chat.css (Other email is the plain envelope)
-const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};
+// todos-chat.css (Other email is the plain envelope, Other calendar,
+// a calendar link and Exchange Server the plain calendar)
+const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',caldav:'cal',ics:'cal',exchange:'cal',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};
 // A phone notification by the app that posted it, when it's a brand with a mark here (machine/sources/android.py names them)
 const MONO_APPS={'com.google.android.gm':'gmail','com.google.android.apps.tasks':'googletasks','com.openai.chatgpt':'openai','com.tailscale.ipn':'tailscale',
  'org.telegram.messenger':'telegram','com.whatsapp':'whatsapp','com.whatsapp.w4b':'whatsapp','com.android.chrome':'googlechrome','com.google.android.calendar':'calendar',
@@ -36,7 +37,7 @@ const KIND_MARK={'meeting.notes':'cal','meeting.transcript':'cal','gateway.alert
 function sourceMark(kind,account,app){const k=String(kind||''),head=k.split('.')[0],svc=account?accountMark(account):'';
  if(k==='android.notification')return MONO_APPS[app]||'android';
  if(!k||head==='gmail'||head==='email')return ['gmail','outlook','imap'].includes(svc)?svc:'mail';
- if(k==='calendar.event')return ['calendar','outlook_calendar'].includes(svc)?svc:'cal';
+ if(k==='calendar.event')return /cal|ics|exch/.test(svc)?svc:'cal';
  if(head==='docs')return svc==='google_docs'?'google_docs':'docs';
  if(KIND_MARK[k])return KIND_MARK[k];
  return head==='machine'?'gateway':monoKey(head)?head:'source'}

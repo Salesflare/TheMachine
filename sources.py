@@ -16,7 +16,10 @@ import shlex
 import subprocess
 import sys
 
+import caldav_calendar
+import ews_calendar
 import google_api
+import ics_feed
 import imap_mail
 import ms_graph
 import smtp_mail
@@ -80,6 +83,13 @@ def gog_read(config, account, api, version, method, params, scope):
             return imap_mail.gmail_call(config, credential, account, method, params)
         except imap_mail.ImapError as error:
             raise SourceError(error.category, error.status, error.retry_after) from None
+    if account.get('transport') in OTHER_CALENDAR_READERS:  # CalDAV, a calendar link or Exchange Server, in Google's shape
+        if api != 'calendar':
+            raise SourceError('unsupported_transport')
+        try:
+            return OTHER_CALENDAR_READERS[account['transport']].calendar_call(config, credential, account, method.split('.', 1)[1], params)
+        except caldav_calendar.CalendarError as error:
+            raise SourceError(error.category, error.status, error.retry_after) from None
     if account.get('service') in MICROSOFT_SERVICES:
         try:
             if api == 'calendar':
@@ -126,7 +136,11 @@ MICROSOFT_SERVICES = ('outlook', 'outlook_calendar')
 # Any other mailbox over IMAP ('imap', imap_mail.py) flows through the same sync the same way, and sends through its own
 # SMTP server (smtp_mail.py).
 MAIL_SERVICES = ('gmail', 'outlook', 'imap')
-CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
+# Calendars beyond Google and Outlook, read only: iCloud and any other CalDAV server (caldav_calendar.py), Proton
+# Calendar and any calendar link (ics_feed.py), Exchange Server (ews_calendar.py). They answer Google's calendar reads.
+OTHER_CALENDARS = ('icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')
+CALENDAR_SERVICES = ('calendar', 'outlook_calendar', *OTHER_CALENDARS)
+OTHER_CALENDAR_READERS = {'caldav': caldav_calendar, 'ics': ics_feed, 'ews': ews_calendar}
 
 
 def mail_account(account):
@@ -171,7 +185,7 @@ def gog_signed_in_since(config, account, since):
     `since` (an ISO time)."""
     if account.get('service') in MICROSOFT_SERVICES and since:
         return ms_graph.connected_since(config, account, since)
-    if account.get('service') == 'imap' and since:  # a new password saved (Reconnect): try it at once
+    if (account.get('service') == 'imap' or account.get('service') in OTHER_CALENDARS) and since:  # a new password saved (Reconnect): try it at once
         try:
             path = Path(os.environ.get('CREDENTIALS_DIRECTORY') or '/nonexistent') / account['credential']
             path = path if path.exists() else Path(config['credentials'][account['credential']]).expanduser()

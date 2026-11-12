@@ -69,7 +69,7 @@ Wenn sich ein Kalender von hier aus ändern lässt, fügt **Neuer Termin** einen
 
 Auch eine Aufgabe kann eine Änderung vorschlagen, etwa eine Abholung, die eingetragen werden soll. Sie zeigt genau, was sich ändert, und erst dein **Hinzufügen**, **Speichern** oder **Löschen** führt es aus.
 
-Noch keine Meetings? Ohne Kalender öffnet **Kalender verbinden** die Verbindungen: Verbinde [Google Calendar](google-calendar.md) oder [Outlook-Kalender](microsoft.md).
+Noch keine Meetings? Ohne Kalender öffnet **Kalender verbinden** die Verbindungen: Verbinde [Google Calendar](google-calendar.md), [Outlook-Kalender](microsoft.md) oder [einen anderen Kalender](other-calendars.md).
 
 ## Überschneidungen mit deinem anderen Kalender
 

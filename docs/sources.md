@@ -13,6 +13,9 @@ Collectors read existing source content. The optional Salesflare `join_pipelines
 | `outlook` | Your own Entra app (`graph`), or a token broker | `transport`, `email`, `credential` (with `graph`), `connected_at` (with `broker`, set when connected), `excluded_terms` |
 | `imap` | Any mailbox with IMAP over TLS, and its password (often an app password) | `email`, `imap_host`, `imap_port`, `imap_security` (`ssl` or `starttls`), `username`, `smtp_host`, `smtp_port`, `smtp_security`, `smtp_refused`, `sent_folder`, `credential`, `excluded_terms` |
 | `outlook_calendar` | The same sign-in as `outlook` | `transport`, `email`, `credential`, `calendar_id` (`primary`), `excluded_title_terms` |
+| `icloud_calendar`, `caldav` | CalDAV over https and a password (iCloud: an app-specific password) | `email`, `username`, `caldav_url` (where discovery starts), `caldav_home` (found), `calendar_name` (only this one), `credential` |
+| `proton_calendar`, `ics` | A calendar's share link (.ics), kept as a credential | `credential`, `excluded_title_terms` |
+| `exchange` | Exchange Server 2013 to 2019 or SE over EWS, NTLM or Basic | `email`, `username` (`DOMAIN\name` or a UPN), `ews_url` (from Autodiscover), `ews_auth`, `credential` |
 | `slack` | A [Maton](https://maton.ai) Slack connection, or Sign in with Slack (The Machine's Slack app, user token through the `slack_broker`, `transport: broker`; the way + Add connects Slack, Maton the other way) | `team_id`, `user_id`, `email`, `slack_host`, `fair_incremental`; Maton only: `credential` + `credential_variable` (file with `MATON_API_KEY=`), `connection_id` (found in Maton during setup) |
 | `salesflare` | Salesflare API key | `api_base`, `app_base`, `credential`, `credential_variable`, `user_id`, `team_id`, `email`, `owner_emails`, `join_pipelines`, `accounts_per_batch`, `meeting_window_days`, `timeout_seconds`, `feed_timeout_seconds` |
 | `android` | OpenClaw Android app paired as a node | `transport: openclaw-feed`, `node_id`, `reconcile_seconds`, `direct_fallback`, `fallback_seconds` |
@@ -92,6 +95,16 @@ Any mailbox a mail app reads over IMAP: iCloud, Yahoo, Fastmail, an internet pro
 ### Calendar
 
 Seven past and thirty future days, recurring events expanded, incremental sync token with a daily full refresh. A missing event is "unavailable", not "canceled". Context for email and preparation, not a reminder feed.
+
+### Other calendars: iCloud, CalDAV, calendar links and Exchange Server
+
+Read only, each answering the same reads as Google Calendar (`events.list` with a window, sync tokens), so their meetings go through the same sync, Calendar view, meeting prep and History. Nothing to install: Python's own `http.client` and an iCalendar reader (`ical.py`) that expands recurring events (RRULE, RDATE, EXDATE, changed occurrences) in their own time zones.
+
+- **iCloud Calendar and Other calendar** (`caldav_calendar.py`): discovery from `/.well-known/caldav`, the principal and its calendar home (iCloud starts at caldav.icloud.com; Fastmail, Yahoo and Zoho are known), every calendar with events or the one named. Each calendar's sync-token, else its ctag, else its etags, make the change marker.
+- **Proton Calendar and Calendar link (ICS)** (`ics_feed.py`): the link is a secret, kept in a credential file. Asked at most every 15 minutes, with If-None-Match and If-Modified-Since.
+- **Exchange Server** (`ews_calendar.py`): EWS with NTLMv2 or Basic; Autodiscover (JSON, then the signed-in XML) finds the server. A calendar view expands recurring meetings; SyncFolderItems' state is the sync token. A Microsoft 365 mailbox (Autodiscover points to outlook.office365.com) is sent to Outlook Calendar. Exchange mail isn't read.
+
+An unchanged marker answers with nothing new; a changed one answers 410, so the window is read again whole and what is gone is removed. TLS is always verified and https is the only way in; a redirect may only stay on the server's own domain. Errors are fixed labels; a password or link is never logged.
 
 ### Slack
 

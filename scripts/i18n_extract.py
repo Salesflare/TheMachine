@@ -427,6 +427,8 @@ NOT_DASHBOARD = {'cli.py', 'installer.py', 'network_crypto.py', 'message_seal.py
 SERVER_TEXT = {
     'own_addresses.py': ['classify', 'SENT_ONLY', 'NAMED_ONLY', 'LABELS'],
     'onboarding.py': ['WHAT', 'LABELS'],
+    # + Add's calendars beyond Google and Outlook: their names, lines, form notes and fields, and what setup says
+    'machine/sources/calendar_setup.py': ['LABELS', 'WHAT', 'NOTES', 'SECRETS', 'ASKS', 'FIELDS', 'REFUSED', 'MISSING'],
     'shared_graph.py': ['why'],          # why a thread is shared or not, under Sharing
     'graph.py': ['likely_same'],         # why two people look like one
     'crm.py': ['org_doubles'],           # why two organizations look like one

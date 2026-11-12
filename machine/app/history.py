@@ -66,7 +66,7 @@ PASSAGE_GAP_SECONDS, PASSAGE_REST, PASSAGE_LOOK_GAP_SECONDS = 20, 10, 5
 SLACK_GAP_SECONDS = 180
 SLACK_WAIT_MAX = 60  # seconds a step may wait for the connection's minute of the round; longer: another step tries
 SLACK_THREADS_KEEP = 5000  # threads with replies queued for the walk's second pass
-MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook', 'imap'), ('calendar', 'outlook_calendar'), ('whatsapp',)
+MAIL, CALENDAR, WHATSAPP = ('gmail', 'outlook', 'imap'), ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange'), ('whatsapp',)
 CONNECTOR_HISTORY = ('teams', 'linkedin', 'x')  # a connector with its own history_page (connectors/teams.py, ...)
 PACED_STOP_DAYS = 1  # a paced connector (HISTORY_PACE) stops its history this long after any failed or odd read
 

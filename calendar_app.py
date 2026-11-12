@@ -18,7 +18,7 @@ from machine.sources.calendar import (
     CALENDAR_BACK_DAYS,
 )
 
-CALENDARS = ('calendar', 'outlook_calendar')  # assistant.CALENDAR_SERVICES
+CALENDARS = ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange')  # assistant.CALENDAR_SERVICES
 
 
 def _when(value):

@@ -83,7 +83,7 @@ def setup_card(store, config):
             phones = 0
     mail = [s for s in services if s in ('gmail', 'outlook', 'imap')]
     return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'whatsapp': 'whatsapp' in services,
-            'calendar': any(s in ('calendar', 'outlook_calendar') for s in services),
+            'calendar': any(s in ('calendar', 'outlook_calendar', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange') for s in services),
             'mail_accounts': len(mail), 'add': 'microsoft' if 'outlook' in mail and 'gmail' not in mail else 'google',
             'more': any(s and s not in SETUP_BASIC for s in services),
             'since': at.get('first_card_shown') or at.get('tracking_since') or None}
