@@ -177,6 +177,8 @@ class MicrosoftPhotos(unittest.TestCase):
         self.assertEqual((card['title'], card['status'], card['origin']),
                          ('Reconnect Microsoft to show your colleagues’ and contacts’ photos', 'pending', 'machine'))
         self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com'})  # Reconnect opens its sign-in
+        self.assertEqual(card['body'], 'Reconnect sam@acme.com to show colleagues’ and contacts’ photos. Read-only.')
+        self.assertIsNone(card['source_line'])  # its text names the account: no "Signal · date" line
         with self.store.connect() as db:
             self.assertEqual([r[0] for r in db.execute('SELECT status FROM deliveries')], ['cancelled'])  # never pushed or mailed
         self.step(fake, now=later(minutes=10))

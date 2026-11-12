@@ -7,7 +7,7 @@ const {chromium}=await import('./browser.mjs');
 // its account's area. Reconnect leads and opens that account's sign-in; Not needed is under …; never Do it or Plan it.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[];
-const card={id:'rc1',title:'Reconnect Microsoft to show your colleagues’ and contacts’ photos',body:'sam@acme.example was connected before your Machine read colleagues and contacts. Reconnect it to add their photos, read-only.',
+const card={id:'rc1',title:'Reconnect Microsoft to show your colleagues’ and contacts’ photos',body:'Reconnect sam@acme.example to show colleagues’ and contacts’ photos. Read-only.',
  status:'pending',scope:'personal',origin:'machine',owner_step:1,created_at:now,event_ids:[1],reconnect:{provider:'microsoft',email:'sam@acme.example'}};
 const state=()=>({suggestions:[card],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[{id:'o1',service:'outlook',email:'sam@acme.example',display_name:'Mail',hosted_signin:'microsoft',status:'ok'}],manage_url:'https://app.example.invalid/account',fleet:{on:true,fleets:[]},
@@ -36,7 +36,7 @@ try{
   const menu=await todo.locator('.more-menu>button').evaluateAll(n=>n.map(x=>x.textContent.trim()));
   assert.ok([...shown,...menu].includes('Not needed'),[...shown,...menu].join(' | '));
   assert.ok(!menu.includes('Plan it'));
-  assert.match(await todo.innerText(),/sam@acme\.example was connected before your Machine read colleagues and contacts/);
+  assert.match(await todo.innerText(),/Reconnect sam@acme\.example to show colleagues’ and contacts’ photos\. Read-only\./);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   const box=await todo.evaluate(e=>e.getBoundingClientRect().toJSON());assert.ok(box.right<=width+0.5,'the to-do fits');
   if(shots){await todo.screenshot({path:`${shots}/reconnect-todo-${width}-${colorScheme}.png`});await page.screenshot({path:`${shots}/reconnect-page-${width}-${colorScheme}.png`})}

@@ -24,7 +24,7 @@ def title(ask):
 
 def summary(ask, email):
     """The to-do's one line under its title: which account, and why."""
-    return {OUTLOOK_PHOTOS: i18n.t('{} was connected before your Machine read colleagues and contacts. Reconnect it to add their photos, read-only.',
+    return {OUTLOOK_PHOTOS: i18n.t('Reconnect {} to show colleagues’ and contacts’ photos. Read-only.',
                                    email)}.get(ask, '')
 
 

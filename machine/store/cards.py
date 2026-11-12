@@ -319,7 +319,8 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
 def source_line(rows, db=None):
     """One readable line about where a suggestion comes from, for the card. With db, a meeting's notes name the meeting
     ("notes from Board meeting Q4"), and lead over the same notes by mail (meeting_mail.lead)."""
-    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix')]  # the owner's own words ("Added by you"), an update's note
+    # the owner's own words ("Added by you"), an update's note, a reconnect ask (its text names the account; no source)
+    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix', 'machine.reconnect_ask')]
     if not rows:
         return None
     rows, meeting = meeting_mail.lead(db, rows)
