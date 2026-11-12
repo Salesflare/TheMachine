@@ -84,6 +84,31 @@ def person_shaped(name):
     return 2 <= len(words) <= 3 and all(NAME_WORD.fullmatch(w) and w[0].isupper() for w in words) and not all(w.isupper() for w in words)
 
 
+# A shared inbox: an organization's address that whoever is on duty answers (info@, klantenservice@, bookings@), in the
+# languages the app speaks. graph.py reads it together with the name the mail came with and what the address sent
+# (shared_inbox), never from the word alone.
+SHARED_WORDS = frozenset('''info infos contact contacts hello hallo hi hey support help helpdesk service services customerservice customercare care
+    klantenservice klantendienst kundenservice kundendienst servicio atencion atencionalcliente atendimento assistenza sav serviceclient serviceclients
+    sales verkoop vente ventes vendas ventas vertrieb office kantoor bureau buero admin administratie administration administracion amministrazione
+    team orders order bestelling bestellingen bestellung commandes pedidos ordini shop store webshop winkel boutique tienda loja negozio
+    booking bookings reservations reservation reservering reserveringen reserveren reservierung reservas prenotazioni verhuur rental vermietung
+    events mail email post inbox enquiries inquiries enquiry kontakt contacto contato contatto contactos
+    accounts accounting finance boekhouding buchhaltung billing facturatie invoices hr jobs careers vacatures press pers partners
+    receptie reception rezeption accueil onthaal secretariaat sekretariat secretariat secretaria segreteria welcome welkom general algemeen'''.split())
+
+
+def shared_address(address, label=''):
+    """Whether an address is shaped like a shared inbox: its local part only words of SHARED_WORDS (a country code or a
+    number may stand next to them: info.nl@, sales2@), or the organization's own name (oakhollow@oakhollow.example). label: the
+    domain's name part, without its ending."""
+    local = str(address or '').lower().partition('@')[0].partition('+')[0]
+    words = [w for w in (t.rstrip('0123456789') for t in re.split(r'[._-]+', local)) if w and (len(w) > 2 or w in SHARED_WORDS)]
+    if words and all(w in SHARED_WORDS for w in words):
+        return True
+    letters = re.sub(r'[^a-z0-9]', '', local)
+    return len(letters) >= 4 and letters == re.sub(r'[^a-z0-9]', '', str(label or '').lower())
+
+
 def mass_mail(m, sender, name, company, wrote_to):
     """Why a mail is one a mailing system sent in a sender's name, not a person writing to the owner, else '':
     'list' (List-Unsubscribe or List-Id), 'reply_to' (replies asked to go to another address, unless a person's name
@@ -186,3 +211,17 @@ def show(db, identifier, now):
     db.execute('INSERT OR IGNORE INTO mail_shown(identifier,created_at) VALUES(?,?)', (identifier, now))
     db.execute('DELETE FROM mail_hidden WHERE identifier=?', (identifier,))
     return {'identifier': identifier, 'shown': True}
+
+
+def shared_inbox(group, name, domain, listed, kept, company, registrable):
+    """Whether someone is an organization's shared inbox, not a person (graph.py): every identifier an email address at
+    the organization's domain shaped like a shared inbox (shared_address), and either no person's full name on it
+    ("Klantenservice", "INFO", "Wes", the company's name: company, as graph.org_from_name read it, or no name) or
+    mailings sent from it (listed: List-Unsubscribe, List-Id, Precedence bulk), a shop's newsletter in someone's name.
+    "Jane Doe" answering from info@ stays a person, and so does anyone the owner's word or work is on (kept: a role, an
+    edit, a name, a merge, Show as a person). registrable: the domain without its subdomains (enrichment.registrable)."""
+    if not group or set(group) & set(kept) or not all(i.startswith('email:') and i.rsplit('@', 1)[1] == domain for i in group):
+        return False
+    if not all(shared_address(i[6:], str(registrable or domain).split('.')[0]) for i in group):
+        return False
+    return not person_shaped(name) or bool(company) or all(i in listed for i in group)

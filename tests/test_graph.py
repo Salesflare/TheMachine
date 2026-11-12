@@ -193,6 +193,38 @@ class Graph(unittest.TestCase):
         self.assertEqual(self.node('email:community@paperbox.example')['signals'], 3)
         self.assertEqual([h['address'] for h in self.app.graph_list('hidden_senders')['items']], ['pat@growth.example', 'lee@moss.example'])
 
+    def test_a_shared_inbox_is_its_organization_not_a_person(self):
+        # Mail both ways with info@, klantenservice@ and the shop's own name@ (an order, a booking): the organization,
+        # not a person. A person's name on info@ keeps them, and so does Show as a person.
+        self.add(mail(9, 'INFO <info@venue.example>', 'sam@acme.com'), mail(8, 'Sam <sam@acme.com>', 'info@venue.example', ('SENT',)),
+                 mail(9, 'Klantenservice <klantenservice@floors.example>', 'sam@acme.com'),
+                 mail(8, 'Sam <sam@acme.com>', 'klantenservice@floors.example', ('SENT',)),
+                 mail(7, 'Wes <info@sports.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'info@sports.example', ('SENT',)),
+                 mail(7, 'Sam <sam@acme.com>', 'oakhollow@oakhollow.example', ('SENT',)), mail(6, 'oakhollow@oakhollow.example', 'sam@acme.com'),
+                 mail(7, 'Ines Halden <info@interior.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'info@interior.example', ('SENT',)),
+                 mail(7, 'Pip <pip@studio.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'pip@studio.example', ('SENT',)),
+                 # a person's name on a shared inbox that also sends the shop's mailings, answered once: no person either
+                 mail(9, 'Tintmore Team <info@tintmore.example>', 'sam@acme.com', list_unsubscribe=True, title='Autumn sale'),
+                 mail(5, 'Tintmore Team <info@tintmore.example>', 'sam@acme.com'), mail(4, 'Sam <sam@acme.com>', 'info@tintmore.example', ('SENT',)))
+        self.build()
+        def people():
+            with self.store.connect() as db:
+                return {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertEqual(people(), {'email:info@interior.example', 'email:pip@studio.example'})
+        with self.store.connect() as db:
+            orgs = {r['id']: r['strength'] for r in db.execute("SELECT id,strength FROM graph_nodes WHERE kind='org'")}
+        for domain in ('venue', 'floors', 'sports', 'oakhollow', 'tintmore'):
+            self.assertGreater(orgs.get(f'org:{domain}.example', 0), 0, domain)  # the organization stands, as close as its inbox
+        hidden = {h['address']: h['why'] for h in self.app.graph_list('hidden_senders')['items']}
+        self.assertEqual(hidden, {'info@venue.example': 'shared', 'klantenservice@floors.example': 'shared', 'info@sports.example': 'shared',
+                                  'oakhollow@oakhollow.example': 'shared', 'info@tintmore.example': 'shared'})
+        self.app.action('graph_show_person', {'identifier': 'email:info@sports.example'}, owner_dashboard=True)
+        self.build()
+        self.assertIn('email:info@sports.example', people())
+        self.assertTrue(graph.mail_senders.shared_address('info.nl@shop.example') and graph.mail_senders.shared_address('sales2@shop.example'))
+        self.assertTrue(graph.mail_senders.shared_address('hr@shop.example') and graph.mail_senders.shared_address('bookings@shop.example'))
+        self.assertFalse(graph.mail_senders.shared_address('jan.peeters@shop.example') or graph.mail_senders.shared_address('info.jan@shop.example'))
+
     def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
         self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
                  chat(1, '00000000002', 'Cas Owner', mine=True),
