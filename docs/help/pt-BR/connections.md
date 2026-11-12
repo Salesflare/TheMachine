@@ -8,7 +8,7 @@ order: 1
 ---
 ## Como elas estão
 
-A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
+A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer. Uma sincronização que falhou e que uma posterior já compensou aparece em cinza; só uma falha que ainda é a mais recente aparece como problema, com quando tenta de novo.
 
 Seus números mostram o que ela trouxe, o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
 
