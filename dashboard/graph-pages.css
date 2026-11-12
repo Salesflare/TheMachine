@@ -198,7 +198,6 @@ span.share-chip{cursor:default}.share-chip.on{color:var(--text);border-color:col
 .team-files{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}.team-files li{display:flex;align-items:baseline;gap:8px;min-width:0}.team-files li>:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.team-files small{flex:none}
 .team-asks{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.team-ask summary{cursor:pointer;display:inline-block;padding:6px 12px;border:1px solid var(--border);border-radius:8px}.team-ask[open]{flex:1 1 100%}.team-ask summary::before{display:none}
 .team-ask-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}.team-ask-form textarea{width:100%}.team-ask-form button{align-self:flex-start}
-.tile-owner{margin:6px 0 0;color:var(--c-text-3);font-size:var(--fs-xs)}
 /*@eager*/
 .tile.team{cursor:pointer}.tile.team.yours{border-color:var(--c-line-strong)}
 /*@lazy*/

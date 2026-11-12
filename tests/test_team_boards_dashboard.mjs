@@ -8,7 +8,9 @@ const {chromium}=await import('./browser.mjs');
 // team and how many of its projects stay with them, each with a lock; a teammate's says whose it is and whether the
 // whole team has it or only chosen teammates. Each of a teammate's projects is its own card, as on the owner's board,
 // and a long stage shows the same number and "Show N more" (8, 6 on a phone). A tile's newest line never
-// says an older stage than the one it is in. A teammate's project opens under Projects with its organization linked.
+// says an older stage than the one it is in. A tile reads the same on both: without the board's name in front, with its
+// organization, days, next step and "no reply" chip; whose it is only on a board of several owners ("by Ada"), never a
+// bare name. A teammate's project opens under Projects with its organization linked.
 // TEAM_BOARDS_SHOT=<dir> writes screenshots (TEAM_BOARDS_LANG=nl for Dutch).
 const dashboard=await dashboardPage();
 const LANG=process.env.TEAM_BOARDS_LANG||'en',SHOTS=process.env.TEAM_BOARDS_SHOT;
@@ -18,14 +20,15 @@ const sharing=[{fleet:FL,name:'Acme',admin:false,confirmed:true,prompts:[],off:n
 const stages=[{name:'Invited'},{name:'Trying it'},{name:'Feedback'},{name:'Up and running'},{name:'Stalled or declined',side:true}];
 const proj=(i,name,stage,extra={})=>({id:'project:'+i,name,stage,reason:'they said yes to a trial',by:'review',at:day(3),event_id:100+i,next:null,first:false,days:3,no_reply_days:0,org:null,...extra});
 const mine=[{id:1,name:'Pilot program',visibility:'team',stages,stuck:0,maybes:[],held:2,shared_with:[],
- projects:[proj(1,'Pilot review: Paperkite','Invited'),proj(2,'Pilot review: Bramblebox','Invited',{held:true}),proj(3,'Pilot review: Quillfeather','Trying it'),proj(4,'Pilot review: Fernwave','Up and running',{held:true})]}];
+ projects:[proj(1,'Pilot review: Paperkite','Invited'),proj(2,'Pilot review: Bramblebox','Invited',{held:true}),proj(3,'Pilot review: Quillfeather','Trying it'),proj(4,'Pilot review: Fernwave','Up and running',{held:true}),proj(5,'Pilot program: Inkwell','Feedback')]}];
 const team=(i,name,stage,extra={})=>({id:'team:project:'+String(i).padStart(32,'0'),name,stage,reason:'they said yes to a trial',by:'review',at:day(5),first:false,days:5,org:null,team_only:true,owner_name:'Ada',fleet:FL,via:'via Ada',yours:false,needs_you:false,...extra});
 const pilots=['Paperkite','Bramblebox','Quillfeather','Otterly Mail','Fernwave','Copperleaf','Driftwood','Halcyon','Juniper'];
 const teamBoards=[
  {name:'Pilot program',stages,team:true,stuck:0,by:['Ada'],seen:'team',projects:[...pilots.map((n,i)=>team(i+1,'Pilot review: '+n,'Invited',{line:'Email: Re: Pilot for '+n,line_at:day(6+i)})),
-  team(20,'Lanternfish','Trying it',{at:day(2),line:'Moved to Invited: agreed to try it',line_at:day(9)}),team(21,'Mossgate','Feedback',{org:{name:'Mossgate',logo:null}})]},
+  team(20,'Lanternfish','Trying it',{at:day(2),line:'Moved to Invited: agreed to try it',line_at:day(9),no_reply_days:12}),team(21,'Mossgate','Feedback',{org:{name:'Mossgate',logo:null}}),
+  team(22,'Pilot program: Copperfield','Up and running',{org:{name:'Copperfield Ltd',logo:null},days:14,next:'Send the pilot terms'}),team(23,'Pilot progr: Wrenfield','Up and running')]},
  {name:'Acquisition talks',stages:[{name:'Contacted'},{name:'Interested'},{name:'Stalled or declined',side:true}],team:true,stuck:0,by:['Ada'],seen:'people',
-  projects:[team(30,'Buyer talks: Northfund','Contacted'),team(31,'Buyer talks: Globex','Interested')]}];
+  projects:[team(30,'Buyer talks: Northfund','Contacted'),team(31,'Buyer talks: Globex','Interested',{owner_name:'Bo'})]}];
 const teamDetail={id:'team:project:'+'3'.padStart(32,'0'),kind:'project',name:'Buyer talks: Northfund',role:null,team_only:true,links:[],recent:[],probable_ids:[],last_at:day(2),
  strength:1,closeness:'regular',signals:0,org_name:'Northfund',org:'team:org:'+'9'.repeat(32),state:'active',stage:'Contacted',board:'Acquisition talks',next:null,team_fields:[],tags:[],
  team:{via:'via Ada',people:[{fleet:FL,member:'m_ada',name:'Ada',score:1,left:false}],timeline:[{at:day(2),line:'Bo agreed to the terms',via:'Ada'}],threads:[{id:FL+':m_ada:'+'e'.repeat(32),subject:'Re: Terms',at:day(2),messages:2,via:'Ada',from:'Bo Lind',preview:'Here are the terms.'}],fields:[],tags:[]}};
@@ -57,25 +60,48 @@ try{
  for(const [w,h] of [[1440,900],[390,844]])for(const scheme of ['light','dark']){const {context,page}=await open(w,h,scheme);
   // The owner's own board: shared with the team, two stay with the owner, each with a lock
   const sub=await page.locator('.board-sub').textContent();
-  if(LANG==='en'){assert.match(sub,/^Shared with the team · 2 stay with you · 4 projects · a check moves them as your messages come in$/);
+  if(LANG==='en'){assert.match(sub,/^Shared with the team · 2 stay with you · 5 projects · a check moves them as your messages come in$/);
    assert.equal(await page.locator('.tile .tile-held').count(),2)}
+  // A project named after its board drops the board's name on it (no repeats), and keeps it in full on hover
+  const inkwell=page.locator('.tile[data-node="project:5"] .tile-name');
+  assert.equal((await inkwell.textContent()).trim(),'Inkwell');assert.equal(await inkwell.getAttribute('title'),'Pilot program: Inkwell');
   await fits(page,w+' mine');await shot(page,`owner-board-${w}-${scheme}`);
   // A teammate's board: whose it is and that the team has it; each project its own card, a long stage cut like the owner's
   await toTeam(page);
   const tsub=await page.locator('.board-sub').textContent();
   const invited=page.locator('.lane[data-lane="Invited"]'),rows=w>560?8:6;
   assert.equal(await page.locator('.tile-group').count(),0);assert.equal(await invited.locator('.tile').count(),rows);
-  if(LANG==='en'){assert.match(tsub,/^Ada's board, shared with the team · 11 projects · a check moves them as the team's messages come in$/);
+  if(LANG==='en'){assert.match(tsub,/^Ada's board, shared with the team · 13 projects · a check moves them as the team's messages come in$/);
    assert.equal((await invited.locator('.lane-more').textContent()).trim(),`Show ${9-rows} more`);
    assert.equal((await invited.locator('.tile .tile-name').first().textContent()).trim(),'Pilot review: Paperkite');
    // A move newer than the newest line: the tile says the move, not the older stage
    assert.match(await page.locator('.tile[data-node$="020"] .tile-why').textContent(),/^Moved to Trying it: they said yes to a trial · /)}
   else assert.match(tsub,/^Bord van Ada, gedeeld met het team · .* · een check verplaatst ze naarmate er berichten van het team binnenkomen$/);
+  // The same tile as on the owner's board: name without the board's (also cut short), organization, days in the stage,
+  // next step, and the stage's "no reply in 10+ days" (without the owner's own filter and follow-ups)
+  const copper=page.locator('.tile[data-node$="022"]');
+  assert.equal((await copper.locator('.tile-name').textContent()).trim(),'Copperfield');
+  assert.equal((await page.locator('.tile[data-node$="023"] .tile-name').textContent()).trim(),'Wrenfield');
+  assert.equal((await copper.locator('.tile-org').textContent()).trim(),'Copperfield Ltd');
+  assert.equal((await copper.locator('.tile-age').textContent()).trim(),'14d');
+  assert.equal((await copper.locator('.tile-next').textContent()).trim(),'Send the pilot terms');
+  assert.equal(await copper.locator('.tile-menu').count(),0);assert.equal(await copper.getAttribute('draggable'),null);
+  const trying=page.locator('.lane[data-lane="Trying it"]');
+  if(LANG==='en')assert.equal((await trying.locator('.lane-sum').textContent()).trim(),'1 with no reply in 10+ days');
+  assert.equal(await trying.locator('.lane-sum button').count(),0);
+  assert.equal(await page.locator('.tile[data-node$="020"] .tile-chips .chip').count(),1);
+  // One owner on the whole board, also a stage with one project: no name on any tile, never a bare one
+  assert.equal(await page.locator('.tile-owner').count(),0);
+  for(const p of await page.locator('.pboard .tile p').allTextContents())assert.notEqual(p.trim(),'Ada');
+  assert.doesNotMatch(await page.locator('.lane[data-lane="Feedback"] .tile-why').textContent(),/Ada/);
   await fits(page,w+' team');await shot(page,`teammate-board-${w}-${scheme}`);
   // A board shared by name: says so, with a lock
   await page.evaluate(()=>{const b=document.querySelector('[data-board="Acquisition talks"]')||document.querySelector('.board-pick');if(b.tagName==='SELECT'){b.value='Acquisition talks';b.dispatchEvent(new Event('change',{bubbles:true}))}else b.click()});
   await page.locator('.board-title',{hasText:'Acquisition talks'}).waitFor({state:'attached'});
   if(LANG==='en')assert.match(await page.locator('.board-sub').textContent(),/^Ada shared this board with you · 2 projects/);
+  // Projects of more than one owner: each tile's meta line ends with whose it is
+  if(LANG==='en'){assert.match(await page.locator('.tile[data-node$="030"] .tile-why').textContent(),/ · by Ada$/);
+   assert.match(await page.locator('.tile[data-node$="031"] .tile-why').textContent(),/ · by Bo$/)}
   await fits(page,w+' by name');await shot(page,`teammate-shared-by-name-${w}-${scheme}`);
   // A teammate's project opens under Projects, its organization a link; what the team shared is in its Timeline, with
   // Mine · Team, each line saying who it came from, and a shared thread opens like an own one

@@ -86,10 +86,12 @@ Werte sind in Euro, außer deine Machine ist auf eine andere Währung eingestell
 
 In **Team** erscheinen Boards, die deine Teammitglieder teilen, neben deinen, die mit den meisten deiner Projekte zuerst. Die Kopfzeile sagt, wessen Board es ist und wer es hat: das ganze Team („Board von Ada, mit dem Team geteilt“) oder nur die Teammitglieder, die die Person gewählt hat („Ada hat dieses Board mit dir geteilt“).
 
-Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, oder seine letzte Verschiebung, wenn die später kam. Der Name des Inhabers erscheint, wenn eine Phase Projekte von mehr als einem Teammitglied hat.
+Jedes Projekt sagt, was zuletzt passiert ist, mit Datum: die neueste Zeile, die mit dem Team geteilt ist, oder seine letzte Verschiebung, wenn die später kam. Auf einem Board mit Projekten von mehr als einem Teammitglied endet diese Zeile damit, wessen Projekt es ist („von Ada“).
 
 Das Board eines Teammitglieds kann weniger Projekte haben, als die Person selbst sieht: Ein Projekt, das sie privat hält oder zu dem ein privates Gespräch gehört, verlässt ihre Machine nie. Jemand, der für sie Privat ist, bleibt aus den geteilten Projekten draußen. Auf deinem eigenen Board sagt die Kopfzeile „Mit dem Team geteilt“ und wie viele bei dir bleiben, und diese Projekte haben ein Schloss.
 
 **Meine**, **Wartet auf mich** und **Alle** wählen, was ein geteiltes Board zeigt, und die Team-Liste der Projekte gleich mit. Meine ist, woran du beteiligt bist: ein Thread dazu, ein Projekt, dessen Inhaber du bist, oder eine Aufgabe von dir dazu. Wartet auf mich ist, was auf dich wartet: eine offene Aufgabe dazu oder ein Thread, dessen neueste Nachricht an dich ging.
 
-Jedes Projekt hat eine eigene Karte, wie auf deinem eigenen Board, und der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Nichts davon ändert, was geteilt wird.
+Jedes Projekt sieht aus wie auf dem Board seines Inhabers, in derselben Reihenfolge: seine Organisation, Tage in der Phase, nächster Schritt und „Seit N Tagen keine Antwort“. Ein nächster Schritt oder Grund aus einer Nachricht, die bei der Person bleibt, erscheint nicht. Der Rest einer Phase klappt in **N weitere anzeigen** zusammen. Nichts davon ändert, was geteilt wird.
+
+Auf jedem Board erscheint ein Projekt, das nach seinem Board benannt ist, ohne den Namen des Boards („Listings: Acme“ heißt auf Listings „Acme“).

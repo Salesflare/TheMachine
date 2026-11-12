@@ -766,6 +766,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     every = lambda value: [keyed(k, value) for k in keys]  # with every graph key held: teammates on another one still match
     views, threads, by_thread, this_week = {}, collections.defaultdict(list), {}, {}
     thread_views = collections.defaultdict(set)
+    wrote = {}  # {event id: (when, the owner's own)} for the shared messages
     waiting = set()  # messages of threads that went before and wait to be sorted again
     week = (today - dt.timedelta(days=7)).isoformat()
     for e in _events(db, sorted(scope.accounts), ''):
@@ -782,6 +783,9 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
             thread = thread_of(e['kind'], e['metadata'], e['id'])
             threads[thread].append(e)
             by_thread[e['id']] = thread
+            if e['kind'] in graph.MESSAGE_KINDS:  # who wrote last on a shared message: a board's "no reply in 10+ days"
+                labels = e['metadata'].get('labels')
+                wrote[e['id']] = (e['occurred_at'], e['metadata'].get('from_me') is True or (isinstance(labels, list) and 'SENT' in labels))
     if held is not None:
         held.update(keyed(secret, 'thread|' + t) for t, seen in thread_views.items() if seen and seen <= {'pending', 'wait'})
     lines = {r['event_id']: r['line'] for r in db.execute('SELECT event_id,line FROM share_lines')}
@@ -858,6 +862,13 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         seen += [('team', r[1]) for r in rows if r[0] in waiting]  # went before, waits to be sorted again: stays meanwhile
         return bool(seen), max((at for _, at in seen), default=None)
 
+    def waiting_since(node_id):
+        """When the owner first wrote since the other side last did (graph._waiting_since), from the shared messages only."""
+        since = None
+        for at, mine in sorted(wrote[r[0]] for r in db.execute('SELECT event_id FROM graph_events WHERE node_id=? AND probable=0', (node_id,)) if r[0] in wrote):
+            since = (since or at) if mine else None
+        return since
+
     records = {}
     people = {}
     for row in db.execute("SELECT * FROM graph_nodes WHERE kind='person' ORDER BY strength DESC LIMIT ?", (MAX_RECORDS,)):
@@ -894,7 +905,7 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
         records[r].update(logos.org_logo(db, graph.org_card(db, domain)['logo']))  # never its own site's address
     tiles = {t['id']: t for b in graph.boards(db, today.isoformat()) for t in b['projects']}
     team_boards = graph.team_board_ids(db)
-    for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.stage_event_id,p.next_step,p.next_step_event_id,p.org porg,b.name board,b.stages stages,b.side side "
+    for row in db.execute("SELECT n.*,p.id pid,b.id bid,p.stage,p.stage_by,p.stage_at,p.stage_reason,p.stage_event_id,p.next_step,p.next_step_event_id,p.created_at pcreated,p.org porg,b.name board,b.stages stages,b.side side "
                           "FROM graph_nodes n JOIN projects p ON 'project:'||p.id=n.id LEFT JOIN boards b ON b.id=p.board_id "
                           "WHERE n.kind='project' AND p.closed_at IS NULL"):
         if not scope.shareable(row['id']):
@@ -924,6 +935,9 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
                       **({'board_seen': 'team'} if row['board'] and row['bid'] in team_boards else
                          {'board_seen': 'people'} if row['board'] and row['id'] in scope.granted_projects else {}),
                       'stage': row['stage'] if row['board'] else None, 'stage_hand': row['stage_by'] == 'owner', 'stage_at': row['stage_at'],
+                      # since: where the owner's board sorts it and counts its days from; waiting: when the owner last
+                      # wrote without an answer, from shared messages only (a held thread's timing never goes)
+                      'since': row['stage_at'] or row['pcreated'], **({'waiting': w} if row['board'] and (w := waiting_since(row['id'])) else {}),
                       **_why(db, row, views),
                       'org': {'name': org['name'], 'd': keyed(key, 'domain:' + domain),
                               **({'logo': team_logo(org['logo'])} if team_logo(org['logo']) else {})} if org else None,
@@ -2932,13 +2946,17 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             names_ok = [x['name'] for x in board['stages']]
             stage = rec.get('stage') if rec.get('stage') in names_ok else names_ok[0]
             mover = names.get(next(((s['fleet'], s['member']) for s in e['sources'] if s['member'] == rec.get('stage_by')), None), '')
-            since = graph.parse_time(rec.get('stage_at')) if rec.get('stage_at') else None
-            days = max(0, (dt.datetime.now(dt.timezone.utc) - since).days) if since else 0
             best = max(e['sources'], key=lambda s: s['record'].get('score') or 0)['record']
+            src = next((s['record'] for s in e['sources'] if s['member'] == rec.get('stage_by')), best)  # whose stage it shows
+            # as on the owner's board: in a stage since its move (or since it was added), sorted newest first, and how
+            # long the owner's last message has gone unanswered
+            since = rec.get('stage_at') or src.get('since')
+            age = lambda at: max(0, (dt.datetime.now(dt.timezone.utc) - graph.parse_time(at)).days) if at else None
+            days, waited = age(since) or 0, age(src.get('waiting'))
             tile = {'id': e['local'] or e['key'], 'name': rec['name'], 'stage': stage, 'reason': rec.get('why') or best.get('why'),
                     'by': 'owner' if rec.get('stage_hand') else 'review', 'mover': _first_name(mover) if rec.get('stage_by') else None,
-                    'at': rec.get('stage_at'), 'event_id': None, 'next': rec.get('next'), 'first': False, 'days': days, 'closed': False,
-                    'no_reply_days': None, 'org': {'name': rec['org'].get('name'), 'logo': self._org_logo(db, rec['org'])} if rec.get('org') else None, 'card': None,
+                    'at': rec.get('stage_at'), 'since': since, 'event_id': None, 'next': rec.get('next'), 'first': False, 'days': days, 'closed': False,
+                    'no_reply_days': waited, 'org': {'name': rec['org'].get('name'), 'logo': self._org_logo(db, rec['org'])} if rec.get('org') else None, 'card': None,
                     'owner': rec.get('owner'), 'owner_name': rec.get('owner_name'), 'fleet': e['sources'][0]['fleet'], 'via': via(e['sources']),
                     'team_only': not e['local'], 'owner_hand': bool(rec.get('owner_hand')), **self._last_line(e)}
             if mine_tile:
@@ -2946,6 +2964,9 @@ class SharedGraph(shared_graph_takeback.TakeBack):
             else:
                 tile['yours'], tile['needs_you'] = self._yours(db, e, rec, me_ids, my_mail, todos)
                 board['projects'].append(tile)
+        for b in boards.values():  # the owner's board's order: the newest move first (graph_boards.boards)
+            b['projects'].sort(key=lambda p: str(p.get('since') or p.get('at') or ''), reverse=True)
+            b['stuck'] = sum(1 for p in b['projects'] if (p.get('no_reply_days') or 0) >= graph.STUCK_DAYS and p['stage'] != graph.STALLED)
         out = [b for b in boards.values() if b['projects']]
         return sorted(out, key=lambda b: -sum(1 for p in b['projects'] if p.get('yours')))  # stable: otherwise as before
 
@@ -3173,7 +3194,8 @@ def _clean_record(r):
     else:
         stages = [s for s in (r.get('stages') or []) if _clean_text(s, 40)][:8] if isinstance(r.get('stages'), list) else None
         out.update(board=text('board', 60), stages=[_clean_text(s, 40) for s in stages] if stages else None, stage=text('stage', 40),
-                   stage_hand=r.get('stage_hand') is True, stage_at=text('stage_at', 25), why=text('why', 160), next=text('next', 120),
+                   stage_hand=r.get('stage_hand') is True, stage_at=text('stage_at', 25), since=text('since', 25), waiting=text('waiting', 25),
+                   why=text('why', 160), next=text('next', 120),
                    about=text('about', project_about.OWNER_CHARS), people=hashes(r.get('people')))
         out.update({'board_seen': r['board_seen']} if r.get('board_seen') in ('team', 'people') else {})  # the whole team's, or by name
     return out
