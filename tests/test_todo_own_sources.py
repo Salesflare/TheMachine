@@ -46,7 +46,9 @@ class Companies(unittest.TestCase):
         self.assertIn('work:Acme (acme.example)', line)
         self.assertIn('add company=<its id> to suggest', line)
         self.assertIn('never by a name in the text alone', line)
-        self.assertEqual(a.companies_prompt({'accounts': ACCOUNTS[:2]}), '')
+        one = a.companies_prompt({'accounts': ACCOUNTS[:2]})  # one company: only work on a personal account (test_work_on_personal_channel)
+        self.assertNotIn("The owner's companies", one)
+        self.assertIn('Work is Work', one)
         self.assertIn('company:<its id>', (ROOT / 'AGENTS.md').read_text())
 
 

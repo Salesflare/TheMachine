@@ -42,6 +42,8 @@ Heeft een to-do een ander gebied nodig om verder te kunnen en komen de berichten
 
 Start je een to-do, dan mag hij altijd de berichten lezen waar hij uit kwam, ook in de mailbox van een ander bedrijf. Heeft hij andere berichten uit een ander gebied nodig, dan vraagt hij het met **Deze mail voor deze to-do gebruiken**; een tik voegt ze toe en hij gaat verder. Mail voor een ander bedrijf van je komt meteen bij de to-do's van dat bedrijf. Een to-do uit je eigen leven, zoals familie die naar je werkadres mailt, is meteen Privé.
 
+Werk dat binnenkomt op een privéaccount, zoals een klant op WhatsApp of een bestelling in je privémailbox, is meteen Werk. Een to-do die je zelf verplaatst of ingedeeld hebt, blijft altijd waar je hem zette. Werk of Privé bepaalt waar een to-do staat en met wie hij gedeeld wordt, nooit waar hij antwoordt: een antwoord gaat altijd waar het gesprek is, ook na verplaatsen, tenzij je een andere weg kiest.
+
 Zo'n privé-to-do antwoordt toch vanaf het werkadres waar de mail binnenkwam, en hij komt nooit in een Work Fleet of de Team-Graph.
 
 Wachten er twee of meer, dan loopt **Doorlopen** in de kop van Voor jou ze een voor een door, in de volgorde van de lijst, elk concept volledig, met **Versturen** of **Doe het**, **Wijzigingen vragen**, **Snoozen** en **Overslaan**. Op een computer verstuurt Enter wat in beeld is, `S` snoozet, `→` slaat over en Esc stopt. Onder de titel zegt de kop ook hoe lang ze op jouw tempo duren, zoals "ongeveer 2 min".

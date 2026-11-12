@@ -42,6 +42,8 @@ Braucht eine Aufgabe einen anderen Bereich, um weiterzukommen, und kamen ihre Na
 
 Startest du eine Aufgabe, darf sie die Nachrichten, aus denen sie kam, immer lesen, auch im Postfach einer anderen Firma. Braucht sie andere Nachrichten aus einem anderen Bereich, fragt sie mit **Diese E-Mail für diese Aufgabe verwenden**; ein Tippen fügt sie hinzu und sie macht weiter. Mail für eine andere deiner Firmen landet gleich bei den Aufgaben dieser Firma. Eine Aufgabe aus deinem eigenen Leben, etwa Familie, die an deine Arbeitsadresse schreibt, ist von Anfang an Privat.
 
+Arbeit, die über ein privates Konto kommt, etwa ein Kunde auf WhatsApp oder eine Bestellung in deinem privaten Postfach, ist von Anfang an Arbeit. Eine Aufgabe, die du selbst verschoben oder eingeordnet hast, bleibt immer, wo du sie hingelegt hast. Arbeit oder Privat bestimmt, wo eine Aufgabe erscheint und mit wem sie geteilt wird, nie, wo sie antwortet: Eine Antwort geht immer dorthin, wo das Gespräch ist, auch nach dem Verschieben, außer du wählst einen anderen Weg.
+
 Die Antwort geht trotzdem von der Arbeitsadresse, an der sie ankam, und sie erscheint nie in einer Work Fleet oder im Team-Graph.
 
 Ab zwei wartenden Aufgaben geht **Durchgehen** in der Überschrift von Für dich sie einzeln durch, in der Reihenfolge der Liste, jeden Entwurf vollständig, mit **Senden** oder **Ausführen**, **Änderungen anfragen**, **Zurückstellen** und **Überspringen**. Am Computer sendet Enter, was zu sehen ist, `S` stellt zurück, `→` überspringt und Esc hört auf. Unter dem Titel sagt die Überschrift auch, wie lange sie in deinem Tempo dauern, etwa "etwa 2 Min.".

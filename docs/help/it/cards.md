@@ -42,6 +42,8 @@ Quando un'attività ha bisogno di un'altra area per andare avanti e i messaggi d
 
 Quando avvii un'attività, può sempre leggere i messaggi da cui è nata, anche nella casella di un'altra azienda. Se le servono altri messaggi da un'altra area, lo chiede con **Usa questa email per questa attività**; un tocco li aggiunge e continua. La posta per un'altra delle tue aziende va subito tra le attività di quell'azienda. Un'attività della tua vita privata, come la famiglia che scrive al tuo indirizzo di lavoro, è Personale fin dall'inizio.
 
+Il lavoro che ti arriva su un account personale, come un cliente su WhatsApp o un ordine nella tua casella personale, è Lavoro fin dall'inizio. Un'attività che hai spostato o messo tu resta sempre dove l'hai messa. Lavoro o Personale decide dove compare un'attività e con chi è condivisa, mai da dove risponde: una risposta va sempre dove si trova la conversazione, anche dopo uno spostamento, a meno che tu non scelga un altro modo.
+
 La risposta parte comunque dall'indirizzo di lavoro dove è arrivata, e non compare mai in una Work Fleet né nel Graph del team.
 
 Con due o più in attesa, **Scorri** nell’intestazione di Per te le passa una alla volta, nell’ordine della lista, ogni bozza per intero, con **Invia** o **Fallo**, **Chiedi modifiche**, **Posticipa** e **Salta**. Al computer, Invio invia ciò che è sullo schermo, `S` posticipa, `→` salta ed Esc si ferma. Sotto il titolo, l’intestazione dice anche quanto ci vuole al tuo ritmo, come "circa 2 min".

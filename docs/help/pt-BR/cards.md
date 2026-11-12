@@ -42,6 +42,8 @@ Quando uma tarefa precisa de outra área para seguir e todas as mensagens de ond
 
 Quando você inicia uma tarefa, ela sempre pode ler as mensagens de onde veio, também na caixa de outra empresa. Se precisar de outras mensagens de outra área, ela pede com **Usar este e-mail para esta tarefa**; um toque as adiciona e ela continua. O e-mail para outra das suas empresas vai desde o início para as tarefas dessa empresa. Uma tarefa da sua vida pessoal, como a família escrevendo para o seu endereço de trabalho, é Pessoal desde o início.
 
+Trabalho que chega por uma conta pessoal, como um cliente no WhatsApp ou um pedido na sua caixa pessoal, é Trabalho desde o início. Uma tarefa que você moveu ou colocou em algum lugar fica sempre onde você a deixou. Trabalho ou Pessoal decide onde uma tarefa aparece e com quem é compartilhada, nunca por onde ela responde: uma resposta sempre vai onde a conversa está, também depois de mover, a não ser que você escolha outro meio.
+
 A resposta sai mesmo assim do endereço de trabalho onde chegou, e nunca aparece em uma Work Fleet nem no Graph da equipe.
 
 Com duas ou mais esperando, **Percorrer** no cabeçalho de Para você passa por elas uma a uma, na ordem da lista, cada rascunho inteiro, com **Enviar** ou **Fazer**, **Pedir mudanças**, **Adiar** e **Pular**. No computador, Enter envia o que está na tela, `S` adia, `→` pula e Esc para. Abaixo do título, o cabeçalho também diz quanto tempo levam no seu ritmo, como "cerca de 2 min".

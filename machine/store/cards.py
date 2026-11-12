@@ -129,6 +129,17 @@ def own_life_evidence(db, event_ids):
     return bool(rows) and all(graph.own_life(json.loads(r[0] or '{}')) for r in rows)
 
 
+def owner_placed(db, card):
+    """Whether the owner put a to-do where it is: moved it (a move, also one undone), or added it with Work or Personal
+    picked. The review never places such a one elsewhere (Store.suggest company, personal)."""
+    if db.execute('SELECT 1 FROM card_moves WHERE suggestion_id=? LIMIT 1', (card['id'],)).fetchone():
+        return True
+    if card['origin'] != 'owner':
+        return False
+    from machine.store.decisions import owner_area_open  # here: decisions reads this module
+    return not owner_area_open(db, card['id'])
+
+
 def thread_keys(rows):
     """The conversations a set of signals belong to where one thread is one matter: an email thread, a Slack thread."""
     keys = set()
@@ -533,7 +544,7 @@ class CardsStore:
             if target:
                 saved = self.update_card(db, target, dedupe_key, title, body, rows, event_ids, when, digest_at, work, urgent, due, ahead, project, reopen,
                                          waiting_on=waiting_on)
-                if company and not target['area']:  # the review placed it with its company or in Personal; the owner's own move stands
+                if company and not target['area'] and not owner_placed(db, target):  # the review places it; the owner's own choice stands
                     db.execute('UPDATE suggestions SET account_ids=coalesce(?,account_ids),area=? WHERE id=?', (placed and encoded(placed), company, target['id']))
                 if owner_step is not None and not saved.get('attached'):
                     db.execute('UPDATE suggestions SET owner_step=? WHERE id=?', (int(bool(owner_step)), target['id']))

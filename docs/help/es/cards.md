@@ -42,6 +42,8 @@ Cuando una tarea necesita otra área para seguir y todos los mensajes de los que
 
 Cuando inicias una tarea, siempre puede leer los mensajes de los que vino, también en el buzón de otra empresa. Si necesita otros mensajes de otra área, lo pide con **Usar este correo para esta tarea**; un toque los añade y sigue. El correo para otra de tus empresas va desde el principio a las tareas de esa empresa. Una tarea de tu propia vida, como tu familia escribiendo a tu dirección del trabajo, es Personal desde el principio.
 
+El trabajo que te llega por una cuenta personal, como un cliente en WhatsApp o un pedido en tu buzón personal, es Trabajo desde el principio. Una tarea que moviste o colocaste tú siempre se queda donde la pusiste. Trabajo o Personal decide dónde aparece una tarea y con quién se comparte, nunca por dónde responde: una respuesta siempre va donde está la conversación, también después de moverla, salvo que elijas otro medio.
+
 Su respuesta sale igual desde la dirección del trabajo donde llegó, y nunca aparece en una Work Fleet ni en el Graph del equipo.
 
 Con dos o más esperando, **Repasar** en el encabezado de Para ti las recorre una a una, en el orden de la lista, cada borrador completo, con **Enviar** o **Hazlo**, **Pedir cambios**, **Posponer** y **Omitir**. En una computadora, Intro envía lo que está en pantalla, `S` pospone, `→` omite y Esc termina. Bajo el título, el encabezado también dice cuánto tardan a tu ritmo, como "unos 2 min".

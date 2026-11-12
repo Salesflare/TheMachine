@@ -66,14 +66,12 @@ def sending_account(config, account_ids):
     return None
 
 
-def personal_reply_home(account, task_accounts, value, replied):
-    """A Personal to-do's reply may go from the mailbox its thread came in on, also one labeled Work (a matter of the
-    owner's own life on a work mailbox, todo_areas.py): True when every account of the to-do is Personal and the email it
-    answers (in_reply_to, one of the to-do's own emails: replied) is in this account. Only where it is sent from changes:
-    the to-do stays Personal, so it never goes to a Work Fleet or the Team Graph."""
-    import todo_areas
-    if not task_accounts or any(todo_areas.area_of_account(a) != todo_areas.PERSONAL for a in task_accounts):
-        return False
+def reply_home(account, value, replied):
+    """A reply goes where its thread lives: from the mailbox the email it answers (in_reply_to, one of the to-do's own
+    emails: replied) came in on, whatever the to-do's area (todo_areas.py). Work or Personal decides filtering and
+    sharing, never the reply channel: a work matter that came in on a personal mailbox replies from there, a family one on
+    a work mailbox too, also after the owner moved it. True when this account holds that email. Only where it is sent
+    from follows the thread: the to-do stays in its area for sharing and the Fleet."""
     original = (replied or {}).get(str(value.get('in_reply_to') or '').strip())
     if not original:
         return False
@@ -617,7 +615,7 @@ def validate(value, config, allowed_accounts, recipient_options=None, linkedin_t
         account = next((a for a in config['accounts'] if a['id'] == value.get('account_id') and mail_account(a)), None)
         if not account or (account['id'] not in allowed_accounts and account.get('boundary') not in boundaries
                            and str(account.get('email') or '').lower() not in emails
-                           and not personal_reply_home(account, task_accounts, value, replied)):
+                           and not reply_home(account, value, replied)):
             raise ValueError('Use a Gmail or Outlook account of this task’s company')
         result = {'kind': 'email', 'account_id': account['id'], 'from': account['email']}
         if value.get('label'):

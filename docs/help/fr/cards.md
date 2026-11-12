@@ -42,6 +42,8 @@ Quand une tâche a besoin d’un autre espace pour avancer et que tous les messa
 
 Quand vous lancez une tâche, elle peut toujours lire les messages d’où elle vient, même dans la boîte d’une autre entreprise. Si elle a besoin d’autres messages d’un autre espace, elle le demande avec **Utiliser cet e-mail pour cette tâche** ; un appui les ajoute et elle continue. Le courrier pour une autre de vos entreprises va dès le départ dans les tâches de cette entreprise. Une tâche de votre vie privée, comme votre famille qui écrit à votre adresse pro, est Perso dès le départ.
 
+Le travail qui vous arrive sur un compte perso, comme un client sur WhatsApp ou une commande dans votre boîte perso, est Travail dès le départ. Une tâche que vous avez déplacée ou placée vous-même reste toujours où vous l’avez mise. Travail ou Perso décide où une tâche apparaît et avec qui elle est partagée, jamais par où elle répond : une réponse va toujours là où est la conversation, même après un déplacement, sauf si vous choisissez un autre moyen.
+
 Sa réponse part quand même de l’adresse pro où elle est arrivée, et elle n’apparaît jamais dans une Work Fleet ni dans le Graph d’équipe.
 
 À partir de deux en attente, **Passer en revue** dans l’en-tête de Pour vous les passe une par une, dans l’ordre de la liste, chaque brouillon en entier, avec **Envoyer** ou **Faire**, **Demander des modifications**, **Mettre en attente** et **Ignorer**. Sur un ordinateur, Entrée envoie ce qui est à l’écran, `S` met en attente, `→` ignore et Échap arrête. Sous le titre, l’en-tête dit aussi combien de temps elles prennent à votre rythme, comme "environ 2 min".

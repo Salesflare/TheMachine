@@ -42,6 +42,8 @@ When a to-do needs your other area to go on and the messages it came from are al
 
 A to-do can always read the messages it came from. When it needs other messages from your other area, it asks with **Use this email for this to-do**. A work mailbox you labeled Personal counts as Personal. Mail for another of your companies goes to that company's to-dos, and a to-do about your own life, like family writing to your work address, is Personal from the start.
 
+Work that reaches you on a personal account, like a client on WhatsApp or an order in your personal mailbox, is Work from the start. A to-do you moved or placed yourself always stays where you put it. Work or Personal decides where a to-do shows up and who it is shared with, never where it replies: a reply always goes where the conversation is, also after a move, unless you pick another way.
+
 Such a Personal to-do still replies from the work address its email came in on, and it never shows up in a Work Fleet or the Team Graph.
 
 With two or more waiting, **Go through** in the header of For you steps through them one at a time, in the list's order, each draft in full, with **Send** or **Do it**, **Ask for changes**, **Snooze** and **Skip**. On a computer, Enter sends what's on screen, `S` snoozes, `→` skips and Esc stops. Under the title, the header also says how long they take at your own pace, like "about 2 min".
