@@ -19,6 +19,12 @@ def iso(hours_ago):
     return (NOW - a.dt.timedelta(hours=hours_ago)).isoformat().replace('+00:00', 'Z')
 
 
+def listed(crm):
+    """(field, offset) of each account list page asked."""
+    return [(a.json.loads(q['q'])['rules'][0]['id'].removeprefix('account.'), q['offset'])
+            for p, q in crm.calls if p == '/accounts']
+
+
 class FakeCRM:
     def __init__(self, forbidden=(), opportunities=()):
         self.calls, self.forbidden, self.joined = [], set(forbidden), []
@@ -58,8 +64,13 @@ class FakeCRM:
     def get(self, path, params=None):
         self.calls.append((path, dict(params or {})))
         if path == '/accounts':
-            field = params['order_by'].split()[0]
-            rows = sorted((r for r in self.accounts.values() if r.get(field)), key=lambda r: r[field], reverse=True)
+            # Filtered by one date rule and ordered by ID, as the sync asks; never sorted by the date (heavy on Salesflare).
+            assert params['order_by'] == 'id', params
+            [rule] = a.json.loads(params['q'])['rules']
+            field, lowest = rule['id'].removeprefix('account.'), a.salesflare_time(rule['value'][0])
+            assert rule['operator'] == 'greater_or_equal', rule
+            rows = sorted((r for r in self.accounts.values() if r.get(field)
+                           and (a.salesflare_time_or_none(r[field]) or lowest) >= lowest), key=lambda r: r['id'])
             return rows[params['offset']:params['offset'] + params['limit']]
         if path == '/opportunities':
             return [{'id': 1}] if (params['account'], params['pipeline']) in self.opportunities else []
@@ -289,15 +300,13 @@ class SalesflareConnector(unittest.TestCase):
             crm.accounts[1000 + n] = {'id': 1000 + n, 'name': f'Co {n}', 'domain': f'co{n}.example',
                                       'last_email_date': iso(1 + n / 10), 'last_meeting_date': None, 'customers': []}
         self.run_to_completion(crm)
-        lists = [q for p, q in crm.calls if p == '/accounts']
-        self.assertEqual({q['limit'] for q in lists}, {10})
-        self.assertEqual(len([q for q in lists if q['order_by'] == 'last_email_date desc']), 3)
+        self.assertEqual(listed(crm), [('last_email_date', 0), ('last_meeting_date', 0)])  # one filtered page each
         crm.calls.clear()
         self.store.commit_page('work-crm', {**self.store.checkpoint('work-crm'), 'notes_watch': {}}, [], record_sync=False)
         last_round = self.store.checkpoint('work-crm')['last_round']
         self.run_to_completion(crm)
-        self.assertEqual([(p, q['order_by'], q['offset']) for p, q in crm.calls],
-                         [('/accounts', 'last_email_date desc', 0), ('/accounts', 'last_meeting_date desc', 0)])
+        self.assertEqual([p for p, _ in crm.calls], ['/accounts', '/accounts'])
+        self.assertEqual(listed(crm), [('last_email_date', 0), ('last_meeting_date', 0)])
         state = self.store.checkpoint('work-crm')
         self.assertEqual(state['last_round'], last_round)  # the card keeps the last round that read accounts
         self.assertGreater(state['watermark'], last_round['at'])
@@ -318,11 +327,28 @@ class SalesflareConnector(unittest.TestCase):
                                       'last_email_date': iso(0.5 + n / 100), 'last_meeting_date': None, 'customers': []}
         crm.calls.clear()
         self.run_to_completion(crm)
-        offsets = [q['offset'] for p, q in crm.calls if p == '/accounts' and q['order_by'] == 'last_email_date desc']
-        self.assertEqual(offsets, [0, 10])
+        [query] = [q for p, q in crm.calls if p == '/accounts' and 'last_email_date' in q['q']]
+        lowest = a.salesflare_time(a.json.loads(query['q'])['rules'][0]['value'][0])
+        self.assertEqual(lowest, a.salesflare_time(mark['at']).replace(microsecond=0) - a.dt.timedelta(minutes=1))
         read = {int(p.split('/')[2]) for p, _ in crm.calls if p.startswith('/accounts/') and not p.endswith('/feed')}
         self.assertEqual(read, set(range(2000, 2015)))  # Acme, at the mark, is not read again
         self.assertEqual(self.store.checkpoint('work-crm')['marks']['last_email_date']['id'], 2000)
+
+    def test_the_filtered_list_pages_by_id_and_answers_newest_first(self):
+        from machine.sources.salesflare import salesflare_recent_stamps
+        crm = FakeCRM()
+        for n in range(15):  # more than one page; IDs in the opposite order of their dates
+            crm.accounts[3000 - n] = {'id': 3000 - n, 'name': f'New {n}', 'domain': f'new{n}.example',
+                                      'last_email_date': iso(0.5 + n / 100), 'last_meeting_date': None, 'customers': []}
+        crm.accounts[3001] = {'id': 3001, 'name': 'Just below', 'domain': 'below.example',
+                              'last_email_date': iso(48.01), 'last_meeting_date': None, 'customers': []}  # in the margin
+        mark = {'at': iso(2), 'id': 10}  # Acme, read last round
+        found = salesflare_recent_stamps(crm, 'last_email_date', NOW - a.dt.timedelta(hours=48), mark, page=10)
+        self.assertEqual(listed(crm), [('last_email_date', 0), ('last_email_date', 10)])
+        self.assertEqual(list(found), list(range(3000, 2985, -1)))  # newest first; not Acme at the mark, nor Globex
+        found = salesflare_recent_stamps(crm, 'last_email_date', NOW - a.dt.timedelta(hours=48), page=100)
+        self.assertNotIn(3001, found)  # older than the window, though within the filter's margin
+        self.assertEqual(list(found)[-1], 10)
 
     def test_a_weekly_full_round_rereads_the_week_whatever_the_dates_say(self):
         crm = FakeCRM()
