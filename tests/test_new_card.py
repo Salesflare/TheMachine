@@ -171,7 +171,7 @@ class NewCard(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE'); self.store.settle_awaiting(db); self.store.settle_ahead(db)
         card = self.row(made['id'])
-        self.assertEqual(card['status'], 'pending')  # a hint at most; only the owner closes it
+        self.assertEqual(card['status'], 'pending')  # a hint first; it closes by itself only after a day
         with self.assertRaisesRegex(ValueError, 'owner'):
             self.app.action('decide', {'suggestion_id': made['id'], 'choice': 'reject', 'decision_id': 'agent-1'})
 

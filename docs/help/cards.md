@@ -22,7 +22,7 @@ After you send, a short note says where the to-do went, like "Sent. Moved to Don
 
 **For you** puts first what's overdue or due by tomorrow, then questions from your Fleet, then the rest. Within each, newest first. A to-do keeps its place while your Machine prepares it and when it's done: only its mark changes. The other open groups put overdue or due by tomorrow first, the rest newest first. The sidebar keeps the same order.
 
-**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. A to-do with a reply draft also looks done when you answered that conversation yourself, like in Gmail or Slack.
+**Looks done** means your Machine sees it's done, like "PR #3451 merged", but it isn't closed yet. **Reopen** puts it back on your list, and your Machine learns from it. These never show as late. After a day, it closes by itself, with **Undo**. A to-do you already handled yourself, like with a reply in Gmail or Slack, closes by itself too.
 
 A to-do still waiting on someone else, like a review or a reply, says **Waiting on:** that step. It sits in **Waiting on others**, folded above Coming back later, until a new message brings it back. The same goes after you asked a question back: it returns the morning before its deadline, at the deadline when that is later today, or the next morning once it has passed, and says whom it is still waiting on.
 

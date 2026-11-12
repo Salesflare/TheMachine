@@ -92,6 +92,74 @@ class LookDone(unittest.TestCase):
         self.assertIn('skipped', self.store.looks_handled(self.sid, 'Sam replied on Tuesday', [event]))
         self.assertIsNone(self.row().get('handled_hint'))
 
+    # a day later it closes by itself (Store.close_looks_done), so the list only holds what is really open
+
+    def hinted(self, at='2026-11-09T10:00:00+00:00'):
+        with self.store.connect() as db:
+            event = db.execute('SELECT id FROM events').fetchone()[0]
+        with patch_everywhere(a, 'now', return_value=at):
+            self.store.looks_handled(self.sid, 'Sam replied on Tuesday', [event])
+
+    def close_at(self, at):
+        with patch_everywhere(a, 'now', return_value=at):
+            return self.store.close_looks_done()
+
+    def test_a_hint_that_stood_a_day_closes_by_itself_once(self):
+        self.hinted()
+        self.assertEqual(self.close_at('2026-11-09T20:00:00+00:00'), [])  # still fresh: theirs to say Not done
+        self.assertEqual(self.close_at('2026-11-10T10:30:00+00:00'), [self.sid])
+        row = self.row()
+        self.assertEqual(row['status'], 'completed')
+        self.assertTrue(row['undo_until'])
+        self.assertEqual(json.loads(row['handled_hint'])['reason'], 'Sam replied on Tuesday')  # Done shows it under the title
+        with self.store.connect() as db:
+            self.assertEqual(tuple(db.execute("SELECT source,feedback FROM decisions WHERE choice='complete'").fetchone()),
+                             ('handled', 'Sam replied on Tuesday'))
+            app = object.__new__(a.App)
+            app.store = self.store
+            lines = [i['text'] for i in app.card_chat_service(db, self.sid)[0] if i['kind'] == 'event']
+        self.assertIn('Closed by itself: Sam replied on Tuesday', lines)
+        self.assertEqual(self.close_at('2026-11-10T11:00:00+00:00'), [])  # once
+
+    def test_undo_makes_it_a_normal_to_do_that_stays_open(self):
+        self.hinted()
+        self.close_at('2026-11-10T10:30:00+00:00')
+        with patch_everywhere(a, 'now', return_value='2026-11-10T11:00:00+00:00'):
+            self.store.decide(self.sid, 'undo', '', 'undo1', 'dashboard')
+        row = self.row()
+        self.assertEqual((row['status'], row.get('handled_hint')), ('pending', None))
+        self.assertFalse(a.looks_done(row))
+        self.assertEqual(self.close_at('2026-11-12T10:00:00+00:00'), [])
+        with self.store.connect() as db:
+            self.assertEqual(a.waiting_count(db), 1)  # back on the list
+
+    def test_not_done_within_the_day_keeps_it(self):
+        self.hinted()
+        with patch_everywhere(a, 'now', return_value='2026-11-09T12:00:00+00:00'):
+            self.store.decide(self.sid, 'not_done', '', 'nd1', 'dashboard')
+        self.assertEqual(self.close_at('2026-11-11T10:00:00+00:00'), [])
+        self.assertEqual(self.row()['status'], 'pending')
+
+    def test_a_run_found_done_closes_too_and_undo_brings_it_back_to_decide(self):
+        with patch_everywhere(a, 'now', return_value='2026-11-09T10:00:00+00:00'):
+            self.already_done()
+        self.assertEqual(self.close_at('2026-11-10T10:30:00+00:00'), [self.sid])
+        with self.store.connect() as db:
+            feedback = db.execute("SELECT feedback FROM decisions WHERE choice='complete'").fetchone()[0]
+        self.assertEqual(feedback, 'PR #3451 merged, deployed Oct 27.')  # what showed it: the run's first sentence
+        with patch_everywhere(a, 'now', return_value='2026-11-10T11:00:00+00:00'):
+            self.store.decide(self.sid, 'undo', '', 'undo1', 'dashboard')
+        row = self.row()
+        self.assertEqual((row['status'], row.get('outcome')), ('pending', None))
+        self.assertEqual(self.close_at('2026-11-12T10:00:00+00:00'), [])
+
+    def test_never_while_a_send_is_under_way(self):
+        self.hinted()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES('j',?,'r1','{}','sending',?,?,'x','dashboard','')",(self.sid, '2026-11-09T11:00:00+00:00', '2026-11-09T11:00:00+00:00'))
+        self.assertEqual(self.close_at('2026-11-10T10:30:00+00:00'), [])
+
     def test_the_chat_shows_it_as_an_event_line(self):
         self.already_done()
         self.store.decide(self.sid, 'not_done', '', 'nd1', 'dashboard')

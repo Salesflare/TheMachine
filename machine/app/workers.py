@@ -357,7 +357,7 @@ class WorkersApp:
 
     def style_step(self):
         """Every ten minutes: a finished profile's channel lines fill voices still empty, and a draft the owner
-        answered themselves instead of sending becomes a lesson for the next drafts, and that to-do looks done."""
+        answered themselves instead of sending becomes a lesson for the next drafts, and that to-do closes by itself."""
         seeded, learned = self.store.seed_voices(), self.store.learn_sent_elsewhere()
         self.store.answered_elsewhere()
         self.store.name_links_once()  # one time: facts already learned are tied to the record they name (fact_links.py)
@@ -387,7 +387,8 @@ class WorkersApp:
 
     def expire_step(self, every=30):
         """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute; Intercom to-dos a
-        teammate took (Store.close_taken_intercom), about every five minutes."""
+        teammate took (Store.close_taken_intercom) and ones that have looked done for a day (Store.close_looks_done),
+        about every five minutes, the first time right after a start."""
         if time.monotonic() - self.__dict__.get('expired_swept', -every) < every:
             return
         self.expired_swept = time.monotonic()
@@ -395,6 +396,7 @@ class WorkersApp:
         if time.monotonic() - self.__dict__.get('intercom_swept', -300) >= 300:  # a teammate took it: within five minutes
             self.intercom_swept = time.monotonic()
             self.store.close_taken_intercom()
+            self.store.close_looks_done()
 
     def thread_snooze_step(self,gmail=None):
         """Archive a replied thread under a label, then return it to the inbox when due."""
