@@ -10,6 +10,8 @@ spec = importlib.util.spec_from_file_location('assistant_connectors', Path(__fil
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
 
+from machine.sources.android import RECONCILE_MAX_SECONDS, feed_backoff  # noqa: E402
+
 ANDROID = {'id':'personal-android','node_id':'phone'}
 
 
@@ -120,6 +122,60 @@ class NewConnectors(unittest.TestCase):
             a.sync_android(self.store,{},ANDROID,src)
         checkpoint=self.store.checkpoint(ANDROID['id'])
         self.assertEqual(len(checkpoint['gaps']),1);self.assertNotIn('offline_since',checkpoint)
+
+    def reconcile_due(self, account, seconds_ago):
+        state=self.store.checkpoint(account['id']) or {};state['fallback_last_attempt']=(a.dt.datetime.fromisoformat(a.now())-a.dt.timedelta(seconds=seconds_ago)).isoformat()
+        self.store.commit_page(account['id'],state,[],record_sync=False)
+
+    def failed_syncs(self):
+        with self.store.connect() as db:return db.execute("SELECT count(*) FROM sync_activity WHERE status='failed'").fetchone()[0]
+
+    def test_a_phone_out_of_reach_with_a_working_feed_is_quiet_and_checked_less_often(self):
+        account={**ANDROID,'direct_fallback':True,'reconcile_seconds':600}
+        with self.store.connect() as db:db.execute('INSERT INTO android_feed_health VALUES(1,?,NULL,NULL)',(a.now(),))
+        src=a.Android({},account)
+        with patch.object(src,'snapshot',side_effect=a.SourceError('android_offline',retry_after=600)) as read:
+            self.assertEqual(a.sync_android_preferred(self.store,{},account,src)['mode'],'incremental')  # no failure raised
+            self.assertEqual(read.call_count,1)
+            state=self.store.checkpoint(account['id'])
+            self.assertEqual((state['reconciliation_error'],state['reconcile_misses']),('android_offline',1))
+            self.reconcile_due(account,601)  # the next check waits 20 minutes now, not 10
+            a.sync_android_preferred(self.store,{},account,src);self.assertEqual(read.call_count,1)
+            self.reconcile_due(account,1201)
+            a.sync_android_preferred(self.store,{},account,src);self.assertEqual(read.call_count,2)
+            self.assertEqual(self.store.checkpoint(account['id'])['reconcile_misses'],2)
+            for _ in range(6):  # never longer than an hour apart
+                self.reconcile_due(account,RECONCILE_MAX_SECONDS+1)
+                a.sync_android_preferred(self.store,{},account,src)
+            self.assertEqual(read.call_count,8)
+        self.assertEqual(self.failed_syncs(),0)
+        with patch.object(src,'snapshot',return_value={'enabled':True,'connected':True,'count':0,'notifications':[]}):
+            self.reconcile_due(account,RECONCILE_MAX_SECONDS+1)
+            a.sync_android_preferred(self.store,{},account,src)
+        state=self.store.checkpoint(account['id'])
+        self.assertNotIn('reconcile_misses',state);self.assertNotIn('reconciliation_error',state)
+        self.assertEqual(len(state['gaps']),1)  # the time it was out of reach is kept as a gap
+
+    def test_other_phone_check_failures_still_fail(self):
+        account={**ANDROID,'direct_fallback':True,'reconcile_seconds':600}
+        with self.store.connect() as db:db.execute('INSERT INTO android_feed_health VALUES(1,?,NULL,NULL)',(a.now(),))
+        src=a.Android({},account)
+        for error in ('android_gateway_unavailable','android_notifications_unavailable','android_timeout'):
+            self.reconcile_due(account,3601)
+            with patch.object(src,'snapshot',side_effect=a.SourceError(error,retry_after=600)),self.assertRaises(a.SourceError) as raised:
+                a.sync_android_preferred(self.store,{},account,src)
+            self.assertEqual(raised.exception.category,error)
+            self.assertEqual(self.store.checkpoint(account['id'])['reconcile_misses'],0)
+
+    def test_an_offline_phone_while_the_feed_is_down_still_fails(self):
+        account={**ANDROID,'direct_fallback':True,'reconcile_seconds':600}
+        src=a.Android({},account)
+        with patch.object(src,'snapshot',side_effect=a.SourceError('android_offline',retry_after=600)),self.assertRaises(a.SourceError):
+            a.sync_android_preferred(self.store,{},account,src)
+
+    def test_a_failing_feed_is_read_with_a_growing_wait(self):
+        account={**ANDROID,'poll_seconds':15}
+        self.assertEqual([feed_backoff(account,n) for n in (None,0,1,2,3,4,5,40)],[15,15,30,60,120,240,300,300])
 
     def test_android_snapshot_permission_count_and_identity_fail_closed(self):
         src=a.Android({},ANDROID)

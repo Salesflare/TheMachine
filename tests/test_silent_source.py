@@ -57,6 +57,19 @@ class ConnectedButSilent(unittest.TestCase):
         self.assertEqual(a.compact_status({**self.store.snapshot([PHONE]), 'suggestions': [], 'decisions': [], 'analyses': []})['connectors'][0]['error'],
                          'android_offline')  # the agent sees it too
 
+    def test_a_phone_out_of_reach_shows_without_failed_reads(self):
+        # The phone check no longer logs a failed read while the feed works: the checkpoint says why instead.
+        self.notifications(PHONE, NOW - dt.timedelta(days=7), NOW - dt.timedelta(hours=5))
+        state = self.store.checkpoint(PHONE['id'])
+        state.update(reconciliation_error='android_offline', reconcile_misses=4)
+        self.store.commit_page(PHONE['id'], state, [], record_sync=False)
+        self.log(PHONE, NOW - dt.timedelta(seconds=15), 'success')
+        card = self.card()
+        self.assertEqual(card['error'], 'android_offline')
+        self.assertEqual(card['failures_24h'], 0)
+        self.notifications(PHONE, NOW - dt.timedelta(minutes=5), NOW - dt.timedelta(minutes=5))
+        self.assertNotIn('silent_since', self.card())  # notifications again: back to normal
+
     def test_it_recovers_once_notifications_arrive_again(self):
         self.notifications(PHONE, NOW - dt.timedelta(days=7), NOW - dt.timedelta(hours=5))
         self.offline_reads(PHONE)

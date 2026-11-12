@@ -78,6 +78,17 @@ class ServiceBusy(unittest.TestCase):
             self.assertEqual(db.execute('SELECT error FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()[0],
                              'google_meet_http:HTTP_503')  # the connection says the service had a problem, retrying
 
+    def test_a_down_notification_bridge_is_read_with_a_growing_wait(self):
+        account = {'id': 'phone', 'service': 'android', 'transport': 'openclaw-feed', 'poll_seconds': 15}
+        down = lambda: assistant.SourceError('android_feed_unavailable', retry_after=15)
+        app, sync = self.app([down(), down(), down(), down()])
+        with patch.object(app, 'resume_wait', return_value=0), patch_everywhere(assistant, 'sync_source', side_effect=sync):
+            app.collector(account)
+        self.assertEqual(self.waits[:4], [15, 30, 60, 120])
+        with app.store.connect() as db:
+            row = db.execute("SELECT error,failures FROM checkpoints WHERE account_id='phone'").fetchone()
+        self.assertEqual(tuple(row)[0], 'android_feed_unavailable')  # still shown as a failure
+
     def test_a_permission_error_is_not_retried_and_is_reported(self):
         for status in (401, 403):
             account = {'id': 'work-trello', 'service': 'trello'}
