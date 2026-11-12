@@ -73,14 +73,15 @@ try{
   await page.keyboard.press('Escape');
   // An answer that cites nothing (the messages don't say): nothing shows
   mode='unanswered';await searchFor(page,'what did the venue say about parking?');
-  await settled(()=>asks.length===2,true,'asked');await page.evaluate(()=>new Promise(r=>setTimeout(r,80)));
+  // asked, then answered: the Looking… line shows from the ask until its answer is in, however long that takes
+  await settled(()=>asks.length===2,true,'asked');await page.locator('#ev-answer [role=status]').waitFor({state:'detached'});
   assert.ok(await page.locator('#ev-answer').isHidden(),'quality or nothing');
   // One account picked: the answer would read every account, so it isn't asked
   mode='answer';await page.locator('#account').evaluate(s=>{s.add(new Option('Home mail','home'));s.value='home';s.dispatchEvent(new Event('change'))});
   await page.waitForFunction(()=>document.querySelectorAll('#results article').length>0);await page.evaluate(()=>new Promise(r=>setTimeout(r,80)));
   assert.equal(asks.length,2,'not asked for one account');assert.ok(await page.locator('#ev-answer').isHidden());
   mode='off';await page.locator('#account').selectOption('all');await settled(()=>asks.length===3,true,'asked');
-  await page.evaluate(()=>new Promise(r=>setTimeout(r,80)));assert.ok(await page.locator('#ev-answer').isHidden(),'no model: nothing');
+  await page.locator('#ev-answer [role=status]').waitFor({state:'detached'});assert.ok(await page.locator('#ev-answer').isHidden(),'no model: nothing');
   // An answer or a source title with markup in it shows as text: nothing in it runs or becomes an element
   mode='markup';await searchFor(page,'what did the mail with the image say?');await page.locator('#ev-answer p:not([role=status])').waitFor();
   assert.equal(await page.locator('#ev-answer p').textContent(),MARKUP);assert.match(await page.locator('#ev-answer .ev-src').textContent(),/^<img /);
