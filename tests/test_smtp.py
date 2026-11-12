@@ -12,10 +12,11 @@ import threading
 import unittest
 from unittest import mock
 
+import imap_mail
 import next_actions
 import smtp_mail
 import sources
-from test_imap import PASSWORD, USER, Base, mime, when
+from test_imap import PASSWORD, USER, Base, Folder, mime, when
 
 
 class FakeSmtp(socketserver.ThreadingTCPServer):
@@ -28,6 +29,7 @@ class FakeSmtp(socketserver.ThreadingTCPServer):
         super().__init__(('127.0.0.1', 0), SmtpHandler)
         self.mode, self.users, self.refuse, self.files_into = mode, users, None, None
         self.received, self.greetings, self.commands = [], [], []
+        self.auth, self.auths = ['PLAIN'], []  # the AUTH methods it offers; each sign-in tried, by method
         self.context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         self.context.load_cert_chain(*cert)
         threading.Thread(target=self.serve_forever, daemon=True).start()
@@ -66,7 +68,7 @@ class SmtpHandler(socketserver.StreamRequestHandler):
             if verb in ('EHLO', 'HELO'):
                 self.server.greetings.append(rest)
                 extensions = ['SMTPUTF8', '8BITMIME'] + (['STARTTLS'] if self.server.mode == 'starttls' and not self.tls else []) + (
-                    ['AUTH PLAIN'] if self.tls else [])
+                    ['AUTH ' + ' '.join(self.server.auth)] if self.tls else [])
                 self.send(''.join(f'250-{e}\r\n' for e in ['fake'] + extensions[:-1]) + f'250 {extensions[-1]}\r\n')
             elif verb == 'STARTTLS':
                 self.send('220 go ahead\r\n')
@@ -74,8 +76,18 @@ class SmtpHandler(socketserver.StreamRequestHandler):
                 self.rfile, self.wfile = self.request.makefile('rb'), self.request.makefile('wb')
                 self.tls = True
             elif verb == 'AUTH':
-                _, _, answer = rest.partition(' ')
-                _, user, password = base64.b64decode(answer).split(b'\0')
+                method, _, answer = rest.partition(' ')
+                self.server.auths.append(method.upper())
+                if method.upper() not in self.server.auth or method.upper() == 'CRAM-MD5':  # never a working CRAM-MD5 here
+                    self.send('535 5.7.8 authentication failed\r\n')
+                    continue
+                if method.upper() == 'LOGIN':  # the name, then the password, each asked for
+                    self.send('334 VXNlcm5hbWU6\r\n')
+                    user = base64.b64decode(self.rfile.readline().strip())
+                    self.send('334 UGFzc3dvcmQ6\r\n')
+                    password = base64.b64decode(self.rfile.readline().strip())
+                else:
+                    _, user, password = base64.b64decode(answer).split(b'\0')
                 ok = self.tls and self.server.users.get(user.decode()) == password.decode()
                 self.user = user.decode() if ok else None
                 self.send('235 ok\r\n' if ok else '535 5.7.8 authentication failed\r\n')
@@ -230,6 +242,54 @@ class StartTlsSending(Sending):
     def test_auth_only_after_tls(self):
         self.send()
         self.assertTrue(all(tls for verb, tls in self.smtp.commands if verb in ('AUTH', 'MAIL', 'RCPT', 'DATA')))
+
+
+class ServerQuirks(SmtpBase):
+    """How the servers mail hosts run sign in (checked against them: most offer PLAIN and LOGIN, some LOGIN first,
+    some CRAM-MD5 too), and a Sent folder on a cPanel-style server with no SPECIAL-USE."""
+    def test_a_server_with_only_auth_login_signs_in(self):
+        self.smtp.auth = ['LOGIN']
+        self.assertEqual(self.send(), {'message_id': 's1700000001-1'})
+        self.assertEqual(set(self.smtp.auths), {'LOGIN'})  # the check before the send, and the send
+
+    def test_plain_is_used_when_offered_whatever_the_order(self):
+        self.smtp.auth = ['CRAM-MD5', 'LOGIN', 'PLAIN']
+        smtp_mail.check(self.config, sources.credential, self.account)
+        self.assertEqual(self.smtp.auths, ['PLAIN'])
+
+    def test_a_wrong_password_is_tried_once_not_once_per_method(self):
+        # smtplib's own login tries every method on offer: three failed sign-ins for one wrong password, and shared
+        # hosting locks the address after a few
+        self.smtp.auth = ['CRAM-MD5', 'PLAIN', 'LOGIN']
+        with self.assertRaises(smtp_mail.SmtpError) as caught:
+            smtp_mail.check(self.config, None, self.account, 'pw-Wrong-0000')
+        self.assertEqual(caught.exception.category, 'smtp_auth_failed')
+        self.assertEqual(self.smtp.auths, ['PLAIN'])
+
+    def test_a_non_ascii_password_over_auth_login(self):
+        self.smtp.auth, self.smtp.users = ['LOGIN'], {USER: 'pw-Zoë-7731'}
+        smtp_mail.check(self.config, None, self.account, 'pw-Zoë-7731')
+        self.assertEqual(self.smtp.auths, ['LOGIN'])
+
+    def test_the_copy_goes_in_inbox_sent_without_special_use(self):
+        self.server.delimiter, self.server.special_use = '.', False
+        self.server.folders = {'INBOX': self.server.folders['INBOX'], 'INBOX.Drafts': Folder(1700000005),
+                               'INBOX.Sent': self.server.folders['Sent']}
+        self.account.pop('sent_folder')
+        self.assertEqual(self.send(), {'message_id': 's1700000001-1'})
+        self.assertEqual(len(self.server.folders['INBOX.Sent'].messages), 1)
+        self.assertEqual(self.server.folders['INBOX.Drafts'].messages, {})
+
+    def test_a_pinned_certificate_on_this_computer(self):
+        with open(self.cert[0], encoding='ascii') as pem:
+            pin = imap_mail.fingerprint(ssl.PEM_cert_to_DER_cert(pem.read()))
+        self.account.update(smtp_tls_pin=pin)
+        smtp_mail.check(self.config, sources.credential, self.account)
+        self.account.update(smtp_tls_pin=':'.join(['00'] * 32))  # another certificate: say Bridge was reinstalled
+        with self.assertRaises(smtp_mail.SmtpError) as caught:
+            smtp_mail.check(self.config, sources.credential, self.account)
+        self.assertEqual(caught.exception.category, 'smtp_tls_failed')
+        self.assertEqual(self.smtp.auths, ['PLAIN'])  # only the first, pinned one signed in: the password never went to the other
 
 
 class PlainSmtp(SmtpBase):

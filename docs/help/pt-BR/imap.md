@@ -28,17 +28,19 @@ Muitos provedores pedem uma senha de app para programas de e-mail, não a sua se
 - Yahoo: Segurança da conta, Gerar senha de app.
 - Fastmail: Settings, Privacy and security, App passwords.
 - Telenet: sua senha normal do e-mail da Telenet.
-- Proton Mail: rode o Proton Mail Bridge no mesmo computador e use a senha que o Bridge mostra.
+- Zoho Mail com verificação em duas etapas: uma senha específica de aplicativo na sua conta Zoho, em Segurança.
+- Proton Mail: rode o Proton Mail Bridge no mesmo computador e use a senha que o Bridge mostra. Só funciona com The Machine nesse mesmo computador. The Machine mostra a impressão digital do certificado do Bridge e confia só nele.
 
 As configurações do servidor são preenchidas para a maioria dos provedores. O seu não foi encontrado? Abra **Configurações do servidor** e digite o que seu provedor informa para programas de e-mail: os servidores IMAP e SMTP, suas portas e a segurança (SSL/TLS ou STARTTLS). The Machine nunca se conecta sem TLS.
 
-Gmail ou e-mail da Microsoft, também no seu próprio domínio? Escolha **Gmail** ou **Outlook**. Eles entram sem senha.
+Gmail ou e-mail da Microsoft, também no seu próprio domínio? Escolha **Gmail** ou **Outlook**. Eles entram sem senha. Os servidores deles digitados em Configurações do servidor levam para lá também: a Microsoft não aceita mais senhas de apps de e-mail.
 
 ## Quando para
 
 - **O servidor de e-mail recusou a senha**: você a mudou, ou a senha de app foi removida. Conecte de novo com a nova.
 - **O servidor de e-mail recusou a senha para enviar**: nada foi enviado. Conecte de novo; se ele continuar recusando, confira o servidor SMTP em Configurações do servidor. Até lá, ela só lê.
 - **Não foi possível alcançar o servidor de e-mail**: ela tenta de novo sozinha. Se continuar falhando, confira o nome do servidor em Configurações do servidor.
+- **O certificado do servidor de e-mail é para outro nome**: em hospedagem compartilhada, quem responde costuma ser o servidor da própria hospedagem. Digite o nome mostrado em Configurações do servidor. The Machine nunca pula a verificação do certificado.
 
 ## Remova
 

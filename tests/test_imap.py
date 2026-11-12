@@ -81,6 +81,8 @@ class FakeImap(socketserver.ThreadingTCPServer):
         self.context.load_cert_chain(*cert)
         self.folders = {'INBOX': Folder(1700000000), 'Sent': Folder(1700000001, '\\Sent')}
         self.logins = 0
+        # A cPanel or Courier style server: '.' between folder names (INBOX.Sent) and no SPECIAL-USE (no \Sent flag)
+        self.delimiter, self.special_use = '/', True
         threading.Thread(target=self.serve_forever, daemon=True).start()
 
     @property
@@ -106,7 +108,7 @@ class Handler(socketserver.StreamRequestHandler):
         self.wfile.flush()
 
     def capabilities(self):
-        caps = ['IMAP4rev1', 'AUTH=PLAIN', 'SPECIAL-USE']
+        caps = ['IMAP4rev1', 'AUTH=PLAIN'] + (['SPECIAL-USE'] if self.server.special_use else [])
         if self.server.mode == 'starttls' and not self.tls:
             caps.append('STARTTLS')
         return ' '.join(caps)
@@ -187,7 +189,8 @@ class Handler(socketserver.StreamRequestHandler):
 
     def do_LIST(self, tag, rest):
         for name, folder in self.server.folders.items():
-            self.send(f'* LIST (\\HasNoChildren{" " + folder.flags if folder.flags else ""}) "/" "{name}"\r\n')
+            flags = folder.flags if self.server.special_use else ''
+            self.send(f'* LIST (\\HasNoChildren{" " + flags if flags else ""}) "{self.server.delimiter}" "{name}"\r\n')
         self.send(f'{tag} OK done\r\n')
 
     def do_APPEND(self, tag, head, data):
@@ -542,7 +545,119 @@ class Folders(unittest.TestCase):
         self.assertIn('SINCE', criteria)
 
 
+class HostQuirks(Base):
+    """What the mail hosts people use do differently: folder names and their separator, no SPECIAL-USE, a
+    certificate pinned for a server on this computer."""
+    def password(self, _config, _name):
+        return PASSWORD
+
+    def test_a_cpanel_style_sent_folder_without_special_use(self):
+        self.server.delimiter, self.server.special_use = '.', False
+        self.server.folders = {'INBOX': self.server.folders['INBOX'], 'INBOX.Drafts': Folder(1700000005),
+                               'INBOX.Sent': self.server.folders['Sent']}
+        self.assertEqual(imap_mail.check(self.config, self.password, self.account), 'INBOX.Sent')
+
+    def test_sent_folder_names_across_hosts(self):
+        cases = [
+            ([b'(\\HasNoChildren) "." "INBOX.Sent Items"', b'(\\HasNoChildren \\Sent) "." "INBOX.Sent"'], 'INBOX.Sent'),  # marked wins
+            ([b'(\\HasChildren) "." INBOX', b'(\\HasNoChildren) "." INBOX.Skickat'], 'INBOX.Skickat'),  # Swedish, Courier-style
+            ([b'(\\HasNoChildren) "/" "Sendte elementer"'], 'Sendte elementer'),
+            ([b'(\\HasNoChildren) "/" "Sent Messages"', b'(\\HasNoChildren) "/" "Archive/2024/Sent"'], 'Sent Messages'),
+            ([b'(\\HasNoChildren) "." "INBOX.Posta inviata"'], 'INBOX.Posta inviata'),
+            ([b'(\\HasNoChildren) NIL "Sent"'], 'Sent'),  # a flat namespace: no separator at all
+        ]
+        for rows, wanted in cases:
+            with self.subTest(wanted=wanted):
+                self.assertEqual(imap_mail.sent_folder(rows), wanted)
+
+    def test_a_server_on_this_computer_answers_with_its_pinned_certificate(self):
+        pin = imap_mail.fingerprint(ssl.PEM_cert_to_DER_cert(Path(self.cert[0]).read_text()))
+        self.assertIsNotNone(imap_mail.check(self.config, self.password, {**self.account, 'tls_pin': pin}))
+        logins = self.server.logins
+        with self.assertRaises(imap_mail.ImapError) as caught:
+            imap_mail.check(self.config, self.password, {**self.account, 'tls_pin': ':'.join(['00'] * 32)})
+        self.assertEqual(caught.exception.category, 'imap_tls_failed')
+        self.assertEqual(self.server.logins, logins)  # the password never went
+
+    def test_an_unverified_certificate_is_only_read_on_this_computer(self):
+        self.assertIsNone(imap_mail.peer_certificate('mail.acme.test', 993, 'ssl', verify=False))
+        der, _ = imap_mail.peer_certificate('127.0.0.1', self.server.port, 'ssl', verify=False)
+        self.assertEqual(der, ssl.PEM_cert_to_DER_cert(Path(self.cert[0]).read_text()))
+        self.assertIsNone(imap_mail.peer_certificate('127.0.0.1', self.server.port, 'ssl'))  # self-signed: not trusted
+
+
 class Presets(unittest.TestCase):
+    def test_hosting_providers_by_their_mail_servers(self):
+        cases = [  # MX -> IMAP, SMTP, as each host's own help pages and servers give them
+            ('10 mx.aruba.it.', 'imaps.aruba.it', 'smtps.aruba.it'),
+            ('0 mailstore1.secureserver.net.', 'imap.secureserver.net', 'smtpout.secureserver.net'),
+            ('0 mx.mailprotect.be.', 'imap.mailprotect.be', 'smtp-auth.mailprotect.be'),
+            ('10 mx.one.com.', 'imap.one.com', 'send.one.com'),
+            ('10 mx1.hostinger.com.', 'imap.hostinger.com', 'smtp.hostinger.com'),
+            ('10 mx1.privateemail.com.', 'mail.privateemail.com', 'mail.privateemail.com'),
+            ('10 mx1.emailsrvr.com.', 'secure.emailsrvr.com', 'secure.emailsrvr.com'),
+            ('5 mta-gw.infomaniak.ch.', 'mail.infomaniak.com', 'mail.infomaniak.com'),
+            ('10 mx00.ionos.de.', 'imap.ionos.de', 'smtp.ionos.de'),
+            ('10 mx00.ionos.co.uk.', 'imap.ionos.co.uk', 'smtp.ionos.co.uk'),
+            ('10 mx00.kundenserver.de.', 'imap.ionos.de', 'smtp.ionos.de'),
+            ('5 smtpin.rzone.de.', 'imap.strato.de', 'smtp.strato.de'),
+            ('10 mx1.titan.email.', 'imap.titan.email', 'smtp.titan.email'),
+            ('10 mail.loopia.se.', 'mailcluster.loopia.se', 'mailcluster.loopia.se'),
+            ('10 www123.your-server.de.', 'mail.your-server.de', 'mail.your-server.de'),
+            ('10 mx.stackmail.com.', 'imap.stackmail.com', 'smtp.stackmail.com'),
+            ('10 arrow.mxrouting.net.', 'arrow.mxrouting.net', 'arrow.mxrouting.net'),  # MXroute: the server its MX names
+            ('10 mx.zoho.eu.', 'imappro.zoho.eu', 'smtppro.zoho.eu'),  # a company's own domain at Zoho: the pro servers
+            ('10 mx.zoho.com.', 'imappro.zoho.com', 'smtppro.zoho.com'),
+        ]
+        for mx, imap_host, smtp_host in cases:
+            with self.subTest(mx=mx):
+                fetch = lambda url, mx=mx: json.dumps({'Answer': [{'type': 15, 'data': mx}]}) if 'dns-query' in url else None
+                found = imap_presets.lookup('alex@shop.test', fetch=fetch)
+                self.assertEqual((found['imap_host'], found['imap_port'], found['imap_security']), (imap_host, 993, 'ssl'))
+                self.assertEqual((found['smtp_host'], found['smtp_port'], found['smtp_security']), (smtp_host, 465, 'ssl'))
+        zoho = imap_presets.lookup('alex@shop.test', fetch=lambda url: json.dumps({'Answer': [{'type': 15, 'data': '10 mx.zoho.eu.'}]}))
+        self.assertIn('zoho.com', zoho['help'])  # where to make the app password two-factor sign-in needs
+
+    def test_app_password_providers_say_where_to_make_one(self):
+        for address in ('a@icloud.com', 'a@me.com', 'a@yahoo.com', 'a@fastmail.com', 'a@zohomail.com', 'a@zohomail.eu'):
+            with self.subTest(address=address):
+                self.assertTrue(imap_presets.lookup(address, network=False)['help'].startswith('https://'))
+        self.assertEqual(imap_presets.lookup('a@me.com', network=False)['smtp_port'], 587)  # iCloud has no SMTP on 465
+
+    def test_the_mx_lookup_asks_for_json(self):
+        # Cloudflare's DNS over HTTPS answers 400 to ct=application/dns-json alone: it wants it in Accept
+        with mock.patch.object(imap_presets.urllib.request, 'urlopen', side_effect=OSError) as opened:
+            imap_presets.mx_hosts('shop.test')
+        request = opened.call_args[0][0]
+        self.assertEqual(request.get_header('Accept'), 'application/dns-json')
+        self.assertNotIn('ct=', request.full_url)
+
+    def test_an_autoconfig_placeholder_is_no_name(self):
+        xml = ('<clientConfig><emailProvider id="acme.test"><displayShortName>%EMAILADDRESS%</displayShortName>'
+               '<incomingServer type="imap"><hostname>mail.acme.test</hostname><port>993</port><socketType>SSL</socketType>'
+               '</incomingServer></emailProvider></clientConfig>')
+        self.assertNotIn('name', imap_presets.parse_autoconfig(xml, 'alex@acme.test'))
+
+    def test_microsoft_and_google_servers_go_to_their_own_connection(self):
+        for host, kind in (('outlook.office365.com', 'outlook'), ('smtp.office365.com', 'outlook'), ('imap.gmail.com', 'gmail'),
+                           ('smtp.gmail.com', 'gmail')):
+            self.assertEqual(imap_presets.OAUTH_HOSTS[host], kind)
+
+    def test_the_name_a_certificate_is_for(self):
+        ionos = ['smtp.ionos.com', '*.mrelay.ionos.com', 'imap.1and1.com', 'imap.ionos.com', 'mx00.ionos.com']
+        hostinger = ['hostinger.com', '*.hostinger.com', '*.hostinger.de']
+        cases = [
+            (ionos, '203.0.113.7', 'imap', 'imap.ionos.com'),  # a server typed as its IP: the provider's name we know
+            (ionos, '203.0.113.7', 'smtp', 'smtp.ionos.com'),
+            (hostinger, 'mail.acme.test', 'imap', 'imap.hostinger.com'),  # a wildcard that covers a server we know
+            (['am12.webhost.test'], 'mail.acme.test', 'imap', 'am12.webhost.test'),  # shared hosting: the server's own name
+            (['webhost.test', 'mail.webhost.test'], 'mail.acme.test', 'imap', 'mail.webhost.test'),
+            (['*.webhost.test'], 'mail.acme.test', 'imap', None),  # only a wildcard nobody's server answers to
+        ]
+        for names, typed, kind, wanted in cases:
+            with self.subTest(names=names, kind=kind), mock.patch.object(imap_setup, 'resolves', return_value=False):
+                self.assertEqual(imap_setup.name_to_use(names, typed, kind), wanted)
+
     def test_telenet_out_of_the_box(self):
         found = imap_presets.lookup('bo@Telenet.be', network=False)
         self.assertEqual((found['imap_host'], found['imap_port'], found['imap_security']), ('imap.telenet.be', 993, 'ssl'))
@@ -662,6 +777,45 @@ class Setup(Base):
             self.step('alex@gmail.com', found={'oauth': 'gmail'})
         self.assertIn('Gmail', caught.exception.fix)
         self.assertEqual(self.server.logins, 0)
+
+    def test_a_server_on_this_computer_is_pinned_and_shown(self):
+        # Proton Mail Bridge: its own self-signed certificate, pinned at setup with its fingerprint shown
+        found = {**imap_presets.lookup('alex@proton.me', network=False), 'imap_port': self.server.port, 'imap_security': 'ssl',
+                 'username': USER}
+        account, ui = self.step(USER, found=found)
+        pin = imap_mail.fingerprint(ssl.PEM_cert_to_DER_cert(Path(self.cert[0]).read_text()))
+        self.assertEqual(account['tls_pin'], pin)
+        self.assertTrue(any(pin in line for line in ui.lines))
+        self.assertTrue(any('Proton Mail Bridge shows' in line for line in ui.lines))
+        self.assertLessEqual({'tls_pin', 'smtp_tls_pin'}, imap_setup.IDENTITY)  # never copied to another mailbox
+        # and from then on it reads only from a server with that certificate
+        self.config['accounts'] = [account]
+        a.sync_gmail(self.store, self.config, account)
+
+    def test_proton_on_a_hosted_machine_says_why_it_cant(self):
+        self.config['manage_url'] = 'https://app.example.test/manage'
+        found = {**imap_presets.lookup('alex@proton.me', network=False)}
+        with self.assertRaises(onboarding.SetupError) as caught:
+            self.step(USER, found=found)
+        self.assertEqual(caught.exception.message, 'Proton Mail Bridge works only with The Machine on the same computer')
+        self.assertEqual(self.server.logins, 0)
+
+    def test_microsoft_servers_typed_by_hand_go_to_outlook(self):
+        for answers in ({'IMAP server': 'outlook.office365.com'}, {'IMAP server': 'mail.acme.test', 'SMTP server': 'smtp.office365.com'}):
+            with self.subTest(answers=answers), self.assertRaises(onboarding.SetupError) as caught:
+                self.step(USER, answers)
+            self.assertIn('Outlook', caught.exception.fix)
+        self.assertEqual(self.server.logins, 0)
+
+    def test_a_certificate_for_another_name_says_which_name_to_use(self):
+        refused = imap_mail.ImapError('imap_tls_failed')
+        with mock.patch.object(imap_mail, 'check', side_effect=refused), \
+                mock.patch.object(imap_mail, 'peer_certificate', return_value=(b'', ['am12.webhost.test'])) as read:
+            with self.assertRaises(onboarding.SetupError) as caught:
+                self.step(USER, {'IMAP server': 'mail.acme.test'})
+        self.assertEqual(caught.exception.message, 'The mail server’s certificate is for am12.webhost.test, not mail.acme.test')
+        self.assertIn('use am12.webhost.test as the IMAP server', caught.exception.fix)
+        self.assertTrue(read.call_args.kwargs.get('verify', True))  # read from a trusted chain only: never skipped
 
     def test_the_dashboard_form_with_its_server_settings(self):
         form = onboarding.web_form(self.config, 'imap')
