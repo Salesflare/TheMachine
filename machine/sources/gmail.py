@@ -11,7 +11,8 @@ import bounces
 from machine.sources.exclusions import email_subject_excluded
 from machine.sources.rows import SKIPPED, Skips
 from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_history
-from sources import SourceError, gog_read
+import ms_graph
+from sources import MICROSOFT_SERVICES, SourceError, gog_read
 from timeutil import now
 
 AUTHUSER = re.compile(r'^https://mail\.google\.com/mail/u/\?authuser=([^#&]+)#')
@@ -174,8 +175,12 @@ def message_event(account, raw, config=None):
 
 def sync_gmail(store, config, account):
     source = Gmail(config, account)
+    microsoft = account.get('service') in MICROSOFT_SERVICES and bool(account.get('email'))
+    if microsoft:  # the address /me gave this connection before a restart, while it holds (ms_graph.IDENTITY_SECONDS)
+        ms_graph.restore_identity(config, account, (store.checkpoint(account['id']) or {}).get('identity'))
     profile = source.profile()  # Fail closed on account routing before every batch.
     state = store.checkpoint(account['id']) or {}
+    checked = ms_graph.checked_identity(config, account) if microsoft else None
     excluded, skipped = set(), Skips('invalid_message')  # a message it can't take is counted, never holding up the page
     if not state:
         state = {'mode': 'bootstrap', 'base_history': str(profile['historyId']),
@@ -244,5 +249,8 @@ def sync_gmail(store, config, account):
         if not page.get('nextPageToken'):
             next_state.pop('page_token', None)
     skipped.check().note(next_state)
+    next_state.pop('identity', None)
+    if checked:
+        next_state['identity'] = checked
     store.commit_page(account['id'], next_state, events, excluded_source_ids=excluded)
     return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded), 'skipped': sum(skipped.values())}

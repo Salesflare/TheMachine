@@ -32,6 +32,7 @@ import datetime as dt
 import email.header
 import email.parser
 import email.policy
+import hashlib
 import http.client
 import portable
 import json
@@ -135,6 +136,7 @@ _tokens: dict = {}
 _folders: dict = {}
 # A mailbox's own address, as /me answered it, per connection: the sync checks it before every round, and /me can fail for
 # hours while the mailbox itself reads fine. Asked again after this long, and at once on a reconnect (a new connection key).
+# The sync keeps it with the mailbox's checkpoint (checked_identity, restore_identity), so a restart keeps it too.
 IDENTITY_SECONDS = 6 * 3600
 _identities: dict = {}
 _lock = threading.Lock()
@@ -449,6 +451,39 @@ def identity(me):
     return str(me.get('mail') or me.get('userPrincipalName') or '').lower()
 
 
+def _fingerprint(key):
+    """A connection key as a short hash: it names the connection (and its credential file's version), never a secret."""
+    return hashlib.sha256(repr(key).encode()).hexdigest()[:24]
+
+
+def checked_identity(config, account):
+    """The address /me gave for this connection and until when it holds, for the sync to keep with its checkpoint
+    ({key, address, until}), so a restart during a /me outage reads on. None when not checked or no longer valid."""
+    key = _connection_key(config, account)
+    with _lock:
+        known = _identities.get(key)
+    if not known or known[1] <= dt.datetime.now(dt.timezone.utc):
+        return None
+    return {'key': _fingerprint(key), 'address': known[0], 'until': known[1].isoformat()}
+
+
+def restore_identity(config, account, saved):
+    """A checkpoint's checked address (checked_identity) back in the cache after a restart: only for this same connection
+    (a reconnect, a changed credential or another address is another key), only while it still holds, never longer."""
+    if not isinstance(saved, dict) or not saved.get('address') or not isinstance(saved.get('until'), str):
+        return
+    key = _connection_key(config, account)
+    try:
+        until = dt.datetime.fromisoformat(saved['until'])
+    except ValueError:
+        return
+    now = dt.datetime.now(dt.timezone.utc)
+    if saved.get('key') != _fingerprint(key) or until.tzinfo is None or not now < until <= now + dt.timedelta(seconds=IDENTITY_SECONDS):
+        return
+    with _lock:
+        _identities.setdefault(key, (str(saved['address']), until))
+
+
 def folders(config, credential, account):
     """The well-known folders' IDs for this mailbox, looked up once per run."""
     key = _connection_key(config, account)
@@ -663,13 +698,13 @@ def gmail_call(config, credential, account, method, params):
         key = _connection_key(config, account)
         with _lock:
             known = _identities.get(key)
-        if known and known[1] > time.monotonic():
+        if known and known[1] > dt.datetime.now(dt.timezone.utc):
             address = known[0]
         else:
             address = identity(call(config, credential, account, 'me', {'$select': 'mail,userPrincipalName'}))
             if address:
                 with _lock:
-                    _identities[key] = (address, time.monotonic() + IDENTITY_SECONDS)
+                    _identities[key] = (address, dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=IDENTITY_SECONDS))
         return {'emailAddress': address, 'historyId':_iso(dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=2))}
     if method == 'gmail.users.settings.sendAs.get':
         return {'sendAsEmail': params.get('sendAsEmail'), 'signature': ''}  # Graph has no API for Outlook signatures
