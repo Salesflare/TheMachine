@@ -61,6 +61,8 @@ BRAND_ASSETS = {
     **{f'/brand/voices/{name}.mp3': ROOT / f'brand/voices/{name}.mp3' for name in voice_input.TALK_VOICES},
     # The services' logos for Connections, + Add, each loaded when shown (their sources and terms: dashboard/logos/NOTICE.md)
     **{f'/brand/logos/{logo.name}': logo for logo in sorted((ROOT / 'dashboard/logos').iterdir()) if logo.suffix in ('.svg', '.png')},
+    # Every source's one-color mark for the small icons in rows (dashboard/todos-logos.js MONO; dashboard/logos/mono/NOTICE.md)
+    **{f'/brand/logos/mono/{logo.name}': logo for logo in sorted((ROOT / 'dashboard/logos/mono').glob('*.svg'))},
 }
 
 

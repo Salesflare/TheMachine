@@ -210,6 +210,7 @@ def _mail_view(db, review, items, batch, mail, current, own):
         thread['last'] = row['occurred_at']  # rows come oldest first
         if not mine or 'open' not in thread:
             thread['open'], thread['kind'] = row['id'], row['kind']  # its newest message to the owner opens
+            thread['account'] = row['account_id']  # its mark: Gmail or Outlook by the account it came in on
         if group == 'email':
             name, address = _sender(meta.get('from'))
             if name and (address not in own or not thread['from']):
@@ -263,7 +264,9 @@ def _mail_view(db, review, items, batch, mail, current, own):
         if why and (len(why.split()) < 3 or said[' '.join(why.casefold().split()).rstrip('.')] >= SAME_WHY):
             why = None
         row = {'from': thread['from'], 'subject': thread['subject'][:160], 'source': thread['source'], 'kind': thread['kind'], 'event': thread['open'],
-               'at': thread['last']}
+               'at': thread['last'], 'account': thread['account']}
+        if thread.get('package'):
+            row['app'] = thread['package']  # a phone notification shows the mark of the app that posted it
         if thread['in'] > 1:
             row['n'] = thread['in']  # its new messages: the rows add up to the line's total
         if thread.get('dm') and not thread['from']:

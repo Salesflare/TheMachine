@@ -18,7 +18,7 @@
 .mail-check .mc-what{color:var(--muted)}
 .mail-check .mc-at{flex:none;font-size:var(--fs-xs);color:var(--faint);font-variant-numeric:tabular-nums}
 .mail-check .mc-src .icon{display:inline-grid;width:16px;height:16px;margin:0 6px 0 0;vertical-align:-3px;border:0;border-radius:0;background:none;color:var(--faint)}
-.mail-check .mc-src .icon svg{width:14px;height:14px}
+.mail-check .mc-src .icon>.via-ico{width:14px;height:14px}
 .mail-check .mc-why{font-size:var(--fs-xs);color:var(--muted)}
 .mail-check .mc-todo b{font-weight:var(--fw-medium,600);color:var(--text)}
 .mail-check .mc-more{font-size:var(--fs-xs);color:var(--faint)}

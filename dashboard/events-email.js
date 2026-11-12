@@ -18,11 +18,15 @@ const VIA_NAME={gmail:'Gmail',mail:'Email',slack:'Slack',whatsapp:'WhatsApp',tel
 const viaIco=(k,quiet)=>k?quiet?html`<i class="via-ico via-${k}" aria-hidden="true"></i>`:html`<i class="via-ico via-${k}" role="img" aria-label="${t(VIA_NAME[k]||service(k)||'The source')}" title="${t(VIA_NAME[k]||service(k)||'The source')}"></i>`:'';
 const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',linkedin:'linkedin',x:'x',intercom:'intercom',handoff:'handoff',finish:'browser'};
 // A final step on GitHub that runs with gh or a GitHub MCP server (github_route.py) shows GitHub's logo, else the browser.
-const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?(svcOf(a.account_id)==='gmail'?'gmail':'mail'):a?.kind==='calendar'?(svcOf(a.account_id)==='calendar'?'gcal':'cal'):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'file':'gdocs'):STEP_VIA[a?.kind]||'';
+// Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
+const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';
+const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?mailVia(svcOf(a.account_id)):a?.kind==='calendar'?calVia(svcOf(a.account_id)):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'docs':'gdocs'):STEP_VIA[a?.kind]||'';
+// A to-do's source by its words ("Source: Slack …"), else the service of the account it came from (todos-logos.js MONO)
 const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim(),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf);
- if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':'mail';
- const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i]].find(([,r])=>r.test(v));
- return named?named[0]:/note/i.test(v)?'note':/calendar/i.test(v)?(svc.includes('calendar')?'gcal':'cal'):'chat'};
+ if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':svc.includes('outlook')||(s.original_urls||[]).some(u=>/^https:\/\/outlook\./.test(u))?'outlook':'mail';
+ const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i],
+  ['teams',/^(microsoft )?teams\b/i],['zoom',/^zoom\b/i],['google_meet',/^(google )?meet\b/i],['github',/^github\b/i],['stripe',/^stripe\b/i],['salesflare',/^salesflare\b/i],['salesforce',/^salesforce\b/i],['trello',/^trello\b/i],['shortcut',/^shortcut\b/i]].find(([,r])=>r.test(v));
+ return named?named[0]:/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):svc.map(x=>x==='calendar'?'':monoKey(x)).find(Boolean)||'chat'};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals

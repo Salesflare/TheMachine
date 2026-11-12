@@ -21,17 +21,18 @@ const quiet={at:at(-9),read:12,counts:{email:12},todos:0,held:0,held_until:null,
 const mixed={...quiet,read:13,counts:{email:9,chat:4},threads:[
  {from:'Noor Pell',subject:'Did anyone finish chapter 4?',source:'chat',kind:'whatsapp.message',event:21,why:'Group chat chatter, nothing asked of you'},
  {from:'Rae Fenn',subject:'Lunch moved to 13:00',source:'chat',kind:'slack.message',event:22,why:'Team lunch moved, nothing to do'},
- em('Yara Oak','Re: Coffee next week',12,{why:'Coffee already set for Thursday 10:00'}),
+ em('Yara Oak','Re: Coffee next week',12,{why:'Coffee already set for Thursday 10:00',account:'work-outlook'}),
  {from:'',subject:'',source:'chat',kind:'telegram.message',event:23}]};
 const many={...mixed,read:15,counts:{email:9,chat:4,notification:2},threads:[...mixed.threads,
- {from:'Parcels',subject:'Parcel: Delivered to your door',source:'notification',kind:'android.notification',event:31,why:'A delivery notice, the parcel is in'}]};
+ {from:'Medium',subject:'Your daily read',source:'notification',kind:'android.notification',event:32,app:'com.medium.reader',why:'A reading list, nothing to do'},
+ {from:'Parcels',subject:'Parcel: Delivered to your door',source:'notification',kind:'android.notification',event:31,app:'com.example.parcels',why:'A delivery notice, the parcel is in'}]};
 const busy={...quiet,todos:2,held:1,held_until:'2026-11-10T08:30:00Z',more:3,threads:[
  em('Mila Under','Pricing for our team',15,{todo:'Send Mila annual pricing',held_until:'2026-11-10T08:30:00Z'}),
  em('Jonah Kett','API limits',16,{todo:'Answer Jonah about API limits'}),...quiet.threads]};
 const opened=[];
 let mail=quiet;
 const state=()=>({suggestions:[{id:'a1'.repeat(8),title:'Answer Jonah about API limits',body:'',status:'prepared',scope:'work',created_at:at(-10),event_ids:[1]}],
- promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{last_completed:at(-9)},review_runs:[],review_live:{runs:[]},connectors:[],
+ promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{last_completed:at(-9)},review_runs:[],review_live:{runs:[]},connectors:[{id:'work-outlook',service:'outlook',email:'pat@example.com'}],
  check:{reviewed:at(-9),waiting:0},mail_check:mail,
  locale:{locale:'en-GB',region:'GB',language:'en',language_set:true,clock:'24',hour12:false,auto_hour12:false,date_locale:'en-GB',languages:{en:'English'},saveable:true}});
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -78,11 +79,11 @@ try{
  assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 13 messages at 16:11 · nothing needs you');
  assert.deepEqual(await rows(),['Noor Pell Did anyone finish chapter 4? Group chat chatter, nothing asked of you','Rae Fenn Lunch moved to 13:00 Team lunch moved, nothing to do',
   'Yara Oak Re: Coffee next week Coffee already set for Thursday 10:00','Unknown sender']);
- assert.equal(await page.locator('#suggestions .mc-list li .mc-src svg').count(),4,'a source icon on every row');
- const iconOf=k=>page.evaluate(k=>{const s=document.createElement('div');s.innerHTML=icon(kindService(k)).s;return s.querySelector('svg').innerHTML},k);
- assert.equal(await page.locator('#suggestions .mc-list li').nth(0).locator('.mc-src svg').innerHTML(),await iconOf('whatsapp.message'));
- assert.equal(await page.locator('#suggestions .mc-list li').nth(1).locator('.mc-src svg').innerHTML(),await iconOf('slack.message'));
- assert.equal(await page.locator('#suggestions .mc-list li').nth(2).locator('.mc-src svg').innerHTML(),await iconOf('gmail.message'));
+ // each row's source by its one-color mark (todos-logos.js), mail by the account it came in on
+ const marks=()=>page.locator('#suggestions .mc-list li .mc-src .via-ico').evaluateAll(n=>n.map(i=>[...i.classList].find(c=>c!=='via-ico')));
+ assert.deepEqual(await marks(),['via-whatsapp','via-slack','via-outlook','via-telegram'],'a source mark on every row');
+ const mark=await page.locator('#suggestions .mc-list li .mc-src .via-ico').first().evaluate(i=>{const s=getComputedStyle(i);return [s.width,s.maskImage||s.webkitMaskImage]});
+ assert.equal(mark[0],'14px');assert.match(mark[1],/brand\/logos\/mono\/whatsapp\.svg/);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=390),'no sideways scroll on a phone with icons');
  // A tap on a row opens its message in the viewer
  await page.locator('#suggestions [data-mc-event="21"]').click();
@@ -95,6 +96,8 @@ try{
  await page.waitForFunction(()=>/15 messages/.test(document.querySelector('#suggestions .mc-line')?.textContent||''));
  assert.equal((await page.locator('#suggestions .mc-line').innerText()).trim(),'Checked 15 messages at 16:11 · nothing needs you');
  assert.equal((await rows()).at(-1),'Parcels Parcel: Delivered to your door A delivery notice, the parcel is in');
+ // a phone notification by the app that posted it when it's a known brand, else the phone
+ assert.deepEqual((await marks()).slice(-2),['via-medium','via-android']);
  // Never longer than the email-only line was, in any language, and one line on a phone: every catalog's
  // "Checked … messages" is no longer than its "Checked … new emails", and the whole line fits at 390
  const fill=(s,...v)=>v.reduce((o,x)=>o.replace('{}',x),s);

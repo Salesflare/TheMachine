@@ -169,7 +169,7 @@ try{
  assert.equal(await page.locator('.graph-event[data-event="39"] h4').textContent(),'School trip');
  assert.ok((await page.locator('.graph-event[data-event="39"] .ge-preview').textContent()).startsWith('Ann Example: '));
  assert.equal(await page.locator('.graph-event[aria-label^="Calendar"]').count(),6);
- assert.equal(await page.locator('.graph-event[aria-label^="Intercom"] .icon svg path').count(),1);
+ assert.equal(await page.locator('.graph-event[aria-label^="Intercom"] .icon .via-ico.via-intercom').count(),1);  // its one-color mark
  const sizes=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(sizes.page<=sizes.viewport,'overflow at 390');
  const posted=async n=>{for(let i=0;i<100&&calls.length<n;i++)await page.waitForTimeout(20)};
