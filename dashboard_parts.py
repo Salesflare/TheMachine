@@ -51,7 +51,6 @@ LAZY = {
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-followups-settings.js',
               'graph-record.js', 'graph-tabs.js', 'graph-crm.js'),
     'help': ('help-panel.js',),
-    'learned': ('todos-first-learned.css', 'todos-first-learned.js'),
     'split': ('graph-split.css', 'graph-split.js'),
     'settings': ('settings-ai.css', 'settings-export.css', 'settings-general.js', 'settings-skills.js', 'settings-ai.js',
                  'settings-export.js', 'settings-upkeep.js', 'settings-apps.js'),

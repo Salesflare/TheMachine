@@ -324,10 +324,6 @@ class StatusApp:
             result['first_look_done'] = self.first_look_done()
         except (sqlite3.Error, ValueError, TypeError) as error:
             LOG.warning('first look done error=%s', type(error).__name__); result['first_look_done'] = None
-        try:  # Here's what I've learned, next to the first look's ending (first_look_learned)
-            result['first_look_learned'] = self.first_look_learned()
-        except (sqlite3.Error, ValueError, TypeError) as error:
-            LOG.warning('first look learned error=%s', type(error).__name__); result['first_look_learned'] = None
         try:  # the first-use tips on a new person's first to-dos (Store.first_tips)
             result['first_tips'] = self.store.first_tips()
         except sqlite3.Error as error:

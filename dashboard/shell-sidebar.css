@@ -106,7 +106,7 @@ body main{padding-top:0}
 /* All clear: the title's line says it, so the block below is only the robot and its line */
 #suggestions .all-clear:not(.first-look-empty){padding-top:24px}
 /* The first look's ending: what it read, then one or two next steps */
-.first-look-end .fl-read{display:block;max-width:34em;margin:0 auto;text-wrap:balance}.first-look-end small{display:block;margin-top:4px;color:var(--muted)}
+.first-look-end .fl-read{display:block;max-width:34em;margin:0 auto;text-wrap:balance}.first-look-end small{display:block;margin-top:4px;color:var(--muted)}.fl-learned{display:inline-block;margin-top:6px}
 .first-look-end .fl-next{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:12px}
 .first-look-note{margin:0 0 10px;color:var(--muted);font-size:.9rem;text-wrap:pretty}#suggestions .all-clear:not(.first-look-empty)>div>strong{display:none}
 .chat-layout{grid-template-columns:minmax(0,1fr)}.chat-layout>.chat-side{display:none}

@@ -189,8 +189,7 @@ def greeting_on(db, at):
 
 
 def first_look_ended(db, at, why='cards'):
-    """The first look stopped digging at `at` (App.first_dig's milestone): for the sandbox, whose Machine never ran one,
-    so the list shows its ending and Here's what I've learned (the site demo too)."""
+    """The first look stopped digging at `at` (App.first_dig's milestone), for a Machine that never ran one (tests)."""
     db.execute("INSERT OR IGNORE INTO milestones(name,at,detail) VALUES('first_dig_done',?,?)", (at, why))
 
 

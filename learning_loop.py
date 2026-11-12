@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS learning_changes(id INTEGER PRIMARY KEY,run_id TEXT N
 CREATE TABLE IF NOT EXISTS learning_signals(kind TEXT NOT NULL,ref TEXT NOT NULL,at TEXT NOT NULL,status TEXT NOT NULL,run_id TEXT,
   tries INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,PRIMARY KEY(kind,ref));
 CREATE TABLE IF NOT EXISTS learning_state(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS learned_fixes(key TEXT PRIMARY KEY,state TEXT NOT NULL,text TEXT,at TEXT NOT NULL);
 '''
+# learned_fixes: what the owner left off the first look's old summary (removed). Machines that used it keep the rows,
+# and Undo of such a change under Learning, Changes still clears it.
 HOURS = 12            # a pass at most this often
 SOON_HOURS = 1        # while more than one batch waits: the next one sooner (still one background turn per budget gap)
 FIRST_DAYS = 7        # the first pass reads this far back
@@ -424,11 +427,10 @@ def undo(db, change_id, unlink=None):
         if db.execute('SELECT 1 FROM facts WHERE removed_at IS NULL AND kind=? AND lower(text)=lower(?)', (fact['kind'], fact['text'])).fetchone():
             raise ValueError('That is already in what I’ve learned')
         db.execute('UPDATE facts SET removed_at=NULL WHERE id=?', (int(row['target']),))  # its vector is stored again when a preparation needs it
-    elif row['kind'] == 'learned':  # an item left off Here's what I've learned (first_learned.py)
-        import first_learned
-        done.update(first_learned.undo(db, row))
+    elif row['kind'] == 'learned':  # an item the owner left off the first look's old summary (learned_fixes)
+        db.execute("DELETE FROM learned_fixes WHERE key=? AND state='removed'", (row['target'],))
     elif row['kind'] == 'voice':
-        # a correction on Here's what I've learned keeps its own run as the voice's ref (first_learned.fix_voice)
+        # a correction on the first look's old summary kept its own run as the voice's ref
         ref = row['run_id'] if row['run_id'].startswith('learned:') else 'tune:' + row['run_id']
         current = db.execute('SELECT text,ref FROM voices WHERE channel=?', (row['target'],)).fetchone()
         if current and (current['text'] != row['after'] or current['ref'] != ref):

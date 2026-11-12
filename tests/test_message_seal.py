@@ -43,6 +43,10 @@ def files(path):
     return b''.join(p.read_bytes() for p in Path(path).parent.glob(Path(path).name + '*'))
 
 
+# The first look's old summary (removed) kept what the owner left off it here; Machines that used it still have the table
+LEARNED_FIXES = 'CREATE TABLE IF NOT EXISTS learned_fixes(key TEXT PRIMARY KEY,state TEXT NOT NULL,text TEXT,at TEXT NOT NULL)'
+
+
 class Sealer(unittest.TestCase):
     def setUp(self):
         self.sealer = message_seal.Sealer(os.urandom(32))
@@ -262,7 +266,6 @@ class Protected(unittest.TestCase):
         return fleet_learnings.finish(db, run_id, [], log=lambda *args: fleet.Fleet.log(None, *args))
 
     def test_team_learnings_learned_changes_and_the_fleet_log_are_sealed_and_read_as_before(self):
-        import first_learned
         import fleet
         import fleet_learnings
         import learning_loop
@@ -272,12 +275,13 @@ class Protected(unittest.TestCase):
                 if statement.strip():
                     db.execute(statement)
             fleet_learnings.ensure(db)
-            db.execute(first_learned.SCHEMA)
+            db.execute(LEARNED_FIXES)
         with store.connect() as db:
             self.assertEqual([k['text'] for k in self.learn(db)], [LEARNED, LEARNED_TOO])
             self.assertEqual(fleet_learnings.remove(db, 'f1', fleet_learnings.fingerprint(LEARNED_TOO)), LEARNED_TOO)
             learning_loop.record(db, 'run2', 'fact', '7', json.dumps({'id': 6, 'text': f'Old {CANARY} fact'}), f'New {CANARY} fact', f'Corrected the {CANARY} to-do.')
-            first_learned.leave_off(db, 'hours', f'Works {CANARY} hours')
+            db.execute("INSERT INTO learned_fixes(key,state,text,at) VALUES('hours','removed',?,'2026-11-01')", (f'Works {CANARY} hours',))
+            learning_loop.record(db, 'learned:off:1', 'learned', 'hours', None, f'Works {CANARY} hours', 'Corrected after the first look.')
         for word in (CANARY.encode(), CANARY.lower().encode()):
             self.assertNotIn(word, files(self.path))  # nor in the pass's draft, which keeps only a count
         with sqlite3.connect(self.path) as raw:
@@ -307,7 +311,6 @@ class Protected(unittest.TestCase):
             self.assertEqual([r['what'] for r in db.execute('SELECT what FROM fleet_log ORDER BY id')], [LEARNED, LEARNED_TOO])
 
     def test_an_update_seals_the_learnings_a_sealed_machine_already_kept_plain(self):
-        import first_learned
         import fleet
         import fleet_learnings
         import learning_loop
@@ -315,10 +318,10 @@ class Protected(unittest.TestCase):
         kept = {'fleet_learnings': ('text', LEARNED), 'fleet_learn_removed': ('text', LEARNED_TOO), 'learned_fixes': ('text', f'Works {CANARY} hours'),
                 'fleet_log': ('what', LEARNED)}
         with sqlite3.connect(self.path) as raw:  # as the version before left it: the tables there, without guards, the rows plain
-            for statement in (fleet.SCHEMA + ';' + fleet_learnings.SCHEMA + ';' + first_learned.SCHEMA).split(';'):
+            for statement in (fleet.SCHEMA + ';' + fleet_learnings.SCHEMA + ';' + LEARNED_FIXES).split(';'):
                 if statement.strip():
                     raw.execute(statement)
-            for name in [r[0] for r in raw.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND name LIKE 'mc_learning_changes_%'")]:
+            for name in [r[0] for r in raw.execute("SELECT name FROM sqlite_master WHERE type='trigger' AND (name LIKE 'mc_learning_changes_%' OR name LIKE 'mc_learned_fixes_%')")]:
                 raw.execute(f'DROP TRIGGER {name}')
             raw.execute("INSERT INTO fleet_learnings(fleet,fp,kind,text,confidence,run_id,at) VALUES('f1','a','process',?,0.9,'r','2026-11-01')", (LEARNED,))
             raw.execute("INSERT INTO fleet_learn_removed(fleet,fp,text,by,at) VALUES('f1','b',?,'me','2026-11-01')", (LEARNED_TOO,))

@@ -99,7 +99,7 @@ try{
   await page.locator('#suggestions .first-look-note').waitFor();
   assert.ok(await page.locator(strip).isHidden());
   const ending=(await page.locator('#suggestions .first-look-note').innerText()).replaceAll(' ',' ');
-  assert.equal(ending,'Read 61 emails, 4 meetings, and 19 messages from the past week and found 3 to-dos.');
+  assert.equal(ending,'Read 61 emails, 4 meetings, and 19 messages from the past week and found 3 to-dos. See what I’ve learned');
   // Every way the line reads: emails when every source is mail, one batch that is the whole week, a single message
   const lines=await page.evaluate(()=>[{read:0,done:0,batch:20,total:284,unit:'email'},{read:20,done:25,batch:40,total:284,unit:'email'},{read:60,done:60,batch:0,total:284,unit:'email'},
    {read:0,done:3,batch:12,total:12},{read:0,done:0,batch:1,total:1,unit:'email'},{read:0,done:0,batch:0,total:1320},{done:3,total:8},{read:9,done:3,batch:50,total:8}].map(flCount));
