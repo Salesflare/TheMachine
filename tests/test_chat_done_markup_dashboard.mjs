@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's text in the chat and on the Done list stays text: the card the chat takes its pieces from (chatParts),
 // the chat's own updates (chatMount, chatPatch), a Done card that looks done (lookDoneCard) and the pages a long list

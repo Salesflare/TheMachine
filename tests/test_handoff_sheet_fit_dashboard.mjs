@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Hand off sheet on a phone: with more teammates than fit a switch, "Hand off to" is a select, and it fits the
 // sheet like the fields under it (a long name doesn't push it past the right edge), for a teammate and By email,

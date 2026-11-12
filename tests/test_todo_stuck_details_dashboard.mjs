@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A stuck to-do whose prepared-ahead run timed out: Try again leads (not Do it), and its technical details sit under the
 // to-do's one Details, never a second Details toggle. A long project name is whole on a phone, or in its tooltip.

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFileSync} from 'node:fs';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Settings, General, Export (dashboard/settings-export.js, machine/app/export.py): one section with a row per way out
 // (EXPORT_OPTIONS: Everything, then Knowledge for another AI with its two switches and passphrase) and Import below. Self-hosted:

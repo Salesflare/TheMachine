@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A person's page in the Graph keeps the dashboard's header and tabs, with a breadcrumb back; it has its own link and
 // the browser's back button works. Facts about them live under Known about them, apart from what is open: each with

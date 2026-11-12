@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {fixtureServer} from './click-speed.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A cold open draws the first to-do without reading the layout for things that can wait for its paint: the sidebar's
 // scroll keeper reads nothing until the sidebar has scrolled (at its top there is nothing to keep), and the page's first

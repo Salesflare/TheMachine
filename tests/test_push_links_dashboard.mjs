@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Where a tapped notification lands. The phone app opens the dashboard at #chat=<the push's tag> (mobile/www/inject.js;
 // Android without a tag for several at once: the kind), the web push at its url. Each kind opens its own view, never a

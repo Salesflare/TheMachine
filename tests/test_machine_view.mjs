@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The dashboard's viewer of the Machine's browser (deploy/browser/machine-view.js, frame=window) on a stand-in noVNC.
 // It frames the browser's front window. When the pane is wider than that window, the screen around it (other windows,

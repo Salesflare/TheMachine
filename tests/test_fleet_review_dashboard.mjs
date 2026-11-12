@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Ask to review on the dashboard (dashboard/todos-review.js), both sides: the owner picks a teammate from More, sees
 // "Waiting for Pat's review" with Withdraw, then Pat's tracked changes to accept (all or some) or ignore; the reviewer

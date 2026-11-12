@@ -4,9 +4,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 const dashboard=await dashboardPage();
 const sid='1234567890abcdef',done='0011223344556677',viaMail='8899aabbccddeeff',revision='1234567890ab',mailRevision='abcdefabcdef';

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Dialogs on a phone fill the screen: the title and × on top, the buttons at the bottom in sight without scrolling,
 // and only what is between scrolls (a long email inside its own box), never the page behind. With the keyboard up

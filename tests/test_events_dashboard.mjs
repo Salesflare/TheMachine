@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Events opens with the latest signals, newest first by when they arrived or happened, the way a person's timeline
 // reads: meetings still to come never sit on top of the list but apart under Coming up, soonest first, three at a

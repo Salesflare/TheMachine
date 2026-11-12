@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections, Other sources: The Machine's own log reads as Machine health, last in the tab, with no internal names on
 // its card (no OpenClaw, no gateway, no owner:system line, no account id) and still its counts and Details. Another

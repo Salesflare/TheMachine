@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Not needed and Snooze answer at once, as Mark done does (decideAtOnce): the to-do leaves the list before the Machine
 // answers, the save goes behind it, and a refused save puts the to-do back with the error. Not needed shows "Marked not

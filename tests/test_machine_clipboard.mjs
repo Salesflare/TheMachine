@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The viewer's clipboard bridge (deploy/browser/machine-clipboard.js) on a stand-in noVNC. Pasting into the Machine's
 // browser takes the text from the paste event itself, so it works without the clipboard-read permission (an installed

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do whose moment passed closed by itself (Store.expire_passed): it sits in Done with "No longer needed" and when
 // that was, said from the stored time on the day it is read (today, yesterday, or the date), with Undo while it lasts,

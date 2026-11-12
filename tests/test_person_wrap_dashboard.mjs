@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The one-line rows on a person or organization page (To you, the organization row, addresses, place, about, links,
 // relations) wrap on a phone instead of being cut off, and their Edit and ✓ Right buttons stay on screen and tappable.

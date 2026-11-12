@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir, readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Support access on a self-hosted Machine: given where it's needed, with the support report in Report a bug (one box,
 // ticked by default; unticked gives nothing), through the app and only after Send; Settings, Security shows it only

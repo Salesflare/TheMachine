@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The to-dos are what a page load waits on: the page's head asks for api/status before its own script has run (that
 // script asks for the theme's colors, api/omarchy-theme, as it starts), and the script's first status read takes that

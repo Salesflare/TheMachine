@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's project picker (Project under Details) and the other boxes that open inside a to-do (Not needed, Ask for
 // changes, Snooze) fit inside the to-do at phone width: a long project name never pushes the box off the screen, and

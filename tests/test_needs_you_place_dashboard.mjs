@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // "Needs you" shows everything on Suggestions, and elsewhere only what belongs to that tab: a signed-out source on
 // Connections, waiting skills on Settings › Skills, nothing on other tabs. Settings › General says in plain words that

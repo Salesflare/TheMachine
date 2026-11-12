@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // An organization's page is built as a person's: logo, name and its fact line in the header with Edit, then one plain
 // line on how you're in touch, Contact (the website as its address, "lumen.example ↗"), With you (what it is to you)

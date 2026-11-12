@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // An open to-do shows where it came from on the to-do itself (not under Details), with that service's logo, and its
 // draft box leads with the logo of where the draft goes: Gmail for a Gmail account, the envelope for Outlook, Slack,

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // On a computer Browser shows the Machine's browser in the main area beside the sidebar (from 1024px) or under the top
 // bar (a narrower window, like the desktop app on half a screen), with Full size, Open in new tab and close. The

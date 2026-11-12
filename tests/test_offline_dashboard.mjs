@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Offline and on a spotty link (a plane's wifi): the app opens with the last to-dos, chat and Calendar from the device,
 // a banner says it is offline and since when, the owner's own decisions (Not needed, Snooze, Mark done, a chat

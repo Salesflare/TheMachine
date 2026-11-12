@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {navClick} from './nav-click.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Last contact (and last signal) reads as people say it (sinceWhen, graph-lists.js): just now, 5 minutes ago,
 // 3 hours ago on the same day, yesterday, 3 days ago up to a week, then a short date in the owner's date order, the

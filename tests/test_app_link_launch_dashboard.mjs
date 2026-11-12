@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A link the installed desktop app catches (the morning summary's Open, #card=<id>&or=chat) shows that to-do, with the
 // app closed (it opens with the link) and open (launch_handler focus-existing hands the link to the open page through

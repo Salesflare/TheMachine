@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {fixtureServer} from './click-speed.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A phone's first to-dos come in fast (vision: instant). While the page draws them, the part that keeps the reader's place
 // (dashboard/shell-place.js) watches every change; asking the browser where the page is scrolled on each one made it lay out

@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir} from 'node:fs/promises';
 import {join} from 'node:path';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A suggested routine (routines.py) before Add: Edit and Change when in its ⋯ menu, like any routine (no Try it: Run
 // again is on the card), and Run again runs its words now. The button waits while it runs (one run per press), and the

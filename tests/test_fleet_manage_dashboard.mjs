@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Fleet › Manage (dashboard/fleet-manage.js). Self-hosted (no manage_url): read only, the people and their roles and a
 // link to that Fleet's settings step on the account in a new tab, and nothing that changes anything. Hosted: the control plane's

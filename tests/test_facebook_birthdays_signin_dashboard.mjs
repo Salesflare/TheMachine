@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Import birthdays from Facebook to-do when the Machine's browser isn't signed in to Facebook: Sign in to Facebook
 // opens Facebook's sign-in page in the Machine's browser (connect_site_signin) and the sign-in dialog on it, the way

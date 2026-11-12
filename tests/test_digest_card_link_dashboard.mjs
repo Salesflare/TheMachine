@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The morning digest's Open (notify.compose: #card=<id>&or=chat) shows the to-do in the To-dos list: scrolled into
 // view, highlighted and in full. One that isn't on the list as shown (done, snoozed, another scope, or gone) opens

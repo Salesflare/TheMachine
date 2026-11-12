@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A new owner's hello (Store.greeting): "Hi Alex" as the title, with who has waited longest on them linked to that
 // to-do ("Ria has been waiting on your reply since Thursday."), just "Hi Alex" while nothing is ready, the tagline once

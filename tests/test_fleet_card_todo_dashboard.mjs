@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A Fleet item among the to-dos ("Rae Moss joined Acme. Share the team's Graph with them?"): Share and Not now carry
 // data-choice like a to-do's buttons, and the to-dos' own click handler once took them for a to-do decision too. It

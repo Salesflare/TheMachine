@@ -10,7 +10,6 @@
 // dates or times that wrap onto a second line. Chromium: CHROMIUM_PATH, else /opt/pw-browsers, else /usr/bin/chromium.
 import {existsSync, mkdirSync, readdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {OPENCLAW} from '../openclaw-root.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((out, a, i, all) => a.startsWith('--') ? [...out, [a.slice(2), all[i + 1]?.startsWith('--') || all[i + 1] === undefined ? 'true' : all[i + 1]]] : out, []));
 const url = args.url || 'http://127.0.0.1:8870';
@@ -25,13 +24,6 @@ const PAGES = {
 };
 const DEFAULT_PAGES = ['todos', 'calendar', 'routines', 'messages', 'graph', 'projects', 'fleet', 'learning', 'connections', 'settings'];
 const pages = (args.pages || DEFAULT_PAGES.join(',')).split(',');
-
-async function playwright() {
-  for (const from of [OPENCLAW + '/node_modules/playwright-core/index.mjs', 'playwright-core', 'playwright']) {
-    try { return await import(from); } catch {}
-  }
-  throw new Error('Playwright not found: install OpenClaw, or `npm i playwright-core` somewhere on the module path');
-}
 
 function chromiumPath() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
@@ -100,7 +92,7 @@ function layoutProblems() {
   return problems;
 }
 
-const {chromium} = await playwright();
+const {chromium} = await import('../tests/browser.mjs');
 mkdirSync(out, {recursive: true});
 const browser = await chromium.launch({executablePath: chromiumPath(), headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage']});
 const report = [];

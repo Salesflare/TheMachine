@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir, readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A fact the owner asked their chat to forget (forget_learned, activity_log.py's memory lines): Settings, Activity shows
 // "Forgot: ..." with Undo, the filter names it Learning, and Undo sends learning_undo with the change's id, the same

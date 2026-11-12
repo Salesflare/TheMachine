@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // An email reply in a to-do's chat: mail sync stores it with a "[Quoted earlier messages: …]" line for the model
 // between the new text and the quoted history (assistant.trim_quoted_history). People never see that line: each

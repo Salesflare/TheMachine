@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections, + Add on a hosted Machine: a sign-in started here comes back here (the control plane's /open to=connect)
 // and the form says how it went: connected, or why the provider's answer was refused (#connect=<provider>/f_..., the

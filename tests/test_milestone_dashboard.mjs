@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {callAfter} from './page-calls.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A milestone on done to-dos (todos-milestone.js, state.done_milestone): one card on top of To-dos with the count,
 // Share and ×. × marks it seen on the Machine (done_milestone_seen) and it is gone, also on the next opening. Share hands

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A chat message shows in the chat as soon as it's sent, not once the Machine has saved it (a slow decide here). Should
 // the Machine not take it, it leaves the chat and goes back in the message box, and the reason shows.

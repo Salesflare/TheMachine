@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The To-dos head's line next to Check now (dashboard/todos-check.js) calls the periodic pass a check, never a review:
 // "Checked 21:10 · next by 21:26 · 2 new", and while one runs the robot's own words, the same in the head and under it.

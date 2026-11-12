@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections, + Add: Suggested for you on top, only for the tiles the Machine has a signal for (connect_sources'
 // suggested, at most 3, never a connected one), each with its why line; no signal, no section. Then every source under its

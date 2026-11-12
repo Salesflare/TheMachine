@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Stop in the Browser view: on a computer, the Browser pane's header has Stop (with the to-do's title beside Browser)
 // only while a to-do's run is on the browser (api/browser-now; the one on the tab in front comes first). One click

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The sidebar's pages (made-up data): To-dos (was Suggestions), Learning (was Feedback) with its tabs, and Messages
 // (was Events) reached from search, not from a sidebar row. Old links and keys keep working: #suggestions, #feedback,

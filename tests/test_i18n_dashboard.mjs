@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Languages (i18n/, the i18n script in dashboard.html): a Machine whose language was never chosen takes the browser's on
 // the first load and saves it once; Settings, General, Language switches the whole page at once, text that renders later

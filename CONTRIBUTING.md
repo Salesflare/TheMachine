@@ -48,7 +48,9 @@ About the test runner:
 The tests live in `tests/` (`test_*.py`, `test_*.mjs` and helpers such as `test-env.mjs`). They run from the
 repository root, so they import the app's modules directly and open files like `sw.js` by their root path. The
 dashboard's page is read assembled, through `dashboardPage()` (`tests/dashboard-page.mjs`) or
-`dashboard_parts.assemble()` ([Code map](docs/code-map.md)).
+`dashboard_parts.assemble()` ([Code map](docs/code-map.md)). Tests get Chromium from `tests/browser.mjs`, never from
+`playwright-core` directly: it runs the browser cut off from the desktop, so a clicked `mailto:` or other external
+link never opens an app on your computer (`tests/test_browser_guard.mjs` checks both).
 
 CI runs the suite on every pull request with the minimum supported Python, Node and OpenClaw. A weekly run adds a
 newer combination (the latest OpenClaw) and macOS and Windows.

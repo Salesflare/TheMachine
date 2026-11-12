@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A link in a to-do's source email opens outside the dashboard: a new tab on a desktop, the phone's browser in the
 // app. The phone app's WebView has no windows, so a target=_blank link goes to the top page, which the email's

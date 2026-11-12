@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {callAfter} from './page-calls.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Settings, Security (security_levels.py): Standard or Careful as one switch, Custom after a change, the switches it
 // sets, each Work Fleet's level, and Look up work contacts locked off in a Careful Fleet. In the Fleet tab, a Careful

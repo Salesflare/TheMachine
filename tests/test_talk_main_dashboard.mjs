@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Talk (talk_live.py, the main conversation): Talk in the sidebar (the drawer on a phone) starts one live conversation
 // about whatever needs the owner. Its bar floats at the bottom of the page, and sits in a to-do's chat when one is open.

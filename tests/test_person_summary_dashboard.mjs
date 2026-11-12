@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A person's summary sits on top of their page, under the line on how you're in touch: a few lines, each with its
 // sources (a message by its date, a promise, your note). Edit opens the lines as one field; Save sends them as lines.

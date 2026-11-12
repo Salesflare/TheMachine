@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // LinkedIn's sign-in from a hosted setup page (#signin-site=linkedin): the password, then the code LinkedIn emails,
 // with the code field left alone while the owner types; LinkedIn going back to the start says so with the form to try

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Settings, Apps: once the official app is ready (reach.shared), Add in ChatGPT and Add in Claude come first, links to
 // The Machine's listings in ChatGPT's plugins and Claude's connector directory (one click, nothing to paste) in a new

@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Opening the app: until the first real data, a calm outline of the cards (never "All clear", also when the Graph's
 // counts come in first); "All clear" only when the Machine says there is nothing. The app's page (sw.js) and the last

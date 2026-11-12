@@ -4,9 +4,8 @@ import {createServer} from 'node:http';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import vm from 'node:vm';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Error reports from the dashboard, the whole way (error_feed.py, docs/help/error-reports.md): a bug in the page's own
 // code that a try caught and showed (most of the page runs inside one: before this, only what reached window.onerror

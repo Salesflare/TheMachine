@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The last check of new messages above the to-dos (dashboard/todos-mail-check.js, state.mail_check, made by check_now.mail_check):
 // "Checked 12 messages at 16:11 · nothing needs you", a to-do held until later, and on a tap one row per thread with

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The to-do chat's header: the back chevron sits on the title's center line, not below it, as the eye sees it. Measured on
 // the pixels, with the page's own font (Inter, served as the service serves it), on a phone and a computer, light and dark:

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Still needed? on the dashboard (dashboard/todos-rows.js, still_needed.py): a to-do untouched for a week asks once
 // with Not needed and Keep, on the to-do and in its chat. Not needed is the to-do's own (with Undo), Keep posts recap_decide. One with

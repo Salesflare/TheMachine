@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The sidebar's People, Organizations and Projects counts come with the status (graph_counts): a page load never asks for
 // the Graph overview (some 600 KB on a busy Machine, its biggest answer) just for them; opening Graph does, as before.

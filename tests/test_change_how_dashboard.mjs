@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do that isn't prepared yet has Ask for changes in sight, right after its lead (Do it, Prepare), like on a
 // ready one; a step only the owner can do keeps it out of sight. The row never runs onto a third line on a phone: when a

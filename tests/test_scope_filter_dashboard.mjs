@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {scopeClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {callAfter} from './page-calls.mjs';
 const scopeSaved=c=>c.action==='set_locale'&&'todo_scope' in c.args;
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The To-dos filter (All, Work, Personal) lives on the Machine (locale_prefs todo_scope), so a phone and a computer show
 // the same list: a filter a browser kept from before goes to the Machine once and the browser forgets it, a change on

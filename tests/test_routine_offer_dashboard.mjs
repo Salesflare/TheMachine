@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // "Turn on Newsletter cleanup?" above the to-dos (dashboard/todos-repeat.js, routine_offers.py): this week's count and
 // what the template does, Turn it on or No thanks; only one offer at a time, a recurring one first. Made-up data; nothing is sent.

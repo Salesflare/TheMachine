@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's body never repeats its title (todos-cards.js bodyAfterTitle, machine/text.py body_after_title): one the
 // owner just made (New to-do) whose body is their words again shows none, also with other case, spacing or a final

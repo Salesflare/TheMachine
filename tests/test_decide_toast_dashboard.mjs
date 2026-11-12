@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Do it, Ask for changes and the other choices on a to-do (saveDecision): the toast shows as
 // soon as the Machine answers the choice, not after the whole status that follows it (a slow /api/status here). A choice

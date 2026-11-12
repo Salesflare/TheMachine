@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Boards the owner makes: a review's suggestion on Projects ("Start a board for Hiring?") with Save, Edit and Not now,
 // nothing a board until it's saved; the editor (name, stages renamed, reordered, added and removed, the Stalled row,

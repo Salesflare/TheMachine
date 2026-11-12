@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The Salesforce card, Update contact details (connectors/salesforce.py card, crm_sync.py): off, it offers Show what would
 // change; that posts connector_contact_sync preview and lists the changes, with Turn on and Not now; on, it lists the

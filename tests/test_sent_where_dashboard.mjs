@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do just acted on is easy to find again (made-up data). Once a send went out, a short toast says where the to-do
 // is now, with Open to go to it there: "Sent. Moved to Done." or, handed to someone, "Sent. Moved to Later until Mon."

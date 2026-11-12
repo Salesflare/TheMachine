@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 import {callAfter} from './page-calls.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // What's new (shell-whats-new.js, state.whats_new): one small dialog a moment after the dashboard opens. One entry: its
 // picture on top, its title, its text with a button that opens it, × and Done. Several: one per view, with dots, Back

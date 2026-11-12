@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's row of actions is measured (does Snooze still fit, actionsSize) when it is drawn anew, when something in
 // it changes and when its width does: not every row on each change anywhere in the page, nor a list put back after a

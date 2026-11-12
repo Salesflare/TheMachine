@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The list redraws on every poll (every 30 s, and when the Fleet's asks come in). A redraw swaps only the to-dos whose
 // data changed: the rest stay the same nodes, so a text selection, focus, an open menu, a button's in-flight state and

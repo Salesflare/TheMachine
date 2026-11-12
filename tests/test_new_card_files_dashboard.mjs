@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
 import zlib from 'node:zlib';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Files on a new to-do (New to-do, chat_files.py): the paperclip (on a phone the file picker, with the camera), a pasted
 // screenshot or a drop on the form adds them. Each uploads at once under the form's draft key (chat_upload with draft,

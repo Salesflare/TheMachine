@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Already did this (Fleet.handled_round, family.DONE): an open to-do someone in the Family closed as done gets one quiet
 // line, who and when, with Done and Still needed. It stays open; Still needed sends family_still_needed and the line goes.

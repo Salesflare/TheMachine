@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The live first look: while a new owner waits for their first to-dos, the robot says how far it read ("Read 20 of
 // 284 emails. Reading the next 20…"), a few of the people and organizations it bumped into (first_dig.names, one more every few seconds),

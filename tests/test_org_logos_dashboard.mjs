@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile, mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Organizations show their logo from enrichment: https only, no referrer, lazy and fixed size, the initial behind it,
 // and the initial alone when there is no logo, it isn't https, or it fails to load. SHOT_DIR=… also saves screenshots.

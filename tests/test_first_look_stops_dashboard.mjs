@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The first look stops digging once it has its to-dos (first_look_done) while its last batch is still reading. That
 // batch is no new count: 2026-11-09 a new owner saw "Reading 30 of 132 messages…" turn into "Reading 9 of 40 messages…"

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The chat's ⋯ in every state of a to-do: never an empty box. A done one has its Reopen there (and on the status line);
 // one that looks done (by its state: an already_done outcome or a handled hint, never its text) is like a done one:

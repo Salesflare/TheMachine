@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A routine suggested from what the owner does (routine_patterns.py) says what was seen at the end of its rhythm line
 // ("Weekly on Monday · 8:00 AM · Asked 4 times in a row"), in the owner's language; a suggestion from an OpenClaw job has none.

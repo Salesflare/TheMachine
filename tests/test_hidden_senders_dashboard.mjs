@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Hidden senders: under People, a quiet entry with how many mailings the Graph left out. Their list loads only when it
 // opens, each with its reason, and Show as a person tells the Machine to count that address from now on: the row says

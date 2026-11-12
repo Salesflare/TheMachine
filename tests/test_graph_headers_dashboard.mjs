@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Every Graph header (person, organization, project, board), in view and edit mode, on a phone and a desktop: the name
 // stays on one line, never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows

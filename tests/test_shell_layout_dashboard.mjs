@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The dashboard's shell. On a phone all clear has no count line, the robot's line stays on screen and nothing is wider than it. On a short computer
 // screen the whole sidebar scrolls, so Settings stays reachable. The lit Graph row follows the page on screen (a person

@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // People's search after a merge: two records of one name were merged, the dashboard said Merged., and the same search
 // still showed both. A search kept the rows it loaded for as long as the dashboard was open; an edit now asks again.

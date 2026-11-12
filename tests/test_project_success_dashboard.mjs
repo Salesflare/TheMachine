@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Done when (project_success.py) on a project's page: the success condition, the proof that met it (the message and
 // the live page) or "Marked done by hand", why a review's "done" isn't proven yet, and the blocker with its one to-do.

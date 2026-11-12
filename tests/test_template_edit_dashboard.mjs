@@ -2,9 +2,8 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir} from 'node:fs/promises';
 import {join} from 'node:path';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A template's routine (routine_templates.py) on the Routines page: its card shows its words, and Edit and Advanced are in
 // its ⋯ menu like any routine's, with its name in the title's place. Once its words changed, Edit offers Back to the

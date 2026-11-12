@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Done when (machine/store/outcomes.py): the result that closes a to-do is one row under its Details, never a line on the
 // to-do itself (its title says it already). One waiting for that result after a Send sits under Waiting on others.

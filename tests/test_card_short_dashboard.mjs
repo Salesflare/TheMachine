@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A ready to-do with a draft is short: its summary and the first 3 lines of the draft (blank lines left out), then one
 // Show more that opens the summary and the draft together. "Nothing goes out until you approve it." is said once, in the

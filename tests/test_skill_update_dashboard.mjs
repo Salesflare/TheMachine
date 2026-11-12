@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A skill suggested from notes (a card) or by the agent (Settings > Skills) is checked against the skills you have: a new
 // one, a new one with a line on the related skill it sits next to, or Update <skill>: the whole skill rewritten as one,

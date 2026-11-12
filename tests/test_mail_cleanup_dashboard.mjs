@@ -3,9 +3,8 @@ import {createServer} from 'node:http';
 import {mkdir,readFile} from 'node:fs/promises';
 import {join,basename} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Routine templates (routine_templates.py, mail_cleanup.py): under Templates on the Routines page, Add turns one on and it
 // leaves the list. Its to-do has a row per newsletter with Keep or Unsubscribe; nothing is sent until the one confirm, which

@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Talk live (talk_live.py): the wave next to the mic in a to-do's chat starts a spoken conversation. The bar shows Live,
 // the clock, Mute and End; a minute before 10 minutes it warns, and at 10 it ends. What both sides say lands in the chat.

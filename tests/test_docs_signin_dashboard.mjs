@@ -3,9 +3,8 @@
 // edits sign-in (microsoft_docs_write), not the read one. Synthetic data, a local fixture server, nothing signed in.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 const dashboard=await dashboardPage();
 const docs={id:'docs',display_name:'Word documents',email:'owner@example.com',service:'docs',transport:'broker',boundary:'work',events:3,recent_events:3,

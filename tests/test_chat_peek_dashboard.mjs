@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do's chat shows its Do it run's browser live, as its card does (peekHTML): where the Open the browser link was,
 // a new picture every few seconds at one fixed size, so the thread never moves; a click opens the Browser pane, as the

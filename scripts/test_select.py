@@ -39,7 +39,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # A change to these runs everything: the way tests run, what they run on, and this selection itself.
 FULL = {
     'scripts/test.py', 'scripts/test_select.py', '.github/workflows/ci.yml', 'package.json', 'package-lock.json',
-    'openclaw-pin.json', 'openclaw-root.mjs', 'tests/test-env.mjs', 'tests/seams.py',
+    'openclaw-pin.json', 'openclaw-root.mjs', 'tests/test-env.mjs', 'tests/seams.py', 'tests/browser.mjs',
 }
 # Folders whose files no test reads: a change there that nothing names runs only ALWAYS. Everything else that nothing
 # names runs everything, since it isn't clear what it touches.

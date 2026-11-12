@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Connections, + Add, Codex (codex_signin.py): Codex signs in with its own device code, shown right in the form with
 // OpenAI's page, never a command to type. A hosted Machine's control plane runs that sign-in on its server (POST

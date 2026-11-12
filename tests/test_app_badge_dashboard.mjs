@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // The installed app's icon badge is the To-dos count in the sidebar: what needs the owner now. Not every open to-do: one
 // that looks done, one waiting on others, a snoozed one and one in Personal while Work is shown don't count. Work or

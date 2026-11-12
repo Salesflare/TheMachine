@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {navClick,menuPick} from './nav-click.mjs';
 import {callAfter} from './page-calls.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Fleet tab: who is who per member, and one rule per kind of question for the whole Fleet: Ask me first | Always | Never
 // as pills, how much they hear, Only about…, a short example, and exceptions for someone in particular as small pills.

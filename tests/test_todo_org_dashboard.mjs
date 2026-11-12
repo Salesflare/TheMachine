@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A to-do shows an organization only when it is about it (2026-11-10): the review named it (org_node), or its project is
 // with it (one the owner or a review set). A Personal to-do from the owner's partner about the house painting showed the partner's employer, only because

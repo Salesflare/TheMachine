@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir} from 'node:fs/promises';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // A run that needs a source that isn't connected (preparation_blocked connect): never a dead Stuck, and never a trip
 // into settings. The to-do says in one plain line what it couldn't read and leads with Connect Slack, which opens Slack

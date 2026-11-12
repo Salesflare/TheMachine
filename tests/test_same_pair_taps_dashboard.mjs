@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
-const {chromium}=await import(OPENCLAW+'/node_modules/playwright-core/index.mjs');
+const {chromium}=await import('./browser.mjs');
 
 // Same person? and Same organization?, tapped through fast: Merge on one row, then the next, while the Machine is still
 // saving the first. Every redraw in between (the first answer's, a poll's) came from a Machine that hadn't stored the
