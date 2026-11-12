@@ -73,6 +73,9 @@ if(/timeout$/.test(what))return t('{} was slow to answer',name||t('The source'))
 if(/rate_?limit/.test(what))return t('{} asked to slow down',name||t('The source'));
 if(/read_failed$/.test(what))return name?t('Couldn’t read {}',name):t('Couldn’t read the source');
 if(/^HTTP_5/.test(what))return t('{} had a problem on its side',name||t('The source'));
+// Slack's own trouble said as a label (slack_internal_error:users.info): the same as its 5xx
+if(/^(?:internal_error|fatal_error|service_unavailable)(?::|$)/.test(what))return t('{} had a problem on its side',name||t('The source'));
+if(/^request_timeout(?::|$)/.test(what))return t('{} was slow to answer',name||t('The source'));
 const words=v.replace(/[_:]+/g,' ').trim();return words[0].toUpperCase()+words.slice(1)}
 const SERVICE_NAMES={gmail:'Email',calendar:'Calendar',outlook:'Outlook',outlook_calendar:'Outlook Calendar',slack:'Slack',salesflare:'Salesflare CRM',salesforce:'Salesforce',whatsapp:'WhatsApp',telegram:'Telegram chats',linkedin:'LinkedIn',android:'Android notifications',gateway:'Machine health',github:'GitHub',intercom:'Intercom',zoom:'Zoom',google_meet:'Google Meet',teams:'Teams',trello:'Trello',stripe:'Stripe',rss:'Feed',docs:'Microsoft OneDrive',shortcut:'Shortcut',x:'X'};
 // The tools underneath (gog, wacli, msgraph-cli, the OpenClaw feed) are never a name on screen: one of their keys from

@@ -21,7 +21,7 @@ import urllib.request
 
 import graph
 from machine import stamps
-from sources import SourceError, credential
+from sources import SourceError, credential, rate_limited, transient
 from timeutil import now
 
 
@@ -248,6 +248,8 @@ class Slack:
             self.read_went(False)
         return data
 
+    EMAIL_GRACE = 6 * 3600  # seconds a passed email check carries a users.info hiccup (Slack's or the network's)
+
     def profile(self):
         if time.monotonic() < self.verified_until:
             return
@@ -255,10 +257,21 @@ class Slack:
         if (identity.get('team_id') != self.account['team_id'] or
                 identity.get('user_id') != self.account['user_id'] or identity.get('bot_id')):
             raise SourceError('account_identity_mismatch')
-        user = self.get('users.info', {'user': self.account['user_id']}).get('user', {})
+        try:
+            user = self.get('users.info', {'user': self.account['user_id']}).get('user', {})
+        except SourceError as error:
+            # auth.test just confirmed the workspace and member. When Slack or the network then hiccups on users.info
+            # (internal_error, a timeout) and this member's email passed the check shortly before, the reads go on and
+            # the next sync checks again. It used to fail every sync for as long as Slack kept answering
+            # internal_error there (2026-11-11). A first check, or any other answer, still fails closed.
+            verified = getattr(self, 'email_verified_at', 0)
+            if verified and time.monotonic() - verified < self.EMAIL_GRACE and slack_hiccup(error):
+                return
+            raise
         if user.get('profile', {}).get('email', '').lower() != self.account['email'].lower():
             raise SourceError('account_identity_mismatch')
-        self.verified_until = time.monotonic() + 300
+        self.email_verified_at = time.monotonic()
+        self.verified_until = self.email_verified_at + 300
 
 
 def slack_raw_title(event):
@@ -316,6 +329,17 @@ SLACK_GONE_AFTER = 3  # refusals in a row before a conversation the owner's list
 def slack_refused(error):
     """Slack's answer is about this one conversation (SLACK_REFUSED), not about the connection."""
     return slack_error(error) in SLACK_REFUSED
+
+
+def slack_hiccup(error):
+    """Slack or the network, as far as anyone can tell (a 5xx, a timeout, Slack's internal_error): the same call is
+    worth another try later. Never a rate limit: that waits for its Retry-After and the read's round."""
+    label = slack_error(error)
+    return not rate_limited(error) and (transient(error) or label == 'invalid_json'
+                                        or label[len('slack_'):] in SLACK_HICCUP_LABELS)
+
+
+SLACK_HICCUP_REST = 120  # seconds a direct message whose check hiccuped waits before it is checked again
 
 
 def slack_set_aside(config, channel, label):
@@ -508,6 +532,7 @@ def slack_next_due(store, config, account, source, state):
         return False
     retained = max(float(state.get('after') or 0), now - config.get('bootstrap_days', 7) * 86400)
     start, best, moved = state['index'] % len(channels), None, False
+    hiccups, checked = [], False  # direct messages whose check hiccuped; whether any check answered
     for offset in range(len(channels)):
         i = (start + offset) % len(channels)
         channel = channels[i]
@@ -524,6 +549,12 @@ def slack_next_due(store, config, account, source, state):
                 try:
                     info = source.get('conversations.info', {'channel': channel['id']}).get('channel') or {}
                 except SourceError as error:
+                    # One check timing out (Slack or the network) failed the whole sync (2026-11-11): that direct
+                    # message is checked again shortly and the others go on. Only when no check answered at all is it
+                    # the connection, and the sync fails as before.
+                    if slack_hiccup(error):
+                        hiccups.append((channel, error))
+                        continue
                     # A direct message this token can't open (closed, or with a removed member) failed every sync
                     # and held up every other conversation behind it (2026-11-09): it rests like a quiet one, and
                     # says it can't be read and rests longer each time (slack_set_aside), until a later read clears it
@@ -533,6 +564,7 @@ def slack_next_due(store, config, account, source, state):
                     slack_set_aside(config, channel, slack_error(error))
                     moved = True
                     continue
+                checked = True
                 latest = info.get('latest') or {}
                 newest = float(latest.get('ts') or 0)
                 seen = max(float(channel.get('last_activity') or 0), float(channel['last_scan']))
@@ -546,6 +578,12 @@ def slack_next_due(store, config, account, source, state):
         rank = float('inf') if news else (now - channel.get('due', 0)) / slack_rest(config, channel)
         if best is None or rank > best[0]:
             best = (rank, i)
+    if hiccups:
+        if best is None and not checked:
+            raise hiccups[0][1]
+        for channel, _ in hiccups:
+            channel['due'] = now + SLACK_HICCUP_REST
+        moved = True
     if best is None:
         state['index'] = 0
         store.commit_page(account['id'], state, [])

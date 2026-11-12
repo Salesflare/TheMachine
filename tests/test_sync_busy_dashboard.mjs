@@ -11,4 +11,7 @@ assert.equal(syncError('salesflare:HTTP_500'),'Salesflare CRM had a problem on i
 assert.equal(syncError('shortcut_http:HTTP_429'),'Shortcut asked to slow down');
 assert.equal(syncError('mystery_http:HTTP_503'),'The source had a problem on its side');
 assert.ok(!/side|slow down/.test(syncError('google_meet_http:HTTP_403')),'a permission error is not the service being busy');
+// Slack says its own trouble as a label, with the method after it
+assert.equal(syncError('slack_internal_error:users.info'),'Slack had a problem on its side');
+assert.equal(syncError('slack_request_timeout:conversations.history'),'Slack was slow to answer');
 console.log('sync busy ok');

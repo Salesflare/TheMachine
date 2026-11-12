@@ -150,6 +150,69 @@ class ReopenAndSlack(unittest.TestCase):
             def get(self,method,params):raise a.SourceError('network:TimeoutError:conversations.info')
         with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},account,Down())
 
+    def test_one_dm_check_timing_out_does_not_fail_the_sync(self):
+        # conversations.info timed out for one direct message and the whole sync failed (2026-11-11).
+        account={'id':'slack','fair_incremental':True,'slack_host':'example.slack.com'}
+        now=a.time.time()
+        channels=[{'id':'D1','name':'DM U2','type':'dm','threads':[],'last_scan':f'{now-60:.6f}','next_full':now+86400,'last_activity':now-3600},
+                  {'id':'D2','name':'DM U3','type':'dm','threads':[],'last_scan':f'{now-60:.6f}','next_full':now+86400,'last_activity':now-3600}]
+        self.store.commit_page('slack',{'mode':'incremental','phase':'scan','after':'1000.000000','channels':channels,'index':0,
+                                        'next_discovery':now+86400},[])
+        calls=[]
+        class Source(a.Slack):
+            def __init__(self):pass
+            def profile(self):pass
+            def get(self,method,params):
+                calls.append((method,params['channel']))
+                if method=='conversations.info':
+                    if params['channel']=='D1':raise a.SourceError('network:TimeoutError:conversations.info')
+                    return {'channel':{'latest':{'ts':f'{now-10:.6f}'}}}
+                return {'messages':[{'ts':f'{now-10:.6f}','text':'New','user':'U3'}]}
+        names=patch_everywhere(a,'remember_slack_names');names.start();self.addCleanup(names.stop)
+        while a.sync_slack(self.store,{},account,Source())['more']:pass
+        self.assertIn(('conversations.history','D2'),calls)
+        cp=self.store.checkpoint('slack')
+        self.assertNotIn('error',cp['channels'][0])  # not set aside: checked again shortly
+        self.assertLessEqual(cp['channels'][0]['due'],a.time.time()+slack_source.SLACK_HICCUP_REST)
+        # A rate limit still stops the sync: it waits for Slack's Retry-After.
+        cp['channels'][0]['due']=0;cp['channels'][1]['due']=0
+        self.store.commit_page('slack',cp,[])
+        class Limited(Source):
+            def get(self,method,params):
+                if method=='conversations.info' and params['channel']=='D1':raise a.SourceError('slack:conversations.info',429,60)
+                return super().get(method,params)
+        with self.assertRaises(a.SourceError):a.sync_slack(self.store,{},account,Limited())
+
+    def test_a_users_info_hiccup_after_a_passed_check_does_not_fail_the_sync(self):
+        # Slack answered internal_error to users.info for half an hour and every sync failed on the identity check (2026-11-11).
+        account={'id':'slack','team_id':'T1','user_id':'U1','email':'owner@example.com'}
+        answers={'users.info':[]}
+        class Source(a.Slack):
+            def get(self,method,params=None):
+                if method=='auth.test':return {'team_id':'T1','user_id':'U1'}
+                if answers['users.info']:raise answers['users.info'].pop(0)
+                return {'user':{'profile':{'email':'Owner@example.com'}}}
+        source=Source({},account)
+        hiccup=a.SourceError('slack_internal_error:users.info')
+        answers['users.info']=[hiccup]
+        with self.assertRaises(a.SourceError):source.profile()  # never checked yet: fails closed
+        source.profile()  # passes
+        source.verified_until=0
+        for error in (hiccup,a.SourceError('network:TimeoutError:users.info'),a.SourceError('slack:users.info',503)):
+            answers['users.info']=[error];source.profile()  # Slack or the network: the reads go on
+            self.assertEqual(source.verified_until,0)  # and the next sync checks again
+        for error in (a.SourceError('slack_invalid_auth:users.info'),a.SourceError('slack:users.info',429,60)):
+            answers['users.info']=[error]
+            with self.assertRaises(a.SourceError):source.profile()
+        source.email_verified_at-=source.EMAIL_GRACE+1
+        answers['users.info']=[hiccup]
+        with self.assertRaises(a.SourceError):source.profile()  # a check long ago carries nothing
+        class Other(Source):
+            def get(self,method,params=None):
+                return {'user':{'profile':{'email':'someone@example.com'}}} if method=='users.info' else super().get(method,params)
+        other=Other({},account);other.email_verified_at=a.time.monotonic()
+        with self.assertRaisesRegex(a.SourceError,'account_identity_mismatch'):other.profile()  # a wrong email still fails
+
     def test_a_busy_channel_is_read_before_a_daily_batch_of_quiet_conversations(self):
         # Quiet conversations all come due for their daily read at about the same time. Walking the list in order
         # spent every read on them (one every few minutes) while a busy channel further down waited for hours.
