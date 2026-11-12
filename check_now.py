@@ -17,11 +17,13 @@ import collections
 import datetime as dt
 import email.utils
 import json
+import sqlite3
 import threading
 import time
 
 import abilities
 import graph
+from machine.cards import group_sender
 from machine.sources.android import android_app_shown, android_text_shown
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_plain
@@ -148,6 +150,20 @@ def _no_id(who):
     return '' if graph.SLACK_MEMBER.search(who) or graph.SOMEONE_ON_SLACK in who else who
 
 
+def _org_names(db, addresses):
+    """The name of the organization the Graph puts each of these addresses' people in (lowercased address -> name),
+    never an address. Empty without a Graph."""
+    wanted = sorted({'email:' + str(a).lower() for a in addresses if a})
+    if not wanted:
+        return {}
+    try:
+        found = db.execute("SELECT p.id, o.name FROM graph_nodes p JOIN graph_nodes o ON o.id=json_extract(p.info,'$.org') "
+                           f"AND o.kind='org' WHERE p.id IN ({','.join('?' * len(wanted))})", wanted).fetchall()
+    except sqlite3.OperationalError:
+        return {}  # no graph yet
+    return {i[6:]: ' '.join(str(name).split()) for i, name in found if name and '@' not in str(name)}
+
+
 def _who_and_what(row, meta):
     """A message that isn't email: who it's from and its first words (a chat), the app by name and what it said (a
     phone notification), or who and its title (an update). Slack's link and mention markup reads as plain words, and a
@@ -155,6 +171,8 @@ def _who_and_what(row, meta):
     group, title, body = source_group(row['kind']), _snippet(row['title'], 1000), _snippet(row['body'])
     if row['kind'] == 'slack.message':
         title, body = _snippet(slack_plain(row['title']), 1000), _snippet(slack_plain(row['body']))
+    if row['kind'] in ('intercom.conversation', 'fleet.intercom'):  # its words turn by turn, never a part's raw time and type
+        body = _snippet(' · '.join(t['body'] for t in message_view.intercom_turns(meta, row['body'], row['occurred_at'])))
     if group == 'notification':
         package = meta.get('package_name') or ''
         app = android_app_shown(package, meta.get('app_name')) if package else str(meta.get('app_name') or '')
@@ -219,6 +237,9 @@ def _mail_view(db, review, items, batch, mail, current, own):
             thread['account'] = row['account_id']  # its mark: Gmail or Outlook by the account it came in on
         if group == 'email':
             name, address = message_view.sender_name(row['kind'], meta), _sender(meta.get('from'))[1]
+            said = email.utils.parseaddr(' '.join(str(meta.get('from') or '').split()))[0].strip().strip('"')
+            if group_sender(said) != said:  # a Google Group's, short enough for a row: "Sam Lee via sales"
+                name = group_sender(said).split('@')[0]
             if name and (address not in own or not thread['from']):
                 thread['from'] = name
             thread['subject'] = (row['title'] or '').strip() or thread['subject']
@@ -287,10 +308,13 @@ def _mail_view(db, review, items, batch, mail, current, own):
             row['why'] = why
         rows.append(row)
     # a sender known only by address shows by the name the Graph knows, the address only when none is known
+    # and outside email, with no person's name, by their organization's (a payment from ops@acme.example: Acme)
     names = message_view.address_names(db, message_view.bare_addresses(*(r.get('from') for r in rows)))
+    orgs = _org_names(db, message_view.bare_addresses(*(r['from'] for r in rows if r['source'] != 'email')) - set(names))
     for row in rows:
-        if row.get('from') and row['from'].lower() in names:
-            row['from'] = names[row['from'].lower()]
+        known = row.get('from') and (names.get(row['from'].lower()) or row['source'] != 'email' and orgs.get(row['from'].lower()))
+        if known:
+            row['from'] = known
     counts = collections.Counter()
     for thread in threads.values():
         counts[thread['source']] += thread['in']
