@@ -460,7 +460,8 @@ class EventsStore:
             rows = slack_named(db, rows)
         for row in rows:
             if row.get('kind') == 'android.notification':
-                row['metadata']['app_name'] = android_app_shown(row['metadata'].get('package_name'))  # "LinkedIn", never "com.linkedin.android"
+                # "LinkedIn", never "com.linkedin.android"; the label the phone gave when it gave one
+                row['metadata']['app_name'] = android_app_shown(row['metadata'].get('package_name'), row['metadata'].get('app_name'))
         return rows
 
     def move_meeting_transcripts(self, db):

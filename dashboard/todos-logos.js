@@ -3,11 +3,12 @@
 // same brands as the colored logos in + Add, drawn in the text's color so they sit quietly in a line. Each is a file,
 // dashboard/logos/mono/<key>.svg (sources and terms in its NOTICE.md), loaded only when shown, as the mask of a
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
-const MONO=['airbnb','android','bol','calendar','discord','docs','dropbox','facebook','gateway','gbrain','github','gmail','google_docs',
- 'google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos','googleplay','googletasks','hubspot',
- 'icloud_calendar','instagram','intercom','linkedin','medium','messenger','netflix','notion','openai','outlook','outlook_calendar','paypal','pinterest','proton_calendar','reddit',
- 'revolut','rss','salesflare','salesforce','shortcut','signal','slack','snapchat','source','spotify','stripe','tailscale','teams','telegram',
- 'tiktok','trello','whatsapp','x','youtube','zoom'];
+const MONO=['airbnb','android','bol','booking','calendar','claude','discord','docs','dropbox','duolingo','etsy','facebook','fitbit','gateway',
+ 'gbrain','github','gmail','google_docs','google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos',
+ 'googleplay','googletasks','hubspot','icloud_calendar','instagram','intercom','komoot','lastpass','linkedin','medium','messenger','netflix',
+ 'notion','openai','outlook','outlook_calendar','paypal','pinterest','podcastaddict','producthunt','proton_calendar','reddit','revolut','rss',
+ 'salesflare','salesforce','shopify','shortcut','signal','slack','snapchat','source','spotify','strava','stremio','stripe','tailscale','teams',
+ 'telegram','tiktok','trello','uber','vinted','waze','whatsapp','wise','x','youtube','zoom'];
 // Other names for a mark: a connector's own key, the older via- names; mail, cal and the rest are the line icons in
 // todos-chat.css (Other email is the plain envelope, Other calendar,
 // a calendar link and Exchange Server the plain calendar)
@@ -23,7 +24,11 @@ const MONO_APPS={'com.google.android.gm':'gmail','com.google.android.apps.tasks'
  'com.stripe.android.dashboard':'stripe','com.github.android':'github','com.medium.reader':'medium','com.bol.shop':'bol','com.discord':'discord','com.reddit.frontpage':'reddit',
  'com.netflix.mediaclient':'netflix','com.airbnb.android':'airbnb','com.paypal.android.p2pmobile':'paypal','com.revolut.revolut':'revolut','notion.id':'notion',
  'com.dropbox.android':'dropbox','com.zhiliaoapp.musically':'tiktok','com.snapchat.android':'snapchat','com.pinterest':'pinterest','com.trello':'trello',
- 'com.google.android.apps.docs.editors.docs':'google_docs','com.microsoft.skydrive':'docs','com.hubspot.android':'hubspot','com.salesforce.chatter':'salesforce'};
+ 'com.google.android.apps.docs.editors.docs':'google_docs','com.microsoft.skydrive':'docs','com.hubspot.android':'hubspot','com.salesforce.chatter':'salesforce',
+ 'com.anthropic.claude':'claude','com.duolingo':'duolingo','com.fitbit.FitbitMobile':'fitbit','com.transferwise.android':'wise','com.revolut.business':'revolut',
+ 'com.strava':'strava','fr.vinted':'vinted','com.etsy.android':'etsy','com.waze':'waze','com.ubercab':'uber','com.ubercab.eats':'uber','com.booking':'booking',
+ 'com.shopify.arrive':'shopify','de.komoot.android':'komoot','com.lastpass.authenticator':'lastpass','com.lastpass.lpandroid':'lastpass',
+ 'com.bambuna.podcastaddict':'podcastaddict','com.producthuntmobile':'producthunt','com.stremio.one':'stremio'};
 const monoKey=k=>MONO.includes(k)?k:MONO_ALIAS[k]||'';
 {const st=document.createElement('style'),url=k=>`url("brand/logos/mono/${k}.svg")`;
  st.textContent=MONO.map(k=>`.via-${k}{--ico:${url(k)}}`).join('')+Object.entries(MONO_ALIAS).map(([a,k])=>`.via-${a}{--ico:${MONO.includes(k)?url(k):`var(--i-${k})`}}`).join('');

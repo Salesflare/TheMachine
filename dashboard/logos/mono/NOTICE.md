@@ -16,10 +16,15 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | File | Service | Simple Icons slug |
 | --- | --- | --- |
 | `airbnb.svg` | Airbnb | airbnb |
+| `booking.svg` | Booking.com | bookingdotcom |
 | `calendar.svg` | Google Calendar | googlecalendar |
+| `claude.svg` | Claude | claude |
 | `discord.svg` | Discord | discord |
 | `dropbox.svg` | Dropbox | dropbox |
+| `duolingo.svg` | Duolingo | duolingo |
+| `etsy.svg` | Etsy | etsy |
 | `facebook.svg` | Facebook | facebook |
+| `fitbit.svg` | Fitbit | fitbit |
 | `github.svg` | GitHub | github |
 | `gmail.svg` | Gmail | gmail |
 | `google_docs.svg` | Google Docs | googledocs |
@@ -36,24 +41,35 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `icloud_calendar.svg` | iCloud Calendar | icloud |
 | `instagram.svg` | Instagram | instagram |
 | `intercom.svg` | Intercom | intercom |
+| `komoot.svg` | komoot | komoot |
+| `lastpass.svg` | LastPass | lastpass |
 | `messenger.svg` | Messenger | messenger |
 | `netflix.svg` | Netflix | netflix |
 | `notion.svg` | Notion | notion |
 | `paypal.svg` | PayPal | paypal |
 | `pinterest.svg` | Pinterest | pinterest |
+| `podcastaddict.svg` | Podcast Addict | podcastaddict |
+| `producthunt.svg` | Product Hunt | producthunt |
 | `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `reddit.svg` | Reddit | reddit |
 | `revolut.svg` | Revolut | revolut |
 | `rss.svg` | RSS | rss |
+| `shopify.svg` | Shopify | shopify |
 | `shortcut.svg` | Shortcut | shortcut |
 | `snapchat.svg` | Snapchat | snapchat |
 | `spotify.svg` | Spotify | spotify |
+| `strava.svg` | Strava | strava |
+| `stremio.svg` | Stremio | stremio |
 | `stripe.svg` | Stripe | stripe |
 | `tailscale.svg` | Tailscale | tailscale |
 | `telegram.svg` | Telegram | telegram |
 | `tiktok.svg` | TikTok | tiktok |
 | `trello.svg` | Trello | trello |
+| `uber.svg` | Uber | uber |
+| `vinted.svg` | Vinted | vinted |
+| `waze.svg` | Waze | waze |
 | `whatsapp.svg` | WhatsApp | whatsapp |
+| `wise.svg` | Wise | wise |
 | `x.svg` | X | x |
 | `youtube.svg` | YouTube | youtube |
 

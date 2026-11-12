@@ -12,7 +12,17 @@ JS = (ROOT / 'dashboard' / 'todos-logos.js').read_text(encoding='utf-8')
 # The line icons in todos-chat.css (--i-<name>) an alias may point at
 LINE_ICONS = {'mail', 'chat', 'cal', 'note', 'file', 'browser', 'link'}
 # Phone apps with no brand mark here: they show the phone
-NO_MARK_APPS = {'android', 'com.google.android.apps.wellbeing', 'com.kbc.mobile.android.phone.kbc', 'com.google.android.dialer'}
+NO_MARK_APPS = {'android', 'com.google.android.apps.wellbeing', 'com.kbc.mobile.android.phone.kbc', 'com.google.android.dialer',
+                # the phone's own apps
+                'com.google.android.gms', 'com.google.android.odad', 'com.google.android.deskclock', 'com.android.deskclock',
+                'com.android.systemui', 'com.android.server.telecom', 'com.android.providers.downloads', 'com.android.settings',
+                'com.google.android.permissioncontroller', 'com.google.android.networkstack', 'com.google.android.GoogleCamera',
+                'com.google.android.apps.weather', 'com.google.android.contacts', 'com.google.android.apps.wear.companion',
+                'com.google.android.apps.wearables.maestro.companion',
+                # brands with no one-color mark under open terms
+                'com.seekingalpha.webwrapper', 'net.dinglisch.android.taskerm', 'org.kde.kdeconnect_tp', 'com.amazon.mShop.android.shopping',
+                'com.disney.disneyplus', 'com.Splitwise.SplitwiseMobile', 'com.bshg.homeconnect.android.release', 'com.labs.merlinbirdid.app',
+                'com.azure.authenticator'}
 
 
 def registry():
