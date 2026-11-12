@@ -237,6 +237,23 @@ class ClaudeNames(unittest.TestCase):
         models = chat_model.parse_catalog(NEW_LIST, self.config)
         self.assertEqual(chat_model.resolve(self.config, models)['model'], 'claude-cli/claude-opus-5-5')
 
+    def test_a_claude_plan_s_main_model_has_its_thinking_levels_though_the_gateway_calls_it_unavailable(self):
+        # A hosted Machine after its Claude sign-in: the Gateway can't see Claude Code's sign-in, so it lists the main
+        # model as unavailable, and the latest session names it anthropic/*. Settings showed no thinking level.
+        self.machine('claude-cli/claude-opus-5-5', {'claude-cli/claude-opus-5-5': {}})
+        unseen = {'models': [{**claude_row('claude-cli', 'claude-opus-5-5'), 'available': False}]}
+        models = chat_model.parse_catalog(unseen, self.config)
+        self.assertEqual([(m['ref'], m['levels']) for m in models], [('claude-cli/claude-opus-5-5', ['low', 'medium', 'high'])])
+        bare = {'models': [{**claude_row('claude-cli', 'claude-opus-5-5'), 'available': False, 'thinkingLevels': []}]}
+        session = {'sessions': [{'modelProvider': 'anthropic', 'model': 'claude-opus-5-5', 'thinkingDefault': 'medium',
+                                 'thinkingLevels': [{'id': x} for x in ('low', 'medium', 'high', 'max')]}]}
+        run = lambda args, **kw: subprocess.CompletedProcess(args, 0, json.dumps(bare if args[3] == 'models.list' else session), '')
+        self.assertEqual([(m['ref'], m['levels']) for m in chat_model.read_catalog(self.config, run)],
+                         [('claude-cli/claude-opus-5-5', ['low', 'medium', 'high', 'max'])])
+        # not on Claude Code: an unavailable model stays out
+        self.machine('acme/lm-2')
+        self.assertEqual(chat_model.parse_catalog(unseen, self.config), [])
+
     def test_an_anthropic_api_key_s_models_are_not_claude_code_s(self):
         self.machine('claude-cli/claude-opus-5-5')  # nothing pins anthropic/* to Claude CLI: those run on an API key
         self.assertEqual(self.refs(NEW_LIST), ['anthropic/claude-opus-5-5', 'anthropic/claude-sonnet-5-5', 'claude-cli/claude-sonnet-5-5'])

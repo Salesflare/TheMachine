@@ -129,13 +129,19 @@ def same_claude(config, ref, refs):
 def parse_catalog(reply, config=None):
     """The models a chat can pick, from a `models.list` reply: [{'ref', 'name', 'levels', 'default'}], signed-in and
     allowed ones only, in the Gateway's order (each provider's recommended ones first). Claude Code's models show once,
-    under one name (claude_form), whether the Gateway lists them as `claude-cli/*`, `anthropic/*` or both."""
+    under one name (claude_form), whether the Gateway lists them as `claude-cli/*`, `anthropic/*` or both. The Gateway
+    can't see Claude Code's own sign-in and may call its models unavailable: while the main model runs through Claude
+    Code, they are offered all the same (else a Claude plan's chats had no model or thinking picker)."""
     out, seen = [], set()
     form = claude_form(config)
+    main_model = main(config)[0]
+    on_claude = bool(main_model) and claude_code(config, main_model)
     for row in (reply or {}).get('models') or []:
-        if not isinstance(row, dict) or row.get('available') is not True:
+        if not isinstance(row, dict):
             continue
         ref = f"{row.get('provider')}/{row.get('id')}"
+        if row.get('available') is not True and not (on_claude and REF.fullmatch(ref) and claude_code(config, ref)):
+            continue
         names = [ref]
         if REF.fullmatch(ref) and ref.split('/')[0] in ('anthropic', 'claude-cli') and claude_code(config, ref):
             # one model under either name: the allowlist may name it either way too
@@ -206,7 +212,13 @@ def fill_levels(models, config, session):
     if not session:
         return models
     ref, levels, default = session
-    if ref != main(config)[0] and ref not in {m['ref'] for m in models}:
+    main_model = main(config)[0]
+    provider, _, name = ref.partition('/')
+    # a session on a Claude Code main model may go by `anthropic/x` where the config has `claude-cli/x`, or back
+    if main_model and provider in ('anthropic', 'claude-cli') and claude_code(config, main_model) \
+            and main_model.split('/', 1)[1] == name:
+        ref = main_model
+    if ref != main_model and ref not in {m['ref'] for m in models}:
         return models
     for entry in models:
         if entry['ref'] == ref:
