@@ -58,7 +58,7 @@ const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why===
 // A row: the source's logo (dashboard/logos/, else a line icon below), its name (and a Suggested tag), why it is
 // suggested or what it brings in, never cut off, and › (↗: opens elsewhere). Connected: a check on the icon, still tappable for a second
 // account. `note`: a status line of its own (Codex, GBrain).
-Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,icloud_calendar:ICONS.calendar,caldav:ICONS.calendar,proton_calendar:ICONS.calendar,ics:ICONS.calendar,exchange:ICONS.calendar,teams:'<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-5v-2"/>',
+Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path d="M4 5h11v8H8l-4 3z"/><path d="M15 9h5v8l-3-2h-5v-2"/>',
  zoom:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 6-3v10l-6-3"/>',docs:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
  intercom:'<path d="M4 5h16v11H9l-5 4z"/><path d="M8.5 9v3M12 8v5M15.5 9v3"/>',rss:'<path d="M5 19h.01M5 12a7 7 0 0 1 7 7M5 5a14 14 0 0 1 14 14"/>',
  shortcut:'<path d="M6 21V4h12l-3 4 3 4H6"/>',salesforce:'<path d="M7 18a4 4 0 0 1-.6-7.95A5 5 0 0 1 16 8.5a4.5 4.5 0 0 1 1.5 8.75L17 18z"/>',trello:'<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6.5" y="6.5" width="4" height="10" rx="1"/><rect x="13.5" y="6.5" width="4" height="6" rx="1"/>',

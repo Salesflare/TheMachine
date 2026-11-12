@@ -33,6 +33,7 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `googleplay.svg` | Google Play | googleplay |
 | `googletasks.svg` | Google Tasks | googletasks |
 | `hubspot.svg` | HubSpot | hubspot |
+| `icloud_calendar.svg` | iCloud Calendar | icloud |
 | `instagram.svg` | Instagram | instagram |
 | `intercom.svg` | Intercom | intercom |
 | `messenger.svg` | Messenger | messenger |
@@ -40,6 +41,7 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `notion.svg` | Notion | notion |
 | `paypal.svg` | PayPal | paypal |
 | `pinterest.svg` | Pinterest | pinterest |
+| `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `reddit.svg` | Reddit | reddit |
 | `revolut.svg` | Revolut | revolut |
 | `rss.svg` | RSS | rss |
