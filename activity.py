@@ -33,7 +33,7 @@ SEEN = ('shown', 'opened', 'visits', 'active_hours')
 CHOICES = {'accept': 'do_it', 'prepare_next': 'do_it', 'send': 'send', 'complete': 'done', 'reject': 'dismissed',
            'snooze': 'snoozed', 'other': 'chat'}
 OWNER_SOURCES = ('dashboard', 'telegram')
-SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
+SEND_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
 KINDS = ('shown', 'opened', 'do_it', 'send', 'sent', 'done', 'dismissed', 'snoozed', 'chat', 'visits', 'active_hours')
 SHOWN = "status IN ('pending','accepted','instructions','prepared') AND (deliver_after IS NULL OR deliver_after<=?)"
 

@@ -105,7 +105,7 @@ LIVE_CONFIG = ('delivery_enabled', 'review_worker')
 # Machine" (2026-11-10). Only a plain addition: new accounts, and new keys (a broker's address, a credential's file)
 # beside settings that stay as they were. Anything else changed, or a source with a process or store of its own, still
 # restarts. The services below keep a process or store of their own that only a start sets up.
-LIVE_SKIP = frozenset({'android', 'gateway', 'telegram', 'whatsapp'})
+LIVE_SKIP = frozenset({'android', 'gateway', 'telegram', 'signal', 'whatsapp'})
 
 
 def live_additions(running, saved):

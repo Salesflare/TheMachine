@@ -24,6 +24,7 @@ from machine.sources.slack import (Slack, slack_error, slack_event, slack_first_
                                    slack_interval, slack_next_due, slack_order, slack_page_names, slack_prune,
                                    slack_read_asked, slack_limits, slack_read_drop, slack_read_now, slack_refused,
                                    slack_set_aside, slack_turn_done, slack_hiccup)
+from machine.sources.signal_chats import sync_signal
 from machine.sources.telegram import sync_telegram
 from machine.sources.whatsapp import sync_whatsapp, WhatsApp
 from sources import CALENDAR_SERVICES, gog_signed_in_since, MAIL_SERVICES, rate_limited, SourceError, transient, upstream_busy
@@ -410,6 +411,8 @@ def sync_source(store, config, account):
         return sync_whatsapp(store, config, account)
     if service == 'telegram':
         return sync_telegram(store, config, account)
+    if service == 'signal':
+        return sync_signal(store, config, account)
     if service == 'salesflare':
         return sync_salesflare(store, config, account)
     if service == 'gateway':

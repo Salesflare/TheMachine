@@ -25,6 +25,7 @@ Simple Icons lists them. One-color marks are drawn dark and inverted in the dark
 | `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
+| `signal.svg` | Signal | signal |
 | `stripe.svg` | Stripe | stripe |
 | `telegram.svg` | Telegram | telegram |
 | `trello.svg` | Trello | trello |

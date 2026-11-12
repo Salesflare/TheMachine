@@ -55,7 +55,7 @@ FIELD_NAMES = {'birthday', 'birthdate', 'birth date', 'date of birth', 'dob', 'v
                'geburtsdatum', 'anniversaire', 'date de naissance', 'cumpleaños', 'fecha de nacimiento', 'compleanno',
                'data di nascita', 'aniversário', 'data de nascimento'}
 # One-to-one conversations the owner writes in, and how a message there is theirs (graph.person_evidence reads it so too)
-CHANNELS = ('whatsapp.message', 'telegram.message', 'gmail.message', 'slack.message', 'linkedin.message', 'teams.message')
+CHANNELS = ('whatsapp.message', 'telegram.message', 'signal.message', 'gmail.message', 'slack.message', 'linkedin.message', 'teams.message')
 
 
 def fold(text):
@@ -317,7 +317,7 @@ def today(db, day, tz, outlook=(), code=None):
 def _one_to_one(kind, meta, owner_slack):
     if kind == 'whatsapp.message':
         return not str(meta.get('chat_id') or '').endswith('@g.us') and not meta.get('group')
-    if kind == 'telegram.message':
+    if kind in ('telegram.message', 'signal.message'):
         return meta.get('chat_kind') != 'group'
     if kind == 'slack.message':
         return str(meta.get('channel_id') or '').startswith('D')

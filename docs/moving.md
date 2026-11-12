@@ -62,7 +62,7 @@ you pick; an export code alone never carries them. The whole archive is encrypte
 `machine/export/hold.py` runs once, before the service starts on the imported data:
 
 - Sends that were queued are blocked with "Not sent: The Machine moved to this computer." Their to-dos show Send again.
-  One that was going out at that moment is uncertain and never resent. The Telegram chats' outbox stops the same way.
+  One that was going out at that moment is uncertain and never resent. The Telegram and Signal chats' outboxes stop the same way.
 - Local agent jobs that ran or waited end with their work kept in their folder.
 - Automated follow-ups are paused on every board that has them, until you resume them.
 - Notifications for the old Machine are dropped; without keys, so are AI connector tokens and phone sign-ups.

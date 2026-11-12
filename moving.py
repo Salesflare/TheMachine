@@ -56,7 +56,7 @@ SECRET_NAMES = {'network-keys.json', 'learnings-keys.json', 'owner-token', 'api-
                 'browser-logins.key', 'session.sealed', 'fleet-token'}
 SECRET_SUFFIXES = ('.key', '.pem', '.sealed', '.p12')  # a Telegram session, a store's own key, a private key
 # Folders that only hold keys (a copied gog keyring, OpenClaw's credentials), and copies of OpenClaw's own settings
-SECRET_DIRS = {'keyring', 'credentials', '.ssh', '.gnupg'}
+SECRET_DIRS = {'keyring', 'credentials', '.ssh', '.gnupg', 'signal-keys'}
 SECRET_FILE = re.compile(r'^openclaw.*\.json$')
 # A small text file that spells out a token, key or password is a key too, whatever its name (a saved API answer, say)
 TOKEN_LIKE = re.compile(rb'(?i)(?:token|api[_-]?key|secret|password|bearer)["\']?\s*[:=]\s*["\']?[A-Za-z0-9_\-./+]{20,}')
@@ -67,7 +67,7 @@ COPY_NAME = re.compile(r'\.(?:bak|backup)[-.]|\.before-|\.pre-[^.]*\d{8}')
 COPIES = 'older copies (.bak, .before-, dated .pre-)'
 # Folders any computer rebuilds by itself (installed packages, caches, git's own history): left out wherever they sit
 REBUILDABLE = {'.git', 'node_modules', '.venv', '.venvs', 'venv', '__pycache__', '.cache', '.pytest_cache', '.mypy_cache',
-               '.ruff_cache', '.tox'}
+               '.ruff_cache', '.tox', 'signal-cli'}
 # Tokens that only work for a hosted server; they are never exported
 HOSTED_ONLY = {'google-broker', 'microsoft-broker', 'zoom-broker', 'google_meet-broker', 'google_docs-broker'}
 # Settings a hosted server added that mean nothing elsewhere
@@ -694,6 +694,9 @@ def _hold(config, manifest, data, now):
             count = moved.hold_telegram(db, now.isoformat(timespec='seconds'))
         if count:
             held['telegram'] = held.get('telegram', 0) + count
+    for path in data.rglob('signal.sqlite'):  # Signal sends count with the others
+        with closing(sqlite3.connect(path, timeout=30)) as db, db:
+            held['sends'] = held.get('sends', 0) + moved.hold_signal(db, now.isoformat(timespec='seconds'))
     return held
 
 

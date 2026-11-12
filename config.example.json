@@ -189,6 +189,14 @@
       "boundary": "personal:telegram"
     },
     {
+      "id": "personal-signal",
+      "service": "signal",
+      "transport": "signal_mirror",
+      "store": "~/.local/share/personal-assistant/signal/personal-signal",
+      "identity_sha256": "sha256-of-your-linked-signal-number",
+      "boundary": "personal:signal"
+    },
+    {
       "id": "openclaw-gateway",
       "service": "gateway",
       "transport": "journald",

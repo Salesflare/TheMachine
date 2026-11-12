@@ -26,13 +26,14 @@ import graph
 
 # Message signals that count as contact, and the channel each is on (the words the card and the prompt use).
 CHANNELS = {'gmail.message': 'email', 'ms_graph.message': 'email', 'outlook.message': 'email', 'salesflare.email': 'email',
-            'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
+            'slack.message': 'Slack', 'teams.message': 'Teams', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
             'linkedin.message': 'LinkedIn', 'x.dm': 'X', 'intercom.conversation': 'Intercom'}
 # Channels the person may use that this Machine may not sync: (channel, services that sync it, identifier prefixes and
 # person_facts fields that show they use it).
 ELSEWHERE = (('WhatsApp', ('whatsapp',), ('wa:',), ('phone',)),
              ('LinkedIn', ('linkedin',), ('li:',), ('linkedin_url',)),
              ('Telegram', ('telegram',), ('tg:',), ()),
+             ('Signal', ('signal',), ('sig:',), ()),
              ('Slack', ('slack',), ('slack:',), ()),
              ('X', ('x',), ('x:',), ('x',)))
 WAITING_DAYS = 3  # the owner wrote last: the card says so after this many days without an answer

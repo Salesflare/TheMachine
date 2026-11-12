@@ -54,7 +54,7 @@ def recap_noise(db, since):
     noise, circle = {}, collections.defaultdict(lambda: {'mine': 0, 'people': set()})
     for i, account, kind, m in db.execute('SELECT id,account_id,kind,metadata FROM events WHERE ingested_at>=? AND history=0', (since,)):
         m = json.loads(m)
-        if (kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us')) or (kind == 'telegram.message' and m.get('chat_kind') == 'group'):
+        if (kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us')) or (kind in ('telegram.message', 'signal.message') and m.get('chat_kind') == 'group'):
             chat = circle[(account, m['chat_id'])]  # who takes part, from every message in it (cards or not)
             if m.get('from_me'):
                 chat['mine'] += 1
@@ -67,8 +67,8 @@ def recap_noise(db, since):
             where, rule = '#' + m['channel_name'], {'channels': [m['channel_name']]}
         elif kind == 'whatsapp.message' and str(m.get('chat_id', '')).endswith('@g.us'):
             where, rule = m.get('chat_name') or 'WhatsApp group', {'chats': [m['chat_id']]}
-        elif kind == 'telegram.message' and m.get('chat_kind') == 'group' and m.get('chat_id'):
-            where, rule = m.get('chat_name') or 'Telegram group', {'chats': [m['chat_id']]}
+        elif kind in ('telegram.message', 'signal.message') and m.get('chat_kind') == 'group' and m.get('chat_id'):
+            where, rule = m.get('chat_name') or kind.split('.')[0].title() + ' group', {'chats': [m['chat_id']]}
         elif kind == 'android.notification' and m.get('package_name'):
             app = android_app_shown(m['package_name'], m.get('app_name'))  # com.Slack → Slack, com.linkedin.android → LinkedIn
             where, rule = app + ' notifications', {'packages': [m['package_name']]}

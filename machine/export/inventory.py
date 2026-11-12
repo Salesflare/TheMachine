@@ -52,7 +52,7 @@ def _names(text):
 # rebuilding it would cost hours on a big mailbox.
 _BY_PART = {
     'messages': _names('''events checkpoints sync_activity sync_daily history_backfill android_inbox
-        android_receipts android_feed_health chats messages state outbox photo_asks email_bounce_events email_bounce_scan email_bounce_cc email_bounce_cc_scan
+        android_receipts android_feed_health chats messages state outbox signal_state signal_chats signal_messages signal_outbox photo_asks email_bounce_events email_bounce_scan email_bounce_cc email_bounce_cc_scan
         email_bounces own_addresses own_address_choices own_address_fetched own_domains slack_members meet_links meet_log
         meet_pins meet_seen meet_sessions meet_prefs meeting_moves talk_lines moved_in'''),
     'todos': _names('''suggestions suggestion_keys card_moves card_uses decision_asks analyses review_runs review_save_failures first_look_ahead feedback_prompts
@@ -100,7 +100,7 @@ INNER = re.compile(r'^sqlite_|_(?:data|idx|docsize|config|content)$')
 
 # The data folder by name (the whole folder moves; files are found by walking it). Keys are kept apart (moving.plan).
 DATA_FILES = {
-    'config.json': 'settings', 'events.sqlite': 'messages', 'telegram.sqlite': 'messages', 'telegram': 'messages', 'chat-files': 'attachments',
+    'config.json': 'settings', 'events.sqlite': 'messages', 'telegram.sqlite': 'messages', 'telegram': 'messages', 'signal': 'messages', 'chat-files': 'attachments',
     'attachments': 'attachments', 'whatsapp-photos': 'attachments', 'open-attachments': 'attachments',
     'agent-jobs': 'agents', 'prompt-receipts': 'activity', 'voice': 'preferences', 'signatures.json': 'preferences',
     'notes.txt': 'memories', 'slack-rounds.json': 'messages', 'bug-queue.json': 'activity', 'bug-offers.json': 'activity',

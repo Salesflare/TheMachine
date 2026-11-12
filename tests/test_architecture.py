@@ -446,7 +446,9 @@ OVER_BUDGET = {}
 # 1,393,000 -> 1,394,000 (2026-11-12): main sat 288 bytes under it. Five calendar sources (iCloud, CalDAV, Proton, a
 # calendar link, Exchange) need their names, icons, marks and sync errors in words wherever a to-do or error line
 # shows them (+905); their connect sheets and cards load with Connections.
-FIRST_LOAD_CEILING = 1_394_000
+# 1,394,000 -> 1,395,000 (2026-11-12): Signal chats is a send and draft kind like WhatsApp in the to-do lists, the send
+# dialog and the viewer, which draw first (about 0.9 KB).
+FIRST_LOAD_CEILING = 1_395_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000
@@ -494,6 +496,9 @@ LAZY_CEILING.update(followups=28_000, graph=384_000)
 # connections 108,000 -> 110,000 (2026-11-12): + Add shows Suggested for you on top again, as well as in each group, and
 # puts catch-all sources last (about 0.9 KB).
 LAZY_CEILING['connections'] = 110_000
+# connections 110,000 -> 111,000 (2026-11-12): Signal chats' QR step, its two stop notes and its no-older-messages note
+# on the card (about 0.35 KB), after the calendar sources took the room.
+LAZY_CEILING['connections'] = 111_000
 # brief 7,000 (2026-11-12): the team brief's lines as to-dos (about 5 KB), loaded when one is on screen.
 LAZY_CEILING['brief'] = 7_000
 # settings 136,000 -> 140,000 (2026-11-12): Work hours' Morning digest follows Snoozes land at, with its note under the

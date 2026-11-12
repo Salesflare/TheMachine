@@ -71,7 +71,7 @@ function setupQRHTML(){const p=state?.phone_app_store||{},rows=v=>Array.isArray(
 // Not in the site's demo or a frame, and not while a hosted Machine's Needs you line already says it (setupStep: its
 // setup page). While it shows, the empty state under it (the robot, its line and Check now) hides: with no mail there is
 // nothing to check, and the card says what to do. Its calendar comes next, as the first row of the card above.
-const SETUP_MAIL=['gmail','outlook','imap'],SETUP_CHATS=['slack','whatsapp','telegram','teams'];
+const SETUP_MAIL=['gmail','outlook','imap'],SETUP_CHATS=['slack','whatsapp','telegram','signal','teams'];
 const setupMailFirst=()=>{const s=state?.setup_card;if(!s||s.demo||DEV.framed||!state.suggestions)return false;
  if((state.connectors||[]).some(c=>SETUP_MAIL.includes(c.service)||SETUP_CHATS.includes(c.service)))return false;
  return setupStep()?.action!=='Connect mail'};

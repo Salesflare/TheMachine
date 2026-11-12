@@ -145,7 +145,7 @@ GENERIC_NAMES = {'you', 'linkedin member', 'x conversation', 'linkedin conversat
 WEIGHTS = {'owner': 0.6, 'them': 0.3, 'met': 0.5}
 UNDATED = frozenset({'owner.card'})  # a record the owner made about someone: when it was made is no contact with them
 # A person's identifiers, one per channel (touches) plus someone added by hand (manual_nodes): the ids Merge takes.
-PERSON_ID = re.compile(r'(?:email|wa|tg|slack|li|x|gh|manual):\S+')
+PERSON_ID = re.compile(r'(?:email|wa|tg|sig|slack|li|x|gh|manual):\S+')
 DECISION_WEIGHT = {'accept': 1.0, 'send': 1.0, 'complete': 1.0, 'other': 0.5, 'reject': -0.5}
 # Cosine between local embeddings (see embeddings.py). Meaning alone groups by genre (every partnership
 # email reads alike), so a probable link also needs a shared person; tried on live data, 2026-10-18.
@@ -441,7 +441,7 @@ def touches(kind, m, owner, wrote_to):
     """[(identifier, name, weight, role)] for one signal. Roles: 'owner' (the owner wrote to them),
     'them' (they wrote to the owner directly), 'met' (a meeting with the owner), 'seen' (present).
     A system or relay address is never one of them."""
-    return [t for t in _touches(kind, relayed(kind, m), owner, wrote_to) if not (t[0].startswith('email:') and relay(t[0][6:]))]
+    return [t for t in (__import__('signal_store').touches(m, WEIGHTS) if kind == 'signal.message' else _touches(kind, relayed(kind, m), owner, wrote_to)) if not (t[0].startswith('email:') and relay(t[0][6:]))]
 
 
 def relayed(kind, m):
@@ -728,8 +728,8 @@ def thread_key(kind, m):
         return ('sl:' + str(m['channel_id']) + ':' + str(stamp), True) if stamp else (None, False)
     if kind in ('whatsapp.message',) and m.get('chat_id'):
         return 'wa:' + str(m['chat_id']), False
-    if kind == 'telegram.message' and m.get('chat_id'):
-        return 'tg:' + str(m['chat_id']), False
+    if kind in ('telegram.message', 'signal.message') and m.get('chat_id'):
+        return ('tg:' if kind == 'telegram.message' else 'sig:') + str(m['chat_id']), False
     if kind in ('linkedin.message', 'x.dm') and m.get('conversation_id'):
         return kind + ':' + str(m['conversation_id']), False
     if kind == 'x.mention' and m.get('conversation_id'):
@@ -2275,7 +2275,7 @@ def detail(db, node_id, events=12):
 TIMELINE_SOURCES = (('email', ('gmail.message', 'salesflare.email')),
                     ('meetings', ('calendar.event', 'salesflare.meeting', 'zoom.summary', 'meeting.notes', 'meeting.transcript')),
                     ('intercom', ('intercom.conversation',)),
-                    ('chats', ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message')))
+                    ('chats', ('whatsapp.message', 'slack.message', 'teams.message', 'linkedin.message', 'x.dm', 'x.mention', 'telegram.message', 'signal.message')))
 TIMELINE_GROUPS = ('email', 'meetings', 'intercom', 'chats', 'cards', 'projects', 'other')
 TIMELINE_CARDS = (*OPEN_CARD, 'completed')  # a dismissed card is not part of the story
 ZOOM_NEAR = dt.timedelta(minutes=30)       # a Zoom summary within this of one of their meetings is that meeting's
@@ -2829,7 +2829,7 @@ def set_role(db, node_id, role, source, now, event_id=None, quote=None):
 
 
 VIA = {'linkedin.message': 'LinkedIn', 'gmail.message': 'email', 'salesflare.email': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
-       'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
+       'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal', 'x.dm': 'X', 'x.mention': 'X', 'intercom.conversation': 'Intercom', 'github.notification': 'GitHub'}
 
 
 def set_org(db, node_id, org, source, now, event_id=None, quote=None):
@@ -4322,7 +4322,7 @@ def project_card(db, node_id):
             'outcome_reason': row['outcome_reason'], **__import__('project_success').card(db, row)}
 
 
-MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'intercom.conversation', 'x.dm',
+MESSAGE_KINDS = ('gmail.message', 'salesflare.email', 'linkedin.message', 'slack.message', 'teams.message', 'whatsapp.message', 'telegram.message', 'signal.message', 'intercom.conversation', 'x.dm',
                  'ms_graph.message', 'outlook.message')
 
 

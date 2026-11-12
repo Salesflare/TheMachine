@@ -76,11 +76,11 @@ function chatDiff(a,b){const x=String(a).split(/(\s+)/),y=String(b).split(/(\s+)
  return html`${out.map(([k,t])=>k==='='?t:k==='-'?(t.trim()?html`<del>${t}</del>`:''):html`<ins>${t}</ins>`)}`}
 // The card's own pieces for the chat, taken from the card as the dashboard draws it, so they stay the same.
 // The card's own sends (their state refreshes every 2 s while one goes out): what the chat's draft says under it
-const CHAT_SENDS=['email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'];
+const CHAT_SENDS=['email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply'];
 const chatSends=s=>taskActions(s).filter(a=>CHAT_SENDS.includes(a.kind)).map(a=>({a,st:a.state||s.action_status})).filter(x=>x.st?.status);
 const chatGoing=st=>['queued','sending'].includes(st?.status)||st?.status==='uncertain'&&!st.retry_ok;
 const chatFailed=st=>['failed','blocked'].includes(st?.status)||!!st?.retry_ok;
-const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',doc_reply:'Sent to {} in the doc'};
+const CHAT_BY={email:'Sent to {} by email',email_demo:'Sent to {} by email',slack:'Sent to {} on Slack',linkedin:'Sent to {} on LinkedIn',whatsapp:'Sent to {} on WhatsApp',telegram:'Sent to {} on Telegram',signal:'Sent to {} on Signal',x:'Sent to {} on X',intercom:'Sent to {} in Intercom',doc_reply:'Sent to {} in the doc'};
 function chatSendLine(d,x){const st=x.st,who=d.to.length&&!d.to.some(v=>v.includes('@'))?d.to.join(', '):x.a.to_name?.split(/\s+/)[0]||d.to.join(', ')||t('them');
  if(chatGoing(st))return html`<p class="chat-sendstate" role="status">${t(st.status==='uncertain'?'Checking it went out…':'Sending…')}</p><div class="send-progress" aria-hidden="true"><i></i></div>`;
  if(st.status==='sent')return html`<p class="chat-sendstate ok" role="status">${d.kind==='intercom'?t('Sent as {}',x.a.as_name||t('your Intercom admin')):t(CHAT_BY[d.kind]||'Sent to {}',who)}${st.sent_at?' · '+chatHM(Date.parse(st.sent_at)):''}</p>`;
@@ -149,7 +149,7 @@ function chatSteps(steps){const rows=new Map();
 const chatLong=(t,lines=4)=>String(t||'').split('\n').length>lines||String(t||'').length>lines*70;
 // A source in the chat by its one-color mark (todos-logos.js): Gmail, Outlook, Slack and the rest by name, else mail or chat
 const chatViaIcon=(v,note)=>{const k=String(v||'').toLowerCase().trim();return note?'note':/^(gmail|outlook)\b/.test(k)?k.split(/\W/)[0]:/^(email|mail)/.test(k)?'mail':/calendar/.test(k)?'cal':monoKey(k)&&!['source','gateway'].includes(k)?k:'chat'};
-const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',whatsapp:'WhatsApp',telegram:'Telegram',x:'X',calendar:'Calendar',intercom:'Intercom',github:'GitHub',android:'Phone'};
+const CHAT_VIA={email:'Email',gmail:'Email',slack:'Slack',linkedin:'LinkedIn',whatsapp:'WhatsApp',telegram:'Telegram',signal:'Signal chats',x:'X',calendar:'Calendar',intercom:'Intercom',github:'GitHub',android:'Phone'};
 // The owner's own taps read as what they did, not a bare button name
 // (said without "You": the side already says who)
 const CHAT_TAPS={'Do it':'Chose Do it','Plan it':'Chose Plan it','Reopened':'Reopened it','Snoozed':'Snoozed it','Unsnoozed':'Unsnoozed it','Back for a check-in':'Brought it back for a check-in','Check-in moved':'Moved the check-in','Marked done':'Marked it done','Not done yet':'Marked it not done'};
@@ -272,7 +272,7 @@ const isOpen=i=>!closed(s)&&(i.kind==='card'||!(i.drafts||[]).length||s.status==
     push(i,result(n,i,html`<div class="chat-result-head"><span class="chat-result-title">${title}</span><button type="button" class="link" data-id="${s.id}" data-result="read" data-file="${f.path}" data-file-name="${f.label}">Open</button></div>${body}<p class="chat-why">${COPY_WHY}</p>${options(n,false)}`));return}
    const parts=html`${ds.map((d,m)=>{const dk=k+':d'+m,ls=liveOf(d),liveSent=ls?.st.status==='sent',went=outcome.get(d)==='sent'||liveSent,last=d===newest&&!went&&s?.status==='prepared',not=!last&&outcome.get(d)==='not';
     const before=prev&&!ds.includes(prev)&&prev.kind===d.kind&&!sent.has(prev.body.trim())&&prev.body!==d.body?chatDiff(prev.body,d.body):null;prev=d;
-    const to=d.to.length?' to '+d.to.join(', '):'',what=d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':d.kind==='telegram'?'Telegram':'Message';
+    const to=d.to.length?' to '+d.to.join(', '):'',what=d.reply?'Reply':d.kind==='email'||d.kind==='email_demo'?'Email':d.kind==='whatsapp'?'WhatsApp':d.kind==='telegram'?'Telegram':d.kind==='signal'?'Signal':'Message';
     const links=orEmpty(html`${[chatLong(d.body,quiet?2:4)?html`<button type="button" class="link" data-unclamp="${dk}">${chatOpenSet.has(dk)?'Less':'Show all'}</button>`:'',before?html`<button type="button" class="link" data-unclamp="${dk}:diff">${chatOpenSet.has(dk+':diff')?'Hide changes':'Show what changed'}</button>`:''].filter(Boolean)}`);
     return html`<div class="chat-draft${went||not?html` went`:''}${last?html` current`:''}"><div class="chat-draft-head"><span>${what}${to}</span>${went?(liveSent?'':html`<span class="went-tag">Sent</span>`):not?html`<span class="went-tag not">Not sent</span>`:last||!quiet?'':html`<span>Earlier draft</span>`}</div>${d.subject&&!d.reply?html`<div class="chat-draft-subject">${d.subject}</div>`:''}<div class="chat-clamp${chatOpenSet.has(dk)?html` open`:''}${d.kind==='email'||d.kind==='email_demo'?html` mail-text`:''}"${chatLong(d.body,quiet?2:4)?html` data-unclamp-by="${dk}"`:''}>${d.kind==='email'||d.kind==='email_demo'?mailHtml(d.body):chatMarkdown(d.body)}</div>
      ${before&&chatOpenSet.has(dk+':diff')?html`<div class="chat-diff">${before}</div>`:''}${ls&&(last||liveSent)?chatSendLine(d,ls):''}${links||last&&p.send?html`<div class="chat-draft-foot"><span>${links}</span>${last&&p.send?p.lead:''}</div>`:''}</div>`})}`;

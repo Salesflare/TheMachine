@@ -47,7 +47,7 @@ function learnedShow(id,what,edit){const f=(state.facts||[]).find(x=>x.id===id);
  setHTML($('#facts'),learnedList());
  requestAnimationFrame(()=>{const row=f?document.getElementById('learned-'+id):null;if(row)learnLit={id,at:Date.now()};(row||$('#facts')).scrollIntoView({block:row?'center':'start'});if(row){row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash')}const t=row?.querySelector('textarea');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}})}
 const learnDay=d=>localeDate(d,DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})});  // Tue, Oct 20, as elsewhere
-const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',slack:'slack',email:'mail',gmail:'gmail',outlook:'outlook',teams:'teams',intercom:'intercom',x:'x','x dm':'x',twitter:'x',github:'github'};
+const VOICE_ICON={linkedin:'linkedin',whatsapp:'whatsapp',telegram:'telegram',signal:'signal',slack:'slack',email:'mail',gmail:'gmail',outlook:'outlook',teams:'teams',intercom:'intercom',x:'x','x dm':'x',twitter:'x',github:'github'};
 // The learning loop's changes (learning_loop.py): what changed, why, and Undo; an undone one stays, marked.
 const LEARN_WHAT={voice:c=>`${c.channel==='All'?'Everywhere':c.channel}: how you write`,source:()=>'Fixed at the source',draft:c=>c.before?'Rule changed':'Rule added',fact:c=>c.before?'Fact changed':'Fact added',learned:()=>'Marked not right',about:()=>'Facts linked',contact:c=>t('Added to {}',c.name),forgot:()=>'Forgotten in chat'};
 function learnChange(c){const what=(LEARN_WHAT[c.kind]||(()=>'Changed'))(c),text=String((Array.isArray(c.line)?t(...c.line):c.text)||'').split('\n').map(l=>l.trim()).filter(Boolean).join(' · ');

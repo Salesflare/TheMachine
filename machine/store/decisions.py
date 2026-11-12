@@ -90,7 +90,7 @@ AUTO_UNDO_NEW = dt.timedelta(hours=1)
 SEND_RETRY_AFTER = dt.timedelta(minutes=30)
 
 
-MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
+MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
 
 
 def own_title(db, suggestion_id, title):
@@ -1260,7 +1260,7 @@ class DecisionsStore:
                     raise ValueError('This agent job stopped or the draft changed. Its result stays on the card without replacing the draft.')
             row=db.execute('SELECT * FROM suggestions WHERE id=?',(suggestion_id,)).fetchone()
             action=next_actions.selected(row['next_action'],revision) if row else None
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','finish'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','finish'):
                 raise ValueError('This draft changed or is no longer ready. Use its current buttons.')
             lock=send_lock(db,suggestion_id,revision,action['kind'])
             if lock:raise ValueError(lock)
@@ -1303,7 +1303,7 @@ class DecisionsStore:
             # A review to-do (fleet_reviews.py) never sends or acts for anyone: the review goes back to the one who asked.
             if row and str(row['dedupe_key']).startswith('fleet-review:'):
                 raise ValueError('A review to-do never sends anything. Your review goes back to its owner, who sends it themselves.')
-            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','prepare','finish','calendar','doc_write'):
+            if not row or row['status']!='prepared' or not action or action['kind'] not in ('email','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','prepare','finish','calendar','doc_write'):
                 raise ValueError('This result changed or is no longer ready. Use its current buttons.')
             off=abilities.refuse(self.config,action.get('account_id'))  # its Can do things was turned off since the draft
             if off:raise ValueError(off)

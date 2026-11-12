@@ -401,7 +401,7 @@ BOARDS_CHARS = 6000
 SUGGESTED_BEFORE = 'Suggested before (don\'t suggest these again): '
 
 
-REPLY_KINDS = ('gmail.message', 'ms_graph.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'linkedin.message')
+REPLY_KINDS = ('gmail.message', 'ms_graph.message', 'slack.message', 'whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message')
 
 
 def board_replies_waiting(db, event_ids, owner_slack_ids=()):
@@ -799,7 +799,7 @@ class ReviewStore:
         writing to them directly (mail not yet checked for a reply in its thread, answered) or a direct chat message,
         1 their appointments, 2 mail they were one of many on, 3 automated mail and their own sent mail and chat messages."""
         m = row['metadata'] if isinstance(row['metadata'], dict) else json.loads(row['metadata'] or '{}')
-        if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message'):
+        if row['kind'] in ('linkedin.message', 'x.dm', 'whatsapp.message', 'telegram.message', 'signal.message'):
             return 3 if m.get('from_me') else 0
         if row['kind'] == 'slack.message' and m.get('conversation_type') == 'dm':
             return 3 if m.get('user_id') in self.owner_user_ids else 0
@@ -905,7 +905,7 @@ class ReviewStore:
     def conversation_context(self, rows, limit=4, hours=48):
         """Up to four earlier messages from the same chat for each Slack/WhatsApp signal, so a
         short reply ("let me check") is reviewed with what it answers."""
-        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'teams.message': 'chat_id', 'telegram.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
+        keys = {'slack.message': 'channel_id', 'whatsapp.message': 'chat_id', 'teams.message': 'chat_id', 'telegram.message': 'chat_id', 'signal.message': 'chat_id', 'linkedin.message': 'conversation_id', 'x.dm': 'conversation_id', 'x.mention': 'conversation_id'}
         context = {}
         with self.connect() as db:
             for row in rows:
@@ -953,7 +953,7 @@ class ReviewStore:
                 by_key[('x-reply', action['account_id'], job['message_id'][2:])] = card
             elif action.get('kind') == 'x' and action.get('conversation_id'):
                 by_key[('x-dm', action['account_id'], action['conversation_id'])] = card
-            elif action.get('kind') in ('whatsapp', 'telegram') and action.get('chat_id'):
+            elif action.get('kind') in ('whatsapp', 'telegram', 'signal') and action.get('chat_id'):
                 by_key[(action['kind'], action['account_id'], action['chat_id'])] = card
             elif action.get('kind') == 'intercom' and action.get('conversation_id'):
                 by_key[('intercom', action['account_id'], action['conversation_id'])] = card
@@ -971,7 +971,7 @@ class ReviewStore:
                 card = by_key.get(('x-reply', row['account_id'], m.get('in_reply_to_id')))
             elif row['kind'] == 'x.dm' and not m.get('from_me'):
                 card = by_key.get(('x-dm', row['account_id'], m.get('conversation_id')))
-            elif row['kind'] in ('whatsapp.message', 'telegram.message') and not m.get('from_me'):
+            elif row['kind'] in ('whatsapp.message', 'telegram.message', 'signal.message') and not m.get('from_me'):
                 card = by_key.get((row['kind'].split('.')[0], row['account_id'], m.get('chat_id')))
             elif row['kind'] == 'intercom.conversation' and m.get('last_author_type') in ('user', 'lead', 'contact'):
                 card = by_key.get(('intercom', row['account_id'], m.get('conversation_id')))  # the customer wrote last

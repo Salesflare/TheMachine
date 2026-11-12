@@ -136,9 +136,9 @@ CREATE TABLE IF NOT EXISTS follow_up_pauses(scope TEXT NOT NULL,ref INTEGER NOT 
 '''
 SCOPES = ('board', 'project')
 # The channels a follow-up can go out on, in the order "switch channel" moves through them
-CHANNELS = ('email', 'linkedin', 'whatsapp', 'slack', 'telegram', 'intercom')
+CHANNELS = ('email', 'linkedin', 'whatsapp', 'slack', 'telegram', 'signal', 'intercom')
 CHANNEL_KINDS = {'gmail.message': 'email', 'salesflare.email': 'email', 'ms_graph.message': 'email', 'outlook.message': 'email',
-                 'linkedin.message': 'linkedin', 'whatsapp.message': 'whatsapp', 'slack.message': 'slack', 'telegram.message': 'telegram',
+                 'linkedin.message': 'linkedin', 'whatsapp.message': 'whatsapp', 'slack.message': 'slack', 'telegram.message': 'telegram', 'signal.message': 'signal',
                  'intercom.conversation': 'intercom'}
 MESSAGE_KINDS = tuple(CHANNEL_KINDS) + ('x.dm',)
 DEFAULT_DAYS = 3
@@ -1672,7 +1672,7 @@ def sendable(accounts):
             out.add('email')
         elif service == 'intercom' and next_actions.intercom_replies_on(a):
             out.add('intercom')
-        elif service in ('linkedin', 'whatsapp', 'slack', 'telegram'):
+        elif service in ('linkedin', 'whatsapp', 'slack', 'telegram', 'signal'):
             out.add(service)
     return out
 

@@ -111,7 +111,7 @@ def reply_waits(row):
                and (s.get('kind') != 'email' or s.get('in_reply_to') or s.get('thread_id')) for s in steps)
 
 
-NUDGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'handoff')
+NUDGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'handoff')
 
 
 def nudge_wait(db, suggestion_id, job_id, outcome, actions):

@@ -363,7 +363,7 @@ const GRAPH_SOURCE={card:html`<rect x="4" y="4" width="16" height="16" rx="2"/><
 const graphSource=k=>k==='salesflare.email'?'gmail':k==='salesflare.meeting'?'calendar':kindService(k);
 // A message by its source's one-color mark (todos-logos.js); a to-do, promise or project move by its line icon
 const sourceIcon=(k,type)=>type&&type!=='event'&&GRAPH_SOURCE[type]?html`<span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24">${GRAPH_SOURCE[type]}</svg></span>`:html`<span class="icon">${markIco(sourceMark(k))}</span>`;
-const SOURCE_NAME={gmail:'Email',salesflare:'Email',calendar:'Calendar',whatsapp:'WhatsApp',slack:'Slack',intercom:'Intercom',linkedin:'LinkedIn',android:'Phone',x:'X',github:'GitHub',stripe:'Stripe',zoom:'Zoom',telegram:'Telegram',docs:'Docs'};
+const SOURCE_NAME={gmail:'Email',salesflare:'Email',calendar:'Calendar',whatsapp:'WhatsApp',slack:'Slack',intercom:'Intercom',linkedin:'LinkedIn',android:'Phone',x:'X',github:'GitHub',stripe:'Stripe',zoom:'Zoom',telegram:'Telegram',signal:'Signal chats',docs:'Docs'};
 const TL_SOURCES={email:'Email',meetings:'Meetings',intercom:'Intercom',chats:'Chats',cards:'To-dos',projects:'Projects',other:'Other'};
 const dayLabel=d=>{const t=new Date(),y=new Date(t),m=new Date(t);y.setDate(t.getDate()-1);m.setDate(t.getDate()+1);const same=(a,b)=>a.toDateString()===b.toDateString();return same(d,t)?'Today':same(d,y)?'Yesterday':same(d,m)?'Tomorrow':localeDate(d,DL,{weekday:'short',day:'numeric',month:'short',...(d.getFullYear()!==t.getFullYear()?{year:'numeric'}:{})})};
 // A run of chat messages in one conversation (same thread, same day, under half an hour apart) is one row.

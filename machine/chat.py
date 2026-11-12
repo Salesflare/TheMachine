@@ -39,7 +39,7 @@ CHAT_PART = re.compile(r'^(\d{9,11}) · ([^·\n]{1,120}) · ([\w.-]{1,60}):[ \t]
 CHAT_AGENTS = {'claude': 'Claude Code', 'codex': 'Codex'}
 
 
-CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'telegram': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
+CHAT_SENT = {'email': 'email', 'email_demo': 'email', 'linkedin': 'message', 'slack': 'message', 'x': 'post', 'whatsapp': 'message', 'telegram': 'message', 'signal': 'message', 'intercom': 'reply', 'doc_reply': 'reply'}
 
 
 CHAT_SECRETS = (
@@ -202,7 +202,7 @@ def chat_person(name):
     return f'{match[2].strip()} {match[1].strip()}' if match else name
 
 
-CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'telegram': ' on Telegram', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
+CHAT_ON = {'slack': ' on Slack', 'whatsapp': ' on WhatsApp', 'telegram': ' on Telegram', 'signal': ' on Signal', 'linkedin': ' on LinkedIn', 'x': ' on X', 'intercom': ' in Intercom', 'doc_reply': ' in the doc'}
 
 
 def chat_name(address, names, fallback=''):

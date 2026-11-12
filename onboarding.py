@@ -33,20 +33,20 @@ from pathlib import Path
 import message_seal
 import portable
 import service
-import wacli_release
+import signal_setup, wacli_release  # noqa: E401 - Signal's setup steps (signal_setup.py)
 from machine.sources import calendar_setup, groups, imap_setup, teams_setup
 
 ROOT = Path(__file__).resolve().parent
 UNIT_NAME = service.UNIT_NAME
 # Connector name -> account id in config.example.json.
 CONNECTORS = {'gmail': 'work-gmail', 'calendar': 'work-calendar', 'slack': 'work-slack',
-              'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'telegram': 'personal-telegram',
+              'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'telegram': 'personal-telegram', 'signal': 'personal-signal',
               'gateway': 'openclaw-gateway'}
 SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar', 'imap': 'imap',
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
-            'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'gateway': 'gateway', 'icloud_calendar': 'icloud_calendar', 'caldav': 'caldav', 'proton_calendar': 'proton_calendar', 'ics': 'ics', 'exchange': 'exchange'}
+            'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'signal': 'signal', 'gateway': 'gateway', 'icloud_calendar': 'icloud_calendar', 'caldav': 'caldav', 'proton_calendar': 'proton_calendar', 'ics': 'ics', 'exchange': 'exchange'}
 LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
-          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'Machine health', **calendar_setup.LABELS}
+          'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'signal': 'Signal chats', 'gateway': 'Machine health', **calendar_setup.LABELS}
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',
@@ -56,7 +56,7 @@ WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Yo
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
         'android': 'The notifications on your Android phone, through the OpenClaw app.',
         'whatsapp': 'Your WhatsApp chats, as a linked device.',
-        'telegram': 'Your Telegram chats and small groups.', 'gateway': "Your Machine's own log, so it spots its own trouble.", **calendar_setup.WHAT}
+        'telegram': 'Your Telegram chats and small groups.', 'signal': 'Your Signal chats, as a linked device.', 'gateway': "Your Machine's own log, so it spots its own trouble.", **calendar_setup.WHAT}
 # Microsoft 365 and Outlook.com (ms_graph.py): your own app registration and a device-code sign-in. A hosted control
 # plane adds them with "transport": "broker" instead.
 MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport': 'graph', 'email': 'alex@example.com',
@@ -67,7 +67,7 @@ MICROSOFT = {'outlook': {'id': 'work-outlook', 'service': 'outlook', 'transport'
 # Values in config.example.json that mean "not filled in yet".
 PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-0000-0000-000000000000',
                 'team_id': 'T00000000', 'user_id': 'U00000000', 'node_id': 'replace-with-your-openclaw-node-id',
-                'identity_sha256': ('sha256-of-your-linked-whatsapp-jid', 'sha256-of-your-telegram-user-id')}
+                'identity_sha256': ('sha256-of-your-linked-whatsapp-jid', 'sha256-of-your-telegram-user-id', 'sha256-of-your-linked-signal-number')}
 # Per-account identity: never copied when a new account starts from one you already have.
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
@@ -79,10 +79,10 @@ BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:mi
 # Phone apps whose notifications repeat a source. Setup offers to skip them on the Android account, never by
 # default: the phone app may also show inboxes or workspaces that nothing here reads.
 # what the owner calls the app whose notifications repeat a source, when the source's label says more
-APP_NAMES = {'telegram': 'Telegram'}
+APP_NAMES = {'telegram': 'Telegram', 'signal': 'Signal'}
 PHONE_APPS = {'gmail': ['com.google.android.gm'], 'calendar': ['com.google.android.calendar'],
               'outlook': ['com.microsoft.office.outlook'], 'outlook_calendar': ['com.microsoft.office.outlook'],
-              'whatsapp': ['com.whatsapp', 'com.whatsapp.w4b'], 'telegram': ['org.telegram.messenger', 'org.thunderdog.challegram'], 'slack': ['com.Slack'], 'salesflare': ['org.salesflare.app'],
+              'whatsapp': ['com.whatsapp', 'com.whatsapp.w4b'], 'telegram': ['org.telegram.messenger', 'org.thunderdog.challegram'], 'signal': ['org.thoughtcrime.securesms'], 'slack': ['com.Slack'], 'salesflare': ['org.salesflare.app'],
               'linkedin': ['com.linkedin.android'], 'x': ['com.twitter.android'], 'github': ['com.github.android'],
               'stripe': ['com.stripe.android.dashboard']}
 # Redacted sync error labels -> what to do about them (first matching prefix wins).
@@ -114,7 +114,7 @@ HINTS = (
     ('whatsapp', 'WhatsApp did not answer as expected; it retries by itself'),
     ('telegram_app_blocked', 'Telegram stopped accepting this Machine’s app ID; add your own from my.telegram.org and connect Telegram again'),
     ('telegram_logged_out', 'Telegram logged this Machine out; connect Telegram again'),
-    ('telegram_source_unavailable', 'the Telegram mirror has not written its store yet; is its service running?'),
+    ('telegram_source_unavailable', 'the Telegram mirror has not written its store yet; is its service running?'), ('signal_unlinked', 'Signal unlinked this Machine; link it again from Connections'), ('signal_outdated', 'Signal no longer accepts this Machine’s Signal client; update The Machine'), ('signal_source_unavailable', 'the Signal mirror has not written its store yet; is its service running?'),
     ('android_offline', 'the phone is not connected to OpenClaw right now; open the OpenClaw app on it'),
     ('android_notifications_unavailable', 'allow notification access for the OpenClaw app on the phone'),
     ('android_identity_mismatch', 'node_id is not a paired Android node; pick it again'),
@@ -333,10 +333,10 @@ WEB_NOTES = {
     'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
     'x': 'Next, you sign in to X on your Machine, right here.',
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
-    'telegram': 'Next, you scan a QR code in Telegram.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
+    'telegram': 'Next, you scan a QR code in Telegram.', 'signal': 'Next, you scan a QR code in Signal on your phone. It uses an unofficial Signal client, so it may stop working.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it', **calendar_setup.NOTES,
     'shortcut': 'It only reads, never changes anything in Shortcut.'}  # Get your token (SETUP token_url) opens the page
-WEB_LEARN = {'telegram': 'telegram-chats', 'imap': 'imap', **calendar_setup.LEARN}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
+WEB_LEARN = {'telegram': 'telegram-chats', 'signal': 'signal-chats', 'imap': 'imap', **calendar_setup.LEARN}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
 WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password', **calendar_setup.SECRETS}
 WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']], **calendar_setup.ASKS}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b|config\.json')  # setup-file notes stay in the terminal
@@ -361,7 +361,7 @@ def web_form(config, service):
     works = [b.split(':', 1)[1] for b in boundaries(config, service) if b.startswith('work:')]
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
-            'token_url': setup.get('token_url') if str(setup.get('token_url') or '').startswith('https://') else None, 'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
+            'token_url': setup.get('token_url') if str(setup.get('token_url') or '').startswith('https://') else None, 'scope': scope, 'personal': service in ('whatsapp', 'telegram', 'signal'), 'browser': setup.get('browser'), 'company': company if scope else '',
             'auto': scope and service in ADDRESS_SCOPE, 'advanced': imap_setup.FIELDS if service == 'imap' else calendar_setup.FIELDS.get(service)}
 
 
@@ -915,7 +915,7 @@ def set_abilities(config_path, account_id, values):
 def boundaries(config, service):
     """Boundaries a new account of this service could belong to, ones it does not cover yet first.
     Device and system boundaries (phone, WhatsApp, Gateway) are not offered for other sources."""
-    devices = {'android', 'whatsapp', 'telegram', 'gateway'}
+    devices = {'android', 'whatsapp', 'telegram', 'signal', 'gateway'}
     known = [a['boundary'] for a in config.get('accounts', []) if a.get('boundary') and ':' in a['boundary']
              and not a['boundary'].startswith('owner:') and (a.get('service', 'gmail') not in devices or a.get('service') == service)]
     covered = {a.get('boundary') for a in siblings(config, service)}
@@ -958,10 +958,10 @@ def new_account(config, service, account_id=None, ui=None):
     account = expand(json.loads(json.dumps(account)), home())
     account.pop('exclude', None)  # example noise rules are not yours
     options = boundaries(config, service)
-    if service in ('android', 'whatsapp', 'telegram', 'gateway') and not same:
+    if service in ('android', 'whatsapp', 'telegram', 'signal', 'gateway') and not same:
         # the example's device boundary, unless the owner picked Work or Personal for it (the setup page asks for
         # WhatsApp): then their pick, marked as theirs, so it never shows as guessed
-        if service in ('whatsapp', 'telegram') and getattr(ui, 'marks', False):
+        if service in ('whatsapp', 'telegram', 'signal') and getattr(ui, 'marks', False):
             picked = ask_boundary(ui, account['boundary'])
             if not (picked.startswith('personal:') and str(account.get('boundary', '')).startswith('personal:')):
                 account['boundary'] = picked  # Personal keeps the example's personal:whatsapp (personal:telegram)
@@ -1060,8 +1060,8 @@ def check(config, account):
             a.Salesflare(config, account).profile()
         elif service == 'whatsapp':
             a.WhatsApp(config, account).profile()
-        elif service == 'telegram':
-            a.Telegram(config, account).profile()
+        elif service in ('telegram', 'signal'):
+            (a.Telegram if service == 'telegram' else a.Signal)(config, account).profile()
         elif service == 'android':
             a.Android(config, account).snapshot()
         elif service == 'gateway':
@@ -2061,7 +2061,7 @@ def step_microsoft(config, account, ui):
 
 
 STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'imap': lambda *step: imap_setup.step(*step), **{s: lambda *step: calendar_setup.step(*step) for s in calendar_setup.SERVICES}, 'slack': step_slack, 'salesflare': step_salesflare,
-         'whatsapp': step_whatsapp, 'telegram': step_telegram, 'android': step_android, 'gateway': step_gateway}
+         'whatsapp': step_whatsapp, 'telegram': step_telegram, 'signal': signal_setup.step_signal, 'android': step_android, 'gateway': step_gateway}
 
 
 def sources():
@@ -2208,13 +2208,13 @@ def connect(config_path, name, ui, account_id=None, restart=True):
 def disconnect(config_path, account_id):
     """Stop reading one account: it leaves config.json (the old file is kept as config.json.bak). What it already
     brought in stays, and so do sign-ins and keys, which other accounts or tools may share. Telegram chats is the
-    exception: its device is logged out at Telegram and its own store deleted. Returns the account."""
+    exception (its device is logged out at Telegram, its store deleted), and Signal (its store and keys go). Returns it."""
     config = load(config_path)
     account = next((a for a in config.get('accounts', []) if a.get('id') == account_id), None)
     if not account:
         raise SetupError('That account is not connected here')
-    if account.get('service') == 'telegram':
-        telegram_remove(config, account)  # Telegram's own login ends too: this device is logged out there
+    if account.get('service') in ('telegram', 'signal'):  # Telegram's own login ends too; Signal's linked device keys go
+        (telegram_remove if account['service'] == 'telegram' else signal_setup.signal_remove)(config, account)
     config['accounts'] = [a for a in config['accounts'] if a.get('id') != account_id]
     save(config_path, config)
     return account

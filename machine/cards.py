@@ -345,7 +345,7 @@ def card(row):
         status={'queued':t('Testing the fix. It merges by itself if every check passes.') if auto else t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),'sending':t('Testing and merging the fix…') if merging else t('Sending your approved draft…'),
                 'sent':((t('Merged by itself and restarted. You can undo it for 24 hours; it undoes itself if the error comes back.') if auto else t('Merged. The Machine restarts with the fix.'))
                         +(' '+action_state['error'] if action_state.get('error') else '')) if merging else
-                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Telegram message sent') if mid.startswith('telegram:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else (t('Doc created') if sent.get('op')=='create' else t('Changes saved in the doc')) if mid.startswith('docwrite:') else t('Email sent'))+to_at+'.'+(' '+action_state['url'] if mid.startswith('docwrite:') and action_state.get('url') else '')+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
+                ('✓ '+(t('LinkedIn message sent') if mid.startswith(('urn:li:','linkedin:')) else t('Slack message sent') if mid.startswith('slack:') else t('Reply posted on X') if mid.startswith('x:') else t('X message sent') if mid.startswith('xdm:') else t('WhatsApp message sent') if mid.startswith('whatsapp:') else t('Telegram message sent') if mid.startswith('telegram:') else t('Signal message sent') if mid.startswith('signal:') else t('Sent as {} in Intercom', ' '.join(str(sent.get('as_name') or t('your Intercom admin')).split())) if mid.startswith('intercom:') else t('Reply posted in the doc') if mid.startswith('doc:') else (t('Doc created') if sent.get('op')=='create' else t('Changes saved in the doc')) if mid.startswith('docwrite:') else t('Email sent'))+to_at+'.'+(' '+action_state['url'] if mid.startswith('docwrite:') and action_state.get('url') else '')+thread_snooze_note(action_state)),'uncertain':action_state.get('error'),'blocked':(action_state.get('error') or '')+(t(' Tap Merge fix to merge it anyway.') if auto else ''),'failed':action_state.get('error'),
                 'undoing':t('Undoing the merge…'),'undone':action_state.get('error') or t('Merge undone.')}.get(action_state['status'],status)
     try:
         handed = json.loads(row['awaiting']) if row.get('awaiting') else {}
@@ -382,7 +382,7 @@ def card(row):
     return ('**' + title + '**\n\n' + body + source + ('\n\n' + status if status else '')).strip()
 
 
-CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
+CARD_DRAFT_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'signal', 'intercom', 'doc_reply')
 
 
 ACTION_BUSY = ('queued', 'sending', 'sent', 'uncertain', 'local_preparation', 'paused', 'undoing', 'undone')
@@ -430,7 +430,7 @@ def card_draft(row):
     elif a['kind'] == 'doc_reply':
         head = ['Reply to ' + a.get('to_name', '') + ' on “' + a.get('doc_title', '') + '”']
     else:
-        head = [{'linkedin': 'LinkedIn', 'slack': 'Slack', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram'}[a['kind']] + ' message to ' + a.get('to_name', '')]
+        head = [{'linkedin': 'LinkedIn', 'slack': 'Slack', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'signal': 'Signal'}[a['kind']] + ' message to ' + a.get('to_name', '')]
     tail = []
     if a.get('signature'): tail.append('+ your signature')
     if a.get('attachments'): tail.append('Attachments: ' + ', '.join(x.get('name', '') for x in a['attachments']))
@@ -641,7 +641,7 @@ def controls(row, root=''):
         for action in actions:
             state=action.get('state') or row.get('action_status',{})
             if action['kind']=='finish' and state.get('status')=='done':continue
-            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','telegram','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
+            if action['kind'] in ('email','email_demo','linkedin','slack','x','whatsapp','telegram','signal','intercom','doc_reply','merge','prepare','finish') and not action_busy(state):
                 if shown and shown['full'] and shown['action']['revision']==action['revision']:
                     # The card shows this draft in full: Send confirms it, Edit opens it in the dashboard editor.
                     buttons.append({'label':next_actions.label(action),'action':{'type':'callback','value':f"assistant:{row['id']}:confirm_{action['revision']}"}})

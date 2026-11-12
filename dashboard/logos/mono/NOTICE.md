@@ -46,7 +46,6 @@ From [Simple Icons](https://simpleicons.org) 16.30, released under
 | `revolut.svg` | Revolut | revolut |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
-| `signal.svg` | Signal | signal |
 | `snapchat.svg` | Snapchat | snapchat |
 | `spotify.svg` | Spotify | spotify |
 | `stripe.svg` | Stripe | stripe |
@@ -63,6 +62,9 @@ for its one-color Slack and LinkedIn marks.
 
 `salesforce.svg`: Salesforce's cloud from Simple Icons 15.0 (CC0 1.0; later releases dropped it), drawn as an outline
 so it is as thin as the line icons. Salesforce is a trademark of Salesforce, Inc.
+
+`signal.svg`: Signal's mark (a ring of dashes around a speech bubble), drawn here as thin lines so it is as thin as the
+line icons. Signal is a trademark of Signal Technology Foundation.
 
 `medium.svg`: Medium's mark (two ellipses and a bar) from Simple Icons 13.0 (CC0 1.0), the path as is; later releases
 show the app's tile instead, which reads as text at row size.

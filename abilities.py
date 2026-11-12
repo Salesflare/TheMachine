@@ -15,7 +15,7 @@ from __future__ import annotations
 
 SIGNALS, ACTIONS = 'signals', 'actions'
 ABILITIES = (SIGNALS, ACTIONS)
-REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'linkedin', 'x')
+REPLY_SERVICES = ('slack', 'whatsapp', 'telegram', 'signal', 'linkedin', 'x')
 
 
 def can_act(account):

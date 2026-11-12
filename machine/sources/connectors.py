@@ -30,7 +30,7 @@ import todo_areas
 ABILITY_CHECK_SECONDS = 3600  # an action-only connection checks what it may do this often (App.ability_checker)
 
 
-BUILT_IN_SERVICES = ('gmail', 'outlook', 'calendar', 'outlook_calendar', 'slack', 'whatsapp', 'telegram', 'salesflare',
+BUILT_IN_SERVICES = ('gmail', 'outlook', 'calendar', 'outlook_calendar', 'slack', 'whatsapp', 'telegram', 'signal', 'salesflare',
                      'gateway', 'android')
 
 

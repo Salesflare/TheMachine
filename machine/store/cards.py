@@ -99,7 +99,7 @@ def awaiting_key(event, owner_slack_ids=()):
         return {**key, 'thread_id': m.get('thread_id'), 'from': _address(m.get('from'))}
     if event['kind'] == 'slack.message' and m.get('user_id') and m['user_id'] not in owner_slack_ids:
         return {**key, 'channel_id': m.get('channel_id'), 'user_id': m['user_id']}
-    if event['kind'] in ('whatsapp.message', 'telegram.message', 'linkedin.message', 'x.dm') and not m.get('from_me') and (m.get('chat_id') or m.get('conversation_id')):
+    if event['kind'] in ('whatsapp.message', 'telegram.message', 'signal.message', 'linkedin.message', 'x.dm') and not m.get('from_me') and (m.get('chat_id') or m.get('conversation_id')):
         return {**key, 'conversation': m.get('chat_id') or m['conversation_id'], 'sender': m.get('sender_id') or m.get('from') or ''}
     return None
 
@@ -124,7 +124,7 @@ def awaiting_match(watch, event, owner_slack_ids=()):
 
 SOURCE_KIND = {'gmail.message': 'email', 'calendar.event': 'calendar', 'slack.message': 'Slack', 'teams.message': 'Teams',
                'salesflare.email': 'CRM email', 'salesflare.meeting': 'CRM meeting',
-               'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram',
+               'android.notification': 'phone', 'whatsapp.message': 'WhatsApp', 'telegram.message': 'Telegram', 'signal.message': 'Signal',
                'gateway.alert': 'The Machine', 'machine.system_log': 'The Machine', 'machine.fault': 'The Machine',
                'meeting.notes': 'meeting notes', 'meeting.transcript': 'transcript'}
 

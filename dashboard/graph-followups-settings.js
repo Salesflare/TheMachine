@@ -20,7 +20,7 @@ document.addEventListener('change',async e=>{const t=e.target.closest?.('[data-p
 // Automated follow-ups (follow_ups.py): their settings for a board or one project (a project's own wins over its board's),
 // the board's "Follow-ups on" line, a project's "Next follow-up", and a board's grouped to-do with its fast review:
 // one follow-up at a time or the whole list, Send, Edit or Skip each, keys to move, Send all checked.
-const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'Slack',telegram:'Telegram',intercom:'Intercom'};
+const FU_CHANNELS={email:'Email',linkedin:'LinkedIn',whatsapp:'WhatsApp',slack:'Slack',telegram:'Telegram',signal:'Signal chats',intercom:'Intercom'};
 const fuDay=v=>{if(!v)return '';const d=new Date(v),n=new Date();if(d<=n||localDay(d)===localDay(n))return t('today');return (d-n)/864e5<6?localeDate(d,DL,{weekday:'short'}):localeDate(d,DL,{day:'numeric',month:'short'})};
 const fuNoReply=n=>n?t(['No reply after {} follow-up','No reply after {} follow-ups'],n):t('Follow-ups stopped');
 // Paused (follow_ups.pause): a small chip where the follow-up status shows; nothing is drafted, sent or ended meanwhile

@@ -172,7 +172,7 @@ LONG_NUMBER = re.compile(r'\b\d{4,}\b')
 PATTERNS = ((EMAIL, 'an address', 'address'), (URL, 'a link', 'link'), (HANDLE, 'someone', 'handle'), (DATE, 'a date', 'date'),
             (MONEY, 'an amount', 'amount'), (PHONE, 'a number', 'number'), (LONG_NUMBER, 'a number', 'number'))
 # What The Machine itself works with stays: a learning about WhatsApp or Gmail is about the product, not a person.
-PRODUCTS = {'google', 'gmail', 'calendar', 'microsoft', 'outlook', 'teams', 'slack', 'whatsapp', 'linkedin', 'telegram', 'zoom', 'stripe',
+PRODUCTS = {'google', 'gmail', 'calendar', 'microsoft', 'outlook', 'teams', 'slack', 'whatsapp', 'linkedin', 'telegram', 'signal', 'zoom', 'stripe',
             'github', 'intercom', 'trello', 'shortcut', 'salesflare', 'x', 'twitter', 'android', 'iphone', 'apple', 'claude', 'chatgpt',
             'openai', 'anthropic', 'codex', 'openclaw', 'the machine', 'rss', 'drive', 'docs', 'sheets', 'peppol'}
 # Plain words a learning and its use cases are written in, never taken for a name (an account called owner@ or info@)

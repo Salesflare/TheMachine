@@ -11,7 +11,7 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 // each source's group as the status gives it (views.source_group, the same as + Add): its tab is Mail and calendar, Chat or Other
-const GROUP={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',imap:'mail',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',
+const GROUP={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',imap:'mail',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',
  linkedin:'chat',x:'chat',zoom:'meetings',google_meet:'meetings',docs:'docs',salesflare:'customers',salesforce:'customers',stripe:'customers',
  intercom:'customers',github:'work',trello:'work',shortcut:'work'};
 const TAB={mail:'Mail and calendar',chat:'Chat'};
@@ -22,7 +22,7 @@ const CARDS=[
  [C('outlook','outlook','Outlook'),'logos/outlook.svg'],[C('outlook_calendar','outlook_calendar','Outlook Calendar'),'logos/outlook_calendar.svg'],
  [C('imap','imap','Other email',{last:true,transport:'imap'}),null],
  [C('slack','slack','Slack'),'logos/slack.svg'],[C('teams','teams','Microsoft Teams'),'logos/teams.svg'],[C('whatsapp','whatsapp','WhatsApp'),'logos/whatsapp.svg'],
- [C('telegram','telegram','Telegram chats'),'logos/telegram.svg'],
+ [C('telegram','telegram','Telegram chats'),'logos/telegram.svg'],[C('signal','signal','Signal chats'),'logos/signal.svg'],
  [C('linkedin','linkedin','LinkedIn'),'logos/linkedin.svg'],[C('x','x','X'),'logos/x.svg'],[C('zoom','zoom','Zoom'),'logos/zoom.png'],
  [C('google_meet','google_meet','Google Meet'),'logos/google_meet.svg'],[C('docs','docs','Microsoft OneDrive'),'logos/docs.svg'],
  [C('gdocs','docs','Google Docs',{docs_provider:'google'}),'logos/google_docs.svg'],[C('crm','salesflare','Salesflare CRM'),'logos/crm.svg'],

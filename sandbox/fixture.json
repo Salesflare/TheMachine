@@ -135,6 +135,14 @@
    "boundary": "personal"
   },
   {
+   "id": "home-signal",
+   "service": "signal",
+   "transport": "signal_mirror",
+   "email": "",
+   "display_name": "Signal chats",
+   "boundary": "personal"
+  },
+  {
    "id": "home-phone",
    "service": "android",
    "transport": "openclaw-feed",
@@ -5740,6 +5748,40 @@
    }
   },
   {
+   "key": "story:plants:0",
+   "account_id": "home-signal",
+   "kind": "signal.message",
+   "minutes_ago": 260,
+   "title": "Dana Kerrigan",
+   "body": "Away Monday to Friday. Could you water the plants once or twice?",
+   "metadata": {
+    "chat_name": "Dana Kerrigan",
+    "chat_id": "5a5d1e00-0000-4000-8000-00000000da0a",
+    "chat_kind": "dm",
+    "from_me": false,
+    "from": "Dana Kerrigan",
+    "sender_id": "5a5d1e00-0000-4000-8000-00000000da0a",
+    "message_id": "5a5d1e00-0000-4000-8000-00000000da0a:1761000000000"
+   }
+  },
+  {
+   "key": "story:plants:1",
+   "account_id": "home-signal",
+   "kind": "signal.message",
+   "minutes_ago": 258,
+   "title": "Dana Kerrigan",
+   "body": "Key is under the blue pot.",
+   "metadata": {
+    "chat_name": "Dana Kerrigan",
+    "chat_id": "5a5d1e00-0000-4000-8000-00000000da0a",
+    "chat_kind": "dm",
+    "from_me": false,
+    "from": "Dana Kerrigan",
+    "sender_id": "5a5d1e00-0000-4000-8000-00000000da0a",
+    "message_id": "5a5d1e00-0000-4000-8000-00000000da0a:1761000000001"
+   }
+  },
+  {
    "key": "story:invoice:1",
    "account_id": "work-gmail",
    "kind": "gmail.message",
@@ -7980,6 +8022,34 @@
    "project": null,
    "urgent": false,
    "snooze_hours": null
+  },
+  {
+   "key": "open16",
+   "title": "Tell Dana if you can water the plants next week",
+   "body": "Dana asked on Signal while they are away from Monday to Friday.",
+   "status": "prepared",
+   "events": [
+    "story:plants:0",
+    "story:plants:1"
+   ],
+   "accounts": [
+    "home-signal"
+   ],
+   "minutes_ago": 240,
+   "source": "Signal from Dana Kerrigan",
+   "project": null,
+   "urgent": false,
+   "snooze_hours": null,
+   "next_action": {
+    "kind": "signal",
+    "account_id": "home-signal",
+    "to_name": "Dana Kerrigan",
+    "chat_id": "5a5d1e00-0000-4000-8000-00000000da0a",
+    "body": "Sure, I will stop by on Tuesday and Thursday.",
+    "label": "Send to Dana",
+    "revision": "rev0016",
+    "max_length": 4000
+   }
   },
   {
    "key": "closed0",

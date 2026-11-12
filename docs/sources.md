@@ -151,6 +151,18 @@ Reads your existing `wacli` store (`auth status`, `messages list` only, always `
 - When Telegram ends the login (`telegram_logged_out`) or stops accepting the app ID (`telegram_app_blocked`), the mirror stops for good and Connections says so. It never logs in again by itself.
 - Disconnect (and `./install.sh --uninstall`) logs the device out at Telegram and deletes the store.
 
+### Signal chats
+
+`signal_mirror.py`, a user service (`the-machine-<account>.service`, for example `the-machine-personal-signal.service`), is the only process that runs [signal-cli](https://github.com/AsamK/signal-cli) for the account, as a linked device of the owner's phone. The collector reads its store read-only.
+
+- **What it reads:** one-to-one chats and groups, from the moment of linking: Signal gives a new linked device no older messages. Attachments are kept as what they are (photo, voice message, file), never their content; view-once media keeps no content. Stories, reactions, calls and Note to Self are skipped.
+- Edits replace the text, deletes for everyone clear it, and a disappearing message's text goes once its timer is up.
+- It never sends read receipts or typing indicators.
+- The linked device's keys stay in the store's `signal-keys/` folder. Message text and names are sealed with a key derived from the message key (or the store's own `store.key`).
+- **Sends** go through the store's outbox, keyed by the approved action, at least 20 seconds apart, only into a chat the store already has. A send that may have gone out is never repeated.
+- When Signal unlinks the device (`signal_unlinked`) or no longer accepts this signal-cli (`signal_outdated`), the mirror stops and Connections says so. It never links again by itself.
+- Disconnect (and `./install.sh --uninstall`) deletes the keys and the store. The phone lists the device until it is unlinked there.
+
 ### OpenClaw Gateway
 
 Failed agent runs on Telegram, refused hand-offs and failed Telegram sends, grouped per half hour with secrets redacted. The first Gateway source also carries **The Machine's own errors** (`machine.fault`): see [The Machine fixes itself](usage.md#the-machine-fixes-itself).

@@ -610,7 +610,7 @@ def setup_config(interactive, facts, paths):
         say(f'Writing {paths.config}')
     refresh_install_paths(config, facts, paths)
     # Built-in sources plus connector plugins (connectors/<service>.py, see docs/adding-a-source.md).
-    supported = {'gmail', 'calendar', 'outlook', 'outlook_calendar', 'imap', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange', 'slack', 'salesflare', 'android', 'whatsapp', 'telegram', 'gateway'} | {
+    supported = {'gmail', 'calendar', 'outlook', 'outlook_calendar', 'imap', 'icloud_calendar', 'caldav', 'proton_calendar', 'ics', 'exchange', 'slack', 'salesflare', 'android', 'whatsapp', 'telegram', 'signal', 'gateway'} | {
         p.stem for p in (ROOT / 'connectors').glob('*.py') if re.fullmatch(r'[a-z][a-z0-9_]{0,30}', p.stem)}
     unsupported = [a['id'] for a in config.get('accounts', []) if a.get('service', 'gmail') not in supported]
     if unsupported:
@@ -1854,6 +1854,9 @@ def uninstall(paths, purge, interactive):
         if isinstance(account, dict) and account.get('service') == 'telegram' and account.get('id'):
             onboarding.telegram_remove(config, account)
             say(f'Logged out of Telegram: {account["id"]}')
+        if isinstance(account, dict) and account.get('service') == 'signal' and account.get('id'):
+            onboarding.signal_setup.signal_remove(config, account)  # its keys go; the phone lists it until removed there
+            say(f'Removed Signal from this Machine: {account["id"]}')
     pattern = service.LABEL_PREFIX + 'wacli-*.plist' if launchd else 'the-machine-wacli-*.service'
     for sync in sorted(paths.unit.parent.glob(pattern)):
         # The WhatsApp syncs it started; the linked wacli store itself stays.

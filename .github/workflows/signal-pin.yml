@@ -1,0 +1,58 @@
+name: signal-cli pin
+
+# Monthly: when signal-cli (AsamK/signal-cli) has a newer release, pin it in signal-pin.json through a pull request.
+# Signal stops accepting old clients, so the pin keeps up. Every archive is downloaded and checked against its sha256 first.
+
+on:
+  schedule:
+    - cron: '23 6 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signal-pin
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: true # the job pushes the signal-pin/<tag> branch
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Pin the newest signal-cli release
+        run: python3 scripts/signal_pin.py bump --verify
+      - name: Open a pull request
+        run: |
+          set -euo pipefail
+          git diff --quiet -- signal-pin.json && { echo "pin is current"; exit 0; }
+          tag=$(python3 -c 'import json; print(json.load(open("signal-pin.json"))["tag"])')
+          branch="signal-pin/$tag"
+          if gh pr list --head "$branch" --state open --json number --jq length | grep -qv '^0$'; then
+            echo "a pull request for $tag is already open"; exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -c "$branch"
+          git commit -m "signal-cli: pin $tag" -- signal-pin.json THIRD_PARTY_NOTICES.md
+          git push --force origin "$branch"
+          body="Pins signal-cli $tag from https://github.com/AsamK/signal-cli/releases/tag/$tag. Every archive matched its sha256. Check its release notes for a change to linking or sending, merge, then cut a release so Machines install it."
+          if ! gh pr create --base main --head "$branch" --title "signal-cli: pin $tag" --body "$body"; then
+            # This repository may not let Actions open pull requests: leave one issue with the link instead.
+            title="signal-cli: pin $tag"
+            open=$(gh issue list --state open --search "\"$title\" in:title" --json title --jq "map(select(.title == \"$title\")) | length")
+            [ "$open" != "0" ] || gh issue create --title "$title" \
+              --body "$body Open the pull request: https://github.com/${GITHUB_REPOSITORY}/compare/main...$branch?expand=1"
+          fi
