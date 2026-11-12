@@ -75,12 +75,21 @@ class LinkedInSource(unittest.TestCase):
         for stderr, code, wait in (('the OpenClaw browser is busy (x)', 'linkedin_browser_busy', 600),
                                    ('LinkedIn is signed out in the OpenClaw browser', 'linkedin_signed_out', 3600),
                                    ('LinkedIn is not signed in in the browser', 'linkedin_signed_out', 3600),
-                                   ('the browser did not answer in time; try again', 'linkedin_read_timeout', 900),
+                                   # the browser's tab stalled: not LinkedIn being slow (LinkedIn was never asked)
+                                   ('the browser did not answer in time; try again', 'linkedin_browser_stalled', 900),
+                                   ('browser_cdp.CdpError: the browser did not answer in time', 'linkedin_browser_stalled', 900),
+                                   ('the LinkedIn tab did not load in time; try again', 'linkedin_browser_stalled', 900),
+                                   # a LinkedIn request that ran out its own time: LinkedIn was slow
+                                   ('LinkedIn read failed: TimeoutError: signal timed out', 'linkedin_read_timeout', 900),
                                    ('LinkedIn lookup failed: boom', 'linkedin_read_failed', 900)):
             with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'linkedin-inbox: ' + stderr)):
                 with self.assertRaises(a.SourceError) as caught:
                     source.page(0, {})
             self.assertEqual((caught.exception.category, caught.exception.retry_after), (code, wait))
+        with patch.object(a.subprocess, 'run', side_effect=subprocess.TimeoutExpired('linkedin-inbox', 480)):
+            with self.assertRaises(a.SourceError) as caught:
+                source.page(0, {})
+        self.assertEqual(caught.exception.category, 'linkedin_browser_stalled')  # the reader never finished: the browser
         with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, '{"messages": []}', '')):
             with self.assertRaises(a.SourceError):
                 source.page(0, {})

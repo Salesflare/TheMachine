@@ -1,4 +1,5 @@
-import base64, hashlib, json, socket, struct, sys, threading, unittest
+import base64, hashlib, json, socket, struct, sys, threading, time, unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'integrations'))
@@ -10,6 +11,7 @@ class FakeBrowser:
 
     def __init__(self, value, exception=None):
         self.value, self.exception, self.tabs, self.calls = value, exception, {'A1': 'page'}, []
+        self.frozen = self.silent = False
         self.server = socket.socket()
         self.server.bind(('127.0.0.1', 0))
         self.server.listen(8)
@@ -49,14 +51,27 @@ class FakeBrowser:
             key = [l.split(b': ')[1] for l in head.split(b'\r\n') if l.lower().startswith(b'sec-websocket-key')][0]
             accept = base64.b64encode(hashlib.sha1(key + b'258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest())
             conn.sendall(b'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + accept + b'\r\n\r\n')
-            request = json.loads(self.read_frame(conn))
-            self.calls.append(('ws', request['method'], request['params']))
-            conn.sendall(self.frame(json.dumps({'method': 'Page.frameNavigated', 'params': {}}).encode()))
-            result = ({'result': {'type': 'object'}, 'exceptionDetails': {'exception': {'description': self.exception}}}
-                      if self.exception else {'result': {'type': 'object', 'value': self.value}})
-            reply = json.dumps({'id': request['id'], 'result': result}).encode()
-            half = len(reply) // 2  # in two fragments, as Chrome may send a big answer
-            conn.sendall(self.frame(reply[:half], opcode=1, last=False) + self.frame(reply[half:], opcode=0))
+            while True:  # one connection may carry several calls (evaluate wakes the tab first)
+                try:
+                    request = json.loads(self.read_frame(conn))
+                except (OSError, ValueError, struct.error):
+                    break
+                self.calls.append(('ws', request['method'], request['params']))
+                if self.silent:  # a tab that doesn't answer at all
+                    continue
+                if request['method'] == 'Page.setWebLifecycleState':
+                    self.frozen = request['params']['state'] == 'frozen'
+                if request['method'] != 'Runtime.evaluate':
+                    conn.sendall(self.frame(json.dumps({'id': request['id'], 'result': {}}).encode()))
+                    continue
+                if self.frozen:  # runs the script but its promise never settles: no answer
+                    continue
+                conn.sendall(self.frame(json.dumps({'method': 'Page.frameNavigated', 'params': {}}).encode()))
+                result = ({'result': {'type': 'object'}, 'exceptionDetails': {'exception': {'description': self.exception}}}
+                          if self.exception else {'result': {'type': 'object', 'value': self.value}})
+                reply = json.dumps({'id': request['id'], 'result': result}).encode()
+                half = len(reply) // 2  # in two fragments, as Chrome may send a big answer
+                conn.sendall(self.frame(reply[:half], opcode=1, last=False) + self.frame(reply[half:], opcode=0))
         conn.close()
 
     @staticmethod
@@ -64,7 +79,10 @@ class FakeBrowser:
         def read(n):
             data = b''
             while len(data) < n:
-                data += conn.recv(n - len(data))
+                chunk = conn.recv(n - len(data))
+                if not chunk:
+                    raise OSError('closed')
+                data += chunk
             return data
         first, second = read(2)
         n = second & 0x7f
@@ -95,13 +113,34 @@ class BrowserCdpTest(unittest.TestCase):
         target = browser_cdp.open_tab(browser.base, 'https://www.linkedin.com/robots.txt')
         self.assertEqual(target, 'B2')
         self.assertEqual(browser_cdp.evaluate(browser.base, target, 'async () => ({})', 5000), big)
-        ws = [c for c in browser.calls if c[0] == 'ws'][0]
+        ws = [c for c in browser.calls if c[0] == 'ws'][-1]
         self.assertEqual(ws[1], 'Runtime.evaluate')
         self.assertTrue(ws[2]['awaitPromise'] and ws[2]['returnByValue'])
         self.assertEqual(ws[2]['expression'], '(async () => ({}))()')
         browser_cdp.close_tab(browser.base, target)
         browser_cdp.close_tab(browser.base, target)  # already gone: fine
         self.assertEqual(browser_cdp.tab_ids(browser.base), {'A1'})
+
+    def test_evaluate_wakes_a_frozen_tab_first(self):
+        # A browser kept up for hours can hold a background tab frozen: the script runs, but its fetches never settle,
+        # so without waking the tab the call hangs until its timeout.
+        browser = FakeBrowser({'ok': 1})
+        self.addCleanup(browser.stop)
+        browser.frozen = True
+        self.assertEqual(browser_cdp.evaluate(browser.base, 'A1', 'async () => 1', 2000), {'ok': 1})
+        self.assertEqual([c[1] for c in browser.calls if c[0] == 'ws'], ['Page.enable', 'Page.setWebLifecycleState', 'Runtime.evaluate'])
+        self.assertEqual([c[2] for c in browser.calls if c[0] == 'ws'][1], {'state': 'active'})
+
+    def test_a_tab_that_does_not_answer_fails_fast(self):
+        browser = FakeBrowser({'ok': 1})
+        self.addCleanup(browser.stop)
+        browser.silent = True
+        with patch.object(browser_cdp, 'WAKE_SECONDS', 0.5):
+            started = time.monotonic()
+            with self.assertRaisesRegex(browser_cdp.CdpError, 'did not answer in time'):
+                browser_cdp.evaluate(browser.base, 'A1', 'async () => 1', 60000)
+        self.assertLess(time.monotonic() - started, 10)  # not the evaluate's 90 seconds
+        self.assertEqual([c[1] for c in browser.calls if c[0] == 'ws'], ['Page.enable'])
 
     def test_a_failing_script_or_missing_browser_is_an_error(self):
         browser = FakeBrowser(None, exception='TypeError: boom')

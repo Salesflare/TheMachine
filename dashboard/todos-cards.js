@@ -68,6 +68,7 @@ if(/microsoft_signin_pending|microsoft_broker_busy/.test(v))return 'Microsoft is
 if(/microsoft_signin_expired/.test(what))return name?t('Microsoft sign-in for {} expired',name):t('Microsoft sign-in for this account expired');
 if(/browser_busy$/.test(what))return 'The browser was busy with another read';
 if(/browser_unreachable$/.test(what))return 'The browser stopped answering; it restarts by itself';
+if(/browser_stalled$/.test(what))return 'The browser didn’t answer; it retries by itself';
 if(/timeout$/.test(what))return t('{} was slow to answer',name||t('The source'));
 if(/rate_?limit/.test(what))return t('{} asked to slow down',name||t('The source'));
 if(/read_failed$/.test(what))return name?t('Couldn’t read {}',name):t('Couldn’t read the source');

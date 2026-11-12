@@ -123,6 +123,7 @@ HINTS = (
     ('linkedin_browser_busy', 'the OpenClaw browser was busy; it retries by itself'),
     ('x_browser_unreachable', 'the OpenClaw browser stopped answering; it restarts it and retries by itself'),
     ('linkedin_browser_unreachable', 'the OpenClaw browser stopped answering; it restarts it and retries by itself'),
+    *((code, 'the browser didn’t answer; it retries by itself') for code in ('x_browser_stalled', 'linkedin_browser_stalled')),
     ('network:', 'a network error; it retries by itself'),
     ('timeout', 'the source was slow to answer; it retries by itself'),
 )

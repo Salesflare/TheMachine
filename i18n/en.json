@@ -5273,6 +5273,7 @@
  "The browser": "The browser",
  "The browser did not answer after submitting; could not confirm the sign-in": "The browser did not answer after submitting; could not confirm the sign-in",
  "The browser did not take that; open the browser to sign in there": "The browser did not take that; open the browser to sign in there",
+ "The browser didn’t answer; it retries by itself": "The browser didn’t answer; it retries by itself",
  "The browser is in front now.": "The browser is in front now.",
  "The browser stopped answering; it restarts by itself": "The browser stopped answering; it restarts by itself",
  "The browser took too long to answer.": "The browser took too long to answer.",

@@ -114,7 +114,8 @@ class XSource(unittest.TestCase):
         self.assertEqual(json.loads(command[command.index('--state') + 1]), {'dm_cursor': 'C1'})
         for stderr, code in (('the OpenClaw browser is busy', 'x_browser_busy'), ('X is signed out in the OpenClaw browser', 'x_signed_out'),
                              ('@acme is not signed in in the OpenClaw browser', 'x_signed_out'), ('X rate limit reached', 'x_rate_limited'),
-                             ('the browser did not answer in time', 'x_read_timeout'), ('X read failed: boom', 'x_read_failed')):
+                             ('the browser did not answer in time', 'x_browser_stalled'),
+                             ('X read failed: TimeoutError: signal timed out', 'x_read_timeout'), ('X read failed: boom', 'x_read_failed')):
             with patch.object(a.subprocess, 'run', return_value=subprocess.CompletedProcess([], 2, '', 'x-inbox: ' + stderr)):
                 with self.assertRaises(a.SourceError) as e:
                     source.page(5, {})
