@@ -468,8 +468,10 @@ def sentence(text):
 
 
 def blocker_questions(value, strict=False):
-    """A blocker's asks for the owner: up to 3 short questions, each with up to 4 quick-pick options when it is a clear
-    choice; [] when there are none. strict (a run saving them): raises on anything malformed; otherwise (stored JSON) []."""
+    """A blocker's asks for the owner: up to 3 short questions, each answered on its own: up to 4 quick-pick options
+    when it is a clear choice, else a short field, prefilled with its suggestion when the run knows a likely answer
+    (last time's value). A plain string is a question without either, as runs wrote them before. [] when there are
+    none. strict (a run saving them): raises on anything malformed; otherwise (stored JSON) []."""
     if not value:
         return []
     try:
@@ -480,15 +482,21 @@ def blocker_questions(value, strict=False):
         for item in items:
             item = {'question': item} if isinstance(item, str) else item
             question = str(item.get('question') or '').strip()
-            options = [str(o).strip() for o in item.get('options') or [] if str(o).strip()]
-            if not question or len(question) > 200 or len(options) > 4 or any(len(o) > 60 for o in options):
+            raw = item.get('options') or []
+            if not isinstance(raw, list):
                 raise ValueError
-            out.append({'question': question, **({'options': options} if options else {})})
+            options = [str(o).strip() for o in raw if str(o).strip()]
+            suggestion = ' '.join(str(item.get('suggestion') or '').split())
+            if not question or len(question) > 200 or len(options) > 4 or any(len(o) > 60 for o in options) or len(suggestion) > 120:
+                raise ValueError
+            out.append({'question': question, **({'options': options} if options else {}),
+                        **({'suggestion': suggestion} if suggestion and not options else {})})
         return out
     except (ValueError, TypeError, AttributeError):
         if not strict:
             return []
-        raise ValueError('questions: at most 3 of {question (max 200 chars), options (at most 4, max 60 chars each)}')
+        raise ValueError('questions: at most 3 of {question (max 200 chars), options (at most 4, max 60 chars each), '
+                         'suggestion (max 120 chars)}')
 
 
 def ask_blocked(row):

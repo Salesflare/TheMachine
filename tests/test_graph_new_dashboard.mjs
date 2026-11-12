@@ -63,8 +63,12 @@ try{
   await shot(page,`new-person-${tag}`);await click('#record-form button.primary');await page.locator('#record-dialog[open]').waitFor({state:'detached'});
   assert.deepEqual(calls.find(c=>c.action==='graph_new').args,{kind:'person',name:'Rae Vos',email:'rae@umber.example',org:'Umber Labs'});
   await page.waitForFunction(()=>graphNode==='email:rae@umber.example');await page.locator('#people-view .graph-detail h3').waitFor();
-  // Same person as… from the ⋯ menu
-  await click('#people-view .person-menu summary');await click('#people-view [data-same-as]');await page.locator('#record-dialog[open]').waitFor();
+  // Same person as… from the ⋯ menu. The person's page can draw again once its details arrive, which closes a menu
+  // opened just before: open it again until the pick lands.
+  for(let i=0;;i++){if(!await page.locator('#people-view .person-menu[open]').count())await click('#people-view .person-menu summary');
+   const item=page.locator('#people-view .person-menu[open] [data-same-as]').first();
+   try{await (mobile?item.tap({timeout:2000}):item.click({timeout:2000}));break}catch(e){if(i>=10)throw e}}
+  await page.locator('#record-dialog[open]').waitFor();
   await page.locator('#record-form [name="name"]').fill('Bo Kent');await click('#record-form button.primary');await page.locator('#record-dialog[open]').waitFor({state:'detached'});
   assert.deepEqual(calls.find(c=>c.action==='graph_same').args,{a:'email:rae@umber.example',b:'person:b',same:true});
   // The "+" in the top bar: New card, person, organization, project and event; New organization opens its form

@@ -39,6 +39,7 @@ Lo que puede enviar depende de la fuente: un correo, un mensaje directo de Slack
 
 - "Esto no se puede enviar desde aquí." significa que copias el borrador con **Copiar borrador** y lo envías tú.
 - **Necesita tu ayuda** significa que te pregunta algo: **Responder**. **Atascada** significa que se paró sin una pregunta, o que tardó demasiado y se detuvo; la tarea dice por qué.
+- ¿Pregunta más de una cosa? Cada pregunta tiene sus propias opciones o un campo corto, a veces ya rellenado con la respuesta de la última vez. **Responder** las envía todas juntas.
 - ¿Le falta algo que solo tienes tú? Te lo pide y redacta solo lo que puede salir sin ello, como una respuesta que confirma una fecha. No redacta una respuesta que solo dice que ya llegará.
 - **Reintentar** la ejecuta una vez más. **Pedir cambios** pide otra cosa. En una tarea atascada, **Reintentar** va primero y **Detalles** muestra lo que intentó.
 - Un código enviado a tu teléfono, o un permiso que le falta, la detiene. La tarea dice en una línea qué necesita, como el código en su navegador o acceso a un archivo, y luego **Continuar** o **Reintentar**. Una fuente que no está conectada, como Slack: **Conecta Slack** va primero en la tarea, y sigue sola en cuanto Slack está conectado.

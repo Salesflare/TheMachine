@@ -77,10 +77,14 @@ try{
   {const m=await page.locator('#task-h1 .more-menu > button').allTextContents();assert.ok(m.includes('Hand off to someone else'),m.join('|'));assert.ok(m.includes('Mark done'),m.join('|'))}
   assert.equal(await page.locator('#task-h1 [data-choice="retry"]').count(),1);
   assert.deepEqual(await primary('e1'),['Try again']);assert.deepEqual(await primary('g1'),['Continue']);
-  // Named questions: each its own line with quick picks; no Try again after a fruitless one; details collapsed and plain
+  // Named questions: each its own line with quick picks or a field, Answer under them (not in the row); no Try again
+  // after a fruitless one; details collapsed and plain
   assert.deepEqual(await page.locator('#task-o1 .ask-q p').allTextContents(),['What did you notice when you tried the tool?','Which score fills the gap?']);
   assert.deepEqual(await page.locator('#task-o1 .pick').allTextContents(),['3.9','4.0']);
-  assert.deepEqual(await primary('o1'),['Answer']);assert.equal(await page.locator('#task-o1 [data-choice="retry"]').count(),0);
+  assert.equal(await page.locator('#task-o1 .ask-field').count(),1);
+  assert.deepEqual(await page.locator('#task-o1 .ask-send button').allTextContents(),['Answer']);
+  assert.deepEqual(await primary('o1'),[]);assert.equal(await page.locator('#task-o1 [data-choice="answer"]').count(),0);
+  assert.equal(await page.locator('#task-o1 [data-choice="retry"]').count(),0);
   // Its technical details sit under the to-do's one Details (no second toggle), collapsed and plain
   assert.equal(await page.locator('#task-o1 details.tech').count(),0);
   assert.equal(await page.locator('#task-o1 .details-toggle').count(),1);
@@ -93,18 +97,14 @@ try{
   // The prepared-ahead one that stopped to ask: Needs your help, its question, Answer leads and Try again is there
   assert.match(await page.locator('#task-p1').innerText(),/Needs your help/);
   assert.deepEqual(await page.locator('#task-p1 .ask-q p').allTextContents(),['Send it to billing@example.com or to Sam directly?']);
-  assert.deepEqual(await primary('p1'),['Answer']);assert.equal(await page.locator('#task-p1 [data-choice="retry"]').count(),1);
+  assert.deepEqual(await page.locator('#task-p1 .ask-send button.primary').allTextContents(),['Answer']);assert.equal(await page.locator('#task-p1 [data-choice="retry"]').count(),1);
   assert.equal(await page.locator('#task-p1 [data-choice="accept"]').count(),0);
   if(process.env.SHOTS_DIR)await page.locator('#task-p1').screenshot({path:`${process.env.SHOTS_DIR}/prepared-ahead-blocker-${width}.png`});
-  // A pick fills the answer box with the answer alone (the Machine keeps which question it answers); another pick for
-  // the same question replaces it; what was typed stays
-  await page.locator('#task-o1 .pick[data-pick="4.0"]').click();
-  assert.equal(await page.locator('#feedback-o1').inputValue(),'4.0');
-  await page.locator('#feedback-o1').fill('It was slow to load\n4.0');
-  await page.locator('#task-o1 .pick[data-pick="3.9"]').click();
-  assert.equal(await page.locator('#feedback-o1').inputValue(),'It was slow to load\n3.9');
-  assert.equal(await page.locator('#task-o1 .pick[data-pick="3.9"]').getAttribute('aria-pressed'),'true');
-  await page.locator('#task-o1 [data-choice="cancel-change"]').click();
+  // A pick answers its own question (no answer box opens); another pick for it replaces it. The answers go together
+  // (test_ask_questions_dashboard.mjs)
+  await page.locator('#task-o1 .pick[data-pick="4.0"]').click();await page.locator('#task-o1 .pick[data-pick="3.9"]').click();
+  assert.equal(await page.locator('#feedback-o1').count(),0);
+  assert.deepEqual(await page.locator('#task-o1 .pick').evaluateAll(b=>b.map(x=>x.getAttribute('aria-pressed'))),['true','false']);
   // The button row fits the card on a phone
   assert.ok(await page.locator('#task-q1 .actions').evaluate(a=>[...a.children].every(c=>c.getBoundingClientRect().right<=a.closest('article').getBoundingClientRect().right+1)));
   // Answer opens the answer box under the question

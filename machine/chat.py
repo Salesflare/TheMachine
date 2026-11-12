@@ -434,8 +434,9 @@ def asked_item(questions, at):
 
 
 def chat_unglued(text, questions):
-    """An answer saved before the question was kept beside it (decision_asks): a quick pick wrote each answer line as
-    the question, then the pick ("Should I …? October invoices now"). Only a line that starts with one of the run's
+    """An answer written as the question, then the answer ("Should I …? October invoices now"), one line per question:
+    how a to-do's questions are answered together on its card, and how a quick pick wrote it before the question was
+    kept beside it (decision_asks). Only a line that starts with one of the run's
     own questions exactly, as that pick wrote it, comes apart: (the answer alone, [the questions]); else (text, [])."""
     heads = [q if q.endswith(('.', '?', '!', '…')) else q + '.' for q in (str(q).strip() for q in questions) if q]
     kept, asked = [], []

@@ -38,6 +38,7 @@ KINDS = ('js', 'css', 'html')
 # names a class, id or data- attribute only the group's scripts write.
 # tests/test_lazy_parts_dashboard.mjs checks the page with them held back and with them refused.
 LAZY = {
+    'ask': ('todos-ask.js',),
     'calendar': ('calendar-view.css', 'calendar-view.js'),
     'clearrun': ('todos-clear.css', 'todos-clear-run.js'),
     'compose': ('todos-compose.js',),

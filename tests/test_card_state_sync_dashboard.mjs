@@ -61,7 +61,7 @@ try{
   assert.ok(!(await card('a1a1a1a1a1a1a1a1').innerText()).includes('Asked'));
   // A run that did ask still leads with Answer under Needs your help
   assert.equal((await card('c3c3c3c3c3c3c3c3').locator('.card-badges .chip').first().textContent()).trim(),'Needs your help');
-  assert.equal(await card('c3c3c3c3c3c3c3c3').locator('[data-choice="answer"]').count(),1);
+  assert.equal(await card('c3c3c3c3c3c3c3c3').locator('.ask-line [data-choice="ask-send"]').count(),1);
   // A run the service stopped after browser steps (a timeout) is Stuck with Try again, never Needs your help
   assert.equal((await card('d4d4d4d4d4d4d4d4').locator('.card-badges .chip').first().textContent()).trim(),'Stuck');
   assert.equal(await card('d4d4d4d4d4d4d4d4').locator('[data-choice="retry"]').count(),1);
