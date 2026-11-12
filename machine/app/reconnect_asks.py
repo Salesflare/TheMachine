@@ -1,12 +1,11 @@
-"""Reconnect to add something: an account signed in before a newer feature asked for more (Google contacts, for their
-photos), now that its sign-in service offers it. One to-do per account and feature in For you, in the account's area:
-Reconnect leads and opens that account's sign-in; it closes itself as done once the sign-in has what the feature needs,
-and Not needed closes it for good. Created once, never again, and never pushed or mailed: it waits on the dashboard.
+"""Reconnect to add something: an account signed in before a newer feature asked for more (Outlook's colleague and
+contact photos), now that its sign-in service offers it. One to-do per account and feature in For you, in the account's
+area: Reconnect leads and opens that account's sign-in; it closes itself as done once the sign-in has what the feature
+needs, and Not needed closes it for good. Created once, never again, and never pushed or mailed: it waits on the dashboard.
 
 Whoever finds out what a sign-in lacks notes it here (note), only for what its sign-in service offers now (a broker's
-`offered`), so nothing asks before the service can grant it: the enrichment worker for Google contacts
-(workers.google_contacts_run), and for Outlook's colleague and contact photos (ms_photos.check). The worker then makes the to-dos (todos). A new kind of ask is a key with its title and
-summary in TITLES and summary()."""
+`offered`), so nothing asks before the service can grant it: ms_photos.check for Outlook. The enrichment worker then makes
+the to-dos (todos). A new kind of ask is a key in PROVIDERS with its title() and summary()."""
 from __future__ import annotations
 
 import sqlite3
@@ -14,22 +13,18 @@ import sqlite3
 import i18n
 from machine.store.machine_cards import RECONNECT_KIND, reconnect_source, reconnected
 
-GOOGLE_CONTACTS = 'google-contacts'
 OUTLOOK_PHOTOS = 'outlook-photos'
-PROVIDERS = {GOOGLE_CONTACTS: 'google', OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
+PROVIDERS = {OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
 
 
 def title(ask):
     """The to-do's title in the owner's language: what reconnecting brings, never a bare "Reconnect"."""
-    return {GOOGLE_CONTACTS: i18n.t('Reconnect Google to show your contacts’ photos'),
-            OUTLOOK_PHOTOS: i18n.t('Reconnect Microsoft to show your colleagues’ and contacts’ photos')}.get(ask, '')
+    return {OUTLOOK_PHOTOS: i18n.t('Reconnect Microsoft to show your colleagues’ and contacts’ photos')}.get(ask, '')
 
 
 def summary(ask, email):
     """The to-do's one line under its title: which account, and why."""
-    return {GOOGLE_CONTACTS: i18n.t('{} was connected before your Machine read contacts. Reconnect it to add their photos, read-only.',
-                                    email),
-            OUTLOOK_PHOTOS: i18n.t('{} was connected before your Machine read colleagues and contacts. Reconnect it to add their photos, read-only.',
+    return {OUTLOOK_PHOTOS: i18n.t('{} was connected before your Machine read colleagues and contacts. Reconnect it to add their photos, read-only.',
                                    email)}.get(ask, '')
 
 
@@ -48,14 +43,6 @@ def note(db, account, ask, missing, at):
         return
     db.execute('DELETE FROM reconnect_asks WHERE account=? AND ask=?', (account, ask))
     reconnected(db, account, ask, at)
-
-
-def signed_in_again(db, account, ask, changed_at):
-    """Whether an open ask's account was signed in again (its sign-in changed at `changed_at`) since it was last checked:
-    worth checking again now, instead of the next day."""
-    ensure(db)
-    row = db.execute('SELECT checked_at FROM reconnect_asks WHERE account=? AND ask=?', (account, ask)).fetchone()
-    return bool(row and changed_at and changed_at > row[0])
 
 
 def todos(store, config):
