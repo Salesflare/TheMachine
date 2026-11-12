@@ -235,6 +235,11 @@ class Rules(unittest.TestCase):
         self.assertIn(' https://tracker.example/b/13.', o['body'])
         self.assertIn('**Ship it** *soon* ~~maybe~~ in #general @here', o['body'])
         self.assertIn('@someone on Slack', o['body'])
+        # the title in plain words, never Slack's link markup
+        shown = lambda title: message_view.shape('slack.message', {'title': title, 'body': ''}, {})['title']
+        self.assertEqual(shown('#sales: ask <mailto:pat@client.example|pat@client.example> about <https://tracker.example/b/12|the board>'),
+                         '#sales: ask pat@client.example about the board')
+        self.assertEqual(shown('#sales: *ship* it in <#C0GENERAL1|general>'), '#sales: ship it in #general')
 
     def test_an_unnamed_slack_sender_is_never_the_channel(self):
         temp = tempfile.TemporaryDirectory()

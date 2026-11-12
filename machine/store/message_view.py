@@ -30,6 +30,7 @@ import re
 import sqlite3
 
 from machine.sources.android import android_text_shown
+from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
 from mail_senders import relay
 
@@ -380,6 +381,8 @@ def shape(kind, o, m):
         o['from'] = actor
     elif view == 'card':
         o['body'] = drop_repeats(o['body'], title)
+    if kind == 'slack.message':  # the title is plain words: a link by its label, an address without "<mailto:…|…>"
+        o['title'] = slack_plain(o['title'])
     if kind in ('slack.message', 'whatsapp.message', 'fleet.message'):
         o['body'] = mrkdwn(o['body'], slack=kind != 'whatsapp.message')
         for turn in o.get('turns') or ():
