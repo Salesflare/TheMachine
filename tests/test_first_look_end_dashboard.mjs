@@ -45,6 +45,9 @@ try{
  assert.equal(plain(await end.locator('.fl-read').innerText()),'Read 8 emails from the past week: 5 newsletters and 3 notifications.');
  assert.ok((await end.innerText()).includes('New mail gets a look as it comes in.'));
  assert.deepEqual(await end.locator('[data-fl-next]').allInnerTexts(),['Add another inbox','Give me a to-do']);
+ // Where what it learned lives: one link to Learning, What I've learned
+ assert.equal(await end.locator('a.fl-learned').getAttribute('href'),'#learning=learned');
+ assert.equal(await end.locator('a.fl-learned').innerText(),'See what I’ve learned');
  assert.equal(await page.locator('#suggestions img.sleepy').count(),0);
  assert.ok(!/Nothing to report|Back to my nap|All quiet/.test(await page.locator('#suggestions').innerText()));
  // Add another inbox leads to Connections, + Add
@@ -76,10 +79,11 @@ try{
  await page.evaluate(async()=>{await refresh()});
  const note=page.locator('#suggestions .first-look-note');
  await note.waitFor();
- assert.equal(plain(await note.innerText()),'Read 8 emails and 2 meetings from the past week and found 1 to-do.');
+ assert.equal(plain(await note.innerText()),'Read 8 emails and 2 meetings from the past week and found 1 to-do. See what I’ve learned');
+ assert.equal(await note.locator('a.fl-learned').getAttribute('href'),'#learning=learned');
  assert.equal(await end.count(),0);
  done={...done,todos:3};await page.evaluate(async()=>{await refresh()});
- assert.equal(plain(await note.innerText()),'Read 8 emails and 2 meetings from the past week and found 3 to-dos.');
+ assert.equal(plain(await note.innerText()),'Read 8 emails and 2 meetings from the past week and found 3 to-dos. See what I’ve learned');
  done={...done,acted:true};await page.evaluate(async()=>{await refresh()});
  assert.equal(await note.count(),0);
  // Past its day: the usual All clear again
