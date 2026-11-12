@@ -398,7 +398,10 @@ class CardChatApp:
                 attached = sent_files.get(r['id'], [])
                 said = '' if attached and r['feedback'] in CHAT_FILES_ONLY else clamp(r['feedback'], 5000)
                 if answered.get(r['id']):
-                    owner.append(asked_item(answered[r['id']], at))
+                    # Several answers at once come as one line per question, the question then its answer: the
+                    # questions it answered show as the asked line, the owner's message as the answers alone
+                    said, pairs = chat_unglued(said, answered[r['id']])
+                    owner.append(asked_item(pairs or answered[r['id']], at))
                 owner.append({'kind': 'you', 'text': said, 'via': r['source'], 'at': at, **({'files': attached} if attached else {})})
                 if r['id'] not in answered and said:
                     loose.append(owner[-1])

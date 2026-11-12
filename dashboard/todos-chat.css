@@ -103,7 +103,7 @@
 .chat-why,.copy-why{margin:8px 0 0;font-size:var(--chat-meta,.8rem);color:var(--chat-quiet,var(--muted))}.chat-result-head .link{margin-left:auto;font-size:.82rem}
 .chat-files .agent-file::before{content:'';width:12px;height:14px;flex:none;background:currentColor;opacity:.55;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M1 0h6l4 4v10H1z' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 14'%3E%3Cpath d='M1 0h6l4 4v10H1z' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") center/contain no-repeat}
 .chat-ask{margin:0}.chat-ask .ask-line{margin:0;font-weight:400}.chat-ask .ask-line>span{display:block;font-weight:600}.chat-ask .ask-q p{margin:2px 0}
-.chat-ask .reason-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}.chat-ask .reason{min-height:30px;padding:4px 12px;font-size:.85rem}
+.chat-ask .reason-chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}.chat-ask .reason{min-height:30px;padding:4px 12px;font-size:.85rem}
 .chat-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.chat-options.under{align-self:flex-start}
 .chat-options>*{min-height:34px;margin:0;padding:6px 14px;border-radius:999px;font-size:.87rem;white-space:nowrap}
 .chat-options>.ghost{background:none;border:1px solid var(--c-line-strong);color:var(--text);box-shadow:none}.chat-options>.ghost:hover{background:var(--c-hover)}

@@ -162,8 +162,8 @@ $('#suggestions').addEventListener('click',async e=>{if(!chatId)return;
  const rc=e.target.closest('[data-recipe-edit],[data-recipe-undo]');if(rc){e.stopPropagation();lazyRun('recipe',()=>recipeAct(rc));return}
  const un=e.target.closest('[data-unclamp]');if(un){e.stopPropagation();const k=un.dataset.unclamp;chatOpenSet.has(k)?chatOpenSet.delete(k):chatOpenSet.add(k);paintChat();return}
  const b=e.target.closest('button');const input=$('#chat-input');
- // A quick pick or a suggestion fills the message box.
- if(b&&(b.dataset.choice==='pick'||b.dataset.chatSay!=null)&&input){e.stopPropagation();input.value=b.dataset.pick??b.dataset.chatSay;chatGrow(input);input.focus();return}
+ // A suggestion fills the message box. A quick pick answers its question in the Needs you block (askLine), as on the to-do.
+ if(b&&b.dataset.chatSay!=null&&input){e.stopPropagation();input.value=b.dataset.chatSay;chatGrow(input);input.focus();return}
  if(e.target.closest('[data-chat-attach]')){e.stopPropagation();$('#chat-file')?.click();return}
  const rm=e.target.closest('[data-att-remove]');if(rm){e.stopPropagation();const f=chatPending.find(x=>x.key===rm.dataset.attRemove);chatPending=chatPending.filter(x=>x!==f);
   if(f?.id)request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'chat_file_remove',args:{suggestion_id:f.sid,id:f.id}})}).catch(()=>{});chatFileError('');chatTray();input?.focus();return}

@@ -639,6 +639,24 @@ class CardChat(unittest.TestCase):
         self.assertEqual(said, [('you', question + ' Maybe'), ('event', 'Asked: ' + question), ('you', 'October now'),
                                 ('you', 'Should I invoice both? No'), ('you', question + '\nOctober now')])
 
+    def test_several_questions_answered_together(self):
+        """A run asked two things, one a clear choice and one open with a suggestion; the card sends both answers as one
+        message, a line per question with its answer. The run reads that message and both questions (asked); the chat
+        shows the questions it answered as the asked line and the owner's message as the answers alone."""
+        one, two = 'How many tickets should I order? Last time it was two.', 'Which room should I book'
+        self.blocked_on([{'question': one, 'options': ['1', '2', '3', 'None']}, {'question': two, 'suggestion': 'Room B'}])
+        card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
+        self.assertEqual(card['preparation_questions'], [{'question': one, 'options': ['1', '2', '3', 'None']}, {'question': two, 'suggestion': 'Room B'}])
+        reply = one + ' 2\n' + two + '. Room C'  # what the card sends (askReply): each question as a sentence, then its answer
+        self.store.decide(self.sid, 'other', reply, 'chat-answers', 'dashboard')
+        with self.store.connect() as db:
+            self.assertEqual(json.loads(db.execute("SELECT questions FROM decision_asks WHERE decision_id='chat-answers'").fetchone()[0]), [one, two])
+            owner, results = self.app.card_chat_service(db, self.sid)
+        card = next(c for c in self.store.snapshot([])['suggestions'] if c['id'] == self.sid)
+        self.assertEqual((card['latest_feedback']['feedback'], card['latest_feedback']['asked']), (reply, [one, two]))
+        said = [(i['kind'], i['text']) for i in a.chat_items([], owner, results) if i['kind'] in ('you', 'event') and i['text'] != 'Do it']
+        self.assertEqual(said, [('event', 'Asked: ' + one + ' ' + two + '.'), ('you', '2\nRoom C')])
+
     def test_answer_lines_split_only_on_the_runs_own_questions(self):
         one, two = 'Which month?', 'Send it today'
         self.assertEqual(chat_unglued('Which month? October\nSend it today. Yes', [one, two]), ('October\nYes', ['Which month?', 'Send it today.']))

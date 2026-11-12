@@ -78,11 +78,11 @@ async function acceptAtOnce(id,feedback){const s=state.suggestions.find(x=>x.id=
  catch(err){s.status=before;localEdits++;focusKept(render);refresh().catch(()=>{});throw err}
  if(/^(pe|ac|pr|in|sn)/.test(saved?.status))s.status=saved.status;localEdits++;focusKept(render);refresh().catch(()=>{});
  if(saved?.already)toast({done:'Already done. See the to-do.',closed:'Nothing is waiting to try again here.'}[saved.already]||'Already carrying on with it.')}
-async function saveDecision(id,choice,feedback='',answer=false){
+async function saveDecision(id,choice,feedback='',answer=false,prefix=''){
 if(choice==='undo'&&atOnceSaving.has(id)&&!await atOnceSaving.get(id))return;  // the change it undoes never landed: nothing to undo
 if(['complete','reject'].includes(choice)&&atOnceOK(id)){await decideAtOnce(id,{choice,feedback},choice==='complete'?'Marked done':'Marked not needed');return}
 if(choice==='accept'&&!changing.has(id)&&atOnceOK(id)&&state.suggestions.find(s=>s.id===id).status==='pending'){await acceptAtOnce(id,feedback);return}
-let saved;try{const args={choice,feedback,decision_id:crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
+let saved;try{const args={choice,feedback,decision_id:prefix+crypto.randomUUID()};saved=OUTBOX_CHOICES.includes(choice)?await decideOrWait(id,[args],choice):await decidePost(id,args)}
 catch(err){refresh().catch(()=>{});throw err}  // the card may be stale: redraw it
 // Offline: it waits on the device, so the editor closes
 if(saved?.waiting){changing.delete(id);dismissing.delete(id);focusKept(render);return}
@@ -110,13 +110,7 @@ if(b.dataset.result){try{if(b.dataset.result==='copy')await copyResult(id);else 
 // A Fleet item among the to-dos (Share, Not now: data-choice too) is not a to-do: its own handler (fleetOn) answers it
 if(!b.dataset.choice||b.closest('.fleet-card'))return;const choice=b.dataset.choice;
 if(choice==='send'){openSend(id);return}
-if(choice==='pick'){const s=state.suggestions.find(x=>x.id===id),q=s?.preparation_questions?.[+b.dataset.q];if(!q)return;
- if(!changing.has(id)){changing.add(id);dismissing.delete(id);render()}
- // Only the answer goes in the box (the Machine keeps which question it answers): a pick for the same question replaces that question's earlier pick
- const t=$('#feedback-'+id);if(!t)return;const picked=askPicks.get(id)||{},lines=t.value.split('\n').filter(l=>l.trim()),was=lines.indexOf(picked[b.dataset.q]);
- if(was>=0)lines.splice(was,1,b.dataset.pick);else lines.push(b.dataset.pick);askPicks.set(id,{...picked,[b.dataset.q]:b.dataset.pick});
- t.value=lines.join('\n');t.classList.add('filled');
- for(const x of document.querySelectorAll(`#task-${CSS.escape(id)} .pick[data-q="${b.dataset.q}"]`))x.setAttribute('aria-pressed',String(x.dataset.pick===b.dataset.pick));t.focus();return}
+if(choice==='pick'||choice==='ask-send'){lazyRun('ask',()=>askAct(b));return}  // a to-do's named questions (todos-ask.js)
 if(choice==='change'||choice==='answer'){changing.add(id);dismissing.delete(id);render();$('#feedback-'+id)?.focus();return}
 if(choice==='cancel-change'){changing.delete(id);render();return}
 if(choice==='reject'){dismissing.add(id);changing.delete(id);render();return}

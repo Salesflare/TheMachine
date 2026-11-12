@@ -39,6 +39,7 @@ Was sie senden kann, hängt von der Quelle ab: eine E-Mail, eine Slack-Direktnac
 
 - „Das kann nicht von hier gesendet werden.“ heißt, dass du den Entwurf mit **Entwurf kopieren** kopierst und selbst sendest.
 - **Braucht deine Hilfe** heißt, dass sie dich etwas fragt: **Antworten**. **Hängt fest** heißt, dass sie ohne Frage angehalten hat oder zu lange lief und gestoppt wurde. Die Aufgabe sagt, warum.
+- Fragt sie mehr als eine Sache? Jede Frage hat ihre eigene Auswahl oder ein kurzes Feld, manchmal schon mit der Antwort vom letzten Mal ausgefüllt. **Antworten** schickt alle zusammen.
 - Fehlt ihr etwas, das nur du hast? Dann fragt sie dich danach und entwirft nur, was ohne es gehen kann, etwa eine Antwort, die einen Termin bestätigt. Eine Antwort, die nur sagt, dass es noch kommt, entwirft sie nicht.
 - **Erneut versuchen** führt sie noch einmal aus. **Änderungen anfragen** bittet um etwas anderes. Bei einer festgefahrenen Aufgabe steht **Erneut versuchen** vorn, und **Details** zeigt, was sie versucht hat.
 - Während der Vorbereitung sagt die Aufgabe in einer einfachen Zeile, was deine Machine gerade tut, etwa „Die Mail wird gelesen“, „Das PDF wird gelesen“ oder „Der Entwurf wird geschrieben“. Die genauen Schritte bleiben im Chat der Aufgabe.

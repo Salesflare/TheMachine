@@ -250,6 +250,21 @@ class AskConcretely(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.assertRaises(ValueError,a.blocker_questions,bad,True)
         self.assertEqual(a.blocker_questions('not json'),[])
+        for bad in ([{'question':'Q?','options':'a, b'}],[{'question':'Q?','suggestion':'x'*121}]):
+            with self.subTest(bad=bad):
+                self.assertRaises(ValueError,a.blocker_questions,bad,True)
+    def test_several_questions_each_with_their_own_answer(self):
+        # Each question keeps its own options; an open one its suggestion (prefilled on the card), never beside options
+        asks=[{'question':'How many tickets should I order?','options':['1','2','3','None']},
+              {'question':'Which room should I book?','suggestion':'  Room   B '},
+              {'question':'Which day suits you?','options':['Tuesday'],'suggestion':'Tuesday'}]
+        self.assertEqual(a.blocker_questions(asks,True),[
+            {'question':'How many tickets should I order?','options':['1','2','3','None']},
+            {'question':'Which room should I book?','suggestion':'Room B'},
+            {'question':'Which day suits you?','options':['Tuesday']}])
+        # Stored as runs wrote them before: plain strings and one flat question with options still read
+        self.assertEqual(a.blocker_questions('["Which date?", {"question": "Which score?", "options": ["3.9", "4.0"]}]'),
+                         [{'question':'Which date?'},{'question':'Which score?','options':['3.9','4.0']}])
     def test_the_prompt_asks_for_plain_questions_and_defaults_for_small_calls(self):
         text=open(a.ROOT/'PREPARATION.md').read()
         for words in ('questions=[{question, options}]','make sense on its own','sensible default'):
