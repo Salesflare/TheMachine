@@ -82,6 +82,21 @@ $('#hours').addEventListener('submit',async e=>{e.preventDefault();const days=[.
  try{if(!days.length)throw Error('Pick at least one work day.');for(const k of['start','end','morning','digest_at'])if(!args[k])throw Error('Fill in every time.');
   $('#hours-save').disabled=true;state.hours=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'set_work_hours',args})});
   hoursDirty=false;$('#hours-error').textContent='';renderHours();notice('Work hours saved.')}catch(err){errCaught(err);$('#hours-error').textContent=err.message}finally{$('#hours-save').disabled=!state.hours?.saveable}});
+// The morning digest follows Snoozes land at (timeutil.digest_floor): never before 5 minutes after it, unless that falls
+// past midnight or outside the hours. Snoozes moved later take the digest along, keeping its gap; set too early, the
+// digest moves up to the first time it can go, and says so.
+const hmMin=v=>{const m=/^(\d{2}):(\d{2})$/.exec(v||'');return m?+m[1]*60+ +m[2]:null},minHM=x=>String(Math.floor(x/60)).padStart(2,'0')+':'+String(x%60).padStart(2,'0');
+function digestFloor(digest,h){const d=hmMin(digest),m=hmMin(h.morning),s=hmMin(h.start),e=hmMin(h.end);if(d==null||m==null)return digest;const x=m+5;
+ if(x>=1440||x<=d)return digest;if(s!=null&&e!=null&&s!==e&&!(s<e?s<=x&&x<e:x>=s||x<e))return digest;return minHM(x)}
+function digestFollow(moved){const f=$('#hours-digest'),mo=$('#hours-morning'),was=hmMin(mo.dataset.was||state.hours?.morning),now=hmMin(mo.value);let d=f.value;
+ if(moved&&was!=null&&now!=null&&now>was&&hmMin(d)!=null&&hmMin(d)>=was+5)d=minHM(Math.min(hmMin(d)+now-was,1439));  // the same gap after the later snoozes
+ if(moved)mo.dataset.was=mo.value;
+ d=digestFloor(d,{morning:mo.value,start:$('#hours-start').value,end:$('#hours-end').value});const x=hmMin(mo.value);f.min=x!=null&&x+5<1440?minHM(x+5):'';
+ if(d!==f.value){f.value=d;hoursDirty=true;let at=d;try{at=fmtHM('2000-01-01T'+d)}catch{}const note=$('#hours-error');note.textContent=t('Morning digest moved to {}, after snoozes land.',at);note.style.color='var(--muted)'}}  // a note, not an error
+$('#hours').addEventListener('submit',()=>{$('#hours-error').style.color=''},true);
+$('#hours-morning').addEventListener('change',()=>digestFollow(true));
+$('#hours-digest').addEventListener('change',()=>digestFollow(false));
+$('#hours-morning').addEventListener('focus',e=>{e.target.dataset.was=e.target.value});
 // Language and region (locale_prefs.py): the region sets the date order and the usual clock; Time format overrides the
 // clock, Language the words (i18n/). Saved at once.
 const LOCALE_REGIONS='AD AE AF AG AI AL AM AO AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CW CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GG GH GI GL GM GN GQ GR GT GU GW GY HK HN HR HT HU ID IE IL IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MP MR MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NZ OM PA PE PF PG PH PK PL PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TC TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WS XK YE ZA ZM ZW'.split(' ');

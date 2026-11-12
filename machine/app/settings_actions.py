@@ -24,7 +24,7 @@ import notify
 import own_addresses
 import security_levels
 import team_learnings
-from timeutil import clock, local_tz, now, set_timezone, set_work_hours, WORK_HOURS, work_hours, WORK_HOURS_DEFAULT
+from timeutil import clock, digest_floor, local_tz, now, set_timezone, set_work_hours, WORK_HOURS, work_hours, WORK_HOURS_DEFAULT
 
 
 def hours_settings(config, changes):
@@ -176,11 +176,29 @@ class SettingsActionsApp:
                 'evening_time': notify.evening_time(self.config.get('evening_at'), WORK_HOURS['start'], WORK_HOURS['end']),
                 'saveable': bool(getattr(self, 'config_path', None))}
 
+    def digest_follows_snoozes(self):
+        """At start: a morning digest set before the morning's snoozes come back (or less than 5 minutes after) moves to
+        5 minutes after them (digest_floor), saved in config.json as Work hours would save it. Without a file to save
+        in, nothing changes here; the stored time stays."""
+        digest = self.config.get('digest_at', '08:30')
+        try:
+            later = digest_floor(digest)
+            if clock(later) == clock(digest) or not getattr(self, 'config_path', None):
+                return None
+            save_hours(self.config_path, {'digest_at': later})
+        except (ValueError, OSError) as error:
+            LOG.warning('digest time kept: %s', type(error).__name__)
+            return None
+        self.config['digest_at'] = later
+        LOG.info('digest time moved after the snoozes: %s', later)
+        return later
+
     def set_hours(self, args):
         """The owner's Work hours from the dashboard: checked, saved in config.json and in use at once."""
         if not getattr(self, 'config_path', None):
             raise ValueError('This can’t be changed on this Machine.')
         values = hours_settings(self.config, args)
+        values['digest_at'] = digest_floor(values['digest_at'], values['work_hours'])  # after the morning's snoozes
         save_hours(self.config_path, values)
         self.config.update(values)
         set_timezone(values['timezone'])

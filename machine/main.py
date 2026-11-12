@@ -152,6 +152,7 @@ class App(*APP_MIXINS):
             set_work_hours(None)
         self.config = config
         self.config_path = Path(config_path) if config_path else None  # where Work hours are saved
+        self.digest_follows_snoozes()  # a digest set before the morning's snoozes: saved at 5 minutes after them
         try:  # what the app starts with: changes after it are followed (follow_config)
             self.config_stamp = self.config_path.stat().st_mtime_ns if self.config_path else None
         except OSError:

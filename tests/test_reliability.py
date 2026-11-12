@@ -6,6 +6,15 @@ import time
 import unittest
 from unittest.mock import patch
 from seams import patch_everywhere  # noqa: E402
+import timeutil
+
+
+def setUpModule():  # these read snoozes landing at 09:00, the old default (now 08:00, before the 08:30 digest)
+    timeutil.set_work_hours({'morning': '09:00'})
+
+
+def tearDownModule():
+    timeutil.set_work_hours(None)
 
 spec = importlib.util.spec_from_file_location('assistant', Path(__file__).parent.parent.joinpath('assistant.py'))
 a = importlib.util.module_from_spec(spec)

@@ -5,6 +5,15 @@ import threading
 from unittest.mock import patch
 import test_ux as ux
 from seams import patch_everywhere  # noqa: E402
+import timeutil
+
+
+def setUpModule():  # these read snoozes landing at 09:00, the old default (now 08:00, before the 08:30 digest)
+    timeutil.set_work_hours({'morning': '09:00'})
+
+
+def tearDownModule():
+    timeutil.set_work_hours(None)
 a=ux.a
 BXL=a.ZoneInfo('Europe/Amsterdam')
 def at(y,m,d,h,mi=0):return dt.datetime(y,m,d,h,mi,tzinfo=BXL).astimezone(dt.timezone.utc).isoformat()

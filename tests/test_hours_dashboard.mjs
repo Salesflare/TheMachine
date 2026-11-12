@@ -108,6 +108,22 @@ try{
  // A refresh while editing does not undo the edit.
  await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#hours-days [aria-pressed="true"]').count(),0);
+ // The morning digest follows Snoozes land at (timeutil.digest_floor): moved later, the snoozes take it along with its
+ // gap; earlier, it stays; a digest set before the snoozes moves to 5 minutes after them, and says so.
+ hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'08:00',timezone:'America/New_York',digest_at:'08:30',saveable:true};
+ await page.reload();await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="notify"]').click();
+ await page.locator('#hours-morning').fill('08:45');
+ assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
+ assert.match(await page.locator('#hours-error').textContent(),/^Morning digest moved to (09:15|9:15\sAM), after snoozes land\.$/);
+ await page.locator('#hours-morning').fill('08:15');
+ assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
+ await page.locator('#hours-digest').fill('08:00');
+ assert.equal(await page.locator('#hours-digest').inputValue(),'08:20');
+ assert.equal(await page.locator('#hours-digest').getAttribute('min'),'08:20');
+ await page.locator('#hours-save').click();
+ await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
+ assert.equal(saved.at(-1).args.morning+' '+saved.at(-1).args.digest_at,'08:15 08:20');
+ assert.deepEqual(await page.evaluate(()=>[digestFloor('08:30',{morning:'17:58',start:'08:00',end:'18:00'}),digestFloor('08:30',{morning:'23:58',start:'00:00',end:'00:00'}),digestFloor('10:00',{morning:'09:00',start:'08:00',end:'23:00'})]),['08:30','08:30','10:00']);
  // Not saveable here (no config file): shown, read-only, in plain words; the file and its key under Show more.
  hours={...hours,saveable:false};
  await page.reload();await navClick(page.locator('#open-settings'));

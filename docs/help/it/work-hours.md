@@ -11,11 +11,11 @@ In **Impostazioni**, **Notifiche**, sotto **Orario di lavoro**:
 - **Giorni lavorativi**: le attività di lavoro e il lavoro posticipato aspettano un giorno lavorativo.
 - **Messaggi dalle** e **Fino alle**: fuori da questi orari non ti arriva nulla, né push, né Telegram, né email.
 - **I posticipi arrivano alle**: quando torna un'attività posticipata di un giorno o più. Il riepilogo del mattino arriva almeno 5 minuti dopo, così le include.
-- **Riepilogo del mattino**: quando arriva il riepilogo del mattino.
+- **Riepilogo del mattino**: quando arriva il riepilogo del mattino. Se i posticipi arrivano più tardi, il riepilogo li segue.
 - **Riepilogo della sera**: quando arriva il riepilogo della sera. Parte da 15 minuti prima di **Fino alle** e segue quell'ora finché non ne scegli una tua.
 - **Fuso orario**: il tuo, per tutto quanto sopra.
 
-Premi **Salva**. Di default è dal lunedì al venerdì, dalle 08:00 alle 23:00, i posticipi alle 09:00, il riepilogo del mattino alle 08:30 e quello della sera alle 22:45.
+Premi **Salva**. Di default è dal lunedì al venerdì, dalle 08:00 alle 23:00, i posticipi alle 08:00, il riepilogo del mattino alle 08:30 e quello della sera alle 22:45.
 
 Cosa parte in questi orari, e come, è spiegato in [Notifiche](notifications.md).
 

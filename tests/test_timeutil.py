@@ -31,7 +31,7 @@ class TimeUtil(unittest.TestCase):
     def test_work_hours_are_checked_and_completed(self):
         self.assertEqual(timeutil.work_hours(), timeutil.WORK_HOURS_DEFAULT)
         self.assertEqual(timeutil.work_hours({'days': 'sun-thu', 'start': '7:00'}),
-                         {'days': [1, 2, 3, 4, 7], 'start': '07:00', 'end': '23:00', 'morning': '09:00'})
+                         {'days': [1, 2, 3, 4, 7], 'start': '07:00', 'end': '23:00', 'morning': '08:00'})
         self.assertEqual(timeutil.work_hours({'days': ['mon', 3, 'Friday']})['days'], [1, 3, 5])
         for bad in ({'days': []}, {'days': [8]}, {'days': ['someday']}, {'end': '25:00'}, 'mon-fri'):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
@@ -67,8 +67,18 @@ class TimeUtil(unittest.TestCase):
         with patch.dict(timeutil.WORK_HOURS, end='18:00'):
             self.assertFalse(timeutil.in_hours(at(18)))
 
+    def test_the_digest_comes_after_the_morning_snoozes(self):
+        floor = timeutil.digest_floor
+        self.assertEqual(floor('08:30'), '08:30')  # the defaults: snoozes at 08:00, the digest at 08:30
+        self.assertEqual(floor('08:00'), '08:05')
+        self.assertEqual(floor('8:30', {'morning': '09:00', 'start': '08:00', 'end': '23:00'}), '09:05')
+        self.assertEqual(floor('10:00', {'morning': '09:00', 'start': '08:00', 'end': '23:00'}), '10:00')  # later: kept
+        self.assertEqual(floor('08:30', {'morning': '17:58', 'start': '08:00', 'end': '18:00'}), '08:30')  # outside the hours
+        self.assertEqual(floor('08:30', {'morning': '23:58', 'start': '00:00', 'end': '00:00'}), '08:30')  # past midnight
+        self.assertEqual(floor('08:30', {'morning': '06:00', 'start': '05:00', 'end': '23:00'}), '08:30')
+
     def test_morning_label(self):
-        self.assertEqual(timeutil.morning_label(), '9:00')
+        self.assertEqual(timeutil.morning_label(), '8:00')
         self.assertEqual(timeutil.morning_label({'morning': '07:30'}), '7:30')
 
 

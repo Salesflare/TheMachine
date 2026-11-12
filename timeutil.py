@@ -32,10 +32,11 @@ def now():
 # The owner's hours (`work_hours` in config.json, the dashboard's Work hours, `assistant hours`):
 # `days` are ISO weekdays (1 = Monday) when work cards go out and snoozed work and returning
 # threads come back; nothing is sent outside `start`–`end` (it may wrap past midnight); `morning`
-# is when "Tomorrow", "3 days" and "1 week" land. Missing keys keep these defaults.
+# is when "Tomorrow", "3 days" and "1 week" land, as the hours start; the morning digest (digest_at, 08:30) comes after
+# it (digest_floor). Missing keys keep these defaults.
 # WORK_HOURS is one dict for the whole run, changed in place by set_work_hours, so a module that imported it sees the
 # owner's current hours.
-WORK_HOURS_DEFAULT = {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '09:00'}
+WORK_HOURS_DEFAULT = {'days': [1, 2, 3, 4, 5], 'start': '08:00', 'end': '23:00', 'morning': '08:00'}
 WORK_HOURS = dict(WORK_HOURS_DEFAULT)
 DAY_NAMES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
@@ -86,6 +87,26 @@ def set_work_hours(value):
     checked = work_hours(value)
     WORK_HOURS.clear()
     WORK_HOURS.update(checked)
+
+
+DIGEST_AFTER_SNOOZES = 5  # minutes: the morning digest comes at least this long after the morning's snoozes
+
+
+def digest_floor(digest_at, hours=None):
+    """The morning digest time ('HH:MM') that follows the snooze time (`morning`): never before DIGEST_AFTER_SNOOZES
+    minutes after it, so the to-dos back that morning are in the digest. A later digest keeps its time. When that
+    minimum falls past midnight or outside the hours, the digest keeps its own time. The dashboard's Work hours do the
+    same (settings-general.js, digestFloor)."""
+    hours = hours or WORK_HOURS
+    digest = '%02d:%02d' % clock(digest_at)
+    hour, minute = clock(hours['morning'])
+    after = hour * 60 + minute + DIGEST_AFTER_SNOOZES
+    if after >= 24 * 60:
+        return digest
+    floor = '%02d:%02d' % divmod(after, 60)
+    if floor <= digest or not in_hours(dt.datetime(2000, 1, 1, *divmod(after, 60)), hours):
+        return digest
+    return floor
 
 
 def is_work_day(day, hours=None):

@@ -436,10 +436,12 @@ class Notifications(unittest.TestCase):
     def test_a_to_do_snoozed_until_tomorrow_is_in_the_next_morning_digest(self):
         self.app.action('push_subscribe', SUB, owner_dashboard=True)
         sid = self.card(title='Call the plumber back')
+        timeutil.set_work_hours({'morning': '09:00'})  # a digest set before the snoozes (08:30)
+        self.addCleanup(timeutil.set_work_hours, None)
         sunday = a.dt.datetime(2026, 10, 11, 20, 0, tzinfo=UTC)
         with patch_everywhere(a, 'local_tz', return_value=UTC):
             until = a.snooze_time('tomorrow', start=sunday.isoformat())
-        self.assertEqual(until, '2026-10-12T09:00:00+00:00')  # Snoozes land at, by default
+        self.assertEqual(until, '2026-10-12T09:00:00+00:00')  # Snoozes land at
         with self.store.connect() as db:
             db.execute("UPDATE suggestions SET status='snoozed',snoozed_until=?,resume_status='pending' WHERE id=?", (until, sid))
         step = lambda h, m: self.morning_step(a.dt.datetime(2026, 10, 12, h, m, tzinfo=UTC))

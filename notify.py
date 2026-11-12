@@ -44,6 +44,7 @@ import urllib.request
 
 import clear_pace
 from i18n import t
+import timeutil
 
 LOG = logging.getLogger('personal-assistant')
 
@@ -378,26 +379,15 @@ def waiting_mail(lines, root=''):
 
 
 # -- the morning digest
-AFTER_SNOOZES = dt.timedelta(minutes=5)  # the digest goes at least this long after the morning's snoozes came back
-
-
 def digest_time(digest_at, morning=None, start=None, end=None):
-    """When the morning digest goes ('HH:MM'): its own time, but never before AFTER_SNOOZES past the morning snooze time
-    (work_hours.morning, where Tomorrow, 3 days and 1 week land), so the to-dos that came back that morning are in it.
-    A digest set later keeps its time. When that would fall past midnight or outside the hours, its own time stays.
+    """When the morning digest goes ('HH:MM'): its own time, but never before 5 minutes after the morning snooze time
+    (timeutil.digest_floor; work_hours.morning, where Tomorrow, 3 days and 1 week land), so the to-dos that came back
+    that morning are in it. A digest set later keeps its time. When that would fall past midnight or outside the hours,
+    its own time stays. Work hours save the digest that way too; this holds for a config.json edited by hand.
     The dashboard shows the same time (settings-device.js, digestTime)."""
     if not morning:
         return digest_at
-    hour, minute = (int(x) for x in morning.split(':'))
-    after = hour * 60 + minute + int(AFTER_SNOOZES.total_seconds() // 60)
-    if after >= 24 * 60:
-        return digest_at
-    later = '%02d:%02d' % divmod(after, 60)
-    if later <= digest_at:
-        return digest_at
-    if start and end and start != end and not (start <= later < end if start < end else later >= start or later < end):
-        return digest_at
-    return later
+    return timeutil.digest_floor(digest_at, {'morning': morning, 'start': start or '00:00', 'end': end or '00:00'})
 
 
 def digest_due(local, digest_at, start, end, work_day, sent_today, morning=None):
