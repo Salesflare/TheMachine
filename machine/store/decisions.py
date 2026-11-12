@@ -93,6 +93,33 @@ SEND_RETRY_AFTER = dt.timedelta(minutes=30)
 MESSAGE_KINDS = ('email', 'linkedin', 'slack', 'x', 'whatsapp', 'telegram', 'intercom', 'doc_reply')
 
 
+def own_title(db, suggestion_id, title):
+    """A handed-off to-do's title once it is the owner's own again (Do it myself): "Waiting on Sam: send the quote"
+    becomes "Send the quote". From what was promised when the to-do came from someone else's promise; else the owner's
+    language's own "Waiting on {}: {}", only for the teammate it went to. Anything else stays: None."""
+    from machine.store.promises import fit_title, promise_title, promise_who_named, PROMISE_TITLE_MAX
+    title = ' '.join(str(title or '').split())
+    whos = {r['name'] for r in db.execute("SELECT name FROM fleet_out WHERE context=? AND name IS NOT NULL", ('handoff:' + str(suggestion_id),))}
+    try:
+        promise = db.execute("SELECT * FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1", (suggestion_id,)).fetchone()
+    except sqlite3.OperationalError:  # no promises yet
+        promise = None
+    if promise:
+        whos |= {promise['who'], promise_who_named(db, dict(promise))['who']}
+    whos = {' '.join(str(w).split()) for w in whos} - {''}
+    whos |= {w.split()[0] for w in whos}
+    own = lambda what: fit_title(what[:1].upper() + what[1:], PROMISE_TITLE_MAX) if what else None
+    if promise and promise['what']:
+        what = ' '.join(str(promise['what']).split())
+        if title in {promise_title(dict(promise), i18n.t('Waiting on {}: {}', w, what)) for w in whos}:
+            return own(what)
+    head, mid, tail = (i18n.t('Waiting on {}: {}', '\0', '\0').split('\0') + ['', ''])[:3]
+    match = re.fullmatch(re.escape(head) + '(.+?)' + re.escape(mid) + '(.+)' + re.escape(tail), title)
+    if match and match.group(1).casefold() in {w.casefold() for w in whos}:
+        return own(match.group(2).strip())
+    return None
+
+
 def send_retry_ok(job, kind):
     """An unconfirmed message send the owner may retry: it was checked for SEND_RETRY_AFTER without a trace."""
     return (job['status'] == 'uncertain' and kind in MESSAGE_KINDS
@@ -652,6 +679,42 @@ class DecisionsStore:
             if card['status'] == 'completed' and latest['source'] == 'fleet' and latest['id'] == 'fleet-handoff-' + request_id:
                 return self._decide(db, suggestion_id, 'reopen', '', decision_id, 'fleet')
             return {'skipped': True, 'reason': 'newer_card_choice'}
+
+    def handoff_mine_card(self, suggestion_id):
+        """Do it myself on a handoff that came back: the to-do is the owner's own now. Its prepared result no longer
+        waits on the teammate (out of Waiting on others), the handoff step and the text about it go, and its title is its
+        own (own_title), so it reads and acts as the owner's own to-do. The handoff's note stays (annotate_requests)."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute('SELECT status,outcome,next_action,title,title_source FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
+            if not row or row['status'] != 'prepared':
+                return False
+            title = own_title(db, suggestion_id, row['title']) if row['title_source'] != 'user' else None
+            if title and title != row['title']:
+                db.execute('UPDATE suggestions SET title=? WHERE id=?', (title, suggestion_id))
+                db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (suggestion_id,))
+            try:
+                outcome = json.loads(row['outcome'] or 'null')
+            except (TypeError, ValueError):
+                outcome = None
+            waiting = isinstance(outcome, dict) and outcome.get('state') == 'waiting'
+            try:
+                current = json.loads(row['next_action'] or 'null')
+            except (TypeError, ValueError):
+                current = None
+            kept = [a for a in next_actions.actions(current) if a.get('kind') != 'handoff'] if current else []
+            dropped = bool(current) and len(kept) != len(next_actions.actions(current))
+            if not waiting and not dropped:
+                return bool(title and title != row['title'])
+            action = (current if not dropped else {**current, 'actions': kept} if current.get('kind') == 'menu' and len(kept) > 1
+                      else kept[0] if kept else None)
+            # The prepared text described the handoff ("Prepared a short handoff to Sam"): it goes. With a draft of its
+            # own left, that draft is still ready for the owner; else it is the owner's own step again, under Needs you,
+            # with Mark done leading (owner_step) and nothing prepared to read.
+            db.execute("UPDATE suggestions SET body='',outcome=?,next_action=?,status=?,owner_step=CASE WHEN ? THEN owner_step ELSE 1 END WHERE id=?",
+                       (row['outcome'] if action and not waiting else None, encoded(action) if action else None, 'prepared' if action else 'pending',
+                        1 if action else 0, suggestion_id))
+            return True
 
     def _decide(self, db, suggestion_id, choice, feedback, decision_id, source, snooze_hours=24, snoozed_until=None, snooze_option=None, verified_terminal_job=None, work=False):
         # The caller owns one IMMEDIATE transaction, including any prompt validation.

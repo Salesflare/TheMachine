@@ -40,7 +40,7 @@ Eine Aufgabe geht an jede Person im Team nur einmal: Solange Pat sie hat, sagt e
 
 ## Wenn jemand ablehnt
 
-Die Person kann sagen, warum: nicht ihre Sache, schon erledigt oder keine Zeit diese Woche. Wähle dann **Selbst erledigen**, **An jemand anderen übergeben** oder **Als erledigt markieren**.
+Die Person kann sagen, warum: nicht ihre Sache, schon erledigt oder keine Zeit diese Woche. Wähle dann **Selbst erledigen**, **An jemand anderen übergeben** oder **Als erledigt markieren**. Das gilt auch, wenn die Person nicht rechtzeitig antwortet. **Selbst erledigen** macht es wieder zu deinem eigenen To-do, unter Für dich.
 
 ## Jemand außerhalb des Network
 
