@@ -349,6 +349,36 @@ class MailSync(Base):
         with self.assertRaises(a.SourceError):
             a.Gmail(self.config, {**self.mail, 'email': 'other@acme.test'}).profile()
 
+    def test_the_checked_address_outlives_a_restart_but_not_its_six_hours(self):
+        """The checked address is kept with the mailbox's checkpoint: a restart during a /me outage reads on; a checkpoint
+        whose time ran out, from another connection, or claiming more than six hours asks /me again."""
+        self.fake.add('m1', INBOX, '2099-01-01T08:00:00Z', '2099-01-01T08:00:00Z', mime('Quote', 'Bo <bo@client.test>', 'alex@acme.test', 'Hi', '<m1@client.test>'))
+        a.sync_gmail(self.store, self.config, self.mail)
+        a.sync_gmail(self.store, self.config, self.mail)
+        kept = self.store.checkpoint('acme-outlook')['identity']
+        self.assertEqual(kept['address'], 'alex@acme.test')
+        self.assertNotIn('machine-token', json.dumps(kept))  # a hash of the connection, never its credential
+        self.fake.fail['GET /me'] = 504
+        ms_graph._identities.clear(); ms_graph._tokens.clear()  # a restart
+        a.sync_gmail(self.store, self.config, self.mail)
+        self.assertEqual(self.store.checkpoint('acme-outlook')['identity'], kept)  # never stretched past its first check
+
+        def restarted_with(identity):
+            ms_graph._identities.clear()
+            with self.store.connect() as db:
+                state = {**self.store.checkpoint('acme-outlook'), 'identity': identity}
+                db.execute('UPDATE checkpoints SET state=? WHERE account_id=?', (json.dumps(state), 'acme-outlook'))
+            with self.assertRaises(a.SourceError) as got:
+                a.sync_gmail(self.store, self.config, self.mail)
+            self.assertEqual(got.exception.status, 504)
+        later = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=7)).isoformat()
+        restarted_with({**kept, 'until': (dt.datetime.now(dt.timezone.utc) - dt.timedelta(minutes=1)).isoformat()})
+        restarted_with({**kept, 'key': 'another-connection'})
+        restarted_with({**kept, 'until': later})
+        ms_graph._identities.clear()
+        with self.assertRaises(a.SourceError):  # a reconnect is another connection: its checkpoint's address doesn't count
+            a.sync_gmail(self.store, self.config, {**self.mail, 'connected_at': '2099-01-02T09:00:00Z'})
+
     def test_a_card_reads_attachments_from_the_message_itself(self):
         body = (b'From: bo@client.test\r\nTo: alex@acme.test\r\nSubject: Invoice\r\nMIME-Version: 1.0\r\n'
                 b'Content-Type: multipart/mixed; boundary=XX\r\n\r\n--XX\r\nContent-Type: text/plain\r\n\r\nSee attached\r\n'
