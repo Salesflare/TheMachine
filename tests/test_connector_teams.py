@@ -256,6 +256,41 @@ class TeamsTests(unittest.TestCase):
         self.assertEqual(self.store.state['meetings'], [])  # the meeting chat is what there is
         self.assertFalse([e for e in self.store.events if e['kind'] != 'teams.message'])
 
+    def test_many_channels_take_turns_without_rerunning_right_away(self):
+        # More channels than a run reads: once each has been read, the rest wait for the next regular run. Before,
+        # every run said there was more, so the account synced again within seconds, all day.
+        self.fake.granted = set(ALL_SCOPES)
+        self.fake.joined = [{'id': 'team-1', 'displayName': 'Acme'}]
+        self.fake.channels = {'team-1': [{'id': f'chan-{n}', 'displayName': f'Room {n}', 'membershipType': 'standard'} for n in range(5)]}
+        self.fake.fail[('teams.channel.messages', 'chan-4')] = 403  # one the owner can't read: never a reason to hurry
+        with mock.patch.object(teams, 'MAX_CHANNELS', 2):
+            runs = []
+            for minute in range(0, 30, 5):
+                self.now = f'2026-11-05T12:{minute:02d}:00+00:00'
+                runs.append(self.sync()['more'])
+        # first run: no hurry; second: channels never read wait; third reads the last readable one; then at rest
+        self.assertEqual(runs, [False, True, False, False, False, False])
+        self.assertEqual(sorted(self.store.state['channel_cursors']), ['chan-0', 'chan-1', 'chan-2', 'chan-3'])
+        self.assertEqual(self.store.state['set_aside'], ['chan-4'])
+        self.assertTrue(self.store.state['coverage_complete'])
+
+    def test_rereading_a_group_chat_is_not_an_edit(self):
+        # Graph lists a chat's members in no fixed order. A message read again (each run rereads the overlap) must come
+        # out the same, or the store takes it for an edit: a new version, read again by the review, on every run.
+        self.fake.chats[CHAT_1].update(chatType='group', lastMessagePreview={'createdDateTime': '2026-11-05T11:00:00Z'})
+        self.fake.members[CHAT_1] = [(ME, 'Owner', OWNER), (SAM, 'Sam Sender', 'sam@partner.example'),
+                                     (ROBIN, 'Robin Reviewer', 'robin@acme.example')]
+        self.fake.messages[CHAT_1].insert(0, message('m5', '2026-11-05T11:00:00Z', user(SAM, 'Sam Sender'), 'Call at 3?'))
+        self.sync()
+        first = next(e for e in self.store.events if e['body'] == 'Call at 3?')
+        self.fake.members[CHAT_1].reverse()
+        self.now = '2026-11-05T12:05:00+00:00'
+        self.sync()
+        again = [e for e in self.store.events if e['body'] == 'Call at 3?']
+        self.assertEqual(len(again), 2)  # read again within the overlap
+        self.assertEqual((again[1]['title'], again[1]['metadata']), (first['title'], first['metadata']))
+        self.assertEqual(first['metadata']['to'], ['robin@acme.example', 'sam@partner.example'])
+
     def test_sign_in_failures_still_ask_to_reconnect(self):
         self.fake.fail['teams.chat.messages'] = 401
         with self.assertRaises(CONNECTOR_HELPERS.SourceError) as caught:

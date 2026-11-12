@@ -249,7 +249,9 @@ class Source:
                     uid = m.get('userId')
                     if uid:
                         found[str(uid)] = (' '.join(str(m.get('displayName') or '').split())[:80], str(m.get('email') or '').strip().lower())
-            self.members[chat_id] = found
+            # Graph lists members in no fixed order: sorted, a chat's name and its messages' "to" stay the same on every
+            # read, so a message read again is not taken for an edit (a new version, read again by the review)
+            self.members[chat_id] = dict(sorted(found.items(), key=lambda kv: (kv[1][0].casefold(), kv[1][1], kv[0])))
         return self.members[chat_id]
 
 
@@ -619,7 +621,10 @@ def sync(store, config, account, helpers):
                     state.update(channel_cursors=ccursors, channel_turn=(turn + n + 1) % max(1, len(channels)))
                     store.commit_page(account['id'], state, events)
                     count += len(events)
-                more = more or len(channels) > MAX_CHANNELS and not first
+                # More than a run's channels: the rest take their turn on the next regular runs. Only a channel never
+                # read yet (just connected, or newly joined) brings the next run sooner; a refused one waits its turn.
+                aside = set(state.get('set_aside') or [])
+                more = more or not first and any(c not in ccursors and c not in aside for _, c, _ in channels)
             except helpers.SourceError as error:
                 if error.status != 403:
                     raise
