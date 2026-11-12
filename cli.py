@@ -30,6 +30,7 @@ onboarding = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(onboarding)
 onboarding._assistant = assistant
 import google_pair  # noqa: E402
+import notify  # noqa: E402
 import office_files  # noqa: E402
 import service  # noqa: E402
 import support  # noqa: E402
@@ -677,14 +678,21 @@ def cmd_telegram(config, args):
 def hours_text(hours):
     days = assistant.WORK_HOURS_DEFAULT['days'] if not hours.get('days') else hours['days']
     names = ', '.join(assistant.DAY_NAMES[d - 1].capitalize() for d in days)
+    # the morning digest goes at least 5 minutes after the snoozes land (notify.digest_time), so they are in it
+    morning = notify.digest_time(hours['digest_at'], hours['morning'], hours['start'], hours['end'])
+    later = f' (set to {hours["digest_at"]}, after the snoozes land)' if morning != hours['digest_at'] else ''
     return (f"Work days: {names}\nHours: {hours['start']}–{hours['end']} (nothing is sent outside them)\n"
-            f"Snoozes and returning threads land at {hours['morning']}; morning digest at {hours['digest_at']}\n"
+            f"Snoozes and returning threads land at {hours['morning']}; morning digest at {morning}{later}\n"
+            f"Evening digest at {notify.evening_time(hours.get('evening_at'), hours['start'], hours['end'])}"
+            f"{'' if hours.get('evening_at') else ' (15 minutes before the end)'}\n"
             f"Time zone: {hours['timezone']}")
 
 
 def cmd_hours(config, args):
     changes = {key: value for key, value in (('days', args.days), ('start', args.start), ('end', args.end), ('morning', args.morning),
                                              ('digest_at', args.digest), ('timezone', args.timezone)) if value}
+    if args.evening:  # 'auto': 15 minutes before the end again
+        changes['evening_at'] = None if args.evening == 'auto' else args.evening
     try:
         values = assistant.hours_settings(config, changes)
     except ValueError as error:
@@ -693,7 +701,7 @@ def cmd_hours(config, args):
         assistant.save_hours(args.config, values)
         if not args.no_restart and service.available():
             service.restart(service.UNIT_NAME, run=onboarding.run)
-    hours = {**values['work_hours'], 'timezone': values['timezone'], 'digest_at': values['digest_at']}
+    hours = {**values['work_hours'], 'timezone': values['timezone'], 'digest_at': values['digest_at'], 'evening_at': values['evening_at']}
     if args.json:
         return out_json(hours)
     print(('Saved. ' if changes else '') + hours_text(hours))
@@ -1137,6 +1145,7 @@ def parser():
     c.add_argument('--end', help='until this time, like 23:00 (may be past midnight)')
     c.add_argument('--morning', help='when Tomorrow, 3 days and 1 week snoozes land, like 09:00')
     c.add_argument('--digest', help='morning digest time, like 08:30')
+    c.add_argument('--evening', metavar='HH:MM', help="the evening digest's time (auto: 15 minutes before the end of the hours)")
     c.add_argument('--timezone', help='IANA time zone, like Europe/Brussels')
     c.add_argument('--no-restart', action='store_true', help='save only; the service picks it up at its next restart')
     c = add('export', 'Everything The Machine knows and how it is set up, in one encrypted archive to move to another computer', cmd_export)

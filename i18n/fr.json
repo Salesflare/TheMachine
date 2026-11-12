@@ -1280,6 +1280,7 @@
  "Done": "Fait",
  "Done / dismissed": "Fait / écarté",
  "Done saves when you’re back online.": "« Fait » sera enregistré dès votre retour en ligne.",
+ "Done today": "Fait aujourd’hui",
  "Done when": "Terminé quand",
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Terminé quand : une ligne courte (140 caractères max.), comme \"La fiche est en ligne avec un lien vers nous\"",
  "Done when: {}": "Terminé quand : {}",
@@ -1289,6 +1290,7 @@
  "Done. Waiting for them to tap Book it.": "C’est fait. En attente que l’autre personne touche Réserver.",
  "Done:": "Fait :",
  "Done: {}": "Fait : {}",
+ "Done: {} and {} more": "Fait : {} et {} autres",
  "Done: {}.": "Fait : {}.",
  "Don’t answer": "Ne pas répondre",
  "Don’t invite {}": "Ne pas inviter {}",
@@ -1327,6 +1329,7 @@
  "Due {}": "Échéance {}",
  "Due {}.": "Échéance : {}.",
  "Due: a date, or a date and time": "Échéance : une date, ou une date et une heure",
+ "Due: {}": "Échéance : {}",
  "Duration {}": "Durée {}",
  "EUR": "EUR",
  "Each AI you approved, with what it may do and everything it did.": "Chaque IA que vous avez approuvée, avec ce qu’elle peut faire et tout ce qu’elle a fait.",
@@ -1410,6 +1413,15 @@
  "Environment id": "ID d’environnement",
  "Error log": "Journal d’erreur",
  "Esc": "Esc",
+ "Evening digest": "Récap du soir",
+ "Evening {}, {} meetings today": {
+  "one": "Bonsoir {}, {} réunion aujourd’hui",
+  "other": "Bonsoir {}, {} réunions aujourd’hui"
+ },
+ "Evening {}, {} to-dos done today": {
+  "one": "Bonsoir {}, {} tâche faite aujourd’hui",
+  "other": "Bonsoir {}, {} tâches faites aujourd’hui"
+ },
  "Event": "Événement",
  "Event account does not match the checkpoint boundary": "Le compte de l’événement ne correspond pas à la limite du point de contrôle",
  "Events": "Événements",
@@ -1798,6 +1810,14 @@
  "Goes within the hour": "Part dans l’heure",
  "Gone quiet": "Plus de nouvelles",
  "Gone quiet: {}": "Silencieux : {}",
+ "Good evening, {} meetings today": {
+  "one": "Bonsoir, {} réunion aujourd’hui",
+  "other": "Bonsoir, {} réunions aujourd’hui"
+ },
+ "Good evening, {} to-dos done today": {
+  "one": "Bonsoir, {} tâche faite aujourd’hui",
+  "other": "Bonsoir, {} tâches faites aujourd’hui"
+ },
  "Good morning": "Bonjour",
  "Good morning, first meeting at {}": "Bonjour, première réunion à {}",
  "Good morning, ready for your OK: {}": "Bonjour, à valider : {}",
@@ -3459,6 +3479,8 @@
  "Open by stage": "Ouverts par étape",
  "Open chatgpt.com/plugins, press +, then Add custom MCP server.": "Ouvrez chatgpt.com/plugins, appuyez sur +, puis sur Add custom MCP server.",
  "Open draft": "Ouvrir le brouillon",
+ "Open for tomorrow": "À faire demain",
+ "Open for {}": "À faire {}",
  "Open in Google Calendar ↗": "Ouvrir dans Google Agenda ↗",
  "Open in Google Docs ↗": "Ouvrir dans Google Docs ↗",
  "Open in Intercom": "Ouvrir dans Intercom",
@@ -5722,6 +5744,7 @@
  "Tomorrow": "Demain",
  "Tomorrow {}": "Demain {}",
  "Tomorrow · 9:00": "Demain · 9:00",
+ "Tomorrow, first meeting at {}": "Demain, première réunion à {}",
  "Too early for numbers.": "Trop tôt pour des chiffres.",
  "Too late to undo that": "Trop tard pour annuler",
  "Too many asks today": "Trop de demandes aujourd’hui",
@@ -7077,6 +7100,8 @@
   "other": "{} brouillons ont changé : lisez-les, puis envoyez-les."
  },
  "{} due": "{} à faire",
+ "{} due on {}": "{} à faire {}",
+ "{} due tomorrow": "{} à faire demain",
  "{} edits to the drafting guide": {
   "one": "{} modification du guide des brouillons",
   "other": "{} modifications du guide des brouillons"
@@ -7269,6 +7294,18 @@
   "one": "{} réunion aujourd’hui, à {}.",
   "other": "{} réunions aujourd’hui, la première à {}."
  },
+ "{} meetings.": {
+  "one": "{} réunion.",
+  "other": "{} réunions."
+ },
+ "{} meetings: {} and {} more.": {
+  "one": "{} réunion : {} et {} autres.",
+  "other": "{} réunions : {} et {} autres."
+ },
+ "{} meetings: {}.": {
+  "one": "{} réunion : {}.",
+  "other": "{} réunions : {}."
+ },
  "{} message": "Message {}",
  "{} message from {}": "Message {} de {}",
  "{} message to {}": "Message {} à {}",
@@ -7311,6 +7348,8 @@
   "one": "{} autre peut attendre.",
   "other": "{} autres peuvent attendre."
  },
+ "{} more done.": "{} autres faites.",
+ "{} more due.": "{} autres à échéance.",
  "{} more in Promises": "{} de plus dans Promesses",
  "{} more like this wait. Always shares them too.": {
   "one": "{} autre demande comme celle-ci attend. Toujours la partage aussi.",
@@ -7603,6 +7642,10 @@
  },
  "{} to-dos done": "{} tâches terminées",
  "{} to-dos done with The Machine.": "{} tâches terminées avec The Machine.",
+ "{} to-dos done.": {
+  "one": "{} tâche faite.",
+  "other": "{} tâches faites."
+ },
  "{} to-dos for you": {
   "one": "{} tâche pour vous",
   "other": "{} tâches pour vous"
@@ -7614,6 +7657,14 @@
  "{} to-dos held until {}": {
   "one": "{} tâche en attente jusqu’à {}",
   "other": "{} tâches en attente jusqu’à {}"
+ },
+ "{} to-dos still need you": {
+  "one": "{} tâche vous attend encore",
+  "other": "{} tâches vous attendent encore"
+ },
+ "{} to-dos still need you.": {
+  "one": "{} tâche vous attend encore.",
+  "other": "{} tâches vous attendent encore."
  },
  "{} to-dos waiting": {
   "one": "{} tâche en attente",
@@ -7696,6 +7747,7 @@
  "{}'s Machine has new keys. Share {} again?": "La Machine de {} a de nouvelles clés. Partager {} à nouveau ?",
  "{}'s board, shared with the team": "Tableau de {}, partagé avec l’équipe",
  "{}'s friend request is no longer open.": "La demande d’ami de {} n’est plus ouverte.",
+ "{}, first meeting at {}": "{}, première réunion à {}",
  "{}, for {}": "{}, pour {}",
  "{}, in your Machine’s browser": "{}, dans le navigateur de votre Machine",
  "{}, {}, {} and {} more": "{}, {}, {} et {} autres",

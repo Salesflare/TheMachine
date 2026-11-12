@@ -13,8 +13,9 @@ Kies in **Instellingen**, **Meldingen** per soort waar die je bereikt:
 - **Resultaten en vragen**: een antwoord dat klaarstaat om te versturen, een taak die een login nodig heeft, een vraag uit je Fleet.
 - **Herinneringen**: snoozes en wachttijden die terugkomen.
 - **Ochtendoverzicht**: één kort overzicht van je dag. Zie hieronder.
+- **Avondoverzicht**: wat vandaag gedaan is en wat morgen open staat. Zie hieronder.
 
-Elk heeft een schakelaar voor **Push** (de app op je telefoon of computer), **Telegram** als dat ingesteld is, en **E-mail** op een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve het overzicht op Telegram.
+Elk heeft een schakelaar voor **Push** (de app op je telefoon of computer), **Telegram** als dat ingesteld is, en **E-mail** op een gehoste Machine of een Machine op The Machine Network. Alles staat aan, behalve de overzichten op Telegram.
 
 **Werkuren** staan in hetzelfde tabblad: je werkdagen, de uren waarin meldingen mogen weggaan, wanneer snoozes terugkomen, het tijdstip van het overzicht en je tijdzone. Zie [Werkuren](work-hours.md).
 
@@ -72,6 +73,15 @@ Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets t
 Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat. Een belofte opent haar to-do, of haar eigen pagina als er nog geen is.
 
 De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
+
+## Het avondoverzicht
+
+Het komt één keer op werkdagen op zijn tijdstip in **Werkuren**, standaard 15 minuten voor **Tot**, via de manieren die je hierboven in zijn rij kiest. Een dag zonder afgewerkte to-do of gehouden afspraak krijgt er geen. Het begint met je dag in een getal, zoals "Goeienavond Sam, vandaag 4 to-do's gedaan", en dan een deel **Werk** en een deel **Privé**. Een leeg deel valt weg. Elk deel heeft:
+
+- **Vandaag gedaan**: tot drie to-do's die jij of je Machine afwerkte, hoeveel nog meer, en je afspraken, zoals "3 afspraken: Prijsgesprek en nog 2.";
+- **Open voor morgen** (op vrijdag je volgende werkdag): de eerste afspraken en wat dan moet.
+
+Het eindigt met hoeveel to-do's nog op je wachten. Tik op de push om je to-do's te openen. Wil je het niet, zet dan zijn rij uit.
 
 ## Privacy
 

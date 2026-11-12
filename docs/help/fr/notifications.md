@@ -13,8 +13,9 @@ Dans **Paramètres**, **Notifications**, choisissez pour chaque type où il vous
 - **Résultats et questions** : une réponse prête à envoyer, une connexion qu’une tâche demande, une question de la Fleet.
 - **Rappels** : les mises en attente et les attentes qui reviennent.
 - **Récap du matin** : un court résumé de votre journée. Voir plus bas.
+- **Récap du soir** : ce qui a été fait aujourd’hui et ce qui reste pour demain. Voir plus bas.
 
-Chacun a un interrupteur pour **Push** (l’app sur votre téléphone ou votre ordinateur), **Telegram** quand il est configuré, et **E-mail** sur une Machine hébergée ou sur une Machine du The Machine Network. Tous sont activés, sauf le récap sur Telegram.
+Chacun a un interrupteur pour **Push** (l’app sur votre téléphone ou votre ordinateur), **Telegram** quand il est configuré, et **E-mail** sur une Machine hébergée ou sur une Machine du The Machine Network. Tous sont activés, sauf les récaps sur Telegram.
 
 Les **Heures de travail** se trouvent dans le même onglet : vos jours de travail, les heures où les notifications peuvent partir, l’heure de retour des mises en attente, l’heure du récap et votre fuseau horaire. Voir [Heures de travail](work-hours.md).
 
@@ -72,6 +73,15 @@ Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il 
 Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mise en attente ou dans une autre vue, son chat s’ouvre. Une promesse ouvre sa tâche, ou sa propre page si elle n’en a pas encore.
 
 Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
+
+## Le récap du soir
+
+Il arrive une fois les jours de travail à son heure dans **Heures de travail**, par défaut 15 minutes avant **Jusqu’à**, par les moyens choisis dans sa ligne ci-dessus. Un jour sans tâche faite ni réunion tenue n’en reçoit pas. Il commence par votre journée en un chiffre, comme "Bonsoir Sam, 4 tâches faites aujourd’hui", puis une partie **Travail** et une partie **Perso**. Une partie vide est omise. Chacune contient :
+
+- **Fait aujourd’hui** : jusqu’à trois tâches que vous ou votre Machine avez terminées, combien d’autres, et vos réunions, comme "3 réunions : Appel tarifs et 2 autres." ;
+- **À faire demain** (un vendredi, votre prochain jour de travail) : les premières réunions et ce qui arrive à échéance.
+
+Il se termine par le nombre de tâches qui vous attendent encore. Touchez la notification push pour ouvrir vos tâches. Pour ne plus le recevoir, désactivez sa ligne.
 
 ## Confidentialité
 

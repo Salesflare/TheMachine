@@ -20,6 +20,7 @@ from machine.config import LOG
 from machine.delivery.push import setup_hints
 from machine.sources.scope_check import scope_hints
 from machine.model_usage import telegram_on, usage_status, use_model_reset
+import notify
 import own_addresses
 import security_levels
 import team_learnings
@@ -27,8 +28,9 @@ from timeutil import clock, local_tz, now, set_timezone, set_work_hours, WORK_HO
 
 
 def hours_settings(config, changes):
-    """`timezone`, `digest_at` and `work_hours` after `changes` (any of those, or the work_hours keys
-    days/start/end/morning at the top level), checked; a ValueError says what is wrong."""
+    """`timezone`, `digest_at`, `evening_at` (None: 15 minutes before the end of the hours) and `work_hours` after
+    `changes` (any of those,
+    or the work_hours keys days/start/end/morning at the top level), checked; a ValueError says what is wrong."""
     current = {**WORK_HOURS_DEFAULT, **(config.get('work_hours') or {})}
     nested = changes.get('work_hours') if isinstance(changes.get('work_hours'), dict) else {}
     merged = {**current, **nested, **{k: changes[k] for k in WORK_HOURS_DEFAULT if changes.get(k) is not None}}
@@ -38,7 +40,9 @@ def hours_settings(config, changes):
     except (ValueError, KeyError, OSError):
         raise ValueError(f'Unknown time zone {zone!r}; use a name like Europe/Brussels or America/New_York') from None
     digest = '%02d:%02d' % clock(changes.get('digest_at') or config.get('digest_at') or '08:30', 'The digest time')
-    return {'timezone': zone, 'digest_at': digest, 'work_hours': work_hours(merged)}
+    evening = changes['evening_at'] if 'evening_at' in changes else config.get('evening_at')
+    evening = '%02d:%02d' % clock(evening, 'The evening digest time') if evening else None
+    return {'timezone': zone, 'digest_at': digest, 'evening_at': evening, 'work_hours': work_hours(merged)}
 
 
 def activity_report(db, timezone=None, current=None):
@@ -168,6 +172,8 @@ class SettingsActionsApp:
     def hours(self):
         """Work hours as the dashboard shows and edits them."""
         return {**WORK_HOURS, 'timezone': getattr(local_tz(), 'key', str(local_tz())), 'digest_at': self.config.get('digest_at', '08:30'),
+                'evening_at': self.config.get('evening_at') or None,
+                'evening_time': notify.evening_time(self.config.get('evening_at'), WORK_HOURS['start'], WORK_HOURS['end']),
                 'saveable': bool(getattr(self, 'config_path', None))}
 
     def set_hours(self, args):

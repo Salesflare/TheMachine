@@ -124,7 +124,7 @@ if(pushOK)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data?.ope
 // icon's badge is the To-dos count (appBadge in shell-render.js). While this page is in front of them, it tells the Machine so no
 // push goes out (a heartbeat a minute; the Machine forgets it after two).
 const NOTIFY_KINDS=[['todo','New to-dos','Only what can’t wait: due today, a reply, urgent'],['result','Results and questions','A reply ready to send, a sign-in, a Fleet question'],
- ['reminder','Reminders','Snoozes and waits coming back'],['digest','Morning digest','Meetings, what’s due, what came in overnight']];
+ ['reminder','Reminders','Snoozes and waits coming back'],['digest','Morning digest','Meetings, what’s due, what came in overnight'],['evening','Evening digest','']];
 const NOTIFY_COLS={push:'Push',telegram:'Telegram',email:'Email'};
 const notifyPost=(action,args={})=>request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action,args})});
 const notifyHM=t=>{try{return fmtHM('2000-01-01T'+t)}catch{return t}};
@@ -145,7 +145,7 @@ function renderNotify(){const n=state?.notify,box=$('#settings-notify');
  const cell=(kind,label,ch)=>{const p=n.prefs[kind]||{};if(!(ch in p))return html`<span class="notify-cell" role="cell"><span class="notify-na">–</span></span>`;
   return html`<span class="notify-cell" role="cell"><button type="button" class="lookup-switch" role="switch" aria-checked="${!!p[ch]}" aria-label="${label+': '+NOTIFY_COLS[ch]}" data-notify-kind="${kind}" data-notify-channel="${ch}"></button></span>`};
  putHTML(grid,html`<div class="notify-row" role="row"><span role="columnheader"></span>${cols.map(c=>html`<span class="notify-col" role="columnheader">${NOTIFY_COLS[c]}</span>`)}</div>${
-  NOTIFY_KINDS.map(([k,label,hint])=>html`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${k==='digest'?digest:hint}</small></span>${cols.map(c=>cell(k,label,c))}</div>`)}${recapRow(n.weekly_recap,cols)}`);
+  NOTIFY_KINDS.map(([k,label,hint])=>html`<div class="notify-row" role="row"><span role="rowheader"><strong>${label}</strong><small>${k==='digest'?digest:k==='evening'?t('Work days at {}',notifyHM(h.evening_time||'')):hint}</small></span>${cols.map(c=>cell(k,label,c))}</div>`)}${recapRow(n.weekly_recap,cols)}`);
  // In the mobile app this device is the phone: its own push (www/inject.js keeps the id app_push_register gave it),
  // not the web's, which a WebView doesn't have. It turns on with the phone's notifications for the app.
  const phone=phoneAppPush(),mine=phone&&(n.app_devices||[]).find(p=>p.id===phone.id);

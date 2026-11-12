@@ -227,7 +227,8 @@ One setting for when The Machine works with you: on the dashboard under **Settin
 - **Work days** (default Monday to Friday): work to-dos (from `work:` sources) wait for a work day, and snoozed work and returning email threads come back on one. Personal to-dos keep their timing.
 - **Messages from / until** (default 08:00 to 23:00): nothing is sent outside these hours, to Telegram or the phone; it waits until they start. Reviews keep running in the background. A range like 20:00 to 04:00 wraps past midnight.
 - **Snoozes land at** (default 09:00): where Tomorrow, 3 days and 1 week land, and when a snoozed email thread comes back.
-- **Morning digest** (`digest_at`, default 08:30) and **time zone** (`timezone`). The installer takes this computer's time zone, and the dashboard offers the device's when it differs.
+- **Evening digest** (`evening_at`, default 15 minutes before the end of the hours): on work days, what got done today and what's open for the next work day, the ways picked in its row under **Notifications**. Nothing on a day without a to-do done or a meeting held.
+- **Morning digest** (`digest_at`, default 08:30, at least 5 minutes after **Snoozes land at** so those to-dos are in it) and **time zone** (`timezone`). The installer takes this computer's time zone, and the dashboard offers the device's when it differs.
 
 Saved from the dashboard, it takes effect at once and is written to `config.json` (the old file stays as `config.json.bak`).
 
@@ -504,7 +505,7 @@ On Linux with systemd, the Machine health source also reads the computer's own l
 | `assistant roles` | Your agent reads the first and latest messages with your closest people and notes what each is to you in the Graph (also the last step of `assistant profile`; `--again` to run it again right away) |
 | `assistant profile` | Your agent drafts how you write and what matters to you from your own messages, and notes what your closest people are to you in the Graph. The draft is saved to `USER.md` only after your yes, within the 4,000 characters OpenClaw loads (`--again` for a fresh draft, `--all` to keep every line, `--yes` to save without asking) |
 | `assistant connect [<source>]` | Set up or redo a source (sign-in or key, IDs, a test read, first sync). Without a source, lists what still needs connecting. `--account <id>` picks or adds one of several |
-| `assistant hours` | Your [work hours](#work-hours); `--days mon-fri --start 08:00 --end 23:00 --morning 09:00 --digest 08:30 --timezone Europe/Brussels` changes them and restarts the service (`--no-restart` only saves) |
+| `assistant hours` | Your [work hours](#work-hours); `--days mon-fri --start 08:00 --end 23:00 --morning 09:00 --digest 08:30 --evening 22:45 --timezone Europe/Brussels` changes them and restarts the service (`--no-restart` only saves) |
 | `assistant telegram status\|on <id>\|off` | Telegram is optional: turn to-do delivery there off (to-dos then reach you through the dashboard app) or back on. `off --remove-bot` also deletes the bot and its token from OpenClaw |
 | `assistant doctor` | Checks the service, OpenClaw bridge, Telegram approval, every source, reviews, dashboard and `USER.md`; every problem comes with its fix. Exits 1 when something is broken |
 | `assistant service status\|start\|stop\|restart\|logs` | The background service (systemd on Linux, launchd on macOS); `logs -n 200`, `-f` |

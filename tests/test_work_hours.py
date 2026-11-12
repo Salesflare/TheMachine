@@ -104,7 +104,7 @@ class Saving(unittest.TestCase):
         saved = app.action('set_work_hours', {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30',
                                               'digest_at': '9:00', 'timezone': 'Europe/London'}, owner_dashboard=True)
         self.assertEqual(saved, {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30', 'timezone': 'Europe/London',
-                                 'digest_at': '09:00', 'saveable': True})
+                                 'digest_at': '09:00', 'evening_at': None, 'evening_time': '17:45', 'saveable': True})
         written = json.loads(path.read_text())
         self.assertEqual(written['work_hours'], {'days': [1, 2, 3, 4], 'start': '09:00', 'end': '18:00', 'morning': '09:30'})
         self.assertEqual((written['timezone'], written['digest_at'], written['other']), ('Europe/London', '09:00', {'kept': True}))
@@ -112,12 +112,17 @@ class Saving(unittest.TestCase):
         self.assertEqual(json.loads(path.with_name('config.json.bak').read_text())['digest_at'], '08:30')
         self.assertEqual((a.WORK_HOURS['days'], a.local_tz().key, app.config['digest_at']), ([1, 2, 3, 4], 'Europe/London', '09:00'))
         self.assertEqual(app.action('status', {'full': True})['hours']['morning'], '09:30')
+        # the evening digest's own time, saved with the rest; none follows Until again
+        self.assertEqual(app.action('set_work_hours', {'evening_at': '7:30'}, owner_dashboard=True)['evening_at'], '07:30')
+        self.assertEqual(json.loads(path.read_text())['evening_at'], '07:30')
+        self.assertIsNone(app.action('set_work_hours', {'evening_at': None}, owner_dashboard=True)['evening_at'])  # Until's again
+        self.assertEqual(json.loads(path.read_text())['work_hours']['days'], [1, 2, 3, 4])  # the rest kept
 
     def test_bad_values_change_nothing(self):
         path = self.config_file()
         before = path.read_text()
         app = self.app(path)
-        for bad in ({'days': []}, {'start': '8'}, {'timezone': 'Mars/Olympus'}, {'digest_at': '30:00'}):
+        for bad in ({'days': []}, {'start': '8'}, {'timezone': 'Mars/Olympus'}, {'digest_at': '30:00'}, {'evening_at': '25:00'}):
             with self.assertRaises(ValueError):
                 app.action('set_work_hours', bad, owner_dashboard=True)
         self.assertEqual(path.read_text(), before)

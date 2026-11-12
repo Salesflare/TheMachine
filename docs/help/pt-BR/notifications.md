@@ -13,8 +13,9 @@ Em **Configurações**, **Notificações**, escolha por tipo onde cada coisa che
 - **Resultados e perguntas**: uma resposta pronta para enviar, um login que uma tarefa precisa, uma pergunta do Fleet.
 - **Lembretes**: itens adiados e esperas que voltam.
 - **Resumo da manhã**: um resumo curto do seu dia. Veja abaixo.
+- **Resumo do fim do dia**: o que foi feito hoje e o que fica em aberto para amanhã. Veja abaixo.
 
-Cada um tem um botão para **Push** (o app no seu celular ou computador), **Telegram** quando estiver configurado e **E-mail** em uma Machine hospedada ou em uma Machine na The Machine Network. Todos ficam ativados, menos o resumo no Telegram.
+Cada um tem um botão para **Push** (o app no seu celular ou computador), **Telegram** quando estiver configurado e **E-mail** em uma Machine hospedada ou em uma Machine na The Machine Network. Todos ficam ativados, menos os resumos no Telegram.
 
 O **Horário de trabalho** fica na mesma aba: os seus dias de trabalho, as horas em que as notificações podem sair, quando os itens adiados voltam, o horário do resumo e o seu fuso horário. Veja [Horário de trabalho](work-hours.md).
 
@@ -72,6 +73,15 @@ Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que
 Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela. Uma promessa abre a tarefa dela, ou a própria página se ainda não tiver uma.
 
 O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
+
+## O resumo do fim do dia
+
+Ele chega uma vez nos dias de trabalho no horário dele em **Horário de trabalho**, por padrão 15 minutos antes de **Até**, pelos meios que você escolher na linha dele acima. Um dia sem tarefa feita nem reunião realizada não recebe nenhum. Ele começa com o seu dia em um número, como "Boa noite, Sam: 4 tarefas feitas hoje", e depois uma parte **Trabalho** e uma parte **Pessoal**. Uma parte vazia fica de fora. Cada uma tem:
+
+- **Feito hoje**: até três tarefas que você ou sua Machine terminaram, quantas mais, e suas reuniões, como "3 reuniões: Ligação de preços e mais 2.";
+- **Em aberto para amanhã** (numa sexta, seu próximo dia de trabalho): as primeiras reuniões e o que vence.
+
+Ele termina com quantas tarefas ainda precisam de você. Toque na notificação push para abrir suas tarefas. Para não receber, desative a linha dele.
 
 ## Privacidade
 

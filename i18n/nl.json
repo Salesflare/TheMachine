@@ -1280,6 +1280,7 @@
  "Done": "Gedaan",
  "Done / dismissed": "Gedaan / afgewezen",
  "Done saves when you’re back online.": "‘Gedaan’ wordt opgeslagen zodra je weer online bent.",
+ "Done today": "Vandaag gedaan",
  "Done when": "Klaar als",
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Klaar als: één korte regel (tot 140 tekens), zoals \"Vermelding staat live met een link naar ons\"",
  "Done when: {}": "Klaar als: {}",
@@ -1289,6 +1290,7 @@
  "Done. Waiting for them to tap Book it.": "Klaar. Wacht tot de ander op Boek het tikt.",
  "Done:": "Gedaan:",
  "Done: {}": "Gedaan: {}",
+ "Done: {} and {} more": "Gedaan: {} en nog {}",
  "Done: {}.": "Gedaan: {}.",
  "Don’t answer": "Niet antwoorden",
  "Don’t invite {}": "{} niet uitnodigen",
@@ -1327,6 +1329,7 @@
  "Due {}": "Deadline {}",
  "Due {}.": "Uiterlijk {}.",
  "Due: a date, or a date and time": "Deadline: een datum, of een datum en tijd",
+ "Due: {}": "Deadline: {}",
  "Duration {}": "Duur {}",
  "EUR": "EUR",
  "Each AI you approved, with what it may do and everything it did.": "Elke AI die je goedkeurde, met wat hij mag en alles wat hij deed.",
@@ -1410,6 +1413,15 @@
  "Environment id": "Omgevings-id",
  "Error log": "Foutlog",
  "Esc": "Esc",
+ "Evening digest": "Avondoverzicht",
+ "Evening {}, {} meetings today": {
+  "one": "Goeienavond {}, vandaag {} afspraak",
+  "other": "Goeienavond {}, vandaag {} afspraken"
+ },
+ "Evening {}, {} to-dos done today": {
+  "one": "Goeienavond {}, vandaag {} to-do gedaan",
+  "other": "Goeienavond {}, vandaag {} to-do’s gedaan"
+ },
  "Event": "Afspraak",
  "Event account does not match the checkpoint boundary": "Het account van het event past niet bij de checkpointgrens",
  "Events": "Gebeurtenissen",
@@ -1798,6 +1810,14 @@
  "Goes within the hour": "Gaat binnen het uur",
  "Gone quiet": "Stil geworden",
  "Gone quiet: {}": "Stil geworden: {}",
+ "Good evening, {} meetings today": {
+  "one": "Goeienavond, vandaag {} afspraak",
+  "other": "Goeienavond, vandaag {} afspraken"
+ },
+ "Good evening, {} to-dos done today": {
+  "one": "Goeienavond, vandaag {} to-do gedaan",
+  "other": "Goeienavond, vandaag {} to-do’s gedaan"
+ },
  "Good morning": "Goeiemorgen",
  "Good morning, first meeting at {}": "Goeiemorgen, eerste afspraak om {}",
  "Good morning, ready for your OK: {}": "Goeiemorgen, klaargezet voor je akkoord: {}",
@@ -3459,6 +3479,8 @@
  "Open by stage": "Open per fase",
  "Open chatgpt.com/plugins, press +, then Add custom MCP server.": "Open chatgpt.com/plugins, druk op + en dan op Add custom MCP server.",
  "Open draft": "Concept openen",
+ "Open for tomorrow": "Open voor morgen",
+ "Open for {}": "Open voor {}",
  "Open in Google Calendar ↗": "Openen in Google Agenda ↗",
  "Open in Google Docs ↗": "Openen in Google Docs ↗",
  "Open in Intercom": "Openen in Intercom",
@@ -5722,6 +5744,7 @@
  "Tomorrow": "Morgen",
  "Tomorrow {}": "Morgen {}",
  "Tomorrow · 9:00": "Morgen · 9:00",
+ "Tomorrow, first meeting at {}": "Morgen, eerste afspraak om {}",
  "Too early for numbers.": "Nog te vroeg voor cijfers.",
  "Too late to undo that": "Te laat om dat ongedaan te maken",
  "Too many asks today": "Te veel vragen vandaag",
@@ -7077,6 +7100,8 @@
   "other": "{} concepten zijn veranderd: lees ze en verstuur ze dan."
  },
  "{} due": "{} te doen",
+ "{} due on {}": "{} voor {}",
+ "{} due tomorrow": "{} voor morgen",
  "{} edits to the drafting guide": {
   "one": "{} aanpassing aan de gids voor concepten",
   "other": "{} aanpassingen aan de gids voor concepten"
@@ -7269,6 +7294,18 @@
   "one": "{} afspraak vandaag, om {}.",
   "other": "{} afspraken vandaag, de eerste om {}."
  },
+ "{} meetings.": {
+  "one": "{} afspraak.",
+  "other": "{} afspraken."
+ },
+ "{} meetings: {} and {} more.": {
+  "one": "{} afspraak: {} en nog {}.",
+  "other": "{} afspraken: {} en nog {}."
+ },
+ "{} meetings: {}.": {
+  "one": "{} afspraak: {}.",
+  "other": "{} afspraken: {}."
+ },
  "{} message": "{}-bericht",
  "{} message from {}": "{}-bericht van {}",
  "{} message to {}": "{}-bericht aan {}",
@@ -7311,6 +7348,8 @@
   "one": "{} andere kan wachten.",
   "other": "{} andere kunnen wachten."
  },
+ "{} more done.": "Nog {} gedaan.",
+ "{} more due.": "Nog {} met een deadline.",
  "{} more in Promises": "Nog {} in Beloftes",
  "{} more like this wait. Always shares them too.": {
   "one": "Er wacht nog {} zoals deze. Altijd deelt die ook.",
@@ -7603,6 +7642,10 @@
  },
  "{} to-dos done": "{} to-do's gedaan",
  "{} to-dos done with The Machine.": "{} to-do's gedaan met The Machine.",
+ "{} to-dos done.": {
+  "one": "{} to-do gedaan.",
+  "other": "{} to-do’s gedaan."
+ },
  "{} to-dos for you": {
   "one": "{} to-do voor jou",
   "other": "{} to-do's voor jou"
@@ -7614,6 +7657,14 @@
  "{} to-dos held until {}": {
   "one": "{} to-do wacht tot {}",
   "other": "{} to-do's wachten tot {}"
+ },
+ "{} to-dos still need you": {
+  "one": "{} to-do wacht nog op je",
+  "other": "{} to-do’s wachten nog op je"
+ },
+ "{} to-dos still need you.": {
+  "one": "{} to-do wacht nog op je.",
+  "other": "{} to-do’s wachten nog op je."
  },
  "{} to-dos waiting": {
   "one": "{} to-do wacht",
@@ -7696,6 +7747,7 @@
  "{}'s Machine has new keys. Share {} again?": "De Machine van {} heeft nieuwe sleutels. {} opnieuw delen?",
  "{}'s board, shared with the team": "Bord van {}, gedeeld met het team",
  "{}'s friend request is no longer open.": "Het vriendschapsverzoek van {} staat niet meer open.",
+ "{}, first meeting at {}": "{}, eerste afspraak om {}",
  "{}, for {}": "{}, voor {}",
  "{}, in your Machine’s browser": "{}, in de browser van je Machine",
  "{}, {}, {} and {} more": "{}, {}, {} en nog {}",

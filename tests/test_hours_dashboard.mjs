@@ -8,7 +8,9 @@ const {chromium}=await import('./browser.mjs');
 // Settings (the gear in the header): Work hours show the saved hours, toggle work days and save through
 // set_work_hours; the device's theme and notifications sit there too. On a phone it fits the screen.
 const dashboard=await dashboardPage();
-let hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Amsterdam',digest_at:'08:30',saveable:true};
+let hours={days:[1,2,3,4,5],start:'08:00',end:'23:00',morning:'09:00',timezone:'Europe/Amsterdam',digest_at:'08:30',evening_time:'22:45',saveable:true};
+// as hours() answers: the evening digest's time in effect, its own or 15 minutes before Until
+const evening=a=>a.evening_at||(([h,m])=>{const x=(h*60+ +m+1425)%1440;return String(x/60|0).padStart(2,'0')+':'+String(x%60).padStart(2,'0')})(a.end.split(':'));
 const saved=[],pairing=[];
 const server=createServer((req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -20,7 +22,7 @@ const server=createServer((req,res)=>{
    if(action==='ai_pair_state'){pairing.push(action);res.end(JSON.stringify({state:'paired',reach:{paired:true}}));return}
    if(action!=='set_work_hours'){res.end('{}');return}saved.push({action,args});
    if(!args.days.length){res.statusCode=400;res.end(JSON.stringify({error:'Pick at least one work day'}));return}
-   hours={...args,saveable:true};res.end(JSON.stringify(hours))});return}
+   hours={...args,evening_time:evening(args),saveable:true};res.end(JSON.stringify(hours))});return}
  if(url.pathname.startsWith('/brand/')||url.pathname.startsWith('/assets/')){res.statusCode=404;res.end();return}
  res.end('{}');
 });
@@ -66,6 +68,7 @@ try{
  assert.equal(await page.locator('#hours-end').inputValue(),'23:00');
  assert.equal(await page.locator('#hours-morning').inputValue(),'09:00');
  assert.equal(await page.locator('#hours-digest').inputValue(),'08:30');
+ assert.equal(await page.locator('#hours-evening').inputValue(),'22:45');  // a quarter of an hour before Until
  assert.equal(await page.locator('#hours-zone').inputValue(),'Europe/Amsterdam');
  // Fits a phone: nothing wider than the screen.
  assert.ok(await page.evaluate(()=>document.querySelector('#hours').getBoundingClientRect().right<=innerWidth));
@@ -78,9 +81,20 @@ try{
  await page.locator('#hours-start').fill('09:00');
  await page.locator('#hours-end').fill('17:30');
  await page.locator('#hours-morning').fill('08:15');
+ // The evening digest's time, like the morning's: while untouched it follows Until, and then saves as none (Until's)
+ assert.equal(await page.locator('#hours-evening').inputValue(),'17:15');
+ assert.equal(await page.locator('#hours-preview, [data-evening-preview], [data-evening-copy]').count(),0);  // no preview here
  await page.locator('#hours-save').click();
  await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
- assert.deepEqual(saved.at(-1),{action:'set_work_hours',args:{days:[1,2,3,4,7],start:'09:00',end:'17:30',morning:'08:15',digest_at:'08:30',timezone:'America/New_York'}});
+ assert.deepEqual(saved.at(-1),{action:'set_work_hours',args:{days:[1,2,3,4,7],start:'09:00',end:'17:30',morning:'08:15',digest_at:'08:30',evening_at:null,timezone:'America/New_York'}});
+ // a time of its own stays when Until changes
+ await page.locator('#hours-evening').fill('16:30');
+ await page.locator('#hours-end').fill('18:00');
+ assert.equal(await page.locator('#hours-evening').inputValue(),'16:30');
+ await page.locator('#hours-save').click();
+ await page.locator('#notice,#toast',{hasText:'Work hours saved.'}).first().waitFor();
+ assert.equal(saved.at(-1).args.evening_at,'16:30');
+ assert.equal(await page.locator('#hours-evening').inputValue(),'16:30');  // kept after the save
  // A refresh keeps what was saved.
  await page.evaluate(()=>refresh());
  assert.deepEqual(await page.locator('#hours-days [aria-pressed="true"]').allTextContents(),['Mon','Tue','Wed','Thu','Sun']);

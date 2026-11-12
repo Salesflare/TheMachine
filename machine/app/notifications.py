@@ -20,7 +20,8 @@ from machine.store.promises import promise_text
 import notify
 import security_levels
 import still_needed
-from timeutil import clock, in_hours, is_work_day, local_tz, now, WORK_HOURS
+import todo_areas
+from timeutil import clock, in_hours, is_work_day, local_tz, next_work_day, now, WORK_HOURS
 
 
 class NotificationsApp:
@@ -164,36 +165,119 @@ class NotificationsApp:
             if not notify.digest_claim(db, day, now()):
                 return None
         digest = self.digest(current)
-        went = []
-        if digest:
-            if prefs.get('push'):
-                subscriptions, phones = push_reach(self.store, self.config)
-                if subscriptions or phones:
-                    payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
-                               '_line': digest['push']['title'], '_body': digest['push']['body'].replace('\n', ' · '),  # the mobile app asks for these
-                               'actions': quick_web('view')}
-                    if push_send(self.store, self.config, subscriptions, payload, 'digest', push, wake='digest'):
-                        went.append('push')
-            if prefs.get('telegram') and telegram_on(self.config):
-                try:
-                    (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
-                                                                                  'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
-                                                                                  'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(notify.LINKS.sub('', digest['text']))
-                    went.append('telegram')
-                except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
-                    LOG.warning('digest telegram error=%s', type(error).__name__)
-            target = prefs.get('email') and self.notify_mail_target()
-            if prefs.get('email') and not target:
-                LOG.info('digest email skipped reason=not_paired')
-            if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
-                went.append('email')
-                with self.store.connect() as db:  # the hourly waiting-for-you email doesn't list them again
-                    dropped = notify.drop_covered(db, ['suggestion:' + i for i in digest.get('covers', ())], notify.wall())
-                if dropped:
-                    LOG.info('notify email dropped digest=%d', dropped)
+        went = self.digest_send(digest, prefs, 'digest', push, telegram_send, mail) if digest else []
         with self.store.connect() as db:
             notify.digest_done(db, day, 'sent' if went else 'empty' if not digest else 'not_sent', went)
         LOG.info('digest day=%s channels=%s', day, ','.join(went) or '-')
+        return went
+
+    def digest_send(self, digest, prefs, label, push=None, telegram_send=None, mail=None):
+        """One digest (the morning's or the evening's) on the channels the owner picked for the digest (prefs). Returns
+        the channels it went on."""
+        went = []
+        if prefs.get('push'):
+            subscriptions, phones = push_reach(self.store, self.config)
+            if subscriptions or phones:
+                payload = {**digest['push'], **({'silent': True} if notify.active() else {}),  # at the dashboard: no buzz
+                           '_line': digest['push']['title'], '_body': digest['push']['body'].replace('\n', ' · '),  # the mobile app asks for these
+                           'actions': quick_web('view')}
+                if push_send(self.store, self.config, subscriptions, payload, label, push, wake='digest'):
+                    went.append('push')
+        if prefs.get('telegram') and telegram_on(self.config):
+            try:
+                (telegram_send or (lambda text: telegram_request(self.config, {'action': 'send', 'channel': 'telegram', 'accountId': telegram_account(self.config),
+                                                                              'target': self.config.get('telegram_owner'), 'message': recap_escape(text),
+                                                                              'presentation': {'blocks': [{'type': 'buttons', 'buttons': []}]}})))(notify.LINKS.sub('', digest['text']))
+                went.append('telegram')
+            except (DeliveryNotSent, subprocess.TimeoutExpired, ValueError) as error:
+                LOG.warning('%s telegram error=%s', label, type(error).__name__)
+        target = prefs.get('email') and self.notify_mail_target()
+        if prefs.get('email') and not target:
+            LOG.info('%s email skipped reason=not_paired', label)
+        if target and (mail or notify.mail)(target[0], target[1], digest['subject'], digest['text']):
+            went.append('email')
+            if digest.get('covers'):
+                with self.store.connect() as db:  # the hourly waiting-for-you email doesn't list them again
+                    dropped = notify.drop_covered(db, ['suggestion:' + i for i in digest['covers']], notify.wall())
+                if dropped:
+                    LOG.info('notify email dropped digest=%d', dropped)
+        return went
+
+    def evening_digest(self, current=None, day=None):
+        """The evening digest of the work day `day` (a date, default today) as of `current` (notify.evening_compose),
+        or None when the day had nothing. Done: the to-dos closed as done today, by the owner or by The Machine (its
+        closing decision, the one Undo takes back, made today), not one that lapsed or was merged into another; the ones
+        that matter first (urgent, then something went out for it, then the latest). Meetings: today's with other people
+        until now, the routine ones counted but not named. Open: the next work day's first meetings, what is due then
+        (to-dos and the owner's own promises), and how many to-dos still need the owner."""
+        current = current or dt.datetime.fromisoformat(now())
+        tz = local_tz()
+        day = day or current.astimezone(tz).date()
+        start = dt.datetime.combine(day, dt.time(), tz)
+        following = next_work_day(start + dt.timedelta(days=1))
+        ahead_end = following + dt.timedelta(days=1)
+        utc = lambda t: t.astimezone(dt.timezone.utc).isoformat()
+        with self.store.connect() as db:
+            rows = [dict(r) for r in db.execute(
+                "SELECT s.id,s.title,s.urgent,s.account_ids,s.area,c.choice closed_by,coalesce(c.created_at,(SELECT max(d.created_at) FROM decisions d WHERE d.suggestion_id=s.id)) done_at,"
+                "EXISTS(SELECT 1 FROM action_jobs j WHERE j.suggestion_id=s.id AND j.status IN ('sent','done')) went "
+                "FROM suggestions s LEFT JOIN decisions c ON c.id=s.closed_decision_id WHERE s.status='completed' AND s.expired_at IS NULL "
+                "AND s.id IN (SELECT suggestion_id FROM decisions WHERE created_at>=?)", (utc(start),))]
+            done = sorted((r for r in rows if utc(start) <= str(r['done_at'] or '') <= utc(current) and r['closed_by'] != 'merge'),
+                          key=lambda r: (int(r['urgent'] or 0), int(r['went'] or 0), str(r['done_at'])), reverse=True)
+            named = {(m['at'], m['title']) for m in recap_meetings(db, utc(start), utc(current), {})}
+            held = [{**m, 'named': (m['at'], m['title']) in named} for m in recap_meetings(db, utc(start), utc(current), {}, routine=True)]
+            ahead = recap_meetings(db, utc(following), utc(ahead_end), {})[:2]
+            due = [dict(r) for r in db.execute(
+                "SELECT id,title,account_ids,area FROM suggestions WHERE status IN ('pending','accepted','prepared','instructions') AND due=? AND NOT " + NOT_FOR_OWNER_SQL + " "
+                "ORDER BY urgent DESC,created_at LIMIT 20", (following.date().isoformat(),))]
+            waiting = waiting_count(db)
+            show = security_levels.notify_text(db, False)
+        listed = {r['id'] for r in due}
+        due += [{'id': p.get('suggestion_id'), 'title': promise_text(p)[0], 'account_ids': [p.get('account_id')]} for p in self.store.promises()
+                if p['direction'] == 'mine' and p.get('due') == following.date().isoformat() and p['state'] in ('open', 'card')
+                and p.get('suggestion_id') not in listed]
+        # Work or Personal, the way the to-do's own label says (todo_areas.current); a meeting by its calendar's account
+        accounts = self.config.get('accounts', [])
+        unsure = 'work' if any(todo_areas.area_of_account(a) not in (None, todo_areas.PERSONAL) for a in accounts) else 'personal'
+        side = lambda area: 'personal' if area == todo_areas.PERSONAL else 'work' if area else unsure
+        by_id = {a.get('id'): a for a in accounts}
+        for r in done + due:
+            r['area'] = side(todo_areas.current(r.get('account_ids'), accounts, r.get('area')))
+        for m in held + ahead:
+            m['area'] = side(todo_areas.area_of_account(by_id[m['account']]) if m.get('account') in by_id else None)
+        root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
+        when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(tz))
+        tomorrow = following.date() == day + dt.timedelta(days=1)
+        return notify.evening_compose(done, held, waiting, due, ahead, root, show, when, name=notify.first_name(self.config.get('owner_name')),
+                                      next_day=None if tomorrow else locale_prefs.day_text(following), tomorrow=tomorrow)
+
+    def evening_step(self, current=None, push=None, telegram_send=None, mail=None):
+        """Send the evening digest once on a work day at its time (notify.evening_time: evening_at, or 15 minutes before
+        the end of the hours), on the channels the owner picked for it (Settings, Notifications, Evening digest), unless
+        the day had nothing. Its row in notify_digests (evening:<day>) is taken before it is made, so a restart never
+        sends it twice."""
+        current = current or dt.datetime.fromisoformat(now())
+        local = current.astimezone(local_tz())
+        with self.store.connect() as db:
+            notify.ensure(db)
+            prefs = notify.prefs(db)['evening']
+            if not any(prefs.values()):
+                return None
+            at = notify.evening_time(self.config.get('evening_at'), WORK_HOURS['start'], WORK_HOURS['end'])
+            day = notify.evening_due(local, at, WORK_HOURS['start'], WORK_HOURS['end'], is_work_day,
+                                     lambda d: notify.digest_sent(db, notify.evening_key(d)))
+        if not day:
+            return None
+        key = notify.evening_key(day)
+        with self.store.connect() as db:
+            if not notify.digest_claim(db, key, now()):
+                return None
+        digest = self.evening_digest(current, day)
+        went = self.digest_send(digest, prefs, 'evening', push, telegram_send, mail) if digest else []
+        with self.store.connect() as db:
+            notify.digest_done(db, key, 'sent' if went else 'empty' if not digest else 'not_sent', went)
+        LOG.info('evening digest day=%s channels=%s', day, ','.join(went) or '-')
         return went
 
     def notify_step(self, current=None, push=None, mail=None):
