@@ -249,6 +249,9 @@ class StoreCore:
             if 'done_when' not in columns:
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_when TEXT')
                 db.execute('ALTER TABLE suggestions ADD COLUMN done_when_by TEXT')
+            # The teammate the review offers the to-do to, as the Fleet member ({"fleet", "member_id"}): its Hand off starts with them
+            if 'handoff_to' not in columns:
+                db.execute('ALTER TABLE suggestions ADD COLUMN handoff_to TEXT')
             delivery_columns = {r['name'] for r in db.execute('PRAGMA table_info(deliveries)')}
             if 'reminder' not in delivery_columns:
                 db.execute('ALTER TABLE deliveries ADD COLUMN reminder INTEGER NOT NULL DEFAULT 0')

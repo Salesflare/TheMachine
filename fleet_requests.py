@@ -531,9 +531,11 @@ class Requests:
             why = card_reason(card['body']) if card['status'] in ('pending', 'snoozed', 'accepted', 'instructions') else ''
             links = '; '.join(f"{t} ({u})" if t else u for t, u in self.handoff_links(card['id'], allowed))
         summary = sentences(task, why, ('Source: ' + links) if links else '', mine_note)
-        first = lambda m: not (ready and self.is_person(m, ready))  # the teammate that text is for comes first, so it's the default
+        # The teammate that text is for comes first, so it's the default; else the one the to-do itself offers it to
+        offered = self.offered_to(card)
+        first = lambda ref, m: not (self.is_person(m, ready) if ready else offered(ref, m))
         fleets = [f for f in [{'id': ref, 'name': self.fleets()[ref].get('name'),
-                   'members': sorted(({'member_id': m['member_id'], 'name': fleet.label(m), '_first': first(m)} for m in self.teammates(ref)
+                   'members': sorted(({'member_id': m['member_id'], 'name': fleet.label(m), '_first': first(ref, m)} for m in self.teammates(ref)
                                       if (ref, m['member_id']) not in givers), key=lambda m: m['_first'])}  # not back to who handed it to you
                   for ref in self.work_fleets() if self.teammates(ref) and 'handoff' in self.fleets()[ref].get('asks', fleet.ASKS['work'])]
                   if f['members']]
@@ -629,6 +631,19 @@ class Requests:
     def teammate(self, action):
         """The Work Fleet teammate a message or handoff is for, as (Fleet id, member), else None."""
         return next(((ref, m) for ref in self.work_fleets() for m in self.teammates(ref) if self.is_person(m, action)), None)
+
+    def offered_to(self, card):
+        """Whether a teammate is the one the to-do offers itself to, as (Fleet id, member) -> bool: the review's handoff_to
+        (that Fleet member), else, on a to-do without one (older ones), the teammate whose Machine its text names ("I can
+        hand this to Pat’s Machine"). So the Hand off sheet never starts with someone other than who the to-do names."""
+        try:
+            target = json.loads(card['handoff_to'] or 'null') if 'handoff_to' in card.keys() else None
+        except ValueError:
+            target = None
+        if isinstance(target, dict) and target.get('member_id'):
+            return lambda ref, m: (ref, m['member_id']) == (target.get('fleet'), target['member_id'])
+        text = ' '.join(str(card['body'] or '').replace("'", '’').split()).casefold()
+        return lambda ref, m: bool(first_name(fleet.label(m))) and f'{first_name(fleet.label(m))}’s machine'.casefold() in text
 
     def handoff_text(self, card):
         """The message a card already holds for a teammate: a Fleet handoff its preparation wrote, else a hand-off message

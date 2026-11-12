@@ -572,10 +572,13 @@ class ReviewApp:
                 LOG.error('skill hint error=%s', type(error).__name__)
             if getattr(self, 'fleet', None):
                 try:  # who a task can go to through The Machine (Hand it off)
-                    people = sorted(set(self.fleet.handoff_people().values()))[:20]
+                    people = sorted(self.fleet.handoff_people().items(), key=lambda p: p[1])[:20]
                     if people:
-                        request['message'] += ("\n\nTeammates in the owner's Work Fleet, each with their own Machine: " + ', '.join(people)
-                                               + ". A task that is one of theirs is offered as a handoff to their Machine (Hand it off).")
+                        request['message'] += ("\n\nTeammates in the owner's Work Fleet, each with their own Machine: "
+                                               + '; '.join(f'{n} <{e}>' for e, n in people)
+                                               + ". A task that is one of theirs is offered as a handoff to their Machine (Hand it off): add "
+                                               "handoff_to (their email above) to suggest, so the to-do's Hand off starts with them. Name "
+                                               "a teammate as the one to hand it to only with handoff_to.")
                 except Exception as error:
                     LOG.error('fleet teammates error=%s', type(error).__name__)
         # Offering learning context is not delivery: a Gateway outage must leave it eligible on retry.
