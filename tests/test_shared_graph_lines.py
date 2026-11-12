@@ -30,7 +30,7 @@ class Merge(unittest.TestCase):
                  line('Teo', 2, B, 'Billing question got a reply.', KB, 'en')]
         got = sgl.merge(lines, 'en', TEAM)
         self.assertEqual([(x['line'], x['via']) for x in got], [
-            ('Noor closed the unanswered account recovery conversation.', ['Mara', 'Ilse', 'Noor', 'Teo', 'Pim']),
+            ('Noor closed the unanswered account recovery conversation', ['Mara', 'Ilse', 'Noor', 'Teo', 'Pim']),
             ('Noor answered Dana about the invoice address', ['Ilse', 'Noor', 'Teo'])])
 
     def test_two_messages_at_the_same_minute_stay_two_lines(self):
@@ -59,6 +59,16 @@ class Merge(unittest.TestCase):
         lines = [line('Mara', 5, A, 'Partner or customer conversation received a follow-up from the team today.', KA, 'en'),
                  line('Teo', 1, A, 'Noor closed the recovery request', KA, 'en')]
         self.assertEqual(sgl.merge(lines, 'en', TEAM)[0]['line'], 'Noor closed the recovery request')
+
+    def test_an_event_line_never_ends_in_a_period_whoever_wrote_it(self):
+        self.assertEqual([sgl.bare(x) for x in ('Dana paid.', ' Dana  paid. ', 'Dana paid', 'Dana paid...', 'Dana paid…', '', None)],
+                         ['Dana paid', 'Dana paid', 'Dana paid', 'Dana paid...', 'Dana paid…', '', ''])
+        got = sgl.merge([line('Mara', 2, A, 'Dana asked for the quote.', KA), line('Teo', 1, B, 'Dana paid.', KB)], 'en', TEAM)
+        self.assertEqual([x['line'] for x in got], ['Dana asked for the quote', 'Dana paid'])
+        # with and without its period, one fact
+        self.assertEqual(len(sgl.unique_lines([{'line': 'Dana paid.'}, {'line': 'Dana paid'}])), 1)
+        # what this Machine sends: a review's line and a project's move alike
+        self.assertEqual(sg._line('Moved to Won: Dana signed the order form.'), 'Moved to Won: Dana signed the order form')
 
     def test_the_same_words_on_two_events_show_once(self):
         got = sgl.merge([line('Mara', 2, A, 'Dana and Mara agreed to reschedule', KA), line('Teo', 1, B, 'Dana and Mara agreed to reschedule', KB)], 'en', TEAM)

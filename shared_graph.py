@@ -359,7 +359,7 @@ def judge(db, team, at=None):
                    'sorted_at=coalesce(share_threads.sorted_at,excluded.sorted_at),grp=excluded.grp,suggest=excluded.suggest',
                    (thread, verdict, row['id'], stamp, stamp if verdict == 'client' else None, group if verdict == 'unsure' else None, suggest))
         verdict = db.execute('SELECT verdict FROM share_threads WHERE thread=?', (thread,)).fetchone()[0]  # sticky calls win
-        line = graph.one_line(item.get('line'), 160)
+        line = shared_graph_lines.bare(graph.one_line(item.get('line'), 160))
         if line and verdict == 'client':
             db.execute('INSERT OR REPLACE INTO share_lines(event_id,thread,line,at) VALUES(?,?,?,?)', (row['id'], thread, line, stamp))
         elif verdict != 'client':
@@ -1000,7 +1000,7 @@ def _why(db, row, views):
 
 
 def _line(text):
-    return ' '.join(str(text or '').split())[:160]
+    return shared_graph_lines.bare(text)[:160]
 
 
 TITLE_WORDS = tuple(w + ': ' for w in (*ITEM_WORDS.values(), 'Meeting notes', 'Meeting transcript', 'Note'))  # a line that is only an item's title

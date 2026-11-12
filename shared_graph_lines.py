@@ -22,11 +22,18 @@ def unique_lines(found):
     """Timeline lines with each fact once, the newest kept (found: newest first)."""
     seen, out = set(), []
     for x in found:
-        key = ' '.join(str(x.get('line') or '').split()).casefold()
+        key = bare(x.get('line')).casefold()
         if key not in seen:
             seen.add(key)
             out.append(x)
     return out
+
+
+def bare(text):
+    """An event line as the Timeline shows it: one line, without a closing period, like a title ("Sam closed the
+    request", never "Sam closed the request."). An ellipsis stays."""
+    text = ' '.join(str(text or '').split())
+    return text[:-1].rstrip() if text.endswith('.') and not text.endswith('..') else text
 
 
 def marks(k, reviewed):
@@ -105,12 +112,12 @@ def merge(lines, lang, names=()):
     for g in groups:
         best = max(g['lines'], key=lambda x: _rank(x, lang, names))
         who = [x['who'] for x in sorted(g['lines'], key=lambda x: -(x.get('score') or 0))]
-        text = ' '.join(str(best['line']).split()).casefold()
+        text = bare(best['line']).casefold()
         if text in by_text:  # the same words on another event: a thread's line on each of its messages, once
             kept = by_text[text]
             kept['via'] += [w for w in who if w not in kept['via']]
             continue
-        line = {'at': best.get('at'), 'line': best['line'], 'via': list(dict.fromkeys(who)), **({'tag': best['tag']} if best.get('tag') else {})}
+        line = {'at': best.get('at'), 'line': bare(best['line']), 'via': list(dict.fromkeys(who)), **({'tag': best['tag']} if best.get('tag') else {})}
         by_text[text] = line
         out.append(line)
     return out

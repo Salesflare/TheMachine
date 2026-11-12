@@ -1088,7 +1088,7 @@ class SharedGraphMore(base.SharedGraph):
             # A line from a Machine from before (no thread on it) about a thread shown: its subject still tells
             old = {**entry, 'sources': [{**src, 'record': {**src['record'], 'timeline': [{'at': ago(2), 'line': 'Email: Re: Rescheduling'},
                                                                                             {'at': ago(1), 'line': 'Lee signed.'}]}} for src in entry['sources']]}
-            self.assertEqual([x['line'] for x in self.mem.team_section(db, old)['timeline']], ['Lee signed.'])
+            self.assertEqual([x['line'] for x in self.mem.team_section(db, old)['timeline']], ['Lee signed'])
 
     # -- team learnings from team conversations (fleet_learnings.py), and asks answered from what the Team Graph shares
     def test_team_learnings_read_only_shared_client_threads_keep_only_general_ones_and_reach_teammates(self):
