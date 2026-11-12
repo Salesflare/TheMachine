@@ -47,8 +47,11 @@ const open=async(width,height,colorScheme='light')=>{const mobile=width<600;rese
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
  await page.goto(base+'#messages');await page.locator('#query').waitFor();return {context,page}};
-const searchFor=async(page,q)=>{await page.locator('#query').fill(q);await page.locator('#query').press('Enter');
- await page.waitForFunction(()=>document.querySelectorAll('#results article').length>0)};
+// Waits for this search's own results: the list already shown is marked first, so its rows (which the new results
+// replace while the answer is drawn) never count, nor get measured as they go
+const searchFor=async(page,q)=>{await page.evaluate(()=>{for(const a of document.querySelectorAll('#results article'))a.dataset.stale=''});
+ await page.locator('#query').fill(q);await page.locator('#query').press('Enter');
+ await page.locator('#results article:not([data-stale])').first().waitFor()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  {const {context,page}=await open(1440,900);
