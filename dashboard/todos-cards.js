@@ -527,7 +527,7 @@ const sendTipFits=s=>s.status==='prepared'&&!closed(s)&&!s.handled_hint&&!withTe
 function tipDone(tip){if(!firstTips().includes(tip))return;tipsGone.add(tip);
  request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'tip_done',args:{tip}})})
   .then(r=>{if(Array.isArray(r?.first_tips))state.first_tips=r.first_tips}).catch(()=>{})}
-const tipLine=(tip,text)=>html`<p class="first-tip" data-tip="${tip}"><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
+const tipLine=(tip,text)=>html`<p class="first-tip" data-tip="${tip}"><svg class="tip-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3h5c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3z"/></svg><span class="tip-text">${text}</span><button type="button" class="tip-x" data-tip-done="${tip}" aria-label="Hide this tip" title="Hide this tip">×</button></p>`;
 function firstTip(s,section,choices){if(closed(s)||section!=='For you')return '';
  if(tipSend)return tipSend===s.id?tipLine('send',t('You can edit it before it goes. It only goes out when you press Send.')):'';
  const change=choices.find(([c])=>c==='change'),reject=choices.find(([c])=>c==='reject');

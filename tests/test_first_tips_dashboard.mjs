@@ -39,8 +39,11 @@ try{
   // The ready draft's tip, alone, under that to-do's buttons
   assert.deepEqual(await shown(),[['task-r1','send','You can edit it before it goes. It only goes out when you press Send.']]);
   assert.ok(await page.locator('#task-r1 .first-tip').evaluate(e=>e.previousElementSibling.classList.contains('actions')));
-  // One line on a wide screen, never wider than the page
-  if(width>600)assert.ok(await page.locator('#task-r1 .first-tip').evaluate(e=>e.getBoundingClientRect().height<30));
+  // A tinted box with one line of text on a wide screen, clear of the buttons above it, never wider than the page
+  const box=await page.locator('#task-r1 .first-tip').evaluate(e=>{const r=e.getBoundingClientRect(),a=e.previousElementSibling.getBoundingClientRect(),cs=getComputedStyle(e);
+   return {h:r.height,gap:r.top-a.bottom,bg:cs.backgroundColor,icon:!!e.querySelector('.tip-icon')}});
+  assert.ok(box.gap>=10&&box.icon&&box.bg!=='rgba(0, 0, 0, 0)',JSON.stringify(box));
+  if(width>600)assert.ok(box.h<50,JSON.stringify(box));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   // × closes it on the Machine; then the first open to-do in the list gets the other one, with that to-do's own labels
   assert.deepEqual(await callAfter(page,'tip_done',()=>page.locator('#task-r1 .tip-x').click()),{action:'tip_done',args:{tip:'send'}});
