@@ -32,7 +32,7 @@ Un’attività che nessuno tocca da una settimana chiede una volta: **Serve anco
 
 Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuoto. Mentre controlla, si sveglia e lo dice. Se un controllo non è riuscito o è in ritardo, la sua riga lo dice, con **Controlla ora** sotto.
 
-**Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro.
+**Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro. Un avviso sulla tua Machine stessa, come una parte che continua a riavviarsi, non è né Lavoro né Personale e compare solo in Tutti.
 
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](projects.md#a-projects-to-dos).
 

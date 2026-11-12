@@ -32,7 +32,7 @@ Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?**
 
 Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquanto verifica, ela acorda e avisa. Se uma verificação falhou ou está atrasada, a linha dela diz isso, com **Verificar agora** embaixo.
 
-**Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar.
+**Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar. Um alerta sobre a própria Machine, como uma parte que reinicia sem parar, não é Trabalho nem Pessoal e só aparece em Todos.
 
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 

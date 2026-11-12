@@ -32,7 +32,7 @@ Une tâche que personne n’a touchée depuis une semaine demande une fois : **T
 
 Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide. Pendant qu’elle vérifie, elle se réveille et le dit. Si une vérification a échoué ou est en retard, sa ligne le dit, avec **Vérifier maintenant** en dessous.
 
-**Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir.
+**Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir. Une alerte sur votre Machine elle-même, comme une partie qui redémarre sans cesse, n’est ni Travail ni Perso et n’apparaît que sous Tout.
 
 Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Projet** sous **Détails** le change ou le retire. Voir [les tâches d’un projet](projects.md#a-projects-to-dos).
 
