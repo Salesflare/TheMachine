@@ -42,6 +42,8 @@ const open=async(width,height,scheme='light',context)=>{const mobile=width<600;
  await page.evaluate(()=>document.querySelector('[data-graph-sub="projects"]').click());
  await page.locator('#people-view .proj-board, #people-view .proj-list').first().waitFor({state:'attached'});return {context,page}};
 const fits=(page,where)=>page.evaluate(()=>({page:document.documentElement.scrollWidth,vw:innerWidth})).then(s=>assert.ok(s.page<=s.vw,`${where}: wider than the screen ${JSON.stringify(s)}`));
+// A move redraws the board before its post goes out, so the tile can be in its new lane before the fixture has the post
+const posted=async(n=1)=>{const until=Date.now()+15000;while(calls.length<n&&Date.now()<until)await new Promise(r=>setTimeout(r,20))};
 const shot=async(page,name)=>{if(process.env.BOARDS_SHOT)await page.screenshot({path:`${process.env.BOARDS_SHOT}/${name}.png`,fullPage:true})};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -75,7 +77,7 @@ try{
   await page.evaluate(()=>{const original=boardMove;boardMove=(...args)=>window.lastBoardMove=original(...args)});
   calls=[];const menu=page.locator('.tile[data-node="project:20"] .tile-menu');await menu.locator('summary').click();
   await menu.locator('[data-stage-to="In review"]').click();
-  await page.locator('.lane[data-lane="In review"] .tile[data-node="project:20"]').waitFor();
+  await page.locator('.lane[data-lane="In review"] .tile[data-node="project:20"]').waitFor();await posted();
   assert.deepEqual(calls.map(c=>c.action),['graph_stage']);assert.deepEqual(calls[0].args,{node_id:'project:20',stage:'In review'});
   await page.evaluate(()=>window.lastBoardMove);  // settle the preceding menu action before the explicit refresh tests
   // The refresh must also respect a tile that was pressed before native dragstart fires.
@@ -93,27 +95,27 @@ try{
   await page.locator('.lane[data-lane="Agreed"]').dispatchEvent('dragover',{dataTransfer:transfer});
   await page.locator('.lane[data-lane="Agreed"]').dispatchEvent('drop',{dataTransfer:transfer});
   await held.dispatchEvent('dragend',{dataTransfer:transfer});
-  await page.locator('.lane[data-lane="Agreed"] .tile[data-node="project:20"]').waitFor();
+  await page.locator('.lane[data-lane="Agreed"] .tile[data-node="project:20"]').waitFor();await posted();
   assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Agreed']]);
   await transfer.dispose();await held.dispose();
   await page.evaluate(()=>window.lastBoardMove);  // the drop's own refresh lands before the next drag starts, as after the menu move
   // A drag moves it too
   calls=[];await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
-  await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
+  await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();await posted();
   assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Live']]);
   // The tile is in its new lane before the Machine answers: the board never waits for the move (a whole Graph build
   // there held a drag some 19 s), and the refresh after the answer keeps it there
   let release;stageHold=new Promise(r=>release=r);calls=[];
   await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Partly live"]'));
-  await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').waitFor();
+  await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').waitFor();await posted();
   assert.deepEqual(calls.map(c=>[c.action,c.args.stage]),[['graph_stage','Partly live']]);
   assert.equal(await page.locator('#toast',{hasText:'Moved to Partly live.'}).count(),0,'the move was not answered yet');
   release();stageHold=null;await page.locator('#toast',{hasText:'Moved to Partly live.'}).waitFor();
   await page.evaluate(()=>window.lastBoardMove);await page.evaluate(()=>people('',true));
   assert.equal(await page.locator('.lane[data-lane="Partly live"] .tile[data-node="project:20"]').count(),1);
-  stageHold=new Promise(r=>release=r);
+  stageHold=new Promise(r=>release=r);calls=[];
   await page.locator('.tile[data-node="project:20"]').dragTo(page.locator('.lane[data-lane="Live"]'));
-  await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();
+  await page.locator('.lane[data-lane="Live"] .tile[data-node="project:20"]').waitFor();await posted();
   // Clicking a tile opens the project page, with its stage and moves; a move answered meanwhile keeps it open
   calls=[];await page.locator('.tile[data-node="project:1"] .tile-next').click();await page.locator('.graph-stage').waitFor();
   release();stageHold=null;await page.locator('#toast',{hasText:'Moved to Live.'}).waitFor();await page.evaluate(()=>window.lastBoardMove);
