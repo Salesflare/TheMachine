@@ -19,7 +19,9 @@ Een service die blijft herstarten, een die op een dag een paar keer mislukte of 
 
 Een enkele herstart of een enkele mislukte run is normaal en blijft stil. Net als een service die een paar keer mislukte en daarna weer goed liep.
 
-Browsers die tests en agents besturen (headless, Playwright, Puppeteer, CI) blijven stil, net als een programma dat stopt terwijl zijn service gestopt of herstart wordt. Een programma dat telkens weer crasht, geeft één to-do die zegt hoe vaak en wanneer.
+Browsers die tests en agents besturen (headless, Playwright, Puppeteer, CI) blijven stil, net als een programma dat stopt terwijl zijn service gestopt of herstart wordt. Dat geldt ook voor ontwikkelaarsruns: wat een codeeragent uitvoert, tests en programma's die vanuit een tijdelijke map of cachemap draaien. Een programma dat telkens weer crasht, geeft één to-do die zegt hoe vaak en wanneer.
+
+Een script krijgt zijn eigen naam, zoals backup.py, niet python3 of node.
 
 ## Wat je krijgt
 

@@ -19,7 +19,9 @@ Un servicio que se reinicia una y otra vez, uno que falló varias veces en un d�
 
 Un solo reinicio o una sola ejecución fallida es normal y no avisa. Tampoco un servicio que falló unas veces y luego volvió a ir bien.
 
-Los navegadores que manejan las pruebas y los agentes (headless, Playwright, Puppeteer, CI) no avisan, y tampoco un programa que se cierra mientras su servicio se detiene o se reinicia. Un programa que falla una y otra vez da una sola tarea, que dice cuántas veces y cuándo.
+Los navegadores que manejan las pruebas y los agentes (headless, Playwright, Puppeteer, CI) no avisan, y tampoco un programa que se cierra mientras su servicio se detiene o se reinicia. Tampoco las ejecuciones de desarrollo: lo que ejecuta un agente de código, las pruebas y los programas que se ejecutan desde una carpeta temporal o de caché. Un programa que falla una y otra vez da una sola tarea, que dice cuántas veces y cuándo.
+
+Un script se nombra por su propio nombre, como backup.py, no python3 ni node.
 
 ## Qué recibes
 

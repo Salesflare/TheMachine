@@ -19,7 +19,9 @@ A service that keeps restarting, one that failed several times in a day or stays
 
 A single restart or a single failed run is normal and stays quiet. So does a service that failed a few times and then ran fine again.
 
-Browsers that tests and agents drive (headless, Playwright, Puppeteer, CI) stay quiet, and so does a program that stops while its service is being stopped or restarted. A program that crashes again and again makes one to-do that says how often and when.
+Browsers that tests and agents drive (headless, Playwright, Puppeteer, CI) stay quiet, and so does a program that stops while its service is being stopped or restarted. So do developer runs: what a coding agent runs, tests, and programs run from a temporary or cache folder. A program that crashes again and again makes one to-do that says how often and when.
+
+A script is named by its own name, like backup.py, not by python3 or node.
 
 ## What you get
 

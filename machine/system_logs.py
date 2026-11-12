@@ -13,9 +13,11 @@ real problems surface (detect): a unit that keeps restarting (LOOP_RESTARTS with
 (a unit whose failed runs were followed by a run that finished well is fine again: recovered), one that stays failed,
 and a program that crashed: all its crash dumps over WINDOW make one finding with their count and time span. A
 browser's helper processes and browsers a program drives (headless, Playwright, Puppeteer, CI, remote debugging with a
-throwaway profile) are not the owner's programs and stay quiet (automated). So does anything that ended while a service
-it belongs to was being stopped or restarted (stopping): the service took it down, as a deliberate restart of the
-OpenClaw Gateway does with its browser. On Omarchy it also reads Hyprland (its crashes and the errors it reports in its
+throwaway profile) are not the owner's programs and stay quiet (automated), and so do developer, test and coding-agent
+runs: what an agent's service ran, a test runner, a program run from a temporary or cache folder (dev_run). So does
+anything that ended while a service it belongs to was being stopped or restarted (stopping): the service took it down,
+as a deliberate restart of the OpenClaw Gateway does with its browser. A script's crash is named by the script, not
+its interpreter (script_of). On Omarchy it also reads Hyprland (its crashes and the errors it reports in its
 settings) and the bar, with fixes in Omarchy's own commands.
 
 Each finding has a plain cause and a suggested fix (card). The service turns new ones into to-dos through the Machine
@@ -28,6 +30,7 @@ import datetime as dt
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -60,7 +63,7 @@ STARTED = '39f53479d3a045ac8e11786248231fbf'
 START_FAILED = 'be02cf6855d2428ba40df7e9d022f03d'
 MAX_UNITS = 40  # units whose starts are read at most
 FIELDS = ('MESSAGE_ID', 'USER_UNIT', 'UNIT_RESULT', 'JOB_RESULT', 'COREDUMP_COMM', 'COREDUMP_EXE', 'COREDUMP_SIGNAL', 'COREDUMP_SIGNAL_NAME',
-          'COREDUMP_PID', 'COREDUMP_UID', 'COREDUMP_CMDLINE', 'COREDUMP_USER_UNIT', 'COREDUMP_TIMESTAMP')
+          'COREDUMP_PID', 'COREDUMP_UID', 'COREDUMP_CMDLINE', 'COREDUMP_USER_UNIT', 'COREDUMP_TIMESTAMP', 'COREDUMP_CGROUP', 'COREDUMP_CWD')
 STOP_SETTLE = dt.timedelta(minutes=2)  # a crash dump is written a little after the stop that caused it
 STOP_LONGEST = dt.timedelta(minutes=15)  # a stop with no end on record counts this long
 # Browsers a program drives rather than the owner: by their path, their flags or the unit they run in
@@ -68,6 +71,20 @@ DRIVEN_PATH = re.compile(r'(ms-playwright|puppeteer|chrome-headless-shell|headle
 DRIVEN_FLAG = re.compile(r'(^|\s)--(headless|enable-automation|remote-debugging-pipe|test-type)(=|\s|$)')
 THROWAWAY_PROFILE = re.compile(r'--user-data-dir=(/tmp/|/var/tmp/|/dev/shm/|\S*(playwright|puppeteer|selenium|\.org\.chromium\.Chromium\.))', re.I)
 CI_UNIT = re.compile(r'(actions\.runner|gitlab-runner|buildkite|jenkins|woodpecker|act[_-]runner|forgejo-runner)', re.I)
+# Runs a developer, a test or a coding agent started rather than programs the owner uses (dev_run): anything a coding
+# agent's service or session ran (by its unit or cgroup, unless it is the agent itself), a test runner or a test file,
+# and a program or working folder in a temporary or cache folder (a throwaway checkout, a sandbox; not an AppImage,
+# which runs from /tmp/.mount_*)
+CODING_AGENT = re.compile(r'(claude|codex|aider|gemini-cli|opencode|goose|openhands|cursor-agent|devin)', re.I)
+TEST_RUNNER = re.compile(r'(pytest|py\.test|unittest|nose2?|tox|nox|jest|vitest|mocha|ava|ctest|karma|cypress)$', re.I)
+TEST_FILE = re.compile(r'(^|/)(tests?|__tests__|spec)/|(^|/)(tests?|test_[\w.-]+|[\w.-]+[._-]test|[\w.-]+\.spec)\.(py|[cm]?[jt]s)$', re.I)
+THROWAWAY_DIR = re.compile(r'^(/tmp/(?!\.mount_)|/var/tmp/|/dev/shm/|/run/user/\d+/|/home/[^/]+/\.cache/|/root/\.cache/)')
+# Interpreters, named in a to-do by the script they ran ('backup.py crashed', not 'python3 crashed'), and their
+# options that take a value of their own
+INTERPRETER = re.compile(r'(python[\d.]*|pypy[\d.]*|node(js)?|bun|deno|ruby[\d.]*|perl[\d.]*|php[\d.]*|lua[\d.]*|luajit|'
+                         r'bash|sh|dash|zsh|fish|ksh|tclsh[\d.]*|Rscript)$')
+VALUE_FLAGS = {'-W', '-X', '-r', '--require', '--import', '--loader', '--experimental-loader', '-o', '-O', '--title'}
+INLINE_FLAGS = {'-c', '-e', '--eval', '-p', '--print'}  # the code is on the command line: no script to name
 FAILURES = {'exit-code', 'signal', 'core-dump', 'timeout', 'watchdog', 'oom-kill', 'start-limit-hit', 'resources', 'protocol'}
 SIGNALS = {4: 'SIGILL', 5: 'SIGTRAP', 6: 'SIGABRT', 7: 'SIGBUS', 8: 'SIGFPE', 11: 'SIGSEGV', 31: 'SIGSYS'}
 # One to-do per unit: the clearest kind wins.
@@ -230,6 +247,55 @@ def automated(cmdline, exe='', unit=''):
     return '--remote-debugging-port' in cmdline and bool(THROWAWAY_PROFILE.search(cmdline))
 
 
+def _args(cmdline):
+    try:
+        return shlex.split(cmdline or '')
+    except ValueError:
+        return (cmdline or '').split()
+
+
+def script_of(cmdline, exe=''):
+    """(script, test_flag) an interpreter ran: the script's path or `-m` module, or None when the program isn't an
+    interpreter or ran code from its own command line; test_flag when it ran as a test runner (node --test)."""
+    args = _args(cmdline)
+    program = os.path.basename(exe or (args[0] if args else ''))
+    if not args or not INTERPRETER.match(program):
+        return None, False
+    rest, test = iter(args[1:]), False
+    for arg in rest:
+        if arg == '-m':
+            return next(rest, None), test
+        if arg in INLINE_FLAGS:
+            return None, test
+        if arg in VALUE_FLAGS:
+            next(rest, None)
+        elif arg == '--test':
+            test = True
+        elif arg == 'run' and program in ('bun', 'deno'):
+            continue
+        elif not arg.startswith('-'):
+            return arg, test
+    return None, test
+
+
+def dev_run(row):
+    """Whether a crashed process was a developer's, a test's or a coding agent's run, not a program the owner uses
+    (see CODING_AGENT): under a coding agent's unit or cgroup (the agent itself crashing still counts), a test runner
+    or test file, or run from a temporary or cache folder. Reads only the unit, cgroup, paths and command line."""
+    cmdline, exe = row.get('COREDUMP_CMDLINE') or '', row.get('COREDUMP_EXE') or ''
+    args = _args(cmdline)
+    itself = f"{os.path.basename(exe)} {row.get('COREDUMP_COMM') or ''} {os.path.basename(args[0]) if args else ''}"
+    if CODING_AGENT.search(f"{row.get('COREDUMP_USER_UNIT') or ''} {row.get('COREDUMP_CGROUP') or ''}") and not CODING_AGENT.search(itself):
+        return True
+    script, test = script_of(cmdline, exe)
+    if test or (script and (TEST_FILE.search(script) or TEST_RUNNER.match(os.path.splitext(os.path.basename(script))[0])
+                            or TEST_RUNNER.match(script.split('.')[0]))):
+        return True
+    if TEST_RUNNER.match(os.path.basename(exe)):
+        return True
+    return any(THROWAWAY_DIR.match(path) for path in (exe, row.get('COREDUMP_CWD') or '', script or '') if path.startswith('/'))
+
+
 def stop_windows(rows):
     """{unit: [(start, end)]}: when each unit was being stopped or restarted, from systemd's Stopping record to its
     Stopped or result record (STOP_LONGEST without one)."""
@@ -301,12 +367,13 @@ def detect(rows, failed=(), now=None, on_omarchy=False, config_errors=0, uid=Non
                 continue
             cmdline = row.get('COREDUMP_CMDLINE')
             exe = row.get('COREDUMP_EXE') or ''
-            if automated(cmdline, exe, row.get('COREDUMP_USER_UNIT')) or stopping(row, windows):
+            if automated(cmdline, exe, row.get('COREDUMP_USER_UNIT')) or dev_run(row) or stopping(row, windows):
                 continue
-            name = row.get('COREDUMP_COMM') or os.path.basename(exe) or 'a program'
             if not exe and not row.get('COREDUMP_COMM'):
                 continue
-            item = crashes.setdefault(os.path.basename(exe) or name, {'name': name, 'times': [], 'known': True})
+            script = os.path.basename(script_of(cmdline, exe)[0] or '')
+            name = script or row.get('COREDUMP_COMM') or os.path.basename(exe)
+            item = crashes.setdefault(script or os.path.basename(exe) or name, {'name': name, 'times': [], 'known': True})
             item['times'].append(_crash_time(row))
             item['pid'] = row.get('COREDUMP_PID') or item.get('pid')
             item['signal'] = row.get('COREDUMP_SIGNAL_NAME') or SIGNALS.get(int(row.get('COREDUMP_SIGNAL') or 0) if (row.get('COREDUMP_SIGNAL') or '').isdigit() else 0) or ''
