@@ -54,7 +54,7 @@ Anyone in the Fleet can **Remove** a learning: it's gone for everyone and isn't 
 Pick **Daily** or **Weekly** for **Team brief** in the Fleet tab, under **Sharing**. Your Machine then asks your teammates' Machines for counts and dates. What needs you lands in To-dos, under Work: a customer waiting for a reply, a company that went quiet, two of you writing the same people, or a shared meeting.
 
 - The company and teammates link to their pages. **Details** shows who on the team is in touch and their latest threads, only what the [Team Graph](team-graph.md) shares.
-- **Ask** sends the team a question about it. Their answers show on the to-do.
+- **Ask the team** sends them a question about it. Their answers show on the to-do.
 - **Not needed** closes it, and the brief learns. It comes back only with something new.
 - When someone replies or takes it on, the to-do closes by itself. One about a company you already have a to-do for joins that to-do.
 

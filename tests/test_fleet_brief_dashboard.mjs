@@ -31,7 +31,7 @@ const view={on:true,kinds:{relationships:'who knows someone',meeting:'meeting co
  asked:[],log:[],notices:[]};
 const BT='b'.repeat(16);
 const briefTodo={id:BT,title:'Globex is waiting for a reply (2 emails)',body:'5 days, sent to you and Pat, and nobody answered or took it.',status:'pending',
- scope:'work',created_at:'2026-10-20T08:00:00+00:00',event_ids:[1],fleet_brief:{own:true,items:[{key:'unanswered:globex.example',kind:'waiting',
+ scope:'work',created_at:'2026-10-20T08:00:00+00:00',event_ids:[1],account_ids:['work'],source_line:'Source: your Fleet · Tue, Oct 20',fleet_brief:{own:true,items:[{key:'unanswered:globex.example',kind:'waiting',
   title:'Globex is waiting for a reply (2 emails)',why:'5 days, sent to you and Pat, and nobody answered or took it',ask:'Who is answering Globex?',
   open:'https://mail.google.com/mail/#search/from%3Aglobex.example',at:'2026-10-15',mine:true,org:{id:'org-globex',name:'Globex'},
   team:[{name:'Pat',node:'person-pat'}],also:['Kim'],threads:[{subject:'Renewal <b>terms</b>',from:'Ada Example',at:'2026-10-14T10:00:00+00:00',via:'Pat'}],
@@ -57,7 +57,9 @@ try{
  assert.equal(await todo.locator('.fleet-brief-why a[href="#graph/org-globex"]').innerText(),'Globex');
  assert.equal(await todo.locator('.fleet-brief-why a[href="#graph/person-pat"]').innerText(),'Pat');
  assert.equal((await todo.innerText()).split('nobody answered').length,2);
- assert.deepEqual(await todo.locator('.actions').last().locator('button,a').allInnerTexts(),['Ask','Open ↗','Snooze','Not needed']);
+ assert.deepEqual(await todo.locator('.actions').last().locator('button,a').allInnerTexts(),['Ask the team','Open ↗','Snooze','Not needed']);
+ assert.ok(await todo.locator('.via-handoff').count(),'a Fleet signal has the team mark, not the mailbox one');
+ assert.equal(await todo.locator('.src').first().textContent(),'From your Fleet · Tue, Oct 20','from the Fleet, never a Signal chat, its date as the app writes it');
  // Details: only what the team shares, as text
  await todo.locator('.details-toggle').click();
  const details=todo.locator('.fleet-brief-details');await details.waitFor();

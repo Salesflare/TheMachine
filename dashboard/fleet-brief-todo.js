@@ -1,12 +1,6 @@
-// The team brief's lines as to-dos (fleet_brief_todos.py): "Globex is waiting for a reply" is a Work to-do in For you,
-// with the company and the teammates on it linked to their pages, Ask (the Fleet's free question, prefilled, editable)
-// and Not needed (hidden from the brief, which learns from it). Details holds what the Team Graph already shares:
-// the team's latest threads with them, who on the team is in touch, and the owner's own latest email from them.
-// A line that joined a to-do the owner already had shows as one note on it, with Ask; that to-do keeps its own buttons.
-const briefAsking=new Map();  // to-do id -> the question being written
-const briefOwn=s=>!!s.fleet_brief?.own&&!closed(s)&&s.status!=='snoozed';
+// The team brief's lines as Work to-dos (fleet_brief_todos.py, docs/fleet.md). A line that joined an owner's to-do is a note on it.
+const briefAsking=new Map();
 const briefPerson=p=>p.node?html`<a href="${graphHash(p.node)}">${p.name}</a>`:html`<span>${p.name}</span>`;
-// The line's why with each teammate's name a link to their page
 function briefWhy(why,team){why=String(why||'');why=why.charAt(0).toUpperCase()+why.slice(1);const linked=(team||[]).filter(p=>p.node&&p.name);if(!linked.length)return html`${why}`;
  const re=new RegExp('('+linked.map(p=>p.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|')+')'),by=Object.fromEntries(linked.map(p=>[p.name,p]));
  return html`${String(why).split(re).map(x=>by[x]?briefPerson(by[x]):html`${x}`)}`}
@@ -15,17 +9,15 @@ function briefAnswers(a){if(!a)return'';
  return html`<div class="fleet-brief-asked"><p class="muted">${t('Asked the team: {}',a.question)}</p>${a.answers.length?html`<ul>${a.answers.map(x=>html`<li><strong>${x.name}</strong> ${x.state==='answered'?html`<span>${x.text}</span>`:html`<span class="muted">${x.state==='waiting'?'Waiting for an answer':'No answer'}</span>`}</li>`)}</ul>`:''}</div>`}
 function briefEditor(s){if(!briefAsking.has(String(s.id)))return'';
  return html`<div class="change-editor fleet-brief-ask"><label for="brief-ask-${s.id}">Ask the team</label><textarea id="brief-ask-${s.id}" rows="2" spellcheck="true" autocapitalize="sentences" data-brief-text="${s.id}">${briefAsking.get(String(s.id))}</textarea><div class="actions"><button class="primary" data-brief-todo="send" data-card="${s.id}">Send</button><button class="ghost" data-brief-todo="cancel" data-card="${s.id}">Cancel</button></div></div>`}
-// On the to-do, under its title: each line's why (the company and teammates linked), an Ask's answers, the Ask editor
 function fleetBriefNote(s){const b=s.fleet_brief;if(!b||closed(s))return'';
  const lines=b.items.map(i=>html`<p class="note fleet fleet-brief-why">${briefOrg(s,i)}${b.own?'':html`${t('From the team brief: {}',i.title)} · `}${briefWhy(i.why,i.team)}</p>`);
  const ask=!b.own&&!b.asked&&!briefAsking.has(String(s.id))&&b.items.some(i=>i.ask)?html`<p class="note fleet"><button type="button" class="link" data-brief-todo="ask" data-card="${s.id}">Ask the team</button></p>`:'';
  return html`${lines}${briefAnswers(b.asked)}${ask}${briefEditor(s)}`}
-// The brief's own to-do: Ask and Not needed; once asked, Done and Not needed. Open when the line has a page.
-function fleetBriefActions(s){const b=s.fleet_brief,open=b.items.find(i=>i.open)?.open,asked=!!b.asked;if(briefAsking.has(String(s.id)))return'';
- return html`<div class="actions">${asked?html`<button class="primary" data-id="${s.id}" data-choice="complete">Done</button>`:b.items.some(i=>i.ask)?html`<button class="primary" data-brief-todo="ask" data-card="${s.id}">Ask</button>`:''}${open?html`<a class="open" href="${safeURL(open)}" target="_blank" rel="noopener">${t('Open')} ↗</a>`:''}<button class="ghost" data-id="${s.id}" data-choice="snooze">Snooze</button><button class="quiet" data-brief-todo="skip" data-card="${s.id}">Not needed</button></div>`}
+// On a phone the lead has its own row (two-rows)
+function fleetBriefActions(s){const b=s.fleet_brief,open=b.items.find(i=>i.open)?.open,asked=!!b.asked,ask=b.items.some(i=>i.ask);if(briefAsking.has(String(s.id)))return'';
+ return html`<div class="actions${asked||ask?html` two-rows`:''}">${asked?html`<button class="primary" data-id="${s.id}" data-choice="complete">Done</button>`:ask?html`<button class="primary" data-brief-todo="ask" data-card="${s.id}">Ask the team</button>`:''}${open?html`<a class="open" href="${safeURL(open)}" target="_blank" rel="noopener">${t('Open')} ↗</a>`:''}<button class="ghost" data-id="${s.id}" data-choice="snooze">Snooze</button><button class="quiet" data-brief-todo="skip" data-card="${s.id}">Not needed</button></div>`}
 const briefDay=at=>localeDate(/^\d{4}-\d\d-\d\d$/.test(at)?new Date(at+'T12:00:00'):new Date(at),DL,{day:'numeric',month:'short'});
-// Under Details: only what the Team Graph shares with this Machine, and the owner's own mail (a quiet line's last
-// contact and a meeting's day are in its why already; a waiting email's first day is not)
+// Details: only what the Team Graph shares
 function fleetBriefDetails(s){const b=s.fleet_brief;if(!b||closed(s))return'';
  const row=(k,v)=>v?html`<div><dt>${t(k)}</dt><dd>${v}</dd></div>`:'';
  const mail=m=>html`<li><span translate="no">${m.subject||t('(no subject)')}</span> <small class="muted">${[m.from,m.at?briefDay(m.at):'',m.via?t('via {}',m.via):''].filter(Boolean).join(' · ')}</small></li>`;

@@ -54,7 +54,7 @@ Alle in der Fleet können eine Erkenntnis **Entfernen**. Dann ist sie für alle 
 Wähle im Fleet-Tab unter **Teilen** bei **Team-Briefing** **Täglich** oder **Wöchentlich**. Deine Machine fragt dann die Machines deines Teams nach Zahlen und Daten. Was dich braucht, landet in den Aufgaben unter Arbeit: ein Kunde, der auf eine Antwort wartet, eine Firma, die still geworden ist, zwei von euch, die denselben Leuten schreiben, oder ein gemeinsamer Termin.
 
 - Firma und Teammitglieder verlinken auf ihre Seiten. **Details** zeigt, wer im Team in Kontakt ist, und ihre letzten Threads, nur was der [Team-Graph](team-graph.md) teilt.
-- **Fragen** schickt dem Team eine Frage dazu. Ihre Antworten stehen an der Aufgabe.
+- **Das Team fragen** schickt ihm eine Frage dazu. Ihre Antworten stehen an der Aufgabe.
 - **Nicht nötig** schließt sie, und das Briefing lernt daraus. Sie kommt nur mit etwas Neuem wieder.
 - Antwortet jemand oder übernimmt es, schließt sich die Aufgabe von selbst. Gibt es schon eine Aufgabe zu dieser Firma, kommt es dazu.
 

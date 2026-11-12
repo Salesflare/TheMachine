@@ -181,7 +181,7 @@ $('#suggestions').addEventListener('submit',async e=>{const t=e.target;if(!t.cla
 $('#settings-take-line').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await fleetPost('fleet_handoff_take_line',{on});if(state.fleet)state.fleet.take_line=r.take_line;b.setAttribute('aria-checked',String(r.take_line));notice(r.take_line?'Handoff emails offer their own Machine.':'Handoff emails leave out their own Machine.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};
 // #fleet=<question> from a phone notification or Telegram: the Fleet tab at that question; &choice= asks to confirm it.
-// #fleet-brief=<fleet> (the brief's Telegram link, an older notification): To-dos, where the brief's lines are
+// #fleet-brief=<fleet> (Telegram, older notifications): To-dos
 // #fleet and #fleet/<pane> (#fleet/sharing, #fleet/activity) are links to the tab: they stay in the address, as #todos does.
 function openFleetLink(){if(/^#fleet-brief(=fl_[0-9a-f]{16})?$/.test(location.hash)){history.replaceState(null,'',location.pathname+location.search+'#todos');openTabLink();return}const sub=/^#fleet\/([a-z0-9_-]{1,40})$/.exec(location.hash),m=sub?[]:/^#fleet(?:=((?:q|fn)_[a-f0-9]{16})(?:&choice=(once|decline))?)?$/.exec(location.hash),card=/^q_/.test(m?.[1]||''),tab=sub||m&&!m[1];
  // before the status comes (a tapped notification on a slow start): the Fleet tab at once, its own data fills it; a question's card waits for its to-dos

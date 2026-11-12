@@ -2526,7 +2526,8 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                     self.build_brief(ref, period, row['every'], json.loads(row['view']).get('since') or since)
             self.tell_brief(ref, period, settings['tell'], local)
             try:
-                self.brief_todos_sync(ref)  # its lines as to-dos, once it is told (fleet_brief_todos.py)
+                # its lines as to-dos, once it is told (fleet_brief_todos.py); silent when the summary pings: one ping, to To-dos
+                self.brief_todos_sync(ref, quiet=bool(settings['tell'] and self.notify_brief))
             except (ValueError, KeyError, TypeError, sqlite3.Error) as error:
                 LOG.warning('fleet brief todos error=%s', type(error).__name__)
         with self.connect() as db:

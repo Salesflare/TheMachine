@@ -24,7 +24,7 @@ class BriefTodos(unittest.TestCase):
         self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)
         self.fleet.done_card = lambda card, choice, why, key: self.store.decide(card, choice, why, key, 'fleet')
 
-    def tell(self, pat, day=1):
+    def tell(self, pat, day=1, quiet=False):
         """A brief told for the work Fleet, from the owner's facts and Pat's answer, then its lines into To-dos."""
         view = fleet.assemble_brief(self.facts(), [('Pat', fleet.clean_brief(pat))])
         period = (NOW - dt.timedelta(days=day)).date().isoformat()
@@ -33,7 +33,7 @@ class BriefTodos(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('INSERT OR REPLACE INTO fleet_briefs(fleet,period,every,view,answers,built_at,told_at) VALUES(?,?,?,?,1,?,?)',
                        ('work', period, 'day', json.dumps(view), at, at))
-        return self.fleet.brief_todos_sync('work', force=True)
+        return self.fleet.brief_todos_sync('work', force=True, quiet=quiet)
 
     def lines(self):
         return (self.fleet.meta(fleet_brief_todos.META) or {}).get('work', {})
@@ -67,6 +67,8 @@ class BriefTodos(unittest.TestCase):
         self.assertEqual(globex['body'], 'Since yesterday, sent to Pat, you also talk to them.')
         self.assertEqual(gone['body'], 'Last contact Aug 2, a customer.')  # why it matters: a customer, when
         self.assertNotIn('—', globex['body'] + gone['body'])
+        # from the Fleet ("From your Fleet" on the dashboard), never "signal from", which reads as a Signal chat
+        self.assertRegex(globex['source_line'], r'^Source: your Fleet · \w{3}, \w{3} \d{1,2}$')
         # Customer Co's waiting email already has the owner's to-do (s3, from the review): the line joins it, no second one
         lines = self.lines()
         self.assertEqual((lines['unanswered:customer.example']['card'], lines['unanswered:customer.example']['merged']), ('s3', True))
@@ -81,6 +83,19 @@ class BriefTodos(unittest.TestCase):
         # the next round with the same brief: nothing new
         self.assertEqual(self.tell(PAT), 0)
         self.assertEqual(len(self.brief_cards()), 2)
+
+    def deliveries(self):
+        with self.store.connect() as db:
+            return {r['title']: r['status'] for r in db.execute(
+                "SELECT s.title,d.status FROM suggestions s JOIN deliveries d ON d.suggestion_id=s.id WHERE s.dedupe_key LIKE 'fleet-brief:%'")}
+
+    def test_the_summary_is_the_one_ping_its_todos_come_in_silently(self):
+        self.tell(PAT, quiet=True)  # the brief told with its own summary, which links to To-dos
+        self.assertEqual(self.deliveries(), {'Globex is waiting for a reply': 'not_sent', 'Gone went quiet': 'not_sent'})
+
+    def test_without_the_summary_ping_its_todos_arrive_like_any_other(self):
+        self.tell(PAT)
+        self.assertEqual(set(self.deliveries().values()), {'queued'})
 
     def test_a_quiet_line_says_the_usual_rhythm_when_there_is_one(self):
         events = [mail('work', days, 'Lou <lou@gone.example>', 'owner@acme.example', message_id=f'<g{days}@gone.example>') for days in (101, 115, 129, 143)]

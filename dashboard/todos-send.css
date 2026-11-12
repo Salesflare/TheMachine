@@ -322,7 +322,6 @@ strong.nb{white-space:nowrap}
 #suggestions .section-head .section-note{font-size:var(--fs-xs)}
 /* Its one Show more sits at the start of the row of links under the draft (Details, Read result, ...), not on a line of its own */
 .card .card-foot>.more{margin:0;padding:0;font-size:inherit}
-/* The team brief's lines as to-dos (fleet-brief-todo.js) */
 .fleet-brief-why a,.fleet-brief-details a{color:inherit;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:2px}.fleet-brief-why a:hover,.fleet-brief-details a:hover{text-decoration-color:currentColor}
 .fleet-brief-asked{margin:6px 0 0}.fleet-brief-asked p{margin:0}.fleet-brief-asked ul,.fleet-brief-mail{list-style:none;margin:2px 0 0;padding:0}.fleet-brief-asked li,.fleet-brief-mail li{margin:2px 0;overflow-wrap:anywhere}.fleet-brief-asked li strong{margin-right:4px}
 .fleet-brief-details{margin:0}.fleet-brief-details .tech-head{margin:0 0 6px}

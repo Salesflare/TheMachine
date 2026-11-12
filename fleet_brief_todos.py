@@ -65,14 +65,14 @@ def rhythm_words(days):
 def card_maker(store):
     """The app's hook (Fleet.brief_card): a Work to-do for one brief line, with an event of its own as evidence,
     marked reviewed so no review or preparation reads it by itself."""
-    def make(account, dedupe, title, body, domain):
+    def make(account, dedupe, title, body, domain, quiet=False):
         event = store.reviewed_event(account, dedupe, 'fleet.brief', title, body, {'sender_display': t('your Fleet'), 'fleet_kind': 'brief'})
-        return store.suggest(dedupe, title[:90], body[:700], [event], when='now', work=True, org=domain)['id']
+        return store.suggest(dedupe, title[:90], body[:700], [event], when='now', work=True, org=domain, quiet=quiet)['id']
     return make
 
 
 class BriefTodos:
-    brief_card = None  # set by the app: brief_card(account, dedupe_key, title, body, domain) -> the new to-do's id
+    brief_card = None  # set by the app: brief_card(account, dedupe_key, title, body, domain, quiet) -> the new to-do's id
 
     # -- state
     def _brief_todos(self):
@@ -93,8 +93,9 @@ class BriefTodos:
         return any(not e.get('closed') for e in (self._brief_todos().get(fleet) or {}).values())
 
     # -- the brief's lines into To-dos
-    def brief_todos_sync(self, fleet, force=False):
-        """The newest told brief of a Fleet, line by line, as to-dos (see the module). Returns how many it made."""
+    def brief_todos_sync(self, fleet, force=False, quiet=False):
+        """The newest told brief of a Fleet, line by line, as to-dos (see the module). Returns how many it made.
+        quiet: the brief pings with its own summary (tell_brief), which links to To-dos: its to-dos come in silently."""
         if not self.brief_card:
             return 0
         with self.connect() as db:
@@ -136,7 +137,7 @@ class BriefTodos:
             body = item['why'][:1].upper() + item['why'][1:] + '.'
             dedupe = 'fleet-brief:' + hashlib.sha256(f'{fleet}|{sig}'.encode()).hexdigest()[:24]
             try:
-                card = self.brief_card(accounts[0], dedupe, item['title'], body, item['domain'])
+                card = self.brief_card(accounts[0], dedupe, item['title'], body, item['domain'], quiet)
             except ValueError as error:
                 LOG.warning('fleet brief todo error=%s', type(error).__name__)
                 continue
@@ -175,7 +176,8 @@ class BriefTodos:
             return 0
         since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=365)).isoformat(timespec='seconds')
         rows = db.execute(f"SELECT DISTINCT substr(occurred_at,1,10) FROM events WHERE kind='gmail.message' AND deleted=0 AND account_id IN ({','.join('?' * len(accounts))}) "
-                          'AND occurred_at>? AND instr(lower(metadata),?)>0 ORDER BY 1', (*accounts, since, '@' + domain.lower())).fetchall()
+                          "AND occurred_at>? AND (instr(lower(json_extract(metadata,'$.from')),?)>0 OR instr(lower(json_extract(metadata,'$.to')),?)>0) ORDER BY 1",
+                          (*accounts, since, '@' + domain.lower(), '@' + domain.lower())).fetchall()  # from and to: plain keys
         days = [dt.date.fromisoformat(r[0]) for r in rows]
         gaps = [(b - a).days for a, b in zip(days, days[1:])]
         return int(statistics.median(gaps)) if len(gaps) >= 3 else 0
@@ -338,7 +340,7 @@ class BriefTodos:
         if not accounts or not item.get('domain'):
             return None
         row = db.execute(f"SELECT title,occurred_at,json_extract(metadata,'$.from') AS sender FROM events WHERE kind='gmail.message' AND deleted=0 "
-                         f"AND account_id IN ({','.join('?' * len(accounts))}) AND instr(metadata,'\"SENT\"')=0 "
+                         f"AND account_id IN ({','.join('?' * len(accounts))}) AND instr(coalesce(json_extract(metadata,'$.labels'),''),'\"SENT\"')=0 "
                          "AND instr(lower(json_extract(metadata,'$.from')),?)>0 ORDER BY occurred_at DESC LIMIT 1",
                          (*accounts, '@' + item['domain'].lower())).fetchone()
         if not row:
