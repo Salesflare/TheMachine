@@ -369,10 +369,20 @@ def silent_failure(db, account, checkpoint, at=None):
     cutoff = (stamp - dt.timedelta(hours=SILENT_HOURS)).isoformat()
     failures = db.execute("SELECT at,error FROM sync_activity WHERE account_id=? AND status='failed' AND at>=? AND at<=? "
                           "ORDER BY at DESC,rowid DESC", (account['id'], cutoff, stamp.isoformat())).fetchall()
+    # A phone out of reach is no failed read (android.sync_android_preferred): its checkpoint says so instead.
+    try:
+        phone_away = account.get('service') == 'android' and \
+            json.loads(checkpoint['state'] or '{}').get('reconciliation_error') == 'android_offline'
+    except (IndexError, KeyError, TypeError, ValueError):
+        phone_away = False
     # Keeps failing: several failed reads in the window, the latest within the last hour.
-    if (len(failures) < SILENT_MIN_FAILURES or not failures[0]['error']
+    if phone_away:
+        error = 'android_offline'
+    elif (len(failures) < SILENT_MIN_FAILURES or not failures[0]['error']
             or failures[0]['at'] < (stamp - dt.timedelta(hours=1)).isoformat()):
         return None
+    else:
+        error = failures[0]['error']
     last = db.execute('SELECT max(occurred_at) FROM events WHERE account_id=? AND occurred_at<=?',
                       (account['id'], stamp.isoformat())).fetchone()[0]
     if not last or last >= cutoff:
@@ -385,7 +395,7 @@ def silent_failure(db, account, checkpoint, at=None):
     quiet = (stamp - dt.datetime.fromisoformat(last)).total_seconds() / 86400
     if usual['n'] < SILENT_MIN_WEEKLY or quiet <= (usual['gap'] or 0):
         return None
-    return {'error': failures[0]['error'], 'silent_since': last}
+    return {'error': error, 'silent_since': last}
 
 
 WHATSAPP_HISTORY_HOURS = 2  # a new link's first sync: WhatsApp sends the history for minutes after it shows connected

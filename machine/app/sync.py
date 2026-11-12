@@ -13,7 +13,7 @@ import enrichment
 import graph
 from machine.config import LOG, SIGNIN_ERROR
 from machine.faults import db_busy, DB_BUSY_RETRY
-from machine.sources.android import sync_android, sync_android_preferred
+from machine.sources.android import feed_backoff, sync_android, sync_android_preferred
 from machine.sources.calendar import sync_calendar
 from machine.sources.connectors import ABILITY_CHECK_SECONDS, BUILT_IN_SERVICES, CONNECTOR_HELPERS, load_connector
 from machine.sources.gateway import sync_gateway
@@ -572,7 +572,7 @@ class SyncApp:
         while not self.stop.is_set():
             try:
                 with self.store.connect() as db:
-                    row = db.execute('SELECT retry_at,error,error_at FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
+                    row = db.execute('SELECT retry_at,error,error_at,failures FROM checkpoints WHERE account_id=?', (account['id'],)).fetchone()
                 local_android_feed = account.get('service') == 'android' and account.get('transport') == 'openclaw-feed'
                 if row and row['retry_at'] and not local_android_feed:
                     if self.wait_for_retry(account, row):
@@ -593,11 +593,11 @@ class SyncApp:
                     if self.stop.is_set():
                         break
                     delay = error.retry_after or delay
-                    error.retry_after = delay
                     if local_android_feed:
-                        # Local queue reads may resume immediately when the bridge
-                        # returns. Phone fallback attempts keep their own durable cap.
-                        delay = account.get('poll_seconds', 15)
+                        # The local queue is read again with a growing wait while the bridge stays down, not every
+                        # poll (feed_backoff). Phone fallback attempts keep their own durable cap.
+                        delay = feed_backoff(account, row['failures'] if row else 0)
+                    error.retry_after = delay
                     self.store.failed(account['id'], error)
                     LOG.warning('sync account=%s error=%s%s', account['id'], error, error_route(error))
                     # Enter the checkpoint wait directly so renewed sign-ins are watched.

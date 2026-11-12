@@ -139,6 +139,19 @@ def sync_android_feed(store, config, account):
     return {'mode': 'incremental', 'events': len(events), 'more': len(rows) >= 100 and bool(consumed)}
 
 
+RECONCILE_MAX_SECONDS = 3600  # the longest wait between phone checks while the phone stays out of reach
+
+# While the notification bridge is down (a Gateway restart or plugin reload), the local feed is read with a growing
+# wait (15, 30, 60 s ... up to this) instead of every poll: nothing is lost, the bridge's inbox waits in the database.
+FEED_BACKOFF_MAX_SECONDS = 300
+
+
+def feed_backoff(account, streak):
+    """Seconds until the next read of a local Android feed that failed `streak` times in a row before this one."""
+    poll = max(1, int(account.get('poll_seconds', 15)))
+    return max(poll, min(FEED_BACKOFF_MAX_SECONDS, poll * 2 ** min(max(int(streak or 0), 0), 10)))
+
+
 def sync_android_preferred(store, config, account, fallback=None):
     result, feed_available = None, True
     try:
@@ -151,6 +164,10 @@ def sync_android_preferred(store, config, account, fallback=None):
         return result
     state = store.checkpoint(account['id']) or {}
     minimum = max(600, int(account.get('reconcile_seconds') or account.get('fallback_seconds', 600)))
+    # A phone that stays out of reach is checked less often: 10, 20, 40 minutes, then hourly (RECONCILE_MAX_SECONDS).
+    # Not while the feed is down: then the direct check is the only reader.
+    if feed_available:
+        minimum = max(minimum, min(RECONCILE_MAX_SECONDS, minimum * 2 ** min(int(state.get('reconcile_misses') or 0), 8)))
     attempt = state.get('fallback_last_attempt')
     elapsed = (dt.datetime.fromisoformat(now()) - dt.datetime.fromisoformat(attempt)).total_seconds() if attempt else minimum + 1
     if elapsed < minimum:
@@ -164,13 +181,21 @@ def sync_android_preferred(store, config, account, fallback=None):
     except SourceError as error:
         state = store.checkpoint(account['id'])
         state.update(reconciliation_error=error.category, reconciliation_error_at=now())
+        # A phone that is asleep, out of reach or has the OpenClaw app stopped is an expected state while the feed
+        # works: the read succeeded, the phone check waits longer each time, and the state keeps why
+        # (connectors.silent_failure turns a long quiet stretch into "Phone disconnected").
+        phone_away = feed_available and error.category == 'android_offline'
+        state['reconcile_misses'] = int(state.get('reconcile_misses') or 0) + 1 if phone_away else 0
         store.commit_page(account['id'], state, [], record_sync=False)
-        # Preserve a redacted failed-read receipt even if the passive feed works.
+        if phone_away:
+            return result
+        # Any other failed check keeps a redacted failed-read receipt, even if the passive feed works.
         raise
     else:
         state = store.checkpoint(account['id'])
         state.pop('reconciliation_error', None)
         state.pop('reconciliation_error_at', None)
+        state.pop('reconcile_misses', None)
         state.update(transport='existing_feed_with_reconciliation' if feed_available else 'direct_fallback')
         if not feed_available: state.setdefault('feed_unavailable_since', now())
         store.commit_page(account['id'], state, [], record_sync=False)
