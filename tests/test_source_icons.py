@@ -87,7 +87,7 @@ class SourceIcons(unittest.TestCase):
         # the rows that list messages and sources draw marks, not the old line glyphs
         for part, needle in [('todos-mail-check.js', 'markIco(sourceMark(r.kind,r.account,r.app))'),
                              ('events-list.js', 'markIco(sourceMark(e.kind,e.account_id,e.metadata.package_name))'),
-                             ('graph-record.js', 'markIco(sourceMark(k))'), ('connections-cards.js', 'conn-head"><span class="icon">${markIco('),
+                             ('graph-record.js', 'markIco(sourceMark(k))'),
                              ('learning-missed.js', 'markIco(VOICE_ICON')]:
             with self.subTest(part=part):
                 self.assertIn(needle, (ROOT / 'dashboard' / part).read_text(encoding='utf-8'))

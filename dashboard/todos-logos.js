@@ -1,5 +1,5 @@
 // Every source's one-color mark: one set, keyed by source, for every small icon that says where something came from (the
-// last check's rows, a to-do's source and its send button, search, a record's timeline, chat, Connections' cards). The
+// last check's rows, a to-do's source and its send button, search, a record's timeline, chat, learned styles). The
 // same brands as the colored logos in + Add, drawn in the text's color so they sit quietly in a line. Each is a file,
 // dashboard/logos/mono/<key>.svg (sources and terms in its NOTICE.md), loaded only when shown, as the mask of a
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
