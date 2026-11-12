@@ -206,6 +206,20 @@ def owner_title(words, limit=90):
     return cut.rstrip(' ,;:.-') + '…'
 
 
+def owner_card_people(db, event_id, about, stamp):
+    """The people the owner picked in New to-do, on the to-do at once: the same graph_events rows a graph build makes for
+    an owner.card signal (graph.participants: 'about', direct), written with the to-do, so its first render shows them
+    instead of waiting for the next build. Organizations and projects stay as before. A build already computing from an
+    older read would drop these rows when it publishes: graph_edits makes it compute again (graph.Outdated)."""
+    ids = [str(p['id']) for p in about if p.get('kind') == 'person'][:5]
+    if not ids:
+        return
+    added = db.executemany("INSERT OR IGNORE INTO graph_events(node_id,event_id,at,probable,direct) "
+                           "SELECT id,?,?,0,1 FROM graph_nodes WHERE id=? AND kind='person'", [(event_id, stamp, i) for i in ids]).rowcount
+    if added and db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='graph_edits'").fetchone():
+        db.execute('UPDATE graph_edits SET n=n+1 WHERE id=1')
+
+
 def owner_card_of(db, rows):
     """The card the owner made for one of these signals (their owner.card signal), or None."""
     ids = {json.loads(r['metadata']).get('card_id') if isinstance(r['metadata'], str) else r['metadata'].get('card_id')
@@ -843,6 +857,7 @@ class CardsStore:
             cursor = db.execute('INSERT INTO events(account_id,source_id,kind,occurred_at,title,body,metadata,deleted,content_hash,version,analyzed_version,ingested_at) '
                                 "VALUES(?,?,'owner.card',?,?,?,?,0,?,1,?,?)",
                                 (account_id, 'owner:' + sid, stamp, title, words, json.dumps(meta), hashlib.sha256((words or title).encode()).hexdigest(), int(accepted), stamp))
+            owner_card_people(db, cursor.lastrowid, about, stamp)
             saved = self.suggest('owner:' + sid, title, clamp(body, 699), [cursor.lastrowid, *[i for i in attach if i != cursor.lastrowid]], when='now',
                                  work=work, due=due, project=project, _db=db, suggestion_id=sid)
             kept = chat_files.adopt(db, files[0], sid, files[1]) if files else []

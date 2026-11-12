@@ -295,6 +295,30 @@ class NewCard(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'no longer in the Graph'):
             self.new(about=['email:nobody@acme.example'])
 
+    def test_a_person_picked_in_new_todo_is_on_its_first_render(self):
+        # The status right after New to-do (the one refresh the dashboard makes) shows the person picked in the form,
+        # with no graph build in between; organizations and projects stay as they were
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:pat@acme.example','person','Pat Example',1,1,'{}'),"
+                       "('org:acme.example','org','Acme',1,1,'{}')")
+            a.graph._watch(db)
+            edits = a.graph._edits(db)
+        made = self.new(about=['email:pat@acme.example', 'org:acme.example'], scope='personal')
+        self.store.accounts = self.app.config['accounts']
+        shown = next(s for s in self.store.snapshot([])['suggestions'] if s['id'] == made['id'])
+        self.assertEqual([(p['id'], p['name']) for p in shown['people']], [('email:pat@acme.example', 'Pat Example')])
+        with self.store.connect() as db:
+            rows = db.execute('SELECT node_id,probable,direct FROM graph_events WHERE event_id=?', (made['event_id'],)).fetchall()
+            self.assertEqual([tuple(r) for r in rows], [('email:pat@acme.example', 0, 1)])
+            self.assertGreater(a.graph._edits(db), edits)  # a build computing from an older read computes again
+            a.graph.build(db, self.app.config, a.now())  # the next build makes the same link: nothing changes on the card
+            people, _ = a.graph.card_people(db, [made['event_id']])
+        self.assertEqual([p['id'] for p in people], ['email:pat@acme.example'])
+        # Without a person picked, nothing is linked by hand: the Machine's own links come with the build, as before
+        plain = self.new(text='Book the venue')
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM graph_events WHERE event_id=?', (plain['event_id'],)).fetchone())
+
     def test_old_cards_are_unaffected(self):
         self.store.commit_page('w', {}, [mail('m1')])
         old = self.review(event_ids=[1], dedupe_key='w:sam')
