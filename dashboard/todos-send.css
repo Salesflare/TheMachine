@@ -61,7 +61,7 @@
 :is(.card,.rt) .actions .more-menu button:hover{background:var(--tile)}.card .actions .more-menu button.quiet{color:var(--muted)}
 /* Hand off: labels above full-width fields, even spacing. */
 .agent-sheet.fleet-handoff-form textarea.handoff-task,.agent-sheet.fleet-handoff-form textarea.handoff-task:focus{max-height:min(240px,40vh);font-size:1rem;color:var(--text)}
-.fleet-handoff-form .handoff-email,.fleet-handoff-form .handoff-pick{width:100%;max-width:none;box-sizing:border-box;margin:0;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg);font:inherit;font-size:.95rem;color:var(--text)}.fleet-handoff-form .handoff-pick{width:auto;min-width:0;max-width:100%;border-radius:999px;text-overflow:ellipsis}
+.fleet-handoff-form .handoff-email,.fleet-handoff-form .handoff-pick{width:100%;max-width:none;box-sizing:border-box;margin:0;min-height:36px;padding:6px 12px;border:1px solid var(--border);border-radius:12px;background-color:var(--bg);font:inherit;font-size:.95rem;color:var(--text)}.fleet-handoff-form .handoff-pick{width:auto;min-width:0;max-width:100%;padding-right:34px;border-radius:999px;text-overflow:ellipsis}  /* the dashboard's select chevron stays: it reads as a choice */
 .agent-get .chip-x{margin:0 -4px 0 2px;padding:0 4px;min-height:0;border:0;background:none;color:var(--faint);font-size:1rem;line-height:1;cursor:pointer}.agent-get .chip-x:hover{color:var(--text)}
 /* Not needed: one compact choice. A reason is optional; Confirm decides. */
 .card .dismiss-q{margin:0 0 8px;font-weight:600}.card .dismiss-q small{font-weight:400;color:var(--faint)}
@@ -126,8 +126,9 @@
 /* The hand-off sheet, on the card and in the chat's message box place */
 .agent-sheet{display:flex;flex-direction:column;gap:10px;margin:14px 0 0;padding:14px 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
 .agent-sheet-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}.agent-sheet-title,.agent-one{font-weight:600;color:var(--text)}
-.agent-switch{display:inline-flex;padding:2px;border-radius:999px;background:var(--tile)}.agent-switch label{display:block;margin:0;cursor:pointer}
-.agent-switch input{position:absolute;opacity:0;pointer-events:none}.agent-switch span{display:block;padding:3px 12px;border-radius:999px;font-size:.87rem;font-weight:600;color:var(--muted);white-space:nowrap}
+/* Wraps onto a second row when the names don't fit (a phone, a narrow window): every choice stays in sight */
+.agent-switch{display:inline-flex;flex-wrap:wrap;max-width:100%;box-sizing:border-box;padding:2px;border-radius:15px;background:var(--tile)}.agent-switch label{display:block;min-width:0;max-width:100%;margin:0;cursor:pointer}
+.agent-switch input{position:absolute;opacity:0;pointer-events:none}.agent-switch span{display:block;padding:3px 12px;border-radius:999px;font-size:.87rem;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .agent-switch input:checked+span{background:var(--surface);color:var(--text);box-shadow:0 1px 2px #0002}.agent-switch input:focus-visible+span{outline:2px solid var(--lavender);outline-offset:1px}
 .agent-what{margin:0;font-size:.92rem;line-height:1.45;color:var(--muted);overflow-wrap:anywhere}
 .handoff-parts{margin:0;padding:8px 12px;border:1px solid var(--border);border-radius:10px;display:grid;gap:6px;min-width:0}.handoff-parts legend{padding:0 4px;font-size:.84rem;color:var(--muted)}
