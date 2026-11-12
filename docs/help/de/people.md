@@ -7,6 +7,8 @@ order: 2
 ---
 Alle, mit denen du in Kontakt bist, die engsten zuerst, aus deinen Nachrichten und Meetings. Newsletter, Belege und andere Massenmails fügen niemanden hinzu, bis du zurückschreibst. Sie stehen unter Ausgeblendete Absender, unter der Liste: Als Person zeigen holt sie herein. Felder, Tags und Import funktionieren in allen drei Listen gleich, und jede Liste hat ihre eigenen Filter: siehe [Der Graph](graph.md).
 
+Ein gemeinsames Postfach (info@, Kundenservice, der eigene Name eines Geschäfts) zählt für seine Organisation, nicht als Person, auch wenn du ihm schreibst.
+
 ## Die Seite einer Person
 
 Sie beginnt mit Foto, Name, Position, Organisation und Ort und einer Zeile dazu, wie ihr in Kontakt seid („Täglicher Austausch · zuletzt Fr, 23. Okt · nächstes Meeting Di, 27. Okt“). Darunter:

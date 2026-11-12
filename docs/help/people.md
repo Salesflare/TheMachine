@@ -7,6 +7,8 @@ order: 2
 ---
 Everyone you're in touch with, closest first, from your messages and meetings. Newsletters, receipts and other mailings don't add anyone until you write back. They are under Hidden senders, below the list: Show as a person brings one in. Fields, tags and import work the same on all three lists, and each list has its own filters: see [The Graph](graph.md).
 
+A shared inbox (info@, customer service, a shop's own name) counts for its organization, not as a person, also after you write to it.
+
 ## Someone's page
 
 It starts with their photo, name, title, organization and place, and one line on how you're in touch ("Talk daily · last contact yesterday · next meeting Tue, Oct 27"). Recent contact reads like "just now", "3 hours ago", "yesterday" or "3 days ago", and older contact as a date; hover it for the exact date. Below that:

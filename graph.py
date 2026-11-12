@@ -55,6 +55,7 @@ import graph_joins
 import graph_publish
 import mail_senders
 from mail_senders import AUTOMATED_PRECEDENCE, BULK, RELAY, addresses, automated, bulk, list_unsubscribes, mass_mail, owner_kept, relay  # noqa: F401
+from mail_senders import address_name, shared_inbox
 import person_summary
 from machine import stamps
 from machine.store import graph_history, graph_identifiers
@@ -565,7 +566,7 @@ def _touches(kind, m, owner, wrote_to):
         # The customer it is with is who a card on it is about (direct, as a card's own people: 'about'); without one, whoever opened it
         customer = addresses(m.get('contact_email'))
         found = customer or addresses(m.get('from'))
-        return [('email:' + found[0][1], (m.get('contact_name') or None) if customer else None, 0.05, 'about' if customer else 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
+        return [('email:' + found[0][1], (m.get('contact_name') if customer else m.get('from_name')) or None, 0.05, 'about' if customer else 'seen')] if found and not owner.mine(found[0][1]) and not bulk(found[0][1]) else []
     if kind in DOC_KINDS:
         # Docs (connectors/docs.py): who commented, @mentioned the owner, suggested edits or shared a doc with them.
         # Drive shows an author's address only when they let it; without one there is nobody to link.
@@ -1254,7 +1255,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     unsubscribes = list_unsubscribes(db, signals + old, owner)
     kept = owner_kept(db)  # whoever the owner's word or work is on stays a person, whatever their mail looks like
     mailings = mail_senders.Hidden(current, HALF_LIFE['person'], FLOOR)  # the senders it leaves out
-    wrote_to = set()
+    listed, wrote_to = set(), set()  # listed: addresses that sent mail a mailing system sent (List-Unsubscribe, List-Id, Precedence bulk): a shared inbox's sign
     for event_id, _, kind, _, m in signals + old:
         if (kind == 'gmail.message' and ('SENT' in (m.get('labels') or ()) or any(a in owner.emails for _, a in addresses(m.get('from'))[:1]))
                 and not automated(m) and event_id not in unsubscribes):
@@ -1301,6 +1302,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                     paying_names.setdefault(domain, str(m['customer_name']))
         if event_id in unsubscribes:
             continue
+        if kind == 'gmail.message' and (m.get('list_unsubscribe') or m.get('list_id') or automated(m)):
+            listed |= {'email:' + a for _, a in addresses(m.get('from'))[:1]}
         found = [t for t in touches(kind, m, owner, wrote_to) if not (t[0].startswith('email:') and t[0].rsplit('@', 1)[1] in warmup) and t[0] not in rooms and not gone(t[0])
                  and not (t[0].startswith('email:') and t[0] not in people_kept and room_like(t[0][6:], t[1]))]
         if kind == 'gmail.message' and found and found[0][3] in ('them', 'seen') and not {event_id, found[0][0]} & kept and (why := mass_mail(
@@ -1546,6 +1549,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
 
     # Write.
     nodes, links, members = [], [], collections.defaultdict(list)
+    inboxes = collections.defaultdict(list)  # domain -> [(node, strength)] of its shared inboxes: they count for the organization
     named = {r['node_id']: r['name'] for r in db.execute('SELECT node_id,name FROM graph_names')}
     role_rows = {r['identifier']: dict(r) for r in db.execute('SELECT * FROM person_roles')}
     said = {i: (r['role'] or None, 'owner' if r['source'] == 'owner' else 'review') for i, r in role_rows.items()}
@@ -1565,7 +1569,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     stated_rows = {r['identifier']: dict(r) for r in db.execute('SELECT * FROM person_orgs')}
     stated = {}  # person node -> the statement of where they work, when no work address says it
     named_orgs = collections.defaultdict(list)
-    surnames = {n.split()[-1] for n in owner.names if len(n.split()) >= 2}
+    surnames, firsts = {n.split()[-1] for n in owner.names if len(n.split()) >= 2}, {n.split()[0].casefold() for c in names.values() for n in c if n and len(n.split()) >= 2}
     alike = {}  # person node -> what "Same person?" compares: name words, company domains, role
     for node, value in strength.items():
         if value < FLOOR:
@@ -1577,9 +1581,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         for identifier in group:
             counts.update(names.get(identifier, {}))
         name = shown_name(counts) if counts and not all(keys.several(i) for i in group) else shown_id(node, x_names)  # a list goes by its address
-        if plain_name(name) in owner.names:
-            continue  # the owner on another channel (a note-to-self chat, an old address)
+        if plain_name(name) in owner.names or (name == shown_id(node, x_names) and node.partition(':')[2] not in name and not any(i in named for i in group) and not roles[node]['owner'] | roles[node]['them'] | roles[node]['met']):
+            continue  # the owner on another channel (a note-to-self chat, an old address); or only seen, with no name at all yet ("Slack")
         name = next((named[i] for i in group if i in named), name)  # the owner's own name for them wins
+        name = (derived := node.startswith('email:') and name == node[6:] and not keys.several(node) and address_name(node[6:], firsts)) or name  # no name given: ayla@ is "Ayla"
         talk = sorted(roles[node]['owner'] | roles[node]['them'] | roles[node]['met'])
         gaps = [(b - a).days for a, b in zip(talk, talk[1:])][-8:]
         usual = sorted(gaps)[len(gaps) // 2] if len(gaps) >= 3 else None
@@ -1590,6 +1595,10 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         # Automated senders (a no-reply, Gemini's meeting notes) are no one's colleague: their domain makes no organization
         domains = sorted({i.split('@', 1)[1] for i in group if i.startswith('email:') and not bulk(i[6:]) and not relay(i[6:])}
                          - FREEMAIL - owner.domains)
+        if domains and shared_inbox(group, name, domains[0], listed, kept, org_from_name(name, domains[0]), enrichment.registrable(domains[0])):
+            inboxes[domains[0]].append((node, value)); members.setdefault(domains[0], [])
+            mailings.found[node] = [name, 'shared', len(node_events[node]), last_day[node].isoformat() if node in last_day else '', value]
+            continue
         said_org = max((stated_rows[i] for i in group if i in stated_rows),
                        key=lambda r: (r['source'] == 'owner', r['said_at'] or '', r['created_at'], r['identifier'] == node), default=None)
         if said_org and said_org['source'] != 'owner' and domains:
@@ -1639,7 +1648,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
                                'by': why} for x, y, why in joined.get(node, ()) if why]
         # What "Same person?" compares. A name that is their company's ("Seeking Alpha" at seekingalpha.com) is no
         # person's name; one read from their address (no name given) is only ever a similar one.
-        no_name = name == shown_id(node, x_names)
+        no_name = bool(derived) or name == shown_id(node, x_names)
         sender_org = any(org_from_name(name, i.rsplit('@', 1)[1]) for i in group if i.startswith('email:')) and not no_name
         alike[node] = {'words': [] if sender_org or all(keys.several(i) for i in group) else name_words(name, node if no_name else None), 'derived': no_name, 'strength': value,
                        'domains': set(domains), 'role': ' '.join(str(role).casefold().split()) if role else None}
@@ -1662,6 +1671,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     by_org_name = {}
     for domain in sorted(members):
         by_org_name.setdefault(folded_words(org_name(domain)), domain)
+        for node, _ in inboxes.get(domain, ()): mailings.found[node][0] = org_name(domain)  # a shared inbox goes by its organization
     for domain in sorted(members):  # "Acme" is acme.com when no organization is called that
         by_org_name.setdefault(folded_words(domain.split('.')[0]), domain)
     infos = {n[0]: n[9] for n in nodes}
@@ -1718,14 +1728,14 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         for node, value, _ in people:
             links.append((node, org_id, 'member', round(value, 4), None))
     for domain, people in members.items():
-        total = sum(v for _, v in people)
+        total = sum(v for _, v in people + inboxes.get(domain, []))
         role, role_by = said.get('org:' + domain, (None, None))
         # What the owner wrote wins; the email domain is the website when nothing else says one.
         profile = {'website': enrichment.website(domain), **(profiles.get(domain) or {}), **edits.get(domain, {})}
         if 'logo' not in profile and domain in site_logos:  # no logo from the lookup or the owner: the one from its own site
             profile['logo'] = 'api/person-photo?p=' + site_logos[domain]
         nodes.append(('org:' + domain, 'org', org_name(domain)[:200], round(total, 4),
-                      max((last_day[p].isoformat() for p, _ in people if p in last_day), default=None), len(people), None, 0, None,
+                      max((last_day[p].isoformat() for p, _ in people + inboxes.get(domain, []) if p in last_day), default=None), len(people), None, 0, None,
                       json.dumps({'domain': domain, 'role': role, 'role_by': role_by, 'paying': domain in paying_names, 'profile': profile,
                                   'edited': sorted(edits.get(domain, {})), 'wrong': domain in wrong,
                                   'manual': any(r['identifier'] == 'org:' + domain for r in manual), **org_live([p for p, _ in people])})))

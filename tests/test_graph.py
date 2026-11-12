@@ -193,6 +193,64 @@ class Graph(unittest.TestCase):
         self.assertEqual(self.node('email:community@paperbox.example')['signals'], 3)
         self.assertEqual([h['address'] for h in self.app.graph_list('hidden_senders')['items']], ['pat@growth.example', 'lee@moss.example'])
 
+    def test_a_shared_inbox_is_its_organization_not_a_person(self):
+        # Mail both ways with info@, klantenservice@ and the shop's own name@ (an order, a booking): the organization,
+        # not a person. A person's name on info@ keeps them, and so does Show as a person.
+        self.add(mail(9, 'INFO <info@venue.example>', 'sam@acme.com'), mail(8, 'Sam <sam@acme.com>', 'info@venue.example', ('SENT',)),
+                 mail(9, 'Klantenservice <klantenservice@floors.example>', 'sam@acme.com'),
+                 mail(8, 'Sam <sam@acme.com>', 'klantenservice@floors.example', ('SENT',)),
+                 mail(7, 'Wes <info@sports.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'info@sports.example', ('SENT',)),
+                 mail(7, 'Sam <sam@acme.com>', 'oakhollow@oakhollow.example', ('SENT',)), mail(6, 'oakhollow@oakhollow.example', 'sam@acme.com'),
+                 mail(7, 'Ines Halden <info@interior.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'info@interior.example', ('SENT',)),
+                 mail(7, 'Pip <pip@studio.example>', 'sam@acme.com'), mail(6, 'Sam <sam@acme.com>', 'pip@studio.example', ('SENT',)),
+                 # a person's name on a shared inbox that also sends the shop's mailings, answered once: no person either
+                 mail(9, 'Tintmore Team <info@tintmore.example>', 'sam@acme.com', list_unsubscribe=True, title='Autumn sale'),
+                 mail(5, 'Tintmore Team <info@tintmore.example>', 'sam@acme.com'), mail(4, 'Sam <sam@acme.com>', 'info@tintmore.example', ('SENT',)))
+        self.build()
+        def people():
+            with self.store.connect() as db:
+                return {r['id'] for r in db.execute("SELECT id FROM graph_nodes WHERE kind='person'")}
+        self.assertEqual(people(), {'email:info@interior.example', 'email:pip@studio.example'})
+        with self.store.connect() as db:
+            orgs = {r['id']: r['strength'] for r in db.execute("SELECT id,strength FROM graph_nodes WHERE kind='org'")}
+        for domain in ('venue', 'floors', 'sports', 'oakhollow', 'tintmore'):
+            self.assertGreater(orgs.get(f'org:{domain}.example', 0), 0, domain)  # the organization stands, as close as its inbox
+        hidden = {h['address']: h['why'] for h in self.app.graph_list('hidden_senders')['items']}
+        self.assertEqual(hidden, {'info@venue.example': 'shared', 'klantenservice@floors.example': 'shared', 'info@sports.example': 'shared',
+                                  'oakhollow@oakhollow.example': 'shared', 'info@tintmore.example': 'shared'})
+        titles = {h['address']: h['name'] for h in self.app.graph_list('hidden_senders')['items']}
+        self.assertEqual(titles['info@venue.example'], 'Venue')  # its organization's name, never "INFO"
+        self.app.action('graph_show_person', {'identifier': 'email:info@sports.example'}, owner_dashboard=True)
+        self.build()
+        self.assertIn('email:info@sports.example', people())
+        self.assertTrue(graph.mail_senders.shared_address('info.nl@shop.example') and graph.mail_senders.shared_address('sales2@shop.example'))
+        self.assertTrue(graph.mail_senders.shared_address('hr@shop.example') and graph.mail_senders.shared_address('bookings@shop.example'))
+        self.assertFalse(graph.mail_senders.shared_address('jan.peeters@shop.example') or graph.mail_senders.shared_address('info.jan@shop.example'))
+
+    def test_a_person_needs_a_name_and_an_address_can_give_one(self):
+        # A Slack member nobody named yet, only seen in a channel, is no row called "Slack"; Intercom's name for who opened a
+        # conversation is theirs; a bare address gives a name only when it clearly is one: a first name someone in the Graph
+        # goes by ("Kit", there is a Kit Marlow), or a first and last name. jdoe@ stays the address.
+        slack = {'account_id': 'slack', 'source_id': 's-nameless', 'kind': 'slack.message', 'occurred_at': at(1), 'title': '#general: hi', 'body': 'hi',
+                 'deleted': False, 'metadata': {'conversation_type': 'channel', 'channel_name': 'general', 'user_id': 'U0NONAME', 'channel_id': 'C1'}}
+        intercom = {'account_id': 'work', 'source_id': 'ic-named', 'kind': 'intercom.conversation', 'occurred_at': at(2), 'title': 'Webhooks?', 'body': '',
+                    'deleted': False, 'metadata': {'from': 'rue@bakehouse.example', 'from_name': 'Rue Holloway'}}  # Intercom names who opened it
+        self.add(slack, intercom, mail(3, 'Kit Marlow <kit@marlow.example>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kit@marlow.example', ('SENT',)),
+                 mail(3, 'kit@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kit@kilnworks.example', ('SENT',)),
+                 mail(3, 'zq.rt@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'zq.rt@kilnworks.example', ('SENT',)),
+                 mail(3, 'jdoe@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'jdoe@kilnworks.example', ('SENT',)))
+        self.build()
+        with self.store.connect() as db:
+            people = {r['id']: r['name'] for r in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'")}
+        self.assertNotIn('slack:U0NONAME', people)
+        self.assertEqual(people.get('email:rue@bakehouse.example'), 'Rue Holloway')
+        self.assertEqual(people.get('email:kit@kilnworks.example'), 'Kit')
+        self.assertEqual(people.get('email:zq.rt@kilnworks.example'), 'zq.rt@kilnworks.example')
+        self.assertEqual(people.get('email:jdoe@kilnworks.example'), 'jdoe@kilnworks.example')
+        self.assertEqual(graph.mail_senders.address_name('jane.doe@shop.example', set()), 'Jane Doe')
+        self.assertEqual([graph.mail_senders.address_name(a + '@shop.example', {'info', 'shop'}) for a in ('info', 'noreply', 'j.doe', 'shop', 'jdoe')],
+                         ['', '', '', '', ''])
+
     def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
         self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
                  chat(1, '00000000002', 'Cas Owner', mine=True),
