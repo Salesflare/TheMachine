@@ -316,7 +316,7 @@ def catalog(config):
         setup = setup_of(service) or {}
         found.append({'name': name, 'service': service, 'label': label(service), 'group': groups.group_of(service, setup.get('group')), 'note': setup.get('note'), 'what': setup.get('what'),
                       'connected': have.get(service, 0), 'broker': service in brokered or bool(setup.get('broker')),
-                      'form': web_form(config, service),
+                      'form': web_form(config, service), **({'last': True} if groups.last(service) else {}),
                       **({'account_page': setup['account_page']} if isinstance(setup.get('account_page'), str) else {})})
     return found
 

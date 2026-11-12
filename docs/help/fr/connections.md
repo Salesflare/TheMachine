@@ -22,9 +22,9 @@ Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoi
 
 Une source déjà connectée l’indique dans la liste, avec son compte. Choisissez-la pour en ajouter une autre à côté : son formulaire le dit et renvoie vers celle que vous avez.
 
-La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents et fichiers**, **Clients**, **Projets et code**, **Autres**), de A à Z dans chaque groupe.
+La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents et fichiers**, **Clients**, **Projets et code**, **Autres**), de A à Z dans chaque groupe. Une entrée générale comme **Autre e-mail** vient en dernier dans son groupe.
 
-Une source pour laquelle votre Machine voit une raison est marquée **Suggéré** dans son propre groupe, avec cette raison en une ligne : des e-mails de Stripe, des réunions Zoom dans votre agenda, des messages qui renvoient vers Google Docs, ou une configuration qui n’a pas abouti. Elle compte cela sur votre Machine ; rien n’en sort. Une source connectée n’est jamais suggérée.
+**Suggéré pour vous** s’affiche en haut quand votre Machine voit une raison pour une source, avec cette raison en une ligne : des e-mails de Stripe, des réunions Zoom dans votre agenda, des messages qui renvoient vers Google Docs, ou une configuration qui n’a pas abouti. La source reste aussi dans son propre groupe, marquée **Suggéré**. Elle compte cela sur votre Machine ; rien n’en sort. Une source connectée n’est jamais suggérée.
 
 Microsoft Teams apparaît deux fois : sous **Chat** pour ses chats et sous **Réunions** comme **Réunions Teams** pour ses notes de réunion. Les deux utilisent la même connexion Microsoft : connecter l’une connecte l’autre.
 

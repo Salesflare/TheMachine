@@ -22,9 +22,9 @@ Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta
 
 Una fuente que ya conectaste lo indica en la lista, con su cuenta. Elígela para añadir otra al lado: su formulario lo dice y enlaza a la que ya tienes.
 
-La lista está agrupada (**Correo y calendario**, **Chat**, **Reuniones**, **Documentos y archivos**, **Clientes**, **Proyectos y código**, **Otras**), de la A a la Z en cada grupo.
+La lista está agrupada (**Correo y calendario**, **Chat**, **Reuniones**, **Documentos y archivos**, **Clientes**, **Proyectos y código**, **Otras**), de la A a la Z en cada grupo. Una opción general como **Otro correo** va al final de su grupo.
 
-Una fuente para la que tu Machine ve un motivo aparece marcada como **Sugerido** en su propio grupo, con ese motivo en una línea: correos de Stripe, reuniones de Zoom en tu calendario, mensajes con enlaces a Google Docs o una configuración que no terminó. Lo cuenta en tu Machine; nada sale de ella. Nunca sugiere una fuente ya conectada.
+**Sugerido para ti** aparece arriba cuando tu Machine ve un motivo para una fuente, con ese motivo en una línea: correos de Stripe, reuniones de Zoom en tu calendario, mensajes con enlaces a Google Docs o una configuración que no terminó. La fuente también sigue en su propio grupo, marcada como **Sugerido**. Lo cuenta en tu Machine; nada sale de ella. Nunca sugiere una fuente ya conectada.
 
 Microsoft Teams aparece dos veces: en **Chat** para sus chats y en **Reuniones** como **Reuniones de Teams** para sus notas de reuniones. Las dos usan el mismo inicio de sesión de Microsoft, así que conectar una conecta la otra.
 

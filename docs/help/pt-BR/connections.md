@@ -22,9 +22,9 @@ Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta p
 
 Uma fonte que você já conectou mostra isso na lista, com a conta. Escolha-a para adicionar outra ao lado: o formulário avisa e leva até a que você já tem.
 
-A lista é agrupada (**E-mail e agenda**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo.
+A lista é agrupada (**E-mail e agenda**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo. Uma opção geral como **Outro e-mail** fica por último no grupo.
 
-Uma fonte para a qual sua Machine vê um motivo aparece marcada como **Sugerido** no próprio grupo, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. Ela conta isso na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
+**Sugerido para você** aparece no topo quando sua Machine vê um motivo para uma fonte, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. A fonte também continua no próprio grupo, marcada como **Sugerido**. Ela conta isso na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
 
 O Microsoft Teams aparece duas vezes: em **Chat** para os chats e em **Reuniões** como **Reuniões do Teams** para as notas de reuniões. Os dois usam o mesmo login da Microsoft, então conectar um conecta o outro.
 

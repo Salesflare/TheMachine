@@ -102,6 +102,14 @@ class Groups(unittest.TestCase):
                           'crm': 'customers', 'github': 'work', 'rss': 'other', 'gateway': 'other'})
         self.assertEqual(groups.GROUPS[-1], 'other')
 
+    def test_a_catch_all_source_says_it_goes_last(self):
+        # Other email (any other mail provider) closes its group in + Add and on Connections: the flag, never its name
+        found = {s['service']: s for s in onboarding.catalog({})}
+        self.assertTrue(found['imap']['last'])
+        self.assertEqual({k for k, s in found.items() if s.get('last')}, set(groups.CATCH_ALL) & set(found))
+        self.assertTrue(groups.last('imap'))
+        self.assertFalse(groups.last('gmail'))
+
     def test_an_unknown_source_is_other(self):
         self.assertEqual(groups.group_of('something_new'), 'other')
         self.assertEqual(groups.group_of('something_new', 'chat'), 'chat')  # a connector's own group

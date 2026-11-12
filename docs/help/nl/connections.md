@@ -22,9 +22,9 @@ Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vra
 
 Een bron die je al koppelde zegt dat in de lijst, met het account. Kies hem om er nog een naast toe te voegen: het formulier zegt dat en linkt naar de koppeling die je al hebt.
 
-De lijst is gegroepeerd (**Mail en agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep.
+De lijst is gegroepeerd (**Mail en agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep. Een verzamelbron zoals **Andere e-mail** staat als laatste in zijn groep.
 
-Een bron waarvoor je Machine een reden ziet, staat in zijn eigen groep met het label **Voorgesteld**, met die reden op één regel: mails van Stripe, Zoom-meetings in je agenda, berichten die naar Google Docs linken, of instellen dat niet is afgerond. Hij telt dat op je Machine; er gaat niets weg. Een gekoppelde bron wordt nooit voorgesteld.
+**Voorgesteld voor jou** staat bovenaan als je Machine een reden ziet voor een bron, met die reden op één regel: mails van Stripe, Zoom-meetings in je agenda, berichten die naar Google Docs linken, of instellen dat niet is afgerond. De bron staat ook in zijn eigen groep, met het label **Voorgesteld**. Hij telt dat op je Machine; er gaat niets weg. Een gekoppelde bron wordt nooit voorgesteld.
 
 Microsoft Teams staat er twee keer: onder **Chat** voor de chats en onder **Afspraken** als **Teams-meetings** voor de meetingnotities. Beide gebruiken dezelfde Microsoft-aanmelding, dus de ene koppelen koppelt ook de andere.
 

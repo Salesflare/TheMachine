@@ -5,9 +5,10 @@ import {OPENCLAW} from '../openclaw-root.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_CORE||OPENCLAW+'/node_modules/playwright-core/index.mjs');
 
-// Connections, + Add: every source under its group's header, in the groups' order and A to Z within each. A suggested
-// one (connect_sources' suggested, at most 3, never a connected one) stays in its own group, tagged Suggested, with its
-// why line; no section of its own on top. Teams shows twice: its chats under Chat, Teams meetings under Meetings, one sign-in.
+// Connections, + Add: Suggested for you on top, only for the tiles the Machine has a signal for (connect_sources'
+// suggested, at most 3, never a connected one), each with its why line; no signal, no section. Then every source under its
+// group's header, in the groups' order and A to Z within each, a suggested one there too, tagged Suggested, with what it
+// brings in; both rows open the same connect. Teams shows twice: its chats under Chat, Teams meetings under Meetings, one sign-in.
 // Salesforce shows its own logo.
 // SHOTS=<folder> saves the list at 390 and 1440, light and dark, with and without suggestions.
 const dashboard=await dashboardPage();
@@ -17,6 +18,8 @@ const sources=[
  S('calendar','Google Calendar','mail','Your meetings, so you go in prepared and follow up.',{connected:1,hosted_signin:'calendar'}),
  S('crm','Salesflare CRM','customers','Accounts, contacts and deals, so it knows who matters.'),
  S('gateway','Machine health','other',"Your Machine's own log, so it spots its own trouble.",{connected:1}),
+ S('imap','Other email','mail','Mail from any other provider, over IMAP.',{last:true}),  // a catch-all: last in its group, not at O
+ S('zzz_other','Other things','other','A made-up catch-all in Other.',{last:true}),
  S('gmail','Gmail','mail','Your email, what comes in and what you send.',{connected:1,hosted_signin:'gmail'}),
  S('outlook','Outlook','mail','Your Outlook email, what comes in and what you send.',{hosted_signin:'outlook'}),
  S('outlook_calendar','Outlook Calendar','mail','Your Outlook meetings, so you go in prepared and follow up.',{hosted_signin:'outlook_calendar'}),
@@ -42,11 +45,15 @@ const sources=[
 const SUGGESTED=[{name:'trello',why:'unfinished',count:0},{name:'stripe',why:'mail',count:12},{name:'zoom',why:'meetings',count:9},
  {name:'gmail',why:'mail',count:40},{name:'nope',why:'mail',count:5},{name:'google_docs',why:'links',count:7}];
 let suggested=SUGGESTED;
+// Connections, Mail and calendar tab: the catch-all card (Other email) after the others, though the config lists it first
+const now=new Date().toISOString();
+const CARDS=[{id:'imap',service:'imap',last:true,display_name:'Other email',email:'me@mail.example',transport:'imap',boundary:'personal',events:3,recent_events:1,last_success:now},
+ {id:'gmail',service:'gmail',display_name:'Gmail',email:'me@gmail.example',transport:'broker',boundary:'personal',events:5,recent_events:2,last_success:now}];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const logo=/^\/brand\/logos\/([a-z_]+\.(svg|png))$/.exec(url.pathname);  // the logos, so the shots show them
  if(logo){res.setHeader('Content-Type',logo[2]==='svg'?'image/svg+xml':'image/png');res.end(await readFile(new URL('../dashboard/logos/'+logo[1],import.meta.url)));return}
- if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
+ if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:CARDS,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:'https://app.example.org/account',sources,suggested,codex:{status:'signed_out'}}));return}
   res.end('{}');return}
@@ -55,7 +62,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const read=page=>page.evaluate(()=>[...document.querySelectorAll('#connect-add .connect-group')].map(g=>({
+const read=page=>page.evaluate(()=>[...document.querySelectorAll('#connect-add .connect-group')].map(g=>({suggested:g.classList.contains('suggested'),
  head:g.querySelector('h4').textContent,tiles:[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent,
  why:n.querySelector('small.why')?.textContent||null,tag:n.querySelector('.cs-tag')?.textContent||null,what:n.querySelector('small.what')?.textContent||null,
  on:!!n.querySelector('.cs-on'),signin:n.dataset.connectSignin||null,logo:n.querySelector('.cs-icon img')?.getAttribute('src')||null}))})));
@@ -72,17 +79,23 @@ try{
    await page.locator('#connect-add .connect-group').first().waitFor();
    const groups=await read(page);
    const heads=groups.map(g=>g.head);
-   const rest=groups,tile=(h,n)=>rest.find(g=>g.head===h).tiles.find(x=>x.name===n);
-   assert.deepEqual(heads,['Mail and calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order, no Suggested section`);
-   for(const g of rest){const names=g.tiles.map(x=>x.name);
-    assert.deepEqual(names,[...names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})),`${tag}: ${g.head} reads A to Z`)}
+   const top=groups[0].suggested?groups[0]:null,rest=groups.filter(g=>!g.suggested),tile=(h,n)=>rest.find(g=>g.head===h).tiles.find(x=>x.name===n);
+   if(mode==='suggested'){
+    assert.equal(top?.head,'Suggested for you',`${tag}: Suggested for you comes first`);
+    assert.deepEqual(top.tiles.map(x=>[x.name,x.why,x.tag]),[['Trello','Setup didn’t finish',null],['Stripe','12 emails from Stripe in 30 days',null],
+     ['Zoom','9 Zoom meetings on your calendar',null]],`${tag}: at most 3 suggestions with their why, connected and unknown ones left out`);
+   }else assert.ok(!groups.some(g=>g.suggested)&&!heads.includes('Suggested for you'),`${tag}: no signal, no Suggested section`);
+   assert.deepEqual(rest.map(g=>g.head),['Mail and calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order`);
+   for(const g of rest){const names=g.tiles.map(x=>x.name).filter(n=>!sources.some(s=>s.last&&s.label===n));
+    assert.deepEqual(names,[...names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})),`${tag}: ${g.head} reads A to Z`);
+    assert.ok(g.tiles.every(x=>x.why===null),`${tag}: ${g.head} shows what each brings in, not a why`)}
    const all=rest.flatMap(g=>g.tiles.map(x=>x.name));
-   assert.equal(all.length,new Set(all).size,`${tag}: no source shows twice under its name`);
-   const marked=rest.flatMap(g=>g.tiles.filter(x=>x.tag).map(x=>[g.head,x.name,x.tag,x.why]));
-   assert.deepEqual(marked,mode==='suggested'?[['Meetings','Zoom','Suggested','9 Zoom meetings on your calendar'],['Customers','Stripe','Suggested','12 emails from Stripe in 30 days'],
-    ['Projects and code','Trello','Suggested','Setup didn’t finish']]:[],`${tag}: at most 3 suggestions, each tagged in its own group with its why; connected and unknown ones left out`);
-   assert.ok(rest.flatMap(g=>g.tiles).every(x=>!!x.tag===!!x.why),`${tag}: a why only on a suggested one`);
-   assert.deepEqual(tile('Docs and files','Google Docs').why,null,`${tag}: a 4th suggestion is a plain row in its group`);
+   assert.equal(all.length,new Set(all).size,`${tag}: no source shows twice among the groups`);
+   const marked=rest.flatMap(g=>g.tiles.filter(x=>x.tag).map(x=>[g.head,x.name,x.tag,!!x.what]));
+   assert.deepEqual(marked,mode==='suggested'?[['Meetings','Zoom','Suggested',true],['Customers','Stripe','Suggested',true],['Projects and code','Trello','Suggested',true]]:[],
+    `${tag}: each suggested one also stays in its own group, tagged Suggested, with what it brings in`);
+   assert.equal(tile('Docs and files','Google Docs').tag,null,`${tag}: a 4th suggestion is a plain row in its group`);
+   if(top)for(const x of top.tiles){const g=rest.flatMap(r=>r.tiles).find(y=>y.name===x.name);assert.deepEqual([x.signin,x.logo,x.on],[g.signin,g.logo,g.on],`${tag}: ${x.name} opens the same connect in both places`)}
    assert.deepEqual(rest.find(g=>g.head==='Meetings').tiles.map(x=>x.name),['Google Meet','Teams meetings','Zoom']);
    assert.deepEqual(rest.find(g=>g.head==='Projects and code').tiles.map(x=>x.name),['Codex','GitHub','Shortcut','Trello']);
    // Teams: two tiles, one sign-in, both connected
@@ -92,9 +105,22 @@ try{
    assert.equal(meet.logo,'brand/logos/teams.svg');
    assert.equal(tile('Customers','Salesforce').logo,'brand/logos/salesforce.svg',`${tag}: Salesforce shows its own logo`);
    assert.ok(rest.find(g=>g.head==='Other').tiles.some(x=>x.name==='Newthing'),`${tag}: a source without a known group is under Other`);
+   // a catch-all row (the source's `last`) closes its group, after the A to Z rows, in every group that has one
+   const lastOf=Object.fromEntries(sources.filter(x=>x.last).map(x=>[x.label,true]));
+   for(const g of rest){const names=g.tiles.map(x=>x.name),k=names.findIndex(n=>lastOf[n]);
+    if(k>=0)assert.ok(names.slice(k).every(n=>lastOf[n]),`${tag}: ${g.head}: the catch-all rows come last (${names.join(', ')})`)}
+   assert.equal(rest.find(g=>g.head==='Mail and calendar').tiles.at(-1).name,'Other email');
+   assert.equal(rest.find(g=>g.head==='Other').tiles.at(-1).name,'Other things');
+   if(mode==='none'&&width===1440&&scheme==='light'){
+    await page.goto(base+'/#connections');await page.locator('#connectors>article[data-conn="imap"]').waitFor({state:'attached'});
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connectors>article[data-group="mail"]')].map(a=>a.dataset.conn)),['gmail','imap'],'Connections: the catch-all card comes last in its tab');
+    await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith('Mail and calendar'))?.click());await page.locator('#connectors>article[data-conn="imap"]').waitFor();
+    if(shots)await page.screenshot({path:`${shots}/connections-mail-${width}-${scheme}.png`,fullPage:true});
+    await page.goto(base+'/#connections=add');await page.locator('#connect-add .connect-group').first().waitFor()}
    // nothing wider than the screen
    const wide=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    assert.ok(wide<=0,`${tag}: no sideways scroll (${wide}px)`);
+   if(shots)await page.evaluate(()=>Promise.all([...document.querySelectorAll('#connect-add img')].map(i=>{i.loading='eager';return i.complete?0:new Promise(r=>{i.onload=i.onerror=r})})));  // every logo in the shot
    if(shots)await page.screenshot({path:`${shots}/${tag}.png`,fullPage:true});
    await context.close()}}
  assert.deepEqual(errors,[]);
