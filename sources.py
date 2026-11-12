@@ -17,6 +17,7 @@ import subprocess
 import sys
 
 import google_api
+import imap_mail
 import ms_graph
 
 # The service's "busy, try again" statuses (5xx it recovers from by itself, 429): one quick retry, then the normal wait
@@ -71,6 +72,13 @@ def gog_read(config, account, api, version, method, params, scope):
     """Use the existing account's gog token; never authorize or write from ingestion. An account with
     "transport": "broker" gets a short-lived token from the configured Google broker instead (google_api.py).
     An Outlook account (Microsoft 365 or Outlook.com) answers the same Gmail and Calendar reads from Graph (ms_graph.py)."""
+    if account.get('service') == 'imap':  # any other mailbox, read over IMAP in Gmail's shapes (imap_mail.py)
+        if api != 'gmail':
+            raise SourceError('unsupported_transport')
+        try:
+            return imap_mail.gmail_call(config, credential, account, method, params)
+        except imap_mail.ImapError as error:
+            raise SourceError(error.category, error.status, error.retry_after) from None
     if account.get('service') in MICROSOFT_SERVICES:
         try:
             if api == 'calendar':
@@ -114,7 +122,9 @@ def gog_read(config, account, api, version, method, params, scope):
 # Outlook mail and calendar: they flow through the same sync, cards and sends as Gmail and Google Calendar, and their
 # messages are stored with the same 'gmail.message' kind (it means "an email" everywhere in the app).
 MICROSOFT_SERVICES = ('outlook', 'outlook_calendar')
-MAIL_SERVICES = ('gmail', 'outlook')
+# Any other mailbox over IMAP ('imap', imap_mail.py) flows through the same sync the same way. It reads only for now:
+# mail_account leaves it out, so nothing is sent from it.
+MAIL_SERVICES = ('gmail', 'outlook', 'imap')
 CALENDAR_SERVICES = ('calendar', 'outlook_calendar')
 
 
@@ -160,6 +170,13 @@ def gog_signed_in_since(config, account, since):
     `since` (an ISO time)."""
     if account.get('service') in MICROSOFT_SERVICES and since:
         return ms_graph.connected_since(config, account, since)
+    if account.get('service') == 'imap' and since:  # a new password saved (Reconnect): try it at once
+        try:
+            path = Path(os.environ.get('CREDENTIALS_DIRECTORY') or '/nonexistent') / account['credential']
+            path = path if path.exists() else Path(config['credentials'][account['credential']]).expanduser()
+            return path.stat().st_mtime > dt.datetime.fromisoformat(since).timestamp()
+        except (OSError, KeyError, TypeError, ValueError):
+            return False
     if account.get('transport') not in ('gog', 'graph') or not since:
         return False
     try:

@@ -1562,7 +1562,7 @@ class SharedGraph(shared_graph_takeback.TakeBack):
         return True
 
     # -- what feeds the team's Graph: per connection, and what the Fleet requires
-    MAIL_SERVICES = ('gmail', 'outlook', 'microsoft', 'ms_graph', 'salesflare', 'intercom')
+    MAIL_SERVICES = ('gmail', 'outlook', 'imap', 'microsoft', 'ms_graph', 'salesflare', 'intercom')
     CALENDAR_SERVICES = ('calendar', 'outlook_calendar', 'google_calendar', 'microsoft_calendar')
 
     def graph_policy(self, group, trusted=None):

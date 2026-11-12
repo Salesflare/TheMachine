@@ -81,7 +81,7 @@ def setup_card(store, config):
             phones = db.execute('SELECT count(*) FROM notify_app_devices').fetchone()[0]
         except sqlite3.Error:
             phones = 0
-    mail = [s for s in services if s in ('gmail', 'outlook')]
+    mail = [s for s in services if s in ('gmail', 'outlook', 'imap')]
     return {'closed': 'card' in closed, 'dismissed': sorted(closed - {'card'}), 'phones': phones, 'whatsapp': 'whatsapp' in services,
             'calendar': any(s in ('calendar', 'outlook_calendar') for s in services),
             'mail_accounts': len(mail), 'add': 'microsoft' if 'outlook' in mail and 'gmail' not in mail else 'google',

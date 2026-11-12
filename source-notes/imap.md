@@ -1,0 +1,1 @@
+- **Other email (IMAP).** Read like Gmail, but only INBOX and the Sent folder: mail filed in other folders isn't collected. It can't send yet, so offer a draft for the owner to send from their own mail app, not a Send button. `events` with `mailbox:true` searches the mailbox itself with from:, to:, subject: and in:sent.

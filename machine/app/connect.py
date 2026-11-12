@@ -344,6 +344,12 @@ def connect_form(source, args):
             if len(value) > 500:
                 raise ValueError('That answer is too long')
             answers[prompt] = value.strip()
+    for key, prompt, *options in form.get('advanced') or ():  # folded-away settings (an IMAP mailbox's servers): only when filled in
+        value = given.get(key)
+        if isinstance(value, str) and value.strip():
+            if len(value) > 200 or (options and value.strip() not in options[0]):
+                raise ValueError('Check the server settings')
+            answers[prompt] = value.strip()
     secret = args.get('secret')
     if form.get('secret') and isinstance(secret, str) and secret.strip():
         if len(secret) > 4096:

@@ -147,7 +147,7 @@ def message_event(account, raw, config=None):
     if files:  # sealed at rest with the rest of what a message says (not in message_seal.PLAIN_METADATA)
         metadata['attachments'] = files
     metadata.update(thread_id=raw.get('threadId'), labels=sorted(raw.get('labelIds', [])),
-                    source_url=raw.get('webLink') if account.get('service') == 'outlook' else
+                    source_url=raw.get('webLink') if account.get('service') in ('outlook', 'imap') else
                     'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + raw['id'],
                     truncated=len(body) > 40000, quoted_history_chars=quoted,
                     quoted_history_shortened=quoted > QUOTED_HISTORY_KEPT)

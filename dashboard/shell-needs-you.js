@@ -8,7 +8,7 @@ const SETUP_LINE='Reading your mail, first to-dos in a few minutes';
 // model: "Connecting ChatGPT…" in place of "Pick your AI", which comes back only when that sign-in fails or runs out.
 const aiConnecting=()=>{const live=state.review_live;return state.manage_url&&state.reviews_on===false&&live?.first_look?.why==='model'&&live.ai_connecting?.name||null};
 const setupLine=()=>{const ai=aiConnecting();return ai?t('Connecting {}…',ai):t(SETUP_LINE)};
-const setupStep=()=>{const why=state.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why,mail=(state.connectors||[]).some(c=>['gmail','outlook'].includes(c.service));
+const setupStep=()=>{const why=state.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why,mail=(state.connectors||[]).some(c=>['gmail','outlook','imap'].includes(c.service));
  if(why==='model'&&aiConnecting())return null;
  return why==='model'?{url:state.manage_url+'#model',action:'Pick your AI',text:'Pick your AI to get your first to-dos.'}:(why==='sources'||startsByItself())&&!mail?{url:state.manage_url+'#google',action:'Connect mail',text:'Connect your mail to get your first to-dos.'}:null};
 const turnOn=()=>{const step=setupStep();return step?{url:step.url,action:step.action}:state.manage_url?{url:state.manage_url+'#turn-on',action:'Turn on checks'}:{action:'Run: ./install.sh --activate'}};

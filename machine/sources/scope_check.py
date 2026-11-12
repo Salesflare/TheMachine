@@ -20,7 +20,7 @@ ENOUGH = 5            # people written to (outside the address's own domain) bef
 PERSONAL_SHARE = 0.7  # this share of them at a mail provider: personal mail
 WORK_SHARE = 0.1      # at most this share at a mail provider, and WORK_DOMAINS companies or more: work mail
 WORK_DOMAINS = 3
-MAIL_SERVICES = ('gmail', 'outlook')
+MAIL_SERVICES = ('gmail', 'outlook', 'imap')
 
 
 def hint_id(account):

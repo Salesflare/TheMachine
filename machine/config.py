@@ -72,4 +72,4 @@ LOG = logging.getLogger('personal-assistant')
 
 # A sync error that a new sign-in ends: Google's or Microsoft's sign-in expired or revoked, or Gmail's or Calendar's 401 (gog's
 # "HTTP_401" once Google revoked the grant). The sync watches for that sign-in, and a reconnect clears it at once.
-SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|\b(gmail|calendar):HTTP_401\b'
+SIGNIN_ERROR = r'(google|microsoft)_signin_(expired|pending)|microsoft_broker|\b(gmail|calendar):HTTP_401\b|\bimap_auth_failed\b'

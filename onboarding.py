@@ -42,16 +42,17 @@ UNIT_NAME = service.UNIT_NAME
 CONNECTORS = {'gmail': 'work-gmail', 'calendar': 'work-calendar', 'slack': 'work-slack',
               'crm': 'work-crm', 'android': 'personal-android', 'whatsapp': 'personal-whatsapp', 'telegram': 'personal-telegram',
               'gateway': 'openclaw-gateway'}
-SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar',
+SERVICES = {'gmail': 'gmail', 'calendar': 'calendar', 'outlook': 'outlook', 'outlook_calendar': 'outlook_calendar', 'imap': 'imap',
             'outlook-calendar': 'outlook_calendar', 'slack': 'slack', 'crm': 'salesflare', 'salesflare': 'salesflare',
             'android': 'android', 'whatsapp': 'whatsapp', 'telegram': 'telegram', 'telegram-chats': 'telegram', 'gateway': 'gateway'}
-LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
+LABELS = {'gmail': 'Gmail', 'calendar': 'Google Calendar', 'outlook': 'Outlook', 'outlook_calendar': 'Outlook Calendar', 'imap': 'Other email', 'slack': 'Slack', 'salesflare': 'Salesflare CRM',
           'android': 'Android notifications', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram chats', 'gateway': 'Machine health'}
 # What each built-in source brings in, in one short line (a connector's own is SETUP['what']). The dashboard's Add tab
 # and a hosted control plane's setup page show it under the name.
 WHAT = {'gmail': 'Your email, what comes in and what you send.', 'calendar': 'Your meetings, so you go in prepared and follow up.',
         'outlook': 'Your Outlook email, what comes in and what you send.',
         'outlook_calendar': 'Your Outlook meetings, so you go in prepared and follow up.',
+        'imap': 'Email from any provider: iCloud, Yahoo, Fastmail, your own domain.',
         'slack': 'Your direct messages, mentions and the threads you are in.',
         'salesflare': 'Accounts, contacts and deals, so it knows who matters.',
         'android': 'The notifications on your Android phone, through the OpenClaw app.',
@@ -72,7 +73,8 @@ PLACEHOLDERS = {'email': 'alex@example.com', 'connection_id': '00000000-0000-000
 IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'team_id', 'user_id', 'slack_host', 'node_id',
             'identity_sha256', 'store', 'calendar_id', 'handle', 'login', 'url', 'workspace_id', 'workspace_name', 'admin_id', 'region', 'stripe_account', 'account_name', 'shared',
             'exclude', 'excluded_terms', 'scope', 'browser_profile', 'browser_cdp', 'connected_at', 'boundary_by', 'tenant_id',
-            'scope_check'}
+            'scope_check', 'sent_folder', 'imap_host', 'imap_port', 'imap_security', 'username', 'smtp_host',
+            'smtp_port', 'smtp_security'}  # an IMAP mailbox's server settings are its own (step_imap)
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
@@ -100,6 +102,11 @@ HINTS = (
     ('microsoft_broker', 'the control plane could not give a Microsoft token; connect the account again from your account page'),
     ('outlook:HTTP_403', 'Microsoft refused: check the app registration\'s API permissions, then connect again'),
     ('outlook', 'Microsoft Graph did not answer as expected; it retries by itself'),
+    ('imap_auth_failed', 'the mail server refused the password: connect it again (many providers need an app password)'),
+    ('imap_tls_failed', 'no secure connection to the mail server: check its name, port and security'),
+    ('imap_unreachable', 'could not reach the mail server; it retries by itself (check its name if it keeps failing)'),
+    ('imap_password_missing', 'the mailbox has no saved password: connect it again'),
+    ('imap', 'the mail server did not answer as expected; it retries by itself'),
     ('gmail', 'gog could not read Gmail: authorize again, and check the keyring password file'),
     ('calendar', 'gog could not read the calendar: authorize again, and check the keyring password file'),
     ('slack_signin_expired', 'the Slack sign-in ended or was removed in Slack; sign in with Slack again'),
@@ -215,6 +222,11 @@ class WebUI:
         with self._cond:
             self.lines += [line.strip() for line in str(text).splitlines() if line.strip()]
             del self.lines[:-200]
+
+    def given(self, prompt):
+        """What the dashboard's form answered to this prompt, without asking; None when it left it."""
+        found = self._match(self.answers, prompt)
+        return found if found not in (None, '') else None
 
     def view(self):
         with self._cond:
@@ -335,10 +347,11 @@ WEB_NOTES = {
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
     'telegram': 'Next, you scan a QR code in Telegram.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it',
+    'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
 }
-WEB_LEARN = {'telegram': 'telegram-chats'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
-WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key'}
-WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']]}
+WEB_LEARN = {'telegram': 'telegram-chats', 'imap': 'imap'}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot
+WEB_SECRETS = {'slack': 'Maton API key', 'salesflare': 'Salesflare API key', 'imap': 'Password'}
+WEB_ASKS = {'whatsapp': [['phone', 'Your WhatsApp phone number, with its country code (+32 470 12 34 56)']], 'gmail': [['email', 'Google account']], 'calendar': [['email', 'Google account']], 'imap': [['email', 'Email address']]}
 TERMINAL_NOTE = re.compile(r'\b(?:openclaw|gh auth|assistant connect|wacli)\b|config\.json')  # setup-file notes stay in the terminal
 NO_SCOPE = {'android', 'gateway', 'docs'}  # a device or the server itself; Docs follows the address it reads for
 
@@ -362,7 +375,7 @@ def web_form(config, service):
     company = works[0] if works else next((company_of(a.get('email')) for a in config.get('accounts', []) if company_of(a.get('email'))), '')
     return {'ask': ask, 'secret': secret, 'learn': WEB_LEARN.get(service), 'note': None if TERMINAL_NOTE.search(note) else note or None,
             'scope': scope, 'personal': service in ('whatsapp', 'telegram'), 'browser': setup.get('browser'), 'company': company if scope else '',
-            'auto': scope and service in ADDRESS_SCOPE}
+            'auto': scope and service in ADDRESS_SCOPE, 'advanced': IMAP_FIELDS if service == 'imap' else None}
 
 
 def run(args, **kwargs):
@@ -947,6 +960,9 @@ def new_account(config, service, account_id=None, ui=None):
     elif service in MICROSOFT:
         account = dict(MICROSOFT[service])
         template_id = account['id']
+    elif service == 'imap':
+        account = dict(IMAP_ACCOUNT)
+        template_id = account['id']
     elif service in LABELS:
         name = next(k for k, v in SERVICES.items() if v == service)
         example = json.loads((ROOT / 'config.example.json').read_text())
@@ -1050,7 +1066,7 @@ def check(config, account):
     a = assistant()
     service = account.get('service', 'gmail')
     try:
-        if service in ('gmail', 'outlook'):
+        if service in ('gmail', 'outlook', 'imap'):
             a.Gmail(config, account).profile()
         elif service in ('calendar', 'outlook_calendar'):
             a.Calendar(config, account).profile()
@@ -2060,7 +2076,113 @@ def step_microsoft(config, account, ui):
     ui.say('  signed in' if getattr(ui, 'web', False) else '  signed in; the sign-in is saved to ' + str(path))
 
 
-STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'slack': step_slack, 'salesflare': step_salesflare,
+# Any other mailbox over IMAP (imap_mail.py): the + Add form asks the address and password; its Server settings, folded
+# away, fill in or change what imap_presets.py finds. The step asks these prompts (the form's labels, IMAP_FIELDS).
+IMAP_ACCOUNT = {'id': 'work-imap', 'service': 'imap', 'transport': 'imap', 'boundary': 'work:Acme'}
+IMAP_FIELDS = [['imap_host', 'IMAP server'], ['imap_port', 'IMAP port'], ['imap_security', 'IMAP security', ['SSL/TLS', 'STARTTLS']],
+               ['username', 'Username'], ['smtp_host', 'SMTP server'], ['smtp_port', 'SMTP port'],
+               ['smtp_security', 'SMTP security', ['SSL/TLS', 'STARTTLS']]]
+STARTTLS_PORTS = (25, 143, 587, 1025, 1143, 2525)
+
+
+def imap_security(text, port):
+    """SSL/TLS or STARTTLS as typed: 'ssl' or 'starttls'. A bare "TLS" on a submission port (587) is STARTTLS, as
+    providers' help pages write it. Anything without TLS is refused."""
+    value = re.sub(r'[^a-z]', '', str(text or '').lower())
+    if value in ('ssl', 'ssltls', 'implicittls', 'implicit'):
+        return 'ssl'
+    if value in ('starttls', 'tlsstarttls'):
+        return 'starttls'
+    if value == 'tls':
+        return 'starttls' if port in STARTTLS_PORTS else 'ssl'
+    raise SetupError('The Machine only connects to mail servers over TLS', 'pick SSL/TLS or STARTTLS in Server settings')
+
+
+def imap_port(text, default):
+    value = str(text or '').strip() or str(default)
+    if not value.isdigit() or not 0 < int(value) < 65536:
+        raise SetupError('That port is not a number from 1 to 65535', 'check the ports in Server settings')
+    return int(value)
+
+
+IMAP_REFUSED = {
+    'imap_auth_failed': 'The mail server refused the email address or password',
+    'imap_tls_failed': 'Couldn’t make a secure connection to the mail server',
+    'imap_unreachable': 'Couldn’t reach the mail server',
+    'timeout': 'The mail server didn’t answer in time',
+    'imap_rate_limited': 'The mail server asked to slow down',
+    'imap_unavailable': 'The mail server is busy',
+    'imap_no_inbox': 'The mail server has no inbox for this account',
+}
+
+
+def step_imap(config, account, ui):
+    """Any other mailbox over IMAP: the address, its server settings (found for it, or as typed in Server settings) and
+    its password, checked by logging in before anything is saved. Gmail and Microsoft mail are steered to their own
+    connection, which needs no password. Signing in again asks only for the password."""
+    import imap_mail  # noqa: PLC0415
+    import imap_presets  # noqa: PLC0415
+    again = bool(account.get('email')) and getattr(ui, 'reconnect', False)
+    if not again:
+        email = ui.ask('Email address', account.get('email') or '').strip().lower()
+        if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email):
+            raise SetupError('No email address given', 'fill in your email address')
+        account['email'] = email
+        typed = getattr(ui, 'given', lambda prompt: None)('IMAP server')
+        found = {} if typed else imap_presets.lookup(email)
+        if found.get('oauth'):
+            gmail = found['oauth'] == 'gmail'
+            raise SetupError(f"{email} signs in with {'Google' if gmail else 'Microsoft'}",
+                             f"add {'Gmail' if gmail else 'Outlook'} instead: it needs no password")
+        if found.get('name'):
+            ui.say(f"  {found['name']} settings found")
+        host = ui.ask('IMAP server', found.get('imap_host') or '').strip().lower()
+        if not host or not re.fullmatch(r'[a-z0-9.:\[\]-]+', host):
+            raise SetupError('No IMAP server given', 'fill in Server settings with what your provider gives for mail apps')
+        security = imap_security(ui.ask('IMAP security', {'ssl': 'SSL/TLS', 'starttls': 'STARTTLS'}.get(found.get('imap_security'), 'SSL/TLS')),
+                                 int(found.get('imap_port') or 993))
+        port = imap_port(ui.ask('IMAP port', str(found.get('imap_port') or (993 if security == 'ssl' else 143))), 993)
+        if security == 'ssl' and port in STARTTLS_PORTS and not found:
+            security = 'starttls'  # SSL/TLS left as it was, with a STARTTLS port typed: that port's way
+        smtp_guess = found.get('smtp_host') or (re.sub(r'^imap\.', 'smtp.', host) if host.startswith('imap.') else host)
+        smtp_security = imap_security(ui.ask('SMTP security', {'ssl': 'SSL/TLS', 'starttls': 'STARTTLS'}.get(found.get('smtp_security'), 'STARTTLS')),
+                                      int(found.get('smtp_port') or 587))
+        account.update(imap_host=host, imap_port=port, imap_security=security,
+                       username=ui.ask('Username', found.get('username') or email).strip() or email,
+                       smtp_host=ui.ask('SMTP server', smtp_guess).strip().lower() or smtp_guess,
+                       smtp_security=smtp_security,
+                       smtp_port=imap_port(ui.ask('SMTP port', str(found.get('smtp_port') or (465 if smtp_security == 'ssl' else 587))), 587))
+    account['credential'] = 'imap-' + account['id']
+    path = Path(config.setdefault('credentials', {}).setdefault(account['credential'], str(data_dir(config) / f"imap-{account['id']}"))).expanduser()
+    has = path.exists() and bool(path.read_text().strip())
+    password = ui.secret('Password' + (' (Enter keeps the saved one)' if has else ''))
+    if not password and has:
+        password = path.read_text().strip()
+    if not password:
+        raise SetupError('No password given', 'fill in the password for this mailbox')
+    try:
+        sent = imap_mail.check(config, lambda _config, _name: password, account)  # before anything is saved
+    except imap_mail.ImapError as error:
+        what = IMAP_REFUSED.get(error.category, 'The mail server didn’t answer as expected')
+        found = imap_presets.builtin(account['email']) or {}
+        if error.category == 'imap_auth_failed':
+            fix = ('use the password Proton Mail Bridge shows' if found.get('password') == 'bridge'
+                   else f"use your {found['name']} mail password" if found.get('password') == 'mail'
+                   else 'use an app password: ' + found['help'] if found.get('help')
+                   else 'check the password; many providers need an app password for mail apps')
+        else:
+            fix = 'check the server name, port and security in Server settings'
+        raise SetupError(what, fix) from None
+    if sent:
+        account['sent_folder'] = sent
+    else:
+        account.pop('sent_folder', None)
+        ui.say('  no Sent folder found: reading the inbox only')
+    write_private(path, password + '\n')
+    ui.say('  signed in')
+
+
+STEPS = {'gmail': step_google, 'calendar': step_google, 'outlook': step_microsoft, 'outlook_calendar': step_microsoft, 'imap': step_imap, 'slack': step_slack, 'salesflare': step_salesflare,
          'whatsapp': step_whatsapp, 'telegram': step_telegram, 'android': step_android, 'gateway': step_gateway}
 
 
