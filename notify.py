@@ -1,5 +1,6 @@
-"""Notifications: which kinds reach the owner on which channel, when they are left out, and the morning digest
-(docs/help/notifications.md).
+"""Notifications: which kinds reach the owner on which channel, when they are left out, and the morning and evening
+digests (docs/help/notifications.md). The evening digest is set like the morning's: its own row here (kind 'evening')
+and its time under Work hours (`evening_at` in config.json, 15 minutes before the end of the hours unless set).
 
 Kinds: a new to-do, a result or question (ready to approve, stuck, a sign-in, a Fleet question), a reminder (a snooze or
 a wait coming back) and the morning digest. Channels: push (the dashboard app on a phone or computer, sent by this
@@ -46,12 +47,13 @@ from i18n import t
 
 LOG = logging.getLogger('personal-assistant')
 
-KINDS = ('todo', 'result', 'reminder', 'digest')
+KINDS = ('todo', 'result', 'reminder', 'digest', 'evening')
 CHANNELS = ('push', 'telegram', 'email')
 # Email is on for every kind: many people never get push working, and it only goes for what is still unseen and
 # waiting after EMAIL_AFTER, bundled. The digest is a push and an email; Telegram already has the weekly recap.
 DEFAULTS = {'todo': {'push': True, 'telegram': True, 'email': True}, 'result': {'push': True, 'telegram': True, 'email': True},
-            'reminder': {'push': True, 'telegram': True, 'email': True}, 'digest': {'push': True, 'telegram': False, 'email': True}}
+            'reminder': {'push': True, 'telegram': True, 'email': True}, 'digest': {'push': True, 'telegram': False, 'email': True},
+            'evening': {'push': True, 'telegram': False, 'email': True}}  # the evening digest: as the morning's
 SCHEMA = 'CREATE TABLE IF NOT EXISTS notify_prefs(key TEXT PRIMARY KEY,value TEXT NOT NULL)'
 DIGESTS = 'CREATE TABLE IF NOT EXISTS notify_digests(day TEXT PRIMARY KEY,status TEXT NOT NULL,created_at TEXT NOT NULL,channels TEXT)'
 ACTIVE_FOR = 120  # seconds: a page's "in use" lasts this long (it says so every minute while it is)
@@ -66,6 +68,10 @@ QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel
          'title TEXT NOT NULL,payload TEXT,show INTEGER NOT NULL DEFAULT 1,created REAL NOT NULL,due REAL NOT NULL)')
 DIGEST_VIEW = '#calendar?view=agenda'  # where the morning's notification opens: today's meetings and what's due
 DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine was off) waits for the next day
+# The evening digest: what got done and what's open for the next work day, by default this long before the hours end
+EVENING_BEFORE = dt.timedelta(minutes=15)
+EVENING_LISTED = 3  # to-dos named per part; the rest is a count
+EVENING_VIEW = '#todos'  # where the evening's notification opens: what still needs the owner
 MAIL_SUBJECT, MAIL_TEXT = 120, 4000
 # Phones with the mobile app: what Settings shows. The control plane holds their push tokens and sends the wakeups.
 APP_DEVICES = 'CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY,platform TEXT NOT NULL,label TEXT NOT NULL,created_at TEXT NOT NULL)'
@@ -659,6 +665,147 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
     return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
             'text': '\n'.join(lines).strip(), 'subject': head}
+
+
+# -- the evening digest
+def evening_time(evening_at, start, end):
+    """When the evening digest goes ('HH:MM'): its own time (evening_at), else EVENING_BEFORE before the end of the
+    hours (round-the-clock hours too: before their turn of the day). The dashboard shows the same default
+    (settings-general.js, eveningAt) and the Machine sends it as evening_time (hours())."""
+    if evening_at:
+        return evening_at
+    hour, minute = (int(x) for x in end.split(':'))
+    left = (hour * 60 + minute - int(EVENING_BEFORE.total_seconds() // 60)) % (24 * 60)
+    return '%02d:%02d' % divmod(left, 60)
+
+
+def evening_due(local, at, start, end, work_day, sent):
+    """The work day (a date) whose evening digest goes now, or None: from its time (`at`, evening_time) for at most
+    DIGEST_LATE, within the hours, on a work day, once (sent(iso day): it went or is going). With hours that wrap past
+    midnight a time before their start is on the next calendar day: that evening is the day they started."""
+    if not at:
+        return None
+    now_hm = local.strftime('%H:%M')
+    if not (start == end or (start <= now_hm < end if start < end else now_hm >= start or now_hm < end)):
+        return None
+    hour, minute = (int(x) for x in at.split(':'))
+    for back in (0, 1):
+        day = (local - dt.timedelta(days=back)).date()
+        target = dt.datetime.combine(day + dt.timedelta(days=1 if end < start and at < start else 0), dt.time(hour, minute), local.tzinfo)
+        if target <= local < target + DIGEST_LATE and work_day(day) and not sent(day.isoformat()):
+            return day
+    return None
+
+
+def evening_key(day):
+    """The evening digest's row in notify_digests (the morning's is the bare day)."""
+    return 'evening:' + str(day)
+
+
+def evening_headline(name, done, held):
+    """The evening digest's first line (the email's subject, the push's title): a greeting and the day in a count, the
+    to-dos done first, else the meetings held."""
+    if done:
+        return t('Evening {}, {} to-dos done today', name, done) if name else t('Good evening, {} to-dos done today', done)
+    return t('Evening {}, {} meetings today', name, held) if name else t('Good evening, {} meetings today', held)
+
+
+EVENING_AREAS = ('work', 'personal')  # the order of the evening digest's parts
+EVENING_COPIED = 30  # at most this many done lines in a part's copy
+
+
+def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, clock=lambda iso: iso[11:16], name='',
+                    next_day=None, tomorrow=True):
+    """The evening digest: what the day brought and what is open for the next work day, short, in a Work part and a
+    Personal part so each can be copied on its own. None when the day had nothing (no to-do done, no meeting held): then
+    nothing is sent, whatever waits.
+
+    done: the to-dos finished today [{id, title, area}], the ones that matter first; held: today's meetings with other
+    people [{at, title, named, area}] (named: one worth naming, not a routine one); waiting: how many to-dos still need
+    the owner (waiting_count); due: what is due on the next work day [{id?, title, area}] (to-dos and the owner's own
+    promises); ahead: that day's first meetings worth naming [{at, title, area}]. area: 'work' or 'personal' (Work when
+    left out). A part with nothing in it is left out. next_day: that day ("Mon, Nov 16") when it isn't tomorrow
+    (tomorrow False: a Friday's evening speaks of Monday). At most EVENING_LISTED lines of each kind per part, the rest as
+    a count. Without show_text (Careful, or notify_text off) only counts and the first meeting's time: no titles anywhere.
+    Returns {push: {title, body, url, tag}, text, subject, sections: [{area, copy}]}: copy is that part as plain text
+    (every to-do done, no links), to paste somewhere else."""
+    if not done and not held:
+        return None
+    head = evening_headline(name, len(done), len(held))
+    side = lambda x: 'personal' if x.get('area') == 'personal' else 'work'
+    of = lambda items, area: [x for x in items if side(x) == area]
+
+    def link(item):
+        ident = str(item.get('id') or '')
+        return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
+
+    def part(area, short):
+        """One part's lines: in the message (short: EVENING_LISTED, links) or its copy (every to-do done, plain)."""
+        d, h, u, a = of(done, area), of(held, area), of(due, area), of(ahead, area)
+        out = []
+        if d or h:
+            out.append(t('Done today'))
+            if show_text:
+                most = EVENING_LISTED if short else EVENING_COPIED
+                out += ['• ' + clip(i['title'], 80) for i in d[:most]]
+                if len(d) > most:
+                    out.append(t('{} more done.', len(d) - most))
+            elif d:
+                out.append(t('{} to-dos done.', len(d)))
+            named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
+            names = ', '.join(clip(x, 40) for x in named)
+            if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
+                out.append(t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
+                           else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
+        if u or a:
+            out.append(t('Open for tomorrow') if tomorrow else t('Open for {}', next_day))
+            if show_text:
+                out += ['• ' + clock(m['at']) + ' ' + clip(m['title'], 60) for m in a[:2]]
+                out += ['• ' + t('Due: {}', clip(i['title'], 80)) + (link(i) if short else '') for i in u[:EVENING_LISTED]]
+                if len(u) > EVENING_LISTED:
+                    out.append(t('{} more due.', len(u) - EVENING_LISTED))
+            else:
+                if a:
+                    out.append(t('Tomorrow, first meeting at {}', clock(a[0]['at'])) + '.' if tomorrow
+                               else t('{}, first meeting at {}', next_day, clock(a[0]['at'])) + '.')
+                if u:
+                    out.append(t('{} due tomorrow', len(u)) + '.' if tomorrow else t('{} due on {}', len(u), next_day) + '.')
+        return out
+    title = {'work': t('Work'), 'personal': t('Personal')}
+    lines, sections = [head], []
+    for area in EVENING_AREAS:
+        body = part(area, True)
+        if body:
+            lines += ['', title[area], *body]
+            sections.append({'area': area, 'copy': '\n'.join(part(area, False))})
+    if waiting:
+        lines += ['', t('{} to-dos still need you.', waiting)]
+    if root:
+        lines += ['', t('Open The Machine: {}', root)]
+    # The push: what got done in a line, then the one thing to know for the next work day
+    soon = []
+    if ahead:
+        at = clock(ahead[0]['at'])
+        soon.append(t('Tomorrow, first meeting at {}', at) if tomorrow else t('{}, first meeting at {}', next_day, at))
+    if due:
+        soon.append(t('{} due tomorrow', len(due)) if tomorrow else t('{} due on {}', len(due), next_day))
+    after = soon[:1] or ([t('{} to-dos still need you', waiting)] if waiting else [])
+    room = APP_BODY - len(after[0]) - 1 if after else APP_BODY
+    ordered = of(done, 'work') + of(done, 'personal')
+    if show_text and done:
+        # Two titles when they fit, else one, so the count of the rest is never clipped away
+        options = []
+        for n in (2, 1):
+            first = ', '.join(clip(i['title'], 40) for i in ordered[:n])
+            options.append(t('Done: {} and {} more', first, len(done) - n) if len(done) > n else t('Done: {}', first))
+        summary = next((x for x in options if len(x) <= room), options[-1])
+    elif done:
+        summary = t('{} to-dos done.', len(done))
+    else:
+        summary = t('{} meetings.', len(held))
+    body = '\n'.join([clip(summary, room), *after])
+    return {'push': {'title': head, 'body': body, 'url': (root or './') + EVENING_VIEW, 'tag': 'evening'},
+            'text': '\n'.join(lines).strip(), 'subject': head, 'sections': sections}
 
 
 # -- email, through the control plane (hosted and paired Machines)

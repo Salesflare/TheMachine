@@ -202,12 +202,13 @@ def recap_presentation(buttons):
     return {'blocks': blocks or [{'type': 'buttons', 'buttons': []}]}
 
 
-def recap_meetings(db, start, end, cards):
+def recap_meetings(db, start, end, cards, routine=False):
     """The week ahead's meetings worth a line: the owner's own (calendar_owned: on a shared calendar, only those they
     organize or are invited to), with other people, said yes or not answered, and either a one-off or one with a card on
-    it (a weekly one-on-one is routine, unless something is prepared for it). A meeting on two calendars shows once."""
+    it (a weekly one-on-one is routine, unless something is prepared for it). A meeting on two calendars shows once.
+    routine: the routine ones too (the evening digest counts every meeting held)."""
     seen, out = set(), []
-    for r in db.execute("SELECT id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND occurred_at>=? AND occurred_at<? "
+    for r in db.execute("SELECT id,account_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 AND occurred_at>=? AND occurred_at<? "
                         'ORDER BY occurred_at,id LIMIT 300', (start, end)):
         m = json.loads(r['metadata'])
         if not calendar_owned(m):
@@ -223,13 +224,13 @@ def recap_meetings(db, start, end, cards):
         if m.get('all_day') or me.get('responseStatus') == 'declined' or m.get('status') == 'cancelled':
             continue
         others = [x for x in people if not is_me(x)]
-        if not others or (m.get('recurring_event_id') and not card):
+        if not others or (m.get('recurring_event_id') and not card and not routine):
             continue
         keys = calendar_keys(m, r['title'], r['occurred_at'], None)
         if keys & seen:
             continue
         seen |= keys
-        out.append({'at': r['occurred_at'], 'title': r['title'], 'guests': len(others), 'card': card})
+        out.append({'at': r['occurred_at'], 'title': r['title'], 'guests': len(others), 'card': card, 'account': r['account_id']})
     return out
 
 

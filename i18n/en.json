@@ -1282,6 +1282,7 @@
  "Done": "Done",
  "Done / dismissed": "Done / dismissed",
  "Done saves when you’re back online.": "Done saves when you’re back online.",
+ "Done today": "Done today",
  "Done when": "Done when",
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"",
  "Done when: {}": "Done when: {}",
@@ -1291,6 +1292,7 @@
  "Done. Waiting for them to tap Book it.": "Done. Waiting for them to tap Book it.",
  "Done:": "Done:",
  "Done: {}": "Done: {}",
+ "Done: {} and {} more": "Done: {} and {} more",
  "Done: {}.": "Done: {}.",
  "Don’t answer": "Don’t answer",
  "Don’t invite {}": "Don’t invite {}",
@@ -1329,6 +1331,7 @@
  "Due {}": "Due {}",
  "Due {}.": "Due {}.",
  "Due: a date, or a date and time": "Due: a date, or a date and time",
+ "Due: {}": "Due: {}",
  "Duration {}": "Duration {}",
  "EUR": "EUR",
  "Each AI you approved, with what it may do and everything it did.": "Each AI you approved, with what it may do and everything it did.",
@@ -1412,6 +1415,15 @@
  "Environment id": "Environment id",
  "Error log": "Error log",
  "Esc": "Esc",
+ "Evening digest": "Evening digest",
+ "Evening {}, {} meetings today": {
+  "one": "Evening {}, {} meeting today",
+  "other": "Evening {}, {} meetings today"
+ },
+ "Evening {}, {} to-dos done today": {
+  "one": "Evening {}, {} to-do done today",
+  "other": "Evening {}, {} to-dos done today"
+ },
  "Event": "Event",
  "Event account does not match the checkpoint boundary": "Event account does not match the checkpoint boundary",
  "Events": "Events",
@@ -1800,6 +1812,14 @@
  "Goes within the hour": "Goes within the hour",
  "Gone quiet": "Gone quiet",
  "Gone quiet: {}": "Gone quiet: {}",
+ "Good evening, {} meetings today": {
+  "one": "Good evening, {} meeting today",
+  "other": "Good evening, {} meetings today"
+ },
+ "Good evening, {} to-dos done today": {
+  "one": "Good evening, {} to-do done today",
+  "other": "Good evening, {} to-dos done today"
+ },
  "Good morning": "Good morning",
  "Good morning, first meeting at {}": "Good morning, first meeting at {}",
  "Good morning, ready for your OK: {}": "Good morning, ready for your OK: {}",
@@ -3463,6 +3483,8 @@
  "Open by stage": "Open by stage",
  "Open chatgpt.com/plugins, press +, then Add custom MCP server.": "Open chatgpt.com/plugins, press +, then Add custom MCP server.",
  "Open draft": "Open draft",
+ "Open for tomorrow": "Open for tomorrow",
+ "Open for {}": "Open for {}",
  "Open in Google Calendar ↗": "Open in Google Calendar ↗",
  "Open in Google Docs ↗": "Open in Google Docs ↗",
  "Open in Intercom": "Open in Intercom",
@@ -5729,6 +5751,7 @@
  "Tomorrow": "Tomorrow",
  "Tomorrow {}": "Tomorrow {}",
  "Tomorrow · 9:00": "Tomorrow · 9:00",
+ "Tomorrow, first meeting at {}": "Tomorrow, first meeting at {}",
  "Too early for numbers.": "Too early for numbers.",
  "Too late to undo that": "Too late to undo that",
  "Too many asks today": "Too many asks today",
@@ -7084,6 +7107,8 @@
   "other": "{} drafts changed: read them, then send."
  },
  "{} due": "{} due",
+ "{} due on {}": "{} due on {}",
+ "{} due tomorrow": "{} due tomorrow",
  "{} edits to the drafting guide": {
   "one": "{} edit to the drafting guide",
   "other": "{} edits to the drafting guide"
@@ -7276,6 +7301,18 @@
   "one": "{} meeting today, at {}.",
   "other": "{} meetings today, the first at {}."
  },
+ "{} meetings.": {
+  "one": "{} meeting.",
+  "other": "{} meetings."
+ },
+ "{} meetings: {} and {} more.": {
+  "one": "{} meeting: {} and {} more.",
+  "other": "{} meetings: {} and {} more."
+ },
+ "{} meetings: {}.": {
+  "one": "{} meeting: {}.",
+  "other": "{} meetings: {}."
+ },
  "{} message": "{} message",
  "{} message from {}": "{} message from {}",
  "{} message to {}": "{} message to {}",
@@ -7318,6 +7355,8 @@
   "one": "{} more can wait.",
   "other": "{} more can wait."
  },
+ "{} more done.": "{} more done.",
+ "{} more due.": "{} more due.",
  "{} more in Promises": "{} more in Promises",
  "{} more like this wait. Always shares them too.": {
   "one": "{} more like this waits. Always shares it too.",
@@ -7610,6 +7649,10 @@
  },
  "{} to-dos done": "{} to-dos done",
  "{} to-dos done with The Machine.": "{} to-dos done with The Machine.",
+ "{} to-dos done.": {
+  "one": "{} to-do done.",
+  "other": "{} to-dos done."
+ },
  "{} to-dos for you": {
   "one": "{} to-do for you",
   "other": "{} to-dos for you"
@@ -7621,6 +7664,14 @@
  "{} to-dos held until {}": {
   "one": "{} to-do held until {}",
   "other": "{} to-dos held until {}"
+ },
+ "{} to-dos still need you": {
+  "one": "{} to-do still needs you",
+  "other": "{} to-dos still need you"
+ },
+ "{} to-dos still need you.": {
+  "one": "{} to-do still needs you.",
+  "other": "{} to-dos still need you."
  },
  "{} to-dos waiting": {
   "one": "{} to-do waiting",
@@ -7703,6 +7754,7 @@
  "{}'s Machine has new keys. Share {} again?": "{}'s Machine has new keys. Share {} again?",
  "{}'s board, shared with the team": "{}'s board, shared with the team",
  "{}'s friend request is no longer open.": "{}'s friend request is no longer open.",
+ "{}, first meeting at {}": "{}, first meeting at {}",
  "{}, for {}": "{}, for {}",
  "{}, in your Machine’s browser": "{}, in your Machine’s browser",
  "{}, {}, {} and {} more": "{}, {}, {} and {} more",

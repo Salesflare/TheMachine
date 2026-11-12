@@ -13,10 +13,11 @@ Fewer notifications, or other ones? In **Settings**, **Notifications**, pick whe
 - **Results and questions**: a reply ready to send, a sign-in a task needs, a Fleet question.
 - **Reminders**: snoozed to-dos, and replies you wait for, coming back.
 - **Morning digest**: one short summary of your day. See below.
+- **Evening digest**: what got done today and what's open for tomorrow. See below.
 
-Each kind has a switch for **Push** (the app on your phone or computer), **Telegram** once it's set up, and **Email** on a hosted Machine or one on The Machine Network. All are on, except the digest on Telegram.
+Each kind has a switch for **Push** (the app on your phone or computer), **Telegram** once it's set up, and **Email** on a hosted Machine or one on The Machine Network. All are on, except the digests on Telegram.
 
-Your **Work hours** are in the same tab: work days, when notifications may go out, when snoozes land, the digest time and your time zone. See [Work hours](work-hours.md).
+Your **Work hours** are in the same tab: work days, when notifications may go out, when snoozes land, the digest times and your time zone. See [Work hours](work-hours.md).
 
 ## Only what can't wait
 
@@ -73,6 +74,15 @@ It comes on work days at your **Morning digest** time, unless there's nothing to
 Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. A promise opens its to-do, or its own page when it has none yet.
 
 The push says the same without links. Tap it to open today in the **Calendar**.
+
+## The evening digest
+
+It comes once on work days at its time in **Work hours**, by default 15 minutes before **Until**, the ways you picked in its row above. A day without a to-do done or a meeting held gets none. It starts with the day in a count, like "Evening Sam, 4 to-dos done today", then a **Work** part and a **Personal** part. A part with nothing in it is left out. Each has:
+
+- **Done today**: up to three to-dos you or your Machine finished, how many more, and your meetings, like "3 meetings: Pricing call and 2 more.";
+- **Open for tomorrow** (on a Friday, your next work day): the first meetings and what's due.
+
+It ends with how many to-dos still need you. Tap the push to open your to-dos. To stop it, turn off its row.
 
 ## Privacy
 

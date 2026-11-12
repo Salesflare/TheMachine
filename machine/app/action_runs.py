@@ -119,6 +119,7 @@ class ActionRunsApp:
                 deliver(self.store, self.config)
                 self.notify_step()
                 self.digest_step()
+                self.evening_step()
                 app_clear_step(self.store, self.config)  # notifications on phones for what no longer waits
             except Exception as error:
                 loop_failed(LOG, 'delivery', error)

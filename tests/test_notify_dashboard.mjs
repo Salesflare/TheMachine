@@ -10,14 +10,14 @@ const {chromium}=await import('./browser.mjs');
 // whether it is in use, like Slack: visible, in focus and touched in the last 10 minutes; in the background or idle it
 // is not (notify_active). At 390px the grid stays inside the screen. Nothing is sent: the server here is a fixture.
 const dashboard=await dashboardPage();
-const prefs={todo:{push:true,telegram:true,email:true},result:{push:true,telegram:true,email:true},reminder:{push:true,telegram:true,email:true},digest:{push:true,telegram:false,email:true}};
+const prefs={todo:{push:true,telegram:true,email:true},result:{push:true,telegram:true,email:true},reminder:{push:true,telegram:true,email:true},digest:{push:true,telegram:false,email:true},evening:{push:true,telegram:false,email:true}};
 let telegram=true;const posts=[],beats=[];
 const view=()=>({prefs,telegram,email:true,push_devices:0,push_ready:true,digest_at:'08:30'});
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],
-  hours:{days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true},notify:view()}));return}
+  hours:{days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',evening_time:'17:45',timezone:'UTC',saveable:true},notify:view()}));return}
  if(url.pathname==='/api/action'){let body='';for await(const c of req)body+=c;const {action,args}=JSON.parse(body);posts.push(action);beats.push(action==='notify_active'?args:null);
   if(action==='notify_set'){prefs[args.kind][args.channel]=args.on;res.end(JSON.stringify(view()));return}
   if(action==='notify_preview'){res.end(JSON.stringify({empty:false,text:'Today\n• 09:30 Planning with the agency'}));return}
@@ -42,7 +42,7 @@ try{
   const cols=await page.locator('#notify-grid .notify-col').allInnerTexts();
   assert.deepEqual(cols,telegram?['Push','Telegram','Email']:['Push','Email']);
   // Email for every kind, no dashes
-  assert.equal(await page.locator('#notify-grid [data-notify-channel="email"]').count(),4);
+  assert.equal(await page.locator('#notify-grid [data-notify-channel="email"]').count(),5);
   assert.equal(await page.locator('#notify-grid .notify-na').count(),0);
   const sw=page.locator('[data-notify-kind="todo"][data-notify-channel="email"]');
   assert.equal(await sw.getAttribute('aria-checked'),'true');
@@ -55,6 +55,10 @@ try{
   assert.match(await page.locator('#notify-grid [data-notify-preview]').locator('xpath=..').innerText(),/^Work days at 0?9:05, after snoozes land/);
   assert.deepEqual(await page.evaluate(()=>[digestTime('08:30',{morning:'09:00',start:'08:00',end:'18:00'}),digestTime('10:00',{morning:'09:00',start:'08:00',end:'18:00'}),
    digestTime('08:30',{morning:'17:58',start:'08:00',end:'18:00'}),digestTime('08:30',{morning:'23:58',start:'00:00',end:'00:00'}),digestTime('08:30',{})]),['09:05','10:00','08:30','08:30','08:30']);
+  // The evening digest: its own row, like the morning's, with its time (15 minutes before Until) and no Preview
+  const evening=page.locator('#notify-grid .notify-row',{hasText:'Evening digest'});
+  assert.match(await evening.locator('small').innerText(),/^Work days at (17:45|5:45\sPM)$/);
+  assert.equal(await evening.locator('[data-notify-kind="evening"]').count(),telegram?3:2);
   // Preview sits in the digest row of the grid; the card below is only This device
   assert.equal(await page.locator('#notify-grid [data-notify-preview]').count(),1);
   assert.deepEqual(await page.locator('#notify-more strong').allInnerTexts(),['This device']);

@@ -13,8 +13,9 @@ In **Impostazioni**, **Notifiche**, scegli per ogni tipo dove ti arriva:
 - **Risultati e domande**: una risposta pronta da inviare, un accesso che serve a un compito, una domanda della Fleet.
 - **Promemoria**: attività posticipate e attese che tornano.
 - **Riepilogo del mattino**: un breve riepilogo della tua giornata. Vedi sotto.
+- **Riepilogo della sera**: cosa è stato fatto oggi e cosa resta per domani. Vedi sotto.
 
-Ognuno ha un interruttore per **Push** (l'app sul telefono o sul computer), per **Telegram** quando è configurato e per **Email** su una Machine in hosting o su una Machine nel The Machine Network. Sono tutti attivi, tranne il riepilogo su Telegram.
+Ognuno ha un interruttore per **Push** (l'app sul telefono o sul computer), per **Telegram** quando è configurato e per **Email** su una Machine in hosting o su una Machine nel The Machine Network. Sono tutti attivi, tranne i riepiloghi su Telegram.
 
 L'**Orario di lavoro** è nella stessa scheda: i tuoi giorni lavorativi, le ore in cui possono partire le notifiche, quando tornano i posticipi, l'ora del riepilogo e il tuo fuso orario. Vedi [Orario di lavoro](work-hours.md).
 
@@ -72,6 +73,15 @@ Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che n
 Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o in un'altra vista, si apre la sua chat. Una promessa apre la sua attività, o la sua pagina se non ne ha ancora una.
 
 La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
+
+## Il riepilogo della sera
+
+Arriva una volta nei giorni lavorativi alla sua ora in **Orario di lavoro**, di default 15 minuti prima di **Fino alle**, nei modi scelti nella sua riga qui sopra. Un giorno senza attività fatte né riunioni tenute non ne riceve. Inizia con la tua giornata in un numero, come "Buonasera Sam, oggi 4 attività fatte", poi una parte **Lavoro** e una parte **Personale**. Una parte vuota viene omessa. Ognuna ha:
+
+- **Fatto oggi**: fino a tre attività che tu o la tua Machine avete finito, quante altre, e le tue riunioni, come "3 riunioni: Chiamata prezzi e altre 2.";
+- **Aperto per domani** (di venerdì, il tuo prossimo giorno lavorativo): le prime riunioni e cosa scade.
+
+Finisce con quante attività hanno ancora bisogno di te. Tocca la notifica push per aprire le tue attività. Per non riceverlo, disattiva la sua riga.
 
 ## Privacy
 

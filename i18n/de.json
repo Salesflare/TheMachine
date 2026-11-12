@@ -1282,6 +1282,7 @@
  "Done": "Erledigt",
  "Done / dismissed": "Erledigt / verworfen",
  "Done saves when you’re back online.": "„Erledigt“ wird gespeichert, sobald du wieder online bist.",
+ "Done today": "Heute erledigt",
  "Done when": "Fertig, wenn",
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Fertig, wenn: eine kurze Zeile (bis 140 Zeichen), etwa \"Eintrag ist live mit einem Link zu uns\"",
  "Done when: {}": "Fertig, wenn: {}",
@@ -1291,6 +1292,7 @@
  "Done. Waiting for them to tap Book it.": "Erledigt. Wartet, bis die andere Person auf Buchen tippt.",
  "Done:": "Erledigt:",
  "Done: {}": "Erledigt: {}",
+ "Done: {} and {} more": "Erledigt: {} und {} weitere",
  "Done: {}.": "Erledigt: {}.",
  "Don’t answer": "Nicht antworten",
  "Don’t invite {}": "{} nicht einladen",
@@ -1329,6 +1331,7 @@
  "Due {}": "Fällig {}",
  "Due {}.": "Fällig {}.",
  "Due: a date, or a date and time": "Fällig: ein Datum oder ein Datum mit Uhrzeit",
+ "Due: {}": "Fällig: {}",
  "Duration {}": "Dauer {}",
  "EUR": "EUR",
  "Each AI you approved, with what it may do and everything it did.": "Jede KI, die du freigegeben hast, mit dem, was sie darf, und allem, was sie getan hat.",
@@ -1412,6 +1415,15 @@
  "Environment id": "Umgebungs-ID",
  "Error log": "Fehlerprotokoll",
  "Esc": "Esc",
+ "Evening digest": "Abendliche Zusammenfassung",
+ "Evening {}, {} meetings today": {
+  "one": "Guten Abend {}, heute {} Termin",
+  "other": "Guten Abend {}, heute {} Termine"
+ },
+ "Evening {}, {} to-dos done today": {
+  "one": "Guten Abend {}, heute {} Aufgabe erledigt",
+  "other": "Guten Abend {}, heute {} Aufgaben erledigt"
+ },
  "Event": "Termin",
  "Event account does not match the checkpoint boundary": "Das Konto des Events passt nicht zur Checkpoint-Grenze",
  "Events": "Termine",
@@ -1800,6 +1812,14 @@
  "Goes within the hour": "Geht innerhalb einer Stunde",
  "Gone quiet": "Still geworden",
  "Gone quiet: {}": "Still geworden: {}",
+ "Good evening, {} meetings today": {
+  "one": "Guten Abend, heute {} Termin",
+  "other": "Guten Abend, heute {} Termine"
+ },
+ "Good evening, {} to-dos done today": {
+  "one": "Guten Abend, heute {} Aufgabe erledigt",
+  "other": "Guten Abend, heute {} Aufgaben erledigt"
+ },
  "Good morning": "Guten Morgen",
  "Good morning, first meeting at {}": "Guten Morgen, erster Termin um {}",
  "Good morning, ready for your OK: {}": "Guten Morgen, wartet auf dein OK: {}",
@@ -3463,6 +3483,8 @@
  "Open by stage": "Offen nach Phase",
  "Open chatgpt.com/plugins, press +, then Add custom MCP server.": "Öffne chatgpt.com/plugins, tippe auf + und dann auf Add custom MCP server.",
  "Open draft": "Entwurf öffnen",
+ "Open for tomorrow": "Offen für morgen",
+ "Open for {}": "Offen für {}",
  "Open in Google Calendar ↗": "In Google Kalender öffnen ↗",
  "Open in Google Docs ↗": "In Google Docs öffnen ↗",
  "Open in Intercom": "In Intercom öffnen",
@@ -5729,6 +5751,7 @@
  "Tomorrow": "Morgen",
  "Tomorrow {}": "Morgen {}",
  "Tomorrow · 9:00": "Morgen · 9:00",
+ "Tomorrow, first meeting at {}": "Morgen, erster Termin um {}",
  "Too early for numbers.": "Noch zu früh für Zahlen.",
  "Too late to undo that": "Zu spät, um das rückgängig zu machen",
  "Too many asks today": "Heute zu viele Anfragen",
@@ -7084,6 +7107,8 @@
   "other": "{} Entwürfe haben sich geändert: erst lesen, dann senden."
  },
  "{} due": "{} fällig",
+ "{} due on {}": "{} fällig am {}",
+ "{} due tomorrow": "{} morgen fällig",
  "{} edits to the drafting guide": {
   "one": "{} Änderung am Leitfaden für Entwürfe",
   "other": "{} Änderungen am Leitfaden für Entwürfe"
@@ -7276,6 +7301,18 @@
   "one": "{} Termin heute, um {}.",
   "other": "{} Termine heute, der erste um {}."
  },
+ "{} meetings.": {
+  "one": "{} Termin.",
+  "other": "{} Termine."
+ },
+ "{} meetings: {} and {} more.": {
+  "one": "{} Termin: {} und {} weitere.",
+  "other": "{} Termine: {} und {} weitere."
+ },
+ "{} meetings: {}.": {
+  "one": "{} Termin: {}.",
+  "other": "{} Termine: {}."
+ },
  "{} message": "{}-Nachricht",
  "{} message from {}": "{}-Nachricht von {}",
  "{} message to {}": "{}-Nachricht an {}",
@@ -7318,6 +7355,8 @@
   "one": "{} weitere kann warten.",
   "other": "{} weitere können warten."
  },
+ "{} more done.": "{} weitere erledigt.",
+ "{} more due.": "{} weitere fällig.",
  "{} more in Promises": "{} weitere unter Versprechen",
  "{} more like this wait. Always shares them too.": {
   "one": "{} weitere wie diese wartet. Immer teilt sie auch.",
@@ -7610,6 +7649,10 @@
  },
  "{} to-dos done": "{} Aufgaben erledigt",
  "{} to-dos done with The Machine.": "{} Aufgaben mit The Machine erledigt.",
+ "{} to-dos done.": {
+  "one": "{} Aufgabe erledigt.",
+  "other": "{} Aufgaben erledigt."
+ },
  "{} to-dos for you": {
   "one": "{} Aufgabe für dich",
   "other": "{} Aufgaben für dich"
@@ -7621,6 +7664,14 @@
  "{} to-dos held until {}": {
   "one": "{} Aufgabe wartet bis {}",
   "other": "{} Aufgaben warten bis {}"
+ },
+ "{} to-dos still need you": {
+  "one": "{} Aufgabe braucht dich noch",
+  "other": "{} Aufgaben brauchen dich noch"
+ },
+ "{} to-dos still need you.": {
+  "one": "{} Aufgabe braucht dich noch.",
+  "other": "{} Aufgaben brauchen dich noch."
  },
  "{} to-dos waiting": {
   "one": "{} Aufgabe wartet",
@@ -7703,6 +7754,7 @@
  "{}'s Machine has new keys. Share {} again?": "Die Machine von {} hat neue Schlüssel. {} erneut teilen?",
  "{}'s board, shared with the team": "Board von {}, mit dem Team geteilt",
  "{}'s friend request is no longer open.": "Die Freundschaftsanfrage von {} ist nicht mehr offen.",
+ "{}, first meeting at {}": "{}, erster Termin um {}",
  "{}, for {}": "{}, für {}",
  "{}, in your Machine’s browser": "{}, im Browser deiner Machine",
  "{}, {}, {} and {} more": "{}, {}, {} und {} weitere",

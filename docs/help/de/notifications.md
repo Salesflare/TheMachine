@@ -13,8 +13,9 @@ Wähle in **Einstellungen**, **Benachrichtigungen** für jede Art, wo sie dich e
 - **Ergebnisse und Fragen**: eine Antwort, bereit zum Senden, eine Anmeldung, die eine Aufgabe braucht, eine Frage aus der Fleet.
 - **Erinnerungen**: Zurückgestelltes und Wartendes, das zurückkommt.
 - **Morgendliche Zusammenfassung**: eine kurze Übersicht über deinen Tag. Siehe unten.
+- **Abendliche Zusammenfassung**: was heute erledigt wurde und was morgen offen ist. Siehe unten.
 
-Jede hat einen Schalter für **Push** (die App auf deinem Handy oder Computer), **Telegram**, wenn es eingerichtet ist, und **E-Mail** auf einer gehosteten Machine oder einer im The Machine Network. Alle sind an, außer der Zusammenfassung auf Telegram.
+Jede hat einen Schalter für **Push** (die App auf deinem Handy oder Computer), **Telegram**, wenn es eingerichtet ist, und **E-Mail** auf einer gehosteten Machine oder einer im The Machine Network. Alle sind an, außer den Zusammenfassungen auf Telegram.
 
 Die **Arbeitszeiten** stehen im selben Tab: deine Arbeitstage, die Stunden, in denen Benachrichtigungen rausgehen dürfen, wann Zurückgestelltes zurückkommt, die Uhrzeit der Zusammenfassung und deine Zeitzone. Siehe [Arbeitszeiten](work-hours.md).
 
@@ -73,6 +74,15 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 Öffnen zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat. Ein Versprechen öffnet seine Aufgabe oder, solange es keine hat, seine eigene Seite.
 
 Der Push sagt dasselbe ohne Links. Tippst du darauf, öffnet sich heute im **Kalender**.
+
+## Die abendliche Zusammenfassung
+
+Sie kommt an Arbeitstagen einmal zu ihrer Uhrzeit unter **Arbeitszeiten**, standardmäßig 15 Minuten vor **Bis**, auf den Wegen, die du oben in ihrer Zeile wählst. Ein Tag ohne erledigte Aufgabe oder gehaltenen Termin bekommt keine. Sie beginnt mit deinem Tag in einer Zahl, etwa "Guten Abend Sam, heute 4 Aufgaben erledigt", dann folgen ein Teil **Arbeit** und ein Teil **Privat**. Ein leerer Teil fällt weg. Jeder Teil hat:
+
+- **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, wie viele noch, und deine Termine, etwa "3 Termine: Preisgespräch und 2 weitere.";
+- **Offen für morgen** (an einem Freitag dein nächster Arbeitstag): die ersten Termine und was fällig ist.
+
+Am Ende steht, wie viele Aufgaben dich noch brauchen. Tippst du auf den Push, öffnen sich deine Aufgaben. Willst du sie nicht, schalte ihre Zeile aus.
 
 ## Datenschutz
 

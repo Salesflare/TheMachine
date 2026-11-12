@@ -13,8 +13,9 @@ En **Ajustes**, **Notificaciones**, elige por tipo por dónde te llega:
 - **Resultados y preguntas**: una respuesta lista para enviar, un inicio de sesión que necesita una tarea, una pregunta del Fleet.
 - **Recordatorios**: lo pospuesto y las esperas que vuelven.
 - **Resumen matutino**: un resumen corto de tu día. Más abajo.
+- **Resumen de la tarde**: lo hecho hoy y lo pendiente para mañana. Más abajo.
 
-Cada uno tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando está configurado y **Correo** en una Machine alojada o en una que está en The Machine Network. Todos están activados, salvo el resumen en Telegram.
+Cada uno tiene un interruptor para **Push** (la app en tu teléfono u ordenador), **Telegram** cuando está configurado y **Correo** en una Machine alojada o en una que está en The Machine Network. Todos están activados, salvo los resúmenes en Telegram.
 
 El **Horario laboral** está en la misma pestaña: tus días laborables, las horas en que pueden salir notificaciones, cuándo vuelve lo pospuesto, la hora del resumen y tu zona horaria. Consulta [Horario laboral](work-hours.md).
 
@@ -72,6 +73,15 @@ Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya 
 Abrir muestra esa tarea resaltada en tu lista. Si está hecha, pospuesta o en otra vista, se abre su chat. Una promesa abre su tarea, o su propia página si aún no tiene una.
 
 El push dice lo mismo sin enlaces. Tócalo para abrir hoy en el **Calendario**.
+
+## El resumen de la tarde
+
+Llega una vez los días laborables a su hora en **Horario laboral**, por defecto 15 minutos antes de **Hasta**, por los medios que elijas en su fila de arriba. Un día sin ninguna tarea hecha ni reunión celebrada no recibe ninguno. Empieza con tu día en una cifra, como "Buenas tardes, Sam: 4 tareas hechas hoy", y luego una parte **Trabajo** y una parte **Personal**. Una parte vacía se omite. Cada una tiene:
+
+- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, cuántas más, y tus reuniones, como "3 reuniones: Llamada de precios y 2 más.";
+- **Pendiente para mañana** (un viernes, tu próximo día laborable): las primeras reuniones y lo que vence.
+
+Termina con cuántas tareas aún te necesitan. Toca la notificación push para abrir tus tareas. Para no recibirlo, desactiva su fila.
 
 ## Privacidad
 
