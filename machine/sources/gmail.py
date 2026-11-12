@@ -12,7 +12,7 @@ from machine.sources.exclusions import email_subject_excluded
 from machine.sources.rows import SKIPPED, Skips
 from machine.text import QUOTED_HISTORY_KEPT, _address, email_body, trim_quoted_history
 import ms_graph
-from sources import MICROSOFT_SERVICES, SourceError, gog_read
+from sources import MICROSOFT_SERVICES, SourceError, gog_read, transient
 from timeutil import now
 
 AUTHUSER = re.compile(r'^https://mail\.google\.com/mail/u/\?authuser=([^#&]+)#')
@@ -173,9 +173,91 @@ def message_event(account, raw, config=None):
             'deleted': False}
 
 
+ROUND_SECONDS = 240  # an Outlook mail round's time for Graph, its reads' retries included (ms_graph.budget)
+FAILED_IN_A_ROW = 3  # messages whose reads failed one after another: Graph is down, the rest waits for the next round
+WAITING_MAX = 100  # this many messages waiting: they are read before any new change is listed
+READ_AT_MAX = 500
+LATER = object()  # what Round.take gives for a message that waits for the next round
+
+
+class Round:
+    """One Outlook mail round against a Graph that fails part of its reads: for hours a mailbox can get a 5xx or no answer
+    on about half of its requests, each served on another try. ms_graph retries every read a few times (budget); a message
+    whose read still fails waits in the checkpoint ('waiting': since when, how often tried, its change's time) and is read
+    again next round, while the cursor moves on and what was read is kept. After FAILED_IN_A_ROW failed messages, or once
+    the round's time is up, the rest waits too. A waiting message is never dropped: it waits until it reads or is gone
+    (404), and its 'since' shows one that keeps failing. A round that got nothing from Graph fails as before (transient,
+    so only reported when that keeps happening); one that listed or read anything is a success, partial or not.
+    'read_at' keeps the messages read at the cursor's own time, which the next listing (changed at or after it) gives
+    again: they aren't read twice. Gmail fails the round on any failed read, as before."""
+
+    def __init__(self, state, microsoft):
+        self.microsoft = microsoft
+        waiting = state.get('waiting') if microsoft else None
+        self.waiting = {k: v for k, v in waiting.items() if isinstance(v, dict)} if isinstance(waiting, dict) else {}
+        read_at = state.get('read_at') if microsoft else None
+        self.read_at = read_at if isinstance(read_at, dict) and isinstance(read_at.get('ids'), list) else {}
+        self.answered, self.failed, self.error, self.done = 0, 0, None, set()
+
+    def full(self):
+        return len(self.waiting) >= WAITING_MAX
+
+    def stopped(self):
+        left = ms_graph.left()
+        return self.failed >= FAILED_IN_A_ROW or (left is not None and left <= 0)
+
+    def seen(self, source_id, modified):
+        return bool(modified) and modified == self.read_at.get('stamp') and source_id in self.read_at['ids']
+
+    def take(self, source_id, read, modified=None):
+        """read() for this message, or LATER when it waits for the next round (Outlook only)."""
+        if not self.microsoft:
+            return read()
+        if self.stopped():
+            self.wait(source_id, modified, tried=False)
+            return LATER
+        try:
+            result = read()
+        except SourceError as error:
+            if not transient(error):
+                raise
+            self.failed, self.error = self.failed + 1, error
+            self.wait(source_id, modified, tried=True)
+            return LATER
+        self.failed = 0
+        self.answered += 1
+        self.done.add(source_id)
+        modified = modified or (self.waiting.pop(source_id, None) or {}).get('modified')
+        self.waiting.pop(source_id, None)
+        stamp = self.read_at.get('stamp')
+        if modified and (not stamp or modified > stamp):
+            self.read_at = {'stamp': modified, 'ids': [source_id]}
+        elif modified and modified == stamp and source_id not in self.read_at['ids'] and len(self.read_at['ids']) < READ_AT_MAX:
+            self.read_at['ids'].append(source_id)
+        return result
+
+    def gone(self, source_id):
+        """Graph answered that this message is no more (404): it is tombstoned and waits no longer."""
+        self.answered += 1
+        self.done.add(source_id)
+        self.waiting.pop(source_id, None)
+
+    def wait(self, source_id, modified, tried):
+        entry = self.waiting.get(source_id) or {'since': now(), 'tries': 0}
+        self.waiting[source_id] = {**entry, 'tries': int(entry.get('tries') or 0) + int(tried), **({'modified': modified} if modified else {})}
+        self.done.add(source_id)
+
+
 def sync_gmail(store, config, account):
-    source = Gmail(config, account)
     microsoft = account.get('service') in MICROSOFT_SERVICES and bool(account.get('email'))
+    if not microsoft:
+        return _sync_mail(store, config, account, False)
+    with ms_graph.budget(ROUND_SECONDS):
+        return _sync_mail(store, config, account, True)
+
+
+def _sync_mail(store, config, account, microsoft):
+    source = Gmail(config, account)
     if microsoft:  # the address /me gave this connection before a restart, while it holds (ms_graph.IDENTITY_SECONDS)
         ms_graph.restore_identity(config, account, (store.checkpoint(account['id']) or {}).get('identity'))
     profile = source.profile()  # Fail closed on account routing before every batch.
@@ -186,71 +268,129 @@ def sync_gmail(store, config, account):
         state = {'mode': 'bootstrap', 'base_history': str(profile['historyId']),
                  'after': int(time.time()) - config.get('bootstrap_days', 7) * 86400}
         store.commit_page(account['id'], state, [], record_sync=False)
+    turn, events, listed = Round(state, microsoft), [], False
+
+    def read(source_id):
+        return lambda: skipped.take(message_event, account, source.get('messages/' + source_id, {'format': 'full'}), config)
+
+    def listing(resource, params):
+        """The page of messages or changes, or None when this round reads only what waits (Outlook: Graph failed it)."""
+        if turn.microsoft and turn.full():
+            return None
+        try:
+            return source.get(resource, params)
+        except SourceError as error:
+            if not turn.microsoft or not transient(error):
+                raise
+            turn.error = error
+            return None
+
     if state['mode'] in ['bootstrap', 'resync']:
         params = {'q': 'after:' + str(state['after']), 'maxResults': 40}
         if state.get('page_token'):
             params['pageToken'] = state['page_token']
         try:
-            page = source.get('messages', params)
+            page = listing('messages', params)
         except SourceError as error:
             if error.status == 400 and state.get('page_token'):
                 state.pop('page_token')
                 store.commit_page(account['id'], state, [], record_sync=False)
             raise
-        events = []
-        for ref in page.get('messages', []):
-            event = skipped.take(message_event, account, source.get('messages/' + ref['id'], {'format': 'full'}), config)
-            if event is SKIPPED: continue
-            if event is None:
-                excluded.add(ref['id'])
-            else:
-                events.append(event)
-        next_state = {**state, 'page_token': page['nextPageToken']} if page.get('nextPageToken') else {
-            'mode': 'incremental', 'history_id': state['base_history'], 'after': state['after'],
-            'resync_reason': state.get('resync_reason')}
-        if state['mode'] == 'bootstrap' and not page.get('nextPageToken'):
-            next_state['backfilled_at'] = now()  # the mailbox's first import is in: its first review starts now (App.mail_backfill)
+        next_state = dict(state)
+        if page is not None:
+            listed = True
+            for ref in page.get('messages', []):
+                if ref['id'] in turn.done:
+                    continue
+                event = turn.take(ref['id'], read(ref['id']))
+                if event is SKIPPED or event is LATER: continue
+                if event is None:
+                    excluded.add(ref['id'])
+                else:
+                    events.append(event)
+            next_state = {**state, 'page_token': page['nextPageToken']} if page.get('nextPageToken') else {
+                'mode': 'incremental', 'history_id': state['base_history'], 'after': state['after'],
+                'resync_reason': state.get('resync_reason')}
+            if state['mode'] == 'bootstrap' and not page.get('nextPageToken'):
+                next_state['backfilled_at'] = now()  # the mailbox's first import is in: its first review starts now (App.mail_backfill)
     else:
         params = {'startHistoryId': state['history_id'], 'maxResults': 100}
         if state.get('page_token'):
             params['pageToken'] = state['page_token']
         try:
-            page = source.get('history', params)
+            page = listing('history', params)
         except SourceError as error:
             if error.status == 404:
                 # Gmail can expire history cursors. Replay the retained time window (rolling,
                 # not since first install); do not infer deletions from a partial mailbox scan.
                 after = max(int(state['after']), int(time.time()) - config.get('bootstrap_days', 7) * 86400)
                 store.commit_page(account['id'], {'mode': 'resync', 'base_history': str(profile['historyId']),
-                                                  'after': after, 'resync_reason': 'expired_history'}, [], record_sync=False)
+                                                  'after': after, 'resync_reason': 'expired_history',
+                                                  **({'waiting': turn.waiting} if turn.waiting else {})}, [], record_sync=False)
                 return {'mode': 'resync', 'events': 0}
             raise
-        changes = {}
-        for record in page.get('history', []):
-            for kind in ['messagesAdded', 'labelsAdded', 'labelsRemoved', 'messagesDeleted']:
-                for item in record.get(kind, []):
-                    changes[item['message']['id']] = kind
-        events = []
-        for source_id, kind in changes.items():
-            try:
-                event = store.tombstone(account['id'], source_id) if kind == 'messagesDeleted' else skipped.take(
-                    message_event, account, source.get('messages/' + source_id, {'format': 'full'}), config)
-            except SourceError as error:
-                if error.status != 404:
-                    raise
-                event = store.tombstone(account['id'], source_id)
-            if event is SKIPPED: continue
-            if event:
-                events.append(event)
-            elif kind != 'messagesDeleted':
-                excluded.add(source_id)
-        next_state = {**state, 'page_token': page['nextPageToken']} if page.get('nextPageToken') else {
-            **state, 'history_id': str(page.get('historyId', profile['historyId']))}
-        if not page.get('nextPageToken'):
-            next_state.pop('page_token', None)
+        next_state = dict(state)
+        if page is not None:
+            listed = True
+            changes, stamps = {}, {}
+            for record in page.get('history', []):
+                for kind in ['messagesAdded', 'labelsAdded', 'labelsRemoved', 'messagesDeleted']:
+                    for item in record.get(kind, []):
+                        changes[item['message']['id']] = kind
+                        stamps[item['message']['id']] = item['message'].get('modified')  # Outlook's change time
+            for source_id, kind in changes.items():
+                if kind != 'messagesDeleted' and (source_id in turn.done or turn.seen(source_id, stamps[source_id])):
+                    continue
+                try:
+                    event = store.tombstone(account['id'], source_id) if kind == 'messagesDeleted' else \
+                        turn.take(source_id, read(source_id), stamps[source_id])
+                except SourceError as error:
+                    if error.status != 404:
+                        raise
+                    turn.gone(source_id)
+                    event = store.tombstone(account['id'], source_id)
+                if event is SKIPPED or event is LATER: continue
+                if event:
+                    events.append(event)
+                elif kind != 'messagesDeleted':
+                    excluded.add(source_id)
+            next_state = {**state, 'page_token': page['nextPageToken']} if page.get('nextPageToken') else {
+                **state, 'history_id': str(page.get('historyId', profile['historyId']))}
+            if not page.get('nextPageToken'):
+                next_state.pop('page_token', None)
+    for source_id in sorted(turn.waiting, key=lambda k: int(turn.waiting[k].get('tries') or 0)):  # the least tried first
+        if source_id in turn.done:
+            continue
+        try:
+            event = turn.take(source_id, read(source_id))
+        except SourceError as error:
+            if error.status != 404:
+                raise
+            turn.gone(source_id)
+            event = store.tombstone(account['id'], source_id)
+        if event is SKIPPED or event is LATER: continue
+        if event:
+            events.append(event)
+        else:
+            excluded.add(source_id)
     skipped.check().note(next_state)
     next_state.pop('identity', None)
     if checked:
         next_state['identity'] = checked
+    if microsoft:
+        for key, value in (('waiting', turn.waiting), ('read_at', turn.read_at)):
+            if value:
+                next_state[key] = value
+            else:
+                next_state.pop(key, None)
+        if turn.error and not (listed or turn.answered):  # nothing from Graph this round: a failure, keeping what waits
+            store.commit_page(account['id'], next_state, events, record_sync=False, excluded_source_ids=excluded)
+            raise turn.error
     store.commit_page(account['id'], next_state, events, excluded_source_ids=excluded)
-    return {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded), 'skipped': sum(skipped.values())}
+    result = {'mode': next_state['mode'], 'events': len(events), 'filtered': len(excluded), 'skipped': sum(skipped.values())}
+    if turn.waiting:
+        result['waiting'] = len(turn.waiting)
+        result['waiting_since'] = min(str(v.get('since') or '') for v in turn.waiting.values())
+    if turn.error and turn.answered:
+        result['more'] = True  # it stopped early or left some for later, and Graph answers again: the next round soon
+    return result
