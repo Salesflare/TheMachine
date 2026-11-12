@@ -349,6 +349,7 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  if(moveAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-move="${s.id}" data-area="${s.preparation_move_to}">${moveText(s.preparation_move_to)}</button>`,...smartButtons];
  else if(useAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-use="${s.id}">${useText(s.preparation_use)}</button>`,...smartButtons];
  else if(connectAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-connect-open="${s.preparation_connect}">${t('Connect {}',SERVICE_NAMES[s.preparation_connect]||s.preparation_connect)}</button>`,...smartButtons];
+ else if(s.reconnect&&!closed(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-hosted-reconnect="${s.reconnect.provider}" data-email="${s.reconnect.email}">${t('Reconnect')}</button>`,...smartButtons];
  if(skill)smartButtons=[k=>skillButton(s,k),...smartButtons];
  else if(copy)smartButtons=[k=>html`<button class="${k('primary','button')}" data-id="${s.id}" data-result="copy">Copy draft</button>`,...smartButtons];
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();
@@ -466,9 +467,9 @@ function reviewSend(label){const whole=label.replace(/^Send\b/,'Review and send'
 // can do around it (a calendar slot, directions, a message if plans change). Never Do it. Same rule as controls() in assistant.py.
 const ownerStep=s=>!!s.owner_step&&!closed(s)&&s.status!=='snoozed';
 // The Machine's own (origin machine): Done, Snooze. From its logs (machine_log): also Not needed, and Do it for a safe fix
-// (machine_fix). A set-aside fix (parked_redo): Redo it.
-const redoLead=s=>s?.parked_redo=='redo'&&s.preparation_status!='blocked',ownFix=s=>s?.machine_fix||redoLead(s);
-const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:redoLead(s)?[['accept','Redo it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&s.machine_log)||(c==='retry'&&s.parked_redo))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
+// (machine_fix). A set-aside fix (parked_redo): Redo it. reconnect: Reconnect.
+const redoLead=s=>s?.parked_redo=='redo'&&s.preparation_status!='blocked',ownFix=s=>s?.machine_fix||redoLead(s)||s?.reconnect;
+const ownerStepChoices=(choices,s)=>[...(s?.origin==='machine'&&s.machine_fix?[['accept','Do it']]:redoLead(s)?[['accept','Redo it']]:[]),['complete','Mark done'],...choices.filter(([c])=>c!=='complete'&&(s?.origin!=='machine'||c==='snooze'||(c==='reject'&&(s.machine_log||s.reconnect))||(c==='retry'&&s.parked_redo))).map(([c,t])=>c==='accept'?[c,'Plan it']:[c,t])];
 // A to-do's project (graph.set_card_project): a chip to its page, and a small picker to change it or take it off.
 // Set by hand it stays; otherwise the review or the project its thread or people are on chose it.
 // The chip opens the project's page; Project under Details opens the picker.

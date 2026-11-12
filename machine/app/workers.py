@@ -260,6 +260,7 @@ class WorkersApp:
                 photos += enrichment.contact_photos_step(self.store.connect, now())
                 saved, changed = ms_photos.step(self.store.connect, self.config, credential, now(), stop=self.stop.is_set, ask=outlook_photos_ask)
                 photos, found = photos + saved, found + changed
+                reconnect_asks.todos(self.store, self.config)  # a to-do for a sign-in that lacks what its service offers now
                 wa_accounts, ask = whatsapp_photo_asker(self.config)
                 if wa_accounts and not self.stop.is_set():
                     photos += enrichment.whatsapp_photos_step(self.store.connect, now(), ask, wa_accounts)

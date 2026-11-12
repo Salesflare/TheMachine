@@ -14,7 +14,6 @@ import abilities
 import agent_jobs
 import fleet
 import graph
-from machine.app import reconnect_asks
 from machine.app.setup_card import phone_app_nudge, setup_card
 from machine.browser import browser_link
 from machine.cards import snooze_choices
@@ -284,10 +283,7 @@ class StatusApp:
                 area['label'] = area['label'].replace(area['name'], named) if area['label'] != 'Work' else 'Work'
                 area['name'] = named
         result['connectors'] = [c for c in result['connectors'] if not docs_unset(c)]
-        asks = reconnect_asks.open_asks(self.store, self.config)  # Reconnect to add something, with why (its card's line)
         for connector in result['connectors']:
-            if asks.get(connector['id']):
-                connector['reconnect_asks'] = asks[connector['id']]
             connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
             account = by_id.get(connector['id'])
             connector.update(connector_says(account, connector.get('service', 'gmail')))
@@ -314,8 +310,7 @@ class StatusApp:
         result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
         result['todo_channels'] = reminder_channels(self.store, self.config, 'todo')  # where a to-do held for later goes (its deliver_after chip)
         result['notify'] = self.notify_view()
-        # an account that asks to reconnect (reconnect_asks): not cached, so its row goes as soon as it was signed in again
-        result['setup_hints'] = self.setup_hints_view() + reconnect_asks.hints(asks)
+        result['setup_hints'] = self.setup_hints_view()
         result['phone_app_store'] = phone_app_nudge(self.store)
         try:  # the setup to-do at the top of To-dos (setup_card)
             result['setup_card'] = setup_card(self.store, self.config)

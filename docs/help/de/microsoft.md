@@ -26,7 +26,7 @@ Der Kalender wird nie geändert.
 
 Microsoft wird auch um die Basisprofile in deiner Organisation (Name, E-Mail und Foto) und deine Outlook-Kontakte gebeten. Deine Machine nutzt sie nur für Fotos, Positionen und Firmen von Personen, die schon in deinem Graph sind, bis zu 200 Fotos am Tag. Wer kein Foto hat, wird nach 30 Tagen erneut geprüft.
 
-Eventuell muss der Admin deiner Organisation die Fotos der Kollegen freigeben. Tut er das nicht, verbindet sich Outlook trotzdem, nur ohne diese Fotos. Ein Konto, das schon vorher verbunden war, fragt einmal unter **Verbindungen**: Drück **Neu verbinden** oder **×**, um es dauerhaft auszublenden.
+Eventuell muss der Admin deiner Organisation die Fotos der Kollegen freigeben. Tut er das nicht, verbindet sich Outlook trotzdem, nur ohne diese Fotos. Ein Konto, das schon vorher verbunden war, bekommt eine Aufgabe: Drück **Neu verbinden** oder **Nicht nötig**, um sie dauerhaft zu schließen.
 
 ## Verbinden
 

@@ -73,7 +73,9 @@ class MicrosoftPhotos(unittest.TestCase):
 
     def step(self, fake, now=NOW, config=None):
         with mock.patch.object(ms_graph, 'grant', fake.grant), mock.patch.object(ms_graph, 'call', fake.call):
-            return ms_photos.step(self.store.connect, config or self.config, None, now, ask=workers.outlook_photos_ask)
+            found = ms_photos.step(self.store.connect, config or self.config, None, now, ask=workers.outlook_photos_ask)
+        reconnect_asks.todos(self.store, config or self.config)  # as the enrichment worker does after it
+        return found
 
     def node(self, address):
         with self.store.connect() as db:
@@ -83,8 +85,11 @@ class MicrosoftPhotos(unittest.TestCase):
         with self.store.connect() as db:
             return {r[0] for r in db.execute('SELECT identifier FROM person_photos')}
 
-    def asks(self):
-        return reconnect_asks.open_asks(self.store, self.config)
+    def todos(self):
+        with self.store.connect() as db:
+            cards = [dict(r) for r in db.execute('SELECT * FROM suggestions ORDER BY created_at')]
+            self.store.machine_fix_views(db, cards)
+        return cards
 
     def test_colleagues_on_the_organizations_own_domains_get_their_photo_once(self):
         self.people('ann@acme.com', 'bo@partner.example', 'cy@gmail.com')
@@ -165,38 +170,41 @@ class MicrosoftPhotos(unittest.TestCase):
         with mock.patch.object(ms_graph, 'grant', side_effect=RuntimeError('boom')):
             self.assertEqual(ms_photos.step(self.store.connect, self.config, None, NOW), (0, 0))
 
-    def test_an_account_from_before_is_asked_once_to_reconnect(self):
+    def test_an_account_from_before_gets_one_quiet_to_do_that_closes_itself_once_reconnected(self):
         fake = Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=('User.ReadBasic.All', 'Contacts.Read'))
         self.step(fake)
-        key = reconnect_asks.hint_id('mail', reconnect_asks.OUTLOOK_PHOTOS)
-        self.assertEqual(self.asks(), {'mail': [{'id': key, 'reason': 'Reconnect Outlook to show your colleagues’ and contacts’ photos.'}]})
-        self.assertEqual([h['reconnect'] for h in reconnect_asks.hints(self.asks())], [{'account': 'mail'}])  # its setup to-do row
-        fake.granted, fake.offered = set(SCOPES), set()
+        [card] = self.todos()
+        self.assertEqual((card['title'], card['status'], card['origin']),
+                         ('Reconnect Microsoft to show your colleagues’ and contacts’ photos', 'pending', 'machine'))
+        self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com'})  # Reconnect opens its sign-in
+        with self.store.connect() as db:
+            self.assertEqual([r[0] for r in db.execute('SELECT status FROM deliveries')], ['cancelled'])  # never pushed or mailed
         self.step(fake, now=later(minutes=10))
-        self.assertTrue(self.asks())  # checked again soon, not at once
+        self.assertEqual(len(self.todos()), 1)  # never a second one
+        fake.granted, fake.offered = set(SCOPES), set()
         self.step(fake, now=later(minutes=20))
-        self.assertEqual(self.asks(), {})  # reconnected: gone within minutes, not the next day
+        self.assertEqual([c['status'] for c in self.todos()], ['completed'])  # reconnected: done within minutes
+        fake.granted, fake.offered = {'User.Read', 'Mail.ReadWrite'}, {'Contacts.Read'}
         self.step(fake, now=later(days=2))
-        self.assertEqual(self.asks(), {})
+        self.assertEqual([c['status'] for c in self.todos()], ['completed'])  # created once, never again
 
-    def test_not_now_hides_it_for_good(self):
+    def test_not_needed_is_for_good(self):
         fake = Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=('Contacts.Read',))
         self.step(fake)
-        self.assertTrue(self.asks())
-        a.setup_dismiss(self.store, self.config, 'hint-' + reconnect_asks.hint_id('mail', reconnect_asks.OUTLOOK_PHOTOS))
-        self.assertEqual(self.asks(), {})
+        [card] = self.todos()
+        self.store.decide(card['id'], 'reject', '', 'd1', 'dashboard')
         self.step(fake, now=later(days=1, hours=1))
-        self.assertEqual(self.asks(), {})
+        self.assertEqual([c['status'] for c in self.todos()], ['rejected'])
 
     def test_an_organization_that_refused_them_is_never_asked(self):
         self.step(Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=()))
-        self.assertEqual(self.asks(), {})
+        self.assertEqual(self.todos(), [])
 
     def test_a_shared_account_is_never_asked(self):
         with self.store.connect() as db:
             workers.outlook_photos_ask(db, 'mail', ['Contacts.Read'], NOW)
-        self.assertEqual(reconnect_asks.open_asks(self.store, {'accounts': [{**OUTLOOK, 'shared': True}]}), {})
-        self.assertTrue(reconnect_asks.open_asks(self.store, self.config))
+        self.assertEqual(reconnect_asks.todos(self.store, {'accounts': [{**OUTLOOK, 'shared': True}]}), 0)
+        self.assertEqual(reconnect_asks.todos(self.store, self.config), 1)
 
     def test_delete_permanently_forgets_the_asks(self):
         self.people('kim@acme.com')

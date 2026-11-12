@@ -1,25 +1,36 @@
 """Reconnect to add something: an account signed in before a newer feature asked for more (Google contacts, for their
-photos). One ask per account and feature, said in one line with why: on that connection's card and as a row of the
-setup to-do (setup_card.py), both closed for good by either ×, which is the setup row's own milestone (setup:hint-<id>).
-It goes by itself once the sign-in has what the feature needs. Never a push, an email or a to-do of its own.
+photos), now that its sign-in service offers it. One to-do per account and feature in For you, in the account's area:
+Reconnect leads and opens that account's sign-in; it closes itself as done once the sign-in has what the feature needs,
+and Not needed closes it for good. Created once, never again, and never pushed or mailed: it waits on the dashboard.
 
-Whoever finds out what a sign-in lacks notes it here (note): the enrichment worker for Google contacts
-(workers.google_contacts_run). A new kind of ask is a key with its sentence in `reason`."""
+Whoever finds out what a sign-in lacks notes it here (note), only for what its sign-in service offers now (a broker's
+`offered`), so nothing asks before the service can grant it: the enrichment worker for Google contacts
+(workers.google_contacts_run), and for Outlook's colleague and contact photos (ms_photos.check). The worker then makes the to-dos (todos). A new kind of ask is a key with its title and
+summary in TITLES and summary()."""
 from __future__ import annotations
 
-import hashlib
 import sqlite3
 
 import i18n
+from machine.store.machine_cards import RECONNECT_KIND, reconnect_source, reconnected
 
 GOOGLE_CONTACTS = 'google-contacts'
 OUTLOOK_PHOTOS = 'outlook-photos'
+PROVIDERS = {GOOGLE_CONTACTS: 'google', OUTLOOK_PHOTOS: 'microsoft'}  # the hosted sign-in its Reconnect opens (the dashboard's data-hosted-reconnect)
 
 
-def reason(ask):
-    """The ask's one line in the owner's language: what reconnecting brings, never a bare "Reconnect"."""
-    return {GOOGLE_CONTACTS: i18n.t('Reconnect Google to show your contacts’ photos.'),
-            OUTLOOK_PHOTOS: i18n.t('Reconnect Outlook to show your colleagues’ and contacts’ photos.')}.get(ask, '')
+def title(ask):
+    """The to-do's title in the owner's language: what reconnecting brings, never a bare "Reconnect"."""
+    return {GOOGLE_CONTACTS: i18n.t('Reconnect Google to show your contacts’ photos'),
+            OUTLOOK_PHOTOS: i18n.t('Reconnect Microsoft to show your colleagues’ and contacts’ photos')}.get(ask, '')
+
+
+def summary(ask, email):
+    """The to-do's one line under its title: which account, and why."""
+    return {GOOGLE_CONTACTS: i18n.t('{} was connected before your Machine read contacts. Reconnect it to add their photos, read-only.',
+                                    email),
+            OUTLOOK_PHOTOS: i18n.t('{} was connected before your Machine read colleagues and contacts. Reconnect it to add their photos, read-only.',
+                                   email)}.get(ask, '')
 
 
 def ensure(db):
@@ -28,13 +39,15 @@ def ensure(db):
 
 
 def note(db, account, ask, missing, at):
-    """What a check of the account's sign-in found: `missing` keeps (or starts) the ask, else it goes."""
+    """What a check of the account's sign-in found: `missing` (what its service offers and it lacks) keeps or starts the
+    ask; nothing missing ends it, and its open to-do closes itself as done."""
     ensure(db)
     if missing:
         db.execute('INSERT INTO reconnect_asks(account,ask,since,checked_at) VALUES(?,?,?,?) '
                    'ON CONFLICT(account,ask) DO UPDATE SET checked_at=excluded.checked_at', (account, ask, at, at))
-    else:
-        db.execute('DELETE FROM reconnect_asks WHERE account=? AND ask=?', (account, ask))
+        return
+    db.execute('DELETE FROM reconnect_asks WHERE account=? AND ask=?', (account, ask))
+    reconnected(db, account, ask, at)
 
 
 def signed_in_again(db, account, ask, changed_at):
@@ -45,33 +58,23 @@ def signed_in_again(db, account, ask, changed_at):
     return bool(row and changed_at and changed_at > row[0])
 
 
-def hint_id(account, ask):
-    """The setup to-do's row id ([a-z0-9-], at most 40), which the card's × closes too."""
-    return f'reconnect-{ask}-' + hashlib.sha256(str(account).encode()).hexdigest()[:8]
-
-
-def open_asks(store, config):
-    """{account id: [{id, reason}]} of the owner's own accounts still in config whose ask wasn't closed. Only reads (the
-    status poll never waits for the write lock): no table yet is no asks."""
-    own = {a['id'] for a in config.get('accounts') or [] if isinstance(a, dict) and a.get('id') and not a.get('shared')}
-    if not own:
-        return {}
+def todos(store, config):
+    """A to-do for each open ask of the owner's own accounts still here (never one shared from a Fleet), once ever per
+    account and ask (Store.machine_card): one closed as done or Not needed never comes back. Returns how many are new."""
+    own = {a['id']: a for a in config.get('accounts') or [] if isinstance(a, dict) and a.get('id') and not a.get('shared')}
     try:
         with store.connect() as db:
-            rows = db.execute('SELECT account,ask FROM reconnect_asks ORDER BY since').fetchall()
-            closed = {r[0][len('setup:hint-'):] for r in db.execute("SELECT name FROM milestones WHERE name LIKE 'setup:hint-reconnect-%'")}
+            ensure(db)
+            rows = db.execute('SELECT r.account,r.ask FROM reconnect_asks r WHERE NOT EXISTS(SELECT 1 FROM events e WHERE e.kind=? '
+                              "AND e.source_id='reconnect:'||r.ask||':'||r.account) ORDER BY r.since", (RECONNECT_KIND,)).fetchall()
     except sqlite3.Error:
-        return {}
-    out = {}
-    for account, ask in rows:
-        line, key = reason(ask), hint_id(account, ask)
-        if account in own and line and key not in closed:
-            out.setdefault(account, []).append({'id': key, 'reason': line})
-    return out
-
-
-def hints(asks):
-    """The setup to-do's rows for open asks (open_asks): Reconnect does what the card's Reconnect does (reconnect: its
-    account)."""
-    return [{'id': ask['id'], 'title': ask['reason'], 'text': '', 'button': i18n.t('Reconnect'), 'reconnect': {'account': account}}
-            for account, items in asks.items() for ask in items]
+        return 0
+    made = 0
+    for account_id, ask in rows:
+        account, provider = own.get(account_id), PROVIDERS.get(ask)
+        if not account or not provider or not title(ask):
+            continue
+        email = str(account.get('email') or '')
+        made += store.machine_card(account_id, RECONNECT_KIND, reconnect_source(account_id, ask), title(ask), summary(ask, email),
+                                   summary(ask, email), {'ask': ask, 'provider': provider, 'email': email}, quiet=True)
+    return made

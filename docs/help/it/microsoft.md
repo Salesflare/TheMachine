@@ -26,7 +26,7 @@ Il calendario non viene mai cambiato.
 
 A Microsoft viene chiesto anche di leggere i profili di base della tua organizzazione (nome, email e foto) e i tuoi contatti di Outlook. La tua Machine li usa solo per foto, ruoli e aziende delle persone già nel tuo Graph, fino a 200 foto al giorno. Chi non ha una foto viene ricontrollato dopo 30 giorni.
 
-Potrebbe servire l’approvazione dell’admin della tua organizzazione per le foto dei colleghi. Senza, Outlook si collega comunque, solo senza queste foto. Un account collegato prima lo chiede una volta in **Connessioni**: premi **Riconnetti**, oppure **×** per nasconderlo per sempre.
+Potrebbe servire l’approvazione dell’admin della tua organizzazione per le foto dei colleghi. Senza, Outlook si collega comunque, solo senza queste foto. Un account collegato prima riceve un’attività: premi **Riconnetti**, oppure **Non serve** per chiuderla per sempre.
 
 ## Collegalo
 
