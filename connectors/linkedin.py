@@ -32,8 +32,9 @@ from pathlib import Path
 READ_HOURS = (7, 22)
 KINDS = {'linkedin.message': 'LinkedIn'}
 # What a sync scan reads; raise it when that grows, and the next scan reads back bootstrap_days once (2: archived
-# conversations and message requests with recent activity, not only INBOX).
-READ_SCOPE = 2
+# conversations and message requests with recent activity, not only INBOX; 3: a conversation's newest messages, not
+# the first page of a long thread).
+READ_SCOPE = 3
 # For `assistant connect linkedin`: the account it adds (see docs/adding-a-source.md).
 SETUP = {'label': 'LinkedIn', 'what': 'Your LinkedIn messages.',
          'account': {'id': 'me-linkedin', 'service': 'linkedin', 'transport': 'linkedin-inbox', 'boundary': 'work', 'poll_seconds': 3600},
