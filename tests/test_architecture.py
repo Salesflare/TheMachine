@@ -443,7 +443,10 @@ OVER_BUDGET = {}
 # first needed (LAZY 'digest').
 # 1,392,000 -> 1,393,000 (2026-11-12): someone new in a Work Fleet sees whose OK the team's Graph waits for, and the
 # page looks again every 5 seconds until it comes (+about 700, used by both the Graph's and the Fleet's parts).
-FIRST_LOAD_CEILING = 1_393_000
+# 1,393,000 -> 1,394,000 (2026-11-12): main sat 288 bytes under it. Five calendar sources (iCloud, CalDAV, Proton, a
+# calendar link, Exchange) need their names, icon and sync errors in words wherever a to-do or error line shows them
+# (+777); their connect sheets and cards load with Connections.
+FIRST_LOAD_CEILING = 1_394_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000
