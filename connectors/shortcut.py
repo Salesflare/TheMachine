@@ -17,6 +17,10 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'shortcut.move': 'Shortcut'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'shortcut.move': 'card'}
+APP = 'Shortcut'
 # Shortcut's own API Tokens page. Without a workspace in the address, Shortcut opens it in the workspace the owner
 # last used; the check names the workspace the token belongs to, so a token from another one shows right away.
 TOKEN_URL = 'https://app.shortcut.com/settings/account/api-tokens'

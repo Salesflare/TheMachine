@@ -30,6 +30,10 @@ from pathlib import Path
 # Reads only from start to end hour, local time (an account's active_hours overrides it); the dashboard says when it reads again.
 READ_HOURS = (7, 23)
 KINDS = {'x.mention': 'X', 'x.dm': 'X message'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'x.mention': 'card', 'x.dm': 'chat'}
+APP = 'X'
 # For `assistant connect x`: the account it adds and what it asks (see docs/adding-a-source.md).
 SETUP = {'label': 'X', 'what': 'Your mentions and direct messages on X.',
          'account': {'id': 'me-x', 'service': 'x', 'transport': 'x-inbox', 'boundary': 'work', 'poll_seconds': 3600},

@@ -25,6 +25,7 @@ import graph
 from machine.sources.android import android_app_shown
 from machine.sources.gmail import machine_notice
 from machine.sources.slack import slack_named, slack_plain
+from machine.store import message_view
 
 REST_SECONDS = 60             # after a check ends, a new press within this long shows it instead of starting another
 READ_WAIT = 180               # the sources' reads, at most this long
@@ -280,6 +281,11 @@ def _mail_view(db, review, items, batch, mail, current, own):
         elif why:
             row['why'] = why
         rows.append(row)
+    # a sender known only by address shows by the name the Graph knows, the address only when none is known
+    names = message_view.address_names(db, message_view.bare_addresses(*(r.get('from') for r in rows)))
+    for row in rows:
+        if row.get('from') and row['from'].lower() in names:
+            row['from'] = names[row['from'].lower()]
     counts = collections.Counter()
     for thread in threads.values():
         counts[thread['source']] += thread['in']

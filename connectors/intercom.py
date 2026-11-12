@@ -40,6 +40,10 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'intercom.conversation': 'Intercom'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'intercom.conversation': 'chat'}
+APP = 'Intercom'
 # For `assistant connect intercom`: the account it adds and what it asks (see docs/adding-a-source.md).
 SETUP = {'label': 'Intercom', 'what': 'Customer conversations in your Intercom workspace.',
          'account': {'id': 'intercom', 'service': 'intercom', 'transport': 'api', 'boundary': 'work',
@@ -295,6 +299,18 @@ def event(account, raw, helpers):
         aid = str(author.get('id') or '')
         if author.get('type') == 'admin' and re.fullmatch(r'[0-9]{1,20}', aid) and aid not in admins and len(admins) < 20:
             admins[aid] = {'email': str(author.get('email') or '').lower()[:200], 'name': ' '.join(str(author.get('name') or '').split())[:100]}
+    # Who wrote each part, by the name the text shows (message_view.intercom_turns): the customer, someone on the team,
+    # or a bot (Fin, Operator, an AI answer). Its turns then read as a chat with sides.
+    roles = {}
+    for author in people:
+        if not isinstance(author, dict):
+            continue
+        name = author.get('name') or author.get('email') or author.get('type', '')
+        if not name or name in roles or len(roles) >= 40:
+            continue
+        kind = author.get('type')
+        roles[str(name)[:100]] = ('customer' if kind in CUSTOMER else 'bot' if kind == 'bot' or author.get('from_ai_agent')
+                                  or author.get('is_ai_answer') else 'team')
     assignee = assigned(raw.get('admin_assignee_id'))
     metadata = {'conversation_id': cid, 'state': raw.get('state'), 'open': raw.get('open'), 'priority': raw.get('priority'),
                 'admin_assignee_id': assignee, 'team_assignee_id': assigned(raw.get('team_assignee_id')),
@@ -308,6 +324,8 @@ def event(account, raw, helpers):
                 'contact_ids': [str(c['id'])[:64] for c in ((raw.get('contacts') or {}).get('contacts') or [] if isinstance(raw.get('contacts'), dict) else [])
                                 if isinstance(c, dict) and c.get('id')][:10],
                 'contact_name': ' '.join(str(customer.get('name') or '').split())[:100],
+                'author_roles': roles, 'channel': str(source.get('type') or '')[:40],
+                'subject': ' '.join(plain(raw.get('title') or source.get('subject') or '').split())[:300],
                 'last_author_type': str(last.get('type') or '') if isinstance(last, dict) else '', 'parts_returned': len(parts),
                 'parts_reported': reported, 'truncated': truncated, 'source_redacted': bool(source.get('redacted')),
                 **handled_facts(raw, parts, reported > len(parts) or len(parts) >= MAX_PARTS),

@@ -31,6 +31,10 @@ from pathlib import Path
 # Reads only from start to end hour, local time (an account's active_hours overrides it); the dashboard says when it reads again.
 READ_HOURS = (7, 22)
 KINDS = {'linkedin.message': 'LinkedIn'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'linkedin.message': 'chat'}
+APP = 'LinkedIn'
 # What a sync scan reads; raise it when that grows, and the next scan reads back bootstrap_days once (2: archived
 # conversations and message requests with recent activity, not only INBOX; 3: a conversation's newest messages, not
 # the first page of a long thread).

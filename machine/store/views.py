@@ -59,6 +59,7 @@ from machine.store.conversation import ConversationStore
 from machine.store.decisions import handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
+from machine.store import message_view
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
 import birthdays_facebook
@@ -176,13 +177,13 @@ CHAT_KINDS = {'slack.message', 'teams.message', 'whatsapp.message', 'telegram.me
               'intercom.conversation', 'fleet.intercom'}
 
 
-INTERCOM_PART = re.compile(r'^(\d{9,11}) · (.*?) · ([a-z_]+): ?(.*)$')
+INTERCOM_PART = message_view.INTERCOM_PART
 
 
 def chat_view(kind, m, body, occurred_at):
     """For a chat message: the conversation's name ("#support", a Slack DM's other person with dm, a WhatsApp chat) and,
-    for an Intercom conversation, its messages as turns (the connector stores them as "<unix time> · <author> ·
-    <part type>: <text>" lines under the opening message). Nothing for other kinds."""
+    for an Intercom conversation, its messages as turns (message_view.intercom_turns: who wrote each, customer, team
+    or bot, and only the parts that say something). Nothing for other kinds."""
     if kind not in CHAT_KINDS:
         return {}
     out = {'chat': ''}
@@ -191,25 +192,10 @@ def chat_view(kind, m, body, occurred_at):
         dm = m.get('conversation_type') == 'dm' or name.startswith('DM ')
         out.update(chat=name[3:].strip() if dm and name.startswith('DM ') else ('#' + name if name else ''), dm=dm)
     elif kind in ('intercom.conversation', 'fleet.intercom'):
-        who = m.get('contact_name') or m.get('from_name') or ''
-        out['chat'] = who
-        turns, opening = [], []
-        for line in str(body or '').split('\n'):
-            part = INTERCOM_PART.match(line)
-            if part:
-                turns.append({'from': part[2].strip(), 'at': int(part[1]), 'type': part[3], 'body': part[4]})
-            elif turns:
-                turns[-1]['body'] += '\n' + line
-            else:
-                opening.append(line)
-        said = [t for t in turns if t['body'].strip() and t['type'] in ('comment', 'open', 'note', 'quick_reply')]
-        if said:
-            start = m.get('created_at') if type(m.get('created_at')) is int else None
-            first = ('\n'.join(opening).strip(), who or m.get('from') or '')
-            out['turns'] = ([{'from': first[1], 'occurred_at': dt.datetime.fromtimestamp(start, dt.timezone.utc).isoformat() if start else occurred_at,
-                              'body': first[0]}] if first[0] else []) + [
-                {'from': t['from'][:300], 'occurred_at': dt.datetime.fromtimestamp(t['at'], dt.timezone.utc).isoformat(), 'body': t['body'].strip(),
-                 **({'note': True} if t['type'] == 'note' else {})} for t in said]
+        out['chat'] = m.get('contact_name') or m.get('from_name') or m.get('contact_email') or m.get('from') or ''
+        turns = message_view.intercom_turns(m, body, occurred_at)
+        if turns:
+            out['turns'] = turns
     else:
         out['chat'] = str(m.get('chat_name') or '')
     out['chat'] = out['chat'][:200]
@@ -265,13 +251,27 @@ def _slack_people_names(db, ids):
     return names
 
 
+def address_names(db, addresses):
+    """message_view.address_names, never a source's label ("Slack") as a person's name."""
+    return message_view.address_names(db, addresses, SOURCE_KIND.values())
+
+
+# The who of a stored source line ("email from ann@client.com · Sun 8 Nov")
+SOURCE_WHO = re.compile(r'^(?:Source: )?.+? (?:from|to) (.+?)(?: · [^·]+?)?(?: \(\+\d+ more\))?$')
+
+
 def source_lines_shown(db, cards):
-    """The cards' source lines as source_line_shown writes them, Slack members by their names (slack_people_names)."""
+    """The cards' source lines as source_line_shown writes them, Slack members by their names (slack_people_names),
+    and a sender stored by address by the name the graph knows for it (address_names)."""
     lines = [c.get('source_line') for c in cards if c.get('source_line')]
     names = slack_people_names(db, {m[1] for line in lines for m in SLACK_ID.finditer(str(line))})
+    people = address_names(db, {a for line in lines if (m := SOURCE_WHO.match(str(line))) for a in message_view.bare_addresses(m[1])})
     for c in cards:
         if c.get('source_line'):
-            c['source_line'] = source_line_shown(c['source_line'], names)
+            line = source_line_shown(c['source_line'], names)
+            m = people and SOURCE_WHO.match(str(line))
+            name = m and people.get(m[1].strip().strip('<>').lower())
+            c['source_line'] = line[:m.start(1)] + name + line[m.end(1):] if name else line
 
 
 def based_on_views(db, cards):
@@ -428,8 +428,10 @@ class ViewsStore(ConversationStore):
             mine = m.get('from_me') or (r['kind'] == 'gmail.message' and _address(m.get('from')) in own)  # also from another address of theirs
             if r['kind'] == 'android.notification':
                 m['app_name'] = android_app_shown(m.get('package_name'), m.get('app_name'))  # its app by name, never the package
-            who = 'You' if mine else (m.get('sender_display') or m.get('from') or m.get('chat_name') or m.get('app_name')
-                   or (('#' + m['channel_name']) if m.get('channel_name') else '') or '')
+            # A chat message is said by a person, never by its channel or chat (an unnamed Slack sender stays blank)
+            chat = r['kind'] in CHAT_KINDS
+            who = 'You' if mine else (m.get('sender_display') or m.get('from') or ('' if chat else m.get('chat_name') or m.get('app_name')
+                   or (('#' + m['channel_name']) if m.get('channel_name') else '')) or '')
             body, details = r['body'], None
             if r['kind'] == 'machine.fault' and '\n' + FAULT_WHERE in body:  # code locations go under Details
                 body, details = body.split('\n' + FAULT_WHERE, 1)
@@ -442,14 +444,22 @@ class ViewsStore(ConversationStore):
                 body = re.sub(r'^Sent image(?:\n|$)', '', said[0])  # the photo itself says that
                 shows = re.search(r'(?m)^Shows: (.+)$', said[1]) if len(said) > 1 else None
                 photo['alt'] = shows[1][:300] if shows else ''
-            result.append({'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
+            result.append(message_view.shape(r['kind'], {'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
                            'cc': str(m.get('cc') or '')[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
                            'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
                            **({'photo': photo} if photo else {}),
-                           **chat_view(r['kind'], m, body, r['occurred_at'])})
+                           **chat_view(r['kind'], m, body, r['occurred_at'])}, m))
+        mail = [o for o in result if o.get('view') == 'email']
+        bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc')))
+        if bare:  # people by the name the graph knows for them, the address only when none is known
+            with self.connect() as db:
+                names = address_names(db, bare)
+            for o in mail:
+                for key in ('from', 'to', 'cc'):
+                    o[key] = message_view.named(o.get(key), names)
         return result
 
     def suggestion_result(self, suggestion, db, pre=None):

@@ -26,6 +26,10 @@ import json
 import re
 
 KINDS = {'google_meet.transcript': 'Meet transcript', 'google_meet.notes': 'Meet notes'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'google_meet.transcript': 'card', 'google_meet.notes': 'card'}
+APP = 'Google Meet'
 MEET_SCOPE = 'https://www.googleapis.com/auth/meetings.space.readonly'
 DOCS_SCOPE = 'https://www.googleapis.com/auth/documents.readonly'
 SCOPES = (MEET_SCOPE, DOCS_SCOPE)

@@ -86,15 +86,18 @@ try{
   assert.match(await box.locator('.convo-say').last().innerText(),/books 🙏$/);
   assert.equal(await box.locator('.convo-main').count(),0,'the whole conversation is the to-do\'s');
   assert.equal(await box.locator('a.convo-source').innerText(),'Open in Intercom ↗');
-  // An email reads as before: sender, subject, headers under Details, the text, Open in Gmail
+  // An email reads as before: sender, subject, To, the text, Open in Gmail; no Details when To is a bare address
+  // already shown in full (the message viewer says nothing twice: tests/test_message_view_dashboard.mjs)
   await open('email');await box.locator('.email-text').waitFor();
   assert.equal(await box.locator('.convo').count(),0);
   assert.equal(await box.locator('.email-from strong').innerText(),'Avery Stone <avery@booths.example>'.replace(/\s*<[^>]+>/,''));
-  assert.equal(await box.locator('.email-subject').innerText(),'Quote for the booth');assert.equal(await box.locator('.email-headers').count(),1);
+  assert.equal(await box.locator('.email-subject').innerText(),'Quote for the booth');
+  assert.equal(await box.locator('.email-to').innerText(),'to owner@example.com');assert.equal(await box.locator('.email-headers').count(),0);
   // A single Slack message opened from Messages reads the same way: its text once
   await page.evaluate(ev=>openEvent(String(ev),'x'),data.slack.originals[1].event_id);await box.locator('.convo-say').waitFor();
   assert.deepEqual(await box.locator('.convo-say').allInnerTexts(),['Could we move it to the company card asap?']);
-  assert.equal(await box.locator('.convo-chat').innerText(),'DM with Rowan Vale');assert.equal(await box.locator('.convo-main').count(),0);
+  // the chat names the dialog, the app heads the thread (the message viewer's chat view)
+  assert.equal(await page.locator('#email-title').innerText(),'DM with Rowan Vale');assert.equal(await box.locator('.convo-chat').innerText(),'Slack');assert.equal(await box.locator('.convo-main').count(),0);
   await context.close();
  }
  assert.deepEqual(errors,[]);

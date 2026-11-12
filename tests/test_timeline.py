@@ -67,6 +67,12 @@ class Timeline(unittest.TestCase):
         self.assertEqual((export['state'], export['source'], export['source_url']), ('open', 'intercom', 'https://app.intercom.com/a/inbox/w/conversation/101'))
         self.assertEqual(next(i for i in found['items'] if i.get('title') == 'Invoice copy')['state'], 'closed')
 
+    def test_mail_sent_by_address_alone_shows_who_by_the_graphs_name(self):
+        self.add(tg.mail(0, 'ivy@globex.example', 'sam@acme.com'))
+        self.build()
+        mail = [i for i in self.timeline('email:ivy@globex.example', 'email')['items'] if not i['from_me']]
+        self.assertEqual([i['from'] for i in mail], ['Ivy Park', 'Ivy Park'])  # never the address where her name is known
+
     def test_an_organisation_has_its_domains_intercom_conversations(self):
         found = self.timeline('org:globex.example')
         titles = [i.get('title') for i in found['items']]

@@ -130,7 +130,33 @@ When an item changes, send it again with the same `source_id`: the service store
 - The account appears under Connections with its health, last read and errors.
 - Every source has a one-color mark for the small icons in rows (the last check above the to-dos, a to-do's source, search, a record's timeline, chat, learned styles): `dashboard/logos/mono/<service>.svg`, its key in `MONO` in [`dashboard/todos-logos.js`](../dashboard/todos-logos.js) and its source and terms in `dashboard/logos/mono/NOTICE.md`. Take it from the same mark as the colored logo (Simple Icons, CC0, when it has one; else a simplified one-color version), one color with no fill of its own, so it masks in the text's color. [`tests/test_source_icons.py`](../tests/test_source_icons.py) fails for a connector without one. The colored logo for + Add is separate (`dashboard/logos/`).
 - `exclude` rules (`senders`, `titles`, `text`) work on plugin events too. See Noise rules in [Configuration](configuration.md).
-- Every event opens in the dashboard's reader with its title, sender (`sender_display` or `from`, "You" when `from_me`) and body, so a readable plain-text `body` is all it needs.
+- Every event opens in the dashboard's message viewer with its title, sender (`sender_display` or `from`, "You" when `from_me`) and body. How it reads there is up to you; see How a message reads below.
+
+### How a message reads
+
+Every kind reads in one of four views ([`machine/store/message_view.py`](../machine/store/message_view.py)). Declare each kind's view and the app its link opens in next to `KINDS`:
+
+```python
+VIEWS = {'rss.item': 'card'}   # email, chat, notification or card
+APP = 'GitHub'                 # "Open in GitHub"; '' for "Open original"; or {'host.example': 'Name'} by the link's host
+```
+
+- **email**: mail. The subject is the title; the sender by name with the address quiet, To and Cc as their own lines, Details for the full addresses. A body that starts with `From:`/`To:` lines has them moved to the header.
+- **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one.
+- **notification**: a phone notification or alert. The app, the time, its title and text, once each.
+- **card**: an item with a state (an issue, a task, a deal, a payment, a doc comment, meeting notes). Its title, where it is, a state, who made it, why it reached the owner, the text rendered.
+
+The rules every view keeps, whatever the source sends:
+
+1. No raw ids, Unix timestamps or internal type names on screen.
+2. Nothing said twice across the title, the header, Details and the body.
+3. Markup renders (markdown, Slack mrkdwn, sanitized HTML): no literal `**`, backticks or `<url|label>` brackets. Name a markdown kind in `MARKDOWN_KINDS`.
+4. People by name where a name exists, and the real author rather than the bot that sent the notification. An address the source sends without a name shows by the name the Graph knows for it, everywhere a sender shows (the viewer, a to-do's source line, the last check's list, a person's Graph timeline); the address only when no name is known.
+5. A short title, whole: no `[repo]` prefixes, never cut mid-word.
+6. Long bodies fold behind Show more.
+7. "Open in …" sits left, under the content, for every kind.
+
+[`tests/test_message_view.py`](../tests/test_message_view.py) fails a connector without `VIEWS` and `APP`, and a kind without a made-up message in its `SAMPLES`, which it then checks against these rules; [`tests/test_message_view_dashboard.mjs`](../tests/test_message_view_dashboard.mjs) opens each one in the viewer and checks what shows.
 - To tell reviews how to read your source (what is noise, when it needs the owner, how a reply goes out), add `source-notes/<service>.md`: one bullet like the others there. Reviews and Do it runs get it only on Machines that have that source connected; `AGENTS.md` keeps the rules for every source.
 - To put the people in your events on the Graph tab, add a branch for your `kind` to `touches()` in [`graph.py`](../graph.py): it returns who took part, with a stable identifier (`email:`, `wa:`, or your own prefix), a name and their role (you wrote to them, they wrote to you, a meeting, or just present). Without it the source works as before; it just adds no people.
 
@@ -162,7 +188,7 @@ python3 scripts/test.py test_connector_<service>.py test_connectors.py test_new_
 
 - [ ] OAuth through The Machine's existing sign-ins when the service has it, with the narrowest scopes; a key only with `no_oauth` saying why.
 - [ ] Read-only credential for exactly this account, with the least access that works.
-- [ ] Stable `source_id`; `kind` listed in `KINDS`.
+- [ ] Stable `source_id`; `kind` listed in `KINDS`, its view in `VIEWS`, its app in `APP`, and a made-up message of it in `tests/test_message_view.py`.
 - [ ] Message text only in `title`, `body` and metadata, never in ids, lookup keys or the cursor.
 - [ ] Events and cursor committed together; replays don't duplicate.
 - [ ] Failures raise `SourceError` with a content-free label.

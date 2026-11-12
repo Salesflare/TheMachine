@@ -95,6 +95,17 @@ class MailCheck(unittest.TestCase):
         self.assertEqual(rows['Body text.'], {'from': 'Sam Ridge', 'subject': 'Body text.', 'source': 'chat', 'kind': 'slack.message', 'event': chat, 'account': 'work'})
         self.assertIsNone(self.view(NOW + dt.timedelta(hours=check_now.MAIL_CHECK_HOURS, minutes=1)))  # an old check says nothing
 
+    def test_a_sender_known_only_by_address_shows_by_the_graphs_name_and_an_unknown_one_by_address(self):
+        known, unknown, named = self.add(mail('avery@booths.example', 'Booth plan', 'b1'), mail('nobody@unknown.example', 'Hello', 'b2'),
+                                         mail('Sam Rivera <sam@client.example>', 'Checking in', 'b3'))
+        with self.store.connect() as db:
+            db.execute("INSERT INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('email:avery@booths.example','person','Avery Stone',1,1,?)",
+                       (json.dumps({'identifiers': ['email:avery@booths.example'], 'emails': ['avery@booths.example']}),))
+        claim = self.store.begin_analysis(['work'], 120)
+        self.store.finish_analysis(claim['analysis_id'], 'Nothing new.', no_todo=[])
+        self.assertEqual({r['event']: r['from'] for r in self.view()['threads']},
+                         {known: 'Avery Stone', unknown: 'nobody@unknown.example', named: 'Sam Rivera'})
+
     def test_a_reason_never_refuses_a_review_and_a_check_with_nothing_new_shows_the_last_one_that_had_something(self):
         first, = self.add(mail('Mila Under <mila@north.example>', 'Question', 't1'))
         claim = self.store.begin_analysis(['work'], 120)

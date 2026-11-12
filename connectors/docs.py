@@ -44,6 +44,10 @@ from xml.parsers import expat
 
 KINDS = {'docs.comment': 'Doc comment', 'docs.mention': 'Doc mention', 'docs.suggestion': 'Suggested edit',
          'docs.shared': 'Shared doc'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'docs.comment': 'card', 'docs.mention': 'card', 'docs.suggestion': 'card', 'docs.shared': 'card'}
+APP = {'docs.google.com': 'Google Docs', 'sharepoint.com': 'OneDrive', 'onedrive.live.com': 'OneDrive'}
 SETUP = {
     # Microsoft only for now, so the tile says so; a Google Docs one gets its own name once the broker offers it
     'label': 'Microsoft OneDrive',

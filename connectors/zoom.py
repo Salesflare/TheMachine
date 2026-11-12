@@ -40,6 +40,10 @@ import urllib.parse
 import urllib.request
 
 KINDS = {'zoom.summary': 'Zoom notes', 'zoom.transcript': 'Zoom transcript'}
+# How each kind reads in the message viewer (email, chat, notification or card) and the app its link opens in
+# (machine/store/message_view.py; docs/adding-a-source.md, "How a message reads")
+VIEWS = {'zoom.summary': 'card', 'zoom.transcript': 'card'}
+APP = 'Zoom'
 SETUP = {
     'label': 'Zoom',
     'account': {'id': 'zoom', 'service': 'zoom', 'transport': 'broker', 'boundary': 'work', 'poll_seconds': 900},
