@@ -18,6 +18,7 @@ SAME = object()  # line(): leave done_elsewhere as it is
 
 IBAN = re.compile(r'\b([A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?)\b')
 OGM = re.compile(r'(?:\+{3}|\*{3})\s*(\d{3})\s*/\s*(\d{4})\s*/\s*(\d{5})\s*(?:\+{3}|\*{3})')  # a Belgian structured reference
+PLAIN_OGM = re.compile(r'(?<![\d/.,-])(\d{3})[ /]?(\d{4})[ /]?(\d{5})(?![\d/.,-])')  # the same, written without +++ or ***
 RF = re.compile(r'\bRF\s?(\d{2})((?: ?[A-Z0-9]){1,21})\b')  # an ISO 11649 creditor reference
 FORM = re.compile(r'https?://((?:forms\.gle/|docs\.google\.com/forms/(?:u/\d+/)?d/(?:e/)?)[A-Za-z0-9_-]{8,}'
                   r'|forms\.(?:office|microsoft)\.com/(?:r/[A-Za-z0-9]{6,}|Pages/ResponsePage\.aspx\?id=[A-Za-z0-9_-]{8,})'
@@ -38,26 +39,32 @@ def _iban(raw):
 
 def bill_of(text):
     """The bill a text is about, as 'IBAN|reference', when it gives both and both check out: an IBAN (mod 97) and a
-    payment reference (a Belgian +++123/4567/89012+++ or an RF creditor reference). Two members' to-dos for the same
+    payment reference (a Belgian +++123/4567/89012+++, also as 12 plain digits, or an RF creditor reference). Two members' to-dos for the same
     bill match on it, whatever email each came from. None without both: an IBAN alone (a supplier's every invoice)
     says too little."""
     text = str(text or '').upper()
     iban = next((found for found in (_iban(m.group(1)) for m in IBAN.finditer(text)) if found), None)
     if not iban:
         return None
-    reference = None
-    for m in OGM.finditer(text):
-        digits = ''.join(m.groups())
-        if (int(digits[:10]) % 97 or 97) == int(digits[10:]):
-            reference = digits
-            break
+    reference = _ogm(OGM, text)
     if not reference:
         for m in RF.finditer(text):
             body = m.group(2).replace(' ', '')
             if _mod97(body + 'RF' + m.group(1)) == 1:
                 reference = 'RF' + m.group(1) + body
                 break
+    if not reference:  # twelve plain digits that check out, outside any IBAN: the bank app shows it with the +++
+        reference = _ogm(PLAIN_OGM, IBAN.sub(' ', text))
     return f'{iban}|{reference}' if reference else None
+
+
+def _ogm(pattern, text):
+    """The first Belgian structured reference pattern finds in text whose last two digits check the first ten (mod 97)."""
+    for m in pattern.finditer(text):
+        digits = ''.join(m.groups())
+        if (int(digits[:10]) % 97 or 97) == int(digits[10:]):
+            return digits
+    return None
 
 
 BILL_FIELDS = ('payee', 'invoice', 'amount')
