@@ -31,6 +31,8 @@ Deine Machine behält die Schlüssel des verknüpften Geräts bei sich. Sie verl
 
 ## Wenn es aufhört
 
+Es nutzt signal-cli, einen inoffiziellen Signal-Client. Deine Machine lädt eine festgelegte Version herunter und prüft ihre Prüfsumme, bevor sie läuft. Signal kann ihn jederzeit nicht mehr akzeptieren.
+
 - **Signal hat diese Machine entkoppelt**: Du hast sie auf deinem Handy entfernt, oder Signal hat die Verknüpfung beendet. Tippe in **Verbindungen** auf **Neu verbinden** und scanne einen neuen Code.
 - **Aktualisiere The Machine für Signal**: Signal akzeptiert den Signal-Client dieser Machine nicht mehr. Aktualisiere The Machine.
 

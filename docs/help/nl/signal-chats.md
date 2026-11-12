@@ -31,6 +31,8 @@ Je Machine bewaart de sleutels van het gekoppelde apparaat bij zichzelf. Ze verl
 
 ## Als hij stopt
 
+Het gebruikt signal-cli, een onofficiële Signal-client. Je Machine downloadt een vaste release en controleert de checksum voor hij draait. Signal kan hem op elk moment niet meer aanvaarden.
+
 - **Signal heeft deze Machine ontkoppeld**: je hebt hem op je telefoon verwijderd, of Signal heeft de koppeling beëindigd. Tik in **Koppelingen** op **Opnieuw verbinden** en scan een nieuwe code.
 - **Werk The Machine bij voor Signal**: Signal aanvaardt de Signal-client van deze Machine niet meer. Werk The Machine bij.
 

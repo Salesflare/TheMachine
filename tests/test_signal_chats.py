@@ -30,6 +30,9 @@ from machine.sources import groups  # noqa: E402
 spec = importlib.util.spec_from_file_location('assistant_signal', ROOT / 'assistant.py')
 a = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(a)
+spec = importlib.util.spec_from_file_location('signal_pin', ROOT / 'scripts/signal_pin.py')
+signal_pin = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(signal_pin)
 
 NUMBER = '+15555550100'  # a fictional number (555-01xx)
 PAT = '11111111-1111-4111-8111-111111111111'
@@ -119,6 +122,34 @@ class Release(unittest.TestCase):
     def test_downloads_only_from_its_own_releases(self):
         with self.assertRaises(RuntimeError):
             sr._fetch('https://example.com/signal-cli.tar.gz')
+
+    def test_the_monthly_bump_pins_the_newest_release_with_its_checksums(self):
+        data = {'repository': 'AsamK/signal-cli', 'tag': 'v0.1.2', 'license': 'GPL-3.0-only',
+                'builds': {'linux_amd64': {'archive': 'signal-cli-0.1.2-Linux-native.tar.gz', 'sha256': '0' * 64, 'binary': 'signal-cli'},
+                           'java': {'archive': 'signal-cli-0.1.2.tar.gz', 'sha256': '0' * 64, 'binary': 'signal-cli-0.1.2/bin/signal-cli', 'java': 25}}}
+        release = {'tag_name': 'v0.1.3', 'assets': [{'name': 'signal-cli-0.1.3-Linux-native.tar.gz', 'digest': 'sha256:' + 'a' * 64},
+                                                    {'name': 'signal-cli-0.1.3.tar.gz', 'digest': 'sha256:' + 'b' * 64},
+                                                    {'name': 'signal-cli-0.1.3.tar.gz.asc', 'digest': None}]}
+        tag, sums = signal_pin.newest('AsamK/signal-cli', lambda url, accept: json.dumps(release).encode())
+        new = signal_pin.updated_pin(data, tag, sums)
+        self.assertEqual(new['tag'], 'v0.1.3')
+        self.assertEqual(new['builds']['linux_amd64'], {'archive': 'signal-cli-0.1.3-Linux-native.tar.gz', 'sha256': 'a' * 64, 'binary': 'signal-cli'})
+        self.assertEqual(new['builds']['java']['binary'], 'signal-cli-0.1.3/bin/signal-cli')
+        self.assertEqual(new['builds']['java']['sha256'], 'b' * 64)
+        with self.assertRaises(SystemExit):
+            signal_pin.updated_pin(data, tag, {'signal-cli-0.1.3.tar.gz': 'b' * 64})  # a build without its archive
+        for odd in ('nightly', 'v0.1.3-rc1'):
+            with self.assertRaises(SystemExit):
+                signal_pin.newest('AsamK/signal-cli', lambda url, accept, odd=odd: json.dumps({'tag_name': odd}).encode())
+        blob = b'archive'
+        good = {**new, 'builds': {'java': {**new['builds']['java'], 'sha256': hashlib.sha256(blob).hexdigest()}}}
+        with contextlib.redirect_stdout(io.StringIO()):
+            signal_pin.verify(good, fetch=lambda url: blob)
+            with self.assertRaises(SystemExit):
+                signal_pin.verify(good, fetch=lambda url: blob + b'x')
+        line = '| [signal-cli](https://github.com/AsamK/signal-cli) 0.1.2, downloaded from its GitHub releases'
+        self.assertIn('signal-cli) 0.1.3, downloaded', signal_pin.notices(line, new))
+        self.assertIn(f"signal-cli) {sr.version()},", (ROOT / 'THIRD_PARTY_NOTICES.md').read_text())
 
 
 # ---------------------------------------------------------------- linking

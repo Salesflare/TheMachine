@@ -31,6 +31,8 @@ Votre Machine garde les clés de l’appareil relié chez elle. Elles ne la quit
 
 ## Quand elle s’arrête
 
+Il utilise signal-cli, un client Signal non officiel. Votre Machine télécharge une version fixée et vérifie sa somme de contrôle avant de la lancer. Signal peut cesser de l’accepter à tout moment.
+
 - **Signal a dissocié cette Machine** : vous l’avez retirée sur votre téléphone, ou Signal a mis fin à la liaison. Touchez **Reconnecter** dans **Connexions** et scannez un nouveau code.
 - **Mettez à jour The Machine pour Signal** : Signal n’accepte plus le client Signal de cette Machine. Mettez à jour The Machine.
 

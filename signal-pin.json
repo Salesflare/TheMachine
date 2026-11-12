@@ -4,7 +4,16 @@
   "tag": "v0.14.10",
   "license": "GPL-3.0-only",
   "builds": {
-    "linux_amd64": {"archive": "signal-cli-0.14.10-Linux-native.tar.gz", "sha256": "db9297789c5bbc6131df505d2f37abe43efa0b54200585f5e56b478e1cd93916", "binary": "signal-cli"},
-    "java": {"archive": "signal-cli-0.14.10.tar.gz", "sha256": "706a57d9faae7525cf732936efdabf210146e3c83f9e8ae7e4e62f5946121c33", "binary": "signal-cli-0.14.10/bin/signal-cli", "java": 25}
+    "linux_amd64": {
+      "archive": "signal-cli-0.14.10-Linux-native.tar.gz",
+      "sha256": "db9297789c5bbc6131df505d2f37abe43efa0b54200585f5e56b478e1cd93916",
+      "binary": "signal-cli"
+    },
+    "java": {
+      "archive": "signal-cli-0.14.10.tar.gz",
+      "sha256": "706a57d9faae7525cf732936efdabf210146e3c83f9e8ae7e4e62f5946121c33",
+      "binary": "signal-cli-0.14.10/bin/signal-cli",
+      "java": 25
+    }
   }
 }

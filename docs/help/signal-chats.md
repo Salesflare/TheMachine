@@ -31,6 +31,8 @@ Your Machine keeps the linked device's keys on itself. They never leave it.
 
 ## When it stops
 
+It uses signal-cli, an unofficial Signal client. Your Machine downloads a pinned release and checks its checksum before it runs. Signal can stop accepting it at any time.
+
 - **Signal unlinked this Machine**: you removed it on your phone, or Signal ended the link. Press **Reconnect** in **Connections** and scan a new code.
 - **Update The Machine for Signal**: Signal no longer accepts this Machine's Signal client. Update The Machine.
 

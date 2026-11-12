@@ -31,6 +31,8 @@ Sua Machine guarda as chaves do aparelho conectado com ela. Elas nunca saem dela
 
 ## Quando ela para
 
+Ele usa o signal-cli, um cliente não oficial do Signal. Sua Machine baixa uma versão fixada e confere o checksum antes de rodá-la. O Signal pode deixar de aceitá-lo a qualquer momento.
+
 - **O Signal desvinculou esta Machine**: você a removeu no celular, ou o Signal encerrou a conexão. Toque em **Reconectar** em **Conexões** e escaneie um novo código.
 - **Atualize The Machine para o Signal**: o Signal não aceita mais o cliente Signal desta Machine. Atualize The Machine.
 

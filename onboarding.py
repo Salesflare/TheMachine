@@ -333,7 +333,7 @@ WEB_NOTES = {
     'linkedin': 'Next, you sign in to LinkedIn on your Machine, right here.',
     'x': 'Next, you sign in to X on your Machine, right here.',
     'whatsapp': 'Next, you link your Machine in WhatsApp, Linked devices, with a code shown here.',
-    'telegram': 'Next, you scan a QR code in Telegram.', 'signal': 'Next, you scan a QR code in Signal on your phone.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
+    'telegram': 'Next, you scan a QR code in Telegram.', 'signal': 'Next, you scan a QR code in Signal on your phone. It uses an unofficial Signal client, so it may stop working.', 'imap': 'Many providers need an app password for mail apps. Server settings are filled in for most.',
     'android': 'Install the OpenClaw app on your phone and pair it with your Machine first: https://themachine.computer/help/android#connect-it', **calendar_setup.NOTES,
     'shortcut': 'It only reads, never changes anything in Shortcut.'}  # Get your token (SETUP token_url) opens the page
 WEB_LEARN = {'telegram': 'telegram-chats', 'signal': 'signal-chats', 'imap': 'imap', **calendar_setup.LEARN}  # its help article, behind Learn more: how it reads, and that it isn't the to-dos bot

@@ -31,6 +31,8 @@ La tua Machine tiene con sé le chiavi del dispositivo collegato. Non la lascian
 
 ## Quando si ferma
 
+Usa signal-cli, un client Signal non ufficiale. La tua Machine scarica una versione fissata e ne controlla il checksum prima di avviarla. Signal può smettere di accettarlo in qualsiasi momento.
+
 - **Signal ha scollegato questa Machine**: l’hai rimossa dal telefono, o Signal ha chiuso il collegamento. Tocca **Ricollega** in **Connessioni** e scansiona un nuovo codice.
 - **Aggiorna The Machine per Signal**: Signal non accetta più il client Signal di questa Machine. Aggiorna The Machine.
 

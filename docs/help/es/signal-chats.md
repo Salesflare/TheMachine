@@ -31,6 +31,8 @@ Tu Machine guarda las claves del dispositivo vinculado consigo. Nunca salen de e
 
 ## Cuando se detiene
 
+Usa signal-cli, un cliente de Signal no oficial. Tu Machine descarga una versión fijada y comprueba su suma de verificación antes de ejecutarla. Signal puede dejar de aceptarlo en cualquier momento.
+
 - **Signal desvinculó esta Machine**: la quitaste en tu teléfono, o Signal terminó la vinculación. Toca **Reconectar** en **Conexiones** y escanea un código nuevo.
 - **Actualiza The Machine para Signal**: Signal ya no acepta el cliente de Signal de esta Machine. Actualiza The Machine.
 
