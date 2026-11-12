@@ -114,7 +114,8 @@ try{
  await page.reload();await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="notify"]').click();
  await page.locator('#hours-morning').fill('08:45');
  assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
- assert.match(await page.locator('#hours-error').textContent(),/^Morning digest moved to (09:15|9:15\sAM), after snoozes land\.$/);
+ assert.match(await page.locator('#hours-digest-note').textContent(),/^Morning digest moved to (09:15|9:15\sAM), after snoozes land\.$/);
+ assert.equal(await page.locator('#hours-error').textContent(),'');  // a note under the field, not an error
  await page.locator('#hours-morning').fill('08:15');
  assert.equal(await page.locator('#hours-digest').inputValue(),'09:15');
  await page.locator('#hours-digest').fill('08:00');

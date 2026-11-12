@@ -92,8 +92,8 @@ function digestFollow(moved){const f=$('#hours-digest'),mo=$('#hours-morning'),w
  if(moved&&was!=null&&now!=null&&now>was&&hmMin(d)!=null&&hmMin(d)>=was+5)d=minHM(Math.min(hmMin(d)+now-was,1439));  // the same gap after the later snoozes
  if(moved)mo.dataset.was=mo.value;
  d=digestFloor(d,{morning:mo.value,start:$('#hours-start').value,end:$('#hours-end').value});const x=hmMin(mo.value);f.min=x!=null&&x+5<1440?minHM(x+5):'';
- if(d!==f.value){f.value=d;hoursDirty=true;let at=d;try{at=fmtHM('2000-01-01T'+d)}catch{}const note=$('#hours-error');note.textContent=t('Morning digest moved to {}, after snoozes land.',at);note.style.color='var(--muted)'}}  // a note, not an error
-$('#hours').addEventListener('submit',()=>{$('#hours-error').style.color=''},true);
+ if(d!==f.value){f.value=d;hoursDirty=true;let at=d;try{at=fmtHM('2000-01-01T'+d)}catch{}$('#hours-digest-note').textContent=t('Morning digest moved to {}, after snoozes land.',at)}}
+$('#hours').addEventListener('submit',()=>{$('#hours-digest-note').textContent=''},true);
 $('#hours-morning').addEventListener('change',()=>digestFollow(true));
 $('#hours-digest').addEventListener('change',()=>digestFollow(false));
 $('#hours-morning').addEventListener('focus',e=>{e.target.dataset.was=e.target.value});
