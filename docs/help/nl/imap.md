@@ -28,17 +28,19 @@ Veel providers willen een app-wachtwoord voor mailprogramma's, niet je gewone wa
 - Yahoo: Accountbeveiliging, App-wachtwoord genereren.
 - Fastmail: Settings, Privacy and security, App passwords.
 - Telenet: je gewone wachtwoord van je Telenet-mail.
-- Proton Mail: laat Proton Mail Bridge op dezelfde computer draaien en gebruik het wachtwoord dat Bridge toont.
+- Zoho Mail met tweestapsverificatie: een app-specifiek wachtwoord in je Zoho-account, bij Beveiliging.
+- Proton Mail: laat Proton Mail Bridge op dezelfde computer draaien en gebruik het wachtwoord dat Bridge toont. Dat werkt alleen met The Machine op diezelfde computer. The Machine toont de vingerafdruk van het certificaat van Bridge en vertrouwt alleen dat.
 
 De serverinstellingen worden voor de meeste providers ingevuld. Die van jou niet gevonden? Open **Serverinstellingen** en typ wat je provider opgeeft voor mailprogramma's: de IMAP- en SMTP-server, hun poorten en beveiliging (SSL/TLS of STARTTLS). The Machine maakt nooit verbinding zonder TLS.
 
-Gmail of mail van Microsoft, ook op je eigen domein? Kies dan **Gmail** of **Outlook**. Die melden zich aan zonder wachtwoord.
+Gmail of mail van Microsoft, ook op je eigen domein? Kies dan **Gmail** of **Outlook**. Die melden zich aan zonder wachtwoord. Typ je hun servers in Serverinstellingen, dan gaat het ook daarheen: Microsoft neemt geen wachtwoorden van mailprogramma’s meer aan.
 
 ## Als het stopt
 
 - **De mailserver weigerde het wachtwoord**: je hebt het gewijzigd, of het app-wachtwoord is verwijderd. Koppel opnieuw met het nieuwe.
 - **De mailserver weigerde het wachtwoord om te verzenden**: er is niets verzonden. Koppel opnieuw; blijft hij weigeren, kijk dan de SMTP-server na in Serverinstellingen. Tot dan leest hij alleen.
 - **De mailserver was niet bereikbaar**: hij probeert het zelf opnieuw. Blijft het mislukken, kijk dan de servernaam na in Serverinstellingen.
+- **Het certificaat van de mailserver is voor een andere naam**: bij gedeelde hosting antwoordt vaak de eigen server van de host. Typ de getoonde naam in Serverinstellingen. The Machine slaat de certificaatcontrole nooit over.
 
 ## Verwijderen
 

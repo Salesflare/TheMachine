@@ -41,7 +41,9 @@ FOLDERS = {'i': 'INBOX', 's': 'SENT'}  # folder key -> its Gmail label
 SENT_NAMES = {'sent', 'sent items', 'sent messages', 'sent mail', 'sent-mail', 'verzonden', 'verzonden items',
               'verzonden berichten', 'gesendet', 'gesendete elemente', 'gesendete objekte', 'envoyés', 'éléments envoyés',
               'messages envoyés', 'enviados', 'elementos enviados', 'mensajes enviados', 'posta inviata', 'inviata',
-              'inviati', 'itens enviados', 'enviadas'}
+              'inviati', 'itens enviados', 'enviadas', 'elementi inviati', 'gesendete nachrichten', 'skickat', 'skickade',
+              'skickade meddelanden', 'skickade objekt', 'sendt', 'sendte', 'sendt post', 'sendte elementer', 'sendte objekter',
+              'wysłane', 'elementy wysłane', 'lähetetyt', 'odeslané', 'elküldött'}
 MONTHS = {m: i for i, m in enumerate(('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'), 1)}
 MESSAGE_ID = re.compile(r'^([is])(\d+)-(\d+)$')
 
@@ -72,12 +74,69 @@ def settings(account):
 
 def tls_context(host):
     """Verified TLS, as a browser does. Only a server on this computer itself (Proton Mail Bridge) may have its own
-    self-signed certificate: nothing in between can read a connection that never leaves the computer."""
+    self-signed certificate, and then only the one pinned at setup (check_pin): the chain isn't checked here, the
+    certificate itself is, right after the handshake and before the password goes."""
     context = ssl.create_default_context()
     if host in LOOPBACK:
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
     return context
+
+
+def fingerprint(der):
+    """A certificate's SHA-256 fingerprint as mail apps and openssl show it: AB:CD:…"""
+    return ':'.join(f'{b:02X}' for b in hashlib.sha256(der).digest())
+
+
+def check_pin(host, sock, account, key='tls_pin'):
+    """A server on this computer answers with the certificate pinned at setup (tls_pin, smtp_tls_pin), or nothing is
+    sent to it. One set up before pins were kept is taken as before until it is connected again."""
+    pin = str(account.get(key) or '')
+    if host not in LOOPBACK or not pin:
+        return
+    der = sock.getpeercert(binary_form=True) if sock is not None else None
+    if not der or fingerprint(der) != pin.upper():
+        raise ssl.SSLError('the certificate is not the pinned one')
+
+
+def peer_certificate(host, port, security, protocol='imap', verify=True):
+    """The server's certificate, read without signing in: (der, [names]), or None when there is no TLS to read it
+    from. verify=True takes only a chain a browser trusts (its names aren't checked: that is what this is for, to say
+    which name to use); verify=False is only for a server on this computer, to show the fingerprint that gets pinned."""
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    if not verify:
+        if host not in LOOPBACK:
+            return None
+        context.verify_mode = ssl.CERT_NONE
+    conn = None
+    try:
+        if protocol == 'imap':
+            if security == 'ssl':
+                conn = imaplib.IMAP4_SSL(host, port, ssl_context=context, timeout=10)
+            else:
+                conn = imaplib.IMAP4(host, port, timeout=10)
+                conn.starttls(ssl_context=context)
+        else:
+            import smtplib  # noqa: PLC0415 - only here
+            if security == 'ssl':
+                conn = smtplib.SMTP_SSL(host, port, local_hostname='[127.0.0.1]', timeout=10, context=context)
+            else:
+                conn = smtplib.SMTP(host, port, local_hostname='[127.0.0.1]', timeout=10)
+                conn.ehlo()
+                conn.starttls(context=context)
+        der, info = conn.sock.getpeercert(binary_form=True), conn.sock.getpeercert() or {}
+    except Exception:  # noqa: BLE001 - nothing to read: the caller says what it can
+        return None
+    finally:
+        if conn is not None:
+            try:
+                conn.sock.close()
+            except Exception:  # noqa: BLE001
+                pass
+    names = [v for k, v in info.get('subjectAltName', ()) if k == 'DNS']
+    names += [v for part in info.get('subject', ()) for k, v in part if k == 'commonName' and v not in names]
+    return der, names
 
 
 def failure(error, login=False):
@@ -237,6 +296,7 @@ def open_connection(account, password):
         else:
             conn = imaplib.IMAP4(host, port, timeout=TIMEOUT)
             conn.starttls(ssl_context=tls_context(host))  # no STARTTLS on offer: refused, never read in plaintext
+        check_pin(host, conn.sock, account)
     except Exception as error:  # noqa: BLE001 - every way it fails is mapped
         _close(conn)
         raise failure(error) from None

@@ -28,17 +28,19 @@ Molti provider chiedono una password per le app di posta, non la tua password no
 - Yahoo: Sicurezza dell’account, Genera password per app.
 - Fastmail: Settings, Privacy and security, App passwords.
 - Telenet: la tua normale password della posta Telenet.
-- Proton Mail: avvia Proton Mail Bridge sullo stesso computer e usa la password che mostra Bridge.
+- Zoho Mail con l’autenticazione a due fattori: una password specifica per l’applicazione nel tuo account Zoho, in Sicurezza.
+- Proton Mail: avvia Proton Mail Bridge sullo stesso computer e usa la password che mostra Bridge. Funziona solo con The Machine su quello stesso computer. The Machine mostra l’impronta del certificato di Bridge e si fida solo di quello.
 
 Le impostazioni del server vengono compilate per la maggior parte dei provider. Il tuo non è stato trovato? Apri **Impostazioni del server** e inserisci quello che il tuo provider indica per le app di posta: server IMAP e SMTP, le loro porte e la sicurezza (SSL/TLS o STARTTLS). The Machine non si collega mai senza TLS.
 
-Gmail o posta Microsoft, anche sul tuo dominio? Scegli invece **Gmail** o **Outlook**. Accedono senza password.
+Gmail o posta Microsoft, anche sul tuo dominio? Scegli invece **Gmail** o **Outlook**. Accedono senza password. Se scrivi i loro server in Impostazioni del server, ti porta lì lo stesso: Microsoft non accetta più password dalle app di posta.
 
 ## Se si ferma
 
 - **Il server di posta ha rifiutato la password**: l’hai cambiata, o la password per app è stata rimossa. Collegala di nuovo con quella nuova.
 - **Il server di posta ha rifiutato la password per l’invio**: non è stato inviato nulla. Ricollegala; se continua a rifiutarla, controlla il server SMTP in Impostazioni del server. Fino ad allora legge soltanto.
 - **Il server di posta non è raggiungibile**: riprova da sola. Se continua a non riuscire, controlla il nome del server in Impostazioni del server.
+- **Il certificato del server di posta è per un altro nome**: con l’hosting condiviso risponde spesso il server del provider. Scrivi il nome mostrato in Impostazioni del server. The Machine non salta mai il controllo del certificato.
 
 ## Rimuovila
 

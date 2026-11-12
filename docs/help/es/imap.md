@@ -28,17 +28,19 @@ Muchos proveedores piden una contraseña de aplicación para programas de correo
 - Yahoo: Seguridad de la cuenta, Generar contraseña de aplicación.
 - Fastmail: Settings, Privacy and security, App passwords.
 - Telenet: tu contraseña normal del correo de Telenet.
-- Proton Mail: ejecuta Proton Mail Bridge en el mismo ordenador y usa la contraseña que muestra Bridge.
+- Zoho Mail con verificación en dos pasos: una contraseña específica de aplicación en tu cuenta de Zoho, en Seguridad.
+- Proton Mail: ejecuta Proton Mail Bridge en el mismo ordenador y usa la contraseña que muestra Bridge. Solo funciona con The Machine en ese mismo ordenador. The Machine muestra la huella del certificado de Bridge y solo confía en ese.
 
 Los ajustes del servidor se rellenan para la mayoría de proveedores. ¿No encuentra el tuyo? Abre **Ajustes del servidor** y escribe lo que tu proveedor indica para programas de correo: los servidores IMAP y SMTP, sus puertos y su seguridad (SSL/TLS o STARTTLS). The Machine nunca se conecta sin TLS.
 
-¿Gmail o correo de Microsoft, también en tu propio dominio? Elige **Gmail** u **Outlook**. Se conectan sin contraseña.
+¿Gmail o correo de Microsoft, también en tu propio dominio? Elige **Gmail** u **Outlook**. Se conectan sin contraseña. Si escribes sus servidores en Ajustes del servidor, también te lleva allí: Microsoft ya no acepta contraseñas de apps de correo.
 
 ## Si se detiene
 
 - **El servidor de correo rechazó la contraseña**: la cambiaste, o se eliminó la contraseña de aplicación. Vuelve a conectarlo con la nueva.
 - **El servidor de correo rechazó la contraseña para enviar**: no se envió nada. Vuelve a conectarlo; si sigue rechazándola, revisa el servidor SMTP en Ajustes del servidor. Hasta entonces solo lee.
 - **No se pudo llegar al servidor de correo**: lo vuelve a intentar sola. Si sigue fallando, revisa el nombre del servidor en Ajustes del servidor.
+- **El certificado del servidor de correo es para otro nombre**: en el hosting compartido suele responder el servidor propio del proveedor. Escribe el nombre que se muestra en Ajustes del servidor. The Machine nunca se salta la comprobación del certificado.
 
 ## Quítalo
 

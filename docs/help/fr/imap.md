@@ -28,17 +28,19 @@ Beaucoup de fournisseurs demandent un mot de passe d’application pour les logi
 - Yahoo : Sécurité du compte, Générer un mot de passe d’application.
 - Fastmail : Settings, Privacy and security, App passwords.
 - Telenet : votre mot de passe habituel de la messagerie Telenet.
-- Proton Mail : lancez Proton Mail Bridge sur le même ordinateur et utilisez le mot de passe affiché par Bridge.
+- Zoho Mail avec l’authentification à deux facteurs : un mot de passe spécifique à l’application dans votre compte Zoho, Sécurité.
+- Proton Mail : lancez Proton Mail Bridge sur le même ordinateur et utilisez le mot de passe affiché par Bridge. Cela ne fonctionne qu’avec The Machine sur ce même ordinateur. The Machine affiche l’empreinte du certificat de Bridge et ne fait confiance qu’à celui-ci.
 
 Les réglages du serveur sont remplis pour la plupart des fournisseurs. Le vôtre n’est pas trouvé ? Ouvrez **Réglages du serveur** et saisissez ce que votre fournisseur indique pour les logiciels de messagerie : les serveurs IMAP et SMTP, leurs ports et leur sécurité (SSL/TLS ou STARTTLS). The Machine ne se connecte jamais sans TLS.
 
-Gmail ou une messagerie Microsoft, même sur votre propre domaine ? Choisissez plutôt **Gmail** ou **Outlook**. Ils se connectent sans mot de passe.
+Gmail ou une messagerie Microsoft, même sur votre propre domaine ? Choisissez plutôt **Gmail** ou **Outlook**. Ils se connectent sans mot de passe. Leurs serveurs saisis dans Réglages du serveur y mènent aussi : Microsoft n’accepte plus les mots de passe des applications de messagerie.
 
 ## Quand elle s’arrête
 
 - **Le serveur de messagerie a refusé le mot de passe** : vous l’avez changé, ou le mot de passe d’application a été supprimé. Connectez-la à nouveau avec le nouveau.
 - **Le serveur de messagerie a refusé le mot de passe pour l’envoi** : rien n’a été envoyé. Reconnectez-la ; s’il refuse encore, vérifiez le serveur SMTP dans Réglages du serveur. D’ici là, elle lit seulement.
 - **Le serveur de messagerie est injoignable** : elle réessaie toute seule. Si cela continue, vérifiez le nom du serveur dans Réglages du serveur.
+- **Le certificat du serveur de messagerie est pour un autre nom** : un hébergement mutualisé répond souvent avec le nom de son propre serveur. Saisissez le nom affiché dans Réglages du serveur. The Machine ne saute jamais la vérification du certificat.
 
 ## La retirer
 

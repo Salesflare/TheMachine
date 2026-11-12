@@ -88,6 +88,29 @@ def _plain(conn, username, password):
         raise smtplib.SMTPAuthenticationError(code, b'')
 
 
+def _login(conn, username, password):
+    """AUTH LOGIN, for a server that offers no PLAIN: the name, then the password, each asked for in turn."""
+    for step, (want, value) in enumerate(((334, None), (334, username), (235, password))):
+        code, _ = conn.docmd('AUTH', 'LOGIN') if step == 0 else conn.docmd(base64.b64encode(value.encode()).decode())
+        if code != want:
+            raise smtplib.SMTPAuthenticationError(code, b'')
+
+
+def sign_in(conn, username, password):
+    """One sign-in, with one method: PLAIN, else LOGIN (both fine inside TLS), else what smtplib does (CRAM-MD5).
+    smtplib's own login tries each method the server offers in turn, so one wrong password counts as two or three
+    failed sign-ins, and shared hosting locks an address out after a few."""
+    offered = set(str(conn.esmtp_features.get('auth') or '').upper().split())
+    if 'PLAIN' in offered:
+        _plain(conn, username, password)
+    elif 'LOGIN' in offered:
+        _login(conn, username, password)
+    elif username.isascii() and password.isascii():
+        conn.login(username, password)
+    else:
+        raise smtplib.SMTPNotSupportedError('no AUTH method for this password')
+
+
 def connect(account, password):
     """A connection over TLS, signed in. Raises SmtpError."""
     host, port, security, username = settings(account)
@@ -105,12 +128,10 @@ def connect(account, password):
                 raise SmtpError('smtp_tls_failed')
             conn.starttls(context=context)
             conn.ehlo()
+        imap_mail.check_pin(host, conn.sock, account, 'smtp_tls_pin')
         if not conn.has_extn('auth'):
             raise SmtpError('smtp_no_auth')
-        if username.isascii() and password.isascii():
-            conn.login(username, password)
-        else:
-            _plain(conn, username, password)
+        sign_in(conn, username, password)
     except Exception as error:  # noqa: BLE001 - every way it fails is mapped
         close(conn)
         raise failure(error) from None

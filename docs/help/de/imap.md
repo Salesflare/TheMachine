@@ -28,17 +28,19 @@ Viele Anbieter wollen für Mailprogramme ein App-Passwort, nicht dein normales P
 - Yahoo: Kontosicherheit, App-Passwort generieren.
 - Fastmail: Settings, Privacy and security, App passwords.
 - Telenet: dein normales Passwort für Telenet-Mail.
-- Proton Mail: lass Proton Mail Bridge auf demselben Computer laufen und nimm das Passwort, das Bridge anzeigt.
+- Zoho Mail mit Zwei-Faktor-Authentifizierung: ein anwendungsspezifisches Passwort in deinem Zoho-Konto, unter Sicherheit.
+- Proton Mail: lass Proton Mail Bridge auf demselben Computer laufen und nimm das Passwort, das Bridge anzeigt. Das klappt nur mit The Machine auf genau diesem Computer. The Machine zeigt den Fingerabdruck des Bridge-Zertifikats und vertraut nur diesem.
 
 Die Servereinstellungen werden für die meisten Anbieter ausgefüllt. Deiner nicht gefunden? Öffne **Servereinstellungen** und gib ein, was dein Anbieter für Mailprogramme angibt: IMAP- und SMTP-Server, ihre Ports und Sicherheit (SSL/TLS oder STARTTLS). The Machine verbindet sich nie ohne TLS.
 
-Gmail oder Mail von Microsoft, auch auf deiner eigenen Domain? Wähle dann **Gmail** oder **Outlook**. Die melden sich ohne Passwort an.
+Gmail oder Mail von Microsoft, auch auf deiner eigenen Domain? Wähle dann **Gmail** oder **Outlook**. Die melden sich ohne Passwort an. Tippst du ihre Server in den Servereinstellungen ein, geht es auch dorthin: Microsoft nimmt keine Passwörter von Mail-Apps mehr an.
 
 ## Wenn sie stoppt
 
 - **Der Mailserver hat das Passwort abgelehnt**: du hast es geändert, oder das App-Passwort wurde entfernt. Verbinde neu mit dem neuen.
 - **Der Mailserver hat das Passwort zum Senden abgelehnt**: Nichts wurde gesendet. Verbinde neu; lehnt er weiter ab, prüfe den SMTP-Server in den Servereinstellungen. Bis dahin liest sie nur.
 - **Der Mailserver war nicht erreichbar**: sie versucht es selbst noch einmal. Klappt es weiter nicht, prüfe den Servernamen in den Servereinstellungen.
+- **Das Zertifikat des Mailservers gilt für einen anderen Namen**: Beim Shared Hosting antwortet oft der eigene Server des Hosters. Gib den angezeigten Namen in den Servereinstellungen ein. The Machine überspringt die Zertifikatsprüfung nie.
 
 ## Entfernen
 
