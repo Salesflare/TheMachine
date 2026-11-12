@@ -130,11 +130,12 @@ _lock = threading.Lock()
 
 
 class GraphError(Exception):
-    """A content-free failure: `status` is Graph's, the broker's or the sign-in's HTTP status, None when unreachable."""
+    """A content-free failure: `status` is Graph's, the broker's or the sign-in's HTTP status, None when unreachable.
+    `route` is the call that failed as its path template (/me/messages/{id}/$value), never an id: set by call()."""
 
-    def __init__(self, category, status=None, retry_after=None):
+    def __init__(self, category, status=None, retry_after=None, route=None):
         super().__init__(category)
-        self.category, self.status, self.retry_after = category, status, retry_after
+        self.category, self.status, self.retry_after, self.route = category, status, retry_after, route
 
 
 def _post_json(url, payload, headers, timeout=20):
@@ -375,6 +376,8 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
     """One Graph call as the account's owner: the parsed JSON answer ({} when empty), or bytes with raw=True.
     `body` is JSON, or bytes sent as `content_type`."""
     verb, scope, url = url_for(method, params, write)
+    # which call failed, for the sync log: an outage fails every call, one message Graph can't serve fails its own
+    route = (WRITE if write else READ)[method][1]
     if isinstance(body, (bytes, bytearray)):
         data, kind = bytes(body), content_type or 'application/octet-stream'
     elif body is not None:
@@ -398,9 +401,10 @@ def call(config, credential, account, method, params=None, body=None, write=Fals
             error.close()
             if error.code == 401 and not attempt and not write:
                 continue  # the access token expired early: one fresh one, for reads only
-            raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None) from None
+            raise GraphError('outlook', error.code, retry_after=_retry_after(error.headers) if error.code in (429, 503) else None,
+                             route=route) from None
         except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException):
-            raise GraphError('timeout') from None
+            raise GraphError('timeout', route=route) from None
         except ValueError:
             raise GraphError('invalid_json') from None
 
