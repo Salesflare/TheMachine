@@ -17,6 +17,10 @@ Zonder tijd draait hij om 8:00. De tijd is die van de klok van je Machine.
 
 Onder **Sjablonen** onderaan Routines zet **Toevoegen** een kant-en-klare routine aan. Die draait meteen één keer en daarna elke ochtend om 7:30 (Spam opruimen elk uur). Haar kaart toont haar woorden zoals elke routine, en **Bewerken** past ze of haar naam aan.
 
+Komen er veel nieuwsbrieven binnen terwijl Nieuwsbrieven opruimen uit staat (25 of meer in een week, van minstens 5 afzenders), dan zegt een regel boven je to-do’s hoeveel er kwamen en wat het zou doen, met **Zet het aan** en **Nee, bedankt**.
+
+Spam opruimen wordt zo aangeboden als er in een week 5 of meer mails met de hand naar spam zijn verplaatst. **Zet het aan** voegt het toe zoals **Toevoegen** hier. Na **Nee, bedankt** komt het niet meer terug, en een sjabloon dat je al eens had nooit.
+
 **Nieuwsbrieven opruimen** maakt één to-do per gebied (werk en persoonlijk) met de nieuwsbrieven van de voorbije dag, elk met **Houden** of **Afmelden**. Afmelden gebruikt de afmeldlink met één klik van de lijst, of de afmeldmail vanaf je adres als versturen aanstaat. Anders toont het **Afmeldpagina openen**.
 
 Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een groepsadres binnenkomt, zoals een Google Group, staat onder wie hem schreef en meldt je nooit af bij de groep.

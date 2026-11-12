@@ -17,6 +17,10 @@ Senza un orario, gira alle 8:00. L’orario è quello dell’orologio della tua 
 
 In **Modelli**, in fondo a Routine, **Aggiungi** attiva una routine già pronta. Parte subito una volta e poi ogni mattina alle 7:30 (Pulizia spam ogni ora). La sua scheda mostra le sue parole come ogni routine, e **Modifica** cambia le parole o il nome.
 
+Quando arrivano molte newsletter e Pulizia newsletter è spenta (25 o più in una settimana, da almeno 5 mittenti), una riga sopra i tuoi to-do dice quante ne sono arrivate e cosa farebbe, con **Attivala** e **No, grazie**.
+
+Pulizia spam viene proposta allo stesso modo quando in una settimana 5 o più email sono state spostate a mano nello spam. **Attivala** la aggiunge come **Aggiungi** qui. Dopo **No, grazie** non viene più proposta, e un modello che avevi già mai.
+
 **Pulizia newsletter** crea un’attività per area (lavoro e personale) con le newsletter dell’ultimo giorno, ognuna con **Tieni** o **Disiscriviti**. La disiscrizione usa il link a un clic della lista, o la sua email di disiscrizione dal tuo indirizzo se l’invio è attivo. Altrimenti mostra **Apri la pagina di disiscrizione**.
 
 Ricevute, ordini e avvisi di pagamento restano fuori. Una email arrivata tramite un indirizzo di gruppo, come un Google Group, è elencata sotto chi l’ha scritta e non ti disiscrive mai dal gruppo.

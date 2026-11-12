@@ -208,7 +208,18 @@ def newsletters(db, accounts, since):
     knows and never what the review sorted as a notification (a receipt, an order or a payment); senders asked before
     are left out. Mail a list relayed (a Google Group) counts under its original sender, with the list as via; when
     the list kept no original address there is nothing to unsubscribe from but the list, and it is left out."""
-    people, skip, found, receipts = People(db), asked(db, 'newsletters'), {}, notifications(db, since)
+    found = {}
+    for r, m, name, address, via in _newsletter_mail(db, accounts, since):
+        if address in found:
+            found[address]['count'] += 1
+        elif len(found) < MAX_ITEMS:
+            found[address] = _item(r, m, name, address, via=via)
+    return list(found.values())
+
+
+def _newsletter_mail(db, accounts, since):
+    """Each newsletter mail since then, newest first, as (row, metadata, name, address, via): newsletters' own test."""
+    people, skip, receipts = People(db), asked(db, 'newsletters'), notifications(db, since)
     for r, m in _rows(db, accounts, since):
         name, address = sender(m)
         if not address or r['id'] in receipts or mail_wait(m, r['title'] or '', people) != 'list':
@@ -217,13 +228,18 @@ def newsletters(db, accounts, since):
         if via:
             name, address = original_sender(m)
             address = address.lower()
-        if not address or address in skip:
-            continue
-        if address in found:
-            found[address]['count'] += 1
-        elif len(found) < MAX_ITEMS:
-            found[address] = _item(r, m, name, address, via=via)
-    return list(found.values())
+        if address and address not in skip:
+            yield r, m, name, address, via
+
+
+def newsletter_count(db, accounts, since):
+    """How many newsletters came since then, and from how many senders: what Newsletter cleanup would list, counted
+    (routine_offers.py). Plain code, no model."""
+    senders, n = set(), 0
+    for _, _, _, address, _ in _newsletter_mail(db, accounts, since):
+        senders.add(address)
+        n += 1
+    return n, len(senders)
 
 
 _BY_OWNER = "(json_extract({0}.metadata,'$.from_me') IN (1,'true') OR instr(json_extract({0}.metadata,'$.labels'),'\"SENT\"')>0)"
@@ -264,12 +280,12 @@ def known_senders(db, addresses):
     return {a for a in addresses if known.wrote_to(a)}
 
 
-def _marked_rows(db, accounts):
-    """The owner's own spam marks of the past MARKS_DAYS: their mail that went to spam after it came in (labels SPAM,
+def _marked_rows(db, accounts, days=MARKS_DAYS):
+    """The owner's own spam marks of the past days: their mail that went to spam after it came in (labels SPAM,
     changed since its first sync), newest first."""
     if not accounts:
         return []
-    start = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=MARKS_DAYS)).isoformat()
+    start = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)).isoformat()
     rows = db.execute(f"SELECT id,account_id,kind,title,metadata,ingested_at FROM events WHERE kind IN ({','.join('?' * len(MAIL_KINDS))}) "
                       f"AND account_id IN ({','.join('?' * len(accounts))}) AND deleted=0 AND occurred_at>=? AND version>1 "
                       "AND instr(json_extract(metadata,'$.labels'),'\"SPAM\"')>0 ORDER BY ingested_at DESC LIMIT 500",
@@ -296,6 +312,13 @@ def learn_marks(db, accounts, stamp):
                         "ON CONFLICT(kind,address) DO UPDATE SET choice='marked',at=excluded.at WHERE excluded.at>mail_cleanup_senders.at "
                         "AND mail_cleanup_senders.choice!='marked'", (address, r['ingested_at'] or stamp)).rowcount
     return n
+
+
+def marks_count(db, accounts, days):
+    """How many mails the owner moved to spam themselves in the past days (_marked_rows), never counting mail from
+    someone they wrote to (routine_offers.py). Plain code, no model."""
+    known = Known(db)
+    return sum(1 for _, m in _marked_rows(db, accounts, days) if (address := sender(m)[1]) and not known.wrote_to(address))
 
 
 def marked_examples(db, accounts):

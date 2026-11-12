@@ -19,6 +19,10 @@ Ohne Uhrzeit läuft sie um 8:00. Die Uhrzeit gilt auf der Uhr deiner Machine. Ih
 
 Unter **Vorlagen** unten auf Routinen schaltet **Hinzufügen** eine fertige Routine ein. Sie läuft sofort einmal und dann jeden Morgen um 7:30 (Spam aufräumen jede Stunde). Ihre Karte zeigt ihre Worte wie jede Routine, und **Bearbeiten** ändert sie oder ihren Namen.
 
+Kommen viele Newsletter an, während Newsletter aufräumen aus ist (25 oder mehr in einer Woche, von mindestens 5 Absendern), sagt eine Zeile über deinen To-dos, wie viele kamen und was es tun würde, mit **Einschalten** und **Nein danke**.
+
+Spam aufräumen wird genauso angeboten, wenn in einer Woche 5 oder mehr Mails von Hand in den Spam verschoben wurden. **Einschalten** fügt es hinzu wie **Hinzufügen** hier. Nach **Nein danke** kommt es nicht wieder, und eine Vorlage, die du schon einmal hattest, nie.
+
 **Newsletter aufräumen** macht ein To-do pro Bereich (Arbeit und Privat) mit den Newslettern des letzten Tages, jeweils mit **Behalten** oder **Abmelden**. Abmelden nutzt den Ein-Klick-Link der Liste oder ihre Abmelde-Mail von deiner Adresse, wenn Senden an ist. Sonst zeigt es **Abmeldeseite öffnen**.
 
 Belege, Bestellungen und Zahlungsmitteilungen bleiben draußen. Mail über eine Gruppenadresse, etwa eine Google Group, steht unter dem, der sie geschrieben hat, und meldet dich nie von der Gruppe ab.

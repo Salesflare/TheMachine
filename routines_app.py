@@ -980,6 +980,10 @@ class RoutinesApp:
                 self.routines_step()
             except Exception as error:
                 loop_failed(LOG, 'routines', error)
+            try:
+                self.routine_offers_step()  # a few times a day: offer a mail cleanup template (mail_cleanup_app.py)
+            except Exception as error:
+                loop_failed(LOG, 'routine offers', error)
 
     @staticmethod
     def routine_why(error):

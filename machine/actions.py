@@ -418,6 +418,7 @@ ROUTINE_ACTIONS = {
     'routine_cleanup',
     'routine_edit',
     'routine_new',
+    'routine_offer',
     'routine_old_job',
     'routine_run_now',
     'routine_state',

@@ -5722,13 +5722,16 @@
  "Tuesdays after {}": "Dinsdags na {}",
  "Turn GBrain on first": "Zet GBrain eerst aan",
  "Turn it off": "Uitzetten",
+ "Turn it on": "Zet het aan",
  "Turn off": "Uitzetten",
  "Turn off and remove shared data": "Uitzetten en gedeelde gegevens verwijderen",
  "Turn off now": "Nu uitzetten",
  "Turn off sharing for everyone?": "Delen uitzetten voor iedereen?",
  "Turn off the old OpenClaw job?": "De oude OpenClaw-taak uitzetten?",
  "Turn on": "Aanzetten",
+ "Turn on Newsletter cleanup?": "Nieuwsbrieven opruimen aanzetten?",
  "Turn on Offer to share learnings first.": "Zet eerst Aanbieden om inzichten te delen aan.",
+ "Turn on Spam cleanup?": "Spam opruimen aanzetten?",
  "Turn on checks": "Checks aanzetten",
  "Turn on device code sign-in for Codex in ChatGPT security settings, at the bottom. Then try again.": "Zet device code sign-in voor Codex aan in de beveiligingsinstellingen van ChatGPT, helemaal onderaan. Probeer het dan opnieuw.",
  "Turn on notifications": "Meldingen aanzetten",
@@ -7200,6 +7203,10 @@
  },
  "{} looks like personal mail. Change it to Personal?": "{} lijkt op privémail. Naar Privé zetten?",
  "{} looks like work mail. Change it to Work?": "{} lijkt op werkmail. Naar Werk zetten?",
+ "{} mails moved to spam by hand this week.": {
+  "one": "Deze week is {} mail met de hand naar spam verplaatst.",
+  "other": "Deze week zijn {} mails met de hand naar spam verplaatst."
+ },
  "{} marked {} done.": "{} markeerde {} als gedaan.",
  "{} matches": {
   "one": "{} treffer",
@@ -7287,6 +7294,10 @@
  "{} newsletters": {
   "one": "{} nieuwsbrief",
   "other": "{} nieuwsbrieven"
+ },
+ "{} newsletters this week.": {
+  "one": "{} nieuwsbrief deze week.",
+  "other": "{} nieuwsbrieven deze week."
  },
  "{} newsletters: keep or unsubscribe?": {
   "one": "{} nieuwsbrief: houden of afmelden?",

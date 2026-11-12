@@ -5722,13 +5722,16 @@
  "Tuesdays after {}": "Le mardi après {}",
  "Turn GBrain on first": "Activez d’abord GBrain",
  "Turn it off": "Désactiver",
+ "Turn it on": "L’activer",
  "Turn off": "Désactiver",
  "Turn off and remove shared data": "Désactiver et retirer les données partagées",
  "Turn off now": "Désactiver maintenant",
  "Turn off sharing for everyone?": "Désactiver le partage pour tous ?",
  "Turn off the old OpenClaw job?": "Désactiver l’ancienne tâche OpenClaw ?",
  "Turn on": "Activer",
+ "Turn on Newsletter cleanup?": "Activer le tri des newsletters ?",
  "Turn on Offer to share learnings first.": "Activez d’abord Proposer de partager des apprentissages.",
+ "Turn on Spam cleanup?": "Activer le tri du spam ?",
  "Turn on checks": "Activer les vérifications",
  "Turn on device code sign-in for Codex in ChatGPT security settings, at the bottom. Then try again.": "Activez la connexion par code d’appareil pour Codex dans les paramètres de sécurité de ChatGPT, tout en bas. Puis réessayez.",
  "Turn on notifications": "Activer les notifications",
@@ -7200,6 +7203,10 @@
  },
  "{} looks like personal mail. Change it to Personal?": "{} ressemble à une boîte perso. Passer en Perso ?",
  "{} looks like work mail. Change it to Work?": "{} ressemble à une boîte pro. Passer en Travail ?",
+ "{} mails moved to spam by hand this week.": {
+  "one": "{} e-mail a été déplacé à la main dans le spam cette semaine.",
+  "other": "{} e-mails ont été déplacés à la main dans le spam cette semaine."
+ },
  "{} marked {} done.": "{} a marqué {} comme fait.",
  "{} matches": {
   "one": "{} résultat",
@@ -7287,6 +7294,10 @@
  "{} newsletters": {
   "one": "{} newsletter",
   "other": "{} newsletters"
+ },
+ "{} newsletters this week.": {
+  "one": "{} newsletter cette semaine.",
+  "other": "{} newsletters cette semaine."
  },
  "{} newsletters: keep or unsubscribe?": {
   "one": "{} newsletter : garder ou se désabonner ?",
