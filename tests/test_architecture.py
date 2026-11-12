@@ -496,6 +496,9 @@ LAZY_CEILING.update(followups=28_000, graph=384_000)
 LAZY_CEILING['connections'] = 110_000
 # brief 7,000 (2026-11-12): the team brief's lines as to-dos (about 5 KB), loaded when one is on screen.
 LAZY_CEILING['brief'] = 7_000
+# settings 136,000 -> 140,000 (2026-11-12): Work hours' Morning digest follows Snoozes land at, with its note under the
+# field (about 1.8 KB); main was 4 bytes under the old ceiling.
+LAZY_CEILING['settings'] = 140_000
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
