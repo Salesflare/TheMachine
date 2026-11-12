@@ -60,7 +60,9 @@ LinkedIn, X en Salesflare houden hun eigen tempo.
 
 Na een check die nieuwe berichten las, zegt een regel boven je to-do’s wat hij in alle bronnen vond, zoals "13 berichten gecheckt om 16:11 · niets voor jou" of "· 2 nieuwe to-do’s". Wacht een nieuwe to-do op een beter moment, zoals je ochtendoverzicht, dan staat er tot wanneer: "1 to-do wacht tot morgen 08:30".
 
-Tik op de regel om elk e-mailgesprek, elke chat en elke melding te zien, met het icoon van de bron: wie schreef, het onderwerp of de eerste woorden, en de nieuwe to-do of waarom er niets nodig was, zoals "Alleen in cc, een collega antwoordt" of "Afspraak staat al voor donderdag". Een gesprek toont geen reden als de check alleen een vage gaf. Tik er een aan om het te lezen. De eerste 10 staan er, een tik eronder toont de rest. Een getal na een naam, zoals (3), is hoeveel nieuwe berichten die chat heeft. Een melding op je telefoon over een bericht dat al in de lijst staat, zie je maar één keer. De regel blijft 12 uur na de check staan.
+Tik op de regel om elk e-mailgesprek, elke chat en elke melding te zien, met het icoon van de bron: wie schreef, het onderwerp of de eerste woorden, en de nieuwe to-do of waarom er niets nodig was, zoals "Alleen in cc, een collega antwoordt" of "Afspraak staat al voor donderdag". Een gesprek toont geen reden als de check alleen een vage gaf. Tik er een aan om het te lezen.
+
+De eerste 10 staan er, een tik eronder toont de rest. Een getal na een naam, zoals (3), is hoeveel nieuwe berichten die chat heeft. Een melding op je telefoon over een bericht dat al in de lijst staat, zie je maar één keer. De regel blijft 12 uur na de check staan.
 
 Hij telt alleen mail aan jou. Je eigen antwoorden worden gelezen voor context en beloftes, maar zijn geen nieuwe mail. De eigen e-mails van je Machine aan jou, zoals je ochtendoverzicht of een melding van een fix, worden nooit gelezen of getoond. Mail over betalingen, je proefperiode of een uitnodiging wordt gewoon gelezen.
 
