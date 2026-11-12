@@ -46,6 +46,17 @@ class SourceIcons(unittest.TestCase):
                 self.assertTrue(key in mono or key in LINE_ICONS, key)
         self.assertIn('source', mono, 'a neutral mark for a source with none')
 
+    def test_the_machines_own_kinds_have_a_mark(self):
+        # a routine's draft, a Fleet hand-off and what it carried: never the neutral mark
+        mono, _, _ = registry()
+        kinds = dict(re.findall(r"'([\w.]+)':'(\w+)'", re.search(r'const KIND_MARK=\{([^}]*)\}', JS, re.S).group(1)))
+        for kind, key in kinds.items():
+            with self.subTest(kind=kind):
+                self.assertTrue(key in mono or key in LINE_ICONS, key)
+        self.assertEqual({k: kinds[k] for k in ('fleet.email', 'fleet.intercom', 'fleet.message')},
+                         {'fleet.email': 'mail', 'fleet.intercom': 'intercom', 'fleet.message': 'chat'})
+        self.assertIn("['machine','routine','fleet'].includes(head)?'gateway'", JS)
+
     def test_known_phone_apps_show_their_brand(self):
         mono, _, apps = registry()
         from machine.sources.android import ANDROID_APP_NAMES

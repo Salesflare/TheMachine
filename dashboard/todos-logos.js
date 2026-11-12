@@ -33,13 +33,16 @@ document.documentElement.style.setProperty('--i-handoff','url("data:image/svg+xm
 const accountMark=id=>{const c=(state?.connectors||[]).find(c=>c.id===id);return !c?'':c.service==='docs'&&c.docs_provider==='google'?'google_docs':c.service||''};
 // What a message's mark is: its kind ('slack.message'), the account it came in on (Gmail, Outlook or other mail; Google
 // or Outlook Calendar) and, for a phone notification, the app that posted it. Unknown: the neutral mark.
-const KIND_MARK={'meeting.notes':'cal','meeting.transcript':'cal','gateway.alert':'gateway','gateway.log':'gateway','owner.card':'note','invoice.payment_failed':'stripe'};
+const KIND_MARK={'meeting.notes':'cal','meeting.transcript':'cal','gateway.alert':'gateway','gateway.log':'gateway','owner.card':'note','invoice.payment_failed':'stripe',
+ // a teammate's Machine handed it over: the email or Intercom chat it carried by its own mark, a message as a chat
+ 'fleet.email':'mail','fleet.intercom':'intercom','fleet.message':'chat'};
 function sourceMark(kind,account,app){const k=String(kind||''),head=k.split('.')[0],svc=account?accountMark(account):'';
  if(k==='android.notification')return MONO_APPS[app]||'android';
  if(!k||head==='gmail'||head==='email')return ['gmail','outlook','imap'].includes(svc)?svc:'mail';
  if(k==='calendar.event')return /cal|ics|exch/.test(svc)?svc:'cal';
  if(head==='docs')return svc==='google_docs'?'google_docs':'docs';
  if(KIND_MARK[k])return KIND_MARK[k];
- return head==='machine'?'gateway':monoKey(head)?head:'source'}
+ // The Machine's own: its routines' drafts and cleanups, a Fleet hand-off, its notes
+ return ['machine','routine','fleet'].includes(head)?'gateway':monoKey(head)?head:'source'}
 // The mark as a picture in a row (aria-hidden: the row names its source in words)
 const markIco=k=>html`<i class="via-ico via-${monoKey(k)||['mail','cal','note','chat'].includes(k)&&k||'source'}" aria-hidden="true"></i>`;
