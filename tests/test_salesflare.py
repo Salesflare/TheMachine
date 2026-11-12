@@ -82,7 +82,7 @@ class SalesflareConnector(unittest.TestCase):
         self.store = a.Store(Path(self.temp.name) / 'events.sqlite')
 
     def run_to_completion(self, crm):
-        for _ in range(10):
+        for _ in range(40):
             if not a.sync_salesflare(self.store, {}, ACCOUNT, crm)['more']:
                 return
         self.fail('sync did not finish')
@@ -235,19 +235,108 @@ class SalesflareConnector(unittest.TestCase):
             client.join_account(10)
         send.assert_called_once_with('/accounts/10/users', None, [{'id': 1}])
 
-    def test_meetings_are_reread_over_a_week_while_email_stays_incremental(self):
+    def due_now(self, *meetings):
+        """Time passes until the next notes check of these watched meetings."""
+        state = self.store.checkpoint('work-crm')
+        for key in meetings:
+            state['notes_watch'][key]['next'] = iso(0.01)
+        self.store.commit_page('work-crm', state, [], record_sync=False)
+
+    def test_late_notes_are_picked_up_by_rechecking_only_meetings_without_them(self):
         crm = FakeCRM()
         self.run_to_completion(crm)  # first window
-        crm.feeds[(20, 'meeting-live')][1]['notes'] = '<p>Notes added days later</p>'
-        crm.feeds[(20, 'meeting-live')][1]['time'] = iso(70)  # meeting three days ago
-        crm.accounts[20]['last_meeting_date'] = iso(70)
+        watch = self.store.checkpoint('work-crm')['notes_watch']
+        # No notes yet (8), and notes on a meeting less than a day old (7): both watched, from 2 hours, a day, ... after
+        self.assertEqual(set(watch), {'7', '8'})
+        self.assertEqual(a.dt.datetime.fromisoformat(watch['8']['next']),
+                         a.dt.datetime.fromisoformat(iso(6).replace('Z', '+00:00')) + a.dt.timedelta(days=1))
+        crm.feeds[(20, 'meeting-live')][1]['notes'] = '<p>Notes added later</p>'  # the meeting's date stays the same
         crm.calls.clear()
-        self.run_to_completion(crm)  # next incremental poll
+        self.run_to_completion(crm)  # nothing due, nothing changed: two short list pages and no account read
+        self.assertEqual([p for p, _ in crm.calls], ['/accounts', '/accounts'])
+        self.assertNotIn('meeting:8', {r['source_id'] for r in self.store.events(['work-crm'])})
+        self.due_now('8')
+        crm.calls.clear()
+        self.run_to_completion(crm)
         self.assertIn('meeting:8', {r['source_id'] for r in self.store.events(['work-crm'])})
-        feeds = [(p, q) for p, q in crm.calls if p.endswith('/feed')]
-        self.assertFalse([1 for p, q in feeds if p == '/accounts/20/feed' and q['types'] == 'email'])  # meeting-only account
-        meeting_after = a.dt.datetime.fromisoformat(next(q['after'] for p, q in feeds if q['types'] == 'meeting-live'))
-        self.assertLess(meeting_after, NOW - a.dt.timedelta(days=6))
+        feeds = [(p, q['types']) for p, q in crm.calls if p.endswith('/feed')]
+        self.assertEqual(feeds, [('/accounts/20/feed', 'meeting-live'), ('/accounts/20/feed', 'meeting-phone')])  # no email
+        self.assertIn('8', self.store.checkpoint('work-crm')['notes_watch'])  # under a day old: its notes may still grow
+
+    def test_a_meeting_is_checked_for_notes_at_most_a_week(self):
+        state, stamp = {}, NOW
+        old = {'id': 1, 'time': iso(24 * 6), 'notes': ''}
+        settled = {'id': 2, 'time': iso(30), 'notes': '<p>Done</p>'}
+        fresh = {'id': 3, 'time': iso(1), 'notes': '<p>Draft</p>'}
+        planned = {'id': 4, 'time': iso(-48), 'notes': ''}
+        from machine.sources.salesflare import salesflare_notes_due, salesflare_watch_notes
+        salesflare_watch_notes(state, 20, [old, settled, fresh, planned], stamp)
+        watch = state['notes_watch']
+        self.assertEqual(set(watch), {'1', '3', '4'})
+        at = a.dt.datetime.fromisoformat(watch['1']['at'])
+        self.assertEqual(a.dt.datetime.fromisoformat(watch['1']['next']), at + a.dt.timedelta(days=7))  # its last check
+        due = salesflare_notes_due(state, stamp + a.dt.timedelta(days=1, hours=1))
+        self.assertEqual({entry['at'] for entry in due}, {watch['1']['at'], watch['3']['at']})
+        self.assertNotIn('1', state['notes_watch'])  # the week is over: no more checks, read or not
+        self.assertEqual(a.dt.datetime.fromisoformat(state['notes_watch']['3']['next']),
+                         a.dt.datetime.fromisoformat(watch['3']['at']) + a.dt.timedelta(days=3))
+        salesflare_watch_notes(state, 20, [], stamp)  # read again and gone from the feed: not watched any more
+        self.assertNotIn('notes_watch', state)
+
+    def test_a_quiet_round_lists_one_page_per_field_and_reads_no_account(self):
+        crm = FakeCRM()
+        for n in range(25):  # more than two pages of accounts with email today
+            crm.accounts[1000 + n] = {'id': 1000 + n, 'name': f'Co {n}', 'domain': f'co{n}.example',
+                                      'last_email_date': iso(1 + n / 10), 'last_meeting_date': None, 'customers': []}
+        self.run_to_completion(crm)
+        lists = [q for p, q in crm.calls if p == '/accounts']
+        self.assertEqual({q['limit'] for q in lists}, {10})
+        self.assertEqual(len([q for q in lists if q['order_by'] == 'last_email_date desc']), 3)
+        crm.calls.clear()
+        self.store.commit_page('work-crm', {**self.store.checkpoint('work-crm'), 'notes_watch': {}}, [], record_sync=False)
+        last_round = self.store.checkpoint('work-crm')['last_round']
+        self.run_to_completion(crm)
+        self.assertEqual([(p, q['order_by'], q['offset']) for p, q in crm.calls],
+                         [('/accounts', 'last_email_date desc', 0), ('/accounts', 'last_meeting_date desc', 0)])
+        state = self.store.checkpoint('work-crm')
+        self.assertEqual(state['last_round'], last_round)  # the card keeps the last round that read accounts
+        self.assertGreater(state['watermark'], last_round['at'])
+        crm.accounts[1020]['last_email_date'] = iso(0)  # one new email, on an account well down the list
+        crm.calls.clear()
+        self.run_to_completion(crm)
+        self.assertEqual([p for p, _ in crm.calls if p != '/accounts'], ['/accounts/1020', '/accounts/1020/feed',
+                                                                         '/accounts/1020/feed', '/accounts/1020/feed'])
+        self.assertEqual(len([p for p, _ in crm.calls if p == '/accounts']), 2)
+
+    def test_the_list_pages_on_until_it_reaches_the_last_rounds_mark(self):
+        crm = FakeCRM()
+        self.run_to_completion(crm)
+        mark = self.store.checkpoint('work-crm')['marks']['last_email_date']
+        self.assertEqual(mark['id'], 10)
+        for n in range(15):  # more new activity than one page holds
+            crm.accounts[2000 + n] = {'id': 2000 + n, 'name': f'New {n}', 'domain': f'new{n}.example',
+                                      'last_email_date': iso(0.5 + n / 100), 'last_meeting_date': None, 'customers': []}
+        crm.calls.clear()
+        self.run_to_completion(crm)
+        offsets = [q['offset'] for p, q in crm.calls if p == '/accounts' and q['order_by'] == 'last_email_date desc']
+        self.assertEqual(offsets, [0, 10])
+        read = {int(p.split('/')[2]) for p, _ in crm.calls if p.startswith('/accounts/') and not p.endswith('/feed')}
+        self.assertEqual(read, set(range(2000, 2015)))  # Acme, at the mark, is not read again
+        self.assertEqual(self.store.checkpoint('work-crm')['marks']['last_email_date']['id'], 2000)
+
+    def test_a_weekly_full_round_rereads_the_week_whatever_the_dates_say(self):
+        crm = FakeCRM()
+        self.run_to_completion(crm)
+        state = self.store.checkpoint('work-crm')
+        self.assertAlmostEqual(state['next_full'] - a.time.time(), 7 * 86400, delta=600)
+        crm.feeds[(10, 'email')].append({'id': 'late', 'time': iso(30), 'email': {
+            'user_id': 7, 'date': iso(30), 'subject': 'Taken in late', 'body': [],
+            'addresses': {'from': {'email': 'ann@acme.example'}, 'to': [{'email': 'rep@example.com'}]}}})
+        self.run_to_completion(crm)
+        self.assertNotIn('email:late', {r['source_id'] for r in self.store.events(['work-crm'])})  # Acme's date didn't move
+        self.store.commit_page('work-crm', {**self.store.checkpoint('work-crm'), 'next_full': 0}, [], record_sync=False)
+        self.run_to_completion(crm)
+        self.assertIn('email:late', {r['source_id'] for r in self.store.events(['work-crm'])})
 
     def test_noise_subjects_are_excluded_in_every_language_and_purged(self):
         for subject in ["Accepted: Demo @ Tue", "Geaccepteerd: Call",
@@ -567,9 +656,9 @@ class SalesflareConnector(unittest.TestCase):
         self.assertEqual({r['source_id'] for r in self.store.events(['work-crm'])}, {'email:e1'})
         view = a.salesflare_progress(ACCOUNT, state)
         self.assertEqual((view['feed_off'], view['no_access_all'], view['no_access']), (False, False, 1))
-        asked = len(self.feeds_asked(crm))
-        self.run_to_completion(crm)  # the next round asks every account again
-        self.assertGreater(len(self.feeds_asked(crm)), asked + 1)
+        crm.calls.clear()
+        self.run_to_completion(crm)  # the next round asks the refused account again, not the one it read
+        self.assertEqual(set(self.feeds_asked(crm)), {'/accounts/20/feed'})
 
     def test_accounts_the_key_is_not_part_of_stay_a_per_account_refusal(self):
         crm = self.team_off(off=False, outsider={10, 20})
@@ -607,6 +696,7 @@ class SalesflareConnector(unittest.TestCase):
         view = a.salesflare_progress(ACCOUNT, state)
         self.assertEqual((view['feed_off'], view['no_access_all'], view['no_access'], view['last_round']['read']), (False, False, 0, 2))
         asked = len(self.feeds_asked(crm))
+        crm.accounts[10]['last_email_date'] = iso(0)  # a new email
         self.run_to_completion(crm)  # and the next round reads as usual, without waiting an hour
         self.assertGreater(len(self.feeds_asked(crm)), asked)
 

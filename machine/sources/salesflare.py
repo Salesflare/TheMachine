@@ -227,9 +227,13 @@ def salesflare_meeting_event(account, info, contacts, item):
             'deleted': False}
 
 
-def salesflare_recent_accounts(source, field, since, page=50, max_pages=40):
-    """CRM account IDs whose last email/meeting date is on or after `since`."""
-    found = []
+def salesflare_recent_stamps(source, field, since, mark=None, page=10, max_pages=200):
+    """{CRM account ID: its last email/meeting date as listed} for the accounts whose date is on or after `since`,
+    newest first. A list ordered by activity is a heavy query on Salesflare's side, so the pages are small (10) and the
+    listing stops at the first account older than `since`, or at the last round's mark ({'at': date, 'id': account}):
+    the newest account it read. Everything newer than the mark is new since; a quiet round asks one page."""
+    mark_at = salesflare_time_or_none((mark or {}).get('at')) if (mark or {}).get('at') else None
+    found = {}
     for number in range(max_pages):
         rows = source.get('/accounts', {'order_by': field + ' desc', 'limit': page, 'offset': number * page, 'details': 'false'})
         if not isinstance(rows, list):
@@ -239,11 +243,118 @@ def salesflare_recent_accounts(source, field, since, page=50, max_pages=40):
             parsed = salesflare_time_or_none(stamp) if stamp else None
             if not stamp or (parsed and parsed < since):
                 return found
+            if mark_at and parsed and (parsed < mark_at or (parsed == mark_at and row.get('id') == mark.get('id'))):
+                return found  # reached what the last round read
             # An unreadable date still lists the account: reading it once too often beats missing it.
-            found.append(row['id'])
+            found.setdefault(row['id'], str(stamp))
         if len(rows) < page:
             return found
     raise SourceError('salesflare_window_limit')  # never claim a complete scan
+
+
+def salesflare_recent_accounts(source, field, since, mark=None, page=10, max_pages=200):
+    """CRM account IDs whose last email/meeting date is on or after `since` (and newer than `mark`)."""
+    return list(salesflare_recent_stamps(source, field, since, mark, page, max_pages))
+
+
+# An incremental round lists each field only down to the newest account the last round read (state['marks']) and reads
+# only the accounts whose date changed since their last read (state['seen']: a date in the future, a meeting planned
+# ahead, stays above the mark and would otherwise be read every round). Notes written days after a meeting leave its
+# date alone, and so may an email Salesflare takes in late, so the daily full round still rereads the whole week
+# (emails and meetings) whatever the dates say. Seen dates older than the week are dropped.
+SALESFLARE_SEEN_FIELDS = ('last_email_date', 'last_meeting_date')
+
+
+# Salesflare has no list of meetings by when they changed, and adding notes leaves an account's dates alone. So a
+# meeting read without notes, or with notes while less than a day old (they often grow), is watched: its account's
+# meetings are read again about 2 hours, a day, 3 days and a week after the meeting, then no more. Nothing due, no call.
+SALESFLARE_NOTES_CHECKS = (dt.timedelta(hours=2), dt.timedelta(days=1), dt.timedelta(days=3), dt.timedelta(days=7))
+SALESFLARE_NOTES_FRESH = dt.timedelta(days=1)
+SALESFLARE_FULL_EVERY = 7 * 86400  # seconds between full rounds (see sync_salesflare)
+SALESFLARE_NOTES_WATCHED = 2000  # meetings at most; the ones furthest out go first
+
+
+def salesflare_watch_notes(state, crm_id, meetings, stamp):
+    """After an account's meetings were read: which of them to read again, and when (state['notes_watch'])."""
+    watch = {key: entry for key, entry in (state.get('notes_watch') or {}).items() if entry.get('account') != crm_id}
+    for item in meetings:
+        at = salesflare_time_or_none(item.get('time')) if isinstance(item, dict) else None
+        if at is None or item.get('id') is None:
+            continue
+        if plain_html(item.get('notes')) and stamp - at >= SALESFLARE_NOTES_FRESH:
+            continue  # notes written, and a day has passed: settled
+        upcoming = [at + after for after in SALESFLARE_NOTES_CHECKS if at + after > stamp]
+        if upcoming:
+            watch[str(item['id'])] = {'account': crm_id, 'at': at.isoformat(), 'next': upcoming[0].isoformat()}
+    if len(watch) > SALESFLARE_NOTES_WATCHED:
+        watch = dict(sorted(watch.items(), key=lambda pair: pair[1]['next'])[:SALESFLARE_NOTES_WATCHED])
+    if watch:
+        state['notes_watch'] = watch
+    else:
+        state.pop('notes_watch', None)
+
+
+def salesflare_notes_due(state, stamp):
+    """The watched meetings due for a check now. Each moves on to its next check (or out) at once, so an account that
+    cannot be read is not asked again every round; reading it sets its meetings' checks anew."""
+    due, watch = [], {}
+    for key, entry in (state.get('notes_watch') or {}).items():
+        at, upcoming = salesflare_time_or_none(entry.get('at')), salesflare_time_or_none(entry.get('next'))
+        if at is None or upcoming is None:
+            continue
+        if upcoming > stamp:
+            watch[key] = entry
+            continue
+        due.append(entry)
+        later = [at + after for after in SALESFLARE_NOTES_CHECKS if at + after > stamp]
+        if later:
+            watch[key] = {**entry, 'next': later[0].isoformat()}
+    if watch:
+        state['notes_watch'] = watch
+    else:
+        state.pop('notes_watch', None)
+    return due
+
+
+def salesflare_round_marks(window):
+    """The marks a finished round leaves for the next. An account it listed but could not read (no access, set aside
+    as slow) holds its field's mark at that account's date, so the next round lists it again, as before, until it
+    drops below the window; the accounts above it it did read are skipped by their seen date."""
+    marks = {}
+    unread = {str(crm_id) for crm_id in (window.get('no_access') or []) + (window.get('set_aside') or [])}
+    for index, field in enumerate(SALESFLARE_SEEN_FIELDS):
+        mark = (window.get('marks') or {}).get(field)
+        if not mark:
+            continue
+        held = [(parsed, stamps[index]) for crm_id, stamps in (window.get('stamps') or {}).items()
+                if crm_id in unread and stamps[index] and (parsed := salesflare_time_or_none(stamps[index]))]
+        oldest = min(held, key=lambda pair: pair[0]) if held else None
+        mark_at = salesflare_time_or_none(mark['at'])
+        marks[field] = {'at': oldest[1], 'id': None} if oldest and mark_at and oldest[0] <= mark_at else mark
+    return marks
+
+
+def salesflare_mark(listed, until):
+    """The newest listed account dated no later than `until`, as the next round's mark; None when there is none."""
+    for crm_id, stamp in listed.items():
+        parsed = salesflare_time_or_none(stamp)
+        if parsed and parsed <= until:
+            return {'at': stamp, 'id': crm_id}
+    return None
+
+
+def salesflare_changed(listed, seen):
+    """The listed account IDs whose date differs from the one seen at their last full read."""
+    return [crm_id for crm_id, stamp in listed.items() if (seen or {}).get(str(crm_id)) != stamp]
+
+
+def salesflare_prune_seen(seen, oldest):
+    """seen without dates older than `oldest`: such an account is no longer listed, so its entry is dead weight."""
+    kept = {}
+    for field, stamps in (seen or {}).items():
+        kept[field] = {crm_id: stamp for crm_id, stamp in stamps.items()
+                       if (parsed := salesflare_time_or_none(stamp)) is None or parsed >= oldest}
+    return kept
 
 
 def salesflare_feed(source, crm_id, kind, since, until, page=100, max_pages=10):
@@ -418,17 +529,30 @@ def sync_salesflare(store, config, account, source=None):
         # A re-check while the feed is off reads the whole week: once it opens, what came in meanwhile is picked up.
         full = not state.get('watermark') or stamp.timestamp() >= state.get('next_full', 0) or bool(state.get('feed_off'))
         since = retained if full else max(retained, dt.datetime.fromisoformat(state['watermark']) - dt.timedelta(hours=6))
-        # Notes are often written days after a meeting, without changing its date, so
-        # meetings are always reread over a full week; emails follow the incremental window.
-        meeting_since = stamp - dt.timedelta(days=account.get('meeting_window_days', 7))
-        email_ids = salesflare_recent_accounts(source, 'last_email_date', since)
+        # Notes are often written days after a meeting, without changing its date: an account read for either field has
+        # its meetings reread over a full week, and the accounts with a meeting still waiting for notes are rechecked
+        # when one is due (salesflare_watch_notes), reaching back far enough for its last check.
+        due = salesflare_notes_due(state, stamp)
+        meeting_since = min([stamp - dt.timedelta(days=account.get('meeting_window_days', 7))]
+                            + [at - dt.timedelta(minutes=5) for entry in due if (at := salesflare_time_or_none(entry.get('at')))])
+        # A full round lists everything in its window; an incremental one only down to the last round's marks and
+        # reads only the accounts whose date changed (SALESFLARE_SEEN_FIELDS). Nothing changed: no account is read.
+        marks, seen = ({}, {}) if full else (state.get('marks') or {}, state.get('seen') or {})
+        listed = {'last_email_date': salesflare_recent_stamps(source, 'last_email_date', since, marks.get('last_email_date')),
+                  'last_meeting_date': salesflare_recent_stamps(source, 'last_meeting_date', meeting_since if full else since,
+                                                                marks.get('last_meeting_date'))}
+        email_ids = salesflare_changed(listed['last_email_date'], seen.get('last_email_date'))
         # Freeze the window and its account list, then work through it in committed batches.
-        pending = list(dict.fromkeys(email_ids + salesflare_recent_accounts(source, 'last_meeting_date', meeting_since)))
+        pending = list(dict.fromkeys(email_ids + salesflare_changed(listed['last_meeting_date'], seen.get('last_meeting_date'))
+                                     + [entry['account'] for entry in due if isinstance(entry.get('account'), int)]))
         if state.get('feed_off'):
             state['feed_off']['checked'] = stamp.isoformat()  # this round is the re-check, whatever it finds
         state.update(mode='bootstrap' if not state.get('watermark') else 'incremental',
                      window={'since': since.isoformat(), 'meeting_since': meeting_since.isoformat(), 'until': stamp.isoformat(),
-                             'full': full, 'pending': pending, 'email_ids': sorted(set(email_ids)), 'accounts': len(pending)})
+                             'full': full, 'pending': pending, 'email_ids': sorted(set(email_ids)), 'accounts': len(pending),
+                             'marks': {field: salesflare_mark(rows, stamp) for field, rows in listed.items()},
+                             'stamps': {str(crm_id): [listed[field].get(crm_id) for field in SALESFLARE_SEEN_FIELDS]
+                                        for crm_id in pending}})
         store.commit_page(account['id'], state, [], record_sync=False)
     window = state['window']
     since, until = dt.datetime.fromisoformat(window['since']), dt.datetime.fromisoformat(window['until'])
@@ -518,6 +642,11 @@ def sync_salesflare(store, config, account, source=None):
             continue
         window['pending'].remove(crm_id)
         window['read'], window['hiccups'] = window.get('read', 0) + 1, 0
+        seen = state.setdefault('seen', {})
+        for field, listed_stamp in zip(SALESFLARE_SEEN_FIELDS, (window.get('stamps') or {}).get(str(crm_id)) or ()):
+            if listed_stamp:  # read in full at this date: not read again until it changes (or a full round)
+                seen.setdefault(field, {})[str(crm_id)] = listed_stamp
+        salesflare_watch_notes(state, crm_id, [item for _, item in meetings], until)
         if state.pop('feed_off', None):  # one read succeeded: the feed is on again, and the round goes on as usual
             LOG.info('salesflare feed on again account=%s', account['id'])
         for item in emails:
@@ -545,12 +674,15 @@ def sync_salesflare(store, config, account, source=None):
              len(window.get('no_access') or []) - refused_before, len(window['pending']))
     if not window['pending']:
         # What this round could open: the card counts it (accounts read, without access) until the next one ends.
+        # A round with nothing changed asks no account, so it says nothing new about access: the card keeps the last
+        # round that read accounts.
         no_access = window.get('no_access') or []
-        state.update(mode='incremental', watermark=window['until'], inaccessible_accounts=sorted(no_access)[-500:],
-                     skipped_accounts=sorted(window.get('set_aside') or [])[-500:],
-                     last_round={'at': window['until'], 'accounts': window.get('accounts', 0), 'read': window.get('read', 0),
-                                 'no_access': len(no_access), 'refused': window.get('refused', 0),
-                                 'set_aside': len(window.get('set_aside') or [])})
+        state.update(mode='incremental', watermark=window['until'])
+        if window.get('accounts') or not state.get('last_round'):
+            state.update(inaccessible_accounts=sorted(no_access)[-500:], skipped_accounts=sorted(window.get('set_aside') or [])[-500:],
+                         last_round={'at': window['until'], 'accounts': window.get('accounts', 0), 'read': window.get('read', 0),
+                                     'no_access': len(no_access), 'refused': window.get('refused', 0),
+                                     'set_aside': len(window.get('set_aside') or [])})
         for key, count in sorted((window.get('refused_detail') or {}).items()):
             LOG.warning('salesflare refused account=%s count=%d %s', account['id'], count, key)
         if window.get('accounts') and not window.get('read') and len(no_access) == window['accounts']:
@@ -558,7 +690,12 @@ def sync_salesflare(store, config, account, source=None):
             LOG.warning('salesflare round opened no account account=%s accounts=%d refused=%d missing=%d', account['id'],
                         window['accounts'], window.get('refused', 0), len(no_access) - window.get('refused', 0))
         if window['full']:
-            state['next_full'] = stamp.timestamp() + 86400
+            # A full round rereads the week whatever the dates say: a safety net for what the marks cannot see (an
+            # email Salesflare takes in late, older than the account's newest). Weekly: late notes have their checks.
+            state['next_full'] = stamp.timestamp() + SALESFLARE_FULL_EVERY
+        # The next round lists down to what this one read. A field with nothing listed keeps its mark.
+        state['marks'] = {**(state.get('marks') or {}), **salesflare_round_marks(window)}
+        state['seen'] = salesflare_prune_seen(state.get('seen'), stamp - dt.timedelta(days=config.get('bootstrap_days', 7) + 1))
         if window.get('accounts') and window.get('feed_refused', 0) == window['accounts']:
             # Every account asked was refused on the feed while the key's user is part of it: Salesflare has the feed
             # off for the whole team. From here one account is asked, now and then (feed_off_wait).
