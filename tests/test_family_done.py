@@ -81,6 +81,15 @@ class FamilyDone(unittest.TestCase):
         self.assertIsNone(family_done.bill_of('BE71 0961 2345 6769 +++090/9337/55494+++'))  # nor a real reference
         self.assertIsNone(family_done.bill_of(''))
 
+    def test_a_belgian_reference_without_plus_signs_counts_when_it_checks_out(self):
+        key = 'BE71096123456769|090123456701'
+        self.assertEqual(family_done.bill_of('IBAN BE71 0961 2345 6769, reference 090123456701'), key)
+        self.assertEqual(family_done.bill_of('Account BE71096123456769\nStructured communication: 090/1234/56701'), key)
+        self.assertIsNone(family_done.bill_of('IBAN BE71 0961 2345 6769, reference 090123456702'))  # check digits off
+        self.assertIsNone(family_done.bill_of('IBAN BE71 0961 2345 6769, order 0901234567012'))  # part of a longer number
+        self.assertEqual(family_done.bill_of('BE71 0961 2345 6769 +++090/9337/55493+++ 090123456701'),
+                         'BE71096123456769|090933755493')  # the marked one wins
+
     def test_a_form_is_its_link_without_the_scheme(self):
         self.assertEqual(family_done.forms_of('Order here >>> <https://forms.gle/AbC123xyz789> by Friday, or '
                                               'HTTPS://Docs.Google.com/forms/d/e/1FAIpQLSf_Zz-0123456789/viewform?usp=sf'),
