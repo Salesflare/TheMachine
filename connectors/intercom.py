@@ -25,7 +25,9 @@ cursor replays its window. Intercom returns at most 500 parts per conversation. 
 to 20,000 characters and the latest history fills the rest of a 40,000-character body; anything cut is
 flagged. Attachments aren't collected. Each conversation keeps who it is assigned to (an admin, a team, or nobody):
 a to-do comes only from one assigned to the owner or to nobody, and closes when a teammate takes it (assistant.py
-intercom_taken).
+intercom_taken), or when someone on the team closed or answered it after the to-do was made (handled_facts,
+Store.close_handled_intercom). The first sync after an update rereads the conversations of open to-dos once, so
+those facts are there for them too (REREAD).
 """
 import datetime as dt
 import html.parser
@@ -57,6 +59,7 @@ REGIONS = {'us': ('https://api.intercom.io', 'https://app.intercom.com'),
            'au': ('https://api.au.intercom.io', 'https://app.au.intercom.com')}
 OPENING, BODY, MAX_PARTS = 20000, 40000, 500
 OVERLAP, FULL_EVERY, MAX_PAGES = 6 * 3600, 86400, 500
+REREAD = 50  # open to-dos' conversations read again once, the first sync after handled_facts came (sync)
 CONVERSATION = re.compile(r'/conversations/[0-9]{1,20}')
 REPLY = re.compile(r'/conversations/([0-9]{1,20})/reply')
 REPLY_FIELDS = {'type', 'admin_id', 'message_type', 'body'}
@@ -223,6 +226,37 @@ def assigned(value):
     return value if re.fullmatch(r'[1-9][0-9]{0,19}', value) else None
 
 
+CUSTOMER = ('user', 'lead', 'contact')
+
+
+def by_person(part):
+    """{'at', 'admin_id', 'name'} for a part a person on the team wrote (an admin, not a bot, Fin or an AI answer), else None."""
+    author = part.get('author') if isinstance(part.get('author'), dict) else {}
+    aid = str(author.get('id') or '')
+    if (author.get('type') != 'admin' or not re.fullmatch(r'[0-9]{1,20}', aid) or type(part.get('created_at')) is not int
+            or author.get('from_ai_agent') or author.get('is_ai_answer') or part.get('from_ai_agent') or part.get('is_ai_answer')):
+        return None
+    return {'at': part['created_at'], 'admin_id': aid, 'name': ' '.join(str(author.get('name') or '').split())[:100]}
+
+
+def handled_facts(raw, parts, truncated):
+    """What Intercom says for certain about whether the team handled a conversation (Store.close_handled_intercom):
+    team_closed, the team member who closed it while it is closed now; team_reply, the latest reply a team member sent
+    to the customer (a comment, never a note); customer_at, the last time the customer wrote anything. Bots, Fin and
+    automatic messages never count. With parts cut off (truncated) neither can be known: None."""
+    ordered = sorted(parts, key=lambda p: (p.get('created_at') or 0, str(p.get('id', ''))))
+    closes = [p for p in ordered if p.get('part_type') == 'close']
+    closed = by_person(closes[-1]) if raw.get('state') == 'closed' and closes and not truncated else None
+    replies = [by_person(p) for p in ordered if p.get('part_type') == 'comment']
+    replies = [r for r in replies if r]
+    source = raw.get('source') if isinstance(raw.get('source'), dict) else {}
+    opened = [raw.get('created_at')] if (source.get('author') or {}).get('type') in CUSTOMER else []
+    customer = [p.get('created_at') for p in ordered if isinstance(p.get('author'), dict) and p['author'].get('type') in CUSTOMER]
+    customer = [t for t in opened + customer if type(t) is int]
+    return {'team_closed': closed, 'team_reply': None if truncated or not replies else replies[-1],
+            'customer_at': max(customer) if customer else None}
+
+
 def event(account, raw, helpers):
     SourceError = helpers.SourceError
     if not re.fullmatch(r'[0-9]{1,20}', str(raw.get('id', ''))) or type(raw.get('updated_at')) is not int:
@@ -276,6 +310,7 @@ def event(account, raw, helpers):
                 'contact_name': ' '.join(str(customer.get('name') or '').split())[:100],
                 'last_author_type': str(last.get('type') or '') if isinstance(last, dict) else '', 'parts_returned': len(parts),
                 'parts_reported': reported, 'truncated': truncated, 'source_redacted': bool(source.get('redacted')),
+                **handled_facts(raw, parts, reported > len(parts) or len(parts) >= MAX_PARTS),
                 'source_url': f"{app}/a/inbox/{account['workspace_id']}/inbox/shared/all/conversation/{cid}"}
     return {'account_id': account['id'], 'source_id': cid, 'kind': 'intercom.conversation',
             'occurred_at': helpers.iso(raw['updated_at']),
@@ -424,6 +459,21 @@ def sync(store, config, account, helpers, source=None):
         if window['full']:
             state['next_full'] = stamp + FULL_EVERY
         state.pop('window')
+    if state.get('handled_facts') != 1 and hasattr(store, 'intercom_rereads'):
+        # Once: open to-dos' conversations synced before handled_facts existed are read again, so a to-do whose
+        # conversation the team already closed or answered can close too (Store.close_handled_intercom).
+        have = {e['source_id'] for e in events}
+        for cid in store.intercom_rereads(account['id'], REREAD):
+            if cid in have or not re.fullmatch(r'[0-9]{1,20}', str(cid)):
+                continue
+            try:
+                detail = source.request('GET', '/conversations/' + cid)
+                if str(detail.get('id')) == cid:
+                    events.append(event(account, detail, helpers))
+            except SourceError as error:
+                if error.status == 429 or (error.status or 0) >= 500 or str(error.category).startswith('network'):
+                    raise  # tried again next poll; a conversation gone, out of reach or unreadable is left as it was
+        state['handled_facts'] = 1
     state['reported_conversations'] = page.get('total_count')
     state.update(coverage_complete=not cursor, coverage='Older Intercom conversations are still being collected.' if cursor
                  else f"Intercom conversations updated in the last {int(config.get('bootstrap_days', 7))} days, caught up.")

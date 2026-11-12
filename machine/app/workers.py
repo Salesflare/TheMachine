@@ -387,7 +387,8 @@ class WorkersApp:
 
     def expire_step(self, every=30):
         """To-dos whose moment passed close by themselves (Store.expire_passed), about every half minute; Intercom to-dos a
-        teammate took (Store.close_taken_intercom) and ones that have looked done for a day (Store.close_looks_done),
+        teammate took (Store.close_taken_intercom) or the team closed or answered there (Store.close_handled_intercom), and
+        ones that have looked done for a day (Store.close_looks_done),
         about every five minutes, the first time right after a start."""
         if time.monotonic() - self.__dict__.get('expired_swept', -every) < every:
             return
@@ -396,6 +397,7 @@ class WorkersApp:
         if time.monotonic() - self.__dict__.get('intercom_swept', -300) >= 300:  # a teammate took it: within five minutes
             self.intercom_swept = time.monotonic()
             self.store.close_taken_intercom()
+            self.store.close_handled_intercom()
             self.store.close_looks_done()
 
     def thread_snooze_step(self,gmail=None):

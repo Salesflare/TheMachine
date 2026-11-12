@@ -42,6 +42,9 @@ from timeutil import local_tz, now
 # Mail a run's search finds (Store.keep_found) that is this close to, or newer than, the account's last sync is left for
 # the review: a mail's own date can be a little older than when it arrived.
 FOUND_NEWS_SLACK = dt.timedelta(hours=1)
+# What connectors/intercom.py handled_facts keeps on a conversation: who on the team closed or answered it, and when the
+# customer last wrote (Store.close_handled_intercom)
+INTERCOM_FACTS = ('team_closed', 'team_reply', 'customer_at')
 
 
 def found_news_line(last_success):
@@ -265,6 +268,10 @@ class EventsStore:
                 if event['kind'] == 'android.notification' and event['metadata'].get('transport') == 'existing_openclaw_feed':
                     digest_event = {**event, 'metadata':{k:v for k,v in event['metadata'].items()
                         if k not in ('is_active','last_notification_event_ms','last_notification_event_id','updates_merged','snapshot_content_hash','snapshot_checked_at')}}
+                if event['kind'] == 'intercom.conversation' and isinstance(event.get('metadata'), dict):
+                    # Who on the team closed or answered it is kept beside, never a new version: a conversation read
+                    # again for these alone is not reviewed again (its replies change its body and updated_at anyway)
+                    digest_event = {**event, 'metadata': {k: v for k, v in event['metadata'].items() if k not in INTERCOM_FACTS}}
                 slack = event['kind'] == 'slack.message' and isinstance(event.get('metadata'), dict)
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}
