@@ -92,17 +92,20 @@ const pageInUse=()=>typedSomewhere()||!localCache.on&&outbox.items.length>0||!!d
 function updateSafe(){if(pageInUse())return false;if(document.hidden)return true;if(!lastTouch&&Date.now()-pageAt<20e3)return true;
  if(!document.hasFocus()&&Date.now()-Math.max(lastTouch,pageAt)>=UPDATE_AWAY)return true;return Date.now()-Math.max(lastInput,pageAt)>=UPDATE_IDLE}
 function updateNow(){try{sessionStorage.setItem('tm-update-view',JSON.stringify({at:Date.now(),tab:document.querySelector('nav button[data-tab].active')?.dataset.tab||'',y:Math.round(scrollY)}))}catch{}
- shellDrop().finally(()=>location.reload())}
+ // the place comes back through updateViewBack, never the browser's own: that one lands late, over a link's to-do
+ try{history.scrollRestoration='manual'}catch{}shellDrop().finally(()=>location.reload())}
 // Never in a loop: when the page that came back is still not the server's (a copy kept somewhere on the way), only the pill
 function updateMaybe(){if(!updateWaiting||!updateSafe())return false;let last=0;try{last=+sessionStorage.getItem('tm-update-at')||0}catch{}if(Date.now()-last<6e4)return false;
  try{sessionStorage.setItem('tm-update-at',String(Date.now()))}catch{}updateWaiting=false;updateNow();return true}
 function uiVersionCheck(){if(!state.ui_version||UI_VERSION.startsWith('__')||state.ui_version===UI_VERSION)return false;
  if(!updateWaiting){updateWaiting=true;for(const b of document.querySelectorAll('[data-update-ready]'))b.hidden=false}return updateMaybe()}
 // After a quiet update: back on the tab and at the place the page was, unless it opened with a link (that link's view
-// stays, also one that left the address once handled)
+// stays, also one that left the address once handled: neither the tab nor the old place on the page come back over it)
 const linkAtLoad=!!location.hash;
+// the browser's own place back again from the first thing done on the page (it would still land late before that)
+if(history.scrollRestoration==='manual')for(const ev of ['pointerdown','keydown','wheel','touchstart'])addEventListener(ev,()=>{try{history.scrollRestoration='auto'}catch{}},{once:true,capture:true,passive:true});
 function updateViewBack(){let v=null;try{v=JSON.parse(sessionStorage.getItem('tm-update-view')||'null');sessionStorage.removeItem('tm-update-view')}catch{}if(!v||!(Date.now()-v.at<6e4))return;
- if(v.tab&&!location.hash&&!linkAtLoad)document.querySelector(`nav button[data-tab="${CSS.escape(v.tab)}"]`)?.click();requestAnimationFrame(()=>scrollTo(0,+v.y||0))}
+ if(location.hash||linkAtLoad)return;if(v.tab)document.querySelector(`nav button[data-tab="${CSS.escape(v.tab)}"]`)?.click();requestAnimationFrame(()=>scrollTo(0,+v.y||0))}
 // A new release: the app's copy of the page goes, so the reload gets the new one from the Machine
 async function shellDrop(){try{for(const k of await caches.keys())if(k.startsWith('tm-shell'))await caches.delete(k)}catch{}}
 // A snooze whose time has passed is back, even before the service's next wake-up reaches this page: never show a past

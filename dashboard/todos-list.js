@@ -21,8 +21,14 @@ $('#result-content').onclick=e=>{const revision=e.target.closest('[data-send-dra
 $('#result-copy').onclick=()=>copyResult(resultId).catch(e=>toast(e.message,true));
 // #result=<id> from Telegram and notifications sent before: the card's own page (its chat), as a tap in the list opens.
 function openResultLink(){const match=/^#result=([a-f0-9]{16})$/.exec(location.hash);if(match&&state.suggestions){history.replaceState(null,'',location.pathname+location.search+'#chat='+match[1]);openChatLink()}}
-// A link the installed app caught while it was open (launch_handler focus-existing): go where it points.
-{const first=location.href;if('launchQueue' in window)launchQueue.setConsumer(p=>{const u=p.targetURL&&new URL(p.targetURL);if(u&&u.href!==first&&u.hash&&u.hash!==location.hash)location.hash=u.hash})}
+// A link the installed app caught while it was open (launch_handler focus-existing): go where it points, any # link (a
+// to-do, a chat, a promise), also the same link again. The launch that opened this page with its link comes first and
+// is the page's own address: that one the page opens by itself. A link handed in is use: an update waiting for a quiet
+// moment doesn't reload the page under it.
+{const first=location.href;let seen=false;if('launchQueue' in window)launchQueue.setConsumer(p=>{const u=p.targetURL&&new URL(p.targetURL),opening=!seen;seen=true;
+ if(!u||!u.hash||opening&&u.href===first)return;
+ try{lastInput=lastTouch=Date.now()}catch{}  // (shell-tabs.js, further down the page: not there yet while the page itself still loads)
+ if(u.hash!==location.hash)location.hash=u.hash;else dispatchEvent(new HashChangeEvent('hashchange'))})}
 let sendTask=null,sendRevision=null,sendDraft=null,sendHeader=null,sendBatch=null;
 // Review and send opens on the draft itself, ready to edit, with Ask for changes (an instruction I redo the draft from) beside Send.
 const SEND_CHATS=['linkedin','slack','x','whatsapp','telegram','intercom','doc_reply'],SEND_EDITABLE=['email',...SEND_CHATS];
