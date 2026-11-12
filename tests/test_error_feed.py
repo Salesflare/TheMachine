@@ -146,7 +146,8 @@ class Scrub(Base):
         for out in said.values():
             self.assertTrue(ef.allowed(out), out)
             self.assertNotRegex(out, r'\d{3}')  # the control plane takes no 3-digit numbers
-        for code in ('trello_http:HTTP_404', 'google_meet_invalid_page', 'hubspot_query_failed:HTTP_502', 'x_rate_limited'):
+        for code in ('trello_http:HTTP_404', 'google_meet_invalid_page', 'hubspot_query_failed:HTTP_502', 'x_rate_limited',
+                     'linkedin_browser_stalled'):
             self.assertNotIn('<word>', ef.normalize(code), code)
         # A code made of words that aren't ours, or free text after the service, is still taken out
         self.assertEqual(ef.normalize('riverbrook_maple_contract'), '<word>')
@@ -398,10 +399,12 @@ class Sources(Base):
             self.assertTrue(a.upstream_busy(a.SourceError('google_meet_http', status)), status)
         for status in (400, 401, 403, 404, 501):
             self.assertFalse(a.transient(a.SourceError('google_meet_http', status)), status)
-        for category in ('network:URLError:intercom_read', 'shortcut_network', 'google_broker_unreachable', 'timeout'):
+        for category in ('network:URLError:intercom_read', 'shortcut_network', 'google_broker_unreachable', 'timeout',
+                         'linkedin_browser_stalled', 'x_browser_stalled', 'x_browser_busy', 'linkedin_read_timeout'):
             self.assertTrue(a.transient(a.SourceError(category)), category)
             self.assertFalse(a.upstream_busy(a.SourceError(category)), category)  # the network: no quick retry, the normal wait
-        self.assertFalse(a.transient(a.SourceError('google_meet_invalid_response')))
+        for category in ('google_meet_invalid_response', 'linkedin_signed_out', 'linkedin_security_check', 'x_browser_failed'):
+            self.assertFalse(a.transient(a.SourceError(category)), category)
 
     def test_a_failed_agent_job_names_the_tool_and_kind_only(self):
         store = a.Store(self.path)
