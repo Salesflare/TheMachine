@@ -109,12 +109,16 @@ def shared_address(address, label=''):
     return len(letters) >= 4 and letters == re.sub(r'[^a-z0-9]', '', str(label or '').lower())
 
 
-def address_name(address):
-    """A name read from an address that came with none, else '': its local part when it reads as one (ayla@ is "Ayla",
-    jane.doe@ "Jane Doe"). Never a shared inbox's (info@) or a mailing system's (noreply@)."""
+def address_name(address, firsts):
+    """A name read from an address that came with none, else '': its local part when it reads as one. A first and last
+    name (jane.doe@ is "Jane Doe"); one word only when it is clearly a first name, one people in the Graph go by (ayla@
+    is "Ayla" when there is an Ayla; jdoe@ stays the address). Never a shared inbox's (info@) or a mailing system's
+    (noreply@). firsts: the folded first names of the Graph's people."""
     local, _, domain = str(address or '').lower().partition('@')
     words = re.split(r'[._-]+', local.partition('+')[0])
     if len(words) > 3 or len(words[0]) < 3 or not all(re.fullmatch(r'[a-z]{2,}', w) for w in words) or shared_address(address, domain.split('.')[0]) or bulk(address):
+        return ''
+    if len(words) == 1 and words[0] not in firsts:
         return ''
     return ' '.join(w.capitalize() for w in words)
 

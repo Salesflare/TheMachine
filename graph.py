@@ -1569,7 +1569,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
     stated_rows = {r['identifier']: dict(r) for r in db.execute('SELECT * FROM person_orgs')}
     stated = {}  # person node -> the statement of where they work, when no work address says it
     named_orgs = collections.defaultdict(list)
-    surnames = {n.split()[-1] for n in owner.names if len(n.split()) >= 2}
+    surnames, firsts = {n.split()[-1] for n in owner.names if len(n.split()) >= 2}, {n.split()[0].casefold() for c in names.values() for n in c if n and len(n.split()) >= 2}
     alike = {}  # person node -> what "Same person?" compares: name words, company domains, role
     for node, value in strength.items():
         if value < FLOOR:
@@ -1584,7 +1584,7 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         if plain_name(name) in owner.names or (name == shown_id(node, x_names) and node.partition(':')[2] not in name and not any(i in named for i in group) and not roles[node]['owner'] | roles[node]['them'] | roles[node]['met']):
             continue  # the owner on another channel (a note-to-self chat, an old address); or only seen, with no name at all yet ("Slack")
         name = next((named[i] for i in group if i in named), name)  # the owner's own name for them wins
-        name = (derived := node.startswith('email:') and name == node[6:] and not keys.several(node) and address_name(node[6:])) or name  # no name given: ayla@ is "Ayla"
+        name = (derived := node.startswith('email:') and name == node[6:] and not keys.several(node) and address_name(node[6:], firsts)) or name  # no name given: ayla@ is "Ayla"
         talk = sorted(roles[node]['owner'] | roles[node]['them'] | roles[node]['met'])
         gaps = [(b - a).days for a, b in zip(talk, talk[1:])][-8:]
         usual = sorted(gaps)[len(gaps) // 2] if len(gaps) >= 3 else None

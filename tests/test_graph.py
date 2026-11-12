@@ -229,14 +229,16 @@ class Graph(unittest.TestCase):
 
     def test_a_person_needs_a_name_and_an_address_can_give_one(self):
         # A Slack member nobody named yet, only seen in a channel, is no row called "Slack"; Intercom's name for who opened a
-        # conversation is theirs; a bare address whose local part reads as a name gives it ("Kit"). One that doesn't stays the address.
+        # conversation is theirs; a bare address gives a name only when it clearly is one: a first name someone in the Graph
+        # goes by ("Kit", there is a Kit Marlow), or a first and last name. jdoe@ stays the address.
         slack = {'account_id': 'slack', 'source_id': 's-nameless', 'kind': 'slack.message', 'occurred_at': at(1), 'title': '#general: hi', 'body': 'hi',
                  'deleted': False, 'metadata': {'conversation_type': 'channel', 'channel_name': 'general', 'user_id': 'U0NONAME', 'channel_id': 'C1'}}
         intercom = {'account_id': 'work', 'source_id': 'ic-named', 'kind': 'intercom.conversation', 'occurred_at': at(2), 'title': 'Webhooks?', 'body': '',
                     'deleted': False, 'metadata': {'from': 'rue@bakehouse.example', 'from_name': 'Rue Holloway'}}  # Intercom names who opened it
         self.add(slack, intercom, mail(3, 'Kit Marlow <kit@marlow.example>', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kit@marlow.example', ('SENT',)),
                  mail(3, 'kit@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'kit@kilnworks.example', ('SENT',)),
-                 mail(3, 'zq.rt@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'zq.rt@kilnworks.example', ('SENT',)))
+                 mail(3, 'zq.rt@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'zq.rt@kilnworks.example', ('SENT',)),
+                 mail(3, 'jdoe@kilnworks.example', 'sam@acme.com'), mail(2, 'Sam <sam@acme.com>', 'jdoe@kilnworks.example', ('SENT',)))
         self.build()
         with self.store.connect() as db:
             people = {r['id']: r['name'] for r in db.execute("SELECT id,name FROM graph_nodes WHERE kind='person'")}
@@ -244,8 +246,10 @@ class Graph(unittest.TestCase):
         self.assertEqual(people.get('email:rue@bakehouse.example'), 'Rue Holloway')
         self.assertEqual(people.get('email:kit@kilnworks.example'), 'Kit')
         self.assertEqual(people.get('email:zq.rt@kilnworks.example'), 'zq.rt@kilnworks.example')
-        self.assertEqual(graph.mail_senders.address_name('jane.doe@shop.example'), 'Jane Doe')
-        self.assertEqual([graph.mail_senders.address_name(a + '@shop.example') for a in ('info', 'noreply', 'j.doe', 'shop')], ['', '', '', ''])
+        self.assertEqual(people.get('email:jdoe@kilnworks.example'), 'jdoe@kilnworks.example')
+        self.assertEqual(graph.mail_senders.address_name('jane.doe@shop.example', set()), 'Jane Doe')
+        self.assertEqual([graph.mail_senders.address_name(a + '@shop.example', {'info', 'shop'}) for a in ('info', 'noreply', 'j.doe', 'shop', 'jdoe')],
+                         ['', '', '', '', ''])
 
     def test_owner_messages_weigh_more_a_burst_is_one_day_and_it_fades(self):
         self.add(*[chat(1, '00000000001', 'Bea Burst', hour=h) for h in range(10)],
