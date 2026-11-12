@@ -1974,6 +1974,7 @@
    "body": "Is there a way to bulk assign accounts to a teammate?",
    "metadata": {
     "from": "teodor@ironbarkoutdoor.example",
+    "from_name": "Teodor Larkspur",
     "state": "open",
     "priority": false,
     "conversation_id": "9038",
@@ -1989,6 +1990,7 @@
    "body": "For context: we are on the Growth plan, about 15 users.",
    "metadata": {
     "from": "teodor@ironbarkoutdoor.example",
+    "from_name": "Teodor Larkspur",
     "state": "open",
     "priority": false,
     "conversation_id": "9038",
@@ -2369,6 +2371,7 @@
    "body": "Can we get an extension of our trial for two more weeks?",
    "metadata": {
     "from": "bram@cobaltandfinch.example",
+    "from_name": "Bram Pemberley",
     "state": "open",
     "priority": false,
     "conversation_id": "9016",
@@ -2390,6 +2393,7 @@
    "body": "Is there a way to bulk assign accounts to a teammate?",
    "metadata": {
     "from": "liesel@saltmarshmedia.example",
+    "from_name": "Liesel Penrose",
     "state": "open",
     "priority": true,
     "conversation_id": "9026",
@@ -2405,6 +2409,7 @@
    "body": "For context: we are on the Growth plan, about 15 users.",
    "metadata": {
     "from": "liesel@saltmarshmedia.example",
+    "from_name": "Liesel Penrose",
     "state": "closed",
     "priority": false,
     "conversation_id": "9026",
@@ -2809,6 +2814,7 @@
    "body": "How do I export all contacts with their custom fields?",
    "metadata": {
     "from": "kofi@ironbarkoutdoor.example",
+    "from_name": "Kofi Larkspur",
     "state": "open",
     "priority": false,
     "conversation_id": "9036",
@@ -3262,6 +3268,7 @@
    "body": "We were charged twice this month, can you check?",
    "metadata": {
     "from": "mara@kestrelenergy.example",
+    "from_name": "Mara Thistlewood",
     "state": "closed",
     "priority": false,
     "conversation_id": "9031",
@@ -3327,6 +3334,7 @@
    "body": "Can we get an extension of our trial for two more weeks?",
    "metadata": {
     "from": "idris@orchardstreetbakery.example",
+    "from_name": "Idris Larkspur",
     "state": "open",
     "priority": true,
     "conversation_id": "9028",
@@ -3629,6 +3637,7 @@
    "body": "The Outlook add-in shows a blank panel after the update.",
    "metadata": {
     "from": "leontine@vantagerail.example",
+    "from_name": "Leontine Merrow",
     "state": "closed",
     "priority": false,
     "conversation_id": "9027",
@@ -3644,6 +3653,7 @@
    "body": "For context: we are on the Growth plan, about 15 users.",
    "metadata": {
     "from": "leontine@vantagerail.example",
+    "from_name": "Leontine Merrow",
     "state": "open",
     "priority": false,
     "conversation_id": "9027",
@@ -3834,6 +3844,7 @@
    "body": "Does your API support webhooks for deal stage changes?",
    "metadata": {
     "from": "liesel@fernhillschools.example",
+    "from_name": "Liesel Westerby",
     "state": "closed",
     "priority": false,
     "conversation_id": "9035",
@@ -4349,6 +4360,7 @@
    "body": "Is there a way to bulk assign accounts to a teammate?",
    "metadata": {
     "from": "teodor@glasswingapps.example",
+    "from_name": "Teodor Greystone",
     "state": "open",
     "priority": true,
     "conversation_id": "9032",

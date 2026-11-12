@@ -474,7 +474,7 @@ def build(profile):
                 # Who it is assigned to, as the shared inbox has it: mostly nobody or Alex, some a teammate (no to-do for Alex)
                 assignee = {0: TEAM[0], 1: OWNER}.get(conversation % 4)
                 add(account, kind, minutes, f"{p['name']} ({p['company']})", INTERCOM[people.index(p) % len(INTERCOM)] if n == 0 else FOLLOW_UPS[(n - 1) % len(FOLLOW_UPS)],
-                    {'from': p['email'], 'state': rng.choice(('open', 'open', 'closed')), 'priority': rng.random() < 0.2,
+                    {'from': p['email'], 'from_name': p['name'], 'state': rng.choice(('open', 'open', 'closed')), 'priority': rng.random() < 0.2,
                      'conversation_id': str(conversation), 'source_url': f'https://inbox.example/conversation/{conversation}',
                      **({'admin_assignee_id': '7001' if assignee is OWNER else '7002', 'assignee_name': assignee['name'], 'assignee_email': assignee['email'],
                          'admin_emails': {'7001' if assignee is OWNER else '7002': assignee['email']}} if assignee else {})}, key)
