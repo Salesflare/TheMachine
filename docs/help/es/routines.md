@@ -17,7 +17,9 @@ Sin hora, se ejecuta a las 8:00. La hora es la del reloj de tu Machine.
 
 En **Plantillas**, al final de Rutinas, **Añadir** activa una rutina ya hecha. Se ejecuta una vez enseguida y luego cada mañana a las 7:30 (Limpieza de spam, cada hora). Su tarjeta muestra sus palabras como cualquier rutina, y **Editar** cambia sus palabras o su nombre.
 
-Cuando llegan muchas newsletters y Limpieza de newsletters está desactivada (25 o más en una semana, de al menos 5 remitentes), una línea encima de tus to-dos dice cuántas llegaron y qué haría, con **Activarla** y **No, gracias**. Limpieza de spam se ofrece igual cuando en una semana se movieron 5 o más correos a spam a mano. **Activarla** la añade como **Añadir** aquí. Tras **No, gracias** no se vuelve a ofrecer, y una plantilla que ya tuviste nunca.
+Cuando llegan muchas newsletters y Limpieza de newsletters está desactivada (25 o más en una semana, de al menos 5 remitentes), una línea encima de tus to-dos dice cuántas llegaron y qué haría, con **Activarla** y **No, gracias**.
+
+Limpieza de spam se ofrece igual cuando en una semana se movieron 5 o más correos a spam a mano. **Activarla** la añade como **Añadir** aquí. Tras **No, gracias** no se vuelve a ofrecer, y una plantilla que ya tuviste nunca.
 
 **Limpieza de newsletters** crea una tarea por área (trabajo y personal) con las newsletters del último día, cada una con **Mantener** o **Darse de baja**. La baja usa el enlace de un clic de la lista, o su correo de baja desde tu dirección si el envío está activado. Si no, muestra **Abrir página de baja**.
 

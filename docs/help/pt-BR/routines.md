@@ -17,7 +17,9 @@ Sem horário, ela roda às 8:00. O horário é o do relógio da sua Machine.
 
 Em **Modelos**, no fim de Rotinas, **Adicionar** liga uma rotina pronta. Ela roda uma vez na hora e depois toda manhã às 7:30 (Limpeza de spam a cada hora). O cartão dela mostra as palavras como qualquer rotina, e **Editar** muda as palavras ou o nome.
 
-Quando chegam muitas newsletters e a Limpeza de newsletters está desligada (25 ou mais numa semana, de pelo menos 5 remetentes), uma linha acima dos seus to-dos diz quantas chegaram e o que ela faria, com **Ativar** e **Não, obrigado**. A Limpeza de spam é oferecida do mesmo jeito quando 5 ou mais e-mails foram movidos para o spam à mão numa semana. **Ativar** a adiciona como **Adicionar** aqui. Depois de **Não, obrigado** ela não é oferecida de novo, e um modelo que você já teve nunca é.
+Quando chegam muitas newsletters e a Limpeza de newsletters está desligada (25 ou mais numa semana, de pelo menos 5 remetentes), uma linha acima dos seus to-dos diz quantas chegaram e o que ela faria, com **Ativar** e **Não, obrigado**.
+
+A Limpeza de spam é oferecida do mesmo jeito quando 5 ou mais e-mails foram movidos para o spam à mão numa semana. **Ativar** a adiciona como **Adicionar** aqui. Depois de **Não, obrigado** ela não é oferecida de novo, e um modelo que você já teve nunca é.
 
 **Limpeza de newsletters** cria uma tarefa por área (trabalho e pessoal) com as newsletters do último dia, cada uma com **Manter** ou **Cancelar inscrição**. O cancelamento usa o link de um clique da lista, ou o e-mail de cancelamento a partir do seu endereço se o envio estiver ligado. Se não, mostra **Abrir página de cancelamento**.
 

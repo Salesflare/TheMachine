@@ -17,7 +17,9 @@ Sans heure, elle tourne à 8:00. L’heure est celle de l’horloge de votre Mac
 
 Sous **Modèles** en bas de Routines, **Ajouter** active une routine toute prête. Elle s’exécute une fois tout de suite, puis chaque matin à 7:30 (Tri du spam toutes les heures). Sa carte montre ses mots comme toute routine, et **Modifier** change ses mots ou son nom.
 
-Quand beaucoup de newsletters arrivent et que le Tri des newsletters est désactivé (25 ou plus en une semaine, d’au moins 5 expéditeurs), une ligne au-dessus de vos to-dos dit combien sont arrivées et ce qu’il ferait, avec **L’activer** et **Non merci**. Le Tri du spam est proposé de la même façon quand 5 e-mails ou plus ont été déplacés à la main dans le spam en une semaine. **L’activer** l’ajoute comme **Ajouter** ici. Après **Non merci**, il n’est plus proposé, et un modèle que vous avez déjà eu ne l’est jamais.
+Quand beaucoup de newsletters arrivent et que le Tri des newsletters est désactivé (25 ou plus en une semaine, d’au moins 5 expéditeurs), une ligne au-dessus de vos to-dos dit combien sont arrivées et ce qu’il ferait, avec **L’activer** et **Non merci**.
+
+Le Tri du spam est proposé de la même façon quand 5 e-mails ou plus ont été déplacés à la main dans le spam en une semaine. **L’activer** l’ajoute comme **Ajouter** ici. Après **Non merci**, il n’est plus proposé, et un modèle que vous avez déjà eu ne l’est jamais.
 
 **Tri des newsletters** crée une tâche par domaine (travail et personnel) avec les newsletters de la veille, chacune avec **Garder** ou **Se désabonner**. Le désabonnement utilise le lien en un clic de la liste, ou son e-mail de désabonnement depuis votre adresse si l’envoi est activé. Sinon, elle affiche **Ouvrir la page de désabonnement**.
 
