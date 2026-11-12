@@ -395,7 +395,7 @@ A small dialog that signs the assistant's browser in for you. It shows on a sign
 
 `./install.sh --browser-viewer` gives the assistant a Chrome of its own on a virtual display (Xtigervnc), shown in noVNC through websockify at `http://127.0.0.1:6080/`. The short address sets the viewer's settings itself; the long `vnc.html?...` keeps working.
 
-- Ctrl+C / Ctrl+V (Cmd on a Mac) work between your computer and that browser.
+- Ctrl+C / Ctrl+V (Cmd on a Mac) work between your computer and that browser, also in the dashboard's Browser pane and the installed app. Pasting takes the text from the paste itself (a phone's long-press Paste too), so it needs no clipboard permission; it is never logged.
 - Everything listens on 127.0.0.1 only. Reach it through an SSH tunnel (`ssh -L 6080:127.0.0.1:6080 server`) or your own private proxy.
 - It starts on first use and stops after 15 idle minutes.
 - OpenClaw gets it as its `machine` browser profile (DevTools on 127.0.0.1:9222), and the dashboard links stuck to-dos to it.
