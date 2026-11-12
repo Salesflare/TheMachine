@@ -25,7 +25,9 @@ Limpieza de spam se ofrece igual cuando en una semana se movieron 5 o más corre
 
 Los recibos, pedidos y avisos de pago quedan fuera. El correo que llega por una dirección de grupo, como un Google Group, aparece bajo quien lo escribió y nunca te da de baja del grupo.
 
-**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Solo está para el correo que The Machine puede mover: Gmail conectado solo para leer no lo tiene. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él. El spam nuevo va a la misma tarea mientras siga abierta.
+**Limpieza de spam** crea una tarea por área con correo de remitentes desconocidos que parece spam, cada uno con **Spam** o **No es spam**. Outlook mueve el spam a Correo no deseado y Gmail lo marca como spam. Revisa cada hora, así el spam suele estar ahí antes de que llegues a él. El spam nuevo va a la misma tarea mientras siga abierta.
+
+Solo funciona con el correo que The Machine puede mover. Gmail conectado solo para leer, como en una Machine alojada, no puede: la plantilla lo dice en lugar de **Añadir**. Outlook sí funciona.
 
 Desconocido quiere decir que nunca le escribiste, y un “Re:” solo cuenta como conversación en un hilo donde escribiste. Si vuelve a colarse correo de un remitente que marcaste como spam, en la tarea o en tu buzón, aparece en la siguiente tarea como **Marcado como spam antes**. Lo que tú mismo moviste a spam también le ayuda a reconocer correo parecido.
 
