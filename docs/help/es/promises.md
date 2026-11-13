@@ -25,4 +25,6 @@ Una promesa abierta también se convierte en tarea sola cuando vence (las tuyas 
 
 Antes, tu Machine lee lo que vino después. ¿Ya se cumplió, por ejemplo con una respuesta tuya o una reunión que lo trató? Se cierra como cumplida, sin tarea.
 
+¿Luego dan una fecha nueva, como «mejor la semana que viene»? La misma promesa se mueve, y su tarea también, sin una segunda. Su página muestra la fecha nueva y el mensaje más reciente.
+
 En tu propio ordenador, `assistant promises` también las lista. El [resumen semanal](weekly-recap.md) cuenta las cumplidas y las abiertas.

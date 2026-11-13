@@ -25,6 +25,8 @@ An open promise also becomes a to-do by itself when it's due (yours the morning 
 
 Already kept, like a reply you sent or a meeting that covered it? It closes by itself, with no to-do.
 
+Given a new date later, like "next week instead"? The same promise moves, its to-do too, with no second one. Its page shows the new date and the newer message.
+
 One without a date gets a **follow-up** day: three days after you made it, a week after they did. Still open by then? It becomes a to-do.
 
 Promises from Slack show the person's name.

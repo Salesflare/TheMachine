@@ -606,9 +606,12 @@ def make_handler(app):
             # a promise's own page: read-only
             try:
                 found = app.store.promise_page(int(urllib.parse.parse_qs(path.query).get('id', [''])[0]))
-                rows = app.store.events([a['id'] for a in app.config['accounts']], event_ids=[found['event_id']])
+                # where it came from: the newest message first (one that moved its date), then the one it was made in
+                order = found.pop('sources', None) or [found['event_id']]
+                rows = sorted(app.store.events([a['id'] for a in app.config['accounts']], event_ids=order),
+                              key=lambda r: order.index(r['id']) if r['id'] in order else len(order))
                 found['source'] = [{'id': r['id'], 'account_id': r['account_id'], 'kind': r['kind'], 'occurred_at': r['occurred_at'], 'title': r['title'][:200],
-                                    'source_url': r['metadata'].get('source_url'), **event_glance(r, app.config['accounts'], app.owner_emails())} for r in rows][:1]
+                                    'source_url': r['metadata'].get('source_url'), **event_glance(r, app.config['accounts'], app.owner_emails())} for r in rows][:3]
                 self.output(200, found)
             except (ValueError, sqlite3.OperationalError):
                 self.output(404, {'error': 'No such promise'})
