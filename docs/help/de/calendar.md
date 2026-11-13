@@ -37,6 +37,8 @@ Klick auf eine Zeile, um den Chat der Aufgabe, das Versprechen oder das Meeting 
 
 Ein gebuchter Besprechungsraum steht beim Ort, nie als Person oder in deinem Graph.
 
+Ein Meeting-Link steht als sein Dienst da, etwa Zoom, Google Meet oder Teams, oder als **Videoanruf**. Öffne das Meeting, um teilzunehmen.
+
 ## Besprechungsnotizen und Transkript
 
 Die Details eines Termins haben zwei Teile. **Notizen** ist die Zusammenfassung: Entscheidungen und Aufgaben. **Transkript** ist, was gesagt wurde, Wort für Wort. Es ist zuerst eingeklappt, mit seiner Länge; **Anzeigen** öffnet es.

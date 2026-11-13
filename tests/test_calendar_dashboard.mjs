@@ -84,6 +84,11 @@ try{
   await page.locator('nav [data-tab="calendar"]').click();await showCal(page);
   assert.equal(await page.locator('#page-head .page-title').textContent(),'Calendar');
   assert.match(await page.locator('#page-head .cal-range').textContent(),/^\w{3} \d{1,2} – (\w{3} )?\d{1,2}, \d{4}$/,'US English: Oct 19 – 25, 2026');
+  // Both ends of the agenda: the same quiet line, the same words
+  const ends=await page.evaluate(()=>{const box=document.createElement('div');box.innerHTML=`<div class="cal-more" data-cal-more="down"><button type="button" class="quiet">Show later days</button></div>`;
+   $('#calendar-view').append(box);const st=e=>{const b=getComputedStyle(e),p=getComputedStyle(e.parentElement);return [e.textContent.split(' ')[0],b.fontSize,b.fontWeight,b.color,b.paddingLeft,b.borderTopWidth,b.backgroundColor,p.justifyContent]};
+   const out=[st($('#calendar-view [data-cal-more="up"] button')),st(box.querySelector('button'))];box.remove();return out});
+  assert.deepEqual(ends[0],ends[1]);assert.equal(ends[0][0],'Show');
   // Every row's title starts with a capital, also a promise's (its text is a clause: "send the pilot recap")
   assert.deepEqual(await page.locator('.cal-title [translate="no"]').evaluateAll(e=>e.map(x=>x.textContent).filter(s=>s&&s[0]!==s[0].toUpperCase())),[]);
   // Meetings come by calendar week, Monday midnight to Monday midnight with time zones: the weeks on show (this week and
@@ -145,6 +150,14 @@ try{
   assert.ok(vrows.includes('Where: Main Street 14 · Falcon Heavy Meeting Room'),vrows.join(' / '));assert.ok(!vrows.some(r=>r.startsWith('With:')&&r.includes('Falcon')),vrows.join(' / '));assert.ok(!vrows.some(r=>r==='With: 8 guests'),vrows.join(' / '));
   const who=await page.locator('#cal-v-rows .cal-v-who').evaluateAll(n=>n.map(e=>[e.textContent,e.title]));
   assert.deepEqual(who,[['Andrea andrea@client.example','andrea@client.example'],['kim@client.example','kim@client.example'],['and 6 more','']]);
+  // A meeting link reads as its service in the row, never a raw address; the meeting's details open it
+  assert.deepEqual(await page.evaluate(()=>[...['https://us02web.zoom.us/j/123?pwd=x','https://meet.google.com/abc-defg-hij','Room 4, https://teams.microsoft.com/l/meetup-join/x','https://meet.example/abc-defg-hij','Main Street 14'].map(l=>calPlace(l).text),
+   calParts({kind:'meeting',m:{title:'Sync',start:'2026-11-13T12:30:00Z',end:'2026-11-13T13:00:00Z',location:'https://meet.example/abc-defg-hij',guests:1}}).sub.replace(/^.* to \S+ · /,'')]),
+   ['Zoom','Google Meet','Room 4 · Teams','Video call','Main Street 14','Video call · 1 guest']);
+  const link=await page.evaluate(()=>{const v=$('#cal-view');v.close();calView({id:'v1',title:'Sync',start:'2026-11-13T12:30:00Z',end:'2026-11-13T13:00:00Z',location:'https://meet.google.com/abc-defg-hij'});
+   const a=document.querySelector('#cal-v-rows a.cal-v-link'),out=a&&[a.closest('dd').textContent,a.href,a.target,a.rel];v.close();return out});
+  assert.deepEqual(link,['Google Meet','https://meet.google.com/abc-defg-hij','_blank','noopener noreferrer']);
+  await page.locator('#calendar-view [data-cal-view="103"]').click();await view.waitFor();
   if(process.env.CALENDAR_SHOT){await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-1440-detail.png`});await page.emulateMedia({colorScheme:'light'});await page.waitForTimeout(300);
    await page.screenshot({path:`${process.env.CALENDAR_SHOT}/calendar-1440-light-detail.png`});await page.emulateMedia({colorScheme:'dark'})}
   assert.ok(vrows.some(r=>/^When: \w+, /.test(r)),vrows.join(' / '));

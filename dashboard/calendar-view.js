@@ -106,10 +106,18 @@ function calWith(p,m){const who=calWords(p.who);if(!who.length)return false;cons
 const calSaid=p=>p.together?t('With {}',p.who):p.direction==='mine'?t('Promised to {}',p.who):t('{} promised',p.who);
 const CAL_CARD={prepared:['Prep ready','mint'],accepted:['Preparing','lavender'],instructions:['Preparing','lavender'],pending:['To-do','amber'],snoozed:['To-do','muted']};
 const calShort=k=>{const d=new Date(k+'T12:00');return localeDate(d,DL,{weekday:'short'})+' '+d.getDate()};  // Sat 24
+// A meeting link reads as its service ("Zoom"), or "Video call" for one we don't know, never as a raw address. Text
+// beside the link (a room, an address) stays. The event's details still open the link.
+const CAL_VIDEO=[[/(^|\.)zoom\.us$/,'Zoom'],[/^meet\.google\.com$/,'Google Meet'],[/^teams\.(microsoft|live)\.com$/,'Teams'],[/(^|\.)webex\.com$/,'Webex']];
+function calPlace(loc){const s=String(loc||'').trim(),url=(s.match(/https?:\/\/[^\s<>"',;]+/i)||[])[0];if(!url)return {text:s};
+ let host='';try{host=new URL(url).hostname.toLowerCase()}catch{}
+ const name=(CAL_VIDEO.find(([re])=>re.test(host))||[])[1]||t('Video call'),
+  rest=s.replace(/https?:\/\/[^\s<>"',;]+/gi,' ').split(/\s*[,;|·]\s*|\s{2,}/).map(x=>x.trim()).filter(x=>x&&x.toLowerCase()!==name.toLowerCase()).join(', ');
+ return {text:[rest,name].filter(Boolean).join(' · '),rest,name,url}}
 function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
  if(it.kind==='meeting'){const m=it.m,c=it.s&&CAL_CARD[it.s.status],a=new Date(m.start),b=new Date(m.end),
    when=it.allDay?(it.span?rangeText(calShort(it.span[0]),calShort(it.span[1])):''):!(b>a)?'':rangeText(hm(a),(localDay(b)!==localDay(a)?calShort(localDay(b))+' ':'')+hm(b));
-  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):'',m.transcript?t('Transcript'):''].filter(Boolean).join(' · '),
+  return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,calPlace(m.location).text,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):'',m.transcript?t('Transcript'):''].filter(Boolean).join(' · '),
    said:(it.promises||[]).map(p=>calSaid(p)+': '+p.what),
    href:it.s?'#chat='+it.s.id:'',edit:!it.s&&m.edit?m.id:'',view:!it.s&&!m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
  if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what&&p.what[0].toUpperCase()+p.what.slice(1),sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
@@ -125,9 +133,10 @@ function calChip(it){const x=calParts(it),tag=x.href||x.edit||x.view?'a':'div',a
  return `<${tag} class="cal-chip k-${x.tone}${it.past?' past':''}"${attrs} title="${esc([x.owner,x.title].filter(Boolean).join(' ')+(x.sub?' · '+x.sub:'')+(x.said||[]).map(t=>' · '+t).join(''))}"><span class="t">${esc(x.owner||x.time)}</span><span class="n" translate="no">${esc(x.title)}</span></${tag}>`}
 const calDate=(k,o={weekday:'short',day:'numeric',month:'short'})=>localeDate(calOf(k),DL,o);  // Sat, Oct 24 (in the owner's date format, DL)
 const calMon=d=>localeDate(d,DL,{month:'short'}).replace(/\.$/,'');
-// A run of days as "Oct 26 – Nov 1, 2026" (the year once, or on both sides when it changes)
+// A run of days in the owner's date format (DL), as the day headings: "Oct 26 – Nov 1, 2026" in the US, "26 Oct – 1 Nov
+// 2026" day first. The year once, or on both sides when it changes. Plain spaces, as some engines put thin ones round the dash.
 function calSpan(a,n=7){const b=calAdd(a,n-1),y=', '+b.getFullYear();
- if(I18N.lang!=='en')try{return new Intl.DateTimeFormat(DL,{day:'numeric',month:'short',year:'numeric'}).formatRange(a,b)}catch{}
+ try{return new Intl.DateTimeFormat(DL,{day:'numeric',month:'short',year:'numeric'}).formatRange(a,b).replace(/\s/g,' ')}catch{}
  return a.getFullYear()!==b.getFullYear()?`${calMon(a)} ${a.getDate()}, ${a.getFullYear()} – ${calMon(b)} ${b.getDate()}, ${b.getFullYear()}`:
   a.getMonth()!==b.getMonth()?`${calMon(a)} ${a.getDate()} – ${calMon(b)} ${b.getDate()}${y}`:`${calMon(b)} ${a.getDate()} – ${b.getDate()}${y}`}
 const calMonthName=m=>localeDate(m,DL,{month:'long',year:'numeric'});
@@ -142,9 +151,9 @@ const calHash=()=>'#calendar?view='+calMode+'&date='+localDay(calMode==='month'?
 function calPush(replace){const h=calHash();if(location.hash===h)return;history[replace?'replaceState':'pushState'](null,'',location.pathname+location.search+h)}
 const calName=k=>{const t=localDay(new Date());return k===t?'Today':k===localDay(calDay(1))?'Tomorrow':k===localDay(calDay(-1))?'Yesterday':localeDate(calOf(k),DL,{weekday:'long'})};
 // A manual one (under "A clear week") loads only on a tap: loading by itself there found nothing again and again, and
-// the button flashed between Loading and Later days
+// the button flashed between Loading and Show later days. Both ends look alike: a quiet line under the list's edge.
 const calMoreRow=(dir,manual)=>{const end=dir==='up'?calFrom<=calAdd(calMonday(new Date()),-7*CAL_BACK)||calBefore(calFrom):calTo>=calAdd(calMonday(new Date()),7*CAL_AHEAD);if(end)return '';
- return `<div class="cal-more" data-cal-more="${dir}"${manual?' data-cal-manual':''}><button type="button" class="quiet">${calMoreFailed[dir]?'Couldn’t load. Try again':dir==='up'?'Show earlier days':'Later days'}</button></div>`};
+ return `<div class="cal-more" data-cal-more="${dir}"${manual?' data-cal-manual':''}><button type="button" class="quiet">${calMoreFailed[dir]?'Couldn’t load. Try again':dir==='up'?'Show earlier days':'Show later days'}</button></div>`};
 // The edge of what came in: before calStarts.day no calendar was read, so its empty days say nothing. One muted line
 // says where it starts, at the top of the agenda once it gets there, and over a week or month that holds days before it.
 const calBefore=d=>!!calStarts&&localDay(d)<=calStarts.day;
@@ -316,7 +325,9 @@ async function calNew(){if(!calCals.length){const a=new Date();try{const r=await
 function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTime()+1):b0,long=d=>localeDate(d,DL,{weekday:'long',day:'numeric',month:'long'});
  const allDay=m.all_day||b-a>=864e5,last=new Date(b-1),when=allDay?(localDay(last)!==localDay(a)?rangeText(long(a),long(last)):long(a))+' · '+t('All day')
   :long(a)+', '+rangeText(humanHM(a),(localDay(b)!==localDay(a)?long(b)+', ':'')+humanHM(b));
- const where=[m.location,...(m.rooms||[])].filter(Boolean).join(' · ');  // a booked meeting room is where, not who
+ // a booked meeting room is where, not who; a meeting link by its service's name, one tap from joining
+ const w=calPlace(m.location),rooms=[w.rest??w.text,...(m.rooms||[])].filter(Boolean).join(' · '),
+  where=w.url?html`${rooms?rooms+' · ':''}<a class="cal-v-link" href="${w.url}" target="_blank" rel="noopener noreferrer" title="${w.url}">${w.name}</a>`:rooms;
  const rows=[['When',when],...(where?[['Where',where]]:[]),...(m.shared?[['Calendar',t('{}’s calendar',m.shared)]]:[]),
   ...(m.guests&&!(m.with||m.people)?.length?[['With',t(['{} guest','{} guests'],m.guests)]]:[])];
  // With: the name (from the invite or the Graph) with its address muted beside it, or the address alone
