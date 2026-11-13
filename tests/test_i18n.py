@@ -183,9 +183,10 @@ class ServerTextTest(unittest.TestCase):
         out = notify.compose([{'at': '2026-10-27T09:00', 'title': 'Standup', 'guests': []}], [{'title': 'A'}], [{'title': 'B'}, {'title': 'C'}],
                              name='Robin', total=14)
         self.assertEqual(out['subject'], 'Goeiemorgen Robin, 1 voor vandaag')
-        self.assertEqual(out['text'], 'Goeiemorgen Robin, 1 voor vandaag\n\n• A\n• 09:00 Standup\n• B\n\n'
-                                      '12 andere kunnen wachten, ongeveer 6 min werk.\n\n1 afspraak vandaag, om 09:00.')
-        self.assertEqual(out['push']['body'], 'A\nEerste afspraak om 09:00\nB\n12 andere kunnen wachten, ongeveer 6 min werk.')
+        # "1 due today" lists that one: the rest can wait, the meetings come after
+        self.assertEqual(out['text'], 'Goeiemorgen Robin, 1 voor vandaag\n\n• A\n\n'
+                                      '13 andere kunnen wachten, ongeveer 7 min werk.\n\n1 afspraak vandaag, om 09:00.')
+        self.assertEqual(out['push']['body'], 'A\n13 andere kunnen wachten, ongeveer 7 min werk.\n1 afspraak vandaag, om 09:00.')
         locale_prefs.configure({})
         self.assertEqual(notify.compose([], [{'title': 'A'}], [])['subject'], 'Good morning, 1 due today')
 
