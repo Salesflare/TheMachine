@@ -15,14 +15,10 @@ Simple Icons lists them. One-color marks are drawn dark and inverted in the dark
 
 | File | Service | Simple Icons slug |
 | --- | --- | --- |
-| `calendar.svg` | Google Calendar | googlecalendar |
 | `github.svg` | GitHub | github |
-| `gmail.svg` | Gmail | gmail |
 | `google_docs.svg` | Google Docs | googledocs |
-| `google_meet.svg` | Google Meet | googlemeet |
 | `icloud_calendar.svg` | iCloud Calendar | icloud |
 | `intercom.svg` | Intercom | intercom |
-| `proton_calendar.svg` | Proton Calendar | protoncalendar |
 | `rss.svg` | RSS | rss |
 | `shortcut.svg` | Shortcut | shortcut |
 | `signal.svg` | Signal | signal |
@@ -63,6 +59,10 @@ the file is removed and the source falls back to its line icon.
 | --- | --- | --- | --- |
 | `slack.svg` | Slack | `SLA-Slack-icon-RGB.svg` from the Slack media kit, https://slack.com/media-kit | https://slack.com/terms-of-service/slack-brand: most uses need a specific written license; Slack may revoke permission, and use must then stop within 7 days |
 | `linkedin.svg` | LinkedIn | The blue In logo from https://brand.linkedin.com/in-logo (the page's own SVG; the download is https://content.linkedin.com/content/dam/me/business/en-us/amp/xbu/linkedin-revised-brand-guidelines/logos/in-logo.zip) | https://brand.linkedin.com: LinkedIn's brand guidelines limit use of the logo |
+| `gmail.svg` | Gmail | Google's Gmail product icon (2020, the four-color M), from https://commons.wikimedia.org/wiki/File:Gmail_icon_(2020).svg | https://about.google/brand-resource-center/: Google's marks need its permission beyond its published guidelines |
+| `calendar.svg` | Google Calendar | Google's Calendar product icon (2020), from https://commons.wikimedia.org/wiki/File:Google_Calendar_icon_(2020).svg | as Gmail |
+| `google_meet.svg` | Google Meet | Google's Meet product icon (2020), from https://commons.wikimedia.org/wiki/File:Google_Meet_icon_(2020).svg | as Gmail |
+| `proton_calendar.svg` | Proton Calendar | `calendar-badge.svg` from the Proton media kit, https://proton.me/media/kit (https://pmecdn.protonweb.com/image-transformation/?s=c&image=image/upload/v1776940263/static/logos/calendar/calendar-badge.svg) | https://proton.me/legal/terms: Proton's marks belong to Proton AG |
 | `outlook.svg`, `outlook_calendar.svg` | Outlook mail and Outlook Calendar (one icon, Outlook's) | `outlook_48x1.svg` from the Microsoft 365 product icons, https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/outlook_48x1.svg | https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks: without a written license, use only as Microsoft's published guidelines allow |
 | `docs.svg` | Microsoft OneDrive (Word, OneDrive and SharePoint) | `onedrive_48x1.svg`, same set: https://res-1.cdn.office.net/files/fabric-cdn-prod_20251008.001/assets/brand-icons/product/svg/onedrive_48x1.svg | as Outlook |
 | `exchange.svg` | Exchange Server | The Microsoft Exchange product icon (2019 and later), from https://commons.wikimedia.org/wiki/File:Microsoft_Exchange_(2019-present).svg (credited there to https://www.microsoft.com/en-us/microsoft-365/exchange/email) | as Outlook |
@@ -72,5 +72,7 @@ the file is removed and the source falls back to its line icon.
 
 The SVGs keep the official artwork; only whitespace, comments and gradient ids were shortened and coordinates rounded to
 two decimals, and the Slack and LinkedIn class styles became plain fill attributes; Salesforce's lost only its size
-attributes and whitespace; Exchange's lost its title and kept two decimals, in a square viewBox. Slack, LinkedIn, Microsoft, Outlook, OneDrive, Microsoft Teams, Exchange, Salesforce and Zoom are
+attributes and whitespace; Exchange's lost its title and kept two decimals, in a square viewBox; Google's three are in a square viewBox, coordinates rounded to two decimals; Proton Calendar's
+badge lost its white tile (kept behind the date corner), its clip path and size attributes, with a viewBox cropped to the
+mark and shorter gradient ids. Gmail, Google Calendar, Google Meet, Proton Calendar, Slack, LinkedIn, Microsoft, Outlook, OneDrive, Microsoft Teams, Exchange, Salesforce and Zoom are
 trademarks of their owners.
