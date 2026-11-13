@@ -9,7 +9,8 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const card=(id,name,more)=>({id,service:'intercom',what:'Customer conversations in your Intercom workspace.',display_name:name,boundary:'work:Acme',total:361,signals_24h:150,pending:0,last_success:at,sync_activity:[],...more});
-const connectors=[card('intercom','Acme',{replies_as:'Alex Example',acts:'reply'}),card('intercom-fleet','Acme Support',{replies_as:'',shared_by:'Acme'})];
+// card_title/card_subtitle as machine/names.py account_card names them: the company is in the title, so the subtitle is just Work
+const connectors=[card('intercom','Acme',{card_title:'Acme',card_subtitle:'Work',replies_as:'Alex Example',acts:'reply'}),card('intercom-fleet','Acme Support',{card_title:'Acme Support',card_subtitle:'Work',replies_as:'',shared_by:'Acme'})];
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -34,7 +35,8 @@ try{
   assert.equal(await own.locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace. Replies only after you press Send.');
   assert.equal(await own.locator('.conn-replies-as').textContent(),'Replies as Alex Example, only after you press Send.');  // under Details
   assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-replies-as').count(),0);
-  assert.match(await own.innerText(),/Intercom · Work · Acme/);
+  assert.equal(await own.locator('.conn-head h3').innerText(),'Acme');
+  assert.equal(await own.locator('.conn-head small').innerText(),'Work');  // never "Work · Acme" under "Acme"
   assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace.');
   const label=own.locator('.figures span').first();
   assert.equal(await label.innerText().then(t=>t.replace(/[­\n-]/g,'')),'conversations');
