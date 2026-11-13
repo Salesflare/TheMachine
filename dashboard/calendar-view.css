@@ -7,8 +7,10 @@
 .cal-day .count{margin-left:auto;font:var(--fw-medium) var(--fs-xs)/1 var(--sans);color:var(--c-text-3);font-variant-numeric:tabular-nums}
 .cal-block.late .cal-day>span:first-child{color:var(--c-orange)}
 .cal-item{display:grid;grid-template-columns:minmax(64px,max-content) 8px minmax(0,1fr) auto;align-items:center;column-gap:12px;min-height:54px;margin:0 -10px;padding:8px 10px;border-radius:var(--r-sm);color:var(--text);text-decoration:none}
-.cal-item+.cal-item{box-shadow:0 -1px 0 color-mix(in srgb,var(--c-line) 60%,transparent)}
-a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item,a.cal-item:hover{box-shadow:none}
+/* The line between rows sits on the column, like the day's line above it; the row's hover fill bleeds 10px past it */
+.cal-item{position:relative}
+.cal-item+.cal-item::before{content:"";position:absolute;top:0;left:10px;right:10px;height:1px;background:color-mix(in srgb,var(--c-line) 60%,transparent);pointer-events:none}
+a.cal-item:hover{background:var(--c-hover)}a.cal-item:hover+.cal-item::before,a.cal-item:hover::before{display:none}
 .cal-time{color:var(--c-text-2);font:var(--fw-medium) var(--fs-sm)/1.2 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cal-dot{width:8px;height:8px;border-radius:50%;background:var(--tone)}
 .cal-main{min-width:0}
@@ -76,7 +78,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 /*@eager*/
 #cal-dialog{width:min(480px,calc(100vw - 24px))}#cal-dialog [hidden]{display:none}
 #cal-view{width:min(560px,calc(100vw - 24px))}#cal-view [hidden]{display:none}#cal-view .snooze-heading{margin-bottom:10px;align-items:flex-start;gap:12px}#cal-view h2{margin:0;font-size:1.2rem;overflow-wrap:anywhere}
-#cal-view .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
+#cal-view .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-size:20px;line-height:1}
 .cal-v-rows{margin:0;display:grid;gap:10px}.cal-v-rows div{display:grid;grid-template-columns:84px 1fr;gap:10px}.cal-v-rows dt{color:var(--faint);font-size:.88rem;padding-top:1px}.cal-v-rows dd{margin:0;color:var(--text);overflow-wrap:anywhere}.cal-v-with{display:grid;gap:4px}.cal-v-mail{color:var(--faint);font-size:.86rem}.cal-v-known{display:flex;min-width:0}
 /*@lazy*/
 .cal-v-links{display:flex;flex-wrap:wrap;gap:6px}.cal-v-links .chip,.cal-v-known .chip{max-width:100%;font:var(--fw-medium) var(--fs-xs)/1.5 var(--sans);padding:1px 9px 1px 8px;min-height:0}
@@ -102,7 +104,7 @@ body:has(#calendar:not([hidden])) #page-head{position:sticky;top:0;z-index:30;ma
 .cal-v-nact .primary{background:var(--mint);color:var(--charcoal)}.cal-v-nact .sure{background:var(--danger,#e5484d);color:#fff}.cal-v-file input{display:none}
 #cal-view .send-act{display:flex;margin-top:16px}#cal-view .send-act button{flex:1 1 0;min-height:46px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
 #cal-dialog .snooze-heading{margin-bottom:12px}#cal-dialog h2{margin:0;font-size:1.2rem}
-#cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:9px;background:var(--tile);color:var(--text);font-size:20px;line-height:1}
+#cal-dialog .snooze-heading button{flex:none;width:34px;height:34px;min-height:0;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-size:20px;line-height:1}
 #cal-dialog label{display:block;margin:0 0 10px;color:var(--faint);font-size:.88rem}
 #cal-dialog :is(input,select,textarea){display:block;width:100%;margin-top:5px;box-sizing:border-box;background:var(--sunken);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.98rem}
 #cal-dialog .cal-f-check{display:flex;align-items:center;gap:8px;color:var(--text)}#cal-dialog .cal-f-check input{width:auto;margin:0}
