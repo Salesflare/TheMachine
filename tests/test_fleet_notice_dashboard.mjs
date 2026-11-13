@@ -50,7 +50,7 @@ try{
   // The notice: one card, before the tabs, text and Show inside it, nothing past the screen's edge.
   const notice=page.locator('#fleet-view>.notice-card');
   assert.equal(await notice.count(),1,at_);
-  assert.equal(await notice.locator('span').innerText(),'One Fleet item waits for you under To-dos.');
+  assert.equal(await notice.locator('>span').innerText(),'One Fleet item waits for you under To-dos.');
   assert.equal(await page.locator('#fleet-view p.note').count(),0,'no bare notice line');
   const [card,text,show,tabs,title]=await Promise.all(['#fleet-view>.notice-card','#fleet-view>.notice-card>span','#fleet-view>.notice-card .head-link','.fleet-tabs','#page-head'].map(s=>box(page,s)));
   assert.equal(await notice.locator('.head-link').innerText(),'Show');
@@ -94,7 +94,7 @@ try{
   await page.locator(`#task-${hex(1)}`).waitFor();
   // Two items: plural. The Network off: the same card, without a button.
   await open({...base,waiting:waitingIn(2)});
-  assert.equal(await page.locator('#fleet-view>.notice-card span').innerText(),'2 Fleet items wait for you under To-dos.');
+  assert.equal(await page.locator('#fleet-view>.notice-card>span').innerText(),'2 Fleet items wait for you under To-dos.');
   await page.locator('#fleet-view>.notice-card .head-link').click();
   await page.locator('#inbox:not([hidden])').waitFor();
   await open({...base,off:true});

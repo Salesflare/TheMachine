@@ -42,8 +42,7 @@ async function graphConnFlip(b,fleet){const id=b.dataset.graphConn,on=b.getAttri
  try{await graphPost('graph_connection',{fleet,account:id,on});toast(on?'Shared with the team.':'Not shared any more. Teammates\' Machines delete what it shared.')}
  catch(err){errCaught(err);set(was);toast(err.message,true)}
  finally{delete graphConnBusy[id]}}
-fleetOn('click',async e=>{const go=e.target.closest('[data-shared-go]');if(go){e.preventDefault();showFleetPane('shared-'+go.dataset.sharedGo);return}
- const op=e.target.closest('[data-shared-open]');if(op){sharedOpen(op.dataset.sharedOpen);return}
+fleetOn('click',async e=>{const op=e.target.closest('[data-shared-open]');if(op){sharedOpen(op.dataset.sharedOpen);return}
  const more=e.target.closest('[data-shared-more]');if(more){const f=more.dataset.sharedMore;sharedShown[f]=(sharedShown[f]||20)+50;sharedLoad(f,true);return}
  const b=e.target.closest('[data-shared-set],[data-shared-many],[data-shared-rule],[data-shared-record],[data-graph-start],[data-graph-pause],[data-graph-switch],[data-off-cancel],[data-graph-conn],[data-graph-all],[data-graph-rekey-no],[data-graph-remove]');if(!b)return;
  const pane=b.closest('[data-shared-fleet]'),fleet=pane?.dataset.sharedFleet||b.dataset.fleet||b.dataset.graphStart||b.dataset.graphPause||b.dataset.graphSwitch||b.dataset.graphAll;
@@ -109,10 +108,6 @@ const FAMILY_REQ=['todo','event'];
 fleetOn('click',async e=>{const b=e.target.closest('[data-net-do]');if(!b)return;if(b.dataset.confirmText&&!confirm(b.dataset.confirmText))return;b.disabled=true;
  try{const r=await fleetPost('fleet_network',{do:b.dataset.netDo,email:b.dataset.netEmail||'',relation:b.dataset.netRel||''});
   toast(r?.status==='connected'?'Already friends. Nothing was sent.':{find_on:'On. Your Machine checks your contacts privately.',asked:'Okay. Turn it on any time in the Fleet tab.',connect:'Request sent. It waits until they accept.',later:'Hidden for now.',never:'Won’t suggest them again.',leave:'You left the Network.'}[b.dataset.netDo]||'Done.');await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-fleetOn('change',async e=>{const t=e.target.closest('[data-net-addr]');if(!t)return;t.disabled=true;
- try{await fleetPost('fleet_network',{do:t.checked?'address_on':'address_off',email:t.dataset.netAddr});await fleetView()}catch(err){errCaught(err);t.checked=!t.checked;toast(err.message,true)}finally{t.disabled=false}});
-fleetOn('change',async e=>{const t=e.target.closest('[data-net-toggle]');if(!t)return;t.disabled=true;
- try{await fleetPost('fleet_network',{do:t.dataset.netToggle});await fleetView()}catch(err){errCaught(err);t.checked=!t.checked;toast(err.message,true)}finally{t.disabled=false}});
 fleetOn('keydown',e=>{const go=(e.key==='Enter'||e.key===' ')&&e.target.matches?.('[data-ho-go]')&&e.target;if(go){e.preventDefault();location.hash=go.dataset.hoGo}});
 fleetOn('click',async e=>{const hoMore=e.target.closest('[data-ho-more]');if(hoMore){hoMore.closest('.fleet-handoffs').querySelectorAll('.fleet-ho-more').forEach(li=>li.hidden=false);hoMore.remove();return}
  const hoGo=e.target.closest('[data-ho-go]');if(hoGo)location.hash=hoGo.dataset.hoGo});  // the whole row opens its card
@@ -143,8 +138,6 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-decide]');if(!b)
 // Undo after I'm in: the event leaves the calendar, the yes stays (family.py)
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-plan-undo]');if(!b)return;b.disabled=true;
  try{await fleetPost('family_plan_undo',{id:b.dataset.planUndo});toast(t('Removed from your calendar.'));refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-fleetOn('submit',async e=>{const t=e.target;if(t.classList.contains('fleet-intro-form')){e.preventDefault();
-  try{await fleetPost('fleet_intro',{fleet:t.dataset.fleet,member_id:t.dataset.member,about:t.dataset.about,note:t.elements.note.value.trim()});toast('Asked. This tab shows how it goes.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}}});
 $('#suggestions').addEventListener('click',async e=>{const c=e.target.closest('[data-handoff-cancel]');if(c){handingOff.delete(c.dataset.handoffCancel);render();return}
  const drop=e.target.closest('[data-handoff-drop]'),dd=drop&&handingOff.get(drop.closest('form').dataset.card);
  if(dd){const v=drop.dataset.handoffDrop;if(v==='contact')dd.with_contact=false;else dd.dropped=[...(dd.dropped||[]),+v];render();return}

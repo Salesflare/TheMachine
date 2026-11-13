@@ -99,7 +99,7 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#fleet');
   const wait=page.locator('.graph-own.team-wait');await wait.waitFor();
   assert.equal(await wait.innerText(),"Waiting for Olive Park or Ada Stone to share the team's data with you. The team's records show in your Graph then.");
-  assert.match(await page.locator('#fleet-m-m_ada').innerText(),/Ada Stone\s*admin/);
+  assert.match(await page.locator('#fleet-m-m_ada').innerText(),/Ada Stone\s*Admin/);
   assert.doesNotMatch(await page.locator('#fleet-m-me').innerText(),/owner|admin/);
   if(process.env.SHOTS)await page.screenshot({path:`${process.env.SHOTS}/fleet-waiting-${width}-${scheme}.png`});
   // The admin OKs: the Machine's directory changes (status fleet.stamp), and Mine / Team shows without a reload
@@ -257,7 +257,9 @@ try{
   assert.match(await pane.locator('.shared-ask').innerText(),/Share with team goes to everyone in the Fleet\. Share with… goes only to the teammates you pick\./);
   assert.deepEqual(await groups.nth(0).locator('.actions button').allInnerTexts(),['Share with team','Share with…','Keep private']);
   assert.deepEqual(await groups.nth(1).locator('.actions button').allInnerTexts(),['Share with…','Share with team','Keep private']);
-  assert.equal(await groups.nth(1).locator('.actions button.primary').innerText(),'Share with…');
+  // one primary in the box: the first group's suggestion; the next says its own in words
+  assert.equal(await pane.locator('.shared-ask button.primary').count(),1);
+  assert.equal(await groups.nth(0).locator('.actions button.primary').innerText(),'Share with team');
   assert.match(await groups.nth(1).innerText(),/Suggested: Share with…/);
   assert.equal(await groups.nth(0).locator('[data-shared-pick]').first().isVisible(),false);  // closed: one tap decides the whole group
   await groups.nth(0).locator('summary').click();

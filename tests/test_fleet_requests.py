@@ -117,6 +117,7 @@ class Requests(unittest.TestCase):
         self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'knows': True, 'people': 2}})
         offers = self.fleet.view()['intro_offers']
         self.assertEqual([(o['member_id'], o['about']) for o in offers], [('pat1', 'client.example')])
+        self.assertEqual(offers[0]['label'], 'Client')  # shown as the company, the domain stays for the intro ask
         with self.assertRaisesRegex(ValueError, 'dashboard'):
             self.app.action('fleet_intro', {'fleet': self.ref, 'member_id': 'pat1', 'about': 'client.example'})
         self.app.action('fleet_intro', {'fleet': self.ref, 'member_id': 'pat1', 'about': 'client.example', 'note': 'about the Q4 pilot'},

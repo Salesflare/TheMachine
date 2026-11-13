@@ -99,7 +99,7 @@ try{
  assert.match(await page.locator('.fleet-todo').innerText(),/One Fleet item waits for you under To-dos/);
  assert.equal(await page.locator('#fleet-view .fleet-card').count(),0);
  // After "who knows": ask that teammate for an intro, with a line why.
- const offer=page.locator('.fleet-intro-form');
+ await page.locator('.fleet-intro>summary').click();const offer=page.locator('.fleet-intro-form');
  await offer.locator('input').fill('About the Q4 pilot');await offer.locator('button').click();await page.waitForTimeout(100);
  assert.deepEqual(calls.at(-1),{action:'fleet_intro',args:{fleet:FL,member_id:'p',about:'client.example',note:'About the Q4 pilot'}});
  assert.match(await page.locator('#fleet-view').innerText(),/intro email sent/);
