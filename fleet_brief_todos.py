@@ -150,6 +150,7 @@ def card_maker(store):
 
 class BriefTodos:
     brief_card = None  # set by the app: brief_card(account, dedupe_key, title, body, domain, quiet) -> the new to-do's id
+    brief_reword = None  # set by the app: brief_reword(card_id, title, body), an open brief to-do in its line's new words
 
     # -- state
     def _brief_todos(self):
@@ -194,29 +195,28 @@ class BriefTodos:
             key, sig = item['key'], signature(item)
             seen.add(key)
             entry = mine.get(key)
-            vague = False
+            vague, kept, target = False, False, None
             with self.connect() as db:
                 words = rhythm_words(self._brief_rhythm(db, accounts, item['domain'])) if item['kind'] == 'quiet' else ''
                 ctx = self._brief_context(db, item, accounts, self._brief_repliers(fleet, item))
                 line = specific(item, ctx, today, words)
                 if entry and not entry.get('closed'):
-                    if self._card_status(db, entry['card']) in OPEN:
-                        if line is None:
-                            vague = True  # nothing specific about it (any more): it stays a line of the brief
-                        else:
-                            if not entry.get('merged') and (line['title'], line['why']) != (entry['item'].get('title'), entry['item'].get('why')):
-                                self._brief_retitle(db, entry['card'], line['title'], line['why'])
-                            entry.update(item=snapshot(line), sig=sig)
-                            continue
-                    else:
+                    if self._card_status(db, entry['card']) not in OPEN:
                         entry.update(closed=True, at=stamp_now)  # the owner closed it: as they left it
-                if not vague and entry and entry['sig'] == sig:
+                    elif line is None:
+                        vague = True  # nothing specific about it (any more): it stays a line of the brief
+                    else:
+                        kept = True
+                if not kept and not vague and entry and entry['sig'] == sig:
                     continue  # closed for this very thing: only something new brings it back
-                if line is None:
-                    target = None
-                else:
+                if line is not None and not kept:
                     item = line
                     target = self._brief_target(db, item, {e['card'] for k, e in mine.items() if not e.get('closed') and k in seen})
+            if kept:  # still open: in the words its line has now (more specific than when it was made)
+                if not entry.get('merged') and (line['title'], line['why']) != (entry['item'].get('title'), entry['item'].get('why')) and self.brief_reword:
+                    self.brief_reword(entry['card'], line['title'][:90], (_sentence(line['why']) + '.')[:700])
+                entry.update(item=snapshot(line), sig=sig)
+                continue
             if vague:
                 self._brief_todo_close(mine, key, 'complete', t(SETTLED['waiting']) if ctx.get('answered')
                                        else t('Nothing specific to act on, it stays in the team brief'))
@@ -276,11 +276,6 @@ class BriefTodos:
         gaps = [(b - a).days for a, b in zip(days, days[1:])]
         return int(statistics.median(gaps)) if len(gaps) >= 3 else 0
 
-    def _brief_retitle(self, db, card_id, title, why):
-        """A brief's own open to-do in the words its line has now (more specific than when it was made): its title
-        (unless the owner wrote one) and its text. Its Fleet evidence (a sealed event) keeps the words it was made with."""
-        db.execute("UPDATE suggestions SET title=CASE WHEN title_source='user' THEN title ELSE ? END,body=? WHERE id=?",
-                   (title[:90], (_sentence(why) + '.')[:700], str(card_id)))
 
     def _brief_repliers(self, ref, item):
         """The addresses of the people a waiting email went to (the teammates named on its line, and the owner when it

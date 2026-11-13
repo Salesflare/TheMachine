@@ -108,6 +108,7 @@ class FleetApp:
             self.fleet.own_event = lambda event: own_or_joined(event, self.store.owner_user_ids)  # silent acceptance: only what the owner did
             self.fleet.notify_brief = self.fleet_notify_brief
             self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)  # a brief line's to-do (fleet_brief_todos.py)
+            self.fleet.brief_reword = self.store.brief_reword  # and in its line's newer words
             self.fleet.remove_work = self.fleet_remove_work
             # Shared connectors (shared_connectors.py): kept in config.json, checked with the connector's own profile read
             self.fleet.save_config = self.fleet_save_config

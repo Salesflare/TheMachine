@@ -23,6 +23,7 @@ class BriefTodos(unittest.TestCase):
     def setUp(self):  # the brief's own fixture (test_fleet_brief.py), then the app's hooks (machine/app/fleet.py)
         brief_fixture.Brief.setUp(self)
         self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)
+        self.fleet.brief_reword = self.store.brief_reword
         self.fleet.done_card = lambda card, choice, why, key: self.store.decide(card, choice, why, key, 'fleet')
         with self.store.connect() as db:  # what is at stake with Globex in the owner's Graph: its renewal, on a board
             db.execute("INSERT OR IGNORE INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:globex.example','org','Globex',0.5,1,?)",
@@ -247,6 +248,9 @@ class BriefTodos(unittest.TestCase):
         row = self.card(globex)
         self.assertEqual((row['title'], row['body']), (f'Globex has been waiting on Pat since {self.day(1)}',
                                                        'Ada asked Pat for the renewal quote. At stake: renewal (Proposal). You also talk to them.'))
+        with self.store.connect() as db:  # its Fleet evidence too, so the chat on it reads the same
+            evidence = db.execute("SELECT e.title FROM events e, json_each(?) j WHERE e.id=j.value AND e.kind='fleet.brief'", (row['event_ids'],)).fetchone()
+        self.assertEqual(evidence['title'], row['title'])
         # Pat's answer is in the owner's copy of the thread (cc, a shared inbox): settled, though Pat's Machine hadn't said so yet
         answer = mail('work', 0, f'Pat <{TEAM}>', 'ada@globex.example', message_id='<answer@acme.example>')
         answer['metadata'].update(thread_id=asked['metadata']['thread_id'])
