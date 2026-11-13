@@ -574,15 +574,15 @@ class AppPush(unittest.TestCase):
     def test_the_brief_and_the_morning_name_their_own_view(self):
         """A tapped notification opens the dashboard at #chat=<tag> (mobile/www/inject.js); the dashboard's pushRoute
         sends a tag that is no to-do to its view (tests/test_push_links_dashboard.mjs). The brief's tag names its Fleet,
-        and the morning's web push opens the Calendar's agenda, like the app's."""
+        and the morning's web push opens that digest, like the app's."""
         self.register()
         fl = 'fl_' + 'a' * 16
         self.app.fleet_notify_brief('Your Fleet this week\n\nGlobex waits', 'https://m.example/#fleet-brief=' + fl)
         self.assertEqual((self.wakes()[-1]['kind'], self.wakes()[-1]['tag']), ('fleet', 'fleet-brief-' + fl))
         self.app.fleet_notify_brief('Your Fleet this week', '')  # no address for the dashboard: the tag still opens a brief
         self.assertEqual(self.wakes()[-1]['tag'], 'fleet-brief')
-        self.assertEqual(notify.compose([], [{'title': 'A'}], [], 'https://m.example/')['push']['url'], 'https://m.example/#calendar?view=agenda')
-        self.assertEqual(notify.compose([], [{'title': 'A'}], [])['push']['url'], './#calendar?view=agenda')
+        self.assertEqual(notify.compose([], [{'title': 'A'}], [], 'https://m.example/')['push']['url'], 'https://m.example/#digest=morning')
+        self.assertEqual(notify.compose([], [{'title': 'A'}], [])['push']['url'], './#digest=morning')
 
     def test_the_team_brief_notification_has_a_body_from_its_items(self):
         # "What your Fleet saw" showed no line under it on the phone: its items' titles, as the brief shows them,

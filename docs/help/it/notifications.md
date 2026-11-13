@@ -72,16 +72,19 @@ Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che n
 
 Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o in un'altra vista, si apre la sua chat. Una promessa apre la sua attività, o la sua pagina se non ne ha ancora una.
 
-La push dice lo stesso senza link. Toccala per aprire oggi nel **Calendario**.
+La push dice lo stesso senza link. Toccala, o tocca il link alla fine dell’email, per rileggere questo riepilogo in **Attività**.
+
+Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo che copia **Riepilogo** nelle attività. Quando il testo delle attività è nascosto nelle notifiche, non ci sono.
 
 ## Il riepilogo della sera
 
 Arriva una volta nei giorni lavorativi alla sua ora in **Orario di lavoro**, di default 15 minuti prima di **Fino alle**, nei modi scelti nella sua riga qui sopra. Un giorno senza attività fatte né riunioni tenute non ne riceve. Inizia con la tua giornata in un numero, come "Buonasera Sam, oggi 4 attività fatte", poi una parte **Lavoro** e una parte **Personale**. Una parte vuota viene omessa. Ognuna ha:
 
-- **Fatto oggi**: fino a tre attività che tu o la tua Machine avete finito, quante altre, e le tue riunioni, come "3 riunioni: Chiamata prezzi e altre 2.";
+- le riunioni del giorno su una riga a sé, come "3 riunioni: Chiamata prezzi e altre 2.";
+- **Fatto oggi**: fino a tre attività che tu o la tua Machine avete finito, e quante altre;
 - **Aperto per domani** (di venerdì, il tuo prossimo giorno lavorativo): le prime riunioni e cosa scade.
 
-Finisce con quante attività hanno ancora bisogno di te. Tocca la notifica push per aprire le tue attività. Per non riceverlo, disattiva la sua riga.
+Finisce con quante attività hanno ancora bisogno di te. Tocca la notifica push, o il link alla fine dell’email, per rileggerlo, con **Copia Lavoro** e **Copia Personale**. Per non riceverlo, disattiva la sua riga.
 
 ## Privacy
 

@@ -465,7 +465,7 @@ class Notifications(unittest.TestCase):
         self.assertEqual(full['push']['title'], 'Good morning, 1 due today')
         self.assertEqual(full['text'], 'Good morning, 1 due today\n\n• Pay the invoice\n'
                                        '• 09:30 Planning with the agency\n• To-do 0\n\n4 more can wait, about 2 min to clear.\n\n'
-                                       '1 meeting today, at 09:30.\n\nOpen The Machine: https://m.example/')
+                                       '1 meeting today, at 09:30.\n\nOpen The Machine: https://m.example/#digest=morning')
         careful = notify.compose(meetings, [], overnight, '', show_text=False)
         self.assertEqual(careful['push']['body'], '5 waiting, about 3 min to clear.\n1 meeting today, at 09:30.')
         self.assertNotIn('agency', careful['text'] + careful['subject'] + careful['push']['body'])
@@ -478,18 +478,18 @@ class Notifications(unittest.TestCase):
         due = [{'title': 'Send the deck'}, {'title': 'Pay the invoice'}, {'title': 'Book the venue'}]
         text = lambda meetings, due, overnight=(), **kw: notify.compose(meetings, due, list(overnight), 'https://m.example/', **kw)['text']
         self.assertEqual(text(one, due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
-                                                  '1 meeting today, at 13:00.\n\nOpen The Machine: https://m.example/')
+                                                  '1 meeting today, at 13:00.\n\nOpen The Machine: https://m.example/#digest=morning')
         self.assertEqual(text(three, due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
-                                                    '3 meetings today, the first at 13:00.\n\nOpen The Machine: https://m.example/')
+                                                    '3 meetings today, the first at 13:00.\n\nOpen The Machine: https://m.example/#digest=morning')
         self.assertEqual(text([], due, total=3), 'Good morning, 3 due today\n\n• Send the deck\n• Pay the invoice\n• Book the venue\n\n'
-                                                 'Open The Machine: https://m.example/')
+                                                 'Open The Machine: https://m.example/#digest=morning')
         self.assertEqual(text(three, due[:1], total=6), 'Good morning, 1 due today\n\n• Send the deck\n• 13:00 Lunch with the agency\n\n'
                                                         '5 more can wait, about 3 min to clear.\n\n3 meetings today, the first at 13:00.\n\n'
-                                                        'Open The Machine: https://m.example/')
+                                                        'Open The Machine: https://m.example/#digest=morning')
         # No due items: the headline is the first meeting and the list starts with it; the meeting line isn't said twice
         self.assertEqual(text(one, [], [{'title': 'Answer the school'}], total=1),
                          'Good morning, first meeting at 13:00\n\n• 13:00 Lunch with the agency\n• Answer the school\n\n'
-                         'Open The Machine: https://m.example/')
+                         'Open The Machine: https://m.example/#digest=morning')
         careful = notify.compose(three, due, [], '', show_text=False, total=3)
         self.assertEqual(careful['text'], 'Good morning, 3 due today\n\n3 waiting, about 2 min to clear.\n\n3 meetings today, the first at 13:00.')
         self.assertEqual(careful['push']['body'], '3 waiting, about 2 min to clear.\n3 meetings today, the first at 13:00.')

@@ -255,7 +255,9 @@ time passed.
   for `"message"`, the message is from the other side. Without it the project goes one stage before and the result says
   `not_proven`. The owner's Won or drag still marks it done. With each review, `monitor` keeps a blocker on every open
   project with a condition (an overdue promise on it, no reply in 10+ days) and adds one plain to-do when it has no open
-  to-do and follow-ups don't already chase it; nothing is drafted or sent.
+  to-do and follow-ups don't already chase it; nothing is drafted or sent. On a work day no review ran it (no new
+  messages, reviews paused), `ReviewStore.daily_blockers` runs the same check once within the owner's hours, by plain
+  code with no model; the same dedupe keys mean a later review never adds a second to-do.
 - Done when on a project on no board (2026-11-11). The owner sets it in Edit; a review may set one with graph
   `{"project", "condition", "proof"}` (never over the owner's). `begin_analysis` lists the claim's ones as `done_when`.
   A message that meets it goes in `finish_analysis` `stages` as `{"project", "done": true, "event_id", "reason", "url"}`

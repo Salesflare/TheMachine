@@ -26,7 +26,7 @@ A agenda nunca é alterada.
 
 A Microsoft também recebe o pedido de ler os perfis básicos da sua organização (nome, email e foto) e seus contatos do Outlook. Sua Machine só os usa para fotos, cargos e empresas de pessoas que já estão no seu Graph, até 200 fotos por dia. Quem não tem foto é verificado de novo depois de 30 dias.
 
-Pode ser que o admin da sua organização precise aprovar as fotos dos colegas. Se não aprovar, o Outlook conecta mesmo assim, só que sem essas fotos. Uma conta conectada antes disso recebe uma tarefa: toque em **Reconectar**, ou em **Não precisa** para fechá-la de vez.
+Pode ser que o admin da sua organização precise aprovar as fotos dos colegas. Se não aprovar, o Outlook conecta mesmo assim, só que sem essas fotos. Uma conta conectada antes disso recebe uma tarefa: toque em **Reconectar**, ou em **Não precisa** para fechá-la de vez. Uma conta pessoal (Outlook.com, Hotmail) não tem colegas, então a tarefa dela só pede as fotos dos contatos.
 
 ## Conectar
 

@@ -26,7 +26,7 @@ De agenda wordt nooit gewijzigd.
 
 Microsoft wordt ook gevraagd om de basisprofielen in je organisatie (naam, e-mail en foto) en je Outlook-contacten te lezen. Je Machine gebruikt ze alleen voor foto’s, functies en bedrijven van mensen die al in je Graph staan, tot 200 foto’s per dag. Wie geen foto heeft, wordt na 30 dagen opnieuw bekeken.
 
-Mogelijk moet de admin van je organisatie de foto’s van collega’s goedkeuren. Doet die dat niet, dan koppelt Outlook toch, alleen zonder die foto’s. Een account dat al eerder gekoppeld was, krijgt één to-do: druk op **Opnieuw verbinden**, of op **Niet nodig** om die voorgoed te sluiten.
+Mogelijk moet de admin van je organisatie de foto’s van collega’s goedkeuren. Doet die dat niet, dan koppelt Outlook toch, alleen zonder die foto’s. Een account dat al eerder gekoppeld was, krijgt één to-do: druk op **Opnieuw verbinden**, of op **Niet nodig** om die voorgoed te sluiten. Een persoonlijk account (Outlook.com, Hotmail) heeft geen collega’s, dus die to-do vraagt alleen om de foto’s van contacten.
 
 ## Koppelen
 

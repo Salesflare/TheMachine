@@ -3,7 +3,8 @@ scopes Outlook's consent asks for:
 
 - colleagues (User.ReadBasic.All): GET /users/{address}/photos/96x96/$value (48x48 when there is no 96), only for
   people already in the graph who show no photo, by a work address on one of the owner's organization's verified
-  domains (GET /organization). A personal account (Outlook.com) has no colleagues: nothing is asked.
+  domains (GET /organization). A personal account (Outlook.com) has no colleagues: nothing is asked, and it is never
+  asked to reconnect for them.
 - Outlook contacts (Contacts.Read): once a day per account, the owner's contacts (their addresses, job title and
   company), then the photo of each contact who is in the graph and shows none (GET /me/contacts/{id}/photo/$value).
   Their job title and company go to the person's facts (enrichment.offer_facts), as a contact's record.
@@ -74,7 +75,9 @@ def check(connect, config, credential, account, now, read=None, ask=None):
     offered = None
     try:
         granted, offered = ms_graph.grant(config, credential, account)
-        scopes = {s for s in SCOPES if ms_graph.ANSWERS[s] & granted}
+        if ms_graph.personal(account):  # an Outlook.com account has no colleagues: reconnecting for them brings nothing
+            offered = set(offered) - {COLLEAGUE}
+        scopes ={s for s in SCOPES if ms_graph.ANSWERS[s] & granted}
         domains = _domains(config, credential, account, read) if COLLEAGUE in scopes else set()
     except ms_graph.GraphError:
         pass

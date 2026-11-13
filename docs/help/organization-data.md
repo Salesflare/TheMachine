@@ -13,7 +13,7 @@ order: 5
 
 Only an organization's web address is sent, never your messages or who you know there. Up to 50 are looked up a day, and each is refreshed every 90 days. Shared sites and mail providers, like gmail.com, are never looked up. People have their own look-up: see [Job title and photo](people.md#job-title-and-photo).
 
-Without a logo from the look-up, The Machine uses the icon from the organization's own website, saved on your Machine. No logo service learns who you deal with.
+Without a logo from the look-up, The Machine uses the icon from the organization's own website, saved on your Machine. No logo service learns who you deal with. When it has both, small spots like a to-do's line show the square icon.
 
 When the look-up has them, up to 5 of the organization's specialties show under its description, and the Organizations list can be filtered by one: **Filter**, then **Specialty**. When a person's look-up brings their company's details along, those fill in the organization too, so it needs no look-up of its own. Details looked up in the last 90 days stay as they are.
 

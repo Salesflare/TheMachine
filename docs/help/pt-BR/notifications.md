@@ -72,16 +72,19 @@ Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que
 
 Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela. Uma promessa abre a tarefa dela, ou a própria página se ainda não tiver uma.
 
-O push diz o mesmo sem links. Toque nele para abrir hoje no **Calendário**.
+O push diz o mesmo sem links. Toque nele, ou no link no fim do e-mail, para ler este resumo de novo em **Tarefas**.
+
+No final vêm seus resumos de **Trabalho** e **Pessoal**, o mesmo texto que **Resumo** copia em Tarefas. Quando o texto das tarefas está oculto nas notificações, eles ficam de fora.
 
 ## O resumo do fim do dia
 
 Ele chega uma vez nos dias de trabalho no horário dele em **Horário de trabalho**, por padrão 15 minutos antes de **Até**, pelos meios que você escolher na linha dele acima. Um dia sem tarefa feita nem reunião realizada não recebe nenhum. Ele começa com o seu dia em um número, como "Boa noite, Sam: 4 tarefas feitas hoje", e depois uma parte **Trabalho** e uma parte **Pessoal**. Uma parte vazia fica de fora. Cada uma tem:
 
-- **Feito hoje**: até três tarefas que você ou sua Machine terminaram, quantas mais, e suas reuniões, como "3 reuniões: Ligação de preços e mais 2.";
+- as reuniões do dia numa linha própria, como "3 reuniões: Ligação de preços e mais 2.";
+- **Feito hoje**: até três tarefas que você ou sua Machine terminaram, e quantas mais;
 - **Em aberto para amanhã** (numa sexta, seu próximo dia de trabalho): as primeiras reuniões e o que vence.
 
-Ele termina com quantas tarefas ainda precisam de você. Toque na notificação push para abrir suas tarefas. Para não receber, desative a linha dele.
+Ele termina com quantas tarefas ainda precisam de você. Toque na notificação push, ou no link no fim do e-mail, para ler de novo, com **Copiar Trabalho** e **Copiar Pessoal**. Para não receber, desative a linha dele.
 
 ## Privacidade
 

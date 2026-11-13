@@ -150,6 +150,15 @@ function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCard
 const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
  return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
+// Digest: a row atop the list opening the area's digest (todos-area-digest.js), when an area to-do is open or done today
+const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString();
+ return (state?.suggestions||[]).some(s=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup&&(/^(pending|accepted|prepared|instructions)$/.test(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))
+  ?html`<p class="ad-entry"><button type="button" data-area-digest><b>${f==='work'?t('Work digest'):f==='personal'?t('Personal digest'):t('Digest')}</b><span>${t('Done today and still open')}</span>›</button></p>`:''};
+document.addEventListener('click',e=>{if(e.target.closest('[data-area-digest]'))lazyRun('areadigest',()=>areaDigestOpen())});
+// A tapped digest notification or its email's link (notify.DIGEST_VIEW, EVENING_VIEW; the phone app's tag, pushRoute):
+// To-dos with that digest open on top. The link goes once handled, so the same one opens it again.
+function openDigestLink(){const m=/^#digest=(morning|evening)$/.exec(location.hash);if(!m)return;
+ history.replaceState(null,'',location.pathname+location.search);if($('#inbox').hidden)showTab('inbox');lazyRun('areadigest',()=>areaDigestOpen(m[1]))}
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
 $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});

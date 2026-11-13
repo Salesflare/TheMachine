@@ -67,12 +67,14 @@ HANDOFF_STALE = 24 * 60 * 60  # a handoff email still not taken by then (the mai
 # A held push that still couldn't go after EMAIL_AFTER is dropped: the email for what still waits takes over by then
 QUEUE = ('CREATE TABLE IF NOT EXISTS notify_queue(id INTEGER PRIMARY KEY,channel TEXT NOT NULL,kind TEXT NOT NULL,ref TEXT,'
          'title TEXT NOT NULL,payload TEXT,show INTEGER NOT NULL DEFAULT 1,created REAL NOT NULL,due REAL NOT NULL)')
-DIGEST_VIEW = '#calendar?view=agenda'  # where the morning's notification opens: today's meetings and what's due
+# Where a digest's notification and its email's link open: that digest again, to read and copy (the dashboard's
+# Digest, todos-area-digest.js). A sent one keeps what it said this long (digest_done).
+DIGEST_VIEW, DIGEST_KEEP = '#digest=morning', dt.timedelta(days=7)
 DIGEST_LATE = dt.timedelta(hours=3)  # a digest not sent by then (the Machine was off) waits for the next day
 # The evening digest: what got done and what's open for the next work day, by default this long before the hours end
 EVENING_BEFORE = dt.timedelta(minutes=15)
 EVENING_LISTED = 3  # to-dos named per part; the rest is a count
-EVENING_VIEW = '#todos'  # where the evening's notification opens: what still needs the owner
+EVENING_VIEW = '#digest=evening'  # where the evening's notification opens: that digest (DIGEST_VIEW)
 MAIL_SUBJECT, MAIL_TEXT = 120, 4000
 # Phones with the mobile app: what Settings shows. The control plane holds their push tokens and sends the wakeups.
 APP_DEVICES = 'CREATE TABLE IF NOT EXISTS notify_app_devices(id TEXT PRIMARY KEY,platform TEXT NOT NULL,label TEXT NOT NULL,created_at TEXT NOT NULL)'
@@ -97,6 +99,8 @@ LINKS = re.compile(r' · \[[^\]\n]+\]\([^)\s]+\)')  # a summary line's Open link
 def ensure(db):
     db.execute(SCHEMA)
     db.execute(DIGESTS)
+    if 'body' not in {r[1] for r in db.execute('PRAGMA table_info(notify_digests)')}:  # what a sent one said (digest_done)
+        db.execute('ALTER TABLE notify_digests ADD COLUMN body TEXT')
     db.execute(QUEUE)
     columns = {r[1] for r in db.execute('PRAGMA table_info(notify_queue)')}
     for name, definition in (('delivery', 'TEXT'), ('batch', 'TEXT'), ('claimed_until', 'REAL NOT NULL DEFAULT 0')):
@@ -419,10 +423,64 @@ def digest_claim(db, day, at):
     return True
 
 
-def digest_done(db, day, status, channels):
-    """The digest of `day` is done: sent (on `channels`), empty or not sent."""
+def digest_done(db, day, status, channels, digest=None):
+    """The digest of `day` is done: sent (on `channels`), empty or not sent. A sent one keeps what it said (digest_kept),
+    so its notification and email open it again (digest_shown); older ones let theirs go after DIGEST_KEEP."""
     channels = json.dumps(channels, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
-    db.execute('UPDATE notify_digests SET status=?,channels=? WHERE day=?', (status, channels, day))
+    body = json.dumps(digest_kept(digest), ensure_ascii=False, separators=(',', ':')) if digest and status == 'sent' else None
+    db.execute('UPDATE notify_digests SET status=?,channels=?,body=? WHERE day=?', (status, channels, body, day))
+    db.execute('UPDATE notify_digests SET body=NULL WHERE body IS NOT NULL AND created_at<?',
+               ((dt.datetime.now(dt.timezone.utc) - DIGEST_KEEP).isoformat(),))
+
+
+def digest_kept(digest):
+    """What a sent digest keeps to show again: its title, its text as the email had it without the headline (the title)
+    and the links (the dashboard is where they lead: read), and its parts to copy (sections)."""
+    return {'title': digest['subject'], 'text': digest.get('read', ''), 'blocks': digest.get('blocks') or [],
+            'sections': [{'area': s['area'], 'copy': s['copy']} for s in digest.get('sections') or () if s.get('copy')]}
+
+
+def read_text(lines):
+    """A digest's lines as the dashboard shows them again (digest_kept): without the headline, the Open links and the
+    blank lines at either end."""
+    return '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip()
+
+
+def read_blocks(lines, heads, subs, meets=()):
+    """The same lines (read_text) as the dashboard draws them: [[kind, text]], kind 'h' (an area: Work, Personal),
+    'sub' (Done today, Open for tomorrow), 'li' (a bullet, without its •), 'meet' (the day's meetings) or 'p'; a blank
+    line is 'gap'. The copy stays the plain text."""
+    out = []
+    for raw in '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip().split('\n'):
+        line = raw.strip()
+        kind = ('gap' if not line else 'h' if line in heads else 'sub' if line in subs else 'li' if line.startswith('• ')
+                else 'meet' if line in meets else 'p')
+        if kind == 'gap' and (not out or out[-1][0] == 'gap'):
+            continue
+        out.append([kind, line[2:] if kind == 'li' else line])
+    return out
+
+
+SHOWN = {'morning': "SELECT body,created_at FROM notify_digests WHERE day NOT LIKE '%:%' AND status='sent' AND body IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+         'evening': "SELECT body,created_at FROM notify_digests WHERE day LIKE 'evening:%' AND status='sent' AND body IS NOT NULL ORDER BY created_at DESC LIMIT 1"}
+
+
+def digest_shown(db, kind):
+    """The last sent digest of `kind` ('morning' or 'evening') that still keeps what it said: {kind, title, text,
+    sections, at}, or {} (none yet, or older than DIGEST_KEEP: the dashboard then shows today's digest instead)."""
+    ensure(db)
+    if kind not in SHOWN:
+        return {}
+    row = db.execute(SHOWN[kind]).fetchone()
+    if not row:
+        return {}
+    try:
+        kept = json.loads(row[0])
+    except (TypeError, ValueError):
+        return {}
+    blocks = [[str(b[0]), str(b[1])] for b in kept.get('blocks') or () if isinstance(b, list) and len(b) == 2]
+    return {'kind': kind, 'title': str(kept.get('title') or ''), 'text': str(kept.get('text') or ''), 'blocks': blocks,
+            'sections': [s for s in kept.get('sections') or () if isinstance(s, dict)], 'at': row[1]}
 
 
 def drop_covered(db, refs, before):
@@ -543,7 +601,7 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=()):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), areas=()):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
@@ -560,6 +618,8 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     from that promise) first, then what is due, the first meeting, what came in overnight, and the waiting to-dos in the
     dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
+    areas: [(area, text)], each area's digest (area_digest), after the rest under its name, email and Telegram only (not
+    the push); an empty one is left out.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
@@ -638,8 +698,15 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         lines += [tail, '']
     if opening and not about_meeting:  # a headline about the first meeting already says it
         lines += [opening, '']
-    if root:
-        lines.append(t('Open The Machine: {}', root))
+    # Each area's digest (area_digest), the same text the To-dos digest copies: never without show_text (titles)
+    for area, text in (areas or ()) if show_text else ():
+        if text:
+            lines += [AREA_TITLES[area](), text, '']
+    sections = [{'area': area, 'copy': text} for area, text in (areas or ()) if show_text and text]
+    read = read_text(lines)
+    blocks = read_blocks(lines, {f() for f in AREA_TITLES.values()}, {t('Done today'), t('Still open')}, {opening} - {''})
+    if root:  # opens this digest again, as its notification does
+        lines.append(t('Open The Machine: {}', root + DIGEST_VIEW))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
     # for them all, and the count then says what was left out. The one the title names isn't said again under it.
     shown = [(item, clip(text, 40) if item is not None else t('First meeting at {}', first_at)) for item, text in picks
@@ -654,7 +721,38 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             break
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
     return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
-            'text': '\n'.join(lines).strip(), 'subject': head}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
+
+
+# -- an area's digest: Copy Work, Copy Personal
+AREAS = ('work', 'personal')  # the order of the areas' digests
+AREA_TITLES = {'work': lambda: t('Work'), 'personal': lambda: t('Personal')}
+AREA_LISTED = 8  # done and open to-dos listed in an area's digest, the rest as a count
+
+
+def area_digest(done, open_items, today=''):
+    """One area's digest (Work or Personal): what got done today and what is still open there, as plain text to paste
+    somewhere else (no links). The To-dos digest shows and copies it, and the morning digest's email carries it.
+    done: the to-dos finished today [{title}], the ones that matter first; open_items: the area's open to-dos [{title,
+    due}] in the dashboard's order (open_order); today ('YYYY-MM-DD'): one due then says so. At most AREA_LISTED of
+    each, the rest as a count. '' when the area has nothing worth listing: then no part of it shows anywhere."""
+    done = [i for i in done if str(i.get('title') or '').strip()]
+    open_items = [i for i in open_items if str(i.get('title') or '').strip()]
+    out = []
+
+    def listed(items, more):
+        for i in items[:AREA_LISTED]:
+            title = clip(i['title'], 80)
+            out.append('• ' + (t('Due today: {}', title) if today and i.get('due') == today else title))
+        if len(items) > AREA_LISTED:
+            out.append(more(len(items) - AREA_LISTED))
+    if done:
+        out.append(t('Done today'))
+        listed(done, lambda n: t('{} more done.', n))
+    if open_items:
+        out.append(t('Still open'))
+        listed(open_items, lambda n: t('{} more open.', n))
+    return '\n'.join(out)
 
 
 # -- the evening digest
@@ -729,26 +827,31 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
         ident = str(item.get('id') or '')
         return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
 
+    meets, opened = set(), t('Open for tomorrow') if tomorrow else t('Open for {}', next_day)
+
     def part(area, short):
         """One part's lines: in the message (short: EVENING_LISTED, links) or its copy (every to-do done, plain)."""
         d, h, u, a = of(done, area), of(held, area), of(due, area), of(ahead, area)
         out = []
-        if d or h:
+        # The day's meetings first, on their own line: under Done today they read as one more to-do done
+        named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
+        names = ', '.join(clip(x, 40) for x in named)
+        if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
+            said = (t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
+                    else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
+            out.append(said)
+            meets.add(said)
+        if d:
             out.append(t('Done today'))
             if show_text:
                 most = EVENING_LISTED if short else EVENING_COPIED
                 out += ['• ' + clip(i['title'], 80) for i in d[:most]]
                 if len(d) > most:
                     out.append(t('{} more done.', len(d) - most))
-            elif d:
+            else:
                 out.append(t('{} to-dos done.', len(d)))
-            named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
-            names = ', '.join(clip(x, 40) for x in named)
-            if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
-                out.append(t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
-                           else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
         if u or a:
-            out.append(t('Open for tomorrow') if tomorrow else t('Open for {}', next_day))
+            out.append(opened)
             if show_text:
                 out += ['• ' + clock(m['at']) + ' ' + clip(m['title'], 60) for m in a[:2]]
                 out += ['• ' + t('Due: {}', clip(i['title'], 80)) + (link(i) if short else '') for i in u[:EVENING_LISTED]]
@@ -770,8 +873,10 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
             sections.append({'area': area, 'copy': '\n'.join(part(area, False))})
     if waiting:
         lines += ['', t('{} to-dos still need you.', waiting)]
-    if root:
-        lines += ['', t('Open The Machine: {}', root)]
+    read = read_text(lines)
+    blocks = read_blocks(lines, set(title.values()), {t('Done today'), opened}, meets)
+    if root:  # opens this digest again, as its notification does
+        lines += ['', t('Open The Machine: {}', root + EVENING_VIEW)]
     # The push: what got done in a line, then the one thing to know for the next work day
     soon = []
     if ahead:
@@ -795,7 +900,7 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
         summary = t('{} meetings.', len(held))
     body = '\n'.join([clip(summary, room), *after])
     return {'push': {'title': head, 'body': body, 'url': (root or './') + EVENING_VIEW, 'tag': 'evening'},
-            'text': '\n'.join(lines).strip(), 'subject': head, 'sections': sections}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
 
 
 # -- email, through the control plane (hosted and paired Machines)

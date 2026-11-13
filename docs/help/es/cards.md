@@ -36,6 +36,8 @@ Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mient
 
 La línea de arriba de la lista también cambia directamente a la otra: **Solo personal · Trabajo · Mostrar todo**.
 
+**Resumen** arriba de la lista muestra lo que se hizo hoy y lo que sigue pendiente, para Trabajo y Personal, o solo el que filtras. **Copiar** lo pone en tu portapapeles, como texto simple para pegar donde quieras. Solo aparece cuando hay algo que mostrar.
+
 Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Proyecto** en **Detalles** lo cambia o lo quita. Consulta [las tareas de un proyecto](projects.md#a-projects-to-dos).
 
 **Área** en **Detalles** pasa la tarea a tu otra área. Lo que puede leer y desde dónde puede enviar cambia con ella; los mensajes de los que vino se quedan donde están. **Deshacer** en el aviso que sigue la devuelve.
@@ -100,7 +102,9 @@ En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: *
 
 En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.
 
-Cada tarea empieza por su título. La línea de debajo dice de quién trata, la organización cuando trata de una (nunca solo porque alguien trabaje allí), el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph. Un nombre y una organización muestran su foto o logo cuando el Graph tiene uno.
+Cada tarea empieza por su título. La línea de debajo dice de quién trata, la organización cuando trata de una (nunca solo porque alguien trabaje allí), el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph.
+
+Un nombre y una organización muestran su foto o logo cuando el Graph tiene uno. Si no, muestran sus iniciales. Un logo que no se leería tan pequeño, como blanco sobre fondo transparente o un logotipo muy ancho, también muestra la inicial.
 
 A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último contacto hace 12 días por correo; nada desde entonces.» Solo aparece cuando el último contacto es antiguo o sigue sin respuesta, y nombra los canales no conectados por los que quizá respondieron, como WhatsApp. Tu Machine prepara con los mismos datos, así que dice lo que no sabe en vez de adivinar.
 
@@ -112,7 +116,7 @@ Sobre el borrador, una línea discreta nombra el mensaje del que viene, con el l
 
 Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la sugerencia de un compañero en Slack, una línea bajo la tarea lo indica, como "Según Sam en #ops". Tócala para leer ese mensaje aquí, con Abrir en Slack o Gmail dentro. Si ese mensaje es el origen de la propia tarea, la línea de origen ya lo muestra y no hay una segunda línea.
 
-Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea tiene una línea fina al lado.
+Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea aparece bajo "Esta tarea". En WhatsApp, Telegram o Signal tus propios mensajes van a la derecha, como en la app.
 
 Una respuesta en un hilo de Slack también muestra lo que se dijo antes del hilo. Un enlace de la tarea a su propio mensaje también lo abre aquí, con **Abrir en Slack** abajo.
 

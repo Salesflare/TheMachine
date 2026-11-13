@@ -68,8 +68,8 @@ def show_org_edit(db, node_id):
         looked = enrichment.usable(domain, json.loads(found['profile'])) if found and found['profile'] and not wrong else None
         profile = {'website': enrichment.website(domain), **(looked or {}), **edits}
         logo = db.execute('SELECT key FROM person_photos WHERE identifier=?', ('logo:' + domain,)).fetchone()
-        if 'logo' not in profile and logo:  # no logo from the lookup or the owner: the one from its own site
-            profile['logo'] = 'api/person-photo?p=' + logo[0]
+        if logo and 'logo' not in edits:  # its own site's icon: the logo when the lookup has none, else for small sizes
+            profile['icon' if 'logo' in profile else 'logo'] = 'api/person-photo?p=' + logo[0]
         info.update(profile=profile, wrong=wrong)
     else:
         info['profile'] = edits or None

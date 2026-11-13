@@ -26,7 +26,7 @@ The calendar is never changed.
 
 Microsoft is also asked to read basic profiles in your organization (name, email and photo) and your Outlook contacts. Your Machine uses them only for photos, job titles and companies of people already in your Graph, up to 200 photos a day. Someone without a photo is checked again after 30 days.
 
-Your organization's admin may have to approve the colleague photos. If they don't, Outlook still connects, just without these photos. An account connected before this gets one to-do: press **Reconnect**, or **Not needed** to close it for good.
+Your organization's admin may have to approve the colleague photos. If they don't, Outlook still connects, just without these photos. An account connected before this gets one to-do: press **Reconnect**, or **Not needed** to close it for good. A personal account (Outlook.com, Hotmail) has no colleagues, so its to-do asks only for contacts’ photos.
 
 ## Connect it
 

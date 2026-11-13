@@ -132,6 +132,48 @@ class Detection(unittest.TestCase):
         self.assertFalse(s.automated('/opt/google/chrome/chrome --remote-debugging-port=9222 --user-data-dir=/home/o/.config/chrome-work'))
         self.assertFalse(s.automated('/usr/bin/headless-notes --open'))  # a word in a name is not a flag
 
+    def test_a_script_crash_is_named_by_its_script_not_its_interpreter(self):
+        rows = [crash('/usr/bin/python3.14', 30, '/usr/bin/python3 -u /home/o/apps/backup.py --nightly'),
+                crash('/usr/bin/node', 20, 'node --require ./env.js /home/o/apps/server.mjs'),
+                crash('/usr/bin/python3.14', 10, '/usr/bin/python3 -m http.server 8000'),
+                crash('/usr/bin/bash', 5, 'bash -c "sleep 1"')]
+        found = {f['name']: f for f in detect(rows)}
+        self.assertEqual(sorted(found), ['backup.py', 'bash', 'http.server', 'server.mjs'])
+        self.assertEqual((found['backup.py']['key'], found['backup.py']['program']), ('crashed:backup.py', 'backup.py'))
+        self.assertEqual(s.card(found['backup.py'])[0], 'backup.py crashed')
+        self.assertEqual(s.script_of('/usr/bin/notes-app --open x.py', '/usr/bin/notes-app'), (None, False))  # not an interpreter
+        self.assertEqual(s.script_of('deno run -A main.ts', '/usr/bin/deno'), ('main.ts', False))
+        self.assertEqual(s.script_of('node --test', '/usr/bin/node'), (None, True))
+
+    def test_developer_test_and_agent_runs_stay_quiet(self):
+        def run(cmdline='/usr/bin/python3 -u scripts/sync.py', exe='/usr/bin/python3.14', **fields):
+            row = crash(exe, 10, cmdline)
+            row.update({'COREDUMP_CWD': '/home/o/projects/app', **fields})
+            return row
+        agent = '/user.slice/user-1000.slice/user@1000.service/app.slice/dev-claude-agent.service'
+        quiet = [run(COREDUMP_USER_UNIT='dev-claude-agent.service', COREDUMP_CGROUP=agent),  # a coding agent's service ran it
+                 run(COREDUMP_CGROUP='/user.slice/user-1000.slice/user@1000.service/app.slice/codex-session-7.scope'),
+                 run(COREDUMP_CWD='/tmp/agent-42/checkout'),  # a throwaway checkout
+                 run(COREDUMP_CWD='/home/o/.cache/task-9/repo'),
+                 run('/tmp/build-1/out/app', '/tmp/build-1/out/app'),  # a program built in a temporary folder
+                 run('/usr/bin/python3 -m pytest -x tests', COREDUMP_CWD='/home/o/projects/app'),  # test runners and test files
+                 run('/usr/bin/python3 -m unittest discover -s tests'),
+                 run('/usr/bin/python3 tests/test_sync.py'),
+                 run('node /home/o/projects/app/node_modules/.bin/vitest run', '/usr/bin/node'),
+                 run('node --test', '/usr/bin/node'),
+                 run('/usr/bin/chromium --type=renderer', '/usr/bin/chromium', COREDUMP_SIGNAL='5')]  # a test's browser helper
+        for row in quiet:
+            self.assertTrue(s.automated(row['COREDUMP_CMDLINE'], row['COREDUMP_EXE']) or s.dev_run(row), row)
+        self.assertEqual(detect(quiet), [])
+        # the owner's own programs still count: an app, a script of theirs, The Machine itself, the coding agent itself,
+        # and an AppImage (it runs from /tmp/.mount_*)
+        kept = [run('/usr/bin/notes-app', '/usr/bin/notes-app', COREDUMP_USER_UNIT='app-Hyprland-notes\\x2dapp-1a2b.scope'),
+                run('/usr/bin/python3 /home/o/apps/backup.py'),
+                run('/usr/bin/python3 -u assistant.py serve', COREDUMP_USER_UNIT='personal-assistant.service', COREDUMP_CWD='/home/o/the-machine'),
+                run('/usr/bin/claude', '/usr/bin/claude', COREDUMP_USER_UNIT='dev-claude-agent.service', COREDUMP_CGROUP=agent),
+                run('/tmp/.mount_EditorAbc/editor', '/tmp/.mount_EditorAbc/editor', COREDUMP_CWD='/home/o')]
+        self.assertEqual(sorted(f['name'] for f in detect(kept)), ['assistant.py', 'backup.py', 'claude', 'editor', 'notes-app'])
+
     def test_a_crash_while_its_service_stops_is_expected_but_not_any_other_time(self):
         browser = '/opt/google/chrome/chrome --remote-debugging-port=18800 --user-data-dir=/home/o/.openclaw/browser/openclaw/user-data'
         down = crash('/opt/google/chrome/chrome', 20, browser)

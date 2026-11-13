@@ -19,7 +19,9 @@ Un servizio che continua a riavviarsi, uno che è fallito più volte in un giorn
 
 Un solo riavvio o una sola esecuzione fallita è normale e non dà avvisi. Lo stesso vale per un servizio che è fallito qualche volta e poi è tornato a funzionare.
 
-I browser guidati da test e agenti (headless, Playwright, Puppeteer, CI) restano in silenzio, e così un programma che si ferma mentre il suo servizio viene fermato o riavviato. Un programma che si blocca più e più volte dà una sola attività, che dice quante volte e quando.
+I browser guidati da test e agenti (headless, Playwright, Puppeteer, CI) restano in silenzio, e così un programma che si ferma mentre il suo servizio viene fermato o riavviato. Lo stesso vale per le esecuzioni di sviluppo: ciò che esegue un agente di programmazione, i test e i programmi avviati da una cartella temporanea o di cache. Un programma che si blocca più e più volte dà una sola attività, che dice quante volte e quando.
+
+Uno script è indicato con il suo nome, come backup.py, non python3 o node.
 
 ## Cosa ricevi
 

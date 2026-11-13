@@ -51,14 +51,15 @@ try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [w,h] of [[1440,900],[390,844]])for(const scheme of ['light','dark']){const {context,page}=await open(w,h,scheme);await toCal(page);
   assert.deepEqual(await line(page),[],'today is after the start: no line yet');assert.equal(await page.locator('[data-cal-more="up"]').count(),1);
-  await toStart(page);
+  const n=asks.length;await toStart(page);
   assert.deepEqual(await line(page),[SAID]);assert.equal(await page.locator('[data-cal-more="up"]').count(),0,'no earlier days to show');
   const d=await days(page);assert.equal(d[0],START,'the agenda starts on the first day that came in: '+d);
   const top=await page.evaluate(()=>[document.querySelector('.cal-start').getBoundingClientRect().bottom,document.querySelector('#calendar-view [data-day]').getBoundingClientRect().top]);
   assert.ok(top[0]<=top[1],'the line sits above the first day');
   // The weeks around the one on show still come one at a time behind it (calQueue), so only an ask that reaches before
-  // the start's week counts: that is what a wheel at the top would ask for if it went on past the start
-  const n=asks.length;await page.evaluate(()=>dispatchEvent(new WheelEvent('wheel',{deltaY:-400})));await page.waitForTimeout(300);
+  // the start's week counts: a wheel at the top past the start, or the queued week next to the start's week. The queue
+  // runs behind the clicks, so every ask since Show earlier days counts, after a moment for it to drain.
+  await page.evaluate(()=>dispatchEvent(new WheelEvent('wheel',{deltaY:-400})));await page.waitForTimeout(1000);
   assert.deepEqual(asks.slice(n).filter(([a])=>a<START_WEEK).map(([a])=>a.toISOString()),[],'nothing earlier is asked for');
   await fits(page,`agenda ${w} ${scheme}`);
   if(process.env.CALENDAR_SHOT)await page.screenshot({path:`${process.env.CALENDAR_SHOT}/agenda-${w}-${scheme}.png`});

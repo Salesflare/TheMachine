@@ -82,21 +82,27 @@ class Compose(unittest.TestCase):
         self.assertEqual(out['subject'], 'Evening Robin, 5 to-dos done today')
         self.assertEqual(out['text'],
                          'Evening Robin, 5 to-dos done today\n\n'
-                         'Work\nDone today\n• Send the order form\n• Reply to the supplier\n• Pay the invoice\n1 more done.\n'
-                         '2 meetings: Pricing call and 1 more.\n'
+                         'Work\n2 meetings: Pricing call and 1 more.\n'
+                         'Done today\n• Send the order form\n• Reply to the supplier\n• Pay the invoice\n1 more done.\n'
                          'Open for tomorrow\n• 10:00 Roadmap review\n'
                          '• Due: Send the signed contract · [Open](https://m.example/#card=e1b2c3d4e5f60718&or=chat)\n\n'
                          'Personal\nDone today\n• Book the dentist\nOpen for tomorrow\n• Due: Pick up the parcel\n\n'
                          '6 to-dos still need you.\n\n'
-                         'Open The Machine: https://m.example/')
+                         'Open The Machine: https://m.example/#digest=evening')
         # each part copies on its own, as plain text: every to-do done, no links
         self.assertEqual(out['sections'], [
-            {'area': 'work', 'copy': 'Done today\n• Send the order form\n• Reply to the supplier\n• Pay the invoice\n• File the expenses\n'
-                                     '2 meetings: Pricing call and 1 more.\nOpen for tomorrow\n• 10:00 Roadmap review\n• Due: Send the signed contract'},
+            {'area': 'work', 'copy': '2 meetings: Pricing call and 1 more.\nDone today\n• Send the order form\n• Reply to the supplier\n'
+                                     '• Pay the invoice\n• File the expenses\nOpen for tomorrow\n• 10:00 Roadmap review\n• Due: Send the signed contract'},
             {'area': 'personal', 'copy': 'Done today\n• Book the dentist\nOpen for tomorrow\n• Due: Pick up the parcel'}])
+        # as the dashboard draws it: the areas headings, their parts subheads, the to-dos a list, the meetings a line
+        self.assertEqual(out['blocks'][:8], [['h', 'Work'], ['meet', '2 meetings: Pricing call and 1 more.'], ['sub', 'Done today'],
+                                             ['li', 'Send the order form'], ['li', 'Reply to the supplier'], ['li', 'Pay the invoice'],
+                                             ['p', '1 more done.'], ['sub', 'Open for tomorrow']])
+        self.assertIn(['li', 'Due: Send the signed contract'], out['blocks'])  # without its link: the dashboard is where it is
+        self.assertEqual(out['blocks'][-3:], [['li', 'Due: Pick up the parcel'], ['gap', ''], ['p', '6 to-dos still need you.']])
         self.assertEqual(out['push'], {'title': 'Evening Robin, 5 to-dos done today',
                                        'body': 'Done: Send the order form, Reply to the supplier and 3 more\nTomorrow, first meeting at 10:00',
-                                       'url': 'https://m.example/#todos', 'tag': 'evening'})
+                                       'url': 'https://m.example/#digest=evening', 'tag': 'evening'})
         self.assertLessEqual(len(out['push']['body']), notify.APP_BODY)
         self.assertNotIn('—', out['text'])
         self.assertFalse(any(line.startswith('You') for line in out['text'].split('\n')))
@@ -118,12 +124,13 @@ class Compose(unittest.TestCase):
     def test_meetings_alone_a_friday_and_careful(self):
         friday = notify.evening_compose([], self.HELD, 0, self.DUE[:1], [], tomorrow=False, next_day='Mon, Nov 16')
         self.assertEqual(friday['subject'], 'Good evening, 2 meetings today')
-        self.assertIn('\nOpen for Mon, Nov 16\n', friday['text'])
+        self.assertIn('Work\n2 meetings: Pricing call and 1 more.\nOpen for Mon, Nov 16\n', friday['text'])  # no Done today when none are
+        self.assertIn(['sub', 'Open for Mon, Nov 16'], friday['blocks'])
         self.assertEqual(friday['push']['body'], '2 meetings.\n1 due on Mon, Nov 16')
         careful = notify.evening_compose(self.DONE, self.HELD, 3, self.DUE, self.AHEAD, '', show_text=False)
         for title in ('order form', 'dentist', 'Pricing call', 'Roadmap', 'contract', 'parcel'):
             self.assertNotIn(title, careful['text'] + careful['push']['body'] + str(careful['sections']))
-        self.assertIn('Work\nDone today\n4 to-dos done.\n2 meetings.\nOpen for tomorrow\nTomorrow, first meeting at 10:00.\n1 due tomorrow.',
+        self.assertIn('Work\n2 meetings.\nDone today\n4 to-dos done.\nOpen for tomorrow\nTomorrow, first meeting at 10:00.\n1 due tomorrow.',
                       careful['text'])
         self.assertIn('Personal\nDone today\n1 to-do done.\nOpen for tomorrow\n1 due tomorrow.\n\n3 to-dos still need you.', careful['text'])
 
@@ -178,7 +185,8 @@ class Step(unittest.TestCase):
         self.card('Answer the school', account='home')
         with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', side_effect=self.meetings):
             out = self.app.evening_digest(evening.astimezone(UTC))
-        self.assertTrue(out['text'].startswith('Good evening, 3 to-dos done today\n\nWork\nDone today\n'), out['text'])
+        self.assertTrue(out['text'].startswith('Good evening, 3 to-dos done today\n\nWork\n2 meetings: Pricing call and 1 more.\nDone today\n'),
+                        out['text'])
         self.assertIn('\n\nPersonal\nDone today\n• Book the dentist\n', out['text'])  # a to-do on a personal account
         self.assertEqual([x['area'] for x in out['sections']], ['work', 'personal'])
         self.assertIn('• Send the order form', out['text'])

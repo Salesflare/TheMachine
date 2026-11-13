@@ -221,14 +221,20 @@ class Protected(unittest.TestCase):
             notify.hold(db, 'push', 'todo', title, 5000.0, ref='suggestion:s1', payload={'title': title, 'tag': 's1'}, clock=lambda: 5000.0)
             notify.hold(db, 'email', 'todo', title, 5000.0, ref='suggestion:s1', clock=lambda: 5000.0)
             notify.app_line_save(db, 's1', f'Ready: {title}', body=f'1 to-do: {title}')
+        with store.connect() as db:  # a sent digest, kept to open again from its notification
+            notify.digest_claim(db, '2026-11-12', '2026-11-12T07:30:00+00:00')
+        with store.connect() as db:
+            notify.digest_done(db, '2026-11-12', 'sent', ['push'], notify.compose([], [{'title': title}], []))
         self.assertNotIn(CANARY.encode(), files(self.path))
         with sqlite3.connect(self.path) as raw:
+            self.assertEqual(raw.execute('SELECT typeof(body) FROM notify_digests').fetchone()[0], 'blob')
             self.assertEqual({r[0] for r in raw.execute('SELECT typeof(title) FROM notify_queue')}, {'blob'})
             self.assertEqual(raw.execute("SELECT typeof(payload) FROM notify_queue WHERE channel='push'").fetchone()[0], 'blob')
             self.assertEqual(raw.execute('SELECT typeof(line),typeof(body) FROM notify_app_lines').fetchone(), ('blob', 'blob'))
         with store.connect() as db:
             self.assertEqual(notify.app_line(db, 's1'), f'Ready: {title}')
             self.assertEqual(notify.app_line_body(db, 's1'), f'1 to-do: {title}')
+            self.assertIn(title, notify.digest_shown(db, 'morning')['text'])
             with unittest.mock.patch.object(notify, 'active', return_value=False), unittest.mock.patch.object(notify, 'push_now', return_value=True), \
                     unittest.mock.patch.object(notify, 'last_seen', return_value=0.0):
                 pushes, lines = notify.take_due(db, clock=lambda: 5000.0)

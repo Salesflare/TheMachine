@@ -20,14 +20,7 @@ $('#people-view').addEventListener('click',async e=>{const keep=e.target.closest
  const el=b.dataset.fleetMember?document.getElementById('fleet-m-'+b.dataset.fleetMember):document.querySelector(`.fleet-free-form[data-fleet="${CSS.escape(b.dataset.fleetFree)}"]`);if(!el)return;
  fleetReveal(el);el.scrollIntoView({block:'center',behavior:'smooth'});if(b.dataset.fleetFree)el.querySelector('input')?.focus({preventScroll:true});else{el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}});
 $('#fleet-view').addEventListener('click',e=>{const b=e.target.closest('[data-graph-open]');if(!b)return;e.preventDefault();graphNode=b.dataset.graphOpen;document.querySelector('nav [data-tab="people"]')?.click()});
-// An organization's logo from enrichment (https only, no referrer, lazy, fixed size); its initial shows until it loads and when it can't.
-const LOGO_URL=/^https:\/\/[^\s"'<>\\]+$/;
-const orgPic=(n,big)=>{const l=n.profile?.logo||'',u=LOGO_URL.test(l)||/^api\/person-photo\?p=[0-9a-f]{32}$/.test(l)?l:'',px=big?36:22;return html`<span class="org-pic${big?html` big`:''}" aria-hidden="true">${(String(n.name||'').trim()[0]||'?').toUpperCase()}${u?html`<img src="${u}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
-// A person's photo from enrichment, the same way: https only, no referrer, lazy; their initials until it loads and when it can't.
-const initials=name=>{const w=String(name||'').trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));return((w[0]?.[0]||'?')+(w.length>1?w.at(-1)[0]:'')).toUpperCase()};
-const PHOTO_URL=/^api\/person-photo\?p=[0-9a-f]{32}$/;  // only photos saved on this Machine, never the service's own link
-const personPic=(n,big)=>{const u=PHOTO_URL.test(n.profile?.photo||'')?n.profile.photo:'',px=big?44:26;return html`<span class="person-pic${big?html` big`:''}" aria-hidden="true">${initials(n.name)}${u?html`<img src="${u}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`};
-document.addEventListener('error',e=>{const t=e.target;if(t?.tagName==='IMG'&&t.parentElement?.matches('.org-pic,.person-pic'))t.remove()},true);
+// orgPic and personPic (with their initials, ring and fallbacks) are the to-do chips' own (todos-cards.js).
 // The owner changes a person's or organization's picture from its page; a teammate's record shows theirs as it is.
 const picEdit=(n,pic)=>n.team_only?pic:html`<button type="button" class="pic-edit" data-pic-edit="${n.id}" title="Change picture" aria-label="Change picture">${pic}</button>`;
 const nodeButton=n=>html`<button class="node" data-node="${n.id}" title="${n.name}">${n.name}</button>`;

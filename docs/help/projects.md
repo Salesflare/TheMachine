@@ -74,7 +74,7 @@ A new board, or a suggested board you save, looks through your whole history onc
 
 A check only moves a project to the last stage with that proof, linked on its page. A project on no board is marked done instead, with **Undo** in its **⋯** under Recent changes.
 
-Change **Done when** later and a done its proof no longer fits opens again; its to-do follows the new one. **Done** or **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. Nothing is sent without you.
+Change **Done when** later and a done its proof no longer fits opens again; its to-do follows the new one. **Done** or **Won** by hand still works. The page also shows what holds it up (no reply in 10+ days, an overdue promise) and adds one to-do for it when it has none. It checks every work day, also when no new messages came in. Nothing is sent without you.
 
 ## Pipeline
 

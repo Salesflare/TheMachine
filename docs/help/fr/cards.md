@@ -36,6 +36,8 @@ Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide.
 
 La ligne en haut de la liste passe aussi directement à l’autre : **Perso uniquement · Travail · Tout afficher**.
 
+**Récap** en haut de la liste montre ce qui a été fait aujourd’hui et ce qui reste à faire, pour Travail et Perso, ou seulement celui que vous filtrez. **Copier** le met dans votre presse-papiers, en texte simple à coller partout. Il n’apparaît que s’il y a quelque chose à lister.
+
 Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Projet** sous **Détails** le change ou le retire. Voir [les tâches d’un projet](projects.md#a-projects-to-dos).
 
 **Domaine** sous **Détails** déplace la tâche vers votre autre espace. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.
@@ -100,7 +102,9 @@ Sur vos premières tâches, une courte ligne sous les boutons montre l’essenti
 
 Le premier jour, le haut des Tâches vous salue par votre prénom et indique qui attend votre réponse depuis le plus longtemps. The Machine rédige cette réponse en premier, pour qu’elle soit prête à votre arrivée. Rien ne part avant que vous l’envoyiez. La ligne disparaît après votre premier jour ou votre première tâche décidée.
 
-Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, l’organisation quand elle en concerne une (jamais seulement parce que quelqu’un y travaille), le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph. Un nom et une organisation affichent leur photo ou leur logo quand le Graph en a un.
+Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, l’organisation quand elle en concerne une (jamais seulement parce que quelqu’un y travaille), le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph.
+
+Un nom et une organisation affichent leur photo ou leur logo quand le Graph en a un. Sinon, ils affichent leurs initiales. Un logo illisible à cette taille, comme du blanc sur fond transparent ou un logotype très large, affiche aussi l’initiale.
 
 Parfois, une ligne discrète sous le texte dit ce qui n'est pas connu, comme « Dernier contact il y a 12 jours par e-mail ; rien depuis. » Elle n'apparaît que si le dernier échange est ancien ou toujours sans réponse, et nomme les canaux non connectés où une réponse a pu arriver, comme WhatsApp. Votre Machine prépare avec les mêmes faits : elle dit ce qu'elle ne sait pas au lieu de deviner.
 
@@ -112,7 +116,7 @@ Au-dessus du brouillon, une ligne discrète nomme le message d’origine, avec l
 
 Quand le brouillon suit l’avis de quelqu’un d’autre dans un autre message, comme la suggestion d’un collègue dans Slack, une ligne sous la tâche l’indique, comme « D’après Sam dans #ops ». Appuyez dessus pour lire ce message ici, avec Ouvrir dans Slack ou Gmail à l’intérieur. Quand ce message est la source même de la tâche, la ligne de source l’affiche déjà, donc pas de deuxième ligne.
 
-Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche a un fin trait à côté.
+Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche est marqué « Cette tâche ». Dans WhatsApp, Telegram ou Signal, vos propres messages sont à droite, comme dans l’app.
 
 Une réponse dans un fil Slack montre aussi ce qui a été dit avant le fil. Un lien de la tâche vers son propre message l'ouvre aussi ici, avec **Ouvrir dans Slack** en bas.
 

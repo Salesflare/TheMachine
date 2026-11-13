@@ -19,7 +19,9 @@ Un service qui redémarre sans cesse, un service qui a échoué plusieurs fois d
 
 Un seul redémarrage ou une seule exécution ratée, c’est normal : rien ne s’affiche. Pareil pour un service qui a échoué quelques fois puis s’est de nouveau bien exécuté.
 
-Les navigateurs que pilotent les tests et les agents (headless, Playwright, Puppeteer, CI) restent silencieux, tout comme un programme qui s’arrête pendant que son service est arrêté ou redémarré. Un programme qui plante encore et encore donne une seule tâche, qui dit combien de fois et quand.
+Les navigateurs que pilotent les tests et les agents (headless, Playwright, Puppeteer, CI) restent silencieux, tout comme un programme qui s’arrête pendant que son service est arrêté ou redémarré. De même pour les exécutions de développement : ce que lance un agent de code, les tests et les programmes lancés depuis un dossier temporaire ou de cache. Un programme qui plante encore et encore donne une seule tâche, qui dit combien de fois et quand.
+
+Un script porte son propre nom, comme backup.py, et non python3 ou node.
 
 ## Ce que vous recevez
 

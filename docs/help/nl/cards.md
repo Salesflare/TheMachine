@@ -36,6 +36,8 @@ Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hi
 
 De regel bovenaan de lijst schakelt ook meteen naar de andere: **Alleen privé · Werk · Alles tonen**.
 
+**Overzicht** bovenaan de lijst toont wat vandaag gedaan is en wat nog open staat, voor Werk en Privé, of alleen dat waarop je filtert. **Kopiëren** zet het op je klembord, als gewone tekst om overal te plakken. Het staat er alleen als er iets op te sommen is.
+
 Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project** onder **Details** wijzigt het of haalt het weg. Zie [de to-do's van een project](projects.md#a-projects-to-dos).
 
 **Gebied** onder **Details** verplaatst de to-do naar je andere gebied. Wat hij mag lezen en waarvandaan hij mag versturen, verhuist mee; de berichten waar hij uit kwam, blijven waar ze zijn. **Ongedaan maken** in de melding die volgt, zet hem terug.
@@ -100,7 +102,9 @@ Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet w
 
 Op je eerste dag zegt de bovenkant van To-do's hallo met je naam en wie het langst op je antwoord wacht. The Machine schrijft dat antwoord eerst, zodat het klaarstaat als je binnenkomt. Er gaat niets weg tot je het verstuurt. De regel verdwijnt na je eerste dag of je eerste besliste to-do.
 
-Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, de organisatie als hij over een organisatie gaat (nooit alleen omdat iemand daar werkt), het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen. Een naam en een organisatie tonen hun foto of logo als de Graph er een heeft.
+Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, de organisatie als hij over een organisatie gaat (nooit alleen omdat iemand daar werkt), het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen.
+
+Een naam en een organisatie tonen hun foto of logo als de Graph er een heeft. Anders tonen ze hun initialen. Een logo dat zo klein niet leesbaar is, zoals wit op een doorzichtige achtergrond of een breed woordmerk, toont ook de initiaal.
 
 Soms zegt een rustige regel onder de tekst wat niet bekend is, zoals "Laatste contact 12 dagen geleden via e-mail; niets sindsdien." Die staat er alleen als het laatste contact oud is of nog onbeantwoord, en noemt kanalen die niet gekoppeld zijn waar ze misschien geantwoord hebben, zoals WhatsApp. Je Machine bereidt voor met dezelfde feiten, dus hij zegt wat hij niet weet in plaats van te gokken.
 
@@ -112,7 +116,7 @@ Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het
 
 Volgt het concept wat iemand anders in een ander bericht zei, zoals een voorstel van een collega in Slack, dan zegt een regel onder de to-do dat, zoals "Op basis van Sam in #ops". Tik erop om dat bericht hier te lezen, met Openen in Slack of Gmail erin. Is dat bericht de bron van de to-do zelf, dan toont de bronregel het al en komt er geen tweede regel.
 
-Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat heeft een dun lijntje ernaast.
+Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat staat onder "Deze to-do". In WhatsApp, Telegram of Signal staan je eigen berichten rechts, zoals in de app.
 
 Een antwoord in een Slack-thread toont ook wat er vóór de thread gezegd werd. Een link van de to-do naar zijn eigen bericht opent het ook hier, met **Openen in Slack** onderaan.
 

@@ -301,11 +301,14 @@ def shared_host(domain):
 
 def usable(domain, profile):
     """A looked-up profile as it may be shown for this domain: None for a shared host's domain or an answer about
-    another company; a website on a shared host is left out (the domain's own website shows instead)."""
+    another company; a website on a shared host is left out (the domain's own website shows instead), and so is
+    LinkedIn's stock logo for a company without one (its own site's icon shows instead, site_logos_step)."""
     if not isinstance(profile, dict) or not profile or shared_host(domain) or another_company(profile, domain):
         return None
     if profile.get('website') and shared_host(profile['website']):
         profile = {k: v for k, v in profile.items() if k != 'website'}
+    if isinstance(profile.get('logo'), str) and placeholder(profile['logo']):
+        profile = {k: v for k, v in profile.items() if k != 'logo'}
     return profile
 
 
@@ -1293,12 +1296,16 @@ LOGO_LINK = re.compile(r'https://[^\s"\'<>\\]{1,600}')
 
 def node_picture(info, field):
     """The picture a person's (field 'photo') or organization's ('logo') Graph node shows, for a to-do's chip: only a
-    photo saved on this Machine; for a logo also the https link the Graph's lists show. None when it has none."""
+    photo saved on this Machine; for a logo also the https link the Graph's lists show, and the icon from its own site
+    first when it has both (square, so it reads at a chip's size). None when it has none."""
     try:
-        found = str(((json.loads(info or '{}') or {}).get('profile') or {}).get(field) or '')
+        profile = (json.loads(info or '{}') or {}).get('profile') or {}
+        icon, found = str(profile.get('icon') or '') if field == 'logo' else '', str(profile.get(field) or '')
     except (ValueError, TypeError, AttributeError):
         return None
-    return found if SAVED_PICTURE.fullmatch(found) or (field == 'logo' and LOGO_LINK.fullmatch(found)) else None
+    if SAVED_PICTURE.fullmatch(icon):
+        return icon
+    return found if SAVED_PICTURE.fullmatch(found) or (field == 'logo' and LOGO_LINK.fullmatch(found) and not placeholder(found)) else None
 
 
 def without_photo(db, nodes):

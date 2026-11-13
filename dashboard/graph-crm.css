@@ -122,43 +122,14 @@
 .fu-names{margin:2px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}
 .fu-group .fu-progress{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-sm)}
 .fu-title{all:unset;cursor:pointer}.fu-title:hover{text-decoration:underline}.fu-title:focus-visible{outline:2px solid var(--c-accent);outline-offset:2px}
-.fu-keys{margin:-4px 0 8px;color:var(--c-text-3);font-size:var(--fs-xs)}
 /* The fast review: every draft at full height, the list the only scroller, the footer always in reach */
 #fu-review[open]{display:flex;flex-direction:column;overflow:hidden;max-height:min(880px,calc(100dvh - 48px))}#fu-review>:not(.fr-list){flex:none}
 .fr-list{flex:1 1 auto;min-height:0;list-style:none;margin:0 -18px;padding:12px 18px 18px;border-top:1px solid var(--c-line);display:flex;flex-direction:column;gap:12px;overflow-y:auto;overscroll-behavior:contain;overflow-anchor:none}  /* frPatch keeps the top draft in place itself */
-.fr-item{flex:none;border:1px solid var(--c-line);border-radius:var(--r-md);padding:12px 14px 14px;background:var(--surface);transition:border-color .15s,box-shadow .15s}.fr-item:focus{outline:none}
-.fr-item.on{border-color:var(--c-accent);box-shadow:0 0 0 1px var(--c-accent)}
-.fr-head{display:flex;align-items:center;gap:10px;min-width:0}.fr-head input{flex:none;width:18px;height:18px;min-height:0;margin:0}.fr-head b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-size:var(--fs-md)}
-.fr-meta{flex:none;margin-left:auto;color:var(--c-text-3);font-size:var(--fs-xs)}
-.fr-sub{display:flex;align-items:center;gap:8px;min-height:32px;margin:2px 0 0 28px}
-.fr-to{flex:1;min-width:0;margin:0;font-size:var(--fs-xs);color:var(--c-text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.fr-actions{flex:none;display:flex;gap:4px;visibility:hidden;width:0;overflow:hidden}.fr-actions button{margin:0;min-height:30px;padding:4px 12px}
-.fr-item.on .fr-actions,.fr-item:hover .fr-actions,.fr-item:focus-within .fr-actions{visibility:visible;width:auto;overflow:visible}.fr-item:not(.on) .fr-actions .primary{background:none;border:1px solid var(--c-line-strong);color:var(--text);box-shadow:none}
-.fr-body{margin:6px 0 0 28px;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font-size:var(--fs-md);line-height:1.5}
-.fr-item.rewriting .fr-body{opacity:.45}
-.fr-item.skipped .fr-head,.fr-item.skipped .fr-sub,.fr-item.skipped .fr-body{opacity:.45}
-.fr-state{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin:6px 0 0 28px;font-size:var(--fs-sm);color:var(--c-text-2)}.fr-state.fail{color:var(--c-orange)}
-.fr-state button.link{min-height:0;margin:0;padding:2px 0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.fr-spin{flex:none;width:12px;height:12px;border:2px solid color-mix(in srgb,var(--text) 18%,transparent);border-top-color:var(--c-accent);border-radius:50%;animation:spin .8s linear infinite}
-/* Change: a small box above the footer, what should change and for which drafts */
-.fr-change{display:flex;flex-direction:column;gap:8px;margin:0 -18px;padding:12px 18px;border-top:1px solid var(--c-line);background:var(--c-sunken)}
-.fr-change-q{color:var(--text);font-weight:600;font-size:var(--fs-sm)}
-.fr-change textarea{display:block;width:100%;margin:0;min-height:3.2em;max-height:9em;field-sizing:content;resize:none;font-size:var(--fs-md);line-height:1.45}
-.fr-scope{display:flex;flex-wrap:wrap;gap:0 4px;min-width:0}.fr-scope .fu-radio{min-width:0;min-height:30px;margin-right:12px}.fr-scope .fu-radio span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fr-scope .fu-radio:has(input:disabled){opacity:.5}
-.fr-change-actions{display:flex;justify-content:flex-end;gap:8px}.fr-change-actions button{margin:0}
-.fr-none{margin:6px 0 0 28px}
-.fr-held{margin:6px 0 0 28px;font-size:var(--fs-sm);color:var(--c-orange)}
-.fr-advice{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 10px;margin:6px 0 0 28px;font-size:var(--fs-sm);color:var(--c-text-2)}
-.fr-advice button.link{min-height:0;margin:0;padding:2px 0;border:0;background:none;box-shadow:none;color:var(--text);font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.fr-actions .fr-plain{background:transparent;border:1px solid var(--c-line-strong);color:var(--text)}
-.fr-edit{display:block;width:calc(100% - 28px);margin:6px 0 0 28px;min-height:7em;field-sizing:content;resize:vertical;font-size:var(--fs-md);line-height:1.55}
-@media(prefers-reduced-motion:reduce){.fr-item{transition:none}.fr-spin{animation:none}}
-@media(hover:none){#fu-review .fu-keys{display:none}}
 @media(max-width:560px){
   #board-dialog,#project-dialog,#record-dialog,#crm-dialog,#crm-dialog.wide,#share-people,#contact-share,#machine-invite,#fu-dialog,#fu-review{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}#crm-dialog.tall{height:92dvh}
   .fu-row input[type=number],.fu-stages input[type=number]{width:3.2em}.fu-stages .fu-chk{flex-basis:9rem}
   #fu-review[open]{height:100dvh;max-height:100dvh;margin:0;border:0;border-radius:0;padding:14px 16px 16px}#fu-review .ed-actions{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
-  .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}.fr-item{padding:12px}.fr-sub,.fr-body,.fr-none,.fr-held,.fr-state,.fr-advice{margin-left:0}.fr-change{margin:0 -16px;padding:12px 16px}.fr-edit{width:100%;margin-left:0}
+  .fr-list{margin:0 -16px;padding:12px 16px 16px}#fu-review .snooze-heading{margin-bottom:10px}
   .ed-row{grid-template-columns:1fr}.proj-new{display:block}
 /*@lazy*/
   .board-suggest{padding:12px 14px}.board-suggest-actions{width:100%}.board-suggest-actions button{flex:1}

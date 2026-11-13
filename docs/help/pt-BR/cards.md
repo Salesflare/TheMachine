@@ -36,6 +36,8 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 A linha no topo da lista também muda direto para a outra: **Só pessoal · Trabalho · Mostrar todas**.
 
+**Resumo** no topo da lista mostra o que foi feito hoje e o que ainda está em aberto, para Trabalho e Pessoal, ou só o que você filtra. **Copiar** copia para a área de transferência, como texto simples para colar onde quiser. Ele só aparece quando há algo para listar.
+
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
 **Área** em **Detalhes** passa a tarefa para a sua outra área. O que ela pode ler e de onde pode enviar muda junto; as mensagens de onde ela veio ficam onde estão. **Desfazer** no aviso que aparece depois a traz de volta.
@@ -100,7 +102,9 @@ Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencia
 
 No seu primeiro dia, o topo de Tarefas diz oi pelo seu nome e mostra quem espera sua resposta há mais tempo. A Machine rascunha essa resposta primeiro, para que esteja pronta quando você chegar. Nada sai até você enviar. A linha some depois do seu primeiro dia ou da sua primeira tarefa decidida.
 
-Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização quando trata de uma (nunca só porque alguém trabalha lá), o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph. Um nome e uma organização mostram a foto ou o logo quando o Graph tem um.
+Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização quando trata de uma (nunca só porque alguém trabalha lá), o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.
+
+Um nome e uma organização mostram a foto ou o logo quando o Graph tem um. Se não, mostram as iniciais. Um logo que não daria para ler tão pequeno, como branco em fundo transparente ou um logotipo muito largo, também mostra a inicial.
 
 Às vezes uma linha discreta abaixo do texto diz o que não se sabe, como "Último contato há 12 dias por e-mail; nada desde então." Ela só aparece quando o último contato é antigo ou ainda está sem resposta, e cita canais não conectados por onde talvez tenham respondido, como o WhatsApp. Sua Machine prepara com os mesmos fatos, então ela diz o que não sabe em vez de adivinhar.
 
@@ -112,7 +116,7 @@ Acima do rascunho, uma linha discreta mostra a mensagem de onde ela veio, com o 
 
 Quando o rascunho segue o que outra pessoa disse em outra mensagem, como a sugestão de um colega no Slack, uma linha abaixo da tarefa diz isso, como "Com base em Sam no #ops". Toque nela para ler essa mensagem aqui, com Abrir no Slack ou no Gmail dentro dela. Quando essa mensagem é a própria origem da tarefa, a linha de origem já a mostra, então não aparece uma segunda linha.
 
-Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa tem uma linha fina ao lado.
+Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa aparece sob "Esta tarefa". No WhatsApp, Telegram ou Signal suas próprias mensagens ficam à direita, como no app.
 
 Uma resposta em uma thread do Slack também mostra o que foi dito antes da thread. Um link da tarefa para a própria mensagem também a abre aqui, com **Abrir no Slack** embaixo.
 

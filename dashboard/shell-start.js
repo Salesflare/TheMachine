@@ -11,7 +11,7 @@ addEventListener('pageshow',e=>{if(e.persisted)refreshWhenReady()});  // back fr
 addEventListener('online',refreshWhenReady);
 // A tapped notification's view opens at once, before the status comes in (that can take a while): the Calendar, To-dos and
 // the Fleet tab load their own data. Then the cards this device kept last time (if any) while the live ones load.
-if(openPushLink()){openTabLink();openFleetLink()}  // only a notification's own view: other links wait for the status as before
+if(openPushLink()){openTabLink();openFleetLink()}openDigestLink();  // a digest's own link too: it reads the digest, not the status  // only a notification's own view: other links wait for the status as before
 sessionCheck();
 if(localCache.on)localCache.read('status').then(hit=>{if(!hit||state.suggestions)return;state=wakeSnoozed(hit.value);shownCached=true;shownAt=hit.at;
  try{cardsMerge();render();openChatLink();openTabLink()}catch(e){errCaught(e);console.error(e)}});
