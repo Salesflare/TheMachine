@@ -210,11 +210,12 @@ const resultLinks=s=>{const found=[],r={text:resultBody(s,(words,path)=>{found.p
  plain:t=>t.replace(/(\d+)/g,(m,i)=>found[i].words)};
  r.fill=x=>html`${String(x).split(/(\d+)/).map((y,i)=>i%2?r.piece(y):y)}`;
  r.mark=(x,mark)=>x.replace(/(\d+)/g,(m,i)=>{const p=r.piece(i);return p instanceof SafeHTML?mark(p):p.replace(/[\u0000\u0001]/g,'')});return r};
-// A Daily digest (todos-digest.js) is only for reading: To read, calm, not counted as needing the owner
-const toRead=s=>!!s.digest&&s.status==='pending';
+// A Daily digest (todos-digest.js) and a meeting briefing (meeting_prep.py) are only for reading: To read, calm, not
+// counted as needing the owner; Done leads, then Snooze and Not needed. A briefing's promises and questions have their own to-dos.
+const toRead=s=>(!!s.digest||!!s.briefing)&&s.status==='pending';
 // A cleanup to-do with every row decided: finished, like a ready result
 const cleanupSettled=s=>!!s.cleanup?.items?.length&&!closed(s)&&s.status==='pending'&&s.cleanup.items.every(i=>!/^(open|working)$/.test(i.state));
-const needsDecision=s=>s.status==='pending'&&!s.digest&&!cleanupSettled(s)||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
+const needsDecision=s=>s.status==='pending'&&!s.digest&&!s.briefing&&!cleanupSettled(s)||(!closed(s)&&s.status!=='snoozed'&&s.preparation_status==='blocked');
 // An open to-do's chip in For you: needs (Needs you), ready (Prepared), read (To read) or preparing (Preparing…). All sit in For you.
 const placeOf=s=>needsDecision(s)?'needs':toRead(s)?'read':s.status==='prepared'||cleanupSettled(s)?'ready':'preparing';
 // A to-do held for later (deliver_after): when it reaches the owner, and where, as deliver_one sends it

@@ -27,6 +27,7 @@ from machine.sources.signal_chats import owner_signal_chats
 from machine.sources.telegram import owner_telegram_chats
 from machine.sources.whatsapp import owner_whatsapp_chats, reply_spots
 import mail_cleanup
+import meeting_prep
 import reading_digest
 from models import model_ready
 import next_actions
@@ -451,6 +452,9 @@ class CardActionsApp:
                     raise ValueError(i18n.t('Pick for each one on the to-do, then confirm.'))
                 if reading_digest.is_digest(db, args.get('suggestion_id')):
                     raise ValueError(i18n.t('A digest is only for reading.'))
+                briefing = db.execute('SELECT dedupe_key FROM suggestions WHERE id=?', (args.get('suggestion_id'),)).fetchone()
+                if briefing and meeting_prep.is_briefing(briefing[0]):
+                    raise ValueError(i18n.t('A briefing is only for reading.'))
         terminal_job=None
         files=args.get('files') if owner_dashboard and args.get('choice')=='other' else None  # added in the chat's composer
         feedback=args.get('feedback', '')

@@ -89,7 +89,7 @@ Vor einem Meeting mit Leuten außerhalb deiner Firma macht The Machine eine Aufg
 - **Offene Fragen:** was noch unbeantwortet ist.
 - **Entscheiden oder mitbringen:** was zu klären oder mitzubringen ist.
 
-Sie kommt am Morgen eines Arbeitstags: am Tag des Meetings, wenn es nachmittags ist, sonst am Arbeitstag davor. Sie nutzt nur, was schon auf deiner Machine ist.
+Sie kommt am Morgen eines Arbeitstags: am Tag des Meetings, wenn es nachmittags ist, sonst am Arbeitstag davor. Sie nutzt nur, was schon auf deiner Machine ist. Sie ist nur zum Lesen da: **Erledigt**, wenn du sie gelesen hast. Ein Versprechen oder eine Frage darin, die etwas zu tun gibt, hat eine eigene Aufgabe.
 
 Ohne nützlichen Verlauf gibt es keine Aufgabe. Wiederkehrende, interne, private und abgelehnte Meetings bekommen keine. Ein verschobenes Meeting behält seine eine Aufgabe, zur neuen Zeit. Eine verworfene kommt nicht zurück, und die eines abgesagten Meetings schließt sich von selbst.
 

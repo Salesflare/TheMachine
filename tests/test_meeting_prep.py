@@ -140,6 +140,19 @@ class MeetingPrep(unittest.TestCase):
         self.assertIsNone(self.run_pass())  # once
         self.assertEqual(len(self.prompts), 1)
 
+    def test_a_briefing_is_only_for_reading(self):
+        asked = self.mail('wmail', 'Sam Rivera <sam@globex.example>', 'Can the pilot start in December?', 4)
+        self.answer['sources'] = [f'E{asked}']
+        self.add(meeting('g1', '10:00'))
+        made = self.run_pass()
+        with self.store.connect() as db:
+            card = dict(db.execute('SELECT * FROM suggestions WHERE id=?', (made,)).fetchone())
+            self.assertTrue(self.store.suggestion_result(card, db).get('briefing'))  # the dashboard's To read, Done first
+        for choice in ('accept', 'other'):  # nothing to do it with or change
+            with self.assertRaisesRegex(ValueError, 'only for reading'):
+                self.app.action('decide', {'suggestion_id': made, 'choice': choice, 'feedback': 'x', 'decision_id': 'go-' + choice}, owner_dashboard=True)
+        self.assertEqual(self.cards()[0]['status'], 'pending')
+
     def test_no_evidence_means_no_turn_and_no_to_do(self):
         self.add(meeting('g2', '10:00', guests=('new@initech.example',)))
         self.assertIsNone(self.run_pass())

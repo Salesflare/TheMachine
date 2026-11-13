@@ -89,7 +89,7 @@ Before a meeting with people from outside your company, The Machine makes one to
 - **Open questions:** what is still unanswered.
 - **Decide or bring:** what to settle or bring along.
 
-It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It only uses what is already on your Machine.
+It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It only uses what is already on your Machine. It is only for reading: **Done** when you have read it. A promise or question in it that needs doing has its own to-do.
 
 No useful history means no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
 

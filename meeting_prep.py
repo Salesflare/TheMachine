@@ -60,10 +60,19 @@ def _at(value):
     return at if at.tzinfo else at.replace(tzinfo=dt.timezone.utc)
 
 
+KEY_PREFIX = 'meetprep:'
+
+
 def meeting_key(row, meta):
     """One key per meeting, whatever its time: its iCalUID, else its own id on its calendar."""
     ref = meta.get('ical_uid') or f"{row['account_id']}:{row['source_id']}"
-    return 'meetprep:' + hashlib.sha256(str(ref).encode()).hexdigest()[:32]
+    return KEY_PREFIX + hashlib.sha256(str(ref).encode()).hexdigest()[:32]
+
+
+def is_briefing(dedupe_key):
+    """Whether a to-do is a meeting briefing: only for reading, like the Daily digest (nothing to do it with or change).
+    What it lists that needs doing (a promise, a question) has its own to-do."""
+    return str(dedupe_key or '').startswith(KEY_PREFIX)
 
 
 def outside_guests(meta, owner_emails, owner_domains):

@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// A briefing before a meeting (meeting_prep.py) is a normal to-do: its title, two lines of its briefing with Show more,
+// A briefing before a meeting (meeting_prep.py) is a normal to-do, only for reading (Done, Snooze): its title, two lines of its briefing with Show more,
 // then every part with its label (Who, Last contact, Open promises, Open questions, Decide or bring). The meeting's own
 // details link to it under To-do, and a tap opens its chat. Nothing is wider than the screen, at 1440 and 390, light
 // and dark. MEETING_PREP_SHOT=<dir> writes the to-do and the meeting's details.
@@ -16,7 +16,7 @@ const PARTS=[['Who:','Sam Rivera, head of operations at Globex.'],['Last contact
  ['Open promises:','Promised Sam the pilot plan by Tuesday.'],['Open questions:','Who signs the order form on their side.'],
  ['Decide or bring:','The pilot plan; decide on the start date.']];
 const card={id:ID,title:TITLE,body:PARTS.map(([k,v])=>`**${k}** ${v}`).join('\n\n'),status:'pending',scope:'work',created_at:now,event_ids:[41,43],
- source_line:'Source: calendar · Tue, Nov 10 (+1 more)',expires_at:'2026-11-10T09:00:00+00:00',origin:'review'};
+ source_line:'Source: calendar · Tue, Nov 10 (+1 more)',expires_at:'2026-11-10T09:00:00+00:00',origin:'review',briefing:true};
 const meeting={id:41,account_id:'work',title:'Pilot review with Globex',start:'2026-11-10T09:00:00Z',end:'2026-11-10T10:00:00Z',all_day:false,location:'https://meet.google.com/abc-defg-hij',
  guests:1,with:[{name:'Sam Rivera',email:'sam@globex.example',node_id:'email:sam@globex.example'}],people:['Sam Rivera'],shared:null,url:null};
 const notes={event_id:41,title:meeting.title,start:meeting.start,end:meeting.end,notes:null,transcript:null,zoom:null,google_meet:null,writing:null};
@@ -43,6 +43,12 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(width+': '+e.message));
   await page.goto(base);const todo=page.locator('#task-'+ID);await todo.locator('.body').waitFor();
   assert.equal(await todo.locator('h3').innerText(),TITLE);
+  // Only for reading, like the Daily digest: To read, Done leads, no Do it or Ask for changes, not counted as needing them
+  assert.equal(await todo.locator('.card-badges .chip').first().innerText(),'To read');
+  assert.equal(await todo.locator('button.primary[data-choice="complete"]').innerText(),'Done');
+  assert.equal(await todo.locator('[data-choice="accept"],[data-choice="change"]').count(),0,'nothing to do it with or change');
+  assert.ok(await todo.locator('.actions [data-choice="snooze"]').first().isVisible(),'Snooze in sight');
+  assert.equal(await page.locator('#badge-inbox').textContent(),'','not counted as needing the owner');
   // Short by default: the first lines, then Show more opens the whole briefing, each part with its label in bold
   const more=todo.locator('button.more[data-more]');assert.equal(await more.innerText(),'Show more');
   assert.ok(await todo.locator('.body.clamp').count(),'the briefing starts folded');

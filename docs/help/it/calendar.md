@@ -89,7 +89,7 @@ Prima di una riunione con persone esterne alla tua azienda, The Machine crea un�
 - **Domande aperte:** cosa resta senza risposta.
 - **Da decidere o portare:** cosa decidere o portare.
 
-Arriva la mattina di un giorno lavorativo: il giorno stesso se la riunione è nel pomeriggio, altrimenti il giorno lavorativo prima. Usa solo quello che è già sulla tua Machine.
+Arriva la mattina di un giorno lavorativo: il giorno stesso se la riunione è nel pomeriggio, altrimenti il giorno lavorativo prima. Usa solo quello che è già sulla tua Machine. È solo da leggere: **Fatto** quando l’hai letta. Una promessa o una domanda che richiede qualcosa ha la sua attività.
 
 Senza una storia utile, nessuna attività. Le riunioni ricorrenti, interne, personali e rifiutate non ne hanno. Una riunione spostata tiene la sua unica attività, al nuovo orario. Una scartata non torna, e quella di una riunione annullata si chiude da sola.
 

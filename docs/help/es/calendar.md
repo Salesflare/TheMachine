@@ -89,7 +89,7 @@ Antes de una reunión con personas de fuera de tu empresa, The Machine crea una 
 - **Preguntas pendientes:** lo que sigue sin respuesta.
 - **Decidir o llevar:** lo que hay que decidir o llevar.
 
-Llega la mañana de un día laborable: el mismo día si la reunión es por la tarde, si no el día laborable anterior. Solo usa lo que ya está en tu Machine.
+Llega la mañana de un día laborable: el mismo día si la reunión es por la tarde, si no el día laborable anterior. Solo usa lo que ya está en tu Machine. Es solo para leer: **Hecho** cuando la leas. Una promesa o pregunta que pida algo tiene su propia tarea.
 
 Sin historial útil, no hay tarea. Las reuniones recurrentes, internas, personales y rechazadas no tienen. Una reunión que se mueve conserva su única tarea, a la nueva hora. Una descartada no vuelve, y la de una reunión cancelada se cierra sola.
 

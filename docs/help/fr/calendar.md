@@ -89,7 +89,7 @@ Avant une réunion avec des personnes extérieures à votre entreprise, The Mach
 - **Questions en suspens :** ce qui reste sans réponse.
 - **À décider ou à apporter :** ce qu’il faut trancher ou apporter.
 
-Elle arrive le matin d’un jour travaillé : le jour même si la réunion est l’après-midi, sinon le jour travaillé d’avant. Elle n’utilise que ce qui est déjà sur votre Machine.
+Elle arrive le matin d’un jour travaillé : le jour même si la réunion est l’après-midi, sinon le jour travaillé d’avant. Elle n’utilise que ce qui est déjà sur votre Machine. Elle sert seulement à lire : **Fait** une fois lue. Une promesse ou une question qui demande une action a sa propre tâche.
 
 Sans historique utile, pas de tâche. Les réunions récurrentes, internes, personnelles et refusées n’en ont pas. Une réunion déplacée garde sa tâche, à la nouvelle heure. Une tâche écartée ne revient pas, et celle d’une réunion annulée se ferme toute seule.
 

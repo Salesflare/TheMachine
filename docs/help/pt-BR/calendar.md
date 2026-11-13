@@ -89,7 +89,7 @@ Antes de uma reunião com pessoas de fora da sua empresa, The Machine cria uma t
 - **Perguntas em aberto:** o que ainda está sem resposta.
 - **Decidir ou levar:** o que decidir ou levar.
 
-Ela chega de manhã em um dia útil: no próprio dia se a reunião for à tarde, senão no dia útil anterior. Ela usa só o que já está na sua Machine.
+Ela chega de manhã em um dia útil: no próprio dia se a reunião for à tarde, senão no dia útil anterior. Ela usa só o que já está na sua Machine. Ela é só para ler: **Feito** quando você ler. Uma promessa ou pergunta que pede ação tem sua própria tarefa.
 
 Sem histórico útil, sem tarefa. Reuniões recorrentes, internas, pessoais e recusadas não têm. Uma reunião remarcada mantém sua única tarefa, no novo horário. Uma descartada não volta, e a de uma reunião cancelada fecha sozinha.
 

@@ -89,7 +89,7 @@ Voor een afspraak met mensen van buiten je bedrijf maakt The Machine één to-do
 - **Open vragen:** wat nog onbeantwoord is.
 - **Beslissen of meebrengen:** wat je moet beslissen of meenemen.
 
-Hij komt op de ochtend van een werkdag: op de dag zelf als de afspraak 's middags is, anders de werkdag ervoor. Hij gebruikt alleen wat al op je Machine staat.
+Hij komt op de ochtend van een werkdag: op de dag zelf als de afspraak 's middags is, anders de werkdag ervoor. Hij gebruikt alleen wat al op je Machine staat. Hij is alleen om te lezen: **Gedaan** als je hem gelezen hebt. Een belofte of vraag erin die werk vraagt, heeft een eigen to-do.
 
 Geen bruikbare geschiedenis betekent geen to-do. Terugkerende, interne, persoonlijke en afgezegde afspraken krijgen er geen. Verschuift een afspraak, dan blijft het bij één to-do, op het nieuwe uur. Een weggeklikte komt niet terug, en die van een geannuleerde afspraak sluit vanzelf.
 
