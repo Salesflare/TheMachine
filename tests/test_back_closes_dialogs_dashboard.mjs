@@ -37,11 +37,13 @@ try{
   assert.equal(await open(page,'#snooze-dialog'),false,'back closes the dialog');
   assert.equal(await page.evaluate(()=>location.href),href);assert.equal(await page.evaluate(()=>window.stayed),1,'no reload');
   assert.ok(await page.locator('#task-'+card.id).isVisible());
-  // closed with its ×: its step goes too, so the history stands where it was before it opened
-  const before=await page.evaluate(()=>history.state);
+  // closed with its ×: the next back is a real one (the step it left is skipped), to the address before
+  await page.evaluate(()=>history.pushState(null,'','?p=1'));
   await page.evaluate(id=>openSnooze(id),card.id);assert.ok(await page.evaluate(()=>history.state?.layer>0));
   await page.locator('#snooze-dialog .snooze-heading button').first().click();await settle(page);
-  assert.equal(await open(page,'#snooze-dialog'),false);assert.deepEqual(await page.evaluate(()=>history.state),before);
+  assert.equal(await open(page,'#snooze-dialog'),false);
+  await back(page);await settle(page);
+  assert.equal(await page.evaluate(()=>location.href),href,'one back leaves the page the dialog was on');assert.equal(await page.evaluate(()=>window.stayed),1);
   // nested: one at a time, topmost first
   await page.evaluate(id=>{openSnooze(id);document.querySelector('#result-dialog').showModal()},card.id);
   assert.ok(await open(page,'#snooze-dialog')&&await open(page,'#result-dialog'));
@@ -58,8 +60,7 @@ try{
   // what the phone app asks first: closes the top one, and says when there was nothing
   await page.evaluate(id=>openSnooze(id),card.id);
   assert.equal(await page.evaluate(()=>machineBack()),true);await settle(page);
-  assert.equal(await open(page,'#snooze-dialog'),false);assert.equal(await page.evaluate(()=>history.state?.layer),undefined);
-  assert.equal(await page.evaluate(()=>machineBack()),false);
+  assert.equal(await open(page,'#snooze-dialog'),false);assert.equal(await page.evaluate(()=>machineBack()),false);
   await ctx.close()}
  // a push link opens the morning digest: back closes it and stays on the page
  {const {ctx,page}=await phone();
