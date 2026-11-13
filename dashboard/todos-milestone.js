@@ -18,8 +18,7 @@ function milestoneCard(){const n=+state?.done_milestone?.count;if(!n)return '';c
 <div class="ms-text"><h2 id="ms-title" translate="no">${htmlT('{} to-dos done',html`<b class="ms-n" data-ms-to="${n}">${f}</b>`)}</h2><p translate="no">${msLine(n)}</p></div>
 <button type="button" class="primary ms-share" data-ms-share>${raw(MS_SHARE)}${t('Share')}</button><button type="button" class="ms-x" data-ms-close aria-label="${t('Close')}" title="${t('Close')}">${raw(MS_X)}</button></section>`}
 // The number counts up as the mascot lands (about 0.9 s), once per card; with reduced motion it just shows.
-// The clock starts at the first frame's own time: a frame's time can be earlier than performance.now() when the
-// count was asked for, and a negative step through the easing counted below 0 before it climbed.
+// Timed from the first frame (a frame's time can predate the ask, which counted below 0)
 function msCount(){const b=document.querySelector('#milestone .ms-n:not([data-ms-done])');if(!b)return;b.dataset.msDone='';if(msStill())return;
  const to=+b.dataset.msTo,ms=900,w=b.getBoundingClientRect().width;let start;b.style.minWidth=w+'px';
  const step=now=>{start??=now;const k=Math.min(1,Math.max(0,(now-start)/ms)),e=1-Math.pow(1-k,3);b.textContent=msNum(Math.round(to*e));if(k<1&&b.isConnected)requestAnimationFrame(step);else{b.textContent=msNum(to);b.style.minWidth=''}};
