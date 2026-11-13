@@ -13,7 +13,8 @@ const {chromium}=await import('./browser.mjs');
 // all the same, and Calendar, the Graph, Settings, the Fleet, Connections, Routines, Talk and the game say so. Connections
 // draws once its views are in, its cards too. Routines opened while its part is on its way draws once it's in, and a
 // conversation by Talk starts with its session's part. A follow-up group's Review tapped while its part is on its way
-// opens once it's in, and so do New to-do and Search.
+// opens once it's in, and so do New to-do and Search. The same redraw asked many times while its part is on its way
+// runs once when it's in.
 const [source,lazy]=JSON.parse(execFileSync('python3',['-c','import json,dashboard_parts;print(json.dumps(dashboard_parts.assemble_split()))'],{encoding:'utf8',maxBuffer:1<<26}));
 const named=s=>createHash('sha256').update(s).digest('hex').slice(0,16)+'.js';
 const files=Object.fromEntries(Object.entries(lazy).map(([group,script])=>['lazy-'+group+'-'+named(script),script]));
@@ -135,6 +136,16 @@ try{
   for(const until=Date.now()+20000;!asked.some(n=>n.startsWith('lazy-graph-'));){assert.ok(Date.now()<until,'the graph part is asked for');await new Promise(r=>setTimeout(r,50))}
   assert.equal(await p.evaluate(()=>graphLoadedAt),0);
   release();hold=null;holdOnly=null;await p.waitForFunction(()=>!document.querySelector('#people').hidden&&graphNode==='person:ada@example.com'&&graphLoadedAt>0);
+  await context.close()}
+ // The same redraw asked again and again while its part is on its way (each to-do that needs a part asks on every draw)
+ // runs once when the part is in, and at once after that; a different one still runs too
+ {let release;hold=new Promise(r=>release=r);holdOnly='lazy-help-';asked.length=0;const context=await browser.newContext({viewport:{width:1440,height:900}});
+  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+  const p=await context.newPage();p.on('pageerror',e=>errors.push('redraw once: '+e.message+' '+e.stack));
+  await p.goto(base,{waitUntil:'load'});await wholeDrawn(p);
+  assert.equal(await p.evaluate(()=>{window.drawn=0;window.draw=()=>{window.drawn++};for(let i=0;i<5;i++)lazyRun('help',draw);lazyRun('help',()=>{window.drawn+=10});return drawn}),0);
+  release();hold=null;holdOnly=null;await p.waitForFunction(()=>lazyIn('help')&&window.drawn>=11);
+  assert.equal(await p.evaluate(()=>new Promise(r=>setTimeout(()=>{lazyRun('help',draw);r(drawn)},100))),12);
   await context.close()}
  // Can't load (offline without a kept copy): the rest is drawn all the same, and the game says so
  {refuse=true;const context=await browser.newContext({viewport:{width:1440,height:900}});

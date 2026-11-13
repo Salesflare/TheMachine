@@ -151,16 +151,14 @@ const htmlT=(key,...a)=>{const tok=i=>`\u0000${i}\u0000`;let s=esc(t(key,...a.ma
 // (javascript:, data:, a broken address) becomes '#'. safeURL in todos-cards.js is stricter: http(s) only, '' otherwise.
 const safeHref=(u,base=location.href)=>{const v=String(u??'').trim();if(!v)return '#';try{const x=new URL(v,base);return ['http:','https:','mailto:','tel:'].includes(x.protocol)?v:'#'}catch{return '#'}};
 const date=v=>v?fmtDHM(v,{month:'short',day:'numeric',year:'numeric'}):t('Not yet');
-// Parts that load when first needed (dashboard_parts.py LAZY: Calendar, the game, the Graph's pages, Help, Learning,
-// Routines, Talk's session and the rest, each with its rules). The served page names their files in LAZY_FILES. The page is drawn without them; once it's
-// drawn whole and the browser is idle after
-// the load event, lazySoon() fetches them one at a time, each once the browser is idle again, so they're there before
-// they're asked for and never slow the start (all at once, they took the connections the page's own data was waiting
-// for). A tab opened before its part is in asks for it at once (lazyPart), whatever the queue. A
-// page with every part inline (the tests, the demo) has none to load. lazyPart(group): that group's file, loaded once
-// (a failed load is tried again on the next call). lazyIn(group): that group is there (or has no file of its own).
-// lazyRun(group,fn): fn now when the group is there, else once it is (opening its tab loads it at once).
-const lazyLoads={},lazyDone={};let lazyAllRun=null,lazySoonRun=false;
+// Parts that load when first needed (dashboard_parts.py LAZY), named in LAZY_FILES. The page is drawn without them;
+// once drawn whole and idle after the load event, lazySoon() fetches them one at a time, each once the browser is idle
+// again, so they never slow the start (all at once, they took the connections the page's data waited for). A tab
+// opened before its part is in asks for it at once (lazyPart). A page with every part inline (tests, the demo) has none
+// to load. lazyPart(group): its file, loaded once (a failed load is tried again on the next call). lazyIn(group): it's
+// there (or has no file). lazyRun(group,fn): fn now when it's there, else once it is, and once only: each to-do that
+// needs a part asks for a redraw on every draw, which queued 60 to 80 whole redraws on a first load.
+const lazyLoads={},lazyDone={},lazyWait={};let lazyAllRun=null,lazySoonRun=false;
 function lazyPart(group){const file=self.LAZY_FILES?.[group];if(!file||lazyDone[group])return Promise.resolve();
  // a load that fails while the Machine restarts (seconds: unreachable or a 502-504) is tried again for a while before it says Offline
  return lazyLoads[group]??=new Promise((ok,fail)=>{const until=Date.now()+45000,no=()=>{delete lazyLoads[group];fail(new Error(t('Offline.')))},
@@ -174,4 +172,4 @@ function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
 addEventListener('popstate',e=>backPop(e));  // shell-back.js
 const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];
-function lazyRun(group,fn){if(lazyIn(group))return fn();lazyPart(group).then(fn,e=>toast(e.message,true))}
+function lazyRun(group,fn){if(lazyIn(group))return fn();const w=lazyWait[group]??=new Set;if(w.has(fn))return;w.add(fn);lazyPart(group).then(fn,e=>toast(e.message,true)).finally(()=>w.delete(fn))}
