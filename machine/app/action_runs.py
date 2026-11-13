@@ -17,7 +17,7 @@ from machine.cards import ACTION_WORKING, PREPARATION_WORKING, thread_return_tim
 from machine.config import LOG
 from machine.delivery.deliver import deliver
 from machine.delivery.push import app_clear_step
-from machine.faults import loop_failed, restart_self
+from machine.faults import loop_failed, restart_with_mirrors
 from machine.sources.connectors import docs_transport, docs_write_transport, intercom_transport
 from machine.store.decisions import note_first, NOTHING_SENT, settle_sent
 from machine.store.first_look import VERIFIED_KINDS
@@ -126,7 +126,7 @@ class ActionRunsApp:
                 loop_failed(LOG, 'delivery', error)
 
     def action_step(self,transport=None):
-        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_self),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config),docs_write_transport(self.config),signal_send.SignalTransport(self.config))
+        transport=transport or next_actions.ActionTransport(next_actions.EmailTransport(self.config,credential,gog_read),next_actions.LinkedInTransport(self.config),next_actions.SlackTransport(self.config,credential),next_actions.XTransport(self.config),next_actions.MergeTransport(self.config,restart_with_mirrors),next_actions.WhatsAppTransport(self.config),intercom_transport(self.config),calendar_writes.CalendarTransport(self.config,credential,gog_read),docs_transport(self.config),next_actions.TelegramTransport(self.config),docs_write_transport(self.config),signal_send.SignalTransport(self.config))
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             for candidate in db.execute("SELECT j.id,j.revision,s.status,s.next_action FROM action_jobs j JOIN suggestions s ON s.id=j.suggestion_id WHERE j.status IN ('queued','blocked')").fetchall():
@@ -276,7 +276,7 @@ class ActionRunsApp:
         with self.store.connect() as db:
             row=db.execute("SELECT j.*,e.operation,e.receipt FROM merge_effects e JOIN action_jobs j ON j.id=e.action_id WHERE e.status='pending' LIMIT 1").fetchone()
         if row:
-            job=dict(row);self.merge_effect(job,json.loads(job['payload']),json.loads(job['receipt']),job['operation'],next_actions.MergeTransport(self.config,restart_self))
+            job=dict(row);self.merge_effect(job,json.loads(job['payload']),json.loads(job['receipt']),job['operation'],next_actions.MergeTransport(self.config,restart_with_mirrors))
 
     def action_worker(self):
         promised = styled = followed = handled = 0
@@ -315,7 +315,7 @@ class ActionRunsApp:
         with self.store.connect() as db:
             job=db.execute("SELECT * FROM action_jobs WHERE status='undoing' ORDER BY updated_at LIMIT 1").fetchone()
         if not job:return
-        merge=merge or next_actions.MergeTransport(self.config,restart_self)
+        merge=merge or next_actions.MergeTransport(self.config,restart_with_mirrors)
         try:
             result=merge.revert(json.loads(job['payload']))
             note=job['error'] or 'Merge undone.'

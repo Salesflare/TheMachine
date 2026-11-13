@@ -33,10 +33,8 @@ import argparse
 import hashlib
 import json
 import os
-import plistlib
 import re
 import secrets
-import shlex
 import shutil
 import subprocess
 import sys
@@ -755,7 +753,7 @@ def install_unit(config, facts, paths, start):
     return True
 
 
-UPDATE_UNIT = 'the-machine-update.service'
+UPDATE_UNIT = service.UPDATE_UNIT
 UPDATE_TIMER = 'the-machine-update.timer'
 HOSTED_AGENT = Path('/var/lib/machine-agent')  # hosted Machines: their agent installs releases instead
 
@@ -841,48 +839,9 @@ def install_updates(config, facts, paths, start):
     return result.returncode == 0
 
 
-# Units a person sets up by hand from deploy/ (docs/operations.md): never restarted by an install. A new cdp-relay
-# process means a new Allow prompt in their Chrome; Caddy and the embedding server run no code of this checkout.
-BY_HAND = ('cdp-relay.service', 'caddy-machine.service', 'embeddinggemma.service')
-
-
-def unit_program(path):
-    """The command line of a systemd unit file (its first ExecStart) or launchd agent (ProgramArguments), [] when unreadable."""
-    try:
-        if path.suffix == '.plist':
-            return [str(p) for p in plistlib.loads(path.read_bytes()).get('ProgramArguments') or []]
-        for line in path.read_text().splitlines():
-            if line.startswith('ExecStart='):
-                return shlex.split(line.removeprefix('ExecStart=').lstrip('-@+!:'))
-    except (OSError, ValueError, plistlib.InvalidFileException):
-        pass
-    return []
-
-
-def runs_checkout(program, root=ROOT):
-    """A command line that runs a file of this checkout (telegram_mirror.py, signal_mirror.py, ...)."""
-    root = Path(root).resolve()
-    return any(part.startswith('/') and Path(part).resolve().is_relative_to(root) for part in program)
-
-
 def machine_units(paths):
-    """The Machine's other long-running units that run code from this checkout: today the Telegram and Signal chat
-    mirrors (onboarding.telegram_follow, signal_setup.follow), named after their account, and any later one written
-    the same way. Found by their command line. Not The Machine's own service (install_unit restarts it), not the daily
-    update (it is what runs this install), not agent jobs (systemd-run units that outlive an update on purpose, and not
-    in this folder), not WhatsApp's sync (wacli, a program of its own), and never anything of OpenClaw's."""
-    launchd = service.manager() == 'launchd'
-    folder = paths.unit.parent
-    units = []
-    for path in sorted(folder.glob(service.LABEL_PREFIX + '*.plist' if launchd else '*.service')) if folder.is_dir() else []:
-        if path == paths.unit:
-            continue
-        unit = 'the-machine-' + path.stem.removeprefix(service.LABEL_PREFIX) + '.service' if launchd else path.name
-        if unit in (UNIT_NAME, UPDATE_UNIT, *BY_HAND) or 'openclaw' in unit.lower() or unit.startswith('the-machine-job-'):
-            continue
-        if runs_checkout(unit_program(path)):
-            units.append(unit)
-    return units
+    """The Machine's other long-running units that run code from this checkout (service.machine_units)."""
+    return service.machine_units(ROOT, paths.home)
 
 
 def restart_machine_units(paths):

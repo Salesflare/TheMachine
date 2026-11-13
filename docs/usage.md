@@ -448,7 +448,7 @@ A fix changes The Machine's code only for a bug: existing, intended behavior tha
 
 - **Do it** never touches the running code (the plugin blocks that). The agent clones it into `fix_dir/<job id>`, finds the cause, fixes it, adds a test, runs the whole suite and commits.
 - The to-do then has a **Merge fix** button with the summary, the files and the full diff.
-- **Merge now** runs the tests again in that clone (`self_test`, by default `scripts/test.py`). It checks that neither the running code nor the fix changed since you reviewed it, and that the running code has no local changes. Then it fast-forwards the running checkout to exactly that commit, pushes it when the branch has an upstream (`self_fix_push`) and restarts the service.
+- **Merge now** runs the tests again in that clone (`self_test`, by default `scripts/test.py`). It checks that neither the running code nor the fix changed since you reviewed it, and that the running code has no local changes. Then it fast-forwards the running checkout to exactly that commit, pushes it when the branch has an upstream (`self_fix_push`) and restarts the service, along with the Telegram and Signal chat mirrors that run now. An undo restarts them the same way.
 - Anything off means nothing is merged, with the reason on the to-do. A fix whose base moved has to be redone.
 - `send_now` can't approve a merge; only the small proven-fix exception below is automatic.
 - A change to the OpenClaw plugin takes effect after `openclaw plugins reload personal-assistant-bridge`.
