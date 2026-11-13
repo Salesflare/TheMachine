@@ -16,7 +16,7 @@ Their Machine pings them on their phone or in Telegram. With neither set up, it 
 
 An Intercom conversation goes along too. If their Machine reads the same Intercom workspace, **Read message** opens it and their reply goes back in Intercom. If not, their to-do links to it.
 
-While you wait, the to-do sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
+While you wait, the to-do says what you asked and when ("Asked Pat on Tue 3 Nov: …"), only when that adds something to its title. It sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
 
 If Pat's Machine can't notify them, the to-do says "Pat won't get a ping. Let them know." Tell Pat yourself. The line goes once they turn on notifications.
 

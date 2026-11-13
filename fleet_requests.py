@@ -126,6 +126,28 @@ def sentences(*parts):
     return ' '.join(p if n == len(parts) - 1 or p[-1] in '.!?…' else p + '.' for n, p in enumerate(parts))
 
 
+def _plain(text):
+    """Text as compared for meaning: case, punctuation and spacing left out."""
+    return ' '.join(re.sub(r'[^\w\s]', ' ', str(text or '').casefold()).split())
+
+
+def beyond_title(summary, titles):
+    """What a handoff asked that its to-do's title doesn't already say, for the card's "Asked Pat on ..." line. A sentence
+    that is the title again (a promise to-do handed on with its own title as the ask: "Waiting on Sam: send the quote."),
+    or a lead-in with the title after its colon, adds nothing and goes; the rest stays as written. Empty when nothing
+    is left: the card then shows no such line."""
+    seen = set()
+    for title in titles:
+        title = ' '.join(str(title or '').split())
+        for part in (title, title.partition(': ')[2]):
+            if len(_plain(part)) >= 8:
+                seen.add(_plain(part))
+    said = lambda text: (lambda p: bool(p) and any(p == s or (len(p) >= 12 and p in s) for s in seen))(_plain(text))
+    kept = [s for s in re.split(r'(?<=[.!?…])\s+', ' '.join(str(summary or '').split()))
+            if _plain(s) and not said(s) and not (': ' in s and said(s.partition(': ')[2]))]
+    return ' '.join(kept)
+
+
 def intercom_ref(value):
     """Where a carried Intercom conversation is, in its fixed form, else None."""
     if not isinstance(value, dict):
@@ -1415,6 +1437,7 @@ class Requests:
     def annotate_requests(self, db, suggestions):
         """A card handed off (to whom, how it went), and who does what after the meeting a card is on."""
         handed = {}
+        titles = {str(s['id']): s.get('title') for s in suggestions}
         mine = {r['key'][13:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_mine:%'")}
         withdrawn = {r['key'][18:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_withdrawn:%'")}
         still = {}  # card: first names of everyone it is still with (both, when the owner kept both)
@@ -1436,11 +1459,15 @@ class Requests:
                 handed[r['context'][8:]] = {'name': r['name'], 'stage': 'on it', 'line': self.on_it_line(r['name'], answer)}
                 continue
             try:  # what was asked, for the card's body while it's with them (the suggestion to hand it stays in the chat)
-                asked = ' '.join(str(json.loads(r['question']).get('summary') or '').split())
+                question = json.loads(r['question'])
+                asked, asked_title = ' '.join(str(question.get('summary') or '').split()), question.get('title')
             except (ValueError, AttributeError):
-                asked = ''
+                asked, asked_title = '', None
+            # only what the to-do's title doesn't already say (worked out on display, so older handoffs read right too)
+            asked = beyond_title(asked, [asked_title, titles.get(r['context'][8:])])
             handed[r['context'][8:]] = {'name': r['name'], 'stage': {'asked': 'asked', 'waiting': 'waiting for them'}.get(stage, STAGES.get(stage, stage)),
-                                        **({'asked': asked[:ASKED_CHARS - 1] + '…' if len(asked) > ASKED_CHARS else asked} if asked and stage not in ('declined', 'expired') else {}),
+                                        **({'asked': asked[:ASKED_CHARS - 1] + '…' if len(asked) > ASKED_CHARS else asked, 'asked_at': r['at']}
+                                           if asked and stage not in ('declined', 'expired') else {}),
                                         **({'note': answer['note']} if answer.get('note') else {}),
                                         # their Machine can't notify them: the card says so, so the owner tells them
                                         **({'no_ping': True} if stage in ('asked', 'waiting') and r['id'] in noping else {}),

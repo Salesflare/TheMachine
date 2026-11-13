@@ -28,7 +28,7 @@ const moved=card('a2a2a2a2a2a2a2a2','Reset the shared inbox rules',{status:'snoo
 const both=card('a3a3a3a3a3a3a3a3','Plan the support rota',{status:'snoozed',snoozed_until:iso(Date.now()+40*hour),handoff_wait:{name:'Kim'},fleet_handoff:{name:'Kim Doe',stage:'waiting for them',also:['Pat'],asked:'Can you draft the support rota for next week?'}});
 // Back from its check-in while Pat still has it, as a ready to-do whose old result asked to send the handoff
 const back=card('a5a5a5a5a5a5a5a5','Lock down the tag export',{status:'prepared',body:'Your handoff to Pat through The Machine is ready.',outcome:JSON.stringify({state:'needs_you',needs:'review and send the handoff'}),
- fleet_handoff:{name:'Pat Lee',stage:'waiting for them',asked:'Can you lock down the tag export today?'}});
+ fleet_handoff:{name:'Pat Lee',stage:'waiting for them',asked:'Can you lock down the tag export today?',asked_at:'2026-11-03T09:00:00+00:00'}});
 const failed=card('b1b1b1b1b1b1b1b1','Rotate the shared webhook secret',{fleet_handoff_failed:{name:'Pat Lee',at:iso(t0+60e3)}});
 const source={kind:'source',from:'Alex Doe',via:'intercom',title:'Security triage',text:'Security triage\nVerdict: CONFIRMED\nConfidence: 90%',mine:false,at:t0-10*60e3};
 const items={
@@ -117,7 +117,8 @@ try{
   const b=page.locator('#task-'+back.id);
   assert.equal((await b.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
   assert.equal(await b.locator('.status-line').count(),0,'no older Needs you line');
-  assert.equal((await b.locator('.body').textContent()).trim(),'Asked Pat: Can you lock down the tag export today?');
+  // when it was asked too, as one whole sentence
+  assert.match((await b.locator('.body').textContent()).trim(),/^Asked Pat on Tue,? (Nov 3|3 Nov): Can you lock down the tag export today\?$/);
   assert.deepEqual(await visible(b),['Check in now','Snooze']);{const m=await more(b);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   if(dir){await b.scrollIntoViewIfNeeded();await b.screenshot({path:`${dir}/handoff-still-with-${width}.png`})}
   await b.locator('[data-handoff-checkin]').click();await page.waitForFunction(id=>location.hash==='#chat='+id,back.id);
