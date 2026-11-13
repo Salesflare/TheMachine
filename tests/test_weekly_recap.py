@@ -104,7 +104,7 @@ class WeeklyRecap(unittest.TestCase):
         with self.store.connect() as db:  # a promise links to its own page, never to its card (the page links the card)
             page = {(r[0], r[1]): f'https://m.example/assistant/#promise/{r[2]}' for r in db.execute('SELECT who,direction,id FROM promises')}
         self.assertEqual(lines[3], f"• Waiting on Sam Lee: [send the signed contract]({page['Sam Lee', 'theirs']}), due Tue, Oct 20")
-        self.assertNotIn('#chat=' + card, text)
+        self.assertNotIn('=' + card, text)
         self.assertEqual(lines[4], f"• Waiting on Kim: [review the deck]({page['Kim', 'theirs']}), since Wed, Oct 14")
         self.assertEqual(lines[5], f"• Promised Alex: [send the Q3 deck]({page['Alex', 'mine']}), due Mon, Oct 26")
         self.assertIn(f"**Next week**\n• Tue, Oct 27: Bo said they'd [call back]({page['Bo', 'theirs']})", text)
@@ -134,7 +134,7 @@ class WeeklyRecap(unittest.TestCase):
             board = db.execute("SELECT id FROM events WHERE source_id='b'").fetchone()[0]
         prep = self.store.suggest('prep', 'Prep notes for the board', 'Body.', [board])['id']
         text = a.weekly_recap(self.store, self.config, dt.datetime.fromisoformat(FRIDAY))
-        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#chat={prep})', text)
+        self.assertIn(f'**Next week**\n• Wed, Oct 28 09:00 Board meeting, 1 person · [to-do](https://m.example/assistant/#card={prep}&or=chat)', text)
         self.assertEqual(text.count('Team offsite'), 1)
         self.assertIn('• Fri, Oct 30 17:00 Parents evening, 2 people', text)  # the partner and the school, not the owner
         for routine in ('Weekly one-on-one', 'Declined lunch', 'Next month', 'Dentist with Robin'):
@@ -228,7 +228,7 @@ class WeeklyRecap(unittest.TestCase):
         self.edits = []
         drop, now, keep = (self.snoozed_card(t, n) for t, n in (('Share the tow-bar cost', 4), ('Pay the painter', 3), ('Book the dentist', 2)))
         sent = self.send()
-        self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#chat={drop}), 4 times')
+        self.assertEqual(sent[2]['message'], f'**Snoozed more than once**\n[Share the tow-bar cost](https://m.example/assistant/#card={drop}&or=chat), 4 times')
         items = {i['ref']: i for i in self.items() if i['kind'] == 'snoozed'}
         self.assertEqual(self.labels(sent[2]), [['Not needed', 'Do it', 'Keep']])
         self.assertEqual([items[x]['message_id'] for x in (drop, now, keep)], ['557', '558', '559'])

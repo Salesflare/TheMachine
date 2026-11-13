@@ -255,6 +255,9 @@ class UX(unittest.TestCase):
         with self.store.connect() as db:
             row=dict(db.execute('SELECT * FROM deliveries').fetchone())
             self.assertEqual((row['status'],row['message_id'],row['notification_message_id'],row['reminder']),('sent','40','43',0))
+        # a notice's link now opens the to-do in the list (#card=): still found as this to-do's
+        with sqlite3.connect(native) as db:db.execute("UPDATE plugin_state_entries SET value_json=replace(value_json,'#result=','#card=')")
+        self.assertEqual(a.cached_card_ids({'telegram_owner':'1000001','openclaw_state':str(native)},self.sid,0),[43])
     def test_only_linked_assistant_files_are_served(self):
         reports=self.root/'memory/assistant';reports.mkdir(parents=True)
         report=reports/'261011-draft.md';report.write_text('Real draft');(self.root/'secret.txt').write_text('Private')
@@ -269,14 +272,14 @@ class UX(unittest.TestCase):
         row=self.row();row.update(status='prepared',body='Draft. [Full result](memory/assistant/261011-draft.md)')
         with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             payload=a.telegram({'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'},row,'send')
-        self.assertNotIn('memory/assistant/',payload['message']);self.assertIn('https://machine.example/assistant/#chat=',payload['message'])
-    def test_telegram_links_open_the_cards_own_page_not_the_old_result_modal(self):
-        """A tap on a Telegram link opened the old Result modal (Copy draft) over the list. Every link now opens the card's
-        own page (#chat=<id>), as a tap on the card in the list does."""
+        self.assertNotIn('memory/assistant/',payload['message']);self.assertIn('https://machine.example/assistant/#card=',payload['message'])
+    def test_telegram_links_open_the_to_do_in_the_list_not_its_chat(self):
+        """A tap on a Telegram link opened the old Result modal (Copy draft) over the list, later the to-do's chat. Every
+        link now opens the to-do itself in the list (#card=<id>), its chat only when it isn't there (&or=chat)."""
         config={'dashboard_host':'machine.example','dashboard_path':'/assistant/','telegram_owner':'owner'}
         row=self.row();row.update(status='prepared',body='Draft.',message_id=5)
         with patch_everywhere(a,'telegram_request',side_effect=lambda config,args:args):
             texts=[a.telegram(config,row,'send')['message'],a.telegram(config,{**row,'_result_notice':True},'send')['message'],
                    a.telegram(config,{**row,'status':'instructions','preparation_status':'blocked','_result_notice':True},'send')['message']]
         for text in texts:
-            self.assertIn('https://machine.example/assistant/#chat='+self.sid+')',text);self.assertNotIn('#result=',text)
+            self.assertIn('https://machine.example/assistant/#card='+self.sid+'&or=chat)',text);self.assertNotIn('#result=',text);self.assertNotIn('#chat=',text)

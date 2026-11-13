@@ -252,7 +252,7 @@ def weekly_recap_message(store, config, current=None):
     ahead = dt.datetime.combine(tomorrow + dt.timedelta(days=7), dt.time(), tz).astimezone(dt.timezone.utc).isoformat()
     in_week = lambda day: tomorrow.isoformat() <= str(day)[:10] < (tomorrow + dt.timedelta(days=7)).isoformat()
     root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
-    link = lambda text, card: f'[{recap_escape(text)}]({root}#chat={card})' if root and card else recap_escape(text)
+    link = lambda text, card: f'[{recap_escape(text)}]({notify.todo_link(root, card)})' if root and card else recap_escape(text)
     names = {x['id']: display_names.account_name(x, config.get('accounts', []), UNNAMED.get(x.get('service'))) for x in config.get('accounts', [])}
     with store.connect() as db:
         batches = [json.loads(r[0]) for r in db.execute("SELECT items FROM analyses WHERE status='complete' AND finished_at>=?", (since,))]

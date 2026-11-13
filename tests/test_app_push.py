@@ -398,9 +398,9 @@ class AppPush(unittest.TestCase):
             with patch_everywhere(a, 'telegram_request', side_effect=lambda config, args: args):
                 return [(b['label'], b['action'].get('url') or b['action'].get('value')) for b in a.telegram(config, row, 'send')['presentation']['blocks'][0]['buttons']]
         sid = cards['draft']
-        self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#chat=' + sid), ('Snooze', f'assistant:{sid}:snooze_2h')])
+        self.assertEqual(sent('draft'), [('Open draft', 'https://machine.example/assistant/#card=' + sid + '&or=chat'), ('Snooze', f'assistant:{sid}:snooze_2h')])
         sid = cards['ready']
-        self.assertEqual(sent('ready'), [('Open', 'https://machine.example/assistant/#chat=' + sid), ('Mark done', f'assistant:{sid}:complete')])
+        self.assertEqual(sent('ready'), [('Open', 'https://machine.example/assistant/#card=' + sid + '&or=chat'), ('Mark done', f'assistant:{sid}:complete')])
         signin = 'https://machine.example/assistant/browser/signin'
         self.assertEqual(sent('preparing', preparation_status='blocked', preparation_browser={'signin_url': signin})[0], ('Sign in', signin))
 
@@ -409,7 +409,7 @@ class AppPush(unittest.TestCase):
         mail = notify.waiting_mail([{'title': 'Pay the invoice', 'show': True, 'ref': 'suggestion:0123456789abcdef'},
                                     {'title': "Kim's Machine asks: Who knows Acme?", 'show': True, 'ref': 'fleet:q_' + '1' * 16},
                                     {'title': 'Old line', 'show': True}], root)
-        self.assertIn('• Pay the invoice · [Open](https://m.example/#chat=0123456789abcdef) · [Snooze](https://m.example/#snooze=0123456789abcdef)', mail['text'])
+        self.assertIn('• Pay the invoice · [Open](https://m.example/#card=0123456789abcdef&or=chat) · [Snooze](https://m.example/#snooze=0123456789abcdef)', mail['text'])
         self.assertIn("• Kim's Machine asks: Who knows Acme? · [Open](https://m.example/#fleet=q_" + '1' * 16 + ')', mail['text'])
         self.assertIn('• Old line\n', mail['text'])
         self.assertNotIn('[Open]', notify.waiting_mail([{'title': 'Secret', 'show': False, 'ref': 'suggestion:0123456789abcdef'}], root)['text'])

@@ -61,6 +61,8 @@ No app, Adiar e Marcar como feita pedem para desbloquear primeiro. No navegador,
 
 Os e-mails com o que espera por você têm links Abrir e Adiar. Eles só abrem o painel.
 
+Tocar em uma notificação, ou em Abrir em um e-mail ou no Telegram, mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em outra visão, abre o chat dela.
+
 ## O resumo da manhã
 
 Ele chega nos dias de trabalho, no horário do **Resumo da manhã**, a menos que não haja nada a dizer. Se for antes de **Itens adiados voltam às**, ele espera até 5 minutos depois, para incluir as tarefas que voltam naquela manhã. **Prévia**, na linha dele, mostra sem enviar. Por padrão é um push e um e-mail, curtos para ler de relance:

@@ -62,6 +62,8 @@ On the phone app, Snooze and Mark done ask you to unlock first. In a browser the
 
 Emails have Open links (and Snooze for what waits). They only open the dashboard.
 
+Tapping a notification, or Open in an email or on Telegram, shows the to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat.
+
 ## The morning digest
 
 It comes on work days at your **Morning digest** time, unless there's nothing to say. When that's earlier than **Snoozes land at**, it waits until 5 minutes after, so the to-dos coming back that morning are in it. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:

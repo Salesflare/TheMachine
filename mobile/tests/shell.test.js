@@ -234,17 +234,17 @@ test('inject: a share opens New to-do filled in, or adds the text as a to-do on 
   assert.equal(old.calls.find(c => c.method === 'POST').body.action, 'card_new');
 });
 
-test('inject: a tapped notification opens its to-do, and only a plain id', async () => {
-  const p = page('https://sam.app.themachine.computer/');
-  await p.run({base: 'https://sam.app.themachine.computer/', tag: 'abc_12'});
-  assert.equal(p.win.location.hash, 'chat=abc_12');
-  const q = page('https://sam.app.themachine.computer/');
-  await q.run({base: 'https://sam.app.themachine.computer/', tag: 'x"><script>'});
-  assert.equal(q.win.location.hash, '');
+test('inject: a tapped notification opens its to-do in the list, not its chat, and only a plain id', async () => {
+  const base = 'https://sam.app.themachine.computer/', id = '0123456789abcdef';
+  const tapped = async extra => { const p = page(base); await p.run({base, ...extra}); return p.win.location.hash; };
+  // a to-do: in the list, in view and highlighted; its chat only when it isn't in the list (done, snoozed, gone)
+  assert.equal(await tapped({tag: id}), 'card=' + id + '&or=chat');
   // Open draft: the to-do in the list, where its draft shows in full
-  const d = page('https://sam.app.themachine.computer/');
-  await d.run({base: 'https://sam.app.themachine.computer/', tag: 'abc_12', card: true});
-  assert.equal(d.win.location.hash, 'card=abc_12');
+  assert.equal(await tapped({tag: id, card: true}), 'card=' + id);
+  // a tag that is no to-do (the morning, a Fleet question): the dashboard sends it to its own view (pushRoute)
+  assert.equal(await tapped({tag: 'digest'}), 'chat=digest');
+  assert.equal(await tapped({tag: 'fleet-brief'}), 'chat=fleet-brief');
+  assert.equal(await tapped({tag: 'x"><script>'}), '');
 });
 
 test('inject: an app that shows the notification itself says so, and registers again at once after the update', async () => {

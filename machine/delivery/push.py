@@ -167,14 +167,14 @@ def push_notify(store, config, row, sender=None):
         # one key per lead, so the dashboard never reads a bare "{}: {}" into other text; no lead: the title alone
         payload = {'title': (i18n.t(lead + ': {}', row['title']) if lead else row['title']) if text else i18n.t(lead or 'To-do'),
                    'body': plain(strip_result_links(row['body']) if ready else row.get('preparation_reason') or '') if text else '',
-                   'url': signin or root + '#chat=' + row['id']}
+                   'url': signin or notify.todo_link(root, row['id'])}  # the to-do in the list, not its chat
         # The mobile app's own line, short (it asks this Machine for it: notify.app_line), and ready or needs-you
         payload['_line'] = (notify.app_line_text(lead + ': {}', row['title']) if lead else notify.clip(row['title'], notify.APP_LINE)) if text else i18n.t(lead or 'To-do')
         payload['_state'] = 'ready' if ready else 'needs'
     else:
         reminder = shown_as_reminder(row)
         payload = {'title': (i18n.t('Reminder: {}', row['title']) if reminder else row['title']) if text else i18n.t('Reminder') if reminder else i18n.t('New to-do'),
-                   'body': plain(row['body']) if text else '', 'url': root + '#chat=' + row['id']}
+                   'body': plain(row['body']) if text else '', 'url': notify.todo_link(root, row['id'])}
         payload['_line'] = (notify.app_line_text('Reminder: {}' if reminder else 'New to-do: {}', row['title']) if text
                             else i18n.t('Reminder') if reminder else i18n.t('New to-do'))
         if notify.kind_of(row) == 'result':  # a reminder for a prepared or stuck to-do: ready or needs-you, as a result says
@@ -221,7 +221,7 @@ def report_done(store, config, suggestion_id, sender=None):
         return []
     root = 'https://' + config['dashboard_host'] + config.get('dashboard_path', '/') if config.get('dashboard_host') else ''
     payload = {'title': i18n.t('Done: {}', row['title']) if text else i18n.t('Done'),
-               'body': plain(row['body'] or '') if text else '', 'url': root + '#chat=' + row['id'], 'tag': row['id'],
+               'body': plain(row['body'] or '') if text else '', 'url': notify.todo_link(root, row['id']), 'tag': row['id'],
                '_line': notify.app_line_text('Done: {}', row['title']) if text else i18n.t('Done'), '_state': 'ready',
                'actions': quick_web('done')}
     return push_send(store, config, subscriptions, payload, 'done=' + row['id'], sender, kind='result')

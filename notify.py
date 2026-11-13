@@ -346,6 +346,13 @@ def mailed(db, clock=wall):
     db.execute("INSERT INTO notify_prefs(key,value) VALUES('_mail_last',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (str(clock()),))
 
 
+def todo_link(root, ident):
+    """Where a notification about a to-do opens it (a push, an email, Telegram, a digest or recap): the to-do itself,
+    in view and highlighted in the To-dos list (#card=), never its chat. One no longer in the list as shown (done,
+    snoozed, another scope, gone) opens its chat instead (&or=chat, the dashboard's openCardLink)."""
+    return f'{root}#card={ident}&or=chat'
+
+
 def mail_links(ref, root=''):
     """An email line's quick buttons, as links (docs/help/notifications.md): Open and Snooze for a to-do, Open for a
     Fleet question. They only open the dashboard (Snooze at its snooze times): a link in an email never does anything
@@ -354,7 +361,7 @@ def mail_links(ref, root=''):
     if not root:
         return ''
     if kind == 'suggestion' and re.fullmatch(r'[a-f0-9]{16}', ident):
-        return f" · [{t('Open')}]({root}#chat={ident}) · [{t('Snooze')}]({root}#snooze={ident})"
+        return f" · [{t('Open')}]({todo_link(root, ident)}) · [{t('Snooze')}]({root}#snooze={ident})"
     if kind == 'fleet' and re.fullmatch(r'q_[a-f0-9]{16}', ident):
         return f" · [{t('Open')}]({root}#fleet={ident})"
     return ''

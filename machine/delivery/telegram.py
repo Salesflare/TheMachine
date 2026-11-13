@@ -11,6 +11,7 @@ from machine.config import ROOT
 from machine.delivery.push import QUICK, QUICK_LABELS, QUICK_OPENS, quick_kind, strip_result_links
 from machine.model_usage import node_bin, node_env, telegram_account, telegram_on
 from machine.text import encoded
+import notify
 
 
 # A result notice's quick buttons as the plugin's callbacks: only these two run from the notice itself
@@ -42,11 +43,11 @@ def telegram(config, row, action, message_id=None):
         signin=not ready and (row.get('preparation_browser') or {}).get('signin_url')
         lead=row.get('_lead','Ready') if ready else 'Needs you to sign in' if signin else 'Needs your help' if ask_blocked(row) or (row.get('preparation_browser') and not row.get('preparation_error')) else 'Stuck'
         message=i18n.t(lead+': {}', '**'+title+'**') if lead else '**'+title+'**'
-        message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+root+'#chat='+row['id']+')'  # the card's own page, as a tap in the list opens
+        message+='\n\n['+(i18n.t('View result') if ready else i18n.t('View task'))+']('+notify.todo_link(root,row['id'])+')'  # the to-do in the list, not its chat
         # A sign-in blocker opens the dashboard's sign-in for this task; once in, the task carries on by itself.
         # Its quick buttons, as the phone's (push.QUICK): the first opens (the draft, the sign-in), the second is a
         # Snooze (2 hours) or Mark done the plugin takes from this message too (openclaw-plugin/index.ts, notice taps).
-        blocks=[{'type':'buttons','buttons':[{'label':i18n.t(QUICK_LABELS[a]),'action':{'type':'url','url':signin or root+'#chat='+row['id']}} if a in QUICK_OPENS
+        blocks=[{'type':'buttons','buttons':[{'label':i18n.t(QUICK_LABELS[a]),'action':{'type':'url','url':signin or notify.todo_link(root,row['id'])}} if a in QUICK_OPENS
                                              else {'label':i18n.t(QUICK_LABELS[a]),'action':{'type':'callback','value':f"assistant:{row['id']}:{TELEGRAM_QUICK[a]}"}}
                                              for a in QUICK[quick_kind(row,'result',not ready,signin)]['web'] if a in QUICK_OPENS or a in TELEGRAM_QUICK]}]
         return telegram_request(config,{'action':'send','channel':'telegram','accountId':telegram_account(config),
@@ -67,7 +68,7 @@ def telegram(config, row, action, message_id=None):
     if root:
         body['body']=strip_result_links(body['body'])
         if shown:body['body']+='\n\n'+shown['text']
-        if row['status']=='prepared':body['body']+='\n\n['+i18n.t('Read result')+']('+root+'#chat='+row['id']+')'
+        if row['status']=='prepared':body['body']+='\n\n['+i18n.t('Read result')+']('+notify.todo_link(root,row['id'])+')'
         elif row.get('original_urls'):body['body']+='\n\n['+i18n.t('Open original')+']('+row['original_urls'][0]+')'
     args = {'action':action,'channel':'telegram','accountId':telegram_account(config),'target':config.get('telegram_owner'),
             'message':(i18n.t('Your update')+'\n\n' if action=='send' and row.get('reminder') and (row['status'] in ('prepared','instructions') or row.get('preparation_status')=='blocked') else i18n.t('Reminder')+'\n\n' if action=='send' and row.get('reminder') else '')+card(body),'presentation':controls(row,root)}

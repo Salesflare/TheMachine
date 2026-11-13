@@ -62,6 +62,8 @@ In der App fragen Zurückstellen und Als erledigt markieren zuerst nach dem Ents
 
 E-Mails mit dem, was auf dich wartet, haben die Links Öffnen und Zurückstellen. Sie öffnen nur das Dashboard.
 
+Ein Tipp auf eine Benachrichtigung oder auf Öffnen in einer E-Mail oder in Telegram zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat.
+
 ## Die morgendliche Zusammenfassung
 
 Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung**, außer es gibt nichts zu sagen. Liegt diese vor **Zurückgestelltes kommt um**, wartet sie bis 5 Minuten danach, damit die Aufgaben, die an dem Morgen zurückkommen, darin stehen. **Vorschau** in ihrer Zeile zeigt sie, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail, kurz genug für einen Blick:
