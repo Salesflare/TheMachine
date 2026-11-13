@@ -43,8 +43,10 @@
 #email-content .convo-im .convo-turn .convo-say>.convo-t{flex:none;margin:0 0 0 auto;font-size:11px;line-height:1.7;color:var(--faint);font-variant-numeric:tabular-nums}
 #email-content .convo-im .convo-turn.me .convo-say>.convo-t{color:color-mix(in srgb,var(--text) 55%,transparent)}
 #email-content .convo-im .convo-turn .convo-say.convo-main{margin-left:0;padding-left:12px;border-left:0;box-shadow:0 0 0 2px var(--mint)}
-#email-content .convo-im .convo-turn .convo-say:is(.convo-say-link,.convo-say-media){flex-wrap:nowrap}
-#email-content .convo-im .convo-say-link .convo-link{padding:0;background:none}
+#email-content .convo-im .convo-turn .convo-say.convo-say-media{flex-wrap:nowrap}
+/* a link bubble is the link: its name and site fill the bubble, the time in its corner like any text */
+#email-content .convo-im .convo-turn .convo-say-link>.convo-said{flex:1 1 auto}
+#email-content .convo-im .convo-turn .convo-say-link .convo-link,#email-content .convo-im .convo-turn .convo-say-link .convo-link:hover{padding:0;border-radius:0;background:none}
 #email-content .convo-im .convo-say-link .convo-link:hover .convo-link-name{text-decoration:underline}
 #email-content .convo-im .convo-turn .convo-say-media{align-items:center;padding:5px 12px 5px 5px}
 #email-content .convo-im .convo-turn+.convo-turn{margin-top:var(--sp-3)}

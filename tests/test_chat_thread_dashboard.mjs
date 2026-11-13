@@ -22,8 +22,8 @@ assert.equal(run.status,0,run.stderr);
 const data=JSON.parse(run.stdout);
 const other=process.env.CHAT_THREAD_PAGE,dashboard=await dashboardPage(other||undefined),shots=process.env.CHAT_THREAD_SHOTS;
 const now=new Date().toISOString();
-const SRC={slack:'Source: Slack DM from Rowan Vale',whatsapp:'Source: WhatsApp from Milo Grant',wamedia:'Source: WhatsApp from Sasha Brook',intercom:'Source: Intercom from Juno Park',email:'Source: email from Avery Stone'};
-const TITLE={slack:'Move the warmup tool billing to the company card',whatsapp:'Tell the climbing crew if you drive on Saturday',wamedia:'Get the chalk and tape for Saturday',intercom:'Resend the October invoice to Harbor',email:'Reply to Avery about the booth quote'};
+const SRC={slack:'Source: Slack DM from Rowan Vale',whatsapp:'Source: WhatsApp from Milo Grant',wamedia:'Source: WhatsApp from Sasha Brook',wa1on1:'Source: WhatsApp from Robin Hale',intercom:'Source: Intercom from Juno Park',email:'Source: email from Avery Stone'};
+const TITLE={slack:'Move the warmup tool billing to the company card',whatsapp:'Tell the climbing crew if you drive on Saturday',wamedia:'Get the chalk and tape for Saturday',wa1on1:'Order the lamp Robin sent',intercom:'Resend the October invoice to Harbor',email:'Reply to Avery about the booth quote'};
 const cards=Object.entries(data).map(([k,v])=>({id:v.id,title:TITLE[k],body:'',status:'pending',scope:'work',created_at:now,event_ids:v.originals.map(o=>o.event_id),source_line:SRC[k]}));
 const byId=Object.fromEntries(Object.values(data).map(v=>[v.id,v.originals]));
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -93,6 +93,12 @@ try{
   assert.deepEqual(await box.locator('.convo-link-site').allInnerTexts(),['shop.example','shop.example','wall.example/routes/north']);
   assert.deepEqual(await box.locator('a.convo-link').evaluateAll(as=>as.map(a=>a.getAttribute('href'))),['https://shop.example/nl/p/climbing-chalk-bag-large/9300001/','https://www.shop.example/nl/p/finger-tape-roll-white/9300002/','https://wall.example/routes/north']);
   assert.match(await box.locator('.convo-main .convo-said').innerText(),/^Chalk and tape from here:/);
+  // A 1:1 names nobody over the bubbles (the line on top names the person); a link bubble is one surface, its time inside
+  await open('wa1on1');
+  assert.equal(await box.locator('.convo-chat span[translate]').innerText(),'Robin Hale');assert.equal(await box.locator('.convo-meta').count(),0);
+  const bubble=box.locator('.convo-say-link'),[b,card,tm]=await Promise.all([bubble,bubble.locator('.convo-link'),bubble.locator('.convo-t')].map(l=>l.boundingBox()));
+  assert.equal(await bubble.locator('.convo-link').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)');
+  assert.ok(tm.x+tm.width<=b.x+b.width&&tm.y+tm.height<=b.y+b.height&&card.x+card.width<=b.x+b.width,'the link fills its bubble, the time inside it');
   // Intercom: one conversation, its turns; the event-only parts left out, an internal note marked
   await open('intercom');
   assert.equal(await box.locator('.convo-chat').innerText(),'Juno Park');

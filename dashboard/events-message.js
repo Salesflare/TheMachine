@@ -113,6 +113,9 @@ const convoDay=at=>{const d=new Date(at),n=Math.round((new Date().setHours(0,0,0
 function chatThreadHTML(items,{main,names=true,head=true,src,earlier,titled}={}){
 const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo||o.media).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
 const first=items.find(o=>o.event_id===main)||items[0]||{},im=THREAD_IM.has(first.kind);
+// a messenger's 1:1 (one other person, who the chat is named after) names nobody over the bubbles: the line on top does
+const others=new Set(msgs.filter(o=>o.from!=='You'&&!o.role).map(o=>sender(o.from)).filter(Boolean)),firstWord=s=>String(s||'').trim().split(/\s+/)[0].toLowerCase();
+const duo=im&&others.size<=1&&(first.dm||!first.chat||[...others].every(w=>sameText(w,first.chat)||firstWord(w)===firstWord(first.chat)));
 const days=[];let prev=null,plain=false,inThread=false;
 // The owner's side on the right: their own messages, and in a support chat (Intercom) the team's and its bot's, each named
 for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',mark=main!=null&&o.event_id===main&&msgs.length>1;
@@ -122,7 +125,7 @@ for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.f
  const said=chatLinks(o.media_only?'':String(o.body||'').replace(/\r\n/g,'\n').trim()),only=!said.text&&!o.photo;
  const who=!you&&names?sender(o.from):'',turns=days.at(-1).turns,time=html`<time datetime="${o.occurred_at}">${fmtHM(at)}</time>`;
  const say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${o.media?mediaChip(o.media):''}${said.text?chatMarkdown(said.text):''}${said.links.map(linkCard)}${o.photo?photoThumbs([o.photo]):''}`;
- if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:im&&(me||!who)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im?'':' · '}`:''}${im?'':time}</p>`});
+ if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:im&&(me||!who||duo)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im?'':' · '}`:''}${im?'':time}</p>`});
  else if(!im&&at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at">${time}</p>`);
  if(mark)turns.at(-1).says.push(html`<p class="convo-this" aria-hidden="true">${t('This to-do')}</p>`);
  const kind=only&&o.media&&!said.links.length?' convo-say-media':only&&said.links.length?' convo-say-link':'';

@@ -25,8 +25,8 @@ INTERCOM_BODY = ('Hi! Our invoices show the old company address since the update
 
 
 def fixture(folder):
-    """Five to-dos: a Slack DM (the to-do's message first of five, with one from the owner), a WhatsApp group, one in
-    that group from its links, a photo and a file (wamedia), an
+    """Six to-dos: a Slack DM (the to-do's message first of five, with one from the owner), a WhatsApp group, one in
+    that group from its links, a photo and a file (wamedia), a WhatsApp 1:1 (wa1on1), an
     Intercom conversation, and an email. Returns the app and each to-do's id."""
     store = a.Store(Path(folder) / 'events.sqlite')
 
@@ -36,10 +36,10 @@ def fixture(folder):
                 'metadata': {'channel_name': 'DM Rowan Vale', 'conversation_type': 'dm', 'channel_id': 'D0ROWAN', 'from_me': me,
                              'sender_display': '' if me else 'Rowan Vale', 'source_url': f'https://acme.slack.example/archives/D0ROWAN/p{i}'}}
 
-    def whatsapp(i, at, who, text, media=''):
+    def whatsapp(i, at, who, text, media='', chat='Climbing crew'):
         return {'account_id': 'home-wa', 'source_id': f'wa{i}', 'kind': 'whatsapp.message', 'occurred_at': DAY + at + ':00+00:00',
-                'title': 'Climbing crew', 'body': text, 'deleted': False,
-                'metadata': {'chat_name': 'Climbing crew', 'chat_id': '1203@g.us', 'from_me': who == 'You', 'sender_display': who,
+                'title': chat, 'body': text, 'deleted': False,
+                'metadata': {'chat_name': chat, 'chat_id': '1203@g.us' if chat == 'Climbing crew' else '3247@s.whatsapp.net', 'from_me': who == 'You', 'sender_display': who,
                              'from': who, 'media_type': media}}
     store.commit_page('work-slack', {}, [
         slack(1, '17:56', 'I just noticed we pay for the mail warmup tool with my personal credit card :upside_down_face:'),
@@ -55,7 +55,10 @@ def fixture(folder):
         whatsapp(5, '08:40', 'Milo Grant', 'Sent image', 'image'),
         whatsapp(6, '08:41', 'Milo Grant', 'The gear list', 'document'),
         whatsapp(7, '08:42', 'Sasha Brook', 'Chalk and tape from here:\nhttps://shop.example/nl/p/climbing-chalk-bag-large/9300001/\n'
-                                            'https://www.shop.example/nl/p/finger-tape-roll-white/9300002/\nhttps://wall.example/routes/north')], None)
+                                            'https://www.shop.example/nl/p/finger-tape-roll-white/9300002/\nhttps://wall.example/routes/north'),
+        whatsapp(8, '09:10', 'Robin Hale', 'Can you order this one?', chat='Robin Hale'),
+        whatsapp(9, '09:11', 'Robin Hale', 'https://shop.example/p/oak-desk-lamp-with-dimmer/77/', chat='Robin Hale'),
+        whatsapp(10, '09:20', 'You', 'Will do', chat='Robin Hale')], None)
     store.commit_page('work-intercom', {}, [{
         'account_id': 'work-intercom', 'source_id': '9101', 'kind': 'intercom.conversation', 'occurred_at': DAY + '11:08:00+00:00',
         'title': 'Hi! Our invoices show the old company address since the update.', 'body': INTERCOM_BODY, 'deleted': False,
@@ -73,6 +76,7 @@ def fixture(folder):
                                        [ids['wa2'], ids['wa1'], ids['wa3'], ids['wa4']])['id'],
              'wamedia': store.suggest('wa-media-card', 'Get the chalk and tape for Saturday', 'Sasha sent links.',
                                       [ids['wa7'], ids['wa5'], ids['wa6'], ids['wa4']])['id'],
+             'wa1on1': store.suggest('wa-duo-card', 'Order the lamp Robin sent', 'Robin asked.', [ids['wa8'], ids['wa9'], ids['wa10']])['id'],
              'intercom': store.suggest('ic-card', 'Resend the October invoice to Harbor', 'Juno asked.', [ids['9101']])['id'],
              'email': store.suggest('mail-card', 'Reply to Avery about the booth quote', 'Avery sent a quote.', [ids['m1']])['id']}
     app = object.__new__(a.App)
