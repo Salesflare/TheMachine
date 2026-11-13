@@ -79,7 +79,7 @@ try{
   await page.locator('#share-p3 input[name=token]').fill('replacement-token-for-tests');
   // Wait for the actual accepted request, not a 200 ms guess under concurrent CI load.
   await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/action')&&r.request().postDataJSON()?.action==='fleet_share_replace'),
-    page.locator('#share-p3 button.primary').click()]);
+    page.locator('#share-p3 .share-replace button:not([type=button])').click()]);
   assert.ok(calls.some(c=>c.action==='fleet_share_ok'&&c.args.id==='p1'&&c.args.choice==='yes'));
   assert.ok(calls.some(c=>c.action==='fleet_share_replace'&&c.args.token==='replacement-token-for-tests'));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

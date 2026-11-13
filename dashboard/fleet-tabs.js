@@ -98,7 +98,7 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-connect]');if(!b
 fleetOn('click',async e=>{const o=e.target.closest('[data-graph-optout]');if(!o)return;const off=o.dataset.off==='1';o.disabled=true;  /* the Shared Graph: asking an admin to stop, or sharing again */
  try{const r=await fleetPost('graph_optout',{fleet:o.dataset.graphOptout,off});toast(off?(r.off==='off'?'Not shared now.':'Asked an admin.'):'Shared with the team again.');await fleetView()}catch(err){errCaught(err);o.disabled=false;toast(err.message,true)}});
 fleetOn('click',e=>{const b=e.target.closest('[data-shared-read]');if(b)openEvent(b.dataset.sharedRead,b.textContent)});
-fleetOn('submit',async e=>{const t=e.target;if(!t.matches('.share-form,.share-replace'))return;e.preventDefault();const btn=t.querySelector('button.primary');btn.disabled=true;
+fleetOn('submit',async e=>{const t=e.target;if(!t.matches('.share-form,.share-replace'))return;e.preventDefault();const btn=t.querySelector('button:not([type=button])');btn.disabled=true;
  try{if(t.matches('.share-form')){const r=await fleetPost('fleet_share',{fleet:t.dataset.fleet,account:t.dataset.account,members:[...t.querySelectorAll('input[name=m]:checked:not(:disabled)')].map(i=>i.value)});toast(`Shared with ${r.shared_with} ${r.shared_with===1?'Machine':'Machines'}.`)}
   else{await fleetPost('fleet_share_replace',{fleet:t.dataset.fleet,service:t.dataset.service,token:t.elements.token.value.trim()});t.elements.token.value='';toast('Replaced. Teammates get the new one.')}
   await fleetView()}catch(err){errCaught(err);btn.disabled=false;toast(err.message,true)}});
