@@ -61,6 +61,7 @@ from machine.store.decisions import checking_in, handoff_wait, owner_area_open, 
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store import message_view
+from machine.store import review_last_look
 from machine.store.review import own_message, REVIEW_SESSION_PREFIX
 from machine.text import _address
 import birthdays_facebook
@@ -981,6 +982,8 @@ class ViewsStore(ConversationStore):
             result['routine_offer'] = routine_offers.view(db)  # "Turn on Newsletter cleanup?", once (routine_offers.py)
             counts = db.execute('SELECT count(*) total,sum(analyzed_version<version) pending,sum(analyzed_version=0) first_review,coalesce(sum(analyzed_version<version AND deferrals>=?),0) set_aside FROM events WHERE history=0', (SET_ASIDE_AFTER,)).fetchone()
             result['review_health'] = {**dict(counts), 'last_completed': db.execute("SELECT max(finished_at) FROM analyses WHERE status='complete'").fetchone()[0]}
+            if counts['set_aside'] and not lean:  # the list under the count: what each is waiting for (review_last_look.py)
+                result['review_health']['set_aside_list'] = review_last_look.listing(self, db)
             result['review_runs'] = []
             for row in db.execute('SELECT * FROM review_runs ORDER BY started_at DESC LIMIT ?', (1 if lean else 20,)):
                 result['review_runs'].append(self.review_run_view(db, dict(row)))

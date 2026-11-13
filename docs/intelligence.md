@@ -950,7 +950,16 @@ Learning, and saves only the ones the owner ticks.
 
 The quality numbers only see to-dos that were made. The missed-work audit (`missed_work.py`, `missed_work_app.py`)
 looks at the other side: reviewed signals whose review left no to-do, no promise and no update to a to-do in the same
-conversation. It is separate from the review and never changes it.
+conversation, and the ones the review set aside unjudged. It is separate from the review and never changes it.
+
+<a id="set-aside"></a>
+A message the review puts off twice at the same version is set aside (`SET_ASIDE_AFTER`). One that may need the owner,
+read without a model from who wrote to whom (a person writing to them directly, a person the Graph knows, a customer's
+conversation no teammate took; never automated or bulk mail), gets one more look three days after it came in, a few per
+regular review and never a review of its own (`machine/store/review_last_look.py`). That look ends it: a to-do through
+the usual `suggest` and its dedupe, no to-do, or, put off again, closed for good. A message on any to-do, or in a thread
+whose to-do the owner dismissed or snoozed, is never looked at again. **Connections**, **Checks** lists them under
+**Set aside** with what each is waiting for.
 
 - Once a week, within the usage budget like every background turn, it samples up to 30 of the last week's reviewed
   emails, messages and meetings, stratified by channel and area (Personal, or Work at one company). Mail in Spam or

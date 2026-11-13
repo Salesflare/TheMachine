@@ -31,3 +31,7 @@ Während es wartet, geht nichts verloren: Was reingekommen ist, wird geprüft, s
 ## Ein Durchlauf ist fehlgeschlagen
 
 **Letzte Durchläufe** unter **Prüfungen** zeigt jeden Durchlauf. Ein fehlgeschlagenes Paket wird von selbst erneut versucht.
+
+## Zurückgestellt
+
+Schiebt eine Prüfung eine Nachricht zweimal auf, wird sie zurückgestellt. **Verbindungen**, **Prüfungen** zeigt, wie viele, und **Zurückgestellt** listet sie auf. Eine von einer Person, die dir direkt schreibt, von jemandem, den du kennst, oder von einem Kunden bekommt etwa 3 Tage nach dem Eingang noch einen Blick. Dieser Blick macht eine Aufgabe daraus oder schließt sie. Was du verworfen oder zurückgestellt hast, bleibt so.

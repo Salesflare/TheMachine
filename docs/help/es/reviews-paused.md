@@ -31,3 +31,7 @@ No se pierde nada mientras espera: lo que llegó se revisa en cuanto se pueda.
 ## Falló una ejecución
 
 **Ejecuciones recientes** en **Revisiones** muestra cada ejecución. Un lote fallido se reintenta solo.
+
+## Apartados
+
+Cuando una revisión aplaza un mensaje dos veces, queda apartado. **Conexiones**, **Revisiones** muestra cuántos, y **Apartados** los enumera. Uno de una persona que te escribe directamente, de alguien que conoces o de un cliente recibe una última mirada unos 3 días después de llegar. Esa mirada crea una tarea o lo cierra. Lo que descartaste o pospusiste se queda así.

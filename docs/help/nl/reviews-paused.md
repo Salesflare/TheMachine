@@ -31,3 +31,7 @@ Er gaat niets verloren terwijl het wacht: wat binnenkwam, wordt gecheckt zodra h
 ## Een run is mislukt
 
 **Recente runs** onder **Checks** toont elke run. Een mislukte portie wordt vanzelf opnieuw geprobeerd.
+
+## Opzijgezet
+
+Als een check een bericht twee keer uitstelt, wordt het opzijgezet. **Koppelingen**, **Checks** toont hoeveel, en **Opzijgezet** somt ze op. Een bericht van iemand die jou rechtstreeks schrijft, iemand die je kent of een klant krijgt ongeveer 3 dagen na binnenkomst nog een laatste blik. Die blik maakt er een to-do van of sluit het. Wat je hebt afgewezen of gesnoozed, blijft zo.

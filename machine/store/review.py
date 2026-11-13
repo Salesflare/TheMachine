@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import review_saves
+from machine.store import review_last_look, review_saves
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -311,6 +311,8 @@ def review_view(row, preview=REVIEW_PREVIEW_CHARS, offset=0, earlier=None, brief
             view[flag] = True
     if row.get('deferrals'):
         view['deferred_before'] = row['deferrals']
+        if row['deferrals'] >= SET_ASIDE_AFTER:  # its one more look (review_last_look.py)
+            view['last_look'] = review_last_look.RULE
     if earlier:
         view['earlier_in_conversation'] = earlier
     if row['kind'] == 'owner.card':
@@ -669,6 +671,11 @@ class ReviewStore:
             quick = bool(scope and (scope['window_hours'] or scope['promising']))
             rows, recovered_from = (self.most_promising(db, accounts, since, limit), None) if quick else (None, None)
             if not quick:
+                # A set-aside message that may need the owner gets one more look, in a regular review and within its budget
+                # (review_last_look.py): a few per review, never one of its own
+                last_look = review_last_look.due(self, db, accounts, min(review_last_look.LAST_LOOK_CAP, limit // 4),
+                                                 dt.datetime.fromisoformat(now())) if not since else []
+                limit -= len(last_look)
                 counts = {a: db.execute('SELECT count(*) FROM events WHERE account_id=? AND analyzed_version<version AND deferrals<? AND occurred_at>=?', (a, SET_ASIDE_AFTER, since)).fetchone()[0] for a in accounts}
                 quotas = {a: 0 for a in accounts}
                 # One slot per nonempty account, then weighted by remaining backlog.
@@ -723,6 +730,7 @@ class ReviewStore:
                     for queue in account_rows:
                         if queue:
                             rows.append(queue.pop(0))
+                rows += last_look
             if not rows:
                 return {'events': [], 'analysis_id': None}
             analysis_id = uuid.uuid4().hex

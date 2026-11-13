@@ -31,3 +31,7 @@ Nothing is lost: what came in is checked once it can.
 ## A run failed
 
 **Recent runs** under **Connections**, **Checks** shows each run. A failed one is tried again by itself.
+
+## Set aside
+
+When a check puts a message off twice, it is set aside. **Connections**, **Checks** shows how many, and **Set aside** lists them. One from a person writing to you, someone you know or a customer gets one more look about 3 days after it came in. That look makes a to-do or closes it. What you dismissed or snoozed stays that way.

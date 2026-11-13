@@ -31,3 +31,7 @@ Rien n’est perdu pendant l’attente : ce qui est arrivé est vérifié dès q
 ## Une exécution a échoué
 
 **Exécutions récentes** sous **Vérifications** affiche chaque exécution. Un lot échoué est relancé automatiquement.
+
+## Mis de côté
+
+Quand une vérification reporte un message deux fois, il est mis de côté. **Connexions**, **Vérifications** indique combien, et **Mis de côté** les liste. Celui d’une personne qui vous écrit directement, de quelqu’un que vous connaissez ou d’un client a droit à un dernier regard environ 3 jours après son arrivée. Ce regard en fait une tâche ou le ferme. Ce que vous avez écarté ou mis en attente reste ainsi.
