@@ -532,12 +532,13 @@ class CardChatApp:
                 except ValueError:
                     return []
                 return [x for x in found if isinstance(x, dict)] if isinstance(found, list) else []
-            asks = [x for x in listed('asks') if str(x.get('text') or '').strip()]
+            # changes asked of the agent: a name of their own, so the run's questions (`asks`, above) stay what they are
+            changes = [x for x in listed('asks') if str(x.get('text') or '').strip()]
             # The handoff is the first turn (its brief); each change asked of it after is the next one. Every turn's
             # answer follows the message it answers, also for jobs from before each answer was kept (read back from
             # the turn's own transcript in the job folder).
             owner.append({'kind': 'event', 'text': 'Handed to ' + name, 'mine': True, 'at': chat_ms(r['created_at'])})
-            for ask in asks:
+            for ask in changes:
                 owner.append({'kind': 'you', 'text': clamp(str(ask['text']), 5000), 'via': 'agent', 'to': name, 'at': chat_ms(ask.get('at'))})
             for answer in agent_jobs.turn_answers(r, self.agent_folder(r['id'])):
                 files = answer['files'][:10]

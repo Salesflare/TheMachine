@@ -5,6 +5,7 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+import shutil
 import stat
 import sys
 import tempfile
@@ -972,6 +973,19 @@ class AgentJobs(unittest.TestCase):
         self.assertNotIn('turn/start', methods)  # the Codex app runs it, in the conversation the owner has open
         self.assertIn('thread/turns/list', methods)
         self.assertNotIn('Make it longer', (Path(self.tmp.name) / 'agent-jobs' / job['id'] / agent_jobs.QUEUED_FILE).read_text())  # only its hash
+
+    def test_a_follow_up_after_its_work_folder_was_removed_carries_on_in_the_same_thread(self):
+        """The work folder deleted from outside the Machine (a disk cleanup): Ask for changes once failed to start the
+        agent (no folder to run in); it makes the folder again and carries on in the job's own thread."""
+        jobs = self.jobs()
+        job = wait(jobs, jobs.start(self.sid, 'codex', 'Write out.txt')['id'])
+        shutil.rmtree(jobs.work(job['id']))
+        job = wait(jobs, jobs.follow_up(job['id'], 'Make it longer')['id'])
+        self.assertEqual(job['status'], 'result', job)
+        self.assertTrue(jobs.work(job['id']).is_dir())
+        calls = self.calls('codex')[-1]['calls']
+        self.assertIn({'method': 'thread/resume', 'params': {'threadId': THREAD}}, calls)
+        self.assertEqual([c['params']['input'][0]['text'] for c in calls if c.get('method') == 'turn/start'], ['Make it longer'])
 
     def test_a_follow_up_the_codex_app_runs_is_followed_again_after_a_restart(self):
         jobs = self.jobs()

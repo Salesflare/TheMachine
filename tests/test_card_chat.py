@@ -639,6 +639,30 @@ class CardChat(unittest.TestCase):
         self.assertEqual(said, [('you', question + ' Maybe'), ('event', 'Asked: ' + question), ('you', 'October now'),
                                 ('you', 'Should I invoice both? No'), ('you', question + '\nOctober now')])
 
+    def test_a_change_asked_of_a_coding_agent_leaves_the_runs_questions_alone(self):
+        """A to-do with the owner's notes, a run's question and a coding agent's job with a change asked of it: the
+        chat reads (the agent's changes once took the questions' place, and every read failed) and the note that
+        answered the run still comes apart from its question."""
+        import agent_jobs
+        question = 'Should I invoice October now, or November on December 2?'
+        job = self.blocked_on([{'question': question, 'options': ['October now', 'November later']}])
+        with self.store.connect() as db:
+            db.execute("INSERT INTO preparation_runs(job_id,suggestion_id,session_job_id,status,started_at) VALUES(?,?,?,'ok',?)", (job, self.sid, job, '2026-01-05T10:00:00+00:00'))
+            db.execute('INSERT INTO preparation_calls(job_id,call_id,tool,params,started_at) VALUES(?,?,?,?,?)', (job, 'c1', 'assistant_signals', json.dumps(
+                {'action': 'preparation_blocked', 'args': {'suggestion_id': self.sid, 'reason': 'Which month', 'questions': [{'question': question, 'options': ['October now']}]}}),
+                '2026-01-05T10:01:00+00:00'))
+            db.execute("INSERT INTO decisions(id,suggestion_id,choice,feedback,source,created_at) VALUES('old',?,'other',?,'dashboard','2026-01-05T10:02:00+00:00')",
+                       (self.sid, question + ' October now'))
+            db.executescript(agent_jobs.SCHEMA)
+            db.execute("INSERT INTO agent_jobs(id,suggestion_id,tool,place,status,brief,asks,summary,turns,created_at,updated_at) "
+                       "VALUES('aj_3',?,'codex','local','failed','b',?,'',2,'2026-01-05T10:03:00+00:00','2026-01-05T10:05:00+00:00')",
+                       (self.sid, json.dumps([{'at': '2026-01-05T10:04:00+00:00', 'text': 'Make it shorter'}])))
+            owner, results = self.app.card_chat_service(db, self.sid)
+        items = a.chat_items([], owner, results)
+        said = [(i['kind'], i['text']) for i in items if (i['kind'] == 'you' and not i.get('to')) or i['text'].startswith('Asked')]
+        self.assertEqual(said, [('event', 'Asked: ' + question), ('you', 'October now')])
+        self.assertIn(('you', 'Make it shorter'), [(i['kind'], i['text']) for i in items if i.get('to') == 'Codex'])
+
     def test_several_questions_answered_together(self):
         """A run asked two things, one a clear choice and one open with a suggestion; the card sends both answers as one
         message, a line per question with its answer. The run reads that message and both questions (asked); the chat

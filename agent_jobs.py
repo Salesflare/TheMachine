@@ -1819,6 +1819,15 @@ class AgentJobs:
     def work(self, job_id):
         return self.folder(job_id) / 'work'
 
+    def work_back(self, job_id):
+        """A turn runs in the job's work folder. One removed from outside the Machine since (a disk cleanup) comes
+        back empty, so Ask for changes and Try again carry on in the agent's own thread instead of failing to start."""
+        work = self.work(job_id)
+        if work.is_dir():
+            return
+        work.mkdir(parents=True, mode=0o700, exist_ok=True)
+        LOG.info('agent job work folder missing, made again')
+
     def prepare_folder(self, job_id, brief, parts):
         work = self.work(job_id)
         work.mkdir(parents=True, exist_ok=False, mode=0o700)
@@ -1899,6 +1908,7 @@ class AgentJobs:
                 if not claimed:
                     return
                 turn_no = row['turns']
+                self.work_back(job_id)
                 transcript = self.folder(job_id) / f'turn-{turn_no}.jsonl'
                 try:
                     session, summary = self.run_turn(runner, row, prompt, resume, transcript)
