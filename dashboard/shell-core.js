@@ -1,3 +1,5 @@
+// The page's own script came (dashboard.html shows "The page didn’t load" otherwise), also when it came late
+self.appStarted=true;document.getElementById('load-failed')?.setAttribute('hidden','');
 // Dates and times follow Settings, General (locale_prefs.py): DL is the date locale (Sat, Oct 24 or Sat 24 Oct), H12 the
 // clock (2:05 PM or 14:05). A Machine without a region keeps US dates and 24-hour times.
 let DL='en-US',H12=false;

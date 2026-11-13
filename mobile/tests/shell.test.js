@@ -342,6 +342,36 @@ test('inject: the phone asks about the microphone and notifications; Open settin
   assert.equal(old.win.machinePhone, undefined);  // no app bridge on this address: nothing to ask with
 });
 
+test('the offline page tries the Machine again by itself once online or in front again, never in a loop', async () => {
+  const listeners = {}, docListeners = {}, replaced = [];
+  const el = () => ({hidden: false, dataset: {}, textContent: '', querySelector: () => null, onclick: null});
+  const els = {retry: el(), other: el()};
+  const doc = {hidden: false, documentElement: {}, body: {dataset: {page: 'offline'}},
+    getElementById: id => els[id] || null, querySelectorAll: () => [], querySelector: () => null,
+    addEventListener: (k, f) => { (docListeners[k] = docListeners[k] || []).push(f); }};
+  const nav = {languages: ['en'], onLine: true};
+  const shell = {get: async () => ({machine: 'https://sam.app.themachine.computer/'}), info: async () => ({platform: 'ios'})};
+  const ctx = {document: doc, navigator: nav, URL, Promise, Date, setTimeout, clearTimeout,
+    location: {replace: u => replaced.push(u)}};
+  ctx.window = Object.assign(ctx, {Capacitor: {Plugins: {MachineShell: shell}},
+    addEventListener: (k, f) => { (listeners[k] = listeners[k] || []).push(f); }});
+  for (const f of ['strings.js', 'machine-url.js', 'app.js']) vm.runInNewContext(fs.readFileSync(path.join(www, f), 'utf8'), ctx);
+  const settle = () => new Promise(r => setTimeout(r, 0));
+  await settle();
+  assert.deepEqual(replaced, [], 'the offline page stays until something changed');
+  nav.onLine = false;
+  for (const f of docListeners.visibilitychange) f();
+  await settle();
+  assert.deepEqual(replaced, [], 'not while the device is offline');
+  nav.onLine = true;
+  for (const f of listeners.online) f();
+  await settle();
+  assert.deepEqual(replaced, ['https://sam.app.themachine.computer/'], 'online again: the Machine');
+  for (const f of docListeners.visibilitychange) f();
+  await settle();
+  assert.equal(replaced.length, 1, 'at most every few seconds');
+});
+
 test('Android keeps the keyboard\'s own suggestions and autocorrect', () => {
   // captureInput swaps the WebView's input for a bare one, which turns off the keyboard's suggestions in every field
   const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'capacitor.config.json'), 'utf8'));

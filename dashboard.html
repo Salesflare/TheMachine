@@ -118,6 +118,15 @@ try{if(localStorage.getItem('side')==='collapsed')root.dataset.side='collapsed'}
 </main><footer class="site-footer"><p id="copyright">© The Machine</p><div class="footer-controls"><a id="help-link" class="footer-link" href="https://themachine.computer/help" target="_blank" rel="noopener">Help</a><a id="source-code" class="footer-link" href="https://github.com/Salesflare/TheMachine" target="_blank" rel="noopener">Source code</a><a id="report-problem" class="footer-link" href="https://github.com/Salesflare/TheMachine/issues/new" target="_blank" rel="noopener">Something's wrong?</a></div></footer>
 <!--@include dashboard/shell-dialogs.html-->
 <!--@include dashboard/connections-dialogs.html-->
+<div id="load-failed" class="load-failed" role="alert" hidden><img src="brand/sleepy.webp" alt="" width="112" height="112" onerror="this.hidden=true"><p>The page didn’t load</p><button type="button" class="primary">Try again</button></div>
+<script>// Never a blank or half-drawn page when the page's own script (app-<hash>.js, a file of its own) doesn't come: a computer
+// that just woke up, a link that dropped while the page loaded. What happened and Try again, which also happens by itself
+// once the device is online or the page is in front again. The script says it started (self.appStarted, shell-core.js).
+(()=>{const box=document.getElementById('load-failed');let at=0;
+const again=()=>{if(self.appStarted||Date.now()-at<5e3||navigator.onLine===false)return;at=Date.now();location.reload()};
+const fail=()=>{if(self.appStarted||!box.hidden)return;box.hidden=false;addEventListener('online',again);document.addEventListener('visibilitychange',()=>{if(!document.hidden)again()})};
+box.querySelector('button').onclick=()=>location.reload();
+addEventListener('load',()=>{if(!self.appStarted)fail()});setTimeout(()=>{if(!self.appStarted)fail()},30e3)})();</script>
 <script>const csrf='__CSRF__',UI_VERSION='__UI_VERSION__',CACHE_SCOPE='__CACHE_SCOPE__';</script>
 <script id="i18n">
 /*@include dashboard/shell-i18n.js*/

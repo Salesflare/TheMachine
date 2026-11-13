@@ -140,6 +140,16 @@
       if (state.machine && MachineUrl.valid(state.machine)) location.replace(state.machine);
       else location.replace('index.html');
     };
+    // Tried again by itself once the device is online or the app is in front again (a computer that just woke up),
+    // at most every few seconds: a Machine still away brings this page back, never a blank one.
+    let tried = 0;
+    const again = () => {
+      if (Date.now() - tried < 5000 || navigator.onLine === false) return;
+      tried = Date.now();
+      $('retry').onclick();
+    };
+    window.addEventListener('online', again);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) again(); });
     $('other').onclick = async () => { if (shell) await shell.forget(); location.replace('index.html'); };
   }
   start();

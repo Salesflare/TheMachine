@@ -21,6 +21,11 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **The Machine's browser**: the dashboard's Browser pane, closed with its X or Back. Opened on its own (an older
   dashboard, a link straight to it) it gets a floating X back to the dashboard (`www/inject.js`).
 
+- **Never a blank window** (iOS, and the same app on a Mac): after sleep the page's process can be gone or hung, which
+  left a white window until the app was closed. On every return (in front again, unlocked, the network back, a wake)
+  the app asks the page for a sign of life and opens it again when none comes in time (`checkPage`); the end of the
+  page's process is heard before Capacitor's own reload (`PageWatch`). The offline page tries again by itself once
+  online or in front again, and the dashboard says "The page didn't load" with Try again when its script doesn't come.
 - **Back** (Android): closes the dashboard's open dialog or sheet first (`machineBack`, `dashboard/shell-back.js`),
   then goes back in the Machine's pages; from the first page it leaves the app.
 

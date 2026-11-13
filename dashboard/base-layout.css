@@ -1,3 +1,7 @@
+/* The page's script didn't come (dashboard.html, load-failed): over everything, in the page's own colors. Eager: it
+   shows exactly when nothing that loads later can */
+.load-failed:not([hidden]){position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:var(--c-bg);color:var(--c-text);text-align:center}
+.load-failed img{width:112px;height:112px}.load-failed p{margin:0;font:600 1.35rem/1.3 var(--serif)}.load-failed button{min-width:140px}
 /* Header */
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:22px}
 .head-side{display:flex;align-items:center;gap:8px}.manage{padding:6px 12px;border:1px solid var(--border);border-radius:999px;color:var(--muted);text-decoration:none;font-size:.85rem}.manage:hover,.head-link:hover{color:var(--text)}
