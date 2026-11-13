@@ -16,13 +16,13 @@ Their Machine pings them on their phone or in Telegram. With neither set up, it 
 
 An Intercom conversation goes along too. If their Machine reads the same Intercom workspace, **Read message** opens it and their reply goes back in Intercom. If not, their to-do links to it.
 
-While you wait, the to-do says what you asked and when ("Asked Pat on Tue 3 Nov: …"), only when that adds something to its title. It sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** asks how it's going; **Change time** moves the check-in.
+While you wait, the to-do says what you asked and when ("Asked Pat on Tue 3 Nov: …"), only when that adds something to its title. It sits under **Coming back later**, "With Pat · waiting", with a check-in date. **Check in now** drafts a short nudge to Pat for you to send; **Change time** moves the check-in.
 
 If Pat's Machine can't notify them, the to-do says "Pat won't get a ping. Let them know." Tell Pat yourself. The line goes once they turn on notifications.
 
 It comes back on top only when there is something to decide: Pat answered, declined or finished it, the handoff failed, or a deadline came. The check-in follows the due date: a few hours for today, the work day before for soon, the next morning for urgent, otherwise 3 work days.
 
-Back for a check-in, it says "Still with Pat · check in?": Pat still has it, nothing came back. **Check in now** opens the chat; **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
+Back for a check-in, it says "Still with Pat". **Check in now** drafts a short nudge to Pat where you asked (Slack, WhatsApp, Telegram or email), on the to-do. Nothing goes until you pick **Send**; then it waits on Pat again. If nothing you connected can message Pat, the chat opens and says so. **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
 
 The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. With no answer yet, it offers **Mark done**, **Snooze** and **Not needed**. To nudge them or take it back, say so in the chat.
 
@@ -34,7 +34,7 @@ While a teammate has it, the to-do says so in one line ("With Pat · waiting"), 
 
 **Hand off to someone else** opens the handoff form. Or say so in the to-do's chat ("this should go to Kim"): the to-do then says "Still with Pat until you send it to Kim", with **Review handoff to** Kim.
 
-A to-do goes to each teammate once: while Pat has it, handing it to Pat again says "Pat already has this to-do".
+A to-do goes to each teammate once: while Pat has it, picking Pat again in the handoff form is a check-in. **Check in** drafts the same nudge, with a line of yours if you add one.
 
 **Take it back from** Pat is on by default; turn it off to let both have it. Nothing goes out until you pick **Hand off**. Pat's Machine is told, and their copy of the to-do goes.
 

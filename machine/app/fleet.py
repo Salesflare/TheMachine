@@ -310,7 +310,15 @@ class FleetApp:
                                       take=args.get('take') if isinstance(args.get('take'), bool) else None, name=str(args.get('name') or ''))
         if name in handoff_mail.ACTIONS:  # By email in the Hand off sheet: what can go, and the take line's setting
             return self.handoff_mail.action(name, args)
+        if name == 'fleet_handoff_checkin':  # Check in now, on a to-do a teammate still has
+            return self.handoff_checkin(str(args.get('suggestion_id') or ''), str(args.get('note') or ''))
         if name == 'fleet_handoff':
+            card = str(args.get('suggestion_id') or '')
+            with self.fleet.connect() as db:
+                held = self.fleet.open_handoffs(db, card)
+            if any((r['fleet'], r['member_id']) == (str(args.get('fleet') or ''), str(args.get('member_id') or '')) for r in held):
+                # Handed to someone who still has it: a check-in on that handoff, not a second one
+                return {**self.handoff_checkin(card, str(args.get('note') or '')), 'checkin': True}
             return self.fleet.hand_off(str(args.get('suggestion_id') or ''), str(args.get('fleet') or ''), str(args.get('member_id') or ''),
                                        str(args.get('title') or ''), str(args.get('summary') or ''), str(args.get('contact') or '') or None,
                                        sources=args['sources'] if isinstance(args.get('sources'), list) else args.get('sources') is not False,  # all, none or those kept
@@ -399,6 +407,45 @@ class FleetApp:
             self.fleet.set_meta('ask_meetings', bool(args.get('on')))
             return {'ask_meetings': self.fleet.meetings_on()}
         raise ValueError('Unknown Fleet action')
+
+    def handoff_checkin(self, card_id, note=''):
+        """Check in now, on a to-do a teammate still has (also Hand off again to that same teammate): a short nudge to them
+        on the channel the to-do was asked on, drafted on the to-do for the owner to read, edit and Send, like any Do it.
+        Nothing goes out from here, and their answer to the handoff still settles the to-do (CHECKIN_PREFIX). With no
+        channel the Machine can send on: {'chat': True, 'why': ...}, and the chat opens instead. A to-do no longer with
+        them (they answered meanwhile): {'gone': True}, nothing to do."""
+        import follow_ups
+        from machine.store.decisions import CHECKIN_PREFIX, handoff_wait
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM suggestions WHERE id=?', (card_id,)).fetchone()
+            if not row:
+                raise ValueError('Unknown suggestion')
+            still = handoff_wait(db, dict(row)) or handoff_wait(db, dict(row), awake=True)
+            if row['status'] in ('completed', 'rejected') or not still:
+                return {'gone': True}
+            events = db.execute('SELECT account_id FROM events WHERE id IN (SELECT value FROM json_each(?)) AND deleted=0 '
+                                'ORDER BY occurred_at,id', (row['event_ids'] or '[]',)).fetchall()
+        accounts = {a.get('id'): a for a in self.config.get('accounts') or [] if a.get('id')}
+        # Where it was asked: the first of its messages on an account that can send (a Fleet-shared one only reads)
+        channel = None
+        for e in events:
+            account = accounts.get(e['account_id'])
+            can = follow_ups.sendable([account]) if account else set()
+            if can:
+                channel = sorted(can)[0]
+                break
+        name = still['name']
+        if not channel:
+            return {'chat': True, 'why': i18n.t('Nothing connected here can message {}. Check in from the chat.', name)}
+        where = {'email': i18n.t('email'), 'slack': 'Slack', 'whatsapp': 'WhatsApp', 'telegram': 'Telegram', 'linkedin': 'LinkedIn',
+                 'signal': 'Signal', 'intercom': 'Intercom'}.get(channel, channel)
+        ask = i18n.t('Check in with {} on {}: a short, specific nudge about this to-do, where it was asked. Draft it for me to read and send.', name, where)
+        note = ' '.join(str(note or '').split())[:600]
+        if note:
+            ask += '\n' + note
+        self.decide_action('decide', {'suggestion_id': card_id, 'choice': 'other', 'decision_id': CHECKIN_PREFIX + uuid.uuid4().hex,
+                                      'feedback': ask}, owner_dashboard=True)
+        return {'card': card_id, 'channel': channel, 'name': name}
 
     def fleet_save_config(self, change, restart):
         """A shared connector changed (shared_connectors.py): the same change to config.json, then a restart when asked."""

@@ -94,11 +94,11 @@ const chatPeek=s=>{const via=s.preparation_browser||{link:state.browser_link||''
 function chatParts(s){const t=document.createElement('template');setHTML(t,suggestionCard(s,'Chat'));const card=t.content.querySelector('article');
  // The card's … menu, flat: Hand off…'s sheet gives its choices by their whole names (Hand to Codex, not Codex)
  const acts=[...(card?.querySelector(':scope>.actions')?.children||[])].flatMap(n=>n.matches('details.more-actions')?[...n.querySelectorAll('.more-menu>button,.more-menu>a,.mm-sub>button:not([data-mm-back]),.mm-sub>a:not([data-mm-back])')].filter(x=>x.dataset.mmOpen==null).map(x=>{if(x.dataset.full){x.textContent=x.dataset.full;delete x.dataset.full}return x}):[n]).map(n=>{n.removeAttribute('hidden');return n})  // a choice kept out of sight on the card is in the chat's menu
-  .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&n.dataset.handoffCheckin==null&&n.dataset.rowFoldMenu==null);  // in the chat already: no Check in now; Snooze once (the …'s copy is for a full row)
+  .filter(n=>!['change','answer','cancel-change'].includes(n.dataset.choice)&&(n.dataset.handoffCheckin==null||s.status==='snoozed')&&n.dataset.rowFoldMenu==null);  // in the chat already: a nudge is asked for in words (a snoozed one's way back stays); Snooze once (the …'s copy is for a full row)
  // A snoozed card's way back is Unsnooze; a closed one's is Reopen or Undo: a text button on the status line
  // A to-do that looks done is one in Done, like the list draws it (lookDoneCard): Reopen puts it back on the list (not_done)
  const ld=looksDone(s),ldBack=ld?(()=>{const b=document.createElement('button');b.type='button';b.className='ghost';b.dataset.ldNot=s.id;return b})():null;
- const back=ld?ldBack:s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'):closed(s)?acts.find(n=>n.dataset.fuBack)||acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
+ const back=ld?ldBack:s.status==='snoozed'?acts.find(n=>n.dataset.choice==='accept'||n.dataset.handoffCheckin!=null):closed(s)?acts.find(n=>n.dataset.fuBack)||acts.find(n=>n.dataset.choice==='reopen')||acts.find(n=>n.dataset.choice==='undo'):null;
  if(back&&!back.dataset.fuBack)back.textContent=s.status==='snoozed'?(s.handoff_wait?'Check in now':'Unsnooze'):'Reopen';
  // The way back is in the ⋯ too, so the menu is never empty on a done to-do
  const backItem=back?.cloneNode(true);if(back)back.className='link chat-inline';

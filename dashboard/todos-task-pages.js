@@ -33,8 +33,13 @@ $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[
   await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-not-mine]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_handoff_not_mine',{suggestion_id:b.dataset.handoffNotMine});toast('Undone. Your teammate is told it isn’t yours.');await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
-// Check in now: the to-do's chat, to ask the teammate how it goes (nothing is sent from here)
-$('#suggestions').addEventListener('click',e=>{const b=e.target.closest('[data-handoff-checkin]');if(!b)return;e.preventDefault();location.hash='chat='+b.dataset.handoffCheckin});
+// Check in now: a short nudge to the teammate where it was asked, drafted on the to-do like any Do it (nothing is sent
+// from here: the owner reads it and taps Send). With nothing connected to message them on, the to-do's chat opens and
+// says so, calmly; something to say about this to-do is said on it (handoffNotes), never in a toast over another one.
+$('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-checkin]');if(!b)return;e.preventDefault();const id=b.dataset.handoffCheckin;b.disabled=true;
+ try{const r=await fleetPost('fleet_handoff_checkin',{suggestion_id:id});handoffNotes.delete(id);
+  if(r.chat){location.hash='chat='+id;toast(r.why);$('#toast').dataset.about=id}
+  await refresh()}catch(err){errCaught(err);handoffNotes.set(id,err.message);b.disabled=false;render()}});
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-take-back]');if(!b)return;b.disabled=true;
  try{await fleetPost('fleet_handoff_take_back',{suggestion_id:b.dataset.handoffTakeBack});toast('Taken back. It’s yours again.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}finally{b.disabled=false}});  // a redraw may keep this button: it is free again either way
 $('#suggestions').addEventListener('click',async e=>{const b=e.target.closest('[data-handoff-mine]');if(!b)return;b.disabled=true;

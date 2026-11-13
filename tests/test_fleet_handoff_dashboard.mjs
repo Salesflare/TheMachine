@@ -66,7 +66,7 @@ try{
  assert.deepEqual(menu.filter(x=>!(x==='Change time'&&!row.includes(x))),['Hand off…','Repeat…','Not needed']);  // take it back or hand it on: under …, Hand off…
  assert.ok(row.includes('Change time')!==menu.includes('Change time'),'Change time is in the row or the …, once');
  assert.deepEqual(await later.locator('.mm-sub>button:not([data-mm-back])').evaluateAll(n=>n.map(x=>x.dataset.full||x.textContent.trim())),['Take it back','Hand off to someone else']);
- assert.equal(await later.locator('.actions [data-choice="accept"]').innerText(),'Check in now');
+ assert.equal(await later.locator('.actions [data-handoff-checkin]').innerText(),'Check in now');
  const chatLine=await page.evaluate(()=>{const s=state.suggestions[0],d=document.createElement('div');d.innerHTML=chatStatus(s);return d.textContent});
  assert.match(chatLine,/^Check in with Kim \S+ \d\d:\d\d if no answer·Check in now$/);
  assert.deepEqual(errors,[]);

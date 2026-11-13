@@ -162,14 +162,24 @@ $('#suggestions').addEventListener('click',async e=>{const c=e.target.closest('[
   handingOff.set(d.suggestion_id,{...d,who,parts,off:new Set(parts&&!parts.take?['take']:[]),to:pickFirst?pickFirst[0]+'|'+pickFirst[1]:'email'});render()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 $('#suggestions').addEventListener('input',e=>{const t=e.target.closest('.fleet-handoff-form');const d=t&&handingOff.get(t.dataset.card);if(!d)return;
  const part=e.target.dataset?.handoffPart;if(part){d.off=d.off||new Set();e.target.checked?d.off.delete(part):d.off.add(part);return}
- const moved=d.to!==t.elements.to.value||(t.elements.replace&&d.replace!==t.elements.replace.checked);Object.assign(d,{to:t.elements.to.value,email:t.elements.email?t.elements.email.value:d.email,task:t.elements.task.value,note:t.elements.note.value,...(t.elements.replace?{replace:t.elements.replace.checked}:{})});if(moved)render()});
-$('#suggestions').addEventListener('submit',async e=>{const t=e.target;if(!t.classList.contains('fleet-handoff-form'))return;e.preventDefault();const [fleet,member_id]=t.elements.to.value.split('|'),d=handingOff.get(t.dataset.card)||{};
+ const moved=d.to!==t.elements.to.value||(t.elements.replace&&d.replace!==t.elements.replace.checked);const checkin=t.classList.contains('handoff-checkin-form');  // a check-in's line is its own, not the handoff's note
+ Object.assign(d,{to:t.elements.to.value,email:t.elements.email?t.elements.email.value:d.email,...(t.elements.task?{task:t.elements.task.value}:{}),...(checkin?{checkin_note:t.elements.note.value}:{note:t.elements.note.value}),...(t.elements.replace?{replace:t.elements.replace.checked}:{})});if(moved){delete d.error;render()}});
+$('#suggestions').addEventListener('submit',async e=>{const t=e.target;if(!t.classList.contains('fleet-handoff-form'))return;e.preventDefault();const [fleet,member_id]=t.elements.to.value.split('|'),d=handingOff.get(t.dataset.card)||{},id=t.dataset.card;
+ // Something to say about it (it didn't go) stays in this form, on this to-do: never a toast over another one
+ const failed=err=>{errCaught(err);const now=handingOff.get(id);if(now){now.error=err.message;render()}else toast(err.message,true)};
+ if(t.classList.contains('handoff-checkin-form')){  // to someone who still has it: a check-in, drafted on the to-do
+  try{const r=await fleetPost('fleet_handoff_checkin',{suggestion_id:id,note:t.elements.note.value.trim()});handingOff.delete(id);handoffNotes.delete(id);
+   if(r.chat){location.hash='chat='+id;toast(r.why);$('#toast').dataset.about=id}
+   await refresh()}catch(err){failed(err)}return}
  const parts=[t.elements.task.value.trim(),t.elements.note.value.trim()].filter(Boolean),summary=parts.map((x,n)=>n<parts.length-1&&!/[.!?…]$/.test(x)?x+'.':x).join(' ');  // as plain sentences
  if(t.elements.to.value==='email'){const p=d.parts,off=d.off||new Set(),keep=p?[...p.lines,...p.links,...p.files,...(p.draft?[p.draft]:[])].map(x=>x.key).filter(k=>!off.has(k)):null;
   try{await fleetPost('fleet_handoff_email',{suggestion_id:t.dataset.card,email:t.elements.email.value.trim(),title:t.elements.title.value.trim(),summary,...(p?{keep,take:!off.has('take')}:{}),...(d.picked?.email===t.elements.email.value.trim()&&d.picked.name?{name:d.picked.name}:{})});
-  handingOff.delete(t.dataset.card);toast('Your email is ready on the to-do. Read it, then send it yourself.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}return}
- try{await fleetPost('fleet_handoff',{suggestion_id:t.dataset.card,fleet,member_id,title:t.elements.title.value.trim(),summary,contact:d.contact&&d.with_contact!==false?d.contact:'',sources:(d.sources||[]).map((_,n)=>n).filter(n=>!d.dropped?.includes(n)),...(t.elements.replace?{replace:t.elements.replace.checked}:{})});
-  handingOff.delete(t.dataset.card);toast('Handed off. The to-do shows how it goes.');await refresh()}catch(err){errCaught(err);toast(err.message,true)}});
+  handingOff.delete(t.dataset.card);toast('Your email is ready on the to-do. Read it, then send it yourself.');$('#toast').dataset.about=id;await refresh()}catch(err){failed(err)}return}
+ try{const r=await fleetPost('fleet_handoff',{suggestion_id:t.dataset.card,fleet,member_id,title:t.elements.title.value.trim(),summary,contact:d.contact&&d.with_contact!==false?d.contact:'',sources:(d.sources||[]).map((_,n)=>n).filter(n=>!d.dropped?.includes(n)),...(t.elements.replace?{replace:t.elements.replace.checked}:{})});
+  handingOff.delete(t.dataset.card);handoffNotes.delete(id);
+  if(r?.chat){location.hash='chat='+id;toast(r.why);$('#toast').dataset.about=id}  // they had it already: a check-in, with nothing to send it on
+  else if(!r?.checkin){toast('Handed off. The to-do shows how it goes.');$('#toast').dataset.about=id}
+  await refresh()}catch(err){failed(err)}});
 // Settings > Fleet: the "Take this on in your own Machine" line in handoff emails (on by default)
 $('#settings-take-line').onclick=async e=>{const b=e.currentTarget,on=b.getAttribute('aria-checked')!=='true';b.disabled=true;
  try{const r=await fleetPost('fleet_handoff_take_line',{on});if(state.fleet)state.fleet.take_line=r.take_line;b.setAttribute('aria-checked',String(r.take_line));notice(r.take_line?'Handoff emails offer their own Machine.':'Handoff emails leave out their own Machine.')}catch(err){errCaught(err);notice(err.message)}finally{b.disabled=false}};

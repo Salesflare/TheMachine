@@ -73,6 +73,13 @@ def settle_sent(store, db, suggestion_id, job_id, label='', note=None):
             sent = {}
         outcomes.wait_for_result(db, row, str(sent.get('to_name') or '') if isinstance(sent, dict) else '', now())
         return True
+    if checking_in(db, dict(row)):
+        # The owner's check-in nudge went out while the teammate still has it: it waits on them again, under Later
+        # until the next check-in, and their answer to the handoff still settles it (handoff_latest)
+        until = handoff_checkin(bool(row['urgent']), row['due'])
+        store._decide(db, suggestion_id, 'snooze', (note or (i18n.t('Sent: {}', label) if label else i18n.t('Sent')))[:200],
+                      CHECKIN_SENT_PREFIX + job_id, 'assistant', snoozed_until=until)
+        return True
     store._decide(db, suggestion_id, 'complete', (note or (i18n.t('Sent: {}', label) if label else i18n.t('Sent')))[:200], 'sent:' + job_id, 'assistant')
     return True
 
@@ -309,6 +316,33 @@ def handoff_wait(db, suggestion, awake=False):
     if not row or (stage or row['status']) not in ('asked', 'waiting'):
         return None
     return {'name': (str(row['name'] or '').split() or ['them'])[0]}
+
+
+# Check in now on a to-do a teammate still has (machine/app/fleet.py handoff_checkin): the owner's ask for a nudge, and
+# the to-do going back to wait on them once that nudge went out (settle_sent)
+CHECKIN_PREFIX = 'handoff-checkin:'
+CHECKIN_SENT_PREFIX = 'handoff-checkin-sent:'
+
+
+def checking_in(db, suggestion):
+    """A to-do working on, or showing, a check-in nudge to the teammate who still has it: open, not snoozed, and the
+    owner's Check in now is newer than its handoff's wait (or the last check-in's send)."""
+    if suggestion.get('status') not in ('accepted', 'instructions', 'prepared'):
+        return False
+    row = db.execute("SELECT id FROM decisions WHERE suggestion_id=? AND (id LIKE 'handoff-checkin%' OR id LIKE 'fleet-handoff-wait-%') "
+                     'ORDER BY rowid DESC LIMIT 1', (suggestion['id'],)).fetchone()
+    return bool(row and row['id'].startswith(CHECKIN_PREFIX)) and bool(handoff_wait(db, suggestion, awake=True))
+
+
+def handoff_latest(db, suggestion_id):
+    """The to-do's latest decision as a handoff's answer sees it: the owner's check-in (Check in now), the send of its
+    nudge (its edits in the chat, its Send) and its wait after are no choice of theirs about the handoff, so the
+    teammate's answer still settles it. Closing or reopening it is."""
+    rows = db.execute('SELECT id,source,choice FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 200', (suggestion_id,)).fetchall()
+    handed = next((n for n, r in enumerate(rows) if r['source'] == 'fleet' and r['id'].startswith('fleet-handoff-')), len(rows))
+    checks = [n for n, r in enumerate(rows[:handed]) if r['id'].startswith('handoff-checkin')]
+    first = checks[-1] if checks else -1  # the first check-in since it was handed off: from there on, the check-ins' own
+    return next((r for n, r in enumerate(rows) if n > first or r['choice'] in ('complete', 'reject', 'reopen', 'undo')), None)
 
 
 def kept_steps(db, suggestion_id, job_id, action, do_now=False):
@@ -628,8 +662,7 @@ class DecisionsStore:
         """Apply an answer only while this exact handoff still owns the card. Owner input wins, atomically."""
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            latest = db.execute('SELECT id,source FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 1',
-                                (suggestion_id,)).fetchone()
+            latest = handoff_latest(db, suggestion_id)  # a check-in the owner asked for meanwhile leaves it theirs to settle
             # Handed off, or taken on and waiting for the to-do's result (handoff_result_wait): their Done closes it
             if not latest or latest['source'] != 'fleet' or latest['id'] not in ('fleet-handoff-wait-' + request_id, 'fleet-handoff-result-' + request_id):
                 return {'skipped': True, 'reason': 'newer_card_choice'}
@@ -644,7 +677,7 @@ class DecisionsStore:
             row = db.execute('SELECT * FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not row or not row['done_when'] or row['status'] in ('completed', 'rejected'):
                 return False
-            latest = db.execute('SELECT id,source FROM decisions WHERE suggestion_id=? ORDER BY rowid DESC LIMIT 1', (suggestion_id,)).fetchone()
+            latest = handoff_latest(db, suggestion_id)
             if not latest or latest['source'] != 'fleet' or latest['id'] not in ('fleet-handoff-wait-' + request_id, 'fleet-handoff-result-' + request_id):
                 return False
             if latest['id'] == 'fleet-handoff-result-' + request_id:
@@ -666,7 +699,8 @@ class DecisionsStore:
             card = db.execute('SELECT status FROM suggestions WHERE id=?', (suggestion_id,)).fetchone()
             if not latest or not card:
                 return {'skipped': True, 'reason': 'no_card'}
-            if card['status'] == 'snoozed' and latest['source'] == 'fleet' and latest['id'] == 'fleet-handoff-wait-' + request_id:
+            own = handoff_latest(db, suggestion_id)  # waiting again after a check-in nudge went out: still this handoff's
+            if card['status'] == 'snoozed' and own and own['source'] == 'fleet' and own['id'] == 'fleet-handoff-wait-' + request_id:
                 return self._decide(db, suggestion_id, 'accept', '', decision_id, 'fleet')
             try:
                 after = dt.datetime.fromisoformat(latest['created_at']) >= dt.datetime.fromisoformat(str(handed_at))

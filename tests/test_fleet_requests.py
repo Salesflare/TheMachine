@@ -530,7 +530,8 @@ class Requests(unittest.TestCase):
             extra = self.store.suggestion_result(row, db)
         self.assertEqual(extra.get('handoff_still'), {'name': 'Kim'})
         self.assertNotIn('handoff_wait', extra)
-        self.assertIn('Still with Kim · check in?', a.card({**row, **extra}))
+        self.assertIn('Still with Kim', a.card({**row, **extra}))
+        self.assertNotIn('check in?', a.card({**row, **extra}))  # plain status: Check in now is the one way to check in
         open_kim = [x for x in self.fleet.view()['asked'] if x['kind'] == 'handoff' and not x.get('withdrawn')]
         self.assertEqual(len(open_kim), 1)
         self.app.action('fleet_handoff_take_back', {'suggestion_id': card}, owner_dashboard=True)
@@ -829,6 +830,92 @@ class Requests(unittest.TestCase):
             db.execute("UPDATE suggestions SET title='Waiting on Kim: my words',title_source='user' WHERE id=?", (mine,))
         self.store.handoff_mine_card(mine)
         self.assertEqual(self.card_row(mine)['title'], 'Waiting on Kim: my words')
+
+    # -- Check in now, on a to-do a teammate still has: a nudge drafted where it was asked, never sent from here
+    def checking_in(self, key='k-check'):
+        """Handed to Kim, no answer, and the check-in is due: back on the list, still with Kim."""
+        self.with_kim()
+        self.fleet.wait_card = lambda card_id, why, key, expected: self.store.wait_handoff(card_id, why, key, expected)
+        self.fleet.close_card = lambda card_id, why, key: self.store.decide_handoff(card_id, 'complete', why, key, key.removeprefix('fleet-handoff-'))
+        self.fleet.wake_card = lambda card_id, key, at: self.store.handoff_back(card_id, key, key.removeprefix('fleet-handoff-back-'), at)
+        card = self.ready_card([], key)
+        self.fleet.hand_off(card, self.ref, 'kim1', 'Export leaks rows', self.HANDOFF_TEXT)
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET snoozed_until='2000-01-01T00:00:00+00:00' WHERE id=?", (card,))
+            kim = db.execute("SELECT id FROM fleet_out WHERE kind='handoff'").fetchone()[0]
+        self.store.wake_snoozed()
+        return card, kim
+
+    def check_ins(self, card):
+        with self.store.connect() as db:
+            return [dict(r) for r in db.execute("SELECT choice,feedback,source FROM decisions WHERE suggestion_id=? AND id LIKE 'handoff-checkin:%'", (card,))]
+
+    def test_check_in_now_drafts_a_nudge_where_it_was_asked_and_their_answer_still_settles_it(self):
+        card, kim = self.checking_in()
+        done = self.app.action('fleet_handoff_checkin', {'suggestion_id': card}, owner_dashboard=True)
+        self.assertEqual(done, {'card': card, 'channel': 'email', 'name': 'Kim'})  # the to-do's own email thread
+        asked = self.check_ins(card)
+        self.assertEqual([(x['choice'], x['source']) for x in asked], [('other', 'dashboard')])
+        self.assertTrue(asked[0]['feedback'].startswith('Check in with Kim on email: a short, specific nudge'))
+        row = self.card_row(card)
+        self.assertEqual(row['status'], 'instructions')  # its run drafts the nudge, as for any Do it
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT status FROM preparations WHERE suggestion_id=?', (card,)).fetchone()[0], 'queued')
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM action_jobs WHERE suggestion_id=?', (card,)).fetchone()[0], 0)  # nothing sent
+            extra = self.store.suggestion_result(row, db)
+        self.assertEqual((extra.get('handoff_still'), extra.get('handoff_checkin')), ({'name': 'Kim'}, True))
+        self.assertNotIn('Still with Kim', a.card({**row, **extra}))  # its draft's status leads, not the handoff's
+        self.assertIn(('Asked for a check-in', True, None), self.chat_events(card))  # a tap, not words put in the owner's mouth
+        self.assertEqual(self.fleet.handoff_draft(card)['note'], '')  # the check-in is no note for whoever takes it on
+        # Kim takes it on meanwhile: the handoff still owns the to-do, so it closes as handed off
+        self.fleet.take_answer({'id': kim, 'status': 'answered', 'answer': {'stage': 'accepted'}})
+        self.assertEqual(self.card_row(card)['status'], 'completed')
+
+    def test_a_sent_check_in_waits_on_them_again_and_a_decline_still_brings_it_back(self):
+        from machine.store.decisions import settle_sent
+        card, kim = self.checking_in('k-check-sent')
+        self.app.action('fleet_handoff_checkin', {'suggestion_id': card}, owner_dashboard=True)
+        nudge = {'kind': 'email', 'revision': 'r1', 'to': ['kim@acme.example'], 'subject': 'Export', 'body': 'Any news?', 'account_id': 'work'}
+        with self.store.connect() as db:
+            db.execute("UPDATE suggestions SET status='prepared',next_action=? WHERE id=?", (json.dumps(nudge), card))
+            db.execute("INSERT INTO action_jobs(id,suggestion_id,revision,payload,status,created_at,updated_at,approval_id,source,rfc_message_id) "
+                       "VALUES('j1',?,'r1',?,'sent',?,?,'ap1','dashboard','')", (card, json.dumps(nudge), NOW.isoformat(), NOW.isoformat()))
+            db.execute("INSERT INTO decisions VALUES('ap1',?,'send','','dashboard',?)", (card, NOW.isoformat()))
+            self.assertTrue(settle_sent(self.store, db, card, 'j1'))
+        row = self.card_row(card)
+        self.assertEqual(row['status'], 'snoozed')  # waiting on Kim again, until the next check-in
+        with self.store.connect() as db:
+            self.assertEqual(self.store.suggestion_result(row, db).get('handoff_wait'), {'name': 'Kim'})
+        self.fleet.take_answer({'id': kim, 'status': 'answered', 'answer': {'stage': 'declined'}})
+        self.assertEqual(self.card_row(card)['status'], 'prepared')  # back to the owner, as any declined handoff
+
+    def test_check_in_with_nothing_to_send_on_says_so_and_opens_the_chat(self):
+        card, _ = self.checking_in('k-check-chat')
+        self.app.config = {**CONFIG, 'accounts': [{**WORK, 'shared': True}, tf.HOME]}  # the thread's account only reads
+        done = self.app.action('fleet_handoff_checkin', {'suggestion_id': card}, owner_dashboard=True)
+        self.assertEqual(done, {'chat': True, 'why': 'Nothing connected here can message Kim. Check in from the chat.'})
+        self.assertEqual(self.check_ins(card), [])
+
+    def test_handing_it_to_the_same_teammate_again_is_a_check_in_not_an_error(self):
+        card, _ = self.checking_in('k-check-again')
+        self.assertEqual(self.fleet.handoff_draft(card)['holding'], [{'fleet': self.ref, 'member_id': 'kim1'}])  # the form offers Check in
+        done = self.app.action('fleet_handoff', {'suggestion_id': card, 'fleet': self.ref, 'member_id': 'kim1', 'title': 'Export leaks rows',
+                                                 'summary': self.HANDOFF_TEXT, 'note': 'Need it by Friday'}, owner_dashboard=True)
+        self.assertEqual(done, {'card': card, 'channel': 'email', 'name': 'Kim', 'checkin': True})
+        self.assertTrue(self.check_ins(card)[0]['feedback'].endswith('\nNeed it by Friday'))  # the owner's line goes with it
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM fleet_out WHERE kind='handoff'").fetchone()[0], 1)  # no second handoff
+        # no longer with them (they answered meanwhile): a stale tap does nothing
+        with self.store.connect() as db:
+            db.execute("UPDATE fleet_out SET status='answered',answer=? WHERE kind='handoff'", (json.dumps({'stage': 'declined'}),))
+        self.assertEqual(self.app.action('fleet_handoff_checkin', {'suggestion_id': card}, owner_dashboard=True), {'gone': True})
+
+    def test_the_handoff_form_asks_what_was_promised_not_the_waiting_on_title(self):
+        card = self.handed_card(key='k-wait-title', title='Waiting on Kim Doe: log the export bug', body='Kim said they would log it.')
+        with self.store.connect() as db:
+            db.execute("INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,suggestion_id,created_at,updated_at) "
+                       "VALUES('theirs','Kim Doe','log the export bug',?,1,'a','carded',?,?,?)", (NOW.isoformat(), card, NOW.isoformat(), NOW.isoformat()))
+        self.assertEqual(self.fleet.handoff_draft(card)['task'], 'Log the export bug')
 
     def test_do_it_myself_on_a_promise_to_do_takes_its_title_from_what_was_promised(self):
         """A to-do from someone else's promise: its own title is what they promised, whole, not the cut one."""

@@ -93,7 +93,7 @@ try{
   const k1=page.locator('#task-k1');
   if(!await k1.isVisible())await page.locator('#later-list>summary').click();await k1.waitFor();
   assert.match(await k1.locator('.note.fleet').innerText(),/With Kim · waiting/);
-  assert.equal(await k1.locator('.actions>[data-choice="accept"]').innerText(),'Check in now');
+  assert.equal(await k1.locator('.actions>[data-handoff-checkin]').innerText(),'Check in now');
   assert.equal(await k1.locator('.mm-sub>[data-handoff-take-back]').textContent(),'Take it back');
   const re=k1.locator('.mm-sub>[data-fleet-handoff]');assert.equal(await re.getAttribute('data-full'),'Hand off to someone else');
   const sheet=async()=>{await k1.locator('.more-actions>summary').click();await k1.locator('[data-mm-open]').click()};  // … then Hand off…

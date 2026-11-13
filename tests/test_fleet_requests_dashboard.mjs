@@ -22,13 +22,15 @@ const view={on:true,kinds:{relationships:'who knows someone',intro:'warm intros'
  log:[],notices:[]};
 const card={id:'c1',title:'Send Sam the pricing',body:'Sam asked for pricing.',status:'pending',event_ids:[1],scope:'work',created_at:new Date().toISOString(),fleet_holder:{}};  // a claim without a name
 const state={suggestions:[card],connectors:[],suggestion_counts:{pending:1},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:3}};
-const calls=[];
+const calls=[];let holding=false,checkinFails=false;
 const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify(state));return}
  if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;const call=JSON.parse(body);calls.push(call);
   if(call.action==='fleet_handoff_draft'){res.end(JSON.stringify({suggestion_id:'c1',title:'Send Sam the pricing',summary:'Sam asked for pricing.',contact:'sam@client.example',due:null,task:'Send Sam the pricing',note:'',sources:[{label:'Email from Sam Lee · Thu 22 Oct',kind:'email'}],
-   fleets:[{id:FL,name:'Acme',members:[{member_id:'p',name:'Pat'}]}]}));return}
+   fleets:[{id:FL,name:'Acme',members:[{member_id:'p',name:'Pat'}]}],holding:holding?[{fleet:FL,member_id:'p'}]:[]}));return}
+  if(call.action==='fleet_handoff_checkin'&&checkinFails){res.statusCode=400;res.end(JSON.stringify({error:'Pat’s Machine is offline. Try again later.'}));return}
+  if(call.action==='fleet_handoff_checkin'){res.end(JSON.stringify({card:'c1',channel:'email',name:'Pat'}));return}
   if(call.action==='fleet_handoff')card.fleet_handoff={name:'Pat',stage:'asked'};
   if(['fleet_decide','fleet_split_adjust'].includes(call.action)){view.waiting=view.waiting.filter(x=>x.id!==call.args.id);state.fleet.waiting=view.waiting.length+1}
   res.end(JSON.stringify({status:'answered',ids:{}}));return}
@@ -53,9 +55,32 @@ try{
  assert.deepEqual(await form.locator('.agent-get').allTextContents(),['Contact: sam@client.example×']);
  assert.equal(await form.locator('textarea[name=task]').inputValue(),'Sam wants pricing for 40 seats.');  // kept through the re-render
  await form.locator('button.primary').click();
- await page.getByText('Still with Pat · check in?').waitFor();  // this fake keeps it on top; the service puts it under Later
+ await page.locator('#task-c1 .note.fleet',{hasText:/^Still with Pat$/}).waitFor();  // this fake keeps it on top; the service puts it under Later
  assert.equal(await page.getByText('is on it').count(),0);  // a claim without a teammate's name says nothing
  assert.deepEqual(calls.at(-1),{action:'fleet_handoff',args:{suggestion_id:'c1',fleet:FL,member_id:'p',title:'Send Sam the pricing',summary:'Sam wants pricing for 40 seats. He is a big account.',contact:'sam@client.example',sources:[]}});
+ // Handing it to Pat again while Pat has it: a check-in (a nudge drafted for the owner to send), not a second handoff
+ // and not an error. Anything that goes wrong is said in the form, on this to-do.
+ holding=true;
+ await page.locator('#task-c1 [data-fleet-handoff="c1"]').first().evaluate(b=>b.click());
+ const again=page.locator('#task-c1 .handoff-checkin-form');await again.waitFor();
+ assert.equal((await again.locator('.agent-what').textContent()).trim(),'Pat still has this. Check in drafts a short nudge for you to send.');
+ assert.equal(await again.locator('textarea[name=task]').count(),0);  // no title to resend
+ assert.equal(await again.locator('textarea[name=note]').inputValue(),'');
+ assert.equal(await again.locator('textarea[name=note]').getAttribute('placeholder'),'Anything to add? Optional');
+ assert.equal((await again.locator('button.primary').textContent()).trim(),'Check in');
+ if(process.env.SHOT_DIR)await page.locator('#task-c1').screenshot({path:`${process.env.SHOT_DIR}/handoff-again-form-390.png`});
+ checkinFails=true;
+ await again.locator('textarea[name=note]').fill('Need it by Friday');
+ await again.locator('button.primary').click();
+ await again.locator('.handoff-error').waitFor();
+ assert.equal((await again.locator('.handoff-error').textContent()).trim(),'Pat’s Machine is offline. Try again later.');
+ assert.doesNotMatch(await page.locator('#toast').textContent(),/offline|Report/);  // on the to-do, no toast with Report a bug
+ checkinFails=false;
+ await again.locator('button.primary').click();
+ await again.waitFor({state:'detached'});
+ assert.deepEqual(calls.filter(c=>c.action==='fleet_handoff_checkin').at(-1).args,{suggestion_id:'c1',note:'Need it by Friday'});
+ assert.equal(calls.filter(c=>c.action==='fleet_handoff').length,1);  // no second handoff
+ holding=false;
  // Requests wait as cards under To-dos (tagged Fleet, Work) with Accept, their words shown as text; the Suggestions
  // badge counts them and the Fleet tab has no badge.
  const intro=page.locator('#suggestions #fleet-q_'+'1'.repeat(16));await intro.waitFor();
