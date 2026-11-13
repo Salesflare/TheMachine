@@ -147,6 +147,7 @@ class OwnersLanguageTest(unittest.TestCase):
             db.row_factory = sqlite3.Row
             db.executescript("CREATE TABLE suggestions(id,status,next_action,body,outcome);"
                              "CREATE TABLE action_jobs(suggestion_id,revision,status);"
+                             "CREATE TABLE decisions(id,suggestion_id,choice,feedback,source,created_at);"  # a check-in's send re-waits (checking_in)
                              "INSERT INTO suggestions VALUES('c1','prepared',NULL,'Draft ready.',NULL);")
             store = mock.Mock()
             self.assertTrue(assistant.settle_sent(store, db, 'c1', 'job1', label='Reply to Pat'))

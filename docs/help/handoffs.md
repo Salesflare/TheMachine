@@ -22,7 +22,7 @@ If Pat's Machine can't notify them, the to-do says "Pat won't get a ping. Let th
 
 It comes back on top only when there is something to decide: Pat answered, declined or finished it, the handoff failed, or a deadline came. The check-in follows the due date: a few hours for today, the work day before for soon, the next morning for urgent, otherwise 3 work days.
 
-Back for a check-in, it says "Still with Pat": Pat still has it, nothing came back. **Check in now** drafts a short, specific nudge to Pat where you asked (Slack, WhatsApp, Telegram or email), right on the to-do. Change it if you like; nothing goes until you pick **Send**. Once it went, the to-do waits on Pat again until the next check-in. If nothing you connected can message Pat, the chat opens and says so. **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
+Back for a check-in, it says "Still with Pat". **Check in now** drafts a short nudge to Pat where you asked (Slack, WhatsApp, Telegram or email), on the to-do. Nothing goes until you pick **Send**; then it waits on Pat again. If nothing you connected can message Pat, the chat opens and says so. **Take it back** and **Hand off to someone else** are under **…**, then **Hand off…**.
 
 The to-do's chat shows when it went ("Handed off to Pat's Machine · 14:02") and what came back: accepted, declined (with their note) or done. With no answer yet, it offers **Mark done**, **Snooze** and **Not needed**. To nudge them or take it back, say so in the chat.
 
