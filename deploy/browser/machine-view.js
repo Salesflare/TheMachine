@@ -104,13 +104,15 @@ if (framed) {
         placeMask();
     }
 
-    async function frameWindow() {
+    let wholeByHand = false;  // Whole screen tapped: kept when the screen changes size
+    async function frameWindow(keepWhole = false) {
+        if (!keepWhole) wholeByHand = false;
         try {
             const r = await fetch('region', {cache: 'no-store'});
             region = r.ok ? (await r.json()).region : null;
         } catch { region = null; }
-        whole = !region;
-        frame(false);
+        whole = !region || wholeByHand;
+        frame(whole);
         label();
     }
 
@@ -130,6 +132,17 @@ if (framed) {
         };
         const d = rfb._display, move = d.viewportChangePos.bind(d);
         d.viewportChangePos = (dx, dy) => { move(dx, dy); placeMask(); };  // moving around keeps the cover on the window's edges
+        // The Machine's screen changes size (a display added or resized): the zoom was for the old one, and the window
+        // has moved on it, so ask where it is now and frame it again (a hidden pane does that once it is shown).
+        if (typeof rfb._resize === 'function') {
+            const resized = rfb._resize.bind(rfb), self = rfb;
+            let sizeTimer = 0;
+            rfb._resize = (w, h) => {
+                resized(w, h);
+                clearTimeout(sizeTimer);
+                sizeTimer = setTimeout(() => { if (rfb === self) frameWindow(true); }, 80);
+            };
+        }
         UI.closeControlbar?.();  // noVNC's side bar stays one tap away on its handle
         frameWindow();
     }
@@ -210,7 +223,7 @@ if (framed) {
         if (!b || !rfb) return;
         if (b.dataset.v === 'whole') {
             if (whole) frameWindow();
-            else { whole = true; frame(true); label(); }
+            else { whole = wholeByHand = true; frame(true); label(); }
         }
         if (b.dataset.v === 'in') apply(zoom * 1.4);
         if (b.dataset.v === 'out') apply(zoom / 1.4);

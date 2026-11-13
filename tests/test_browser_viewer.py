@@ -222,6 +222,18 @@ class DesktopViewTest(unittest.TestCase):
             for bad in ('../secret', 'app/../../x', '.git/config', '', 'app', '%2e%2e/x'):
                 self.assertIsNone(browser_viewer.view_file(tmp, bad), bad)
 
+    def test_the_machines_own_viewer_scripts_come_from_this_app(self):
+        # The viewer folder is written at install; an update never rewrote it, so the pane ran an old viewer
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in browser_viewer.OWN_FILES:
+                Path(tmp, name).write_text('// an old copy from the install')
+                found = browser_viewer.view_file(tmp, name)
+                self.assertEqual(found, browser_viewer.UNITS / name)
+                self.assertEqual(found.read_text(), (browser_viewer.ROOT / 'deploy/browser' / name).read_text())
+            Path(tmp, 'app').mkdir()
+            Path(tmp, 'app/machine-view.js').write_text('x')
+            self.assertEqual(browser_viewer.view_file(tmp, 'app/machine-view.js'), Path(tmp, 'app/machine-view.js'))
+
     def test_bridge_carries_vnc_both_ways(self):
         import io
         import socket

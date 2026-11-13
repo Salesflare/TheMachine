@@ -267,11 +267,18 @@ def vnc_target(spec):
     return (socket.AF_INET6 if host == '::1' else socket.AF_INET), (host, int(port))
 
 
+OWN_FILES = ('machine-view.js', 'machine-clipboard.js')
+
+
 def view_file(web, path):
-    """The viewer file for /browser/<path> in `web` (noVNC, maybe with links into its package), or None."""
+    """The viewer file for /browser/<path> in `web` (noVNC, maybe with links into its package), or None. The
+    Machine's own scripts come from this app, not from `web`: that folder is written once, at install, so an update
+    never reached it and the pane kept an old viewer (one that opened mostly black, a corner of the browser showing)."""
     parts = [p for p in urllib.parse.unquote(path).split('/') if p]
     if not parts or any(p.startswith('.') or '\\' in p for p in parts):
         return None
+    if len(parts) == 1 and parts[0] in OWN_FILES and (UNITS / parts[0]).is_file():
+        return UNITS / parts[0]
     found = Path(web).expanduser().joinpath(*parts)
     return found if found.is_file() else None
 
