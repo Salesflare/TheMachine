@@ -174,6 +174,11 @@ def keep(db, meeting, verdict, suggestion_id, stamp):
                (meeting['key'], meeting['id'], suggestion_id, verdict, meeting['start'].isoformat(), stamp))
 
 
+def moved_to(db, key, start):
+    """Records a briefing's meeting at its new time."""
+    db.execute('UPDATE meeting_preps SET starts_at=? WHERE dedupe_key=?', (start.isoformat(), key))
+
+
 def taken(db, event_id, open_states):
     """Whether an open to-do already holds this meeting (the review made one for it)."""
     return db.execute(f"SELECT 1 FROM suggestions s, json_each(s.event_ids) j WHERE j.value=? AND s.status IN ({','.join('?' * len(open_states))}) LIMIT 1",

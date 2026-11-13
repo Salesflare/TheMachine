@@ -130,8 +130,8 @@ class MeetingPrepApp:
                 db.execute('BEGIN IMMEDIATE')
                 for sid, start, key in meeting_prep.moved(db, CARD_OPEN, current):
                     at = (start or current).astimezone(dt.timezone.utc).isoformat(timespec='seconds')
-                    db.execute('UPDATE suggestions SET expires_at=? WHERE id=?', (at, sid))
-                    db.execute('UPDATE meeting_preps SET starts_at=? WHERE dedupe_key=?', ((start or current).isoformat(), key))
+                    self.store.move_moment(db, sid, at)
+                    meeting_prep.moved_to(db, key, start or current)
         except sqlite3.OperationalError as error:
             LOG.warning('meeting prep follow error=%s', type(error).__name__)
         self.store.expire_passed()
