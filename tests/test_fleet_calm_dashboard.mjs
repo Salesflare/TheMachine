@@ -20,7 +20,7 @@ const view={on:true,ask_meetings:false,kinds:{},kind_rules:{},no_details:[],scop
    {id:'s4',fleet:FL,kind:'recipient',name:'Pat Lee',email:'pat@acme.example',fp:FP,service:'intercom'}],
   graph:[{fleet:FL,confirmed:true,paused:true,teammates:2,admin:true,new_devices:[{member:'p',name:'Pat Lee',fp:FP,from:at}]}],
   shares:[],accounts:[],can_share:[]},
- intro_offers:[{fleet:FL,member_id:'p',name:'Pat Lee',about:'globex.example',label:'Globex'},{fleet:FL,member_id:'k',name:'Kim Ray',about:'globex.example',label:'Globex'}],
+ intro_offers:[{ask_id:'a1',fleet:FL,member_id:'p',name:'Pat Lee',about:'globex.example',label:'Globex'},{ask_id:'a2',fleet:FL,member_id:'k',name:'Kim Ray',about:'globex.example',label:'Globex'}],
  waiting:[],free:[],log:[],notices:[],
  asked:[{id:'a1',fleet:FL,name:'Pat Lee',question:'Who knows someone at Globex?',status:'answered',answer:'knows 2 people'},
   {id:'a2',fleet:FL,name:'Kim Ray',question:'Who knows someone at Globex?',status:'answered',answer:'knows 1 person'}]};
@@ -63,10 +63,21 @@ try{
   // Who knows: the question once, each answer under it
   const who=pane.locator('.fleet-box',{hasText:'Who knows someone?'});
   assert.equal(await who.getByText('Who knows someone at Globex?',{exact:true}).count(),1);
-  // The company by name, never its domain; the intro ask still carries the domain
-  assert.match(await who.innerText(),/Pat Lee knows someone at Globex\./);assert.doesNotMatch(await who.innerText(),/globex\.example/);
-  assert.equal(await who.locator('.fleet-intro-form').first().getAttribute('data-about'),'globex.example');
-  assert.match(await who.locator('.list article',{hasText:'Who knows someone at'}).innerText(),/Pat Lee · knows 2 people\s+Kim Ray · knows 1 person/);
+  // One list: Ask for an intro folded under the answer that offers it, no second block per person; the company by
+  // name, never its domain, while the intro ask still carries the domain
+  assert.match(await who.locator('.list article',{hasText:'Who knows someone at'}).innerText(),/Pat Lee · knows 2 people\s+Ask for an intro\s+Kim Ray · knows 1 person\s+Ask for an intro/);
+  assert.doesNotMatch(await who.innerText(),/knows someone at Globex\.|globex\.example/);
+  const intro=who.locator('details.fleet-intro');assert.equal(await intro.count(),2);
+  assert.equal(await intro.first().locator('input').isVisible(),false);
+  await intro.first().locator('summary').click();assert.ok(await intro.first().locator('input').isVisible());
+  const form=intro.first().locator('.fleet-intro-form');
+  assert.deepEqual([await form.getAttribute('data-about'),await form.getAttribute('data-member')],['globex.example','p']);
+  await intro.first().locator('summary').click();
+  // Every ask: its button at its own width, then Not now as text beside it, on one line
+  for(const a of await pane.locator('.fleet-yn').all()){
+   const r=await a.evaluate(e=>[...e.children].filter(b=>b.checkVisibility()).map(b=>{const x=b.getBoundingClientRect();return [Math.round((x.top+x.bottom)/2),x.width,e.getBoundingClientRect().width,getComputedStyle(b).backgroundColor]}));
+   assert.equal(new Set(r.map(x=>x[0])).size,1,`${tag}: an ask's buttons on two lines`);assert.ok(r[0][1]<r[0][2]*0.6,`${tag}: a full-width ask button`);
+   for(const x of r.slice(1))assert.equal(x[3],'rgba(0, 0, 0, 0)',`${tag}: Not now with a fill`)}
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${tag}: scrolls sideways`);
   if(shots){await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:`${shots}/fleet-calm-${width}-${scheme}.png`,fullPage:true})}
   // Keys pressed earlier (Escape) still land without a ring; j brings it, whole, not clipped to a line by its list

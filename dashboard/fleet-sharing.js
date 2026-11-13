@@ -51,7 +51,7 @@ function sharedHTML(work,g,d){const n=x=>Number(x||0).toLocaleString(DL),fleet=w
 const SHARE_PICK={team:'Share with team',people:'Share with…',private:'Keep private'},sharedGroupOpen=new Set();  // groups the owner opened stay open through a reload
 document.addEventListener('toggle',e=>{const d=e.target;if(d?.classList?.contains('shared-group-list')){const k=d.closest('.shared-group')?.dataset.sharedGroup??'';d.open?sharedGroupOpen.add(k):sharedGroupOpen.delete(k)}},true);
 function sharedAskHTML(d){const who=(d.teammates||[]).length,groups=d.groups?.length?d.groups:[{name:'',suggest:null,count:d.unsure.length}];
- // One primary in the box: the first group's suggestion. The groups after it say theirs in words (Suggested: …).
+ // One primary per box: the first group's suggestion
  const lead=groups.find(g=>g.suggest&&d.unsure.some(x=>(x.group||'')===g.name));
  return html`<div class="fleet-box shared-ask"><h3>Share these?</h3><p class="sub">Not sure these are client work. They stay with you until you choose.</p><p class="fleet-fine muted">Share with team goes to everyone in the Fleet. Share with… goes only to the teammates you pick.</p>${groups.map(g=>{
   const rows=d.unsure.filter(x=>(x.group||'')===g.name);if(!rows.length)return '';

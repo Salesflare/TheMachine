@@ -237,7 +237,7 @@ dialog h2,.snooze-heading h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight)
 .fleet-ho.tap{padding-right:32px!important}.fleet-ho.tap::after{right:4px}
 /* Lists inside a box: rows divided by a line, not boxes in a box. */
 .fleet-box .list{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
-#fleet-view :is(.link,.acct-quiet){color:inherit;text-decoration:underline var(--border-strong);text-underline-offset:2px}
+#fleet-view :is(.link,.acct-quiet){color:inherit;text-decoration:underline var(--border-strong);text-underline-offset:2px}#fleet-view :is(.link,.acct-quiet):hover{text-decoration-color:currentColor}
 .fleet-box .list>article{background:transparent;border:0;border-top:1px solid var(--border);border-radius:0;box-shadow:none;margin:0;padding:12px 0}
 .fleet-box .list>article p{margin:2px 0}
 /* Sub-tabs (Fleet, Graph, Connections): one pill row. On a phone it scrolls sideways with a fade on the side that
