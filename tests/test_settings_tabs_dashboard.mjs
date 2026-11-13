@@ -13,14 +13,15 @@ const {chromium}=await import('./browser.mjs');
 // phone (390) it scrolls sideways with a fade at its edge, the open tab scrolled into view. The page stays inside the screen.
 const dashboard=await dashboardPage();
 const hours={days:[0,1,2,3,4],start:'08:00',end:'18:00',morning:'09:00',digest_at:'08:30',timezone:'UTC',saveable:true};
-let hosted=true,paired=false,model=true;
+let hosted=true,paired=false,model=true,addrs=false;
 const server=createServer(async(req,res)=>{
  const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],hours,
   signatures:[{account_id:'mail',email:'owner@example.org',service:'gmail',html:'<b>Owner</b>',source:'detected',saveable:true}],skills:{skills:[],waiting:0,targets:[],folder:'skills/the-machine'},
   ...(model?{model_usage:[],model_status:{model:'openai/example-model',provider:'openai',windows:[],checked_at:new Date().toISOString()}}:{}),
-  ...(hosted?{manage_url:'https://account.example/setup',account_url:'https://account.example/account'}:{}),...(paired?{fleet:{on:true,waiting:0},account_url:'https://app.themachine.computer/account'}:{})}));return}
+  ...(hosted?{manage_url:'https://account.example/setup',account_url:'https://account.example/account'}:{}),...(paired?{fleet:{on:true,waiting:0},account_url:'https://app.themachine.computer/account'}:{}),
+  ...(addrs?{own_addresses:{yours:[{address:'owner@example.org',sources:['Connected']}],maybe:[],team:[],not_mine:[],domains:[{domain:'example.org'}]}}:{})}));return}
  if(url.pathname==='/_machine/support-access'){res.end(JSON.stringify({until:new Date(Date.now()+36e5).toISOString(),hours:24,accesses:[]}));return}  // on: Settings, Security shows it
  res.end('{}');
 });
@@ -50,6 +51,9 @@ try{
   await page.locator('#settings-tabs [data-settings-tab="general"]').click();
   assert.equal(await visible(page,'#theme-toggle'),true);assert.equal(await visible(page,'#settings-account'),false);assert.equal(await visible(page,'#settings-acct'),false);
   for(const sel of ['#hours','#signatures','#settings-skills','#model-panel'])assert.equal(await visible(page,sel),false,sel);
+  // Language and region: its dropdowns share one width and the same left and right edge
+  const loc=await page.evaluate(()=>[...new Set([...document.querySelectorAll('.locale-list select')].filter(s=>s.checkVisibility()).map(s=>{const r=s.getBoundingClientRect();return Math.round(r.left)+'-'+Math.round(r.right)}))]);
+  assert.ok(loc.length<=1,`Language and region's dropdowns line up at ${width}px: ${loc}`);
   assert.equal(await help(page),HELP+'settings');
   // Each tab shows its own part.
   for(const [tab,sel] of [['notify','#hours'],['writing','#signatures'],['writing','#settings-voices'],['skills','#settings-skills'],['model','#model-panel']]){
@@ -86,7 +90,17 @@ try{
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   assert.equal(await tabs(page).then(t=>t[0]),'Account');
+  // Fleet's rows are rows like the others: a bold label and a control on the right
+  await page.locator('#settings-tabs [data-settings-tab="general"]').click();await page.locator('#settings-fleet-rules:visible').waitFor();
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#settings-fleet .settings-list>div')].filter(r=>r.checkVisibility()).map(r=>{const s=r.querySelector(':scope>.grow>strong'),c=r.querySelector(':scope>:is(button,select)');return !!s&&!!c&&c.getBoundingClientRect().left>=s.getBoundingClientRect().right-1}).every(Boolean)),true);
   paired=false;
+  // On your own computer with addresses found: an Account tab, and the account in short (Join the Network) first in it,
+  // not also at the end of General
+  addrs=true;await page.goto('about:blank');await page.goto(base+'/#settings/account');await page.locator('#settings-addresses:visible').waitFor();
+  assert.equal(await tabs(page).then(t=>t[0]),'Account');assert.equal(await visible(page,'#settings-cloud'),true);
+  assert.equal(await page.evaluate(()=>[...document.querySelectorAll('#settings>[data-stab="account"]:not([hidden])')].map(x=>x.id).join()),'settings-account-block,settings-addresses,settings-domains');
+  await page.locator('#settings-tabs [data-settings-tab="general"]').click();assert.equal(await visible(page,'#settings-cloud'),false);
+  addrs=false;
   await context.close();
  }
  assert.deepEqual(errors,[]);

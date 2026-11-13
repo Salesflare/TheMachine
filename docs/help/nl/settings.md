@@ -8,8 +8,8 @@ order: 1
 ---
 Open **Instellingen** met het tandwiel bovenaan. De tabbladen:
 
-- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md). **Uitloggen** staat bovenaan, **Abonnement opzeggen** en **Account verwijderen** helemaal onderaan. Op een Machine op je eigen computer, gekoppeld aan het Network: je Fleet, gebruikersnaam, vrienden en inloggen, elk met een link die dat deel van je account opent (log daar in), en **Account verwijderen** onderaan.
-- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en importeren, de versie die hij draait, en je account.
+- **Account**: **Je adressen**, de adressen die als jou tellen, met waar elk vandaan komt, en **Uitloggen**. Op een gehoste Machine ook je abonnement, facturen, Machine, Fleet, adres, vrienden, inloggen en gegevens, elk met een knop. Zie [Abonnementen en facturatie](plans-and-billing.md). **Uitloggen** staat bovenaan, **Abonnement opzeggen** en **Account verwijderen** helemaal onderaan. Op een Machine op je eigen computer, gekoppeld aan het Network: je Fleet, gebruikersnaam, vrienden en inloggen, elk met een link die dat deel van je account opent (log daar in), en **Account verwijderen** onderaan. Nog niet gekoppeld: **Word lid van het Network**, bovenaan.
+- **Algemeen**: taal en regio, spraakinvoer, dit apparaat, de browser van je Machine, je Fleet, exporteren en importeren, en de versie die hij draait. Zonder tab Account staat **Word lid van het Network** onderaan.
 - **Beveiliging**: Standaard of Voorzichtig, en de instellingen die ze bepalen. Zie [Beveiligingsniveaus](security-levels.md). Ook **Toegang voor support**, zolang het aanstaat: zie [Hulp krijgen](get-support.md#support-access).
 - **Activiteit**: alles wat The Machine voor je deed, nieuwste eerst. Zie [Activiteit](activity.md).
 - **Meldingen**: wat je waar bereikt, en je werkuren. Zie [Meldingen](notifications.md) en [Werkuren](work-hours.md).

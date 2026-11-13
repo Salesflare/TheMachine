@@ -203,7 +203,7 @@ body.chat-open:has(#inbox:not([hidden])) #fixed-notice,body.chat-open:has(#inbox
 .cm-menu .cm-speed{display:flex;flex-direction:column;margin-top:4px;padding-top:4px;border-top:1px solid var(--c-line,var(--border))}
 .cm-menu .cm-group{margin:0;padding:6px 10px 3px 9px;color:var(--c-text-3,var(--muted));font-size:var(--fs-xs,.75rem);font-weight:var(--fw-semibold,600);letter-spacing:.04em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(pointer:coarse){.cm-menu :is([role="menuitemradio"],[role="menuitemcheckbox"]){min-height:44px}}
-@media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .settings-list>div{flex-wrap:wrap}#model-chats .grow{flex-basis:100%}#model-chats .select-like{width:100%}}
+@media(max-width:520px){#model-panel .settings-list>div:first-child{flex-wrap:wrap}#model-chats .select-like{min-width:0;max-width:52%}#model-chats .select-like>span{overflow:hidden;text-overflow:ellipsis}}
 .chat-status:not(:empty){margin:0 0 12px}
 .chat-picks{display:flex;flex-wrap:nowrap;gap:8px;margin:0 0 12px;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}.chat-picks::-webkit-scrollbar{display:none}.chat-picks:empty,.chat-picks[hidden]{display:none}
 .chat-say{flex:none;width:auto;min-height:30px;margin:0;padding:4px 12px;border:1px solid var(--c-line-strong);border-radius:999px;background:none;box-shadow:none;color:var(--muted);font:400 .84rem/1.3 var(--sans);white-space:nowrap;cursor:pointer}.chat-say:hover{background:var(--c-hover);color:var(--text)}

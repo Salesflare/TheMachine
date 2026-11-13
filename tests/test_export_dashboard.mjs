@@ -82,6 +82,8 @@ try{
   assert.deepEqual(await page.locator('#export-list [data-export-option] > .grow > strong').allInnerTexts(),['Everything','Knowledge for another AI']);
   assert.equal(await page.evaluate(()=>EXPORT_OPTIONS.map(o=>o.id).join()),'everything,knowledge');
   assert.equal(await page.locator('[data-export-option="knowledge"] a.learn').getAttribute('href'),'https://themachine.computer/help/knowledge-export');
+  // One row pattern, also on a phone: words left, the button right of them (Export as Import's Choose file)
+  assert.deepEqual(await page.locator('#export-list>div:has(>.grow)').evaluateAll(rs=>rs.map(r=>{const t=r.querySelector('.grow').getBoundingClientRect(),b=r.querySelector(':scope>button,:scope>a,:scope>form');if(!b)return 'none';const x=b.getBoundingClientRect();return x.left>=t.right-1&&x.top<t.bottom})),[true,true,true],tag);
   // Knowledge for another AI: Export opens two switches (off) and a passphrase; Download packs it and fetches it by token
   await page.locator('[data-export-go="knowledge:toggle"]').click();
   assert.deepEqual(await page.locator('[data-export-go^="knowledge:"][role=switch]').evaluateAll(b=>b.map(x=>x.getAttribute('aria-checked'))),['false','false']);

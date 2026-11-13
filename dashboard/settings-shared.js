@@ -13,7 +13,7 @@ let settingsTab=SETTINGS_OLD[localStorage.getItem('settings-tab')]||localStorage
 {const bar=document.createElement('div');bar.className='sub-tabs';bar.id='settings-tabs';bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Settings');
  bar.innerHTML=SETTINGS_TABS.map(([id,label])=>`<button type="button" role="tab" data-settings-tab="${id}" aria-selected="false">${label}</button>`).join('');
  $('#settings').prepend(bar)}
-function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new Set(),set=(el,k,v)=>{if(el[k]!==v)el[k]=v};if(s.firstElementChild!==bar)s.prepend(bar);
+function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new Set(),set=(el,k,v)=>{if(el[k]!==v)el[k]=v};if(s.firstElementChild!==bar)s.prepend(bar);if(typeof settingsAccountPlace==='function')settingsAccountPlace(s);
  let tab='general';for(const el of s.children){if(el===bar)continue;tab=SETTINGS_OF[el.id]||(el.classList.contains('section-head')?SETTINGS_OF[el.nextElementSibling?.id]||'general':tab);el.dataset.stab=tab;if(!el.hidden&&!el.classList.contains('section-head'))shown.add(tab)}
  settingsNow=shown.has(settingsTab)?settingsTab:SETTINGS_TABS.map(t=>t[0]).find(t=>shown.has(t))||'general';const live=!s.hidden&&lazyIn('settings');if(live)loadSettingsViews();if(settingsNow==='account'&&live)loadAccount();if(settingsNow==='general'&&live){loadDictation();loadExport()}if((settingsNow==='general'||settingsNow==='model')&&live)upkeepShown();if(settingsNow==='activity'&&!s.hidden&&typeof actShown==='function')actShown();if(settingsNow==='apps'&&live&&!aiView)aiLoad();if(!s.hidden)helpLink('settings');
  for(const el of s.children)if(el!==bar)el.classList.toggle('stab-off',el.dataset.stab!==settingsNow);

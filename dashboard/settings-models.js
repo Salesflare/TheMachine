@@ -63,7 +63,9 @@ function cmPlace(m,b){m.style.cssText='';const r=b.getBoundingClientRect(),gap=6
   up=below<fair&&(under>=fair||above>below),room=!up?below:under>=fair?under:above;
  m.style.minWidth=Math.max(200,Math.round(r.width))+'px';m.style.maxHeight=Math.max(120,Math.floor(room))+'px';
  if(up)m.style.bottom=Math.round(innerHeight-r.top+gap)+'px';else m.style.top=Math.round(r.bottom+gap)+'px';
- m.style.left=Math.round(Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8)))+'px'}
+ // a picker at the right (Settings rows): the menu's right edge on the picker's, so it grows to the left and stays on screen
+ m.style.left='0px';if(r.left+m.offsetWidth>innerWidth-8){m.style.left='auto';m.style.right=Math.round(Math.max(8,innerWidth-r.right))+'px'}
+ else m.style.left=Math.round(Math.max(8,r.left))+'px'}
 const CM_CHECK=html`<svg class="cm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 function cmMenuClose(focus){const m=$('#cm-menu');if(!m||m.hidden)return;if(m.hidePopover&&m.matches(':popover-open'))m.hidePopover();m.hidden=true;const o=cmOpen;cmOpen=null;if(!o)return;
  const b=o.box.querySelector(`[data-cm-pick="${o.which}"]`);b?.setAttribute('aria-expanded','false');if(focus)b?.focus({preventScroll:true})}
