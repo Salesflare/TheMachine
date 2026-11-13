@@ -110,6 +110,15 @@ class StatusCost(unittest.TestCase):
         for sql, plan in plans.items():
             self.assertIn('sync_activity_failed' if 'sync_activity' in sql else 'COVERING INDEX events_signal_counts', plan, sql)
 
+    def test_an_organization_named_on_a_to_do_is_found_by_index(self):
+        """Each to-do that names its organization looks it up by name (todo_org.card_org): a scan of every Graph node per
+        to-do, 10 to 20 ms each on a Graph of 20,000 nodes. An index on the name, not on the kind: one on the kind
+        sent queries that join Graph events through it, and the many that read all of one kind, the slow way."""
+        with self.store.connect() as db:
+            plan = lambda sql, *args: ' '.join(r[3] for r in db.execute('EXPLAIN QUERY PLAN ' + sql, args))
+            self.assertIn('INDEX graph_nodes_name', plan("SELECT id FROM graph_nodes WHERE kind='org' AND name=? COLLATE NOCASE LIMIT 2", 'Acme'))
+            self.assertNotIn('graph_nodes_name', plan("SELECT id,name,info FROM graph_nodes WHERE kind='org'"))
+
     def test_status_stays_fast_with_a_long_read_history(self):
         """A timing guard: 200,000 successful reads of one connection (a phone feed's months) and 60 to-dos."""
         self.todos(60)
