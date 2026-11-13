@@ -335,13 +335,14 @@ def last_check_data():
     """The emails and chats of the last check (LAST_CHECK) and what the sandbox's review of them said."""
     events = [{'key': key, 'account_id': 'work-gmail', 'kind': 'gmail.message', 'minutes_ago': minutes, 'title': subject, 'body': body,
                'metadata': {'from': sender, 'to': to, **({'cc': cc} if cc else {}), 'labels': ['INBOX', 'UNREAD'], 'thread_id': 't-' + key.replace(':', '-'),
-                            'message-id': f'<{key.replace(":", ".")}@mail.example>'}}
+                            'message-id': f'<{key.replace(":", ".")}@mail.example>',
+                            'source_url': f'https://mail.example/#inbox/t-{key.replace(":", "-")}'}}  # as every collected email has
               for key, sender, to, cc, subject, body, minutes, _ in LAST_CHECK['emails']]
     for key, account, kind, who, chat, text, minutes, _ in LAST_CHECK['chats']:
         meta = ({'chat_name': chat, 'chat_id': slug(chat), 'from_me': False, 'group': False, 'sender_display': who, 'message_id': 'wa-' + key.replace(':', '-')}
                 if kind == 'whatsapp.message' else
                 {'channel_name': chat, 'channel_id': 'C0' + chat.upper(), 'conversation_type': 'channel', 'sender_display': who, 'user_id': 'U2200',
-                 'message_ts': f'1762{minutes:06d}.000300'})
+                 'message_ts': f'1762{minutes:06d}.000300', 'source_url': f'https://lumenlabs.slack.example/archives/C0{chat.upper()}/p1762{minutes:06d}000300'})
         events.append({'key': key, 'account_id': account, 'kind': kind, 'minutes_ago': minutes, 'title': chat if kind == 'whatsapp.message' else f'#{chat}: {who}',
                        'body': text, 'metadata': meta})
     for key, package, text, minutes, _ in LAST_CHECK['phone']:  # stored as the phone's feed stores an app it has no label for

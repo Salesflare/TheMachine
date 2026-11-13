@@ -131,6 +131,10 @@ SAMPLES = {
     'google_meet.transcript': ev('meet', 'm2', 'google_meet.transcript', 'Design review', 'Kit: Shall we start?', **{}),
     'teams.notes': ev('teams', 'tn1', 'teams.notes', 'Planning', 'Action items: send the deck', **{}),
     'teams.transcript': ev('teams', 'tt1', 'teams.transcript', 'Planning', 'Kit: Hello', **{}),
+    # a transcript the owner pasted on a meeting (meeting_notes.py), with its raw stamps
+    'meeting.transcript': ev('cal', 'transcript:1', 'meeting.transcript', 'Weekly sync',
+                             '[0:00:00] Kit Navarro: Morning all.\n[0:00:03] Kit Navarro: Shall we start with the export fix?\n'
+                             '[0:00:06] Robin Hale: Yes, it shipped yesterday.\n[0:01:30] Kit Navarro: Great, then the fair.', **{}),
     'docs.comment': ev('docs', 'd1', 'docs.comment', 'Q4 plan', 'On: “launch in May”\n\nKit Navarro: Should this be June?',
                        **{'source_url': 'https://docs.google.com/document/d/1'}),
     'docs.mention': ev('docs', 'd2', 'docs.mention', 'Q4 plan', 'Kit Navarro: @Robin can you check the numbers?',
@@ -369,6 +373,101 @@ class Rules(unittest.TestCase):
     def test_docs_open_in_the_app_their_link_names(self):
         self.assertEqual(self.items['docs.comment']['app'], 'Google Docs')
         self.assertEqual(self.items['docs.shared']['app'], 'OneDrive')
+
+    def test_a_transcript_reads_as_speaker_turns_at_times_of_day(self):
+        o = self.items['meeting.transcript']
+        self.assertEqual([(t['from'], t['occurred_at'][11:19]) for t in o['turns']],
+                         [('Kit Navarro', '14:01:00'), ('Robin Hale', '14:01:06'), ('Kit Navarro', '14:02:30')])
+        self.assertEqual(o['turns'][0]['body'], 'Morning all. Shall we start with the export fix?')  # a speaker's run, joined
+        self.assertEqual(o['chat'], 'Weekly sync')
+        self.assertNotIn('[0:', json.dumps(shown(o)))
+
+
+# A turn written each way transcripts come: pasted, Zoom's and Teams' WebVTT, "Name (00:01):" and plain "Name: words"
+TRANSCRIPTS = ['[0:00:00] Kit: Hello\n[0:00:06] Robin: Hi there', '00:00:00 Kit: Hello\n00:00:06 Robin: Hi there',
+               'Kit (00:00): Hello\nRobin (00:06): Hi there', 'Kit 0:00: Hello\nRobin 0:06: Hi there',
+               'WEBVTT\n\n1\n00:00:00.000 --> 00:00:04.000\nKit: Hello\n\n2\n00:00:06.000 --> 00:00:09.000\nRobin: Hi there',
+               '- [00:00] Kit: Hello\n- [00:06] Robin: Hi there']
+
+
+class Rows(unittest.TestCase):
+    """A row in Messages (message_view.list_row, events-list.js) keeps the viewer's rules for every kind in the registry."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory()
+        app, _ = fixture(cls.temp.name)  # the Graph knows some senders by name
+        with app.store.connect() as db:
+            cls.shown = dict(zip(SAMPLES, message_view.list_rows(db, [{**e, 'kind': k.split('#')[0]} for k, e in SAMPLES.items()])))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.temp.cleanup()
+
+    def rows(self):
+        return self.shown
+
+    def test_every_kind_with_a_link_opens_it_in_the_same_way(self):
+        for key, row in self.rows().items():
+            url = SAMPLES[key]['metadata'].get('source_url') or ''
+            self.assertEqual(row['url'], url if url.startswith('https://') else '', key)
+            if row['url']:  # "Open in <app> ↗" or "Open original": never a made-up name
+                self.assertIsInstance(row['app'], str, key)
+                self.assertEqual(row['app'], message_view.app_of(key.split('#')[0], url), key)
+        self.assertEqual(message_view.list_row('gmail.message', 'Hi', 'Hi', {'source_url': 'javascript:alert(1)'})['url'], '')
+
+    def test_no_raw_ids_stamps_markup_or_repeats(self):
+        for key, row in self.rows().items():
+            for s in (row['title'], row['who'], row['text'], *(t['from'] + ' ' + t['body'] for t in row.get('turns') or ())):
+                self.assertIsNone(TIMESTAMP.search(s), (key, s))
+                self.assertIsNone(INTERNAL.search(s), (key, s))
+                self.assertIsNone(RAW.search(s), (key, s))
+                self.assertIsNone(re.search(r'\[\d{1,2}:\d{2}', s), (key, s))
+                self.assertIsNone(re.search(r'\*\*|\]\(|```|<https?:|\|[^|\s]+>', s), (key, s))  # markup reads as words
+            self.assertNotIn('@', row['who'].replace('@owner', ''), key)  # who by name, never an address
+            if row['who']:
+                self.assertFalse(message_view.words_in(row['who']) <= message_view.words_in(row['title']), (key, row))
+            self.assertTrue(row['title'], key)
+
+    def test_notifications_by_their_app_never_a_package(self):
+        rows = self.rows()
+        self.assertEqual((rows['android.notification']['title'], rows['android.notification']['text'], rows['android.notification']['who']),
+                         ('Your daily digest is ready', '', 'Medium'))
+        self.assertEqual(rows['android.notification#summary']['title'], 'Acmeshop')
+
+    def test_mail_and_chat_senders_by_name(self):
+        rows = self.rows()
+        self.assertEqual(rows['gmail.message#bare']['who'], 'Avery Stone')  # stored by address, named by the Graph
+        self.assertNotIn('<', rows['slack.message']['text'])
+
+    def test_transcripts_in_every_format_read_as_turns(self):
+        for body in TRANSCRIPTS:
+            turns = message_view.transcript_turns(body, AT)
+            self.assertEqual([(t['from'], t['body'], t['occurred_at'][11:19]) for t in turns],
+                             [('Kit', 'Hello', '14:01:00'), ('Robin', 'Hi there', '14:01:06')], body)
+            row = message_view.list_row('zoom.transcript', 'Weekly sync', body, {}, AT)
+            self.assertEqual(row['turns'], [{'from': 'Kit', 'body': 'Hello'}, {'from': 'Robin', 'body': 'Hi there'}], body)
+        # a summary that mentions a time is no transcript: it reads as written
+        self.assertEqual(message_view.transcript_turns('We met at 10:30 and agreed on the plan.\nNext: send the deck by Friday to everyone.', AT), [])
+
+    def test_a_long_meeting_keeps_each_turns_own_words_and_time(self):
+        said = [(0, 'Dana', 'Shall we start with the pilot?'), (14, 'Kit', 'It has been live for two weeks.'),
+                (95, 'Dana', 'How many use it every day?'), (410, 'Robin', 'IT sent the security questions.'),
+                (760, 'Dana', 'We can answer those by Thursday.'), (1790, 'Kit', 'Then the second team starts on the 15th.')]
+        hms = lambda s, sep='': f'{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}{sep}'
+        formats = {'webvtt': 'WEBVTT\n\n' + '\n\n'.join(f'{i}\n{hms(s, ".000")} --> {hms(s + 4, ".000")}\n{w}: {x}' for i, (s, w, x) in enumerate(said, 1)),
+                   'name (mm:ss)': '\n'.join(f'{w} ({s // 60:02d}:{s % 60:02d}): {x}' for s, w, x in said),
+                   'plain': '\n'.join(f'{w}: {x}' for s, w, x in said)}
+        for name, body in formats.items():
+            turns = message_view.transcript_turns(body, '2026-11-10T14:00:00+00:00')
+            self.assertEqual([(t['from'], t['body']) for t in turns], [(w, x) for _, w, x in said], name)
+            times = [t['occurred_at'] for t in turns if not t.get('untimed')]
+            if name == 'plain':  # no stamps: no times, rather than the meeting's start on every turn
+                self.assertEqual(times, [], name)
+            else:
+                self.assertEqual(len(times), len(said), name)
+                self.assertTrue(all(a < b for a, b in zip(times, times[1:])), (name, times))
+                self.assertEqual(times[-1][11:19], '14:29:50', name)
 
 
 if __name__ == '__main__':

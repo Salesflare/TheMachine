@@ -131,8 +131,8 @@ for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.f
  const said=chatLinks(o.media_only?'':String(o.body||'').replace(/\r\n/g,'\n').trim()),only=!said.text&&!o.photo;
  const who=!you&&names?sender(o.from):'',turns=days.at(-1).turns,time=html`<time datetime="${o.occurred_at}">${fmtHM(at)}</time>`;
  const say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${o.media?mediaChip(o.media):''}${said.text?chatMarkdown(said.text):''}${said.links.map(linkCard)}${o.photo?photoThumbs([o.photo]):''}`;
- if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:im&&(me||!who||duo)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im?'':' · '}`:''}${im?'':time}</p>`});
- else if(!im&&at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at">${time}</p>`);
+ if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:im&&(me||!who||duo)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im||o.untimed?'':' · '}`:''}${im||o.untimed?'':time}</p>`});
+ else if(!im&&!o.untimed&&at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at">${time}</p>`);
  if(mark)turns.at(-1).says.push(html`<p class="convo-this" aria-hidden="true">${t('This to-do')}</p>`);
  const kind=only&&o.media&&!said.links.length?' convo-say-media':only&&said.links.length?' convo-say-link':'';
  turns.at(-1).says.push(html`<div class="convo-say${kind}${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${im?html`<div class="convo-said">${say}</div><span class="convo-t">${time}</span>`:say}</div>`);prev=o}

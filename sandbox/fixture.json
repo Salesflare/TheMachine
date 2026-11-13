@@ -7353,7 +7353,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-cc-0",
-    "message-id": "<check.cc.0@mail.example>"
+    "message-id": "<check.cc.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-cc-0"
    }
   },
   {
@@ -7371,7 +7372,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-meet-0",
-    "message-id": "<check.meet.0@mail.example>"
+    "message-id": "<check.meet.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-meet-0"
    }
   },
   {
@@ -7389,7 +7391,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-thanks-0",
-    "message-id": "<check.thanks.0@mail.example>"
+    "message-id": "<check.thanks.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-thanks-0"
    }
   },
   {
@@ -7407,7 +7410,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-news-0",
-    "message-id": "<check.news.0@mail.example>"
+    "message-id": "<check.news.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-news-0"
    }
   },
   {
@@ -7425,7 +7429,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-receipt-0",
-    "message-id": "<check.receipt.0@mail.example>"
+    "message-id": "<check.receipt.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-receipt-0"
    }
   },
   {
@@ -7443,7 +7448,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-webinar-0",
-    "message-id": "<check.webinar.0@mail.example>"
+    "message-id": "<check.webinar.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-webinar-0"
    }
   },
   {
@@ -7461,7 +7467,8 @@
      "UNREAD"
     ],
     "thread_id": "t-check-ooo-0",
-    "message-id": "<check.ooo.0@mail.example>"
+    "message-id": "<check.ooo.0@mail.example>",
+    "source_url": "https://mail.example/#inbox/t-check-ooo-0"
    }
   },
   {
@@ -7509,7 +7516,8 @@
     "conversation_type": "channel",
     "sender_display": "Tomasz Nowak",
     "user_id": "U2200",
-    "message_ts": "1762000027.000300"
+    "message_ts": "1762000027.000300",
+    "source_url": "https://lumenlabs.slack.example/archives/C0GENERAL/p1762000027000300"
    }
   },
   {
