@@ -84,6 +84,16 @@ class OwnerBoundary(unittest.TestCase):
         self.assertEqual(get(url,owner),(200,expected))
 
 
+    # What serve() starts beside the HTTP server: workers and the start's one-off steps. These tests check the page and
+    # the API, so all of it stays off. Left on, they wrote events.sqlite's journal in the temporary folder after the
+    # test had ended (the failed-saves requeue alone reads this computer's real agent database for seconds, and the
+    # routines worker sleeps 30 s before it looks at stop), and removing the folder failed with "Directory not empty".
+    BACKGROUND = ('delivery_worker', 'preparation_worker', 'whatsapp_photo_worker', 'voice_warm_worker', 'action_worker',
+                  'review_worker', 'graph_worker', 'model_usage_worker', 'retention_worker', 'plain_keys_worker',
+                  'history_worker', 'embedding_worker', 'enrichment_worker', 'linkedin_connections_worker',
+                  'recurring_worker', 'routines_worker', 'protection_waiter', 'birthdays_facebook_fill_old',
+                  'meeting_write_resume', 'gbrain_start')
+
     def serve(self):
         servers = []
         real = a.http.server.ThreadingHTTPServer
@@ -92,15 +102,20 @@ class OwnerBoundary(unittest.TestCase):
         # Keep the patches for the whole test: serve() installs signal handlers after
         # creating the server, so ending them early races the server thread.
         for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
-                        patch.object(a.signal, 'signal'), patch.object(a.App, 'preparation_worker'),
-                        patch.object(a.App, 'delivery_worker')):
+                        patch.object(a.signal, 'signal'), patch('machine.store.review_requeue.requeue', return_value=0),
+                        *(patch.object(a.App, name) for name in self.BACKGROUND)):
             patcher.start()
             self.addCleanup(patcher.stop)
         thread = threading.Thread(target=self.app.serve, daemon=True)
         thread.start()
         while not servers:
             pass
-        self.addCleanup(lambda: (self.app.stop.set(), thread.join(5)))
+
+        def stop():  # the server ends within its 1 s timeout; the temporary folder goes only after that
+            self.app.stop.set()
+            thread.join(10)
+            self.assertFalse(thread.is_alive(), 'serve() still running after the test')
+        self.addCleanup(stop)
         return servers[0].server_address[1]
 
     def post(self, port, body, headers):
