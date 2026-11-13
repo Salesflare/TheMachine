@@ -7,7 +7,8 @@ const {chromium}=await import('./browser.mjs');
 
 // A milestone on done to-dos (todos-milestone.js, state.done_milestone): one card on top of To-dos with the count,
 // Share and ×. × marks it seen on the Machine (done_milestone_seen) and it is gone, also on the next opening. Share hands
-// the image to the share sheet where there is one (Web Share, or the phone app's own), else a dialog with the image in
+// the image to a phone's share sheet where there is one (Web Share, or the phone app's own); on a computer (a fine
+// pointer), even one with a share sheet, or where there is none, a dialog (todos-milestone-share.js) with the image in
 // two sizes, Download image (a blob: link, which a browser saves and the phone app takes), Copy image or Share image,
 // and the text to post. Each button says what it did inside the dialog, and its × stays in reach on a phone. The image is drawn from the count alone: nothing from the owner's to-dos or name reaches it.
 const dashboard=await dashboardPage();
@@ -93,6 +94,7 @@ try{
  // A share sheet (a phone, the installed app): Share hands it the square image and the text with the link, nothing else
  milestone={count:500};
  {const {context,page}=await open(390,{share:'files'});await card(page).waitFor();await watchInputs(page);
+  assert.equal(await page.evaluate(()=>matchMedia('(pointer: coarse)').matches),true);
   await page.locator('#milestone [data-ms-share]').click();await page.waitForFunction(()=>window.shared);
   const shared=await page.evaluate(()=>window.shared);
   assert.equal(shared.files.length,1);assert.equal(shared.files[0].name,'the-machine-500-todos.png');assert.equal(shared.files[0].type,'image/png');assert.ok(shared.files[0].size>20000);
@@ -124,6 +126,28 @@ try{
   const all=JSON.stringify(words);for(const s of ['Sam','Keller','Acme','@',SECRET])assert.ok(!all.includes(s),s);
   await page.keyboard.press('Escape');await d.waitFor({state:'detached'}).catch(()=>{});assert.equal(await page.locator('#ms-share[open]').count(),0);
   assert.equal(await card(page).count(),1);await context.close()}
+ // A computer whose browser has a share sheet (Windows' Chrome and Edge): the dialog all the same, never the sheet,
+ // Download image first and focused, Copy image and no Share image; Esc closes it and focus is back on Share
+ {const {context,page}=await open(1440,{share:'files'});await card(page).waitFor();
+  assert.equal(await page.evaluate(()=>matchMedia('(pointer: fine)').matches),true);
+  await page.locator('#milestone [data-ms-share]').click();const d=page.locator('#ms-share[open]');await d.waitFor();
+  assert.equal(await page.evaluate(()=>window.shared),undefined);
+  assert.equal(await page.locator('#ms-share .ms-preview').evaluate(async i=>{await i.decode();return i.naturalWidth}),1080);
+  assert.deepEqual(await page.locator('#ms-share .ms-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Download image','Copy image']);
+  assert.equal(await page.evaluate(()=>document.activeElement?.hasAttribute('data-ms-download')),true);
+  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#ms-share [data-ms-download]').click()]);
+  assert.equal(download.suggestedFilename(),'the-machine-500-todos.png');
+  await page.locator('#ms-share [data-ms-copy-image]').click();await page.waitForFunction(()=>window.clipped.length===1);
+  assert.equal(await page.evaluate(()=>window.shared),undefined);
+  await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.querySelector('#ms-share[open]'));
+  await page.waitForFunction(()=>document.activeElement?.hasAttribute('data-ms-share'),null,{timeout:3000});
+  await context.close()}
+ // ... and when its clipboard refuses the image, it says so in the dialog instead of opening the sheet
+ {const {context,page}=await open(1440,{share:'files',clip:false});await card(page).waitFor();
+  await page.locator('#milestone [data-ms-share]').click();await page.locator('#ms-share[open]').waitFor();
+  await page.locator('#ms-share [data-ms-copy-image]').click();await page.waitForFunction(()=>!document.querySelector('#ms-share .ms-said').hidden);
+  assert.equal(await page.locator('#ms-share .ms-said').textContent(),'That didn’t work here. Download the image instead.');
+  assert.equal(await page.evaluate(()=>window.shared),undefined);await context.close()}
  // A phone: the dialog is the whole screen, its × on the title's row (below the phone's status bar, env(safe-area-inset-top)) and closing it; a refused copy says so in the dialog
  {const {context,page}=await open(390,{clip:false});await card(page).waitFor();
   await page.locator('#milestone [data-ms-share]').click();const d=page.locator('#ms-share[open]');await d.waitFor();

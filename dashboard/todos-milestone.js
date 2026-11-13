@@ -1,8 +1,8 @@
 // A milestone on done to-dos (state.done_milestone, machine/store/done_milestones.py): a small card on top of To-dos,
 // "500 to-dos done", the party mascot popping in with confetti and the number counting up (still with reduced motion),
 // Share and ×. × marks it seen on the Machine (done_milestone_seen): once per level. Share draws an image on the device
-// (msImage: a canvas, nothing uploaded) for the phone's or app's share sheet; where there is none, a dialog has
-// Download image, Copy image and the text to post. Nothing is posted for them. The image holds the count and fixed
+// (msImage: a canvas, nothing uploaded) for the phone's or app's share sheet; on a computer, or where there is none,
+// a dialog (todos-milestone-share.js) has Download image, Copy image and the text to post. Nothing is posted for them. The image holds the count and fixed
 // words only. A lazy part (dashboard_parts.LAZY 'milestone'): shell-render.js milestoneSlot loads it while one is due.
 const MS_SITE='themachine.computer',MS_URL='https://themachine.computer';
 const MS_X='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>';
@@ -16,7 +16,7 @@ const msDark=()=>(document.documentElement.dataset.theme||(matchMedia('(prefers-
 function milestoneCard(){const n=+state?.done_milestone?.count;if(!n)return '';const f=msNum(n);
  return html`<section id="milestone" class="ms-card" aria-labelledby="ms-title"><div class="ms-bot" aria-hidden="true"><img src="brand/party.webp" alt="" width="76" height="76">${raw('<i></i>'.repeat(12))}</div>
 <div class="ms-text"><h2 id="ms-title" translate="no">${htmlT('{} to-dos done',html`<b class="ms-n" data-ms-to="${n}">${f}</b>`)}</h2><p translate="no">${msLine(n)}</p></div>
-<button type="button" class="primary ms-share" data-ms-share>${raw(MS_SHARE)}${t('Share')}</button><button type="button" class="ms-x" data-ms-close aria-label="${t('Close')}" title="${t('Close')}">${raw(MS_X)}</button></section>`}
+<button type="button" class="primary ms-share-btn" data-ms-share>${raw(MS_SHARE)}${t('Share')}</button><button type="button" class="ms-x" data-ms-close aria-label="${t('Close')}" title="${t('Close')}">${raw(MS_X)}</button></section>`}
 // The number counts up as the mascot lands (about 0.9 s, from frame one), once per card; with reduced motion it just shows
 function msCount(){const b=document.querySelector('#milestone .ms-n:not([data-ms-done])');if(!b)return;b.dataset.msDone='';if(msStill())return;
  const to=+b.dataset.msTo,ms=900,w=b.getBoundingClientRect().width;let start;b.style.minWidth=w+'px';
@@ -66,56 +66,27 @@ async function msImage(n,wide,dark){const th=MS_THEME[dark?'dark':'light'],W=wid
 const msBlob=cv=>new Promise((ok,no)=>cv.toBlob(b=>b?ok(b):no(new Error(t('Couldn’t make the image. Try again in a moment.'))),'image/png'));
 const msName=(n,wide)=>`the-machine-${n}-todos${wide?'-wide':''}.png`;
 // Share: the phone's own share sheet with the square image, or the dialog where there is none. Web Share where the
-// browser has it; in the phone app, whose WebView has none, the app's own sheet (mobile/www/inject.js)
+// browser has it; in the phone app, whose WebView has none, the app's own sheet (mobile/www/inject.js). A computer
+// (a fine pointer, not the phone app) gets the dialog: its share sheet (Windows') offers little for an image.
 let msReady=null;
 const msApp=()=>typeof window.__machineFiles==='function',msAppSheet=()=>typeof window.__machineShareFile==='function';
+const msDesk=()=>!msApp()&&matchMedia('(pointer:fine)').matches;
 const msWebShare=file=>{try{return!!navigator.canShare?.({files:[file]})}catch{return false}};
 // The file to a share sheet: true once one opened (closing it counts), false where there is none or it failed
 async function msSheet(file,n){if(msWebShare(file)){try{await navigator.share({files:[file],text:msPost(n)});return true}catch(e){return e.name==='AbortError'}}
  if(msAppSheet()){try{return!!await window.__machineShareFile(file,file.name)}catch{return false}}
  return false}
 async function msShare(btn){const n=+state?.done_milestone?.count,dark=msDark();if(!n)return;btn.disabled=true;
- try{const blob=(msReady?.n===n&&msReady.dark===dark&&await msReady.blob)||await msBlob(await msImage(n,false,dark));
-  if(!await msSheet(new File([blob],msName(n,false),{type:'image/png'}),n))await msDialog(n)}
+ try{const sheet=async()=>{const blob=(msReady?.n===n&&msReady.dark===dark&&await msReady.blob)||await msBlob(await msImage(n,false,dark));
+   return msSheet(new File([blob],msName(n,false),{type:'image/png'}),n)};
+  if(msDesk()||!await sheet()){await lazyPart('msshare');await msDialog(n)}}
  catch(e){errCaught(e);toast(e.message,true)}finally{btn.disabled=false}}
-// The dialog: the image (Square or For links), Download image, Copy image (or Share image where the clipboard takes
-// no image but a share sheet is there), and the text to post. Download is a blob: link, which a browser saves and the
-// phone app takes (a data: link does nothing in a WebView); that WebView puts no image on the clipboard, so no Copy
-// image there. What each button did shows in the dialog: a toast would sit under it.
-const msCopyImage=()=>!msApp()&&isSecureContext&&!!(window.ClipboardItem&&navigator.clipboard?.write);
-const msShareImage=()=>msAppSheet()||msWebShare(new File([new Blob(['x'],{type:'image/png'})],'x.png',{type:'image/png'}));
-let msWide=false,msShown=null,msShownUrl=null;
-const msSay=(text,bad=false)=>{const p=$('#ms-share .ms-said');if(!p)return;p.textContent=text;p.hidden=!text;p.classList.toggle('bad',bad)};
-async function msDialog(n){let d=$('#ms-share');
- if(!d){d=document.createElement('dialog');d.id='ms-share';d.setAttribute('aria-labelledby','ms-share-title');document.body.append(d);
-  d.addEventListener('click',async e=>{const b=e.target.closest('button');if(e.target===d){d.close();return}if(!b)return;
-   if(b.dataset.msSize!=null){msWide=b.dataset.msSize==='wide';msSay('');await msPreview(+d.dataset.n);return}
-   if(b.hasAttribute('data-ms-close-share'))return d.close();
-   const n=+d.dataset.n,name=msName(n,msWide),file=()=>new File([msShown],name,{type:'image/png'});msSay('');
-   if(b.hasAttribute('data-ms-download')){const a=make('a',{href:msShownUrl,download:name});document.body.append(a);a.click();a.remove()}
-   else if(b.hasAttribute('data-ms-copy-image')){try{await navigator.clipboard.write([new ClipboardItem({'image/png':msShown})]);msSay(t('Image copied.'))}
-    catch{if(!await msSheet(file(),n))msSay(t('That didn’t work here. Download the image instead.'),true)}}
-   else if(b.hasAttribute('data-ms-share-image')){if(!await msSheet(file(),n))msSay(t('That didn’t work here. Download the image instead.'),true)}
-   else if(b.hasAttribute('data-ms-copy-text')){try{await navigator.clipboard.writeText(msPost(n));msSay(t('Copied.'))}catch{msSay(t('Couldn’t copy. Select it and copy it yourself.'),true)}}});
-  d.addEventListener('close',()=>{if(msShownUrl)URL.revokeObjectURL(msShownUrl);msShownUrl=null})}
- d.dataset.n=n;msWide=false;
- setHTML(d,html`<div class="snooze-heading"><h2 id="ms-share-title">${t('Share it')}</h2><button type="button" data-ms-close-share aria-label="${t('Close')}" title="${t('Close')}">×</button></div>
-<div class="ms-sizes" role="group" aria-label="${t('Size')}"><button type="button" data-ms-size="square" aria-pressed="true">${t('Square')}</button><button type="button" data-ms-size="wide" aria-pressed="false">${t('For links')}</button></div>
-<div class="ms-frame"><img class="ms-preview" alt="${t('{} to-dos done',msNum(n))}"></div>
-<div class="ms-acts"><button type="button" class="primary" data-ms-download>${t('Download image')}</button>${msCopyImage()?html`<button type="button" data-ms-copy-image>${t('Copy image')}</button>`:msShareImage()?html`<button type="button" data-ms-share-image>${t('Share image')}</button>`:''}</div>
-<p class="ms-said" role="status" hidden></p>
-<div class="ms-post"><span>${t('Text to post')}</span><button type="button" class="quiet" data-ms-copy-text>${t('Copy text')}</button><p class="ms-post-text">${msPost(n)}</p></div>`);
- await msPreview(n);d.showModal()}
-// The image shown is the one every button uses, made a PNG once, so a tap acts at once (Safari and the phone app
-// want the download or copy to follow the tap)
-async function msPreview(n){const d=$('#ms-share');msShown=await msBlob(await msImage(n,msWide,msDark()));if(msShownUrl)URL.revokeObjectURL(msShownUrl);
- msShownUrl=URL.createObjectURL(msShown);d.querySelector('.ms-preview').src=msShownUrl;
- d.querySelector('.ms-frame').classList.toggle('wide',msWide);d.querySelectorAll('[data-ms-size]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.msSize==='wide')===msWide)))}
 // × : seen on the Machine, for every device; the card goes once it says so
 $('#suggestions').addEventListener('click',async e=>{
  const s=e.target.closest('[data-ms-share]');if(s){msShare(s);return}
  const x=e.target.closest('[data-ms-close]');if(!x)return;const n=+state?.done_milestone?.count;x.disabled=true;
  try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'done_milestone_seen',args:{count:n}})});
   state.done_milestone=r.done_milestone??null;render()}catch(err){errCaught(err);x.disabled=false;toast(err.message,true)}});
-// The square image is drawn ahead, once the card is in, so Share opens the sheet at once (a share must follow the tap)
-(self.requestIdleCallback||setTimeout)(()=>{const n=+state?.done_milestone?.count,dark=msDark();if(n)msReady={n,dark,blob:msImage(n,false,dark).then(msBlob).catch(()=>null)}},{timeout:3000});
+// The square image is drawn ahead, once the card is in, so Share opens the sheet at once (a share must follow the tap);
+// a computer's dialog draws its own
+(self.requestIdleCallback||setTimeout)(()=>{const n=+state?.done_milestone?.count,dark=msDark();if(n&&!msDesk())msReady={n,dark,blob:msImage(n,false,dark).then(msBlob).catch(()=>null)}},{timeout:3000});
