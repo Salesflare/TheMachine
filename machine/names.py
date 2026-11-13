@@ -79,6 +79,8 @@ def account_name(account, accounts=(), default=None):
     return default if default is not None else str(account.get('id') or '')
 
 
+# A connection without a name of its own yet: what its card says, not the account id (machine/sources/connectors.py)
+UNNAMED = {'trello': 'Trello board', 'gateway': 'Machine health'}
 # A config key, not a name: lowercase words joined by - or _ ('personal-signal', 'work_gmail'). Never a card's title.
 SLUG = re.compile(r'[a-z0-9]+(?:[-_][a-z0-9]+)+')
 # Chat apps on the owner's own phone number: a name the app tells reads as whose it is ("Sam’s Signal")
@@ -154,7 +156,6 @@ def card_title(account, accounts=(), state=None, t=None):
     handle = usable_name(account.get('handle'), account)
     if handle:
         return '@' + handle.lstrip('@')
-    from machine.sources.connectors import UNNAMED
     if service in UNNAMED:
         return UNNAMED[service]
     # several of this kind without a name: told apart by their order

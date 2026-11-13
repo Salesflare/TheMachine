@@ -20,6 +20,7 @@ import doc_writes
 import enrichment
 from machine.browser import browser_read_failure, recover_browser
 from machine.config import ROOT
+from machine import names
 from machine.sources.rows import Skips
 import next_actions
 from sources import CALENDAR_SERVICES, MICROSOFT_SERVICES, SourceError, credential
@@ -51,7 +52,7 @@ def remember_profiles(store, source, offers):
     return changed
 
 
-UNNAMED = {'trello': 'Trello board', 'gateway': 'Machine health'}  # a connection without a name of its own yet: what its card says, not the account id
+UNNAMED = names.UNNAMED  # a connection without a name of its own yet: what its card says, not the account id
 
 
 CONNECTOR_HELPERS = types.SimpleNamespace(
