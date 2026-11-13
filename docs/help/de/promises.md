@@ -25,6 +25,8 @@ Ein offenes Versprechen wird auch von selbst zur Aufgabe, wenn es fällig ist (d
 
 Vorher liest deine Machine, was danach kam. Schon gehalten, etwa durch eine Antwort von dir oder ein Meeting dazu? Dann schließt es sich als gehalten, ohne Aufgabe.
 
+Später ein neues Datum genannt, etwa „doch erst nächste Woche“? Dasselbe Versprechen verschiebt sich, seine Aufgabe mit, ohne ein zweites. Seine Seite zeigt das neue Datum und die neuere Nachricht.
+
 Eins ohne Datum zeigt seinen Tag zum **Nachfassen**: drei Tage, nachdem du es gesagt hast, eine Woche, nachdem die andere Person es gesagt hat. Dann noch offen? Dann wird es zur Aufgabe.
 
 Eine Slack-Nachricht nennt ihren Absender nur mit seiner Slack-ID. Deine Machine schlägt den Namen nach, damit Versprechen die Person zeigen, nicht die ID.

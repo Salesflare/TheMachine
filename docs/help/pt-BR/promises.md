@@ -25,4 +25,6 @@ Uma promessa em aberto também vira tarefa sozinha quando vence (as suas na manh
 
 Antes disso, sua Machine lê o que veio depois. Já cumprida, como com uma resposta sua ou uma reunião que tratou disso? Ela fecha como cumprida, sem tarefa.
 
+Depois veio uma data nova, como "melhor na semana que vem"? A mesma promessa muda de data, e a tarefa dela também, sem criar uma segunda. A página dela mostra a data nova e a mensagem mais recente.
+
 No seu próprio computador, `assistant promises` também lista as promessas. O [resumo semanal](weekly-recap.md) conta as cumpridas e as em aberto.

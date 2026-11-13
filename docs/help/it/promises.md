@@ -25,4 +25,6 @@ Una promessa aperta diventa anche da sola un’attività alla scadenza (le tue l
 
 Prima, la tua Machine legge cosa è arrivato dopo. Già mantenuta, per esempio con una tua risposta o una riunione che ne ha parlato? Si chiude come mantenuta, senza attività.
 
+Poi arriva una nuova data, come «meglio la settimana prossima»? La stessa promessa si sposta, con la sua attività, senza una seconda. La sua pagina mostra la nuova data e il messaggio più recente.
+
 Sul tuo computer, anche `assistant promises` le elenca. Il [riepilogo settimanale](weekly-recap.md) conta quelle mantenute e quelle aperte.

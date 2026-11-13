@@ -25,4 +25,6 @@ Une promesse ouverte devient aussi une tâche d’elle-même à son échéance (
 
 Avant cela, votre Machine lit ce qui a suivi. Déjà tenue, par une réponse de votre part ou une réunion qui l’a traitée ? Elle se ferme comme tenue, sans tâche.
 
+Une nouvelle date donnée ensuite, comme « plutôt la semaine prochaine » ? La même promesse se déplace, sa tâche aussi, sans en créer une deuxième. Sa page montre la nouvelle date et le message plus récent.
+
 Sur votre propre ordinateur, `assistant promises` les liste aussi. Le [récap hebdomadaire](weekly-recap.md) compte celles tenues et celles ouvertes.

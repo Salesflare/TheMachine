@@ -97,6 +97,14 @@ def promise_card(db, suggestion_id):
     return dict(card) if card else None
 
 
+def promise_open_card(db, row):
+    """A carded promise's to-do while it is still open (promise_card), as its whole row; else None."""
+    card = promise_card(db, row['suggestion_id'])
+    if not card or card['status'] not in CARD_OPEN:
+        return None
+    return dict(db.execute('SELECT * FROM suggestions WHERE id=?', (card['id'],)).fetchone())
+
+
 def card_looks_done(card):
     """The Machine's word that a promise's open to-do is done (a later message showed it, or its run found it done):
     its reason, else None."""
@@ -312,9 +320,11 @@ class PromisesStore:
                 raise ValueError('Unknown promise id')
             if row['status'] == 'carded' and source == 'dashboard' and args.get('status') in ('kept', 'dropped'):
                 return self.close_carded_promise(db, dict(row), args['status'])
-            if row['status'] != 'open':
-                raise ValueError('This promise is no longer open: its card is out, use looks_handled on that card' if row['status'] == 'carded' else 'This promise is no longer open')
             status, reason = args.get('status'), ' '.join(str(args.get('reason') or '').split())[:200]
+            # A new date for a promise that is a to-do now moves both (move_promise): the same promise, never a second one
+            live_card = row['status'] == 'carded' and not status and args.get('due') and source in ('assistant', 'dashboard') and promise_open_card(db, row)
+            if row['status'] != 'open' and not live_card:
+                raise ValueError('This promise is no longer open: its card is out, use looks_handled on that card' if row['status'] == 'carded' else 'This promise is no longer open')
             if status in ('kept', 'dropped'):
                 if source == 'assistant' and len(reason) < 3:
                     raise ValueError('Say in a few words what shows it kept or no longer needed (reason), with the event_ids')
@@ -327,13 +337,80 @@ class PromisesStore:
                     due = dt.date.fromisoformat(str(args['due'])[:10]).isoformat()
                 except ValueError:
                     raise ValueError('due must be YYYY-MM-DD') from None
-                check_at = promise_check_at(row['direction'], due, row['made_at'], digest_at)
-                if row['direction'] == 'theirs':
-                    check_at = before_blocked(db, row['event_id'], check_at, digest_at)
-                db.execute('UPDATE promises SET due=?,check_at=?,note=?,updated_at=? WHERE id=?', (due, check_at, reason or row['note'] if source == 'dashboard' else reason or None, now(), row['id']))
-                promise_logged(db, row['id'], 'due', due)
-                return {'id': row['id'], 'status': 'open', 'due': due, 'check_at': check_at}
+                newer = None
+                if args.get('event_id') is not None:
+                    newer = db.execute('SELECT id,occurred_at FROM events WHERE id=? AND deleted=0', (args['event_id'],)).fetchone()
+                    if not newer:
+                        raise ValueError('event_id is the newer message that gave the new date')
+                note = reason or row['note'] if source == 'dashboard' else reason or None
+                check_at = self.move_promise(db, dict(row), due, newer['id'] if newer else None, digest_at, note)
+                return {'id': row['id'], 'status': row['status'], 'due': due, 'check_at': check_at}
         raise ValueError("Update a promise with status 'kept' or 'dropped' and a reason, or with a new due date")
+
+    def move_promise(self, db, row, due, event_id=None, digest_at='08:30', note=None):
+        """A promise given a new date (a later message rescheduled it, or the owner on the dashboard): its date and when
+        it is checked follow, with a line in its history and the newer message as a source. One that is a to-do now
+        moves that to-do too: its date, the newer message first in its sources, and someone else's goes out of sight
+        until the morning after the new date (the check it would have had). Returns the new check_at."""
+        check_at = promise_check_at(row['direction'], due, row['made_at'], digest_at)
+        if row['direction'] == 'theirs':
+            check_at = before_blocked(db, row['event_id'], check_at, digest_at)
+        db.execute('UPDATE promises SET due=?,check_at=?,note=?,updated_at=? WHERE id=?', (due, check_at, note, now(), row['id']))
+        promise_logged(db, row['id'], 'due', due)
+        if event_id is not None and event_id != row['event_id']:
+            promise_logged(db, row['id'], 'source', event_id)  # promise_page: the newer message, beside the first
+        card = promise_open_card(db, row) if row['status'] == 'carded' else None
+        if not card:
+            return check_at
+        ids = json.loads(card['event_ids'] or '[]')
+        if event_id is not None and event_id not in ids:
+            ids = [event_id] + ids
+        db.execute('UPDATE suggestions SET due=?,event_ids=? WHERE id=?', (due, encoded(ids), card['id']))
+        old_body, new_body = (promise_text(promise_who_named(db, {**row, 'due': d}))[1][:700] for d in (row['due'], due))
+        if card['body'] == old_body:  # still the line it was made with: "Promised on ... for <the old date>"
+            db.execute('UPDATE suggestions SET body=? WHERE id=?', (new_body, card['id']))
+        db.execute('UPDATE deliveries SET needs_edit=1 WHERE suggestion_id=? AND message_id IS NOT NULL', (card['id'],))
+        if row['direction'] == 'theirs' and not row.get('together') and card['status'] in ('pending', 'prepared') and check_at > now():
+            self._decide(db, card['id'], 'snooze', i18n.t('Moved to {}', locale_prefs.day_text(dt.date.fromisoformat(due))),
+                         'promise-moved:' + uuid.uuid4().hex, 'assistant', snoozed_until=check_at)
+        return check_at
+
+    def promise_twins(self, db, limit=3):
+        """Open promises that may be an older one given again: the same person, the same direction, and an older promise
+        still open or a to-do that is (a new date for it noted as a new promise, or stored before the review saw the
+        older one). Only meaning tells whether it is the same thing, so the promise check reads each pair once
+        (promise_twin_run); a pair it has read is logged as 'twin' on the newer one. [(newer, older)], oldest first."""
+        rows = [dict(r) for r in db.execute("SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id "
+                                            "WHERE p.status IN ('open','carded') AND e.deleted=0 ORDER BY e.occurred_at,p.id")]
+        live = [r for r in rows if r['status'] == 'open' or promise_open_card(db, r)]
+        asked = {}
+        for r in db.execute("SELECT promise_id,detail FROM promise_log WHERE kind='twin'"):
+            asked.setdefault(r['promise_id'], set()).add(str(r['detail']))
+        pairs = []
+        for i, newer in enumerate(live):
+            if newer['status'] != 'open':
+                continue  # one that is a to-do of its own stays as it is
+            older = next((o for o in live[:i] if o['direction'] == newer['direction'] and o['who'].casefold() == newer['who'].casefold()
+                          and str(o['id']) not in asked.get(newer['id'], ())), None)
+            if older:
+                pairs.append((newer, older))
+        return pairs[:limit]
+
+    def merge_twin(self, db, newer_id, older_id, digest_at='08:30'):
+        """The newer promise is the older one given again: the older one keeps going (its to-do too), with the newer
+        date and message (move_promise), and the newer one closes as the same as it. False when either changed since."""
+        pick = 'SELECT p.*,e.occurred_at made_at FROM promises p JOIN events e ON e.id=p.event_id WHERE p.id=?'
+        newer, older = (db.execute(pick, (i,)).fetchone() for i in (newer_id, older_id))
+        if not newer or not older or newer['status'] != 'open' or not (older['status'] == 'open' or promise_open_card(db, older)):
+            return False
+        older = dict(older)
+        if newer['due'] and newer['due'] != older['due']:
+            self.move_promise(db, older, newer['due'], newer['event_id'], digest_at, older['note'])
+        else:
+            promise_logged(db, older['id'], 'source', newer['event_id'])
+        db.execute("UPDATE promises SET status='dropped',note=?,updated_at=? WHERE id=?", (f"The same as promise {older['id']}", now(), newer['id']))
+        promise_logged(db, newer['id'], 'merged', older['id'])
+        return True
 
     def close_carded_promise(self, db, row, status):
         """The owner's Done or Drop on a promise that is a to-do now: its to-do closes with it (Done, or Not needed), so
@@ -448,7 +525,9 @@ class PromisesStore:
             log = [dict(r) for r in db.execute('SELECT at,kind,detail FROM promise_log WHERE promise_id=? ORDER BY at,id', (promise_id,))]
         p['state'] = promise_state(p)
         history = [{'at': p['made_at'], 'kind': 'said', 'detail': p['source_kind']}, {'at': max(p['created_at'], p['made_at']), 'kind': 'noted'}]
-        history += [h for h in log if h['kind'] != 'checked' and (h['kind'] != 'together' or h['at'] > p['created_at'])]  # checked: an inner step
+        # checked, source and twin: inner steps (a newer message that moved it shows as a source instead)
+        history += [h for h in log if h['kind'] not in ('checked', 'source', 'twin') and (h['kind'] != 'together' or h['at'] > p['created_at'])]
+        sources = list(dict.fromkeys([int(h['detail']) for h in reversed(log) if h['kind'] == 'source' and str(h['detail']).isdigit()] + [p['event_id']]))
         closed = {'kept': 'kept', 'dropped': 'dropped', 'answered': 'answered'}.get(p['status'])
         if closed and not any(h['kind'] in (closed, 'merged') for h in log):
             history.append({'at': p['updated_at'], 'kind': closed})  # closed before the log
@@ -456,16 +535,18 @@ class PromisesStore:
             history.append({'at': p['updated_at'], 'kind': 'carded'})
         card = {'id': p['suggestion_id'], 'title': p['card_title'], 'status': p['card_status']} if p['suggestion_id'] and p['card_title'] else None
         keep = ('id', 'direction', 'together', 'who', 'what', 'due', 'check_at', 'status', 'state', 'note', 'made_at', 'event_id', 'account_id', 'created_at', 'updated_at')
-        return {**{k: p[k] for k in keep}, 'card': card, 'links': links, 'history': sorted(history, key=lambda h: h['at'] or '')}
+        return {**{k: p[k] for k in keep}, 'card': card, 'links': links, 'sources': sources, 'history': sorted(history, key=lambda h: h['at'] or '')}
 
     def promises_text(self, limit=30):
-        """Open promises for the review prompt, so a later message can close them."""
+        """Open promises for the review prompt, so a later message can close or move them: those that are a to-do now
+        too, so a new date for one moves it instead of making a second promise."""
         lines = []
-        for p in [p for p in self.promises() if p['state'] == 'open'][:limit]:
+        for p in [p for p in self.promises() if p['state'] in ('open', 'card')][:limit]:
             made = dt.datetime.fromisoformat(p['made_at']).astimezone(local_tz())
             due = 'due ' + dt.date.fromisoformat(p['due']).strftime('%a, %b ') + str(dt.date.fromisoformat(p['due']).day) if p['due'] else 'no date'
             who = f"you with {p['who']}" if p.get('together') else f"you → {p['who']}" if p['direction'] == 'mine' else f"{p['who']} → you"
-            lines.append(f"- #{p['id']} {who}: {p['what']} ({due}; said {made:%a, %b} {made.day}, event {p['event_id']})")
+            todo = '; a to-do now' if p['state'] == 'card' else ''
+            lines.append(f"- #{p['id']} {who}: {p['what']} ({due}; said {made:%a, %b} {made.day}, event {p['event_id']}{todo})")
             memory_use.note('promise', p['id'], lines[-1], 'always', source='signal', at=p['made_at'])
         return '\n'.join(lines)
 

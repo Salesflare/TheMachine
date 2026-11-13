@@ -25,4 +25,6 @@ Een open belofte wordt ook vanzelf een to-do als ze moet gebeuren (die van jou d
 
 Daarvoor leest je Machine wat erna kwam. Al nagekomen, zoals met een antwoord van jou of een meeting erover? Dan sluit ze als nagekomen, zonder to-do.
 
+Later een nieuwe datum, zoals "toch pas volgende week"? Dan schuift dezelfde belofte op, haar to-do mee, zonder een tweede. Haar pagina toont de nieuwe datum en het nieuwere bericht.
+
 Op je eigen computer toont `assistant promises` ze ook. Het [weekoverzicht](weekly-recap.md) telt de nagekomen en de open beloftes.
