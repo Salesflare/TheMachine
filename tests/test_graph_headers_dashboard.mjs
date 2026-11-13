@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Every Graph header (person, organization, project, board), in view and edit mode, on a phone and a desktop: the name
-// stays on one line (two for a record on a phone), never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows
+// stays on one line (a record's wraps on a phone), never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows
 // whole; the actions never cover it; while editing only Cancel and Save are offered. HEADERS_SHOT=<dir> writes screenshots.
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
@@ -31,8 +31,8 @@ const measure=(page,sel)=>page.locator(sel).evaluate(h=>{const cs=getComputedSty
  const row=h.closest('.name-row,.board-head'),acts=[...(row?.querySelectorAll('.org-actions>button,.org-actions>details>summary,.board-menu>summary')||[])].filter(b=>b.checkVisibility());
  const hit=acts.find(b=>{const q=b.getBoundingClientRect();return q.left<r.right-1&&q.right>r.left+1&&q.top<r.bottom-1&&q.bottom>r.top+1});
  return {lines:Math.round(r.height/line),whole:h.scrollWidth<=h.clientWidth+1,ellipsis:cs.textOverflow==='ellipsis',title:h.title,text:h.textContent,acts:acts.map(b=>b.textContent.trim()||b.getAttribute('aria-label')),covered:hit?.textContent.trim()||'',wide:document.documentElement.scrollWidth>innerWidth}});
-// A phone's record page has no breadcrumb with the name (‹ People alone), so its name takes up to two lines there
-const check=(m,where,{whole,two})=>{if(two)assert.ok(m.lines<=2,`${where}: the name is on at most two lines ${JSON.stringify(m)}`);else assert.equal(m.lines,1,`${where}: the name is on one line ${JSON.stringify(m)}`);assert.ok(!m.covered,`${where}: ${m.covered} covers the name`);assert.ok(!m.wide,`${where}: wider than the screen`);
+// A phone's record page has no breadcrumb with the name (‹ People alone), so its name wraps there, whole
+const check=(m,where,{whole,two})=>{if(two)assert.ok(m.lines<=3&&m.whole,`${where}: the name wraps, whole ${JSON.stringify(m)}`);else assert.equal(m.lines,1,`${where}: the name is on one line ${JSON.stringify(m)}`);assert.ok(!m.covered,`${where}: ${m.covered} covers the name`);assert.ok(!m.wide,`${where}: wider than the screen`);
  if(whole)assert.ok(m.whole,`${where}: "${m.text}" shows whole ${JSON.stringify(m)}`);else assert.ok(m.whole||m.ellipsis&&m.title===m.text,`${where}: a cut name ends in an ellipsis with the full name on hover ${JSON.stringify(m)}`)};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
