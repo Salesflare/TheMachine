@@ -927,6 +927,46 @@ def _org_name(db, domain):
     return clean(row['name'], 80) if row and row['name'] else domain
 
 
+BARE_DOMAIN = re.compile(r'(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,24}')
+SECOND_LEVEL = {'co', 'com', 'org', 'net', 'ac', 'gov', 'edu'}
+
+
+def org_label(about, db=None):
+    """What a teammate asks about, as people say it: for a bare domain, the company's name in the owner's Graph, else
+    the domain's own name without its ending (acme-labs.co.uk: Acme Labs). A name, an email or anything else stays as typed."""
+    text = clean(about, 120)
+    domain = text.lower().removeprefix('www.')
+    if not BARE_DOMAIN.fullmatch(domain):
+        return text
+    if db is not None:
+        try:
+            row = db.execute("SELECT name FROM graph_nodes WHERE id=?", ('org:' + domain,)).fetchone()
+        except sqlite3.Error:
+            row = None
+        if row and clean(row['name'], 80) and clean(row['name'], 80).lower() != domain:
+            return clean(row['name'], 80)
+    labels = domain.split('.')[:-1]
+    if len(labels) > 1 and labels[-1] in SECOND_LEVEL:
+        labels = labels[:-1]
+    return ' '.join(w.capitalize() for w in labels[-1].split('-') if w)
+
+
+def _match_title(db, row):
+    """A free question's match as the owner reads it: a raw handle (an X mention's '@someone') becomes the person's
+    name when the Graph knows them."""
+    title = clean(row['title'], 120)
+    if title.startswith('@') and ' ' not in title:
+        try:
+            named = db.execute("SELECT n.name FROM graph_events e JOIN graph_nodes n ON n.id=e.node_id WHERE e.event_id=? AND n.kind='person' "
+                               "ORDER BY e.direct DESC LIMIT 1", (row['id'],)).fetchone()
+        except sqlite3.Error:
+            named = None
+        name = clean(named['name'], 120) if named else ''
+        if name and not name.startswith('@'):
+            return name
+    return title
+
+
 def _hash(secret, *parts):
     return hashlib.sha256('\n'.join((secret, *parts)).encode()).hexdigest()
 
@@ -1167,6 +1207,9 @@ def keywords(text):
     return [w for w in re.findall(r'\w+', text.lower()) if len(w) > 2 and w not in STOP_WORDS][:12]
 
 
+MONTHS = ('January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December')
+
+
 def free_draft(db, accounts, text, search=None, internal=()):
     """A draft answer to a free question, by plain code: what the owner's own work accounts hold on its words. The
     question is only data here: searched for (keywords, and by meaning when the owner's Machine has embeddings), never
@@ -1197,10 +1240,13 @@ def free_draft(db, accounts, text, search=None, internal=()):
         if org and org not in orgs:
             orgs.append(org)
         kinds[row['kind'].split('.')[-1]] += 1
-        matches.append({'id': row['id'], 'kind': row['kind'], 'title': clean(row['title'], 120), 'at': day(row['occurred_at'])})
+        matches.append({'id': row['id'], 'kind': row['kind'], 'title': _match_title(db, row), 'at': day(row['occurred_at'])})
     plural = {'message': ('email', 'emails'), 'event': ('meeting', 'meetings')}
     what = ', '.join(f"{n} {plural.get(k, ('message', 'messages'))[n > 1]}" for k, n in kinds.most_common(3))
     last = max((m['at'] or '' for m in matches), default='')[:7]
+    if re.fullmatch(r'\d{4}-\d\d', last):  # as people say it: November, or November 2025 in another year
+        year, month = int(last[:4]), int(last[5:])
+        last = MONTHS[month - 1] + (f' {year}' if year != dt.date.today().year else '')
     draft = (f"Yes, I have: {what} on this" + (f", with {', '.join(orgs[:3])}" if orgs else '')
              + (f", most recently in {last}" if last else '') + '. Happy to tell you more.')
     return draft[:FREE_ANSWER_CHARS], matches
@@ -1351,11 +1397,11 @@ def clean_answer(kind, answer):
     return None
 
 
-def question_text(kind, question):
+def question_text(kind, question, db=None):
     if kind == fleet_reviews.KIND:
         return fleet_reviews.question_text(question)
     if kind in fleet_requests.STAGED:
-        return fleet_requests.question_text(kind, question)
+        return fleet_requests.question_text(kind, question, db)
     if kind == 'availability':
         return friends.question_text(question)
     if kind == 'skill':
@@ -1363,7 +1409,7 @@ def question_text(kind, question):
     if kind == contact_share.KIND:
         return contact_share.question_text(question)
     if kind == 'relationships':
-        return t('Who knows someone at {}?', question.get('about', '?'))
+        return t('Who knows someone at {}?', org_label(question.get('about'), db) or '?')
     if kind == 'meeting':
         return (t('What do you know about {}?', ', '.join(question.get('emails', [])))
                 + (t(' (a meeting on {})', question['when']) if question.get('when') else ''))
@@ -1996,16 +2042,16 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                                                          (fleet, teammate['member_id'])).fetchone()[0] >= FREE_OPEN
                 if rule == 'never' or verdict == 'never':
                     status, body = 'declined', None
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db),
                              'declined (your rule)' if rule == 'never' else 'declined (your rule: never about that)')
                 elif busy:  # a teammate can't pile free questions on the owner
                     status, body = 'declined', None
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db),
                              f'declined: {FREE_OPEN} of their questions already wait for you')
                 elif rule == 'always':
                     body = self.compute(db, kind, question, details, fleet, scope, ok=gate)
                     status = 'answered'
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question),
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db),
                              ('answered with what the Team Graph shares: ' if kind == 'brief' or gate else 'answered: ') + answer_text(kind, body))
                 else:
                     draft = None
@@ -2020,7 +2066,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                                 json.dumps(draft) if draft else None))
                     if kind == 'brief':  # a brief comes back every day: only the latest one waits, the older ones expire
                         superseded = self.fold_briefs(db, fleet, teammate['member_id'], ask['id'])
-                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question), 'waiting for you')
+                    self.log(db, 'in', fleet, teammate['member_id'], name, kind, question_text(kind, question, db), 'waiting for you')
                     status, body = 'waiting', None
         self.relay.call('POST', '/answer', {'id': ask['id'], 'status': status, **({'answer': body} if body is not None else {})})
         if superseded and self.retell:
@@ -2081,7 +2127,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         self.relay.call('POST', '/answer', {'id': row['id'], 'status': status, **({'answer': answer} if answer is not None else {})})
         with self.connect() as db:
             db.execute('UPDATE fleet_in SET status=?,decided_at=?,choice=? WHERE id=?', (status, now(), choice, row['id']))
-            self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question),
+            self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question, db),
                      ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else 'declined')
         if retell and row['telegram_message_id'] and self.retell:
             self.retell(row['telegram_message_id'])
@@ -2126,7 +2172,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             with self.connect() as db:
                 db.execute("UPDATE fleet_in SET status=?,decided_at=?,choice=? WHERE id=? AND status='waiting'",
                            (status, now(), 'rule', row['id']))
-                self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question), outcome)
+                self.log(db, 'in', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], question, db), outcome)
             settled.append(row['id'])
             if row['telegram_message_id']:
                 told.add(row['telegram_message_id'])
@@ -2391,7 +2437,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             if context_key:
                 db.execute('DELETE FROM fleet_meta WHERE key=?', (context_key,))
             if created:
-                self.log(db, 'out', fleet, None, 'your Fleet', kind, question_text(kind, question), f"asked {len(sent.get('ids', {}))}")
+                self.log(db, 'out', fleet, None, 'your Fleet', kind, question_text(kind, question, db), f"asked {len(sent.get('ids', {}))}")
         return sent
 
     def ask_free(self, text, fleet):
@@ -2421,7 +2467,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             db.execute('UPDATE fleet_out SET status=?,answer=?,answered_at=? WHERE id=?',
                        (status, json.dumps(answer) if answer is not None else None, now(), row['id']))
             if status != 'waiting':
-                self.log(db, 'out', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], json.loads(row['question'])),
+                self.log(db, 'out', row['fleet'], row['member_id'], row['name'], row['kind'], question_text(row['kind'], json.loads(row['question']), db),
                          ('answered: ' + answer_text(row['kind'], answer)) if answer is not None else status)
         if row['kind'] == fleet_reviews.KIND:
             self.review_answered(row, status, answer)
@@ -3485,7 +3531,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             for r in db.execute('SELECT * FROM fleet_scopes'):
                 scopes.setdefault(r['fleet'], {}).setdefault(r['member_id'], {})[r['kind']] = scope_of(r['scope'])
             noping = {r['key'][15:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_noping:%'")}
-            waiting = [{**{k: v for k, v in dict(r).items() if k != 'draft'}, 'question': question_text(r['kind'], json.loads(r['question'])),
+            waiting = [{**{k: v for k, v in dict(r).items() if k != 'draft'}, 'question': question_text(r['kind'], json.loads(r['question']), db),
                         **({'draft': json.loads(r['draft'])} if _get(r, 'draft') else {})}
                        for r in db.execute("SELECT * FROM fleet_in WHERE status='waiting' ORDER BY at DESC LIMIT 50")]
             # A handoff taken back says so; two open handoffs of one to-do to the same teammate show as one (the newest)
@@ -3501,7 +3547,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
                 return True
             asked = [{**{k: r[k] for k in ('id', 'fleet', 'member_id', 'name', 'kind', 'context', 'status', 'at', 'answered_at')},
                       **({'withdrawn': True} if r['id'] in withdrawn else {}),
-                      'question': question_text(r['kind'], json.loads(r['question'])),
+                      'question': question_text(r['kind'], json.loads(r['question']), db),
                       'answer': answer_text(r['kind'], json.loads(r['answer'])) if r['answer'] else None,
                       **({'busy': json.loads(r['answer']).get('busy', [])} if r['kind'] == 'availability' and r['answer'] else {}),
                       **({'delivered': delivered[r['id']]} if r['id'] in delivered and r['status'] in ('asked', 'waiting') else {}),

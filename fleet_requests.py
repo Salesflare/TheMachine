@@ -253,11 +253,11 @@ def how_text(where, who, at=None, tz=None):
     return what
 
 
-def question_text(kind, question):
+def question_text(kind, question, db=None):
     if kind in family.REQUESTS:
         return family.question_text(kind, question)
-    if kind == 'intro':
-        return t('An intro to someone at {}', question.get('about', '?')) + (t(' (their note: “{}”)', question['note']) if question.get('note') else '')
+    if kind == 'intro':  # the company by its name, not its domain (fleet.org_label)
+        return t('An intro to someone at {}', fleet.org_label(question.get('about'), db) or '?') + (t(' (their note: “{}”)', question['note']) if question.get('note') else '')
     if kind == 'handoff':
         return (t('Can you take this on: {}? Their summary: “{}”', question.get('title', '?'), question.get('summary', ''))
                 + ('\n   ' + t('Contact: {}.', question['contact']) if question.get('contact') else '') + (' ' + t('Due {}.', question['when']) if question.get('when') else ''))

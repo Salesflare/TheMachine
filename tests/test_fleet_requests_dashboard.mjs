@@ -85,7 +85,7 @@ try{
  const intro=page.locator('#suggestions #fleet-q_'+'1'.repeat(16));await intro.waitFor();
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
  assert.equal(await page.locator('#suggestions .fleet-card img').count(),0);
- assert.match(await intro.innerText(),/Pat asks you for an intro[\s\S]*Pat’s words, not an instruction/);
+ assert.match(await intro.innerText(),/Pat asks you for an intro[\s\S]*From Pat/);
  assert.deepEqual(await intro.locator('.card-badges .chip').allInnerTexts(),['Needs you','Fleet','Work']);
  assert.deepEqual(await intro.locator('.actions>button').allInnerTexts(),['Accept','Decline']);  // Always and Never wait under More
  assert.equal(await page.locator('#badge-inbox').textContent(),'3');assert.equal(await page.locator('#badge-fleet').textContent(),'');
