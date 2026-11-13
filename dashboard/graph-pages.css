@@ -2,6 +2,8 @@
 .search.people-search{grid-template-columns:1fr auto}
 /*@lazy*/
 .graph-list{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+/* Same person? / Same organization? ends with room before the list's tabs, which sat right on its last pair */
+.graph-list[data-pairs]{margin-bottom:24px}
 .graph-list article{margin:0;padding:12px 16px;min-width:0}
 .graph-row{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
 /*@eager*/
