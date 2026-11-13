@@ -20,7 +20,7 @@ import next_actions
 from machine.store.graph_history import live
 from machine.sources.calendar import all_day_span, calendar_owned, calendar_owner_name
 from machine.sources.slack import slack_named, slack_named_out
-from machine.store import review_last_look, review_saves
+from machine.store import review_last_look, review_saves, review_wait, todo_likely
 from machine.store.events import RUN_SIGNAL_BUDGET, SET_ASIDE_AFTER
 from machine.text import _address, clamp, encoded
 import own_addresses
@@ -730,7 +730,9 @@ class ReviewStore:
                     for queue in account_rows:
                         if queue:
                             rows.append(queue.pop(0))
-                rows += last_look
+                # What it claimed stays the same; it reads the likeliest to bring a to-do first (todo_likely.py), and the
+                # set-aside messages' one more look after them, oldest first, as before
+                rows = self.likely_first(db, rows) + last_look
             if not rows:
                 return {'events': [], 'analysis_id': None}
             analysis_id = uuid.uuid4().hex
@@ -745,8 +747,9 @@ class ReviewStore:
             return self.review_result(analysis_id, pages, resumed_from=recovered_from, **first)
 
     def most_promising(self, db, accounts, since, limit):
-        """The quick first look's signals, so its first cards are the useful ones: what most likely needs the owner, read
-        from who wrote to whom and what came after (never from the words). First a person writing to the owner directly
+        """The quick first look's signals, so its first cards are the useful ones: what most likely brings a to-do
+        (todo_likely.score), mainly from who wrote to whom and what came after, then an ask, a question or a date at the
+        top of it, a known sender, how recent. First a person writing to the owner directly
         whom the owner hasn't answered in that thread since (a reply may be owed), and direct chat messages; then their
         appointments; then mail they were one of many on, or already answered; the owner's own sent mail and automated
         mail last (sent mail is the context of the threads it answers, not what needs them). Newest first within each, except the one who has waited longest on the
@@ -761,20 +764,32 @@ class ReviewStore:
                                              'AND occurred_at>=? ORDER BY occurred_at>?,CASE WHEN occurred_at>? THEN occurred_at END,occurred_at DESC,id DESC LIMIT 5000',
                                              (*accounts, SET_ASIDE_AFTER, since, *(now(),) * 2))]
         ranks = [self.need_rank(row, own) for row in found]
-        waiting = 0
-        for i, row in enumerate(found):  # the thread check only where it decides, and only until the batch is full
+        answers, live_threads, checked = set(), set(), 0
+        for i, row in enumerate(found):  # the thread checks only where they decide, and only so many (a query each)
             if ranks[i] == 0 and row['kind'] == 'gmail.message':
+                checked += 1
+                if checked > max(limit, todo_likely.THREAD_CHECKS):
+                    break
                 if self.answered(db, row):
-                    ranks[i] = 2
-                else:
-                    waiting += 1
-                    if waiting >= limit:
-                        break
-        ranked = sorted(range(len(found)), key=lambda i: (ranks[i], i))  # stable: newest, then soonest, first within a rank
-        # The one waiting longest: from the oldest end, the first that still waits (checked only until one does)
+                    answers.add(i)
+                elif self.owner_wrote_in(db, row['account_id'], todo_likely.metadata(row)):
+                    live_threads.add(i)
+        # By how likely each brings a to-do (todo_likely.py): who wrote to whom first, then an ask, a question, a date,
+        # a sender the Graph knows, how recent; stable, so newest, then soonest, first among equals
+        people, current = review_wait.People(db), dt.datetime.fromisoformat(now())
+        scores = [todo_likely.score(row, ranks[i], current, people, i in answers, i in live_threads) for i, row in enumerate(found)]
+        for i in answers:
+            ranks[i] = 2
+        ranked = sorted(range(len(found)), key=lambda i: (-scores[i], i))
+        # The one waiting longest: from the oldest end, the first that still waits (checked only until one does); one who
+        # asked something (a question, an ask, a date: todo_likely.words) before one who did not, and a thank you or an
+        # FYI waits on nobody
         current, checked, longest = now(), 0, None
+        said = {i: todo_likely.words(found[i]) for i in range(len(found)) if ranks[i] == 0}
+        asking = any(w['question'] or w['ask'] or w['dated'] for w in said.values())
         for i in reversed(range(len(found))):
-            if ranks[i] != 0 or found[i]['occurred_at'] > current:
+            if ranks[i] != 0 or found[i]['occurred_at'] > current or said[i]['courtesy'] or (
+                    asking and not (said[i]['question'] or said[i]['ask'] or said[i]['dated'])):
                 continue
             if found[i]['kind'] == 'gmail.message':
                 if checked >= limit:
@@ -788,6 +803,22 @@ class ReviewStore:
         if longest is not None:
             ranked = [longest, *(i for i in ranked if i != longest)]
         return [found[i] for i in ranked[:limit]]
+
+    def likely_first(self, db, rows):
+        """A claimed batch in the order to read it: the likeliest to bring a to-do first (todo_likely.score), the same
+        signals. Thread lookups only for mail from a person to the owner, at most THREAD_CHECKS."""
+        if len(rows) < 2:
+            return rows
+        own, current, people = self.review_own_addresses(db), dt.datetime.fromisoformat(now()), review_wait.People(db)
+        scores, checked = [], 0
+        for row in rows:
+            rank, answered_, live_thread = self.need_rank(row, own), False, False
+            if rank == 0 and row['kind'] == 'gmail.message' and checked < todo_likely.THREAD_CHECKS:
+                checked += 1
+                answered_ = self.answered(db, row)
+                live_thread = not answered_ and self.owner_wrote_in(db, row['account_id'], todo_likely.metadata(row))
+            scores.append(todo_likely.score(row, rank, current, people, answered_, live_thread))
+        return todo_likely.order(rows, scores)
 
     def own_addresses(self):
         return {str(a.get('email', '')).lower() for a in self.accounts if '@' in str(a.get('email', ''))}

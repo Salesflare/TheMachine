@@ -87,12 +87,14 @@ Also:
 
 You don't have to ask for that preview. With reviews still off, once OpenClaw has a model and a source has sent its first signals, the service starts it by itself, in two passes.
 
-**The quick pass:** the 20 signals of the last 7 days that most likely need you, whatever their age within the week, as soon as the first page of mail is in, so the first to-dos come within minutes. What most likely needs you is read from who wrote to whom, not from the words, in this order:
+**The quick pass:** the 20 signals of the last 7 days that most likely need you, whatever their age within the week, as soon as the first page of mail is in, so the first to-dos come within minutes. What most likely needs you is worked out on your Machine, with no model call, mainly from who wrote to whom:
 
 1. people writing to you directly whom you haven't answered in that thread, and direct messages (Slack, LinkedIn, X, WhatsApp);
-2. your own mail and your appointments (the soonest first);
-3. mail you were one of many on;
-4. automated mail last.
+2. your appointments (the soonest first);
+3. mail you were one of many on, or answered since;
+4. automated mail and your own mail last.
+
+Within that, a signal more likely to bring a to-do comes first: a question or an ask in its subject or the top of its body (never the part a reply quotes), an ask with a date, a reply in a thread you wrote in, a sender your Graph knows, Gmail's Important mark, and how recent it is. A thank-you or an FYI, and a newsletter or a system's mail, come later. Each regular review reads the batch it claimed in the same order. Only the order changes: everything is still reviewed.
 
 **Then it keeps digging**, 40 of the most promising at a time (the rest of the week in one batch when it is at most 60), the next batch within seconds of the last one ending (while it digs the service checks its review every 4 seconds instead of 15), until it has 3 to-dos, has looked through the whole week, or has used 60% of the 5-hour usage window (on an API key or a sign-in without usage windows: 300 signals). Its reviewer is asked to keep its steps few (status and the batch in one step, the lookups for several signals at once) and to save each to-do as soon as it is checked. What one batch reviewed is not reviewed again, so no to-do comes twice. The health report says why it stopped (`dig`: `cards`, `covered`, `usage`, or `expired` a day after it started).
 
