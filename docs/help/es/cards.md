@@ -102,7 +102,7 @@ En tus primeras tareas, una línea corta bajo los botones muestra lo esencial: *
 
 En tu primer día, la parte de arriba de Tareas te saluda por tu nombre y muestra quién lleva más tiempo esperando tu respuesta. The Machine redacta esa respuesta primero, para que esté lista cuando llegues. No sale nada hasta que la envías. La línea desaparece después de tu primer día o de tu primera tarea decidida.
 
-Cada tarea empieza por su título. La línea de debajo dice de quién trata, la organización cuando trata de una (nunca solo porque alguien trabaje allí), el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph. Un nombre y una organización muestran su foto o logo cuando el Graph tiene uno.
+Cada tarea empieza por su título. La línea de debajo dice de quién trata, la organización cuando trata de una (nunca solo porque alguien trabaje allí), el proyecto, Trabajo o Personal (en **Todo**) y cuándo llegó, además de cómo va cuando su grupo no lo dice ya. Toca un nombre para abrir su página en el Graph. Un nombre y una organización muestran su foto o logo cuando el Graph tiene uno. Si no, muestran sus iniciales. Un logo que no se leería tan pequeño, como blanco sobre fondo transparente o un logotipo muy ancho, también muestra la inicial.
 
 A veces una línea discreta bajo el texto dice lo que no se sabe, como «Último contacto hace 12 días por correo; nada desde entonces.» Solo aparece cuando el último contacto es antiguo o sigue sin respuesta, y nombra los canales no conectados por los que quizá respondieron, como WhatsApp. Tu Machine prepara con los mismos datos, así que dice lo que no sabe en vez de adivinar.
 

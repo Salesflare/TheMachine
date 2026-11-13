@@ -702,7 +702,20 @@ class Enrichment(unittest.TestCase):
             self.assertNotIn('hooli.example', enrichment.due(db, day(60), 25))
         self.build()
         self.assertEqual(self.node('org:globex.com')['profile']['logo'], 'https://media.example/globex.png')  # the lookup's wins
+        icon = self.node('org:globex.com')['profile']['icon']  # the site's square icon stays for small sizes
+        self.assertTrue(icon.startswith('api/person-photo?p='))
+        with self.store.connect() as db:
+            info = db.execute("SELECT info FROM graph_nodes WHERE id='org:globex.com'").fetchone()[0]
+        self.assertEqual(enrichment.node_picture(info, 'logo'), icon)  # a to-do's chip shows the icon
+        self.assertNotIn('icon', self.node('org:hooli.example')['profile'])
         self.assertTrue(self.node('org:hooli.example')['profile']['logo'].startswith('api/person-photo?p='))
+
+    def test_linkedins_stock_company_logo_counts_as_none(self):
+        stock = 'https://static.licdn.com/aero-v1/sc/h/abc123'
+        self.assertNotIn('logo', enrichment.usable('globex.com', {'name': 'Globex', 'logo': stock}))
+        self.assertEqual(enrichment.usable('globex.com', {'name': 'Globex', 'logo': 'https://media.licdn.com/dms/image/x'})['logo'],
+                         'https://media.licdn.com/dms/image/x')
+        self.assertIsNone(enrichment.node_picture(json.dumps({'profile': {'logo': stock}}), 'logo'))
 
     def test_a_site_logo_is_the_icon_its_home_page_names_never_an_svg(self):
         page = """<html><head><link rel="icon" href="/dark.png" sizes="192x192" media="(prefers-color-scheme: dark)">
