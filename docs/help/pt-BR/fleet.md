@@ -35,7 +35,7 @@ Em um Fleet de Trabalho Padrão, sua Machine responde sozinha a **quem conhece a
 
 Para parar uma delas, defina como **Nunca** em **Compartilhamento**. Uma regra salva como **Perguntar antes** agora funciona como **Sempre**. Enquanto o compartilhamento do Graph da equipe do seu Fleet está desligado, quem conhece alguém e contexto de reunião continuam perguntando a você antes.
 
-Fleets de Trabalho Cuidadosos, Amigos e Família continuam perguntando a você antes. Apresentações, passagens de trabalho, acompanhamentos compartilhados e perguntas livres mantêm suas próprias regras.
+Fleets de Trabalho Cuidadosos, Amigos e Família continuam perguntando a você antes. Apresentações, passagens de trabalho e perguntas livres mantêm suas próprias regras.
 
 ## Aprendizados da equipe
 

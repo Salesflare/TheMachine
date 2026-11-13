@@ -14,7 +14,7 @@ Summaries need a paid Zoom plan, AI Companion turned on during the meeting, and 
 
 ## What it does with them
 
-Each summary is matched to the meeting in your calendar. It shows in that meeting's **Notes** and the transcript in its **Transcript**, marked **From Zoom**, next to anything you added. Your Machine uses it for that meeting's follow-ups, including who on your team does what. Nothing is sent until you send it.
+Each summary is matched to the meeting in your calendar. It shows in that meeting's **Notes** and the transcript in its **Transcript**, marked **From Zoom**, next to anything you added. Your Machine makes to-dos from the next steps that are yours. Nothing is sent until you send it.
 
 ## What it can do
 

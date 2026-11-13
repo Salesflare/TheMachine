@@ -28,7 +28,7 @@ The Fleet tab shows one view at a time, picked with pills:
 - **Friends**, **Network** (finding people you know, scheduling with other Machines), **Sharing** (every rule in one
   place) and **Activity** (what happened, and what your Machine asked, answered and shared).
 
-What a Fleet needs from you (a teammate's request, a meeting's follow-ups to split, a server to confirm) shows as a
+What a Fleet needs from you (a teammate's request, a server to confirm) shows as a
 to-do under **To-dos**, tagged Fleet and Work, with the same buttons as your other to-dos. The To-dos badge counts them.
 A teammate's brief ask is the exception: it comes every day, so it is never a to-do (see [The team brief](#the-team-brief)).
 
@@ -61,7 +61,7 @@ Any Fleet, and any friend, can share:
 5. **Shared Graph.** Work people, organizations, projects and client threads are shared with the Fleet. Graph has
    **Mine / Team**, "via <name>" and **Ask <name>**. It all stays on the Machines; the Network only passes it on. See
    [Shared Graph](shared-graph.md).
-6. **Requests**: intros, handoffs, shared follow-ups and reviews. See
+6. **Requests**: intros, handoffs and reviews. See
    [Asking a teammate to do something](#asking-a-teammate-to-do-something).
 7. **The team brief**, **team learnings** and **free questions**: see [The team brief](#the-team-brief),
    [Team learnings](#team-learnings) and [Ask the Fleet anything](#ask-the-fleet-anything).
@@ -84,7 +84,7 @@ What your Machine tells the others depends on your rule for shared emails ([Your
 
 ## Asking a teammate to do something
 
-Besides questions, a Work Fleet carries three kinds of requests: **intros**, **handoffs** and **shared follow-ups**.
+Besides questions, a Work Fleet carries two kinds of requests: **intros** and **handoffs**.
 Each has its own rule in the Fleet (**Ask me first** by default, **Always accept**, **Never**), and nothing happens on
 your side until you accept one. **Ask to review** has no rule: each request is a to-do the reviewer answers.
 
@@ -209,21 +209,11 @@ no signature.
 - The Network only counts how far each link got (opened, answered, done, signed up, task added, connected), never
   what was in it.
 
-### Shared follow-ups
+### Meeting follow-ups
 
-After a meeting that several members of one Work Fleet attended (in the last two days), one Machine proposes who does
-which follow-up: the organizer's, else that of the member who joined the Fleet first, so there is only ever one
-proposal.
-
-- It starts from that owner's own open to-dos and promises on the meeting, from that Fleet's work accounts only
-  (never a Personal to-do or a promise made from a personal account). The owner fills in each teammate's part
-  ("send the pricing", "book the demo") on a to-do with the meeting's title and day, then **Send the split** or **Not
-  needed**.
-- With [Zoom](sources.md) connected, the meeting's summary fills in the empty parts: the review gives each next step
-  to the person it names (an unclear one stays empty). The to-do says so; nothing goes until Send the split.
-- Each member's Machine shows them their part, with the meeting's title from their own calendar, to **Accept**, change
-  (**Accept my change**) or **Decline**. Accepting makes their to-do. To-dos on that meeting then say who does what.
-- The meeting only travels as a hash keyed with the Fleet's secret: neither its title nor its id leaves your Machine.
+There is no Fleet request for a meeting's follow-ups. Each teammate's Machine reads the same meeting's notes and makes
+its own owner's to-dos from them (one per next step that is theirs, the meeting as its source). Nothing goes to anyone. (The
+follow-up split it once had is gone: one still open was set aside, and one from an older Machine is declined.)
 
 ### Ask to review
 
@@ -340,7 +330,7 @@ context and who handles shared emails.
   default. If the Team Graph stops between the rule and the answer, the ask waits for you.
 - Who handles shared emails sends only hashes both sides already have, so it follows the Fleet's level alone.
 
-A Careful Fleet, Friends and Family keep asking. Intros, handoffs, shared follow-ups and free questions keep their own
+A Careful Fleet, Friends and Family keep asking. Intros, handoffs and free questions keep their own
 rules.
 
 ## Team learnings

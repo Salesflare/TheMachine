@@ -1,5 +1,5 @@
-"""Warm intros, handoffs and shared follow-ups in a Work Fleet (docs/fleet.md): a teammate asks this Machine's owner to
-do something, not for an answer.
+"""Warm intros and handoffs in a Work Fleet (docs/fleet.md): a teammate asks this Machine's owner to do something, not
+for an answer.
 
 - intro: after "who knows someone at acme.com?", the asker asks one teammate for an intro. Once that teammate accepts,
   their Machine makes a card with a double-opt-in email to the person they know best there, drafted by plain code from
@@ -8,10 +8,10 @@ do something, not for an answer.
 - handoff: "can you take this on?" from a card. The sender reads and edits the short summary before it goes. The
   receiver's Machine shows "<sender> hands you: ..." with Accept and Decline; accepting makes the follow-up card there.
   The sender sees how it went, and their card says it was handed off.
-- followup: after a meeting that several members of one Fleet attended, one Machine proposes who does which follow-up:
-  the organizer's, else that of the member who joined the Fleet first (the relay lists them in that order), so only one
-  does. Its owner fills in and sends the split; each member's Machine shows them their part to accept, change or
-  decline. Cards on that meeting then say who does what, so nobody follows up twice.
+
+A meeting's follow-ups are no request: each Machine's review reads the meeting's notes and makes its own owner's
+to-dos, and a teammate's commitment to the owner a promise ("Waiting on Pat: ..."). The follow-up split it once had
+(kind followup, retired 2026-11) is gone: one from an older Machine is declined like any request this one doesn't take.
 
 Each has its own rule per teammate (Ask me first by default; Always accepts by itself, Never declines).
 
@@ -22,7 +22,6 @@ the quoted text is data. Everything stays in the Fleet it came from: answered th
 from __future__ import annotations
 
 import datetime as dt
-import hashlib
 import json
 import logging
 import re
@@ -31,7 +30,6 @@ import sqlite3
 import family
 import graph
 import locale_prefs
-import meeting_notes
 from i18n import t
 import next_actions
 
@@ -39,19 +37,20 @@ LOG = logging.getLogger('personal-assistant')
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS fleet_requests(id TEXT PRIMARY KEY,fleet TEXT NOT NULL,kind TEXT NOT NULL,member_id TEXT,name TEXT,
   card_id TEXT,stage TEXT NOT NULL,at TEXT NOT NULL,updated_at TEXT NOT NULL);
+-- the retired follow-up splits: kept as they were (export), nothing reads them (retire_splits)
 CREATE TABLE IF NOT EXISTS fleet_splits(id TEXT PRIMARY KEY,fleet TEXT NOT NULL,meeting TEXT NOT NULL,direction TEXT NOT NULL,
   event_id INTEGER,title TEXT,day TEXT,proposer TEXT,parts TEXT NOT NULL,status TEXT NOT NULL,card_id TEXT,at TEXT NOT NULL,updated_at TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS fleet_splits_meeting ON fleet_splits(fleet,meeting);
 '''
-KINDS = ('intro', 'handoff', 'followup')
-STAGED = KINDS + family.REQUESTS  # with a Family's to-dos and plans: the same path, accept or decline
+KINDS = ('intro', 'handoff')
+RETIRED = ('followup',)  # sent or taken before: their rows still read (logs, a teammate's late answer), never a new one
+STAGED = KINDS + RETIRED + family.REQUESTS  # with a Family's to-dos and plans: the same path, accept or decline
 STAGES = {'accepted': 'accepted', 'adjusted': 'accepted with a change', 'sent': 'intro email sent', 'declined': 'declined',
           'done': 'done'}
 ACCEPTED = {'once': 'Accepted', 'always': 'Accepted, and always from now on', 'decline': 'Declined',
             'never': 'Declined, and never from now on', 'adjust': 'Accepted with your change'}
 NOTE_CHARS = 160  # the optional short note with an answer ("Not mine", "Already done"): sealed for the asker like the stage
 BACK_DAYS = 7  # a handoff declined this recently brings its card back, also when the answer came before this version
-FOLLOWUP_DAYS = 2  # a meeting that ended this long ago still gets a follow-up split proposed
 KEY = re.compile(r'[0-9a-f]{64}')
 # A handoff carries the card's own sources (its emails or messages), so the teammate can read what it is about on their
 # own Machine. Only that card's evidence, within these limits: the whole question is sealed into one envelope the
@@ -71,7 +70,6 @@ INTERCOM_REGIONS = ('us', 'eu', 'au')
 VIA = re.compile(r"^\s*['\"]?(.+?)['\"]?\s+via\s+\S.*$", re.I)
 DAY = re.compile(r'\d{4}-\d{2}-\d{2}')
 OPEN = ('pending', 'accepted', 'prepared', 'instructions', 'snoozed')
-SPLIT_SHOWN_DAYS = 7
 # Silent acceptance: the owner acts on a waiting handoff (a message they sent, a call they joined) before they tap
 # Accept. The review judges that by meaning (handoff_on_it); the teammate hears "on it", where and when, and the first
 # name of who they talked to ("talked to Sam on Slack"), never what was said. It travels as an accept with a `silent`
@@ -85,6 +83,14 @@ WAITING_DAYS = 14  # handoffs waiting this long or less are offered to the revie
 
 def ensure(db):
     db.executescript(SCHEMA)
+
+
+def retire_splits(db):
+    """Once, as the follow-up split went (2026-11): a split still waiting for the owner is set aside, and a teammate's
+    split still waiting for an answer lapses, as an unanswered request does. Quietly: nothing goes to the teammate (the
+    Network lets it lapse there too) and no to-do is made from it; the regular review already made the meeting's."""
+    db.execute("UPDATE fleet_splits SET status='dismissed',updated_at=? WHERE direction='out' AND status='proposed'", (fleet.now(),))
+    db.execute("UPDATE fleet_in SET status='expired' WHERE kind IN (%s) AND status='waiting'" % ','.join('?' * len(RETIRED)), RETIRED)
 
 
 def _day(value):
@@ -186,7 +192,7 @@ def parse_sources(value):
 
 
 def parse(kind, question):
-    """A teammate's intro request, handoff or follow-up split in its fixed form, else None. The text in it is their own
+    """A teammate's intro request or handoff in its fixed form, else None. The text in it is their own
     words: kept short, shown quoted, never read as instructions."""
     if kind in family.REQUESTS:
         return family.parse(kind, question)
@@ -206,14 +212,7 @@ def parse(kind, question):
         return {'title': title, 'summary': summary, **({'contact': contact} if fleet.EMAIL.fullmatch(contact) else {}),
                 **({'when': _day(question.get('when'))} if _day(question.get('when')) else {}),
                 **({'messages': messages} if messages else {}), **({'sources': sources} if sources else {})}
-    if kind != 'followup':
-        return None
-    key, items, when = question.get('meeting'), question.get('items'), _day(question.get('when'))
-    if not isinstance(key, str) or not KEY.fullmatch(key) or not isinstance(items, list) or not when:
-        return None
-    kept = [{'member_id': fleet.clean(i['member_id'], 40), 'what': fleet.clean(i['what'], 200)} for i in items[:10]
-            if isinstance(i, dict) and isinstance(i.get('member_id'), str) and isinstance(i.get('what'), str) and fleet.clean(i['what'], 200)]
-    return {'meeting': key, 'when': when, 'items': kept} if kept else None
+    return None  # a retired kind (a follow-up split from an older Machine): declined
 
 
 def clean_answer(kind, answer):
@@ -273,12 +272,6 @@ def answer_text(kind, answer):
     answer = answer or {}
     return (t(STAGES.get(answer.get('stage'), 'no answer')) + (f": “{answer['what']}”" if answer.get('what') else '')
             + ((' (' if answer.get('what') else ': ') + f"“{answer['note']}”" + (')' if answer.get('what') else '') if answer.get('note') else ''))
-
-
-def meeting_key(secret, source_id, day):
-    """The same meeting on every attendee's Machine (calendar event ids are shared), as a hash with the Fleet's secret:
-    neither its title nor its id travels."""
-    return hashlib.sha256((secret + '\n' + str(source_id) + '\n' + day).encode()).hexdigest()
 
 
 def first_name(name):
@@ -360,12 +353,8 @@ class Requests:
         return bool(row and row['kind'] in STAGED)
 
     def take_request(self, ask, teammate, fleet_ref, kind, question, name):
-        """An intro request, handoff or follow-up split from a teammate: declined, accepted by the owner's rule, or kept
-        for the owner. The relay hears only the stage."""
-        if kind == 'followup' and question and teammate:
-            question = self.split_parts(fleet_ref, question, teammate)
-            if not any(p['mine'] for p in question['parts']):
-                question = None
+        """An intro request or handoff from a teammate: declined, accepted by the owner's rule, or kept for the owner.
+        The relay hears only the stage."""
         if not teammate or not question:
             with self.connect() as db:
                 self.log(db, 'in', fleet_ref, ask.get('from'), name, kind, 'a request this Machine does not take', 'declined')
@@ -390,36 +379,33 @@ class Requests:
         self.relay.call('POST', '/answer', {'id': ask['id'], 'status': 'waiting'})
         return 'waiting'
 
-    def decide_request(self, ask_id, choice, text=None, retell=True, by_rule=False, note=None):
-        """The owner on a waiting request: Accept (once), Always, Decline, Never, or for a follow-up, Accept with their
-        own change (adjust, from the dashboard). Accepting makes a card from this Machine's own data. `note`: the owner's
-        optional short reason or remark ("Not mine"), sealed for the asker with the stage; never by a rule."""
-        if choice not in ACCEPTED:
+    def decide_request(self, ask_id, choice, retell=True, by_rule=False, note=None):
+        """The owner on a waiting request: Accept (once), Always, Decline or Never. Accepting makes a card from this
+        Machine's own data. `note`: the owner's optional short reason or remark ("Not mine"), sealed for the asker with
+        the stage; never by a rule. (Accept with a change, 'adjust', was the retired follow-up split's: only its old
+        rows still say it.)"""
+        if choice not in ACCEPTED or choice == 'adjust':
             raise ValueError('Choose accept, always, decline or never')
         with self.connect() as db:
             row = db.execute("SELECT * FROM fleet_in WHERE id=? AND status='waiting'", (str(ask_id),)).fetchone()
         if not row:
             raise ValueError('That request was answered or has expired')
         question = json.loads(row['question'])
-        if choice == 'adjust':
-            text = fleet.clean(text, 200)
-            if row['kind'] != 'followup' or not text:
-                raise ValueError('Write your part of the follow-up')
         if choice in ('always', 'never') and not by_rule:
             with self.connect() as db:
                 _, details = self.rule(db, row['fleet'], row['member_id'], row['kind'])
                 db.execute('INSERT OR REPLACE INTO fleet_rules(fleet,member_id,kind,rule,details,updated_at) VALUES(?,?,?,?,?,?)',
                            (row['fleet'], row['member_id'], row['kind'], choice, int(details), fleet.now()))
         card_id, stage, why = None, 'declined', ''
-        if choice in ('once', 'always', 'adjust'):
+        if choice in ('once', 'always'):
             try:
-                card_id = self.request_card(row, question, text)
-                stage = 'adjusted' if choice == 'adjust' else 'accepted'
+                card_id = self.request_card(row, question)
+                stage = 'accepted'
             except ValueError as error:
                 why = fleet.clean(str(error), 200)
         status = 'answered' if stage != 'declined' else 'declined'
         note = '' if by_rule or row['kind'] not in KINDS else fleet.clean(note, NOTE_CHARS)
-        answer = {'stage': stage, **({'what': text} if stage == 'adjusted' else {})} if status == 'answered' else None
+        answer = {'stage': stage} if status == 'answered' else None
         if note:  # a decline with a reason travels as a stage (sealed), as only an answer carries words
             answer = {**(answer or {'stage': 'declined'}), 'note': note}
         self.relay.call('POST', '/answer', {'id': row['id'], 'status': 'answered' if answer else status, **({'answer': answer} if answer else {})})
@@ -433,7 +419,7 @@ class Requests:
             self.retell(row['telegram_message_id'])
         return {'status': status, 'answer': answer_text(row['kind'], answer) if status == 'answered' else None, 'card_id': card_id, 'reason': why or None}
 
-    def request_card(self, row, question, text=None):
+    def request_card(self, row, question):
         """The card for an accepted request, made from this Machine's own data. The teammate's words are shown quoted."""
         if not self.make_card:
             raise ValueError('This Machine makes no to-dos')
@@ -485,14 +471,7 @@ class Requests:
             return self.make_card(kind='handoff', ask_id=row['id'], name=sender, title=question['title'][:90],
                                   body=t('{} asks you to take this on: “{}”', first, summary),
                                   evidence=evidence, due=question.get('when'), **({'carried': carried} if carried else {}))
-        mine = '; '.join(text and [text] or [p['what'] for p in question['parts'] if p['mine']])
-        others = '; '.join(f"{p['name']}: {p['what']}" for p in question['parts'] if not p['mine'])
-        card = self.make_card(kind='followup', ask_id=row['id'], name=sender, title=t('Follow up: {}', mine)[:90],
-                              body=(t('Your part of the follow-ups from {} on {}, split in your Fleet by {}: {}.', question.get('title') or t('the meeting'),
-                                      question['when'], sender, mine) + (' ' + t('The others: {}.', others) if others else ''))[:700],
-                              evidence=[question['event_id']] if question.get('event_id') else [])
-        self.keep_split(row['fleet'], question, 'in', sender, card)
-        return card
+        raise ValueError('That request was answered or has expired')  # a retired kind: its waiting ones lapsed (retire_splits)
 
     # -- asking a teammate
     def ask_intro(self, fleet_ref, member_id, about, note=''):
@@ -997,17 +976,6 @@ class Requests:
         """A teammate's stage on the owner's own request: kept, logged, and told (accepted, sent, declined, done)."""
         stage = (answer or {}).get('stage') or {'declined': 'declined', 'expired': 'expired', 'waiting': 'waiting'}.get(status, status)
         question = json.loads(row['question'])
-        if row['kind'] == 'followup' and stage in STAGES:
-            with self.connect() as db:
-                split = db.execute("SELECT * FROM fleet_splits WHERE fleet=? AND meeting=? AND direction='out'", (row['fleet'], question['meeting'])).fetchone()
-                if split:
-                    parts = json.loads(split['parts'])
-                    for p in parts:
-                        if p['member_id'] == row['member_id']:
-                            p['stage'] = stage
-                            if (answer or {}).get('what'):
-                                p['what'] = answer['what']
-                    db.execute('UPDATE fleet_splits SET parts=?,updated_at=? WHERE id=?', (json.dumps(parts), fleet.now(), split['id']))
         if row['kind'] == 'handoff':
             with self.connect() as db:
                 if db.execute('SELECT 1 FROM fleet_meta WHERE key=?', ('handoff_withdrawn:' + str(row['id']),)).fetchone():
@@ -1191,207 +1159,6 @@ class Requests:
             self.retell(message[0])
         return {'ok': True, 'card_id': card_id, 'joined': note['joined']}
 
-    # -- shared follow-ups
-    def split_parts(self, fleet_ref, question, teammate):
-        """A follow-up split from a teammate, with each part's name from the directory, this owner's own part marked,
-        and this Machine's own copy of the meeting (its title stays here) when it has one."""
-        found = self.fleets().get(fleet_ref) or {}
-        names = {m['member_id']: fleet.clean(fleet.label(m), 80) for m in found.get('members', [])}
-        me = next((m['member_id'] for m in found.get('members', []) if m.get('me')), None)
-        parts = [{'member_id': i['member_id'], 'name': names.get(i['member_id'], 'a teammate'), 'what': i['what'], 'mine': i['member_id'] == me}
-                 for i in question['items'] if i['member_id'] in names]
-        event = self.meeting_event(fleet_ref, question['meeting'], question['when'])
-        return {**question, 'parts': parts, **({'event_id': event['id'], 'title': fleet.clean(event['title'], 80)} if event else {})}
-
-    def meeting_event(self, fleet_ref, key, day):
-        secret = (self.fleets().get(fleet_ref) or {}).get('secret') or ''
-        start = dt.date.fromisoformat(day)
-        with self.connect() as db:
-            for event in db.execute("SELECT id,source_id,title,occurred_at,metadata FROM events WHERE kind='calendar.event' AND deleted=0 "
-                                    'AND occurred_at>=? AND occurred_at<?', ((start - dt.timedelta(days=1)).isoformat(), (start + dt.timedelta(days=2)).isoformat())):
-                if meeting_key(secret, event['source_id'], day) == key:
-                    return event
-        return None
-
-    def keep_split(self, fleet_ref, question, direction, proposer, card_id=None):
-        with self.connect() as db:
-            db.execute('INSERT OR REPLACE INTO fleet_splits(id,fleet,meeting,direction,event_id,title,day,proposer,parts,status,card_id,at,updated_at) '
-                       'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                       (direction + ':' + question['meeting'], fleet_ref, question['meeting'], direction, question.get('event_id'), question.get('title'),
-                        question['when'], proposer, json.dumps(question['parts']), 'accepted', card_id, fleet.now(), fleet.now()))
-            # A split from a teammate for a meeting this Machine was about to propose: theirs is the one.
-            db.execute("UPDATE fleet_splits SET status='superseded',updated_at=? WHERE fleet=? AND meeting=? AND direction='out' AND status='proposed'",
-                       (fleet.now(), fleet_ref, question['meeting']))
-
-    def followup_round(self):
-        """Meetings that ended in the last two days with members of one Work Fleet in them: this Machine proposes a
-        follow-up split only where it is the one to (the organizer's, else the member who joined first). Nothing goes
-        until the owner sends it."""
-        proposed = 0
-        today = dt.datetime.now(dt.timezone.utc)
-        accounts = fleet.work_accounts(self.config)
-        if not accounts:
-            return 0
-        with self.connect() as db:
-            events = db.execute(f"SELECT id,source_id,title,occurred_at,metadata,account_id FROM events WHERE kind='calendar.event' AND deleted=0 AND history=0 "
-                                f"AND account_id IN ({','.join('?' * len(accounts))}) AND occurred_at>=? AND occurred_at<=?",
-                                (*accounts, (today - dt.timedelta(days=FOLLOWUP_DAYS + 1)).isoformat(), today.isoformat())).fetchall()
-            known = {r['id'] for r in db.execute('SELECT id FROM fleet_splits')}
-        for ref in self.work_fleets():
-            found = self.fleets()[ref]
-            if 'followup' not in found.get('asks', fleet.ASKS['work']) or not self.teammates(ref):
-                continue
-            members = found.get('members', [])
-            mine = self.my_emails()
-            own = self.fleet_accounts(ref)  # a meeting on another company's calendar is never split in this Fleet
-            for event in events:
-                if event['account_id'] not in own:
-                    continue
-                m = json.loads(event['metadata'] or '{}')
-                try:
-                    end = dt.datetime.fromisoformat(str(m.get('end_at') or event['occurred_at']).replace('Z', '+00:00'))
-                    end = end if end.tzinfo else end.replace(tzinfo=dt.timezone.utc)
-                except ValueError:
-                    continue
-                if not today - dt.timedelta(days=FOLLOWUP_DAYS) <= end <= today or m.get('status') == 'cancelled' or m.get('all_day'):
-                    continue
-                if any(isinstance(a, dict) and a.get('self') and a.get('responseStatus') == 'declined' for a in m.get('attendees') or []):
-                    continue  # the owner didn't go
-                emails = {str(a.get('email') or '').lower() for a in m.get('attendees') or [] if isinstance(a, dict) and a.get('responseStatus') != 'declined'}
-                there = [p for p in members if p.get('me') or emails & {e.lower() for e in p.get('emails', [])}]
-                if len(there) < 2:
-                    continue
-                organizer = str((m.get('organizer') or {}).get('email') or '').lower()
-                by = next((p for p in there if organizer and (organizer in {e.lower() for e in p.get('emails', [])} or (p.get('me') and organizer in mine))), None)
-                if not (by or there[0]).get('me'):
-                    continue
-                day = event['occurred_at'][:10]
-                key = meeting_key(found.get('secret') or '', event['source_id'], day)
-                if 'out:' + key in known or 'in:' + key in known:
-                    continue
-                parts = [{'member_id': p['member_id'], 'name': fleet.clean(fleet.label(p), 80), 'mine': bool(p.get('me')),
-                          'what': self.own_followups(event, own) if p.get('me') else ''} for p in there]
-                with self.connect() as db:
-                    db.execute('INSERT OR IGNORE INTO fleet_splits(id,fleet,meeting,direction,event_id,title,day,proposer,parts,status,at,updated_at) '
-                               'VALUES(?,?,?,?,?,?,?,?,?,?,?,?)', ('out:' + key, ref, key, 'out', event['id'], fleet.clean(event['title'], 80), day,
-                                                                   '', json.dumps(parts), 'proposed', fleet.now(), fleet.now()))
-                known.add('out:' + key)
-                proposed += 1
-        return proposed
-
-    def own_followups(self, event, accounts):
-        """The owner's own follow-ups from a meeting, to start the split with: open cards on it, and promises they made
-        from its start to a day after. From this Machine's own data only, and of it only the Fleet's accounts
-        (fleet_accounts): never a Personal to-do, nor a promise made from a personal account."""
-        with self.connect() as db:
-            cards = [r['title'] for r in db.execute(f"SELECT title FROM suggestions WHERE status IN ({','.join('?' * len(OPEN))}) "
-                                                    "AND coalesce(area,'')<>'personal' "
-                                                    "AND EXISTS (SELECT 1 FROM json_each(suggestions.event_ids) WHERE value=?)", (*OPEN, event['id']))]
-            try:
-                promised = [r['what'] for r in db.execute("SELECT what FROM promises WHERE direction='mine' AND status='open' AND created_at>=? AND created_at<=? "
-                                                          f"AND account_id IN ({','.join('?' * len(accounts))})",
-                                                          (event['occurred_at'], (dt.datetime.fromisoformat(event['occurred_at']) + dt.timedelta(days=1)).isoformat(), *accounts))]
-            except Exception:  # an install without promises yet
-                promised = []
-        return fleet.clean('; '.join(dict.fromkeys(cards + promised)), 200)
-
-    def split_notes(self):
-        """Proposed splits whose meeting has notes (meeting_notes.py) not read for them yet: for the review to fill in."""
-        since = (dt.date.today() - dt.timedelta(days=FOLLOWUP_DAYS + 1)).isoformat()
-        out = []
-        with self.connect() as db:
-            done = {r['key'][12:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'split_notes:%'")}
-            for split in db.execute("SELECT * FROM fleet_splits WHERE direction='out' AND status='proposed' AND day>=? AND event_id IS NOT NULL "
-                                    'ORDER BY day DESC LIMIT 10', (since,)).fetchall():
-                if split['id'] in done:
-                    continue
-                notes = meeting_notes.for_event(db, split['event_id'], split['day'])
-                if notes:
-                    out.append({'split_id': split['id'], 'title': split['title'] or 'a meeting', 'day': split['day'], 'event_id': notes['id'],
-                                'source': meeting_notes.SOURCE.get(notes['kind'], 'meeting'), 'parts': json.loads(split['parts'])})
-        return out
-
-    def split_notes_text(self):
-        """The review's list: each split's people (the owner marked), and the notes event to read."""
-        lines = []
-        for s in self.split_notes():
-            people = ', '.join(f"{p['member_id']} = {'the owner' if p['mine'] else p['name']}" for p in s['parts'])
-            lines.append(f"- split_id {s['split_id']}: “{s['title']}” on {s['day']}, {s['source']} notes event_id {s['event_id']}. People: {people}")
-        return '\n'.join(lines)
-
-    def fill_split(self, split_id, event_id, parts):
-        """The review read a meeting's notes and gave its next steps to the people in the split ({member_id: text}).
-        Only empty fields are filled, marked as suggested; the owner edits them and nothing goes before Send the split.
-        Called once per split: an empty `parts` says the notes give nobody anything clear."""
-        if isinstance(event_id, str) and event_id.strip().isdigit():
-            event_id = int(event_id.strip())
-        with self.connect() as db:
-            split = db.execute("SELECT * FROM fleet_splits WHERE id=? AND direction='out' AND status='proposed'", (str(split_id),)).fetchone()
-            if not split:
-                raise ValueError('That split was sent or set aside already, or is not this Machine\'s to propose')
-            notes = meeting_notes.for_event(db, split['event_id'], split['day']) if split['event_id'] else None
-        if not notes or notes['id'] != event_id:
-            raise ValueError('event_id is the notes event listed with that split')
-        given = parts if isinstance(parts, dict) else {}
-        split_parts = json.loads(split['parts'])
-        known = {p['member_id'] for p in split_parts}
-        if set(given) - known:
-            raise ValueError('parts names only the member_ids listed with that split')
-        filled = 0
-        for p in split_parts:
-            text = fleet.clean(given.get(p['member_id']) or '', 200)
-            if text and not p.get('what'):
-                p['what'], p['from_notes'] = text, True
-                filled += 1
-        with self.connect() as db:
-            if not db.execute("UPDATE fleet_splits SET parts=?,updated_at=? WHERE id=? AND status='proposed'",
-                              (json.dumps(split_parts), fleet.now(), split['id'])).rowcount:
-                raise ValueError('That split was sent or set aside already')
-            db.execute('INSERT OR REPLACE INTO fleet_meta(key,value) VALUES(?,?)',
-                       ('split_notes:' + split['id'], json.dumps({'event_id': notes['id'], 'source': meeting_notes.SOURCE.get(notes['kind'], ''),
-                                                               'filled': filled, 'at': fleet.now()})))
-        return {'filled': filled}
-
-    def send_split(self, split_id, items):
-        """The owner sends the split as they filled it in: {member_id: what}. Each teammate with a part gets it; the
-        owner's own part becomes their card."""
-        with self.connect() as db:
-            split = db.execute("SELECT * FROM fleet_splits WHERE id=? AND direction='out' AND status='proposed'", (str(split_id),)).fetchone()
-        if not split:
-            raise ValueError('That split was sent or set aside already')
-        parts = json.loads(split['parts'])
-        items = items if isinstance(items, dict) else {}
-        for p in parts:
-            p['what'] = fleet.clean(items.get(p['member_id'], ''), 200)
-        if not any(p['what'] for p in parts if not p['mine']):
-            raise ValueError('Give at least one teammate a part, or keep the follow-ups to yourself')
-        question = {'meeting': split['meeting'], 'when': split['day'], 'items': [{'member_id': p['member_id'], 'what': p['what']} for p in parts if p['what']]}
-        sent = self.ask('followup', question, context='followup:' + split['meeting'], fleet=split['fleet'])
-        mine = '; '.join(p['what'] for p in parts if p['mine'] and p['what'])
-        card = None
-        if mine and self.make_card:
-            others = '; '.join(f"{p['name']}: {p['what']}" for p in parts if not p['mine'] and p['what'])
-            try:
-                card = self.make_card(kind='followup', ask_id='split-' + split['meeting'][:16], name='you', title=f'Follow up: {mine}'[:90],
-                                      body=f"Your part of the follow-ups from {split['title'] or 'the meeting'} on {split['day']}. The others: {others}."[:700],
-                                      evidence=[split['event_id']] if split['event_id'] else [])
-            except ValueError as error:
-                LOG.warning('fleet split card error=%s', type(error).__name__)
-        for p in parts:
-            if not p['mine'] and p['what']:
-                p['stage'] = 'asked'
-        with self.connect() as db:
-            db.execute("UPDATE fleet_splits SET status='sent',parts=?,card_id=?,updated_at=? WHERE id=?", (json.dumps(parts), card, fleet.now(), split['id']))
-        return {'ids': sent.get('ids', {}), 'card_id': card}
-
-    def set_split_aside(self, split_id):
-        with self.connect() as db:
-            done = db.execute("UPDATE fleet_splits SET status='dismissed',updated_at=? WHERE id=? AND direction='out' AND status='proposed'",
-                              (fleet.now(), str(split_id))).rowcount
-        if not done:
-            raise ValueError('That split was sent or set aside already')
-        return {'status': 'dismissed'}
-
     # -- keeping the asker up to date
     def requests_round(self):
         """Stages the owner reached on accepted requests, told to the teammate who asked: an intro email sent (or its
@@ -1424,13 +1191,7 @@ class Requests:
 
     # -- for the dashboard and preparations
     def requests_view(self):
-        since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=SPLIT_SHOWN_DAYS)).isoformat(timespec='seconds')
         with self.connect() as db:
-            noted = {r['key'][12:]: json.loads(r['value']) for r in db.execute("SELECT key,value FROM fleet_meta WHERE key LIKE 'split_notes:%'")}
-            splits = [{**{k: r[k] for k in ('id', 'fleet', 'title', 'day', 'status')}, 'parts': json.loads(r['parts']),
-                       **({'notes': noted[r['id']]['source']} if (noted.get(r['id']) or {}).get('filled') else {})}
-                      for r in db.execute("SELECT * FROM fleet_splits WHERE direction='out' AND ((status='proposed' AND day>=?) OR (status='sent' AND updated_at>=?)) "
-                                          'ORDER BY day DESC LIMIT 20', (since[:10], since))]
             asked = {(r['fleet'], r['member_id'], json.loads(r['question']).get('about')) for r in db.execute("SELECT * FROM fleet_out WHERE kind='intro'")}
             offers = []
             for r in db.execute("SELECT * FROM fleet_out WHERE kind='relationships' AND status='answered' AND at>=? ORDER BY at DESC LIMIT 60",
@@ -1438,16 +1199,10 @@ class Requests:
                 about = json.loads(r['question']).get('about')
                 if json.loads(r['answer'] or '{}').get('knows') and (r['fleet'], r['member_id'], about) not in asked:
                     offers.append({'ask_id': r['id'], 'fleet': r['fleet'], 'member_id': r['member_id'], 'name': r['name'], 'about': about})
-        return {'splits': splits, 'intro_offers': offers}
-
-    def proposals(self):
-        """Follow-up splits waiting for the owner; one left alone for a week no longer counts."""
-        since = (dt.date.today() - dt.timedelta(days=SPLIT_SHOWN_DAYS)).isoformat()
-        with self.connect() as db:
-            return db.execute("SELECT COUNT(*) FROM fleet_splits WHERE direction='out' AND status='proposed' AND day>=?", (since,)).fetchone()[0]
+        return {'intro_offers': offers}
 
     def annotate_requests(self, db, suggestions):
-        """A card handed off (to whom, how it went), and who does what after the meeting a card is on."""
+        """A card handed off: to whom, and how it went."""
         handed = {}
         titles = {str(s['id']): s.get('title') for s in suggestions}
         mine = {r['key'][13:] for r in db.execute("SELECT key FROM fleet_meta WHERE key LIKE 'handoff_mine:%'")}
@@ -1490,9 +1245,6 @@ class Requests:
             others = [n for n in dict.fromkeys(names) if lead and n != first_name(lead['name'])]
             if lead and lead['stage'] in ('asked', 'waiting for them') and others:
                 lead['also'] = others
-        splits = {}
-        for r in db.execute("SELECT * FROM fleet_splits WHERE status IN ('sent','accepted') AND event_id IS NOT NULL"):
-            splits[r['event_id']] = '; '.join(f"{'you' if p.get('mine') else p['name']}: {p['what']}" for p in json.loads(r['parts']) if p.get('what'))
         silent = {}
         for r in db.execute("SELECT m.key,m.value FROM fleet_meta m JOIN fleet_requests q ON q.id=substr(m.key,16) "
                             "WHERE m.key LIKE 'handoff_silent:%' AND q.stage='on_it'"):
@@ -1529,11 +1281,6 @@ class Requests:
                     has = {first_name(handed[s['id']]['name']), *handed[s['id']].get('also', [])}
                     s['next_actions'] = [a for a in s['next_actions'] if a.get('kind') == 'open' or (
                         a.get('kind') == 'handoff' and a.get('to_name') and first_name(a['to_name']) not in has)]
-            ids = s.get('event_ids')
-            ids = json.loads(ids) if isinstance(ids, str) else ids or []
-            split = next((splits[i] for i in ids if i in splits), None)
-            if split:
-                s['fleet_split'] = split
 
     def request_lines(self, suggestion_id):
         """For a preparation of a card made from a teammate's request: their words are data, not instructions."""

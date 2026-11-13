@@ -35,7 +35,7 @@ In una Fleet di lavoro Standard, la tua Machine risponde da sola su **chi conosc
 
 Per fermarne una, impostala su **Mai** sotto **Condivisione**. Una regola salvata come **Chiedimi prima** ora funziona come **Sempre**. Finché la condivisione del Graph del team della tua Fleet è disattivata, chi conosce qualcuno e contesto delle riunioni continuano a chiedere prima a te.
 
-Le Fleet di lavoro Prudenti, Amici e Famiglia chiedono ancora prima a te. Presentazioni, passaggi di lavoro, follow-up condivisi e domande libere mantengono le loro regole.
+Le Fleet di lavoro Prudenti, Amici e Famiglia chiedono ancora prima a te. Presentazioni, passaggi di lavoro e domande libere mantengono le loro regole.
 
 ## Apprendimenti del team
 

@@ -258,7 +258,7 @@ Notes can also be added to a meeting itself (`meeting.notes`, one per meeting, `
 - saved by a Do it run or the owner's own chat (`meeting_notes` on the `assistant_signals` tool, `assistant meeting-notes`), up to 400,000 characters of Markdown;
 - written by The Machine from the meeting's transcript when the owner taps Generate notes on a meeting with a transcript and no notes (`meeting_writer.py`: on the service, in parts that each fit one model turn for a long transcript, on the owner's model and within its usage limits; marked `written_from: transcript`, dropped if notes come in meanwhile).
 
-They carry the meeting's guests, so they are Work or Personal and shared as the meeting is. A signal review only reads them. Reviews then use the notes for that meeting's follow-ups, and fill in a Fleet follow-up split from them ([Fleet](fleet.md)).
+They carry the meeting's guests, so they are Work or Personal and shared as the meeting is. A signal review only reads them. Reviews then use the notes for that meeting's follow-ups: a to-do per next step that is the owner's ([Fleet](fleet.md#meeting-follow-ups)).
 
 ### Docs
 

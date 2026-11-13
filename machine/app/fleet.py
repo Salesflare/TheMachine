@@ -223,7 +223,7 @@ class FleetApp:
         return message_id if re.fullmatch(r'\d+', message_id) else None
 
     def fleet_tell(self, text, anchor):
-        """How the owner's own Fleet request went (an intro, a handoff, a follow-up split): a phone notification, and a
+        """How the owner's own Fleet request went (an intro, a handoff): a phone notification, and a
         plain Telegram line with Open when Telegram is on. No buttons to act on: it only tells."""
         root = fleet.dashboard_root(self.config)
         subscriptions, phones = push_reach(self.store, self.config)
@@ -358,12 +358,6 @@ class FleetApp:
             return self.fleet.reply_review(str(args.get('suggestion_id') or ''), str(args.get('stage') or ''), str(args.get('comment') or ''),
                                            args.get('subject') if isinstance(args.get('subject'), str) else None,
                                            args.get('body') if isinstance(args.get('body'), str) else None)
-        if name == 'fleet_split':  # send a follow-up split as the owner filled it in
-            return self.fleet.send_split(str(args.get('id') or ''), args.get('items'))
-        if name == 'fleet_split_dismiss':
-            return self.fleet.set_split_aside(str(args.get('id') or ''))
-        if name == 'fleet_split_adjust':  # accept a teammate's split with the owner's own part as they changed it
-            return self.fleet.decide_request(str(args.get('id') or ''), 'adjust', text=str(args.get('text') or ''))
         if name == 'fleet_rule':
             return self.fleet.set_rule(args.get('fleet') or 'work', str(args.get('member_id') or ''), args.get('kind'),
                                        args.get('rule'), args.get('details'), args.get('scope'), bool(args.get('clear')))

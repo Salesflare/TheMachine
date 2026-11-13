@@ -189,4 +189,4 @@ function fleetNote(s){if(closed(s))return fleetHandoff(s);const h=s.fleet_holder
  if(h?.offer)out=html`${out}${html`<p class="note fleet">${h.offer.join(', ')} also got this email. <button type="button" class="link" data-fleet-take="${s.id}">Tell them you’re on it</button></p>`}`;
  else if(h?.name&&!h.mine)out=html`${out}${html`<p class="note handled fleet">${h.name} is on it. <button type="button" class="link" data-fleet-take="${s.id}">I’ll handle it</button></p>`}`;
  if(s.fleet_context?.length)out=html`${out}${html`<p class="note fleet">From your Fleet: ${s.fleet_context.join(' · ')}</p>`}`;
- if(s.fleet_split)out=html`${out}${html`<p class="note fleet">Follow-ups split in your Fleet: ${s.fleet_split}</p>`}`;return html`${out}${fleetHandoff(s)}`}
+ return html`${out}${fleetHandoff(s)}`}

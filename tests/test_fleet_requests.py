@@ -1,4 +1,4 @@
-"""Warm intros, handoffs and shared follow-ups in a Work Fleet (fleet_requests.py): both sides of each, the owner's
+"""Warm intros and handoffs in a Work Fleet (fleet_requests.py), and a meeting's follow-ups without one: both sides of each, the owner's
 approval first, stale taps, one Fleet at a time, and a teammate's words kept as data. A fake relay stands in for the
 control plane; nothing is sent anywhere (no email, Telegram or push)."""
 import datetime as dt
@@ -1071,7 +1071,7 @@ class Requests(unittest.TestCase):
             self.assertEqual(sum(r['title'] in ('Send Sam the pricing', 'Book the demo') for r in db.execute('SELECT title FROM suggestions')), 2)
             self.assertEqual(db.execute('SELECT COUNT(*) FROM action_jobs').fetchone()[0], 0)
 
-    # -- shared follow-ups
+    # -- a meeting's follow-ups: the regular to-dos and promises, never a Fleet request
     def meeting(self, organizer='owner@acme.example', source='cal1', hours_ago=3):
         start = NOW - dt.timedelta(hours=hours_ago + 1)
         event = {'account_id': 'work', 'source_id': source, 'kind': 'calendar.event', 'occurred_at': start.isoformat(), 'title': 'Deal review',
@@ -1082,83 +1082,6 @@ class Requests(unittest.TestCase):
         with self.store.connect() as db:
             return db.execute('SELECT id FROM events WHERE source_id=?', (source,)).fetchone()[0]
 
-    def test_the_organizer_proposes_one_split_and_sends_it_as_the_owner_filled_it_in(self):
-        event_id = self.meeting()
-        self.meeting(organizer=TEAM, source='cal2')  # Pat's Machine proposes that one
-        self.store.suggest('k-pricing', 'Send Sam the pricing', 'Sam asked for pricing.', [event_id])
-        self.assertEqual(self.fleet.followup_round(), 1)
-        self.assertEqual(self.fleet.followup_round(), 0)  # once per meeting
-        self.assertEqual(self.fleet.summary()['waiting'], 1)
-        (split,) = self.fleet.view()['splits']
-        self.assertEqual([(p['name'], p['mine'], p['what']) for p in split['parts']], [('Owner', True, 'Send Sam the pricing'), ('Pat', False, '')])
-        self.assertEqual(self.relay.sent('/ask'), [])  # nothing goes before the owner sends it
-        with self.assertRaisesRegex(ValueError, 'at least one teammate'):
-            self.fleet.send_split(split['id'], {'me1': 'Send pricing'})
-        self.app.action('fleet_split', {'id': split['id'], 'items': {'me1': 'Send pricing', 'pat1': 'Book the demo'}}, owner_dashboard=True)
-        sent = self.relay.sent('/ask')[-1]
-        self.assertEqual(sent['kind'], 'followup')
-        self.assertRegex(sent['question']['meeting'], r'^[0-9a-f]{64}$')
-        self.assertEqual(sent['question']['items'], [{'member_id': 'me1', 'what': 'Send pricing'}, {'member_id': 'pat1', 'what': 'Book the demo'}])
-        self.assertNotIn('Deal review', json.dumps(sent))  # the meeting's title stays here
-        with self.assertRaisesRegex(ValueError, 'sent or set aside'):
-            self.fleet.send_split(split['id'], {'pat1': 'again'})
-        suggestions = [{'id': 'x', 'event_ids': [event_id]}]
-        with self.store.connect() as db:
-            self.fleet.annotate(db, suggestions)
-        self.assertEqual(suggestions[0]['fleet_split'], 'you: Send pricing; Pat: Book the demo')
-        with self.store.connect() as db:
-            ask_id = db.execute("SELECT id FROM fleet_out WHERE kind='followup'").fetchone()[0]
-        self.fleet.take_answer({'id': ask_id, 'status': 'answered', 'answer': {'stage': 'adjusted', 'what': 'Book the demo for next week'}})
-        self.assertEqual(self.fleet.view()['splits'][0]['parts'][1]['what'], 'Book the demo for next week')
-        self.assertEqual(self.told[-1], 'Pat accepted their part of the follow-ups, changed to: “Book the demo for next week”.')
-
-    def test_a_split_starts_only_from_the_fleets_accounts_and_never_from_a_personal_to_do(self):
-        event_id = self.meeting()
-        personal = self.store.suggest('k-private', 'Book the dentist', 'Before the trip.', [event_id])['id']
-        self.store.suggest('k-pricing', 'Send Sam the pricing', 'Sam asked for pricing.', [event_id])
-        with self.store.connect() as db:
-            db.execute("UPDATE suggestions SET area='personal' WHERE id=?", (personal,))
-            at = db.execute('SELECT occurred_at FROM events WHERE id=?', (event_id,)).fetchone()[0]
-            for n, (account, what) in enumerate((('home', 'Call the notary'), ('work', 'Send the contract'))):
-                db.execute('INSERT INTO promises(direction,who,what,check_at,event_id,account_id,status,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',
-                           ('mine', 'someone@else.example', what, at, 9000 + n, account, 'open', at, at))
-        self.assertEqual(self.fleet.followup_round(), 1)
-        (split,) = self.fleet.view()['splits']
-        self.assertEqual(split['parts'][0]['what'], 'Send Sam the pricing; Send the contract')
-        self.assertNotIn('dentist', json.dumps(split))
-        self.assertNotIn('notary', json.dumps(split))
-
-    def test_a_meeting_on_a_personal_calendar_is_never_split_with_the_team(self):
-        event_id = self.meeting()
-        with self.store.connect() as db:
-            db.execute("UPDATE events SET account_id='home' WHERE id=?", (event_id,))
-        self.assertEqual(self.fleet.followup_round(), 0)
-        self.assertEqual(self.fleet.view()['splits'], [])
-
-    def test_a_split_from_a_teammate_shows_the_owner_their_part_and_wins_over_their_own_proposal(self):
-        event_id = self.meeting()
-        self.fleet.followup_round()
-        secret = self.fleet.fleets()[self.ref]['secret']
-        key = fleet_requests.meeting_key(secret, 'cal1', (NOW - dt.timedelta(hours=4)).isoformat()[:10])
-        items = [{'member_id': 'me1', 'what': 'Send pricing. ' + EVIL}, {'member_id': 'pat1', 'what': 'Book the demo'}]
-        self.assertEqual(self.ask('followup', {'meeting': key, 'when': (NOW - dt.timedelta(hours=4)).isoformat()[:10], 'items': items}, 'q1'), 'waiting')
-        waiting = self.fleet.view()['waiting'][0]['question']
-        self.assertIn('Follow-ups from Deal review', waiting)  # this Machine's own title for it
-        self.assertIn('you: Send pricing. ' + EVIL, waiting)
-        with self.assertRaisesRegex(ValueError, 'Write your part'):
-            self.app.action('fleet_split_adjust', {'id': 'q1', 'text': ' '}, owner_dashboard=True)
-        done = self.app.action('fleet_split_adjust', {'id': 'q1', 'text': 'Send pricing on Friday'}, owner_dashboard=True)
-        self.assertEqual(self.answered()['answer'], {'stage': 'adjusted', 'what': 'Send pricing on Friday'})
-        card = self.card_row(done['card_id'])
-        self.assertEqual(card['title'], 'Follow up: Send pricing on Friday')
-        self.assertIn(event_id, json.loads(card['event_ids']))
-        self.assertEqual(self.fleet.view()['splits'], [])  # their split, not a second one
-        self.assertEqual(self.fleet.followup_round(), 0)
-        # No part for the owner, a meeting this Machine doesn't know of in another form, or a stranger: declined.
-        self.assertEqual(self.ask('followup', {'meeting': key, 'when': '2026-10-19', 'items': [{'member_id': 'pat1', 'what': 'x'}]}, 'q2'), 'declined')
-        self.assertEqual(self.ask('followup', {'meeting': 'not-a-key', 'when': '2026-10-19', 'items': items}, 'q3'), 'declined')
-        self.assertEqual(self.ask('followup', {'meeting': key, 'when': '2026-10-19', 'items': items}, 'q4', sender='stranger'), 'declined')
-
     def notes(self, start, meeting_id='81234567890', source='z1', host='owner@acme.example'):
         event = {'account_id': 'zoom', 'source_id': source, 'kind': 'zoom.summary', 'occurred_at': start.isoformat(), 'title': 'Deal review',
                  'body': 'Next steps\n- Pat books the demo.\n- Sam (client) to check the budget.', 'deleted': False,
@@ -1168,39 +1091,87 @@ class Requests(unittest.TestCase):
         with self.store.connect() as db:
             return db.execute('SELECT id FROM events WHERE source_id=?', (source,)).fetchone()[0]
 
-    def test_meeting_notes_fill_in_the_split_as_a_suggestion_and_nothing_goes(self):
+    def met(self):
+        """A meeting with a teammate, two days ago at most, and its Zoom notes: (the meeting's id, the notes' id)."""
         event_id = self.meeting()
         with self.store.connect() as db:  # the invite carries the Zoom link
             db.execute("UPDATE events SET body='Join https://us02web.zoom.us/j/81234567890?pwd=x' WHERE id=?", (event_id,))
-        self.store.suggest('k-pricing', 'Send Sam the pricing', 'Sam asked for pricing.', [event_id])
-        self.fleet.followup_round()
-        start = NOW - dt.timedelta(hours=4, minutes=-3)
-        self.notes(start + dt.timedelta(hours=5), source='z-other')  # another meeting with the same recurring ID, later that day
-        notes_id = self.notes(start)
-        (split,) = self.fleet.view()['splits']
-        text = self.fleet.split_notes_text()
-        self.assertIn(f"split_id {split['id']}: “Deal review”", text)
-        self.assertIn(f'Zoom notes event_id {notes_id}. People: me1 = the owner, pat1 = Pat', text)
-        prompt = a.review_prompt('r1', ['work'], splits=text)
-        self.assertIn('call split_from_notes once', prompt)
-        self.assertIn('judged by meaning', prompt)
-        with self.assertRaisesRegex(ValueError, 'notes event listed'):
-            self.app.action('split_from_notes', {'split_id': split['id'], 'event_id': notes_id + 1, 'parts': {'pat1': 'x'}})
-        with self.assertRaisesRegex(ValueError, 'only the member_ids'):
-            self.app.action('split_from_notes', {'split_id': split['id'], 'event_id': notes_id, 'parts': {'sam': 'Check the budget'}})
-        done = self.app.action('split_from_notes', {'split_id': split['id'], 'event_id': str(notes_id),
-                                                    'parts': {'pat1': 'Book the demo', 'me1': 'Send the release notes'}})
-        self.assertEqual(done, {'filled': 1})
-        (split,) = self.fleet.view()['splits']
-        self.assertEqual(split['notes'], 'Zoom')
-        self.assertEqual([(p['what'], p.get('from_notes', False)) for p in split['parts']],
-                         [('Send Sam the pricing', False), ('Book the demo', True)])  # the owner's own part as it was
-        self.assertEqual(self.fleet.split_notes_text(), '')  # read once
-        self.assertEqual(self.relay.sent('/ask'), [])  # a suggestion: nothing goes before Send the split
-        self.fleet.send_split(split['id'], {'me1': 'Send pricing', 'pat1': 'Book the demo on Tuesday'})
-        self.assertEqual(self.relay.sent('/ask')[-1]['question']['items'][1], {'member_id': 'pat1', 'what': 'Book the demo on Tuesday'})
-        with self.assertRaisesRegex(ValueError, 'sent or set aside'):
-            self.app.action('split_from_notes', {'split_id': split['id'], 'event_id': notes_id, 'parts': {}})
+        return event_id, self.notes(NOW - dt.timedelta(hours=4, minutes=-3))
+
+    def todos(self):
+        with self.store.connect() as db:
+            return [dict(r) for r in db.execute("SELECT * FROM suggestions WHERE status NOT IN ('rejected','completed') ORDER BY created_at,id")]
+
+    def review_saves(self, notes_id, event_id, **args):
+        """A to-do as the review saves it from the meeting's notes (suggest): the notes first in its evidence."""
+        return self.app.action('suggest', {'when': 'now', 'event_ids': [notes_id, event_id], 'newer_checked': [notes_id, event_id], **args})
+
+    def test_a_meeting_with_teammates_and_no_follow_ups_makes_nothing_and_sends_nothing(self):
+        self.met()
+        self.fleet.step(wait=0)
+        self.assertEqual(self.todos(), [])  # no to-do, no card to split who does what
+        self.assertNotIn('splits', self.fleet.view())
+        self.assertEqual(self.fleet.summary()['waiting'], 0)
+        self.assertEqual(self.relay.sent('/ask'), [])
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM fleet_splits').fetchone()[0], 0)
+        prompt = a.review_prompt('r1', ['work'])
+        self.assertNotIn('split_from_notes', prompt)
+        self.assertNotIn('split_from_notes', a.App.ACTIONS)
+        # The review's own rule for a meeting's record: a to-do per next step, the meeting first in its evidence, one per step
+        self.assertIn('each next step is one to-do with the meeting first in its evidence', prompt)
+        self.assertIn('never a second one', prompt)
+
+    def test_the_owners_next_steps_are_one_to_do_each_with_the_meeting_as_source_and_nothing_goes(self):
+        event_id, notes_id = self.met()
+        first = self.review_saves(notes_id, event_id, dedupe_key='meeting:pricing', title='Send Sam the pricing for 40 seats',
+                                  body='Sam asked for pricing in the deal review.')
+        self.review_saves(notes_id, event_id, dedupe_key='meeting:deck', title='Share the deal review deck with Sam',
+                          body='Promised in the deal review.')
+        # The same step again (the notes by mail too): it goes on that to-do, never a second one
+        self.review_saves(notes_id, event_id, dedupe_key='meeting:pricing-mail', title='Send Sam the pricing for 40 seats',
+                          body='Sam asked for pricing in the deal review.', card_id=first['id'])
+        todos = self.todos()
+        self.assertEqual([t['title'] for t in todos], ['Send Sam the pricing for 40 seats', 'Share the deal review deck with Sam'])
+        self.assertEqual({json.loads(t['event_ids'])[0] for t in todos}, {notes_id})  # the meeting's notes: the source line
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM action_jobs WHERE status!='local_preparation'").fetchone()[0], 0)
+        self.fleet.step(wait=0)
+        self.assertEqual(self.relay.sent('/ask'), [])  # nothing goes to the teammate
+        self.assertEqual(len(self.todos()), 2)
+
+    def test_a_teammates_part_goes_nowhere_their_own_machine_reads_the_meeting(self):
+        self.met()
+        self.fleet.step(wait=0)
+        self.fleet.step(wait=0)
+        self.assertEqual(self.relay.sent('/ask'), [])  # Pat's step is not pushed to Pat's Machine
+        with self.store.connect() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM fleet_requests').fetchone()[0], 0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM action_jobs').fetchone()[0], 0)
+        self.assertEqual(self.todos(), [])
+
+    def test_an_open_split_is_set_aside_once_and_an_older_machines_split_is_declined(self):
+        event_id, _ = self.met()
+        at = fleet.now()
+        with self.store.connect() as db:
+            db.execute("INSERT INTO fleet_splits(id,fleet,meeting,direction,event_id,title,day,proposer,parts,status,at,updated_at) "
+                       "VALUES('out:k',?,'k','out',?,'Deal review',?,'','[]','proposed',?,?)", (self.ref, event_id, at[:10], at, at))
+            db.execute("INSERT INTO fleet_in(id,fleet,member_id,name,kind,question,status,at) VALUES('q9',?,'pat1','Pat','followup','{}','waiting',?)",
+                       (self.ref, at))
+            db.execute("DELETE FROM fleet_meta WHERE key='followup_splits_retired'")
+            fleet.ensure(db)
+            self.assertEqual(db.execute("SELECT status FROM fleet_splits").fetchone()[0], 'dismissed')
+            self.assertEqual(db.execute("SELECT status FROM fleet_in WHERE id='q9'").fetchone()[0], 'expired')
+        self.assertEqual(self.todos(), [])  # nothing converted: the regular review made the meeting's to-dos
+        self.assertEqual(self.fleet.summary()['waiting'], 0)
+        calls = len(self.relay.calls)
+        with self.store.connect() as db:
+            fleet.ensure(db)  # once
+        self.assertEqual(len(self.relay.calls), calls)
+        items = [{'member_id': 'me1', 'what': 'Send pricing'}, {'member_id': 'pat1', 'what': 'Book the demo'}]
+        self.assertEqual(self.ask('followup', {'meeting': 'a' * 64, 'when': at[:10], 'items': items}, 'q10'), 'declined')
+        self.assertNotIn('followup', fleet.RULE_KINDS['work'])
+        self.assertEqual(self.todos(), [])
 
     def test_notes_match_their_meeting_by_time_when_no_id_says_so_and_never_a_toss_up(self):
         import meeting_notes

@@ -144,14 +144,7 @@ fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-decide]');if(!b)
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-plan-undo]');if(!b)return;b.disabled=true;
  try{await fleetPost('family_plan_undo',{id:b.dataset.planUndo});toast(t('Removed from your calendar.'));refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 fleetOn('submit',async e=>{const t=e.target;if(t.classList.contains('fleet-intro-form')){e.preventDefault();
-  try{await fleetPost('fleet_intro',{fleet:t.dataset.fleet,member_id:t.dataset.member,about:t.dataset.about,note:t.elements.note.value.trim()});toast('Asked. This tab shows how it goes.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}}
- else if(t.classList.contains('fleet-split-form')){e.preventDefault();const items={};for(const i of t.querySelectorAll('input'))items[i.name]=i.value.trim();
-  try{await fleetPost('fleet_split',{id:t.dataset.split,items});toast('Sent. Each teammate sees their part.');await fleetView();await refresh()}catch(err){errCaught(err);toast(err.message,true)}}});
-fleetOn('click',async e=>{const b=e.target.closest('[data-fleet-adjust],[data-split-dismiss]');if(!b)return;b.disabled=true;
- try{if(b.dataset.splitDismiss)await fleetPost('fleet_split_dismiss',{id:b.dataset.splitDismiss});
-  else{const text=document.getElementById('fleet-part-'+b.dataset.fleetAdjust)?.value.trim();if(!text){b.disabled=false;toast('Write your part first.',true);return}
-   await fleetPost('fleet_split_adjust',{id:b.dataset.fleetAdjust,text});toast('Accepted with your change.')}
-  await fleetView();await refresh()}catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
+  try{await fleetPost('fleet_intro',{fleet:t.dataset.fleet,member_id:t.dataset.member,about:t.dataset.about,note:t.elements.note.value.trim()});toast('Asked. This tab shows how it goes.');await fleetView()}catch(err){errCaught(err);toast(err.message,true)}}});
 $('#suggestions').addEventListener('click',async e=>{const c=e.target.closest('[data-handoff-cancel]');if(c){handingOff.delete(c.dataset.handoffCancel);render();return}
  const drop=e.target.closest('[data-handoff-drop]'),dd=drop&&handingOff.get(drop.closest('form').dataset.card);
  if(dd){const v=drop.dataset.handoffDrop;if(v==='contact')dd.with_contact=false;else dd.dropped=[...(dd.dropped||[]),+v];render();return}

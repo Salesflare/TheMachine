@@ -366,7 +366,7 @@ class ReviewApp:
                'review_context': 'review_context_action', 'review_failed': 'review_failed_action',
                'analysis_page': 'analysis_page_action', 'finish_analysis': 'finish_analysis_action',
                'enrich': 'enrich_action', 'looks_handled': 'looks_handled_action',
-               'handoff_on_it': 'handoff_on_it_action', 'split_from_notes': 'split_from_notes_action'}
+               'handoff_on_it': 'handoff_on_it_action'}
 
     def review_subject(self, card_id):
         """What Ask to review shows of an open to-do (fleet_reviews.py): its ready draft (to, subject, text, revision) when
@@ -536,7 +536,7 @@ class ReviewApp:
             memory = recall(self, 'review', {'run': run['run_id']}, PROMPT_LIMIT)  # what was learned, as one list of what it read
             parts = dict(preferences=memory.text('history'), facts=memory.text('facts'), slipped=self.store.slipped(run['run_id']),
                          promises=memory.text('promises'), unnamed=self.store.unnamed_text(run['run_id']), roles=self.store.role_text(run['run_id']),
-                         notes=self.store.notes_to_learn(), handoffs=self.waiting_handoffs_text(), splits=self.split_notes_text(),
+                         notes=self.store.notes_to_learn(), handoffs=self.waiting_handoffs_text(),
                          sorting=self.store.sort_text(run['run_id']), sources=source_notes(account_services(self.config)) + companies_prompt(self.config),
                          fitting=self.store.fit_text(run['run_id']), backfill=self.backfill_text(run['run_id']), first_look=self.store.first_look_run(run['run_id']),
                          batch_facts='\n\n'.join(filter(None, (memory.text('batch_facts'), memory.text('retained')))),  # both differ per batch
@@ -881,20 +881,6 @@ class ReviewApp:
         if not getattr(self, 'fleet', None):
             raise ValueError('This Machine is not on the Network')
         return self.fleet.handoff_on_it(str(args.get('ask_id') or ''), args.get('event_id'))
-
-    def split_from_notes_action(self, name, args, owner_dashboard=False):
-        # the review: a meeting's notes give its next steps to the people in a proposed split
-        if not getattr(self, 'fleet', None):
-            raise ValueError('This Machine is not on the Network')
-        return self.fleet.fill_split(str(args.get('split_id') or ''), args.get('event_id'), args.get('parts') or {})
-
-    def split_notes_text(self):
-        """Proposed follow-up splits whose meeting has notes to read, for the review; nothing when off the Network."""
-        try:
-            return self.fleet.split_notes_text() if getattr(self, 'fleet', None) else ''
-        except Exception as error:  # the review goes on without them
-            LOG.warning('split notes error=%s', type(error).__name__)
-            return ''
 
     def events_action(self, name, args, owner_dashboard=False):
         # reading signals (events, related) and starting a review (begin_analysis), on explicit accounts only
