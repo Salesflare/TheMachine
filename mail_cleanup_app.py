@@ -24,6 +24,7 @@ of its own, each item with what this Machine may already do and never with more 
   gets none, never a row the owner would have to mark elsewhere. Its template still shows there, with why
   (cleanup_spam_needs).
 Once every item is settled, the to-do is done by itself."""
+import base64
 import datetime as dt
 import http.client
 import ipaddress
@@ -52,8 +53,10 @@ from models import background_model
 from sources import credential, gog_read
 
 LOG = logging.getLogger('personal-assistant')
-# The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group) is never unsubscribed from
-HEADERS = ['List-Unsubscribe', 'List-Unsubscribe-Post', 'From', 'Reply-To', 'List-Id', 'X-Original-From', 'X-Original-Sender']
+# The list's unsubscribe, and who sent the mail: a list that relayed it (a Google Group, a Microsoft 365 group,
+# Mailman) is never unsubscribed from (mail_cleanup.relay_of)
+HEADERS = ['List-Unsubscribe', 'List-Unsubscribe-Post', 'From', 'Reply-To', 'List-Id', 'X-Original-From', 'X-Original-Sender',
+           'To', 'Cc', 'Sender', 'X-Google-Group-Id', 'Mailing-list', 'X-Mailman-Version']
 POST_TIMEOUT = 15
 BODY_MAX = 700  # a to-do's text (Store.suggest)
 LINE_MAX = 80  # one item's line in it
@@ -259,7 +262,7 @@ class MailCleanupApp:
             ids = [a['id'] for a in self.cleanup_accounts()]
             with self.store.connect() as db:
                 mail_cleanup.ensure(db)
-                found = mail_cleanup.newsletters(db, ids, self.cleanup_since(db, run['routine_id']))
+                found = mail_cleanup.newsletters(db, ids, self.cleanup_since(db, run['routine_id']), mail_cleanup.own_sites(db, self.config))
             found = self.cleanup_ways(found)
         listed, missed, made, added = self.cleanup_todos(run, key, found) if found and not routines.is_test(run) else (0, 0, 0, 0)
         with self.store.connect() as db:
@@ -338,7 +341,7 @@ class MailCleanupApp:
         mail_cleanup.ensure(db)
         since = self.cleanup_since(db, routine_id)
         if key == 'newsletters':
-            return mail_cleanup.newsletters(db, [a['id'] for a in self.cleanup_accounts()], since)
+            return mail_cleanup.newsletters(db, [a['id'] for a in self.cleanup_accounts()], since, mail_cleanup.own_sites(db, self.config))
         ids = self.cleanup_mark_accounts()
         return mail_cleanup.spam_candidates(db, ids, since) if ids else []
 
@@ -391,12 +394,10 @@ class MailCleanupApp:
             if not account:
                 continue
             try:
-                ways = self.cleanup_headers(account, item['message'])
+                ways = self.cleanup_item_ways(account, item)
             except Exception as error:
                 LOG.info('newsletter headers unread error=%s', type(error).__name__)
                 continue
-            if item.get('via'):  # came through a list: only its original sender's own ways, never the list's
-                ways = mail_cleanup.relay_ways(ways, item['address'], item['via'])
             if 'mailto' in ways and account['id'] not in sends:
                 sends[account['id']] = self.cleanup_can_send(account)
             how = 'one_click' if 'one_click' in ways else 'mailto' if 'mailto' in ways and sends.get(account['id']) else 'page' if 'link' in ways else None
@@ -404,10 +405,47 @@ class MailCleanupApp:
                 out.append({**item, 'how': how})
         return out
 
+    def cleanup_item_ways(self, account, item):
+        """An item's unsubscribe ways, read now: its List-Unsubscribe's, never a group's or one at the owner's own sites.
+        Mail a list relayed (via) keeps only its original sender's own ways; with none, the sender's own unsubscribe
+        page from the mail's text, for the owner to open. Never the list's."""
+        ways = self.cleanup_headers(account, item['message'])
+        if item.get('via'):
+            own = self.cleanup_own()
+            ways = mail_cleanup.relay_ways(ways, item['address'], item['via'], own)
+            if not ways:
+                try:
+                    text = self.cleanup_html(account, item['message'])
+                except Exception as error:
+                    LOG.info('newsletter text unread error=%s', type(error).__name__)
+                    text = ''
+                link = mail_cleanup.body_link(text, item['address'], item['via'], own)
+                ways = {'link': link} if link else {}
+        return ways
+
+    def cleanup_own(self):
+        with self.store.connect() as db:
+            return mail_cleanup.own_sites(db, self.config)
+
     def cleanup_headers(self, account, message_id):
         msg = Gmail(self.config, account).get('messages/' + str(message_id), {'format': 'metadata', 'metadataHeaders': HEADERS})
         headers = {str(h.get('name') or '').lower(): str(h.get('value') or '') for h in (msg.get('payload') or {}).get('headers') or ()}
-        return mail_cleanup.unsubscribe_ways_of(headers)
+        return mail_cleanup.unsubscribe_ways_of(headers, own=self.cleanup_own())
+
+    def cleanup_html(self, account, message_id):
+        """A mail's HTML text, read now (only to find the sender's own unsubscribe link in it)."""
+        msg = Gmail(self.config, account).get('messages/' + str(message_id), {'format': 'full'})
+        found, stack = [], [msg.get('payload') or {}]
+        while stack:
+            part = stack.pop()
+            data = (part.get('body') or {}).get('data') or ''
+            if part.get('mimeType') == 'text/html' and not part.get('filename') and data:
+                try:
+                    found.append(base64.urlsafe_b64decode(data + '=' * (-len(data) % 4)).decode('utf-8', errors='replace'))
+                except ValueError:
+                    continue
+            stack.extend(part.get('parts') or ())
+        return '\n'.join(found)
 
     def cleanup_can_send(self, account):
         try:
@@ -590,9 +628,7 @@ class MailCleanupApp:
 
     def cleanup_unsubscribe(self, account, item):
         """(state, how, link): one-click, else an unsubscribe email when sending is on, else the page for the owner."""
-        ways = self.cleanup_headers(account, item['message'])
-        if item.get('via'):  # came through a list (a Google Group): never the list's own unsubscribe
-            ways = mail_cleanup.relay_ways(ways, item['address'], item['via'])
+        ways = self.cleanup_item_ways(account, item)  # came through a list (a Google Group): never the list's own unsubscribe
         if ways.get('one_click') and one_click(ways['one_click']):
             return 'done', 'one_click', None
         if ways.get('mailto') and self.cleanup_can_send(account):

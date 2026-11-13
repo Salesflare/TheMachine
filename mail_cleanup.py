@@ -26,6 +26,7 @@ later to-do wins.
 Tables (this module owns them): mail_cleanup_items (one row per item of a to-do: its pick and how it went; the
 unsubscribe page's link, sealed, while the owner still has to open it) and mail_cleanup_senders."""
 import datetime as dt
+import html
 import json
 import re
 import urllib.parse
@@ -95,7 +96,15 @@ def sender(m):
 # A list that relays mail rewrites From to its own address ("'Ann' via info@acme.example readers" <info@acme.example>)
 # and adds its own List-Id and List-Unsubscribe. That unsubscribe leaves the list (the owner's, or the team's, info@),
 # never the original sender's mailing: it is never used. The original sender is in X-Original-From or
-# X-Original-Sender, else in Reply-To.
+# X-Original-Sender, else in Reply-To. A list often keeps the sender's From (when the sender's domain lets it): then
+# only its headers tell: its List-Id is the address it came to (<info.acme.example> on mail to info@acme.example), a
+# Google Group's X-Google-Group-Id or Mailing-list, Mailman's X-Mailman-Version, or a Sender that is the list.
+# Whatever a mail says, an unsubscribe at a group service (GROUP_HOSTS) or at the owner's own domains is never used.
+
+# Where a group's or a team list's own unsubscribe lives (Google Groups, Microsoft 365 groups, groups.io): never a
+# newsletter's own
+GROUP_HOSTS = ('googlegroups.com', 'groups.google.com', 'groups.io', 'outlook.office365.com', 'outlook.office.com')
+
 
 def _address_of(value):
     found = graph.addresses(value)[:1]
@@ -106,9 +115,16 @@ def _domain(address):
     return str(address or '').rpartition('@')[2].lower().strip('.')
 
 
-def relay_of(m):
-    """The list address that relayed this mail (its From is the list's own), or ''. m: a mail's metadata, or
-    header_meta of its headers."""
+def _list_id(m):
+    """A List-Id's id, lowercased, without its phrase and brackets: 'Info <info.acme.example>' reads info.acme.example."""
+    text = str(m.get('list_id') or '')
+    found = re.search(r'<([^<>]+)>', text)
+    return (found.group(1) if found else text).strip().lower()
+
+
+def relay_of(m, own=()):
+    """The list address that relayed this mail, or ''. m: a mail's metadata, or header_meta of its headers. own: the
+    owner's own sites (own_sites): a list there is their team's."""
     name, address = _address_of(m.get('from'))
     if not address:
         return ''
@@ -118,16 +134,35 @@ def relay_of(m):
     # "'Ann' via info@acme.example readers", or "Ann via Info" from the list whose id is its address with a dot (RFC
     # 2919: <info.acme.example>). A list that sends its own mail (an announcement list) has no "via": its unsubscribe is right.
     local, _, domain = address.partition('@')
-    own_id = str(m.get('list_id') or '').strip().strip('<>').strip().lower() == f'{local}.{domain}'
-    if ' via ' in name.lower() and (f' via {address}' in name.lower() or own_id):
+    list_id = _list_id(m)
+    if ' via ' in name.lower() and (f' via {address}' in name.lower() or list_id == f'{local}.{domain}'):
         return address
+    # the sender's From kept: the list it came through, from its headers
+    recipients = [a for _, a in graph.addresses(', '.join(str(m.get(k) or '') for k in ('to', 'cc')))]
+    for to in recipients:
+        to_local, _, to_domain = to.partition('@')
+        if to != address and list_id == f'{to_local}.{to_domain}':
+            return to
+    _, sender = _address_of(m.get('sender'))
+    if sender and sender != address and (m.get('list_id') or m.get('list_unsubscribe')) and \
+            (sender in recipients or any(_under(_domain(sender), site) for site in own)):
+        return sender
+    _, listed = _address_of(str(m.get('mailing_list') or '').partition(';')[0].removeprefix('list '))
+    marked = m.get('google_group') or m.get('mailing_list') or m.get('mailman') or \
+        any(_under(list_id, site) for site in GROUP_HOSTS) or any(_under(list_id, site) for site in own)
+    if marked:
+        return (listed if listed and listed != address else '') or (sender if sender and sender != address else '') or \
+            (list_id if list_id and not _under(list_id, _site(domain)) else '') or 'list.invalid'
     return ''
 
 
-def original_sender(m):
+def original_sender(m, own=()):
     """(name, address) of who wrote a relayed mail: X-Original-From (or -Sender), else Reply-To when it is someone
-    else; the address is '' when the relay kept none."""
-    relay = relay_of(m)
+    else, else From when the list kept it; the address is '' when the relay kept none."""
+    relay = relay_of(m, own)
+    name, address = _address_of(m.get('from'))
+    if address and address != relay:  # the list kept the sender's From
+        return name or address, address
     for key in ('original_from', 'reply-to'):
         name, address = _address_of(m.get(key))
         if address and address != relay:
@@ -140,7 +175,24 @@ def original_sender(m):
 def header_meta(headers):
     """The keys relay_of and original_sender read, from a mail's headers (lowercased names)."""
     return {'from': headers.get('from', ''), 'reply-to': headers.get('reply-to', ''), 'list_id': headers.get('list-id', ''),
-            'original_from': headers.get('x-original-from') or headers.get('x-original-sender') or ''}
+            'original_from': headers.get('x-original-from') or headers.get('x-original-sender') or '',
+            'to': headers.get('to', ''), 'cc': headers.get('cc', ''), 'sender': headers.get('sender', ''),
+            'list_unsubscribe': bool(str(headers.get('list-unsubscribe') or '').strip()),
+            'google_group': str(headers.get('x-google-group-id') or '').strip(),
+            'mailing_list': ' '.join(str(headers.get('mailing-list') or '').split())[:200],
+            'mailman': str(headers.get('x-mailman-version') or '').strip()}
+
+
+def own_sites(db, config):
+    """The sites of the owner's own domains (their mailboxes' and the company domains they added): mail a list there
+    relayed is their team's, and nothing there is ever unsubscribed from."""
+    import own_addresses
+    domains = set()
+    try:
+        domains = own_addresses.detected_domains(db, config) | own_addresses.domains(db)
+    except Exception:  # a read-only or locked database: at least the mailboxes' own
+        domains = {own_addresses.email_domain(a.get('email')) for a in own_addresses.own_accounts(config)} - {''} - graph.FREEMAIL
+    return {_site(d) for d in domains} - {''}
 
 
 def _site(domain):
@@ -154,25 +206,60 @@ def _under(domain, site):
     return bool(site) and (domain == site or domain.endswith('.' + site))
 
 
-def relay_ways(ways, original, relay):
+def _target(key, way):
+    return _domain(way['to']) if key == 'mailto' else (urllib.parse.urlsplit(way).hostname or '').lower()
+
+
+def safe_ways(ways, own=()):
+    """Never a group service's unsubscribe (GROUP_HOSTS), and never one at the owner's own sites: that would take the
+    owner, or the team, off their own list."""
+    return {key: way for key, way in ways.items()
+            if not any(_under(_target(key, way), site) for site in (*GROUP_HOSTS, *own))}
+
+
+def relay_ways(ways, original, relay, own=()):
     """Of a relayed mail's unsubscribe ways, only those of its original sender: at the original sender's site and not at
     the relay's. With no original address, none: the list's own unsubscribe is never used."""
     theirs, list_site = _site(_domain(original)), _site(_domain(relay))
     out = {}
-    for key, way in ways.items():
-        target = _domain(way['to']) if key == 'mailto' else (urllib.parse.urlsplit(way).hostname or '').lower()
+    for key, way in safe_ways(ways, own).items():
+        target = _target(key, way)
         if _under(target, theirs) and not _under(target, list_site):
             out[key] = way
     return out
 
 
-def unsubscribe_ways_of(headers, via=''):
-    """unsubscribe_ways from a mail's headers (lowercased names). Mail a list relayed (or an item that came through
-    one: via) keeps only its original sender's ways (relay_ways)."""
-    ways = unsubscribe_ways(headers.get('list-unsubscribe'), headers.get('list-unsubscribe-post'))
+# An unsubscribe link in a mail's text, in the languages the app speaks: its words or its address say so
+_UNSUB_WORDS = re.compile(r'unsub|opt[\s_-]?out|afmeld|uitschrijv|d[ée]sinscri|d[ée]sabonn|abmeld|abbestell|darse de baja|'
+                          r'disiscri|cancelar (?:a )?(?:subscri|inscri)|descadastr', re.I)
+_LINK = re.compile(r'<a\b[^>]*?\bhref\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.I | re.S)
+
+
+def body_link(text, original, relay, own=()):
+    """The original sender's own unsubscribe page from a relayed mail's HTML: an https link that says unsubscribe, at the
+    original sender's site and never at the relay's, a group service's or the owner's own (a list's footer has its own
+    leave link). '' when there is none."""
+    theirs, list_site = _site(_domain(original)), _site(_domain(relay))
+    for href, label in _LINK.findall(str(text or '')[:500_000]):
+        href = html.unescape(href).strip()
+        parts = urllib.parse.urlsplit(href)
+        host = (parts.hostname or '').lower()
+        words = re.sub(r'<[^>]+>', ' ', html.unescape(label)) + ' ' + parts.path + ' ' + parts.query
+        if (parts.scheme == 'https' and host and not parts.username and not parts.password and len(href) <= 2000
+                and _UNSUB_WORDS.search(words) and _under(host, theirs) and not _under(host, list_site)
+                and not any(_under(host, site) for site in (*GROUP_HOSTS, *own))):
+            return href
+    return ''
+
+
+def unsubscribe_ways_of(headers, via='', own=()):
+    """unsubscribe_ways from a mail's headers (lowercased names), never a group's or one at the owner's own sites
+    (safe_ways). Mail a list relayed (or an item that came through one: via) keeps only its original sender's ways
+    (relay_ways)."""
+    ways = safe_ways(unsubscribe_ways(headers.get('list-unsubscribe'), headers.get('list-unsubscribe-post')), own)
     m = header_meta(headers)
-    relay = relay_of(m) or via
-    return relay_ways(ways, original_sender(m)[1], relay) if relay else ways
+    relay = relay_of(m, own) or via
+    return relay_ways(ways, original_sender(m, own)[1], relay, own) if relay else ways
 
 
 def asked(db, kind):
@@ -204,14 +291,15 @@ def notifications(db, since):
     return found
 
 
-def newsletters(db, accounts, since):
+def newsletters(db, accounts, since, own=()):
     """Newsletters and list mail since then, one item per sender (its newest mail, with how many came), newest first.
     A newsletter is what review_wait.mail_wait calls 'list' (List-Unsubscribe or List-Id), never someone the owner
     knows and never what the review sorted as a notification (a receipt, an order or a payment); senders asked before
     are left out. Mail a list relayed (a Google Group) counts under its original sender, with the list as via; when
-    the list kept no original address there is nothing to unsubscribe from but the list, and it is left out."""
+    the list kept no original address there is nothing to unsubscribe from but the list, and it is left out. own: the
+    owner's own sites (own_sites)."""
     found = {}
-    for r, m, name, address, via in _newsletter_mail(db, accounts, since):
+    for r, m, name, address, via in _newsletter_mail(db, accounts, since, own):
         if address in found:
             found[address]['count'] += 1
         elif len(found) < MAX_ITEMS:
@@ -219,16 +307,16 @@ def newsletters(db, accounts, since):
     return list(found.values())
 
 
-def _newsletter_mail(db, accounts, since):
+def _newsletter_mail(db, accounts, since, own=()):
     """Each newsletter mail since then, newest first, as (row, metadata, name, address, via): newsletters' own test."""
     people, skip, receipts = People(db), asked(db, 'newsletters'), notifications(db, since)
     for r, m in _rows(db, accounts, since):
         name, address = sender(m)
         if not address or r['id'] in receipts or mail_wait(m, r['title'] or '', people) != 'list':
             continue
-        via = relay_of(m)
+        via = relay_of(m, own)
         if via:
-            name, address = original_sender(m)
+            name, address = original_sender(m, own)
             address = address.lower()
         if address and address not in skip:
             yield r, m, name, address, via
