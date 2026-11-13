@@ -1,6 +1,7 @@
 """The Shared Graph (shared_graph.py, docs/shared-graph.md): a Work Fleet's Machines share their Work records, timelines
 and client threads, sealed Machine to Machine. A fake Network stands in for the control plane, honest or not: it keeps
 the sealed blobs until every Machine they were sealed for took them, and can't read, change, replay or forge them. No network, no model."""
+import contextlib
 import copy
 import datetime as dt
 import importlib.util
@@ -19,6 +20,7 @@ import fleet_trust as ft
 import message_seal
 import network_crypto as nc
 import shared_graph as sg
+import shared_graph_kept as sg_kept
 import shared_graph_logos as sgl
 from kept_connections import kept_connections
 
@@ -1657,6 +1659,87 @@ class SharedGraph(unittest.TestCase):
         self.mem.graph_fetch()
         source = next(r for r in self.team(self.mem, 'team_sources') if r['member'] == 'own1')
         self.assertEqual(source['seq'], previous['seq'])
+
+    def traced(self, box):
+        """(the SQL box's Fleet runs, a patch that records it while it holds)."""
+        seen, real = [], box.connect
+
+        @contextlib.contextmanager
+        def connect():
+            with real() as db:
+                db.set_trace_callback(seen.append)
+                try:
+                    yield db
+                finally:
+                    db.set_trace_callback(None)
+        connect.close = real.close
+        return seen, patch.object(box, 'connect', connect)
+
+    def test_catching_up_lists_the_blobs_once_and_reads_only_those_it_passes_on(self):
+        group = self.own._group(FLEET)
+        me = self.own._me_in(group)
+        previous = self.own._put(group, me, 'snapshot', {'records': [], 'threads': []}, ['adm2', 'mem3'])
+        for _ in range(sg.SERVE_BATCH + 1):
+            previous = self.own._put(group, me, 'delta', {'prev': previous['seq'], 'records': [], 'threads': []}, ['adm2', 'mem3'])
+        self.adm.graph_fetch()
+        self.net.expire('mem3')
+        self.mem._put(self.mem._group(FLEET), self.mem._me_in(self.mem._group(FLEET)), 'want',
+                      {'at': a.now(), 'snap': {}, 'got': {}}, ['adm2'], tag='b' * 32)
+        self.adm.graph_fetch()
+        self.adm.set_meta('graph_puts', [])
+        adm_group = self.adm._group(FLEET)
+        found, trusted, _ = self.adm.confirmed(adm_group)
+        before, to_them = len(self.relays()), len(self.relays('mem3'))
+        seen, traced = self.traced(self.adm)
+        with traced:
+            self.adm._graph_serve(adm_group, self.adm._me_in(adm_group), found, trusted)
+        passed = len(self.relays()) - before  # to everyone who asked
+        self.assertEqual(len(self.relays('mem3')) - to_them, sg.SERVE_BATCH)
+        blobs = [s for s in seen if 'FROM team_blobs' in s]
+        self.assertEqual(sum(s.startswith('SELECT id,member,kind,tag,seq,dk,header,sha FROM team_blobs') for s in blobs), 1)  # listed once
+        self.assertEqual(sum(s.startswith('SELECT ct,sig FROM team_blobs WHERE id=') for s in blobs), passed)  # each blob read as it goes
+        self.assertFalse([s for s in blobs if s.startswith('SELECT') and not s.startswith(('SELECT id,member', 'SELECT ct,sig'))])
+        self.mem.graph_fetch()
+        source = next(r for r in self.team(self.mem, 'team_sources') if r['member'] == 'own1')
+        self.assertLess(source['seq'], previous['seq'])  # what it passed on arrived as signed: the rest next round
+
+    def test_a_round_reads_the_messages_once_and_bodies_only_of_what_goes(self):
+        self.olive_mail()
+        self.rounds()
+        went = {self.event_id(self.own, s) for s in ('work-1', 'work-2')}
+        with self.own.store.connect() as db:
+            scope = sg.Scope(db, ['work'], {'acme.example'}, {'own1@acme.example'})
+            reads, events, asked, bodies = [], sg._events, [], sg._bodies
+            with patch.object(sg, '_events', lambda *x, **k: reads.append(k.get('body')) or events(*x, **k)), \
+                    patch.object(sg, '_bodies', lambda db, ids: asked.extend(ids) or bodies(db, ids)):
+                threads = sg.collect(db, scope, b'k' * 32, b's' * 32)[1]
+                chain = sg.collect(db, scope.granted([], []), b'k' * 32, b's' * 32)[1]
+        self.assertEqual(reads, [None])  # once for the scope and the copy it made, without the bodies
+        self.assertEqual(chain.keys(), threads.keys())
+        self.assertEqual(sorted(asked), sorted(went))  # the client thread's; never the sensitive, internal or personal ones
+        self.assertEqual([m['body'] for t in threads.values() for m in t['messages']], [BODY, 'Thanks, Lee. Checking with finance.'])
+
+    def test_the_review_reads_bodies_only_of_the_messages_it_quotes(self):
+        self.olive_mail()
+        self.add(self.own, mail('work', 6, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Pilot dates', 'Can we start the pilot in May?', 1, 't-pilot'),
+                 mail('work', 7, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Re: Pilot dates', 'Or June works too.', 0, 't-pilot'))
+        seen = []
+        with self.own.store.connect() as db:
+            db.set_trace_callback(seen.append)
+            found = sg.unjudged(db, sg.Scope(db, ['work'], {'acme.example'}, {'own1@acme.example'}), 10)
+        pilot = next(x for x in found if x['subject'] == 'Re: Pilot dates')
+        self.assertEqual((pilot['text'], [x['text'] for x in pilot['earlier']]), ('Or June works too.', ['Can we start the pilot in May?']))
+        reads = [s for s in seen if 'FROM events' in s and 'body' in s]
+        self.assertTrue(reads)
+        self.assertFalse([s for s in reads if not s.startswith('SELECT id,body FROM events WHERE id IN')])  # never every message's body
+
+    def test_a_kept_scope_reads_the_messages_again_for_each_request(self):
+        with self.own.store.connect() as db:
+            base = sg.Scope(db, ['work'], {'acme.example'}, {'own1@acme.example'})
+            before = len(sg_kept.renewed(base, db, None, sg.HOLD).signals())
+        self.add(self.own, mail('work', 8, 'Lee Park <lee@client.example>', 'own1@acme.example', 'Hello', 'Hi there', 0, 't-hello'))
+        with self.own.store.connect() as db:
+            self.assertEqual(len(sg_kept.renewed(base, db, None, sg.HOLD).signals()), before + 1)
 
     def test_records_sent_after_a_want_are_passed_on_only_when_still_missing(self):
         group, mem_group = self.own._group(FLEET), self.mem._group(FLEET)

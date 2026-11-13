@@ -149,6 +149,9 @@ CREATE TABLE IF NOT EXISTS team_wants(fleet TEXT NOT NULL,member TEXT NOT NULL,b
 
 
 PENDING_DAYS = 7           # a blob from a teammate this Machine doesn't know as confirmed yet waits this long
+# What each kept blob is, without the blob (ct, and sig stored after it): a teammate's file is most of the table, and
+# a catch-up reads the one it passes on by its id (_graph_serve)
+BLOB_LIST = 'SELECT id,member,kind,tag,seq,dk,header,sha FROM team_blobs WHERE fleet=? ORDER BY seq DESC'
 
 
 class Later(ValueError):
@@ -503,6 +506,7 @@ class Scope(shared_graph_private.Kept):
         self.granted_projects, self.board_threads, self.hand_threads = set(), set(), set()
         self.board_items = set()  # meetings, Intercom and chats of a board shared by name: shared by being on it
         self._team_items, self._private_events = None, None
+        self._signals = {}  # signals(): the accounts' messages, read once for this scope and its copies (granted)
         self.calls = {r[0]: (r[1], r[2]) for r in db.execute('SELECT thread,verdict,hand FROM share_threads')}  # the review's and the owner's
         self.kept_conversations = _kept_conversations(db)  # Only you by hand on a direct message or chat: for all of it
         self._private_found, self._private_memo = {}, None  # private_units: shared by this scope's copies (granted)
@@ -592,6 +596,20 @@ class Scope(shared_graph_private.Kept):
     @property
     def item_events(self):
         return self.board_items | self.team_items
+
+    def signals(self):
+        """The accounts' messages (_events, without their bodies, metadata read), oldest first: read once for this
+        scope and the copies it makes for teammates shared with by name (granted), so a round reads and opens them once
+        instead of once per chain and per pass. A scope is made for one round, so it is never older than that."""
+        if 'rows' not in self._signals:
+            self._signals['rows'] = [{**dict(e), 'metadata': json.loads(e['metadata'] or '{}')} for e in _events(self._db, sorted(self.accounts), '')]
+        return self._signals['rows']
+
+    def bodies(self, event_ids):
+        """{event id: body} of these messages, each read once for this scope and its copies."""
+        kept = self._signals.setdefault('bodies', {})
+        kept.update(_bodies(self._db, set(event_ids) - set(kept)))
+        return {i: kept[i] for i in event_ids if i in kept}
 
     @property
     def private_events(self):
@@ -749,10 +767,23 @@ def _who(metadata, scope):
 
 
 def _events(db, accounts, since):
+    """The accounts' messages since then, oldest first, without their bodies: a body is most of what a message holds
+    and each one read is opened (message_seal), so they are read only for the messages that need one (_bodies)."""
     if not accounts:
         return []
-    return db.execute("SELECT id,account_id,kind,occurred_at,title,body,metadata FROM events WHERE deleted=0 AND history=0 AND occurred_at>=? "
-                      "AND account_id IN (SELECT value FROM json_each(?)) ORDER BY occurred_at", (since, json.dumps(list(accounts)))).fetchall()
+    return db.execute("SELECT id,account_id,kind,occurred_at,title,NULL AS body,metadata FROM events "
+                      "WHERE deleted=0 AND history=0 AND occurred_at>=? AND account_id IN (SELECT value FROM json_each(?)) ORDER BY occurred_at",
+                      (since, json.dumps(list(accounts)))).fetchall()
+
+
+def _bodies(db, event_ids):
+    """{event id: body} of just these messages."""
+    found = {}
+    ids = sorted({int(i) for i in event_ids})
+    for start in range(0, len(ids), 5000):
+        found.update((r[0], r[1]) for r in db.execute('SELECT id,body FROM events WHERE id IN (SELECT value FROM json_each(?))',
+                                                      (json.dumps(ids[start:start + 5000]),)))
+    return found
 
 
 def collect(db, scope, key, secret, today=None, held=None, kept=()):
@@ -774,9 +805,8 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     wrote = {}  # {event id: (when, the owner's own)} for the shared messages
     waiting = set()  # messages of threads that went before and wait to be sorted again
     week = (today - dt.timedelta(days=7)).isoformat()
-    for e in _events(db, sorted(scope.accounts), ''):
-        e = dict(e)
-        e['metadata'] = json.loads(e['metadata'] or '{}')
+    signals = scope.signals()  # read once a round, also for the chains of teammates shared with by name
+    for e in signals:
         view = visibility(db, scope, e)
         views[e['id']] = view
         thread_views[thread_of(e['kind'], e['metadata'], e['id'])].add(view)
@@ -797,22 +827,27 @@ def collect(db, scope, key, secret, today=None, held=None, kept=()):
     if held is not None:
         held.update(keyed(secret, 'thread|' + t) for t, seen in thread_views.items() if seen and seen <= {'pending', 'wait'})
     lines = {r['event_id']: r['line'] for r in db.execute('SELECT event_id,line FROM share_lines')}
-    names = slack_names_of(db, [e for items in threads.values() for e in items])
-    titles = {}  # a line for what has none from the review: all of a board shared by name, and boards' meetings and chats
     on_boards = scope.item_events
+    newest = sorted(threads.items(), key=lambda t: t[1][-1]['occurred_at'], reverse=True)[:MAX_THREADS]
+    newest = [(thread, kept_items) for thread, items in newest
+              if (kept_items := [e for e in items if e['kind'] in MAIL_KINDS or e['id'] in on_boards])]  # mail, or a board project's meeting or chat
+    # Bodies only where one is used: the messages that go with a thread, and shared Slack messages (a member named in
+    # one, a title made again from it); not every message of the accounts, every round
+    going = {e['id'] for _, items in newest for e in items[-MAX_MESSAGES:]}
+    bodies = scope.bodies(going | {e['id'] for items in threads.values() for e in items if e['kind'] == 'slack.message'})
+    full = lambda e: {**e, 'body': bodies[e['id']]} if e['id'] in bodies else e
+    names = slack_names_of(db, [full(e) for items in threads.values() for e in items])
+    titles = {}  # a line for what has none from the review: all of a board shared by name, and boards' meetings and chats
     if scope.granted_projects or on_boards:
-        for e in _events(db, sorted(scope.accounts), ''):
+        for e in signals:
             if views.get(e['id']) == 'team' and (scope.granted_projects or e['id'] in on_boards):
                 word = ('Meeting notes' if e['kind'] in ('zoom.summary', 'meeting.notes') else 'Meeting transcript' if e['kind'] == 'meeting.transcript'
                         else ITEM_WORDS.get(_source(e['kind']), 'Note'))
-                titles[e['id']] = _line(word + ': ' + (shown_title(dict(e), names) or '(no subject)'))
+                titles[e['id']] = _line(word + ': ' + (shown_title(full(e), names) or '(no subject)'))
     out_threads, files = {}, {}
-    newest = sorted(threads.items(), key=lambda t: t[1][-1]['occurred_at'], reverse=True)[:MAX_THREADS]
     for thread, items in newest:
         tag = keyed(secret, 'thread|' + thread)
-        items = [e for e in items if e['kind'] in MAIL_KINDS or e['id'] in on_boards]  # mail, or a board project's meeting or chat
-        if not items:
-            continue
+        items = [full(e) for e in items]
         last = items[-1]
         messages = [_message(e) for e in items[-MAX_MESSAGES:]]
         out_threads[tag] = {'tag': tag, 'subject': shown_title(items[0], names)[:200], 'at': last['occurred_at'], 'messages': messages,
@@ -1048,10 +1083,12 @@ def unjudged(db, scope, limit, skip=(), first=None, again=()):
     if not scope.accounts:
         return found
     on_boards = scope.item_events
-    # Signals only: history (machine/store/history.py) never goes to the team
-    rows = [dict(e) for e in db.execute('SELECT id,account_id,kind,occurred_at,title,body,metadata,history FROM events WHERE deleted=0 '
+    # Signals only: history (machine/store/history.py) never goes to the team, so it isn't read (nor opened). Bodies
+    # are read after, for the messages this batch quotes only. (+history: the same index as before, so messages at the
+    # same time keep their order.)
+    rows = [dict(e) for e in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE deleted=0 AND +history=0 '
                                         'AND account_id IN (SELECT value FROM json_each(?)) ORDER BY occurred_at DESC', (json.dumps(sorted(scope.accounts)),))
-            if not e['history'] and (e['kind'] in MAIL_KINDS or e['id'] in on_boards)]  # mail, and a board project's meetings and chats
+            if e['kind'] in MAIL_KINDS or e['id'] in on_boards]  # mail, and a board project's meetings and chats
     for e in rows:
         e['metadata'] = json.loads(e['metadata'] or '{}')
         e['thread'] = thread_of(e['kind'], e['metadata'], e['id'])
@@ -1064,8 +1101,7 @@ def unjudged(db, scope, limit, skip=(), first=None, again=()):
             thread = e['thread']
             if thread in earlier:
                 if len(earlier[thread]) < 4:
-                    earlier[thread].append({'from': str(e['metadata'].get('from') or '')[:120], 'at': e['occurred_at'],
-                                            'text': ' '.join(str(e['body'] or '').split())[:300]})
+                    earlier[thread].append({'from': str(e['metadata'].get('from') or '')[:120], 'at': e['occurred_at'], 'text': (e['id'], 300)})
                 continue
             if thread in seen or len(found) >= limit or not wanted(thread):
                 seen.add(thread)
@@ -1078,7 +1114,12 @@ def unjudged(db, scope, limit, skip=(), first=None, again=()):
             earlier[thread] = []
             found.append({'event_id': e['id'], 'subject': str(e['title'] or '')[:200], 'with': _who(e['metadata'], scope), 'at': e['occurred_at'],
                           'from': str(e['metadata'].get('from') or '')[:200], 'to': str(e['metadata'].get('to') or '')[:300],
-                          'text': ' '.join(str(e['body'] or '').split())[:1500], 'earlier': earlier[thread]})
+                          'text': (e['id'], 1500), 'earlier': earlier[thread]})
+    quoted = [x for item in found for x in (item, *item['earlier'])]
+    bodies = _bodies(db, [x['text'][0] for x in quoted])
+    for x in quoted:
+        event_id, size = x['text']
+        x['text'] = ' '.join(str(bodies.get(event_id) or '').split())[:size]
     return found
 
 
@@ -1138,15 +1179,15 @@ def threads_by_view(db, scope):
     """{thread: (view, newest event row, hand)} for every thread in the scope's accounts."""
     out = {}
     hands = {r[0]: r[1] for r in db.execute('SELECT thread,hand FROM share_threads')}
-    for e in _events(db, sorted(scope.accounts), ''):
-        e = dict(e)
-        e['metadata'] = json.loads(e['metadata'] or '{}')
+    for e in scope.signals():
         view = visibility(db, scope, e)
         if view is None:
             continue
         thread = thread_of(e['kind'], e['metadata'], e['id'])
         out[thread] = (view, e, hands.get(thread) or scope.hand(thread, e['kind'], e['metadata']))
-    return out
+    # a Slack message's body names its members and makes a lost title again (shown_title): read for those rows only
+    bodies = _bodies(db, [e['id'] for _, e, _ in out.values() if e['kind'] == 'slack.message'])
+    return {t: (v, {**e, 'body': bodies[e['id']]} if e['id'] in bodies else e, h) for t, (v, e, h) in out.items()}
 
 
 def slack_names_of(db, events):
@@ -1958,6 +1999,7 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             ensure(db)
             wants = db.execute('SELECT member,body FROM team_wants WHERE fleet=?', (fleet,)).fetchall()
             signs = {r['member']: r['sign'] for r in db.execute('SELECT member,sign FROM team_sources WHERE fleet=?', (fleet,))}
+        kept = None
         for want in wants:
             who = want['member']
             body = json.loads(want['body'])
@@ -1972,9 +2014,10 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
             served = self.meta(f'graph_served:{fleet}:{who}') or {}
             if served.get('at') != body['at']:
                 served = {'at': body['at'], 'snap': {}, 'low': {}}
-            with self.connect() as db:
-                rows = [dict(r) for r in db.execute('SELECT * FROM team_blobs WHERE fleet=? AND member!=? ORDER BY seq DESC', (fleet, who))]
-            rows = [r for r in rows if for_them(r, who)]  # shared by name with others: never passed on to this teammate
+            if kept is None:  # what each blob is, once a round for everyone who asked; the blob itself only when it goes
+                with self.connect() as db:
+                    kept = [dict(r) for r in db.execute(BLOB_LIST, (fleet,))]
+            rows = [r for r in kept if r['member'] != who and for_them(r, who)]  # shared by name with others: never passed on to this teammate
             sign_of = lambda p: (nc.public_keys(self._private())['sign'] if p == me['member_id'] else
                                  (self._public(group, p) or {}).get('sign') if p in found else signs.get(p))
             allowed = {r['member'] for r in rows if (r['member'] in found or (r['member'] not in members and me['member_id'] in trusted))
@@ -2013,8 +2056,12 @@ class SharedGraph(shared_graph_takeback.TakeBack, shared_graph_boards.TeamBoards
                 chain = chain[:budget]
                 for r in chain:
                     header = json.loads(r['header'])
+                    with self.connect() as db:
+                        blob = db.execute('SELECT ct,sig FROM team_blobs WHERE id=?', (r['id'],)).fetchone()
+                    if not blob:
+                        continue  # replaced by a newer one since this round listed it: that one goes in a later round
                     wrap = nc.seal({'dk': r['dk'], 'h': r['sha'], 'from_key': sign_of(p)}, self._private(), keys, wrap_context(header, me['member_id'], who))
-                    self.relay.call('POST', '/graph', {'op': 'relay', 'fleet': fleet, 'blob': {'header': header, 'ct': r['ct'], 'sig': r['sig']},
+                    self.relay.call('POST', '/graph', {'op': 'relay', 'fleet': fleet, 'blob': {'header': header, 'ct': blob['ct'], 'sig': blob['sig']},
                                                        'wraps': {who: wrap}}, timeout=120 if r['kind'] == 'file' else 60)
                     self._spent()
                     budget -= 1
