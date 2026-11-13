@@ -236,11 +236,15 @@ try{
   const outside=await page.evaluate(()=>[...document.querySelectorAll('#settings-dictation .settings-list>div>select')].filter(s=>{const row=s.parentElement,r=s.getBoundingClientRect(),edge=row.getBoundingClientRect().right-parseFloat(getComputedStyle(row).paddingRight);return r.width&&r.right>edge+0.5}).map(s=>s.id));
   assert.deepEqual(outside,[],`Voice input's dropdowns stay inside their row's padding at ${w}px`);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no sideways scroll');
-  assert.equal(await page.locator('#dictation-note').textContent(),'In use: this Machine. Your recordings never leave it.');
+  assert.equal(await page.locator('#dictation-note').textContent(),'Recordings stay on this Machine.');
+  // Every dropdown in Voice input lines up: one width, the same left and right edge
+  const edges=await page.evaluate(()=>[...new Set([...document.querySelectorAll('#dictation-list select')].map(s=>{const r=s.getBoundingClientRect();return Math.round(r.left)+'-'+Math.round(r.right)}))]);
+  assert.equal(edges.length,1,`Voice input's dropdowns line up at ${w}px: ${edges}`);
+  assert.equal(await page.locator('#talk-hint').isHidden(),true,'no Talk live hint when it is ready');
   assert.match(await page.locator('#talk-note').textContent(),/^Ready\. Tap Talk in the menu, or the wave/);
   await page.locator('#settings-dictation').scrollIntoViewIfNeeded();await shot('11-settings');
   engine='auto';local={state:'preparing',step:'model',done:10,total:100};await page.evaluate(()=>loadDictation(true));
-  await page.waitForFunction(()=>document.querySelector('#dictation-note')?.textContent==='Getting ready (in the background). Until then, your browser writes it down.');
+  await page.waitForFunction(()=>document.querySelector('#dictation-note')?.textContent==='Getting ready (in the background).');
   await shot('11b-settings-getting-ready');engine='local';local={state:'ready'};
   actions.length=0;await page.selectOption('#dictation-language','nl');await page.waitForFunction(()=>true);
   await page.waitForTimeout(200);assert.deepEqual(actions.find(a=>a.action==='voice_prefs')?.args,{language:'nl'});

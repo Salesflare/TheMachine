@@ -51,6 +51,9 @@ try{
   await page.locator('#settings-tabs [data-settings-tab="general"]').click();
   assert.equal(await visible(page,'#theme-toggle'),true);assert.equal(await visible(page,'#settings-account'),false);assert.equal(await visible(page,'#settings-acct'),false);
   for(const sel of ['#hours','#signatures','#settings-skills','#model-panel'])assert.equal(await visible(page,sel),false,sel);
+  // Language and region: its dropdowns share one width and the same left and right edge
+  const loc=await page.evaluate(()=>[...new Set([...document.querySelectorAll('.locale-list select')].filter(s=>s.checkVisibility()).map(s=>{const r=s.getBoundingClientRect();return Math.round(r.left)+'-'+Math.round(r.right)}))]);
+  assert.ok(loc.length<=1,`Language and region's dropdowns line up at ${width}px: ${loc}`);
   assert.equal(await help(page),HELP+'settings');
   // Each tab shows its own part.
   for(const [tab,sel] of [['notify','#hours'],['writing','#signatures'],['writing','#settings-voices'],['skills','#settings-skills'],['model','#model-panel']]){
@@ -87,6 +90,9 @@ try{
   // Self-hosted but paired with the Network: the Account tab too.
   paired=true;await page.goto('about:blank');await page.goto(base+'/#settings');await page.locator('#settings-tabs [data-settings-tab="account"]:not([hidden])').waitFor();
   assert.equal(await tabs(page).then(t=>t[0]),'Account');
+  // Fleet's rows are rows like the others: a bold label and a control on the right
+  await page.locator('#settings-tabs [data-settings-tab="general"]').click();await page.locator('#settings-fleet-rules:visible').waitFor();
+  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#settings-fleet .settings-list>div')].filter(r=>r.checkVisibility()).map(r=>{const s=r.querySelector(':scope>.grow>strong'),c=r.querySelector(':scope>:is(button,select)');return !!s&&!!c&&c.getBoundingClientRect().left>=s.getBoundingClientRect().right-1}).every(Boolean)),true);
   paired=false;
   // On your own computer with addresses found: an Account tab, and the account in short (Join the Network) first in it,
   // not also at the end of General
