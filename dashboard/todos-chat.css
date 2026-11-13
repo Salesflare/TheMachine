@@ -9,6 +9,8 @@
 .saved-feedback .see-chat{margin-left:auto;font-size:.8rem;color:color-mix(in srgb,var(--text) 55%,var(--surface));text-decoration:none}.saved-feedback .see-chat:hover{color:var(--text);text-decoration:underline}
 @media(hover:hover){.card{transition:border-color .15s,box-shadow .15s}.card:hover{border-color:var(--c-line-strong)}}
 /* The chat layout applies only while the Suggestions tab shows it; every other tab scrolls as a normal page */body.chat-open:has(#inbox:not([hidden])) main{max-width:calc(var(--measure) + 440px);padding-bottom:0;margin-bottom:0}body.chat-open:has(#inbox:not([hidden])) #suggestion-summary,body.chat-open:has(#inbox:not([hidden])) #suggestion-stats,body.chat-open:has(#inbox:not([hidden])) #first-look,body.chat-open:has(#inbox:not([hidden])) #needs-you,body.chat-open:has(#inbox:not([hidden])) .site-footer{display:none}
+/* The Fixed lines belong on the to-do list, not in a to-do's chat; the banner box goes with them unless a usage limit is in it */
+body.chat-open:has(#inbox:not([hidden])) #fixed-notice,body.chat-open:has(#inbox:not([hidden])) #banners:not(:has(>#limit-banner:not([hidden]))){display:none}
 /* Calm, like a chat app: replies are plain text, your own messages soft pills, sources light quotes, taps and times
    small and muted; only what the Machine made for you (a draft, an outcome, files, the call it needs) is a raised card. */
 .chat-layout{--chat-body:1rem;--chat-meta:.75rem;--chat-col:720px;--chat-quiet:color-mix(in srgb,var(--text) 55%,var(--bg));display:grid;grid-template-columns:clamp(240px,calc(100% - var(--chat-col) - 92px),300px) minmax(0,1fr);gap:32px;align-items:start}
