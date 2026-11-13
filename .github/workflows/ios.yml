@@ -5,7 +5,8 @@ name: iOS app build
 # Without "upload" it builds for the simulator without signing, to check the native code compiles. With "upload" it
 # archives a signed build and sends it to TestFlight instead (one run, not two): Xcode's automatic signing through the
 # App Store Connect API key in the repo secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 and APPLE_TEAM_ID. The build
-# number is the run number, so each upload is new.
+# number is the run number, so each upload is new. The development certificate signing makes on the runner is revoked
+# at the end, so they never reach Apple's limit.
 on:
   workflow_dispatch:
     inputs:
@@ -85,3 +86,17 @@ jobs:
           PLIST
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/export" "${auth[@]}" | tail -n 40
+      - name: Revoke this run's development certificate
+        # Each archive on a fresh runner makes a new development certificate whose key leaves with the runner; without
+        # this they reach Apple's limit and the next upload fails.
+        if: ${{ always() && inputs.upload && github.repository == 'Salesflare/TheMachine' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          key="$RUNNER_TEMP/asc-key-revoke.p8"
+          umask 077
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          trap 'rm -f "$key"' EXIT
+          ASC_KEY_FILE="$key" node .github/scripts/asc-revoke-ci-dev-certs.mjs
