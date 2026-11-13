@@ -53,7 +53,7 @@ class ConnectLogos(unittest.TestCase):
             self.assertIn(brand, gmail, f'Gmail logo misses {brand}')
         self.assertGreaterEqual(len(colors('calendar') & {'#4285F4', '#34A853', '#FBBC04', '#EA4335'}), 4)
         self.assertGreaterEqual(len(colors('google_meet')), 5)
-        one_color = {'codex', 'crm', 'github', 'google_docs', 'icloud_calendar', 'intercom', 'linkedin', 'proton_calendar', 'rss',
+        one_color = {'codex', 'crm', 'github', 'google_docs', 'icloud_calendar', 'intercom', 'linkedin', 'rss',
                      'shortcut', 'signal', 'stripe', 'telegram', 'trello', 'whatsapp', 'x'}
         for path in LOGOS.glob('*.svg'):
             if path.stem not in one_color:
