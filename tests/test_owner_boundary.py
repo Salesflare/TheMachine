@@ -101,7 +101,20 @@ class OwnerBoundary(unittest.TestCase):
             servers.append(real(*args, **kwargs)); return servers[-1]
         # Keep the patches for the whole test: serve() installs signal handlers after
         # creating the server, so ending them early races the server thread.
-        for patcher in (patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
+        # serve() hangs the error log (machine/faults.py) on the shared logger, writing into this test's database: it
+        # comes off again, or an error logged later (another test's thread) writes into the folder while it is removed.
+        import machine.app.serve as serve_module
+        real_watch = serve_module.watch_faults
+        def watch(store, *args):
+            hook = threading.excepthook
+            log = real_watch(store, *args)
+            def unwatch():
+                a.LOG.removeHandler(log)
+                threading.excepthook = hook
+            self.addCleanup(unwatch)
+            return log
+        for patcher in (patch.object(serve_module, 'watch_faults', side_effect=watch),
+                        patch.object(a.http.server, 'ThreadingHTTPServer', side_effect=capture),
                         patch.object(a.signal, 'signal'), patch('machine.store.review_requeue.requeue', return_value=0),
                         *(patch.object(a.App, name) for name in self.BACKGROUND)):
             patcher.start()
