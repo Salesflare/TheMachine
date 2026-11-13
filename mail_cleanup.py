@@ -35,6 +35,7 @@ import urllib.parse
 import graph
 import i18n
 from machine.cards import group_sender
+from machine.sources.gmail import phone_link
 from machine.store.review_wait import People, mail_wait
 
 KINDS = ('newsletters', 'spam')
@@ -597,7 +598,8 @@ def view(db, suggestion_id, metas):
                           'event': item.get('event') if item.get('event') in kept else None,  # its mail, to read in the viewer while still kept
                           'count': item.get('count') or 1, 'why': item.get('why') or '', 'state': row['state'], 'how': row['how'],
                           'plan': item.get('how'),  # what the pick will do, read when the run made it (mail_cleanup_app.py)
-                          'link': row['link'] if row['state'] == 'yours' else None})
+                          'link': row['link'] if row['state'] == 'yours' else None,
+                          **({'phone_link': phone} if row['state'] == 'yours' and (phone := phone_link(row['link'], item.get('thread'))) else {})})
         return {'kind': m['cleanup'], 'items': items}
     return None
 
@@ -618,6 +620,19 @@ def details(metas, n):
             items = m.get('items') or []
             return items[n] if 0 <= n < len(items) else None
     return None
+
+
+_MESSAGE_ID = re.compile(r'[A-Za-z0-9_-]{1,64}')
+
+
+def mail_link(account, item):
+    """A Gmail item's mail in Gmail on the web, in the account it came to (Spam where this Machine may not move mail to
+    spam: the owner marks it there), or None (Outlook, or no message id of Gmail's shape)."""
+    message = str(item.get('message') or '')
+    if item.get('mail') != 'gmail.message' or (account.get('service') or 'gmail') != 'gmail' or not account.get('email') \
+            or not _MESSAGE_ID.fullmatch(message):
+        return None
+    return 'https://mail.google.com/mail/u/?authuser=' + urllib.parse.quote(account['email']) + '#all/' + message
 
 
 # --- the List-Unsubscribe header (RFC 2369, RFC 8058) -------------------------------------------------------------------

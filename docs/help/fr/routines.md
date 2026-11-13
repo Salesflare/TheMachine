@@ -27,7 +27,7 @@ Les reçus, commandes et avis de paiement sont laissés de côté. Un e-mail arr
 
 **Tri du spam** crée une tâche par domaine avec les e-mails d’expéditeurs inconnus qui ressemblent à du spam, chacun avec **Spam** ou **Pas du spam**. Outlook déplace le spam dans Courrier indésirable et Gmail le marque comme spam. Il vérifie toutes les heures, donc le spam est souvent là avant que vous y arriviez. Le nouveau spam va sur la même tâche tant qu’elle est ouverte.
 
-Il ne fonctionne qu’avec les e-mails que The Machine peut déplacer. Gmail connecté en lecture seule, comme sur une Machine hébergée, ne peut pas : le modèle le dit à la place de **Ajouter**.
+Gmail connecté en lecture seule, comme sur une Machine hébergée, ne peut pas déplacer d’e-mails dans le spam. Là, **Spam** donne un lien pour le signaler dans Gmail, et The Machine retient l’expéditeur comme spam. Sans compte mail connecté, le modèle affiche **Connecter vos e-mails** à la place de **Ajouter**.
 
 Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte comme conversation que dans un fil où vous avez écrit. Si un e-mail d’un expéditeur que vous avez signalé comme spam, sur la tâche ou dans votre boîte, passe encore, il est sur la tâche suivante avec **Déjà signalé comme spam**. Ce que vous avez déplacé vous-même dans le spam l’aide aussi à repérer des e-mails semblables.
 

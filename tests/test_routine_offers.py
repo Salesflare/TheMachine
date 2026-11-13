@@ -122,14 +122,11 @@ class Offers(unittest.TestCase):
         self.act('routine_state', id=rid, to='stop')
         self.assertIsNone(self.look())  # stopped: the owner decided
 
-    def test_spam_moved_by_hand_offers_spam_cleanup_only_where_mail_can_move(self):
+    def test_spam_moved_by_hand_offers_spam_cleanup_also_on_read_only_gmail(self):
         for i in range(6):
             self.mail(f'Pitch {i} <sales@leads{i}.example>', 'Verified leads', hours_ago=30 + i, version=2, labels=['SPAM'])
         self.mail('Filtered <x@junk.example>', 'You won', hours_ago=20, labels=['SPAM'])  # the filter's own: not by hand
-        self.assertIsNone(self.look())  # read-only Gmail: no Spam cleanup to offer
-        self.marks = True
-        self.app._cleanup_marks = None
-        offer = self.look()
+        offer = self.look()  # read-only Gmail: Spam cleanup adds there too (Spam links to the mail in Gmail)
         self.assertEqual((offer['key'], offer['n']), ('spam', 6))
         self.newsletters(6, 5)
         self.assertEqual(self.look()['key'], 'newsletters')  # one at a time: newsletters first

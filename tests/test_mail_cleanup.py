@@ -565,33 +565,38 @@ class Cleanup(unittest.TestCase):
         row, extra = self.view(self.todos()[0]['id'])
         self.assertEqual([(i['address'], i['plan']) for i in extra['cleanup']['items']], [('seo@ranks.example', 'spam')])
 
-    def test_spam_cleanup_only_where_mail_can_move_to_spam(self):
-        # hosted Gmail reads only: Spam cleanup shows with why it can't be added, and one added before reads nothing and
-        # makes no to-do
+    def test_every_template_can_be_added_spam_cleanup_too_on_read_only_gmail(self):
+        # hosted Gmail reads only: Spam cleanup still adds, reads the mail, and Spam on its to-do is the owner's own step
+        # in Gmail, with the mail's link; nothing is written to the mailbox and no permission is asked for
         templates = self.app.routines_view()['templates']
         self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays'])
-        self.assertEqual([x.get('needs') for x in templates], [None, 'gmail', None, None])
-        with self.assertRaises(ValueError):
-            self.act('routine_template', key='spam')
-        with patch.object(self.app, 'cleanup_accounts', lambda: []):  # no mailbox at all
-            self.assertEqual(self.app.cleanup_spam_needs(), 'mail')
-        self.marks = True
-        self.app._cleanup_marks = None
-        templates = self.app.routines_view()['templates']
-        self.assertEqual([x['key'] for x in templates], ['newsletters', 'spam', 'digest', 'birthdays'])
-        self.assertNotIn('needs', templates[1])
+        self.assertEqual([x.get('needs') for x in templates], [None, None, None, None])
         self.add('spam')
-        self.marks = False
-        self.app._cleanup_marks = None
         self.mail('Growth Team <seo@ranks.example>', 'Page one on Google in 30 days', hours_ago=-0.01)
         with self.store.connect() as db:
-            rid = db.execute("SELECT id FROM routines WHERE origin='template:spam'").fetchone()[0]
-            routines.run_now(db, rid, self.app.routines_stamp())
-        self.app.routines_step()
-        self.assertEqual([s for s in self.sent if s['action'] == 'start'], [])
-        self.assertEqual(self.asked, [])
-        self.assertEqual([r['state'] for r in self.runs()], ['nothing', 'nothing'])
-        self.assertEqual(self.todos(), [])
+            event = db.execute("SELECT id FROM events WHERE source_id='m1'").fetchone()[0]
+        self.reply = json.dumps({'spam': [{'event_id': event, 'why': 'Cold SEO pitch'}]})
+        self.again('spam')
+        self.assertEqual(self.turns(), [])
+        row, extra = self.view(self.todos()[0]['id'])
+        self.assertEqual([(i['address'], i['plan']) for i in extra['cleanup']['items']], [('seo@ranks.example', 'in_mail')])
+        with patch.object(a.next_actions.ThreadSnooze, 'write', lambda *x: self.fail('read-only Gmail is never written')):
+            self.act('routine_cleanup', suggestion_id=row['id'], picks={'0': 'go'})
+        row, extra = self.view(row['id'])
+        item = extra['cleanup']['items'][0]
+        self.assertEqual((item['state'], item['how'], item['link']),
+                         ('yours', 'in_mail', 'https://mail.google.com/mail/u/?authuser=owner%40acme.example#all/m1'))
+        self.assertNotEqual(row['status'], 'completed')  # the owner's step is left: they mark it done
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT choice FROM mail_cleanup_senders WHERE kind='spam' AND address='seo@ranks.example'").fetchone()[0], 'gone')
+
+    def test_spam_cleanup_with_no_mail_account_says_so_with_connect_mail(self):
+        with patch.object(a.App, 'cleanup_accounts', lambda s: []):
+            spam = next(x for x in self.app.routines_view()['templates'] if x['key'] == 'spam')
+            self.assertEqual(spam['needs'], 'mail')
+            with self.assertRaises(ValueError):
+                self.act('routine_template', key='spam')
+        self.assertEqual(self.app.cleanup_spam_needs(), None)
 
     def test_spam_reads_only_unknown_senders_and_takes_only_what_it_read(self):
         self.marks = True
@@ -621,12 +626,12 @@ class Cleanup(unittest.TestCase):
         with self.store.connect() as db:
             db.execute('UPDATE events SET deleted=0 WHERE id=?', (event,))
             self.assertEqual(db.execute("SELECT state FROM mail_cleanup_items WHERE suggestion_id=?", (row['id'],)).fetchone()[0], 'open')
-        # the right taken away since: Spam didn't work, and nothing is left for the owner to do elsewhere
+        # the right taken away since: Spam is the owner's own step, with the mail's link in Gmail
         self.marks = False
         self.act('routine_cleanup', suggestion_id=row['id'], picks={'0': 'go'})
         row, extra = self.view(row['id'])
-        self.assertEqual(extra['cleanup']['items'][0]['state'], 'failed')
-        self.assertNotIn('url', extra['cleanup']['items'][0])
+        self.assertEqual((extra['cleanup']['items'][0]['state'], extra['cleanup']['items'][0]['how']), ('yours', 'in_mail'))
+        self.assertTrue(extra['cleanup']['items'][0]['link'].startswith('https://mail.google.com/mail/u/?authuser='))
 
     def at(self, hour, minute=0):
         """The owner's clock moves on, and the routines take a step."""

@@ -1340,6 +1340,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"",
  "Done when: {}": "Done when: {}",
  "Done {}": "Done {}",
+ "Done, except {} to mark as spam yourself.": {
+  "one": "Done, except {} to mark as spam yourself.",
+  "other": "Done, except {} to mark as spam yourself."
+ },
  "Done, except {} to unsubscribe by hand.": {
   "one": "Done, except {} to unsubscribe by hand.",
   "other": "Done, except {} to unsubscribe by hand."
@@ -1850,8 +1854,8 @@
  "Gmail could not give the message ({})": "Gmail could not give the message ({})",
  "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.",
  "Gmail has no signature for this address.": "Gmail has no signature for this address.",
- "Gmail is connected read-only here, so spam can’t be moved.": "Gmail is connected read-only here, so spam can’t be moved.",
  "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.": "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.",
+ "Gmail is read-only here, so Spam gives a link to mark it in Gmail.": "Gmail is read-only here, so Spam gives a link to mark it in Gmail.",
  "Gmail send-as": "Gmail send-as",
  "Gmail sender identity could not be verified. Nothing was sent.": "Gmail sender identity could not be verified. Nothing was sent.",
  "Gmail sends as it, but not as an alias": "Gmail sends as it, but not as an alias",
@@ -2589,6 +2593,8 @@
  "Many providers need an app password. Server settings are filled in for most.": "Many providers need an app password. Server settings are filled in for most.",
  "Mar": "Mar",
  "Mark all as spam": "Mark all as spam",
+ "Mark as spam in Gmail": "Mark as spam in Gmail",
+ "Mark as spam yourself": "Mark as spam yourself",
  "Mark done": "Mark done",
  "Mark done (D)": "Mark done (D)",
  "Mark done only an open item": "Mark done only an open item",
@@ -2825,8 +2831,8 @@
  "Names and promises": "Names and promises",
  "Need your admin’s approval? Send them this link.": "Need your admin’s approval? Send them this link.",
  "Needs OpenAI: a ChatGPT sign-in, or an API key.": "Needs OpenAI: a ChatGPT sign-in, or an API key.",
+ "Needs a connected mail account.": "Needs a connected mail account.",
  "Needs a login": "Needs a login",
- "Needs a mailbox where spam can be moved, like Outlook.": "Needs a mailbox where spam can be moved, like Outlook.",
  "Needs an answer": "Needs an answer",
  "Needs its {}": "Needs its {}",
  "Needs me": "Needs me",
@@ -4940,7 +4946,7 @@
  "Spaced out so they don’t look automated · done around {}": "Spaced out so they don’t look automated · done around {}",
  "Spam": "Spam",
  "Spam cleanup": "Spam cleanup",
- "Spam cleanup needs a mail account The Machine can move spam in.": "Spam cleanup needs a mail account The Machine can move spam in.",
+ "Spam cleanup needs a connected mail account.": "Spam cleanup needs a connected mail account.",
  "Spam moves it to your spam folder.": "Spam moves it to your spam folder.",
  "Specialty": "Specialty",
  "Specialty: {}": "Specialty: {}",
