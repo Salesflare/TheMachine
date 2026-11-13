@@ -74,7 +74,7 @@ Abrir mostra a tarefa destacada na sua lista. Se ela estiver feita, adiada ou em
 
 O push diz o mesmo sem links. Toque nele, ou no link no fim do e-mail, para ler este resumo de novo em **Tarefas**.
 
-No final vêm seus resumos de **Trabalho** e **Pessoal**, o mesmo texto que **Resumo** copia em Tarefas. Quando o texto das tarefas está oculto nas notificações, eles ficam de fora.
+No final vêm seus resumos de **Trabalho** e **Pessoal**, o mesmo texto que **Resumo** copia em Tarefas, sem as tarefas já listadas acima. Quando o texto das tarefas está oculto nas notificações, eles ficam de fora.
 
 ## O resumo do fim do dia
 

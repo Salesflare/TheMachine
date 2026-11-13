@@ -74,7 +74,7 @@ Abrir muestra esa tarea resaltada en tu lista. Si está hecha, pospuesta o en ot
 
 El push dice lo mismo sin enlaces. Tócalo, o toca el enlace al final del correo, para volver a leer este resumen en **Tareas**.
 
-Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que copia **Resumen** en Tareas. Si el texto de las tareas está oculto en las notificaciones, no aparecen.
+Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que copia **Resumen** en Tareas, sin las tareas que ya aparecen arriba. Si el texto de las tareas está oculto en las notificaciones, no aparecen.
 
 ## El resumen de la tarde
 

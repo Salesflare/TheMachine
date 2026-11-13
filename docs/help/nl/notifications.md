@@ -74,7 +74,7 @@ Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een
 
 De push zegt hetzelfde zonder links. Tik erop, of op de link onderaan de e-mail, om dit overzicht opnieuw te lezen in **To-do's**.
 
-Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **Overzicht** bij To-do's kopieert. Is de tekst van to-do's verborgen in meldingen, dan vallen ze weg.
+Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **Overzicht** bij To-do's kopieert, zonder de to-do's die er al boven staan. Is de tekst van to-do's verborgen in meldingen, dan vallen ze weg.
 
 ## Het avondoverzicht
 

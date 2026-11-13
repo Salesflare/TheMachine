@@ -74,7 +74,7 @@ Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mi
 
 Le push dit la même chose sans liens. Touchez-le, ou le lien à la fin de l’e-mail, pour relire ce récap dans **Tâches**.
 
-À la fin viennent vos récaps **Travail** et **Perso**, le même texte que copie **Récap** dans les tâches. Quand le texte des tâches est masqué dans les notifications, ils sont omis.
+À la fin viennent vos récaps **Travail** et **Perso**, le même texte que copie **Récap** dans les tâches, sans les tâches déjà listées plus haut. Quand le texte des tâches est masqué dans les notifications, ils sont omis.
 
 ## Le récap du soir
 

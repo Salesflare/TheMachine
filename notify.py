@@ -601,7 +601,7 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), areas=()):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), areas=(), area_rows=None):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
@@ -619,7 +619,9 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
     areas: [(area, text)], each area's digest (area_digest), after the rest under its name, email and Telegram only (not
-    the push); an empty one is left out.
+    the push); an empty one is left out. area_rows: {area: (done, open_items, today)}, what that text was made from: then
+    the digest lists a to-do once, so an area leaves out what the three lines above it already say (they carry its Open
+    link, and the push names them). Its Copy (sections) stays the whole area, as the To-dos digest copies it.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
@@ -698,8 +700,12 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         lines += [tail, '']
     if opening and not about_meeting:  # a headline about the first meeting already says it
         lines += [opening, '']
-    # Each area's digest (area_digest), the same text the To-dos digest copies: never without show_text (titles)
+    # Each area's digest (area_digest), the same text the To-dos digest copies: never without show_text (titles); without
+    # the to-dos listed above (picked: a promise by the to-do made from it)
+    picked = {str(i.get('covers') or i.get('id') or '') for i, _ in picks if i is not None} - {''}
     for area, text in (areas or ()) if show_text else ():
+        if text and area_rows and area in area_rows:
+            text = area_digest(*area_rows[area], skip=picked)
         if text:
             lines += [AREA_TITLES[area](), text, '']
     sections = [{'area': area, 'copy': text} for area, text in (areas or ()) if show_text and text]
@@ -730,14 +736,15 @@ AREA_TITLES = {'work': lambda: t('Work'), 'personal': lambda: t('Personal')}
 AREA_LISTED = 8  # done and open to-dos listed in an area's digest, the rest as a count
 
 
-def area_digest(done, open_items, today=''):
+def area_digest(done, open_items, today='', skip=()):
     """One area's digest (Work or Personal): what got done today and what is still open there, as plain text to paste
     somewhere else (no links). The To-dos digest shows and copies it, and the morning digest's email carries it.
     done: the to-dos finished today [{title}], the ones that matter first; open_items: the area's open to-dos [{title,
     due}] in the dashboard's order (open_order); today ('YYYY-MM-DD'): one due then says so. At most AREA_LISTED of
-    each, the rest as a count. '' when the area has nothing worth listing: then no part of it shows anywhere."""
+    each, the rest as a count. '' when the area has nothing worth listing: then no part of it shows anywhere.
+    skip: ids of open to-dos to leave out (the morning digest lists those above its areas)."""
     done = [i for i in done if str(i.get('title') or '').strip()]
-    open_items = [i for i in open_items if str(i.get('title') or '').strip()]
+    open_items = [i for i in open_items if str(i.get('title') or '').strip() and (not skip or i.get('id') not in skip)]
     out = []
 
     def listed(items, more):

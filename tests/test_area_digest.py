@@ -46,6 +46,30 @@ class Text(unittest.TestCase):
         self.assertNotIn('Plan the offsite', careful['text'])
         self.assertNotIn('Plan the offsite', notify.compose([], [], [{'title': 'Answer the school'}], '', total=1, areas=areas)['push']['body'])
 
+    def test_the_morning_digest_lists_a_to_do_once(self):
+        due = [{'id': 'a1b2c3d4e5f60718', 'title': 'Reply to the supplier'}]
+        still = [{'id': 'a1b2c3d4e5f60718', 'title': 'Reply to the supplier', 'due': '2026-11-13'},
+                 {'id': 'b1b2c3d4e5f60718', 'title': 'Send the quarterly numbers'}]
+        rows = {'work': ([], still, '2026-11-13'), 'personal': ([], [{'id': 'c1b2c3d4e5f60718', 'title': 'Book the dentist'}], '')}
+        areas = [(a, notify.area_digest(*rows[a])) for a in notify.AREAS]
+        out = notify.compose([], due, [], 'https://m.example/', total=3, top=still, areas=areas, area_rows=rows)
+        # the three lines above the areas carry the due one with its Open link; Work lists the rest
+        self.assertEqual(out['text'].count('Reply to the supplier'), 1, out['text'])
+        self.assertIn('• Reply to the supplier · [Open]', out['text'])
+        self.assertEqual(out['text'].count('Send the quarterly numbers'), 1, out['text'])
+        self.assertEqual(out['text'].count('Book the dentist'), 1, out['text'])
+        self.assertEqual(out['read'].count('Reply to the supplier'), 1, out['read'])
+        self.assertEqual([b for b in out['blocks'] if 'Reply to the supplier' in b[1]], [['li', 'Reply to the supplier']])
+        # Copy Work stays the whole area, as the To-dos digest copies it
+        self.assertEqual(out['sections'][0], {'area': 'work', 'copy': 'Still open\n• Due today: Reply to the supplier\n• Send the quarterly numbers'})
+
+    def test_an_area_with_only_what_the_top_lists_is_left_out(self):
+        due = [{'id': 'a1b2c3d4e5f60718', 'title': 'Reply to the supplier'}]
+        rows = {'work': ([], [dict(due[0], due='2026-11-13')], '2026-11-13')}
+        out = notify.compose([], due, [], '', total=1, top=rows['work'][1], areas=[('work', notify.area_digest(*rows['work']))], area_rows=rows)
+        self.assertNotIn('Work', out['text'])
+        self.assertEqual(out['sections'], [{'area': 'work', 'copy': 'Still open\n• Due today: Reply to the supplier'}])
+
 
 class FromTheMachine(unittest.TestCase):
     def setUp(self):
@@ -106,21 +130,32 @@ class FromTheMachine(unittest.TestCase):
             self.assertEqual(self.app.action('area_digest', {}, owner_dashboard=True)['personal'], 'Still open\n• Answer the school')
 
     def test_the_morning_digest_email_has_both_areas_unless_text_is_hidden(self):
-        self.card('Send the signed contract')
-        self.card('Answer the school', account='home')
+        work = ['Send the signed contract', 'Plan the offsite', 'Review the budget', 'Call the bank']
+        home = ['Answer the school', 'Book the dentist', 'Renew the passport']
+        for title in home:  # the newest lead: three Work ones up top, Work's fourth and all of Personal below
+            self.card(title, account='home')
+        for title in work:
+            self.card(title)
         with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
-            text = self.app.digest(at(12, 9).astimezone(UTC))['text']
-            self.assertIn('\n\nWork\nStill open\n• Send the signed contract\n\nPersonal\nStill open\n• Answer the school\n\nOpen The Machine: ', text)
+            digest = self.app.digest(at(12, 9).astimezone(UTC))
+            text = digest['text']
+            self.assertIn('\n\nWork\nStill open\n• ', text)
+            self.assertIn('\n\nPersonal\nStill open\n• ', text)
+            # each to-do once: the three lines up top, the rest under its area; Copy Work and Copy Personal stay whole
+            for title in work + home:
+                self.assertEqual(text.count(title), 1, (title, text))
+            copied = {s['area']: s['copy'] for s in digest['sections']}
+            self.assertTrue(all(x in copied['work'] for x in work) and all(x in copied['personal'] for x in home), copied)
             # a Careful Work Fleet keeps Work titles out of notifications: the Work part goes, the owner's Personal stays
             with patch.object(security_levels, 'careful_fleets', return_value=[{'id': 'f1'}]):
                 fleet = self.app.digest(at(12, 9).astimezone(UTC))['text']
             self.assertNotIn('\nWork\n', fleet)
-            self.assertIn('\n\nPersonal\nStill open\n• Answer the school\n', fleet)
+            self.assertIn('\n\nPersonal\nStill open\n• ', fleet)
             with self.store.connect() as db:  # to-do text off in notifications: no part at all
                 security_levels.set_pref(db, 'notify_text', 'off')
             careful = self.app.digest(at(12, 9).astimezone(UTC))['text']
-        self.assertNotIn('Answer the school', careful)
-        self.assertNotIn('Send the signed contract', careful)
+        for title in work + home:
+            self.assertNotIn(title, careful)
 
 
 if __name__ == '__main__':

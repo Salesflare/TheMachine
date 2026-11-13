@@ -74,7 +74,7 @@ Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o i
 
 La push dice lo stesso senza link. Toccala, o tocca il link alla fine dell’email, per rileggere questo riepilogo in **Attività**.
 
-Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo che copia **Riepilogo** nelle attività. Quando il testo delle attività è nascosto nelle notifiche, non ci sono.
+Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo che copia **Riepilogo** nelle attività, senza le attività già elencate sopra. Quando il testo delle attività è nascosto nelle notifiche, non ci sono.
 
 ## Il riepilogo della sera
 

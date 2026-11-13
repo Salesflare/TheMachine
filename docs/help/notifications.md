@@ -75,7 +75,7 @@ Open shows that to-do in your list, highlighted. One that's done, snoozed or in 
 
 The push says the same without links. Tap it, or the link at the end of the email, to read this digest again in **To-dos**.
 
-At the end come your **Work** and **Personal** digests, the same text **Digest** in To-dos copies. When to-do text is hidden in notifications, they are left out.
+At the end come your **Work** and **Personal** digests, the same text **Digest** in To-dos copies, without the to-dos already listed above. When to-do text is hidden in notifications, they are left out.
 
 ## The evening digest
 

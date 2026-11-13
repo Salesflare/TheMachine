@@ -75,7 +75,7 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 
 Der Push sagt dasselbe ohne Links. Tippst du darauf oder auf den Link am Ende der E-Mail, liest du diese Zusammenfassung in **Aufgaben** noch einmal.
 
-Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe Text, den **Zusammenfassung** in den Aufgaben kopiert. Wenn Aufgabentext in Benachrichtigungen ausgeblendet ist, fehlen sie.
+Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe Text, den **Zusammenfassung** in den Aufgaben kopiert, ohne die Aufgaben, die schon oben stehen. Wenn Aufgabentext in Benachrichtigungen ausgeblendet ist, fehlen sie.
 
 ## Die abendliche Zusammenfassung
 

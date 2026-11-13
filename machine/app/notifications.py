@@ -187,12 +187,13 @@ class NotificationsApp:
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         # Each area's digest after the rest: the email goes to the owner's own address only, so Personal goes along;
         # Work as Work's own rules allow (a Careful Fleet: no Work titles in notifications)
-        areas = self.area_digests(current) if show else {}
+        rows = self.area_rows(current) if show else {}
         if not show_work:
-            areas.pop('work', None)
+            rows.pop('work', None)
+        areas = {a: notify.area_digest(*r) for a, r in rows.items()}
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
                                 per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
-                                areas=[(a, areas.get(a, '')) for a in notify.AREAS])
+                                areas=[(a, areas.get(a, '')) for a in notify.AREAS], area_rows=rows)
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})
@@ -200,10 +201,14 @@ class NotificationsApp:
 
     def area_digests(self, current=None):
         """Each area's digest as of `current` (notify.area_digest): {'work': text, 'personal': text}, '' for an area with
-        nothing worth listing. An area as the To-dos filter places a to-do (suggestion_scope); one only about the Machine
-        itself is in neither. Done: the to-dos closed as done today (done_today). Open: the ones still open in the
-        dashboard's order, without what waits on others or looks done, one set aside by Still needed?, and a Daily
-        digest or cleanup to-do (to read, not to do)."""
+        nothing worth listing."""
+        return {a: notify.area_digest(*r) for a, r in self.area_rows(current).items()}
+
+    def area_rows(self, current=None):
+        """What each area's digest is made from: {area: (done, open, today)}. An area as the To-dos filter places a to-do
+        (suggestion_scope); one only about the Machine itself is in neither. Done: the to-dos closed as done today
+        (done_today). Open: the ones still open in the dashboard's order, without what waits on others or looks done, one
+        set aside by Still needed?, and a Daily digest or cleanup to-do (to read, not to do)."""
         current = current or dt.datetime.fromisoformat(now())
         local = current.astimezone(local_tz())
         start = local.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -221,7 +226,7 @@ class NotificationsApp:
                 return None
             return suggestion_scope(r['account_ids'], accounts, r.get('area'))
         today = local.date().isoformat()
-        return {a: notify.area_digest([r for r in done if area(r) == a], [r for r in open_rows if area(r) == a], today) for a in notify.AREAS}
+        return {a: ([r for r in done if area(r) == a], [r for r in open_rows if area(r) == a], today) for a in notify.AREAS}
 
     def digest_step(self, current=None, push=None, telegram_send=None, mail=None):
         """Send the morning digest once on a work day, at its time, on the channels the owner picked."""
