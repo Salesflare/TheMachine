@@ -101,7 +101,7 @@ function showFleetPane(id){const view=$('#fleet-view');if(!view.querySelector(`[
 const fleetReveal=el=>{const p=el?.closest('.fleet-pane');if(p&&p.hidden)showFleetPane(p.dataset.pane)};
 async function fleetView(refresh=false,cached=false){const view=$('#fleet-view'),before=fleetSig(),version=++fleetViewVersion;if(!cached||!fleetData)try{const stamp=state?.fleet?.stamp,next=await request('api/fleet'+(refresh?'?refresh=1':''));if(version!==fleetViewVersion)return;fleetData=next;fleetAt=Date.now();fleetStamp=stamp;if(state?.suggestions&&fleetSig()!==before)render()}catch(e){errCaught(e);if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
  // the tab's views load when first needed (dashboard_parts.LAZY): drawn once they're in, an error in place of them offline
- if(!lazyIn('fleet'))try{await lazyPart('fleet');if(version!==fleetViewVersion)return}catch(e){if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
+ if(!lazyIn('fleet')||!lazyIn('settings'))try{await Promise.all([lazyPart('fleet'),lazyPart('settings')]);if(version!==fleetViewVersion)return}catch(e){if(version===fleetViewVersion){view._fleetHTML=null;setHTML(view,html`<p class="error">${e.message}</p>`)}return}
  fleetDraw(view)}
 // Family (family.py): when everyone is free, to-dos for one another and plans to say yes or no to. Self-contained:
 // its forms post family_free, family_todo and family_event; what waits for you is a card under Suggestions.
