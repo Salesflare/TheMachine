@@ -277,6 +277,21 @@ class Arriving(unittest.TestCase):
         self.assertEqual(events[f'{PAT}:{t + 3}']['body'], '[One-time security code omitted]')
         self.assertFalse({'chat_name', 'sender_display', 'media_type'} & message_seal.PLAIN_METADATA)
 
+    def test_the_linked_accounts_own_name_names_its_card_never_its_number(self):
+        self.assertNotIn('name', ss.get_state(self.m.db))  # its own entry wasn't in the list
+        self.m.call.answers['listContacts'] = [{'uuid': OWN, 'number': NUMBER, 'profile': {'givenName': 'Sam', 'familyName': 'Example'}}]
+        self.m.refresh_names()
+        self.assertEqual(ss.get_state(self.m.db)['name'], 'Sam Example')
+        store = a.Store(Path(self.tmp.name) / 'events.sqlite')
+        a.sync_signal(store, {}, account(self.store))
+        self.assertEqual(store.checkpoint('personal-signal')['account_name'], 'Sam Example')
+        from machine import names
+        card = names.account_card(account(self.store), [], store.checkpoint('personal-signal'))
+        self.assertEqual(card, {'card_title': 'Sam’s Signal', 'card_subtitle': 'Personal'})
+        self.m.call.answers['listContacts'] = [{'uuid': OWN, 'number': NUMBER}]  # no name: never the number instead
+        self.m.refresh_names()
+        self.assertEqual(ss.get_state(self.m.db)['name'], 'Sam Example')
+
     def test_work_or_personal_and_the_graph_like_whatsapp(self):
         event = a.signal_event(account(self.store), {'chat_id': PAT, 'author': PAT, 'sent_at': NOW_MS, 'from_me': 0, 'text': 'Hi',
                                                      'occurred_at': ss.now(), 'chat_name': 'Pat Example', 'sender_name': 'Pat Example'})

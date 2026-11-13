@@ -14,6 +14,8 @@ Uma sincronização que falhou e que uma posterior já compensou aparece em cinz
 
 Seus números mostram tudo o que ela trouxe, inclusive o [histórico](history.md), o que chegou nas últimas 24 h e o que ainda não foi verificado. Uma agenda conta eventos: todos, os dos próximos 7 dias e os das últimas 24 h.
 
+Cada fonte tem o nome da conta, do jeito que o serviço a chama: seu endereço, um perfil do X, um workspace do Slack ou de quem é o Signal ou o Telegram. Embaixo: **Trabalho** ou **Pessoal**, com o endereço ou o usuário quando o nome ainda não diz.
+
 Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, que só faz isso depois que você toca em **Enviar** ou dá o seu OK.
 
 ## Adicionar uma

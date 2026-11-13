@@ -14,6 +14,8 @@ Une synchro échouée qu’une synchro suivante a rattrapée s’affiche en gris
 
 Ses compteurs indiquent tout ce qu’elle a apporté, son [historique](history.md) compris, ce qui est arrivé ces dernières 24 h et ce qui n’est pas encore vérifié. Un agenda compte des événements : tous, ceux des 7 prochains jours et des dernières 24 h.
 
+Chaque source porte le nom de son compte, tel que le service le nomme : votre adresse, un profil X, un espace de travail Slack, ou à qui appartient le Signal ou le Telegram. En dessous : **Travail** ou **Perso**, avec l’adresse ou l’identifiant quand le nom ne le dit pas déjà.
+
 Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand elle peut agir, qu’elle ne le fait qu’après que vous avez appuyé sur **Envoyer** ou donné votre accord.
 
 ## En ajouter une

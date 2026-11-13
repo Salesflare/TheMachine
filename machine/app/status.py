@@ -58,6 +58,15 @@ def compact_card(s):
             'body': clamp(s.get('body') or '', 400), **agent_work_status(s.get('agent_job'))}
 
 
+def checkpoint_state(connector):
+    """A connection's sync state as its card row carries it (the checkpoint's JSON), {} when it has none."""
+    try:
+        state = json.loads(connector.get('state') or '{}')
+    except (TypeError, ValueError):
+        return {}
+    return state if isinstance(state, dict) else {}
+
+
 def compact_status(result):
     """The agent's view of status, well under OpenClaw's tool-result cut: the open to-dos first, then the done ones in
     short. The CLI and dashboard read the full version."""
@@ -286,6 +295,10 @@ class StatusApp:
         for connector in result['connectors']:
             connector.update(sign_in_help(connector.get('service', ''), connector.get('error'), result['manage_url']))
             account = by_id.get(connector['id'])
+            try:  # its card's title and subtitle, made the same way for every kind (names.account_card)
+                connector.update(display_names.account_card(account, self.config['accounts'], checkpoint_state(connector), result['work_labels']) if account else {})
+            except Exception as error:  # noqa: BLE001 - a name never costs the status: the card falls back to its own
+                LOG.error('card name error=%s', type(error).__name__)
             connector.update(connector_says(account, connector.get('service', 'gmail')))
             connector.update(abilities.view(account) if account else {})
             kind = docs_provider(self.config, account)

@@ -7980,6 +7980,7 @@
  "{}’s title is {}": "De functie van {} is {}",
  "{}’s to-do": "To-do van {}",
  "{}’s words, not an instruction:": "Woorden van {}, geen instructie:",
+ "{}’s {}": "{1} van {0}",
  "© The Machine": "© The Machine",
  "© {} The Machine. {}": "© {} The Machine. {}",
  "· All day": "· Hele dag",

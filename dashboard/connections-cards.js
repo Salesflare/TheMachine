@@ -425,7 +425,7 @@ function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.mana
 // accounts from this Machine (work_removal.py); personal ones stay.
 // A company by how the Machine names it (work_or_personal.work_labels): plain Work when its name was only made from a domain
 const scopeLabel=b=>{b=String(b||'');const named=/^work:./.test(b)&&Object.prototype.hasOwnProperty.call(state.work_labels||{},b)?String(state.work_labels[b]):'';
- return /^owner:/.test(b)?'':named?named.replace(/^Work(?= · |$)/,t('Work')): /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
+ return /^owner:/.test(b)?'':named?named.replace(/^Work(?= · |$)/,t('Work')): /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='work'?t('Work'):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
 function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.service==='gateway')return '';
  const all=[...new Set([...(state.connectors||[]).map(x=>String(x.boundary||'')),b])],cur=b==='personal'?'personal:me':b;
  const opts=[...all.filter(x=>/^work:./.test(x)),...new Set(['personal:me',...all.filter(x=>/^personal:./.test(x))])].map(v=>[v,scopeLabel(v)]).concat([['','Work, another company…']]);
@@ -433,7 +433,7 @@ function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.
 document.addEventListener('change',async e=>{const s=e.target.closest('select[data-scope]');if(!s)return;let b=s.value;
  if(!b){const name=(prompt('Company name')||'').trim();if(!name){s.value=s.dataset.was;return}b='work:'+name}
  s.disabled=true;try{const r=await connectPost('connect_scope',{account:s.dataset.scope,boundary:b});if(r.restarting)restartSoon();toast(r.restarting?'Saved. Restarting…':'Saved. Restart the service to use it.');setTimeout(refresh,r.restarting?8000:500)}catch(err){errCaught(err);toast(err.message,true);s.disabled=false;s.value=s.dataset.was}});
-function connActions(c){const name=c.display_name||c.email||c.id;
+function connActions(c){const name=connTitle(c)||c.id;
  if(c.shared_by)return html`<p class="note">${t('Shared by {}. Its admins manage it.',c.shared_by)}</p>`;  // shared_connectors.py: no token, no Disconnect here
  if(c.hosted_signin&&state.manage_url)return html`<div class="actions conn-actions">${hostedReconnect(c,docsConnect(c),'ghost')}${c.account_page?html`<a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Disconnect ↗</a>`:html`<button type="button" class="ghost danger" data-disconnect="${c.id}" data-name="${name}">Disconnect</button>`}</div>`;  // Disconnect: the account page when it holds the grant
  if(c.account_page)return html`<div class="actions conn-actions"><a class="btn-link" href="${safeHref(c.account_page)}" target="_blank" rel="noopener">Reconnect or disconnect ↗</a></div>`;
@@ -532,15 +532,15 @@ const syncRows=list=>{list=list||[];const fixed=list.findIndex(a=>a.status==='su
 // One history line on a card: while WhatsApp's first chat history still counts in (c.history), only that one.
 const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'&&c.history)return '';const [y,m]=b.back_to.split('-').map(Number),when=localeDate(new Date(y,m-1,1),DL,{month:'long',year:'numeric'});
  return html`<p class="note">${b.done?t('History: back to {}.',when):t('History coming in: back to {} so far.',when)}</p>`};
-// Under the name: the kind of source and Work or personal. The Machine's own health (owner:system) has neither to say.
-function connSubtitle(c){const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===(c.display_name||c.email)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
- return parts.length?html`<small>${parts.join(' · ')}</small>`:''}
+// machine/names.py account_card
+const connTitle=c=>c.card_title||c.display_name||c.email;
+function connSubtitle(c){const s=typeof c.card_subtitle==='string'?c.card_subtitle:scopeLabel(c.boundary);return s?html`<small>${s}</small>`:''}
 // A connected source's card shows the same logo as its row in + Add (connectLogo, dashboard/logos): the catalog's name for
 // its service (Salesflare is crm there, Google Docs is docs signed in with Google). A catch-all (Other email) keeps its line icon.
 const LOGO_NAME={salesflare:'crm'},connLogo=c=>connectLogo({service:c.service},c.service==='docs'&&c.docs_provider==='google'?'google_docs':LOGO_NAME[c.service]||c.service);
 function connectorCard(c,open){
 const unit={calendar:'events',outlook_calendar:'events',icloud_calendar:'events',caldav:'events',proton_calendar:'events',ics:'events',exchange:'events',intercom:'conversations',android:'notifications',gateway:'alerts',github:'notifications',stripe:'events',rss:'items',docs:'items',google_meet:'meetings',trello:'card changes',salesforce:'updates'}[c.service]||'messages',tone=connectorTone(c),phone=c.service==='android'?JSON.parse(c.state||'{}'):{},synced=c.signals!==false;
-return html`<article data-group="${healthGroup(c)}" data-conn="${c.id}"><div class="conn-head">${connLogo(c)}<div><h3>${c.display_name||c.email}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
+return html`<article data-group="${healthGroup(c)}" data-conn="${c.id}"><div class="conn-head">${connLogo(c)}<div><h3>${connTitle(c)}</h3>${connSubtitle(c)}</div><span class="state-dot t-${tone}" title="${connectorHealth(c).text}"></span></div>
 <p class="connection-status">${connectorHealth(c).text}</p>
 ${connWhat(c)}
 ${synced?html`<div class="figures">${connFigures(c,unit).map(([n,label])=>html`<div><b>${(n||0).toLocaleString(DL)}</b><span>${t(label)}</span></div>`)}</div>

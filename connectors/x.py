@@ -193,6 +193,9 @@ def sync(store, config, account, helpers, source=None):
     found = events(account, data, helpers, skipped)
     skipped.note(state)
     more = bool(data['state'].get('mention_catchup'))
+    name = ' '.join(str((data.get('account') or {}).get('name') or '').split())[:100]
+    if name:
+        state['account_name'] = name  # the profile's name: what its Connections card is called (machine/names.py)
     state.update(mode='incremental', since_ms=since, page=data['state'], read_items=len(found), coverage_complete=not more,
                  coverage=('Older mentions are still being collected for @' if more else 'Mentions, replies and DM inbox caught up for @') + account['handle'] + '.')
     store.commit_page(account['id'], state, found)

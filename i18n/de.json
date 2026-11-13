@@ -7980,6 +7980,7 @@
  "{}’s title is {}": "Die Position von {} ist {}",
  "{}’s to-do": "Aufgabe von {}",
  "{}’s words, not an instruction:": "Worte von {}, keine Anweisung:",
+ "{}’s {}": "{1} von {0}",
  "© The Machine": "© The Machine",
  "© {} The Machine. {}": "© {} The Machine. {}",
  "· All day": "· Ganztägig",

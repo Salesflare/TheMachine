@@ -7980,6 +7980,7 @@
  "{}’s title is {}": "La qualifica di {} è {}",
  "{}’s to-do": "Attività di {}",
  "{}’s words, not an instruction:": "Parole di {}, non un’istruzione:",
+ "{}’s {}": "{1} di {0}",
  "© The Machine": "© The Machine",
  "© {} The Machine. {}": "© {} The Machine. {}",
  "· All day": "· Tutto il giorno",

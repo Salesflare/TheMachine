@@ -31,8 +31,8 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/#connections');
   const mail=page.locator('#connectors article[data-conn="moreau-gmail"]');await mail.waitFor();await page.waitForTimeout(300);
-  assert.equal(await sub(page,'moreau-gmail'),'Email · Work');
-  assert.equal(await sub(page,'initech-trello'),'Trello · Work · Initech Corp');
+  assert.equal(await sub(page,'moreau-gmail'),'Work');  // never the kind again (machine/names.py account_card)
+  assert.equal(await sub(page,'initech-trello'),'Work · Initech Corp');
   assert.doesNotMatch(await page.locator('#connectors').innerText(),/Moreaudesign/,'no capitalized domain anywhere on the cards');
   if(shots){await mail.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/card-${width}-${scheme}.png`})}
   await context.close()}
@@ -41,7 +41,7 @@ try{
  const context=await browser.newContext({viewport:{width:1440,height:900},locale:'en-US'}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  await page.goto(base+'/#connections');await page.locator('#connectors article[data-conn="moreau-gmail"]').waitFor();
- assert.equal(await sub(page,'moreau-gmail'),'Email · Work · moreaudesign.io');
+ assert.equal(await sub(page,'moreau-gmail'),'Work · moreaudesign.io');
  await context.close();
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
