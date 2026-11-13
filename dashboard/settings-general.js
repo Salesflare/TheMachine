@@ -1,3 +1,8 @@
+// One setting by its id (a toast's Settings link): its tab, scrolled to its row, lit for a moment
+function settingsAt(id){settingsOpen(SETTINGS_OF[id]);requestAnimationFrame(()=>{const el=document.getElementById(id);if(!el||$('#settings').hidden)return;
+ const row=el.closest('.settings-list>div')||el.querySelector('.settings-list>div')||el;
+ row.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash');setTimeout(()=>row.classList.remove('flash'),2400);kbFocus(row.querySelector('button')||row,false)})}
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];let hoursDirty=false;
 function zones(){try{return Intl.supportedValuesOf('timeZone')}catch(e){return[]}}
 $('#settings-shared').onclick=()=>sharedOpen((graphSharing.find(x=>x.confirmed)||graphSharing[0])?.fleet);

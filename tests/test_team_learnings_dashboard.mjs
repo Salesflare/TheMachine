@@ -94,9 +94,12 @@ try{
    await box.locator('[data-share="never"]').click();
    await page.locator('#toast',{hasText:'I won’t ask again. Turn it back on in Settings.'}).waitFor({state:'attached'});
    assert.deepEqual(posts.map(p=>p.action),['learnings_never']);
-   // Settings shows the switch off; turning it back on asks again another week
-   await navClick(page.locator('#open-settings'));await page.locator('#settings-tabs [data-settings-tab="security"]').click();
+   // Settings in the toast links to the switch: Security, scrolled to it and lit for a moment. It shows off;
+   // turning it back on asks again another week
+   await page.locator('#toast a[data-settings-at="settings-share"]').click();
    const sw=page.locator('#share-offer');await sw.waitFor();
+   await page.waitForFunction(()=>document.querySelector('#settings-tabs [aria-selected="true"]')?.dataset.settingsTab==='security'&&document.querySelector('#share-offer').closest('.flash'));
+   await page.waitForTimeout(700);assert.ok(await sw.evaluate(b=>{const r=b.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight}),'the switch is in view');
    assert.equal(await sw.getAttribute('aria-checked'),'false');
    await sw.click();await page.locator('#share-offer[aria-checked="true"]').waitFor();
    assert.deepEqual(posts.at(-1),{action:'set_learnings_offer',args:{on:true}});

@@ -58,6 +58,9 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
    desktop every tab shows, a little tighter so they fit one row, a second row when a language's names are longer */
 #settings-tabs{flex-wrap:nowrap;overflow-x:auto}
 @media(min-width:1024px){#settings-tabs{flex-wrap:wrap;overflow-x:visible;row-gap:6px}#settings-tabs button{padding:6px 10px}}
+/* A setting a toast's link landed on (settingsAt): lit for a moment */
+#settings .flash{animation:setting-flash 2.2s ease-out}@keyframes setting-flash{0%,45%{background:color-mix(in srgb,var(--mint) 18%,transparent)}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){#settings .flash{animation:none}}
 
 /* Needs you: one calm line per item with a small amber dot. A notice card (.notice-card, pageNotice()) is the same quiet
    card for one line at the top of a page: the text, and its button on the right (below it when the line wraps on a phone). */

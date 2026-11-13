@@ -4,8 +4,9 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// On a phone the toast never covers buttons (a card's actions at the bottom of the screen, the chat box): it moves just
-// above them, or to the top under the bar when buttons fill the bottom of the screen, and back down for the next one when nothing is in the way. On a desktop it stays where it is. The send
+// The toast never covers buttons (a card's actions at the bottom of the screen, the chat box), on a phone or a desktop:
+// it moves just above them, or to the top under the bar when buttons fill the bottom of the screen, and back down for
+// the next one when nothing is in the way. The send
 // confirm (Confirm / Edit / Cancel) is a bottom sheet on a phone, like the other editors.
 const dashboard=await dashboardPage();
 const shots=process.env.SHOTS||'';
@@ -32,8 +33,7 @@ try{
   await page.evaluate(()=>{const d=document.createElement('div');d.id='bar';d.style.cssText='position:fixed;left:0;right:0;bottom:10px;display:flex;gap:8px;padding:0 16px;z-index:1';
    d.innerHTML='<button style="flex:1;height:44px">Do it</button><button style="flex:1;height:44px">Snooze</button>';document.body.append(d);toast('Handed off. The to-do shows how it goes.')});
   await shown(page);const t=await rect(page,'#toast'),bar=await rect(page,'#bar');
-  if(width<1024)assert.ok(t.bottom<=bar.top,`${width}: the toast sits above the buttons ${JSON.stringify({t,bar})}`);
-  else assert.ok(t.bottom>bar.top,'desktop: the toast stays put');
+  assert.ok(t.bottom<=bar.top,`${width}: the toast sits above the buttons ${JSON.stringify({t,bar})}`);
   if(shots)await page.screenshot({path:`${shots}/toast-lift-${width}.png`});
   // Buttons filling the bottom of the screen (a card with its Why chips, note and Decline): the toast goes to the top
   if(width<1024){await page.evaluate(()=>{const d=document.querySelector('#bar');d.style.cssText+=';flex-direction:column;height:360px;gap:4px';d.innerHTML=Array.from({length:7},(_,i)=>`<button style="height:44px">B${i}</button>`).join('');toast('Declined. They see your note.')});

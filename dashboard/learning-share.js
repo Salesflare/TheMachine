@@ -44,7 +44,7 @@ $('#share-learnings').addEventListener('click',async e=>{const a=state.team_lear
   if(what==='send'){const items=shareKept(a).map(i=>{const d=shareDraft.items[i.n]||{};return {n:i.n,text:d.text??i.text,example:d.example??i.example??'',log:!!d.log,...(i.use_cases?.length?{use_cases:shareCases(i,d).filter(c=>!c.removed).map(c=>({given:c.given,when:c.when,then:c.then}))}:{})}});
    const auto=!!shareDraft.auto&&!state.team_learnings?.auto_careful;r=await sharePost('learnings_share',{id:a.id,items,named:shareDraft.named,auto});toast(auto?t(['Sent {} learning. New ones go automatically now.','Sent {} learnings. New ones go automatically now.'],r.count||items.length):`Sent ${shareCount(r.count||items.length)}. Thank you.`)}
   else if(what==='later'){r=await sharePost('learnings_later',{id:a.id});toast('Not now. I’ll ask again another week.')}
-  else if(what==='never'){r=await sharePost('learnings_never',{id:a.id});toast('I won’t ask again. Turn it back on in Settings.')}
+  else if(what==='never'){r=await sharePost('learnings_never',{id:a.id});toastSettings('I won’t ask again. Turn it back on in {}.','settings-share')}
   if(r?.team_learnings)state.team_learnings=r.team_learnings;renderShare(true);renderShareOffer()}
  catch(err){errCaught(err);b.disabled=false;toast(err.message,true)}});
 // Learning, Shared, under Ask first: the votes waiting for the owner, in one quiet box (never a to-do each, never a notification).
