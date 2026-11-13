@@ -5,6 +5,8 @@ function settingsAt(id){settingsOpen(SETTINGS_OF[id]);requestAnimationFrame(()=>
  row.classList.remove('flash');void row.offsetWidth;row.classList.add('flash');setTimeout(()=>row.classList.remove('flash'),2400);kbFocus(row.querySelector('button')||row,false)})}
 const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];let hoursDirty=false;
 function zones(){try{return Intl.supportedValuesOf('timeZone')}catch(e){return[]}}
+// Fleet's link rows: "Open" says where to by its row's label (kept out of the first load)
+for(const id of ['settings-fleet-rules','settings-shared'])$('#'+id).ariaLabel=$('#'+id).previousElementSibling.querySelector('strong').textContent;
 $('#settings-shared').onclick=()=>sharedOpen((graphSharing.find(x=>x.confirmed)||graphSharing[0])?.fleet);
 $('#settings-fleet-rules').onclick=()=>{document.querySelector('nav [data-tab="fleet"]').click();fleetShown.then(()=>{showFleetPane('sharing');$('#fleet-view').scrollIntoView({block:'start',behavior:'smooth'})})};
 const CLOUD='https://app.themachine.computer';
@@ -147,7 +149,7 @@ function renderDictation(){const d=state.dictation,box=$('#settings-dictation'),
   +`<div><span class="grow"><strong>${esc(t('Language'))}</strong><small>${esc(t('Detect works for every app language. Picking yours is a little faster.'))}</small></span><select id="dictation-language" aria-label="${esc(t('Voice input language'))}"><option value=""${d.language?'':' selected'}>${esc(t('Detect'))}</option>${MIC_LANGS.map(([c,n])=>`<option value="${c}" translate="no"${d.language===c?' selected':''}>${n}</option>`).join('')}</select></div>`
   // Talk live: a row with its voice when it's ready, else a hint under the list (none while still checking)
   +(d.talk?.ready&&d.talk_voice?`<div><span class="grow"><strong>${esc(t('Talk live'))}</strong><small id="talk-note">${esc(t('Ready. Tap Talk in the menu, or the wave in a to-do’s chat.'))}</small></span><button type="button" class="quiet talk-sample" data-talk-sample aria-label="${esc(t('Play a sample'))}" title="${esc(t('Play a sample'))}">${PLAY}</button><select id="talk-voice" aria-label="${esc(t('Voice'))}">${TALK_VOICES.map(n=>`<option value="${n}" translate="no"${d.talk_voice===n?' selected':''}>${n[0].toUpperCase()+n.slice(1)}</option>`).join('')}</select></div>`:'');
- const hint=$('#talk-hint');hint.textContent=d.talk?.ready===false?t('Talk live needs OpenAI: a ChatGPT sign-in, or an API key.'):'';hint.hidden=!hint.textContent;
+ let hint=$('#talk-hint');if(!hint){hint=document.createElement('p');hint.className='footnote';hint.id='talk-hint';list.after(hint)}hint.textContent=d.talk?.ready===false?t('Talk live needs OpenAI: a ChatGPT sign-in, or an API key.'):'';hint.hidden=!hint.textContent;
  // Still preparing, or the Machine still asking OpenClaw what OpenAI can do here (it answers at once, and fills that in later)
  clearTimeout(dictation.timer);if((l.state==='preparing'||d.openai==null||d.talk&&d.talk.ready==null)&&!$('#settings').hidden)dictation.timer=setTimeout(()=>loadDictation(true),2000)}
 $('#settings-dictation').addEventListener('change',async e=>{const el=e.target;if(!el.matches('select'))return;const key={'dictation-engine':'engine','dictation-model':'model','dictation-language':'language','talk-voice':'talk_voice'}[el.id];if(!key)return;el.disabled=true;
