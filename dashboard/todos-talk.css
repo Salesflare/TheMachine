@@ -79,8 +79,12 @@ body:has(#talk-view:not([hidden])) .site-footer{display:none}
 @media(max-width:860px){
   .chat-layout{grid-template-columns:minmax(0,1fr)}
   body.chat-open:has(#inbox:not([hidden])) .site-footer{display:none}
-  /* The chat column is fixed over the page here, so a banner left in the page would show through it over the messages */
-  body.chat-open:has(#inbox:not([hidden])) #banners{display:none}
+  /* The chat column is fixed over the page here: it is solid, so nothing left in the page shows through it. A usage limit
+     stays in view as a bar over the column, which starts under it (--chat-banner-h, shell-banners.js) */
+  body.chat-open:has(#inbox:not([hidden])) .chat-main{background:var(--bg)}
+  body.chat-open:has(#inbox:not([hidden])) #banners:has(>#limit-banner:not([hidden])){position:fixed;z-index:2;top:var(--vv-top,0px);left:0;right:0;margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);border-width:0 0 1px;border-radius:0;box-shadow:none}
+  body.chat-open:has(#inbox:not([hidden])):has(#limit-banner:not([hidden])) .chat-main{top:calc(var(--vv-top,0px) + var(--chat-banner-h,0px));height:calc(var(--vv-h,100dvh) - var(--chat-banner-h,0px))}
+  body.chat-open:has(#inbox:not([hidden])):has(#limit-banner:not([hidden])) .chat-head{padding-top:4px}
   body.chat-open:has(#inbox:not([hidden])) main{padding:0 20px}
   /* The chat is one column the height of what you see, like the ChatGPT and Claude apps: the thread scrolls in its own
      box and the message box is the column's last row, so it never moves while you scroll. The page itself doesn't

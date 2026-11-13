@@ -47,6 +47,9 @@ document.addEventListener('click',async e=>{const b=e.target.closest('#fixed-not
  if(d.fixed){fixedDrop(d.fixed);try{await fixedPost({seen:d.fixed})}catch{}return}
  if(d.fixedWorks){fixedDrop(d.fixedWorks);try{await fixedPost({answer:'works',report:d.fixedWorks})}catch{}return}
  if(d.fixedOff)lazyRun('help',()=>{fixedOpen=fixedOpen===d.fixedOff?null:d.fixedOff;fixedShot=null;renderFixed();$('#fixed-notice textarea')?.focus()})});  // its box: help-panel.js
+// On a phone a to-do chat is a fixed column; a usage limit sits over it as a bar (todos-talk.css), and the column starts under it
+{const b=$('#banners'),fit=()=>document.documentElement.style.setProperty('--chat-banner-h',(getComputedStyle(b).position==='fixed'?b.offsetHeight:0)+'px');
+ if(b&&window.ResizeObserver)new ResizeObserver(fit).observe(b)}
 function renderLimitBanner(){const b=$('#limit-banner');if(!b)return;const p=state.model_pause?['model',state.model_pause]:['review',state.review_pause],nodes=p[0]==='model'?limitBanner(p[1]):reviewBanner(p[1]);
  bannerSet(b,JSON.stringify([p,pauseWhen(p[1]?.until),document.documentElement.lang]),nodes)}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-review-now]');if(!b)return;b.disabled=true;
