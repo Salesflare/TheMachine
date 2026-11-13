@@ -168,9 +168,15 @@ class Mirror:
         ss.save_chat(self.db, self.seal, chat_id, kind, name)
 
     def refresh_names(self):
-        """The names of people and groups, from signal-cli's contact and group lists (the phone syncs them)."""
+        """The names of people and groups, from signal-cli's contact and group lists (the phone syncs them). The
+        account's own entry gives the name its Connections card goes by ("Sam’s Signal"), never its number."""
+        own = ss.get_state(self.db)
         for contact in self.call('listContacts') or ():
             uuid = str(contact.get('uuid') or '')
+            if uuid == own.get('uuid') if own.get('uuid') else contact.get('number') and contact.get('number') == own.get('account'):
+                name = display_name(contact)
+                if name and name != contact.get('number') and name != own.get('name'):
+                    ss.set_state(self.db, name=name[:100])
             if ss.re_person(uuid) and not contact.get('isBlocked'):
                 self.save_chat(uuid, 'dm', display_name(contact))
         for group in self.call('listGroups') or ():

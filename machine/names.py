@@ -79,6 +79,140 @@ def account_name(account, accounts=(), default=None):
     return default if default is not None else str(account.get('id') or '')
 
 
+# A config key, not a name: lowercase words joined by - or _ ('personal-signal', 'work_gmail'). Never a card's title.
+SLUG = re.compile(r'[a-z0-9]+(?:[-_][a-z0-9]+)+')
+# Chat apps on the owner's own phone number: a name the app tells reads as whose it is ("Sam’s Signal")
+OWNED_CHATS = ('whatsapp', 'telegram', 'signal')
+# A device boundary's name is its kind, not a person or company: personal:signal reads Personal
+DEVICE_SCOPES = ('phone', 'device', 'chats', 'chat')
+# Where a connection keeps the handle, address or workspace that tells it apart, after its email
+HANDLES = (('handle', '@'), ('login', '@'), ('workspace_name', ''), ('account_name', ''), ('workspace', ''), ('username', ''))
+TLDS = {'com', 'org', 'net', 'io', 'co', 'ai', 'app', 'dev', 'eu', 'be', 'nl', 'de', 'fr', 'uk', 'us', 'www'}
+
+
+def _t():
+    import i18n
+    return i18n.t
+
+
+def words(text):
+    """The words of a name or line, lowercased, without a domain's ending: 'Work · acme.com' -> {'work', 'acme'}."""
+    return {w for w in re.findall(r'[^\W_]+', str(text or '').casefold()) if w not in TLDS}
+
+
+def kind_words(service):
+    """The words that only say what kind of connection it is: its key and its names ('signal', 'Signal chats')."""
+    import onboarding
+    try:
+        label = onboarding.label(service)
+    except Exception:  # noqa: BLE001 - a connector that can't load still has its key and name
+        label = ''
+    return words(service) | words(service.replace('_', '')) | words(service_name(service)) | words(label)
+
+
+def _overlaps(part, title):
+    """Whether a subtitle part says what the title says already: a shared word, or one holds the other's letters
+    ('TheMachine' under 'The Machine', '@HeyAcme' under 'Acme')."""
+    mine = words(part)
+    joined = lambda text: re.sub(r'[\W_]+', '', str(text or '').casefold())
+    return bool(mine & words(title)) or (len(joined(part)) > 2 and joined(part) in joined(title)) \
+        or (len(joined(title)) > 2 and joined(title) in joined(part))
+
+
+def usable_name(name, account):
+    """A name fit for a card: not empty, not the account's id or a config key, not only its kind ('signal')."""
+    name = ' '.join(str(name or '').split())[:120]
+    service = account_service(account)
+    if not name or name == account.get('id') or SLUG.fullmatch(name) or name.casefold() in (service, service.replace('_', ' ')):
+        return ''
+    # "Acme on X": the logo already says X, so the card says Acme
+    provider = SERVICES.get(service)
+    if provider:
+        name = re.sub(r'\s+(?:on|in)\s+' + re.escape(provider) + r'$', '', name) or name
+    return name
+
+
+def card_title(account, accounts=(), state=None, t=None):
+    """A connection card's title: the account's own name as its provider tells it (an X profile's name, a Slack
+    workspace, a Telegram or Signal account's owner as "Sam’s Signal"), else the name it was given, else its address.
+    Never its id or a config key. Without any, its provider's name, numbered when there are several ('Signal 2')."""
+    account, state = account or {}, state or {}
+    t = t or _t()
+    service = account_service(account)
+    provider = SERVICES.get(service) or service_name(service) or 'Connection'
+    told = usable_name(state.get('account_name'), account)
+    own = usable_name(account.get('display_name'), account)
+    if service == 'x' and told:
+        return told
+    if own:
+        return own
+    if told:
+        return t('{}’s {}', told.split()[0], provider) if service in OWNED_CHATS else told
+    for named in (account.get('email'), account.get(WORKSPACE_FIELDS.get(service, 'workspace_name')), account.get('workspace')):
+        if usable_name(named, account):  # its address; an Intercom, Stripe or Shortcut by its workspace
+            return usable_name(named, account)
+    handle = usable_name(account.get('handle'), account)
+    if handle:
+        return '@' + handle.lstrip('@')
+    from machine.sources.connectors import UNNAMED
+    if service in UNNAMED:
+        return UNNAMED[service]
+    # several of this kind without a name: told apart by their order
+    same = [a.get('id') for a in accounts or () if isinstance(a, dict) and account_service(a) == service]
+    at = same.index(account.get('id')) + 1 if account.get('id') in same else 1
+    return provider if at == 1 else f'{provider} {at}'
+
+
+def scope_part(boundary, labels=None, t=None):
+    """Work or Personal as a card's subtitle says it: the company's label (work_or_personal.work_labels), Personal
+    with a person's name; a device boundary's kind (personal:signal, personal:phone) adds nothing."""
+    t = t or _t()
+    kind, _, name = str(boundary or '').partition(':')
+    if kind == 'work':
+        label = str((labels or {}).get(boundary) or ('Work · ' + name if name else 'Work'))
+        return re.sub(r'^Work(?= · |$)', t('Work'), label)
+    if kind == 'personal':
+        plain = not name or name in ('me', 'personal') or name.casefold() in DEVICE_SCOPES or name.casefold() in SERVICES or name.casefold() in TRANSPORT_SERVICES
+        return t('Personal') if plain else t('Personal') + ' · ' + name
+    return ''  # owner:system, The Machine's own health: neither
+
+
+def card_detail(account):
+    """The one thing that tells this connection apart from another of its kind: its address, handle or workspace."""
+    email = str(account.get('email') or '').strip()
+    if '@' in email or usable_name(email, account):  # an old install's label kept as email ('the-machine') is not one
+        return email
+    for key, mark in HANDLES:
+        value = ' '.join(str(account.get(key) or '').split())[:80].lstrip('@')
+        if value and (mark or not SLUG.fullmatch(value)):  # a handle is one as it is; a workspace key ('acme-eu') is not a name
+            return mark + value
+    return ''
+
+
+def account_card(account, accounts=(), state=None, labels=None, t=None):
+    """{'card_title', 'card_subtitle'} of a connection's card on Connections: every connector's, the one place they are
+    made (tests/test_card_names.py checks each kind in the registry). The subtitle is Work or Personal, and the
+    address or handle only when the title doesn't say it already; never the provider's name or kind again (its logo
+    and its tab say that), never a raw key, never a word the title has."""
+    account = account or {}
+    t = t or _t()
+    title = card_title(account, accounts, state, t)
+    service = account_service(account)
+    kinds = kind_words(service)
+    company_only = lambda part: part.split(' · ', 1)[1] if ' · ' in part else ''
+    scope = scope_part(account.get('boundary'), labels, t)
+    parts = []
+    if scope:
+        extra = company_only(scope)
+        head = scope.split(' · ', 1)[0]
+        parts.append(head if extra and (_overlaps(extra, title) or words(extra) <= kinds) else scope)
+    detail = card_detail(account)
+    if detail and not _overlaps(detail, title) and not (words(detail) and words(detail) <= kinds) \
+            and not any(_overlaps(detail, p) for p in parts):
+        parts.append(detail)
+    return {'card_title': title, 'card_subtitle': ' · '.join(p for p in parts if p)}
+
+
 def agent_name(tool, default='The agent'):
     """'codex' -> 'Codex': the agent a job was handed to, never its command-line name."""
     tool = str(tool or '')

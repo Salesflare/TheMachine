@@ -14,6 +14,8 @@ Una sincronizzazione fallita che una successiva ha recuperato appare in grigio; 
 
 I suoi numeri mostrano tutto ciò che ha portato, anche la sua [cronologia](history.md), cosa è arrivato nelle ultime 24 ore e cosa non è ancora stato controllato. Un calendario conta eventi: tutti, quelli dei prossimi 7 giorni e delle ultime 24 ore.
 
+Ogni fonte porta il nome del suo account, come lo chiama il servizio: il tuo indirizzo, un profilo X, uno spazio di lavoro Slack o di chi è il Signal o il Telegram. Sotto: **Lavoro** o **Personale**, con l’indirizzo o l’handle quando il nome non lo dice già.
+
 Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che lo fa solo dopo che premi **Invia** o dai l’OK.
 
 ## Aggiungine una

@@ -92,6 +92,12 @@ class XSource(unittest.TestCase):
         self.assertEqual(src.calls[0][1], {})
         self.assertEqual(src.calls[1][1], {'mention_since_id': '1978000000000000001', 'dm_cursor': 'C1'})
         self.assertEqual(self.store.checkpoint('x-sf')['page']['dm_cursor'], 'C2')
+        self.assertNotIn('account_name', self.store.checkpoint('x-sf'))  # the reader gave no profile name
+        named = page()
+        named['account']['name'] = '  Acme   Inc '
+        with patch_everywhere(a, 'now', return_value=NOW):
+            x.sync(self.store, {}, ACCOUNT, H, Source(named))
+        self.assertEqual(self.store.checkpoint('x-sf')['account_name'], 'Acme Inc')  # its card's title (machine/names.py)
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0], 2)
         with patch_everywhere(a, 'now', return_value='2026-10-16T22:30:00+00:00'):  # 00:30 local time

@@ -131,6 +131,7 @@ def sync_signal(store, config, account, source=None):
     checkpoint.update(mode='incremental', after=after, before=stamp.isoformat(), retained_days=config.get('bootstrap_days', 7),
                       available_messages=len(rows), source_latest_message=max((e['occurred_at'] for e in events), default=None),
                       mirror_last_ok=state_.get('last_ok'), linked_at=state_.get('linked_at'),
+                      account_name=state_.get('name'),  # the linked account's own name, for its card (machine/names.py)
                       coverage='Seven-day reread of the Signal mirror store, from the moment of linking. Nothing here talks to Signal.')
     store.commit_page(account['id'], checkpoint, events)
     return {'mode': 'incremental', 'events': len(events), 'skipped': sum(skipped.values())}

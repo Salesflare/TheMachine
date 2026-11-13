@@ -96,7 +96,7 @@ async () => {
     for (const m of (t.extended_entities || t.entities || {}).media || []) if (m.url) text = text.split(m.url).join('').trim() + ' [' + (m.type || 'media') + ']';
     return text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
   };
-  const out = {account: {id: target.id, screen_name: target.screen_name}, mentions: [], dms: [], profiles: {}, state: {...(P.state || {})}};
+  const out = {account: {id: target.id, screen_name: target.screen_name, name: target.name || ''}, mentions: [], dms: [], profiles: {}, state: {...(P.state || {})}};
   // What their profile says, from the user objects these answers carry anyway (no extra request): bio, place, website, photo.
   const keep = (id, u) => {
     if (!id || id === target.id || !u || out.profiles[id]) return;

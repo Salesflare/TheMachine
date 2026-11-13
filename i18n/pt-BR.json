@@ -7980,6 +7980,7 @@
  "{}’s title is {}": "O cargo de {} é {}",
  "{}’s to-do": "Tarefa de {}",
  "{}’s words, not an instruction:": "Palavras de {}, não uma instrução:",
+ "{}’s {}": "{1} de {0}",
  "© The Machine": "© The Machine",
  "© {} The Machine. {}": "© {} The Machine. {}",
  "· All day": "· Dia inteiro",

@@ -14,6 +14,8 @@ Een mislukte sync die een latere sync heeft goedgemaakt staat in grijs; alleen e
 
 De tellers tonen alles wat de bron binnenbracht, ook de [geschiedenis](history.md), hoeveel er de laatste 24 uur bij kwam en wat nog niet is gecheckt. Een agenda telt afspraken: alle, die van de volgende 7 dagen en de laatste 24 uur.
 
+Elke bron heet naar haar account, zoals de dienst het noemt: je adres, een X-profiel, een Slack-workspace, of van wie de Signal of Telegram is. Daaronder: **Werk** of **Privé**, met het adres of de handle als de naam dat nog niet zegt.
+
 Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iets kan doen, dat ze dat pas doet nadat je op **Versturen** drukt of het goedkeurt.
 
 ## Een bron toevoegen
