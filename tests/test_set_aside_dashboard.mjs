@@ -12,8 +12,11 @@ let list=[{id:11,kind:'gmail.message',title:'Question about the renewal terms fo
  {id:12,kind:'intercom.conversation',title:'Login issue on the mobile app',at:day(-5),state:'look',look_at:day(-1)},
  {id:13,kind:'gmail.message',title:'Partnership idea',at:day(-6),state:'closed',look_at:null},
  {id:14,kind:'gmail.message',title:'Your weekly digest',at:day(-4),state:'left',look_at:null}];
-const state=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],
- review_health:{total:240,pending:3,set_aside:list.length,last_completed:day(0),...(list.length?{set_aside_list:list}:{})},
+// one finished check, so the header's "checked · last …" and the list of checks agree
+const finished=new Date(Date.now()-5*60e3).toISOString();
+const state=()=>({suggestions:[],promises:[],suggestion_counts:{},decisions:[],deliveries:[],review_runs:[],
+ analyses:[{status:'complete',items:'[{"id":1}]',started_at:finished,finished_at:finished,attempts:1,checked_count:40,summary:'Checked 40 messages.'}],
+ review_health:{total:240,pending:3,set_aside:list.length,last_completed:finished,...(list.length?{set_aside_list:list}:{})},
  connectors:[{id:'gmail',email:'pat@example.com',service:'gmail'}]});
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -34,6 +37,10 @@ try{
   await box.waitFor();
   assert.equal(await box.evaluate(e=>e.open),false);  // quiet: closed until opened
   assert.match(await page.locator('#review-summary').textContent(),/4 set aside/);
+  assert.equal(await page.locator('#analyses .no-reviews:not([hidden])').count(),0);  // a check ran: no "No checks yet."
+  // nothing empty draws a line between the sections: an empty live list takes no room
+  assert.equal(await page.locator('#review-live').evaluate(e=>e.getBoundingClientRect().height),0);
+  if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/set-aside-${width}-${colorScheme}-folded.png`,fullPage:false});
   await box.locator('summary').click();
   const rows=page.locator('#set-aside-list .sa-row');
   assert.equal(await rows.count(),4);
@@ -41,7 +48,7 @@ try{
   assert.match(lines[0],/^One more look on /);
   assert.deepEqual(lines.slice(1),['One more look with the next check','Closed after one more look','Left as is: no sign it needs you']);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`no sideways scroll at ${width}`);
-  if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/set-aside-${width}-${colorScheme}.png`,fullPage:false});
+  if(process.env.SHOT_DIR)await page.screenshot({path:`${process.env.SHOT_DIR}/set-aside-${width}-${colorScheme}-open.png`,fullPage:false});
   await rows.first().locator('button').click();  // the title opens the message in the dashboard's own viewer
   await page.locator('#email-dialog[open]').waitFor();
   assert.equal(await page.locator('#email-title').textContent(),list[0].title);
