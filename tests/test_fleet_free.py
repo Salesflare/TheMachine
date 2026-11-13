@@ -47,10 +47,21 @@ class Free(unittest.TestCase):
         self.assertNotIn('\n', waiting['question'])
         self.assertEqual(waiting['draft']['matches'][0]['title'], 'Stripe dispute opened')
         self.assertIn('Yes, I have: 1 email', waiting['draft']['text'])
+        self.assertRegex(waiting['draft']['text'], r'most recently in [A-Z][a-z]+( \d{4})?\.')  # a month by its name, not 2026-11
         self.assertNotIn('40k', waiting['draft']['text'])
         # The question went nowhere else: no preparation, no card, no agent turn
         with self.store.connect() as db:
             self.assertEqual(db.execute('SELECT COUNT(*) FROM suggestions').fetchone()[0], 0)
+
+    def test_a_raw_handle_in_a_match_reads_as_the_persons_name(self):
+        import sqlite3
+        db = sqlite3.connect(':memory:')
+        db.row_factory = sqlite3.Row
+        db.executescript("CREATE TABLE graph_nodes(id TEXT,kind TEXT,name TEXT);CREATE TABLE graph_events(node_id TEXT,event_id INTEGER,direct INTEGER);"
+                         "INSERT INTO graph_nodes VALUES('x:1','person','Robin Vale');INSERT INTO graph_events VALUES('x:1',7,1)")
+        self.assertEqual(fleet._match_title(db, {'id': 7, 'title': '@rvale'}), 'Robin Vale')
+        self.assertEqual(fleet._match_title(db, {'id': 8, 'title': '@nobody'}), '@nobody')  # no name known: the handle
+        self.assertEqual(fleet._match_title(db, {'id': 7, 'title': 'Renewal  quote'}), 'Renewal quote')
 
     def test_keyword_search_without_embeddings_stays_in_work_accounts(self):
         self.ask(text='Has anyone dealt with Stripe disputes?')

@@ -151,6 +151,7 @@ details.tech{margin:6px 0 0;font-size:.82rem}details.tech>summary{cursor:pointer
 }
 .fleet-card h3 small{font-weight:400;font-size:.85rem;margin-left:6px;white-space:nowrap}
 .fleet-card .fleet-from{margin:0 0 10px;color:var(--muted);font-size:.9rem}.fleet-card blockquote{margin:0 0 12px}
+.fleet-card .fleet-matches{margin:0 0 12px;padding-left:1.2em;display:grid;gap:4px;overflow-wrap:anywhere}
 .fleet-card .fleet-field{display:flex;flex-direction:column;gap:6px;margin:12px 0 0}.fleet-card .fleet-field input,.fleet-card .fleet-field textarea{width:100%;min-width:0}
 .fleet-settings{display:grid;gap:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:16px 20px}.fleet-settings>p{margin:0}
 .fleet-option{display:flex;align-items:flex-start;gap:10px;margin:0}.fleet-option input{margin-top:4px}.fleet-option small{display:block}

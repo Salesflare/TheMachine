@@ -2162,6 +2162,7 @@
  "In use: this Machine. Your recordings never leave it.": "In use: this Machine. Your recordings never leave it.",
  "In your contacts": "In your contacts",
  "In your projects": "In your projects",
+ "In your work accounts": "In your work accounts",
  "In your work accounts: {}": "In your work accounts: {}",
  "In: {}": "In: {}",
  "Inbox": "Inbox",
@@ -7392,6 +7393,7 @@
  "{} has been waiting on your reply since {}.": "{} has been waiting on your reply since {}.",
  "{} has been waiting on {} since {}": "{} has been waiting on {} since {}",
  "{} hasn’t moved on. If it stopped the sign-in, press Try again.": "{} hasn’t moved on. If it stopped the sign-in, press Try again.",
+ "{} in #{}": "{} in #{}",
  "{} in last sync": "{} in last sync",
  "{} in {} go to {}.": "{} in {} go to {}.",
  "{} invites made.": {

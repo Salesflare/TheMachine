@@ -2162,6 +2162,7 @@
  "In use: this Machine. Your recordings never leave it.": "Em uso: esta Machine. Suas gravações nunca saem dela.",
  "In your contacts": "Nos seus contatos",
  "In your projects": "Nos seus projetos",
+ "In your work accounts": "Nas suas contas de trabalho",
  "In your work accounts: {}": "Nas suas contas de trabalho: {}",
  "In: {}": "Vão: {}",
  "Inbox": "Caixa de entrada",
@@ -7392,6 +7393,7 @@
  "{} has been waiting on your reply since {}.": "{} está esperando sua resposta desde {}.",
  "{} has been waiting on {} since {}": "{} está esperando {} desde {}",
  "{} hasn’t moved on. If it stopped the sign-in, press Try again.": "{} não avançou. Se interrompeu o login, toque em Tentar de novo.",
+ "{} in #{}": "{} em #{}",
  "{} in last sync": "{} na última sincronização",
  "{} in {} go to {}.": "{} em {} vão para {}.",
  "{} invites made.": {
