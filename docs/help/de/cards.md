@@ -36,7 +36,9 @@ Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerche
 
 Die Zeile oben in der Liste wechselt auch direkt zur anderen: **Nur privat · Arbeit · Alle anzeigen**.
 
-Die Zeile oben in der Liste nennt deine letzte Morgen- oder Abendzusammenfassung und was darin gezählt wurde, etwa **Zusammenfassung von gestern Abend** · 12 erledigt, 3 offen. Tippe darauf, um sie noch einmal zu lesen, mit **Kopieren** zum Einfügen überall. Ohne aktuelle Zusammenfassung steht dort **Heute bisher**: was heute erledigt wurde und was noch offen ist, für Arbeit und Privat oder nur für den Filter, der an ist. Sobald du sie öffnest oder auf **×** tippst, verschwindet sie auf allen deinen Geräten bis zur nächsten Zusammenfassung.
+Die Zeile oben in der Liste nennt deine letzte Morgen- oder Abendzusammenfassung und was darin gezählt wurde, etwa **Zusammenfassung von gestern Abend** · 12 erledigt, 3 offen. Tippe darauf, um sie noch einmal zu lesen, mit **Kopieren** zum Einfügen überall. Sobald du sie öffnest oder auf **×** tippst, verschwindet sie auf allen Geräten bis zur nächsten.
+
+Ohne aktuelle Zusammenfassung steht dort **Heute bisher**: was heute erledigt wurde und was noch offen ist, für Arbeit und Privat oder nur für den Filter, der an ist.
 
 Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt** unter **Details** ändert es oder entfernt es. Siehe [Aufgaben eines Projekts](projects.md#a-projects-to-dos).
 

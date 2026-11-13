@@ -150,14 +150,10 @@ function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCard
 const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
  return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
-// Digest: a row atop the list saying which digest it opens and what it counted (state.digest_row, notify.digest_row):
-// the last morning or evening digest sent ("Yesterday evening's digest · 12 done, 3 open", the filter's areas), or,
-// without one, today's so far when an area to-do is open or done today (todos-area-digest.js). Opening it or its ×
-// sets it aside on every device until the next digest goes out (today's: or the next day). A Machine from before
-// digest_row (none in the status) shows today's.
-let digestHiding=false;  // set aside, on its way to the Machine: a status read from before doesn't bring the row back
+// Digest row atop the list (state.digest_row, notify.digest_row): the last digest sent, by when, with its counts for the
+// filter's areas, else today's so far. Opening it or its × sets it aside on every device until the next digest.
+let digestHiding=false;  // on its way to the Machine: a status read from before doesn't bring the row back
 const digestDays=at=>{const d=new Date(at),n=new Date();return Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5)};
-// Which digest, by when it went: "This evening's digest", "Yesterday morning's digest", "Friday evening's digest"
 function digestName(kind,at){if(kind==='today'||!at)return t('Today so far');const days=digestDays(at),eve=kind==='evening';
  return days<=0?(eve?t('This evening’s digest'):t('This morning’s digest')):days===1?(eve?t('Yesterday evening’s digest'):t('Yesterday morning’s digest'))
   :eve?t('{} evening’s digest',localeDate(new Date(at),DL,{weekday:'long'})):t('{} morning’s digest',localeDate(new Date(at),DL,{weekday:'long'}))}
@@ -169,7 +165,6 @@ const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString(),hide=t(
   if(!done&&!open)return ''}
  else for(const a of f==='all'?['work','personal']:[f]){done+=Number(row.counts?.[a]?.done)||0;open+=Number(row.counts?.[a]?.open)||0}
  return html`<p class="ad-entry"><button type="button" data-area-digest="${row.kind}"><span class="ad-name"><b>${digestName(row.kind,row.at)}</b><span class="ad-count">${digestCounted(done,open)}</span></span>›</button><button type="button" class="ad-x" data-digest-hide aria-label="${hide}" title="${hide}">×</button></p>`};
-// Sets the row aside on the Machine (every device); the × says so, opening it doesn't
 async function digestSetAside(said){const drawn=()=>'digest_row' in state;digestHiding=true;if(drawn())render();let ok=false;
  try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'digest_row_hide',args:{}})});ok=true;if(said)toast(t('Hidden until the next digest.'))}
  catch(err){errCaught(err);if(said)toast(err.message,true)}
@@ -178,11 +173,10 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-area-diges
  if(b){const kind=b.dataset.areaDigest;lazyRun('areadigest',()=>areaDigestOpen(kind==='today'?undefined:kind));digestSetAside(false);return}
  if(e.target.closest('[data-digest-hide]'))digestSetAside(true)});
 // A tapped digest notification or its email's link (notify.DIGEST_VIEW, EVENING_VIEW; the phone app's tag, pushRoute):
-// To-dos with that digest open on top, and the row for that digest goes, as when it's opened from the row. The link goes
-// once handled, so the same one opens it again.
+// To-dos with that digest open on top, its row set aside. The link goes once handled, so the same one opens it again.
 function openDigestLink(){const m=/^#digest=(morning|evening)$/.exec(location.hash);if(!m)return;
  history.replaceState(null,'',location.pathname+location.search);if($('#inbox').hidden)showTab('inbox');lazyRun('areadigest',()=>areaDigestOpen(m[1]));
- if(!('digest_row' in state)||state.digest_row?.kind===m[1])digestSetAside(false)}  // before the status: the link is the newest digest's
+ if(!('digest_row' in state)||state.digest_row?.kind===m[1])digestSetAside(false)}
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
 $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});

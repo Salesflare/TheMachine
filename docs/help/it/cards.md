@@ -36,7 +36,9 @@ Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuot
 
 La riga in cima all'elenco passa anche direttamente all'altra: **Solo personale · Lavoro · Mostra tutto**.
 
-La riga in cima all’elenco indica il tuo ultimo riepilogo del mattino o della sera e cosa ha contato, per esempio **Riepilogo di ieri sera** · 12 fatte, 3 aperte. Toccala per rileggere quel riepilogo, con **Copia** per incollarlo ovunque. Senza un riepilogo recente mostra **Oggi finora**: cosa è stato fatto oggi e cosa è ancora aperto, per Lavoro e Personale, o solo quello che filtri. Appena la apri o tocchi la sua **×**, sparisce su tutti i tuoi dispositivi fino al prossimo riepilogo.
+La riga in cima all’elenco indica il tuo ultimo riepilogo del mattino o della sera e cosa ha contato, per esempio **Riepilogo di ieri sera** · 12 fatte, 3 aperte. Toccala per rileggerlo, con **Copia** per incollarlo ovunque. Appena la apri o tocchi la sua **×**, sparisce su tutti i tuoi dispositivi fino al prossimo riepilogo.
+
+Senza un riepilogo recente mostra **Oggi finora**: cosa è stato fatto oggi e cosa è ancora aperto, per Lavoro e Personale, o solo quello che filtri.
 
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](projects.md#a-projects-to-dos).
 
