@@ -42,7 +42,7 @@ Su una Machine in hosting:
 
 Durante la configurazione, anche la pagina di configurazione ha **Connect Microsoft Teams**.
 
-Sul tuo computer, Teams non è ancora disponibile.
+Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **+ Aggiungi**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. Lì legge le tue chat e le chat delle riunioni. Canali e note delle riunioni non sono ancora disponibili lì.
 
 ## Rimuovilo
 

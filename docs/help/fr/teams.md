@@ -42,7 +42,7 @@ Sur une Machine hébergée :
 
 Pendant la configuration, la page de configuration propose aussi **Connect Microsoft Teams**.
 
-Sur votre propre ordinateur, Teams n’est pas encore disponible.
+Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez **Microsoft Teams** ou **Réunions Teams** et appuyez sur **Se connecter avec Microsoft**. Là, il lit vos chats et chats de réunion. Les canaux et les notes de réunion n'y sont pas encore disponibles.
 
 ## Le retirer
 

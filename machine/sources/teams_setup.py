@@ -4,8 +4,12 @@ import types
 
 
 def offered(config):
-    """Teams signs in through the hosted Machine's Microsoft consent: offered once that offers it (teams_consent)."""
-    return bool(config.get('teams_consent'))
+    """Teams signs in through The Machine's Microsoft consent: on a hosted Machine once its account page offers it
+    (teams_consent); on a self-hosted one once it is paired with an account, which starts it from + Add (fleet.py
+    connect_start, microsoft_teams; the dashboard leaves it out while the control plane doesn't open that sign-in)."""
+    if config.get('teams_consent'):
+        return True
+    return not config.get('manage_url') and bool((config.get('credentials') or {}).get('fleet'))
 
 
 def missing(config, account, plugin, error):

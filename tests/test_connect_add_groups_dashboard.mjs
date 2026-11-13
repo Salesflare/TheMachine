@@ -117,8 +117,8 @@ try{
    assert.deepEqual(rest.find(g=>g.head==='Projects and code').tiles.map(x=>x.name),['Codex','GitHub','Shortcut','Trello']);
    // Teams: two tiles, one sign-in, both connected
    const chat=tile('Chat','Microsoft Teams'),meet=tile('Meetings','Teams meetings');
-   assert.deepEqual([chat.what,chat.signin,chat.on,meet.what,meet.signin,meet.on],['Chats and meeting chats from Teams. Reads only.','teams',true,
-    'Meeting notes and transcripts from Teams. Reads only.','teams',true],`${tag}: Teams chats and Teams meetings share one sign-in`);
+   assert.deepEqual([chat.what,chat.signin,chat.on,meet.what,meet.signin,meet.on],['Chats and meeting chats from Teams. Read-only.','teams',true,
+    'Meeting notes and transcripts from Teams. Read-only.','teams',true],`${tag}: Teams chats and Teams meetings share one sign-in`);
    assert.equal(meet.logo,'brand/logos/teams.svg');
    assert.equal(tile('Customers','Salesforce').logo,'brand/logos/salesforce.svg',`${tag}: Salesforce shows its own logo`);
    assert.ok(rest.find(g=>g.head==='Other').tiles.some(x=>x.name==='Newthing'),`${tag}: a source without a known group is under Other`);

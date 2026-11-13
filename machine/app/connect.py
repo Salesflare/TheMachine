@@ -70,6 +70,8 @@ class ConnectApp:
                 # Google Meet has no other way: shown only once the control plane says it opens Meet's sign-in for this
                 # owner (for everyone, or only the owners it lists)
                 found['sources'] = [x for x in found['sources'] if x['service'] != 'google_meet' or (available is not None and 'google_meet' in available)]
+                # Teams the same: only its sign-in connects it, so it waits until the control plane opens it here
+                found['sources'] = [x for x in found['sources'] if x['service'] != 'teams' or (available is not None and 'microsoft_teams' in available)]
                 found['paired'], found['pair_url'] = getattr(self, 'fleet', None) is not None, fleet.PAIR_PAGE
             if not hosted or gbrain.on(self.config):
                 # GBrain (gbrain.py): one optional tile at the end, on a Machine where the owner can install it

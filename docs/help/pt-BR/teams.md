@@ -42,7 +42,7 @@ Numa Machine hospedada:
 
 Durante a configuração, a página de configuração também tem **Connect Microsoft Teams**.
 
-No seu próprio computador, o Teams ainda não está disponível.
+No seu próprio computador, depois que ele estiver [pareado com sua conta](friends.md#a-machine-on-your-own-computer): abra **Conexões**, depois **+ Adicionar**, escolha **Microsoft Teams** ou **Reuniões do Teams** e clique em **Entrar com Microsoft**. Lá, ele lê seus chats e chats de reuniões. Canais e notas de reuniões ainda não estão disponíveis lá.
 
 ## Remover
 
