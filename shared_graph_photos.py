@@ -34,8 +34,10 @@ import shared_graph_logos as logos
 # 'google': Google's Limited Use rules keep what its APIs give with the owner
 WORK_SOURCES = frozenset({'slack', 'linkedin', 'x', 'salesflare', 'microsoft', 'outlook'})
 NEVER = ('wa:', 'tg:', 'pic:', 'logo:')  # chat apps, the owner's own pictures, organization logos
-READ_SECONDS = 20
-WINDOW = 600
+# Drawing a picture is pure Python, on the Fleet's thread: after a restart, when none is drawn yet, a round's share
+# holds the dashboard's requests up while it draws. A few seconds a round; the rest in the next ones.
+READ_SECONDS = 4
+WINDOW = 300
 _THUMBS = {}  # (photo key, saved_at) -> thumbnail PNG, or None when it can't be read
 _SPENT = [0.0, 0.0]  # this window's start, seconds spent reading pictures in it
 WAIT = object()
