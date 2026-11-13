@@ -68,15 +68,13 @@ Tocar una notificación, o Abrir en un correo o en Telegram, muestra la tarea re
 Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya nada que contar. Si es antes de **Lo pospuesto vuelve a las**, espera hasta 5 minutos después, para incluir las tareas que vuelven esa mañana. **Vista previa**, en su fila, lo muestra sin enviarlo. Por defecto es un push y un correo, cortos para leer de un vistazo:
 
 - un saludo con lo que importa hoy, como "Buenos días, Sam: 2 respuestas listas para enviar" o, para una tarea, "Buenos días, Sam. Para revisar: Enviar el formulario de pedido";
-- como mucho tres cosas que hacer, cada una con un enlace Abrir: primero los borradores para revisar y las promesas de hoy;
+- las tareas que cuenta el saludo, cada una con un enlace Abrir, y lo que vence hoy; si no, como mucho tres cosas que hacer;
 - cuántas más pueden esperar y cuánto te llevan a tu ritmo, como "12 más pueden esperar, unos 5 min para terminar." Las tareas que esperan tu respuesta no cuentan en ese tiempo.
 - tus reuniones en una línea.
 
 Abrir muestra esa tarea resaltada en tu lista. Si está hecha, pospuesta o en otra vista, se abre su chat. Una promesa abre su tarea, o su propia página si aún no tiene una.
 
 El push dice lo mismo sin enlaces. Tócalo, o toca el enlace al final del correo, para volver a leer este resumen en **Tareas**.
-
-Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que copia **Resumen** en Tareas, sin las tareas que ya aparecen arriba. Si el texto de las tareas está oculto en las notificaciones, no aparecen.
 
 ## El resumen de la tarde
 

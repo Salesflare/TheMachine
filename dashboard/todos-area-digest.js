@@ -1,7 +1,7 @@
 // A lazy part (dashboard_parts.LAZY 'areadigest'): the To-dos digest. The row at the top of the list (digestEntry,
 // todos-learned.js) opens the last digest sent (as below), or today's so far, "Today so far": each area's done today
 // and still open (notify.area_digest, the area_digest action), Work
-// and Personal or the filter's one, as plain text with Copy, the same text the morning digest's email carries. An area
+// and Personal or the filter's one, as plain text with Copy. An area
 // with nothing in it isn't shown. Read from the Machine each time it opens, so it is never older than the list.
 // A tapped morning or evening digest notification, or its email's link (#digest=morning|evening, openDigestLink),
 // opens that digest as it went (the digest_sent action) with Copy per area; none kept: today's, as above.

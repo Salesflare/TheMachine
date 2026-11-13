@@ -7536,12 +7536,20 @@
   "one": "{} altra può aspettare.",
   "other": "Altre {} possono aspettare."
  },
+ "{} more due today.": {
+  "one": "{} altra in scadenza oggi.",
+  "other": "Altre {} in scadenza oggi."
+ },
  "{} more in Promises": "Altre {} in Promesse",
  "{} more like this wait. Always shares them too.": {
   "one": "{} altra come questa attende. Sempre la condivide anche.",
   "other": "Altre {} come questa attendono. Sempre le condivide anche."
  },
  "{} more like this {}. Always shares {} too.": "Altri {} come questo {}. Sempre condivide anche {}.",
+ "{} more ready for your OK.": {
+  "one": "{} altra da approvare.",
+  "other": "Altre {} da approvare."
+ },
  "{} more, open the day": "Altri {}, apri il giorno",
  "{} morning’s digest": "Riepilogo di {} mattina",
  "{} moved to {}": "{} passa a {}",
@@ -7626,6 +7634,14 @@
  "{} other signals": {
   "one": "{} altro segnale",
   "other": "{} altri segnali"
+ },
+ "{} others can wait, about {} min to clear.": {
+  "one": "{} altra può aspettare, circa {} min per sbrigarla.",
+  "other": "Altre {} possono aspettare, circa {} min per sbrigarle."
+ },
+ "{} others can wait.": {
+  "one": "{} altra può aspettare.",
+  "other": "Altre {} possono aspettare."
  },
  "{} owns it.": "È di {}.",
  "{} pages": {

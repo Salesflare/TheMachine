@@ -146,7 +146,7 @@ class Reopen(unittest.TestCase):
         with patch_everywhere(a, 'local_tz', return_value=BXL):
             self.assertIsNone(self.app.digest_row_view())
 
-    def test_the_morning_digest_keeps_its_area_counts(self):
+    def test_the_morning_digest_keeps_its_area_counts_open_only(self):
         self.done_card('Send the order form', 'office', a.dt.datetime(2026, 11, 13, 7, tzinfo=BXL))
         self.done_card('Reply to the supplier', 'office', a.dt.datetime(2026, 11, 13, 7, tzinfo=BXL))
         with self.store.connect() as db:  # one still open, due today: the digest has something to say
@@ -154,7 +154,8 @@ class Reopen(unittest.TestCase):
             db.execute("DELETE FROM decisions WHERE suggestion_id=(SELECT id FROM suggestions WHERE title='Reply to the supplier')")
         with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
             digest = self.app.digest(a.dt.datetime(2026, 11, 13, 8, 30, tzinfo=BXL).astimezone(UTC))
-        self.assertEqual(digest['counts']['work'], {'done': 1, 'open': 1})
+        # what got done is the evening digest's: the morning's row counts what is open only
+        self.assertEqual(digest['counts']['work'], {'done': 0, 'open': 1})
         self.assertEqual(notify.digest_kept(digest)['counts'], digest['counts'])
 
 

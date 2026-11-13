@@ -69,15 +69,13 @@ Tapping a notification, or Open in an email or on Telegram, shows the to-do in y
 It comes on work days at your **Morning digest** time, unless there's nothing to say. When that's earlier than **Snoozes land at**, it waits until 5 minutes after, so the to-dos coming back that morning are in it. **Preview** shows it without sending it. By default it's a push and an email, short enough to read at a glance:
 
 - a greeting with what matters today, like "Morning Sam, 2 replies are ready to send" or, for one to-do, "Morning Sam, ready for your OK: Send the order form";
-- at most three things to do, each with an Open link: drafts ready for you and promises due today first;
+- the to-dos the greeting counts, each with an Open link, and what's due today; otherwise at most three things to do;
 - how many more can wait, and how long they take at your pace, like "12 more can wait, about 5 min to clear." To-dos that wait on your answer aren't in that time.
 - your meetings in one line.
 
 Open shows that to-do in your list, highlighted. One that's done, snoozed or in another view opens its chat. A promise opens its to-do, or its own page when it has none yet.
 
 The push says the same without links. Tap it, or the link at the end of the email, to read this digest again in **To-dos**.
-
-At the end come your **Work** and **Personal** digests, the same text **Digest** in To-dos copies, without the to-dos already listed above. When to-do text is hidden in notifications, they are left out.
 
 ## The evening digest
 

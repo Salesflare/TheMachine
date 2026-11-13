@@ -68,15 +68,13 @@ Tik je op een melding, of op Openen in een mail of in Telegram, dan zie je die t
 Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets te melden is. Valt dat vóór **Gesnoozede items komen terug om**, dan wacht het tot 5 minuten daarna, zodat de to-do's die die ochtend terugkomen erin staan. **Voorbeeld**, in de rij ervan, toont het zonder het te versturen. Standaard is het een push en een e-mail, kort genoeg om in één blik te lezen:
 
 - een groet met wat vandaag telt, zoals "Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen" of, voor één to-do, "Goeiemorgen Sam, klaargezet voor je akkoord: Stuur het bestelformulier";
-- hoogstens drie dingen om te doen, elk met een link Openen: eerst klaargezette concepten en beloftes voor vandaag;
+- de to-do's die de groet telt, elk met een link Openen, en wat vandaag moet; anders hoogstens drie dingen om te doen;
 - hoeveel er nog kan wachten en hoe lang dat op jouw tempo duurt, zoals "12 andere kunnen wachten, ongeveer 5 min werk." To-do's die op je antwoord wachten, tellen niet mee in die tijd.
 - je afspraken in één regel.
 
 Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat. Een belofte opent haar to-do, of haar eigen pagina als er nog geen is.
 
 De push zegt hetzelfde zonder links. Tik erop, of op de link onderaan de e-mail, om dit overzicht opnieuw te lezen in **To-do's**.
-
-Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **Overzicht** bij To-do's kopieert, zonder de to-do's die er al boven staan. Is de tekst van to-do's verborgen in meldingen, dan vallen ze weg.
 
 ## Het avondoverzicht
 

@@ -7536,12 +7536,20 @@
   "one": "{} más puede esperar.",
   "other": "{} más pueden esperar."
  },
+ "{} more due today.": {
+  "one": "{} más para hoy.",
+  "other": "{} más para hoy."
+ },
  "{} more in Promises": "{} más en Promesas",
  "{} more like this wait. Always shares them too.": {
   "one": "{} más como esta espera. Siempre la comparte también.",
   "other": "{} más como esta esperan. Siempre las comparte también."
  },
  "{} more like this {}. Always shares {} too.": "{} más como esto {}. Siempre comparte también {}.",
+ "{} more ready for your OK.": {
+  "one": "{} más para revisar.",
+  "other": "{} más para revisar."
+ },
  "{} more, open the day": "{} más, abrir el día",
  "{} morning’s digest": "Resumen del {} por la mañana",
  "{} moved to {}": "{} pasó a {}",
@@ -7626,6 +7634,14 @@
  "{} other signals": {
   "one": "{} otra señal",
   "other": "{} otras señales"
+ },
+ "{} others can wait, about {} min to clear.": {
+  "one": "{} otra puede esperar, unos {} min para terminar.",
+  "other": "{} otras pueden esperar, unos {} min para terminar."
+ },
+ "{} others can wait.": {
+  "one": "{} otra puede esperar.",
+  "other": "{} otras pueden esperar."
  },
  "{} owns it.": "Es de {}.",
  "{} pages": {
