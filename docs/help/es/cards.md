@@ -36,7 +36,9 @@ Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mient
 
 La línea de arriba de la lista también cambia directamente a la otra: **Solo personal · Trabajo · Mostrar todo**.
 
-**Resumen** arriba de la lista muestra lo que se hizo hoy y lo que sigue pendiente, para Trabajo y Personal, o solo el que filtras. **Copiar** lo pone en tu portapapeles, como texto simple para pegar donde quieras. Solo aparece cuando hay algo que mostrar. Su **×** lo oculta en todos tus dispositivos hasta el próximo resumen de la mañana o de la tarde, o hasta el día siguiente.
+La fila arriba de la lista nombra tu último resumen de la mañana o de la tarde y lo que contó, por ejemplo **Resumen de ayer por la tarde** · 12 hechas, 3 abiertas. Tócala para volver a leerlo, con **Copiar** para pegarlo donde quieras. En cuanto la abres o tocas su **×**, desaparece en todos tus dispositivos hasta el próximo resumen.
+
+Sin un resumen reciente muestra **Hoy hasta ahora**: lo que se hizo hoy y lo que sigue pendiente, para Trabajo y Personal, o solo el que filtras.
 
 Una tarea de un proyecto muestra el nombre del proyecto en la línea bajo su título; abre el proyecto. **Proyecto** en **Detalles** lo cambia o lo quita. Consulta [las tareas de un proyecto](projects.md#a-projects-to-dos).
 

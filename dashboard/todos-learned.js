@@ -150,21 +150,33 @@ function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCard
 const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
  return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
-// Digest: a row atop the list opening the area's digest (todos-area-digest.js), when an area to-do is open or done today.
-// Its × sets it aside on every device until the next digest goes out or the next day (state.digest_row_hidden, notify.py).
-let digestHiding=false;  // its × on its way to the Machine: a status read from before doesn't bring the row back
-const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString(),hide=t('Hide until the next digest');
- return !state?.digest_row_hidden&&!digestHiding&&(state?.suggestions||[]).some(s=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup&&(/^(pending|accepted|prepared|instructions)$/.test(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))
-  ?html`<p class="ad-entry"><button type="button" data-area-digest><b>${f==='work'?t('Work digest'):f==='personal'?t('Personal digest'):t('Digest')}</b><span>${t('Done today and still open')}</span>›</button><button type="button" class="ad-x" data-digest-hide aria-label="${hide}" title="${hide}">×</button></p>`:''};
-document.addEventListener('click',async e=>{if(e.target.closest('[data-area-digest]'))lazyRun('areadigest',()=>areaDigestOpen());
- if(!e.target.closest('[data-digest-hide]'))return;digestHiding=true;render();let ok=false;
- try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'digest_row_hide',args:{}})});ok=true;toast(t('Hidden until the next digest.'))}
- catch(err){errCaught(err);toast(err.message,true)}
- digestHiding=false;if(ok)state.digest_row_hidden=true;else render()});
+// Digest row atop the list (state.digest_row, notify.digest_row): the last digest sent, by when, with its counts for the
+// filter's areas, else today's so far. Opening it or its × sets it aside on every device until the next digest.
+let digestHiding=false;  // on its way to the Machine: a status read from before doesn't bring the row back
+const digestDays=at=>{const d=new Date(at),n=new Date();return Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-new Date(d.getFullYear(),d.getMonth(),d.getDate()))/864e5)};
+function digestName(kind,at){if(kind==='today'||!at)return t('Today so far');const days=digestDays(at),eve=kind==='evening';
+ return days<=0?(eve?t('This evening’s digest'):t('This morning’s digest')):days===1?(eve?t('Yesterday evening’s digest'):t('Yesterday morning’s digest'))
+  :eve?t('{} evening’s digest',localeDate(new Date(at),DL,{weekday:'long'})):t('{} morning’s digest',localeDate(new Date(at),DL,{weekday:'long'}))}
+const digestCounted=(done,open)=>done&&open?t('{} done, {} open',done,open):done?t('{} done',done):open?t('{} open',open):'';
+const digestToday=(s,f)=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup;
+const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString(),hide=t('Hide until the next digest'),row=state?.digest_row===undefined?{kind:'today'}:state.digest_row;
+ if(!row||digestHiding)return '';let done=0,open=0;
+ if(row.kind==='today'){for(const s of state?.suggestions||[])if(digestToday(s,f))if(/^(pending|accepted|prepared|instructions)$/.test(s.status))open++;else if(s.status==='completed'&&new Date(closedAt(s)).toDateString()===day)done++;
+  if(!done&&!open)return ''}
+ else for(const a of f==='all'?['work','personal']:[f]){done+=Number(row.counts?.[a]?.done)||0;open+=Number(row.counts?.[a]?.open)||0}
+ return html`<p class="ad-entry"><button type="button" data-area-digest="${row.kind}"><span class="ad-name"><b>${digestName(row.kind,row.at)}</b><span class="ad-count">${digestCounted(done,open)}</span></span>›</button><button type="button" class="ad-x" data-digest-hide aria-label="${hide}" title="${hide}">×</button></p>`};
+async function digestSetAside(said){const drawn=()=>'digest_row' in state;digestHiding=true;if(drawn())render();let ok=false;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'digest_row_hide',args:{}})});ok=true;if(said)toast(t('Hidden until the next digest.'))}
+ catch(err){errCaught(err);if(said)toast(err.message,true)}
+ digestHiding=false;if(ok)state.digest_row=null;else if(drawn())render()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-area-digest]');
+ if(b){const kind=b.dataset.areaDigest;lazyRun('areadigest',()=>areaDigestOpen(kind==='today'?undefined:kind));digestSetAside(false);return}
+ if(e.target.closest('[data-digest-hide]'))digestSetAside(true)});
 // A tapped digest notification or its email's link (notify.DIGEST_VIEW, EVENING_VIEW; the phone app's tag, pushRoute):
-// To-dos with that digest open on top. The link goes once handled, so the same one opens it again.
+// To-dos with that digest open on top, its row set aside. The link goes once handled, so the same one opens it again.
 function openDigestLink(){const m=/^#digest=(morning|evening)$/.exec(location.hash);if(!m)return;
- history.replaceState(null,'',location.pathname+location.search);if($('#inbox').hidden)showTab('inbox');lazyRun('areadigest',()=>areaDigestOpen(m[1]))}
+ history.replaceState(null,'',location.pathname+location.search);if($('#inbox').hidden)showTab('inbox');lazyRun('areadigest',()=>areaDigestOpen(m[1]));
+ if(!('digest_row' in state)||state.digest_row?.kind===m[1])digestSetAside(false)}
 let linkedCardId=null;
 $('#suggestion-stats').addEventListener('click',e=>{const t=e.target.closest('[data-fold-tile]');if(t)toggleSection(t.dataset.foldTile)});
 $('#suggestion-summary').addEventListener('click',e=>{const b=e.target.closest('[data-scope]');if(b)scopeSet(b.dataset.scope)});

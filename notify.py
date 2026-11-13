@@ -435,9 +435,21 @@ def digest_done(db, day, status, channels, digest=None):
 
 def digest_kept(digest):
     """What a sent digest keeps to show again: its title, its text as the email had it without the headline (the title)
-    and the links (the dashboard is where they lead: read), and its parts to copy (sections)."""
+    and the links (the dashboard is where they lead: read), its parts to copy (sections), and how many to-dos it counted
+    done and open per area (counts: To-dos' Digest row says them, digest_row)."""
     return {'title': digest['subject'], 'text': digest.get('read', ''), 'blocks': digest.get('blocks') or [],
-            'sections': [{'area': s['area'], 'copy': s['copy']} for s in digest.get('sections') or () if s.get('copy')]}
+            'sections': [{'area': s['area'], 'copy': s['copy']} for s in digest.get('sections') or () if s.get('copy')],
+            'counts': digest.get('counts') or {}}
+
+
+def area_counts(counts):
+    """A digest's counts as kept (digest_kept): {area: {done, open}}, numbers only, the known areas only."""
+    out = {}
+    for area in AREAS:
+        part = counts.get(area) if isinstance(counts, dict) else None
+        if isinstance(part, dict):
+            out[area] = {k: max(0, int(part[k])) for k in ('done', 'open') if isinstance(part.get(k), int)}
+    return out
 
 
 def read_text(lines):
@@ -489,34 +501,49 @@ def digest_shown(db, kind):
             'sections': [s for s in kept.get('sections') or () if isinstance(s, dict)], 'at': row[1]}
 
 
-# The Digest row at the top of To-dos, set aside with its ×: kept here (UTC ISO), so every device of the owner's hides it
+# The Digest row at the top of To-dos, opened or set aside with its ×: kept here (UTC ISO), so every device of the
+# owner's hides it
 DIGEST_ROW_HIDDEN = '_digest_row_hidden'
+DIGEST_ROW_DAYS = dt.timedelta(days=3)  # a sent digest older than this isn't the row's any more: today's is
 
 
 def digest_row_hide(db, at):
-    """The owner set the To-dos Digest row aside at `at` (UTC ISO): hidden until there is a new digest (digest_row_hidden)."""
+    """The owner opened the To-dos Digest row or set it aside at `at` (UTC ISO): hidden until the next digest (digest_row)."""
     ensure(db)
     _stamp(db, DIGEST_ROW_HIDDEN, at)
 
 
-def digest_row_hidden(db, current, tz):
-    """Whether the To-dos Digest row stays set aside at `current`: it was hidden on the same local day and no morning or
-    evening digest went out since. The next digest sent, or the next day, brings it back."""
+def _when(value):
+    try:
+        at = dt.datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    return at if at.tzinfo else None
+
+
+def digest_row(db, current, tz):
+    """What To-dos' Digest row shows at `current`, or None when it is set aside. The last morning or evening digest sent
+    (that still keeps what it said, digest_shown) in the last DIGEST_ROW_DAYS: {kind 'morning'|'evening', at, counts}
+    (area_counts), until it is opened or set aside; the next digest sent brings the row back. Without one: today's digest
+    so far, {kind 'today'}, set aside for the rest of the day."""
     ensure(db)
     row = db.execute('SELECT value FROM notify_prefs WHERE key=?', (DIGEST_ROW_HIDDEN,)).fetchone()
-    try:
-        hidden = dt.datetime.fromisoformat(row[0]) if row else None
-    except (TypeError, ValueError):
-        hidden = None
-    if not hidden or hidden.tzinfo is None or hidden.astimezone(tz).date() != current.astimezone(tz).date():
-        return False
-    for (at,) in db.execute("SELECT created_at FROM notify_digests WHERE status='sent' ORDER BY created_at DESC LIMIT 4"):
+    hidden = _when(row[0]) if row else None
+    last = db.execute("SELECT day,body,created_at FROM notify_digests WHERE status='sent' AND body IS NOT NULL "
+                      "AND (day NOT LIKE '%:%' OR day LIKE 'evening:%') ORDER BY created_at DESC LIMIT 1").fetchone()
+    sent = _when(last[2]) if last else None
+    if sent and current - sent <= DIGEST_ROW_DAYS:
+        if hidden and hidden >= sent:
+            return None
         try:
-            if dt.datetime.fromisoformat(at) > hidden:
-                return False
+            kept = json.loads(last[1])
         except (TypeError, ValueError):
-            continue
-    return True
+            kept = {}
+        return {'kind': 'evening' if last[0].startswith('evening:') else 'morning', 'at': last[2],
+                'counts': area_counts(kept.get('counts') if isinstance(kept, dict) else None)}
+    if hidden and hidden.astimezone(tz).date() == current.astimezone(tz).date():
+        return None
+    return {'kind': 'today'}
 
 
 def drop_covered(db, refs, before):
@@ -946,8 +973,10 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
     else:
         summary = t('{} meetings.', len(held))
     body = '\n'.join([clip(summary, room), *after])
+    counts = {area: {'done': len(of(done, area)), 'open': len(of(due, area))} for area in EVENING_AREAS}
     return {'push': {'title': head, 'body': body, 'url': (root or './') + EVENING_VIEW, 'tag': 'evening'},
-            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections,
+            'counts': counts}
 
 
 # -- email, through the control plane (hosted and paired Machines)

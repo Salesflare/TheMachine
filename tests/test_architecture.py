@@ -458,7 +458,9 @@ OVER_BUDGET = {}
 # (shell-back.js, about 2 KB): it wraps showModal before any dialog opens, a push link's digest at load included.
 # 1,252,000 -> 1,253,000 (2026-11-13): main sat 173 bytes under it. A to-do with nothing left to lead has Mark done
 # as its lead, and a cleanup with every row decided reads as finished (chip, line, place in the list): first draw (+972).
-FIRST_LOAD_CEILING = 1_253_000
+# 1,253,000 -> 1,255,000 (2026-11-13): main sat 201 bytes under it. To-dos' Digest row names its digest by when it went
+# with its counts, and goes once opened (todos-learned.js, about 1.5 KB): it draws on the first view.
+FIRST_LOAD_CEILING = 1_255_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000

@@ -36,7 +36,9 @@ When nothing needs you, your Machine naps on an empty list. While it checks, it 
 
 The line at the top of the list also switches straight to the other one: **Personal only · Work · Show all**.
 
-**Digest** at the top of the list shows what got done today and what is still open, for Work and Personal, or only the one you filter on. **Copy** puts it on your clipboard, as plain text to paste anywhere. It only shows when there is something to list. Its **×** hides it on all your devices until the next morning or evening digest, or the next day.
+The row at the top of the list names your last morning or evening digest and what it counted, like **Yesterday evening’s digest** · 12 done, 3 open. Tap it to read that digest again, with **Copy** to paste it anywhere. Once you open it or tap its **×**, it goes on all your devices until the next digest.
+
+Without a recent digest it shows **Today so far**: what got done today and what is still open, for Work and Personal, or only the one you filter on.
 
 A to-do on a project shows the project's name under its title. Tap it to open the project. **Project** under **Details** changes it or takes it off. See [a project's to-dos](projects.md#a-projects-to-dos).
 

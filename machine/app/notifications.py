@@ -59,18 +59,18 @@ class NotificationsApp:
                'digest_sent': 'digest_sent_action', 'digest_row_hide': 'digest_row_hide_action'}
 
     def digest_row_hide_action(self, name, args, owner_dashboard=False):
-        # To-dos, the Digest row's ×: hidden on every device until the next digest goes out or the next day
-        # (notify.digest_row_hidden, the status's digest_row_hidden). The owner's own dashboard only
+        # To-dos, the Digest row opened or its × tapped: hidden on every device until the next digest goes out (or the
+        # next day, for today's digest so far) (notify.digest_row, the status's digest_row). The owner's own dashboard only
         if not owner_dashboard:
             raise ValueError('The digest is read in the dashboard')
         with self.store.connect() as db:
             notify.digest_row_hide(db, now())
-        return {'digest_row_hidden': True}
+        return {'digest_row': None}
 
     def digest_row_view(self):
-        """Whether To-dos' Digest row stays set aside (notify.digest_row_hidden): the status's digest_row_hidden."""
+        """What To-dos' Digest row shows, None when set aside (notify.digest_row): the status's digest_row."""
         with self.store.connect() as db:
-            return notify.digest_row_hidden(db, dt.datetime.fromisoformat(now()), local_tz())
+            return notify.digest_row(db, dt.datetime.fromisoformat(now()), local_tz())
 
     def digest_sent_action(self, name, args, owner_dashboard=False):
         # A tapped digest notification, or its email's link: the last morning or evening digest as it went
@@ -201,7 +201,8 @@ class NotificationsApp:
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
         # Each area's digest after the rest: the email goes to the owner's own address only, so Personal goes along;
         # Work as Work's own rules allow (a Careful Fleet: no Work titles in notifications)
-        rows = self.area_rows(current) if show else {}
+        counted = self.area_rows(current)
+        rows = dict(counted) if show else {}
         if not show_work:
             rows.pop('work', None)
         areas = {a: notify.area_digest(*r) for a, r in rows.items()}
@@ -211,6 +212,8 @@ class NotificationsApp:
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})
+            # how many each area had done and open, numbers only (no titles): To-dos' Digest row says them (notify.digest_row)
+            digest['counts'] = {a: {'done': len(r[0]), 'open': len(r[1])} for a, r in counted.items()}
         return digest
 
     def area_digests(self, current=None):

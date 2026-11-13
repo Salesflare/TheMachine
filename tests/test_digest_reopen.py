@@ -94,42 +94,68 @@ class Reopen(unittest.TestCase):
             self.app.action('digest_sent', {'kind': 'evening'}, owner_dashboard=False)
         self.assertEqual(self.shown('weekly'), {})
 
-    def test_the_digest_row_hides_until_the_next_digest_or_day(self):
-        # To-dos' Digest row: its × keeps it hidden on the Machine (every device), until a digest goes out or the next day
+    def test_the_digest_row_names_the_last_digest_and_its_counts(self):
+        # To-dos' Digest row: the last morning or evening digest sent, with how many it counted done and open per area,
+        # until it is opened or set aside (every device); the next digest brings it back. Without one: today's so far.
         at = lambda d, h, m=0: a.dt.datetime(2026, 11, d, h, m, tzinfo=BXL).astimezone(UTC)
 
-        def hidden(current):
+        def row(current):
             with self.store.connect() as db:
-                return notify.digest_row_hidden(db, current, BXL)
-        self.assertFalse(hidden(at(13, 7)))  # never hidden
+                return notify.digest_row(db, current, BXL)
+
+        def send(day, when, digest, status='sent'):
+            with self.store.connect() as db:
+                notify.digest_claim(db, day, when.isoformat())
+            with self.store.connect() as db:
+                notify.digest_done(db, day, status, ['push'] if status == 'sent' else [], digest)
+        self.assertEqual(row(at(12, 7)), {'kind': 'today'})  # no digest yet
         with self.assertRaises(ValueError):
             self.app.action('digest_row_hide', {}, owner_dashboard=False)
         self.assertIn('digest_row_hide', a.DASHBOARD_ACTIONS)
         self.assertIn('digest_row_hide', a.OWNER_ACTIONS)  # never the CLI the agent runs
         with self.store.connect() as db:
-            notify.digest_row_hide(db, at(13, 6, 45).isoformat())
-        self.assertTrue(hidden(at(13, 7)))
-        self.assertTrue(hidden(at(13, 23, 59)))
-        self.assertFalse(hidden(at(14, 0, 1)))  # the next day: back
-        with self.store.connect() as db:  # a digest that didn't go out changes nothing
-            notify.digest_claim(db, 'evening:2026-11-13', at(13, 17, 45).isoformat())
-        with self.store.connect() as db:
-            notify.digest_done(db, 'evening:2026-11-13', 'empty', [])
-        self.assertTrue(hidden(at(13, 18)))
-        with self.store.connect() as db:  # one sent before it was hidden neither
-            notify.digest_claim(db, '2026-11-13', at(13, 6, 30).isoformat())
-        with self.store.connect() as db:
-            notify.digest_done(db, '2026-11-13', 'sent', ['push'], notify.compose([], [{'title': 'Pay the invoice'}], []))
-        self.assertTrue(hidden(at(13, 18)))
-        with self.store.connect() as db:  # the evening digest sent after: back for it
-            db.execute("UPDATE notify_digests SET status='sent',created_at=? WHERE day='evening:2026-11-13'", (at(13, 17, 46).isoformat(),))
-        self.assertFalse(hidden(at(13, 18)))
-        # the action stamps now and the status says so
+            notify.digest_row_hide(db, at(12, 6, 45).isoformat())
+        self.assertIsNone(row(at(12, 23, 59)))  # today's set aside for the day
+        self.assertEqual(row(at(13, 0, 1)), {'kind': 'today'})
+        # the evening digest: its own counts, done today and open for the next work day, per area
+        evening = notify.evening_compose([{'id': 'a' * 16, 'title': 'Send the order form', 'area': 'work'},
+                                          {'id': 'b' * 16, 'title': 'Book the dentist', 'area': 'personal'},
+                                          {'id': 'c' * 16, 'title': 'File the expenses', 'area': 'work'}],
+                                         [], 0, [{'id': 'd' * 16, 'title': 'Call the bank', 'area': 'personal'}], [])
+        self.assertEqual(evening['counts'], {'work': {'done': 2, 'open': 0}, 'personal': {'done': 1, 'open': 1}})
+        send('evening:2026-11-12', at(12, 17, 45), evening, 'empty')  # one that didn't go out isn't the row's
+        self.assertEqual(row(at(13, 7)), {'kind': 'today'})
         with self.store.connect() as db:
             db.execute('DELETE FROM notify_digests')
-        self.assertEqual(self.app.action('digest_row_hide', {}, owner_dashboard=True), {'digest_row_hidden': True})
+        send('evening:2026-11-12', at(12, 17, 45), evening)
+        got = row(at(13, 7))
+        self.assertEqual(got, {'kind': 'evening', 'at': at(12, 17, 45).isoformat(), 'counts': evening['counts']})
+        # opened (or ×): gone, also the next morning, until the next digest goes out
+        with self.store.connect() as db:
+            notify.digest_row_hide(db, at(12, 20).isoformat())
+        self.assertIsNone(row(at(13, 7)))
+        morning = notify.compose([], [{'title': 'Pay the invoice'}], [])
+        morning['counts'] = {'work': {'done': 0, 'open': 4}, 'personal': {'done': 0, 'open': 'x'}, 'other': {'done': 9}}
+        send('2026-11-13', at(13, 8, 30), morning)
+        self.assertEqual(row(at(13, 9)), {'kind': 'morning', 'at': at(13, 8, 30).isoformat(),
+                                          'counts': {'work': {'done': 0, 'open': 4}, 'personal': {'done': 0}}})  # numbers only
+        # older than DIGEST_ROW_DAYS: today's so far instead
+        self.assertEqual(row(at(16, 9)), {'kind': 'today'})
+        # the action stamps now and the status says so
+        self.assertEqual(self.app.action('digest_row_hide', {}, owner_dashboard=True), {'digest_row': None})
         with patch_everywhere(a, 'local_tz', return_value=BXL):
-            self.assertTrue(self.app.digest_row_view())
+            self.assertIsNone(self.app.digest_row_view())
+
+    def test_the_morning_digest_keeps_its_area_counts(self):
+        self.done_card('Send the order form', 'office', a.dt.datetime(2026, 11, 13, 7, tzinfo=BXL))
+        self.done_card('Reply to the supplier', 'office', a.dt.datetime(2026, 11, 13, 7, tzinfo=BXL))
+        with self.store.connect() as db:  # one still open, due today: the digest has something to say
+            db.execute("UPDATE suggestions SET status='pending',closed_decision_id=NULL,due='2026-11-13' WHERE title='Reply to the supplier'")
+            db.execute("DELETE FROM decisions WHERE suggestion_id=(SELECT id FROM suggestions WHERE title='Reply to the supplier')")
+        with patch_everywhere(a, 'local_tz', return_value=BXL), patch_everywhere(a, 'recap_meetings', return_value=[]):
+            digest = self.app.digest(a.dt.datetime(2026, 11, 13, 8, 30, tzinfo=BXL).astimezone(UTC))
+        self.assertEqual(digest['counts']['work'], {'done': 1, 'open': 1})
+        self.assertEqual(notify.digest_kept(digest)['counts'], digest['counts'])
 
 
 if __name__ == '__main__':

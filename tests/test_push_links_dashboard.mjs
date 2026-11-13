@@ -58,13 +58,11 @@ try{
   // a digest: To-dos with that digest open on top, as it went, then closed for the next case
   // one kept before it had blocks (the morning here) reads as its text; one with them as headings, subheads and a list
   const sent=async(kind,why)=>{const blocks=DIGESTS[kind].blocks;await landed(blocks?'#area-digest .ad-read':'#area-digest .ad-text',why);assert.ok(await tab('inbox'));
-   assert.equal(await page.locator('#area-digest h2').innerText(),DIGESTS[kind].title);
+   assert.equal(await page.locator('#area-digest h2').innerText(),kind==='evening'?'This evening’s digest':'This morning’s digest');  // named by when it went
    if(!blocks)assert.equal(await page.locator('#area-digest .ad-text').textContent(),DIGESTS[kind].text);
    else{// the overflow and the meetings close the list, muted, never loose lines beside it; "to-dos" never breaks
     assert.deepEqual(await page.evaluate(()=>[...document.querySelector('#area-digest .ad-read').children].map(e=>e.matches('ul')?['ul',[...e.children].map(li=>[li.className,li.textContent])]:[e.className,e.textContent])),
      [['ad-area','Work'],['ad-sub','Done today'],['ul',[['','Send the invoice'],['ad-more','+20 more'],['ad-more','+2 meetings']]]],why);
-    assert.equal(await page.locator('#area-digest h2 .ad-nw').innerText(),'to-dos');
-    assert.equal(await page.locator('#area-digest h2 .ad-nw').evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
     const muted=await page.locator('#area-digest li.ad-more').first().evaluate(e=>getComputedStyle(e).color),plain=await page.locator('#area-digest .ad-list li').first().evaluate(e=>getComputedStyle(e).color);
     assert.notEqual(muted,plain,'the +N more line is muted')}
    await page.evaluate(()=>document.querySelector('#area-digest').close())};
