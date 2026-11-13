@@ -25,8 +25,8 @@ cursor replays its window. Intercom returns at most 500 parts per conversation. 
 to 20,000 characters and the latest history fills the rest of a 40,000-character body; anything cut is
 flagged. Attachments aren't collected. Each conversation keeps who it is assigned to (an admin, a team, or nobody):
 a to-do comes only from one assigned to the owner or to nobody, and closes when a teammate takes it (assistant.py
-intercom_taken), or when someone on the team closed or answered it after the to-do was made (handled_facts,
-Store.close_handled_intercom). The first sync after an update rereads the conversations of open to-dos once, so
+intercom_taken), or when someone on the team closed or answered it after the to-do was made, or before it but read in
+only after it (handled_facts, Store.close_handled_intercom). The first sync after an update rereads the conversations of open to-dos once, so
 those facts are there for them too (REREAD).
 """
 import datetime as dt

@@ -154,9 +154,51 @@ class Store(unittest.TestCase):
         self.stays(conversation(part('comment', T, admin(), is_ai_answer=True)))
         self.stays(conversation(part('close', T, BOT, body=None), state='closed'))
 
+    def made_now(self):
+        with self.store.connect() as db:
+            db.execute('UPDATE suggestions SET created_at=? WHERE id=?', (a.now(), self.sid))
+
     def test_before_the_to_do_was_made(self):
-        self.stays(conversation(part('comment', 200, admin())))
-        self.stays(conversation(part('close', 200, admin(), body=None), state='closed'))
+        # Read in before the to-do was made: the review that made it saw them, so they never close it
+        for raw in (conversation(part('comment', 200, admin())), conversation(part('close', 200, admin(), body=None), state='closed')):
+            self.sync(raw)
+            self.made_now()
+            self.stays(raw)
+        # Something else changing later (a note) keeps the reply as seen before the to-do
+        replied = conversation(part('comment', 200, admin()))
+        self.sync(replied)
+        self.made_now()
+        self.stays(conversation(part('comment', 200, admin()), part('note', 300, admin('52'))))
+
+    def test_a_reply_sent_before_the_to_do_but_read_in_after_it_answers_it(self):
+        # The owner answered in Intercom while the review ran; the next sync brought it in after the to-do was made
+        sent = int(time.time()) - 360
+        self.sync(conversation(part('comment', sent, OWNER)))
+        self.assertEqual(self.store.close_handled_intercom(), [self.sid])
+        self.assertEqual(self.lines(), ['Answered in Intercom'])
+
+    def test_a_close_read_in_after_the_to_do_closes_it(self):
+        self.sync(conversation(part('close', int(time.time()) - 360, admin(), body=None), state='closed'))
+        self.assertEqual(self.store.close_handled_intercom(), [self.sid])
+        self.assertEqual(self.lines(), ['Closed in Intercom by Sam Lee'])
+
+    def test_a_reply_read_in_late_still_needs_the_customer_quiet_and_a_reply_only_to_do(self):
+        sent = int(time.time()) - 360
+        self.stays(conversation(part('comment', sent, OWNER), part('comment', sent + 5, CUSTOMER)))
+        self.step({'kind': 'finish', 'label': 'Send quote'})
+        self.stays(conversation(part('comment', sent, OWNER)))
+
+    def test_a_reply_kept_before_stamps_existed_never_counts_as_unseen(self):
+        replied = conversation(part('comment', 200, admin()))
+        self.sync(replied)
+        with self.store.connect() as db:
+            old = json.loads(db.execute('SELECT metadata FROM events WHERE id=1').fetchone()[0])
+            old['team_reply'].pop('seen')
+            db.execute('UPDATE events SET metadata=? WHERE id=1', (json.dumps(old),))
+        self.made_now()
+        self.stays(replied)
+        with self.store.connect() as db:
+            self.assertNotIn('seen', json.loads(db.execute('SELECT metadata FROM events WHERE id=1').fetchone()[0])['team_reply'])
 
     def test_a_reply_is_not_enough_for_more(self):
         handled = conversation(part('comment', T, admin()))

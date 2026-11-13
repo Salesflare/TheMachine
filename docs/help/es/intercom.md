@@ -20,7 +20,7 @@ Una tarea de una conversación de Intercom muestra de dónde viene: **Leer mensa
 
 Solo las conversaciones asignadas a ti, o todavía a nadie, se vuelven tareas, también las de una bandeja de equipo sin nadie asignado. Cuando alguien del equipo toma una conversación en Intercom, su tarea abierta se cierra sola, con **Deshacer**. En un Intercom compartido contigo, tus conversaciones son las asignadas al admin con el que escribes.
 
-Una tarea de Intercom también se cierra sola cuando alguien del equipo cierra la conversación en Intercom, o la responde y el cliente no ha vuelto a escribir, si la tarea solo pedía una respuesta. Una nota, posponer o la respuesta de un bot nunca cuentan.
+Una tarea de Intercom también se cierra sola cuando alguien del equipo cierra la conversación en Intercom, o la responde y el cliente no ha vuelto a escribir, si la tarea solo pedía una respuesta. También cuenta si respondiste justo antes de la tarea, antes de que The Machine leyera tu respuesta. Una nota, posponer o la respuesta de un bot nunca cuentan.
 
 Cuando Intercom no puede responder desde tu Machine (compartido contigo solo para leer, respuestas sin activar o sin conectar), el borrador va por correo. La tarea dice por qué y su revisión pregunta **¿Enviar por correo en su lugar?** Para responder tú en Intercom, toca **Conecta tu propio Intercom** en la tarea e inicia sesión. Después la tarea se vuelve a escribir como respuesta en Intercom. No sale nada antes de que lo envíes.
 

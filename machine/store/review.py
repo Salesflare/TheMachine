@@ -162,7 +162,8 @@ def reply_does_it(todo, metadata):
 
 def intercom_handled(metadata, todo, owner_ids):
     """('closed' | 'answered', who, when) when Intercom shows for certain that the team handled a to-do's conversation
-    after the to-do was made, else None. who: '' for the owner, else the teammate's name as Intercom gives it ('' when
+    after the to-do was made (or before, but read in after it: the review that made it never saw it, as with mail and
+    chats in Store.answered_elsewhere), else None. who: '' for the owner, else the teammate's name as Intercom gives it ('' when
     it has none). Closed: someone on the team closed it since, and it is still closed. Answered: someone on the team
     replied to the customer since, the customer hasn't written again after that, and a reply is all the to-do asks
     (reply_does_it). A note, a snooze, an assignment, a bot, Fin or an automatic message is never either
@@ -173,11 +174,16 @@ def intercom_handled(metadata, todo, owner_ids):
 
     def who(fact):
         return '' if str(fact.get('admin_id') or '') in owner_ids else ' '.join(str(fact.get('name') or '').split())[:100]
+
+    def since(fact):
+        # After the to-do was made, or before it but read in after it (seen): the review that made it never saw it
+        seen = stamp_of(fact.get('seen')) if fact.get('seen') else None
+        return isinstance(fact, dict) and type(fact.get('at')) is int and (fact['at'] > made or (seen is not None and seen > made))
     closed = metadata.get('team_closed')
-    if metadata.get('state') == 'closed' and isinstance(closed, dict) and type(closed.get('at')) is int and closed['at'] > made:
+    if metadata.get('state') == 'closed' and isinstance(closed, dict) and since(closed):
         return ('closed', who(closed), closed['at'])
     reply, customer = metadata.get('team_reply'), metadata.get('customer_at')
-    if (isinstance(reply, dict) and type(reply.get('at')) is int and reply['at'] > made
+    if (isinstance(reply, dict) and since(reply)
             and (customer is None or (type(customer) is int and customer <= reply['at'])) and reply_does_it(todo, metadata)):
         return ('answered', who(reply), reply['at'])
     return None

@@ -20,7 +20,7 @@ A to-do from Intercom shows the customer, and **Read message** opens the convers
 
 Only conversations assigned to you, or to no one yet, become to-dos. When a teammate takes one in Intercom, its to-do closes by itself, with **Undo**. On an Intercom shared with you, your conversations are the ones assigned to the teammate you write as.
 
-An Intercom to-do also closes by itself once someone on the team closes the conversation in Intercom, or answers it and the customer hasn't written since, when a reply was all the to-do asked. A note, a snooze or a bot's answer never counts.
+An Intercom to-do also closes by itself once someone on the team closes the conversation in Intercom, or answers it and the customer hasn't written since, when a reply was all the to-do asked. That also counts when you answered just before the to-do came, before The Machine read your reply. A note, a snooze or a bot's answer never counts.
 
 When your Machine can't reply in Intercom (shared with you to read only, replies not turned on, or not connected), the draft goes by email instead. The to-do says why and asks **Send by email instead?** To reply in Intercom, tap **Connect your own Intercom** on the to-do and sign in. The to-do is then written again as a reply in Intercom. Nothing goes out before you send it.
 
