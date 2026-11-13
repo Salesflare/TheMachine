@@ -137,7 +137,9 @@ class TeamsTests(unittest.TestCase):
     def setUp(self):
         self.fake = FakeGraph()
         api = types.SimpleNamespace(READ=ms_graph.READ, GraphError=ms_graph.GraphError, personal=ms_graph.personal,
-                                    identity=ms_graph.identity, call=self.fake.call, scopes=self.fake.scopes)
+                                    identity=ms_graph.identity, call=self.fake.call, scopes=self.fake.scopes,
+                                    budget=self.budget, ROUND_SECONDS=ms_graph.ROUND_SECONDS)
+        self.rounds = []
         self.patch = mock.patch.dict('sys.modules', {'ms_graph': api})
         self.patch.start()
         self.addCleanup(self.patch.stop)
@@ -148,6 +150,14 @@ class TeamsTests(unittest.TestCase):
 
     def sync(self):
         return teams.sync(self.store, self.config, ACCOUNT, self.helpers)
+
+    def budget(self, seconds):
+        self.rounds.append(seconds)
+        return ms_graph.budget(seconds)
+
+    def test_a_run_is_a_round_whose_graph_reads_are_tried_again(self):
+        self.sync()
+        self.assertEqual(self.rounds, [ms_graph.ROUND_SECONDS])  # ms_graph.call retries a read that fails now and then
 
     def test_allowlisted_reads_only(self):
         for method, (verb, template, scope) in ms_graph.READ.items():

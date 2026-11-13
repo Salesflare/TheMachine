@@ -70,13 +70,14 @@ class BirthdaysApp:
             if account.get('service') != 'outlook_calendar' or account.get('shared') or account.get('calendar_id', 'primary') != 'primary':
                 continue
             try:
-                found = ms_graph.call(self.config, credential, account, 'calendars.list', {'$select': 'id,name', '$top': 50})
-                for calendar in found.get('value') or ():
-                    if birthdays.fold(calendar.get('name')) not in birthdays.CALENDAR_NAMES or not calendar.get('id'):
-                        continue
-                    page = ms_graph.call(self.config, credential, account, 'calendars.view',
-                                         {'id': calendar['id'], 'startDateTime': start, 'endDateTime': end, '$select': 'subject,isAllDay,isCancelled', '$top': 50})
-                    titles += [str(e.get('subject') or '') for e in page.get('value') or () if not e.get('isCancelled')]
+                with ms_graph.budget(ms_graph.ROUND_SECONDS):  # a read Graph fails now and then is tried again
+                    found = ms_graph.call(self.config, credential, account, 'calendars.list', {'$select': 'id,name', '$top': 50})
+                    for calendar in found.get('value') or ():
+                        if birthdays.fold(calendar.get('name')) not in birthdays.CALENDAR_NAMES or not calendar.get('id'):
+                            continue
+                        page = ms_graph.call(self.config, credential, account, 'calendars.view',
+                                             {'id': calendar['id'], 'startDateTime': start, 'endDateTime': end, '$select': 'subject,isAllDay,isCancelled', '$top': 50})
+                        titles += [str(e.get('subject') or '') for e in page.get('value') or () if not e.get('isCancelled')]
             except (ms_graph.GraphError, ValueError, RuntimeError, OSError) as error:
                 LOG.info('birthdays outlook unread error=%s', type(error).__name__)
         return titles

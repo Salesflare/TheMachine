@@ -299,6 +299,14 @@ def calendar_keys(metadata, title, start, end):
 
 
 def sync_calendar(store, config, account):
+    if account.get('service') != 'outlook_calendar':
+        return _sync_calendar(store, config, account)
+    # Graph can fail part of a calendar's reads for hours: inside the round's budget each read is tried again (ms_graph)
+    with ms_graph.budget(ms_graph.ROUND_SECONDS):
+        return _sync_calendar(store, config, account)
+
+
+def _sync_calendar(store, config, account):
     source = Calendar(config, account)
     profile = source.profile()  # Only this explicitly configured calendar.
     timezone = profile.get('timeZone', str(local_tz()))

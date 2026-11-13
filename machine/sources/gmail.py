@@ -173,7 +173,7 @@ def message_event(account, raw, config=None):
             'deleted': False}
 
 
-ROUND_SECONDS = 240  # an Outlook mail round's time for Graph, its reads' retries included (ms_graph.budget)
+ROUND_SECONDS = ms_graph.ROUND_SECONDS  # an Outlook mail round's time for Graph, its reads' retries included (ms_graph.budget)
 FAILED_IN_A_ROW = 3  # messages whose reads failed one after another: Graph is down, the rest waits for the next round
 WAITING_MAX = 100  # this many messages waiting: they are read before any new change is listed
 READ_AT_MAX = 500
