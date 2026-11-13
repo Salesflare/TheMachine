@@ -116,7 +116,9 @@ Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa
 
 Folgt der Entwurf dem Hinweis von jemand anderem in einer anderen Nachricht, etwa dem Vorschlag einer Kollegin in Slack, sagt eine Zeile unter der Aufgabe das, etwa „Laut Sam in #ops“. Tippe darauf, um diese Nachricht hier zu lesen, mit In Slack oder Gmail öffnen darin. Ist diese Nachricht die Quelle der Aufgabe selbst, zeigt die Quellzeile sie schon, also gibt es keine zweite Zeile.
 
-Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, steht unter „Diese Aufgabe“. In WhatsApp, Telegram oder Signal stehen deine eigenen Nachrichten rechts, wie in der App. Bei einer E-Mail zeigt **Details** nur, was die Kopfzeile nicht sagt, etwa vollständige Cc-Adressen, Bcc oder eine andere Antwortadresse; gibt es nichts hinzuzufügen, fehlt es.
+Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, steht unter „Diese Aufgabe“. In WhatsApp, Telegram oder Signal stehen deine eigenen Nachrichten rechts, wie in der App.
+
+Bei einer E-Mail zeigt **Details** nur, was die Kopfzeile nicht sagt, etwa vollständige Cc-Adressen, Bcc oder eine andere Antwortadresse; gibt es nichts hinzuzufügen, fehlt es.
 
 Eine Antwort in einem Slack-Thread zeigt auch, was vor dem Thread gesagt wurde. Ein Link der Aufgabe zu ihrer eigenen Nachricht öffnet sie auch hier, mit **In Slack öffnen** unten.
 

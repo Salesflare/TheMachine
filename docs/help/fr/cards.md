@@ -116,7 +116,9 @@ Au-dessus du brouillon, une ligne discrète nomme le message d’origine, avec l
 
 Quand le brouillon suit l’avis de quelqu’un d’autre dans un autre message, comme la suggestion d’un collègue dans Slack, une ligne sous la tâche l’indique, comme « D’après Sam dans #ops ». Appuyez dessus pour lire ce message ici, avec Ouvrir dans Slack ou Gmail à l’intérieur. Quand ce message est la source même de la tâche, la ligne de source l’affiche déjà, donc pas de deuxième ligne.
 
-Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche est marqué « Cette tâche ». Dans WhatsApp, Telegram ou Signal, vos propres messages sont à droite, comme dans l’app. Pour un e-mail, **Détails** n’affiche que ce que l’en-tête ne dit pas, comme les adresses Cc complètes, Cci ou une autre adresse de réponse ; s’il n’y a rien à ajouter, il n’apparaît pas.
+Un chat (Slack, WhatsApp, Telegram, Intercom…) se lit comme une seule conversation, du plus ancien au plus récent, chaque message une fois ; celui dont parle la tâche est marqué « Cette tâche ». Dans WhatsApp, Telegram ou Signal, vos propres messages sont à droite, comme dans l’app.
+
+Pour un e-mail, **Détails** n’affiche que ce que l’en-tête ne dit pas, comme les adresses Cc complètes, Cci ou une autre adresse de réponse ; s’il n’y a rien à ajouter, il n’apparaît pas.
 
 Une réponse dans un fil Slack montre aussi ce qui a été dit avant le fil. Un lien de la tâche vers son propre message l'ouvre aussi ici, avec **Ouvrir dans Slack** en bas.
 

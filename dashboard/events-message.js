@@ -11,10 +11,9 @@ const kindLabel=k=>t(KIND_LABEL[k]||k||'Original');
 const sameText=(a,b)=>{const n=s=>String(s??'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();return !!n(a)&&n(a)===n(b)};
 // "Sam Lee <sam@x.example>, lee@y.example" as [{name,addr}]
 const mailPeople=v=>{const out=[];String(v||'').replace(/(?:"([^"]*)"|([^,<"]*?))\s*<([^<>\s]+@[^<>\s]+)>|([^\s,<>"]+@[^\s,<>"]+)/g,(m,q,n,addr,bare)=>{out.push({name:groupSender((q??n??'').trim()),addr:(addr||bare).trim()});return ''});return out};
-// A name that is only the address again ('"sam@x.example" <sam@x.example>') is no name
+// '"a@x" <a@x>' has no name; Details writes "Sam Lee <sam@x>", else the address
 const mailName=p=>p.name&&!sameText(p.name,p.addr)&&!/^\S+@\S+$/.test(p.name)?p.name:'';
 const mailFirst=p=>{const n=mailName(p);return n&&!n.includes('@')?n.split(/\s+/)[0]:p.addr};
-// How Details writes one: "Sam Lee <sam@x.example>", the address alone when there is no other name
 const mailFull=p=>{const n=mailName(p);return n?`${n} <${p.addr}>`:p.addr};
 const msgWhen=o=>html`<time datetime="${o.occurred_at}">${fmtDHM(o.occurred_at,{weekday:'short',day:'numeric',month:'short'})}</time>`;
 // The title a message opens under: an email's subject, a chat's conversation, a notification's own title or its app
@@ -29,15 +28,13 @@ const attachmentsHTML=(o,id)=>(o.attachments||[]).length?html`<div class="attach
 const srcIcon=o=>o.source?html`<span class="icon">${markIco(sourceMark(o.source,o.account_id,o.app))}</span>`:'';
 // An email: the sender by name with the address quiet, "to Dana, Mira", the date, and the subject only when the
 // dialog's title isn't it already. A name that already says the address ("Sam via sales@…") has none after it.
-// Details only when it adds something the header doesn't say, and then only those rows: To or Cc when a name on the
-// line hides an address, Bcc, a Reply-To elsewhere, the service it was sent through (message_view.details_only).
-// No toggle at all when To is just the address the line shows.
+// Details only with rows the header lacks: To/Cc when a name hides an address, Bcc, Reply-To, Sent via (details_only).
 function mailHead(o,shown){const [f]=mailPeople(o.from),name=f?.name||sender(o.from),addr=f&&f.name&&!sameText(f.name,f.addr)&&!f.name.toLowerCase().includes(f.addr.toLowerCase())?f.addr:'';
  const to=mailPeople(o.to),cc=mailPeople(o.cc),list=ps=>ps.map(mailFirst).join(', ');
  const line=[to.length?t('to {}',list(to)):'',cc.length?t('cc {}',list(cc)):''].filter(Boolean).join(' · ');
  const adds=ps=>ps.some(p=>mailFull(p)!==mailFirst(p)),full=ps=>ps.map(mailFull).join(', ');
  const rows=[[t('To'),adds(to)&&full(to)],[t('Cc'),adds(cc)&&full(cc)],[t('Bcc'),full(mailPeople(o.bcc))],[t('Reply to'),full(mailPeople(o.reply_to))],[t('Sent via'),o.sent_via||'']]
-  .filter(([,v])=>v).map(([k,v])=>html`<div><span>${k}</span> <span translate="no">${v}</span></div>`);
+  .filter(([,v])=>v).map(([k,v])=>html`<div><span>${k}</span> ${v}</div>`);
  const meta=[...rows,o.details?html`<pre class="email-tech">${o.details}</pre>`:''].filter(Boolean);
  return html`<div class="email-meta"><div class="email-from"><span class="email-who"><strong translate="no">${name||kindLabel(o.kind)}</strong>${addr?html` <span class="email-addr" translate="no">${addr}</span>`:''}</span>${msgWhen(o)}</div>${line?html`<div class="email-to" translate="no">${line}</div>`:''}${o.title&&!sameText(o.title,shown)?html`<div class="email-subject" translate="no">${o.title}</div>`:''}${meta.length?html`<details class="email-headers"><summary>${t('Details')}</summary>${meta}</details>`:''}</div>`}
 // A notification: its app with its icon and the time, then its title (when the dialog's title isn't it) and text, once each
