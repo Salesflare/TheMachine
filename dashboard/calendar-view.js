@@ -112,7 +112,7 @@ function calParts(it){const hm=v=>humanHM(new Date(v)),late=it.day==='overdue';
   return {time:it.allDay?'All day':hm(m.start),title:m.title,owner:m.shared?m.shared+'’s':'',sub:[when,m.location,...(m.rooms||[]),m.guests?t(['{} guest','{} guests'],m.guests):'',m.notes?t('Notes'):'',m.transcript?t('Transcript'):''].filter(Boolean).join(' · '),
    said:(it.promises||[]).map(p=>calSaid(p)+': '+p.what),
    href:it.s?'#chat='+it.s.id:'',edit:!it.s&&m.edit?m.id:'',view:!it.s&&!m.edit?m.id:'',badge:c?chip(c[0],c[1]):'',prep:c?c[0]:'',tone:m.shared?'theirs':it.s?'prep t-'+(c?c[1]:'muted'):'meeting'}}
- if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what,sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
+ if(it.kind==='promise'){const p=it.p;return {time:late?calShort(p.due):'Due',title:p.what&&p.what[0].toUpperCase()+p.what.slice(1),sub:calSaid(p),href:promiseHref(p),tone:late?'late':'promise'}}
  const s=it.s;if(it.kind==='checkin')return {time:hm(s.snoozed_until),title:t('Check in with {}',s.handoff_wait.name),sub:t('If no answer')+' · '+s.title,href:'#chat='+s.id,tone:'back'};
  if(it.kind==='back')return {time:hm(s.snoozed_until),title:s.title,sub:'Comes back',href:'#chat='+s.id,tone:'back'};
  return {time:late?calShort(s.due):'Due',title:s.title,sub:calCardWho(s),href:'#chat='+s.id,tone:late?'late':'due'}}

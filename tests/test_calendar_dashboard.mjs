@@ -44,7 +44,7 @@ const cards=[
  card('5','Answered before its date passed','pending',{due:day(-1),handled_hint:JSON.stringify({reason:'Answered in Gmail',event_ids:[2],at:now})})];
 const promises=[
  {id:1,direction:'mine',who:'Alex Morgan',what:'Send the Q3 deck',due:day(4),state:'open',made_at:now,check_at:now},
- {id:2,direction:'theirs',who:'Sam Lee',what:'Send the signed contract',due:day(2),state:'open',made_at:now,check_at:now},
+ {id:2,direction:'theirs',who:'Sam Lee',what:'send the signed contract',due:day(2),state:'open',made_at:now,check_at:now},
  {id:4,direction:'theirs',who:'alex morgan',what:'Send the  Q3 deck',due:day(4),state:'open',made_at:now,check_at:now},  // the same plan, seen from both sides
  {id:5,direction:'mine',who:'Evelien Smit',what:'pick up the pram after swimming',due:day(5),state:'open',made_at:now,check_at:now},  // the same thing as that day's meeting
  {id:3,direction:'theirs',who:'Kim',what:'On a card already',due:day(0),state:'card',made_at:now,check_at:now}];
@@ -84,6 +84,8 @@ try{
   await page.locator('nav [data-tab="calendar"]').click();await showCal(page);
   assert.equal(await page.locator('#page-head .page-title').textContent(),'Calendar');
   assert.match(await page.locator('#page-head .cal-range').textContent(),/^\w{3} \d{1,2} – (\w{3} )?\d{1,2}, \d{4}$/,'US English: Oct 19 – 25, 2026');
+  // Every row's title starts with a capital, also a promise's (its text is a clause: "send the pilot recap")
+  assert.deepEqual(await page.locator('.cal-title [translate="no"]').evaluateAll(e=>e.map(x=>x.textContent).filter(s=>s&&s[0]!==s[0].toUpperCase())),[]);
   // Meetings come by calendar week, Monday midnight to Monday midnight with time zones: the weeks on show (this week and
   // the next) in one ask, then the week before and the week after, one at a time. Never a burst (2026-11-10: 43 at once).
   const monday=n=>{const d=at(0,0);d.setDate(d.getDate()-(d.getDay()+6)%7+7*n);return d.getTime()};
