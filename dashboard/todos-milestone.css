@@ -19,7 +19,7 @@ body.chat-open .ms-card{display:none}
 .ms-card h2{margin:0;color:var(--text);font-size:var(--fs-lg);font-weight:var(--fw-strong);line-height:1.15}
 .ms-n{display:inline-block;margin-right:2px;color:var(--amber);font:700 38px/1 var(--serif);letter-spacing:-.01em;vertical-align:-4px;font-variant-numeric:tabular-nums;text-align:right}
 .ms-card p{margin:4px 0 0;color:var(--muted);font-size:var(--fs-sm)}
-.ms-card .ms-share-btn{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 16px;border-radius:var(--r-pill);white-space:nowrap}
+.ms-card .ms-share-btn{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 16px;border-radius:var(--r-sm);white-space:nowrap}
 .ms-share-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ms-x{display:grid;place-items:center;flex:none;width:30px;height:30px;min-height:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--faint);cursor:pointer;position:relative}
 .ms-x::after{content:'';position:absolute;inset:-7px}.ms-x:hover{background:var(--c-hover);color:var(--text)}

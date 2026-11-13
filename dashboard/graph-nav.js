@@ -7,7 +7,10 @@ function graphCountsSet(c){if(!c||graphCounts&&['person','org','project'].every(
 function graphSubLabels(){for(const a of document.querySelectorAll('.side-sub a')){const n=a.querySelector('.badge').textContent.trim(),label=GRAPH_SUBS[a.dataset.graphSub]+(n?' · '+n:'');if(a.getAttribute('aria-label')!==label)a.setAttribute('aria-label',label)}}
 function graphSubSync(){pageHead();const on=!$('#people').hidden,graph=$('nav [data-tab="people"]');let lit=false;
  const shown=graphNode&&!/^promise:/.test(graphNode)?graphNodePane(graphNode):graphShown;
- for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===shown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit)}
+ for(const a of document.querySelectorAll('.side-sub a')){const me=on&&a.dataset.graphSub===shown;lit||=me;if(me)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')}graph.classList.toggle('sub-on',lit);
+ // The search says what the list on screen holds
+ const q=$('#people-query'),pane=graphShown||graphPane,find=t(pane==='orgs'?'Find an organization':pane==='projects'?'Find a project':'Find a person');
+ if(q&&q.placeholder!==find){q.placeholder=find;q.setAttribute('aria-label',find)}}
 // A link to another pane that is drawn (#graph=projects just followed, its hashchange still to come) is left for
 // openTabLink: a redraw that started before it never puts the old pane back in the address. A pane the owner
 // switches to (switched) always goes in, so a reload opens it

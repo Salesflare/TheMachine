@@ -16,7 +16,7 @@
 .rt{padding:var(--sp-4) var(--sp-5);border:1px solid var(--c-line);border-radius:var(--r-lg);background:var(--c-surface)}
 /* Opened from a to-do's "From your routine" link (routines-page.js rtReveal): marked for a moment */
 .rt{transition:box-shadow .4s}.rt[tabindex="-1"]:focus{outline:none}.rt.rt-found{box-shadow:var(--ring)}
-.rt h3{margin:0;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}
+.rt h3{margin:0;font:var(--fw-strong) var(--fs-lg)/1.3 var(--sans)}
 /*@lazy*/
 .rt-when{margin:2px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .rt-seen{white-space:nowrap}
@@ -60,7 +60,7 @@
 .rt:has(>.rt-form[data-rt-form="edit"])>:is(.rt-what,.rt-step,.rt-body,.more){display:none}
 /* Edit's name (Change's on a new one), in the title's place: the card a column for the moment, the form's fields its own items */
 .rt:has(>.rt-form:is([data-rt-form="edit"],[data-rt-form="change"])){display:flex;flex-direction:column}.rt:has(>.rt-form:is([data-rt-form="edit"],[data-rt-form="change"]))>h3{display:none}
-.rt-form:is([data-rt-form="edit"],[data-rt-form="change"]){display:contents}.rt-form>.rt-name{order:-1;margin-bottom:4px;font:var(--fw-heading) var(--fs-lg)/1.3 var(--serif)}.rt-form>.rt-name+*{margin-top:12px}
+.rt-form:is([data-rt-form="edit"],[data-rt-form="change"]){display:contents}.rt-form>.rt-name{order:-1;margin-bottom:4px;font:var(--fw-strong) var(--fs-lg)/1.3 var(--sans)}.rt-form>.rt-name+*{margin-top:12px}
 /* A template's edited routine: Back to the template after Cancel, on a line of its own when they don't fit */
 .rt-form-acts{flex-wrap:wrap}.rt-form-acts>button{flex:none}
 /* Templates (routine_templates.py): a name, one line, Add */

@@ -65,7 +65,7 @@ try{
   // time (someone from the open to-dos, or a general one); a click asks it
   assert.equal(await page.locator('#side-find').getAttribute('placeholder'),'Search or ask');
   await palOpenNow(page,1440);
-  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or ask anything');
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or ask');
   await page.locator('#pal-hint').waitFor();assert.deepEqual(examples[0],{people:['p1'],area:null},'asks which of the to-dos\' people it can answer about');
   const tries=[await page.locator('#pal-hint').textContent()];await page.keyboard.press('Escape');
   await palOpenNow(page,1440);await page.locator('#pal-hint').waitFor();tries.push(await page.locator('#pal-hint').textContent());
@@ -145,7 +145,7 @@ try{
   await page.locator('#pal-q').fill('what did kim say then?');await page.evaluate(()=>new Promise(r=>setTimeout(r,1200)));
   assert.equal(asks.length,n,'no model: not asked again');
   await page.locator('#pal-q').fill('');assert.ok(await page.locator('#pal-hint').isHidden(),'no model: nothing to try');
-  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search');
   await context.close()}
  // Shots: 390 and 1440, light and dark
  for(const colorScheme of ['light','dark'])for(const [w,h] of [[390,844],[1440,900]]){

@@ -15,7 +15,7 @@ let run=null,dig={read:0,total:64,todos:0,goal:3,days:7,pace:1},done=null;
 const live=()=>({runs:run?[run]:[],queue:null,first_look:null,first_dig:dig});
 const state=()=>({suggestions:[],promises:[],connectors:[{id:'work',display_name:'Work mail',service:'outlook'}],
  suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],reviews_on:true,greeting:{name:'Robin'},
- review_live:live(),first_look_done:done});
+ review_live:live(),first_look_done:done,done_counts:{all:1,work:1,personal:0}});  // one done, so Done / dismissed shows
 const errors=[],line=page=>page.locator('#suggestions .fl-count').innerText();
 const bar=page=>page.evaluate(()=>{const b=document.querySelector('#suggestions .fl-bar');return [parseFloat(b.firstChild.style.width)||0,+b.getAttribute('aria-valuenow')]});
 const server=createServer((req,res)=>{
