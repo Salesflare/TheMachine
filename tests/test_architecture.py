@@ -527,6 +527,9 @@ LAZY_CEILING['areadigest'] = 4_000  # the Work and Personal digest view with its
 # areadigest 4,000 -> 8,000 (2026-11-13): a digest notification or its email's link opens that digest as it went, drawn as
 # headings, subheads and a list (about 3 KB)
 LAZY_CEILING['areadigest'] = 8_000
+# followups 28,000 -> 29,000 (2026-11-13): the fast review's styles (graph-followups-review.css, about 3.9 KB of the
+# first load) load with it, when the first load sat over its ceiling (1,250,045 -> 1,246,119).
+LAZY_CEILING['followups'] = 29_000
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new

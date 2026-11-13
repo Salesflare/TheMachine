@@ -54,7 +54,7 @@ LAZY = {
     'fbpeople': ('todos-facebook-people.css', 'todos-facebook-people.js'),
     'brief': ('fleet-brief-todo.js',),
     'game': ('todos-game.js',),
-    'followups': ('graph-followups-review.js',),
+    'followups': ('graph-followups-review.css', 'graph-followups-review.js'),
     'graph': ('graph-pages.css', 'graph-crm.css', 'graph-lists.js', 'graph-boards.js', 'graph-followups-settings.js',
               'graph-record.js', 'graph-tabs.js', 'graph-crm.js'),
     'help': ('help-panel.js',),
