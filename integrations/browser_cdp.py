@@ -69,12 +69,12 @@ def close_tab(base, target):
 class _Socket:
     """A minimal client WebSocket (RFC 6455): text frames out, text frames (possibly fragmented) in."""
 
-    def __init__(self, base, target, timeout):
+    def __init__(self, base, target, timeout, kind='page'):
         parsed = urllib.parse.urlparse(base)
         host, port = parsed.hostname or '127.0.0.1', parsed.port or 80
         self.sock = socket.create_connection((host, port), timeout=timeout)
         key = base64.b64encode(os.urandom(16)).decode()
-        self.sock.sendall(('GET /devtools/page/' + urllib.parse.quote(target, safe='') + ' HTTP/1.1\r\nHost: '
+        self.sock.sendall(('GET /devtools/' + kind + '/' + urllib.parse.quote(target, safe='') + ' HTTP/1.1\r\nHost: '
                            + host + ':' + str(port) + '\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n'
                            'Sec-WebSocket-Key: ' + key + '\r\nSec-WebSocket-Version: 13\r\n\r\n').encode())
         head = b''
@@ -176,8 +176,19 @@ def navigate(base, target, url, timeout=60):
 class Session:
     """Several calls on one connection to a tab, in order (events in between are skipped)."""
 
-    def __init__(self, base, target, timeout=30):
-        self.ws, self.next, self.timeout = _Socket(base, target, timeout), 0, timeout
+    def __init__(self, base, target, timeout=30, kind='page'):
+        self.ws, self.next, self.timeout = _Socket(base, target, timeout, kind), 0, timeout
+
+    @classmethod
+    def browser(cls, base, timeout=30):
+        """A session with the browser itself (not a tab): what only it may do, like a fresh profile of its own
+        (Target.createBrowserContext)."""
+        info = _http(base, '/json/version', timeout=timeout)
+        url = str(info.get('webSocketDebuggerUrl') or '') if isinstance(info, dict) else ''
+        found = urllib.parse.urlsplit(url).path.rpartition('/devtools/browser/')[2]
+        if not found:
+            raise CdpError('the browser has no DevTools address of its own')
+        return cls(base, found, timeout, kind='browser')
 
     def __enter__(self):
         return self

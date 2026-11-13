@@ -11,7 +11,8 @@ info@) counts under its original sender and is never unsubscribed through the li
 Nothing changes until the owner picks Keep or Unsubscribe (Not spam or Spam) per item and confirms on the to-do. Then
 each item is done with what this Machine may already do, never with more permission (mail_cleanup_app.py):
 unsubscribe by the list's one-click link (RFC 8058, an HTTPS POST to a public address) or by its mailto address from
-the owner's mailbox when sending is on, else the to-do offers the list's page to open; spam is moved to Junk (Outlook,
+the owner's mailbox when sending is on, else on the list's page in this Machine's own browser (unsubscribe_page.py),
+else the to-do offers that page to open, with why; spam is moved to Junk (Outlook,
 Mail.ReadWrite) or labeled spam (Gmail, only with gmail.modify), else the to-do offers to open the mail. A send whose
 outcome is unknown is never sent again.
 
@@ -493,10 +494,15 @@ def picked_spam(candidates, picks):
 
 
 def record(db, suggestion_id, kind, items, stamp, start=0):
-    """A to-do's items, all open; start: the number of the first (items added to a to-do that has some)."""
+    """A to-do's items, open; start: the number of the first (items added to a to-do that has some). A newsletter that
+    came through a group with no way of its sender's own (how: hand) is the owner's from the start: its row says so,
+    with no pick (yours, how: group), and its sender is not asked about again."""
     for n, item in enumerate(items, start):
-        db.execute('INSERT OR IGNORE INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,state,updated_at) VALUES(?,?,?,?,?,?,?)',
-                   (suggestion_id, n, kind, item['account'], item['address'], 'open', stamp))
+        hand = item.get('how') == 'hand'
+        db.execute('INSERT OR IGNORE INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,state,how,updated_at) VALUES(?,?,?,?,?,?,?,?)',
+                   (suggestion_id, n, kind, item['account'], item['address'], 'yours' if hand else 'open', 'group' if hand else None, stamp))
+        if hand:
+            remember(db, kind, item['address'], 'gone', stamp)
 
 
 def open_todo(db, kind, area):
@@ -549,8 +555,8 @@ def pick(db, suggestion_id, picks, stamp):
 
 
 def settle(db, suggestion_id, n, state, stamp, how=None, link=None):
-    """How one item went: done (how: one_click, mailto, junk, spam), yours (link: the unsubscribe page to open), failed,
-    unknown. A done or yours item's sender is not asked about again."""
+    """How one item went: done (how: one_click, mailto, page, junk, spam), yours (link: the unsubscribe page to open;
+    how: why the Machine left it, unsubscribe_page.REASONS, or page from before), failed, unknown. A done or yours item's sender is not asked about again."""
     state = state if state in SETTLED else 'failed'
     db.execute("UPDATE mail_cleanup_items SET state=?,how=?,link=?,updated_at=? WHERE suggestion_id=? AND item=? AND state='working'",
                (state, how, link, stamp, suggestion_id, n))

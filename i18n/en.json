@@ -584,6 +584,7 @@
  "Asking to join": "Asking to join",
  "Asking {}’s Machine for a time that suits you both.": "Asking {}’s Machine for a time that suits you both.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Asks for a {} Machine, paid by the Fleet: {}.",
+ "Asks for choices": "Asks for choices",
  "Assigned to you": "Assigned to you",
  "At https://trello.com/power-ups/admin create a Power-Up (any name), then open its API key page and copy the API key (not the Secret). Next to it, click the Token link, allow read access and copy the token it shows (it starts with ATTA).": "At https://trello.com/power-ups/admin create a Power-Up (any name), then open its API key page and copy the API key (not the Secret). Next to it, click the Token link, allow read access and copy the token it shows (it starts with ATTA).",
  "At least": "At least",
@@ -737,6 +738,7 @@
  "Calendar link": "Calendar link",
  "Calendar link (ICS)": "Calendar link (ICS)",
  "Came from": "Came from",
+ "Came through a group": "Came through a group",
  "Can do things": "Can do things",
  "Can do things is off for {}. Turn it on under Connections first.": "Can do things is off for {}. Turn it on under Connections first.",
  "Can you take this on: {}? Their summary: “{}”": "Can you take this on: {}? Their summary: “{}”",
@@ -1154,6 +1156,7 @@
  "Couldn’t find a calendar on this server": "Couldn’t find a calendar on this server",
  "Couldn’t find a calendar with that name": "Couldn’t find a calendar with that name",
  "Couldn’t find the server for this address": "Couldn’t find the server for this address",
+ "Couldn’t finish it": "Couldn’t finish it",
  "Couldn’t load the full email.": "Couldn’t load the full email.",
  "Couldn’t load this page.": "Couldn’t load this page.",
  "Couldn’t load. Try again": "Couldn’t load. Try again",
@@ -1161,6 +1164,7 @@
  "Couldn’t make a secure connection to the server": "Couldn’t make a secure connection to the server",
  "Couldn’t make the image. Try again in a moment.": "Couldn’t make the image. Try again in a moment.",
  "Couldn’t make the to-do. The next run tries again.": "Couldn’t make the to-do. The next run tries again.",
+ "Couldn’t open it": "Couldn’t open it",
  "Couldn’t open that project.": "Couldn’t open that project.",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "one": "Couldn’t put {} more on a to-do. The next run tries again.",
@@ -1335,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"",
  "Done when: {}": "Done when: {}",
  "Done {}": "Done {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Done, except {} to unsubscribe by hand.",
+  "other": "Done, except {} to unsubscribe by hand."
+ },
  "Done.": "Done.",
  "Done. Their Machine gets it next.": "Done. Their Machine gets it next.",
  "Done. Waiting for them to tap Book it.": "Done. Waiting for them to tap Book it.",
@@ -1955,6 +1963,7 @@
  "Handoff emails offer their own Machine.": "Handoff emails offer their own Machine.",
  "Handoffs": "Handoffs",
  "Has a Machine": "Has a Machine",
+ "Has a captcha": "Has a captcha",
  "Has an open project": "Has an open project",
  "Has an open project: on or off": "Has an open project: on or off",
  "Has your name": "Has your name",
@@ -2818,6 +2827,7 @@
  "Names and promises": "Names and promises",
  "Need your admin’s approval? Send them this link.": "Need your admin’s approval? Send them this link.",
  "Needs OpenAI: a ChatGPT sign-in, or an API key.": "Needs OpenAI: a ChatGPT sign-in, or an API key.",
+ "Needs a login": "Needs a login",
  "Needs a mailbox where spam can be moved, like Outlook.": "Needs a mailbox where spam can be moved, like Outlook.",
  "Needs an answer": "Needs an answer",
  "Needs its {}": "Needs its {}",
@@ -6048,6 +6058,7 @@
  "Unsnoozed": "Unsnoozed",
  "Unsnoozed it": "Unsnoozed it",
  "Unsubscribe": "Unsubscribe",
+ "Unsubscribe by hand": "Unsubscribe by hand",
  "Unsubscribe from all": "Unsubscribe from all",
  "Unsubscribe from poking?": "Unsubscribe from poking?",
  "Unsubscribe from {}": "Unsubscribe from {}",
@@ -7303,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} email looks like spam",
   "other": "{} emails look like spam"
+ },
+ "{} emails · {}": {
+  "one": "{} email · {}",
+  "other": "{} emails · {}"
  },
  "{} evening’s digest": "{} evening’s digest",
  "{} facts live on Graph pages": {

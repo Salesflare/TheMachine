@@ -16,7 +16,8 @@ routine_cleanup is the owner's confirm on that to-do: their picks, all at once. 
 of its own, each item with what this Machine may already do and never with more permission:
 - unsubscribe: the list's one-click link (RFC 8058: an HTTPS POST to a public address, pinned, no redirects), else its
   unsubscribe address from the owner's mailbox when sending is on for it (a send whose outcome is unknown is never sent
-  again), else the list's page for the owner to open. Mail a list relayed (a Google Group like info@) uses only its
+  again), else the list's page, done in this Machine's own browser (unsubscribe_page.py: one confirm step at most,
+  never a login, a captcha or a choice), else that page for the owner to open, with why. Mail a list relayed (a Google Group like info@) uses only its
   original sender's own ways, never the list's: that would take the owner, or the team, off the list
   (mail_cleanup.relay_ways);
 - spam: Outlook moves it to Junk (Mail.ReadWrite); Gmail labels it spam only with gmail.modify. Spam cleanup can only
@@ -30,14 +31,18 @@ import http.client
 import ipaddress
 import json
 import logging
+import secrets
 import socket
 import ssl
+import subprocess
+import sys
 import threading
 import time
 import urllib.parse
 import uuid
 from email.utils import make_msgid
 
+import browser_login
 import help_chat
 import i18n
 import mail_cleanup
@@ -47,7 +52,9 @@ import routine_offers
 import routine_templates
 import routines
 import todo_areas
+import unsubscribe_page
 from enrichment import _Pinned
+from machine.browser import browser_lease_script
 from machine.sources.gmail import Gmail
 from models import background_model
 from sources import credential, gog_read
@@ -62,21 +69,36 @@ BODY_MAX = 700  # a to-do's text (Store.suggest)
 LINE_MAX = 80  # one item's line in it
 MARK_KEEP_S = 600  # how long the Routines page keeps which accounts may move mail to spam
 SPAM_TIMEOUT = 120  # seconds the spam pass's model call may take
+PAGE_TIMEOUT = 60  # seconds the model may take to read an unsubscribe page
+
+
+def _public(url):
+    """(parts, port, addresses) of an https link at a public address only, else None."""
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme != 'https' or not parts.hostname or parts.username or parts.password:
+        return None
+    try:
+        port = parts.port or 443
+        addresses = {info[4][0] for info in socket.getaddrinfo(parts.hostname, port, type=socket.SOCK_STREAM)}
+        if not addresses or not all(ipaddress.ip_address(a.split('%')[0]).is_global for a in addresses):
+            return None
+    except (OSError, ValueError):
+        return None
+    return parts, port, addresses
+
+
+def public_page(url):
+    """May the browser be on this page while it unsubscribes (unsubscribe_page.visit)? https at a public address."""
+    return _public(url) is not None
 
 
 def one_click(url, timeout=POST_TIMEOUT):
     """RFC 8058's one-click unsubscribe: POST List-Unsubscribe=One-Click to the list's https link. Only to a public
     address (checked, then pinned), no redirects, no cookies. True when the list said yes (2xx)."""
-    parts = urllib.parse.urlsplit(url)
-    if parts.scheme != 'https' or not parts.hostname or parts.username or parts.password:
+    found = _public(url)
+    if not found:
         return False
-    try:
-        port = parts.port or 443
-        addresses = {info[4][0] for info in socket.getaddrinfo(parts.hostname, port, type=socket.SOCK_STREAM)}
-        if not addresses or not all(ipaddress.ip_address(a.split('%')[0]).is_global for a in addresses):
-            return False
-    except (OSError, ValueError):
-        return False
+    parts, port, addresses = found
     body = b'List-Unsubscribe=One-Click'
     for address in sorted(addresses, key=lambda a: (':' in a, a)):
         connection = _Pinned(parts.hostname, address, port=port, timeout=timeout, context=ssl.create_default_context())
@@ -387,7 +409,8 @@ class MailCleanupApp:
 
     def cleanup_ways(self, items):
         """Newsletters, each with how Unsubscribe will go (how: one_click, mailto or page), from its List-Unsubscribe
-        header read now. One without any way this Machine can use is left out."""
+        header read now; hand: one that came through a group with no way of its sender's own (mail_cleanup.record).
+        Any other without a way this Machine can use is left out."""
         out, sends = [], {}
         for item in items:
             account = self.cleanup_account(item['account'])
@@ -401,6 +424,8 @@ class MailCleanupApp:
             if 'mailto' in ways and account['id'] not in sends:
                 sends[account['id']] = self.cleanup_can_send(account)
             how = 'one_click' if 'one_click' in ways else 'mailto' if 'mailto' in ways and sends.get(account['id']) else 'page' if 'link' in ways else None
+            if not how and item.get('via') and not ways:  # through a group, no way of the sender's own: by hand, said on its row
+                how = 'hand'
             if how:
                 out.append({**item, 'how': how})
         return out
@@ -636,8 +661,45 @@ class MailCleanupApp:
             if got in ('done', 'unknown'):
                 return got, 'mailto', None
         if ways.get('link'):
-            return 'yours', 'page', ways['link']
+            state, how = self.cleanup_page(ways['link'], item.get('from') or '')
+            return state, how, ways['link'] if state == 'yours' else None
         return 'failed', None, None
+
+    def cleanup_page(self, url, sender=''):
+        """The list's unsubscribe page, done in this Machine's own browser under the shared browser lease
+        (unsubscribe_page.py): ('done', 'page'), or ('yours', why) for the owner to finish with the link."""
+        base = (browser_login.endpoints(self.config) or [None])[0]
+        if not base:
+            return 'yours', 'browser'
+        owner = 'unsubscribe-' + secrets.token_hex(6)
+        lease = [sys.executable, str(browser_lease_script(self.config))]
+        try:
+            claim = subprocess.run([*lease, 'claim', '--owner', owner, '--minutes', '4', '--wait', '2'], capture_output=True, text=True, timeout=150)
+        except (OSError, subprocess.SubprocessError):
+            return 'yours', 'browser'
+        if claim.returncode != 0:
+            return 'yours', 'browser'
+        try:
+            return unsubscribe_page.visit(base, url, self.cleanup_page_ask, public_page, sender=sender)
+        except (browser_login.browser_cdp.CdpError, OSError, ValueError, KeyError) as error:
+            LOG.info('unsubscribe page unreached error=%s', type(error).__name__)
+            return 'yours', 'browser'
+        finally:
+            try:
+                subprocess.run([*lease, 'release', '--owner', owner], capture_output=True, text=True, timeout=30)
+            except (OSError, subprocess.SubprocessError):
+                pass  # the lease runs out by itself
+
+    def cleanup_page_ask(self, prompt):
+        """The model's read of an unsubscribe page (no agent, no tools, the background model), or None."""
+        ask = getattr(self, 'cleanup_page_model', None)  # tests and the sandbox: (prompt) -> reply
+        if ask:
+            return ask(prompt)
+        model = background_model(self.config)
+        try:
+            return help_chat.openclaw_model_run(self.config, prompt, '/'.join(model) if model else None, timeout=PAGE_TIMEOUT)
+        except help_chat.Unavailable:
+            return None
 
     def cleanup_mailto(self, account, mailto):
         """The list's unsubscribe email, from the owner's mailbox: 'done', 'unknown' (never sent again) or None."""

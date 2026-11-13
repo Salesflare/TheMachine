@@ -23,9 +23,9 @@ When a lot of newsletters come in and Newsletter cleanup is off (25 or more in a
 
 Spam cleanup is offered the same way when 5 or more mails were moved to spam by hand in a week. **Turn it on** adds it as **Add** does here. **No thanks** means it isn’t offered again, and a template you had before never is.
 
-**Newsletter cleanup** makes one to-do per area (work and personal) with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise it shows **Open unsubscribe page**.
+**Newsletter cleanup** makes one to-do per area (work and personal) with the past day’s newsletters, each with **Keep** or **Unsubscribe**. Unsubscribe uses the list’s one-click link, or its unsubscribe email from your address when sending is on. Otherwise The Machine unsubscribes on the list’s page in its own browser. A login, captcha or choices there are yours: the row says why, with **Open unsubscribe page**.
 
-Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group.
+Receipts, orders and payment notices are left out. Mail that came through a group address, like a Google Group, is listed under who wrote it and never unsubscribes you from the group. When the sender has no unsubscribe of their own, its row says **Unsubscribe by hand**.
 
 **Spam cleanup** makes one to-do per area with mail from unknown senders that looks like spam, each with **Spam** or **Not spam**. Outlook moves spam to Junk and Gmail marks it as spam. It checks every hour, so spam is usually there before you get to it. New spam goes on the same to-do while it’s open.
 

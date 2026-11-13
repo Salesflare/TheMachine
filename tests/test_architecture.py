@@ -502,6 +502,11 @@ def budget(name):
 LAZY_CEILING['routinetodos'] = 14_000
 # routinetodos 14,000 -> 15,000 (2026-11-11): a cleanup to-do's row opens its mail in the viewer (about 0.6 KB).
 LAZY_CEILING['routinetodos'] = 15_000
+# routinetodos 15,000 -> 15,500 (2026-11-13): an unsubscribe page the Machine couldn't finish says why on its row
+# (about 0.3 KB, after trimming).
+LAZY_CEILING['routinetodos'] = 15_500
+# routinetodos 15,500 -> 16,000 (2026-11-13): Unsubscribe by hand on a group's row opens its mail in the viewer.
+LAZY_CEILING['routinetodos'] = 16_000
 # followups 28,000 (2026-11-11): a follow-up group's fast review (about 23.9 KB), out of the first load.
 # graph 360,000 -> 384,000 (2026-11-11): a project's follow-ups and Done when, a board's follow-ups line and the
 # follow-up settings dialog, which only the Graph's pages open (about 17.6 KB), out of the first load.

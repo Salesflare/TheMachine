@@ -584,6 +584,7 @@
  "Asking to join": "Pedem para entrar",
  "Asking {}’s Machine for a time that suits you both.": "Pedindo à Machine de {} um horário bom para os dois.",
  "Asks for a {} Machine, paid by the Fleet: {}.": "Pede uma Machine {}, paga pela Fleet: {}.",
+ "Asks for choices": "Pede escolhas",
  "Assigned to you": "Atribuído a você",
  "At https://trello.com/power-ups/admin create a Power-Up (any name), then open its API key page and copy the API key (not the Secret). Next to it, click the Token link, allow read access and copy the token it shows (it starts with ATTA).": "Em https://trello.com/power-ups/admin crie um Power-Up (qualquer nome), abra a página da chave de API e copie a API key (não o Secret). Ao lado, clique no link Token, permita acesso de leitura e copie o token mostrado (começa com ATTA).",
  "At least": "Pelo menos",
@@ -737,6 +738,7 @@
  "Calendar link": "Link de calendário",
  "Calendar link (ICS)": "Link de calendário (ICS)",
  "Came from": "Veio de",
+ "Came through a group": "Veio por um grupo",
  "Can do things": "Pode fazer coisas",
  "Can do things is off for {}. Turn it on under Connections first.": "Pode fazer coisas está desligado para {}. Ligue primeiro em Conexões.",
  "Can you take this on: {}? Their summary: “{}”": "Você pode assumir isto: {}? Resumo da pessoa: “{}”",
@@ -1154,6 +1156,7 @@
  "Couldn’t find a calendar on this server": "Nenhum calendário encontrado neste servidor",
  "Couldn’t find a calendar with that name": "Nenhum calendário encontrado com esse nome",
  "Couldn’t find the server for this address": "Nenhum servidor encontrado para este endereço",
+ "Couldn’t finish it": "Não conseguiu concluir",
  "Couldn’t load the full email.": "Não foi possível carregar o e-mail completo.",
  "Couldn’t load this page.": "Não foi possível carregar esta página.",
  "Couldn’t load. Try again": "Não foi possível carregar. Tentar de novo",
@@ -1161,6 +1164,7 @@
  "Couldn’t make a secure connection to the server": "Sem conexão segura com o servidor",
  "Couldn’t make the image. Try again in a moment.": "Não foi possível criar a imagem. Tente de novo em instantes.",
  "Couldn’t make the to-do. The next run tries again.": "Não deu para criar a tarefa. A próxima execução tenta de novo.",
+ "Couldn’t open it": "Não conseguiu abrir",
  "Couldn’t open that project.": "Não foi possível abrir esse projeto.",
  "Couldn’t put {} more on a to-do. The next run tries again.": {
   "one": "Não deu para colocar mais {} em uma tarefa. A próxima execução tenta de novo.",
@@ -1335,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Concluído quando: uma linha curta (até 140 caracteres), como \"A listagem está no ar com um link para nós\"",
  "Done when: {}": "Concluído quando: {}",
  "Done {}": "Feito {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Feito, exceto {} para cancelar manualmente.",
+  "other": "Feito, exceto {} para cancelar manualmente."
+ },
  "Done.": "Feito.",
  "Done. Their Machine gets it next.": "Feito. A Machine dessa pessoa recebe em seguida.",
  "Done. Waiting for them to tap Book it.": "Pronto. Aguardando a outra pessoa tocar em Marcar.",
@@ -1955,6 +1963,7 @@
  "Handoff emails offer their own Machine.": "E-mails de repasse oferecem uma Machine própria.",
  "Handoffs": "Repasses",
  "Has a Machine": "Tem uma Machine",
+ "Has a captcha": "Tem um captcha",
  "Has an open project": "Tem um projeto aberto",
  "Has an open project: on or off": "Tem um projeto aberto: ligado ou desligado",
  "Has your name": "Tem seu nome",
@@ -2818,6 +2827,7 @@
  "Names and promises": "Nomes e promessas",
  "Need your admin’s approval? Send them this link.": "Precisa da aprovação do seu administrador? Envie este link para essa pessoa.",
  "Needs OpenAI: a ChatGPT sign-in, or an API key.": "Precisa da OpenAI: um login do ChatGPT ou uma chave de API.",
+ "Needs a login": "Pede login",
  "Needs a mailbox where spam can be moved, like Outlook.": "Precisa de uma caixa de e-mail onde o spam possa ser movido, como o Outlook.",
  "Needs an answer": "Falta a resposta",
  "Needs its {}": "Precisa do seu {}",
@@ -6048,6 +6058,7 @@
  "Unsnoozed": "Adiamento cancelado",
  "Unsnoozed it": "Cancelei o adiamento",
  "Unsubscribe": "Cancelar inscrição",
+ "Unsubscribe by hand": "Cancelar manualmente",
  "Unsubscribe from all": "Cancelar todas",
  "Unsubscribe from poking?": "Cancelar a inscrição nas cutucadas?",
  "Unsubscribe from {}": "Cancelar {}",
@@ -7303,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} e-mail parece spam",
   "other": "{} e-mails parecem spam"
+ },
+ "{} emails · {}": {
+  "one": "{} e-mail · {}",
+  "other": "{} e-mails · {}"
  },
  "{} evening’s digest": "Resumo do fim do dia de {}",
  "{} facts live on Graph pages": {

@@ -4,14 +4,16 @@
 // Spam), kept here until the one confirm; nothing changes before it. Then each row says how it went, and the "Pick …"
 // lead gives way to the to-do's Finished line (todos-cards.js cleanupSettled).
 const cleanupPicks=new Map();
-const CLEAN_DONE={one_click:'Unsubscribed',mailto:'Unsubscribed',junk:'Moved to Junk',spam:'Marked as spam'};
-const cleanupOut=(href,label)=>html`<a class="cl-end" href="${safeURL(href)}" target="_blank" rel="noreferrer">${t(label)} ↗</a>`;
+const CLEAN_DONE={one_click:'Unsubscribed',mailto:'Unsubscribed',page:'Unsubscribed',junk:'Moved to Junk',spam:'Marked as spam'};
+// unsubscribe_page.REASONS; group: through a group, no way of the sender's own (mail_cleanup.record), its mail opens instead
+const CLEAN_WHY={login:'Needs a login',captcha:'Has a captcha',choices:'Asks for choices',unclear:'Couldn’t finish it',browser:'Couldn’t open it',group:'Came through a group'};
+const cleanupOut=(href,label,why,i)=>html`<span class="cl-end cl-yours">${why?html`<small>${t(why)}</small>`:''}${href?html`<a href="${safeURL(href)}" target="_blank" rel="noreferrer">${t(label)} ↗</a>`:i.event?html`<button type="button" class="cl-hand" data-cl-open="${i.event}" data-cl-title="${i.title||i.from}">${t('Unsubscribe by hand')}</button>`:t('Unsubscribe by hand')}</span>`;
 function cleanupRow(s,news,i){const p=(cleanupPicks.get(s.id)||{})[i.n]||'',pick=(to,label)=>html`<button type="button" data-cl="${s.id}" data-cl-n="${i.n}" data-cl-to="${to}" aria-pressed="${p===to}">${t(label)}</button>`;
  const end=i.state==='open'&&!closed(s)?html`<span class="cl-pick" role="group" aria-label="${i.from}">${pick('keep',news?'Keep':'Not spam')}${pick('go',news?'Unsubscribe':'Spam')}</span>`
   :i.state==='done'?html`<span class="cl-end ok">${t(CLEAN_DONE[i.how]||'Done')}</span>`:i.state==='kept'?html`<span class="cl-end">${t(news?'Kept':'Not spam')}</span>`
-  :i.state==='yours'&&i.link?cleanupOut(i.link,'Open unsubscribe page')
+  :i.state==='yours'?cleanupOut(i.link,'Open unsubscribe page',CLEAN_WHY[i.how],i)
   :i.state==='failed'?html`<span class="cl-end bad">${t('Didn’t work')}</span>`:i.state==='unknown'?html`<span class="cl-end">${t('Sent, not confirmed')}</span>`:i.state==='working'?html`<span class="cl-end">${t('Working…')}</span>`:'';
- const what=html`<b translate="no">${i.from}</b>${i.count>1?html` <small>×${i.count}</small>`:''}<span class="cl-sub" translate="no">${i.why||i.title}</span>`;
+ const what=html`<b translate="no">${i.from}</b><span class="cl-sub" translate="no">${i.count>1?t('{} emails · {}',i.count,i.why||i.title):i.why||i.title}</span>`;
  // sender and subject open its kept mail in the viewer, read only
  return html`<li class="cl-row">${i.event?html`<button type="button" class="cl-what cl-open" data-cl-open="${i.event}"${news?'':html` data-cl-local`} data-cl-title="${i.title||i.from}">${what}</button>`:html`<div class="cl-what">${what}</div>`}${end}</li>`}
 function cleanupBox(s){const c=s.cleanup,news=c.kind==='newsletters',picks=cleanupPicks.get(s.id)||{},go=Object.values(picks).filter(v=>v==='go').length,open=!closed(s)&&c.items.some(i=>i.state==='open');

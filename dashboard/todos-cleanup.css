@@ -10,6 +10,7 @@
 .cl-pick button{min-height:32px;padding:4px 10px;border:1px solid var(--c-line);border-radius:999px;background:transparent;color:var(--c-text-2);font-size:var(--fs-sm)}
 .cl-pick button[aria-pressed="true"]{border-color:var(--mint);background:color-mix(in srgb,var(--mint) 16%,transparent);color:var(--text)}
 .cl-end{flex:none;color:var(--c-text-3);font-size:var(--fs-sm)}.cl-end.ok{color:var(--mint)}.cl-end.bad{color:var(--c-orange)}
+.cl-yours{text-align:end}.cl-yours a,.cl-hand{color:inherit}.cl-hand{padding:0;border:0;background:none;font:inherit;text-decoration:underline}.cl-yours small{display:block;font-size:inherit;color:var(--c-orange)}
 .cl-fine{margin:8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
 .cl-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin:8px 0 0}
 .cl-acts .ghost{padding-inline:10px;margin-inline:-11px}

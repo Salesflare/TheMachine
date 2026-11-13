@@ -14,6 +14,7 @@ const cleanup=(id,items)=>({id,title:items.length+' newsletters: keep or unsubsc
  cleanup:{kind:'newsletters',items}});
 const cards=[
  cleanup('cl-done',[row(1,'kept'),row(2,'done',{how:'one_click'}),row(3,'yours',{link:'https://lists.example/unsubscribe'})]),
+ cleanup('cl-all',[row(1,'kept'),row(2,'done',{how:'page'})]),
  cleanup('cl-open',[row(1,'open',{plan:'one_click'}),row(2,'kept')]),
  cleanup('cl-work',[row(1,'working'),row(2,'kept')]),
  {id:'sent',title:'Reply about the listings',body:'Sent the reply.',status:'prepared',scope:'work',created_at:now,event_ids:[2],outcome:JSON.stringify({state:'done'}),
@@ -47,7 +48,10 @@ try{
    assert.ok(!(await menu(id)).includes('complete'),`${id}: Mark done is not only in the … ${why}`)}
   // Every row decided: the finished line, no "Needs you" and no "Pick …"
   const done=card('cl-done');
-  assert.equal((await done.locator('.status-line').innerText()).trim(),'Finished. Mark it done if it looks right.');
+  // a row the owner still unsubscribes by hand: what's left, not Finished
+  assert.equal((await done.locator('.status-line').innerText()).trim(),'Done, except 1 to unsubscribe by hand.');
+  assert.equal((await card('cl-all').locator('.status-line').innerText()).trim(),'Finished. Mark it done if it looks right.');
+  assert.deepEqual(await lead('cl-all'),['Mark done']);
   assert.equal(await done.locator('.cl-lead').count(),0,'no "Pick …" once every row is decided');
   assert.ok(!(await done.locator('.card-badges').innerText()).includes('Needs you'),'no Needs you once every row is decided');
   assert.equal(await done.getAttribute('class').then(c=>/\bt-amber\b/.test(c)),false,'it no longer looks like it needs the owner');
