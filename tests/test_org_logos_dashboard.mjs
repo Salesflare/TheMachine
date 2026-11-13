@@ -38,7 +38,7 @@ try{
   const row=id=>page.locator(`#people-view article[data-node="org:${id}"] .org-pic`);
   await row('globex.example').waitFor();
   const img=row('globex.example').locator('img');
-  assert.deepEqual(await img.evaluate(i=>[i.getAttribute('referrerpolicy'),i.getAttribute('loading'),i.width,i.height,i.alt]),['no-referrer','lazy',22,22,'']);
+  assert.deepEqual(await img.evaluate(i=>[i.getAttribute('referrerpolicy'),i.getAttribute('loading'),i.width,i.height,i.alt]),['no-referrer','lazy',26,26,'']);  // as big as a person's photo in the People list
   await page.waitForFunction(()=>document.querySelector('article[data-node="org:globex.example"] .org-pic img')?.complete);
   await page.waitForFunction(()=>!document.querySelector('article[data-node="org:initech.example"] .org-pic img'));  // failed: the initial stays
   assert.equal(await row('initech.example').getAttribute('data-i'),'I');
