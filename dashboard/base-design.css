@@ -141,8 +141,11 @@ a.chip.who,.chip.project-chip a{gap:4px}.chip.project-chip a{display:inline-flex
 .person-pic,.org-pic{position:relative;flex:none;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;overflow:hidden;background:var(--sunken);color:var(--muted);font:600 10.5px/1 var(--sans);letter-spacing:.02em;vertical-align:middle}
 .person-pic::before,.org-pic::before{content:attr(data-i)}.person-pic::after,.org-pic::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--text) 13%,transparent);pointer-events:none}
 .person-pic img,.org-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%}.person-pic.big{width:44px;height:44px;font-size:15px}
-.org-pic{width:22px;height:22px;border-radius:6px;font-size:11px;letter-spacing:0}.org-pic img{box-sizing:border-box;padding:9%;object-fit:contain;object-position:50% 50%;background:#fff}.org-pic img.bleed{padding:0;object-fit:cover}.org-pic.big{width:36px;height:36px;border-radius:9px;font-size:15px}
-.chip-av{width:18px;height:18px;margin:-1px 0;font-size:7.5px;letter-spacing:0}.org-pic.chip-av{border-radius:5px;font-size:9px}
+/* One shape for every avatar, set only above: a circle, for people and organizations alike, at every size and on every
+   page (tests/test_avatar_shape_dashboard.mjs). A logo sits on a white disc with 15% padding, so its square fits inside
+   the circle (an inscribed square needs 14.6%); an app icon that fills its square (.bleed) fills the circle instead. */
+.org-pic{width:22px;height:22px;font-size:11px;letter-spacing:0}.org-pic img{box-sizing:border-box;padding:15%;object-fit:contain;object-position:50% 50%;background:#fff}.org-pic img.bleed{padding:0;object-fit:cover}.org-pic.big{width:36px;height:36px;font-size:15px}
+.chip-av{width:18px;height:18px;margin:-1px 0;font-size:7.5px;letter-spacing:0}.org-pic.chip-av{font-size:9px}
 .card-badges .chip.project-chip{padding-right:3px;gap:0}
 .chip.project-chip .project-pick{display:inline-grid;place-items:center;width:16px;height:16px;padding:0;margin-left:1px;border-radius:50%;opacity:.75}
 .chip.project-chip .project-pick:hover{opacity:1;background:var(--tile-hover,#ffffff14)}.chip.project-chip .project-pick svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
