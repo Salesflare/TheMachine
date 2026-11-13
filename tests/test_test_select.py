@@ -77,7 +77,9 @@ class Selection(unittest.TestCase):
                 self.assertRuns([part], needed)
 
     def test_a_catalog_runs_the_tests_that_serve_the_catalogs(self):
-        needed = [test for test, text in SOURCE.items() if 'i18n' in text]
+        # 'i18n' as the page's localStorage key (the catalog kept on the device, put there by the test) reads no catalog
+        kept = re.compile(r"""localStorage\.(?:get|set|remove)Item\(['"]i18n['"]""")
+        needed = [test for test, text in SOURCE.items() if 'i18n' in kept.sub('', text)]
         self.assertTrue(needed)
         self.assertRuns(['i18n/de.json'], needed)
 
@@ -446,7 +448,7 @@ class WithTheMap(unittest.TestCase):
 
     def browser(self, old):
         """A map whose browser half knows dashboard/shell-core.js as old: localeFmt ran in one page test, applyLocale in
-        another, a third only loaded the page; every other line is a function no test ran, but line 3 (let DL=...)."""
+        another, a third only loaded the page; every other line is a function no test ran, but the let DL=... line."""
         part = 'dashboard/shell-core.js'
         pages = [Path(t).name for t in TESTS if t.endswith('_dashboard.mjs')]
         quiet = [t for t in pages if not re.search(r'\b(DL|H12|applyLocale|localeFmt|start)\b|shell-core',
@@ -457,8 +459,8 @@ class WithTheMap(unittest.TestCase):
         start = old.index('function localeFmt(')
         end = old.index('\n', old.index('return f.format(d)}', start))
         funcs, offset = [[start, end, [at[fmt]]]], 0
-        for n, line in enumerate(old.split('\n'), 1):
-            if n != 3 and line and not line.startswith('//') and not start <= offset <= end:
+        for line in old.split('\n'):
+            if not line.startswith('let DL=') and line and not line.startswith('//') and not start <= offset <= end:
                 funcs.append([offset, offset + len(line), [at[arrow]] if line.startswith('const applyLocale=') else []])
             offset += len(line) + 1
         impact.commit = 'map'

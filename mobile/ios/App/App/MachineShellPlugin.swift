@@ -2,6 +2,7 @@ import AVFoundation
 import AuthenticationServices
 import Capacitor
 import CryptoKit
+import Network
 import QuickLook
 import UIKit
 import UserNotifications
@@ -37,16 +38,33 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
     private var pendingShare: [String: Any]?
     private var mediaGate: MediaGate?
     private var filePreview: FilePreview?  // the open preview's data source (the controller holds it weakly)
+    private var pageWatch: PageWatch?  // the WebView holds its navigation delegate weakly
+    private let network = NWPathMonitor()
+    private var networkWasDown = false
+    private var wakeTimer: Timer?
+    private var lastTick = Date()
+    private var pageGone = false
+    private var probing = false
+    private var lastReopen = Date.distantPast
 
     override public func load() {
         MachineActions.shared.install()  // in front of Capacitor's notification delegate, which it set by now
         NotificationCenter.default.addObserver(self, selector: #selector(openURL(_:)), name: .capacitorOpenURL, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(becameActive), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(cameBack), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(cameBack), name: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil)
         loading = bridge?.webView?.observe(\.isLoading, options: [.new]) { [weak self] webView, change in
-            if change.newValue == false { self?.onMachinePage(webView.url) }
+            if change.newValue == false {
+                self?.pageGone = false
+                self?.onMachinePage(webView.url)
+            }
         }
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let webView = self.bridge?.webView else { return }
+            self.watchForWake()  // on the main run loop, where its timer runs
+            // Capacitor's navigation delegate, told first when the page's process ends (PageWatch)
+            self.pageWatch = PageWatch(inner: webView.navigationDelegate, plugin: self)
+            webView.navigationDelegate = self.pageWatch
             webView.allowsBackForwardNavigationGestures = true  // swipe from the edge: back in the Machine's pages
             // The microphone (Talk, dictation) for the Machine's own page only; Capacitor's delegate does the rest
             self.mediaGate = MediaGate(inner: webView.uiDelegate, plugin: self)
@@ -462,6 +480,7 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
 
     /// What the Share extension left in the app group (ShareExtension/ShareViewController.swift): read once, then gone.
     @objc private func becameActive() {
+        checkPage()
         MachineNotice.sweep()
         guard let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: MachineShellPlugin.appGroup)?
             .appendingPathComponent("share", isDirectory: true),
@@ -475,6 +494,79 @@ public class MachineShellPlugin: CAPPlugin, CAPBridgedPlugin, ASWebAuthenticatio
         try? FileManager.default.removeItem(at: dir)
         pendingShare = ["text": found["text"] as? String ?? "", "files": files]
         if let url = bridge?.webView?.url, let saved = machine, url.absoluteString.hasPrefix(saved) { onMachinePage(url) }
+    }
+
+    // MARK: never a blank page
+
+    // After the computer or phone slept, the page's own process can be gone (the system ended it, or it ran out of
+    // memory) or hang, and the WebView then stays white until the app is closed and opened again. Capacitor reloads when
+    // it hears the process ended, but that reload is lost when it comes while the app is away (asleep, in the
+    // background), and a hung process isn't reported at all. So whenever the app comes back (in front again, unlocked,
+    // the network back, a wake: the clock jumped between two ticks) the page is asked for a sign of life, and opened
+    // again when none comes in time.
+
+    static let pageAnswer: TimeInterval = 8  // a busy page still answers in this time; a gone or hung one never does
+    static let reopenGap: TimeInterval = 15  // never in a loop
+
+    private func watchForWake() {
+        network.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if path.status != .satisfied { self.networkWasDown = true; return }
+                if self.networkWasDown { self.networkWasDown = false; self.checkPage() }
+            }
+        }
+        network.start(queue: DispatchQueue.global(qos: .utility))
+        // Timers don't run while the computer sleeps: a tick that comes late is a wake
+        wakeTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            let now = Date(), slept = now.timeIntervalSince(self.lastTick) > 90
+            self.lastTick = now
+            if slept { self.checkPage() }
+        }
+    }
+
+    @objc private func cameBack() { checkPage() }
+
+    /// The page's process ended (PageWatch, before Capacitor reloads): until a page has loaded again, the next check opens it again.
+    func pageEnded() {
+        pageGone = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.checkPage() }
+    }
+
+    /// Opens the page again when it has no address, its process ended without a page loading since, or it doesn't
+    /// answer a one-line script in time. Only while the app is in front: in the background it would be lost again.
+    func checkPage() {
+        guard UIApplication.shared.applicationState != .background, let webView = bridge?.webView, !probing else { return }
+        if pageGone || webView.url == nil { return reopen() }
+        if webView.isLoading { return }
+        probing = true
+        var done = false
+        let finish: (Bool) -> Void = { [weak self] alive in
+            guard let self = self, !done else { return }
+            done = true
+            self.probing = false
+            if !alive { self.reopen() }
+        }
+        webView.evaluateJavaScript("document.readyState") { result, error in finish(error == nil && result is String) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(false) }
+    }
+
+    /// The page it had (the Machine's, or the app's own start or offline page), else the saved Machine, else the start page.
+    private func reopen() {
+        guard let webView = bridge?.webView, Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap else { return }
+        lastReopen = Date()
+        pageGone = false
+        let local = bridge?.config.localURL
+        var target: URL?
+        if let url = webView.url, url.scheme == "https" || (url.scheme == local?.scheme && url.host == local?.host) {
+            target = url
+        } else if let saved = machine {
+            target = URL(string: saved)
+        } else {
+            target = local?.appendingPathComponent("index.html")
+        }
+        if let target = target { webView.load(URLRequest(url: target)) }
     }
 
     // MARK: in the Machine's page: www/inject.js
@@ -555,6 +647,31 @@ private final class MediaGate: NSObject, WKUIDelegate {
     func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo,
                  type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         decisionHandler(type == .microphone && frame.isMainFrame && plugin?.isMachine(origin) == true ? .grant : .deny)
+    }
+}
+
+/// The WebView's navigation delegate (Capacitor's), and first to hear that the page's process ended, so the plugin
+/// makes sure a page comes back (MachineShellPlugin.pageEnded) whatever happens to Capacitor's own reload.
+private final class PageWatch: NSObject, WKNavigationDelegate {
+    weak var inner: WKNavigationDelegate?
+    weak var plugin: MachineShellPlugin?
+
+    init(inner: WKNavigationDelegate?, plugin: MachineShellPlugin) {
+        self.inner = inner
+        self.plugin = plugin
+    }
+
+    override func responds(to aSelector: Selector!) -> Bool {
+        super.responds(to: aSelector) || (inner?.responds(to: aSelector) ?? false)
+    }
+
+    override func forwardingTarget(for aSelector: Selector!) -> Any? {
+        inner?.responds(to: aSelector) == true ? inner : nil
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        plugin?.pageEnded()
+        inner?.webViewWebContentProcessDidTerminate?(webView)
     }
 }
 

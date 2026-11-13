@@ -220,6 +220,34 @@ class IOSNotifications(unittest.TestCase):
         for call in ('MachineActions.shared.install()', 'MachineNotice.sweep()', 'MachineNotice.forget()', 'keepSignIn(saved)', '"fetch": true'):
             self.assertIn(call, plugin)
 
+    def test_ios_never_stays_blank_after_sleep(self):
+        # The page's process ended or hangs after the computer or phone slept: the WebView stays white until the app is
+        # closed. The plugin hears the end before Capacitor (whose own reload is lost while the app is away), and checks
+        # the page on every return, opening it again when it doesn't answer in time. Never in a loop.
+        plugin = (self.IOS / 'App/MachineShellPlugin.swift').read_text()
+        watch = plugin[plugin.index('private final class PageWatch'):]
+        watch = watch[:watch.index('\n}\n')]
+        self.assertIn('func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {\n        plugin?.pageEnded()\n'
+                      '        inner?.webViewWebContentProcessDidTerminate?(webView)', watch)
+        self.assertIn('inner?.responds(to: aSelector) == true ? inner : nil', watch)  # Capacitor's delegate does the rest
+        self.assertIn('webView.navigationDelegate = self.pageWatch', plugin)
+        # every way back: in front, unlocked, the network back, a wake (a late timer tick), the process gone
+        for back in ('UIApplication.didBecomeActiveNotification', 'UIApplication.willEnterForegroundNotification',
+                     'UIApplication.protectedDataDidBecomeAvailableNotification'):
+            self.assertIn(back, plugin)
+        check = plugin[plugin.index('    func checkPage() {'):plugin.index('    private func reopen() {')]
+        self.assertIn('if pageGone || webView.url == nil { return reopen() }', check)
+        self.assertIn('evaluateJavaScript("document.readyState")', check)
+        self.assertIn('asyncAfter(deadline: .now() + MachineShellPlugin.pageAnswer) { finish(false) }', check)
+        self.assertIn('applicationState != .background', check)
+        for caller in ('@objc private func becameActive() {\n        checkPage()', '@objc private func cameBack() { checkPage() }',
+                       'if self.networkWasDown { self.networkWasDown = false; self.checkPage() }', 'if slept { self.checkPage() }'):
+            self.assertIn(caller, plugin)
+        reopen = plugin[plugin.index('    private func reopen() {'):]
+        reopen = reopen[:reopen.index('\n    }\n')]
+        self.assertIn('Date().timeIntervalSince(lastReopen) > MachineShellPlugin.reopenGap', reopen)
+        self.assertIn('webView.load(URLRequest(url: target))', reopen)
+
     def test_android_buttons_are_the_same_decisions(self):
         java = (MOBILE / 'android/app/src/main/java/computer/themachine/app/PushText.java').read_text()
         for action, choice in (('prepare', 'accept'), ('done', 'complete')):
