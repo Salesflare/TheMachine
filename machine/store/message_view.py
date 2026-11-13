@@ -436,14 +436,15 @@ def _seconds(stamp):
 
 def transcript_turns(body, start=None):
     """A transcript as speaker turns, [{'from', 'body', 'occurred_at'}], without its raw stamps: a speaker's run is one
-    turn, said at the meeting's start (`start`, ISO) plus its first stamp, or at the start when it has none. [] when
-    speaker lines aren't most of the text (then it reads as written)."""
+    turn, said at the meeting's start (`start`, ISO) plus its first stamp. A turn without a stamp keeps the time before
+    it and is `untimed` (no time shown: never the same time over and over). [] when speaker lines aren't most of the
+    text (then it reads as written)."""
     try:
         began = dt.datetime.fromisoformat(str(start)) if start else None
     except ValueError:
         began = None
-    at = lambda secs: (began + dt.timedelta(seconds=secs)).isoformat() if began and secs is not None else (start or '')
-    turns, cue, total, covered = [], None, 0, 0
+    at = lambda secs: (began + dt.timedelta(seconds=secs)).isoformat() if began else (start or '')
+    turns, cue, total, covered, last = [], None, 0, 0, 0
     for line in str(body or '').replace('\r\n', '\n').split('\n'):
         bare = line.strip()
         if not bare or bare == 'WEBVTT' or bare.isdigit():
@@ -470,7 +471,9 @@ def transcript_turns(body, start=None):
         if turns and turns[-1]['from'] == who:
             turns[-1]['body'] = (turns[-1]['body'] + ' ' + said).strip()
         else:
-            turns.append({'from': who, 'body': said, 'occurred_at': at(secs)})
+            turns.append({'from': who, 'body': said, 'occurred_at': at(last if secs is None else secs)}
+                         | ({'untimed': True} if secs is None else {}))
+        last = last if secs is None else secs
     turns = [t for t in turns if t['body']]
     return turns if turns and covered >= 0.6 * total else []
 

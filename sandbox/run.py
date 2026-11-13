@@ -221,14 +221,30 @@ def seed_transcript(app):
     else:
         return
     names = ['Alex Morgan'] + [str(g.get('displayName') or g.get('email', '').split('@')[0].replace('.', ' ').title()) for g in guests[:2]]
-    topics = ['the pilot timeline', 'reminders on shared inboxes', 'the rollout to the second team', 'pricing for the larger plan',
-              'the security questions from IT', 'who owns the onboarding checklist', 'the go-live date']
-    lines = []
-    for minute in range(135):
-        for second in range(0, 60, 6):
-            who = names[(minute + second // 6) % len(names)]
-            topic = topics[minute // 20]
-            lines.append(f'[{minute // 60}:{minute % 60:02d}:{second:02d}] {who}: On {topic}, we went through what is open and what comes next.')
+    # a meeting as people talk: each line its own words, each speaker in turn, a few to some 20 seconds apart
+    topics = [['the pilot has been live for two weeks', 'eleven of the fifteen use it every day', 'the rest are on leave until Monday',
+               'the daily summary is what people open first', 'nobody asked for the old report again'],
+              ['shared inboxes still send double reminders', 'support wants one reminder per thread', 'sales is fine with two',
+               'the reminder could go to whoever replied last', 'we test that on the support inbox first'],
+              ['the second team is twelve people', 'they start after the pilot review', 'their manager wants a short demo',
+               'training takes about an hour', 'the 15th works for their calendar'],
+              ['the larger plan is priced per seat', 'finance wants a yearly invoice', 'a quote by Wednesday is enough',
+               'the pilot seats move over as they are', 'nothing changes for the first team'],
+              ['IT sent the security questions on Monday', 'most of them are about where data is stored',
+               'the data stays on their own machines', 'we answer the list by Thursday', 'IT wants a call if anything is unclear'],
+              ['the onboarding checklist has no owner yet', 'support can own the first week', 'after that it moves to the team lead',
+               'the checklist lives in the shared drive', 'we review it after the first month'],
+              ['the go-live is the 15th', 'the rollout plan comes by Friday', 'a check-in two weeks after go-live',
+               'questions go to the shared channel', 'the pilot review is the week before']]
+    leads = ['', 'I think ', 'From our side, ', 'Just to check, ', 'If I remember right, ', 'For the record, ', 'To be fair, ', 'Right, so ']
+    ends = ['.', ', does that work?', ', I can follow up on it.', ', that was the feedback last week.', ', we should decide today.', ', agreed.']
+    lines, at, k = [], 0, 0
+    while at < 8070:  # until 2:14:30, the closing line
+        said = topics[min(at // 1200, len(topics) - 1)]
+        point, end, lead = said[k % len(said)], ends[k // len(said) % len(ends)], leads[k // (len(said) * len(ends)) % len(leads)]
+        line = lead + point + end
+        lines.append(f'[{at // 3600}:{at % 3600 // 60:02d}:{at % 60:02d}] {names[k % len(names)]}: {line[0].upper()}{line[1:]}')
+        at, k = at + 4 + k * 7 % 17, k + 1
     lines.append(f'[2:14:30] {names[0]}: So we go live on the 15th, and I send the rollout plan by Friday.')
     app.meeting_notes({'event_id': r['id'], 'field': 'transcript', 'text': '\n'.join(lines)}, True)
     print(f"sandbox: a 2h 15m transcript on \"{r['title']}\" ({r['occurred_at'][:16]})", flush=True)

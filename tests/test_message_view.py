@@ -450,6 +450,25 @@ class Rows(unittest.TestCase):
         # a summary that mentions a time is no transcript: it reads as written
         self.assertEqual(message_view.transcript_turns('We met at 10:30 and agreed on the plan.\nNext: send the deck by Friday to everyone.', AT), [])
 
+    def test_a_long_meeting_keeps_each_turns_own_words_and_time(self):
+        said = [(0, 'Dana', 'Shall we start with the pilot?'), (14, 'Kit', 'It has been live for two weeks.'),
+                (95, 'Dana', 'How many use it every day?'), (410, 'Robin', 'IT sent the security questions.'),
+                (760, 'Dana', 'We can answer those by Thursday.'), (1790, 'Kit', 'Then the second team starts on the 15th.')]
+        hms = lambda s, sep='': f'{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}{sep}'
+        formats = {'webvtt': 'WEBVTT\n\n' + '\n\n'.join(f'{i}\n{hms(s, ".000")} --> {hms(s + 4, ".000")}\n{w}: {x}' for i, (s, w, x) in enumerate(said, 1)),
+                   'name (mm:ss)': '\n'.join(f'{w} ({s // 60:02d}:{s % 60:02d}): {x}' for s, w, x in said),
+                   'plain': '\n'.join(f'{w}: {x}' for s, w, x in said)}
+        for name, body in formats.items():
+            turns = message_view.transcript_turns(body, '2026-11-10T14:00:00+00:00')
+            self.assertEqual([(t['from'], t['body']) for t in turns], [(w, x) for _, w, x in said], name)
+            times = [t['occurred_at'] for t in turns if not t.get('untimed')]
+            if name == 'plain':  # no stamps: no times, rather than the meeting's start on every turn
+                self.assertEqual(times, [], name)
+            else:
+                self.assertEqual(len(times), len(said), name)
+                self.assertTrue(all(a < b for a, b in zip(times, times[1:])), (name, times))
+                self.assertEqual(times[-1][11:19], '14:29:50', name)
+
 
 if __name__ == '__main__':
     unittest.main()
