@@ -134,6 +134,13 @@ button.node:hover{text-decoration:underline;background:none}
 .graph-crumbs a{color:var(--muted);text-decoration:none}.graph-crumbs a:hover{color:var(--text);text-decoration:underline}
 .graph-crumbs [aria-current]{color:var(--text);font-weight:var(--fw-medium);min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /*@lazy*/
+/* A phone: a person's, organization's or project's page has one ‹ People (Organizations, Projects) back link for the
+   section's head and the breadcrumb; the name shows once, on the page */
+@media(max-width:560px){body:has(#people:not([hidden]) .graph-crumbs>a[data-crumb]:not([data-crumb=""])) #page-head{display:none}
+.graph-crumbs:has(>a[data-crumb]:not([data-crumb=""]))>:not(a[data-crumb]:not([data-crumb=""])){display:none}
+.graph-crumbs>a[data-crumb]:not([data-crumb=""]){display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-4px 0 -4px -6px;padding:0 14px 0 6px;color:var(--muted);font-size:var(--fs-md);font-weight:var(--fw-medium)}
+.graph-crumbs>a[data-crumb]:not([data-crumb=""])::before{content:'‹';content:'‹'/'';font-size:1.5em;line-height:1;margin-top:-2px}
+#people-view .graph-crumbs:has(>a[data-crumb]:not([data-crumb=""]))~.graph-detail>.name-row h3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;white-space:normal;overflow-wrap:break-word}}  /* no crumb to show a long name whole: two lines */
 /* Known about them: plain lines, each with a small menu (Edit, Not about them, Remove), and Add in the head. */
 .graph-known{list-style:none;margin:0;padding:0}
 .graph-known li{display:flex;align-items:flex-start;gap:var(--sp-2);padding:var(--sp-2) 0;border-top:1px solid var(--border);font-size:var(--fs-sm);line-height:1.45}

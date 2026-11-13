@@ -393,7 +393,8 @@ the organization's role.
   whose name shares a telling word with the fact, and the records on its own to-do) in one small background turn per
   25 facts (`fact_ties.py`, about 9,000 tokens for 100 facts). Each pass leaves one entry under Learning, Changes,
   with Undo, and a link you removed stays removed.
-- **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). Each page
+- **The page itself** keeps the dashboard's header and tabs, with a breadcrumb back (Graph › People › name). On a phone a single ‹ People (‹ Organizations, ‹ Projects) link
+  takes the header's and breadcrumb's place and goes back to the list as the back gesture does. Each page
   has its own link, `#graph/<node id>`, and the browser's back button works. Its events come by day, coming up first.
 
 ### Project descriptions

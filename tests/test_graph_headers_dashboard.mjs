@@ -5,7 +5,7 @@ import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
 // Every Graph header (person, organization, project, board), in view and edit mode, on a phone and a desktop: the name
-// stays on one line, never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows
+// stays on one line (two for a record on a phone), never broken mid-word (a long one ends in an ellipsis, the full name on hover); a short one shows
 // whole; the actions never cover it; while editing only Cancel and Save are offered. HEADERS_SHOT=<dir> writes screenshots.
 const dashboard=await dashboardPage();
 const day=n=>new Date(Date.now()-n*864e5).toISOString();
@@ -31,7 +31,8 @@ const measure=(page,sel)=>page.locator(sel).evaluate(h=>{const cs=getComputedSty
  const row=h.closest('.name-row,.board-head'),acts=[...(row?.querySelectorAll('.org-actions>button,.org-actions>details>summary,.board-menu>summary')||[])].filter(b=>b.checkVisibility());
  const hit=acts.find(b=>{const q=b.getBoundingClientRect();return q.left<r.right-1&&q.right>r.left+1&&q.top<r.bottom-1&&q.bottom>r.top+1});
  return {lines:Math.round(r.height/line),whole:h.scrollWidth<=h.clientWidth+1,ellipsis:cs.textOverflow==='ellipsis',title:h.title,text:h.textContent,acts:acts.map(b=>b.textContent.trim()||b.getAttribute('aria-label')),covered:hit?.textContent.trim()||'',wide:document.documentElement.scrollWidth>innerWidth}});
-const check=(m,where,{whole})=>{assert.equal(m.lines,1,`${where}: the name is on one line ${JSON.stringify(m)}`);assert.ok(!m.covered,`${where}: ${m.covered} covers the name`);assert.ok(!m.wide,`${where}: wider than the screen`);
+// A phone's record page has no breadcrumb with the name (‹ People alone), so its name takes up to two lines there
+const check=(m,where,{whole,two})=>{if(two)assert.ok(m.lines<=2,`${where}: the name is on at most two lines ${JSON.stringify(m)}`);else assert.equal(m.lines,1,`${where}: the name is on one line ${JSON.stringify(m)}`);assert.ok(!m.covered,`${where}: ${m.covered} covers the name`);assert.ok(!m.wide,`${where}: wider than the screen`);
  if(whole)assert.ok(m.whole,`${where}: "${m.text}" shows whole ${JSON.stringify(m)}`);else assert.ok(m.whole||m.ellipsis&&m.title===m.text,`${where}: a cut name ends in an ellipsis with the full name on hover ${JSON.stringify(m)}`)};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -48,20 +49,20 @@ try{
   await page.evaluate(()=>people('org:umicore.example'));await page.locator('#people-view .org-page').waitFor();
   const org='#people-view .org-page>.name-row h3';
   assert.equal(await page.locator('.graph-crumbs [data-crumb]:not([data-crumb=""])').textContent(),'Organizations',`an organization opened from Projects is under Organizations ${tag}`);
-  m=await measure(page,org);check(m,`org view ${tag}`,{whole});assert.deepEqual(m.acts,['New project','Edit','⋯'],`org view actions ${tag}`);await shot(page,`org-view-${tag}`);
+  m=await measure(page,org);check(m,`org view ${tag}`,{whole,two:mobile});assert.deepEqual(m.acts,['New project','Edit','⋯'],`org view actions ${tag}`);await shot(page,`org-view-${tag}`);
   await page.locator('#people-view [data-org-edit]').click();await page.locator('#people-view .org-editing').waitFor();
-  m=await measure(page,org);check(m,`org edit ${tag}`,{whole});assert.deepEqual(m.acts,['Cancel','Save'],`org edit: only Cancel and Save ${tag}`);await shot(page,`org-edit-${tag}`);
+  m=await measure(page,org);check(m,`org edit ${tag}`,{whole,two:mobile});assert.deepEqual(m.acts,['Cancel','Save'],`org edit: only Cancel and Save ${tag}`);await shot(page,`org-edit-${tag}`);
   // Person: view, then edit
   await page.evaluate(()=>people('person:a'));await page.locator('#people-view .person-page:not(.org-page)').waitFor();
   const per='#people-view .person-page>.name-row h3';
   assert.equal(await page.locator('.graph-crumbs [data-crumb]:not([data-crumb=""])').textContent(),'People',`person title ${tag}`);
-  m=await measure(page,per);check(m,`person view ${tag}`,{whole});assert.deepEqual(m.acts,['Edit','⋯'],`person view actions ${tag}`);await shot(page,`person-view-${tag}`);
+  m=await measure(page,per);check(m,`person view ${tag}`,{whole,two:mobile});assert.deepEqual(m.acts,['Edit','⋯'],`person view actions ${tag}`);await shot(page,`person-view-${tag}`);
   await page.locator('#people-view [data-org-edit]').click();await page.locator('#people-view .org-editing').waitFor();
-  m=await measure(page,per);check(m,`person edit ${tag}`,{whole});assert.deepEqual(m.acts,['Cancel','Save'],`person edit: only Cancel and Save ${tag}`);await shot(page,`person-edit-${tag}`);
+  m=await measure(page,per);check(m,`person edit ${tag}`,{whole,two:mobile});assert.deepEqual(m.acts,['Cancel','Save'],`person edit: only Cancel and Save ${tag}`);await shot(page,`person-edit-${tag}`);
   // Project page (edits in a dialog, whose title is not the name)
   await page.evaluate(()=>people('project:1'));await page.locator('#people-view .graph-detail [data-proj-edit]').first().waitFor();
   assert.equal(await page.locator('.graph-crumbs [data-crumb]:not([data-crumb=""])').textContent(),'Projects',`project title ${tag}`);
-  m=await measure(page,'#people-view .graph-detail>.name-row h3');check(m,`project view ${tag}`,{whole});assert.deepEqual(m.acts,['Edit','⋯'],`project actions ${tag}`);await shot(page,`project-view-${tag}`);
+  m=await measure(page,'#people-view .graph-detail>.name-row h3');check(m,`project view ${tag}`,{whole,two:mobile});assert.deepEqual(m.acts,['Edit','⋯'],`project actions ${tag}`);await shot(page,`project-view-${tag}`);
   await page.locator('#people-view .graph-detail>.name-row [data-proj-edit]').click();await page.locator('#project-dialog[open]').waitFor();await shot(page,`project-edit-${tag}`);
   await page.keyboard.press('Escape');await page.locator('#project-dialog[open]').waitFor({state:'detached'});
   await context.close()}
