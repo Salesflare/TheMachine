@@ -70,8 +70,8 @@ const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs
  connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
-// teammate shares), matched by service as connect_sources counts them.
-const connectHave=x=>x?.connected?(state.connectors||[]).filter(c=>c.service===x.service&&!c.shared_by):[],connectHaveName=c=>c.display_name||c.email||c.id;
+// teammate shares), matched by service as connect_sources counts them. Named as its card is (connTitle), never "Zoom".
+const connectHave=x=>x?.connected?(state.connectors||[]).filter(c=>c.service===x.service&&!c.shared_by):[],connectHaveName=c=>c.card_title||c.display_name||c.email||c.id;
 function connectHaveLine(x){const have=connectHave(x);return !have.length?'':have.length===1?t('Connected: {}',connectHaveName(have[0])):t(['Connected: {} and {} more','Connected: {} and {} more'],connectHaveName(have[0]),have.length-1)}
 function connectHaveNote(x){const have=connectHave(x);if(!have.length)return '';
  return html`<p class="fine connect-note connect-have"><span>${connectHaveLine(x)}</span> <button type="button" class="browser-link" data-connect-card="${have[0].id}">${t('Open its card')}</button><br><span>${t('This adds a new connection. Existing ones stay.')}</span></p>`}
