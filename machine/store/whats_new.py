@@ -31,6 +31,26 @@ import i18n
 from timeutil import local_day, local_tz, now
 
 ENTRIES = [
+    {'id': 'day-digests', 'date': '2026-11-13', 'weight': 2, 'title': 'Your day in a digest',
+     'text': 'An evening digest says what got done and what’s open for tomorrow. Digest at the top of To-dos copies '
+             'it, for Work or Personal.',
+     'action': {'label': 'Open To-dos', 'run': 'go-todos'}, 'art': 'digest'},
+    {'id': 'team-brief-todos', 'date': '2026-11-13', 'weight': 2, 'who': 'team', 'title': 'The team brief as to-dos',
+     'text': 'Each line of the team brief is a to-do now: who is waiting, what they asked and what’s at stake. Ask '
+             'the team right from it.',
+     'action': {'label': 'Open To-dos', 'run': 'go-todos'}, 'art': 'brief'},
+    {'id': 'email-composer', 'date': '2026-11-12', 'weight': 2, 'title': 'Write an email right here',
+     'text': 'Click an email address to write from your own mailbox, without leaving The Machine. Nothing goes out '
+             'until you press Send.',
+     'art': 'compose'},
+    {'id': 'more-connections', 'date': '2026-11-12', 'weight': 2, 'title': 'Signal, any mailbox, any calendar',
+     'text': 'Connect Signal chats, any mailbox over IMAP, and calendars from iCloud, Proton, Exchange or any '
+             'CalDAV server.',
+     'action': {'label': 'Add a connection', 'run': 'add-connection'}, 'art': 'connect'},
+    {'id': 'chat-memory', 'date': '2026-11-11', 'weight': 2, 'title': 'The chat remembers',
+     'text': 'Tell the chat something that stays true, even in passing, and it keeps it. Ask it to forget, and it '
+             'does, with Undo in Activity.',
+     'art': 'memory'},
     {'id': 'project-descriptions', 'date': '2026-11-10', 'weight': 2, 'title': 'Projects describe themselves',
      'text': 'A project’s page says what it is and where it stands, and keeps that up to date. Edit it to make it yours.',
      'action': {'label': 'Open Projects', 'run': 'go-projects'}, 'art': 'project'},

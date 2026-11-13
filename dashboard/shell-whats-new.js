@@ -30,6 +30,32 @@ const WN_ART={
  team:()=>[60,170,280].map((x,i)=>`<rect class="c" x="${x}" y="46" width="100" height="122" rx="10"/>`+wnBar(x+12,58,[44,56,38][i],'s')
   +[0,1,2].slice(0,3-i%2).map(j=>`<rect class="${j===1-i%2?'f':'t'}" x="${x+10}" y="${74+j*31}" width="80" height="23" rx="6"/>`+wnBar(x+18,82+j*31,[52,40,60][(i+j)%3])).join('')).join('')
   +[0,1,2].map(i=>`<circle class="${i===1?'f':'m'}" cx="${192+i*28}" cy="26" r="11"/>`).join(''),
+ // The day's digest under its moon: what got done (ticked) over what is still open (empty rings), a copy button per part
+ digest:()=>`<rect class="c" x="44" y="14" width="250" height="152" rx="12"/><g class="l" transform="translate(262 22) scale(.9)"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></g>`
+  +wnBar(62,30,64,'s')+wnTick(72,54,7)+wnBar(88,51,130)+wnTick(72,76,7)+wnBar(88,73,96)+`<path class="e" d="M44 94h250"/>`
+  +wnBar(62,108,78,'s')+[130,150].map((y,i)=>`<circle class="q" cx="72" cy="${y}" r="6.5"/>`+wnBar(88,y-3,i?92:140)).join('')
+  +[46,108].map(y=>`<rect class="t" x="306" y="${y}" width="86" height="30" rx="15"/><g class="l" transform="translate(317 ${y+7}) scale(.67)"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></g>`+wnBar(341,y+12,38,'s')).join(''),
+ // The team brief's lines as to-dos: who waits, a line on what they asked, what's at stake, the teammates in touch
+ brief:()=>[0,1,2].map(i=>{const y=14+i*52;
+  return `<rect class="c" x="50" y="${y}" width="340" height="44" rx="10"/><circle class="${i===1?'f':'m'}" cx="74" cy="${y+22}" r="11"/>`+wnBar(96,y+12,[150,120,138][i],'s')+wnBar(96,y+26,[110,140,96][i])
+   +(([x,w])=>`<rect class="t" x="${x}" y="${y+10}" width="${w}" height="24" rx="12"/>`+wnBar(x+12,y+19,w-24,'m'))([[270,60],[282,48],[262,68]][i])
+   +[0,1].map(j=>`<circle class="${j?'t':'f'}" cx="${356+j*14}" cy="${y+22}" r="8"/>`).join('')}).join(''),
+ // A person's page with their address lit up, and the small composer it opens: To, subject, the message and Send
+ compose:()=>`<rect class="c" x="30" y="38" width="160" height="104" rx="12"/><circle class="m" cx="58" cy="66" r="14"/>`+wnBar(80,58,84,'s')+wnBar(80,72,56)
+  +`<rect class="t" x="44" y="96" width="132" height="28" rx="8"/><g class="l" transform="translate(52 101) scale(.75)"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></g>`+wnBar(76,107,88,'m')
+  +`<path class="l" stroke-dasharray="2 7" d="M196 90h14"/><path class="l" d="M212 83l7 7-7 7"/>`
+  +`<rect class="c" x="230" y="14" width="158" height="152" rx="12"/>`+wnBar(246,30,20,'b')+wnBar(274,30,84,'s')+`<path class="e" d="M230 46h158M230 74h158"/>`+wnBar(246,57,110,'s')
+  +wnBar(246,88,126)+wnBar(246,102,112)+wnBar(246,116,84)+`<rect class="m" x="312" y="134" width="62" height="22" rx="11"/><g class="k" transform="translate(330 137) scale(.66)"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></g>`+wnBar(350,142,14,'t'),
+ // The Machine in the middle, with chats, a mailbox and a calendar connected to it, and room for more
+ connect:()=>`<path class="l" stroke-dasharray="2 7" d="M118 90h76M246 78l76-36M246 102l76 36"/><rect class="f" x="190" y="60" width="60" height="60" rx="14"/><path class="m" d="M220 74l4 9.5 9.5 4-9.5 4-4 9.5-4-9.5-9.5-4 9.5-4z"/>`
+  +[[62,62,'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>'],[326,14,'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'],[326,110,'<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>']]
+   .map(([x,y,p])=>`<rect class="c" x="${x}" y="${y}" width="56" height="56" rx="12"/><g class="l" transform="translate(${x+14} ${y+14}) scale(1.17)">${p}</g>`).join('')
+  +`<circle class="t" cx="90" cy="148" r="12"/><path class="l" d="M90 142v12M84 148h12"/>`,
+ // The chat: the owner says something that stays true, the reply keeps it, and it lands as a kept fact with its bookmark
+ memory:()=>`<rect class="f" x="174" y="14" width="200" height="44" rx="14"/>`+wnBar(190,26,150)+wnBar(190,40,110)
+  +`<rect class="c" x="54" y="70" width="190" height="34" rx="14"/>`+wnBar(70,84,110)+wnTick(222,87,8)
+  +`<rect class="c" x="54" y="118" width="300" height="46" rx="10"/><rect class="t" x="66" y="128" width="26" height="26" rx="7"/><g class="l" transform="translate(70 132) scale(.75)"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></g>`
+  +wnBar(104,130,150,'s')+wnBar(104,144,104),
  new:()=>`<rect class="c" x="120" y="42" width="200" height="96" rx="12"/><path class="m" d="M152 62l4 9.5 9.5 4-9.5 4-4 9.5-4-9.5-9.5-4 9.5-4z"/>`+wnBar(180,68,110,'s')+wnBar(180,84,76)+wnBar(142,108,156)+wnBar(142,122,112)};
 let wn={list:[],i:0};
 // A tap on the backdrop (the dialog itself is the target there, and on its own padding too)

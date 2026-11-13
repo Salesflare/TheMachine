@@ -98,6 +98,8 @@ English strings the check skips, with why:
 - `I couldn’t find that Signal chat. Nothing was sent.` names the Signal app, not a signal.
 - `Signal was not linked{}` names the Signal app, not a signal.
 - `Could not start the Signal link ({})` names the Signal app, not a signal.
+- `Signal, any mailbox, any calendar` names the Signal app, not a signal.
+- `Connect Signal chats, any mailbox over IMAP, and calendars from iCloud, Proton, Exchange or any CalDAV server.` names the Signal app, not a signal.
 
 ## Not checked, but use these
 
