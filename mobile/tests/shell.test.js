@@ -80,7 +80,7 @@ test('every start page word is in every language, and the pages use only known w
   const ctx = {};
   vm.runInNewContext(fs.readFileSync(path.join(www, 'strings.js'), 'utf8'), ctx);
   const {S, pick} = ctx.MachineStrings;
-  assert.deepEqual(Object.keys(S).sort(), ['de', 'en', 'es', 'fr', 'it', 'nl', 'pt-BR']);
+  assert.deepEqual(Object.keys(S).sort(), ['de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt-BR', 'ru', 'zh-CN']);
   const keys = Object.keys(S.en).sort();
   for (const [lang, words] of Object.entries(S)) {
     assert.deepEqual(Object.keys(words).sort(), keys, lang);
@@ -95,7 +95,9 @@ test('every start page word is in every language, and the pages use only known w
   for (const k of fs.readFileSync(path.join(www, 'app.js'), 'utf8').matchAll(/\bT\.(\w+)/g)) assert.ok(k[1] in S.en, k[1]);
   assert.equal(pick(['pt-PT']), 'pt-BR');
   assert.equal(pick(['nl-BE', 'en']), 'nl');
-  assert.equal(pick(['ja']), 'en');
+  assert.equal(pick(['ja-JP']), 'ja');
+  assert.equal(pick(['zh-TW']), 'zh-CN');
+  assert.equal(pick(['tr']), 'en');
 });
 
 test('no sign-up, plans or prices on the start pages (accounts are made and paid for on the web)', () => {

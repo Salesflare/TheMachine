@@ -55,7 +55,7 @@ RATE = 16000
 REQUEST_BYTES = (MAX_SECONDS + 5) * RATE * 2 * 4 // 3 + 64 * 1024   # the WAV, base64 in JSON
 IDLE_SECONDS = 300
 FREE_BYTES = 2 * 1024 ** 3   # room the preparation needs: packages about 0.5 GB, the small model 0.5 GB, and slack
-LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')   # the app's languages (i18n/*.json), as Whisper names them
+LANGUAGES = ('de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt', 'ru', 'zh')   # the app's languages (i18n/*.json), as Whisper names them
 # Talk live's voices (OpenAI Realtime, gpt-realtime). ChatGPT's Cove isn't one of them (only GPT-Live through a
 # ChatGPT sign-in has it); Cedar, calm and low, is the closest, so it's the default. Samples: brand/voices/<name>.mp3.
 TALK_VOICES = ('cedar', 'marin', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'alloy')

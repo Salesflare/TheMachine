@@ -65,8 +65,9 @@ async function i18nLoad(lang){if(!lang||lang===I18N.lang&&(lang==='en'||I18N.cat
  I18N.loading=lang;try{const [cat,en]=await Promise.all([fetch('i18n/'+lang+'.json?v='+I18N.ver).then(r=>r.ok?r.json():null),Object.keys(I18N.en).length?I18N.en:fetch('i18n/en.json?v='+I18N.ver).then(r=>r.ok?r.json():{})]);
   if(!cat)return false;I18N.en=en||{};i18nUse(lang,cat);try{localStorage.setItem('i18n',JSON.stringify({lang,ver:I18N.ver,cat,en:I18N.en}))}catch{}return true}catch{return false}finally{I18N.loading=null}}
 // The first language a browser asks for that there is a catalog for (navigator.languages is its Accept-Language):
-// the exact tag (pt-BR), else its language (it-CH reads it), Portuguese from Portugal reading Brazilian for now.
-const I18N_NEAREST={pt:'pt-BR'};
+// the exact tag (pt-BR), else its language (it-CH reads it), Portuguese from Portugal reading Brazilian and any Chinese
+// (zh-TW, zh-Hant) Simplified Chinese for now.
+const I18N_NEAREST={pt:'pt-BR',zh:'zh-CN'};
 function i18nBrowser(langs){const codes=Object.fromEntries(Object.keys(langs).map(c=>[c.toLowerCase(),c]));
  for(const l of (navigator.languages?.length?navigator.languages:[navigator.language||'en'])){const t=String(l).toLowerCase(),b=t.split('-')[0],c=codes[t]||codes[b]||(langs[I18N_NEAREST[b]]?I18N_NEAREST[b]:'');if(c)return c}return 'en'}
 // With each state (applyLocale): the owner's language; never chosen yet (language_set false), the browser's, saved once.

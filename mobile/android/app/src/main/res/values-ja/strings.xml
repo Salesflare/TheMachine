@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_label">The Machineに追加</string>
+    <string name="saved_download">ダウンロードに保存しました：%1$s</string>
+    <string name="not_saved">ファイルを保存できませんでした。</string>
+    <string name="push_open">タップして開きます。</string>
+</resources>

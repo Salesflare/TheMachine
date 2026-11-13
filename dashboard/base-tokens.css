@@ -45,6 +45,12 @@ html,body{overflow-anchor:none}
 /* design-tokens:end */
 @font-face{font-family:"Source Serif 4";font-style:normal;font-weight:200 900;font-display:swap;src:url(brand/serif.woff2) format("woff2")}
 @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url(brand/sans.woff2) format("woff2")}
+/* CJK: the system's font after the Latin brand fonts (nothing downloaded), the language's line breaks, no tracking */
+:root:lang(zh){--sans:Inter,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;--serif:"Source Serif 4","Songti SC","Noto Serif CJK SC",SimSun,serif}
+:root:lang(ja){--sans:Inter,"Hiragino Sans","Yu Gothic UI",Meiryo,"Noto Sans CJK JP",sans-serif;--serif:"Source Serif 4","Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP",serif}
+:root:lang(ko){--sans:Inter,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans CJK KR",sans-serif;--serif:"Source Serif 4",AppleMyungjo,"Noto Serif CJK KR",Batang,serif;word-break:keep-all;overflow-wrap:break-word}
+:root:is(:lang(zh),:lang(ja)){line-break:strict}
+:root:is(:lang(zh),:lang(ja),:lang(ko)) *{letter-spacing:0!important}
 /* Palette: BRANDING.md / palette.json. Dark charcoal surfaces, restrained mint + amber, cream text, lavender secondary. */
 :root{color-scheme:dark;
   --mint:#BCCBA8;--cream:#F5E5BF;--amber:#FFD76B;--orange:#ECA45B;--lavender:#C7B5E2;--lavender-light:#E6DEEF;--night-lavender:#58516E;--charcoal:#22252B;--screen:#34392F;

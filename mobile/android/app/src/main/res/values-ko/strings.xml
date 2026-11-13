@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="share_label">The Machine에 추가</string>
+    <string name="saved_download">다운로드에 저장했어요: %1$s</string>
+    <string name="not_saved">파일을 저장할 수 없어요.</string>
+    <string name="push_open">탭하여 열기.</string>
+</resources>

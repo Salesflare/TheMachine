@@ -6,8 +6,9 @@
 
 Keys are the English text itself, as in the dashboard (dashboard.html, the i18n script), so English stays the source and
 the fallback: a string without an entry reads as written. {} placeholders fill in order; a translation may use {0}, {1}
-to reorder them. A plural entry picks its form by the first number among the values (CLDR one/other: the four
-languages here all have just those two in UI copy, French and Brazilian Portuguese counting 0 and 1 as one)."""
+to reorder them. A plural entry picks its form by the first number among the values, by CLDR's rules: one/other in
+the European languages (French and Brazilian Portuguese counting 0 and 1 as one), only other in Chinese, Japanese and
+Korean, and one/few/many/other in Russian (1 and 21 one, 2-4 few, 0 and 5-20 many, fractions other)."""
 from __future__ import annotations
 
 import functools
@@ -34,11 +35,20 @@ def catalog(lang):
 
 
 def plural_form(lang, n):
-    """'one' or 'other' for n in lang."""
+    """'one', 'few', 'many' or 'other' for n in lang (CLDR)."""
     try:
         n = abs(float(n))
     except (TypeError, ValueError):
         return 'other'
+    if lang in ('zh-CN', 'ja', 'ko'):
+        return 'other'
+    if lang == 'ru':
+        if n != int(n):
+            return 'other'
+        i = int(n)
+        if i % 10 == 1 and i % 100 != 11:
+            return 'one'
+        return 'few' if 2 <= i % 10 <= 4 and not 12 <= i % 100 <= 14 else 'many'
     if lang in ('fr', 'pt-BR'):
         return 'one' if n < 2 else 'other'
     return 'one' if n == 1 else 'other'
@@ -59,7 +69,7 @@ def t(text, *args, lang=None):
     lang = lang or locale_prefs.language()
     found = catalog(lang).get(text) if lang != 'en' else None
     if found is None:
-        found = catalog('en').get(text, text)
+        found, lang = catalog('en').get(text, text), 'en'  # English's own plural rule for its forms
     if isinstance(found, dict):
         n = next((a for a in args if isinstance(a, (int, float))), None)
         found = found.get(plural_form(lang, n)) or found.get('other') or text
@@ -69,7 +79,8 @@ def t(text, *args, lang=None):
 def language_name(lang=None):
     """'Dutch' for nl: how a prompt names the owner's language."""
     return {'en': 'English', 'nl': 'Dutch', 'fr': 'French', 'de': 'German', 'es': 'Spanish', 'it': 'Italian',
-            'pt-BR': 'Brazilian Portuguese'}.get(lang or locale_prefs.language(), 'English')
+            'pt-BR': 'Brazilian Portuguese', 'zh-CN': 'Simplified Chinese', 'ja': 'Japanese', 'ko': 'Korean',
+            'ru': 'Russian'}.get(lang or locale_prefs.language(), 'English')
 
 
 def written_in(lang=None):

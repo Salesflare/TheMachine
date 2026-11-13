@@ -24,6 +24,7 @@ scripts/test_select.py changed.txt          (changed paths, one per line; - read
 scripts/test_select.py --impact map.json.gz --base HEAD^1 changed.txt
 scripts/test_select.py --why tests/test_x.py changed.txt   (why that test was picked, or not)"""
 import ast
+import functools
 import gzip
 from html.parser import HTMLParser
 import io
@@ -1208,8 +1209,10 @@ def names_file(text, path):
     return path in text or name in text and mentions_name(text, path)
 
 
+@functools.cache
 def python_strings(path, text):
-    """A Python file's strings but its docstrings ('see docs/code-map.md' reads nothing); other files as they are."""
+    """A Python file's strings but its docstrings ('see docs/code-map.md' reads nothing); other files as they are.
+    Once per file: a change to many docs (a new language's help) asks again for every article."""
     if not path.endswith('.py'):
         return text
     try:

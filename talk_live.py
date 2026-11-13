@@ -385,16 +385,30 @@ YES = {
            {'va', 'pure', 'per', 'favore', 'tutti', 'grazie', 'ok'}),
     'pt': ({'sim', 'claro', 'pode', 'envia', 'enviar', 'manda', 'mandar', 'ok', 'perfeito', 'certo', 'beleza'},
            {'por', 'favor', 'isso', 'todos', 'obrigado', 'obrigada', 'ja', 'pode'}),
+    'ru': ({'да', 'конечно', 'отправляй', 'отправь', 'отправьте', 'давай', 'давайте', 'ок', 'хорошо', 'верно', 'отлично'},
+           {'пожалуйста', 'все', 'всё', 'оба', 'обе', 'сейчас', 'спасибо', 'это', 'его', 'её', 'их', 'ну', 'так', 'можно'}),
+    # written without spaces between words: a yes is a short run on its own ("はい、送って", "네, 보내 주세요", "好的，发吧")
+    'ja': ({'はい', 'うん', 'ええ', 'お願いします', '送って', '送信して', 'いいよ', 'いいです', 'どうぞ', 'ok'},
+           {'それで', '全部', '両方', '今', 'ありがとう', 'じゃあ', 'ください'}),
+    'ko': ({'네', '예', '응', '좋아요', '보내', '보내요', '보내줘', '그래요', '맞아요', 'ok'},
+           {'주세요', '줘', '다', '모두', '지금', '고마워요', '감사합니다'}),
+    'zh': ({'好', '好的', '是', '是的', '对', '可以', '发吧', '发送', '行', '嗯', 'ok'},
+           {'吧', '请', '都', '谢谢', '现在'}),
 }
+# The yes words as answer_words() reads them (accents, dakuten and the like gone), so both sides compare alike
+YES = {lang: tuple({w for word in group for w in re.findall(r'\w+', ''.join(c for c in unicodedata.normalize('NFKD', word)
+                                                                            if not unicodedata.combining(c)))} for group in pair)
+       for lang, pair in YES.items()}
 NO_START = {'no', 'nope', 'nah', 'nee', 'neen', 'niet', 'nein', 'non', 'nao', 'wait', 'wacht', 'warte', 'attends', 'espera',
-            'aspetta', 'stop', 'cancel', 'dont', 'hold', 'undo', 'never', 'not'}
+            'aspetta', 'stop', 'cancel', 'dont', 'hold', 'undo', 'never', 'not', 'нет', 'не', 'стоп', 'подожди', 'подождите',
+            'отмена', 'いいえ', 'いや', 'まって', '아니', '아니요', '아뇨', '잠깐', '不', '不要', '不用', '等等', '别'}
 
 
 def answer_words(text):
     """An answer as plain lowercase words: accents and apostrophes gone ("Oké" is "oke", "it's" is "its")."""
     plain = unicodedata.normalize('NFKD', str(text or '').lower().replace('’', "'"))
     plain = ''.join(c for c in plain if not unicodedata.combining(c)).replace("'", '').replace('-', ' ')
-    return re.findall(r'[a-z0-9]+', plain)
+    return re.findall(r'\w+', plain)
 
 
 def clear_answer(text, languages=('en',), names=()):
@@ -405,7 +419,7 @@ def clear_answer(text, languages=('en',), names=()):
         return 'unclear'
     if found[0] in NO_START:
         return 'no'
-    if '?' in str(text):
+    if '?' in str(text) or '？' in str(text):
         return 'unclear'
     langs = ['en'] + [x for x in spoken(languages or []) if x != 'en']
     core = set().union(*(YES[x][0] for x in langs if x in YES))
@@ -433,9 +447,10 @@ TRANSCRIBE_MODEL = 'gpt-4o-transcribe'
 # session.update of its own (transcription_next()): one a session refuses (it is new, and documented for WebSocket)
 # changes nothing else, and TRANSCRIBE_MODEL stays.
 NEXT_TRANSCRIBE_MODEL = 'gpt-transcribe'
-# The languages the app speaks, as ISO 639-1 codes (what transcription takes); all of them write in Latin script
-SPOKEN = ('de', 'en', 'es', 'fr', 'it', 'nl', 'pt')
-LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese'}
+# The languages the app speaks, as ISO 639-1 codes (what transcription takes)
+SPOKEN = ('de', 'en', 'es', 'fr', 'it', 'ja', 'ko', 'nl', 'pt', 'ru', 'zh')
+LANGUAGE_NAMES = {'de': 'German', 'en': 'English', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'nl': 'Dutch', 'pt-BR': 'Brazilian Portuguese',
+                  'ja': 'Japanese', 'ko': 'Korean', 'ru': 'Russian', 'zh': 'Chinese'}
 
 
 def spoken(*wanted):

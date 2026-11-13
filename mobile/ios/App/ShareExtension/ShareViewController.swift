@@ -20,11 +20,16 @@ class ShareViewController: UIViewController {
         "es": ("Añadido. Abre The Machine para revisarlo.", "No ha funcionado. Inténtalo de nuevo desde la app."),
         "it": ("Aggiunto. Apri The Machine per controllarlo.", "Non ha funzionato. Riprova dall’app."),
         "pt-BR": ("Adicionado. Abra The Machine para conferir.", "Não deu certo. Tente de novo pelo app."),
+        "zh-CN": ("已添加。打开The Machine查看。", "没有成功。请在应用中重试。"),
+        "ja": ("追加しました。The Machineを開いて確認してください。", "うまくいきませんでした。アプリからもう一度お試しください。"),
+        "ko": ("추가했어요. The Machine을 열어 확인하세요.", "잘 안 됐어요. 앱에서 다시 시도하세요."),
+        "ru": ("Добавлено. Откройте The Machine, чтобы проверить.", "Не получилось. Попробуйте ещё раз в приложении."),
     ]
 
     static var lang: String {
         for l in Locale.preferredLanguages {
             if l.hasPrefix("pt") { return "pt-BR" }
+            if l.hasPrefix("zh") { return "zh-CN" }
             let base = String(l.prefix(2))
             if words[base] != nil { return base }
         }

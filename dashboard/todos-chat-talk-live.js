@@ -220,7 +220,7 @@ async function talkEvent(v,data){if(talk!==v)return;let e;try{e=JSON.parse(data)
 // transcript null: the transcript never came (a reply waiting on it is kept).
 function talkHeard(v,e){const item=e.item_id;if(!v.pending.has(item)&&e.transcript==null)return;v.pending.delete(item);
  const heardIn=Array.isArray(e.languages)?e.languages.map(talkLang).filter(Boolean):[],mine=(v.languages||['en']).map(talkLang);
- const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt),foreign=!noise&&e.transcript!=null&&!talkShort(e.transcript)&&(talkForeign(e.transcript,v.languages)||heardIn.length>0&&!heardIn.some(l=>mine.includes(l)));  // gpt-transcribe says which language it heard
+ const noise=e.transcript!=null&&talkNoise(e.transcript,e.logprobs,v.transcription?.prompt,v.languages),foreign=!noise&&e.transcript!=null&&!talkShort(e.transcript)&&(talkForeign(e.transcript,v.languages)||heardIn.length>0&&!heardIn.some(l=>mine.includes(l)));  // gpt-transcribe says which language it heard
  if(noise||foreign){v.dropped.add(item);if(v.dc?.readyState==='open'){
    if(item)v.dc.send(JSON.stringify({type:'conversation.item.delete',item_id:item}));  // out of what the voice remembers
    for(const [id,to] of Object.entries(v.respFor))if(to===item&&v.responding){v.dc.send(JSON.stringify({type:'response.cancel',response_id:id}));v.dc.send(JSON.stringify({type:'output_audio_buffer.clear'}))}}
@@ -237,20 +237,22 @@ function talkMiss(v,failed){v.misses=(v.misses||0)+1;
  v.unheardTold=true;talkTell(v,v.notes.unheard||v.notes.again||'')}
 // A language gpt-transcribe says it heard: [{code:'fr'}] in its events, an ISO 639-1 code ('fr', 'pt-BR') or a 639-3
 // one ('fra'); a plain string too. Read as 'fr', or as the 639-3 code when the app has no such language.
-const TALK_ISO3={eng:'en',nld:'nl',dut:'nl',deu:'de',ger:'de',fra:'fr',fre:'fr',spa:'es',ita:'it',por:'pt'};
+const TALK_ISO3={eng:'en',nld:'nl',dut:'nl',deu:'de',ger:'de',fra:'fr',fre:'fr',spa:'es',ita:'it',por:'pt',zho:'zh',chi:'zh',cmn:'zh',jpn:'ja',kor:'ko',rus:'ru'};
 const talkLang=x=>{const c=String((x&&typeof x==='object'?x.code??x.language:x)??'').trim().toLowerCase().split(/[-_]/)[0];
  return /^[a-z]{2,3}$/.test(c)?TALK_ISO3[c]||c:''};
 // The short answers and commands Talk listens for (yes, no, ok, send it, stop, undo, next…, in the app's languages): never
 // taken for noise, however unsure the transcript is (talk_live.YES has the same yes words)
-const TALK_SHORT=new Set(`yes yeah yep yup ok okay sure send it go ahead no nope nah stop undo wait cancel next previous back skip done dismiss snooze again please now do them all both ja jawel jep oke okee nee neen niet doe maar verstuur stuur hoor prima goed klopt wacht volgende vorige terug klaar nein jawohl klar genau gut bitte oui non daccord si vale claro sim nao certo bye goodbye thanks thank cheers doei dag bedankt tschuss danke merci ciao grazie adios gracias tchau obrigado`.split(' '));
+const TALK_SHORT=new Set(`yes yeah yep yup ok okay sure send it go ahead no nope nah stop undo wait cancel next previous back skip done dismiss snooze again please now do them all both ja jawel jep oke okee nee neen niet doe maar verstuur stuur hoor prima goed klopt wacht volgende vorige terug klaar nein jawohl klar genau gut bitte oui non daccord si vale claro sim nao certo bye goodbye thanks thank cheers doei dag bedankt tschuss danke merci ciao grazie adios gracias tchau obrigado да нет ок хорошо стоп отмена дальше спасибо はい いいえ うん 送って 待って ありがとう 네 예 아니요 아니 보내 잠깐 고마워요 감사합니다 好 好的 是的 不 不要 发吧 等等 谢谢`.normalize('NFKD').replace(/\p{M}/gu,'').split(' '));  // as talkWords reads them (Hangul in its letters)
 const talkWords=text=>String(text||'').toLowerCase().normalize('NFKD').replace(/\p{M}/gu,'').replace(/[’']/g,'').match(/[\p{L}\p{N}]+/gu)||[];
 const talkShort=text=>{const w=talkWords(text);return w.length>0&&w.length<=3&&w.every(x=>TALK_SHORT.has(x))};
-// Whether a transcript is noise rather than words: nothing but marks, mostly letters of another script than Latin (the
-// app's languages all write in it), the transcription prompt itself, or a short line the model was unsure of (its
+// Whether a transcript is noise rather than words: nothing but marks, mostly letters of another script than the owner's
+// (Latin, and Cyrillic, Chinese, Japanese or Korean for those languages), the transcription prompt itself, or a short line the model was unsure of (its
 // average logprob, when OpenAI sends them). A short answer or command ("yes", "ja", "send it", "undo") is never noise.
-function talkNoise(text,logprobs,prompt){const s=String(text||'').normalize('NFC').trim();
+const TALK_SCRIPTS={ru:/\p{Script=Cyrillic}/u,zh:/\p{Script=Han}/u,ja:/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}ー]/u,ko:/[\p{Script=Hangul}\p{Script=Han}]/u};
+const talkOwnScript=(c,languages)=>/\p{Script=Latin}/u.test(c)||(languages||[]).some(l=>TALK_SCRIPTS[talkLang(l)]?.test(c));
+function talkNoise(text,logprobs,prompt,languages){const s=String(text||'').normalize('NFC').trim();
  const letters=s.match(/\p{L}/gu)||[];if(!letters.length&&!/\p{N}/u.test(s))return true;
- const latin=letters.filter(c=>/\p{Script=Latin}/u.test(c)).length;if(latin*2<letters.length)return true;
+ const own=letters.filter(c=>talkOwnScript(c,languages)).length;if(own*2<letters.length)return true;
  if(talkShort(s))return false;
  const flat=x=>String(x||'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();if(prompt&&flat(s)&&flat(prompt).includes(flat(s))&&flat(s).split(' ').length>2)return true;
  const lp=(Array.isArray(logprobs)?logprobs:[]).map(x=>+x?.logprob).filter(Number.isFinite);
@@ -271,7 +273,7 @@ const talkMarks=(()=>{const seen={},out={};for(const [l,w] of Object.entries(TAL
 const TALK_LETTERS={en:'',nl:'éëïèóáêöç',de:'äöüß',fr:'éèêàâçëïîôûùœÿ',es:'áéíóúñü',it:'àèéìòù',pt:'áâãàçéêíóôõú'};
 function talkForeign(text,languages){const mine=new Set((languages||['en']).map(x=>String(x).slice(0,2))),w=talkWords(text);if(!w.length||w.length>10||talkShort(text))return false;
  const langs=w.map(x=>talkMarks[x]).filter(Boolean);if(langs.some(l=>mine.has(l)))return false;if(langs.length)return true;
- const ok=new Set([...mine].map(l=>TALK_LETTERS[l]||'').join('')),odd=[...String(text).toLowerCase().normalize('NFC')].filter(c=>/\p{L}/u.test(c)&&!/[a-z]/.test(c));
+ const ok=new Set([...mine].map(l=>TALK_LETTERS[l]||'').join('')),odd=[...String(text).toLowerCase().normalize('NFC')].filter(c=>/\p{L}/u.test(c)&&!/[a-z]/.test(c)&&!(/\P{Script=Latin}/u.test(c)&&talkOwnScript(c,languages)));
  return w.length<=4&&odd.some(c=>!ok.has(c))}
 // What one side said goes into the chat as an ordinary message (and is kept by the Machine, talk_line)
 const talkNoDash=text=>String(text||'').replace(/\s*\u2014\s*|\s+\u2013\s+/g,', ').replace(/,\s*([.,!?])/g,'$1').replace(/^,\s*/,'');

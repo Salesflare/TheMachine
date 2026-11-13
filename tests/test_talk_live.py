@@ -452,9 +452,10 @@ class Tools(unittest.TestCase):
         self.assertIn('don’t repeat it', t.DONE_NOTE)
 
     def test_the_owner_is_heard_in_their_own_languages(self):
-        self.assertEqual(t.spoken('en', '', 'en-BE', ['en-US', 'nl-BE', 'nl', 'ko']), ['en', 'nl'])
+        self.assertEqual(t.spoken('en', '', 'en-BE', ['en-US', 'nl-BE', 'nl', 'tr']), ['en', 'nl'])
         self.assertEqual(t.spoken('pt-BR', None, None, []), ['pt'])
-        self.assertEqual(t.spoken(None, '', None, ['ko-KR', 'th']), ['en'])   # nothing the app speaks: English
+        self.assertEqual(t.spoken('ru', '', None, ['ja-JP', 'ko']), ['ru', 'ja', 'ko'])
+        self.assertEqual(t.spoken(None, '', None, ['tr-TR', 'th']), ['en'])   # nothing the app speaks: English
         self.assertEqual(len(t.spoken('en', 'nl', 'fr-BE', ['de', 'es'])), 3)
         one = t.transcription(['nl'])
         self.assertEqual((one['model'], one['language']), ('gpt-4o-transcribe', 'nl'))   # one language: pinned
