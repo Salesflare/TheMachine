@@ -116,7 +116,7 @@ Sopra la bozza, una riga discreta indica il messaggio da cui viene, con il logo 
 
 Quando la bozza segue l'indicazione di qualcun altro in un altro messaggio, come il suggerimento di un collega su Slack, una riga sotto l'attività lo dice, come "Secondo Sam in #ops". Toccala per leggere quel messaggio qui, con Apri in Slack o Gmail all'interno. Se quel messaggio è la fonte dell'attività stessa, la riga della fonte lo mostra già e non c'è una seconda riga.
 
-Una chat (Slack, WhatsApp, Telegram, Intercom…) si legge come un'unica conversazione, dal più vecchio, ogni messaggio una volta; il messaggio di cui parla l'attività ha una linea sottile accanto.
+Una chat (Slack, WhatsApp, Telegram, Intercom…) si legge come un'unica conversazione, dal più vecchio, ogni messaggio una volta; il messaggio di cui parla l'attività è sotto "Questa attività". In WhatsApp, Telegram o Signal i tuoi messaggi stanno a destra, come nell'app.
 
 Una risposta in un thread di Slack mostra anche cosa è stato detto prima del thread. Un link dell'attività al suo messaggio lo apre anche qui, con **Apri in Slack** in fondo.
 

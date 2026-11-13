@@ -142,7 +142,7 @@ APP = 'GitHub'                 # "Open in GitHub"; '' for "Open original"; or {'
 ```
 
 - **email**: mail. The subject is the title; the sender by name with the address quiet, To and Cc as their own lines, Details for the full addresses. A body that starts with `From:`/`To:` lines has them moved to the header.
-- **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one.
+- **chat**: a conversation. Turns by who said them, the owner's side (and a support team's) on the right, a bot marked as one. A messenger kind in `THREAD_IM` (dashboard/events-message.js) reads like its app, bubbles with their times; list it in `MEDIA_KINDS` and set `media_type` in metadata, and `media_shown` turns a caption-less "Sent image" into a chip.
 - **notification**: a phone notification or alert. The app, the time, its title and text, once each.
 - **card**: an item with a state (an issue, a task, a deal, a payment, a doc comment, meeting notes). Its title, where it is, a state, who made it, why it reached the owner, the text rendered.
 

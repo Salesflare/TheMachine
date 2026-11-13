@@ -84,8 +84,10 @@ try{
   if(width===390){await dialog.evaluate(d=>d.scrollTop=0);await shot('slack-earlier')}
   // WhatsApp group: the chat's run before the to-do's message and the reply after it, nothing from another account
   await open('whatsapp');await shot('whatsapp');
-  assert.equal(await box.locator('.convo-chat').innerText(),'Garden club');
-  assert.equal(await box.locator('.convo-say').count(),5);assert.equal(await box.locator('.convo-main').innerText(),'I can pick it up Friday evening');
+  assert.equal(await box.locator('.convo-chat span[translate]').innerText(),'Garden club');
+  assert.equal(await box.locator('.convo-say').count(),5);assert.equal(await box.locator('.convo-main .convo-said').innerText(),'I can pick it up Friday evening');
+  // the conversation's line stays in view while the thread scrolls
+  assert.equal(await box.locator('.convo-chat').evaluate(n=>getComputedStyle(n).position),'sticky');
   assert.doesNotMatch(await box.innerText(),/Work chat/);assert.equal(await box.locator('[data-convo-earlier]').count(),0);
   // Email thread: the two earlier emails folded above, the to-do's own open and marked, the reply folded below
   await open('email');await box.locator('.email-text').waitFor();await shot('email');

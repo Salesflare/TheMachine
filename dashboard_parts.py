@@ -44,7 +44,7 @@ LAZY = {
     'compose': ('todos-send.js', 'todos-compose.js'),
     'signin': ('connections-signin-dialog.js',),
     'emailframe': ('events-email-frame.js',),
-    'msgview': ('events-message.js',),
+    'msgview': ('events-message.css', 'events-message.js'),
     'voice': ('todos-chat-voice-rec.js',),
     'ask': ('todos-ask.js',),
     'calendar': ('calendar-view.css', 'calendar-view.js'),

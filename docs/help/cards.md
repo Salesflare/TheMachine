@@ -116,7 +116,7 @@ Above the draft, one faint line names the message it came from, with that servic
 
 When the draft follows someone's input elsewhere, like a teammate's suggestion in Slack, a line says so, like "Based on Sam in #ops". Tap it to read that message.
 
-A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. That message has a thin line beside it and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
+A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. In WhatsApp, Telegram or Signal your messages sit on the right, as in the app. The to-do's message is marked "This to-do" and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
 
 A reply in a Slack thread also shows what was said before the thread started. A to-do's link to its own message opens it here too, with **Open in Slack** at the bottom.
 
