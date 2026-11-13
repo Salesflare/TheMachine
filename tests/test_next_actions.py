@@ -464,8 +464,29 @@ class ThreadSnoozes(unittest.TestCase):
         with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='snoozed',until='2000-01-01T00:00:00+00:00',error=NULL")
         class Down:
             def wake(self,*_):raise RuntimeError('down')
-        self.app().thread_snooze_step(Down())
+        with self.assertLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Down())
         row=self.snoozes()[0];self.assertEqual(row['status'],'snoozed');self.assertIsNotNone(row['retry_at'])
+
+    def test_outlook_down_for_a_moment_retries_without_an_error_report(self):
+        # Graph answered 502 while a snoozed thread was due back: retried later, a warning, not a bug in the error reports.
+        import urllib.error
+        self.ready(**self.reply);self.confirm();self.app().action_step(self.transport())
+        with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='snoozed',until='2000-01-01T00:00:00+00:00'")
+        def bad_gateway(*_,**__):
+            try:raise urllib.error.HTTPError('https://graph.microsoft.com/v1.0/me/mailFolders',502,'Bad Gateway',{},None)
+            except urllib.error.HTTPError as error:raise n.ms_graph.GraphError('outlook',502) from error
+        class Outlook:
+            def wake(self,*_):return n.OutlookSnooze({},None).folder({'id':'work'})
+        with patch.object(n.ms_graph,'call',bad_gateway),self.assertNoLogs(a.LOG,'ERROR'),self.assertLogs(a.LOG,'WARNING'):
+            self.app().thread_snooze_step(Outlook())
+        row=self.snoozes()[0]
+        self.assertEqual((row['status'],row['attempts'],row['error']),('snoozed',1,'RuntimeError'));self.assertIsNotNone(row['retry_at'])
+        # A snooze still failing after its last try gave up: that one is an error.
+        with self.store.connect() as db:db.execute("UPDATE thread_snoozes SET status='queued',attempts=11,retry_at=NULL,until='2999-01-01T00:00:00+00:00'")
+        class Snooze:
+            def snooze(self,*_):return n.OutlookSnooze({},None).folder({'id':'work'})
+        with patch.object(n.ms_graph,'call',bad_gateway),self.assertLogs(a.LOG,'ERROR'):self.app().thread_snooze_step(Snooze())
+        self.assertEqual(self.snoozes()[0]['status'],'failed')
 
     def test_gmail_wake_respects_a_reply_or_owner_move(self):
         config={'accounts':[{'id':'work','email':'owner@example.com','client':'existing'}],'gog':'gog'}

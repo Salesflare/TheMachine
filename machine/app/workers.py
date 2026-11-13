@@ -18,7 +18,7 @@ import help_topics
 import linkedin_connections
 from machine.app import reconnect_asks
 from machine.config import LOG
-from machine.faults import restart_self
+from machine.faults import fault_origin, restart_self
 from machine.sources.calendar import calendar_owned
 from machine.sources.exclusions import default_exclusions
 from machine.sources.telegram import telegram_photo_asker
@@ -443,11 +443,15 @@ class WorkersApp:
         except Exception as error:
             # Retry with backoff; a thread that can't come back stays labeled in Gmail.
             attempts=row['attempts']+1
+            status=row['status'] if attempts<12 or row['status']=='snoozed' else 'failed'
             with self.store.connect() as db:
                 db.execute('UPDATE thread_snoozes SET attempts=?,error=?,retry_at=?,status=?,updated_at=? WHERE job_id=?',
                            (attempts,type(error).__name__,(dt.datetime.fromisoformat(now())+dt.timedelta(minutes=min(5*2**attempts,360))).isoformat(),
-                            row['status'] if attempts<12 or row['status']=='snoozed' else 'failed',now(),row['job_id']))
-            LOG.error('thread snooze status=%s error=%s',row['status'],type(error).__name__)
+                            status,now(),row['job_id']))
+            # Outlook or Gmail failing for a moment (a 5xx, a timeout) is retried here, not a bug in this code: a warning,
+            # like a sync's, so it doesn't reach the error reports. Our own errors, and a snooze that gave up, stay errors.
+            outside=fault_origin(error) and status!='failed'
+            (LOG.warning if outside else LOG.error)('thread snooze status=%s error=%s',row['status'],type(error).__name__)
 
     def follow_config(self):
         """Settings in LIVE_CONFIG that changed in config.json since the last look (the hosting agent's reviews on, while
