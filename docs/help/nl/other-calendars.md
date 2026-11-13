@@ -15,12 +15,12 @@ Het leest alleen: het voegt nooit een afspraak toe, verplaatst er geen en verwij
 ## iCloud-agenda koppelen
 
 1. Maak een app-specifiek wachtwoord aan op [appleid.apple.com](https://appleid.apple.com), onder **Inloggen en beveiliging**. Dat van iCloud Mail werkt ook.
-2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies **iCloud-agenda**.
+2. Open in het dashboard **Koppelingen**, dan **Agenda**, en kies **iCloud-agenda**.
 3. Vul je Apple ID en het app-specifieke wachtwoord in en druk op **Verbinden**.
 
 ## Een andere agenda koppelen
 
-1. Open **Koppelingen**, dan **+ Toevoegen**, en kies **Andere agenda**.
+1. Open **Koppelingen**, dan **Agenda**, en kies **Andere agenda**.
 2. Vul je e-mailadres en wachtwoord in. Veel providers willen hier een app-wachtwoord, dat je aanmaakt in je accountinstellingen.
 3. Druk op **Verbinden**.
 

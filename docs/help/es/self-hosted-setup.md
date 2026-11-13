@@ -30,7 +30,7 @@ El instalador encuentra tus cuentas, las conecta una a una y muestra una vista p
 
 - Conecta tu correo: arriba en **Tareas**, pulsa **Gmail** (o **Outlook**) y luego **Vincular esta Machine** para vincularla con tu cuenta. Sin cuenta, **Usar tu propia app** está justo debajo.
 - Luego pulsa **Iniciar sesión con Google** (o **Iniciar sesión con Microsoft** para Outlook). El correo y el calendario se conectan juntos.
-- Otras fuentes: **Conexiones** y luego **+ Añadir**. Tu propio cliente de Google o app de Entra: `assistant connect` en una terminal.
+- Otras fuentes: **Conexiones** y luego el tipo de fuente. Tu propio cliente de Google o app de Entra: `assistant connect` en una terminal.
 - Revísalo todo con `assistant doctor`. Muestra una solución para cada problema.
 - El instalador toma la versión firmada más reciente, y las actualizaciones también llegan como versiones firmadas.
 - Vinculada a The Machine Network, tu Machine comparte su dirección de Tailscale con tu cuenta, para que la app del teléfono la abra después de iniciar sesión. Al desvincularla, se borra.

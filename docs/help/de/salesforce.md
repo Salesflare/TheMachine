@@ -24,7 +24,7 @@ Auf einer gehosteten Machine:
 2. Öffne Salesforce und tippe auf **Salesforce verbinden**.
 3. Melde dich bei Salesforce an und erlaube The Machine. Es kommt von Salesflare.
 
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Salesforce und tippe auf **Mit Salesforce anmelden**.
+Oder im Dashboard: **Verbindungen**, **Kunden**, wähle Salesforce und tippe auf **Mit Salesforce anmelden**.
 
 Dein Salesforce-Benutzer braucht API-Zugriff, den die meisten Editionen haben.
 

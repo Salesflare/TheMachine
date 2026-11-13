@@ -20,7 +20,7 @@ A direct message to one person, as you, and only after you approve it on the to-
 
 ## Connect it
 
-1. **Connections**, **+ Add**, **Slack**, then **Sign in with Slack**, and allow it in Slack. On your own computer, pair it with your account on themachine.computer first.
+1. **Connections**, **Chat**, **Slack**, then **Sign in with Slack**, and allow it in Slack. On your own computer, pair it with your account on themachine.computer first.
 2. New messages and direct messages come in first. Slack lets apps read about one conversation a minute, so older messages fill in over a few hours.
 
 Or use a Maton API key: sign in at maton.ai, connect Slack there and copy your Maton API key from Home. Then open **Or use a Maton API key** under Slack and paste it, or run `assistant connect slack` on your own computer. A Slack connected through Maton keeps working as it is.

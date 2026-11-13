@@ -31,11 +31,11 @@ Auf einer gehosteten Machine:
 
 Mit Google registriert und auf diesem Bildschirm Gmail und Kalender erlaubt? Dann werden sie von selbst verbunden. Gesendet wird nur, wenn du auf Senden tippst.
 
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
+Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Gmail und tippe auf **Mit Google anmelden**. Danach bist du zurück im Dashboard.
 
 Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Gmail.
+1. Öffne im Dashboard **Verbindungen**, dann **E-Mail**, und wähle Gmail.
 2. Tippe auf **Mit Google anmelden** und melde dich in dem Tab an, der sich öffnet. Gmail und Google Calendar werden zusammen verbunden.
 
 Nicht gekoppelt, oder mit deinem eigenen Google-OAuth-Client: Öffne dort **Eigene App nutzen** oder führe `assistant connect gmail` aus. Drücke **Google öffnen**, melde dich an und füge dann die Adresse ein, zu der Google dich schickt. Google Calendar für dieselbe Adresse kommt mit.

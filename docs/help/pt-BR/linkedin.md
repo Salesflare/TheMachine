@@ -34,7 +34,7 @@ Em uma Machine hospedada:
 No seu próprio computador:
 
 1. Entre no LinkedIn uma vez no navegador da sua Machine (Configurações, **Abrir o navegador da Machine ↗**).
-2. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha LinkedIn. Ou rode `assistant connect linkedin`.
+2. No painel, abra **Conexões**, depois **Chat**, e escolha LinkedIn. Ou rode `assistant connect linkedin`.
 
 Uma segunda conta do LinkedIn ganha um navegador próprio. Se o LinkedIn desconectar sua Machine, veja [Desconectado de um site](signed-out.md).
 

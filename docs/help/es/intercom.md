@@ -28,7 +28,7 @@ Tu propio Intercom y uno compartido contigo del mismo workspace no leen los dos:
 
 ## Conéctalo
 
-1. En el panel: **Conexiones**, **+ Añadir**, Intercom. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Intercom. En tu propio ordenador, vincúlalo primero a tu cuenta.
+1. En el panel: **Conexiones**, **Clientes**, Intercom. O en la página de configuración de una Machine alojada, en app.themachine.computer/setup: **Más fuentes**, Intercom. En tu propio ordenador, vincúlalo primero a tu cuenta.
 2. Pulsa **Iniciar sesión con Intercom**.
 3. Aprueba The Machine en Intercom. La hace Salesflare. Cuando termines, vuelves a donde empezaste.
 

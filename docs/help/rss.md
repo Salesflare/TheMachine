@@ -17,7 +17,7 @@ Nothing. It only reads the feed.
 
 RSS works on a Machine on your own computer only.
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick RSS feed. Or run `assistant connect rss`.
+1. In the dashboard, open **Connections**, then **Other**, and pick RSS feed. Or run `assistant connect rss`.
 2. Paste the feed's address.
 
 ## Remove it

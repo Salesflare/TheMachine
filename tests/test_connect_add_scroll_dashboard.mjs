@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, scrolled far down the grid of sources: a tile's own view (a sign-in, a form, a run) is much
+// Connections, a kind (here Other: the fixture gives no groups), scrolled far down its sources: a tile's own view (a sign-in, a form, a run) is much
 // shorter than the grid. It starts at its top, just under the top bar, with focus on it; the page never stays down where
 // the grid was (only the footer showing). Back returns to the grid where it was, on the tile it left from.
 // SHOTS=<folder> saves screenshots of the grid scrolled down and of each view right after the tap.
@@ -38,7 +38,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}x${height}-${scheme}`;
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="google_meet"]').waitFor();
   for(const [name,sel,heading] of [['google-meet','[data-connect-signin="google_meet"]','Google Meet'],['trello','[data-connect-signin="trello"]','Trello'],['shortcut','[data-connect="shortcut"]','Shortcut']]){
    // Far down the grid, the tile near the bottom of the screen

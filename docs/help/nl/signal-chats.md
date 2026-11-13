@@ -22,7 +22,7 @@ Kwam een to-do binnen per e-mail maar praat je met die persoon op Signal, zeg he
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Signal-chats.
+1. Open in het dashboard **Koppelingen**, dan **Chat**, en kies Signal-chats.
 2. Open op je telefoon in Signal Instellingen, **Gekoppelde apparaten**, **Nieuw apparaat koppelen**, en scan de code.
 
 Je hebt een tweede scherm nodig om van te scannen: Signal koppelt een apparaat alleen met een QR-code. Of voer `assistant connect signal` uit in een terminal en scan de code die daar verschijnt.

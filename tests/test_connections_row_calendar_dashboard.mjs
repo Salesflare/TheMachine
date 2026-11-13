@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections on a hosted Machine. The row under the cards: Connect Google, Connect Microsoft, Connect other email and Add another source are
+// Connections on a hosted Machine, a kind open (the fixture's cards have no group: Other). The row under the cards: Connect Google, Connect Microsoft, Connect other email and Add another source are
 // whole pills (never split over two lines) and the ask for a missing source is its own line under them. A calendar's
 // card counts events (kept, next 7 days, last 24h), never messages or "not checked".
 // SHOTS=<folder> saves each width and theme.
@@ -29,8 +29,8 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}-${scheme}`;
-  await page.goto(base+'/#connections');
-  await page.locator('#connect-more a.manage').first().waitFor();await page.waitForTimeout(300);
+  await page.goto(base+'/#connections=other');
+  await page.locator('#connect-more a.manage').first().waitFor();await page.evaluate(()=>{for(const a of document.querySelectorAll('#connectors>article:not([hidden])'))cardShow(a.dataset.conn)});await page.waitForTimeout(300);
   const row=await page.evaluate(()=>{const more=document.querySelector('#connect-more');
    const pills=[...more.querySelectorAll('a.manage')].map(a=>({text:a.textContent,lines:a.getClientRects().length,h:a.getBoundingClientRect().height,bottom:a.getBoundingClientRect().bottom,right:a.getBoundingClientRect().right}));
    const ask=more.querySelector('.connect-ask'),r=ask?.getBoundingClientRect();

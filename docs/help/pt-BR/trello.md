@@ -16,7 +16,7 @@ Nada no Trello. Ela só lê.
 
 ## Conecte
 
-1. No painel: **Conexões**, **+ Adicionar**, Trello. Ou na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Trello. No seu próprio computador, pareie-o primeiro com sua conta.
+1. No painel: **Conexões**, **Projetos e código**, Trello. Ou na página de configuração de uma Machine hospedada, em app.themachine.computer/setup: **Mais fontes**, Trello. No seu próprio computador, pareie-o primeiro com sua conta.
 2. Clique em **Entrar com o Trello** e permita o acesso de leitura no Trello. The Machine é feita pela Salesflare.
 3. Escolha o quadro a seguir e clique em **Conectar**. Para outro quadro, adicione o Trello de novo.
 

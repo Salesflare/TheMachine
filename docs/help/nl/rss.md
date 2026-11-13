@@ -17,7 +17,7 @@ Niets. Het haalt alleen de feed op.
 
 RSS is voor een Machine op je eigen computer; de setuppagina's voor gehoste Machines bieden het niet aan.
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies RSS-feed. Of voer `assistant connect rss` uit.
+1. Open in het dashboard **Koppelingen**, dan **Andere**, en kies RSS-feed. Of voer `assistant connect rss` uit.
 2. Plak het adres van de feed.
 
 ## Verwijderen

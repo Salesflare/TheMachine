@@ -31,7 +31,7 @@ It never asks for your Drive. Your Gmail and Calendar access stay as they are.
 
 It doesn't need Gmail connected. To connect it:
 
-- Hosted Machine: in the dashboard, open **Connections**, **+ Add**, pick **Google Meet** and press **Sign in with Google**. Give the OK above, and you're back in the dashboard.
+- Hosted Machine: in the dashboard, open **Connections**, **Meetings**, pick **Google Meet** and press **Sign in with Google**. Give the OK above, and you're back in the dashboard.
 - Your own computer, paired with your account: the same steps. The sign-in opens in a new tab.
 
 Without the Meet OK it isn't added. There is nothing to paste or renew.

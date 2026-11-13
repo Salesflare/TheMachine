@@ -51,7 +51,7 @@ try{
   assert.equal(await page.locator('#email-dialog').evaluate(d=>d.open),true);
   await page.keyboard.press('Escape');
   // The connection: Read photos off by default; on, then Also in personal chats
-  await page.evaluate(()=>{location.hash='#connections'});await page.locator('[data-health-pane="chat"]').first().click().catch(()=>{});
+  await page.evaluate(()=>{location.hash='#connections'});await page.waitForFunction(()=>typeof cardShow==='function');await page.evaluate(()=>cardShow('home-whatsapp'));  // its kind, its card open
   const details=page.locator('#sync-details-home-whatsapp');await details.waitFor({state:'attached'});
   assert.equal(await details.locator('[data-wa-photos]').count(),1);  // under Details, out of the card body
   await details.locator('summary').click();const read=details.locator('[data-wa-photos="home-whatsapp"][data-field="read"]');await read.waitFor();

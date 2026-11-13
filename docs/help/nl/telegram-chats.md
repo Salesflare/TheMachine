@@ -23,7 +23,7 @@ Kwam een to-do binnen via e-mail maar praat je met die persoon op Telegram, zeg 
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Telegram-chats.
+1. Open in het dashboard **Koppelingen**, dan **Chat**, en kies Telegram-chats.
 2. Kies **Scan een QR-code in Telegram op je telefoon**.
 3. Open op je telefoon in Telegram Instellingen, Apparaten, **Link Desktop Device**, en scan de code.
 4. Heeft je account een cloudwachtwoord, typ het dan als erom gevraagd wordt. Het gaat naar Telegram en wordt nooit bewaard.

@@ -31,7 +31,7 @@ Nunca pide tu Drive. Tu acceso a Gmail y Calendar sigue igual.
 
 No necesita Gmail conectado. Para conectarlo:
 
-- Machine alojada: en el panel, abre **Conexiones**, **+ Añadir**, elige **Google Meet** y pulsa **Iniciar sesión con Google**. Google pide el OK de arriba y luego vuelves al panel.
+- Machine alojada: en el panel, abre **Conexiones**, **Reuniones**, elige **Google Meet** y pulsa **Iniciar sesión con Google**. Google pide el OK de arriba y luego vuelves al panel.
 - Tu propio ordenador, vinculado a tu cuenta: los mismos pasos. El inicio de sesión se abre en una pestaña nueva.
 
 Comprueba que el inicio de sesión puede leer Meet. Sin ese OK no se añade. El inicio de sesión sigue funcionando: no hay nada que pegar ni renovar.

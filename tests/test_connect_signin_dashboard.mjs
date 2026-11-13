@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add on a self-hosted Machine: Intercom signs in through The Machine's own app once this Machine is
+// Connections on a self-hosted Machine (the fixture gives no groups: every source is under Other): Intercom signs in through The Machine's own app once this Machine is
 // paired (a one-time start link in a new tab, then its row follows how it goes); not paired, it says pair first.
 // Intercom and Trello sign in only: no token to paste. Google, Microsoft and Zoom the same way, with their own app folded away (Use your
 // own app). One the control plane has no app for (Stripe here) shows the other way at once, and one it refuses anyway
@@ -50,7 +50,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}x${height}-${scheme}`;
   paired=true;state='started';calls=[];
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="intercom"]').click();
   const go=page.getByRole('button',{name:'Sign in with Intercom'});
   await go.waitFor();
@@ -72,7 +72,7 @@ try{
   await shot(page,`add-intercom-connected-${tag}`);
   // Trello: the same, read only, the board picked after signing in
   state='started';
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="trello"]').click();
   const trello=page.getByRole('button',{name:'Sign in with Trello'});
   await trello.waitFor();
@@ -89,7 +89,7 @@ try{
   await shot(page,`add-trello-connected-${tag}`);await pageShot(page,`page-trello-connected-${tag}`);
   // Not paired: pair first, on the account page; no token to paste instead
   paired=false;
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="intercom"]').click();
   // one click (pairing.py): the account's pair page in a new tab, then this Machine pairs by itself and Sign in shows
   const pair=page.getByRole('button',{name:'Pair this Machine'});
@@ -105,7 +105,7 @@ try{
   await page.getByRole('button',{name:'Sign in with Intercom'}).waitFor({timeout:8000});
   // Google not paired: why pairing, and its own app right below as the other way (agent users' newcomer, 2026-11-08)
   paired=false;
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="gmail"]').click();
   await page.getByRole('button',{name:'Pair this Machine'}).waitFor();
   assert.match(await page.locator('#connect-add').innerText(),/Sign in with Google goes through your account on themachine\.computer\. Pair this Machine with it once, or use your own app below\./);
@@ -114,7 +114,7 @@ try{
   await shot(page,`add-google-not-paired-${tag}`);
   // Google: Gmail and Calendar in one sign-in, with its own app folded away
   paired=true;state='started';
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="gmail"]').click();
   const google=page.getByRole('button',{name:'Sign in with Google'});
   await google.waitFor();
@@ -132,14 +132,14 @@ try{
   await page.getByText('Connected to dee@acme.example.').waitFor({timeout:8000});
   assert.doesNotMatch(await page.locator('#connect-add').innerText(),/Replies go as you/);
   await shot(page,`add-google-connected-${tag}`);
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="zoom"]').click();
   await page.getByRole('button',{name:'Sign in with Zoom'}).waitFor();
   assert.match(await page.locator('#connect-add').innerText(),/Reads only\./);
   await page.locator('#connect-add details.connect-other summary').click();
   await shot(page,`add-zoom-own-app-${tag}`);
   // Microsoft OneDrive on a Microsoft address, Outlook or not: its own consent, signed in with Microsoft through The Machine's app; no own app to fold away
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="docs"]').click();
   await page.getByRole('button',{name:'Sign in with Microsoft'}).waitFor();
   assert.equal(await page.locator('#connect-add h3').innerText(),'Microsoft OneDrive');
@@ -147,7 +147,7 @@ try{
   assert.equal(await page.locator('#connect-add details.connect-other').count(),0);
   // Stripe, which the control plane has no app for: no Sign in button, pasting a restricted key open at once
   let opened=0;context.on('page',()=>opened++);
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="stripe"]').click();
   await page.getByText('Sign in with Stripe isn’t available yet. Paste a restricted key instead.').waitFor();
   assert.equal(await page.getByRole('button',{name:'Sign in with Stripe'}).count(),0);
@@ -157,7 +157,7 @@ try{
   await shot(page,`add-stripe-unavailable-${tag}`);await pageShot(page,`page-stripe-unavailable-${tag}`);
   // Intercom refused anyway (the list was not known): no tab opens or closes; the line, and Back
   refuse=true;calls=[];
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="intercom"]').click();
   await page.getByRole('button',{name:'Sign in with Intercom'}).click();
   await page.getByText('Sign in with Intercom isn’t available yet.').waitFor();
@@ -169,7 +169,7 @@ try{
   assert.ok(await page.locator('#connect-add').getByRole('button',{name:'Back'}).isVisible());
   await shot(page,`add-intercom-refused-${tag}`);await pageShot(page,`page-intercom-refused-${tag}`);
   refuse=false;
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await shot(page,`add-list-${tag}`);
   await context.close();
  }

@@ -8,7 +8,7 @@ order: 1
 ---
 ## Wie es ihnen geht
 
-Der Tab **Verbindungen** gruppiert deine Quellen in **E-Mail**, **Kalender**, **Chat** und **Andere Quellen**. Jede zeigt, wie es ihr geht: Verbunden, Wartet auf die erste Synchronisierung, Verbindet sich automatisch neu oder Braucht deine Hilfe. Öffne **Details** für **Letzte Syncs**, wo ihre Synchronisierung in einfachen Worten steht (etwa „Auf dem neuesten Stand“ oder „Erstes Lesen“), und was zu tun ist.
+Der Tab **Verbindungen** listet deine Quellen nach Art (**E-Mail**, **Kalender**, **Chat** und mehr), unter einer Linie **Anmeldungen** und **Prüfungen**. Auf dem Handy öffnet ein Tipp eine Art, **Verbindungen** führt zurück. Jede Quelle ist eine Zeile; ein Tipp öffnet ihre Karte. Jede zeigt, wie es ihr geht: Verbunden, Wartet auf die erste Synchronisierung, Verbindet sich automatisch neu oder Braucht deine Hilfe. Öffne **Details** für **Letzte Syncs**, wo ihre Synchronisierung in einfachen Worten steht (etwa „Auf dem neuesten Stand“ oder „Erstes Lesen“), und was zu tun ist.
 
 Ein fehlgeschlagener Sync, den ein späterer ausgeglichen hat, steht in Grau; nur ein Fehler, der noch der letzte ist, steht als Problem da, mit dem Zeitpunkt des nächsten Versuchs.
 
@@ -20,7 +20,7 @@ Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn s
 
 ## Eine hinzufügen
 
-Öffne **+ Hinzufügen** und wähle eine Quelle. Sie zeigt ein kurzes Formular, wie auf deiner Einrichtungsseite: was sie braucht (einen Schlüssel, eine Adresse), und **Arbeit** mit ihrer Firma oder **Privat**. Tippe auf **Verbinden**. Eine Quelle mit Anmeldung, etwa LinkedIn oder X, öffnet ihre Anmeldung auf deiner Machine und macht von selbst weiter, sobald du drin bist. GitHub, WhatsApp und Codex zeigen einen Code zum Eingeben, und Telegram-Chats einen QR-Code zum Scannen.
+Öffne ihre Art und wähle eine Quelle unter **Weitere hinzufügen**, oder unter der Liste, wenn noch keine verbunden ist. Sie zeigt ein kurzes Formular, wie auf deiner Einrichtungsseite: was sie braucht (einen Schlüssel, eine Adresse), und **Arbeit** mit ihrer Firma oder **Privat**. Tippe auf **Verbinden**. Eine Quelle mit Anmeldung, etwa LinkedIn oder X, öffnet ihre Anmeldung auf deiner Machine und macht von selbst weiter, sobald du drin bist. GitHub, WhatsApp und Codex zeigen einen Code zum Eingeben, und Telegram-Chats einen QR-Code zum Scannen.
 
 Die Liste ist gruppiert (**E-Mail**, **Kalender**, **Chat**, **Meetings**, **Dokumente und Dateien**, **Kunden**, **Projekte und Code**, **Andere**), von A bis Z in jeder Gruppe. Ein Sammeleintrag wie **Andere E-Mail** steht zuletzt in seiner Gruppe.
 

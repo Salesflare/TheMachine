@@ -52,7 +52,7 @@ try{
   // When this times out on CI the first refresh failed to draw; say what the page said, so the next failure names its cause
   const why=async e=>new Error(`${width}: ${e.message}\npage errors: ${JSON.stringify(errors)}\nconsole errors: ${JSON.stringify(logged)}\npage: ${await page.evaluate(()=>JSON.stringify({notice:document.querySelector('#notice')?.textContent,refreshFailed,tab:document.querySelector('main>section:not([hidden])')?.id,healthPane,connectors:document.querySelectorAll('#connectors article').length})).catch(x=>x.message)}`);
   await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article')).catch(async e=>{throw await why(e)});
-  await page.evaluate(()=>showTab('health','other'));
+  await page.evaluate(()=>{showTab('health','other');for(const a of document.querySelectorAll('#connectors>article:not([hidden])'))cardShow(a.dataset.conn)});  // Other, each card open
   const card=page.locator('#connectors article[data-conn="work-crm"]');
   await card.waitFor().catch(async e=>{throw await why(e)});
   assert.equal(await card.locator('.conn-what').innerText(),'Accounts, contacts and deals, so it knows who matters.');

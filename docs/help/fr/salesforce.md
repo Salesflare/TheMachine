@@ -24,7 +24,7 @@ Sur une Machine hébergée :
 2. Ouvrez Salesforce et appuyez sur **Connecter Salesforce**.
 3. Connectez-vous à Salesforce et autorisez The Machine (créée par Salesflare).
 
-Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Salesforce et appuyez sur **Se connecter avec Salesforce**.
+Ou dans le tableau de bord : **Connexions**, **Clients**, choisissez Salesforce et appuyez sur **Se connecter avec Salesforce**.
 
 Votre utilisateur Salesforce a besoin de l’accès API, inclus dans la plupart des éditions.
 

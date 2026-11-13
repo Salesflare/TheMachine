@@ -4,11 +4,11 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, after a source is added (renderConnectRun, connectFollow):
+// Connections, a source added from its kind, after it is added (renderConnectRun, connectFollow):
 // - While it runs, the pane offers Cancel (not Stop, which on a Salesflare card means stop syncing).
 // - Done: the pane says it restarts, waits while the service is away, and once it answers with the new account it moves
-//   to that account's card, marked for a moment; the card says what it does before its first sync. Back on + Add the pane
-//   says the card shows how far it is, with Open its card.
+//   to that account's card, opened and marked for a moment, in place of the setup; the card says what it does before its
+//   first sync.
 // - Details on a card are plain lines, never the raw saved state; Recent syncs and the Details lines read in Dutch.
 // - Work or personal: "Guessed" only for an account The Machine marked as a guess (boundary_by guess), never for one
 //   from before that mark.
@@ -48,7 +48,7 @@ try{
  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
  await page.evaluate(()=>showTab('health'));
  // Details: plain lines, no raw state
- await page.evaluate(()=>showHealthPane('mail'));
+ await page.evaluate(()=>cardShow('work-gmail'));  // its kind, its card open
  const gmail=page.locator('#connectors article[data-conn="work-gmail"]');
  await gmail.locator('details[id^="sync-details"] summary').click();
  const details=await gmail.locator('details[id^="sync-details"]').innerText();
@@ -64,8 +64,8 @@ try{
  assert.doesNotMatch(await page.locator('#connectors article[data-conn="personal-whatsapp"]').innerHTML(),/Guessed/);
  await page.evaluate(()=>showHealthPane('mail'));
  assert.match(await page.locator('#connectors article[data-conn="home-cal"]').innerHTML(),/Guessed\. Pick one to be sure\./);
- // + Add Salesflare: Cancel while running, then the restart, then its card
- await page.evaluate(()=>showHealthPane('add'));
+ // Salesflare from its kind (Other: the fixture's source has no group): Cancel while running, then the restart, then its card
+ await page.evaluate(()=>showHealthPane('other'));
  await page.locator('#connect-add [data-connect="salesflare"]').click();
  await page.locator('#connect-add [data-connect-stop]').waitFor();
  assert.equal(await page.locator('#connect-add [data-connect-stop]').innerText(),'Cancel');
@@ -78,13 +78,11 @@ try{
  assert.equal(await card.locator('.sf-line').innerText(),'Finding the accounts with recent emails and meetings…');
  await card.locator('details[id^="sync-details"] summary').click();
  assert.match(await card.locator('details[id^="sync-details"]').innerText(),/Waiting for the first sync\. It starts within a few minutes\./);
- await page.evaluate(()=>showHealthPane('add'));
- assert.match(await page.locator('#connect-add .sent-ok').innerText(),/^Connected\. Running again\. Its card shows how far it is\.$/);
- await page.locator('#connect-add [data-connect-card]').click();
- assert.equal(await page.evaluate(()=>healthPane),'other');
+ assert.equal(await card.locator('.conn-body').isVisible(),true,'its card opens');
+ assert.equal(await page.locator('#connect-add').getAttribute('data-view'),'grid','the setup gives way to the card');
  // Dutch: Recent syncs and Details lines
  language='nl';await page.reload();await page.waitForFunction(()=>document.documentElement.lang==='nl'&&document.querySelector('#connectors article'));
- await page.evaluate(()=>{showTab('health');showHealthPane('mail')});
+ await page.evaluate(()=>{showTab('health');cardShow('work-gmail')});
  for(const id of ['sync-recent-work-gmail','sync-details-work-gmail'])await page.locator('#'+id+' summary').click();
  const dutch=await page.locator('#connectors article[data-conn="work-gmail"] .conn-more').innerText();
  for(const en of ['Synced, 3 new or changed','failed sync in the last 24 hours','Caught up','Last failure'])assert.ok(!dutch.includes(en),`${en} reads in Dutch: ${dutch}`);

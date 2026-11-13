@@ -34,7 +34,7 @@ Sur une Machine hébergée :
 Sur votre propre ordinateur :
 
 1. Connectez-vous une fois à LinkedIn dans le navigateur de votre Machine (Paramètres, **Ouvrir le navigateur de la Machine ↗**).
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez LinkedIn. Ou lancez `assistant connect linkedin`.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez LinkedIn. Ou lancez `assistant connect linkedin`.
 
 Un deuxième compte LinkedIn a son propre navigateur. Si LinkedIn déconnecte votre Machine, voir [Déconnecté d’un site](signed-out.md).
 

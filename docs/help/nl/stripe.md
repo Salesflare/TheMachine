@@ -18,7 +18,7 @@ Niets in Stripe. Het schrijft nooit iets, betaalt nooit terug en probeert nooit 
 
 Inloggen met Stripe, de makkelijke manier:
 
-1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Stripe. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Stripe. Op je eigen computer koppel je hem eerst aan je account.
+1. In het dashboard: **Koppelingen**, **Klanten**, Stripe. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Stripe. Op je eigen computer koppel je hem eerst aan je account.
 2. Druk op **Inloggen met Stripe**. Stripe vraagt welk account, en toont wat The Machine mag lezen.
 3. Druk op **Installeren**. Je bent terug waar je begon, en Stripe is gekoppeld.
 

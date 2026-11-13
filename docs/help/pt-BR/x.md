@@ -26,7 +26,7 @@ Em uma Machine hospedada:
 No seu próprio computador:
 
 1. Entre no X uma vez no navegador da sua Machine (Configurações, **Abrir o navegador da Machine ↗**).
-2. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha X. Ou execute `assistant connect x`.
+2. No painel, abra **Conexões**, depois **Chat**, e escolha X. Ou execute `assistant connect x`.
 3. Digite seu nome de usuário e o nome de usuário com que o navegador costuma estar conectado.
 
 Se o X desconectar sua Machine, veja [Desconectado de um site](signed-out.md).

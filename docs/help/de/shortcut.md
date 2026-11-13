@@ -16,7 +16,7 @@ Nichts in Shortcut. Es liest nur, obwohl Shortcut-Tokens mehr könnten.
 
 ## Verbinden
 
-1. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen** und öffne Shortcut. Auf deinem eigenen Computer: **Verbindungen**, **+ Hinzufügen**, Shortcut, oder `assistant connect shortcut`.
+1. Auf einer gehosteten Machine: Öffne deine Einrichtungsseite unter app.themachine.computer/setup, geh zu **Weitere Quellen** und öffne Shortcut. Auf deinem eigenen Computer: **Verbindungen**, **Projekte und Code**, Shortcut, oder `assistant connect shortcut`.
 2. Tippe auf **Token holen**. Shortcut öffnet seine Seite API Tokens in einem neuen Tab: Erstelle ein Token und kopiere es.
 3. Füge es ein und tippe auf **Verbinden**. Das Token wird sofort geprüft, und du siehst, als wer und in welchem Workspace es verbunden ist.
 

@@ -62,7 +62,7 @@ Already use OpenClaw's Windows Hub with its own `OpenClawGateway` distro? It ins
 ### Sign in with Google (the short way)
 
 1. Open the dashboard at the address the installer prints ([step 3](#3-open-the-dashboard)).
-2. **Connections**, **+ Add**, pick Gmail and press **Pair this Machine**. Your account page opens; sign in there (or make an account) and confirm the code it shows. Nothing to copy, no restart.
+2. **Connections**, **Email**, pick Gmail and press **Pair this Machine**. Your account page opens; sign in there (or make an account) and confirm the code it shows. Nothing to copy, no restart.
 3. Back in the dashboard, press **Sign in with Google** and sign in in the tab that opens. Gmail and Google Calendar connect together. It asks Google for sending too, and sends an email only after you approve it. Outlook works the same with **Sign in with Microsoft**.
 
 Pairing also gives the Machine its address for the phone app and the Network ([Pairing](ai-connections.md#pairing)). Check: Connections shows Gmail with its first sync.
@@ -86,7 +86,7 @@ For your own Google OAuth client or Entra app, or a Machine you'd rather not pai
 
 Setup checks a real read before it calls the account connected. A busy or rate-limited browser source can be saved for its first sync, marked unverified: a saved setting is not proof a read worked. Afterwards you see the first sync per source: how many signals came in and from how far back.
 
-Skipped one? `assistant connect gmail` (or `slack`, `crm`, `whatsapp`, `telegram`, `android`, `github`, …) does the same any time, and so does the dashboard: Connections, **+ Add**. `assistant connect` on its own lists what is still missing.
+Skipped one? `assistant connect gmail` (or `slack`, `crm`, `whatsapp`, `telegram`, `android`, `github`, …) does the same any time, and so does the dashboard: Connections, then the source's kind. `assistant connect` on its own lists what is still missing.
 
 ### Pairing your Android phone
 

@@ -16,7 +16,7 @@ Niets in Trello. Het leest alleen.
 
 ## Koppelen
 
-1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Trello. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Trello. Op je eigen computer koppel je hem eerst aan je account.
+1. In het dashboard: **Koppelingen**, **Projecten en code**, Trello. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Trello. Op je eigen computer koppel je hem eerst aan je account.
 2. Druk op **Inloggen met Trello** en sta leestoegang toe in Trello. The Machine is gemaakt door Salesflare.
 3. Kies het bord om te volgen en druk op **Verbinden**. Voor een ander bord voeg je Trello opnieuw toe.
 

@@ -27,11 +27,11 @@ Op een gehoste Machine:
 2. Druk onder **Mail en agenda** op **Google koppelen** en log in. Het scherm van Google noemt Salesflare, dat The Machine maakt.
 3. Gmail en Google Calendar worden samen gekoppeld.
 
-Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Gmail en druk op **Inloggen met Google**. Als je klaar bent, ben je terug in het dashboard.
+Of in het dashboard: **Koppelingen**, **E-mail**, kies Gmail en druk op **Inloggen met Google**. Als je klaar bent, ben je terug in het dashboard.
 
 Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer):
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies Gmail.
+1. Open in het dashboard **Koppelingen**, dan **E-mail**, en kies Gmail.
 2. Druk op **Inloggen met Google** en log in in het tabblad dat opent. Gmail en Google Calendar worden samen gekoppeld.
 
 Niet gekoppeld, of met je eigen Google OAuth-client: open daar **Je eigen app gebruiken**, of voer `assistant connect gmail` uit. Druk op **Open Google**, log in en plak dan het adres waar Google je naartoe stuurt. Google Calendar voor hetzelfde adres komt mee.

@@ -54,14 +54,14 @@ If that OK is taken back later, Microsoft OneDrive says **Waiting for your OK to
 
 On a hosted Machine, or your own computer paired with your account:
 
-- Open **Connections**, then **+ Add**, and pick **Microsoft OneDrive**.
+- Open **Connections**, then **Docs and files**, and pick **Microsoft OneDrive**.
 - Press **Sign in with Microsoft** and allow reading and editing your files.
 
 If Microsoft doesn't allow reading, it isn't added. If you press **Allow edits** and Microsoft doesn't allow edits, it says so.
 
 ## Google Docs
 
-On a hosted Machine, open **Connections**, then **+ Add**, and pick **Google Docs**. Google asks you to let it see and edit the docs you point it to, and make new ones. Gmail doesn't need to be connected, and your Gmail access doesn't change.
+On a hosted Machine, open **Connections**, then **Docs and files**, and pick **Google Docs**. Google asks you to let it see and edit the docs you point it to, and make new ones. Gmail doesn't need to be connected, and your Gmail access doesn't change.
 
 Then your Machine:
 

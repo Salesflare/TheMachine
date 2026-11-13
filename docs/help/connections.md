@@ -8,21 +8,21 @@ order: 1
 ---
 ## How they're doing
 
-The **Connections** tab groups your sources into **Email**, **Calendar**, **Chat** and **Other sources**, A to Z within each. Each says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. **Details** shows **Recent syncs** in plain words (like "Caught up") and what to do.
+The **Connections** tab lists your sources by kind, with **Sign-ins** and **Checks** below a line. On a phone, tap a kind to open it and **Connections** to go back. A kind with a source that needs you opens first. Each source is a row: how it's doing (Connected, Waiting for first sync, Reconnecting automatically, or Needs your help) and what came in lately. Tap it for its card and **Details**.
 
 A failed sync that a later one made up for is shown in gray; only a failure that is still the latest one is shown as a problem, with when it tries again.
 
 Its counts show everything it brought in, its [history](history.md) too, what came in the last 24 hours and what isn't checked yet. A calendar counts its events.
 
-Each source is named after its account, the way the service names it: your address, an X profile, a Slack workspace, or whose Signal or Telegram it is. Under the name: **Work** or **Personal**, plus the address or handle when the name doesn't already say it. Two sources on one tab with the same name also say what tells them apart, like Slack or X, or the workspace’s address.
+Each source is named after its account, the way the service names it: your address, an X profile, a Slack workspace, or whose Signal or Telegram it is. Under the name: **Work** or **Personal** first, plus the address or handle when the name doesn't already say it. Two sources of one kind with the same name also say what tells them apart, like Slack or X, or the workspace’s address.
 
 Each source also says in one line what it brings in and, if it can act, that it acts only after you press **Send** or OK it.
 
 ## Add one
 
-Open **+ Add** and pick a source. The list is grouped (**Email**, **Calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each. A catch-all comes last in its group: **Other email** under Email, **Calendar link (ICS)** and **Other calendar** under Calendar. Exchange Server reads meetings, so it's under Calendar.
+Open a kind (**Email**, **Calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**) and pick a source under **Add another**, or below the list when none is connected yet. A catch-all comes last: **Other email** under Email, **Calendar link (ICS)** and **Other calendar** under Calendar. Exchange Server reads meetings, so it's under Calendar.
 
-**Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. The source also stays in its own group, marked **Suggested**. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
+**Suggested for you** sits on top of **Connections** when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. The source also stays in its own group, marked **Suggested**. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
 
 Microsoft Teams shows twice: under **Chat** for its chats and under **Meetings** as **Teams meetings** for its meeting notes. Both use the same Microsoft sign-in, so connecting one connects the other.
 

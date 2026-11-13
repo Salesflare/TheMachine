@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, one source: one short form like the account's setup page (onboarding.web_form), not a question at
+// Connections, a kind (here Other: the fixture gives no groups), one source: one short form like the account's setup page (onboarding.web_form), not a question at
 // a time with "work:Main" typed in. Work with its company or Personal as two choices, a key as a password field, then
 // Connect. LinkedIn waits for its sign-in on the Machine and opens it; GitHub and WhatsApp show a code to enter.
 // SHOTS=<folder> saves screenshots.
@@ -47,7 +47,7 @@ const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
 const shot=async(page,name)=>{if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/${name}.png`})};
-const open=async(page,name)=>{await page.goto('about:blank');await page.goto(base+'/#connections=add');await page.locator(`#connect-add [data-connect="${name}"]`).click();await page.locator(`#connect-add form[data-connect-setup="${name}"]`).waitFor()};
+const open=async(page,name)=>{await page.goto('about:blank');await page.goto(base+'/#connections=other');await page.locator(`#connect-add [data-connect="${name}"]`).click();await page.locator(`#connect-add form[data-connect-setup="${name}"]`).waitFor()};
 const started=()=>calls.filter(c=>c.action==='connect_start').at(-1)?.args;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});

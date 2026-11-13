@@ -28,7 +28,7 @@ Votre propre Intercom et un Intercom partagé avec vous pour le même espace de 
 
 ## Le connecter
 
-1. Dans le tableau de bord : **Connexions**, **+ Ajouter**, Intercom. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Intercom. Sur votre propre ordinateur, associez-le d’abord à votre compte.
+1. Dans le tableau de bord : **Connexions**, **Clients**, Intercom. Ou sur la page de configuration d’une Machine hébergée, sur app.themachine.computer/setup : **Plus de sources**, Intercom. Sur votre propre ordinateur, associez-le d’abord à votre compte.
 2. Appuyez sur **Se connecter avec Intercom**.
 3. Approuvez The Machine dans Intercom. Elle est créée par Salesflare. Une fois terminé, vous revenez là où vous avez commencé.
 

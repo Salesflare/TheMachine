@@ -20,7 +20,7 @@ Een direct bericht aan één persoon, als jou, en pas nadat je het goedkeurt op 
 
 ## Koppelen
 
-1. **Koppelingen**, **+ Toevoegen**, **Slack**, dan **Inloggen met Slack**, en sta het toe in Slack. Op je eigen computer koppel je hem eerst aan je account op themachine.computer.
+1. **Koppelingen**, **Chat**, **Slack**, dan **Inloggen met Slack**, en sta het toe in Slack. Op je eigen computer koppel je hem eerst aan je account op themachine.computer.
 2. Nieuwe berichten en directe berichten komen eerst binnen. Slack laat apps ongeveer één gesprek per minuut lezen, dus oudere berichten komen in een paar uur binnen.
 
 Of gebruik een Maton-API-sleutel: log in op maton.ai, koppel Slack daar en kopieer je Maton API-sleutel vanaf Home. Open dan onder Slack **Of gebruik een Maton-API-sleutel** en plak hem, of voer `assistant connect slack` uit op je eigen computer. Een Slack die via Maton gekoppeld is, blijft werken zoals hij is.

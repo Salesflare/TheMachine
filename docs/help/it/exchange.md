@@ -18,7 +18,7 @@ Exchange Server gira nella tua azienda. Microsoft 365 (Exchange Online) è il cl
 
 ## Collegalo
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli **Exchange Server**.
+1. Nella dashboard, apri **Connessioni**, poi **Calendario**, e scegli **Exchange Server**.
 2. Inserisci il tuo indirizzo email di lavoro e la tua password di Windows.
 3. Premi **Collegati**.
 

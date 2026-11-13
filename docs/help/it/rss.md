@@ -17,7 +17,7 @@ Niente. Scarica soltanto il feed.
 
 RSS è per una Machine sul tuo computer; le pagine di configurazione ospitate non lo offrono.
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli Feed RSS. Oppure esegui `assistant connect rss`.
+1. Nella dashboard, apri **Connessioni**, poi **Altro**, e scegli Feed RSS. Oppure esegui `assistant connect rss`.
 2. Incolla l'indirizzo del feed.
 
 ## Rimuovilo

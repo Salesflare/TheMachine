@@ -18,7 +18,7 @@ Reading never changes anything on GitHub. When a to-do ends in a GitHub step, li
 
 On a hosted Machine:
 
-1. Open **Connections**, then **+ Add**, and pick GitHub.
+1. Open **Connections**, then **Projects and code**, and pick GitHub.
 2. Pick **Work** or **Personal** and press **Sign in with GitHub**.
 3. Press **Open GitHub ↗**, enter the code it shows and allow it. It connects by itself.
 
@@ -26,7 +26,7 @@ Your setup page at app.themachine.computer/setup has the same sign-in under **Mo
 
 On your own computer:
 
-1. Open **Connections**, then **+ Add**, and pick GitHub.
+1. Open **Connections**, then **Projects and code**, and pick GitHub.
 2. Pick **Work** with its company, or **Personal**, and press **Connect**.
 3. If asked, press **Open GitHub ↗**, enter the code and allow it. It connects by itself.
 

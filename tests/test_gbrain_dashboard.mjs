@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, GBrain: one optional tile, only when the Machine says so (self-hosted, or already on). Not
+// Connections, Other, GBrain: one optional tile, only when the Machine says so (self-hosted, or already on). Not
 // installed shows how to install it; installed asks first (what goes in, that GBrain may send it to its own AI
 // providers) and "Connect GBrain" stays off until the owner agrees; connected shows the brain, the sync and Turn off.
 // Without connect_sources' gbrain (a hosted Machine) there's no tile at all. SHOTS=<folder> saves screenshots.
@@ -40,7 +40,7 @@ try{
   const shot=async name=>{if(shots)await page.screenshot({path:`${shots}/${name}-${tag}.png`})};
   const clean=async()=>{const text=await pane.innerText();assert.ok(!text.includes('—'),'no em dashes');assert.doesNotMatch(text,/\bcard\b/i);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll')};
-  const go=async()=>{await page.goto('about:blank');await page.goto(base+'/#connections=add');await pane.locator('.connect-source').first().waitFor()};
+  const go=async()=>{await page.goto('about:blank');await page.goto(base+'/#connections=other');await pane.locator('.connect-source').first().waitFor()};
 
   // a hosted Machine: no tile, nothing asked
   tile=false;state={...OFF};calls=[];await go();

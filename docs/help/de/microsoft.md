@@ -36,9 +36,9 @@ Auf einer gehosteten Machine:
 2. Tippe auf **Microsoft verbinden** und melde dich an.
 3. Wenn Microsoft nach einer Admin-Freigabe fragt, schick deinem Microsoft 365 Admin diesen Link: themachine.computer/m365-admin-consent. **Link kopieren** kopiert ihn. Sobald der Admin freigibt, können sich alle in deiner Organisation verbinden. Bist du der Admin, tippe auf **Ich bin der Admin: jetzt freigeben**.
 
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard. Brauchst du die Freigabe deines Admins? Derselbe Link steht unter dem Button, mit **Link kopieren**.
+Oder im Dashboard: **Verbindungen**, **E-Mail**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Danach bist du zurück im Dashboard. Brauchst du die Freigabe deines Admins? Derselbe Link steht unter dem Button, mit **Link kopieren**.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Mail und Kalender werden zusammen verbunden.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **E-Mail**, wähle Outlook und tippe auf **Mit Microsoft anmelden**. Mail und Kalender werden zusammen verbunden.
 
 Mit deiner eigenen App: Öffne dort **Eigene App nutzen** oder führe `assistant connect outlook` oder `assistant connect outlook_calendar` aus. Es nutzt deine eigene App-Registrierung in Microsoft Entra und einen Anmeldecode. Es fragt, ob es auch senden soll, was du freigibst.
 

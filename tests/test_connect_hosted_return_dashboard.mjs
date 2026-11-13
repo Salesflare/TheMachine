@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add on a hosted Machine: a sign-in started here comes back here (the control plane's /open to=connect)
+// Connections on a hosted Machine, each source in its kind (the status's groups): a sign-in started here comes back here (the control plane's /open to=connect)
 // and the form says how it went: connected, or why the provider's answer was refused (#connect=<provider>/f_..., the
 // reason asked from /_machine/connect-state, never read from the address). GitHub, WhatsApp and the phone sign in right
 // here: their code shows in the form. Every provider's way back is followed, and Reconnect on a card or in Needs you
@@ -25,16 +25,16 @@ const server=createServer(async(req,res)=>{
   const next=states[key];if(!next){res.statusCode=404;res.end('{"error":"unknown"}');return}res.end(JSON.stringify(Array.isArray(next)?next.length>1?next.shift():next[0]:next));return}
  if(url.pathname==='/api/action'){let body='';for await(const b of req)body+=b;const {action}=JSON.parse(body);
   if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:MANAGE,sources:[
-   {name:'gmail',service:'gmail',label:'Gmail',connected:0,broker:true,hosted_signin:'google'},
-   {name:'outlook',service:'outlook',label:'Outlook',connected:1,broker:true,hosted_signin:'microsoft'},
-   {name:'docs',service:'docs',label:'Microsoft OneDrive',connected:0,broker:false,account_page:'docs',hosted_signin:'microsoft_docs'},
-   {name:'github',service:'github',label:'GitHub',what:'Review requests, mentions and failed CI runs.',connected:0,broker:false,hosted_signin:'github'},
-   {name:'zoom',service:'zoom',label:'Zoom',what:'Your meetings.',connected:0,broker:true,hosted_signin:'zoom'},
-   {name:'stripe',service:'stripe',label:'Stripe',what:'Payments.',connected:0,broker:false,hosted_signin:'stripe'},
-   {name:'intercom',service:'intercom',label:'Intercom',connected:0,broker:false,account_page:'source-intercom',hosted_signin:'intercom'},
-   {name:'whatsapp',service:'whatsapp',label:'WhatsApp',connected:0,broker:false,hosted_signin:'whatsapp'},
-   {name:'android',service:'android',label:'Android phone',connected:0,broker:false,hosted_signin:'android'},
-   {name:'slack',service:'slack',label:'Slack',connected:0,broker:false,hosted_signin:'slack'}]}));return}
+   {name:'gmail',service:'gmail',group:'mail',label:'Gmail',connected:0,broker:true,hosted_signin:'google'},
+   {name:'outlook',service:'outlook',group:'mail',label:'Outlook',connected:1,broker:true,hosted_signin:'microsoft'},
+   {name:'docs',service:'docs',group:'docs',label:'Microsoft OneDrive',connected:0,broker:false,account_page:'docs',hosted_signin:'microsoft_docs'},
+   {name:'github',service:'github',group:'work',label:'GitHub',what:'Review requests, mentions and failed CI runs.',connected:0,broker:false,hosted_signin:'github'},
+   {name:'zoom',service:'zoom',group:'meetings',label:'Zoom',what:'Your meetings.',connected:0,broker:true,hosted_signin:'zoom'},
+   {name:'stripe',service:'stripe',group:'customers',label:'Stripe',what:'Payments.',connected:0,broker:false,hosted_signin:'stripe'},
+   {name:'intercom',service:'intercom',group:'customers',label:'Intercom',connected:0,broker:false,account_page:'source-intercom',hosted_signin:'intercom'},
+   {name:'whatsapp',service:'whatsapp',group:'chat',label:'WhatsApp',connected:0,broker:false,hosted_signin:'whatsapp'},
+   {name:'android',service:'android',group:'other',label:'Android phone',connected:0,broker:false,hosted_signin:'android'},
+   {name:'slack',service:'slack',group:'chat',label:'Slack',connected:0,broker:false,hosted_signin:'slack'}]}));return}
   res.end('{}');return}
  res.end('{}');
 });
@@ -113,7 +113,7 @@ try{
   }
   // WhatsApp: Show the QR code posts to this dashboard only, and the QR code it shows is this command's own
   posted=[];
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=chat');
   await box(page).locator('[data-connect-signin="whatsapp"]').click();
   await box(page).getByRole('button',{name:'Show the QR code'}).waitFor();
   await shot(page,`whatsapp-intro-${tag}`);
@@ -129,7 +129,7 @@ try{
   await shot(page,`whatsapp-qr-${tag}`);
   await box(page).getByText('Connected.').waitFor({timeout:15000});
   // On the phone itself: a code to type, for that number
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=chat');
   await box(page).locator('[data-connect-signin="whatsapp"]').click();
   await box(page).locator('summary').click();
   await box(page).locator('input[name="signin-phone"]').fill('+32 470 12 34 56');
@@ -138,7 +138,7 @@ try{
   await box(page).getByText('WXYZ-1234').waitFor({timeout:10000});
   assert.deepEqual([posted.at(-1).way,posted.at(-1).phone],['code','+32 470 12 34 56']);
   // The phone: its setup code, the pairing request to approve, and how the phone is
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await box(page).locator('[data-connect-signin="android"]').click();
   await box(page).getByRole('button',{name:'Show a setup code'}).waitFor();
   assert.equal(await box(page).locator('input[name="signin-scope"]').count(),0,'no Work or Personal for a phone');
@@ -163,16 +163,17 @@ try{
   await box(page).getByRole('button',{name:'Sign in with Microsoft'}).waitFor({timeout:10000});
   await shot(page,`reconnect-form-${tag}`);
   connectors=[];
-  // GitHub in + Add: its own form here, never a link to the account page
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  // GitHub in Projects and code: its own form here, never a link to the account page
+  await page.goto('about:blank');await page.goto(base+'/#connections=work');
   await box(page).locator('[data-connect-signin="github"]').click();
   await box(page).getByRole('button',{name:'Sign in with GitHub'}).waitFor();
   assert.equal(await box(page).locator(`a[href^="${MANAGE}"]`).count(),0);
   await shot(page,`github-intro-${tag}`);
   await box(page).getByRole('button',{name:'Back'}).click();
-  // + Add: no source links away to the account page any more
-  await box(page).locator('[data-connect-signin="android"]').waitFor();
-  assert.equal(await box(page).locator(`a[href^="${MANAGE}"]`).count(),0);
+  // Back in Projects and code; in no kind does a source link away to the account page any more
+  await box(page).locator('[data-connect-signin="github"]').waitFor();
+  for(const k of ['mail','chat','meetings','docs','customers','work','other']){await page.evaluate(k=>showHealthPane(k),k);await box(page).locator('.connect-source').first().waitFor();
+   assert.equal(await box(page).locator(`a[href^="${MANAGE}"]`).count(),0,k)}
   if(first)await shot(page,`add-list-${tag}`);
   await context.close();
  }

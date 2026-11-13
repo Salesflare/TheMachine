@@ -26,7 +26,7 @@ Sur une Machine hébergée :
 Sur votre propre ordinateur :
 
 1. Connectez-vous une fois à X dans le navigateur de votre Machine (Paramètres, **Ouvrir le navigateur de la Machine ↗**).
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez X. Ou lancez `assistant connect x`.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez X. Ou lancez `assistant connect x`.
 3. Tapez votre identifiant, et celui avec lequel le navigateur est connecté d’habitude.
 
 Si X déconnecte votre Machine, voir [Déconnecté d’un site](signed-out.md).

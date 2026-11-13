@@ -31,7 +31,7 @@ Het vraagt nooit om je Drive. Je toegang tot Gmail en Agenda blijft zoals hij is
 
 Gmail hoeft niet gekoppeld te zijn. Zo koppel je het:
 
-- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Google Meet** en druk op **Inloggen met Google**. Google vraagt om de OK hierboven, daarna kom je terug in het dashboard.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **Afspraken**, kies **Google Meet** en druk op **Inloggen met Google**. Google vraagt om de OK hierboven, daarna kom je terug in het dashboard.
 - Je eigen computer, gekoppeld aan je account: dezelfde stappen. De login opent in een nieuw tabblad.
 
 Hij controleert of de login Meet mag lezen. Zonder die OK wordt het niet toegevoegd. De login blijft werken: je hoeft niets te plakken of te vernieuwen.

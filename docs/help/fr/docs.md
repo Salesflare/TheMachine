@@ -54,14 +54,14 @@ Si cet accord est retiré plus tard, la carte Microsoft OneDrive indique **En at
 
 Outlook n’a pas besoin d’être connecté.
 
-- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft OneDrive** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture et la modification de vos fichiers, puis vous revenez au tableau de bord.
-- Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **+ Ajouter**, choisissez **Microsoft OneDrive** et appuyez sur **Se connecter avec Microsoft**.
+- Machine hébergée : dans le tableau de bord, ouvrez **Connexions**, **Documents et fichiers**, choisissez **Microsoft OneDrive** et appuyez sur **Se connecter avec Microsoft**. Microsoft vous demande d’autoriser la lecture et la modification de vos fichiers, puis vous revenez au tableau de bord.
+- Votre propre ordinateur, associé à votre compte : ouvrez **Connexions**, **Documents et fichiers**, choisissez **Microsoft OneDrive** et appuyez sur **Se connecter avec Microsoft**.
 
 Il vérifie que la connexion peut lire les documents. Sans cet accord, il n’est pas ajouté. Si vous touchez **Autoriser les modifications** et que Microsoft ne les autorise pas, il le dit au lieu d’afficher Connecté.
 
 ## Google Docs
 
-Sur une Machine hébergée, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **Google Docs**. Google vous demande de lui permettre de voir et modifier les documents que vous lui indiquez, et d’en créer de nouveaux. Gmail n’a pas besoin d’être connecté, et votre accès Gmail ne change pas.
+Sur une Machine hébergée, ouvrez **Connexions**, puis **Documents et fichiers**, et choisissez **Google Docs**. Google vous demande de lui permettre de voir et modifier les documents que vous lui indiquez, et d’en créer de nouveaux. Gmail n’a pas besoin d’être connecté, et votre accès Gmail ne change pas.
 
 Ensuite votre Machine :
 

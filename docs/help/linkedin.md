@@ -33,7 +33,7 @@ On a hosted Machine:
 
 On your own computer:
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick LinkedIn.
+1. In the dashboard, open **Connections**, then **Chat**, and pick LinkedIn.
 2. Pick **Work** (with its company) or **Personal**, then press **Connect**.
 3. Press **Sign in to LinkedIn** and sign in in your Machine's browser. It connects by itself once you're in.
 

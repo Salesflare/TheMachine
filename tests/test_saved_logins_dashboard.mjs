@@ -43,7 +43,7 @@ try{
    await page.goto('about:blank');await page.goto(base+'/#connections=signins');  // a fresh load each time, not just a hash change
    await page.locator('#saved-logins-block').waitFor();
    if(n)await page.locator('#saved-logins .saved-login').nth(n-1).waitFor();else await page.locator('#saved-logins.empty').waitFor();
-   await page.locator('#health-tabs [role=tab][aria-selected="true"]').filter({hasText:/^Sign-ins$/})  /* a saved sign-in needs nothing: no count */.waitFor();
+   await page.locator('#health-tabs .conn-cat[aria-selected="true"]').filter({hasNot:page.locator('.badge')}).locator('.ell',{hasText:/^Sign-ins$/})  /* a saved sign-in needs nothing: no count; on a phone the list of kinds hides behind the open kind */.waitFor({state:'attached'});
    const shown=await text(page);
    assert.match(shown,/sign it back in with one tap/);assert.match(shown,/encrypted on this Machine/);
    const html=await page.content();
@@ -70,7 +70,7 @@ try{
   }
   await context.close();
  }
- // Forget: the row goes; after the last one, the empty state stays in its tab.
+ // Forget: the row goes; after the last one, the empty state stays in its kind.
  const context=await browser.newContext({viewport:{width:1280,height:900}}),page=await context.newPage();
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
@@ -79,10 +79,10 @@ try{
  await page.locator('#saved-logins [data-forget-login]').click();
  await page.locator('#saved-logins.empty').waitFor();
  assert.deepEqual(forgotten,['crm.example.org']);
- assert.equal(await page.locator('#health-tabs [role=tab][aria-selected="true"]').innerText(),'Sign-ins');
- // Without sign-ins and without a link to them, Connections has no Sign-ins tab.
- await page.goto(base);await page.locator('nav [data-tab="health"]').click();await page.locator('#health-tabs [role=tab]').first().waitFor();
- assert.ok(!(await page.locator('#health-tabs [role=tab]').allInnerTexts()).some(t=>t.startsWith('Sign-ins')));
+ assert.equal(await page.locator('#health-tabs .conn-cat[aria-selected="true"] .ell').innerText(),'Sign-ins');
+ // Without sign-ins and without a link to them, Connections has no Sign-ins kind.
+ await page.goto(base);await page.locator('nav [data-tab="health"]').click();await page.locator('#health-tabs .conn-cat').first().waitFor();
+ assert.ok(!(await page.locator('#health-tabs .conn-cat .ell').allInnerTexts()).includes('Sign-ins'));
  assert.deepEqual(errors,[]);
  console.log('saved sign-ins dashboard ok');
 }finally{await browser?.close();server.close()}

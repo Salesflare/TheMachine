@@ -7,7 +7,7 @@ const {chromium}=await import('./browser.mjs');
 // A connection's history on its card (machine/store/history.py, docs/help/history.md): how far back it reaches once it's
 // in ("History: back to November 2025."), "so far" while it comes in, and nothing before it starts. One line, in the
 // owner's language, never wider than the card. While WhatsApp's own first chat-history count runs, only that line shows.
-// SHOTS=<folder> saves each width and theme.
+// The fixture's cards have no group, so they sit in Other, opened. SHOTS=<folder> saves each width and theme.
 const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const card=(id,service,email,more)=>({id,service,email,display_name:email,boundary:'personal',last_success:at,last_sync_signals:2,sync_activity:[],failures_24h:0,read_window:{},...more});
@@ -31,7 +31,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}x${height}-${scheme}`;
-  await page.goto(base+'/#connections');await page.locator('#connectors article[data-conn="mail"]').waitFor();await page.waitForTimeout(300);
+  await page.goto(base+'/#connections=other');await page.locator('#connectors article[data-conn="mail"]').waitFor({state:'attached'});await page.evaluate(()=>{for(const a of document.querySelectorAll('#connectors>article:not([hidden])'))cardShow(a.dataset.conn)});await page.locator('#connectors article[data-conn="mail"] .conn-body').waitFor();await page.waitForTimeout(300);
   const n=await notes(page);
   assert.ok(n.mail.includes('History: back to November 2025.'),`${tag} mail: ${n.mail}`);
   assert.ok(n.cal.includes('History coming in: back to March 2026 so far.'),`${tag} calendar: ${n.cal}`);
@@ -47,7 +47,7 @@ try{
   const context=await browser.newContext({viewport:{width:1440,height:900},locale:'nl-NL'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/#connections');await page.locator('#connectors article[data-conn="mail"]').waitFor();
+  await page.goto(base+'/#connections=other');await page.locator('#connectors article[data-conn="mail"]').waitFor({state:'attached'});await page.evaluate(()=>{for(const a of document.querySelectorAll('#connectors>article:not([hidden])'))cardShow(a.dataset.conn)});await page.locator('#connectors article[data-conn="mail"] .conn-body').waitFor();
   await page.evaluate(cat=>i18nUse('nl',cat),nl);await page.getByText('Geschiedenis: terug tot').first().waitFor({timeout:8000});
   const n=await notes(page);assert.ok(n.mail.some(x=>/^Geschiedenis: terug tot \S+ 2025\.$/.test(x)),`nl: ${n.mail}`);
   assert.ok(n.cal.some(x=>/^Geschiedenis komt binnen: tot nu toe terug tot \S+ 2026\.$/.test(x)),`nl: ${n.cal}`);await context.close()}

@@ -6,7 +6,7 @@ This page is about The Machine using GBrain. GBrain can also connect to a Machin
 
 ## Turning it on
 
-On a self-hosted Machine: **Connections**, **+ Add**, **GBrain**.
+On a self-hosted Machine: **Connections**, **Other**, **GBrain**.
 
 1. Install GBrain if it isn't there yet: `bun install -g github:garrytan/gbrain`. The Machine finds `gbrain` from `gbrain.bin` in `config.json`, `GBRAIN_BIN`, `~/.bun/bin/gbrain` or `PATH`.
 2. Read the consent step and check **I agree**. Nothing goes into GBrain before that.

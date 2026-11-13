@@ -26,7 +26,7 @@ En una Machine alojada:
 En tu propio ordenador:
 
 1. Inicia sesión en X una vez en el navegador de tu Machine (Ajustes, **Abrir el navegador de la Machine ↗**).
-2. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige X. O ejecuta `assistant connect x`.
+2. En el panel, abre **Conexiones**, luego **Chat**, y elige X. O ejecuta `assistant connect x`.
 3. Escribe tu usuario, y el usuario con el que el navegador suele tener la sesión iniciada.
 
 Si X cierra la sesión de tu Machine, consulta [Sesión cerrada en un sitio](signed-out.md).

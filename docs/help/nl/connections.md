@@ -8,7 +8,7 @@ order: 1
 ---
 ## Hoe het ermee gaat
 
-Het tabblad **Koppelingen** groepeert je bronnen in **E-mail**, **Agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
+Het tabblad **Koppelingen** toont je bronnen per soort (**E-mail**, **Agenda**, **Chat** en meer), met **Logins** en **Checks** onder een lijn. Op een telefoon tik je op een soort om ze te openen en op **Koppelingen** om terug te gaan. Elke bron is een rij; tik erop voor haar kaart. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
 
 Een mislukte sync die een latere sync heeft goedgemaakt staat in grijs; alleen een mislukking die nog de laatste is, staat als probleem, met wanneer hij opnieuw probeert.
 
@@ -20,7 +20,7 @@ Onder de status zegt elke bron in één regel wat ze binnenbrengt en, als ze iet
 
 ## Een bron toevoegen
 
-Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Weggegaan voor het klaar was? Open **Koppelingen** opnieuw, op eender welk toestel, en je gaat verder bij dezelfde stap. Zodra hij gekoppeld is, begint je Machine hem meteen te lezen en opent hij de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.
+Open de soort en kies een bron onder **Nog een toevoegen**, of onder de lijst als er nog geen gekoppeld is. Hij vraagt wat hij nodig heeft, één vraag tegelijk. **Annuleren** stopt het toevoegen. Weggegaan voor het klaar was? Open **Koppelingen** opnieuw, op eender welk toestel, en je gaat verder bij dezelfde stap. Zodra hij gekoppeld is, begint je Machine hem meteen te lezen en opent hij de nieuwe kaart, die toont hoe de eerste sync verloopt. Op een gehoste Machine log je hier in bij Google, Microsoft, Microsoft OneDrive, Zoom, Stripe en Intercom: kies **Werk** of **Privé**, log in en je komt terug in dit formulier, dat toont hoe het koppelen gaat. GitHub, WhatsApp, Codex, Telegram-chats en je Android-telefoon tonen hun code meteen in dit formulier.
 
 Een bron die je al koppelde zegt dat in de lijst, met het account. Kies hem om er nog een naast toe te voegen: het formulier zegt dat en linkt naar de koppeling die je al hebt.
 

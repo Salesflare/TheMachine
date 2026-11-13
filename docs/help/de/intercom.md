@@ -28,7 +28,7 @@ Dein eigenes Intercom und ein mit dir geteiltes für denselben Workspace lesen n
 
 ## Verbinden
 
-1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Intercom. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Intercom. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
+1. Im Dashboard: **Verbindungen**, **Kunden**, Intercom. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Intercom. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
 2. Tippe auf **Mit Intercom anmelden**.
 3. Erlaube The Machine in Intercom. Sie wird von Salesflare gemacht. Danach bist du wieder dort, wo du angefangen hast.
 

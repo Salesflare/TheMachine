@@ -36,13 +36,13 @@ Es funktioniert nur mit einem Microsoft-Arbeits- oder Schulkonto. Private Konten
 
 Auf einer gehosteten Machine:
 
-1. Öffne im Dashboard **Verbindungen**, **+ Hinzufügen** und wähle **Microsoft Teams** (unter Chat) oder **Teams-Meetings** (unter Meetings). Beide sind dieselbe Anmeldung.
+1. Öffne im Dashboard **Verbindungen**, **Chat** oder **Meetings** und wähle **Microsoft Teams** (unter Chat) oder **Teams-Meetings** (unter Meetings). Beide sind dieselbe Anmeldung.
 2. Drücke **Mit Microsoft anmelden** und gib das OK. Danach bist du zurück im Dashboard.
 3. Für Kanäle und Meeting-Notizen schick deinem Admin den Link, den die Anmeldeseite zeigt. Sobald er zugestimmt hat, verbinde Teams erneut.
 
 Beim Einrichten hat auch die Einrichtungsseite **Connect Microsoft Teams**.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle **Microsoft Teams** oder **Teams-Meetings** und drücke **Mit Microsoft anmelden**. Dort liest es deine Chats und Meeting-Chats. Kanäle und Besprechungsnotizen gibt es dort noch nicht.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Chat** oder **Meetings**, wähle **Microsoft Teams** oder **Teams-Meetings** und drücke **Mit Microsoft anmelden**. Dort liest es deine Chats und Meeting-Chats. Kanäle und Besprechungsnotizen gibt es dort noch nicht.
 
 ## Entfernen
 

@@ -40,6 +40,6 @@ Op een gehoste Machine kies je het op je setuppagina, onder **Voeg later meer to
 - **Andere manieren**, **Op mijn computer**: de opdracht draait op je eigen computer, met de Codex waarmee daar ingelogd is. Er staat niets van Codex op je gehoste Machine, en de opdracht is versleuteld voor alleen die computer: het Network geeft hem door maar kan hem niet lezen. Installeer The Machine op die computer, koppel hem op je pagina Account, en voer daar `codex login` uit. Laat The Machine erop draaien. De opdracht verschijnt als thread in de Codex-app op die computer, en het resultaat komt terug op de to-do. Staat de computer uit, dan wachten opdrachten tot hij terug is.
 - **Andere manieren**, **Codex cloud**: de opdracht draait in de cloud van OpenAI. Druk op **Codex koppelen**. Het gebruikt hetzelfde ChatGPT-abonnement als je model, en OpenAI vraagt nog één code, voor Codex. Vul daarna de Codex-cloudomgeving in bij Instellingen.
 
-Of log in vanaf je dashboard: **Koppelingen**, **+ Toevoegen**, **Codex**, **Code ophalen**. Een zelf gehoste Machine doet die login zelf.
+Of log in vanaf je dashboard: **Koppelingen**, **Projecten en code**, **Codex**, **Code ophalen**. Een zelf gehoste Machine doet die login zelf.
 
 Op een gehoste Machine verschijnt Codex en Claude Code zodra GitHub of Codex gekoppeld is. Het verschijnt ook bij setups die opdrachten elders draaien. Meer in de [gids over agents](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

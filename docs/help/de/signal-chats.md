@@ -22,7 +22,7 @@ Kam eine Aufgabe per E-Mail, aber du schreibst mit dieser Person auf Signal, sag
 
 ## Verbinden
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Signal-Chats.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle Signal-Chats.
 2. Öffne auf deinem Handy in Signal Einstellungen, **Verknüpfte Geräte**, **Neues Gerät verknüpfen**, und scanne den Code.
 
 Du brauchst einen zweiten Bildschirm zum Scannen: Signal verknüpft ein Gerät nur per QR-Code. Oder führe `assistant connect signal` in einem Terminal aus und scanne den Code, der dort erscheint.

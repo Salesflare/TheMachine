@@ -8,7 +8,7 @@ order: 1
 ---
 ## Leur état
 
-L’onglet **Connexions** regroupe vos sources en **E-mail**, **Agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
+L’onglet **Connexions** liste vos sources par type (**E-mail**, **Agenda**, **Chat** et plus), avec **Connexions aux sites** et **Vérifications** sous une ligne. Sur un téléphone, touchez un type pour l’ouvrir et **Connexions** pour revenir. Chaque source est une ligne ; touchez-la pour voir sa carte. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
 
 Une synchro échouée qu’une synchro suivante a rattrapée s’affiche en gris ; seul un échec qui reste le dernier s’affiche comme un problème, avec l’heure du prochain essai.
 
@@ -20,7 +20,7 @@ Sous son état, chaque source dit en une ligne ce qu’elle apporte et, quand el
 
 ## En ajouter une
 
-Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Parti avant la fin ? Rouvrez **Connexions**, sur n’importe quel appareil, et vous reprenez à la même étape. Une fois la source connectée, votre Machine commence aussitôt à la lire et ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. GitHub, WhatsApp, Codex, Discussions Telegram et votre téléphone Android affichent leur code directement dans ce formulaire.
+Ouvrez son type et choisissez une source sous **En ajouter un autre**, ou sous la liste si aucune n’est encore connectée. Elle demande ce dont elle a besoin, une question à la fois. **Annuler** arrête l’ajout. Parti avant la fin ? Rouvrez **Connexions**, sur n’importe quel appareil, et vous reprenez à la même étape. Une fois la source connectée, votre Machine commence aussitôt à la lire et ouvre la nouvelle carte, qui montre comment se passe sa première synchro. Sur une Machine hébergée, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe et Intercom se connectent ici : choisissez **Travail** ou **Perso**, connectez-vous et vous revenez à ce formulaire, qui montre où en est la connexion. GitHub, WhatsApp, Codex, Discussions Telegram et votre téléphone Android affichent leur code directement dans ce formulaire.
 
 Une source déjà connectée l’indique dans la liste, avec son compte. Choisissez-la pour en ajouter une autre à côté : son formulaire le dit et renvoie vers celle que vous avez.
 

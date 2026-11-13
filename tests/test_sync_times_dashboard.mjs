@@ -38,7 +38,7 @@ const open=async(width,scheme)=>{
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
  await page.waitForFunction(()=>typeof showTab==='function'&&document.querySelector('#connectors article'));
- await page.evaluate(()=>{showTab('health');showHealthPane('other')});
+ await page.evaluate(()=>{showTab('health');cardShow('work-x');cardShow('work-linkedin')});  // their kind, both cards open
  const card=page.locator('#connectors article[data-conn="work-linkedin"]');
  await card.locator('details[id^="sync-recent"] summary').click();
  await card.locator('details[id^="sync-details"] summary').click();

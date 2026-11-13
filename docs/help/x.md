@@ -25,7 +25,7 @@ On a hosted Machine:
 
 On your own computer:
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick X.
+1. In the dashboard, open **Connections**, then **Chat**, and pick X.
 2. Pick **Work** with its company, or **Personal**, type your handle without the @, and press **Connect**.
 3. Press **Sign in to X** and sign in in your Machine's browser. It connects by itself once you're in.
 

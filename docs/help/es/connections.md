@@ -8,7 +8,7 @@ order: 1
 ---
 ## Cómo van
 
-La pestaña **Conexiones** agrupa tus fuentes en **Correo**, **Calendario**, **Chat** y **Otras fuentes**. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
+La pestaña **Conexiones** lista tus fuentes por tipo (**Correo**, **Calendario**, **Chat** y más), con **Inicios de sesión** y **Revisiones** bajo una línea. En el teléfono, toca un tipo para abrirlo y **Conexiones** para volver. Cada fuente es una fila; tócala para ver su tarjeta. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
 
 Una sincronización fallida que una posterior ya compensó se muestra en gris; solo un fallo que sigue siendo el último se muestra como problema, con cuándo vuelve a intentarlo.
 
@@ -20,7 +20,7 @@ Debajo de su estado, cada fuente dice en una línea lo que trae y, cuando puede 
 
 ## Añade una
 
-Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta cada vez. **Cancelar** deja de añadirla. ¿Te fuiste antes de terminar? Vuelve a abrir **Conexiones**, en cualquier dispositivo, y sigue en el mismo paso. Cuando ya está conectada, tu Machine empieza a leerla enseguida y abre la tarjeta nueva, que muestra cómo va su primera sincronización. En una Machine alojada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom inician sesión aquí: elige **Trabajo** o **Personal**, inicia sesión y vuelves a este formulario, que muestra cómo va la conexión. GitHub, WhatsApp, Codex, Chats de Telegram y tu teléfono Android muestran su código en este mismo formulario.
+Abre su tipo y elige una fuente en **Añadir otro**, o bajo la lista si aún no hay ninguna conectada. Te pregunta lo que necesita, una pregunta cada vez. **Cancelar** deja de añadirla. ¿Te fuiste antes de terminar? Vuelve a abrir **Conexiones**, en cualquier dispositivo, y sigue en el mismo paso. Cuando ya está conectada, tu Machine empieza a leerla enseguida y abre la tarjeta nueva, que muestra cómo va su primera sincronización. En una Machine alojada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom inician sesión aquí: elige **Trabajo** o **Personal**, inicia sesión y vuelves a este formulario, que muestra cómo va la conexión. GitHub, WhatsApp, Codex, Chats de Telegram y tu teléfono Android muestran su código en este mismo formulario.
 
 Una fuente que ya conectaste lo indica en la lista, con su cuenta. Elígela para añadir otra al lado: su formulario lo dice y enlaza a la que ya tienes.
 

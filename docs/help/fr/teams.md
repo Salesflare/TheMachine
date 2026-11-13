@@ -36,13 +36,13 @@ Il fonctionne seulement avec un compte Microsoft professionnel ou scolaire. Les 
 
 Sur une Machine hébergée :
 
-1. Dans le tableau de bord, ouvrez **Connexions**, **+ Ajouter** et choisissez **Microsoft Teams** (sous Chat) ou **Réunions Teams** (sous Réunions). Les deux sont la même connexion.
+1. Dans le tableau de bord, ouvrez **Connexions**, **Chat** ou **Réunions** et choisissez **Microsoft Teams** (sous Chat) ou **Réunions Teams** (sous Réunions). Les deux sont la même connexion.
 2. Appuyez sur **Se connecter avec Microsoft** et donnez votre accord. Vous revenez au tableau de bord.
 3. Pour les canaux et les notes de réunion, envoyez à votre admin le lien affiché sur la page de connexion. Une fois approuvé, connectez Teams à nouveau.
 
 Pendant la configuration, la page de configuration propose aussi **Connect Microsoft Teams**.
 
-Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez **Microsoft Teams** ou **Réunions Teams** et appuyez sur **Se connecter avec Microsoft**. Là, il lit vos chats et chats de réunion. Les canaux et les notes de réunion n'y sont pas encore disponibles.
+Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **Chat** ou **Réunions**, choisissez **Microsoft Teams** ou **Réunions Teams** et appuyez sur **Se connecter avec Microsoft**. Là, il lit vos chats et chats de réunion. Les canaux et les notes de réunion n'y sont pas encore disponibles.
 
 ## Le retirer
 

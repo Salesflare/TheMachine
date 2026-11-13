@@ -8,7 +8,7 @@ order: 90
 ---
 ## Einschalten
 
-GBrain ist ein Open-Source-Gedächtnis für Agents, das manche schon nutzen. Es ist aus, bis du es einschaltest, und nur auf einer Machine auf deinem eigenen Computer verfügbar. Installiere zuerst GBrain, dann öffne **Verbindungen**, **+ Hinzufügen**, **GBrain**.
+GBrain ist ein Open-Source-Gedächtnis für Agents, das manche schon nutzen. Es ist aus, bis du es einschaltest, und nur auf einer Machine auf deinem eigenen Computer verfügbar. Installiere zuerst GBrain, dann öffne **Verbindungen**, **Andere**, **GBrain**.
 
 Deine Machine sagt dir, was hineingeht: Personen und Projekte aus deinem Graph mit einem Link zurück, und was sie darüber gelernt hat, wie du arbeitest. Der Text deiner Nachrichten geht nie hinein. GBrain kann das an seine eigenen KI-Anbieter senden. Setz ein Häkchen bei **Ich stimme zu**, dann **GBrain verbinden**.
 

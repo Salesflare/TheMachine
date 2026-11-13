@@ -94,11 +94,11 @@ try{
   assert.equal(of(seen),before,'opened from what was read ahead');
   await page.keyboard.press('Escape');
   for(const k of Object.keys(hits))hits[k]={};
-  // Connections, Add.
-  await page.goto(base+'/#connections=add');
+  // Connections, adding a source: the fixture gives no groups, so they are all in Other, below its cards.
+  await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect="crm"]').waitFor();
   assert.deepEqual(await page.locator('#connect-add .connect-source b').allInnerTexts(),['GitHub','Gmail','Salesflare CRM']);  // A to Z in their group
-  assert.equal(await page.locator('#connectors>article:not([hidden])').count(),0);
+  assert.equal(await page.locator('#conn-title').textContent(),'Other');
   if(shots)await page.screenshot({path:`${shots}/add-${width}.png`});
   await page.locator('#connect-add [data-connect="crm"]').click();
   await page.locator('#connect-answer[type=password]').waitFor();

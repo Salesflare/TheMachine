@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, Codex (codex_signin.py): Codex signs in with its own device code, shown right in the form with
+// Connections, Projects and code, Codex (codex_signin.py): Codex signs in with its own device code, shown right in the form with
 // OpenAI's page, never a command to type. A hosted Machine's control plane runs that sign-in on its server (POST
 // /_machine/connect, followed by /_machine/connect-state, like GitHub); a self-hosted Machine runs it itself
 // (codex_signin, codex_signin_state). The tile says whether Codex is signed in. In Dutch every line reads Dutch.
@@ -53,7 +53,7 @@ try{
   const tag=`${width}x${height}-${scheme}`;
   // Hosted: the tile says Signed out; Get a code posts to this dashboard, which follows the server's sign-in
   hosted=true;lang='en';codex='signed_out';posted=[];
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=work');
   const tile=box(page).locator('[data-codex-signin]');await tile.waitFor({timeout:10000});
   // a phone's tiles leave what a source brings in to its sheet
   assert.match(await tile.innerText(),width>560?/Codex[\s\S]*Coding to-dos on your ChatGPT plan[\s\S]*Signed out/:/Codex[\s\S]*Signed out/);
@@ -95,7 +95,7 @@ try{
   // Self-hosted: this Machine runs the sign-in itself, and the tile says Connected after
   hosted=false;codex='signed_out';actions=[];
   local=[{state:'starting'},{state:'code',code:'WXYZ-98765',url:DEVICE},{state:'code',code:'WXYZ-98765',url:DEVICE},{state:'done'}];
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=work');
   await box(page).locator('[data-codex-signin]').click();
   await box(page).getByRole('button',{name:'Get a code'}).click();
   await box(page).getByText('WXYZ-98765').waitFor({timeout:10000});
@@ -107,14 +107,14 @@ try{
   await page.waitForFunction(()=>/Connected/.test(document.querySelector('[data-codex-signin]')?.innerText||''));
   // No Codex here yet: how to install it, then Try again
   codex=null;local=[{state:'missing'}];
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=work');
   await box(page).locator('[data-codex-signin]').click();
   await box(page).getByRole('button',{name:'Get a code'}).click();
   await box(page).getByText('npm install -g @openai/codex').first().waitFor({timeout:8000});
   // Dutch: the tile and the form read Dutch, nothing English around the code
   hosted=true;lang='nl';codex='signed_out';
   states={'codex/c_00000000000000ff':[{state:'code',code:'ABCD-12345',url:DEVICE}]};
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=work');
   await page.waitForFunction(()=>document.documentElement.lang==='nl');
   const nlTile=box(page).locator('[data-codex-signin]');await nlTile.waitFor({timeout:10000});
   await page.waitForFunction(()=>/Uitgelogd/.test(document.querySelector('[data-codex-signin]')?.innerText||''));

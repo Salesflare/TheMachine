@@ -20,7 +20,7 @@ Eine Direktnachricht an eine Person, als du, und nur, nachdem du sie bei der Auf
 
 ## Verbinden
 
-1. **Verbindungen**, **+ Hinzufügen**, **Slack**, dann **Mit Slack anmelden**, und erlaube es in Slack. Auf deinem eigenen Computer verbindest du ihn zuerst mit deinem Konto auf themachine.computer.
+1. **Verbindungen**, **Chat**, **Slack**, dann **Mit Slack anmelden**, und erlaube es in Slack. Auf deinem eigenen Computer verbindest du ihn zuerst mit deinem Konto auf themachine.computer.
 2. Neue Nachrichten und Direktnachrichten kommen zuerst. Slack lässt Apps etwa ein Gespräch pro Minute lesen, ältere Nachrichten kommen deshalb im Lauf einiger Stunden dazu.
 
 Oder einen Maton-API-Schlüssel verwenden: Melde dich bei maton.ai an, verbinde dort Slack und kopiere deinen Maton-API-Schlüssel unter Home. Öffne dann unter Slack **Oder einen Maton-API-Schlüssel verwenden** und füge ihn ein, oder führe auf deinem eigenen Computer `assistant connect slack` aus. Ein über Maton verbundenes Slack funktioniert weiter wie bisher.

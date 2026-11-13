@@ -26,7 +26,7 @@ Su una Machine in hosting:
 Sul tuo computer:
 
 1. Accedi a X una volta nel browser della tua Machine (Impostazioni, **Apri il browser della Machine ↗**).
-2. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli X. Oppure esegui `assistant connect x`.
+2. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli X. Oppure esegui `assistant connect x`.
 3. Scrivi il tuo nome utente, e quello con cui il browser di solito ha l'accesso.
 
 Se X disconnette la tua Machine, vedi [Disconnesso da un sito](signed-out.md).

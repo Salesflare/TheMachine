@@ -24,7 +24,7 @@ En una Machine alojada:
 2. Abre Salesforce y pulsa **Conectar Salesforce**.
 3. Inicia sesión en Salesforce y permite The Machine (hecha por Salesflare).
 
-O en el panel: **Conexiones**, **+ Añadir**, elige Salesforce y pulsa **Iniciar sesión con Salesforce**.
+O en el panel: **Conexiones**, **Clientes**, elige Salesforce y pulsa **Iniciar sesión con Salesforce**.
 
 Tu usuario de Salesforce necesita acceso a la API, que incluyen la mayoría de las ediciones.
 

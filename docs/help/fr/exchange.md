@@ -18,7 +18,7 @@ Exchange Server tourne dans votre entreprise. Microsoft 365 (Exchange Online) es
 
 ## Le connecter
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **Exchange Server**.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, et choisissez **Exchange Server**.
 2. Saisissez votre adresse e-mail professionnelle et votre mot de passe Windows.
 3. Appuyez sur **Se connecter**.
 

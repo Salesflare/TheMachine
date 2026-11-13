@@ -15,12 +15,12 @@ It is read-only: it never adds, moves or removes a meeting.
 ## Connect iCloud Calendar
 
 1. Make an app-specific password at [appleid.apple.com](https://appleid.apple.com), under **Sign-In and Security**. The one you made for iCloud Mail works too.
-2. In the dashboard, open **Connections**, then **+ Add**, and pick **iCloud Calendar**.
+2. In the dashboard, open **Connections**, then **Calendar**, and pick **iCloud Calendar**.
 3. Fill in your Apple ID and the app-specific password, then press **Connect**.
 
 ## Connect another calendar
 
-1. Open **Connections**, then **+ Add**, and pick **Other calendar**.
+1. Open **Connections**, then **Calendar**, and pick **Other calendar**.
 2. Fill in your email address and password. Many providers want an app password here, made in your account settings.
 3. Press **Connect**.
 

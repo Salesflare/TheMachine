@@ -26,16 +26,17 @@ try{
   const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US'});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/#connections');
+  await page.goto(base+'/#connections=other');
   const health=page.locator('#connectors article[data-conn="openclaw-gateway"]');await health.waitFor();await page.waitForTimeout(300);
+  await health.locator('[data-conn-open]').click();  // its row opens the card
   assert.deepEqual(await page.locator('#connectors article:not([hidden])').evaluateAll(a=>a.map(x=>x.dataset.conn)),['news','openclaw-gateway'],'Machine health comes last');
-  assert.equal(await health.locator('h3').innerText(),'Machine health');
-  assert.equal(await health.locator('.conn-head small').count(),0,'no kind or owner line under it');
+  assert.equal(await health.locator('.conn-name').innerText(),'Machine health');
+  assert.equal(await health.locator('.conn-sub').count(),0,'no kind or owner line under it');
   const text=await health.innerText();
   assert.doesNotMatch(text,/openclaw|gateway|owner:|system/i,text);
   assert.deepEqual(await health.locator('.figures span').allInnerTexts(),['alerts','last 24h','not checked']);
   assert.equal(await health.locator('details summary').filter({hasText:'Details'}).count(),1);
-  assert.equal(await page.locator('#connectors article[data-conn="news"] .conn-head small').innerText(),'Work · Acme');
+  assert.equal(await page.locator('#connectors article[data-conn="news"] .conn-sub').innerText(),'Work · Acme');
   if(shots){await health.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/after-${width}x${height}.png`})}
   await context.close()}
  assert.deepEqual(errors,[]);

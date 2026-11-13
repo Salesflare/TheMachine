@@ -19,7 +19,7 @@ Nothing on your phone. It only reads notifications.
 On a hosted Machine:
 
 1. Install OpenClaw from Google Play on your phone.
-2. In the dashboard, open **Connections**, then **+ Add**, pick Android phone and press **Show a setup code**.
+2. In the dashboard, open **Connections**, then **Other**, pick Android phone and press **Show a setup code**.
 3. In the OpenClaw app, add a Gateway and scan the code. Back in the dashboard, press **Approve**.
 4. Allow notification access when the app asks. Then turn on Forward Notification Events in the app's settings, so notifications come in as they arrive, not only at the check every 10 minutes.
 

@@ -32,7 +32,7 @@ WhatsApp biedt hier geen officiële manier voor. Lezen en af en toe een antwoord
 
 Op een gehoste Machine:
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies WhatsApp.
+1. Open in het dashboard **Koppelingen**, dan **Chat**, en kies WhatsApp.
 2. Druk op **Toon de QR-code**.
 3. Open op je telefoon in WhatsApp Instellingen, Gekoppelde apparaten, Apparaat koppelen, en scan de QR-code.
 4. Binnen een minuut staat WhatsApp als gekoppeld. Je chatgeschiedenis blijft daarna binnenkomen, en de kaart telt de berichten zolang dat duurt.

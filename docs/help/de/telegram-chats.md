@@ -23,7 +23,7 @@ Kam eine Aufgabe per E-Mail rein, aber du schreibst mit der Person über Telegra
 
 ## Verbinden
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle Telegram-Chats.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle Telegram-Chats.
 2. Wähle **QR-Code in Telegram auf deinem Handy scannen**.
 3. Öffne auf deinem Handy in Telegram Einstellungen, Geräte, **Link Desktop Device**, und scanne den Code.
 4. Hat dein Konto ein Cloud-Passwort, gib es ein, wenn danach gefragt wird. Es geht an Telegram und wird nie gespeichert.

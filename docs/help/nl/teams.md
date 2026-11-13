@@ -36,13 +36,13 @@ Het werkt alleen met een Microsoft-werk- of schoolaccount. Persoonlijke accounts
 
 Op een gehoste Machine:
 
-1. Open in het dashboard **Koppelingen**, **+ Toevoegen** en kies **Microsoft Teams** (onder Chat) of **Teams-meetings** (onder Afspraken). Beide zijn dezelfde aanmelding.
+1. Open in het dashboard **Koppelingen**, **Chat** of **Afspraken** en kies **Microsoft Teams** (onder Chat) of **Teams-meetings** (onder Afspraken). Beide zijn dezelfde aanmelding.
 2. Druk op **Inloggen met Microsoft** en geef het OK. Daarna ben je terug in het dashboard.
 3. Voor kanalen en meetingnotities stuur je je beheerder de link die de inlogpagina toont. Zodra die goedkeurt, koppel je Teams opnieuw.
 
 Tijdens het instellen heeft de instelpagina ook **Connect Microsoft Teams**.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **+ Toevoegen**, kies **Microsoft Teams** of **Teams-meetings** en druk op **Inloggen met Microsoft**. Daar leest hij je chats en meetingchats. Kanalen en meetingnotities zijn daar nog niet beschikbaar.
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **Chat** of **Afspraken**, kies **Microsoft Teams** of **Teams-meetings** en druk op **Inloggen met Microsoft**. Daar leest hij je chats en meetingchats. Kanalen en meetingnotities zijn daar nog niet beschikbaar.
 
 ## Verwijderen
 

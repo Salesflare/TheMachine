@@ -54,14 +54,14 @@ Si más tarde se retira ese OK, la tarjeta de Microsoft OneDrive dice **Esperand
 
 No necesitas tener Outlook conectado.
 
-- Machine alojada: en el panel, abre **Conexiones**, **+ Añadir**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea y edite tus archivos y luego vuelves al panel.
-- Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **+ Añadir**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**.
+- Machine alojada: en el panel, abre **Conexiones**, **Documentos y archivos**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**. Microsoft te pide permitir que lea y edite tus archivos y luego vuelves al panel.
+- Tu propio ordenador, vinculado a tu cuenta: abre **Conexiones**, **Documentos y archivos**, elige **Microsoft OneDrive** y pulsa **Iniciar sesión con Microsoft**.
 
 Comprueba que el inicio de sesión puede leer documentos. Sin ese OK no se añade. Si tocas **Permitir cambios** y Microsoft no permite cambios, lo dice en lugar de mostrar Conectado.
 
 ## Google Docs
 
-En una Machine alojada, abre **Conexiones**, luego **+ Añadir**, y elige **Google Docs**. Google te pide permitir que vea y edite los documentos que le indicas, y que cree otros nuevos. No hace falta tener Gmail conectado, y tu acceso a Gmail no cambia.
+En una Machine alojada, abre **Conexiones**, luego **Documentos y archivos**, y elige **Google Docs**. Google te pide permitir que vea y edite los documentos que le indicas, y que cree otros nuevos. No hace falta tener Gmail conectado, y tu acceso a Gmail no cambia.
 
 Después tu Machine:
 

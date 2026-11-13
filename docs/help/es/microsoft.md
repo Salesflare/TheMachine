@@ -36,9 +36,9 @@ En una Machine alojada:
 2. Pulsa **Conectar Microsoft** e inicia sesión.
 3. Si Microsoft pide la aprobación de un administrador, envía este enlace al administrador de tu Microsoft 365: themachine.computer/m365-admin-consent. **Copiar enlace** lo copia. En cuanto lo apruebe, todas las personas de tu organización pueden conectarse. Si eres tú, pulsa **Soy el administrador: aprobar ahora**.
 
-O en el panel: **Conexiones**, **+ Añadir**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. Cuando termines, vuelves al panel. ¿Necesitas la aprobación de tu administrador? El mismo enlace está debajo del botón, con **Copiar enlace**.
+O en el panel: **Conexiones**, **Correo**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. Cuando termines, vuelves al panel. ¿Necesitas la aprobación de tu administrador? El mismo enlace está debajo del botón, con **Copiar enlace**.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **+ Añadir**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. El correo y el calendario se conectan juntos.
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **Correo**, elige Outlook y pulsa **Iniciar sesión con Microsoft**. El correo y el calendario se conectan juntos.
 
 Con tu propia app: abre ahí **Usar tu propia app**, o ejecuta `assistant connect outlook` o `assistant connect outlook_calendar`. Usa tu propio registro de app en Microsoft Entra y un código de inicio de sesión. Te pregunta si también debe enviar lo que apruebes.
 

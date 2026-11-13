@@ -24,7 +24,7 @@ Em uma Machine hospedada:
 2. Abra o Salesforce e clique em **Conectar Salesforce**.
 3. Entre no Salesforce e permita a The Machine (feita pela Salesflare).
 
-Ou no painel: **Conexões**, **+ Adicionar**, escolha Salesforce e clique em **Entrar com Salesforce**.
+Ou no painel: **Conexões**, **Clientes**, escolha Salesforce e clique em **Entrar com Salesforce**.
 
 Seu usuário do Salesforce precisa de acesso à API, que a maioria das edições inclui.
 

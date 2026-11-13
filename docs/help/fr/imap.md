@@ -18,7 +18,7 @@ Elle envoie un e-mail seulement quand vous appuyez sur Envoyer, par le serveur d
 
 ## La connecter
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **Autre e-mail**.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **E-mail**, et choisissez **Autre e-mail**.
 2. Saisissez votre adresse e-mail et votre mot de passe.
 3. Appuyez sur **Se connecter**.
 

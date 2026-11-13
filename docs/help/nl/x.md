@@ -26,7 +26,7 @@ Op een gehoste Machine:
 Op je eigen computer:
 
 1. Log één keer in bij X in de browser van je Machine (Instellingen, **De browser van je Machine openen ↗**).
-2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies X. Of voer `assistant connect x` uit.
+2. Open in het dashboard **Koppelingen**, dan **Chat**, en kies X. Of voer `assistant connect x` uit.
 3. Typ je handle, en de handle waarmee de browser normaal ingelogd is.
 
 Logt X je Machine uit, zie dan [Uitgelogd op een site](signed-out.md).

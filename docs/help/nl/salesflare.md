@@ -18,7 +18,7 @@ Niets, tenzij je `join_pipelines` instelt in het instellingenbestand van je Mach
 
 1. Open in Salesflare [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) en maak een sleutel aan.
 2. Op een gehoste Machine: open je setuppagina op app.themachine.computer/setup, ga naar **Meer bronnen**, open Salesflare CRM, plak de sleutel en druk op **Verbinden**.
-3. Op je eigen computer: voer `assistant connect crm` uit, of **Koppelingen**, **+ Toevoegen**, Salesflare CRM. Na **Verbinden** herstart je Machine en opent hij de Salesflare-kaart. Die zegt eerst dat hij de accounts met recente e-mails en afspraken zoekt, en daarna hoeveel hij er gelezen heeft.
+3. Op je eigen computer: voer `assistant connect crm` uit, of **Koppelingen**, **Klanten**, Salesflare CRM. Na **Verbinden** herstart je Machine en opent hij de Salesflare-kaart. Die zegt eerst dat hij de accounts met recente e-mails en afspraken zoekt, en daarna hoeveel hij er gelezen heeft.
 
 ## Details van de sync
 

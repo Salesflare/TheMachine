@@ -28,9 +28,9 @@ Su una Machine ospitata:
 2. Apri Zoom, scegli lavoro o personale e premi **Collega Zoom**.
 3. Accedi a Zoom e autorizza The Machine. È fatta da Salesflare.
 
-Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Zoom e premi **Accedi con Zoom**. Quando hai finito, torni alla dashboard.
+Oppure nella dashboard: **Connessioni**, **Riunioni**, scegli Zoom e premi **Accedi con Zoom**. Quando hai finito, torni alla dashboard.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **+ Aggiungi**, scegli Zoom e premi **Accedi con Zoom**.
+Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Riunioni**, scegli Zoom e premi **Accedi con Zoom**.
 
 ## Rimuovilo
 

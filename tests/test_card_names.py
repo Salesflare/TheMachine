@@ -172,12 +172,11 @@ class StatusCarriesThem(unittest.TestCase):
     def test_the_card_shows_what_the_machine_named_it(self):
         js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
         self.assertIn('const connTitle=c=>c.card_title||', js)
-        self.assertIn('<h3>${connTitle(c)}</h3>${connSubtitle(c)}', js)
-        # the subtitle is only ever the Machine's: a page-side fallback once read "Acme" over "Work · Acme"
-        line = next(x for x in js.splitlines() if 'connSubtitle=' in x or 'function connSubtitle' in x)
-        self.assertIn('const connSubtitle=c=>c.card_subtitle?html`<small>${c.card_subtitle}</small>`:', line)
-        for composed in ('scopeLabel', 'boundary', 'work_labels', 'display_name', 'service'):
-            self.assertNotIn(composed, line)
+        # the row: its name, then the subtitle, which is only ever the Machine's: a page-side fallback once read "Acme"
+        # over "Work · Acme"
+        row = '<span class="conn-name">${connTitle(c)}</span><small>${c.card_subtitle?html`<span class="conn-sub">${c.card_subtitle}</span> · `:\'\'}'
+        self.assertIn(row, js)
+        self.assertNotIn('connSubtitle', js)
         self.assertIn('display_names.account_card(', (ROOT / 'machine' / 'app' / 'status.py').read_text(encoding='utf-8'))
 
     def test_status_gives_each_card_its_title_and_subtitle(self):

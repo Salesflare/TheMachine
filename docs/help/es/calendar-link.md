@@ -20,7 +20,7 @@ Proton Calendar no tiene otro acceso para apps, así que usa un enlace para comp
 2. Ve a "Ajustes", "Todos los ajustes", "Calendarios", y elige el calendario.
 3. En "Share with anyone", pulsa "Create link" y elige "Full view". Limited view solo muestra cuándo estás ocupado.
 4. Pulsa "Copy link".
-5. En el panel, abre **Conexiones**, luego **+ Añadir**, elige **Proton Calendar**, pega el enlace y pulsa **Conectar**.
+5. En el panel, abre **Conexiones**, luego **Calendario**, elige **Proton Calendar**, pega el enlace y pulsa **Conectar**.
 
 ## Conecta cualquier otro enlace de calendario
 

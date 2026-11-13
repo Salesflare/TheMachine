@@ -24,7 +24,7 @@ On a hosted Machine:
 2. Open Salesforce and press **Connect Salesforce**.
 3. Sign in to Salesforce and allow The Machine (made by Salesflare).
 
-Or in the dashboard: **Connections**, **+ Add**, pick Salesforce and press **Sign in with Salesforce**.
+Or in the dashboard: **Connections**, **Customers**, pick Salesforce and press **Sign in with Salesforce**.
 
 Your Salesforce user needs API access, which most editions include.
 

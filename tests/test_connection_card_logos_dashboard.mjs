@@ -1,40 +1,41 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, the tabs of connected sources: each card shows the same colored logo as its row in + Add (connectLogo,
-// dashboard/logos), by the catalog's name for its service (Salesflare: crm, Google Docs: docs signed in with Google),
-// and none is a broken image. Each card sits on the tab of its source's group (the status's group, as in + Add). A catch-all (Other email) keeps its line icon; Machine health shows the robot.
-// Made-up data, a local fixture server. SHOTS=<folder> saves each tab at 390 and 1440, light and dark.
+// Connections, the kinds of connected sources: each row shows its source's one-color mark (todos-logos.js, dashboard/logos/mono),
+// Google Docs by docs signed in with Google, a catch-all its plain line icon (Other email: the envelope), and every brand's mark
+// is a file there. Each card sits under the kind of its source's group (the status's group, as in + Add). A catch-all (Other email) keeps its line icon; Machine health shows the robot.
+// Made-up data, a local fixture server. SHOTS=<folder> saves each kind at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
-// each source's group as the status gives it (views.source_group, the same as + Add): its tab is Email, Calendar, Chat or Other
+// each source's group as the status gives it (views.source_group, the same as + Add): its kind on Connections
 const GROUP={gmail:'mail',calendar:'calendar',outlook:'mail',outlook_calendar:'calendar',imap:'mail',exchange:'calendar',icloud_calendar:'calendar',
  proton_calendar:'calendar',ics:'calendar',caldav:'calendar',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',
  linkedin:'chat',x:'chat',zoom:'meetings',google_meet:'meetings',docs:'docs',salesflare:'customers',salesforce:'customers',stripe:'customers',
  intercom:'customers',github:'work',trello:'work',shortcut:'work'};
-const TAB={mail:'Email',calendar:'Calendar',chat:'Chat'};
+const KIND={mail:'Email',calendar:'Calendar',chat:'Chat',meetings:'Meetings',docs:'Docs and files',customers:'Customers',work:'Projects and code',other:'Other'};
 const C=(id,service,name,extra={})=>({id,service,group:GROUP[service]||'other',display_name:name,email:id+'@example.org',transport:'broker',boundary:'work',events:12,recent_events:3,last_success:now,...extra});
-// card id -> the logo file it must show (null: its line icon)
+// card id -> the mark it must show (.via-<mark>)
 const CARDS=[
- [C('gmail','gmail','Gmail'),'logos/gmail.svg'],[C('calendar','calendar','Google Calendar'),'logos/calendar.svg'],
- [C('outlook','outlook','Outlook'),'logos/outlook.svg'],[C('outlook_calendar','outlook_calendar','Outlook Calendar'),'logos/outlook_calendar.svg'],
- [C('imap','imap','Other email',{last:true,transport:'imap'}),null],
- [C('ews','exchange','Exchange Server',{transport:'ews'}),'logos/exchange.svg'],[C('icloud','icloud_calendar','iCloud Calendar',{transport:'caldav'}),'logos/icloud_calendar.svg'],
- [C('proton','proton_calendar','Proton Calendar',{transport:'ics'}),'logos/proton_calendar.svg'],
- [C('ics','ics','Calendar link (ICS)',{last:true,transport:'ics'}),null],[C('caldav','caldav','Other calendar',{last:true,transport:'caldav'}),null],
- [C('slack','slack','Slack'),'logos/slack.svg'],[C('teams','teams','Microsoft Teams'),'logos/teams.svg'],[C('whatsapp','whatsapp','WhatsApp'),'logos/whatsapp.svg'],
- [C('telegram','telegram','Telegram chats'),'logos/telegram.svg'],[C('signal','signal','Signal chats'),'logos/signal.svg'],
- [C('linkedin','linkedin','LinkedIn'),'logos/linkedin.svg'],[C('x','x','X'),'logos/x.svg'],[C('zoom','zoom','Zoom'),'logos/zoom.png'],
- [C('google_meet','google_meet','Google Meet'),'logos/google_meet.svg'],[C('docs','docs','Microsoft OneDrive'),'logos/docs.svg'],
- [C('gdocs','docs','Google Docs',{docs_provider:'google'}),'logos/google_docs.svg'],[C('crm','salesflare','Salesflare CRM'),'logos/crm.svg'],
- [C('salesforce','salesforce','Salesforce'),'logos/salesforce.svg'],[C('stripe','stripe','Stripe'),'logos/stripe.svg'],
- [C('intercom','intercom','Intercom'),'logos/intercom.svg'],[C('github','github','GitHub'),'logos/github.svg'],
- [C('trello','trello','Trello'),'logos/trello.svg'],[C('shortcut','shortcut','Shortcut'),'logos/shortcut.svg'],
- [C('android','android','Android notifications'),'logos/android.svg'],[C('rss','rss','RSS feed'),'logos/rss.svg'],
- [C('gateway','gateway','Machine health'),'avatar.png']];
+ [C('gmail','gmail','Gmail'),'gmail'],[C('calendar','calendar','Google Calendar'),'calendar'],
+ [C('outlook','outlook','Outlook'),'outlook'],[C('outlook_calendar','outlook_calendar','Outlook Calendar'),'outlook_calendar'],
+ [C('imap','imap','Other email',{last:true,transport:'imap'}),'mail'],
+ [C('ews','exchange','Exchange Server',{transport:'ews'}),'exchange'],[C('icloud','icloud_calendar','iCloud Calendar',{transport:'caldav'}),'icloud_calendar'],
+ [C('proton','proton_calendar','Proton Calendar',{transport:'ics'}),'proton_calendar'],
+ [C('ics','ics','Calendar link (ICS)',{last:true,transport:'ics'}),'cal'],[C('caldav','caldav','Other calendar',{last:true,transport:'caldav'}),'cal'],
+ [C('slack','slack','Slack'),'slack'],[C('teams','teams','Microsoft Teams'),'teams'],[C('whatsapp','whatsapp','WhatsApp'),'whatsapp'],
+ [C('telegram','telegram','Telegram chats'),'telegram'],[C('signal','signal','Signal chats'),'signal'],
+ [C('linkedin','linkedin','LinkedIn'),'linkedin'],[C('x','x','X'),'x'],[C('zoom','zoom','Zoom'),'zoom'],
+ [C('google_meet','google_meet','Google Meet'),'google_meet'],[C('docs','docs','Microsoft OneDrive'),'docs'],
+ [C('gdocs','docs','Google Docs',{docs_provider:'google'}),'google_docs'],[C('crm','salesflare','Salesflare CRM'),'salesflare'],
+ [C('salesforce','salesforce','Salesforce'),'salesforce'],[C('stripe','stripe','Stripe'),'stripe'],
+ [C('intercom','intercom','Intercom'),'intercom'],[C('github','github','GitHub'),'github'],
+ [C('trello','trello','Trello'),'trello'],[C('shortcut','shortcut','Shortcut'),'shortcut'],
+ [C('android','android','Android notifications'),'android'],[C('rss','rss','RSS feed'),'rss'],
+ [C('gateway','gateway','Machine health'),'gateway']];
 const BRAND={'avatar.png':'../brand/app-icon-192.png'};
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -56,22 +57,22 @@ try{
   const tag=`${width}-${scheme}`;
   await page.goto(base+'/#connections');
   await page.locator('#connectors>article[data-conn="gmail"]').waitFor({state:'attached'});
-  for(const [pane,file] of [['Email','mail'],['Calendar','calendar'],['Chat','chat'],['Other sources','other']]){
-   await page.evaluate(p=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith(p))?.click(),pane);
+  for(const [file,pane] of Object.entries(KIND)){
+   await page.evaluate(k=>document.querySelector(`#health-tabs button.conn-cat[data-health-pane="${k}"]`).click(),file);
+   assert.equal(await page.locator(`#health-tabs button.conn-cat[data-health-pane="${file}"] .ell`).textContent(),pane,`${tag}: the ${pane} kind`);
    // every logo loaded, also the ones below the fold
-   const seen=await page.evaluate(()=>Promise.all([...document.querySelectorAll('#connectors>article:not([hidden])')].map(async a=>{const i=a.querySelector('.conn-head img');
-    if(i){i.loading='eager';if(!i.complete)await new Promise(r=>{i.onload=i.onerror=r})}
-    return [a.dataset.conn,i?i.getAttribute('src'):null,i?i.naturalWidth>0:null]})));
+   const seen=await page.evaluate(()=>Promise.all([...document.querySelectorAll('#connectors>article:not([hidden])')].map(async a=>{const i=a.querySelector('.conn-row>.icon>.via-ico');
+    return [a.dataset.conn,i?[...i.classList].find(c=>c.startsWith('via-')&&c!=='via-ico').slice(4):null,i?getComputedStyle(i).maskImage!=='none':null]})));
    assert.ok(seen.length>0,`${tag}: ${pane} shows its cards`);
-   // a card's tab is its source's group: LinkedIn and X on Chat, a meeting, CRM or work tool on Other sources
-   assert.deepEqual(seen.map(([id])=>id).sort(),CARDS.filter(([c])=>(TAB[c.group]||'Other sources')===pane).map(([c])=>c.id).sort(),`${tag}: ${pane} holds its group's cards`);
-   for(const [id,src,ok] of seen){const want=CARDS.find(([c])=>c.id===id)[1];
-    assert.equal(src,want&&'brand/'+want,`${tag}: ${id} shows ${want||'its line icon'}`);
-    if(src)assert.ok(ok,`${tag}: ${id}'s logo is not a broken image`)}
+   // a card's kind is its source's group: LinkedIn and X under Chat, Zoom under Meetings, a group without a kind under Other
+   assert.deepEqual(seen.map(([id])=>id).sort(),CARDS.filter(([c])=>(KIND[c.group]?c.group:'other')===file).map(([c])=>c.id).sort(),`${tag}: ${pane} holds its group's cards`);
+   for(const [id,mark,ok] of seen){const want=CARDS.find(([c])=>c.id===id)[1];
+    assert.equal(mark,want,`${tag}: ${id} shows the ${want} mark`);assert.ok(ok,`${tag}: ${id}'s mark is drawn`);
+    if(!['mail','cal'].includes(want))assert.ok(existsSync(new URL(`../dashboard/logos/mono/${want}.svg`,import.meta.url)),`${tag}: ${want} has its mark file`)}
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${tag}: ${pane}: no sideways scroll`);
    if(shots)await page.screenshot({path:`${shots}/cards-${file}-${tag}.png`,fullPage:true})}
   const all=await page.evaluate(()=>[...document.querySelectorAll('#connectors>article')].map(a=>a.dataset.conn));
-  assert.deepEqual([...all].sort(),CARDS.map(([c])=>c.id).sort(),`${tag}: every card is on a tab`);
+  assert.deepEqual([...all].sort(),CARDS.map(([c])=>c.id).sort(),`${tag}: every card is under a kind`);
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('connection card logos dashboard ok');

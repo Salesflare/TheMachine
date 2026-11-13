@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add on a paired self-hosted Machine: Microsoft Teams shows under Chat and Teams meetings under Meetings,
+// Connections on a paired self-hosted Machine: Microsoft Teams shows under Chat and Teams meetings under Meetings,
 // one sign-in through the control plane (connect_sources' signin microsoft_teams, test_teams_selfhosted.py). Either
 // row opens Sign in with Microsoft, which starts the `teams` sign-in; coming back, it says Connected to Microsoft Teams.
 // SHOTS=<folder> saves the list and the sign-in step at 390 and 1440, light and dark.
@@ -43,8 +43,9 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const read=page=>page.evaluate(()=>[...document.querySelectorAll('#connect-add .connect-group')].map(g=>({head:g.querySelector('h4').textContent,
- tiles:[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent,what:n.querySelector('small.what')?.textContent||null,signin:n.dataset.connectSignin||null}))})));
+// each kind's sources, as its page shows them, under the kind's name
+const read=page=>page.evaluate(()=>[...document.querySelectorAll('#health-tabs .conn-cat')].filter(b=>CONNECT_GROUPS.some(([k])=>k===b.dataset.healthPane)).map(b=>{showHealthPane(b.dataset.healthPane);
+ return {head:b.querySelector('.ell').textContent,tiles:[...document.querySelectorAll('#connect-add .connect-source')].map(n=>({name:n.querySelector('b').textContent,what:n.querySelector('small.what')?.textContent||null,signin:n.dataset.connectSignin||null}))}}));
 const settle=page=>page.evaluate(()=>Promise.all([...document.querySelectorAll('#connect-add img')].map(i=>{i.loading='eager';return i.complete?0:new Promise(r=>{i.onload=i.onerror=r})})));
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -54,7 +55,7 @@ try{
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{window.open=()=>({location:{}})});  // a stand-in tab: the start link would go to the control plane
   const tag=`${width}-${scheme}`;
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=chat');
   await page.locator('#connect-add .connect-group').first().waitFor();
   const groups=await read(page),tile=(h,n)=>groups.find(g=>g.head===h)?.tiles.find(x=>x.name===n);
   assert.deepEqual(groups.filter(g=>g.tiles.some(x=>/Teams/.test(x.name))).map(g=>g.head),['Chat','Meetings'],`${tag}: Teams shows under Chat and Meetings`);
@@ -63,12 +64,12 @@ try{
   // Read-only, as the calendar rows say it; no meeting notes promised: that admin step is only on a hosted Machine
   assert.deepEqual([tile('Chat','Microsoft Teams').what,tile('Meetings','Teams meetings').what],
    ['Chats and meeting chats from Teams. Read-only.','Meeting chats from Teams. Read-only.'],`${tag}: what the Teams rows bring in`);
-  const tabs=await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].map(b=>b.textContent.trim()));
-  assert.ok(!tabs.some(x=>/^Sources/.test(x))&&['Email','Calendar','Chat'].every(n=>tabs.some(x=>x.startsWith(n))),`${tag}: the tabs are the groups (${tabs.join(', ')})`);
+  const tabs=await page.evaluate(()=>[...document.querySelectorAll('#health-tabs .conn-cat .ell')].map(b=>b.textContent.trim()));
+  assert.ok(!tabs.some(x=>/^Sources/.test(x))&&['Email','Calendar','Chat'].every(n=>tabs.some(x=>x.startsWith(n))),`${tag}: the kinds are the groups (${tabs.join(', ')})`);
   const wide=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
   assert.ok(wide<=0,`${tag}: no sideways scroll (${wide}px)`);
   if(shots){await settle(page);await page.screenshot({path:`${shots}/add-list-${tag}.png`,fullPage:true})}
-  const meetings=page.locator('#connect-add .connect-group').filter({has:page.locator('h4',{hasText:/^Meetings$/})});
+  await page.evaluate(()=>showHealthPane('meetings'));const meetings=page.locator('#connect-add .connect-group');
   if(shots){await meetings.scrollIntoViewIfNeeded();await page.screenshot({path:`${shots}/add-meetings-${tag}.png`})}
   // Teams meetings: Sign in with Microsoft, the Teams consent's own step (never pair first: this Machine is paired)
   await meetings.locator('[data-connect-signin="teams"]').click();

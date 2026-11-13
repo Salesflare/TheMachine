@@ -18,7 +18,7 @@ Nada, a menos que você defina `join_pipelines` no arquivo de configurações da
 
 1. No Salesflare, abra [Configurações, Chaves de API](https://app.salesflare.com/#/settings/apikeys) e crie uma chave.
 2. Em uma Machine hospedada: abra sua página de configuração em app.themachine.computer/setup, vá para **Mais fontes**, abra Salesflare CRM, cole a chave e clique em **Conectar**.
-3. No seu próprio computador: rode `assistant connect crm`, ou **Conexões**, **+ Adicionar**, Salesflare CRM. Depois de **Conectar**, sua Machine reinicia e abre o cartão do Salesflare, que primeiro diz que está encontrando as contas com e-mails e reuniões recentes, e depois quantas já leu.
+3. No seu próprio computador: rode `assistant connect crm`, ou **Conexões**, **Clientes**, Salesflare CRM. Depois de **Conectar**, sua Machine reinicia e abre o cartão do Salesflare, que primeiro diz que está encontrando as contas com e-mails e reuniões recentes, e depois quantas já leu.
 
 ## Detalhes da sincronização
 

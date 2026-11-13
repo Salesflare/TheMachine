@@ -28,7 +28,7 @@ Il tuo Intercom e uno condiviso con te per lo stesso workspace non leggono entra
 
 ## Collegalo
 
-1. Nella dashboard: **Connessioni**, **+ Aggiungi**, Intercom. Oppure nella pagina di configurazione di una Machine in hosting, su app.themachine.computer/setup: **Altre fonti**, Intercom. Sul tuo computer, abbinalo prima al tuo account.
+1. Nella dashboard: **Connessioni**, **Clienti**, Intercom. Oppure nella pagina di configurazione di una Machine in hosting, su app.themachine.computer/setup: **Altre fonti**, Intercom. Sul tuo computer, abbinalo prima al tuo account.
 2. Premi **Accedi con Intercom**.
 3. Approva The Machine in Intercom. È fatta da Salesflare. Quando hai finito, torni da dove eri partito.
 

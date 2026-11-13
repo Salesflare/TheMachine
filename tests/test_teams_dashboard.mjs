@@ -39,14 +39,14 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}-${scheme}`;
-  // + Add: the Teams tile and its form
-  await page.goto(base+'/#connections=add');
-  // two tiles, one sign-in: its chats under Chat, Teams meetings under Meetings
-  const tiles=page.locator('#connect-add [data-connect-signin="teams"]');await tiles.first().waitFor();
-  assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connect-add [data-connect-signin="teams"]')].map(n=>[n.closest('.connect-group').querySelector('h4').textContent,n.innerText.replace(/\s+/g,' ').trim()])),
-   [['Chat','Microsoft Teams Chats and meeting chats from Teams. Read-only. ›'],['Meetings','Teams meetings Meeting notes and transcripts from Teams. Read-only. ›']]);
+  // The Teams tiles and its form: two tiles, one sign-in, its chats in Chat and Teams meetings in Meetings
+  const tiles=page.locator('#connect-add [data-connect-signin="teams"]'),said=()=>tiles.evaluateAll(t=>t.map(n=>n.innerText.replace(/\s+/g,' ').trim()));
+  await page.goto(base+'/#connections=chat');await tiles.first().waitFor();const chat=await said();
+  await page.evaluate(()=>showHealthPane('meetings'));await tiles.filter({hasText:'Teams meetings'}).waitFor();const meet=await said();
+  assert.deepEqual([chat,meet],[['Microsoft Teams Chats and meeting chats from Teams. Read-only. ›'],['Teams meetings Meeting notes and transcripts from Teams. Read-only. ›']]);
   if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/teams-add-${tag}.png`});
-  const tile=tiles.nth(width>500?0:1);  // either one signs in the same way
+  if(width>500){await page.evaluate(()=>showHealthPane('chat'));await tiles.filter({hasText:'Microsoft Teams'}).waitFor()}
+  const tile=tiles.first();  // either one signs in the same way: Chat's on a computer, Meetings' on a phone
   await tile.click();
   const go=page.getByRole('button',{name:'Sign in with Microsoft'});await go.waitFor();
   const form=page.locator('#connect-add');
@@ -64,10 +64,8 @@ try{
   assert.equal(posted[0].source,'microsoft_teams');
   assert.equal(posted[0].scope,undefined);
   // Its card: what it reads, and what it can't yet and why
-  await page.goto(base+'/#connections');
-  await page.evaluate(()=>document.querySelector('nav [data-tab="health"]')?.click());
-  await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());
-  const conn=page.locator('[data-conn="teams"]');await conn.waitFor();
+  await page.goto(base+'/#connections=other');  // no group in the fixture: Other
+  const conn=page.locator('[data-conn="teams"]');await conn.waitFor();await conn.locator('[data-conn-open]').click();
   const lines=await conn.locator('.conn-what').allInnerTexts();
   assert.deepEqual(lines,['Chats, meeting chats and meeting notes from Teams. Reads only. Channels and meeting notes need your admin’s OK.']);  // the first OK only: all of what the admin's OK adds, in one line
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'no sideways scroll');

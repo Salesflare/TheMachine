@@ -25,7 +25,7 @@ Sur une Machine hébergée :
 Sur votre propre ordinateur :
 
 1. Connectez-vous d’abord à la CLI GitHub : `gh auth login`.
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez GitHub. Ou lancez `assistant connect github`.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **Projets et code**, et choisissez GitHub. Ou lancez `assistant connect github`.
 3. Confirmez votre identifiant GitHub. The Machine vérifie qu’il correspond à chaque synchro.
 
 ## Le retirer

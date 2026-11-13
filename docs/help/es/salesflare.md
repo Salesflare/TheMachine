@@ -18,7 +18,7 @@ Nada, a menos que configures `join_pipelines` en el archivo de ajustes de tu Mac
 
 1. En Salesflare, abre [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) y crea una clave.
 2. En una Machine alojada: abre tu página de configuración en app.themachine.computer/setup, ve a **Más fuentes**, abre Salesflare CRM, pega la clave y pulsa **Conectar**.
-3. En tu propio ordenador: ejecuta `assistant connect crm`, o **Conexiones**, **+ Añadir**, Salesflare CRM. Tras **Conectar**, tu Machine se reinicia y abre la tarjeta de Salesflare, que primero dice que está buscando las cuentas con correos y reuniones recientes, y luego cuántas ha leído.
+3. En tu propio ordenador: ejecuta `assistant connect crm`, o **Conexiones**, **Clientes**, Salesflare CRM. Tras **Conectar**, tu Machine se reinicia y abre la tarjeta de Salesflare, que primero dice que está buscando las cuentas con correos y reuniones recientes, y luego cuántas ha leído.
 
 ## Detalles de la sincronización
 

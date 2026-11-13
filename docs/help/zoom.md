@@ -28,9 +28,9 @@ On a hosted Machine:
 2. Open Zoom, pick work or personal, and press **Connect Zoom**.
 3. Sign in to Zoom and allow The Machine (made by Salesflare).
 
-Or in the dashboard: **Connections**, **+ Add**, pick Zoom and press **Sign in with Zoom**. When you're done, you're back in the dashboard.
+Or in the dashboard: **Connections**, **Meetings**, pick Zoom and press **Sign in with Zoom**. When you're done, you're back in the dashboard.
 
-On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Zoom and press **Sign in with Zoom**.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **Meetings**, pick Zoom and press **Sign in with Zoom**.
 
 ## Remove it
 

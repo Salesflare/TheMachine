@@ -31,7 +31,7 @@ Es fragt nie nach deinem Drive. Dein Zugriff auf Gmail und Kalender bleibt, wie 
 
 Gmail muss dafür nicht verbunden sein. So verbindest du es:
 
-- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Google Meet** und tippe auf **Mit Google anmelden**. Google fragt nach dem OK oben, dann kommst du zurück zum Dashboard.
+- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **Meetings**, wähle **Google Meet** und tippe auf **Mit Google anmelden**. Google fragt nach dem OK oben, dann kommst du zurück zum Dashboard.
 - Dein eigener Computer, gekoppelt mit deinem Konto: dieselben Schritte. Die Anmeldung öffnet sich in einem neuen Tab.
 
 Es prüft, ob die Anmeldung Meet lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Die Anmeldung bleibt gültig: Du musst nichts einfügen oder erneuern.

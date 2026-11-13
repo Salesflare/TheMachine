@@ -30,7 +30,7 @@ The installer finds your accounts, connects them one by one, and shows a preview
 
 - Connect your mail: at the top of **To-dos**, press **Gmail** (or **Outlook**), then **Pair this Machine** to pair it with your account. Without an account, **Use your own app** is right below it.
 - Then press **Sign in with Google** (or **Sign in with Microsoft** for Outlook). Mail and calendar connect together.
-- Other sources: **Connections**, then **+ Add**. Your own Google client or Entra app: `assistant connect` in a terminal.
+- Other sources: **Connections**, then the source's kind. Your own Google client or Entra app: `assistant connect` in a terminal.
 - Check everything with `assistant doctor`. It prints a fix for each problem.
 - It installs the newest signed release, and updates come as signed releases too.
 - Pair it with your account, and the phone app opens it after you sign in. Unpairing removes that link.

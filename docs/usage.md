@@ -151,13 +151,13 @@ Links open a tab: `#settings`, `#settings/skills` or `#settings=skills` (also `a
 Graph and Connections have sub-tabs, like Fleet:
 
 - **Graph:** People, Projects and Organizations.
-- **Connections:** your sources by kind (Email, Calendar, Chat, Other sources with Android), **+ Add**, saved **Sign-ins** and **Reviews**. A sub-tab with a source that needs you shows how many and opens first.
+- **Connections:** your sources by kind (the groups below: Email, Calendar, Chat, Meetings and so on), then saved **Sign-ins** and **Checks** below a line. On a computer the kinds sit on the left; on a phone they are a list, and a kind opens as its own page with a way back. Each kind lists its accounts as rows (Work or Personal first, then how it's doing and what came in lately); a row opens its full card. A kind with a source that needs you shows how many and opens first.
 
-Links open a tab or sub-tab: `#events`, `#graph`, `#graph=roles` (`people`, `projects`, `orgs`), `#connections`, `#connections=chat` (`mail`, `other`, `add`, `signins`, `reviews`; the old `phone` opens Other sources). The older `#people` and `#health` still work.
+Links open a tab or sub-tab: `#events`, `#graph`, `#graph=roles` (`people`, `projects`, `orgs`), `#connections`, `#connections=chat` (any kind: `mail`, `calendar`, `meetings`, `docs`, `customers`, `work`, `other`; and `signins`, `reviews`). `#connections=add` opens Email on a computer and the list of kinds on a phone; the old `phone` opens Other. The older `#people` and `#health` still work.
 
 ### Adding a source
 
-Connections, **+ Add** lists every source this Machine can add and how many of each are connected. Picking one runs the same steps as `assistant connect <source>`, inside the service:
+Each kind of Connections lists every source of that kind this Machine can add, under **Add another** once one is connected, and how many of each are connected. Picking one runs the same steps as `assistant connect <source>`, inside the service:
 
 1. Its questions show one at a time. A key goes in a password field and only to the step that asked for it.
 2. A test read.
@@ -583,7 +583,7 @@ Only from a to-do: the owner's Send, never `send_now`.
 
 - The `intercom` action replies in a conversation from the task's own `intercom.conversation` signals (`conversation_id`), at most 10,000 characters of plain text.
 - It goes as the owner's own Intercom admin, with a reply token in a credential file of its own (`reply_credential`, with `reply_admin_id` and `reply_admin_name`).
-- Only the owner's own Sign in with Intercom sets these: on a hosted Machine's setup page, or on a paired self-hosted one's dashboard (Connections, + Add). `onboarding.enable_replies` checks the token's workspace on `GET /me`.
+- Only the owner's own Sign in with Intercom sets these: on a hosted Machine's setup page, or on a paired self-hosted one's dashboard (Connections, Customers). `onboarding.enable_replies` checks the token's workspace on `GET /me`.
 - A pasted token only reads, and a token shared through a Fleet only reads, even if its app could write.
 - The connector allows one write: `POST /conversations/<id>/reply` with `type: admin`, `message_type: comment`, the owner's own `admin_id` and the body, and no other field. Notes, assigning, closing and tags are refused before any token is read.
 - `IntercomTransport` checks first, read-only: the reply token is still that admin in that workspace, and the conversation exists. It then sends once.
