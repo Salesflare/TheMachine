@@ -17,10 +17,10 @@ function milestoneCard(){const n=+state?.done_milestone?.count;if(!n)return '';c
  return html`<section id="milestone" class="ms-card" aria-labelledby="ms-title"><div class="ms-bot" aria-hidden="true"><img src="brand/party.webp" alt="" width="76" height="76">${raw('<i></i>'.repeat(12))}</div>
 <div class="ms-text"><h2 id="ms-title" translate="no">${htmlT('{} to-dos done',html`<b class="ms-n" data-ms-to="${n}">${f}</b>`)}</h2><p translate="no">${msLine(n)}</p></div>
 <button type="button" class="primary ms-share" data-ms-share>${raw(MS_SHARE)}${t('Share')}</button><button type="button" class="ms-x" data-ms-close aria-label="${t('Close')}" title="${t('Close')}">${raw(MS_X)}</button></section>`}
-// The number counts up as the mascot lands (about 0.9 s), once per card; with reduced motion it just shows
+// The number counts up as the mascot lands (about 0.9 s, from frame one), once per card; with reduced motion it just shows
 function msCount(){const b=document.querySelector('#milestone .ms-n:not([data-ms-done])');if(!b)return;b.dataset.msDone='';if(msStill())return;
- const to=+b.dataset.msTo,start=performance.now(),ms=900,w=b.getBoundingClientRect().width;b.style.minWidth=w+'px';
- const step=now=>{const k=Math.min(1,(now-start)/ms),e=1-Math.pow(1-k,3);b.textContent=msNum(Math.round(to*e));if(k<1&&b.isConnected)requestAnimationFrame(step);else{b.textContent=msNum(to);b.style.minWidth=''}};
+ const to=+b.dataset.msTo,ms=900,w=b.getBoundingClientRect().width;let start;b.style.minWidth=w+'px';
+ const step=now=>{start??=now;const k=Math.min(1,(now-start)/ms),e=1-Math.pow(1-k,3);b.textContent=msNum(Math.round(to*e));if(k<1&&b.isConnected)requestAnimationFrame(step);else{b.textContent=msNum(to);b.style.minWidth=''}};
  requestAnimationFrame(step)}
 new MutationObserver(msCount).observe($('#suggestions'),{childList:true});msCount();
 // The image: the brand's color, the number huge, the party mascot, the wordmark and the site. Square (1080) for a
