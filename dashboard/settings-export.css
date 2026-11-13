@@ -21,5 +21,6 @@
 /*@lazy*/
 .export-list [data-export-option]>a.btn-link,.export-list [data-export-option]>button,.export-list [data-export-option]>form{flex:none}
 .export-list [data-export-option]>a.btn-link+button{margin-left:-6px}
+.export-list>[data-export-option]{flex-wrap:wrap}.export-list>[data-export-option]>.grow+*{margin-left:auto}
 .export-body .export-opt{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--border)}.export-body .export-opt:first-child{border-top:0}
 .export-body .export-opt input[type=password]{flex:0 1 220px;min-width:0}
