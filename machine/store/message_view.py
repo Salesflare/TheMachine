@@ -21,7 +21,8 @@ below on made-up data. The rules (docs/adding-a-source.md, "How a message reads"
    The source's own name for an address comes first (sender_name), and a relay or bot address never shows outside email.
 5. A short title, whole, never cut mid-word by the source.
 6. Long bodies fold behind Show more (the dashboard does that).
-7. "Open in …" sits left, under the content, for every kind.
+7. "Open in …" sits left, under the content, for every kind that has a link (list rows too: list_row).
+8. A meeting transcript reads as speaker turns with times of day, never its raw "[0:00:00]" stamps (transcript_turns).
 """
 import datetime as dt
 import email.utils
@@ -30,7 +31,8 @@ import re
 import sqlite3
 
 from machine.cards import group_sender
-from machine.sources.android import android_text_shown
+from machine.sources.android import android_app_shown, android_text_shown
+from machine.sources.gmail import phone_link
 from machine.sources.slack import slack_plain
 from machine.store import graph_identifiers
 from mail_senders import relay
@@ -411,6 +413,145 @@ def intercom_turns(m, body, occurred_at):
     return out
 
 
+# A meeting transcript's turn, as Zoom, Teams, Meet and pasted ones write it: "[0:01:02] Dana: words", "00:01:02 Dana:
+# words", "Dana (00:01): words", "Dana 0:01: words" or "Dana: words". A WebVTT cue's timing line ("00:00:01.000 -->
+# 00:00:04.000") gives the next turn its time. The stamp is when in the meeting it was said (h:mm:ss or m:ss).
+_STAMP = r'[\[(]?((?:\d{1,2}:)?\d{1,2}:\d{2})(?:[.,]\d{1,3})?[\])]?'
+TURN_STAMP_FIRST = re.compile(r'^\s*(?:[-*]\s+)?' + _STAMP + r'\s*[-–|]?\s*([^\s:\[(][^:\n]{0,60}?)\s*:\s*(.*)$')
+TURN_STAMP_AFTER = re.compile(r'^\s*(?:[-*]\s+)?([^\s:\[(][^:\n]{0,60}?)[\s,–-]+' + _STAMP + r'\s*:\s*(.*)$')
+TURN_PLAIN = re.compile(r'^\s*(?:[-*]\s+)?([^\s:\[(\d][^:\n]{0,60}?):\s+(\S.*)$')
+CUE = re.compile(r'^\s*' + _STAMP + r'\s+-->\s')
+
+
+def transcript_kind(kind):
+    """Whether an event kind is a meeting transcript (meeting.transcript, zoom.transcript, teams.transcript, a future
+    connector's *.transcript)."""
+    return str(kind or '').endswith('.transcript')
+
+
+def _seconds(stamp):
+    parts = [int(p) for p in str(stamp).split(':')]
+    return parts[0] * 3600 + parts[1] * 60 + parts[2] if len(parts) == 3 else parts[0] * 60 + parts[1]
+
+
+def transcript_turns(body, start=None):
+    """A transcript as speaker turns, [{'from', 'body', 'occurred_at'}], without its raw stamps: a speaker's run is one
+    turn, said at the meeting's start (`start`, ISO) plus its first stamp, or at the start when it has none. [] when
+    speaker lines aren't most of the text (then it reads as written)."""
+    try:
+        began = dt.datetime.fromisoformat(str(start)) if start else None
+    except ValueError:
+        began = None
+    at = lambda secs: (began + dt.timedelta(seconds=secs)).isoformat() if began and secs is not None else (start or '')
+    turns, cue, total, covered = [], None, 0, 0
+    for line in str(body or '').replace('\r\n', '\n').split('\n'):
+        bare = line.strip()
+        if not bare or bare == 'WEBVTT' or bare.isdigit():
+            continue
+        timing = CUE.match(line)
+        if timing:
+            cue = _seconds(timing[1])
+            continue
+        total += len(bare)
+        hit = TURN_STAMP_FIRST.match(line)
+        who, said, secs = (hit[2], hit[3], _seconds(hit[1])) if hit else (None, None, None)
+        if not hit and (hit := TURN_STAMP_AFTER.match(line)):
+            who, said, secs = hit[1], hit[3], _seconds(hit[2])
+        if not hit and (hit := TURN_PLAIN.match(line)):
+            who, said, secs = hit[1], hit[2], cue
+        cue = None
+        if not hit:
+            if turns:  # a turn's words that went on to the next line
+                turns[-1]['body'] += ' ' + bare
+                covered += len(bare)
+            continue
+        covered += len(bare)
+        who, said = ' '.join(who.split())[:120], said.strip()
+        if turns and turns[-1]['from'] == who:
+            turns[-1]['body'] = (turns[-1]['body'] + ' ' + said).strip()
+        else:
+            turns.append({'from': who, 'body': said, 'occurred_at': at(secs)})
+    turns = [t for t in turns if t['body']]
+    return turns if turns and covered >= 0.6 * total else []
+
+
+def list_row(kind, title, body, m, occurred_at=''):
+    """How one message reads as a row in a list of them (Messages, events-list.js), by the same rules as the viewer:
+    {'title', 'who', 'text', 'url', 'phone_url'?, 'app'}. `who` is who it's from by name (never an address, a package or
+    the title again), `text` its words without raw stamps, ids or markup, `url` where it opens outside (https only,
+    else ''), and `app` the app that is ("Gmail"; '' is "Open original"). Every kind with a link gets it, the same way."""
+    m = m if isinstance(m, dict) else {}
+    view = view_of(kind)
+    title, text = ' '.join(str(title or '').split()), str(body or '')
+    who, turns = '', []
+    if view == 'notification':
+        package = str(m.get('package_name') or '')
+        app = android_app_shown(package, m.get('app_name')) if package else str(m.get('app_name') or '')
+        o = {'title': title, 'body': text}
+        shape_notification(o, {**m, 'app_name': app}, title)
+        title = o['title'] or app
+        text = '\n'.join(s for s in (o['body'], o['sub']) if s and not same(s, title))
+        who = app
+    elif transcript_kind(kind) and (turns := transcript_turns(text[:6000], m.get('start_at') or occurred_at)):  # its start is enough
+        text = '\n'.join(f"{t['from']}: {t['body']}" for t in turns)
+    elif kind in ('intercom.conversation', 'fleet.intercom') and (said := intercom_turns(m, text, occurred_at)):
+        # a support conversation by who said what, never its parts' raw times and types; the customer's own words
+        # without their name again (the meta line says it)
+        who = sender_name(kind, m)
+        text = '\n'.join(t['body'] if t['from'] == who else f"{t['from']}: {t['body']}" for t in said)
+    else:  # as the viewer shapes it (shape): mail headers out of the text, GitHub's head line and its comment's author
+        o = shape(kind, {'title': title, 'body': text, 'from': str(m.get('from') or ''), 'occurred_at': occurred_at, 'url': None}, dict(m))
+        title, text = ' '.join(str(o.get('title') or title).split()), o.get('body') or ''
+        if o['format'] == 'markdown':  # a row is plain words: no ** or [label](url)
+            text = plain_markdown(text)
+        if kind != 'calendar.event':  # a meeting's row says when, not who
+            card = o.get('card') or {}
+            # a Google Group's "'Sam Lee' via Sales" is Sam Lee
+            raw = str(o.get('from') or '')
+            person = (raw.partition('<')[0] if '<' in raw else '').strip().strip('"').split(' via ')[0].strip().strip("'\"")
+            # the owner's own: a chat row says "From You" (events-list.js); anything else of theirs needs no sender
+            who = ('You' if kind in ('whatsapp.message', 'linkedin.message') else '') if m.get('from_me') else card.get('comment_by') or (person if view == 'email' and '@' not in person else '') \
+                or sender_name(kind, {**m, 'from': o.get('from') or m.get('from')}) or str(m.get('channel_name') or m.get('chat_name') or '')
+            who = re.sub(r'\[bot\]$', '', who, flags=re.I)  # "sweeper", as the viewer names a bot
+    who = ' '.join(who.split())
+    if who and (words_in(who) <= words_in(title)):  # the title says it already ("Jamie Morgan", "#general: Tomasz Nowak")
+        who = ''
+    url = m.get('source_url')
+    url = url if isinstance(url, str) and re.match(r'https://[^\s/]+', url) else ''
+    row = {'title': title, 'who': who, 'text': text.strip()[:2000], 'url': url, 'app': app_of(kind, url) if url else ''}
+    if turns:  # a transcript's first turns, each by its speaker (the row shows three lines)
+        row['turns'] = [{'from': t['from'], 'body': t['body'][:300]} for t in turns[:6]]
+    if url and kind == 'gmail.message':
+        phone = phone_link(url, m.get('thread_id'))
+        if phone:
+            row['phone_url'] = phone
+    return row
+
+
+def plain_markdown(text):
+    """Markdown as the plain words a list row shows: [label](url) as label, no ** _ ` or # marks, code as its text."""
+    text = re.sub(r'```[^\n]*\n?([\s\S]*?)```', r'\1', str(text or ''))
+    text = re.sub(r'!?\[([^\]\n]*)\]\((?:[^()\s]|\([^()\s]*\))+\)', r'\1', text)
+    text = re.sub(r'(?m)^\s{0,3}#{1,6}\s+', '', text)
+    text = re.sub(r'(\*\*|__|~~)(?=\S)(.+?)(?<=\S)\1', r'\2', text)
+    text = re.sub(r'(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])', r'\1', text)
+    return re.sub(r'`([^`\n]+)`', r'\1', text)
+
+
+def list_rows(db, events):
+    """list_row for each event (dicts with kind, title, body, metadata, occurred_at), a sender known only by address
+    by the Graph's name for it (rule 4); the address only when no name is known."""
+    rows = [list_row(e.get('kind'), e.get('title'), e.get('body'), e.get('metadata'), e.get('occurred_at')) for e in events]
+    names = address_names(db, bare_addresses(*(r['who'] for r in rows)))
+    for r in rows:
+        r['who'] = name_only(r['who'], names)
+    return rows
+
+
+def words_in(text):
+    return set(re.findall(r'[^\W_]+', str(text or '').casefold()))
+
+
 def shape(kind, o, m):
     """Add the viewer's fields to one original (Store.event_views): view, app, format, and per view what it needs,
     following the rules in this module's docstring."""
@@ -434,6 +575,9 @@ def shape(kind, o, m):
         o['from'] = actor
     elif view == 'card':
         o['body'] = drop_repeats(o['body'], title)
+    if transcript_kind(kind) and (turns := transcript_turns(o['body'], m.get('start_at') or o.get('occurred_at'))):
+        # a transcript reads as who said what, in turns, at the time of day they said it (chatThreadHTML), never "[0:00:00]"
+        o['turns'], o['chat'] = turns, title
     if kind == 'slack.message':  # the title is plain words: a link by its label, an address without "<mailto:…|…>"
         o['title'] = slack_plain(o['title'])
     if kind in ('slack.message', 'whatsapp.message', 'fleet.message'):

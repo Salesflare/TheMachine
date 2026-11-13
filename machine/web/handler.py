@@ -37,6 +37,7 @@ from machine.faults import source_url
 from machine import omarchy
 from machine.sources.calendar import calendar_account_owner, company_domains, invite_people, team_people
 from machine.sources.connectors import writable_calendars
+from machine.store import message_view
 from machine.store.views import DONE_FIRST
 from machine.text import _address, ATTACHMENT_INLINE, encoded, shown_body
 from machine.timing import _REQUEST_TIMING, SLOW_REQUEST_SECONDS, aside, close_kept
@@ -516,7 +517,10 @@ def make_handler(app):
                 rows = app.message_hits(args.get('account', []), query) if kind == 'message' else app.action(
                     'events', {'account_ids': args.get('account', []), 'query': query, 'semantic': bool(query.strip()) and not email,
                                'full': True, **({'kinds': sorted(EMAIL_KINDS)} if email else {})})
-                self.output(200, [{**r, 'body': whatsapp_images.listed(shown_body(r.get('body'))[0])} for r in rows])  # read by people: no model marker
+                rows = [{**r, 'body': whatsapp_images.listed(shown_body(r.get('body'))[0])} for r in rows]  # read by people: no model marker
+                with app.store.connect() as db:  # row: how it reads in Messages, by the viewer's rules for its kind (message_view.list_row)
+                    shown = message_view.list_rows(db, rows)
+                self.output(200, [{**r, 'row': row} for r, row in zip(rows, shown)])
             except (ValueError, sqlite3.OperationalError):
                 self.output(400, {'error': 'Select accounts and use a valid search'})
 
