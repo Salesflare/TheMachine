@@ -2392,7 +2392,7 @@ def connect_grant(config_path, provider, args, team_domains=()):
             if provider == 'microsoft':  # a refused sign-in right after this is Microsoft still settling (ms_graph.py)
                 account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')
             error = check(config, account)
-            if error and not error.startswith(BUSY):
+            if error and not error.startswith(BUSY) and not re.match(r'outlook:HTTP_5\d\d\b', error):  # Graph down, sign-in fine: kept
                 raise SetupError(f'{label(service)} for {email} did not check out ({error})', 'sign in again from Connections, + Add')
             checked.append(account)
         for account in checked:

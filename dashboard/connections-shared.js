@@ -48,7 +48,8 @@ function showHealthPane(id){healthPane=id;healthPicked=true;localStorage.setItem
 // The way into Connections' views, which load when first needed: each waits for them (offline: says so) and goes on.
 async function connectAdd(force){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectAddNow(force)}
 async function connectOpen(name){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectOpenNow(name)}
-function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow())}
+function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow());
+ else if(/^#signed-in=/.test(location.hash))lazyRun('connections',()=>openSignedInLink())}
 // Reconnect buttons elsewhere (cards, Needs you) work before the views are in: the click waits for them, then goes on.
 document.addEventListener('click',e=>{if(lazyIn('connections'))return;const b=e.target.closest('[data-reconnect],[data-hosted-reconnect]');if(!b)return;
  e.preventDefault();e.stopImmediatePropagation();lazyRun('connections',()=>b.click())},true);

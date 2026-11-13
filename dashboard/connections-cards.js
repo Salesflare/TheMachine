@@ -261,6 +261,10 @@ function hostedPoll(){clearTimeout(signinTimer);const s=connectSignin;if(!s?.hos
 // Back from the provider (cloud: open_dashboard to=connect): + Add, that sign-in's form, following how it goes
 // c_: the command its callback queued; f_: why the provider's answer was refused, which the account keeps for this form
 const ON_DASHBOARD=['github','whatsapp','android','codex'];
+function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec(location.hash);if(!m)return;
+ history.replaceState(null,'',location.pathname+location.search);showTab('health');const s=m[1].split('_');
+ if(/^(google|microsoft|zoom|stripe|slack|salesforce|intercom|trello|google_(meet|docs)|microsoft_docs(_write)?)$/.test(m[1]))
+  toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',s[0]=='microsoft'&&s[1]?'Microsoft OneDrive':s.slice(0,2).map(w=>w[0].toUpperCase()+w.slice(1)).join(' ')))}
 async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microsoft_docs|microsoft_docs_write|microsoft_teams|google_meet|google_docs|zoom|stripe|slack|intercom|trello|github|whatsapp|android|codex|salesforce)(?:\/([cf]_[0-9a-f]{16}|stopped))?$/.exec(location.hash);if(!m||!state.manage_url)return;
  history.replaceState(null,'',location.pathname+location.search);connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);
  const docs=m[1]==='microsoft_docs_write'&&connectList?.sources.find(v=>v.hosted_signin==='microsoft_docs');  // Allow edits: the Docs source, its own consent

@@ -90,6 +90,22 @@ class ConnectGrant(unittest.TestCase):
         self.assertEqual((config['accounts'], 'google_broker' in config), ([], False))
         self.assertIsNone(mail_grants.get(config, 'google', 'dee@acme.example'))
 
+    def test_microsoft_signed_in_again_while_graph_is_down_for_that_mailbox_is_kept(self):
+        """Graph answering 5xx for the mailbox says nothing against the new sign-in: it is kept (new scopes and all), and
+        its sync retries by itself. A refusal still leaves the sign-in before, and Google's 5xx isn't let through."""
+        onboarding.connect_delivered(self.path, self.args('microsoft'))
+        self.answer = 'outlook:HTTP_502'
+        self.assertEqual(onboarding.connect_delivered(self.path, self.args('microsoft', refresh_token='fixture-refresh-token-2', scopes=['Contacts.Read'])),
+                         {'ok': True, 'name': 'dee@acme.example'})
+        self.assertEqual(mail_grants.get(self.config(), 'microsoft', 'dee@acme.example'), 'fixture-refresh-token-2')
+        self.answer = 'outlook:HTTP_403'
+        with self.assertRaises(onboarding.SetupError):
+            onboarding.connect_delivered(self.path, self.args('microsoft', refresh_token='fixture-refresh-token-3'))
+        self.assertEqual(mail_grants.get(self.config(), 'microsoft', 'dee@acme.example'), 'fixture-refresh-token-2')
+        self.answer = 'gmail:HTTP_502'
+        with self.assertRaises(onboarding.SetupError):
+            onboarding.connect_delivered(self.path, self.args())
+
     def test_signing_in_again_keeps_the_accounts_and_a_failed_one_keeps_the_sign_in_before(self):
         onboarding.connect_delivered(self.path, self.args())
         before = self.config()['accounts']
