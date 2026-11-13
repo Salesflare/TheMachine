@@ -133,7 +133,6 @@ function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,se
  const xs=kbItems(),first=xs.find(x=>x.matches('article'))||xs[0];
  // No to-do yet (only Done / dismissed and the like): no focus and no ring until a key was pressed
  if(first?.matches('summary')&&kbInput!=='key'&&sec.id==='inbox')return;
- // The Fleet tab's first row is an ask inside a box (Approve, Share): its ring only after a key, never on a plain open
  if(kbInput!=='key'&&sec.id==='fleet')return;
  if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
  if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading

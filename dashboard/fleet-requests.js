@@ -59,7 +59,6 @@ function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=
    html`<div class="actions"><button class="primary" data-share-ok="${p.id}" data-kind="${p.kind}" data-choice="yes">${p.kind==='member'?'Share':p.kind==='admin'?'Confirm':'Approve'}</button><button class="ghost" data-share-ok="${p.id}" data-choice="no">Not now</button></div>`));
  out.push(...networkCards(f));
  return out}
-// A teammate Machine's safety number: folded away, there to compare when it matters, never a raw code in the open
 const fleetFp=fp=>fp?html`<details class="share-fp"><summary>Their Machine's safety number</summary><p class="mono">${fp}</p></details>`:'';
 // Finding people you know on the Network (discovery.py): a permission card once, then a card per person only with a concrete reason
 const netBtn=(label,d,email='',rel='',cls='ghost',confirmText='')=>html`<button type="button" class="${cls}" data-net-do="${d}"${email?html` data-net-email="${email}"`:''}${rel?html` data-net-rel="${rel}"`:''}${confirmText?html` data-confirm-text="${confirmText}"`:''}>${label}</button>`;
