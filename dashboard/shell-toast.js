@@ -8,7 +8,8 @@ function toastSettings(key,id){toast(t(key,t('Settings')));
 // with data-about) goes when another to-do opens: it names no to-do, so over another one it would read as being about that one.
 function toastNotAbout(id){const t=$('#toast'),b=t.querySelector('[data-toast-open],[data-undo],[data-unsnooze],[data-quick-undo],[data-move-undo]'),d=b?.dataset,about=t.dataset.about||d&&(d.toastOpen||d.undo||d.unsnooze||d.quickUndo||d.id);
  if(about&&about!==id&&!about.includes(','))t.classList.remove('show')}
-async function manualRefresh(){if(manualBusy)return;manualBusy=true;newTagline();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':netSlow?NET_SLOW_TEXT:'Couldn’t refresh. Try again in a moment.',!ok)}
+// Each tap of the logo or the time shows a new tagline, also while the refresh before it is still on its way
+async function manualRefresh(){newTagline();if(manualBusy)return;manualBusy=true;document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.add('busy'));const ok=await refresh();document.querySelectorAll('.refresh-tap').forEach(e=>e.classList.remove('busy'));manualBusy=false;toast(ok?'Up to date':netSlow?NET_SLOW_TEXT:'Couldn’t refresh. Try again in a moment.',!ok)}
 document.querySelectorAll('.refresh-tap').forEach(e=>{e.addEventListener('click',manualRefresh);e.addEventListener('keydown',k=>{if(k.key==='Enter'||k.key===' '){k.preventDefault();manualRefresh()}})});
 // The mascot blinks now and then: its closed-eyes frame for 150ms every 4 to 9 seconds, sometimes twice. Every robot
 // image whose pose has one blinks (SHUT; data-blink names it for the image's first pose), also one drawn later or that

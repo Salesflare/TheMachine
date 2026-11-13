@@ -53,7 +53,9 @@ Iedereen in de Fleet kan een inzicht **Verwijderen**. Het is dan weg voor iedere
 
 Kies **Dagelijks** of **Wekelijks** bij **Teambriefing** in het Fleet-tabblad, onder **Delen**. Je Machine vraagt dan de Machines van je team om aantallen en datums. Wat jou nodig heeft, komt in To-do's, onder Werk: een klant die op antwoord wacht, een bedrijf dat stil werd, twee van jullie die dezelfde mensen mailen, of een gedeelde meeting.
 
-- Het bedrijf en je teamgenoten linken naar hun pagina. **Details** toont wie van het team contact heeft en hun laatste threads, alleen wat de [Team Graph](team-graph.md) deelt.
+- Een to-do zegt op wie het wacht, sinds wanneer, wat ze vroegen en wat er speelt, zoals een open project. Is er niets concreets te zeggen, dan blijft het een regel in de briefing, geen to-do.
+- Het bedrijf en je teamgenoten linken naar hun pagina. **Details** toont wat ze schreven (tik om het te lezen), wat er speelt, wie van het team contact heeft en hun laatste threads, alleen wat de [Team Graph](team-graph.md) deelt.
+- Staat wat ze schreven alleen in de mail van een teamgenoot, dan zegt de to-do wie je het vraagt.
 - **Het team vragen** stuurt hun een vraag erover. Hun antwoorden staan op de to-do.
 - **Niet nodig** sluit hem, en de briefing leert ervan. Hij komt alleen terug met iets nieuws.
 - Antwoordt iemand of neemt iemand het op zich, dan sluit de to-do vanzelf. Heb je al een to-do over dat bedrijf, dan komt het daarbij.

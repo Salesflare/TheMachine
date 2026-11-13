@@ -6,7 +6,8 @@ import datetime as dt
 import json
 import unittest
 
-from test_fleet import NOW, fleet, mail  # noqa: I001 - first: it puts the repository on the path
+from test_fleet import NOW, TEAM, fleet, mail  # noqa: I001 - first: it puts the repository on the path
+import fleet_brief
 import fleet_brief_todos
 import test_fleet_brief as brief_fixture
 
@@ -22,7 +23,20 @@ class BriefTodos(unittest.TestCase):
     def setUp(self):  # the brief's own fixture (test_fleet_brief.py), then the app's hooks (machine/app/fleet.py)
         brief_fixture.Brief.setUp(self)
         self.fleet.brief_card = fleet_brief_todos.card_maker(self.store)
+        self.fleet.brief_reword = self.store.brief_reword
         self.fleet.done_card = lambda card, choice, why, key: self.store.decide(card, choice, why, key, 'fleet')
+        with self.store.connect() as db:  # what is at stake with Globex in the owner's Graph: its renewal, on a board
+            db.execute("INSERT OR IGNORE INTO graph_nodes(id,kind,name,strength,signals,info) VALUES('org:globex.example','org','Globex',0.5,1,?)",
+                       (json.dumps({'domain': 'globex.example'}),))
+            db.execute("INSERT INTO boards(id,name,stages,source,created_at) VALUES(9,'Renewals','[\"Proposal\",\"Signed\"]','owner',?)", (NOW.isoformat(),))
+            db.execute("INSERT INTO projects(id,name,created_at,org,board_id,stage) VALUES(90,'Globex renewal',?,'globex.example',9,'Proposal')", (NOW.isoformat(),))
+
+    def day(self, days_ago):
+        return fleet_brief._on_day((NOW - dt.timedelta(days=days_ago)).date().isoformat(), NOW.date())
+
+    def gone_title(self):
+        days = (NOW.date() - dt.date.fromisoformat(GONE['last'])).days
+        return f'Gone has been quiet for {days // 7} weeks' if days < 60 else f'Gone has been quiet for {days // 30} months'
 
     def tell(self, pat, day=1, quiet=False):
         """A brief told for the work Fleet, from the owner's facts and Pat's answer, then its lines into To-dos."""
@@ -61,11 +75,13 @@ class BriefTodos(unittest.TestCase):
     def test_a_line_is_a_work_todo_and_one_about_a_company_with_an_open_todo_joins_it(self):
         self.assertEqual(self.tell(PAT), 2)
         cards = {c['title']: c for c in self.brief_cards()}
-        self.assertEqual(set(cards), {'Globex is waiting for a reply', 'Gone went quiet'})
-        globex, gone = cards['Globex is waiting for a reply'], cards['Gone went quiet']
+        waiting = f'Globex has been waiting on Pat since {self.day(1)}'
+        self.assertEqual(set(cards), {waiting, self.gone_title()})
+        globex, gone = cards[waiting], cards[self.gone_title()]
         self.assertEqual((globex['status'], json.loads(globex['account_ids'])), ('pending', ['work']))  # Work, For you
-        self.assertEqual(globex['body'], 'Since yesterday, sent to Pat, you also talk to them.')
-        self.assertEqual(gone['body'], 'Last contact Aug 2, a customer.')  # why it matters: a customer, when
+        # who has it, what's at stake in the owner's Graph, and plainly that what they wrote is only in Pat's mail
+        self.assertEqual(globex['body'], 'What they wrote isn’t shared with you. Ask Pat. At stake: renewal (Proposal). You also talk to them.')
+        self.assertEqual(gone['body'], 'Last contact Aug 2. A customer.')  # why it matters: a customer, when
         self.assertNotIn('—', globex['body'] + gone['body'])
         # from the Fleet ("From your Fleet" on the dashboard), never "signal from", which reads as a Signal chat
         self.assertRegex(globex['source_line'], r'^Source: your Fleet · \w{3}, \w{3} \d{1,2}$')
@@ -74,11 +90,11 @@ class BriefTodos(unittest.TestCase):
         self.assertEqual((lines['unanswered:customer.example']['card'], lines['unanswered:customer.example']['merged']), ('s3', True))
         joined = self.shown('s3')
         self.assertFalse(joined['own'])
-        self.assertEqual([i['title'] for i in joined['items']], ['Customer Co is waiting for a reply'])
+        self.assertEqual([i['title'] for i in joined['items']], [f'Customer Co has been waiting on you since {self.day(3)}'])
         own = self.shown(globex['id'])
         self.assertTrue(own['own'])
         line = own['items'][0]
-        self.assertEqual((line['kind'], line['org']['name'], line['ask']), ('waiting', 'Globex', 'Who is answering Globex?'))
+        self.assertEqual((line['kind'], line['org']['name'], line['ask']), ('waiting', 'Globex', 'Is anyone answering the email Globex sent to Pat?'))
         self.assertEqual([p['name'] for p in line['team']], ['Pat'])
         # the next round with the same brief: nothing new
         self.assertEqual(self.tell(PAT), 0)
@@ -91,7 +107,7 @@ class BriefTodos(unittest.TestCase):
 
     def test_the_summary_is_the_one_ping_its_todos_come_in_silently(self):
         self.tell(PAT, quiet=True)  # the brief told with its own summary, which links to To-dos
-        self.assertEqual(self.deliveries(), {'Globex is waiting for a reply': 'not_sent', 'Gone went quiet': 'not_sent'})
+        self.assertEqual(self.deliveries(), {f'Globex has been waiting on Pat since {self.day(1)}': 'not_sent', self.gone_title(): 'not_sent'})
 
     def test_without_the_summary_ping_its_todos_arrive_like_any_other(self):
         self.tell(PAT)
@@ -102,7 +118,7 @@ class BriefTodos(unittest.TestCase):
         for e in events:
             self.store.commit_page('work', {}, [e])
         self.tell({'quiet': [GONE]})
-        self.assertEqual(self.card(self.card_of('quiet:gone.example'))['body'], 'Last contact Aug 2, a customer, usually every two weeks.')
+        self.assertEqual(self.card(self.card_of('quiet:gone.example'))['body'], 'Last contact Aug 2. A customer. Usually every two weeks.')
         self.assertEqual(fleet_brief_todos.rhythm_words(7), 'usually weekly')
         self.assertEqual(fleet_brief_todos.rhythm_words(1), '')
 
@@ -191,13 +207,71 @@ class BriefTodos(unittest.TestCase):
         self.assertNotIn('40k', json.dumps(line))
         self.assertEqual(line['also'], ['Kim'])  # Pat is on the line already
         self.assertNotIn('home@globex', json.dumps(line))
-        self.assertEqual(line['own']['from'], 'Ada')  # the newest from Globex on the work mailbox, not the home one
-        self.assertEqual(line['own']['at'][:10], (NOW - dt.timedelta(days=2)).date().isoformat())
+        # what they wrote: the owner's own copy from that day on the work mailbox (not the home one), to open in the reader
+        self.assertEqual(line['gist']['from'], 'Ada')
+        self.assertEqual(line['gist']['at'][:10], (NOW - dt.timedelta(days=2)).date().isoformat())
+        self.assertEqual(set(line['gist']), {'event', 'subject', 'from', 'at'})  # never its text
+        self.assertNotIn('own', line)  # the newest from them is that same email
+        self.assertEqual(line['stake'], [{'id': 'project:90', 'name': 'renewal', 'stage': 'Proposal'}])
+        self.assertEqual(line['org'], {'id': 'org:globex.example', 'name': 'Globex'})
+        self.assertNotIn('unshared', line)
         self.assertTrue(seen)
-        # nothing shared about them: the line alone
+        # nothing shared about them: the line and the owner's own Graph alone
         self.fleet.team_for = lambda db, node: (_ for _ in ()).throw(KeyError(node))
         line = self.shown(self.card_of('unanswered:globex.example'))['items'][0]
-        self.assertEqual((line['threads'], line['also']), ([], []))
+        self.assertEqual((line['threads'], line['also'], line['gist']['from']), ([], [], 'Ada'))
+
+    def test_vague_lines_make_no_todo_and_one_that_turns_vague_closes(self):
+        recent = {**GONE, 'last': (NOW - dt.timedelta(days=5)).date().isoformat()}  # in touch five days ago: not quiet
+        self.tell({'unanswered': [GLOBEX], 'quiet': [recent]})
+        self.assertNotIn('quiet:gone.example', self.lines())
+        globex = self.card_of('unanswered:globex.example')
+        with self.store.connect() as db:  # the renewal is won and closed: nothing at stake, nothing else known
+            db.execute("UPDATE projects SET closed_at=? WHERE id=90", (NOW.isoformat(),))
+        self.tell({'unanswered': [GLOBEX]})
+        self.assertIn('unanswered:globex.example', self.brief_keys())  # still a line of the brief
+        self.assertEqual(self.card(globex)['status'], 'completed')  # but no longer a to-do: only a name and a day
+        with self.store.connect() as db:
+            why = db.execute('SELECT feedback FROM decisions WHERE suggestion_id=? ORDER BY created_at DESC', (globex,)).fetchone()[0]
+        self.assertEqual(why, 'Nothing specific to act on, it stays in the team brief')
+
+    def test_what_they_asked_comes_from_the_owners_own_copy_and_a_reply_from_who_it_went_to_settles_it(self):
+        asked = mail('work', 1, 'Ada <ada@globex.example>', f'Pat <{TEAM}>', cc='owner@acme.example', message_id='<ask@globex.example>')
+        self.store.commit_page('work', {}, [asked])
+        self.tell(PAT)
+        globex = self.card_of('unanswered:globex.example')
+        self.assertTrue(self.card(globex)['body'].startswith('Their email: “Mail '))  # its subject, never its text
+        with self.store.connect() as db:  # the review's own line about that email (client threads only)
+            event = db.execute("SELECT id FROM events WHERE source_id=?", (asked['source_id'],)).fetchone()[0]
+            db.execute("INSERT INTO share_lines(event_id,thread,line,at) VALUES(?,?,?,?)", (event, 'x', 'Ada asked Pat for the renewal quote', NOW.isoformat()))
+        self.tell(PAT)
+        row = self.card(globex)
+        self.assertEqual((row['title'], row['body']), (f'Globex has been waiting on Pat since {self.day(1)}',
+                                                       'Ada asked Pat for the renewal quote. At stake: renewal (Proposal). You also talk to them.'))
+        with self.store.connect() as db:  # its Fleet evidence too, so the chat on it reads the same
+            evidence = db.execute("SELECT e.title FROM events e, json_each(?) j WHERE e.id=j.value AND e.kind='fleet.brief'", (row['event_ids'],)).fetchone()
+        self.assertEqual(evidence['title'], row['title'])
+        # Pat's answer is in the owner's copy of the thread (cc, a shared inbox): settled, though Pat's Machine hadn't said so yet
+        answer = mail('work', 0, f'Pat <{TEAM}>', 'ada@globex.example', message_id='<answer@acme.example>')
+        answer['metadata'].update(thread_id=asked['metadata']['thread_id'])
+        self.store.commit_page('work', {}, [answer])
+        self.tell(PAT)
+        self.assertEqual(self.card(globex)['status'], 'completed')
+        with self.store.connect() as db:
+            why = db.execute('SELECT feedback FROM decisions WHERE suggestion_id=? ORDER BY created_at DESC', (globex,)).fetchone()[0]
+        self.assertEqual(why, 'Someone on the team replied or took it on')
+
+    def test_a_quiet_company_says_what_is_at_stake_or_makes_no_todo(self):
+        line = {'key': 'quiet:globex.example', 'kind': 'quiet', 'title': 'Globex went quiet', 'why': 'last contact Aug 2', 'org': 'Globex',
+                'domain': 'globex.example', 'at': (NOW - dt.timedelta(days=30)).date().isoformat(), 'team': [{'label': 'Pat', 'name': 'Pat'}], 'mine': True}
+        gist = {'event': 1, 'subject': 'Renewal terms', 'at': line['at'] + 'T09:00:00+00:00', 'line': 'Ada asked for the new terms'}
+        stake = [{'id': 'project:90', 'name': 'Globex renewal', 'stage': 'Proposal', 'open': True}]
+        made = fleet_brief_todos.specific(line, {'stake': stake, 'gist': gist}, NOW.date(), 'usually weekly')
+        self.assertEqual(made['title'], 'Globex has been quiet for 4 weeks')
+        self.assertEqual(made['why'], f"Last contact {fleet_brief._on_day(line['at'], NOW.date())}: Ada asked for the new terms. "
+                                      'At stake: renewal (Proposal). Usually weekly. Known to you and Pat')
+        self.assertIsNone(fleet_brief_todos.specific(line, {'stake': [], 'gist': gist}, NOW.date()))  # quiet, but nothing at stake
+        self.assertIsNone(fleet_brief_todos.specific({**line, 'at': YESTERDAY}, {'stake': stake}, NOW.date()))  # not quiet at all
 
 
 if __name__ == '__main__':

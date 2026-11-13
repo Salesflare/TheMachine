@@ -873,6 +873,21 @@ class CardsStore:
                            (title, body, json.dumps(meta), event_id))
             return bool(changed)
 
+    def brief_reword(self, suggestion_id, title, body):
+        """A team brief's open to-do in the words its line has now (fleet_brief_todos.py): its title (unless the owner
+        wrote one), text and Fleet evidence, so the chat on it reads the same. Quiet: where it is stays. False when it
+        was closed meanwhile."""
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            row = db.execute("SELECT event_ids FROM suggestions WHERE id=? AND status NOT IN ('completed','rejected')", (suggestion_id,)).fetchone()
+            if not row:
+                return False
+            db.execute("UPDATE suggestions SET " + KEEP_OWNER_TITLE + ",body=? WHERE id=?", (title[:300], title[:300], body[:5000], suggestion_id))
+            ids = [int(i) for i in json.loads(row['event_ids'] or '[]')]
+            if ids:
+                db.execute(f"UPDATE events SET title=?,body=? WHERE kind='fleet.brief' AND id IN ({','.join('?' * len(ids))})", (title, body, *ids))
+            return True
+
     def owner_card(self, text, account_id, work=False, due=None, about=(), attach=(), project=None, files=None, due_at=None, area_open=False,
                    file_texts=None, accepted=False):
         """A card the owner makes themselves (New card on the dashboard). It goes through suggest() like every card, with

@@ -35,9 +35,10 @@ const briefTodo={id:BT,title:'Globex is waiting for a reply (2 emails)',body:'5 
   title:'Globex is waiting for a reply (2 emails)',why:'5 days, sent to you and Pat, and nobody answered or took it',ask:'Who is answering Globex?',
   open:'https://mail.google.com/mail/#search/from%3Aglobex.example',at:'2026-10-15',mine:true,org:{id:'org-globex',name:'Globex'},
   team:[{name:'Pat',node:'person-pat'}],also:['Kim'],threads:[{subject:'Renewal <b>terms</b>',from:'Ada Example',at:'2026-10-14T10:00:00+00:00',via:'Pat'}],
-  own:{subject:'Contract question',from:'Ada Example',at:'2026-10-15T09:00:00+00:00'}}]}};
-const calls=[];
-const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');
+  gist:{event:7,subject:'Contract question',from:'Ada Example',at:'2026-10-15T09:00:00+00:00',line:'Ada asked Pat for the <i>signed</i> contract'},
+  stake:[{id:'project:90',name:'renewal',stage:'Proposal'}],own:{event:8,subject:'Thanks!',from:'Ada Example',at:'2026-10-16T09:00:00+00:00'}}]}};
+const calls=[],requested=[];
+const server=createServer(async(req,res)=>{res.setHeader('Content-Type','application/json');requested.push(req.url);
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[briefTodo],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:1}}));return}
  if(req.url==='/api/action'){let body='';for await(const b of req)body+=b;calls.push(JSON.parse(body));res.end('{"ok":true,"result":{"status":"answered"}}');return}
@@ -64,8 +65,16 @@ try{
  await todo.locator('.details-toggle').click();
  const details=todo.locator('.fleet-brief-details');await details.waitFor();
  const shown=await details.innerText();
- for(const want of [/Waiting since\nOct 15/,/On the team\nPat, Kim/,/Your latest email\nContract question/,/Shared by the team\nRenewal <b>terms<\/b> Ada Example · Oct 14 · via Pat/])assert.match(shown,want);
- assert.equal(await details.locator('b').count(),0);
+ for(const want of [/Waiting since\nOct 15/,/What they wrote\nAda asked Pat for the <i>signed<\/i> contract\nContract question Ada Example · Oct 15/,/At stake\nrenewal Proposal/,
+  /Organization\nGlobex/,/On the team\nPat, Kim/,/Latest from them\nThanks! Ada Example · Oct 16/,/Shared by the team\nRenewal <b>terms<\/b> Ada Example · Oct 14 · via Pat/])assert.match(shown,want);
+ assert.equal(await details.locator('b,i').count(),0);
+ assert.equal(await details.locator('a[href="#graph/project%3A90"]').innerText(),'renewal');
+ // what they wrote opens in the message reader, one tap
+ calls.length=0;await details.locator('[data-brief-open="7"]').click();
+ const reader=page.locator('#email-dialog');await reader.waitFor();
+ assert.equal(await page.locator('#email-title').textContent(),'Contract question');
+ assert.ok(requested.some(u=>u.startsWith('/api/originals?event=7')));
+ await page.keyboard.press('Escape');await reader.waitFor({state:'hidden'});
  // Ask: the question, editable, then Send
  await todo.locator('[data-brief-todo="ask"]').click();
  const box=page.locator('#brief-ask-'+BT);assert.equal(await box.inputValue(),'Who is answering Globex?');

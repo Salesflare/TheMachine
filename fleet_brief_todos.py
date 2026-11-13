@@ -6,6 +6,9 @@ decide, so it is a to-do in For you, not a box of its own in the Fleet tab:
 - Once a brief is told (all answered, or BRIEF_SETTLE passed), each of its lines gets a Work to-do: its title, the
   line's why as its context, the company as its organization. The to-do carries Ask (the Fleet's free question,
   prefilled) and Not needed (Fleet.hide_brief_item: hidden, and an overlap learned).
+- Only a specific line is a to-do (specific(), from _brief_context, no model call): who it waits on and since when,
+  what they asked and what's at stake (open projects, a customer). A vague line stays in the brief; an open to-do
+  that turns vague closes, one that gains a gist is retitled.
 - No second to-do: when the owner already has an open to-do about that company (its organization, or mail from it on
   its evidence), the line joins it; two lines about one company share one to-do.
 - It settles as the line does: once a rebuilt brief no longer has it (a reply went out, a teammate claimed it, contact
@@ -22,9 +25,11 @@ import datetime as dt
 import hashlib
 import json
 import logging
+import sqlite3
 import statistics
 
 from fleet_brief import brief_items
+import graph
 from i18n import t
 import shared_graph_kept
 import todo_org
@@ -39,13 +44,85 @@ SETTLED = {'waiting': 'Someone on the team replied or took it on', 'quiet': 'Bac
 THREADS_SHOWN = 3
 
 
+STAKES_SHOWN = 2
+
+
+def _sentence(text):
+    text = ' '.join(str(text or '').split()).rstrip('.')
+    return text[:1].upper() + text[1:]
+
+
+def _stake_name(name, org):
+    """A project as its to-do names it: without the company's own name in front ("Acme renewal" → "renewal")."""
+    words, lead = str(name or '').split(), str(org or '').casefold().split()
+    n = 0
+    while n < min(len(words) - 1, len(lead)) and words[n].casefold() == lead[n]:
+        n += 1
+    return ' '.join(words[n:])
+
+
+def stake_words(ctx, item):
+    """What is at stake with the company, in a few words: its open projects (with their stage), else a customer."""
+    stakes = [_stake_name(p['name'], item.get('org')) + (f" ({p['stage']})" if p.get('stage') else '') for p in ctx.get('stake') or []]
+    if stakes:
+        return t('At stake: {}', ', '.join(stakes))
+    return t('A customer') if item.get('known') == 'customer' or ctx.get('customer') else ''
+
+
+def specific(item, ctx, today, rhythm=''):
+    """A brief line as a to-do that says what is going on and why it matters, or None: then it stays a line of the
+    brief (its summary), never a vague to-do. ctx is BriefTodos._brief_context: the company's open projects and the
+    last exchange with them, from the owner's own Graph and work accounts. Waiting: who it waits on and since when,
+    what they asked (the exchange's line), and what's at stake; made only when one of those says something (what
+    they asked, a stake, or mail to the owner too). Quiet: how long, the last exchange and what's at stake; made only
+    with a stake. Other kinds as they are."""
+    from fleet_brief import QUIET_MIN_DAYS, _brief_date, _on_day, _people
+    kind, org = item.get('kind'), item.get('org') or ''
+    if kind not in ('waiting', 'quiet'):
+        return item
+    stake = stake_words(ctx, item)
+    gist = ctx.get('gist') or {}
+    said = gist.get('line') or (t('Their email: “{}”', gist['subject']) if gist.get('subject') else '')
+    day = _on_day(item.get('at'), today)
+    last = _brief_date(item.get('at'))
+    names = [p.get('name') or p.get('label') for p in item.get('team') or []]
+    if kind == 'waiting':
+        to = list(item.get('to') or [])
+        if ctx.get('answered') or not (said or stake or item.get('to_me')):
+            return None
+        on = _people((['You'] if item.get('to_me') else []) + to, None, True)
+        parts = [said or (t('What they wrote isn’t shared with you. Ask {}', _people(to)) if to and not item.get('to_me') else ''), stake]
+        also = [n for n in names if n not in to] + (['You'] if item.get('mine') and not item.get('to_me') else [])
+        if also:
+            parts.append(t('{} also talks to them', _people(also)) if also != ['You'] and len(also) == 1 else t('{} also talk to them', _people(also)))
+        return {**item, 'title': t('{} has been waiting on {} since {}', org, on, day) if on else item['title'],
+                'why': '. '.join(_sentence(p) for p in parts if p) or item['why'],
+                'ask': t('Is anyone answering the email {} sent to {}?', org, _people(to, None, True)) if to else item.get('ask'),
+                'gist': gist.get('event') or None}
+    days = (today - last).days if last else 0
+    if days < QUIET_MIN_DAYS or not stake:
+        return None
+    span = t('{} weeks', days // 7) if days < 60 else t('{} months', days // 30)
+    then = _brief_date(gist.get('at'))
+    if not then or abs((then - last).days) > 1 or not (gist.get('line') or gist.get('subject')):  # not the last contact: the day alone
+        last_words = t('Last contact {}', day)
+    else:
+        last_words = t('Last contact {}: {}', day, gist['line']) if gist.get('line') else t('Last contact {}: “{}”', day, gist.get('subject') or '')
+    parts = [last_words, stake, rhythm]
+    known = (['You'] if item.get('mine') else []) + names
+    if len(known) > 1:
+        parts.append(t('known to {}', _people(known, None, True)))
+    return {**item, 'title': t('{} has been quiet for {}', org, span), 'why': '. '.join(_sentence(p) for p in parts if p),
+            'ask': t('Anyone in touch with {} since {}?', org, day), 'gist': gist.get('event') or None}
+
+
 def signature(item):
     """The line and the day it hangs on: the same waiting email, meeting or last contact is the same thing."""
     return f"{item['key']}|{item.get('at') or ''}"
 
 
 def snapshot(item):
-    keep = ('key', 'kind', 'title', 'why', 'ask', 'open', 'org', 'domain', 'at', 'known', 'team', 'mine')
+    keep = ('key', 'kind', 'title', 'why', 'ask', 'open', 'org', 'domain', 'at', 'known', 'team', 'mine', 'to', 'to_me', 'gist')
     return {k: item.get(k) for k in keep}
 
 
@@ -73,6 +150,7 @@ def card_maker(store):
 
 class BriefTodos:
     brief_card = None  # set by the app: brief_card(account, dedupe_key, title, body, domain, quiet) -> the new to-do's id
+    brief_reword = None  # set by the app: brief_reword(card_id, title, body), an open brief to-do in its line's new words
 
     # -- state
     def _brief_todos(self):
@@ -117,18 +195,34 @@ class BriefTodos:
             key, sig = item['key'], signature(item)
             seen.add(key)
             entry = mine.get(key)
+            vague, kept, target = False, False, None
             with self.connect() as db:
-                if item['kind'] == 'quiet':
-                    words = rhythm_words(self._brief_rhythm(db, accounts, item['domain']))
-                    item = {**item, 'why': item['why'] + (', ' + words if words else '')}
+                words = rhythm_words(self._brief_rhythm(db, accounts, item['domain'])) if item['kind'] == 'quiet' else ''
+                ctx = self._brief_context(db, item, accounts, self._brief_repliers(fleet, item))
+                line = specific(item, ctx, today, words)
                 if entry and not entry.get('closed'):
-                    if self._card_status(db, entry['card']) in OPEN:
-                        entry.update(item=snapshot(item), sig=sig)
-                        continue
-                    entry.update(closed=True, at=stamp_now)  # the owner closed it: as they left it
-                if entry and entry['sig'] == sig:
+                    if self._card_status(db, entry['card']) not in OPEN:
+                        entry.update(closed=True, at=stamp_now)  # the owner closed it: as they left it
+                    elif line is None:
+                        vague = True  # nothing specific about it (any more): it stays a line of the brief
+                    else:
+                        kept = True
+                if not kept and not vague and entry and entry['sig'] == sig:
                     continue  # closed for this very thing: only something new brings it back
-                target = self._brief_target(db, item, {e['card'] for k, e in mine.items() if not e.get('closed') and k in seen})
+                if line is not None and not kept:
+                    item = line
+                    target = self._brief_target(db, item, {e['card'] for k, e in mine.items() if not e.get('closed') and k in seen})
+            if kept:  # still open: in the words its line has now (more specific than when it was made)
+                if not entry.get('merged') and (line['title'], line['why']) != (entry['item'].get('title'), entry['item'].get('why')) and self.brief_reword:
+                    self.brief_reword(entry['card'], line['title'][:90], (_sentence(line['why']) + '.')[:700])
+                entry.update(item=snapshot(line), sig=sig)
+                continue
+            if vague:
+                self._brief_todo_close(mine, key, 'complete', t(SETTLED['waiting']) if ctx.get('answered')
+                                       else t('Nothing specific to act on, it stays in the team brief'))
+                continue
+            if line is None:
+                continue
             if target:
                 mine[key] = {'card': target, 'sig': sig, 'item': snapshot(item), 'merged': True, 'at': stamp_now}
                 continue
@@ -181,6 +275,86 @@ class BriefTodos:
         days = [dt.date.fromisoformat(r[0]) for r in rows]
         gaps = [(b - a).days for a, b in zip(days, days[1:])]
         return int(statistics.median(gaps)) if len(gaps) >= 3 else 0
+
+
+    def _brief_repliers(self, ref, item):
+        """The addresses of the people a waiting email went to (the teammates named on its line, and the owner when it
+        went to them too): a reply from one of them in the owner's own copy of its thread answers it."""
+        import fleet as fleet_module
+        if item.get('kind') != 'waiting':
+            return set()
+        to = set(item.get('to') or ())
+        labels = {p.get('label') for p in item.get('team') or [] if p.get('name') in to}
+        found = {str(e).lower() for m in self.teammates(ref) if fleet_module.clean(fleet_module.label(m), 120) in labels for e in m.get('emails') or ()}
+        return found | ({str(e).lower() for e in self.my_emails()} if item.get('to_me') else set())
+
+    def _brief_context(self, db, item, accounts, repliers=()):
+        """What the owner's own Machine knows that makes a brief line specific: the company's open projects in their
+        Graph (`stake`), whether it is a customer, and the exchange the line hangs on (`gist`): for a waiting email, the
+        message from them on its day (the review's line about it, else its subject); for a quiet company, the last one
+        from them. `answered`: the owner's own copy of that email's thread (a shared CRM inbox, cc) already has a reply
+        from someone it went to (`repliers`), which the brief hadn't seen. Only the owner's own work accounts and Graph: a
+        teammate's Machine shares no message for a brief."""
+        domain = str(item.get('domain') or '').lower()
+        org = todo_org.card_org(db, domain) if domain else ''
+        out = {'org': org, 'stake': [], 'customer': False, 'gist': None, 'latest': None, 'answered': False}
+        if org:
+            out['stake'] = [p for p in graph.org_projects(db, org) if p.get('open')][:STAKES_SHOWN]
+            row = db.execute("SELECT info FROM graph_nodes WHERE id=?", (org,)).fetchone()
+            out['customer'] = bool(row and json.loads(row['info'] or '{}').get('paying'))
+        exchange = self._brief_exchange(db, org, domain, accounts)
+        found = [m for m in exchange if m['them']]
+        out['latest'] = found[0] if found else None
+        if item.get('kind') == 'waiting':
+            try:
+                day = dt.date.fromisoformat(str(item.get('at') or '')[:10])
+            except ValueError:
+                day = None
+            near = [m for m in found if day and abs((dt.date.fromisoformat(m['at'][:10]) - day).days) <= 1]
+            out['gist'] = next((m for m in near if m.get('line')), near[0] if near else None)
+            repliers = set(repliers)
+            out['answered'] = any(r['thread'] == m['thread'] and r['at'] > m['at'] and r['address'] in repliers
+                                  for m in near if m['thread'] for r in exchange if not r['them'])
+        elif item.get('kind') == 'quiet':
+            out['gist'] = next((m for m in found if m.get('line')), out['latest'])
+        return out
+
+    def _brief_exchange(self, db, org, domain, accounts, limit=40):
+        """Messages with the company on the owner's work accounts, newest first: each its event, subject, sender, when,
+        its mail thread, whether it came from them (`them`), and the review's one line about it (share_lines: written for
+        client threads only), where there is one."""
+        if not accounts or not domain:
+            return []
+        marks = ','.join('?' * len(accounts))
+        ids, names = [], {}
+        if org:  # the people of the organization: mail, chats, Intercom, a shared CRM inbox
+            for name, info in db.execute("SELECT n.name,n.info FROM graph_links l JOIN graph_nodes n ON n.id=l.a WHERE l.b=? AND l.kind='member' AND n.kind='person'", (org,)):
+                for i in json.loads(info or '{}').get('identifiers') or ():
+                    if str(i).startswith('email:'):
+                        names.setdefault(str(i)[6:].lower(), name)  # a bare address (a CRM copy) shows as the person
+            ids = [r[0] for r in db.execute("SELECT g.event_id FROM graph_events g JOIN graph_links l ON l.a=g.node_id WHERE l.b=? AND l.kind='member' "
+                                            "GROUP BY g.event_id ORDER BY MAX(g.at) DESC LIMIT 60", (org,))]
+        ids += [r[0] for r in db.execute(f"SELECT id FROM events WHERE kind='gmail.message' AND deleted=0 AND account_id IN ({marks}) "
+                                         "AND (instr(lower(json_extract(metadata,'$.from')),?)>0 OR instr(lower(json_extract(metadata,'$.to')),?)>0) "
+                                         "ORDER BY occurred_at DESC LIMIT 30", (*accounts, '@' + domain, '@' + domain))]
+        if not ids:
+            return []
+        try:
+            lines = {r[0]: r[1] for r in db.execute(f"SELECT event_id,line FROM share_lines WHERE event_id IN ({','.join('?' * len(ids))})", ids)}
+        except sqlite3.OperationalError:  # no Team Graph here
+            lines = {}
+        out = []
+        for r in db.execute(f"SELECT id,title,occurred_at,metadata FROM events WHERE id IN ({','.join('?' * len(ids))}) AND deleted=0 "
+                            f"AND account_id IN ({marks}) AND occurred_at<=? ORDER BY occurred_at DESC LIMIT ?",
+                            (*ids, *accounts, dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'), limit)):
+            m = json.loads(r['metadata'] or '{}')
+            sender = str(m.get('from') or '')
+            name = ' '.join(sender.split('<')[0].replace('"', '').split()) if '<' in sender else ''
+            them = '@' + domain in sender.lower() and 'SENT' not in set(m.get('labels') or ())
+            address = ((graph.addresses(sender) or [('', '')])[0][1] or '').lower()
+            out.append({'event': r['id'], 'subject': str(r['title'] or '')[:160], 'from': (name or names.get(address) or sender)[:80], 'at': r['occurred_at'],
+                        'them': them, 'thread': str(m.get('thread_id') or ''), 'address': address, **({'line': lines[r['id']]} if lines.get(r['id']) else {})})
+        return out
 
     def _brief_todo_close(self, mine, key, choice, why):
         """One line done with: its own to-do closes (choice, why) unless another open line still holds it; a to-do
@@ -311,11 +485,18 @@ class BriefTodos:
                        for x in section['threads'][:THREADS_SHOWN]]
             named = {p['name'] for p in team}
             also = [p['name'] for p in section['people'] if p.get('name') and p['name'] not in named]
-        own = self._brief_own_mail(db, ref, item) if item.get('mine') else None
+        ctx = self._brief_context(db, item, self.fleet_accounts(ref), self._brief_repliers(ref, item))
+        shown = lambda m: {k: m[k] for k in ('event', 'subject', 'from', 'at', 'line') if m.get(k)}
+        gist, own = ctx.get('gist'), ctx.get('latest')
+        stake = [{'id': p['id'], 'name': _stake_name(p['name'], item.get('org')), **({'stage': p['stage']} if p.get('stage') else {})} for p in ctx['stake']]
+        # what they wrote is in a teammate's mail only: say so, and who to ask
+        unshared = item['kind'] == 'waiting' and not item.get('to_me') and not gist and not threads
         return {'key': item['key'], 'kind': item['kind'], 'title': item['title'], 'why': item['why'], 'ask': item.get('ask') or '',
                 'open': item.get('open') or '', 'at': item.get('at') or '', 'mine': bool(item.get('mine')),
                 'org': {'id': org or self._brief_team_org(db, item.get('domain')) or '', 'name': item.get('org') or ''},
-                'team': team, 'also': also, 'threads': threads, **({'own': own} if own else {})}
+                'team': team, 'also': also, 'threads': threads, 'stake': stake,
+                **({'gist': shown(gist)} if gist else {}), **({'own': shown(own)} if own and (not gist or own['event'] != gist['event']) else {}),
+                **({'unshared': [p['name'] for p in team if p['name'] in (item.get('to') or [])] or [p['name'] for p in team][:1]} if unshared else {})}
 
     def _brief_team_org(self, db, domain):
         """A company only teammates have in their Graph: its Team record's key, by the hashed domain, else ''."""
@@ -333,20 +514,6 @@ class BriefTodos:
         except Exception as error:  # noqa: BLE001 - no Team Graph yet
             LOG.info('fleet brief team org error=%s', type(error).__name__)
         return ''
-
-    def _brief_own_mail(self, db, ref, item):
-        """The owner's own newest mail from that company on this Fleet's accounts: subject, sender and when."""
-        accounts = self.fleet_accounts(ref)
-        if not accounts or not item.get('domain'):
-            return None
-        row = db.execute(f"SELECT title,occurred_at,json_extract(metadata,'$.from') AS sender FROM events WHERE kind='gmail.message' AND deleted=0 "
-                         f"AND account_id IN ({','.join('?' * len(accounts))}) AND instr(coalesce(json_extract(metadata,'$.labels'),''),'\"SENT\"')=0 "
-                         "AND instr(lower(json_extract(metadata,'$.from')),?)>0 ORDER BY occurred_at DESC LIMIT 1",
-                         (*accounts, '@' + item['domain'].lower())).fetchone()
-        if not row:
-            return None
-        sender = ' '.join(str(row['sender'] or '').split('<')[0].replace('"', '').split()) or str(row['sender'] or '')
-        return {'subject': str(row['title'] or '')[:160], 'from': sender[:80], 'at': row['occurred_at']}
 
     def _brief_asked(self, db, context):
         rows = db.execute('SELECT * FROM fleet_out WHERE context=? ORDER BY at', (context,)).fetchall()

@@ -53,7 +53,9 @@ Tout membre de la Fleet peut **Retirer** un apprentissage. Il disparaît pour to
 
 Choisis **Quotidienne** ou **Hebdomadaire** pour **Brief d’équipe** dans l’onglet Fleet, sous **Partage**. Ta Machine demande alors aux Machines de ton équipe des chiffres et des dates. Ce qui a besoin de toi arrive dans Tâches, sous Travail : un client qui attend une réponse, une entreprise devenue silencieuse, deux d’entre vous qui écrivent aux mêmes personnes, ou une réunion commune.
 
-- L’entreprise et les coéquipiers renvoient à leur page. **Détails** montre qui dans l’équipe est en contact et leurs derniers fils, seulement ce que partage le [Team Graph](team-graph.md).
+- Une tâche dit qui doit répondre, depuis quand, ce qu’ils ont demandé et l’enjeu, comme un projet ouvert. Sans rien de précis à dire, cela reste une ligne du brief, pas une tâche.
+- L’entreprise et les coéquipiers renvoient à leur page. **Détails** montre ce qu’ils ont écrit (touche pour le lire), l’enjeu, qui dans l’équipe est en contact et leurs derniers fils, seulement ce que partage le [Team Graph](team-graph.md).
+- Si ce qu’ils ont écrit n’est que dans les e-mails d’un coéquipier, la tâche dit à qui demander.
 - **Demander à l’équipe** lui envoie une question à ce sujet. Leurs réponses s’affichent sur la tâche.
 - **Pas nécessaire** la ferme, et le brief en tient compte. Elle ne revient qu’avec du nouveau.
 - Quand quelqu’un répond ou s’en charge, la tâche se ferme d’elle-même. Si tu as déjà une tâche sur cette entreprise, elle s’y ajoute.

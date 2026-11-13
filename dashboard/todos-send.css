@@ -325,3 +325,4 @@ strong.nb{white-space:nowrap}
 .fleet-brief-why a,.fleet-brief-details a{color:inherit;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:2px}.fleet-brief-why a:hover,.fleet-brief-details a:hover{text-decoration-color:currentColor}
 .fleet-brief-asked{margin:6px 0 0}.fleet-brief-asked p{margin:0}.fleet-brief-asked ul,.fleet-brief-mail{list-style:none;margin:2px 0 0;padding:0}.fleet-brief-asked li,.fleet-brief-mail li{margin:2px 0;overflow-wrap:anywhere}.fleet-brief-asked li strong{margin-right:4px}
 .fleet-brief-details{margin:0}.fleet-brief-details .tech-head{margin:0 0 6px}
+.fleet-brief-mail button.link{border:0;background:none;box-shadow:none;padding:0;min-height:0;color:inherit;font:inherit;text-align:start;text-decoration:underline;text-decoration-color:var(--border);text-underline-offset:2px;cursor:pointer;overflow-wrap:anywhere}.fleet-brief-mail button.link:hover{text-decoration-color:currentColor}

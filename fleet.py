@@ -55,7 +55,7 @@ import urllib.parse
 import urllib.request
 
 import graph
-from fleet_brief import BRIEF_SHOWN, assemble_brief, brief_items, brief_text, gmail_search, settled
+from fleet_brief import BRIEF_SHOWN, QUIET_MIN_DAYS, assemble_brief, brief_items, brief_text, gmail_search, settled
 from machine import stamps
 from machine.faults import loop_failed
 from machine.timing import _REQUEST_TIMING
@@ -1078,6 +1078,8 @@ def brief_facts(db, accounts, since, secret, internal, today=None, team=(), mine
         for domain in domains(row['id'])[:1]:
             if last and domain not in touched:
                 quiet[domain] = max(quiet.get(domain, ''), str(last)[:10])
+    recent = (today - dt.timedelta(days=QUIET_MIN_DAYS)).isoformat()  # someone there wrote lately (the Graph's flag lags): not quiet
+    quiet = {d: last for d, last in quiet.items() if last <= recent}
     out['quiet'] = [{'org': _org_name(db, d), 'domain': d, 'last': day(last), **({'known': k} if (k := _org_known(db, d)) else {})}
                     for d, last in list(quiet.items())[:20]]
     start = (today - dt.timedelta(days=UNANSWERED_DAYS)).isoformat()

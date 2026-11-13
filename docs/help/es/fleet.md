@@ -53,7 +53,9 @@ Cualquiera en el Fleet puede **Quitar** un aprendizaje. Desaparece para todos y 
 
 Elige **Diario** o **Semanal** en **Resumen del equipo**, en la pestaña Fleet, en **Compartiendo**. Tu Machine pregunta entonces a las Machines de tu equipo por recuentos y fechas. Lo que te necesita llega a Tareas, en Trabajo: un cliente que espera respuesta, una empresa que se quedó en silencio, dos de ustedes escribiendo a las mismas personas o una reunión compartida.
 
-- La empresa y los compañeros enlazan a sus páginas. **Detalles** muestra quién del equipo está en contacto y sus últimos hilos, solo lo que comparte el [Team Graph](team-graph.md).
+- Una tarea dice a quién espera, desde cuándo, qué pidieron y qué está en juego, como un proyecto abierto. Si no hay nada concreto que decir, queda como una línea del resumen, no como tarea.
+- La empresa y los compañeros enlazan a sus páginas. **Detalles** muestra lo que escribieron (tócalo para leerlo), qué está en juego, quién del equipo está en contacto y sus últimos hilos, solo lo que comparte el [Team Graph](team-graph.md).
+- Si lo que escribieron solo está en el correo de un compañero, la tarea dice a quién preguntar.
 - **Preguntar al equipo** le envía una pregunta sobre ello. Sus respuestas aparecen en la tarea.
 - **No hace falta** la cierra, y el resumen aprende. Solo vuelve con algo nuevo.
 - Cuando alguien responde o se encarga, la tarea se cierra sola. Si ya tienes una tarea sobre esa empresa, se suma a ella.
