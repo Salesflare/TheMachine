@@ -446,18 +446,24 @@ def read_text(lines):
     return '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip()
 
 
+# A list's count line: "+20 more", "+1 meeting" (in any language the catalogs start it with +N), drawn muted in the
+# dashboard (read_blocks) and the email (the control plane's notify_mail, the same rule)
+MORE = re.compile(r'\+\d')
+
+
 def read_blocks(lines, heads, subs, meets=()):
     """The same lines (read_text) as the dashboard draws them: [[kind, text]], kind 'h' (an area: Work, Personal),
-    'sub' (Done today, Open for tomorrow), 'li' (a bullet, without its •), 'meet' (the day's meetings) or 'p'; a blank
-    line is 'gap'. The copy stays the plain text."""
+    'sub' (Done today, Open for tomorrow), 'li' (a bullet, without its •), 'more' (a list's "+N more" or "+2 meetings"
+    last line, a bullet drawn muted: MORE), 'meet' (the morning's meetings line) or 'p'; a blank line is 'gap'. The copy
+    stays the plain text."""
     out = []
     for raw in '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip().split('\n'):
         line = raw.strip()
-        kind = ('gap' if not line else 'h' if line in heads else 'sub' if line in subs else 'li' if line.startswith('• ')
-                else 'meet' if line in meets else 'p')
+        kind = ('gap' if not line else 'h' if line in heads else 'sub' if line in subs
+                else ('more' if MORE.match(line[2:]) else 'li') if line.startswith('• ') else 'meet' if line in meets else 'p')
         if kind == 'gap' and (not out or out[-1][0] == 'gap'):
             continue
-        out.append([kind, line[2:] if kind == 'li' else line])
+        out.append([kind, line[2:] if kind in ('li', 'more') else line])
     return out
 
 
@@ -777,18 +783,18 @@ def area_digest(done, open_items, today='', skip=()):
     open_items = [i for i in open_items if str(i.get('title') or '').strip() and (not skip or i.get('id') not in skip)]
     out = []
 
-    def listed(items, more):
+    def listed(items):
         for i in items[:AREA_LISTED]:
             title = clip(i['title'], 80)
             out.append('• ' + (t('Due today: {}', title) if today and i.get('due') == today else title))
-        if len(items) > AREA_LISTED:
-            out.append(more(len(items) - AREA_LISTED))
+        if len(items) > AREA_LISTED:  # the list's last line, as the evening digest has it
+            out.append('• ' + t('+{} more', len(items) - AREA_LISTED))
     if done:
         out.append(t('Done today'))
-        listed(done, lambda n: t('{} more done.', n))
+        listed(done)
     if open_items:
         out.append(t('Still open'))
-        listed(open_items, lambda n: t('{} more open.', n))
+        listed(open_items)
     return '\n'.join(out)
 
 
@@ -864,36 +870,40 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
         ident = str(item.get('id') or '')
         return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
 
-    meets, opened = set(), t('Open for tomorrow') if tomorrow else t('Open for {}', next_day)
+    opened = t('Open for tomorrow') if tomorrow else t('Open for {}', next_day)
 
     def part(area, short):
         """One part's lines: in the message (short: EVENING_LISTED, links) or its copy (every to-do done, plain)."""
         d, h, u, a = of(done, area), of(held, area), of(due, area), of(ahead, area)
         out = []
-        # The day's meetings first, on their own line: under Done today they read as one more to-do done
-        named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
-        names = ', '.join(clip(x, 40) for x in named)
-        if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
-            said = (t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
-                    else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
-            out.append(said)
-            meets.add(said)
-        if d:
+        if d or h:
             out.append(t('Done today'))
+        if d:
             if show_text:
                 most = EVENING_LISTED if short else EVENING_COPIED
                 out += ['• ' + clip(i['title'], 80) for i in d[:most]]
-                if len(d) > most:
-                    out.append(t('{} more done.', len(d) - most))
+                if len(d) > most:  # the rest as the list's last line, "+N more", muted where it's drawn (MORE)
+                    out.append('• ' + t('+{} more', len(d) - most))
             else:
-                out.append(t('{} to-dos done.', len(d)))
+                out.append('• ' + t('{} to-dos', len(d)))
+        # The day's meetings close the list as a count ("+2 meetings: Pricing call and 1 more"), muted like the rest, so
+        # they never read as one more to-do done; alone in it without the +. Every meeting counted: the ones not named
+        # (routine, or past the first few) as a count.
+        named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
+        names = ', '.join(clip(x, 40) for x in named)
+        if h and d:
+            out.append('• ' + (t('+{} meetings', len(h)) if not named else t('+{} meetings: {}', len(h), names) if len(named) == len(h)
+                               else t('+{} meetings: {} and {} more', len(h), names, len(h) - len(named))))
+        elif h:
+            out.append('• ' + (t('{} meetings', len(h)) if not named else t('{} meetings: {}', len(h), names) if len(named) == len(h)
+                               else t('{} meetings: {} and {} more', len(h), names, len(h) - len(named))))
         if u or a:
             out.append(opened)
             if show_text:
                 out += ['• ' + clock(m['at']) + ' ' + clip(m['title'], 60) for m in a[:2]]
                 out += ['• ' + t('Due: {}', clip(i['title'], 80)) + (link(i) if short else '') for i in u[:EVENING_LISTED]]
                 if len(u) > EVENING_LISTED:
-                    out.append(t('{} more due.', len(u) - EVENING_LISTED))
+                    out.append('• ' + t('+{} more', len(u) - EVENING_LISTED))
             else:
                 if a:
                     out.append(t('Tomorrow, first meeting at {}', clock(a[0]['at'])) + '.' if tomorrow
@@ -911,7 +921,7 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
     if waiting:
         lines += ['', t('{} to-dos still need you.', waiting)]
     read = read_text(lines)
-    blocks = read_blocks(lines, set(title.values()), {t('Done today'), opened}, meets)
+    blocks = read_blocks(lines, set(title.values()), {t('Done today'), opened})
     if root:  # opens this digest again, as its notification does
         lines += ['', t('Open The Machine: {}', root + EVENING_VIEW)]
     # The push: what got done in a line, then the one thing to know for the next work day

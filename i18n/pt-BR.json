@@ -33,6 +33,18 @@
  "+ New person": "+ Nova pessoa",
  "+ Tag": "+ Tag",
  "+ your signature": "+ sua assinatura",
+ "+{} meetings": {
+  "one": "+{} reunião",
+  "other": "+{} reuniões"
+ },
+ "+{} meetings: {}": {
+  "one": "+{} reunião: {}",
+  "other": "+{} reuniões: {}"
+ },
+ "+{} meetings: {} and {} more": {
+  "one": "+{} reunião: {} e mais {}",
+  "other": "+{} reuniões: {} e mais {}"
+ },
  "+{} more": "+{} mais",
  ", and {} more known only by address": ", e mais {} conhecidos só pelo endereço",
  ", down from {}%": ", abaixo dos {}% anteriores",
@@ -7465,13 +7477,13 @@
   "one": "{} reunião.",
   "other": "{} reuniões."
  },
- "{} meetings: {} and {} more.": {
-  "one": "{} reunião: {} e mais {}.",
-  "other": "{} reuniões: {} e mais {}."
+ "{} meetings: {}": {
+  "one": "{} reunião: {}",
+  "other": "{} reuniões: {}"
  },
- "{} meetings: {}.": {
-  "one": "{} reunião: {}.",
-  "other": "{} reuniões: {}."
+ "{} meetings: {} and {} more": {
+  "one": "{} reunião: {} e mais {}",
+  "other": "{} reuniões: {} e mais {}"
  },
  "{} message": "Mensagem de {}",
  "{} message from {}": "Mensagem de {1} no {0}",
@@ -7519,15 +7531,12 @@
   "one": "Mais {} pode esperar.",
   "other": "Mais {} podem esperar."
  },
- "{} more done.": "Mais {} feitas.",
- "{} more due.": "Mais {} com prazo.",
  "{} more in Promises": "Mais {} em Promessas",
  "{} more like this wait. Always shares them too.": {
   "one": "Mais {} como esta aguarda. Sempre compartilha também.",
   "other": "Mais {} como esta aguardam. Sempre compartilha também."
  },
  "{} more like this {}. Always shares {} too.": "Mais {} como este {}. Sempre compartilha {} também.",
- "{} more open.": "Mais {} em aberto.",
  "{} more, open the day": "Mais {}, abrir o dia",
  "{} moved to {}": "{} passou para {}",
  "{} moves to Stalled or declined": "{} passa para Parado ou recusado",

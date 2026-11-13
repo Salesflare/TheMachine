@@ -33,6 +33,18 @@
  "+ New person": "+ Nouvelle personne",
  "+ Tag": "+ Tag",
  "+ your signature": "+ votre signature",
+ "+{} meetings": {
+  "one": "+{} réunion",
+  "other": "+{} réunions"
+ },
+ "+{} meetings: {}": {
+  "one": "+{} réunion : {}",
+  "other": "+{} réunions : {}"
+ },
+ "+{} meetings: {} and {} more": {
+  "one": "+{} réunion : {} et {} autres",
+  "other": "+{} réunions : {} et {} autres"
+ },
  "+{} more": "+{} de plus",
  ", and {} more known only by address": ", et {} autres connus seulement par leur adresse",
  ", down from {}%": ", en baisse par rapport à {} %",
@@ -7465,13 +7477,13 @@
   "one": "{} réunion.",
   "other": "{} réunions."
  },
- "{} meetings: {} and {} more.": {
-  "one": "{} réunion : {} et {} autres.",
-  "other": "{} réunions : {} et {} autres."
+ "{} meetings: {}": {
+  "one": "{} réunion : {}",
+  "other": "{} réunions : {}"
  },
- "{} meetings: {}.": {
-  "one": "{} réunion : {}.",
-  "other": "{} réunions : {}."
+ "{} meetings: {} and {} more": {
+  "one": "{} réunion : {} et {} autres",
+  "other": "{} réunions : {} et {} autres"
  },
  "{} message": "Message {}",
  "{} message from {}": "Message {} de {}",
@@ -7519,15 +7531,12 @@
   "one": "{} autre peut attendre.",
   "other": "{} autres peuvent attendre."
  },
- "{} more done.": "{} autres faites.",
- "{} more due.": "{} autres à échéance.",
  "{} more in Promises": "{} de plus dans Promesses",
  "{} more like this wait. Always shares them too.": {
   "one": "{} autre demande comme celle-ci attend. Toujours la partage aussi.",
   "other": "{} autres demandes comme celle-ci attendent. Toujours les partage aussi."
  },
  "{} more like this {}. Always shares {} too.": "{} autres comme ceci {}. Toujours partage aussi {}.",
- "{} more open.": "Encore {} à faire.",
  "{} more, open the day": "{} de plus, ouvrir la journée",
  "{} moved to {}": "{} passe à l’étape {}",
  "{} moves to Stalled or declined": "{} passe à Au point mort ou refusé",

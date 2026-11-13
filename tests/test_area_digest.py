@@ -30,8 +30,8 @@ class Text(unittest.TestCase):
         many = [{'title': f'To-do {n}'} for n in range(notify.AREA_LISTED + 3)]
         text = notify.area_digest([], many)
         self.assertTrue(text.startswith('Still open\n• To-do 0\n'), text)
-        self.assertTrue(text.endswith(f'• To-do {notify.AREA_LISTED - 1}\n3 more open.'), text)
-        self.assertEqual(notify.area_digest(many, []).splitlines()[-1], '3 more done.')
+        self.assertTrue(text.endswith(f'• To-do {notify.AREA_LISTED - 1}\n• +3 more'), text)
+        self.assertEqual(notify.area_digest(many, []).splitlines()[-1], '• +3 more')
 
     def test_nothing_worth_listing_says_nothing(self):
         self.assertEqual(notify.area_digest([], []), '')

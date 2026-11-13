@@ -21,15 +21,17 @@ function adDraw(){const d=adDialog();if(adSent)return adSentDraw(d);const areas=
  :shown.map(a=>html`<section class="ad-part">${one?'':html`<div class="ad-head"><h3>${a==='work'?t('Work'):t('Personal')}</h3><button type="button" class="ad-copy" data-ad-copy="${a}">${copy(a)}</button></div>`}<pre class="ad-text">${adText[a]}</pre></section>`)}
  ${one&&shown.length?html`<div class="actions"><button type="button" class="primary" data-ad-copy="${areas[0]}">${copy(areas[0])}</button></div>`:''}`)}
 // Its lines drawn as they read (notify.read_blocks): an area a heading, Done today and Open for tomorrow under it, the
-// to-dos a list, the day's meetings a line of their own. Copy keeps the plain text.
-function adBlocks(blocks){const out=[];let li=[];const flush=()=>{if(li.length)out.push(html`<ul class="ad-list">${li.map(x=>html`<li>${x}</li>`)}</ul>`);li=[]};
- for(const [k,x] of blocks){if(k==='li'){li.push(x);continue}flush();
+// to-dos a list whose "+N more" and meetings count close it, muted ('more'). Copy keeps the plain text.
+function adBlocks(blocks){const out=[];let li=[];const flush=()=>{if(li.length)out.push(html`<ul class="ad-list">${li.map(([k,x])=>html`<li class="${k==='more'?'ad-more':''}">${x}</li>`)}</ul>`);li=[]};
+ for(const [k,x] of blocks){if(k==='li'||k==='more'){li.push([k,x]);continue}flush();
   if(k==='h')out.push(html`<h3 class="ad-area">${x}</h3>`);else if(k==='sub')out.push(html`<h4 class="ad-sub">${x}</h4>`);
   else if(k!=='gap')out.push(html`<p class="${k==='meet'?'ad-meet':'ad-p'}">${x}</p>`)}
  flush();return html`<div class="ad-read">${out}</div>`}
+// A hyphenated word ("to-dos") kept on one line, so a narrow headline never breaks it as "to-" and "dos"
+const adKeep=s=>String(s||'').split(/(\S+-\S+)/).map((x,i)=>i%2?html`<span class="ad-nw">${x}</span>`:x);
 // The digest as it went: its headline, when, its text, then Copy for each area it has (Copy Work, Copy Personal), else one Copy
 function adSentDraw(d){const s=adSent,parts=s.sections.filter(x=>x.copy&&/^(work|personal)$/.test(x.area));
- setHTML(d,html`<div class="snooze-heading"><h2 id="area-digest-title">${s.title}</h2><button type="button" data-ad-close aria-label="${t('Close')}">×</button></div>
+ setHTML(d,html`<div class="snooze-heading"><h2 id="area-digest-title">${adKeep(s.title)}</h2><button type="button" data-ad-close aria-label="${t('Close')}">×</button></div>
  ${s.at?html`<p class="ad-fine ad-when">${localeDate(s.at,DL,{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:H12})}</p>`:''}
  ${s.blocks?.length?adBlocks(s.blocks):html`<pre class="ad-text">${s.text}</pre>`}<div class="actions">${parts.length?parts.map(x=>html`<button type="button" class="ad-copy" data-ad-copy="${x.area}">${x.area==='work'?t('Copy Work'):t('Copy Personal')}</button>`)
  :html`<button type="button" class="primary" data-ad-copy="all">${t('Copy')}</button>`}</div>`)}

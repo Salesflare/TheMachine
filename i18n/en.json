@@ -33,6 +33,18 @@
  "+ New person": "+ New person",
  "+ Tag": "+ Tag",
  "+ your signature": "+ your signature",
+ "+{} meetings": {
+  "one": "+{} meeting",
+  "other": "+{} meetings"
+ },
+ "+{} meetings: {}": {
+  "one": "+{} meeting: {}",
+  "other": "+{} meetings: {}"
+ },
+ "+{} meetings: {} and {} more": {
+  "one": "+{} meeting: {} and {} more",
+  "other": "+{} meetings: {} and {} more"
+ },
  "+{} more": "+{} more",
  ", and {} more known only by address": ", and {} more known only by address",
  ", down from {}%": ", down from {}%",
@@ -7465,13 +7477,13 @@
   "one": "{} meeting.",
   "other": "{} meetings."
  },
- "{} meetings: {} and {} more.": {
-  "one": "{} meeting: {} and {} more.",
-  "other": "{} meetings: {} and {} more."
+ "{} meetings: {}": {
+  "one": "{} meeting: {}",
+  "other": "{} meetings: {}"
  },
- "{} meetings: {}.": {
-  "one": "{} meeting: {}.",
-  "other": "{} meetings: {}."
+ "{} meetings: {} and {} more": {
+  "one": "{} meeting: {} and {} more",
+  "other": "{} meetings: {} and {} more"
  },
  "{} message": "{} message",
  "{} message from {}": "{} message from {}",
@@ -7519,15 +7531,12 @@
   "one": "{} more can wait.",
   "other": "{} more can wait."
  },
- "{} more done.": "{} more done.",
- "{} more due.": "{} more due.",
  "{} more in Promises": "{} more in Promises",
  "{} more like this wait. Always shares them too.": {
   "one": "{} more like this waits. Always shares it too.",
   "other": "{} more like this wait. Always shares them too."
  },
  "{} more like this {}. Always shares {} too.": "{} more like this {}. Always shares {} too.",
- "{} more open.": "{} more open.",
  "{} more, open the day": "{} more, open the day",
  "{} moved to {}": "{} moved to {}",
  "{} moves to Stalled or declined": "{} moves to Stalled or declined",

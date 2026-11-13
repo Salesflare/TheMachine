@@ -23,8 +23,8 @@ const fleetView={on:true,kinds:{relationships:'who knows someone',brief:'brief f
  waiting:[{id:Q,fleet:FL,member_id:'Pat',name:'Pat',kind:'relationships',status:'waiting',at:now,question:'Who knows someone at Globex?'}],
  asked:[],log:[],notices:[{id:N,fleet:FL2,kind:'seat_confirmed',text:'Your Machine was confirmed in Northwind.',buttons:[]}]};
 const DIGESTS={morning:{kind:'morning',title:'Morning, 1 due today',text:'• Reply to the venue about the date',sections:[],at:now},
- evening:{kind:'evening',title:'Good evening, 1 to-do done today',text:'Work\n2 meetings.\nDone today\n• Send the invoice',
-  blocks:[['h','Work'],['meet','2 meetings.'],['sub','Done today'],['li','Send the invoice']],sections:[{area:'work',copy:'Done today\n• Send the invoice'}],at:now}};
+ evening:{kind:'evening',title:'Good evening, 21 to-dos done today',text:'Work\nDone today\n• Send the invoice\n• +20 more\n• +2 meetings',
+  blocks:[['h','Work'],['sub','Done today'],['li','Send the invoice'],['more','+20 more'],['more','+2 meetings']],sections:[{area:'work',copy:'Done today\n• Send the invoice'}],at:now}};
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:true,waiting:1,fleets:fleetView.fleets}});
 // A Machine slow to answer the status: the tapped view still opens at once. Each status read is logged with when it
@@ -60,8 +60,13 @@ try{
   const sent=async(kind,why)=>{const blocks=DIGESTS[kind].blocks;await landed(blocks?'#area-digest .ad-read':'#area-digest .ad-text',why);assert.ok(await tab('inbox'));
    assert.equal(await page.locator('#area-digest h2').innerText(),DIGESTS[kind].title);
    if(!blocks)assert.equal(await page.locator('#area-digest .ad-text').textContent(),DIGESTS[kind].text);
-   else assert.deepEqual(await page.evaluate(()=>[...document.querySelector('#area-digest .ad-read').children].map(e=>e.matches('ul')?['ul',[...e.children].map(li=>li.textContent)]:[e.className,e.textContent])),
-    [['ad-area','Work'],['ad-meet','2 meetings.'],['ad-sub','Done today'],['ul',['Send the invoice']]],why);
+   else{// the overflow and the meetings close the list, muted, never loose lines beside it; "to-dos" never breaks
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelector('#area-digest .ad-read').children].map(e=>e.matches('ul')?['ul',[...e.children].map(li=>[li.className,li.textContent])]:[e.className,e.textContent])),
+     [['ad-area','Work'],['ad-sub','Done today'],['ul',[['','Send the invoice'],['ad-more','+20 more'],['ad-more','+2 meetings']]]],why);
+    assert.equal(await page.locator('#area-digest h2 .ad-nw').innerText(),'to-dos');
+    assert.equal(await page.locator('#area-digest h2 .ad-nw').evaluate(e=>getComputedStyle(e).whiteSpace),'nowrap');
+    const muted=await page.locator('#area-digest li.ad-more').first().evaluate(e=>getComputedStyle(e).color),plain=await page.locator('#area-digest .ad-list li').first().evaluate(e=>getComputedStyle(e).color);
+    assert.notEqual(muted,plain,'the +N more line is muted')}
    await page.evaluate(()=>document.querySelector('#area-digest').close())};
   const tap=async tag=>{await elsewhere();await page.evaluate(t=>{location.hash='chat='+t},tag)};  // what inject.js does with a tapped push
   await page.goto(base);await page.locator('#task-'+TODO).waitFor();

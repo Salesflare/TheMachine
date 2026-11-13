@@ -80,8 +80,7 @@ Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que co
 
 Llega una vez los días laborables a su hora en **Horario laboral**, por defecto 15 minutos antes de **Hasta**, por los medios que elijas en su fila de arriba. Un día sin ninguna tarea hecha ni reunión celebrada no recibe ninguno. Empieza con tu día en una cifra, como "Buenas tardes, Sam: 4 tareas hechas hoy", y luego una parte **Trabajo** y una parte **Personal**. Una parte vacía se omite. Cada una tiene:
 
-- las reuniones del día en una línea propia, como "3 reuniones: Llamada de precios y 2 más.";
-- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, y cuántas más;
+- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, luego "+12 más" y las reuniones del día, como "+3 reuniones: Llamada de precios y 2 más";
 - **Pendiente para mañana** (un viernes, tu próximo día laborable): las primeras reuniones y lo que vence.
 
 Termina con cuántas tareas aún te necesitan. Toca la notificación push, o el enlace al final del correo, para volver a leerlo, con **Copiar Trabajo** y **Copiar Personal**. Para no recibirlo, desactiva su fila.
