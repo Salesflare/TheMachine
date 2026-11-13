@@ -92,7 +92,7 @@ try{
  assert.equal(await c.locator('.tp-shared a').count(),0);
  assert.match(await c.locator('.tp-shared').innerText(),/^Task page until Fri, Oct 30\s*·\s*Stop sharing$/);
  await c.locator('[data-tp-stop]').click();
- await page.waitForTimeout(300);
+ await c.locator('.tp-shared',{hasText:'Task page stopped.'}).waitFor();  // the POST, then refresh() redraws: no fixed wait (300 ms ran out on a busy runner)
  assert.deepEqual(calls.at(-1),{action:'task_page_stop',args:{suggestion_id:'c1'}});
  assert.match(await c.locator('.tp-shared').innerText(),/Task page stopped\. The link no longer works\./);
  assert.deepEqual(errors,[]);
