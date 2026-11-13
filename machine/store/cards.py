@@ -330,14 +330,37 @@ def same_matter_cards(db, event_ids, project=None, limit=4):
     return found
 
 
+def _line_rows(rows, db=None):
+    """The rows a source line is written from, the one it names first, and the meeting it names (meeting_mail.lead)."""
+    # the owner's own words ("Added by you"), an update's note, and what no line can name (shown_source)
+    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix') and shown_source(r)]
+    return meeting_mail.lead(db, rows) if rows else ([], None)
+
+
+def line_head(kind):
+    """How a source line starts for an event of this kind (source_text): "WhatsApp", "your routine", "your Fleet"."""
+    return 'your routine' if str(kind).startswith('routine.') else 'your Fleet' if kind == 'fleet.brief' else source_kind(kind)
+
+
+def source_lead(rows, line, db=None):
+    """The event a stored source line names, so its icon is that message's own: the row source_line leads with, when
+    the line still starts with its kind's words, else the first row whose kind the line starts with (a line written
+    before the evidence changed). None when no row fits, rather than another source's icon."""
+    text = re.sub(r'^Source:\s*', '', str(line or ''))
+    starts = lambda kind: re.match(re.escape(line_head(kind)) + r'(?: |$)', text)  # a whole word: "X" is not "Xero"
+    lead, meeting = _line_rows(rows, db)
+    if lead and (meeting and text.startswith('notes from ') or starts(lead[0]['kind'])):
+        return lead[0]
+    fits = [(len(line_head(r['kind'])), -n, r) for n, r in enumerate(lead) if starts(r['kind'])]
+    return max(fits, key=lambda x: x[:2])[2] if fits else None
+
+
 def source_line(rows, db=None):
     """One readable line about where a suggestion comes from, for the card. With db, a meeting's notes name the meeting
     ("notes from Board meeting Q4"), and lead over the same notes by mail (meeting_mail.lead)."""
-    # the owner's own words ("Added by you"), an update's note, and what no line can name (shown_source)
-    rows = [r for r in rows if r['kind'] not in ('owner.card', 'machine.parked_fix') and shown_source(r)]
+    rows, meeting = _line_rows(rows, db)
     if not rows:
         return None
-    rows, meeting = meeting_mail.lead(db, rows)
     first = rows[0]  # The reviewer's main evidence (callers keep its order).
     more = [r for r in rows[1:] if r['kind'] != 'fleet.request']  # a Fleet request's own event is the card's text, not another source
     if meeting:

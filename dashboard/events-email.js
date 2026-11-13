@@ -21,19 +21,25 @@ const STEP_VIA={slack:'slack',whatsapp:'whatsapp',telegram:'telegram',signal:'si
 // Mail and calendar steps by their account: Gmail or Outlook, Google or Outlook Calendar, else the plain line icon
 const mailVia=svc=>['gmail','outlook'].includes(svc)?svc:'mail',calVia=svc=>svc==='calendar'?'gcal':svc==='outlook_calendar'?svc:'cal';
 const actionVia=a=>a?.kind==='finish'&&['gh','mcp'].includes(a.via)?'github':['email','email_demo'].includes(a?.kind)?mailVia(svcOf(a.account_id)):a?.kind==='calendar'?calVia(svcOf(a.account_id)):['doc_write','doc_reply'].includes(a?.kind)?(a.provider==='microsoft'?'docs':'gdocs'):STEP_VIA[a?.kind]||'';
-// A to-do's source by its words ("Source: Slack …"), else the service of the account it came from (todos-logos.js MONO)
-const cardViaIcon=s=>{const v=(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim(),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf);
+// A to-do's source by the message its line names (views.source_marks), never another one's; else by the line's words
+const srcHead=s=>(/^Source:\s*([^·\n]+)/i.exec(s.source_line||'')?.[1]||'').trim();
+const cardViaIcon=s=>{const v=srcHead(s),svc=(Array.isArray(s.account_ids)?s.account_ids:(()=>{try{return JSON.parse(s.account_ids||'[]')}catch{return []}})()).map(svcOf),m=s.source_mark,k=m&&sourceMark(m.kind,m.account_id,m.app);
+ if(/^your fleet$/i.test(v))return 'handoff';
+ if(k&&k!=='source'&&!(k==='mail'&&isEmail(s)))return k==='imap'?'mail':k;  // an email on an unlisted account: by its links
+ const named=lineNamed(v);if(named)return named;
  if(isEmail(s)||/^(email|gmail|outlook|mail)\b/i.test(v))return (s.original_urls||[]).some(u=>/^https:\/\/mail\.google\.com\//.test(u))||svc.includes('gmail')&&!svc.includes('outlook')?'gmail':svc.includes('outlook')||(s.original_urls||[]).some(u=>/^https:\/\/outlook\./.test(u))?'outlook':'mail';
- const named=[['slack',/^slack\b/i],['whatsapp',/^whatsapp\b/i],['telegram',/^telegram\b/i],['signal',/^signal\b/i],['linkedin',/^linkedin\b/i],['x',/^x( message)?\b/i],['intercom',/^intercom\b/i],['gdocs',/^(doc |suggested edit)/i],
-  ['teams',/^(microsoft )?teams\b/i],['zoom',/^zoom\b/i],['google_meet',/^(google )?meet\b/i],['github',/^github\b/i],['stripe',/^stripe\b/i],['salesflare',/^salesflare\b/i],['salesforce',/^salesforce\b/i],['trello',/^trello\b/i],['shortcut',/^shortcut\b/i]].find(([,r])=>r.test(v));
- // The Machine's own (a crash, a fault, its health) by its own mark, whatever account carried it. A source the line
- // doesn't name takes its account's mark only when every account agrees, so it never wears another source's brand.
+ // The Machine's own by its mark, whatever account carried it. A source the line doesn't name takes its account's
+ // mark only when every account agrees.
  const marks=[...new Set(svc.map(x=>x==='calendar'?'':monoKey(x)).filter(Boolean))];
- return named?named[0]:/^the machine$/i.test(v)?'gateway':/^your fleet$/i.test(v)?'handoff':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):marks.length===1?marks[0]:'chat'};
+ return /^the machine$/i.test(v)?'gateway':/note/i.test(v)?'note':/calendar/i.test(v)?calVia(svc.find(x=>/calendar/.test(x))):marks.length===1?marks[0]:'chat'};
+// The source a line's first word names
+const lineNamed=v=>{const w=v.toLowerCase().replace(/^(microsoft|google) /,'').split(/[^a-z]/)[0];
+ return w==='doc'||w==='suggested'?'gdocs':w==='meet'?'google_meet':/^(slack|whatsapp|telegram|signal|linkedin|x|intercom|teams|zoom|github|stripe|salesflare|salesforce|trello|shortcut)$/.test(w)?w:''};
 // A card the owner added has their own words as its only signal until the review links an email: nothing to open yet.
 const hasOriginal=s=>Boolean(s.source_line||(!['owner','machine'].includes(s.origin)&&eventIds(s).length)||(s.original_urls||[]).length);  // machine: an update's note, no thread
 // A meeting's notes lead ("Source: notes from Board meeting", meeting_mail.py): not an email, even with its notes mail among the originals
-const isEmail=s=>/^Source: email/.test(s.source_line||'')||!/^Source: notes from /.test(s.source_line||'')&&(s.original_urls||[]).some(u=>/^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//.test(u));
+// and the message the line names decides: a WhatsApp line with an email among the rest is not one
+const isEmail=s=>s.source_mark?.kind?/^(gmail|email)\./.test(s.source_mark.kind):/^Source: email/.test(s.source_line||'')||!/^Source: notes from /.test(s.source_line||'')&&!lineNamed(srcHead(s))&&(s.original_urls||[]).some(u=>/^https:\/\/(mail\.google\.com|outlook\.(office|office365|live)\.com)\//.test(u));
 const originalsFor=id=>{if(!originals.has(id))originals.set(id,request('api/originals?id='+id).then(r=>{around.set(id,r.around||null);return r.originals}).catch(e=>{originals.delete(id);throw e}));return originals.get(id)};
 // How each kind of message reads (its header, text, a chat as one thread) is the lazy part 'msgview' (events-message.js):
 // the viewer loads it with the message, so the first load doesn't carry it.

@@ -55,7 +55,7 @@ from machine.sources.slack import slack_first_import_progress, SLACK_ID, slack_n
 from machine.store import history as history_store
 from machine.store import graph_identifiers
 from machine import names, stamps
-from machine.store.cards import source_kind, SOURCE_KIND, use_view
+from machine.store.cards import source_kind, source_lead, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
 from machine.store.decisions import handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
@@ -277,6 +277,28 @@ def source_lines_shown(db, cards):
             m = people and SOURCE_WHO.match(str(line))
             name = m and people.get(m[1].strip().strip('<>').lower())
             c['source_line'] = line[:m.start(1)] + name + line[m.end(1):] if name else line
+
+
+def source_marks(db, cards):
+    """Each source line's icon from the event the line names (cards.source_lead): its kind, account and, for a phone
+    notification, its app (todos-logos.js sourceMark), so "WhatsApp to Sam (+2 more)" never wears the mark of an
+    email among the other messages. None when no event fits; the dashboard then reads the line's words."""
+    held = {c['id']: [i for i in json.loads(c.get('event_ids') or '[]') if isinstance(i, int)] for c in cards if c.get('source_line')}
+    ids = sorted({i for v in held.values() for i in v})
+    rows = {r['id']: dict(r) for r in db.execute('SELECT id,account_id,kind,occurred_at,title,metadata FROM events WHERE id IN '
+                                                   '(SELECT value FROM json_each(?))', (json.dumps(ids),))} if ids else {}
+    for card in cards:
+        if card['id'] not in held:
+            continue
+        try:  # only a meeting's notes need the meeting looked up (meeting_mail.lead); any other line names its lead's kind
+            meeting = str(card['source_line']).startswith('Source: notes from ')
+            lead = source_lead([rows[i] for i in held[card['id']] if i in rows], card['source_line'], db if meeting else None)
+        except (sqlite3.Error, ValueError, TypeError):
+            lead = None
+        if lead:
+            m = json.loads(lead['metadata'] or '{}')
+            card['source_mark'] = {'kind': lead['kind'], 'account_id': lead['account_id'],
+                                   'app': (m.get('package_name') if isinstance(m, dict) else None) or None}
 
 
 def based_on_views(db, cards):
@@ -679,6 +701,7 @@ class ViewsStore(ConversationStore):
     def _card_views(self, db, cards, jobs):
         if not jobs:
             source_lines_shown(db, cards)  # a Slack DM by the person's name, never a raw chat handle
+            source_marks(db, cards)  # the line's icon is the named message's own
             based_on_views(db, cards)  # "Based on Sam in #ops": the teammate's input the draft follows, with its link
             self.machine_fix_views(db, cards)  # a to-do from the computer's logs with a safe fix offers Do it
             labels = {r['suggestion_id']: skill_labels(r) for r in db.execute("SELECT suggestion_id,target_id,target_name FROM skill_clusters WHERE status IN ('pending','declined')")}
