@@ -1198,7 +1198,8 @@ class Requests:
                                 ((dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=30)).isoformat(),)):
                 about = json.loads(r['question']).get('about')
                 if json.loads(r['answer'] or '{}').get('knows') and (r['fleet'], r['member_id'], about) not in asked:
-                    offers.append({'ask_id': r['id'], 'fleet': r['fleet'], 'member_id': r['member_id'], 'name': r['name'], 'about': about})
+                    offers.append({'ask_id': r['id'], 'fleet': r['fleet'], 'member_id': r['member_id'], 'name': r['name'], 'about': about,
+                                   'label': fleet.org_label(about, db)})  # the company by name, as the question reads
         return {'intro_offers': offers}
 
     def annotate_requests(self, db, suggestions):

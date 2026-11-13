@@ -20,10 +20,10 @@ const view={on:true,ask_meetings:false,kinds:{},kind_rules:{},no_details:[],scop
    {id:'s4',fleet:FL,kind:'recipient',name:'Pat Lee',email:'pat@acme.example',fp:FP,service:'intercom'}],
   graph:[{fleet:FL,confirmed:true,paused:true,teammates:2,admin:true,new_devices:[{member:'p',name:'Pat Lee',fp:FP,from:at}]}],
   shares:[],accounts:[],can_share:[]},
- intro_offers:[{fleet:FL,member_id:'p',name:'Pat Lee',about:'globex.example'},{fleet:FL,member_id:'k',name:'Kim Ray',about:'globex.example'}],
+ intro_offers:[{fleet:FL,member_id:'p',name:'Pat Lee',about:'globex.example',label:'Globex'},{fleet:FL,member_id:'k',name:'Kim Ray',about:'globex.example',label:'Globex'}],
  waiting:[],free:[],log:[],notices:[],
- asked:[{id:'a1',fleet:FL,name:'Pat Lee',question:'Who knows someone at globex.example?',status:'answered',answer:'knows 2 people'},
-  {id:'a2',fleet:FL,name:'Kim Ray',question:'Who knows someone at globex.example?',status:'answered',answer:'knows 1 person'}]};
+ asked:[{id:'a1',fleet:FL,name:'Pat Lee',question:'Who knows someone at Globex?',status:'answered',answer:'knows 2 people'},
+  {id:'a2',fleet:FL,name:'Kim Ray',question:'Who knows someone at Globex?',status:'answered',answer:'knows 1 person'}]};
 const server=createServer((req,res)=>{res.setHeader('Content-Type','application/json');
  if(req.url==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(req.url==='/api/status'){res.end(JSON.stringify({suggestions:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],fleet:{on:true,waiting:0}}));return}
@@ -62,15 +62,19 @@ try{
   assert.equal(await team.locator('[data-shared-open]').count(),1);
   // Who knows: the question once, each answer under it
   const who=pane.locator('.fleet-box',{hasText:'Who knows someone?'});
-  assert.equal(await who.getByText('Who knows someone at globex.example?',{exact:true}).count(),1);
+  assert.equal(await who.getByText('Who knows someone at Globex?',{exact:true}).count(),1);
+  // The company by name, never its domain; the intro ask still carries the domain
+  assert.match(await who.innerText(),/Pat Lee knows someone at Globex\./);assert.doesNotMatch(await who.innerText(),/globex\.example/);
+  assert.equal(await who.locator('.fleet-intro-form').first().getAttribute('data-about'),'globex.example');
   assert.match(await who.locator('.list article',{hasText:'Who knows someone at'}).innerText(),/Pat Lee · knows 2 people\s+Kim Ray · knows 1 person/);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${tag}: scrolls sideways`);
   if(shots){await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:`${shots}/fleet-calm-${width}-${scheme}.png`,fullPage:true})}
-  // A key brings the ring: whole, not clipped to a line by its list
-  await page.evaluate(()=>{location.hash='#todos'});await page.waitForTimeout(200);await page.keyboard.press('Shift+Tab');
-  await page.evaluate(()=>{location.hash='#fleet'});await page.locator('#fleet-view .kb-on').waitFor({timeout:5000}).catch(()=>{});
-  const ring=page.locator('#fleet-view .kb-on');
-  if(await ring.count())assert.equal(await ring.evaluate(e=>getComputedStyle(e.parentElement).overflow),'visible');
+  // Keys pressed earlier (Escape) still land without a ring; j brings it, whole, not clipped to a line by its list
+  await page.evaluate(()=>{location.hash='#todos'});await page.waitForTimeout(200);await page.keyboard.press('Escape');
+  await page.evaluate(()=>{location.hash='#fleet'});await page.waitForTimeout(2500);
+  assert.equal(await page.locator('#fleet-view .kb-on').count(),0,`${tag}: a ring after an earlier key`);
+  await page.keyboard.press('j');const ring=page.locator('#fleet-view .kb-on');await ring.first().waitFor({timeout:5000});
+  assert.equal(await ring.first().evaluate(e=>getComputedStyle(e.parentElement).overflow),'visible');
   assert.deepEqual(errors,[]);
   await page.context().close();
  }
