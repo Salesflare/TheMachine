@@ -82,7 +82,7 @@ try{
   assert.equal(await card.locator('.cl-row').count(),5);
   assert.equal(await card.locator('.cl-row').nth(4).locator('[data-cl]').count(),0,'a row by hand has nothing to pick');
   assert.equal((await text(card.locator('.cl-row').nth(4).locator('.cl-end'))),'Came through a group Unsubscribe by hand');
-  assert.equal(await text(card.locator('.cl-row').first().locator('.cl-what')),'Brightpath Weekly ×3 This week in gardening');
+  assert.equal(await text(card.locator('.cl-row').first().locator('.cl-what')),'Brightpath Weekly 3 emails · This week in gardening');  // the count in words, on the subtitle line
   assert.equal(await card.getByRole('button',{name:'Do it',exact:true}).count(),0,'a cleanup to-do has no Do it');
   assert.equal(await card.locator('[data-cl-open]').count(),1,'only a row with a kept mail opens');
   await card.locator('[data-cl-open="11"]').click();

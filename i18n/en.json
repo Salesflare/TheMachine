@@ -1339,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"",
  "Done when: {}": "Done when: {}",
  "Done {}": "Done {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Done, except {} to unsubscribe by hand.",
+  "other": "Done, except {} to unsubscribe by hand."
+ },
  "Done.": "Done.",
  "Done. Their Machine gets it next.": "Done. Their Machine gets it next.",
  "Done. Waiting for them to tap Book it.": "Done. Waiting for them to tap Book it.",
@@ -7310,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} email looks like spam",
   "other": "{} emails look like spam"
+ },
+ "{} emails · {}": {
+  "one": "{} email · {}",
+  "other": "{} emails · {}"
  },
  "{} evening’s digest": "{} evening’s digest",
  "{} facts live on Graph pages": {

@@ -1339,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Fertig, wenn: eine kurze Zeile (bis 140 Zeichen), etwa \"Eintrag ist live mit einem Link zu uns\"",
  "Done when: {}": "Fertig, wenn: {}",
  "Done {}": "Erledigt {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Erledigt, bis auf {} zum selbst Abmelden.",
+  "other": "Erledigt, bis auf {} zum selbst Abmelden."
+ },
  "Done.": "Erledigt.",
  "Done. Their Machine gets it next.": "Erledigt. Ihre Machine bekommt es als Nächstes.",
  "Done. Waiting for them to tap Book it.": "Erledigt. Wartet, bis die andere Person auf Buchen tippt.",
@@ -7310,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} Mail sieht nach Spam aus",
   "other": "{} Mails sehen nach Spam aus"
+ },
+ "{} emails · {}": {
+  "one": "{} E-Mail · {}",
+  "other": "{} E-Mails · {}"
  },
  "{} evening’s digest": "Zusammenfassung vom {}abend",
  "{} facts live on Graph pages": {

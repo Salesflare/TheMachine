@@ -1339,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Klaar als: één korte regel (tot 140 tekens), zoals \"Vermelding staat live met een link naar ons\"",
  "Done when: {}": "Klaar als: {}",
  "Done {}": "Gedaan {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Klaar, behalve {} om zelf af te melden.",
+  "other": "Klaar, behalve {} om zelf af te melden."
+ },
  "Done.": "Gedaan.",
  "Done. Their Machine gets it next.": "Gedaan. Hun Machine krijgt het hierna.",
  "Done. Waiting for them to tap Book it.": "Klaar. Wacht tot de ander op Boek het tikt.",
@@ -7310,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} mail lijkt op spam",
   "other": "{} mails lijken op spam"
+ },
+ "{} emails · {}": {
+  "one": "{} e-mail · {}",
+  "other": "{} e-mails · {}"
  },
  "{} evening’s digest": "Avondoverzicht van {}",
  "{} facts live on Graph pages": {

@@ -1339,6 +1339,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Terminé quand : une ligne courte (140 caractères max.), comme \"La fiche est en ligne avec un lien vers nous\"",
  "Done when: {}": "Terminé quand : {}",
  "Done {}": "Fait {}",
+ "Done, except {} to unsubscribe by hand.": {
+  "one": "Fait, sauf {} à désabonner soi-même.",
+  "other": "Fait, sauf {} à désabonner soi-même."
+ },
  "Done.": "Fait.",
  "Done. Their Machine gets it next.": "Fait. Sa Machine le reçoit ensuite.",
  "Done. Waiting for them to tap Book it.": "C’est fait. En attente que l’autre personne touche Réserver.",
@@ -7310,6 +7314,10 @@
  "{} emails look like spam": {
   "one": "{} e-mail ressemble à du spam",
   "other": "{} e-mails ressemblent à du spam"
+ },
+ "{} emails · {}": {
+  "one": "{} e-mail · {}",
+  "other": "{} e-mails · {}"
  },
  "{} evening’s digest": "Récap de {} soir",
  "{} facts live on Graph pages": {
