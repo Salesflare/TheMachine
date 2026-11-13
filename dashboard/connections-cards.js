@@ -532,11 +532,9 @@ const syncRows=list=>{list=list||[];const fixed=list.findIndex(a=>a.status==='su
 // One history line on a card: while WhatsApp's first chat history still counts in (c.history), only that one.
 const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'&&c.history)return '';const [y,m]=b.back_to.split('-').map(Number),when=localeDate(new Date(y,m-1,1),DL,{month:'long',year:'numeric'});
  return html`<p class="note">${b.done?t('History: back to {}.',when):t('History coming in: back to {} so far.',when)}</p>`};
-// The card's name and the line under it come from the Machine (machine/names.py account_card, the same for every kind):
-// the account's own name, then Work or Personal and what tells it apart, never its kind again. The older line below is
-// only for a status without them.
+// machine/names.py account_card
 const connTitle=c=>c.card_title||c.display_name||c.email;
-function connSubtitle(c){if(typeof c.card_subtitle==='string')return c.card_subtitle?html`<small>${c.card_subtitle}</small>`:'';const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===(c.display_name||c.email)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
+function connSubtitle(c){if(typeof c.card_subtitle==='string')return c.card_subtitle?html`<small>${c.card_subtitle}</small>`:'';const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===connTitle(c)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
  return parts.length?html`<small>${parts.join(' · ')}</small>`:''}
 // A connected source's card shows the same logo as its row in + Add (connectLogo, dashboard/logos): the catalog's name for
 // its service (Salesflare is crm there, Google Docs is docs signed in with Google). A catch-all (Other email) keeps its line icon.
