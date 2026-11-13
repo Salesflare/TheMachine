@@ -61,6 +61,8 @@ Nell’app, Posticipa e Segna come fatto chiedono prima di sbloccare. In un brow
 
 Le email con ciò che ti aspetta hanno i link Apri e Posticipa. Aprono solo la dashboard.
 
+Un tocco su una notifica, o su Apri in un'email o su Telegram, mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o in un'altra vista, si apre la sua chat.
+
 ## Il riepilogo del mattino
 
 Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. Se è prima di **I posticipi arrivano alle**, aspetta fino a 5 minuti dopo, così include le attività che tornano quella mattina. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:

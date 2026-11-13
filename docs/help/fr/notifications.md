@@ -61,6 +61,8 @@ Dans l’app, Mettre en attente et Marquer comme fait demandent d’abord de dé
 
 Les e-mails qui listent ce qui vous attend ont des liens Ouvrir et Mettre en attente. Ils ouvrent seulement le tableau de bord.
 
+Toucher une notification, ou Ouvrir dans un e-mail ou sur Telegram, affiche la tâche en surbrillance dans votre liste. Si elle est faite, mise en attente ou dans une autre vue, son chat s’ouvre.
+
 ## Le récap du matin
 
 Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. Si elle est avant **Les mises en attente reviennent à**, il attend 5 minutes après, pour inclure les tâches qui reviennent ce matin-là. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :

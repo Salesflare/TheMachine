@@ -61,6 +61,8 @@ In de app vragen Snoozen en Markeer als gedaan eerst om te ontgrendelen. In een 
 
 Mails met wat op je wacht hebben de links Openen en Snoozen. Die openen alleen het dashboard.
 
+Tik je op een melding, of op Openen in een mail of in Telegram, dan zie je die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat.
+
 ## Het ochtendoverzicht
 
 Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets te melden is. Valt dat vóór **Gesnoozede items komen terug om**, dan wacht het tot 5 minuten daarna, zodat de to-do's die die ochtend terugkomen erin staan. **Voorbeeld**, in de rij ervan, toont het zonder het te versturen. Standaard is het een push en een e-mail, kort genoeg om in één blik te lezen:

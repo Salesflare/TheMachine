@@ -126,6 +126,13 @@ assert.equal(await page.locator(`#task-${B} .clamp`).count(),0);assert.ok(await 
  assert.ok(/Talk soon/.test(await page.locator(`#task-${B} .draft`).innerText()));
  if(shots)await page.screenshot({path:shots+'/open-draft-whole.png'});
  assert.equal(await page.locator(`.chat-layout[data-chat="${B}"]`).count(),0);assert.equal(await quiet(),before);
+ // A tap on the notification itself: the to-do in the list too, never its chat; one shown before with a #chat= url too
+ for(const url of [base+'#card='+B+'&or=chat',base+'#chat='+B]){
+  await page.evaluate(()=>{for(const c of document.querySelectorAll('.flash'))c.classList.remove('flash');history.replaceState(null,'',location.pathname)});
+  await worker.evaluate(async([B,url])=>{await self.registration.showNotification('Ready: Find the train times',{tag:B,data:{url}});
+   const [n]=await self.registration.getNotifications({tag:B});self.dispatchEvent(new NotificationEvent('notificationclick',{notification:n}));await self.__last},[B,url]);
+  await page.waitForFunction(b=>document.getElementById('task-'+b)?.classList.contains('flash'),B);
+  assert.equal(await page.locator(`.chat-layout[data-chat="${B}"]`).count(),0,url)}
 
  // a tap that starts the page: done once the to-dos are in
  cards[0].status='pending';id=await keep(A,'done');

@@ -46,8 +46,8 @@ def cached_card_ids(config, suggestion_id, since):
     found = []
     with contextlib.closing(sqlite3.connect('file:' + path + '?mode=ro', uri=True, timeout=2)) as native:
         for value, in native.execute("SELECT value_json FROM plugin_state_entries WHERE plugin_id='telegram' "
-                                     "AND namespace='telegram.message-cache' AND (instr(value_json,?)>0 OR instr(value_json,?)>0 OR instr(value_json,?)>0)",
-                                     (callback,'#chat='+suggestion_id,'#result='+suggestion_id)):  # #result= in notices sent before
+                                     "AND namespace='telegram.message-cache' AND (instr(value_json,?)>0 OR instr(value_json,?)>0 OR instr(value_json,?)>0 OR instr(value_json,?)>0)",
+                                     (callback,'#card='+suggestion_id,'#chat='+suggestion_id,'#result='+suggestion_id)):  # #chat=, #result= in notices sent before
             message = json.loads(value).get('sourceMessage', {})
             if (str(message.get('chat', {}).get('id')) == config.get('telegram_owner') and message.get('from', {}).get('is_bot')
                     and message.get('message_id') and (message.get('date') or 0) >= since):

@@ -50,7 +50,7 @@ class DoneReport(unittest.TestCase):
         payload, kind = pushes[0]
         self.assertEqual(payload['title'], 'Done: Prepare a useful draft')
         self.assertIn('#42', payload['body'])
-        self.assertTrue(payload['url'].endswith('#chat=' + self.sid))
+        self.assertTrue(payload['url'].endswith('#card=' + self.sid + '&or=chat'))
         self.assertEqual(payload['tag'], self.sid)
         self.assertEqual(kind['kind'], 'result')
         # The phone app's own line says done, not "gone"; its notification stays until the owner saw it

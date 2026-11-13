@@ -7,8 +7,10 @@
 //    Once a week per token is enough (kept in this page's own storage on the Machine's address).
 //  - share: what was shared to the app (text, links, files) opens the dashboard's New to-do, filled in, for the
 //    owner to check and add (window.machineShare). A dashboard from before that only gets the text, as a new to-do.
-//  - tag: a tapped notification's to-do opens (#chat=<id>), or with card (Open draft) its place in the list, where
-//    the draft shows in full (#card=<id>); listen: the same for taps while this page is open (iOS).
+//  - tag: a tapped notification's to-do opens in the list, in view and highlighted (#card=<id>&or=chat: its chat only
+//    when it isn't there), never its chat; with card (Open draft) without that fallback, where the draft shows in
+//    full. A tag that is no to-do (the morning, a Fleet question) goes as #chat=<tag>, which the dashboard sends to
+//    its own view (pushRoute). listen: the same for taps while this page is open (iOS).
 //  - files: a download (a link with `download`, an export) goes to the app (MachineFiles on Android, machineFiles on
 //    iOS, both only there on the Machine's own address), which saves it on the phone. A WebView has no downloads.
 //    A file linked in a new tab (a to-do's files) goes the same way, for the phone to open in an app. A file the page
@@ -40,13 +42,16 @@
     return r.json();
   };
 
+  const tapped = (tag, draft) => typeof tag !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(tag) ? ''
+    : /^[a-f0-9]{16}$/.test(tag) ? 'card=' + tag + (draft ? '' : '&or=chat') : 'chat=' + tag;
+
   if (payload.listen && !window.__machineListen) {
     window.__machineListen = true;
     const push = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
     if (push && push.addListener) {
       push.addListener('pushNotificationActionPerformed', event => {
         const tag = event && event.notification && event.notification.data && event.notification.data.tag;
-        location.hash = typeof tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(tag) ? (event.actionId === 'draft' ? 'card=' : 'chat=') + tag : '';
+        location.hash = tapped(tag, event.actionId === 'draft');
       });
     }
   }
@@ -70,7 +75,7 @@
     (document.body || document.documentElement).appendChild(x);
   }
 
-  if (typeof payload.tag === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(payload.tag)) location.hash = (payload.card === true ? 'card=' : 'chat=') + payload.tag;
+  if (tapped(payload.tag)) location.hash = tapped(payload.tag, payload.card === true);
 
   const KEY = 'machine-app-push', WEEK = 7 * 24 * 3600 * 1000;
   let last = null;

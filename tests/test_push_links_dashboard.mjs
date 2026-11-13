@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
+const INJECT=readFileSync(new URL('../mobile/www/inject.js',import.meta.url),'utf8');
 const {chromium}=await import('./browser.mjs');
 
-// Where a tapped notification lands. The phone app opens the dashboard at #chat=<the push's tag> (mobile/www/inject.js;
-// Android without a tag for several at once: the kind), the web push at its url. Each kind opens its own view, never a
-// to-do chat that isn't there: a to-do its chat, the morning and evening digest that digest, the team brief To-dos (its lines are
+// Where a tapped notification lands. The phone app opens the dashboard where mobile/www/inject.js (run here as the app
+// runs it) points: a to-do at #card=<id>&or=chat, anything else at #chat=<the push's tag> (Android without a tag for
+// several at once: the kind); the web push at its url. Each kind opens its own view, never a to-do chat: a to-do the
+// to-do itself in the list, in view and highlighted, the morning and evening digest that digest, the team brief To-dos (its lines are
 // to-dos there), a Fleet question its card, a Fleet notice its line, the week's recap and a test To-dos. Each case starts
 // somewhere else (a chat open, another Fleet pane), and every target must be on screen.
 const dashboard=await dashboardPage();
@@ -42,12 +45,12 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  res.statusCode=url.pathname.startsWith('/brand/')?404:200;res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port+'/';
-const shots=process.env.PUSH_LINK_SHOTS||'';
+const shots=process.env.PUSH_LINK_SHOTS||'',scheme=process.env.PUSH_LINK_SCHEME==='dark'?'dark':'light';
 const errors=[];let browser;
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [label,viewport] of [['phone',{width:390,height:844}],['desktop',{width:1440,height:900}]]){
-  const context=await browser.newContext({viewport,locale:'en-US',...(label==='phone'?{isMobile:true,hasTouch:true}:{})});
+  const context=await browser.newContext({viewport,locale:'en-US',colorScheme:scheme,...(label==='phone'?{isMobile:true,hasTouch:true}:{})});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   // on screen: waits for the page itself to show it (busy CI machines included), then says where it was if it never did
@@ -66,10 +69,15 @@ try{
     const muted=await page.locator('#area-digest li.ad-more').first().evaluate(e=>getComputedStyle(e).color),plain=await page.locator('#area-digest .ad-list li').first().evaluate(e=>getComputedStyle(e).color);
     assert.notEqual(muted,plain,'the +N more line is muted')}
    await page.evaluate(()=>document.querySelector('#area-digest').close())};
-  const tap=async tag=>{await elsewhere();await page.evaluate(t=>{location.hash='chat='+t},tag)};  // what inject.js does with a tapped push
+  // a tapped push in the app: inject.js itself, with the push's tag (and card for Open draft), as the app runs it
+  const inject=(tag,card)=>page.evaluate(`(${INJECT})(${JSON.stringify({base,tag,...(card?{card:true}:{})})})`);
+  const tap=async(tag,card)=>{await elsewhere();await inject(tag,card)};
+  // the to-do itself: in the To-dos list, on screen and highlighted, with no chat open and none in the address
+  const theTodo=async why=>{await landed(`#task-${TODO}.flash`,why);assert.ok(await tab('inbox'),why);
+   assert.equal(await page.locator('.chat-layout').count(),0,`${label} ${why}: no chat open`);assert.doesNotMatch(new URL(page.url()).hash,/chat=/,why)};
   await page.goto(base);await page.locator('#task-'+TODO).waitFor();
   const cases=[
-   ['a new to-do, a result, a reminder',TODO,async()=>{await landed(`.chat-layout[data-chat="${TODO}"] .chat-title`,'the to-do');assert.equal(new URL(page.url()).hash,'#chat='+TODO)}],
+   ['a new to-do, a result, a reminder',TODO,async()=>{await theTodo('the to-do, not its chat')}],
    ['the morning','digest',async()=>{await sent('morning','the morning digest')}],
    ['the evening','evening',async()=>{await sent('evening','the evening digest')}],
    ['the team brief',`fleet-brief-${FL2}`,async()=>{await landed('#suggestions','To-dos');assert.ok(await tab('inbox'))}],
@@ -83,7 +91,13 @@ try{
   for(const [what,tag,check] of cases){
    await tap(tag);await check();
    assert.doesNotMatch(new URL(page.url()).hash,/^#chat=(?![a-f0-9]{16}$)/,`${label} ${what}: no chat link left that isn't a to-do`);
-   if(shots&&['digest',`fleet-brief-${FL2}`,`fleet-${Q}`,'recap-2026-W45'].includes(tag)){await page.waitForTimeout(400);await page.screenshot({path:`${shots}/${label}-${tag.replace(/_.*/,'')}.png`})}}
+   if(shots&&[TODO,'digest',`fleet-brief-${FL2}`,`fleet-${Q}`,'recap-2026-W45'].includes(tag)){await page.waitForTimeout(400);await page.screenshot({path:`${shots}/${label}-${scheme}-${tag===TODO?'todo':tag.replace(/_.*/,'')}.png`})}}
+  // Open draft in the app: the to-do in the list too, its draft in full
+  await tap(TODO,true);await theTodo('Open draft');
+  // the web push's url, the email's, Telegram's and the recap's Open (machine/delivery/push.py, notify.todo_link)
+  await elsewhere();await page.evaluate(id=>{location.hash='card='+id+'&or=chat'},TODO);await theTodo('the web push link');
+  // a tap that starts the app or a link that opens the page: the to-do, not its chat
+  await page.goto('about:blank');await page.goto(base+'#card='+TODO+'&or=chat');await theTodo('the to-do on a cold start');
   // the web push's and Telegram's own links: the brief's (#fleet-brief=<fleet>) opens To-dos too
   await elsewhere();
   await page.evaluate(fl=>{location.hash='fleet-brief='+fl},FL2);await landed('#suggestions','the web brief link');assert.ok(await tab('inbox'));
