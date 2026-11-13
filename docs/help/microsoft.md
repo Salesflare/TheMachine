@@ -38,7 +38,7 @@ On a hosted Machine:
 
 Or in the dashboard: **Connections**, **+ Add**, pick Outlook and press **Sign in with Microsoft**. The admin link is right under the button.
 
-On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Outlook and press **Sign in with Microsoft**. Mail and calendar connect together.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick Outlook and press **Sign in with Microsoft**. Mail and calendar connect together. After Microsoft, you're back in **Connections** on your dashboard.
 
 For IT teams with their own Microsoft Entra app: open **Use your own app** there, or run `assistant connect outlook`.
 
