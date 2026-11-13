@@ -76,7 +76,6 @@ IDENTITY = {'id', 'email', 'owner_emails', 'display_name', 'connection_id', 'tea
 # The source is set up but can't serve right now (shared browser in use, rate limit): saved anyway, and the
 # collector's own retry reads it, instead of failing setup over a moment's contention.
 BUSY = ('x_browser_busy', 'linkedin_browser_busy', 'x_rate_limited', 'outlook:microsoft_signin_pending', 'microsoft_broker_busy')
-GRAPH_DOWN = re.compile(r'outlook:HTTP_5\d\d\b')  # Graph's own server error for a mailbox, after the token came (ms_graph.py)
 # Phone apps whose notifications repeat a source. Setup offers to skip them on the Android account, never by
 # default: the phone app may also show inboxes or workspaces that nothing here reads.
 # what the owner calls the app whose notifications repeat a source, when the source's label says more
@@ -2393,9 +2392,7 @@ def connect_grant(config_path, provider, args, team_domains=()):
             if provider == 'microsoft':  # a refused sign-in right after this is Microsoft still settling (ms_graph.py)
                 account['connected_at'] = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S+00:00')
             error = check(config, account)
-            # Graph down for that mailbox (a 5xx after the token came) says nothing against the sign-in: it is kept, and
-            # its sync retries as it does for any account Graph doesn't answer for
-            if error and not error.startswith(BUSY) and not (provider == 'microsoft' and GRAPH_DOWN.match(error)):
+            if error and not error.startswith(BUSY) and not re.match(r'outlook:HTTP_5\d\d\b', error):  # Graph down, sign-in fine: kept
                 raise SetupError(f'{label(service)} for {email} did not check out ({error})', 'sign in again from Connections, + Add')
             checked.append(account)
         for account in checked:

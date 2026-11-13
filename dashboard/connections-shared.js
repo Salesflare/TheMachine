@@ -48,13 +48,8 @@ function showHealthPane(id){healthPane=id;healthPicked=true;localStorage.setItem
 // The way into Connections' views, which load when first needed: each waits for them (offline: says so) and goes on.
 async function connectAdd(force){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectAddNow(force)}
 async function connectOpen(name){if(!lazyIn('connections'))try{await lazyPart('connections')}catch(e){toast(e.message,true);return}return connectOpenNow(name)}
-function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow());else openSignedInLink()}
-// Back from a sign-in this self-hosted Machine started (the account's callback, cloud signed_in_page): Connections, where
-// its row follows the rest, and a word that it worked. /again: an account it had already, signed in again.
-const SIGNED_IN_LABELS={google:'Google',google_meet:'Google Meet',google_docs:'Google Docs',microsoft:'Microsoft',microsoft_docs:'Microsoft OneDrive',
- microsoft_docs_write:'Microsoft OneDrive',zoom:'Zoom',stripe:'Stripe',slack:'Slack',salesforce:'Salesforce',intercom:'Intercom',trello:'Trello'};
-function openSignedInLink(){const m=/^#signed-in=([a-z_]{1,32})(\/again)?$/.exec(location.hash);if(!m)return;history.replaceState(null,'',location.pathname+location.search);
- showTab('health');const label=SIGNED_IN_LABELS[m[1]];if(label)toast(t(m[2]?'Reconnected to {}.':'Connected to {}.',label))}
+function openConnectLink(){if(/^#connect=/.test(location.hash))lazyRun('connections',()=>openConnectLinkNow());
+ else if(/^#signed-in=/.test(location.hash))lazyRun('connections',()=>openSignedInLink())}
 // Reconnect buttons elsewhere (cards, Needs you) work before the views are in: the click waits for them, then goes on.
 document.addEventListener('click',e=>{if(lazyIn('connections'))return;const b=e.target.closest('[data-reconnect],[data-hosted-reconnect]');if(!b)return;
  e.preventDefault();e.stopImmediatePropagation();lazyRun('connections',()=>b.click())},true);
