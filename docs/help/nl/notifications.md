@@ -72,7 +72,7 @@ Het komt op werkdagen op je tijdstip bij **Ochtendoverzicht**, tenzij er niets t
 
 Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een andere weergave, dan opent zijn chat. Een belofte opent haar to-do, of haar eigen pagina als er nog geen is.
 
-De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
+De push zegt hetzelfde zonder links. Tik erop, of op de link onderaan de e-mail, om dit overzicht opnieuw te lezen in **To-do's**.
 
 Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **Overzicht** bij To-do's kopieert. Is de tekst van to-do's verborgen in meldingen, dan vallen ze weg.
 
@@ -80,10 +80,11 @@ Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **
 
 Het komt één keer op werkdagen op zijn tijdstip in **Werkuren**, standaard 15 minuten voor **Tot**, via de manieren die je hierboven in zijn rij kiest. Een dag zonder afgewerkte to-do of gehouden afspraak krijgt er geen. Het begint met je dag in een getal, zoals "Goeienavond Sam, vandaag 4 to-do's gedaan", en dan een deel **Werk** en een deel **Privé**. Een leeg deel valt weg. Elk deel heeft:
 
-- **Vandaag gedaan**: tot drie to-do's die jij of je Machine afwerkte, hoeveel nog meer, en je afspraken, zoals "3 afspraken: Prijsgesprek en nog 2.";
+- de afspraken van de dag op een eigen regel, zoals "3 afspraken: Prijsgesprek en nog 2.";
+- **Vandaag gedaan**: tot drie to-do's die jij of je Machine afwerkte, en hoeveel nog meer;
 - **Open voor morgen** (op vrijdag je volgende werkdag): de eerste afspraken en wat dan moet.
 
-Het eindigt met hoeveel to-do's nog op je wachten. Tik op de push om je to-do's te openen. Wil je het niet, zet dan zijn rij uit.
+Het eindigt met hoeveel to-do's nog op je wachten. Tik op de push, of op de link onderaan de e-mail, om het opnieuw te lezen, met **Werk kopiëren** en **Privé kopiëren**. Wil je het niet, zet dan zijn rij uit.
 
 ## Privacy
 

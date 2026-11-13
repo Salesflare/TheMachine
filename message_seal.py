@@ -103,6 +103,7 @@ DERIVED = {'suggestions': ('title', 'body', 'handled_hint', 'owner_words', 'titl
            'ai_writes': ('changes',),  # a connected AI's Graph change, before and after, for its Undo (ai_access.py)
            # a to-do's title while its push, email line or handoff email waits to go, and the line a woken phone shows (notify.py)
            'notify_queue': ('title', 'payload'), 'notify_app_lines': ('line', 'body'),
+           'notify_digests': ('body',),  # a sent morning or evening digest, kept a week to open again (notify.digest_done)
            'contact_marks': ('note',),  # the note a teammate wrote on a contact they shared (contact_share.py)
            'gbrain_notes': ('text',),  # the owner's own notes on a GBrain page (gbrain.py)
            # a Work Fleet's team learnings, also a removed one kept so it is not learned again (fleet_learnings.py)

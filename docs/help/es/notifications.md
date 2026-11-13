@@ -72,7 +72,7 @@ Llega los días laborables a tu hora de **Resumen matutino**, salvo que no haya 
 
 Abrir muestra esa tarea resaltada en tu lista. Si está hecha, pospuesta o en otra vista, se abre su chat. Una promesa abre su tarea, o su propia página si aún no tiene una.
 
-El push dice lo mismo sin enlaces. Tócalo para abrir hoy en el **Calendario**.
+El push dice lo mismo sin enlaces. Tócalo, o toca el enlace al final del correo, para volver a leer este resumen en **Tareas**.
 
 Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que copia **Resumen** en Tareas. Si el texto de las tareas está oculto en las notificaciones, no aparecen.
 
@@ -80,10 +80,11 @@ Al final van tus resúmenes de **Trabajo** y **Personal**, el mismo texto que co
 
 Llega una vez los días laborables a su hora en **Horario laboral**, por defecto 15 minutos antes de **Hasta**, por los medios que elijas en su fila de arriba. Un día sin ninguna tarea hecha ni reunión celebrada no recibe ninguno. Empieza con tu día en una cifra, como "Buenas tardes, Sam: 4 tareas hechas hoy", y luego una parte **Trabajo** y una parte **Personal**. Una parte vacía se omite. Cada una tiene:
 
-- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, cuántas más, y tus reuniones, como "3 reuniones: Llamada de precios y 2 más.";
+- las reuniones del día en una línea propia, como "3 reuniones: Llamada de precios y 2 más.";
+- **Hecho hoy**: hasta tres tareas que tú o tu Machine terminaron, y cuántas más;
 - **Pendiente para mañana** (un viernes, tu próximo día laborable): las primeras reuniones y lo que vence.
 
-Termina con cuántas tareas aún te necesitan. Toca la notificación push para abrir tus tareas. Para no recibirlo, desactiva su fila.
+Termina con cuántas tareas aún te necesitan. Toca la notificación push, o el enlace al final del correo, para volver a leerlo, con **Copiar Trabajo** y **Copiar Personal**. Para no recibirlo, desactiva su fila.
 
 ## Privacidad
 

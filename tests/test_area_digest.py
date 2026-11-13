@@ -40,7 +40,7 @@ class Text(unittest.TestCase):
     def test_the_morning_digest_carries_each_area_after_the_rest_only_with_titles(self):
         areas = [('work', 'Still open\n• Plan the offsite'), ('personal', '')]
         text = notify.compose([], [], [{'title': 'Answer the school'}], 'https://m.example/', total=1, areas=areas)['text']
-        self.assertTrue(text.endswith('\n\nWork\nStill open\n• Plan the offsite\n\nOpen The Machine: https://m.example/'), text)
+        self.assertTrue(text.endswith('\n\nWork\nStill open\n• Plan the offsite\n\nOpen The Machine: https://m.example/#digest=morning'), text)
         self.assertNotIn('Personal', text)
         careful = notify.compose([], [], [{'title': 'Answer the school'}], '', show_text=False, total=1, areas=areas)
         self.assertNotIn('Plan the offsite', careful['text'])

@@ -488,6 +488,7 @@ DASHBOARD_ACTIONS = frozenset({
     'connector_sync',
     'decide',
     'detect_signature',
+    'digest_sent',
     'done_milestone_seen',
     'edit_fact',
     'fleet_ask',
