@@ -32,7 +32,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(url.pathname==='/api/push-key'){res.end(JSON.stringify({key:'B'+'A'.repeat(86)}));return}
  if(url.pathname==='/api/action'){const r=JSON.parse(body);actions.push(r);
   // the Machine keeps a closed row (assistant.setup_dismiss): every device gets it with its next state
-  // + Add's list, with the two sources the setup to-do opens there
+  // the sources to add, with the two sources the setup to-do opens there
   if(r.action==='connect_sources'){res.end(JSON.stringify({saveable:true,manage_url:manage||null,paired:!manage,sources:[{name:'whatsapp',label:'WhatsApp',service:'whatsapp',hosted_signin:'whatsapp',what:'Your chats.'},
    {name:'google',label:'Google',service:'gmail',hosted_signin:'google',what:'Mail and calendar.'},{name:'microsoft',label:'Microsoft',service:'outlook',hosted_signin:'microsoft',what:'Mail and calendar.'}]}));return}
   if(r.action==='setup_restore'){const step=r.args.step;setup=step==='all'?{...setup,closed:false,dismissed:[]}:step==='card'?{...setup,closed:false}:{...setup,dismissed:setup.dismissed.filter(x=>x!==step)};res.end(JSON.stringify({setup_card:setup}));return}
@@ -132,7 +132,7 @@ try{
   await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('A test is on its way'));
   assert.deepEqual(await asked(page),['requestPermission','subscribe']);assert.deepEqual(actionNames(),['push_subscribe','push_test']);
   let c=await card(page);assert.deepEqual(c.rows.map(r=>r[0]),['whatsapp','account','connect'],'done: the row goes');assert.equal(c.head,'Get more out of The Machine 3 steps left');
-  // WhatsApp opens its own sign-in under Connections; another email account and more connections the + Add picker,
+  // WhatsApp opens its own sign-in under Connections; another email account and more connections the kinds to add from,
   // where Google and Microsoft both are
   for(const [step,hash] of [['whatsapp','#connect=whatsapp'],['account','#connections=add'],['connect','#connections=add']]){
    const seen=page.evaluate(()=>new Promise(r=>addEventListener('hashchange',()=>r(location.hash||history.state||''),{once:true})));

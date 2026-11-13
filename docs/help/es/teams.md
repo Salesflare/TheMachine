@@ -36,13 +36,13 @@ Solo funciona con una cuenta de Microsoft profesional o educativa. Las cuentas p
 
 En una Machine alojada:
 
-1. En el panel, abre **Conexiones**, **+ Añadir** y elige **Microsoft Teams** (en Chat) o **Reuniones de Teams** (en Reuniones). Las dos son el mismo inicio de sesión.
+1. En el panel, abre **Conexiones**, **Chat** o **Reuniones** y elige **Microsoft Teams** (en Chat) o **Reuniones de Teams** (en Reuniones). Las dos son el mismo inicio de sesión.
 2. Pulsa **Iniciar sesión con Microsoft** y da el OK. Vuelves al panel.
 3. Para los canales y las notas de reuniones, envía a tu admin el enlace que muestra la página de inicio de sesión. Cuando lo apruebe, conecta Teams de nuevo.
 
 Durante la configuración, la página de configuración también tiene **Connect Microsoft Teams**.
 
-En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **+ Añadir**, elige **Microsoft Teams** o **Reuniones de Teams** y pulsa **Iniciar sesión con Microsoft**. Ahí lee tus chats y los chats de reuniones. Los canales y las notas de reuniones aún no están disponibles ahí.
+En tu propio ordenador, una vez [vinculado con tu cuenta](friends.md#a-machine-on-your-own-computer): abre **Conexiones**, luego **Chat** o **Reuniones**, elige **Microsoft Teams** o **Reuniones de Teams** y pulsa **Iniciar sesión con Microsoft**. Ahí lee tus chats y los chats de reuniones. Los canales y las notas de reuniones aún no están disponibles ahí.
 
 ## Quítalo
 

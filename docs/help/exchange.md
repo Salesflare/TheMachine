@@ -18,7 +18,7 @@ Exchange Server runs at your company. Microsoft 365 (Exchange Online) is Microso
 
 ## Connect it
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick **Exchange Server**.
+1. In the dashboard, open **Connections**, then **Calendar**, and pick **Exchange Server**.
 2. Fill in your work email address and your Windows password.
 3. Press **Connect**.
 

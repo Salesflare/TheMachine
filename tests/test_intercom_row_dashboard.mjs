@@ -27,16 +27,15 @@ try{
   const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/#connections');
-  const other=page.locator('#connections button',{hasText:'Other sources'});
-  if(await other.count())await other.first().click();
+  await page.goto(base+'/#connections=other');  // no group in the fixture: Other
   const own=page.locator('article[data-conn="intercom"]');
   await own.waitFor();
+  for(const id of ['intercom','intercom-fleet'])await page.locator(`[data-conn-open="${id}"]`).click();  // each row opens its card
   assert.equal(await own.locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace. Replies only after you press Send.');
   assert.equal(await own.locator('.conn-replies-as').textContent(),'Replies as Alex Example, only after you press Send.');  // under Details
   assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-replies-as').count(),0);
-  assert.equal(await own.locator('.conn-head h3').innerText(),'Acme');
-  assert.equal(await own.locator('.conn-head small').innerText(),'Work');  // never "Work · Acme" under "Acme"
+  assert.equal(await own.locator('.conn-name').innerText(),'Acme');
+  assert.equal(await own.locator('.conn-sub').innerText(),'Work');  // never "Work · Acme" under "Acme"
   assert.equal(await page.locator('article',{hasText:'Acme Support'}).locator('.conn-what').innerText(),'Customer conversations in your Intercom workspace.');
   const label=own.locator('.figures span').first();
   assert.equal(await label.innerText().then(t=>t.replace(/[­\n-]/g,'')),'conversations');

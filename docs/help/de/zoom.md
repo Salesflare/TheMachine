@@ -28,9 +28,9 @@ Auf einer gehosteten Machine:
 2. Öffne Zoom, wähle Arbeit oder privat und tippe auf **Zoom verbinden**.
 3. Melde dich bei Zoom an und erlaube The Machine. Es kommt von Salesflare.
 
-Oder im Dashboard: **Verbindungen**, **+ Hinzufügen**, wähle Zoom und tippe auf **Mit Zoom anmelden**. Danach bist du zurück im Dashboard.
+Oder im Dashboard: **Verbindungen**, **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**. Danach bist du zurück im Dashboard.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **Meetings**, wähle Zoom und tippe auf **Mit Zoom anmelden**.
 
 ## Entfernen
 

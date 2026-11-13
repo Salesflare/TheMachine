@@ -25,10 +25,13 @@ try{
   const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+server.address().port+'/#connections');
-  await page.locator('article .figures').first().waitFor();await page.evaluate(()=>document.fonts.ready);
+  await page.locator('#health-tabs .conn-cat').first().waitFor({state:'attached'});await page.evaluate(()=>document.fonts.ready);
   const seen=new Set();
-  for(const tab of ['Email','Calendar','Chat','Other sources',null]){
-   if(tab){const b=page.locator('#health-tabs button:visible',{hasText:tab});if(!await b.count())continue;await b.first().click()}
+  for(const kind of await page.locator('#health-tabs .conn-cat').evaluateAll(b=>b.map(x=>x.dataset.healthPane))){
+   await page.evaluate(k=>showHealthPane(k),kind);  // each kind, every card in it opened
+   const shut=page.locator('#connectors [data-conn-open][aria-expanded="false"]:visible');
+   while(await shut.count())await shut.first().click();
+   await page.evaluate(()=>document.fonts.ready);
    const found=await page.evaluate(()=>[...document.querySelectorAll('article .figures span')].filter(s=>s.getBoundingClientRect().width>0).map(s=>{
     const cs=getComputedStyle(s),ctx=document.createElement('canvas').getContext('2d');ctx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
     const inner=s.clientWidth,box=s.parentElement.getBoundingClientRect(),card=s.closest('article').getBoundingClientRect();

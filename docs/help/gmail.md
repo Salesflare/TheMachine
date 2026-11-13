@@ -31,11 +31,11 @@ On a hosted Machine:
 
 Signed up with Google and allowed Gmail and Calendar on that screen? They connect by themselves. It sends only when you press Send.
 
-Or in the dashboard: **Connections**, **+ Add**, pick Gmail and press **Sign in with Google**. When you're done, you're back in the dashboard.
+Or in the dashboard: **Connections**, **Email**, pick Gmail and press **Sign in with Google**. When you're done, you're back in the dashboard.
 
 On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer):
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick Gmail.
+1. In the dashboard, open **Connections**, then **Email**, and pick Gmail.
 2. Press **Sign in with Google** and sign in in the tab that opens. Gmail and Google Calendar connect together.
 
 Not paired, or with your own Google OAuth client: open **Use your own app** there, or run `assistant connect gmail`. Press **Open Google**, sign in, then paste the address Google sends you to. Google Calendar for the same address comes along.

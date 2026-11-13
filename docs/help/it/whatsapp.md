@@ -32,7 +32,7 @@ WhatsApp non offre un modo ufficiale per farlo. Leggere e inviare ogni tanto una
 
 Su una Machine ospitata:
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli WhatsApp.
+1. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli WhatsApp.
 2. Premi **Mostra il codice QR**.
 3. Sul telefono, in WhatsApp, apri Impostazioni, Dispositivi collegati, Collega un dispositivo, e scansiona il codice QR.
 4. WhatsApp risulta collegato entro un minuto. La tua cronologia chat continua ad arrivare dopo, e la sua scheda conta i messaggi mentre arrivano.

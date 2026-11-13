@@ -15,12 +15,12 @@ Suas reuniões, com convidados, salas e notas: a semana passada e o próximo mê
 ## Conecte o iCloud Calendar
 
 1. Crie uma senha específica de app em [appleid.apple.com](https://appleid.apple.com), em **Início de Sessão e Segurança**. A que você criou para o iCloud Mail também funciona.
-2. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha **iCloud Calendar**.
+2. No painel, abra **Conexões**, depois **Calendário**, e escolha **iCloud Calendar**.
 3. Informe seu Apple ID e a senha específica de app, depois clique em **Conectar**.
 
 ## Conecte outro calendário
 
-1. Abra **Conexões**, depois **+ Adicionar**, e escolha **Outro calendário**.
+1. Abra **Conexões**, depois **Calendário**, e escolha **Outro calendário**.
 2. Informe seu endereço de e-mail e sua senha. Muitos provedores pedem aqui uma senha de app, criada nas configurações da sua conta.
 3. Clique em **Conectar**.
 

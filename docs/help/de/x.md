@@ -25,7 +25,7 @@ Auf einer gehosteten Machine:
 
 Auf deinem eigenen Computer:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle X.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle X.
 2. Wähle **Arbeit** mit ihrer Firma oder **Privat**, gib deinen Handle ohne @ ein und tippe auf **Verbinden**.
 3. Tippe auf **Bei X anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
 

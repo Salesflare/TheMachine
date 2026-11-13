@@ -24,7 +24,7 @@ Su una Machine in hosting:
 2. Apri Salesforce e premi **Collega Salesforce**.
 3. Accedi a Salesforce e consenti The Machine (fatta da Salesflare).
 
-Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Salesforce e premi **Accedi con Salesforce**.
+Oppure nella dashboard: **Connessioni**, **Clienti**, scegli Salesforce e premi **Accedi con Salesforce**.
 
 Il tuo utente Salesforce ha bisogno dell’accesso API, incluso nella maggior parte delle edizioni.
 

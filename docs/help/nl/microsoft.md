@@ -36,9 +36,9 @@ Op een gehoste Machine:
 2. Druk op **Microsoft koppelen** en log in.
 3. Vraagt Microsoft om goedkeuring van een beheerder, stuur de beheerder van je Microsoft 365 dan deze link: themachine.computer/m365-admin-consent. **Link kopiëren** kopieert hem. Zodra die goedkeurt, kan iedereen in je organisatie koppelen. Ben jij de beheerder, druk dan op **Ik ben de beheerder: nu goedkeuren**.
 
-Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard. Goedkeuring van je beheerder nodig? Dezelfde link staat onder de knop, met **Link kopiëren**.
+Of in het dashboard: **Koppelingen**, **E-mail**, kies Outlook en druk op **Inloggen met Microsoft**. Als je klaar bent, ben je terug in het dashboard. Goedkeuring van je beheerder nodig? Dezelfde link staat onder de knop, met **Link kopiëren**.
 
-Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **+ Toevoegen**, kies Outlook en druk op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld.
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **E-mail**, kies Outlook en druk op **Inloggen met Microsoft**. Mail en agenda worden samen gekoppeld.
 
 Met je eigen app: open daar **Je eigen app gebruiken**, of voer `assistant connect outlook` of `assistant connect outlook_calendar` uit. Het gebruikt je eigen app-registratie in Microsoft Entra en een inlogcode. Hij vraagt of hij ook moet versturen wat je goedkeurt.
 

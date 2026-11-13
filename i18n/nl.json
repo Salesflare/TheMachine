@@ -3119,6 +3119,7 @@
  "Not bad for a sleepy robot.": "Niet slecht voor een slaperige robot.",
  "Not client": "Geen klant",
  "Not confirmed yet: {}": "Nog niet bevestigd: {}",
+ "Not connected": "Niet gekoppeld",
  "Not connected.": "Niet gekoppeld.",
  "Not delivered yet": "Nog niet afgeleverd",
  "Not done yet": "Nog niet gedaan",
@@ -7465,6 +7466,7 @@
  "{} keeps restarting": "{} blijft herstarten",
  "{} kept the promise to {}": "{} deed wat beloofd was: {}",
  "{} knows someone at {}.": "{} kent iemand bij {}.",
+ "{} last 24h": "{} laatste 24 uur",
  "{} learnings to share, if you like: ": {
   "one": "{} inzicht om te delen, als je wilt: ",
   "other": "{} inzichten om te delen, als je wilt: "
@@ -7603,6 +7605,7 @@
   "one": "{} nieuwsbrief: houden of afmelden?",
   "other": "{} nieuwsbrieven: houden of afmelden?"
  },
+ "{} next 7 days": "{} komende 7 dagen",
  "{} no longer works at {}": "{} werkt niet meer bij {}",
  "{} notes": {
   "one": "{} notitie",

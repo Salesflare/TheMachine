@@ -3119,6 +3119,7 @@
  "Not bad for a sleepy robot.": "Nicht schlecht für einen müden Roboter.",
  "Not client": "Kein Kunde",
  "Not confirmed yet: {}": "Noch nicht bestätigt: {}",
+ "Not connected": "Nicht verbunden",
  "Not connected.": "Nicht verbunden.",
  "Not delivered yet": "Noch nicht zugestellt",
  "Not done yet": "Noch nicht erledigt",
@@ -7465,6 +7466,7 @@
  "{} keeps restarting": "{} startet immer wieder neu",
  "{} kept the promise to {}": "{} hat das Versprechen gehalten: {}",
  "{} knows someone at {}.": "{} kennt jemanden bei {}.",
+ "{} last 24h": "{} in den letzten 24 Std.",
  "{} learnings to share, if you like: ": {
   "one": "{} Erkenntnis zum Teilen, wenn du magst: ",
   "other": "{} Erkenntnisse zum Teilen, wenn du magst: "
@@ -7603,6 +7605,7 @@
   "one": "{} Newsletter: behalten oder abmelden?",
   "other": "{} Newsletter: behalten oder abmelden?"
  },
+ "{} next 7 days": "{} in 7 Tagen",
  "{} no longer works at {}": "{} arbeitet nicht mehr bei {}",
  "{} notes": {
   "one": "{} Notiz",

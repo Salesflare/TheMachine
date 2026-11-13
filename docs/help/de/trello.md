@@ -16,7 +16,7 @@ Nichts in Trello. Es liest nur.
 
 ## Verbinden
 
-1. Im Dashboard: **Verbindungen**, **+ Hinzufügen**, Trello. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Trello. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
+1. Im Dashboard: **Verbindungen**, **Projekte und Code**, Trello. Oder auf der Einrichtungsseite einer gehosteten Machine unter app.themachine.computer/setup: **Weitere Quellen**, Trello. Auf deinem eigenen Computer koppelst du ihn zuerst mit deinem Konto.
 2. Tippe auf **Mit Trello anmelden** und erlaube in Trello den Lesezugriff. The Machine wird von Salesflare gemacht.
 3. Wähle das Board, dem gefolgt werden soll, und tippe auf **Verbinden**. Für ein weiteres Board füge Trello noch einmal hinzu.
 

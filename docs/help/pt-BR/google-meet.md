@@ -31,7 +31,7 @@ Ele nunca pede o seu Drive. Seu acesso ao Gmail e à Agenda continua igual.
 
 Não precisa ter o Gmail conectado. Para conectar:
 
-- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Google Meet** e clique em **Entrar com Google**. O Google pede o OK acima, e você volta para o painel.
+- Machine hospedada: no painel, abra **Conexões**, **Reuniões**, escolha **Google Meet** e clique em **Entrar com Google**. O Google pede o OK acima, e você volta para o painel.
 - Seu próprio computador, pareado com sua conta: os mesmos passos. O login abre em uma nova aba.
 
 Ela confere se o login pode ler o Meet. Sem esse OK, ele não é adicionado. O login continua valendo: não há nada para colar nem renovar.

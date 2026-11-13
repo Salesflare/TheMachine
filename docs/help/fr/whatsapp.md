@@ -32,7 +32,7 @@ WhatsApp ne propose pas de moyen officiel pour cela. Lire et envoyer de temps en
 
 Sur une Machine hébergée :
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez WhatsApp.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez WhatsApp.
 2. Appuyez sur **Afficher le code QR**.
 3. Sur votre téléphone, dans WhatsApp, ouvrez Paramètres, Appareils connectés, Connecter un appareil, et scannez le code QR.
 4. WhatsApp apparaît comme connecté en moins d’une minute. Votre historique de discussions continue d’arriver ensuite, et sa carte compte les messages pendant ce temps.

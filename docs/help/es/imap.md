@@ -18,7 +18,7 @@ Envía correo solo cuando pulsas Enviar, por el servidor de correo de tu proveed
 
 ## Conéctalo
 
-1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige **Otro correo**.
+1. En el panel, abre **Conexiones**, luego **Correo**, y elige **Otro correo**.
 2. Escribe tu dirección de correo y tu contraseña.
 3. Pulsa **Conectar**.
 

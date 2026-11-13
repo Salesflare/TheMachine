@@ -40,6 +40,6 @@ On a hosted Machine, pick it on your setup page, under **Add more any time**, **
 - **Other ways**, **On my computer**: the job runs on your own computer, with the Codex signed in there. It travels encrypted, for that computer only. Install The Machine there, pair it on your Account page, run `codex login` and keep The Machine running. The result comes back on the to-do. When the computer is off, jobs wait.
 - **Other ways**, **Codex cloud**: the job runs in OpenAI's cloud. Press **Connect Codex**. It uses the same ChatGPT plan as your model, and OpenAI asks for one more code, for Codex. Then enter the Codex cloud environment in Settings.
 
-Or sign in from your dashboard: **Connections**, **+ Add**, **Codex**, **Get a code**. A self-hosted Machine runs that same sign-in itself.
+Or sign in from your dashboard: **Connections**, **Projects and code**, **Codex**, **Get a code**. A self-hosted Machine runs that same sign-in itself.
 
 On a hosted Machine, **Codex and Claude Code** shows in Settings once GitHub or Codex is connected. For developers: the [agents guide](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

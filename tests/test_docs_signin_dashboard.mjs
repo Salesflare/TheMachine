@@ -33,8 +33,7 @@ try{
  await page.goto('http://127.0.0.1:'+server.address().port);
  await page.evaluate(()=>refresh());
  const open=async()=>{
-  await page.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
-  await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());
+  await page.evaluate(()=>{document.querySelector('nav [data-tab="health"]').click();cardShow('docs')});  // its kind (no group: Other), its card open
   const conn=page.locator('[data-conn="docs"]');await conn.waitFor();return conn};
  for(const [label,start] of [['Allow edits','microsoft_docs_write'],['Reconnect','microsoft_docs']]){
   const conn=await open();

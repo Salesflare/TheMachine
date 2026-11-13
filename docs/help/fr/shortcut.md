@@ -16,7 +16,7 @@ Rien dans Shortcut. Il ne fait que lire, même si les jetons Shortcut permettent
 
 ## Le connecter
 
-1. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources** et ouvrez Shortcut. Sur votre propre ordinateur : **Connexions**, **+ Ajouter**, Shortcut, ou `assistant connect shortcut`.
+1. Sur une Machine hébergée : ouvrez votre page de configuration sur app.themachine.computer/setup, allez dans **Plus de sources** et ouvrez Shortcut. Sur votre propre ordinateur : **Connexions**, **Projets et code**, Shortcut, ou `assistant connect shortcut`.
 2. Appuyez sur **Obtenir votre jeton**. Shortcut ouvre sa page API Tokens dans un nouvel onglet : créez un jeton et copiez-le.
 3. Collez-le et appuyez sur **Se connecter**. Le jeton est vérifié tout de suite, avec le nom et l’espace de travail connectés.
 

@@ -20,7 +20,7 @@ Proton Calendar heeft geen andere toegang voor apps, dus het gebruikt een deelli
 2. Ga naar "Instellingen", "Alle instellingen", "Agenda's", en kies de agenda.
 3. Druk onder "Share with anyone" op "Create link" en kies "Full view". Limited view toont alleen wanneer je bezet bent.
 4. Druk op "Copy link".
-5. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, kies **Proton Calendar**, plak de link en druk op **Verbinden**.
+5. Open in het dashboard **Koppelingen**, dan **Agenda**, kies **Proton Calendar**, plak de link en druk op **Verbinden**.
 
 ## Een andere agendalink koppelen
 

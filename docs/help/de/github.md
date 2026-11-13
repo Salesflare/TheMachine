@@ -18,7 +18,7 @@ Lesen ändert nichts auf GitHub. Endet eine Aufgabe mit einem Schritt auf GitHub
 
 Auf einer gehosteten Machine:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle GitHub.
+1. Öffne im Dashboard **Verbindungen**, dann **Projekte und Code**, und wähle GitHub.
 2. Wähle **Arbeit** oder **Privat** und tippe auf **Mit GitHub anmelden**.
 3. Es zeigt einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
 
@@ -26,7 +26,7 @@ Deine Einrichtungsseite unter app.themachine.computer/setup hat dieselbe Anmeldu
 
 Auf deinem eigenen Computer:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle GitHub.
+1. Öffne im Dashboard **Verbindungen**, dann **Projekte und Code**, und wähle GitHub.
 2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
 3. Ist deine Machine noch nicht bei GitHub angemeldet, zeigt sie einen Code. Tippe auf **GitHub öffnen ↗**, gib den Code ein und erlaube den Zugriff. Danach geht es von selbst weiter.
 

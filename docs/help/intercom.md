@@ -28,7 +28,7 @@ Your own Intercom and one shared with you for the same workspace don't both read
 
 ## Connect it
 
-1. In the dashboard: **Connections**, **+ Add**, Intercom. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Intercom. On your own computer, pair it with your account first.
+1. In the dashboard: **Connections**, **Customers**, Intercom. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Intercom. On your own computer, pair it with your account first.
 2. Press **Sign in with Intercom**.
 3. Approve The Machine (made by Salesflare) in Intercom. You come back where you started.
 

@@ -32,7 +32,7 @@ WhatsApp bietet dafür keinen offiziellen Weg. Lesen und ab und zu eine Antwort,
 
 Auf einer gehosteten Machine:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle WhatsApp.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle WhatsApp.
 2. Tippe auf **QR-Code zeigen**.
 3. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, und scanne den QR-Code.
 4. Innerhalb einer Minute ist WhatsApp verbunden. Dein Chatverlauf kommt danach weiter an, und die Karte zählt die Nachrichten, solange das läuft.
@@ -40,7 +40,7 @@ Auf einer gehosteten Machine:
 
 Du richtest es auf deinem Handy ein und hast keinen zweiten Bildschirm zum Scannen? Öffne **Am Handy? Stattdessen mit einem Code verknüpfen**, gib deine Nummer ein und tippe auf **Code anfordern**. WhatsApp fragt dann nach diesem Code.
 
-Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle WhatsApp, gib deine Handynummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es zeigt einen Code. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, dann **Stattdessen mit Telefonnummer verknüpfen**, und gib den Code ein.
+Auf deinem eigenen Computer: Öffne **Verbindungen**, dann **Chat**, wähle WhatsApp, gib deine Handynummer mit Ländervorwahl ein und tippe auf **Verbinden**. Es zeigt einen Code. Öffne auf deinem Handy in WhatsApp Einstellungen, Verknüpfte Geräte, Gerät hinzufügen, dann **Stattdessen mit Telefonnummer verknüpfen**, und gib den Code ein.
 
 Oder führe `assistant connect whatsapp` aus und scanne den Code, den es im Terminal zeigt. Beim ersten Mal bietet es an, die WhatsApp-Verbindung zu installieren, einen festgelegten Build, geprüft anhand seiner Prüfsumme ([Quelle](https://github.com/Salesflare/wacli)).
 

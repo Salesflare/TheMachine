@@ -15,12 +15,12 @@ Es liest nur: Es fügt nie ein Meeting hinzu, verschiebt keins und entfernt kein
 ## iCloud-Kalender verbinden
 
 1. Erstelle ein App-spezifisches Passwort auf [appleid.apple.com](https://appleid.apple.com), unter **Anmeldung und Sicherheit**. Das für iCloud Mail geht auch.
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle **iCloud-Kalender**.
+2. Öffne im Dashboard **Verbindungen**, dann **Kalender**, und wähle **iCloud-Kalender**.
 3. Gib deine Apple ID und das App-spezifische Passwort ein und drücke **Verbinden**.
 
 ## Einen anderen Kalender verbinden
 
-1. Öffne **Verbindungen**, dann **+ Hinzufügen**, und wähle **Anderer Kalender**.
+1. Öffne **Verbindungen**, dann **Kalender**, und wähle **Anderer Kalender**.
 2. Gib deine E-Mail-Adresse und dein Passwort ein. Viele Anbieter wollen hier ein App-Passwort, das du in deinen Kontoeinstellungen erstellst.
 3. Drücke **Verbinden**.
 

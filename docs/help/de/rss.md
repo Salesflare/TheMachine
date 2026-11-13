@@ -17,7 +17,7 @@ Nichts. Es ruft nur den Feed ab.
 
 RSS ist für eine Machine auf deinem eigenen Computer. Gehostete Einrichtungsseiten bieten es nicht an.
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle RSS-Feed. Oder führe `assistant connect rss` aus.
+1. Öffne im Dashboard **Verbindungen**, dann **Andere**, und wähle RSS-Feed. Oder führe `assistant connect rss` aus.
 2. Füge die Adresse des Feeds ein.
 
 ## Entfernen

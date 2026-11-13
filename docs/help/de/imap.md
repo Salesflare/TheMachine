@@ -18,7 +18,7 @@ Sie sendet Mail erst, wenn du auf Senden drückst, über den Mailserver deines A
 
 ## Verbinden
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle **Andere E-Mail**.
+1. Öffne im Dashboard **Verbindungen**, dann **E-Mail**, und wähle **Andere E-Mail**.
 2. Gib deine E-Mail-Adresse und dein Passwort ein.
 3. Drücke **Verbinden**.
 

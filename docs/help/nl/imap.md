@@ -18,7 +18,7 @@ Het verstuurt mail pas als je op Versturen drukt, via de mailserver van je provi
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies **Andere e-mail**.
+1. Open in het dashboard **Koppelingen**, dan **E-mail**, en kies **Andere e-mail**.
 2. Vul je e-mailadres en wachtwoord in.
 3. Druk op **Verbinden**.
 

@@ -17,7 +17,7 @@ Nada. Solo descarga el feed.
 
 RSS es para una Machine en tu propio ordenador; las páginas de configuración alojadas no lo ofrecen.
 
-1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Feed RSS. O ejecuta `assistant connect rss`.
+1. En el panel, abre **Conexiones**, luego **Otras**, y elige Feed RSS. O ejecuta `assistant connect rss`.
 2. Pega la dirección del feed.
 
 ## Quítalo

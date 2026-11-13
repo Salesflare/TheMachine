@@ -5,10 +5,10 @@ import {navClick} from './nav-click.mjs';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Graph and Connections have sub-tabs like Fleet: a pill row over panes. Links open the right one (#graph=orgs,
-// #connections=chat, and the old #people and #health), a source that needs attention shows on its sub-tab, section
+// Graph has sub-tabs like Fleet, Connections its kinds in a list beside them. Links open the right one (#graph=orgs,
+// #connections=chat, and the old #people and #health), a source that needs attention shows on its kind, section
 // heads keep their heading on one line, and every tab has the same column width. Graph's tab has no count (no Who's who);
-// a tab shows a number only when something needs the owner (Sign-ins never). At 390px the row scrolls with a fade.
+// a tab shows a number only when something needs the owner (Sign-ins never). At 390px the kinds are a page of their own.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString(),day=now.slice(0,10);
 const person=(n,i)=>({id:'email:p'+i+'@example.org',kind:'person',name:n,strength:3-i/10,closeness:'regular',last_at:day,signals:4,ids:['p'+i+'@example.org']});
@@ -71,21 +71,23 @@ try{
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
  for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<7;i++)await page.waitForTimeout(20);
+ const kinds=page=>page.locator('#health-tabs .conn-cat').evaluateAll(b=>b.map(x=>x.querySelector('.ell').textContent+(x.querySelector('.badge')?'\n'+x.querySelector('.badge').textContent:'')));
+ const open=page=>page.locator('#health-tabs .conn-cat[aria-selected="true"] .ell').textContent();
  // A number only where something needs you: Chat has a failing source; a saved sign-in needs nothing, so Sign-ins has none
- assert.deepEqual(await tabs(page,'#health-tabs'),['Email','Calendar','Chat\n1','Other sources','+ Add','Sign-ins','Checks']);
+ assert.deepEqual(await kinds(page),['Email','Calendar','Chat\n1','Customers','Other','Sign-ins','Checks']);
  assert.equal(await page.locator('#health-tabs [data-health-pane="signins"] .badge').count(),0);
  assert.equal(await page.locator('#health-tabs [data-health-pane="chat"] .badge.warn').count(),1);
- assert.equal(await selected(page,'#health-tabs'),'Chat\n1');
- assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['team-chat','wa']);
+ assert.equal(await open(page),'Chat');
+ assert.deepEqual(await page.locator('#connectors>article:not([hidden]) .conn-name').allInnerTexts(),['team-chat','wa']);
  await page.locator('#health-tabs [data-health-pane="signins"]').click();
  await page.locator('#saved-logins-block').waitFor();assert.equal(await page.locator('#connectors>article:not([hidden])').count(),0);
  assert.equal(await page.locator('#review-summary').isVisible(),false);
  await page.goto(base+'/#connections=reviews');await page.locator('#review-summary').waitFor({state:'attached'});
- for(let i=0;i<100&&await selected(page,'#health-tabs').catch(()=>'')!=='Checks';i++)await page.waitForTimeout(20);
- assert.equal(await selected(page,'#health-tabs'),'Checks');
- // Android is in Other sources; the old phone link opens it.
- await page.goto(base+'/#connections=phone');await page.locator('#connectors>article:not([hidden]) h3',{hasText:'phone'}).waitFor();
- assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['crm','phone']);  // A to Z
+ for(let i=0;i<100&&await open(page).catch(()=>'')!=='Checks';i++)await page.waitForTimeout(20);
+ assert.equal(await open(page),'Checks');
+ // Android is in Other; the old phone link opens it.
+ await page.goto(base+'/#connections=phone');await page.locator('#connectors>article:not([hidden]) .conn-name',{hasText:'phone'}).waitFor();
+ assert.deepEqual(await page.locator('#connectors>article:not([hidden]) .conn-name').allInnerTexts(),['phone']);
  await page.goto(base+'/#health');await page.locator('#health:not([hidden])').waitFor();
  // One column for every tab.
  const widths=[];
@@ -93,14 +95,13 @@ try{
  // Events opens with the latest signals (here none), never an empty page
  await page.evaluate(()=>showTab('events'));await page.waitForFunction(()=>/No matching messages/.test(document.querySelector('#results').textContent));
  assert.equal(new Set(widths).size,1,widths.join());
- // A phone: the sub-tab row scrolls sideways inside itself, with a fade on the side that has more.
- await page.setViewportSize({width:390,height:844});await page.goto(base+'/#connections=mail');await page.locator('#health-tabs [role=tab]').first().waitFor();
- for(let i=0;i<100&&!(await page.locator('#health-tabs .sub-tabs.more-right').count());i++)await page.waitForTimeout(20);
- assert.equal(await page.locator('#health-tabs .sub-tabs.more-right').count(),1);
+ // A phone: a link opens its kind as a page of its own; back shows the kinds, every one in view
+ await page.setViewportSize({width:390,height:844});await page.goto(base+'/#connections=mail');await page.locator('[data-conn-back]:not([hidden])').waitFor();
+ assert.equal(await page.locator('#conn-title').textContent(),'Email');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- await page.locator('#health-tabs [data-health-pane="reviews"]').click();
- for(let i=0;i<100&&!(await page.locator('#health-tabs .sub-tabs.more-left').count());i++)await page.waitForTimeout(20);
- assert.equal(await page.locator('#health-tabs .sub-tabs.more-left').count(),1);  // the chosen one scrolled into view
+ await page.locator('[data-conn-back]').click();await page.locator('#health-tabs .conn-cat').first().waitFor();
+ assert.equal(await page.locator('#health-tabs .conn-cat:visible').count(),7);
+ await page.locator('#health-tabs [data-health-pane="reviews"]').click();await page.locator('#review-summary').waitFor();
  // Out of sight, Connections' tabs are drawn but not measured: a redraw on another tab never lays the page out for them
  const measured=await page.evaluate(()=>{showTab('inbox');let n=0;const f=tabsShow;tabsShow=(...a)=>{if(a[0]?.closest('#health-tabs'))n++;return f(...a)};try{render()}finally{tabsShow=f}return n});
  assert.equal(measured,0,'no measuring for a hidden Connections');

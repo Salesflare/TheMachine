@@ -73,7 +73,7 @@ Codex and Claude Code**.
   back after two days shows as stopped.
 - **Codex**: pick where it runs on the setup page (step **Codex**, **Where Codex runs**).
 - **Codex, On your Machine** (the default): press **Connect Codex** on the setup page, or **Get a code** under
-  Connections, **+ Add**, **Codex** on the dashboard. Your server runs `codex login --device-auth` and the page shows
+  Connections, **Projects and code**, **Codex** on the dashboard. Your server runs `codex login --device-auth` and the page shows
   the code to enter on OpenAI's page. Nobody types a command. Jobs then run on your hosted Machine as ordinary local
   Codex jobs. A self-hosted Machine runs the same sign-in itself from Connections (`codex_signin.py`).
 - **Codex, On my computer** (under **Other ways**): the job runs on your own computer, which needs The Machine installed

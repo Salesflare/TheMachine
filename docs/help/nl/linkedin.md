@@ -34,7 +34,7 @@ Op een gehoste Machine:
 Op je eigen computer:
 
 1. Log één keer in bij LinkedIn in de browser van je Machine (Instellingen, **De browser van je Machine openen ↗**).
-2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies LinkedIn. Of voer `assistant connect linkedin` uit.
+2. Open in het dashboard **Koppelingen**, dan **Chat**, en kies LinkedIn. Of voer `assistant connect linkedin` uit.
 
 Een tweede LinkedIn-account krijgt een eigen browser. Logt LinkedIn je Machine uit, zie dan [Uitgelogd op een site](signed-out.md).
 

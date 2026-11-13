@@ -136,7 +136,7 @@ function kbLand(n=0,seq=++kbLandSeq,from=null){const a=document.activeElement,se
  if(first){kbPick(first,first.getBoundingClientRect().top>innerHeight-80);return}  // the page stays where it is when the item shows
  if(KB_LISTS[sec.id]&&n<10){setTimeout(()=>kbLand(n+1,seq,sec),200);return}  // the list is still loading
  const shown=x=>x.getClientRects().length&&!x.disabled;
- const t=[...sec.querySelectorAll('[role="tab"][aria-selected="true"]')].find(shown)||[...sec.querySelectorAll('button,a[href],summary,[tabindex="0"]')].find(shown);
+ const t=[...sec.querySelectorAll('[role="tab"][aria-selected="true"]')].find(shown)||[...sec.querySelectorAll('button,a[href],[tabindex="0"]')].find(shown);  // never a fold (For developers) as a page opens
  if(t){t.focus({preventScroll:true})}}
 function kbMove(step){if(chatId&&!$('#inbox').hidden){const rows=[...document.querySelectorAll('#side-cards a[href^="#chat="]')],i=rows.findIndex(a=>a.getAttribute('href')==='#chat='+chatId),n=rows[i+step];
   if(n)chatGo(n.getAttribute('href').slice(6));return}

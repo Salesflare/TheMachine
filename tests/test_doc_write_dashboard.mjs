@@ -141,9 +141,9 @@ try{
   if(shots)await no.screenshot({path:`${shots}/refused-todo-${name}.png`});
   // The Docs card: what it may write, and Allow edits until it may
   await page.evaluate(()=>document.querySelector('nav [data-tab="health"]').click());
-  await page.evaluate(()=>[...document.querySelectorAll('button')].find(b=>b.offsetParent&&b.textContent.trim()==='Other sources')?.click());
+  await page.evaluate(()=>showHealthPane('other'));  // no group in the fixture: Other
   const conn=page.locator('[data-conn="docs"]');
-  await conn.waitFor();
+  await conn.waitFor();if(await conn.locator('[data-conn-open]').getAttribute('aria-expanded')==='false')await conn.locator('[data-conn-open]').click();
   assert.ok((await conn.textContent()).includes('Can’t create or edit docs yet.'));
   const allow=conn.locator('button',{hasText:'Allow edits'});
   assert.equal(await allow.getAttribute('data-signin-source'),'microsoft_docs_write');

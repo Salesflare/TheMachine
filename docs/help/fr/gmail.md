@@ -27,11 +27,11 @@ Sur une Machine hébergée :
 2. Sous **E-mail et agenda**, appuyez sur **Connecter Google** et connectez-vous. L’écran de Google indique Salesflare, qui crée The Machine.
 3. Gmail et Google Agenda se connectent ensemble.
 
-Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Gmail et appuyez sur **Se connecter avec Google**. Une fois terminé, vous revenez au tableau de bord.
+Ou dans le tableau de bord : **Connexions**, **E-mail**, choisissez Gmail et appuyez sur **Se connecter avec Google**. Une fois terminé, vous revenez au tableau de bord.
 
 Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) :
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Gmail.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **E-mail**, et choisissez Gmail.
 2. Appuyez sur **Se connecter avec Google** et connectez-vous dans l’onglet qui s’ouvre. Gmail et Google Agenda se connectent ensemble.
 
 Sans association, ou avec votre propre client OAuth Google : ouvrez **Utiliser votre propre app** à cet endroit, ou lancez `assistant connect gmail`. Appuyez sur **Ouvrir Google**, connectez-vous, puis collez l’adresse vers laquelle Google vous renvoie. Google Calendar pour la même adresse suit.

@@ -22,7 +22,7 @@ Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur
 
 ## La connecter
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Discussions Signal.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez Discussions Signal.
 2. Sur votre téléphone, dans Signal, ouvrez Paramètres, **Appareils reliés**, **Relier un nouvel appareil**, et scannez le code.
 
 Il vous faut un second écran d’où scanner : Signal ne relie un appareil que par code QR. Ou lancez `assistant connect signal` dans un terminal et scannez le code qui s’y affiche.

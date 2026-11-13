@@ -25,7 +25,7 @@ Em uma Machine hospedada:
 No seu próprio computador:
 
 1. Primeiro, entre na CLI do GitHub: `gh auth login`.
-2. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha GitHub. Ou execute `assistant connect github`.
+2. No painel, abra **Conexões**, depois **Projetos e código**, e escolha GitHub. Ou execute `assistant connect github`.
 3. Confirme seu login do GitHub. A The Machine verifica se ele confere a cada sincronização.
 
 ## Remover

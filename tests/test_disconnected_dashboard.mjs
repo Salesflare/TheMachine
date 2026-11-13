@@ -9,7 +9,7 @@ const {chromium}=await import('./browser.mjs');
 const dashboard=await dashboardPage();
 const brand={'/brand/avatar.png':'brand/app-icon-192.png','/brand/serif.woff2':'brand/fonts/source-serif-4-latin.woff2','/brand/sans.woff2':'brand/fonts/inter-latin.woff2'};
 const at=new Date().toISOString(),earlier=new Date(Date.now()-3*3600e3).toISOString();
-const connectors=[{id:'g',service:'gmail',display_name:'alex@acme.example',boundary:'work:Acme',total:812,signals_24h:14,last_success:at,sync_activity:[]}];
+const connectors=[{id:'g',service:'gmail',group:'mail',display_name:'alex@acme.example',boundary:'work:Acme',total:812,signals_24h:14,last_success:at,sync_activity:[]}];
 const disconnected=[{provider:'google',email:'alex.long.address@subsidiary.acme-holdings.example',at,state:'pending'},
  {provider:'microsoft',email:'sam@contoso.example',at:earlier,state:'removed'},{provider:'google',email:'old@acme.example',at:earlier,state:'removed'}];
 const server=createServer(async(req,res)=>{
@@ -25,7 +25,7 @@ try{
  for(const [width,height] of [[1280,900],[390,844]]){
   const context=await browser.newContext({viewport:{width,height}}),page=await context.newPage();
   page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:'+server.address().port+'/#connections');
+  await page.goto('http://127.0.0.1:'+server.address().port+'/#connections=mail');  // under Email, also on a phone
   const block=page.locator('#disconnected');await block.locator('article').first().waitFor();
   const rows=await block.locator('article').evaluateAll(a=>a.map(x=>x.innerText.replace(/\s+/g,' ')));
   assert.equal(rows.length,3);

@@ -54,14 +54,14 @@ Se in seguito quell’OK viene revocato, la scheda Microsoft OneDrive dice **In 
 
 Non serve avere Outlook collegato.
 
-- Machine in hosting: nella dashboard, apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura e la modifica dei tuoi file, poi torni alla dashboard.
-- Il tuo computer, abbinato al tuo account: apri **Connessioni**, **+ Aggiungi**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**.
+- Machine in hosting: nella dashboard, apri **Connessioni**, **Documenti e file**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**. Microsoft ti chiede di consentire la lettura e la modifica dei tuoi file, poi torni alla dashboard.
+- Il tuo computer, abbinato al tuo account: apri **Connessioni**, **Documenti e file**, scegli **Microsoft OneDrive** e premi **Accedi con Microsoft**.
 
 Verifica che l’accesso possa leggere i documenti. Senza quell’OK non viene aggiunto. Se tocchi **Consenti le modifiche** e Microsoft non le consente, lo dice invece di mostrare Connesso.
 
 ## Google Docs
 
-Su una Machine in hosting, apri **Connessioni**, poi **+ Aggiungi**, e scegli **Google Docs**. Google ti chiede di permetterle di vedere e modificare i documenti che le indichi, e di crearne di nuovi. Gmail non deve essere collegato, e il tuo accesso a Gmail non cambia.
+Su una Machine in hosting, apri **Connessioni**, poi **Documenti e file**, e scegli **Google Docs**. Google ti chiede di permetterle di vedere e modificare i documenti che le indichi, e di crearne di nuovi. Gmail non deve essere collegato, e il tuo accesso a Gmail non cambia.
 
 Poi la tua Machine:
 

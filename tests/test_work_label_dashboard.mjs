@@ -30,7 +30,7 @@ try{
   const context=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile,locale:'en-US',colorScheme:scheme});
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/#connections');
+  await page.goto(base+'/#connections=other');  // no group in the fixture: Other
   const mail=page.locator('#connectors article[data-conn="moreau-gmail"]');await mail.waitFor();await page.waitForTimeout(300);
   assert.equal(await sub(page,'moreau-gmail'),'Work');  // never the kind again (machine/names.py account_card)
   assert.equal(await sub(page,'initech-trello'),'Work · Initech Corp');

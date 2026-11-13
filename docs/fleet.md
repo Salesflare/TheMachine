@@ -524,7 +524,7 @@ company does not stay with you. Your Machine disconnects that company's accounts
 personal sources stay. The invite page says so before you join, and the confirmation before you leave.
 
 - **Work or personal is yours to mark.** Each account is Work (with its company) or Personal: pick it in the dashboard
-  (Connections, a to-do's Details, and + Add) or, on a hosted Machine, on the setup page. It is the account's `boundary`
+  (Connections, a to-do's Details, and adding a source) or, on a hosted Machine, on the setup page. It is the account's `boundary`
   (`work:Acme` or `personal:me`), marked as your own choice (`boundary_by: owner`); all accounts on the same address
   follow it.
 - **Which accounts.** Your marking first: what you marked Work for that company goes, whatever its address; what you
@@ -573,7 +573,7 @@ them on the Network.
 ### Sign-ins for it
 
 Some sources sign in through The Machine's own app: Intercom, Google (Gmail and Calendar), Microsoft (Outlook mail and
-calendar) and Zoom. On a paired Machine you start that on its dashboard: Connections, **+ Add**, then the source. Not
+calendar) and Zoom. On a paired Machine you start that on its dashboard: Connections, the source's kind, then the source. Not
 paired yet, the dashboard says to pair first; pasting a token stays as a folded fallback, also for sources the control
 plane has no app for (`GET /signins`).
 

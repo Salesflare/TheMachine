@@ -23,7 +23,7 @@ Se un'attività è arrivata via email ma con quella persona parli su Telegram, d
 
 ## Collegala
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli Chat di Telegram.
+1. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli Chat di Telegram.
 2. Scegli **Scansiona un codice QR in Telegram sul telefono**.
 3. Sul telefono, in Telegram, apri Impostazioni, Dispositivi, **Link Desktop Device**, e scansiona il codice.
 4. Se il tuo account ha una password cloud, scrivila quando te la chiede. Va a Telegram e non viene mai salvata.

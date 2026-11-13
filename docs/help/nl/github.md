@@ -25,7 +25,7 @@ Op een gehoste Machine:
 Op je eigen computer:
 
 1. Log eerst in bij de GitHub CLI: `gh auth login`.
-2. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies GitHub. Of voer `assistant connect github` uit.
+2. Open in het dashboard **Koppelingen**, dan **Projecten en code**, en kies GitHub. Of voer `assistant connect github` uit.
 3. Bevestig je GitHub-login. The Machine controleert bij elke sync of die klopt.
 
 ## Verwijderen

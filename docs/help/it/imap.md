@@ -18,7 +18,7 @@ Invia un’email solo quando premi Invia, tramite il server di posta del tuo pro
 
 ## Collegala
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli **Altra email**.
+1. Nella dashboard, apri **Connessioni**, poi **Email**, e scegli **Altra email**.
 2. Inserisci il tuo indirizzo email e la password.
 3. Premi **Collegati**.
 

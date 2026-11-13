@@ -18,7 +18,7 @@ Ela envia e-mail só quando você toca em Enviar, pelo servidor de e-mail do seu
 
 ## Conecte
 
-1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha **Outro e-mail**.
+1. No painel, abra **Conexões**, depois **E-mail**, e escolha **Outro e-mail**.
 2. Preencha seu endereço de e-mail e sua senha.
 3. Toque em **Conectar**.
 

@@ -23,7 +23,7 @@ Si une tâche est arrivée par e-mail mais que vous parlez à cette personne sur
 
 ## La connecter
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Discussions Telegram.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Chat**, et choisissez Discussions Telegram.
 2. Choisissez **Scanner un code QR dans Telegram sur votre téléphone**.
 3. Sur votre téléphone, dans Telegram, ouvrez Paramètres, Appareils, **Link Desktop Device**, et scannez le code.
 4. Si votre compte a un mot de passe cloud, saisissez-le quand il est demandé. Il va à Telegram et n’est jamais enregistré.

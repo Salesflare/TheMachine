@@ -18,7 +18,7 @@ Nothing. (On your own computer, the `join_pipelines` setting can make it add you
 
 1. In Salesflare, open [Settings, API keys](https://app.salesflare.com/#/settings/apikeys) and create a key.
 2. On a hosted Machine: open your setup page at app.themachine.computer/setup, go to **More sources**, open Salesflare CRM, paste the key and press **Connect**.
-3. In the dashboard: **Connections**, **+ Add**, Salesflare CRM, paste the key and press **Connect**. It then shows how many accounts it has read.
+3. In the dashboard: **Connections**, **Customers**, Salesflare CRM, paste the key and press **Connect**. It then shows how many accounts it has read.
 
 ## Sync details
 

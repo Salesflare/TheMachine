@@ -22,7 +22,7 @@ If a to-do came in by email but you talk to that person on Signal, say so in the
 
 ## Connect it
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick Signal chats.
+1. In the dashboard, open **Connections**, then **Chat**, and pick Signal chats.
 2. On your phone, in Signal, open Settings, **Linked devices**, **Link new device**, and scan the code.
 
 Scanning needs a second screen: Signal links a device only by QR code. Or run `assistant connect signal` in a terminal and scan the code it shows there.

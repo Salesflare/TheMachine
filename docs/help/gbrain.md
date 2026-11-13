@@ -8,7 +8,7 @@ order: 90
 ---
 ## Turn it on
 
-GBrain is an open-source agent memory some people already run. It's off unless you turn it on, and only on a Machine on your own computer. Install GBrain first, then open **Connections**, **+ Add**, **GBrain**.
+GBrain is an open-source agent memory some people already run. It's off unless you turn it on, and only on a Machine on your own computer. Install GBrain first, then open **Connections**, **Other**, **GBrain**.
 
 Your Machine says what goes in: people and projects from your Graph with a link back, and what it learned about how you work. Message text never goes in. GBrain may send this to its own AI providers. Check **I agree**, then **Connect GBrain**.
 

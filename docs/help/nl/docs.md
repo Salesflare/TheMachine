@@ -54,14 +54,14 @@ Wordt die OK later ingetrokken, dan zegt de kaart van Microsoft OneDrive **Wacht
 
 Je hebt er geen gekoppelde Outlook voor nodig.
 
-- Gehoste Machine: open in het dashboard **Koppelingen**, **+ Toevoegen**, kies **Microsoft OneDrive** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen en bewerken van je bestanden toe te staan, daarna kom je terug in het dashboard.
-- Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **+ Toevoegen**, kies **Microsoft OneDrive** en druk op **Inloggen met Microsoft**.
+- Gehoste Machine: open in het dashboard **Koppelingen**, **Documenten en bestanden**, kies **Microsoft OneDrive** en druk op **Inloggen met Microsoft**. Microsoft vraagt je om het lezen en bewerken van je bestanden toe te staan, daarna kom je terug in het dashboard.
+- Je eigen computer, gekoppeld aan je account: open **Koppelingen**, **Documenten en bestanden**, kies **Microsoft OneDrive** en druk op **Inloggen met Microsoft**.
 
 Hij controleert of de login documenten mag lezen. Zonder die OK wordt het niet toegevoegd. Druk je op **Bewerken toestaan** en staat Microsoft bewerken niet toe, dan zegt hij dat in plaats van Gekoppeld.
 
 ## Google Docs
 
-Open op een gehoste Machine **Koppelingen**, dan **+ Toevoegen**, en kies **Google Docs**. Google vraagt je om hem de documenten te laten zien en bewerken die je hem aanwijst, en nieuwe te laten maken. Gmail hoeft niet gekoppeld te zijn, en je Gmail-toegang verandert niet.
+Open op een gehoste Machine **Koppelingen**, dan **Documenten en bestanden**, en kies **Google Docs**. Google vraagt je om hem de documenten te laten zien en bewerken die je hem aanwijst, en nieuwe te laten maken. Gmail hoeft niet gekoppeld te zijn, en je Gmail-toegang verandert niet.
 
 Daarna kan je Machine:
 

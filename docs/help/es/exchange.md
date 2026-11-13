@@ -18,7 +18,7 @@ Exchange Server funciona en tu empresa. Microsoft 365 (Exchange Online) es la nu
 
 ## Conéctalo
 
-1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige **Exchange Server**.
+1. En el panel, abre **Conexiones**, luego **Calendario**, y elige **Exchange Server**.
 2. Escribe tu dirección de correo del trabajo y tu contraseña de Windows.
 3. Pulsa **Conectar**.
 

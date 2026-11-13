@@ -22,7 +22,7 @@ Se un’attività è arrivata per email ma con quella persona parli su Signal, d
 
 ## Collegala
 
-1. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli Chat di Signal.
+1. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli Chat di Signal.
 2. Sul telefono, in Signal, apri Impostazioni, **Dispositivi collegati**, **Collega nuovo dispositivo**, e scansiona il codice.
 
 Ti serve un secondo schermo da cui scansionare: Signal collega un dispositivo solo con un codice QR. Oppure esegui `assistant connect signal` in un terminale e scansiona il codice che mostra.

@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, Microsoft: a work organization that lets only approved apps in needs its admin's approval first.
+// Connections, Microsoft (the fixture gives no groups: under Other): a work organization that lets only approved apps in needs its admin's approval first.
 // The form says so in one line with the short link (themachine.computer/m365-admin-consent, never Microsoft's long one)
 // and Copy link, on a hosted Machine and a self-hosted one alike, and again when the sign-in comes back unfinished or
 // refused (Microsoft's "Need admin approval", AADSTS90094; on a hosted Machine the cloud's reason by f_ ref). Google and Docs don't show it. SHOTS=<folder> saves screenshots.
@@ -61,7 +61,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   const tag=`${m}-${width}-${scheme}`;
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect-signin="outlook"]').click();
   await page.getByRole('button',{name:'Sign in with Microsoft'}).waitFor();
   await checkHint(page,'the Microsoft form');
@@ -107,7 +107,7 @@ try{
  const context=await browser.newContext({viewport:{width:1440,height:900}}),page=await context.newPage();
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
  page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/#connections=add');
+ await page.goto(base+'/#connections=other');
  await page.locator('#connect-add [data-connect-signin="outlook"]').click();
  await page.getByText('Goedkeuring van je beheerder nodig? Stuur hem of haar deze link.').waitFor();
  assert.equal(await hint(page).locator('a').innerText(),'themachine.computer/m365-admin-consent');

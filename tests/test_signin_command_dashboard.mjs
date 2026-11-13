@@ -22,6 +22,7 @@ const server=createServer((req,res)=>{
  if(url.pathname==='/api/action'){let body='';req.on('data',d=>body+=d);req.on('end',()=>{const {action,args}=JSON.parse(body);actions.push([action,args]);
   if(action==='connect_start'){res.end(JSON.stringify({session:'s1',state:'running',label:'Gmail',source:args.name,reconnect:args.account,lines:['Checking what this Google sign-in may do now, to ask for the same again...'],question:null}));return}
   if(action==='connect_poll'){res.end(JSON.stringify({session:'s1',state:'running',label:'Gmail',source:'gmail',reconnect:'work-gmail',lines:['Open this address'],question:{id:1,kind:'ask',prompt:'The address Google sent you to',default:''}}));return}
+  if(action==='connect_sources'){res.end(JSON.stringify({saveable:true,sources:[{name:'gmail',label:'Gmail',service:'gmail',group:'mail',what:'Your email.',connected:1}]}));return}
   if(action==='connect_remove'){res.end(JSON.stringify({removed:args.account,restarting:true}));return}
   res.end('{}')});return}
  res.statusCode=404;res.end('{}');
@@ -36,6 +37,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
  await navClick(page.locator('nav [data-tab="health"]'));
+ await page.locator('#health-tabs [data-health-pane="mail"]').click();  // a phone: the kinds first, then Email
  const pre=page.locator('#connectors .signin-command');await pre.waitFor({state:'attached'});
  assert.equal(await pre.textContent(),command);
  const card=await page.locator('#connectors').textContent();
@@ -47,14 +49,14 @@ try{
  await page.locator('#toast',{hasText:'Copied.'}).waitFor();
  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),command);
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- // Reconnect runs the same sign-in as + Add, for this account, in the + Add pane.
+ // Reconnect runs the same sign-in as adding one, for this account, in its kind.
  await page.locator('#connectors .alert [data-reconnect]').click();
  await page.locator('#connect-add .connect-run').waitFor();
  assert.deepEqual(actions.find(a=>a[0]==='connect_start')[1],{name:'gmail',account:'work-gmail'});
  assert.ok(await page.locator('#connect-add').isVisible());
  await page.locator('#connect-answer').waitFor();
- // Details: Reconnect and Disconnect (asks first).
- await page.locator('[data-health-pane="mail"]').click();
+ // Details: Reconnect and Disconnect (asks first). Back stops the sign-in and shows the kinds; Email shows its card again.
+ await page.locator('[data-conn-back]').click();await page.locator('#health-tabs [data-health-pane="mail"]').click();
  await page.locator('#connectors details[id^="sync-details-"] summary').click();
  page.once('dialog',d=>{assert.match(d.message(),/^Disconnect owner@example\.com\? It stops syncing\./);d.accept()});
  await page.locator('#connectors [data-disconnect="work-gmail"]').click();

@@ -22,7 +22,7 @@ Si una tarea llegó por email pero hablas con esa persona por Signal, dilo en el
 
 ## Conéctalo
 
-1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Chats de Signal.
+1. En el panel, abre **Conexiones**, luego **Chat**, y elige Chats de Signal.
 2. En tu teléfono, en Signal, abre Ajustes, **Dispositivos vinculados**, **Vincular nuevo dispositivo**, y escanea el código.
 
 Necesitas una segunda pantalla desde la que escanear: Signal solo vincula un dispositivo con un código QR. O ejecuta `assistant connect signal` en una terminal y escanea el código que muestra.

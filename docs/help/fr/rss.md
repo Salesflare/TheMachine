@@ -17,7 +17,7 @@ Rien. Elle se contente de récupérer le flux.
 
 RSS est réservé à une Machine sur votre propre ordinateur. Les pages de configuration hébergées ne le proposent pas.
 
-1. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez Flux RSS. Ou lancez `assistant connect rss`.
+1. Dans le tableau de bord, ouvrez **Connexions**, puis **Autres**, et choisissez Flux RSS. Ou lancez `assistant connect rss`.
 2. Collez l’adresse du flux.
 
 ## La retirer

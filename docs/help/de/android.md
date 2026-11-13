@@ -19,7 +19,7 @@ Nichts auf deinem Handy. Sie liest nur Benachrichtigungen.
 Auf einer gehosteten Machine:
 
 1. Installiere OpenClaw aus Google Play auf deinem Handy.
-2. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, wähle Android-Handy und tippe auf **Einrichtungscode zeigen**.
+2. Öffne im Dashboard **Verbindungen**, dann **Andere**, wähle Android-Handy und tippe auf **Einrichtungscode zeigen**.
 3. Füge in der OpenClaw-App ein Gateway hinzu und scanne den Code. Tippe dann im Dashboard auf **Freigeben**.
 4. Erlaube den Zugriff auf Benachrichtigungen, wenn die App danach fragt. Schalte dann in den Einstellungen der App Forward Notification Events ein, damit Benachrichtigungen sofort ankommen, nicht nur bei der Prüfung alle 10 Minuten.
 

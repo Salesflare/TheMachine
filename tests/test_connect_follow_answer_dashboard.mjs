@@ -7,7 +7,7 @@ const {chromium}=await import('./browser.mjs');
 // the pane still follows the restart and moves to the new account's card once the Machine is back, instead of saying
 // "Restarting to start reading it…" for good (a newcomer waited over a minute on it, agent users 2026-11-08).
 const dashboard=await dashboardPage();
-const gmail={id:'work-gmail',service:'gmail',email:'jules@example.com',boundary:'work:Studio',boundary_by:'owner',total:0};
+const gmail={id:'work-gmail',service:'gmail',group:'mail',email:'jules@example.com',boundary:'work:Studio',boundary_by:'owner',total:0};
 let connectors=[],away=0;
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://x.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -36,8 +36,10 @@ try{
  await page.locator('[data-connect-form] button.primary').click();
  await page.locator('#connect-add .sent-ok',{hasText:'Restarting to start reading it…'}).waitFor({timeout:8000});
  await page.locator('#connectors article[data-conn="work-gmail"].conn-new').waitFor({timeout:20000});
- await page.evaluate(()=>showHealthPane('add'));
- assert.match(await page.locator('#connect-add .sent-ok').innerText(),/^Connected\. Running again\. Its card shows how far it is\.$/);
+ // its card takes the setup's place, open, in the source's own kind
+ assert.equal(await page.locator('#connectors article[data-conn="work-gmail"] [data-conn-open]').getAttribute('aria-expanded'),'true');
+ assert.equal(await page.locator('#connect-add .sent-ok').count(),0);
+ assert.equal(await page.locator('#conn-title').textContent(),'Email');
  await context.close();
  assert.deepEqual(errors,[]);
 }finally{await browser.close();server.close()}

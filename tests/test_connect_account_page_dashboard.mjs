@@ -30,7 +30,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   page.on('pageerror',e=>errors.push(e.message));
   manage='https://app.example.org/setup';
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=other');
   const link=page.locator('#connect-add a.connect-source');
   await link.waitFor();
   assert.equal(await link.getAttribute('href'),'https://app.example.org/setup#source-intercom');
@@ -43,7 +43,7 @@ try{
   if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/dashboard-add-hosted-${width}.png`});
   // Self-hosted: no account page, so the token is pasted right here
   manage=null;
-  await page.goto('about:blank');await page.goto(base+'/#connections=add');
+  await page.goto('about:blank');await page.goto(base+'/#connections=other');
   await page.locator('#connect-add [data-connect="intercom"]').waitFor();
   assert.equal(await page.locator('#connect-add a.connect-source').count(),0);
   await context.close();

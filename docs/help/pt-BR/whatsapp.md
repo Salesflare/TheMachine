@@ -32,7 +32,7 @@ O WhatsApp não oferece um jeito oficial de fazer isso. Ler e enviar de vez em q
 
 Em uma Machine hospedada:
 
-1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha WhatsApp.
+1. No painel, abra **Conexões**, depois **Chat**, e escolha WhatsApp.
 2. Toque em **Mostrar o QR code**.
 3. No seu celular, no WhatsApp, abra Configurações, Dispositivos conectados, Conectar um dispositivo, e escaneie o QR code.
 4. O WhatsApp aparece como conectado em menos de um minuto. Seu histórico de conversas continua chegando depois, e o cartão conta as mensagens enquanto chegam.

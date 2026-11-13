@@ -24,7 +24,7 @@ Op een gehoste Machine:
 2. Open Salesforce en druk op **Salesforce koppelen**.
 3. Log in bij Salesforce en sta The Machine toe (gemaakt door Salesflare).
 
-Of in het dashboard: **Koppelingen**, **+ Toevoegen**, kies Salesforce en druk op **Inloggen met Salesforce**.
+Of in het dashboard: **Koppelingen**, **Klanten**, kies Salesforce en druk op **Inloggen met Salesforce**.
 
 Je Salesforce-gebruiker heeft API-toegang nodig, wat de meeste edities hebben.
 

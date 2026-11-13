@@ -45,6 +45,12 @@ await page.goto('http://127.0.0.1:'+server.address().port);await page.locator('#
  assert.equal(await page.locator('#task-'+ids[0]+' .chip.t-muted').filter({hasText:/Telegram|Notification/}).count(),0);}
 // Connected-source cards must fit a narrow phone after the design-system change.
 await navClick(page.locator('nav [data-tab="health"]'));
+await page.locator('#health-tabs .conn-cat').first().waitFor();  // on a phone: the list of kinds, then one open
+for(const width of [320,390]){
+ await page.setViewportSize({width,height:844});
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Connections, its kinds, overflow at '+width);
+}
+await page.locator('#health-tabs .conn-cat').first().click();
 await page.locator('.health article:not([hidden])').first().waitFor();
 for(const width of [320,390]){
  await page.setViewportSize({width,height:844});

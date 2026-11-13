@@ -15,12 +15,12 @@ Il est en lecture seule : il n’ajoute, ne déplace et ne supprime jamais de r�
 ## Connecter iCloud Calendar
 
 1. Créez un mot de passe pour app sur [appleid.apple.com](https://appleid.apple.com), sous **Connexion et sécurité**. Celui créé pour iCloud Mail fonctionne aussi.
-2. Dans le tableau de bord, ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **iCloud Calendar**.
+2. Dans le tableau de bord, ouvrez **Connexions**, puis **Agenda**, et choisissez **iCloud Calendar**.
 3. Saisissez votre Apple ID et le mot de passe pour app, puis appuyez sur **Se connecter**.
 
 ## Connecter un autre agenda
 
-1. Ouvrez **Connexions**, puis **+ Ajouter**, et choisissez **Autre agenda**.
+1. Ouvrez **Connexions**, puis **Agenda**, et choisissez **Autre agenda**.
 2. Saisissez votre adresse e-mail et votre mot de passe. Beaucoup de fournisseurs demandent ici un mot de passe d’application, créé dans les réglages de votre compte.
 3. Appuyez sur **Se connecter**.
 

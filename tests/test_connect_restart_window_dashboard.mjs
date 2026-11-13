@@ -54,7 +54,7 @@ try{
   const {context,page}=await open(scheme,width);
   // The restart: the account page's connect saved Intercom and the service is away for a few seconds
   mode='restart';
-  await page.evaluate(()=>{connectList=null;showHealthPane('add')});
+  await page.evaluate(()=>{connectList=null;showHealthPane('customers')});  // Intercom's kind
   await page.waitForFunction(()=>/Laden…/.test(document.querySelector('#connect-add').innerText),null,{timeout:5000});
   await page.waitForFunction(()=>!document.querySelector('#offline-bar').hidden,null,{timeout:6000});
   assert.equal(await bar(page),'Je Machine start opnieuw op.','the calm restart bar, no Try now');
@@ -77,7 +77,7 @@ try{
  // A real outage (no restart note) is not waited out: the pane says so, as before
  const {context,page}=await open('light',1440);
  mode='down';
- await page.evaluate(()=>{connectList=null;showHealthPane('add')});
+ await page.evaluate(()=>{connectList=null;showHealthPane('customers')});  // Intercom's kind
  await page.waitForFunction(()=>/niet bereikbaar/.test(document.querySelector('#connect-add').innerText),null,{timeout:6000});
  await context.close();
  assert.deepEqual(errors,[]);

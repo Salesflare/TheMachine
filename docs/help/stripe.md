@@ -18,7 +18,7 @@ Nothing in Stripe. It never refunds, retries or changes anything. It asks for re
 
 Sign in with Stripe, the easy way:
 
-1. In the dashboard: **Connections**, **+ Add**, Stripe. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Stripe. On your own computer, pair it with your account first.
+1. In the dashboard: **Connections**, **Customers**, Stripe. Or on a hosted Machine's setup page at app.themachine.computer/setup: **More sources**, Stripe. On your own computer, pair it with your account first.
 2. Press **Sign in with Stripe**. Stripe asks which account, and shows what The Machine may read.
 3. Press **Install**. You're back where you started, and Stripe is connected.
 
@@ -28,7 +28,7 @@ Or paste a restricted key instead:
 2. Find your account ID (acct_...) under Settings, Business details.
 3. Open Stripe as above (or run `assistant connect stripe`), open **Or paste a restricted key**, paste the account ID and the key, then press **Connect**.
 
-On your own computer, when Sign in with Stripe isn't available yet, + Add says so and opens this form straight away.
+On your own computer, when Sign in with Stripe isn't available yet, Connections says so and opens this form straight away.
 
 ## Connect it once for your team
 

@@ -27,11 +27,11 @@ Em uma Machine hospedada:
 2. Em **E-mail e agenda**, toque em **Conectar Google** e entre. A tela do Google mostra Salesflare, quem faz a The Machine.
 3. O Gmail e o Google Calendar se conectam juntos.
 
-Ou no painel: **Conexões**, **+ Adicionar**, escolha Gmail e clique em **Entrar com Google**. Quando terminar, você volta para o painel.
+Ou no painel: **Conexões**, **E-mail**, escolha Gmail e clique em **Entrar com Google**. Quando terminar, você volta para o painel.
 
 No seu próprio computador, depois de [pareado com a sua conta](friends.md#a-machine-on-your-own-computer):
 
-1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha Gmail.
+1. No painel, abra **Conexões**, depois **E-mail**, e escolha Gmail.
 2. Toque em **Entrar com o Google** e entre na aba que abrir. O Gmail e o Google Calendar se conectam juntos.
 
 Sem pareamento, ou com o seu próprio cliente OAuth do Google: abra **Usar seu próprio app** ali, ou rode `assistant connect gmail`. Toque em **Abrir o Google**, entre e cole o endereço para onde o Google te mandar. O Google Calendar do mesmo endereço vem junto.

@@ -18,7 +18,7 @@ Exchange Server läuft bei deiner Firma. Microsoft 365 (Exchange Online) ist die
 
 ## Verbinden
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle **Exchange Server**.
+1. Öffne im Dashboard **Verbindungen**, dann **Kalender**, und wähle **Exchange Server**.
 2. Gib deine Arbeitsadresse und dein Windows-Passwort ein.
 3. Drücke **Verbinden**.
 

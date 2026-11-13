@@ -28,9 +28,9 @@ Sur une Machine hébergée :
 2. Ouvrez Zoom, choisissez travail ou perso, et appuyez sur **Connecter Zoom**.
 3. Connectez-vous à Zoom et autorisez The Machine. Elle est créée par Salesflare.
 
-Ou dans le tableau de bord : **Connexions**, **+ Ajouter**, choisissez Zoom et appuyez sur **Se connecter avec Zoom**. Une fois terminé, vous revenez au tableau de bord.
+Ou dans le tableau de bord : **Connexions**, **Réunions**, choisissez Zoom et appuyez sur **Se connecter avec Zoom**. Une fois terminé, vous revenez au tableau de bord.
 
-Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **+ Ajouter**, choisissez Zoom et appuyez sur **Se connecter avec Zoom**.
+Sur votre propre ordinateur, une fois [associé à votre compte](friends.md#a-machine-on-your-own-computer) : ouvrez **Connexions**, puis **Réunions**, choisissez Zoom et appuyez sur **Se connecter avec Zoom**.
 
 ## Le retirer
 

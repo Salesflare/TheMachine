@@ -8,7 +8,7 @@ order: 1
 ---
 ## Como elas estão
 
-A aba **Conexões** agrupa suas fontes em **E-mail**, **Calendário**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
+A aba **Conexões** lista suas fontes por tipo (**E-mail**, **Calendário**, **Chat** e mais), com **Logins** e **Verificações** abaixo de uma linha. No celular, toque em um tipo para abri-lo e em **Conexões** para voltar. Cada fonte é uma linha; toque nela para ver o cartão. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
 
 Uma sincronização que falhou e que uma posterior já compensou aparece em cinza; só uma falha que ainda é a mais recente aparece como problema, com quando tenta de novo.
 
@@ -20,7 +20,7 @@ Abaixo do status, cada fonte diz em uma linha o que traz e, quando pode agir, qu
 
 ## Adicionar uma
 
-Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Saiu antes de terminar? Abra **Conexões** de novo, em qualquer dispositivo, e continua no mesmo passo. Depois de conectada, sua Machine começa a ler a fonte na hora e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
+Abra o tipo dela e escolha uma fonte em **Adicionar outro**, ou abaixo da lista se nenhuma estiver conectada ainda. Ela pede o que precisa, uma pergunta por vez. **Cancelar** para de adicionar a fonte. Saiu antes de terminar? Abra **Conexões** de novo, em qualquer dispositivo, e continua no mesmo passo. Depois de conectada, sua Machine começa a ler a fonte na hora e abre o novo cartão, que mostra como vai a primeira sincronização. Em uma Machine hospedada, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom entram por aqui: escolha **Trabalho** ou **Pessoal**, entre e você volta para este formulário, que mostra como a conexão está indo. O GitHub, o WhatsApp, o Codex, os Chats do Telegram e seu celular Android mostram o código direto neste formulário.
 
 Uma fonte que você já conectou mostra isso na lista, com a conta. Escolha-a para adicionar outra ao lado: o formulário avisa e leva até a que você já tem.
 

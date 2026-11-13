@@ -20,7 +20,7 @@ Un mensaje directo a una persona, en tu nombre, y solo después de que lo aprueb
 
 ## Conéctalo
 
-1. **Conexiones**, **+ Añadir**, **Slack**, luego **Iniciar sesión con Slack**, y permítelo en Slack. En tu propio ordenador, vincúlalo primero con tu cuenta en themachine.computer.
+1. **Conexiones**, **Chat**, **Slack**, luego **Iniciar sesión con Slack**, y permítelo en Slack. En tu propio ordenador, vincúlalo primero con tu cuenta en themachine.computer.
 2. Los mensajes nuevos y los mensajes directos llegan primero. Slack deja que las apps lean más o menos una conversación por minuto, así que los mensajes anteriores llegan a lo largo de unas horas.
 
 O usa una clave de API de Maton: inicia sesión en maton.ai, conecta Slack allí y copia tu clave de API de Maton desde Home. Luego abre **O usa una clave de API de Maton** debajo de Slack y pégala, o ejecuta `assistant connect slack` en tu propio ordenador. Un Slack conectado a través de Maton sigue funcionando como está.

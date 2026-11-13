@@ -32,7 +32,7 @@ WhatsApp doesn't offer an official way to do this. Reading and an occasional rep
 
 On a hosted Machine:
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick WhatsApp.
+1. In the dashboard, open **Connections**, then **Chat**, and pick WhatsApp.
 2. Press **Show the QR code**.
 3. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, and scan the QR code.
 4. WhatsApp shows as connected within a minute. Your chat history keeps coming in after that, and its card counts the messages while it does.
@@ -40,7 +40,7 @@ On a hosted Machine:
 
 Setting up on your phone, with no second screen to scan from? Open **On your phone? Link with a code instead**, enter your number and press **Get a code**. WhatsApp then asks for that code.
 
-On your own computer: open **Connections**, then **+ Add**, pick WhatsApp, enter your phone number with its country code and press **Connect**. It shows a code. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, then **Link with phone number instead**, and enter the code.
+On your own computer: open **Connections**, then **Chat**, pick WhatsApp, enter your phone number with its country code and press **Connect**. It shows a code. On your phone, in WhatsApp, open Settings, Linked devices, Link a device, then **Link with phone number instead**, and enter the code.
 
 Or run `assistant connect whatsapp` and scan the code it shows in the terminal. The first time, it offers to install the WhatsApp connector, a pinned build checked against its checksum ([source](https://github.com/Salesflare/wacli)).
 

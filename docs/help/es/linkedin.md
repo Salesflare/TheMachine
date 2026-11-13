@@ -34,7 +34,7 @@ En una Machine alojada:
 En tu propio ordenador:
 
 1. Inicia sesión en LinkedIn una vez en el navegador de tu Machine (Ajustes, **Abrir el navegador de la Machine ↗**).
-2. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige LinkedIn. O ejecuta `assistant connect linkedin`.
+2. En el panel, abre **Conexiones**, luego **Chat**, y elige LinkedIn. O ejecuta `assistant connect linkedin`.
 
 Una segunda cuenta de LinkedIn tiene su propio navegador. Si LinkedIn cierra la sesión de tu Machine, consulta [Sesión cerrada en un sitio](signed-out.md).
 

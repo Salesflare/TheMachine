@@ -17,7 +17,7 @@ Nada. Ele só busca o feed.
 
 O RSS é para uma Machine no seu próprio computador. As páginas de configuração hospedada não oferecem essa opção.
 
-1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha feed RSS. Ou rode `assistant connect rss`.
+1. No painel, abra **Conexões**, depois **Outras**, e escolha feed RSS. Ou rode `assistant connect rss`.
 2. Cole o endereço do feed.
 
 ## Remova

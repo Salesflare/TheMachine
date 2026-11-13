@@ -28,7 +28,7 @@ Je eigen Intercom en een gedeelde voor dezelfde workspace lezen niet allebei: de
 
 ## Koppelen
 
-1. In het dashboard: **Koppelingen**, **+ Toevoegen**, Intercom. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Intercom. Op je eigen computer koppel je hem eerst aan je account.
+1. In het dashboard: **Koppelingen**, **Klanten**, Intercom. Of op de setuppagina van een gehoste Machine op app.themachine.computer/setup: **Meer bronnen**, Intercom. Op je eigen computer koppel je hem eerst aan je account.
 2. Druk op **Inloggen met Intercom**.
 3. Keur The Machine goed in Intercom. Hij is gemaakt door Salesflare. Daarna ben je terug waar je begon.
 

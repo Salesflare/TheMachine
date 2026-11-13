@@ -23,7 +23,7 @@ Se uma tarefa chegou por e-mail, mas você fala com essa pessoa pelo Telegram, d
 
 ## Conectar
 
-1. No painel, abra **Conexões**, depois **+ Adicionar**, e escolha Chats do Telegram.
+1. No painel, abra **Conexões**, depois **Chat**, e escolha Chats do Telegram.
 2. Escolha **Escanear um QR code no Telegram do seu celular**.
 3. No seu celular, no Telegram, abra Configurações, Dispositivos, **Link Desktop Device**, e escaneie o código.
 4. Se a sua conta tem uma senha na nuvem, digite quando for pedida. Ela vai para o Telegram e nunca é guardada.

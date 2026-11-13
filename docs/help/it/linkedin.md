@@ -34,7 +34,7 @@ Su una Machine in hosting:
 Sul tuo computer:
 
 1. Accedi una volta a LinkedIn nel browser della tua Machine (Impostazioni, **Apri il browser della Machine ↗**).
-2. Nella dashboard, apri **Connessioni**, poi **+ Aggiungi**, e scegli LinkedIn. Oppure esegui `assistant connect linkedin`.
+2. Nella dashboard, apri **Connessioni**, poi **Chat**, e scegli LinkedIn. Oppure esegui `assistant connect linkedin`.
 
 Un secondo account LinkedIn ha un browser tutto suo. Se LinkedIn disconnette la tua Machine, vedi [Disconnesso da un sito](signed-out.md).
 

@@ -36,13 +36,13 @@ Funziona solo con un account Microsoft aziendale o scolastico. Gli account perso
 
 Su una Machine in hosting:
 
-1. Nella dashboard, apri **Connessioni**, **+ Aggiungi** e scegli **Microsoft Teams** (sotto Chat) o **Riunioni Teams** (sotto Riunioni). Sono lo stesso accesso.
+1. Nella dashboard, apri **Connessioni**, **Chat** o **Riunioni** e scegli **Microsoft Teams** (sotto Chat) o **Riunioni Teams** (sotto Riunioni). Sono lo stesso accesso.
 2. Premi **Accedi con Microsoft** e dai l’OK. Torni alla dashboard.
 3. Per canali e note delle riunioni, manda al tuo admin il link che mostra la pagina di accesso. Quando approva, collega di nuovo Teams.
 
 Durante la configurazione, anche la pagina di configurazione ha **Connect Microsoft Teams**.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **+ Aggiungi**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. Lì legge le tue chat e le chat delle riunioni. Canali e note delle riunioni non sono ancora disponibili lì.
+Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Chat** o **Riunioni**, scegli **Microsoft Teams** o **Riunioni Teams** e premi **Accedi con Microsoft**. Lì legge le tue chat e le chat delle riunioni. Canali e note delle riunioni non sono ancora disponibili lì.
 
 ## Rimuovilo
 

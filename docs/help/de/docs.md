@@ -54,14 +54,14 @@ Wird dieses OK später zurückgenommen, zeigt die Microsoft-OneDrive-Karte **War
 
 Du brauchst dafür kein verbundenes Outlook.
 
-- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen und Bearbeiten deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
-- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **+ Hinzufügen**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**.
+- Gehostete Machine: Öffne im Dashboard **Verbindungen**, **Dokumente und Dateien**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**. Microsoft bittet dich, das Lesen und Bearbeiten deiner Dateien zu erlauben, dann kommst du zurück zum Dashboard.
+- Dein eigener Computer, gekoppelt mit deinem Konto: Öffne **Verbindungen**, **Dokumente und Dateien**, wähle **Microsoft OneDrive** und tippe auf **Mit Microsoft anmelden**.
 
 Es prüft, ob die Anmeldung Dokumente lesen darf. Ohne dieses OK wird es nicht hinzugefügt. Tippst du auf **Bearbeiten erlauben** und Microsoft erlaubt keine Änderungen, sagt es das, statt Verbunden zu zeigen.
 
 ## Google Docs
 
-Öffne auf einer gehosteten Machine **Verbindungen**, dann **+ Hinzufügen**, und wähle **Google Docs**. Google bittet dich zu erlauben, dass sie die Dokumente sieht und bearbeitet, auf die du sie hinweist, und neue erstellt. Gmail muss nicht verbunden sein, und dein Gmail-Zugriff ändert sich nicht.
+Öffne auf einer gehosteten Machine **Verbindungen**, dann **Dokumente und Dateien**, und wähle **Google Docs**. Google bittet dich zu erlauben, dass sie die Dokumente sieht und bearbeitet, auf die du sie hinweist, und neue erstellt. Gmail muss nicht verbunden sein, und dein Gmail-Zugriff ändert sich nicht.
 
 Dann kann deine Machine:
 

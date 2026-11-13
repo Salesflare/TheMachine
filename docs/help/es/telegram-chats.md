@@ -23,7 +23,7 @@ Si una tarea llegó por correo pero con esa persona hablas por Telegram, dilo en
 
 ## Conéctalo
 
-1. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige Chats de Telegram.
+1. En el panel, abre **Conexiones**, luego **Chat**, y elige Chats de Telegram.
 2. Elige **Escanear un código QR en Telegram en tu teléfono**.
 3. En tu teléfono, en Telegram, abre Ajustes, Dispositivos, **Link Desktop Device**, y escanea el código.
 4. Si tu cuenta tiene una contraseña en la nube, escríbela cuando te la pida. Va a Telegram y nunca se guarda.

@@ -54,14 +54,14 @@ Se esse OK for retirado depois, o cartão do Microsoft OneDrive mostra **Aguarda
 
 Você não precisa do Outlook conectado.
 
-- Machine hospedada: no painel, abra **Conexões**, **+ Adicionar**, escolha **Microsoft OneDrive** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura e a edição dos seus arquivos, e você volta para o painel.
-- Seu próprio computador, pareado com sua conta: abra **Conexões**, **+ Adicionar**, escolha **Microsoft OneDrive** e clique em **Entrar com a Microsoft**.
+- Machine hospedada: no painel, abra **Conexões**, **Documentos e arquivos**, escolha **Microsoft OneDrive** e clique em **Entrar com a Microsoft**. A Microsoft pede para você permitir a leitura e a edição dos seus arquivos, e você volta para o painel.
+- Seu próprio computador, pareado com sua conta: abra **Conexões**, **Documentos e arquivos**, escolha **Microsoft OneDrive** e clique em **Entrar com a Microsoft**.
 
 Ela confere se o login pode ler documentos. Sem esse OK, o Microsoft OneDrive não é adicionado. Se você tocar em **Permitir edições** e a Microsoft não permitir edições, ela avisa em vez de mostrar Conectado.
 
 ## Google Docs
 
-Em uma Machine hospedada, abra **Conexões**, depois **+ Adicionar**, e escolha **Google Docs**. O Google pede para você permitir que ela veja e edite os documentos que você indicar, e crie novos. O Gmail não precisa estar conectado, e seu acesso ao Gmail não muda.
+Em uma Machine hospedada, abra **Conexões**, depois **Documentos e arquivos**, e escolha **Google Docs**. O Google pede para você permitir que ela veja e edite os documentos que você indicar, e crie novos. O Gmail não precisa estar conectado, e seu acesso ao Gmail não muda.
 
 Depois a sua Machine:
 

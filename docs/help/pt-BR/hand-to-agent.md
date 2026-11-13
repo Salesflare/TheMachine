@@ -40,6 +40,6 @@ Em uma Machine hospedada, escolha na sua página de configuração, em **Adicion
 - **Outras formas**, **No meu computador**: o trabalho roda no seu próprio computador, com o Codex conectado lá. Nada do Codex fica na sua Machine hospedada, e o trabalho é criptografado só para esse computador: a Network repassa, mas não consegue ler. Instale The Machine nesse computador, pareie na sua página Conta e rode `codex login` lá. Deixe The Machine rodando nele. O trabalho aparece como uma conversa no app do Codex nesse computador, e o resultado volta na tarefa. Quando o computador está desligado, os trabalhos esperam até ele voltar.
 - **Outras formas**, **Codex cloud**: o trabalho roda na nuvem da OpenAI. Clique em **Conectar o Codex**. Ele usa o mesmo plano do ChatGPT que o seu modelo, e a OpenAI pede mais um código, para o Codex. Depois digite o ambiente de nuvem do Codex em Configurações.
 
-Ou entre pelo painel: **Conexões**, **+ Adicionar**, **Codex**, **Pegar um código**. Uma Machine auto-hospedada faz esse mesmo login sozinha.
+Ou entre pelo painel: **Conexões**, **Projetos e código**, **Codex**, **Pegar um código**. Uma Machine auto-hospedada faz esse mesmo login sozinha.
 
 Em uma Machine hospedada, Codex e Claude Code aparece quando o GitHub ou o Codex está conectado. Também aparece em configurações que rodam trabalhos em outro lugar. Mais no [guia de agentes](https://github.com/Salesflare/TheMachine/blob/main/docs/agents.md).

@@ -18,7 +18,7 @@ It sends email only after you press Send, through your provider's mail server (S
 
 ## Connect it
 
-1. In the dashboard, open **Connections**, then **+ Add**, and pick **Other email**.
+1. In the dashboard, open **Connections**, then **Email**, and pick **Other email**.
 2. Fill in your email address and password.
 3. Press **Connect**.
 

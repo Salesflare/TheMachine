@@ -8,7 +8,7 @@ order: 1
 ---
 ## Come stanno andando
 
-La scheda **Connessioni** raggruppa le tue fonti in **Email**, **Calendario**, **Chat** e **Altre fonti**. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
+La scheda **Connessioni** elenca le tue fonti per tipo (**Email**, **Calendario**, **Chat** e altro), con **Accessi** e **Controlli** sotto una linea. Sul telefono, tocca un tipo per aprirlo e **Connessioni** per tornare indietro. Ogni fonte è una riga; toccala per la sua scheda. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
 
 Una sincronizzazione fallita che una successiva ha recuperato appare in grigio; solo un errore che è ancora l’ultimo appare come problema, con quando riprova.
 
@@ -20,7 +20,7 @@ Sotto lo stato, ogni fonte dice in una riga cosa porta e, quando può agire, che
 
 ## Aggiungine una
 
-Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Sei uscito prima di finire? Riapri **Connessioni**, su qualsiasi dispositivo, e riprendi dallo stesso passaggio. Una volta collegata, la tua Machine inizia subito a leggerla e apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
+Apri il suo tipo e scegli una fonte sotto **Aggiungine un altro**, o sotto l’elenco se non ne hai ancora collegata nessuna. Chiede quello che le serve, una domanda alla volta. **Annulla** interrompe l'aggiunta. Sei uscito prima di finire? Riapri **Connessioni**, su qualsiasi dispositivo, e riprendi dallo stesso passaggio. Una volta collegata, la tua Machine inizia subito a leggerla e apre la nuova scheda, che mostra come va la prima sincronizzazione. Su una Machine in hosting, Google, Microsoft, Microsoft OneDrive, Zoom, Stripe e Intercom accedono da qui: scegli **Lavoro** o **Personale**, accedi e torni a questo modulo, che mostra come va il collegamento. GitHub, WhatsApp, Codex, Chat di Telegram e il tuo telefono Android mostrano il loro codice direttamente in questo modulo.
 
 Una fonte già collegata lo indica nell’elenco, con il suo account. Sceglila per aggiungerne un’altra accanto: il modulo lo dice e rimanda a quella che hai già.
 

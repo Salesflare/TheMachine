@@ -36,9 +36,9 @@ Su una Machine ospitata:
 2. Premi **Collega Microsoft** e accedi.
 3. Se Microsoft chiede l'approvazione di un admin, manda questo link all'amministratore del tuo Microsoft 365: themachine.computer/m365-admin-consent. **Copia link** lo copia. Appena approva, tutti nella tua organizzazione possono collegarsi. Se sei tu, premi **Sono l'admin: approva ora**.
 
-Oppure nella dashboard: **Connessioni**, **+ Aggiungi**, scegli Outlook e premi **Accedi con Microsoft**. Quando hai finito, torni alla dashboard. Serve l'approvazione del tuo amministratore? Lo stesso link è sotto il pulsante, con **Copia link**.
+Oppure nella dashboard: **Connessioni**, **Email**, scegli Outlook e premi **Accedi con Microsoft**. Quando hai finito, torni alla dashboard. Serve l'approvazione del tuo amministratore? Lo stesso link è sotto il pulsante, con **Copia link**.
 
-Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **+ Aggiungi**, scegli Outlook e premi **Accedi con Microsoft**. Posta e calendario si collegano insieme.
+Sul tuo computer, quando è [abbinato al tuo account](friends.md#a-machine-on-your-own-computer): apri **Connessioni**, poi **Email**, scegli Outlook e premi **Accedi con Microsoft**. Posta e calendario si collegano insieme.
 
 Con la tua app: apri **Usa la tua app** lì, oppure esegui `assistant connect outlook` o `assistant connect outlook_calendar`. Usa la registrazione della tua app in Microsoft Entra e un codice di accesso. Ti chiede se inviare anche ciò che approvi.
 

@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add, for a source already connected: its row says which account ("Connected: <it>", or the first and
+// Connections, each kind's sources, for a source already connected: its row says which account ("Connected: <it>", or the first and
 // how many more), and its add view says in one line that this adds a new connection, with a way to the existing one's
 // card. Connecting another stays possible. A teammate's shared connection doesn't count; a reconnect of an account
 // (it carries its email) says nothing of the kind. SHOTS=<folder> saves the list and the form at 390 and 1440, light and dark.
@@ -35,8 +35,9 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const rows=page=>page.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#connect-add .connect-source')].map(n=>[n.querySelector('b').textContent,
- {have:n.querySelector('small.count')?.textContent||null,check:!!n.querySelector('.cs-on')}])));
+// every kind's sources (a kind shows its own), then back to Customers
+const rows=page=>page.evaluate(()=>{const out={};for(const [k] of CONNECT_GROUPS){showHealthPane(k);for(const n of document.querySelectorAll('#connect-add .connect-source'))out[n.querySelector('b').textContent]=
+ {have:n.querySelector('small.count')?.textContent||null,check:!!n.querySelector('.cs-on')}}showHealthPane('customers');return out});
 const back=async page=>{await page.locator('#connect-add [data-connect-back]').first().click();await page.locator('#connect-add .connect-group').first().waitFor()};
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -45,7 +46,7 @@ try{
   await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   const tag=`${width}x${height}-${scheme}`;
-  await page.goto(base+'/#connections=add');
+  await page.goto(base+'/#connections=customers');
   await page.locator('#connect-add .connect-group').first().waitFor();
   const list=await rows(page);
   assert.deepEqual(list['Salesflare CRM'],{have:'Connected: jamie@acme.example',check:true},`${tag}: a connected source names its account`);
@@ -64,12 +65,13 @@ try{
   await note.locator('[data-connect-card]').click();
   await page.locator('#connectors>article[data-conn="acme-crm"]').waitFor({state:'visible',timeout:5000});
   // a sign-in source: the same line above its sign-in
-  await page.goto(base+'/?again=1#connections=add');await page.locator('#connect-add .connect-group').first().waitFor();
+  await page.goto(base+'/?again=1#connections=mail');await page.locator('#connect-add .connect-group').first().waitFor();
   await page.locator('#connect-add .connect-source',{hasText:'Gmail'}).click();
   await page.locator('#connect-add .connect-signin').waitFor();
   assert.match(await page.locator('#connect-add .connect-have').textContent(),/Connected: jamie@acme\.example and 1 more/,`${tag}: Gmail's sign-in says one is there`);
   await back(page);
   // a source not connected: no such line
+  await page.evaluate(()=>showHealthPane('chat'));
   await page.locator('#connect-add .connect-source',{hasText:'Slack'}).click();
   await page.locator('#connect-add .connect-signin').waitFor();
   assert.equal(await page.locator('#connect-add .connect-have').count(),0,`${tag}: nothing about an existing one when there is none`);

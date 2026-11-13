@@ -18,7 +18,7 @@ Exchange Server draait bij je bedrijf. Microsoft 365 (Exchange Online) is de clo
 
 ## Koppelen
 
-1. Open in het dashboard **Koppelingen**, dan **+ Toevoegen**, en kies **Exchange Server**.
+1. Open in het dashboard **Koppelingen**, dan **Agenda**, en kies **Exchange Server**.
 2. Vul je werkadres en je Windows-wachtwoord in.
 3. Druk op **Verbinden**.
 

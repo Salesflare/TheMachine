@@ -4,9 +4,9 @@ import {createServer} from 'node:http';
 import {dashboardPage} from './dashboard-page.mjs';
 const {chromium}=await import('./browser.mjs');
 
-// Connections, + Add: Suggested for you on top, only for the tiles the Machine has a signal for (connect_sources'
-// suggested, at most 3, never a connected one), each with its why line; no signal, no section. Then every source under its
-// group's header, in the groups' order and A to Z within each, a suggested one there too, tagged Suggested, with what it
+// Connections: Suggested for you on top, only for the tiles the Machine has a signal for (connect_sources'
+// suggested, at most 3, never a connected one), each with its why line; no signal, no section. Then every source in its kind
+// (the kinds of Connections, a page each), in the groups' order and A to Z within each, a suggested one there too, tagged Suggested, with what it
 // brings in; both rows open the same connect. Teams shows twice: its chats under Chat, Teams meetings under Meetings, one sign-in.
 // Salesforce shows its own logo.
 // SHOTS=<folder> saves the list at 390 and 1440, light and dark, with and without suggestions.
@@ -69,10 +69,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const read=page=>page.evaluate(()=>[...document.querySelectorAll('#connect-add .connect-group')].map(g=>({suggested:g.classList.contains('suggested'),
- head:g.querySelector('h4').textContent,tiles:[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent,
+// Suggested for you (on the list of kinds), then each kind's sources as its page shows them, under the kind's name
+const read=page=>page.evaluate(()=>{const tiles=g=>[...g.querySelectorAll('.connect-source')].map(n=>({name:n.querySelector('b').textContent,
  why:n.querySelector('small.why')?.textContent||null,tag:n.querySelector('.cs-tag')?.textContent||null,what:n.querySelector('small.what')?.textContent||null,
- on:!!n.querySelector('.cs-on'),signin:n.dataset.connectSignin||null,logo:n.querySelector('.cs-icon img')?.getAttribute('src')||null}))})));
+ on:!!n.querySelector('.cs-on'),signin:n.dataset.connectSignin||null,logo:n.querySelector('.cs-icon img')?.getAttribute('src')||null}));
+ const out=[],sug=document.querySelector('#conn-suggested .connect-group.suggested');if(sug?.getClientRects().length)out.push({suggested:true,head:sug.querySelector('h4').textContent,tiles:tiles(sug)});
+ for(const b of [...document.querySelectorAll('#health-tabs .conn-cat')].filter(b=>CONNECT_GROUPS.some(([k])=>k===b.dataset.healthPane))){showHealthPane(b.dataset.healthPane);
+  out.push({suggested:false,head:b.querySelector('.ell').textContent,tiles:[...document.querySelectorAll('#connect-add .connect-group')].flatMap(tiles)})}
+ return out});
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const [width,height,mobile,scheme] of [[390,844,true,'light'],[390,844,true,'dark'],[1440,900,false,'light'],[1440,900,false,'dark']]){
@@ -83,7 +87,7 @@ try{
    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
    const tag=`${width}x${height}-${scheme}-${mode}`;
    await page.goto(base+'/#connections=add');
-   await page.locator('#connect-add .connect-group').first().waitFor();
+   await page.locator('#connect-add .connect-group').first().waitFor({state:'attached'});await page.locator('#health-tabs .conn-cat').first().waitFor();
    const groups=await read(page);
    const heads=groups.map(g=>g.head);
    const top=groups[0].suggested?groups[0]:null,rest=groups.filter(g=>!g.suggested),tile=(h,n)=>rest.find(g=>g.head===h).tiles.find(x=>x.name===n);
@@ -95,7 +99,7 @@ try{
    assert.deepEqual(rest.map(g=>g.head),['Email','Calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order`);
    // every source the list gives shows in a group, a two-group one (Teams) in each
    const shown=new Set(rest.flatMap(g=>g.tiles.map(x=>x.name)));
-   for(const x of sources)assert.ok(shown.has(x.label),`${tag}: ${x.label} shows in + Add`);
+   for(const x of sources)assert.ok(shown.has(x.label),`${tag}: ${x.label} shows in its kind`);
    assert.deepEqual(rest.filter(g=>g.tiles.some(x=>/Teams/.test(x.name))).map(g=>g.head),['Chat','Meetings'],`${tag}: Teams shows under Chat and Meetings`);
    assert.deepEqual(rest.find(g=>g.head==='Email').tiles.map(x=>x.name),['Gmail','Outlook','Other email'],`${tag}: Email holds the mailboxes, Other email last`);
    assert.deepEqual(rest.find(g=>g.head==='Calendar').tiles.map(x=>x.name),['Exchange Server','Google Calendar','iCloud Calendar','Outlook Calendar','Proton Calendar',
@@ -133,13 +137,13 @@ try{
     assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connectors>article[data-group="mail"]')].map(a=>a.dataset.conn)),['gmail','imap'],'Connections: the catch-all card comes last in its tab');
     assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connectors>article[data-group="calendar"]')].map(a=>a.dataset.conn)),['ews','gcal','caldav','ics'],
      'Connections: Calendar reads A to Z, the catch-alls last');
-    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].map(b=>b.textContent.trim())).then(x=>x.slice(0,2)),['Email','Calendar'],
-     'Connections: Email and Calendar are tabs of their own');
-    assert.equal(await page.evaluate(()=>document.querySelector('#connectors>article[data-conn="ews"] .conn-head img')?.getAttribute('src')),'brand/logos/exchange.svg',
-     'Connections: the Exchange Server card shows its logo');
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#health-tabs .conn-cat .ell')].map(b=>b.textContent.trim())).then(x=>x.slice(0,2)),['Email','Calendar'],
+     'Connections: Email and Calendar are kinds of their own');
+    assert.equal(await page.evaluate(()=>document.querySelector('#connectors>article[data-conn="ews"] .conn-row .via-ico')?.classList.contains('via-exchange')),true,
+     'Connections: the Exchange Server row shows its mark');
     await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith('Email'))?.click());await page.locator('#connectors>article[data-conn="imap"]').waitFor();
     if(shots)await page.screenshot({path:`${shots}/connections-mail-${width}-${scheme}.png`,fullPage:true});
-    await page.goto(base+'/#connections=add');await page.locator('#connect-add .connect-group').first().waitFor()}
+    await page.goto(base+'/#connections=add');await page.locator('#connect-add .connect-group').first().waitFor({state:'attached'})}
    // nothing wider than the screen
    const wide=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    assert.ok(wide<=0,`${tag}: no sideways scroll (${wide}px)`);

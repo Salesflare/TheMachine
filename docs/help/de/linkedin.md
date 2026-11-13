@@ -33,7 +33,7 @@ Auf einer gehosteten Machine:
 
 Auf deinem eigenen Computer:
 
-1. Öffne im Dashboard **Verbindungen**, dann **+ Hinzufügen**, und wähle LinkedIn.
+1. Öffne im Dashboard **Verbindungen**, dann **Chat**, und wähle LinkedIn.
 2. Wähle **Arbeit** mit ihrer Firma oder **Privat** und tippe auf **Verbinden**.
 3. Tippe auf **Bei LinkedIn anmelden** und melde dich im Browser deiner Machine an. Sobald du drin bist, verbindet es sich von selbst.
 

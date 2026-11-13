@@ -15,12 +15,12 @@ Es de solo lectura: nunca añade, mueve ni quita una reunión.
 ## Conecta el Calendario de iCloud
 
 1. Crea una contraseña específica de app en [appleid.apple.com](https://appleid.apple.com), en **Inicio de sesión y seguridad**. También sirve la que creaste para iCloud Mail.
-2. En el panel, abre **Conexiones**, luego **+ Añadir**, y elige **Calendario de iCloud**.
+2. En el panel, abre **Conexiones**, luego **Calendario**, y elige **Calendario de iCloud**.
 3. Escribe tu Apple ID y la contraseña específica de app, y pulsa **Conectar**.
 
 ## Conecta otro calendario
 
-1. Abre **Conexiones**, luego **+ Añadir**, y elige **Otro calendario**.
+1. Abre **Conexiones**, luego **Calendario**, y elige **Otro calendario**.
 2. Escribe tu dirección de correo y tu contraseña. Muchos proveedores piden aquí una contraseña de aplicación, que creas en los ajustes de tu cuenta.
 3. Pulsa **Conectar**.
 

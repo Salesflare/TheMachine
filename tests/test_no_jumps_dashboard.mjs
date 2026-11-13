@@ -72,7 +72,7 @@ const screens=[
   await page.evaluate(()=>{for(const b of document.querySelectorAll('.lane-more'))b.click()})}],
  ['Projects list',async page=>{await page.locator('#page-head [data-proj-view="list"]').click();await page.locator('#people-view .proj-list:not([hidden])').waitFor()}],
  ['Calendar',async page=>{await page.evaluate(()=>showTab('calendar'));await page.locator('#calendar-view .cal-block').nth(3).waitFor()}],
- ['Connections',async page=>{await page.evaluate(()=>showTab('health','mail'));await page.locator('#connectors>article:not([hidden])').nth(20).waitFor()}],
+ ['Connections',async page=>{await page.evaluate(()=>showTab('health','other'));await page.locator('#connectors>article:not([hidden])').nth(20).waitFor()}],
  ['Fleet',async page=>{await page.evaluate(()=>showTab('fleet'));await page.locator('#fleet-view').getByText('Teammate 20').first().waitFor()}],
  // Model is the tallest tab: Codex and Claude Code, the model picker and the plan's usage
  ['Settings',async page=>{await page.evaluate(()=>showSettings('model'));await page.waitForTimeout(300)}]];
