@@ -145,7 +145,9 @@ _lock = threading.Lock()
 # Graph can fail a share of one mailbox's reads (5xx, or no answer) for hours and serve each of them on another try.
 # Inside a sync round's budget() a read is tried up to READ_TRIES times, with a short jittered wait (Graph's own
 # Retry-After when that is short), never past the round's deadline. Outside one, and for every write, a call is tried
-# once as before: a send is never repeated, and someone waiting on a screen gets the answer at once.
+# once as before: a send is never repeated, and someone waiting on a screen gets the answer at once. Every background
+# round of Graph reads opens one: mail and calendar sync, Teams, Outlook photos and contacts, Outlook birthdays.
+ROUND_SECONDS = 240  # a round's time for Graph, its reads' retries included
 READ_TRIES = 3
 RETRY_STATUSES = (500, 502, 503, 504)
 RETRY_WAIT_MAX = 10  # a longer Retry-After goes to the sync, which waits it out between rounds

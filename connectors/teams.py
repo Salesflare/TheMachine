@@ -557,6 +557,12 @@ def missing_by_scope(granted, missing):
 
 
 def sync(store, config, account, helpers):
+    import ms_graph
+    with ms_graph.budget(ms_graph.ROUND_SECONDS):  # a read Graph fails now and then is tried again within the round
+        return _sync(store, config, account, helpers)
+
+
+def _sync(store, config, account, helpers):
     source = Source(config, account, helpers)
     state = dict(store.checkpoint(account['id']) or {})
     now = stamp(helpers.now())

@@ -244,16 +244,19 @@ def step(connect, config, credential, now, stop=lambda: False, ask=None):
     for account in accounts(config):
         if stop():
             break
-        try:  # one account's trouble never stops the others, nor the other photo sources after this
-            scopes, domains = check(connect, config, credential, account, now, ask=ask)
-            with connect() as db:
-                tables(db)
-                left = min(PER_PASS, _due(db, now)[0])
-            if CONTACT in scopes and left > 0:
-                got, asked, changed = contact_photos(connect, config, credential, account, now, left)
-                saved, facts, left = saved + got, facts + changed, left - asked
-            if COLLEAGUE in scopes and domains and left > 0:
-                saved += colleague_photos(connect, config, credential, account, domains, now, left)[0]
+        # one account's trouble never stops the others, nor the other photo sources after this; a read Graph fails now
+        # and then is tried again within the pass (ms_graph.budget), so the day's contacts aren't cut short by one
+        try:
+            with ms_graph.budget(ms_graph.ROUND_SECONDS):
+                scopes, domains = check(connect, config, credential, account, now, ask=ask)
+                with connect() as db:
+                    tables(db)
+                    left = min(PER_PASS, _due(db, now)[0])
+                if CONTACT in scopes and left > 0:
+                    got, asked, changed = contact_photos(connect, config, credential, account, now, left)
+                    saved, facts, left = saved + got, facts + changed, left - asked
+                if COLLEAGUE in scopes and domains and left > 0:
+                    saved += colleague_photos(connect, config, credential, account, domains, now, left)[0]
         except Exception as error:  # noqa: BLE001 - logged by kind only, tried again next pass
             LOG.warning('outlook photos error=%s', type(error).__name__)
     return saved, facts

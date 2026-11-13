@@ -6,6 +6,7 @@ mail came in. Now each read is retried a few times within the round's time, a me
 next round while what was read is kept and the cursor moves on, and every message is read exactly once.
 No network: urlopen is the fake Graph of test_ms_graph."""
 import collections
+import datetime as dt
 import io
 import json
 import random
@@ -240,6 +241,55 @@ class ReadRetries(FlakyBase):
             self.assertLessEqual(ms_graph._again(502, {}, 2), 3)
         with mock.patch.object(ms_graph, 'left', return_value=0.5):
             self.assertIsNone(ms_graph._again(502, {}, 2))  # never waits past the round
+
+
+class OtherGraphRounds(t.Base):
+    """The calendar, photos and birthdays read Graph in rounds too: a read Graph fails now and then is tried again there."""
+
+    def setUp(self):
+        super().setUp()
+        self.fake = FlakyGraph()
+        patcher = mock.patch.object(ms_graph.urllib.request, 'urlopen', self.fake); patcher.start(); self.addCleanup(patcher.stop)
+        pauses = mock.patch.object(ms_graph, '_pause'); self.pause = pauses.start(); self.addCleanup(pauses.stop)
+        self.fake.delta = [{'value': [{'id': 'e1', 'subject': 'Demo', 'isAllDay': False,
+                                       'start': {'dateTime': '2099-01-03T09:00:00.0000000', 'timeZone': 'UTC'},
+                                       'end': {'dateTime': '2099-01-03T10:00:00.0000000', 'timeZone': 'UTC'}}],
+                            '@odata.deltaLink': t.G + '/me/calendarView/delta?$deltatoken=one'}]
+
+    def test_a_calendar_round_reads_on_through_a_5xx_and_no_answer(self):
+        self.fake.fails = lambda n: n in (1, 3)  # the calendar's own read answers 502, the delta not at all, each once
+        with t.patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'):
+            result = a.sync_calendar(self.store, self.config, self.cal)
+        self.assertEqual((result['events'], self.fake.failed, self.pause.call_count), (1, 2, 2))
+        with self.store.connect() as db:
+            row = db.execute('SELECT error, failures FROM checkpoints WHERE account_id=?', (self.cal['id'],)).fetchone()
+        self.assertEqual((row[0], row[1] or 0), (None, 0))  # nothing failed, so nothing reaches the error feed
+
+    def test_a_calendar_round_that_keeps_failing_is_a_passing_failure(self):
+        self.fake.fails = lambda n: True
+        with t.patch_everywhere(a, 'now', return_value='2099-01-01T00:00:00+00:00'), self.assertRaises(a.SourceError) as got:
+            a.sync_calendar(self.store, self.config, self.cal)
+        self.assertEqual(self.fake.graph, ms_graph.READ_TRIES)
+        self.assertTrue(a.transient(got.exception))  # only reported when it keeps happening
+
+    def test_photos_and_birthdays_read_inside_a_round(self):
+        import birthdays_app
+        import ms_photos
+        rounds = []
+
+        def call(*args, **kwargs):
+            rounds.append(ms_graph.left())
+            return {'value': [{'id': 'b', 'name': 'Birthdays'}]}
+        with mock.patch.object(ms_graph, 'call', call), mock.patch.object(ms_graph, 'grant', lambda *args: (set(), set())):
+            ms_photos.step(self.store.connect, {'accounts': [self.mail]}, None, '2099-01-01T00:00:00+00:00')
+            self.assertEqual(rounds, [])  # nothing granted, nothing read
+            with mock.patch.object(ms_photos, '_domains', lambda *args: rounds.append(ms_graph.left()) or set()), \
+                    mock.patch.object(ms_graph, 'grant', lambda *args: ({next(iter(ms_graph.ANSWERS[ms_photos.COLLEAGUE]))}, set())):
+                ms_photos.step(self.store.connect, {'accounts': [self.mail]}, None, '2099-01-03T00:00:00+00:00')  # checked again
+            app = mock.MagicMock(config=self.config)
+            birthdays_app.BirthdaysApp.birthdays_outlook(app, dt.date(2099, 1, 1), dt.timezone.utc)
+        self.assertEqual(len(rounds), 3)
+        self.assertTrue(all(left and left > 0 for left in rounds))
 
 
 if __name__ == '__main__':
