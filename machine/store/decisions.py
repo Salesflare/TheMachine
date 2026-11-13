@@ -33,7 +33,7 @@ from machine.cards import (
 )
 from machine.config import LOG
 from machine.store.cards import return_waiting, source_line
-from machine.text import encoded, first_sentence
+from machine.text import encoded, first_sentence, no_you
 import next_actions
 from machine.store import outcomes
 from machine.store.review import intercom_handled
@@ -522,7 +522,7 @@ class DecisionsStore:
         """A later signal suggests an open card is already done. It looks done for a day, with Reopen, then closes by
         itself (close_looks_done). A to-do whose
         owner did their part and that waits for this result (outcomes.py) closes by itself, with Undo for a day."""
-        reason = ' '.join(str(reason or '').split())
+        reason = no_you(' '.join(str(reason or '').split()))  # an event line: never "You ..."
         if not 5 <= len(reason) <= 200 or not event_ids:
             raise ValueError('Give a short plain reason (5-200 characters) and the event_ids that show it')
         with self.connect() as db:
@@ -550,7 +550,7 @@ class DecisionsStore:
         Undo for a day (outcomes.close_handled), instead of looking done for a day first. Only on messages that came in
         after the to-do was made and after the owner's own last word on it; once per set of messages. Not while a send
         of it is under way. Anything else it can't say falls back to looks_handled."""
-        reason = ' '.join(str(reason or '').split())
+        reason = no_you(' '.join(str(reason or '').split()))  # an event line: never "You ..."
         ids = sorted({int(i) for i in event_ids or []})
         if not 5 <= len(reason) <= 200 or not ids:
             raise ValueError('Give a short plain reason (5-200 characters) and the event_ids that show it paid')
@@ -582,7 +582,7 @@ class DecisionsStore:
         with Undo for a day. Only on messages that came in after the to-do was made and after the owner's own last word on
         it; once per set of messages, so after the owner takes it back the same messages never close it again. Not while
         a send of theirs is under way."""
-        reason = ' '.join(str(reason or '').split())
+        reason = no_you(' '.join(str(reason or '').split()))  # an event line: never "You ..."
         ids = sorted({int(i) for i in event_ids or []})
         if not 5 <= len(reason) <= 200 or not ids:
             raise ValueError('Give a short plain reason (5-200 characters) and the event_ids of the newer messages')
