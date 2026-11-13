@@ -534,7 +534,7 @@ const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'
  return html`<p class="note">${b.done?t('History: back to {}.',when):t('History coming in: back to {} so far.',when)}</p>`};
 // machine/names.py account_card
 const connTitle=c=>c.card_title||c.display_name||c.email;
-function connSubtitle(c){const s=typeof c.card_subtitle==='string'?c.card_subtitle:scopeLabel(c.boundary);return s?html`<small>${s}</small>`:''}
+const connSubtitle=c=>c.card_subtitle?html`<small>${c.card_subtitle}</small>`:'';  // only the Machine's line: never made here
 // A connected source's card shows the same logo as its row in + Add (connectLogo, dashboard/logos): the catalog's name for
 // its service (Salesflare is crm there, Google Docs is docs signed in with Google). A catch-all (Other email) keeps its line icon.
 const LOGO_NAME={salesflare:'crm'},connLogo=c=>connectLogo({service:c.service},c.service==='docs'&&c.docs_provider==='google'?'google_docs':LOGO_NAME[c.service]||c.service);

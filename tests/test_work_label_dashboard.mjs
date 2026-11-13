@@ -22,7 +22,8 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const base='http://127.0.0.1:'+server.address().port;
 const shots=process.env.SHOTS;if(shots)await mkdir(shots,{recursive:true});
 const errors=[];let browser;
-const sub=(page,id)=>page.locator(`#connectors article[data-conn="${id}"] .conn-head small`).innerText();
+// the company as its Details choice reads it; the card's own subtitle is the Machine's (test_card_names.py)
+const sub=(page,id)=>page.locator(`select[data-scope="${id}"]`).evaluate(s=>s.selectedOptions[0].textContent);
 try{
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  for(const scheme of ['light','dark'])for(const [width,height,mobile] of [[1440,900,false],[390,844,true]]){

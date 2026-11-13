@@ -11,7 +11,7 @@ const dashboard=await dashboardPage();
 const at=new Date().toISOString();
 const card=(id,service,display_name,boundary,more)=>({id,service,email:'',display_name,boundary,last_success:at,last_sync_signals:2,sync_activity:[],failures_24h:0,read_window:{},total:40,signals_24h:3,pending:1,...more});
 const connectors=[card('openclaw-gateway','gateway','Machine health','owner:system',{what:'Your Machine’s own log, so it spots its own trouble.'}),
- card('news','rss','Product news','work:Acme',{what:'Posts from the feeds you follow.'})];
+ card('news','rss','Product news','work:Acme',{what:'Posts from the feeds you follow.',card_title:'Product news',card_subtitle:'Work · Acme'})];  // as account_card names them
 const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors,suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[]}));return}

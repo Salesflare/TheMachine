@@ -104,6 +104,9 @@ class CardNames(unittest.TestCase):
         for service, title in (('exchange', 'Exchange'), ('calendar', 'Google Calendar'), ('ics', 'Other calendar'), ('caldav', 'Team calendar')):
             plain = {'id': f'work-{service}', 'service': service, 'boundary': 'work', 'display_name': title}
             self.assertEqual(names.account_card(plain, [plain]), {'card_title': title, 'card_subtitle': 'Work'}, service)
+        # a workspace named after its company: the company is in the title, so the subtitle is just Work
+        desk = {'id': 'intercom', 'service': 'intercom', 'boundary': 'work:Acme', 'display_name': 'Acme'}
+        self.assertEqual(names.account_card(desk, [desk], None, {'work:Acme': 'Work · Acme'}), {'card_title': 'Acme', 'card_subtitle': 'Work'})
         health = {'id': 'openclaw-gateway', 'service': 'gateway', 'boundary': 'owner:system'}
         self.assertEqual(names.account_card(health, [health]), {'card_title': 'Machine health', 'card_subtitle': ''})
 
@@ -113,8 +116,11 @@ class StatusCarriesThem(unittest.TestCase):
         js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
         self.assertIn('const connTitle=c=>c.card_title||', js)
         self.assertIn('<h3>${connTitle(c)}</h3>${connSubtitle(c)}', js)
-        self.assertIn("function connSubtitle(c){const s=typeof c.card_subtitle==='string'?c.card_subtitle:scopeLabel(c.boundary);", js)
-        self.assertIn("b==='work'?t('Work')", js)  # a plain work boundary reads Work, never "work"
+        # the subtitle is only ever the Machine's: a page-side fallback once read "Acme" over "Work · Acme"
+        line = next(x for x in js.splitlines() if 'connSubtitle=' in x or 'function connSubtitle' in x)
+        self.assertIn('const connSubtitle=c=>c.card_subtitle?html`<small>${c.card_subtitle}</small>`:', line)
+        for composed in ('scopeLabel', 'boundary', 'work_labels', 'display_name', 'service'):
+            self.assertNotIn(composed, line)
         self.assertIn('display_names.account_card(', (ROOT / 'machine' / 'app' / 'status.py').read_text(encoding='utf-8'))
 
     def test_status_gives_each_card_its_title_and_subtitle(self):
