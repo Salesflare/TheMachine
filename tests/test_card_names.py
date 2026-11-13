@@ -41,6 +41,7 @@ def fixtures(service):
         ('address', {**base, 'id': f'{service}-mail', 'email': 'sam@acme.com', 'boundary': 'work:acme.com'}, [], {}),
         ('handle', {**base, 'id': f'{service}-h', 'handle': 'acmehq', 'login': 'acmehq', 'boundary': 'work:Acme'}, [], {}),
         ('named', {**base, 'id': f'{service}-n', 'display_name': 'Acme on ' + (names.SERVICES.get(service) or service), 'boundary': 'work:Acme'}, [], {}),
+        ('plain work', {**base, 'id': f'{service}-w', 'display_name': names.SERVICES.get(service) or service, 'boundary': 'work'}, [], {}),
         ('told', {**base, 'id': f'{service}-t', 'boundary': f'personal:{service}'}, [], {'account_name': 'Sam Example'}),
         ('second', {**base, 'id': f'{service}-b', 'boundary': 'personal:me'}, [{**base, 'id': f'{service}-a'}, {**base, 'id': f'{service}-b'}], {}),
     ]
@@ -65,6 +66,7 @@ class CardNames(unittest.TestCase):
                     self.assertFalse(SLUG.fullmatch(title) and '@' not in title, f'{title!r} reads as a key')
                     parts = subtitle.split(' · ') if subtitle else []
                     self.assertEqual(len(parts), len(set(parts)), subtitle)
+                    self.assertNotIn(parts[0] if parts else '', ('work', 'personal'), f'{subtitle!r}: Work and Personal read capitalized')
                     for part in parts:
                         self.assertNotEqual(part, service)
                         self.assertFalse(SLUG.fullmatch(part) and '@' not in part and part not in ('acme.com',), f'{part!r} in {subtitle!r} is a raw key')
@@ -98,6 +100,10 @@ class CardNames(unittest.TestCase):
         self.assertEqual(names.account_card(mail, [mail], None, {'work:Acme': 'Work · Acme'}), {'card_title': 'sam@acme.com', 'card_subtitle': 'Work'})
         other = {'id': 'work-gmail', 'boundary': 'work:Globex', 'email': 'sam@acme.com'}
         self.assertEqual(names.account_card(other, [other], None, {'work:Globex': 'Work · Globex'}), {'card_title': 'sam@acme.com', 'card_subtitle': 'Work · Globex'})
+        # calendars and Exchange on a plain work boundary: never "Calendar · work" or "Exchange · work"
+        for service, title in (('exchange', 'Exchange'), ('calendar', 'Google Calendar'), ('ics', 'Other calendar'), ('caldav', 'Team calendar')):
+            plain = {'id': f'work-{service}', 'service': service, 'boundary': 'work', 'display_name': title}
+            self.assertEqual(names.account_card(plain, [plain]), {'card_title': title, 'card_subtitle': 'Work'}, service)
         health = {'id': 'openclaw-gateway', 'service': 'gateway', 'boundary': 'owner:system'}
         self.assertEqual(names.account_card(health, [health]), {'card_title': 'Machine health', 'card_subtitle': ''})
 
@@ -107,7 +113,8 @@ class StatusCarriesThem(unittest.TestCase):
         js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')
         self.assertIn('const connTitle=c=>c.card_title||', js)
         self.assertIn('<h3>${connTitle(c)}</h3>${connSubtitle(c)}', js)
-        self.assertRegex(js, r"function connSubtitle\(c\)\{if\(typeof c\.card_subtitle==='string'\)")
+        self.assertIn("function connSubtitle(c){const s=typeof c.card_subtitle==='string'?c.card_subtitle:scopeLabel(c.boundary);", js)
+        self.assertIn("b==='work'?t('Work')", js)  # a plain work boundary reads Work, never "work"
         self.assertIn('display_names.account_card(', (ROOT / 'machine' / 'app' / 'status.py').read_text(encoding='utf-8'))
 
     def test_status_gives_each_card_its_title_and_subtitle(self):

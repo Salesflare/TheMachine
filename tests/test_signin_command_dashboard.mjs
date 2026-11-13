@@ -61,7 +61,7 @@ try{
  await page.locator('#toast',{hasText:'Disconnected.'}).waitFor();
  assert.deepEqual(actions.find(a=>a[0]==='connect_remove')[1],{account:'work-gmail'});
  // Details: Work (with its company) or Personal, the owner's own marking (a guess until then). Another company asks its name.
- assert.match(await page.locator('#connectors .conn-head small').textContent(),/Email · Work · Example/);
+ assert.match(await page.locator('#connectors .conn-head small').textContent(),/^\s*Work · Example\s*$/);
  assert.match(await page.locator('#connectors .conn-scope').textContent(),/Guessed/);
  await page.locator('#connectors select[data-scope="work-gmail"]').selectOption('personal:me');
  await page.locator('#toast',{hasText:'Saved.'}).waitFor();

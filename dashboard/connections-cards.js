@@ -425,7 +425,7 @@ function reconnectButton(c,label='Reconnect'){return c.hosted_signin&&state.mana
 // accounts from this Machine (work_removal.py); personal ones stay.
 // A company by how the Machine names it (work_or_personal.work_labels): plain Work when its name was only made from a domain
 const scopeLabel=b=>{b=String(b||'');const named=/^work:./.test(b)&&Object.prototype.hasOwnProperty.call(state.work_labels||{},b)?String(state.work_labels[b]):'';
- return /^owner:/.test(b)?'':named?named.replace(/^Work(?= · |$)/,t('Work')): /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
+ return /^owner:/.test(b)?'':named?named.replace(/^Work(?= · |$)/,t('Work')): /^work:./.test(b)?t('Work')+' · '+b.slice(5):b==='work'?t('Work'):b==='personal:me'||b==='personal'?'Personal':/^personal:./.test(b)?t('Personal')+' · '+b.slice(9):b};
 function scopeRow(c){const b=String(c.boundary||'');if(!b||/^owner:/.test(b)||c.service==='gateway')return '';
  const all=[...new Set([...(state.connectors||[]).map(x=>String(x.boundary||'')),b])],cur=b==='personal'?'personal:me':b;
  const opts=[...all.filter(x=>/^work:./.test(x)),...new Set(['personal:me',...all.filter(x=>/^personal:./.test(x))])].map(v=>[v,scopeLabel(v)]).concat([['','Work, another company…']]);
@@ -534,8 +534,7 @@ const connBackfill=c=>{const b=c.backfill;if(!b?.back_to||c.service==='whatsapp'
  return html`<p class="note">${b.done?t('History: back to {}.',when):t('History coming in: back to {} so far.',when)}</p>`};
 // machine/names.py account_card
 const connTitle=c=>c.card_title||c.display_name||c.email;
-function connSubtitle(c){if(typeof c.card_subtitle==='string')return c.card_subtitle?html`<small>${c.card_subtitle}</small>`:'';const kind=c.service==='docs'&&c.docs_provider==='google'?'Google Docs':service(c.service),parts=[kind===connTitle(c)?'':kind,scopeLabel(c.boundary)].filter(Boolean);
- return parts.length?html`<small>${parts.join(' · ')}</small>`:''}
+function connSubtitle(c){const s=typeof c.card_subtitle==='string'?c.card_subtitle:scopeLabel(c.boundary);return s?html`<small>${s}</small>`:''}
 // A connected source's card shows the same logo as its row in + Add (connectLogo, dashboard/logos): the catalog's name for
 // its service (Salesflare is crm there, Google Docs is docs signed in with Google). A catch-all (Other email) keeps its line icon.
 const LOGO_NAME={salesflare:'crm'},connLogo=c=>connectLogo({service:c.service},c.service==='docs'&&c.docs_provider==='google'?'google_docs':LOGO_NAME[c.service]||c.service);
