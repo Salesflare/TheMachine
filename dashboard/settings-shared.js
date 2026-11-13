@@ -13,12 +13,7 @@ let settingsTab=SETTINGS_OLD[localStorage.getItem('settings-tab')]||localStorage
 {const bar=document.createElement('div');bar.className='sub-tabs';bar.id='settings-tabs';bar.setAttribute('role','tablist');bar.setAttribute('aria-label','Settings');
  bar.innerHTML=SETTINGS_TABS.map(([id,label])=>`<button type="button" role="tab" data-settings-tab="${id}" aria-selected="false">${label}</button>`).join('');
  $('#settings').prepend(bar)}
-// The account in short on a Machine not linked to one (Join the Network, or the Fleet account it's paired with): first in
-// Account when that tab is there (its addresses), else at the end of General. Never in both.
-function settingsAccountPlace(s){const blk=$('#settings-account-block'),head=$('#settings-acct'),ver=$('#settings-version');if(!blk||!head||!ver)return;
- const acct=['settings-acct','settings-addresses','settings-domains','settings-acct-end'].some(id=>!$('#'+id).hidden);SETTINGS_OF['settings-account-block']=acct?'account':'general';
- const after=acct?head:ver;if(!blk.hidden&&blk.previousElementSibling!==after)s.insertBefore(blk,after.nextElementSibling)}
-function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new Set(),set=(el,k,v)=>{if(el[k]!==v)el[k]=v};if(s.firstElementChild!==bar)s.prepend(bar);settingsAccountPlace(s);
+function settingsSync(){const s=$('#settings'),bar=$('#settings-tabs'),shown=new Set(),set=(el,k,v)=>{if(el[k]!==v)el[k]=v};if(s.firstElementChild!==bar)s.prepend(bar);if(typeof settingsAccountPlace==='function')settingsAccountPlace(s);
  let tab='general';for(const el of s.children){if(el===bar)continue;tab=SETTINGS_OF[el.id]||(el.classList.contains('section-head')?SETTINGS_OF[el.nextElementSibling?.id]||'general':tab);el.dataset.stab=tab;if(!el.hidden&&!el.classList.contains('section-head'))shown.add(tab)}
  settingsNow=shown.has(settingsTab)?settingsTab:SETTINGS_TABS.map(t=>t[0]).find(t=>shown.has(t))||'general';const live=!s.hidden&&lazyIn('settings');if(live)loadSettingsViews();if(settingsNow==='account'&&live)loadAccount();if(settingsNow==='general'&&live){loadDictation();loadExport()}if((settingsNow==='general'||settingsNow==='model')&&live)upkeepShown();if(settingsNow==='activity'&&!s.hidden&&typeof actShown==='function')actShown();if(settingsNow==='apps'&&live&&!aiView)aiLoad();if(!s.hidden)helpLink('settings');
  for(const el of s.children)if(el!==bar)el.classList.toggle('stab-off',el.dataset.stab!==settingsNow);

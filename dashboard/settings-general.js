@@ -384,5 +384,10 @@ $('#signatures').addEventListener('submit',async e=>{e.preventDefault();const f=
 // Join the Network on a self-hosted Machine not paired yet: one-click pairing (settings-ai.js aiPairGo, pairing.py), the
 // account's own page in a new tab and back here by itself, no code to copy and no restart. The link to /start stays for
 // a browser without this script.
+// The account in short on a Machine not linked to one (Join the Network, or the Fleet account it's paired with): first in
+// Account when that tab is there (its addresses), else at the end of General. Never in both. settingsSync places it.
+function settingsAccountPlace(s){const blk=$('#settings-account-block'),head=$('#settings-acct'),ver=$('#settings-version');if(!blk||!head||!ver)return;
+ const acct=['settings-acct','settings-addresses','settings-domains','settings-acct-end'].some(id=>!$('#'+id).hidden);SETTINGS_OF['settings-account-block']=acct?'account':'general';
+ const after=acct?head:ver;if(!blk.hidden&&blk.previousElementSibling!==after)s.insertBefore(blk,after.nextElementSibling)}
 $('#settings-cloud').addEventListener('click',e=>{if(!e.currentTarget.hasAttribute('data-network-pair')||typeof aiPairGo!=='function')return;
  e.preventDefault();aiPairGo(()=>{notice(t('Paired with your account'));refresh()})});
