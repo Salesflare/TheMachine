@@ -13,13 +13,17 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(MachineShellPlugin.class);
         super.onCreate(savedInstanceState);
         ((MachineShellPlugin) bridge.getPlugin("MachineShell").getInstance()).attach();
-        // Back goes back in the Machine's pages (a closed drawer, the view before); from the first page it leaves the app
+        // Back first closes the dashboard's open dialog or sheet (machineBack, dashboard/shell-back.js), then goes back in
+        // the Machine's pages (a closed drawer, the view before); from the first page it leaves the app
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
                 WebView webView = bridge.getWebView();
-                if (webView.canGoBack()) webView.goBack();
-                else moveTaskToBack(true);
+                webView.evaluateJavascript("!!(window.machineBack&&window.machineBack())", closed -> {
+                    if ("true".equals(closed)) return;
+                    if (webView.canGoBack()) webView.goBack();
+                    else moveTaskToBack(true);
+                });
             }
         });
     }
