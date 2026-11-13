@@ -450,7 +450,13 @@ function clampKey(key){if(key==null)return;const k=CSS.escape(key),els=document.
  const over=[...els].map(clampCut);any=over.some(o=>o==null||o>1);
  els.forEach((el,i)=>{if(over[i]!=null)el.classList.toggle('clamp',any&&over[i]>0&&!open)});
  for(const b of btns)b.hidden=!any}
-const clampSeen=new ResizeObserver(rows=>{const keys=new Set();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){e._fitW=r.width;keys.add(e.dataset.clamp)}keys.forEach(clampKey)});
+// Behind an open modal (a phone's full-screen sheet, which also takes away the page's scrollbar gutter, so every to-do
+// widens a little) a text is measured once the modal closes, and only if its width then differs: measuring each one
+// costs the whole page's style and layout twice, and in the frame that opens the sheet that was most of Snooze's time.
+const clampLater=new Set();
+const clampSeen=new ResizeObserver(rows=>{const keys=new Set(),modal=modalOpen();for(const {target:e,contentRect:r} of rows)if(r.width&&e._fitW!==r.width){if(modal&&!e.closest('dialog[open]')){clampLater.add(e);continue}e._fitW=r.width;keys.add(e.dataset.clamp)}keys.forEach(clampKey)});
+// Observed again, the observer reports each one's width now: no work when it is back where it was measured
+document.addEventListener('close',()=>{if(!clampLater.size||modalOpen())return;for(const e of clampLater)if(e.isConnected){clampSeen.unobserve(e);clampSeen.observe(e)}clampLater.clear()},true);
 let clampQueued=0;const clampNew=()=>{clampQueued=0;for(const e of document.querySelectorAll('[data-clamp]:not([data-cfit])')){e.dataset.cfit='';clampSeen.observe(e)}};
 new MutationObserver(()=>{if(!clampQueued)clampQueued=requestAnimationFrame(clampNew)}).observe(document.body,{childList:true,subtree:true});
 const clampAll=()=>new Set([...document.querySelectorAll('[data-clamp][data-cfit]')].map(e=>e.dataset.clamp)).forEach(clampKey);

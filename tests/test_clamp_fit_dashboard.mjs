@@ -7,7 +7,7 @@ const {chromium}=await import('./browser.mjs');
 // A to-do's text shows Show more and the fade over its last line only when more than one line of it would be cut off
 // (Show more takes about a line itself). A summary that fills one line more than its 2, or a ready draft one more than its
 // 3, shows whole: no Show more, no fade. One word more and both come back. Checked at 1440 and 390 wide, at 1x and 1.5x display scaling (fractional pixels), light and dark, and again
-// after the page gets narrower. SHOTS=<folder> saves screenshots.
+// after the page gets narrower, and after a phone-width sheet over it closes. SHOTS=<folder> saves screenshots.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
 const words=('Peter cannot come on the eleventh, and they ask when he can come instead. He already promised to confirm another day; '+
@@ -61,7 +61,18 @@ try{
   if(!mobile){await page.setViewportSize({width:640,height});await page.waitForTimeout(200);
    assert.deepEqual(await look(page,'fitbody'),{more:['Show more'],fade:true,hidden:true},why+': narrower, cut');
    await page.setViewportSize({width,height});await page.waitForTimeout(200);
-   assert.deepEqual(await look(page,'fitbody'),{more:[],fade:false,hidden:false},why+': wide again, whole')}
+   assert.deepEqual(await look(page,'fitbody'),{more:[],fade:false,hidden:false},why+': wide again, whole');
+   // A phone-width sheet (Snooze) takes the page's scrollbar gutter away, so the to-dos behind it widen: they aren't
+   // measured again while it covers them (each costs the page's style and layout, in the frame that opens the sheet)...
+   await page.setViewportSize({width:500,height});await page.waitForTimeout(200);
+   await page.evaluate(()=>{const f=window.clampKey;window.__measured=0;window.clampKey=k=>{window.__measured++;f(k)}});
+   await page.evaluate(()=>openSnooze('fitbody'));await page.waitForTimeout(300);
+   assert.ok(await page.evaluate(()=>$('#snooze-dialog').open),why+': the sheet is open');
+   assert.equal(await page.evaluate(()=>window.__measured),0,why+': nothing behind the sheet measured again');
+   // ...and a width that really changed meanwhile is measured once it closes
+   await page.setViewportSize({width,height});await page.waitForTimeout(200);
+   await page.evaluate(()=>$('#snooze-dialog').close());await page.waitForTimeout(300);
+   assert.deepEqual(await look(page,'fitbody'),{more:[],fade:false,hidden:false},why+': wide again after the sheet, whole')}
   await context.close()}
  assert.deepEqual(errors,[]);
 }finally{await browser?.close();server.close()}
