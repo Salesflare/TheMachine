@@ -15,11 +15,14 @@ const sources=[
   form:{secret:'Salesflare API key',scope:true,company:'Acme'}}),
  S('gmail','gmail','Gmail','mail','Your email, what comes in and what you send.',{connected:2,hosted_signin:'gmail'}),
  S('slack','slack','Slack','chat','Your direct messages, mentions and the threads you are in.',{hosted_signin:'slack'}),
- S('stripe','stripe','Stripe','customers','Failed payments, disputes, churn and big new subscriptions.',{hosted_signin:'stripe'})];
+ S('stripe','stripe','Stripe','customers','Failed payments, disputes, churn and big new subscriptions.',{hosted_signin:'stripe'}),
+ S('zoom','zoom','Zoom','meetings','Meeting summaries and transcripts from Zoom.',{connected:1,hosted_signin:'zoom'})];
 const connectors=[
  {id:'acme-crm',service:'salesflare',email:'jamie@acme.example',display_name:'jamie@acme.example',status:'ok',last_success:new Date().toISOString()},
  {id:'acme-gmail',service:'gmail',email:'jamie@acme.example',status:'ok',last_success:new Date().toISOString()},
  {id:'home-gmail',service:'gmail',email:'jamie.lee@mail.example',status:'ok',last_success:new Date().toISOString()},
+ // named only after its provider: the row says its card's title (machine/names.py account_card), never "Zoom" again
+ {id:'acme-zoom',service:'zoom',email:'jamie@acme.example',display_name:'Zoom',card_title:'jamie@acme.example',card_subtitle:'Work',status:'ok',last_success:new Date().toISOString()},
  {id:'team-stripe',service:'stripe',display_name:'Acme Stripe',shared_by:'Robin Vale',status:'ok',last_success:new Date().toISOString()}];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
@@ -47,6 +50,7 @@ try{
   const list=await rows(page);
   assert.deepEqual(list['Salesflare CRM'],{have:'Connected: jamie@acme.example',check:true},`${tag}: a connected source names its account`);
   assert.deepEqual(list['Gmail'],{have:'Connected: jamie@acme.example and 1 more',check:true},`${tag}: two accounts: the first and how many more`);
+  assert.deepEqual(list['Zoom'],{have:'Connected: jamie@acme.example',check:true},`${tag}: named as its card is, never the provider again`);
   assert.deepEqual(list['Slack'],{have:null,check:false},`${tag}: a source not connected says nothing of the kind`);
   assert.deepEqual(list['Stripe'],{have:null,check:false},`${tag}: a teammate's shared connection is not one of the owner's own`);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)<=0,`${tag}: no sideways scroll`);
