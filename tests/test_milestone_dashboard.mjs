@@ -11,19 +11,23 @@ const {chromium}=await import('./browser.mjs');
 // pointer), even one with a share sheet, or where there is none, a dialog (todos-milestone-share.js) with the image in
 // two sizes, Download image (a blob: link, which a browser saves and the phone app takes), Copy image or Share image,
 // and the text to post. Each button says what it did inside the dialog, and its × stays in reach on a phone. The image is drawn from the count alone: nothing from the owner's to-dos or name reaches it.
-const dashboard=await dashboardPage();
 const ROOT=new URL('..',import.meta.url);
+// The page goes with the Machine's own policy (PAGE_CSP): without it, a blob: image the Machine blocks showed here all the same
+const pageCsp=()=>{const m=readFileSync(new URL('machine/web/handler.py',ROOT),'utf8').match(/^PAGE_CSP = \(((?:\s*"[^"]*")+)\)/m);
+ if(!m)throw new Error('machine/web/handler.py: no PAGE_CSP');return [...m[1].matchAll(/"([^"]*)"/g)].map(x=>x[1]).join('')};
+const dashboard=await dashboardPage(),CSP=pageCsp();
 const BRAND={'party.webp':'brand/party.webp','party-512.webp':'brand/party-512.webp','serif.woff2':'brand/fonts/source-serif-4-latin.woff2','sans.woff2':'brand/fonts/inter-latin.woff2'};
 const now=new Date().toISOString();
 const ID='00000000000000a1',SECRET='Reply to Sam Keller about the Acme renewal';
-let milestone=null,seen=[];
+let milestone=null,seen=[],slowArt=0;
 const cards=[{id:ID,title:SECRET,body:'sam.keller@acme.example asked for pricing.',status:'pending',scope:'work',created_at:now,event_ids:[1]}];
 const state=()=>({suggestions:cards,done_milestone:milestone,done_counts:{all:503,work:503,personal:0},whats_new:null,greeting:null,first_tips:[],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:false,fleets:[]},
  owner_name:'Sam Keller',locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
 const server=createServer(async(req,res)=>{let body='';for await(const c of req)body+=c;const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
- if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
+ if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.setHeader('Content-Security-Policy',CSP);res.end(dashboard);return}
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state()));return}
  if(url.pathname.startsWith('/brand/')){const f=BRAND[url.pathname.slice(7)];if(!f){res.statusCode=404;res.end();return}
+  if(slowArt&&f.endsWith('party-512.webp'))await new Promise(r=>setTimeout(r,slowArt));  // a phone on a slow line
   res.setHeader('Content-Type',f.endsWith('.webp')?'image/webp':'font/woff2');res.end(readFileSync(new URL(f,ROOT)));return}
  if(req.method==='POST'&&body){const b=JSON.parse(body);
   if(b.action==='done_milestone_seen'){seen.push(b.args.count);milestone=null;res.end(JSON.stringify({done_milestone:null}));return}}
@@ -176,7 +180,22 @@ try{
   assert.deepEqual(await page.locator('#ms-share .ms-acts button').evaluateAll(b=>b.map(x=>x.textContent)),['Download image']);
   await page.locator('#ms-share [data-ms-download]').click();await page.waitForFunction(()=>window.saved.length===1);
   assert.deepEqual(await page.evaluate(()=>window.saved),[['blob:','the-machine-500-todos.png']]);
+  // the app reads the link's file with fetch (mobile/www/inject.js give), which the page's policy lets through
+  assert.deepEqual(await page.evaluate(()=>fetch(msShownUrl).then(r=>r.blob()).then(b=>[b.type,b.size>20000])),['image/png',true]);
   await context.close()}
+ // A phone with no share sheet, on a slow line (the mascot comes in late): the dialog's image shows, loaded and not
+ // broken, in both sizes, light and dark, under the Machine's own policy
+ slowArt=700;
+ for(const theme of ['light','dark']){const {context,page}=await open(390,{theme});await card(page).waitFor();
+  await page.locator('#milestone [data-ms-share]').click();await page.locator('#ms-share[open]').waitFor();
+  const shown=()=>page.waitForFunction(()=>{const i=document.querySelector('#ms-share .ms-preview');return i?.complete&&i.naturalWidth>0&&[i.naturalWidth,i.naturalHeight]},null,{timeout:8000}).then(h=>h.jsonValue());
+  assert.deepEqual(await shown(),[1080,1080]);
+  await page.locator('#ms-share [data-ms-size="wide"]').click();await page.waitForFunction(()=>document.querySelector('#ms-share .ms-preview').naturalWidth===1200,null,{timeout:8000});
+  assert.deepEqual(await shown(),[1200,630]);
+  await page.locator('#ms-share [data-ms-size="square"]').click();await page.waitForFunction(()=>document.querySelector('#ms-share .ms-preview').naturalWidth===1080,null,{timeout:8000});
+  assert.deepEqual(await shown(),[1080,1080]);
+  await context.close()}
+ slowArt=0;
  // An older phone browser, whose canvas has no roundRect ("c.roundRect is not a function"): the image still draws, in
  // both sizes, its rounded confetti and the site's chip made from arcTo
  {const {context,page}=await open(390,{canvas:'old'});await card(page).waitFor();
