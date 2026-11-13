@@ -42,6 +42,24 @@ class ConnectLogos(unittest.TestCase):
             self.assertTrue(png.startswith(b'\x89PNG\r\n\x1a\n'))
             self.assertLess(len(png), 8 * 1024)
 
+    def test_multicolor_brands_keep_their_colors(self):
+        """Cards and + Add show each brand's own colored logo: a multicolor mark never collapses to one fill (Gmail once
+        showed as a flat red M). Gmail is Google's four-color M; one-color logos are only the brands that are one color."""
+        def colors(name):
+            svg = (LOGOS / f'{name}.svg').read_text(encoding='utf-8')
+            return {c.upper() for c in re.findall(r'(?:fill|stop-color)="(#[0-9A-Fa-f]{3,6})"', svg)} | set(re.findall(r'url\(#[^)]+\)', svg))
+        gmail = colors('gmail')
+        for brand in ('#4285F4', '#34A853', '#FBBC04', '#EA4335'):  # blue, green, yellow, red
+            self.assertIn(brand, gmail, f'Gmail logo misses {brand}')
+        self.assertGreaterEqual(len(colors('calendar') & {'#4285F4', '#34A853', '#FBBC04', '#EA4335'}), 4)
+        self.assertGreaterEqual(len(colors('google_meet')), 5)
+        one_color = {'codex', 'crm', 'github', 'google_docs', 'icloud_calendar', 'intercom', 'linkedin', 'proton_calendar', 'rss',
+                     'shortcut', 'signal', 'stripe', 'telegram', 'trello', 'whatsapp', 'x'}
+        for path in LOGOS.glob('*.svg'):
+            if path.stem not in one_color:
+                with self.subTest(logo=path.name):
+                    self.assertGreaterEqual(len(colors(path.stem)), 2, 'a multicolor brand logo flattened to one color')
+
     def test_the_machine_serves_them_as_images_and_the_page_never_inlines_them(self):
         from machine.config import BRAND_ASSETS
         for path in files():
