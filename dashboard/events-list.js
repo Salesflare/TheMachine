@@ -29,7 +29,6 @@ function openEventFrom(e){const a=e.target.closest('article[data-event]');if(!a|
  if(a.dataset.events)openConversation(a);else if('meeting' in a.dataset)openMeeting(a.dataset.meeting||a.dataset.event,title);else openEvent(a.dataset.event,title);return true}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches?.('article[data-event]'))openEventFrom(e)});
 const openEvent=(ev,title,local)=>openOriginal(ev,title,false,local);  // local: nothing from outside loads (events-email-frame.js)
-$('#set-aside-list')?.addEventListener('click',e=>{const b=e.target.closest('[data-sa-open]');if(b)openEvent(b.dataset.saOpen,b.textContent)});  // Set aside, under Checks
 // One collected signal as it came in. A meeting opens as it does in the Calendar instead (openMeeting), unless its raw
 // invite is asked for (raw: Original invite in the meeting's details).
 async function openOriginal(ev,title,raw,local){const dialog=$('#email-dialog');$('#email-title').textContent=title||t('Original');setHTML($('#email-content'),html`<p class="muted">Loading…</p>`);if(!dialog.open)dialog.showModal();
