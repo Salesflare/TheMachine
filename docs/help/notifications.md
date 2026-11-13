@@ -81,7 +81,8 @@ At the end come your **Work** and **Personal** digests, the same text **Digest**
 
 It comes once on work days at its time in **Work hours**, by default 15 minutes before **Until**, the ways you picked in its row above. A day without a to-do done or a meeting held gets none. It starts with the day in a count, like "Evening Sam, 4 to-dos done today", then a **Work** part and a **Personal** part. A part with nothing in it is left out. Each has:
 
-- **Done today**: up to three to-dos you or your Machine finished, how many more, and your meetings, like "3 meetings: Pricing call and 2 more.";
+- the day's meetings on a line of their own, like "3 meetings: Pricing call and 2 more.";
+- **Done today**: up to three to-dos you or your Machine finished, and how many more;
 - **Open for tomorrow** (on a Friday, your next work day): the first meetings and what's due.
 
 It ends with how many to-dos still need you. Tap the push, or the link at the end of the email, to read it again, with **Copy Work** and **Copy Personal**. To stop it, turn off its row.

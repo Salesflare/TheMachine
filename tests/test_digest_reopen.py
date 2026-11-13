@@ -55,6 +55,9 @@ class Reopen(unittest.TestCase):
         self.assertNotIn('Open The Machine', got['text'])  # it is open already
         self.assertNotIn('](', got['text'])
         self.assertEqual([s['area'] for s in got['sections']], ['work', 'personal'])
+        # drawn as it reads: the areas headings, Done today a subhead, the to-dos a list
+        self.assertEqual(got['blocks'][:3], [['h', 'Work'], ['sub', 'Done today'], ['li', 'Send the order form']])
+        self.assertIn(['h', 'Personal'], got['blocks'])
         self.assertEqual(self.shown('morning'), {})  # the evening's never stands in for the morning's
 
     def test_the_morning_keeps_its_text_and_the_email_links_back_to_it(self):
@@ -69,6 +72,7 @@ class Reopen(unittest.TestCase):
             notify.digest_done(db, '2026-11-12', 'sent', ['push', 'email'], out)
         got = self.shown('morning')
         self.assertEqual((got['title'], got['text']), ('Good morning, 1 due today', '• Pay the invoice'))  # without its Open link
+        self.assertEqual(got['blocks'], [['li', 'Pay the invoice']])
 
     def test_only_a_sent_one_keeps_its_text_and_not_past_a_week(self):
         out = notify.compose([], [{'title': 'Pay the invoice'}], [])

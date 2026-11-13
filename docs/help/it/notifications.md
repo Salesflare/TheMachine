@@ -80,7 +80,8 @@ Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo 
 
 Arriva una volta nei giorni lavorativi alla sua ora in **Orario di lavoro**, di default 15 minuti prima di **Fino alle**, nei modi scelti nella sua riga qui sopra. Un giorno senza attività fatte né riunioni tenute non ne riceve. Inizia con la tua giornata in un numero, come "Buonasera Sam, oggi 4 attività fatte", poi una parte **Lavoro** e una parte **Personale**. Una parte vuota viene omessa. Ognuna ha:
 
-- **Fatto oggi**: fino a tre attività che tu o la tua Machine avete finito, quante altre, e le tue riunioni, come "3 riunioni: Chiamata prezzi e altre 2.";
+- le riunioni del giorno su una riga a sé, come "3 riunioni: Chiamata prezzi e altre 2.";
+- **Fatto oggi**: fino a tre attività che tu o la tua Machine avete finito, e quante altre;
 - **Aperto per domani** (di venerdì, il tuo prossimo giorno lavorativo): le prime riunioni e cosa scade.
 
 Finisce con quante attività hanno ancora bisogno di te. Tocca la notifica push, o il link alla fine dell’email, per rileggerlo, con **Copia Lavoro** e **Copia Personale**. Per non riceverlo, disattiva la sua riga.

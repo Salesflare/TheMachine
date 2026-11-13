@@ -80,7 +80,8 @@ Le push dit la même chose sans liens. Touchez-le, ou le lien à la fin de l’e
 
 Il arrive une fois les jours de travail à son heure dans **Heures de travail**, par défaut 15 minutes avant **Jusqu’à**, par les moyens choisis dans sa ligne ci-dessus. Un jour sans tâche faite ni réunion tenue n’en reçoit pas. Il commence par votre journée en un chiffre, comme "Bonsoir Sam, 4 tâches faites aujourd’hui", puis une partie **Travail** et une partie **Perso**. Une partie vide est omise. Chacune contient :
 
-- **Fait aujourd’hui** : jusqu’à trois tâches que vous ou votre Machine avez terminées, combien d’autres, et vos réunions, comme "3 réunions : Appel tarifs et 2 autres." ;
+- les réunions du jour sur une ligne à part, comme "3 réunions : Appel tarifs et 2 autres." ;
+- **Fait aujourd’hui** : jusqu’à trois tâches que vous ou votre Machine avez terminées, et combien d’autres ;
 - **À faire demain** (un vendredi, votre prochain jour de travail) : les premières réunions et ce qui arrive à échéance.
 
 Il se termine par le nombre de tâches qui vous attendent encore. Touchez la notification push, ou le lien à la fin de l’e-mail, pour le relire, avec **Copier Travail** et **Copier Perso**. Pour ne plus le recevoir, désactivez sa ligne.

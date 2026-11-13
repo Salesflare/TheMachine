@@ -80,7 +80,8 @@ Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **
 
 Het komt één keer op werkdagen op zijn tijdstip in **Werkuren**, standaard 15 minuten voor **Tot**, via de manieren die je hierboven in zijn rij kiest. Een dag zonder afgewerkte to-do of gehouden afspraak krijgt er geen. Het begint met je dag in een getal, zoals "Goeienavond Sam, vandaag 4 to-do's gedaan", en dan een deel **Werk** en een deel **Privé**. Een leeg deel valt weg. Elk deel heeft:
 
-- **Vandaag gedaan**: tot drie to-do's die jij of je Machine afwerkte, hoeveel nog meer, en je afspraken, zoals "3 afspraken: Prijsgesprek en nog 2.";
+- de afspraken van de dag op een eigen regel, zoals "3 afspraken: Prijsgesprek en nog 2.";
+- **Vandaag gedaan**: tot drie to-do's die jij of je Machine afwerkte, en hoeveel nog meer;
 - **Open voor morgen** (op vrijdag je volgende werkdag): de eerste afspraken en wat dan moet.
 
 Het eindigt met hoeveel to-do's nog op je wachten. Tik op de push, of op de link onderaan de e-mail, om het opnieuw te lezen, met **Werk kopiëren** en **Privé kopiëren**. Wil je het niet, zet dan zijn rij uit.

@@ -436,7 +436,7 @@ def digest_done(db, day, status, channels, digest=None):
 def digest_kept(digest):
     """What a sent digest keeps to show again: its title, its text as the email had it without the headline (the title)
     and the links (the dashboard is where they lead: read), and its parts to copy (sections)."""
-    return {'title': digest['subject'], 'text': digest.get('read', ''),
+    return {'title': digest['subject'], 'text': digest.get('read', ''), 'blocks': digest.get('blocks') or [],
             'sections': [{'area': s['area'], 'copy': s['copy']} for s in digest.get('sections') or () if s.get('copy')]}
 
 
@@ -444,6 +444,21 @@ def read_text(lines):
     """A digest's lines as the dashboard shows them again (digest_kept): without the headline, the Open links and the
     blank lines at either end."""
     return '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip()
+
+
+def read_blocks(lines, heads, subs, meets=()):
+    """The same lines (read_text) as the dashboard draws them: [[kind, text]], kind 'h' (an area: Work, Personal),
+    'sub' (Done today, Open for tomorrow), 'li' (a bullet, without its •), 'meet' (the day's meetings) or 'p'; a blank
+    line is 'gap'. The copy stays the plain text."""
+    out = []
+    for raw in '\n'.join(LINKS.sub('', x) for x in lines[1:]).strip().split('\n'):
+        line = raw.strip()
+        kind = ('gap' if not line else 'h' if line in heads else 'sub' if line in subs else 'li' if line.startswith('• ')
+                else 'meet' if line in meets else 'p')
+        if kind == 'gap' and (not out or out[-1][0] == 'gap'):
+            continue
+        out.append([kind, line[2:] if kind == 'li' else line])
+    return out
 
 
 SHOWN = {'morning': "SELECT body,created_at FROM notify_digests WHERE day NOT LIKE '%:%' AND status='sent' AND body IS NOT NULL ORDER BY created_at DESC LIMIT 1",
@@ -463,7 +478,8 @@ def digest_shown(db, kind):
         kept = json.loads(row[0])
     except (TypeError, ValueError):
         return {}
-    return {'kind': kind, 'title': str(kept.get('title') or ''), 'text': str(kept.get('text') or ''),
+    blocks = [[str(b[0]), str(b[1])] for b in kept.get('blocks') or () if isinstance(b, list) and len(b) == 2]
+    return {'kind': kind, 'title': str(kept.get('title') or ''), 'text': str(kept.get('text') or ''), 'blocks': blocks,
             'sections': [s for s in kept.get('sections') or () if isinstance(s, dict)], 'at': row[1]}
 
 
@@ -688,6 +704,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             lines += [AREA_TITLES[area](), text, '']
     sections = [{'area': area, 'copy': text} for area, text in (areas or ()) if show_text and text]
     read = read_text(lines)
+    blocks = read_blocks(lines, {f() for f in AREA_TITLES.values()}, {t('Done today'), t('Still open')}, {opening} - {''})
     if root:  # opens this digest again, as its notification does
         lines.append(t('Open The Machine: {}', root + DIGEST_VIEW))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
@@ -704,7 +721,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
             break
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
     return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
-            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'sections': sections}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
 
 
 # -- an area's digest: Copy Work, Copy Personal
@@ -810,26 +827,31 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
         ident = str(item.get('id') or '')
         return f" · [{t('Open')}]({root}#card={ident}&or=chat)" if root and re.fullmatch(r'[a-f0-9]{16}', ident) else ''
 
+    meets, opened = set(), t('Open for tomorrow') if tomorrow else t('Open for {}', next_day)
+
     def part(area, short):
         """One part's lines: in the message (short: EVENING_LISTED, links) or its copy (every to-do done, plain)."""
         d, h, u, a = of(done, area), of(held, area), of(due, area), of(ahead, area)
         out = []
-        if d or h:
+        # The day's meetings first, on their own line: under Done today they read as one more to-do done
+        named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
+        names = ', '.join(clip(x, 40) for x in named)
+        if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
+            said = (t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
+                    else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
+            out.append(said)
+            meets.add(said)
+        if d:
             out.append(t('Done today'))
             if show_text:
                 most = EVENING_LISTED if short else EVENING_COPIED
                 out += ['• ' + clip(i['title'], 80) for i in d[:most]]
                 if len(d) > most:
                     out.append(t('{} more done.', len(d) - most))
-            elif d:
+            else:
                 out.append(t('{} to-dos done.', len(d)))
-            named = [m['title'] for m in h if m.get('named')][:2 if short else EVENING_COPIED] if show_text else []
-            names = ', '.join(clip(x, 40) for x in named)
-            if h:  # every meeting counted: the ones not named (routine, or past the first few) as a count
-                out.append(t('{} meetings.', len(h)) if not named else t('{} meetings: {}.', len(h), names) if len(named) == len(h)
-                           else t('{} meetings: {} and {} more.', len(h), names, len(h) - len(named)))
         if u or a:
-            out.append(t('Open for tomorrow') if tomorrow else t('Open for {}', next_day))
+            out.append(opened)
             if show_text:
                 out += ['• ' + clock(m['at']) + ' ' + clip(m['title'], 60) for m in a[:2]]
                 out += ['• ' + t('Due: {}', clip(i['title'], 80)) + (link(i) if short else '') for i in u[:EVENING_LISTED]]
@@ -852,6 +874,7 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
     if waiting:
         lines += ['', t('{} to-dos still need you.', waiting)]
     read = read_text(lines)
+    blocks = read_blocks(lines, set(title.values()), {t('Done today'), opened}, meets)
     if root:  # opens this digest again, as its notification does
         lines += ['', t('Open The Machine: {}', root + EVENING_VIEW)]
     # The push: what got done in a line, then the one thing to know for the next work day
@@ -877,7 +900,7 @@ def evening_compose(done, held, waiting, due, ahead, root='', show_text=True, cl
         summary = t('{} meetings.', len(held))
     body = '\n'.join([clip(summary, room), *after])
     return {'push': {'title': head, 'body': body, 'url': (root or './') + EVENING_VIEW, 'tag': 'evening'},
-            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'sections': sections}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
 
 
 # -- email, through the control plane (hosted and paired Machines)

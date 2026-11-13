@@ -23,7 +23,8 @@ const fleetView={on:true,kinds:{relationships:'who knows someone',brief:'brief f
  waiting:[{id:Q,fleet:FL,member_id:'Pat',name:'Pat',kind:'relationships',status:'waiting',at:now,question:'Who knows someone at Globex?'}],
  asked:[],log:[],notices:[{id:N,fleet:FL2,kind:'seat_confirmed',text:'Your Machine was confirmed in Northwind.',buttons:[]}]};
 const DIGESTS={morning:{kind:'morning',title:'Morning, 1 due today',text:'• Reply to the venue about the date',sections:[],at:now},
- evening:{kind:'evening',title:'Good evening, 1 to-do done today',text:'Work\nDone today\n• Send the invoice',sections:[{area:'work',copy:'Done today\n• Send the invoice'}],at:now}};
+ evening:{kind:'evening',title:'Good evening, 1 to-do done today',text:'Work\n2 meetings.\nDone today\n• Send the invoice',
+  blocks:[['h','Work'],['meet','2 meetings.'],['sub','Done today'],['li','Send the invoice']],sections:[{area:'work',copy:'Done today\n• Send the invoice'}],at:now}};
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
  connectors:[],fleet:{on:true,waiting:1,fleets:fleetView.fleets}});
 // A Machine slow to answer the status: the tapped view still opens at once. Each status read is logged with when it
@@ -55,8 +56,12 @@ try{
   // somewhere else first: the to-do's chat open, the Fleet tab on the other pane
   const elsewhere=async()=>{await page.evaluate(id=>{location.hash='chat='+id},TODO);await landed(`.chat-layout[data-chat="${TODO}"] .chat-title`,'the chat to start from')};
   // a digest: To-dos with that digest open on top, as it went, then closed for the next case
-  const sent=async(kind,why)=>{await landed('#area-digest .ad-text',why);assert.ok(await tab('inbox'));
-   assert.equal(await page.locator('#area-digest h2').innerText(),DIGESTS[kind].title);assert.equal(await page.locator('#area-digest .ad-text').textContent(),DIGESTS[kind].text);
+  // one kept before it had blocks (the morning here) reads as its text; one with them as headings, subheads and a list
+  const sent=async(kind,why)=>{const blocks=DIGESTS[kind].blocks;await landed(blocks?'#area-digest .ad-read':'#area-digest .ad-text',why);assert.ok(await tab('inbox'));
+   assert.equal(await page.locator('#area-digest h2').innerText(),DIGESTS[kind].title);
+   if(!blocks)assert.equal(await page.locator('#area-digest .ad-text').textContent(),DIGESTS[kind].text);
+   else assert.deepEqual(await page.evaluate(()=>[...document.querySelector('#area-digest .ad-read').children].map(e=>e.matches('ul')?['ul',[...e.children].map(li=>li.textContent)]:[e.className,e.textContent])),
+    [['ad-area','Work'],['ad-meet','2 meetings.'],['ad-sub','Done today'],['ul',['Send the invoice']]],why);
    await page.evaluate(()=>document.querySelector('#area-digest').close())};
   const tap=async tag=>{await elsewhere();await page.evaluate(t=>{location.hash='chat='+t},tag)};  // what inject.js does with a tapped push
   await page.goto(base);await page.locator('#task-'+TODO).waitFor();
