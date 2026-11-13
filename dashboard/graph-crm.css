@@ -200,7 +200,7 @@ button.convo-earlier{align-self:center;margin:0 0 var(--sp-1);padding:6px 8px;mi
 /*@lazy*/
 .fleet-mark{color:var(--text)}.graph-sub:is(.fleet-mark,.fleet-named,.detail-sub){white-space:normal}
 /*@eager*/
-.share-fp{font-size:var(--fs-xs);color:var(--muted);margin:4px 0 0}.share-fp>summary{width:fit-content;cursor:pointer;font:var(--fw-regular,400) var(--fs-xs)/1.4 var(--sans);color:var(--muted)}.share-fp>.mono{margin:2px 0 0;color:var(--faint);letter-spacing:.02em}
+.share-fp{font-size:var(--fs-xs);color:var(--muted);margin:4px 0 0}.share-fp summary{cursor:pointer;font:400 var(--fs-xs)/1.4 var(--sans)}.share-fp p{margin:2px 0 0;color:var(--faint)}
 /*@lazy*/
 /* On a person or organization page every row wraps (a long To you, address or relation), never cut off; Edit stays in reach. */
 .graph-detail .graph-sub{white-space:normal;overflow-wrap:anywhere}.graph-detail .graph-sub :is(button,summary){flex:0 0 auto}
