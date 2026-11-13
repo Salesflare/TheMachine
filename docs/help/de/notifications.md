@@ -81,8 +81,7 @@ Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe 
 
 Sie kommt an Arbeitstagen einmal zu ihrer Uhrzeit unter **Arbeitszeiten**, standardmäßig 15 Minuten vor **Bis**, auf den Wegen, die du oben in ihrer Zeile wählst. Ein Tag ohne erledigte Aufgabe oder gehaltenen Termin bekommt keine. Sie beginnt mit deinem Tag in einer Zahl, etwa "Guten Abend Sam, heute 4 Aufgaben erledigt", dann folgen ein Teil **Arbeit** und ein Teil **Privat**. Ein leerer Teil fällt weg. Jeder Teil hat:
 
-- die Termine des Tages in einer eigenen Zeile, etwa "3 Termine: Preisgespräch und 2 weitere.";
-- **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, und wie viele noch;
+- **Heute erledigt**: bis zu drei Aufgaben, die du oder deine Machine erledigt habt, dann "+12 weitere" und die Termine des Tages, etwa "+3 Termine: Preisgespräch und 2 weitere";
 - **Offen für morgen** (an einem Freitag dein nächster Arbeitstag): die ersten Termine und was fällig ist.
 
 Am Ende steht, wie viele Aufgaben dich noch brauchen. Tippst du auf den Push oder auf den Link am Ende der E-Mail, liest du sie noch einmal, mit **Arbeit kopieren** und **Privat kopieren**. Willst du sie nicht, schalte ihre Zeile aus.
