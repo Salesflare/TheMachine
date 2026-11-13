@@ -102,7 +102,9 @@ Nas suas primeiras tarefas, uma linha curta abaixo dos botões mostra o essencia
 
 No seu primeiro dia, o topo de Tarefas diz oi pelo seu nome e mostra quem espera sua resposta há mais tempo. A Machine rascunha essa resposta primeiro, para que esteja pronta quando você chegar. Nada sai até você enviar. A linha some depois do seu primeiro dia ou da sua primeira tarefa decidida.
 
-Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização quando trata de uma (nunca só porque alguém trabalha lá), o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph. Um nome e uma organização mostram a foto ou o logo quando o Graph tem um.
+Cada tarefa começa pelo título. A linha abaixo diz de quem ela trata, a organização quando trata de uma (nunca só porque alguém trabalha lá), o projeto, Trabalho ou Pessoal (em **Todos**) e quando chegou, além de como está quando o grupo dela ainda não diz. Toque em um nome para abrir a página no Graph.
+
+Um nome e uma organização mostram a foto ou o logo quando o Graph tem um. Se não, mostram as iniciais. Um logo que não daria para ler tão pequeno, como branco em fundo transparente ou um logotipo muito largo, também mostra a inicial.
 
 Às vezes uma linha discreta abaixo do texto diz o que não se sabe, como "Último contato há 12 dias por e-mail; nada desde então." Ela só aparece quando o último contato é antigo ou ainda está sem resposta, e cita canais não conectados por onde talvez tenham respondido, como o WhatsApp. Sua Machine prepara com os mesmos fatos, então ela diz o que não sabe em vez de adivinhar.
 

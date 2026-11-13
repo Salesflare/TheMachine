@@ -1732,8 +1732,8 @@ def _build_in(db, config, now, team, kin, locked, history=False):
         role, role_by = said.get('org:' + domain, (None, None))
         # What the owner wrote wins; the email domain is the website when nothing else says one.
         profile = {'website': enrichment.website(domain), **(profiles.get(domain) or {}), **edits.get(domain, {})}
-        if 'logo' not in profile and domain in site_logos:  # no logo from the lookup or the owner: the one from its own site
-            profile['logo'] = 'api/person-photo?p=' + site_logos[domain]
+        if domain in site_logos and 'logo' not in edits.get(domain, {}):  # its own site's icon: the logo when the lookup has none, else for small sizes
+            profile['icon' if 'logo' in profile else 'logo'] = 'api/person-photo?p=' + site_logos[domain]
         nodes.append(('org:' + domain, 'org', org_name(domain)[:200], round(total, 4),
                       max((last_day[p].isoformat() for p, _ in people + inboxes.get(domain, []) if p in last_day), default=None), len(people), None, 0, None,
                       json.dumps({'domain': domain, 'role': role, 'role_by': role_by, 'paying': domain in paying_names, 'profile': profile,

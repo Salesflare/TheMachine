@@ -102,7 +102,9 @@ Sulle tue prime attività, una riga breve sotto i pulsanti mostra l'essenziale: 
 
 Il primo giorno, la parte alta delle Attività ti saluta per nome e mostra chi aspetta la tua risposta da più tempo. The Machine prepara prima quella risposta, così è pronta quando arrivi. Non parte nulla finché non la invii. La riga sparisce dopo il primo giorno o la prima attività decisa.
 
-Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, l'organizzazione quando riguarda una (mai solo perché qualcuno ci lavora), il progetto, Lavoro o Personale (sotto **Tutti**) e quando è arrivata, più a che punto è quando il suo gruppo non lo dice già. Tocca un nome per aprirne la pagina nel Graph. Un nome e un'organizzazione mostrano la loro foto o il loro logo quando il Graph ne ha uno.
+Ogni attività inizia con il suo titolo. La riga sotto dice chi riguarda, l'organizzazione quando riguarda una (mai solo perché qualcuno ci lavora), il progetto, Lavoro o Personale (sotto **Tutti**) e quando è arrivata, più a che punto è quando il suo gruppo non lo dice già. Tocca un nome per aprirne la pagina nel Graph.
+
+Un nome e un'organizzazione mostrano la loro foto o il loro logo quando il Graph ne ha uno. Altrimenti mostrano le iniziali. Un logo che così piccolo non si leggerebbe, come bianco su sfondo trasparente o una scritta molto larga, mostra anche lui l'iniziale.
 
 A volte una riga discreta sotto il testo dice cosa non si sa, come «Ultimo contatto 12 giorni fa via email; niente da allora.» Compare solo quando l'ultimo contatto è vecchio o ancora senza risposta, e nomina i canali non collegati dove potrebbero aver risposto, come WhatsApp. La tua Machine prepara con gli stessi fatti, quindi dice cosa non sa invece di tirare a indovinare.
 
