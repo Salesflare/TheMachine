@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Le tue chat WhatsApp, come dispositivo collegato al WhatsApp del tuo telefono, come WhatsApp su un computer. Quando lo colleghi, WhatsApp invia anche le chat più vecchie, spesso di anni. La tua Machine conserva tutto, e solo i messaggi degli ultimi 7 giorni diventano attività.
 
-Una foto, un messaggio vocale o un file senza didascalia compare per ciò che è, come "Immagine inviata". Gli avvisi di WhatsApp, come quello sulla crittografia o qualcuno che entra in un gruppo, non hanno testo e vengono esclusi.
+Una foto, un messaggio vocale o un file senza didascalia compare per ciò che è, come "Foto", con la sua icona. Gli avvisi di WhatsApp, come quello sulla crittografia o qualcuno che entra in un gruppo, non hanno testo e vengono esclusi.
 
 ## Leggi le foto
 

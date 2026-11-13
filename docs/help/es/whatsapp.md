@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Tus chats de WhatsApp, como dispositivo vinculado al WhatsApp de tu teléfono, igual que WhatsApp en un ordenador. Al conectar, WhatsApp también envía tus chats antiguos, a menudo de años. Tu Machine lo guarda todo, y solo los mensajes de los últimos 7 días se convierten en tareas.
 
-Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por ejemplo "Imagen enviada". Los avisos propios de WhatsApp, como el aviso de cifrado o que alguien se une a un grupo, no tienen texto y se dejan fuera.
+Una foto, un mensaje de voz o un archivo sin texto aparece como lo que es, por ejemplo "Foto", con su icono. Los avisos propios de WhatsApp, como el aviso de cifrado o que alguien se une a un grupo, no tienen texto y se dejan fuera.
 
 ## Leer fotos
 

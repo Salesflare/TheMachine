@@ -55,9 +55,9 @@ try{
   assert.deepEqual(await pic('lee@globex.example').locator('img').evaluate(i=>[i.getAttribute('referrerpolicy'),i.getAttribute('loading'),i.width,i.height,i.alt]),['no-referrer','lazy',26,26,'']);
   await page.waitForFunction(()=>document.querySelector('article[data-node="email:lee@globex.example"] .person-pic img')?.complete);
   await page.waitForFunction(()=>!document.querySelector('article[data-node="email:rae@initech.example"] .person-pic img'));  // failed: initials stay
-  assert.equal((await pic('rae@initech.example').textContent()).trim(),'RQ');
+  assert.equal(await pic('rae@initech.example').getAttribute('data-i'),'RQ');
   assert.equal(await pic('mia@hooli.example').locator('img').count(),0);  // the service's own link: never loaded
-  assert.equal((await pic('kai@umbrella.example').textContent()).trim(),'KN');
+  assert.equal(await pic('kai@umbrella.example').getAttribute('data-i'),'KN');
   assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub').textContent(),/^Head of Sales · Customer · last contact yesterday · usually every 7 days · /);
   assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub time').getAttribute('title'),/^\w+day, \w+ \d+, \d{4}, \d\d:\d\d$/);  // the exact date on hover
   assert.match(await page.locator('article[data-node="email:lee@globex.example"] .graph-sub').getAttribute('title'),/^Head of Sales · Customer · last contact yesterday · /);  // the row's own hover: plain text

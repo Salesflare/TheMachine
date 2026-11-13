@@ -74,7 +74,7 @@ Ein neues Board, oder ein vorgeschlagenes Board, das du speicherst, durchsucht e
 
 Eine Prüfung setzt ein Projekt nur mit diesem Beleg in die letzte Phase, verlinkt auf seiner Seite. Ein Projekt ohne Board wird stattdessen als erledigt markiert, mit **Rückgängig** in seinem **⋯** unter Letzte Änderungen.
 
-Änderst du **Fertig, wenn** später und passt der Beleg nicht mehr, wird es wieder geöffnet; seine Aufgabe folgt dem neuen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Nichts wird ohne dich gesendet.
+Änderst du **Fertig, wenn** später und passt der Beleg nicht mehr, wird es wieder geöffnet; seine Aufgabe folgt dem neuen. **Erledigt** oder **Gewonnen** von Hand geht immer. Die Seite zeigt auch, was es aufhält (seit 10+ Tagen keine Antwort, ein überfälliges Versprechen), und legt eine Aufgabe dafür an, wenn es keine hat. Geprüft wird jeden Arbeitstag, auch wenn keine neuen Nachrichten kamen. Nichts wird ohne dich gesendet.
 
 ## Pipeline
 

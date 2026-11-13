@@ -812,6 +812,15 @@ class ReviewApp:
             except Exception as error:LOG.error('recap error=%s',type(error).__name__)
             try:self.still_needed_step()
             except Exception as error:LOG.error('still needed error=%s',type(error).__name__)
+            try:self.blockers_step()
+            except Exception as error:LOG.error('daily blockers error=%s',type(error).__name__)
+
+    def blockers_step(self):
+        """Projects' blockers once a day without a review (ReviewStore.daily_blockers), only once reviews are on: like
+        the reviews' own to-dos, none before."""
+        if (self.config.get('review_worker') or {}).get('enabled'):
+            return self.store.daily_blockers()
+        return False
 
     def preview_review_action(self, name, args, owner_dashboard=False):
         return self.start_preview()

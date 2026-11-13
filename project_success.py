@@ -17,9 +17,11 @@ its proof comes in (finish_analysis stages or graph, with "done": true), the sam
 done (outcome 'won', which the dashboard calls Done for work that isn't a deal), with Undo under Recent changes. The
 owner's Reopen stands until a message newer than it proves it again.
 
-The same review run keeps an eye on the open ones (monitor, no loop of its own): no reply for NO_REPLY_DAYS, an
-overdue promise on it (the owner's, or theirs that they are late with). A blocker with a clear next step gets one
-to-do, only when the project has no open to-do already, and never one that sends anything: the owner sees it first.
+The same review run keeps an eye on the open ones (monitor): no reply for NO_REPLY_DAYS, an overdue promise on it
+(the owner's, or theirs that they are late with). A blocker with a clear next step gets one to-do, only when the
+project has no open to-do already, and never one that sends anything: the owner sees it first. A day with no review
+(no new messages, reviews paused) still gets the same check once, by plain code in the owner's work hours
+(ReviewStore.daily_blockers; checked_on says when it last ran), so a project that went quiet is caught without them.
 """
 import datetime as dt
 import json
@@ -45,6 +47,7 @@ URL = re.compile(r'https://[^\s"\'<>()\[\]]+')
 
 def ensure(db):
     db.execute(SCHEMA)
+    db.execute('CREATE TABLE IF NOT EXISTS project_success_checks(id INTEGER PRIMARY KEY CHECK(id=1),checked_at TEXT)')
     have = {r[1] for r in db.execute('PRAGMA table_info(project_success)')}
     for column in COLUMNS:
         if column.split()[0] not in have:
@@ -503,7 +506,15 @@ def monitor(db, now, limit=MONITOR_LIMIT):
             _put(db, s['project_id'], now, blocker=json.dumps(found) if found else None, blocker_at=now if found else None, todo_id=todo_id)
         else:
             db.execute('UPDATE project_success SET updated_at=? WHERE project_id=?', (now, s['project_id']))
+    db.execute('INSERT OR REPLACE INTO project_success_checks(id,checked_at) VALUES(1,?)', (now,))
     return actions
+
+
+def checked_on(db):
+    """When monitor last ran (a review's or the daily check), or None."""
+    ensure(db)
+    row = db.execute('SELECT checked_at FROM project_success_checks WHERE id=1').fetchone()
+    return row[0] if row else None
 
 
 def linked(db, project_id, todo_id, now):

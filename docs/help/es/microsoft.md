@@ -26,7 +26,7 @@ El calendario nunca se cambia.
 
 También se pide a Microsoft leer los perfiles básicos de tu organización (nombre, email y foto) y tus contactos de Outlook. Tu Machine solo los usa para fotos, cargos y empresas de personas que ya están en tu Graph, hasta 200 fotos al día. Si alguien no tiene foto, se vuelve a mirar a los 30 días.
 
-Puede que el admin de tu organización tenga que aprobar las fotos de colegas. Si no lo hace, Outlook se conecta igual, solo que sin esas fotos. Una cuenta conectada antes recibe una tarea: pulsa **Reconectar**, o **No hace falta** para cerrarla para siempre.
+Puede que el admin de tu organización tenga que aprobar las fotos de colegas. Si no lo hace, Outlook se conecta igual, solo que sin esas fotos. Una cuenta conectada antes recibe una tarea: pulsa **Reconectar**, o **No hace falta** para cerrarla para siempre. Una cuenta personal (Outlook.com, Hotmail) no tiene colegas, así que su tarea solo pide las fotos de los contactos.
 
 ## Conéctalo
 

@@ -451,6 +451,7 @@ class ViewsStore(ConversationStore):
                 body = re.sub(r'^Sent image(?:\n|$)', '', said[0])  # the photo itself says that
                 shows = re.search(r'(?m)^Shows: (.+)$', said[1]) if len(said) > 1 else None
                 photo['alt'] = shows[1][:300] if shows else ''
+            media = {} if photo else message_view.media_shown(r['kind'], m, body)  # a photo not kept, a video: its chip
             result.append(message_view.shape(r['kind'], {'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
                            'cc': str(m.get('cc') or '')[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
@@ -458,7 +459,7 @@ class ViewsStore(ConversationStore):
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
                            **({'phone_url': phone} if r['kind'] == 'gmail.message' and (phone := phone_link(url, m.get('thread_id'))) else {}),
                            'event_id': r['id'], 'gmail': {'account_id': r['account_id'], 'message_id': r['source_id']} if r['kind'] == 'gmail.message' else None,
-                           **({'photo': photo} if photo else {}),
+                           **({'photo': photo} if photo else {}), **media,
                            **chat_view(r['kind'], m, body, r['occurred_at'])}, m))
         mail = [o for o in result if o.get('view') == 'email']
         rest = [o for o in result if o.get('view') != 'email']

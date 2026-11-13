@@ -102,7 +102,9 @@ Bei deinen ersten Aufgaben zeigt eine kurze Zeile unter den Buttons das Wichtigs
 
 An deinem ersten Tag begrüßt dich der Kopf von Aufgaben mit Namen und zeigt, wer am längsten auf deine Antwort wartet. Die Machine entwirft diese Antwort zuerst, damit sie bereitliegt, wenn du ankommst. Nichts geht raus, bevor du sie sendest. Die Zeile verschwindet nach deinem ersten Tag oder deiner ersten entschiedenen Aufgabe.
 
-Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, die Organisation, wenn es um eine geht (nie nur, weil jemand dort arbeitet), das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen. Name und Organisation zeigen ihr Foto oder Logo, wenn der Graph eines hat.
+Jede Aufgabe beginnt mit ihrem Titel. Die Zeile darunter zeigt, um wen es geht, die Organisation, wenn es um eine geht (nie nur, weil jemand dort arbeitet), das Projekt, Arbeit oder Privat (unter **Alle**) und wann sie kam, dazu ihren Stand, wenn ihre Gruppe ihn nicht schon nennt. Tippe auf einen Namen, um seine Seite im Graph zu öffnen.
+
+Name und Organisation zeigen ihr Foto oder Logo, wenn der Graph eines hat. Sonst zeigen sie ihre Initialen. Ein Logo, das so klein nicht lesbar wäre, etwa Weiß auf durchsichtigem Grund oder ein breiter Schriftzug, zeigt ebenfalls die Initiale.
 
 Manchmal sagt eine dezente Zeile unter dem Text, was nicht bekannt ist, etwa „Letzter Kontakt vor 12 Tagen per E-Mail; seitdem nichts.“ Sie erscheint nur, wenn der letzte Austausch alt oder noch unbeantwortet ist, und nennt nicht verbundene Kanäle, über die vielleicht eine Antwort kam, etwa WhatsApp. Deine Machine bereitet mit denselben Fakten vor, also sagt sie, was sie nicht weiß, statt zu raten.
 
@@ -114,7 +116,7 @@ Ein Titel sagt, was zu tun ist. Er ändert sich nur, wenn sich das ändert, etwa
 
 Folgt der Entwurf dem Hinweis von jemand anderem in einer anderen Nachricht, etwa dem Vorschlag einer Kollegin in Slack, sagt eine Zeile unter der Aufgabe das, etwa „Laut Sam in #ops“. Tippe darauf, um diese Nachricht hier zu lesen, mit In Slack oder Gmail öffnen darin. Ist diese Nachricht die Quelle der Aufgabe selbst, zeigt die Quellzeile sie schon, also gibt es keine zweite Zeile.
 
-Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, hat eine dünne Linie daneben.
+Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, steht unter „Diese Aufgabe“. In WhatsApp, Telegram oder Signal stehen deine eigenen Nachrichten rechts, wie in der App.
 
 Eine Antwort in einem Slack-Thread zeigt auch, was vor dem Thread gesagt wurde. Ein Link der Aufgabe zu ihrer eigenen Nachricht öffnet sie auch hier, mit **In Slack öffnen** unten.
 

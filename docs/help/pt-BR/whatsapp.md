@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Suas conversas do WhatsApp, como um dispositivo conectado ao WhatsApp do seu celular, igual ao WhatsApp no computador. Quando você conecta, o WhatsApp também envia suas conversas antigas, muitas vezes de anos. Sua Machine guarda tudo, e só as mensagens dos últimos 7 dias viram tarefas.
 
-Uma foto, mensagem de voz ou arquivo sem legenda aparece pelo que é, como "Imagem enviada". Os avisos do próprio WhatsApp, como o aviso de criptografia ou alguém entrando em um grupo, não têm texto e ficam de fora.
+Uma foto, mensagem de voz ou arquivo sem legenda aparece pelo que é, como "Foto", com seu ícone. Os avisos do próprio WhatsApp, como o aviso de criptografia ou alguém entrando em um grupo, não têm texto e ficam de fora.
 
 ## Ler fotos
 

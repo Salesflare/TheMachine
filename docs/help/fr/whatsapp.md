@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Vos discussions WhatsApp, comme un appareil associé au WhatsApp de votre téléphone, comme WhatsApp sur un ordinateur. À la connexion, WhatsApp envoie aussi vos anciennes discussions, souvent sur des années. Votre Machine garde tout, et seuls les messages des 7 derniers jours deviennent des tâches.
 
-Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par exemple « Image envoyée ». Les notifications de WhatsApp lui-même, comme l’avis de chiffrement ou l’arrivée de quelqu’un dans un groupe, n’ont pas de texte et sont exclues.
+Une photo, un message vocal ou un fichier sans légende apparaît tel quel, par exemple « Photo », avec son icône. Les notifications de WhatsApp lui-même, comme l’avis de chiffrement ou l’arrivée de quelqu’un dans un groupe, n’ont pas de texte et sont exclues.
 
 ## Lire les photos
 

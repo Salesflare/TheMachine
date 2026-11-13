@@ -26,7 +26,7 @@ L’agenda n’est jamais modifié.
 
 Microsoft est aussi sollicité pour lire les profils de base de votre organisation (nom, e-mail et photo) et vos contacts Outlook. Votre Machine ne s’en sert que pour les photos, postes et entreprises des personnes déjà dans votre Graph, jusqu’à 200 photos par jour. Une personne sans photo est revérifiée après 30 jours.
 
-L’admin de votre organisation devra peut-être approuver les photos des collègues. Sinon, Outlook se connecte quand même, simplement sans ces photos. Un compte connecté avant cela reçoit une tâche : appuyez sur **Reconnecter**, ou sur **Pas nécessaire** pour la fermer définitivement.
+L’admin de votre organisation devra peut-être approuver les photos des collègues. Sinon, Outlook se connecte quand même, simplement sans ces photos. Un compte connecté avant cela reçoit une tâche : appuyez sur **Reconnecter**, ou sur **Pas nécessaire** pour la fermer définitivement. Un compte personnel (Outlook.com, Hotmail) n’a pas de collègues : sa tâche ne demande que les photos des contacts.
 
 ## Le connecter
 

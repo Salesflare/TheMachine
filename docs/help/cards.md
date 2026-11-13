@@ -102,7 +102,9 @@ On your first to-dos, a short tip shows the key moves: **Ask for changes** and *
 
 On your first day, the top of To-dos greets you and names who has waited longest on your reply. That reply is drafted first, so it's ready when you arrive.
 
-Each to-do starts with its title. The line under it says who it's about, the organization when it's about one (never just because someone works there), the project, Work or Personal and when it came in. Tap a name to open their page in the Graph. A name and an organization show their photo or logo when the Graph has one.
+Each to-do starts with its title. The line under it says who it's about, the organization when it's about one (never just because someone works there), the project, Work or Personal and when it came in. Tap a name to open their page in the Graph.
+
+A name and an organization show their photo or logo when the Graph has one, and their initials otherwise. A logo that wouldn't read that small, like white on a clear background or a wide wordmark, shows the initial too.
 
 Sometimes a quiet line says what isn't known, like "Last contact 12 days ago by email; nothing since." It shows when the last word with them is old or unanswered, and names channels that aren't connected, like WhatsApp. Your Machine says what it doesn't know instead of guessing.
 
@@ -114,7 +116,7 @@ Above the draft, one faint line names the message it came from, with that servic
 
 When the draft follows someone's input elsewhere, like a teammate's suggestion in Slack, a line says so, like "Based on Sam in #ops". Tap it to read that message.
 
-A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. That message has a thin line beside it and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
+A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. In WhatsApp, Telegram or Signal your messages sit on the right, as in the app. The to-do's message is marked "This to-do" and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
 
 A reply in a Slack thread also shows what was said before the thread started. A to-do's link to its own message opens it here too, with **Open in Slack** at the bottom.
 
