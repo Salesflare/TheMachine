@@ -258,7 +258,7 @@ Priya". It covers:
 - meetings with the same company on several calendars;
 - companies where two or more of you are on separate threads with the same people there ("You and Priya are both in
   touch with Globex");
-- companies that went quiet, when several of you knew them or they are a customer.
+- companies that went quiet (no contact for two weeks or more), when several of you knew them or they are a customer.
 
 **Both in touch** means a real chance of talking past each other: each of you took part yourselves (wrote, met, or
 answered in a shared inbox), on separate threads, with the same person at the company. One thread you are all on (cc'd)
@@ -270,12 +270,22 @@ went to two or more of you, to a shared address of the team (sales@, info@, a gr
 is in touch with, or from a customer. Each line says which. Mail only you got, from someone only you know, stays in
 To-dos. Cold sales, newsletters and notifications never count.
 
-**In To-dos** (fleet_brief_todos.py). Once a brief is told, each line is a Work to-do in For you, with the company as
-its organization and the line's why under its title (teammates linked to their person pages). It has **Ask the team** (the
-Fleet's free question, prefilled and editable; the answers show on the to-do, which then offers **Done**), **Open** (that
-company's mail, when it came to you) and **Not needed**. Details shows when a waiting email came in, who on the team is
-in touch, the team's latest threads with that company as the Team Graph shares them (subject, sender, date, whose; never
-a private, personal or sensitive thread, never a preview) and your own newest work email from them. A line about a
+**In To-dos** (fleet_brief_todos.py). Once a brief is told, a line that says something specific is a Work to-do in For
+you, with the company as its organization and the line's why under its title (teammates linked to their person pages).
+Specific comes from what your own Machine already knows, with no model call: the company's open projects in your Graph
+(what's at stake, with their stage), whether it is a customer, and the exchange the line hangs on in your own work
+accounts (a shared CRM inbox, a cc), with the review's one line about it when it has one. A waiting line becomes "Globex
+has been waiting on Priya since Mon", with what they asked, what's at stake and who else talks to them; when only the
+teammate has the email, it says so and who to ask. A quiet line becomes "Globex has been quiet for 5 weeks", with the
+last exchange, what's at stake and the usual rhythm, and is made only when something is at stake. Anything vaguer stays
+a line of the brief, and an open to-do that turns vague closes. A waiting line whose thread, in your own copy, already
+has a reply from someone it went to settles as answered. The to-do has **Ask the team** (the Fleet's free question,
+prefilled with the specific question and editable; the answers show on the to-do, which then offers **Done**), **Open**
+(that company's mail, when it came to you) and **Not needed**. Details shows when a waiting email came in, what they
+wrote (its line and subject; tapping the subject opens it in the reader), what's at stake (links to the projects), the
+company's page, who on the team is in touch, the team's latest threads with that company as the Team Graph shares them
+(subject, sender, date, whose; never a private, personal or sensitive thread, never a preview) and the newest work email
+from them. A line about a
 company you already have an open to-do for (its organization, or its mail on that to-do) joins that to-do instead, as a
 note with Ask the team. While a brief to-do is open the brief is rebuilt every half hour: a line the newer brief no longer has
 (someone replied or claimed it, you are back in touch) closes its to-do by itself. Not needed on the to-do, on the old

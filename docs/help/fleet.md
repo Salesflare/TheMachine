@@ -51,10 +51,12 @@ Anyone in the Fleet can **Remove** a learning: it's gone for everyone and isn't 
 
 ## Team brief
 
-Pick **Daily** or **Weekly** for **Team brief** in the Fleet tab, under **Sharing**. Your Machine then asks your teammates' Machines for counts and dates. What needs you lands in To-dos, under Work: a customer waiting for a reply, a company that went quiet, two of you writing the same people, or a shared meeting.
+Pick **Daily** or **Weekly** for **Team brief** in the Fleet tab, under **Sharing**. Your Machine then asks your teammates' Machines for counts and dates. What needs you lands in To-dos, under Work: a customer waiting on a teammate, a company quiet for two weeks or more, two of you writing the same people, or a shared meeting.
 
-- The company and teammates link to their pages. **Details** shows who on the team is in touch and their latest threads, only what the [Team Graph](team-graph.md) shares.
-- **Ask the team** sends them a question about it. Their answers show on the to-do.
+- A to-do says who it waits on, since when, what they asked and what's at stake, like an open project. With nothing specific to say, it stays a line in the brief, not a to-do.
+- The company and teammates link to their pages. **Details** shows what they wrote (tap it to read it), what's at stake, who on the team is in touch and their latest threads, only what the [Team Graph](team-graph.md) shares.
+- When what they wrote is only in a teammate's mail, the to-do says who to ask.
+- **Ask the team** sends them a question about it, prefilled. Their answers show on the to-do.
 - **Not needed** closes it, and the brief learns. It comes back only with something new.
 - When someone replies or takes it on, the to-do closes by itself. One about a company you already have a to-do for joins that to-do.
 

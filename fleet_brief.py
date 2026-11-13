@@ -131,6 +131,7 @@ def assemble_brief(own, answers, claimed=(), members=None):
 
 
 BRIEF_SHOWN = 5  # items a brief shows before "Show more"
+QUIET_MIN_DAYS = 14  # the Graph's own floor for gone quiet (graph.build): in touch more recently than this isn't quiet
 
 
 def _brief_date(value):
@@ -259,7 +260,8 @@ def brief_items(view, today=None, hidden=(), opener=None, learned=None, limit=12
         items.append({'key': 'unanswered:' + x['domain'], 'kind': 'waiting', 'score': 100 + min(days, 14) * 5 + (20 if several else 0),
                       'title': t('{} is waiting for a reply', company(x)) + (t(' ({} emails)', count) if count > 1 else ''),
                       'why': f"{waited}, {why}", 'ask': t('Who is answering {}?', company(x)),
-                      'open': opener(x['domain']) if 'You' in who else '', **_raw(x, x.get('since'), who + [w for w in also if w not in who], short)})
+                      'open': opener(x['domain']) if 'You' in who else '', **_raw(x, x.get('since'), who + [w for w in also if w not in who], short),
+                      'to': [short.get(w, w) for w in team], 'to_me': 'You' in who})
     for x in view.get('meetings') or []:
         d = _brief_date(x.get('day'))
         soon = d is not None and 0 <= (d - today).days <= 3
@@ -278,6 +280,9 @@ def brief_items(view, today=None, hidden=(), opener=None, learned=None, limit=12
     for x in view.get('quiet') or []:
         who = x.get('who') or []
         if len(who) < 2 and not x.get('known'):  # one of you, a company the team doesn't know (a brief from before 2026-10-21)
+            continue
+        last = _brief_date(x.get('last'))
+        if not last or (today - last).days < QUIET_MIN_DAYS:  # a person gone quiet, but someone there wrote lately: not quiet
             continue
         why = [t('known to {}', people(who, True))] if len(who) > 1 else []
         why += [t(KNOWN_WHY[x['known']])] if x.get('known') in KNOWN_WHY else []

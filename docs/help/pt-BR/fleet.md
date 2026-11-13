@@ -53,7 +53,9 @@ Qualquer pessoa no Fleet pode **Remover** um aprendizado. Ele some para todos e 
 
 Escolha **Diário** ou **Semanal** em **Resumo da equipe**, na aba Fleet, em **Compartilhamento**. Sua Machine então pede às Machines da equipe contagens e datas. O que precisa de você chega em Tarefas, em Trabalho: um cliente esperando resposta, uma empresa que ficou em silêncio, dois de vocês escrevendo para as mesmas pessoas ou uma reunião em comum.
 
-- A empresa e os colegas levam às suas páginas. **Detalhes** mostra quem da equipe está em contato e as últimas conversas deles, só o que o [Team Graph](team-graph.md) compartilha.
+- Uma tarefa diz quem precisa responder, desde quando, o que pediram e o que está em jogo, como um projeto aberto. Sem nada concreto a dizer, fica como uma linha do resumo, não como tarefa.
+- A empresa e os colegas levam às suas páginas. **Detalhes** mostra o que escreveram (toque para ler), o que está em jogo, quem da equipe está em contato e as últimas conversas deles, só o que o [Team Graph](team-graph.md) compartilha.
+- Se o que escreveram está só no e-mail de um colega, a tarefa diz a quem perguntar.
 - **Perguntar à equipe** envia a ela uma pergunta sobre isso. As respostas aparecem na tarefa.
 - **Não precisa** fecha a tarefa, e o resumo aprende. Ela só volta com algo novo.
 - Quando alguém responde ou assume, a tarefa fecha sozinha. Se você já tem uma tarefa sobre essa empresa, ela entra nessa tarefa.

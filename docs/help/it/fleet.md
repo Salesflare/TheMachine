@@ -53,7 +53,9 @@ Chiunque nella Fleet può premere **Rimuovi** su un apprendimento. Sparisce per 
 
 Scegli **Giornaliero** o **Settimanale** per **Brief del team** nella scheda Fleet, sotto **Condivisione**. La tua Machine chiede allora alle Machine del team conteggi e date. Ciò che ha bisogno di te arriva in Attività, sotto Lavoro: un cliente che aspetta una risposta, un’azienda che si è fatta silenziosa, due di voi che scrivono alle stesse persone o una riunione in comune.
 
-- L’azienda e i colleghi rimandano alle loro pagine. **Dettagli** mostra chi nel team è in contatto e i loro ultimi thread, solo ciò che il [Team Graph](team-graph.md) condivide.
+- Un’attività dice chi deve rispondere, da quando, cosa hanno chiesto e cosa c’è in gioco, come un progetto aperto. Se non c’è niente di concreto da dire, resta una riga del brief, non un’attività.
+- L’azienda e i colleghi rimandano alle loro pagine. **Dettagli** mostra cosa hanno scritto (tocca per leggerlo), cosa c’è in gioco, chi nel team è in contatto e i loro ultimi thread, solo ciò che il [Team Graph](team-graph.md) condivide.
+- Se quello che hanno scritto è solo nella posta di un collega, l’attività dice a chi chiedere.
 - **Chiedi al team** gli manda una domanda al riguardo. Le risposte compaiono sull’attività.
 - **Non serve** la chiude, e il brief ne tiene conto. Torna solo con qualcosa di nuovo.
 - Quando qualcuno risponde o se ne occupa, l’attività si chiude da sola. Se hai già un’attività su quell’azienda, si unisce a quella.
