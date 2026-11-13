@@ -14,7 +14,7 @@ Una sincronización fallida que una posterior ya compensó se muestra en gris; s
 
 Sus cifras muestran todo lo que trajo, también su [historial](history.md), lo que llegó en las últimas 24 h y lo que aún no se ha revisado. Un calendario cuenta eventos: todos, los de los próximos 7 días y los de las últimas 24 h.
 
-Cada fuente lleva el nombre de su cuenta, como lo llama el servicio: tu dirección, un perfil de X, un espacio de trabajo de Slack o de quién es el Signal o el Telegram. Debajo: **Trabajo** o **Personal**, y la dirección o el usuario cuando el nombre aún no lo dice.
+Cada fuente lleva el nombre de su cuenta, como lo llama el servicio: tu dirección, un perfil de X, un espacio de trabajo de Slack o de quién es el Signal o el Telegram. Debajo: **Trabajo** o **Personal**, y la dirección o el usuario cuando el nombre aún no lo dice. Si dos fuentes de una pestaña tienen el mismo nombre, cada una dice también qué las distingue, como Slack o X, o la dirección del espacio de trabajo.
 
 Debajo de su estado, cada fuente dice en una línea lo que trae y, cuando puede actuar, que solo lo hace después de que pulses **Enviar** o des el visto bueno.
 

@@ -14,7 +14,7 @@ A failed sync that a later one made up for is shown in gray; only a failure that
 
 Its counts show everything it brought in, its [history](history.md) too, what came in the last 24 hours and what isn't checked yet. A calendar counts its events.
 
-Each source is named after its account, the way the service names it: your address, an X profile, a Slack workspace, or whose Signal or Telegram it is. Under the name: **Work** or **Personal**, plus the address or handle when the name doesn't already say it.
+Each source is named after its account, the way the service names it: your address, an X profile, a Slack workspace, or whose Signal or Telegram it is. Under the name: **Work** or **Personal**, plus the address or handle when the name doesn't already say it. Two sources on one tab with the same name also say what tells them apart, like Slack or X, or the workspace’s address.
 
 Each source also says in one line what it brings in and, if it can act, that it acts only after you press **Send** or OK it.
 

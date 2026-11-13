@@ -150,12 +150,15 @@ def card_title(account, accounts=(), state=None, t=None):
         return own
     if told:
         return t('{}’s {}', told.split()[0], provider) if service in OWNED_CHATS else told
+    handle = ' '.join(str(account.get('handle') or account.get('login') or '').split())[:80].lstrip('@')
+    handle = handle if handle and handle != account.get('id') and handle.casefold() != service else ''  # a handle may look like a key ('sam-example')
     for named in (account.get('email'), account.get(WORKSPACE_FIELDS.get(service, 'workspace_name')), account.get('workspace')):
         if usable_name(named, account):  # its address; an Intercom, Stripe or Shortcut by its workspace
-            return usable_name(named, account)
-    handle = usable_name(account.get('handle'), account)
+            named = usable_name(named, account)
+            # a handle kept as its address (a GitHub login) reads as one: '@sam-example', never a bare 'SamExample'
+            return '@' + handle if handle and named.lstrip('@').casefold() == handle.casefold() else named
     if handle:
-        return '@' + handle.lstrip('@')
+        return '@' + handle
     if service in UNNAMED:
         return UNNAMED[service]
     # several of this kind without a name: told apart by their order
@@ -212,6 +215,41 @@ def account_card(account, accounts=(), state=None, labels=None, t=None):
             and not any(_overlaps(detail, p) for p in parts):
         parts.append(detail)
     return {'card_title': title, 'card_subtitle': ' · '.join(p for p in parts if p)}
+
+
+# Connections' own tabs: every other + Add group shares Other sources (the dashboard's HEALTH_TABS)
+PAGE_TABS = ('mail', 'calendar', 'chat')
+# Where a workspace keeps its address ('acme.slack.com'), which tells two of the same name apart
+HOSTS = ('slack_host', 'workspace_domain', 'domain')
+
+
+def page_tab(group):
+    """The Connections tab a card of this + Add group sits on."""
+    return group if group in PAGE_TABS else 'other'
+
+
+def tell_apart(cards, accounts=()):
+    """Cards on one Connections tab that read the same (title and subtitle): each subtitle gets the one thing that tells
+    them apart, the first that differs for every one of them: the provider ('Slack', 'X'), the workspace's address
+    ('acme-eu.slack.com'), the address or handle (even one the title says already), else their order. Changes cards in place."""
+    by_id = {a.get('id'): a for a in accounts or () if isinstance(a, dict)}
+    same = {}
+    for card in cards:
+        if card.get('card_title'):
+            same.setdefault((page_tab(card.get('group')), card['card_title'], card.get('card_subtitle') or ''), []).append(card)
+    provider = lambda a: SERVICES.get(account_service(a)) or service_name(account_service(a)) or ''
+    host = lambda a: next((str(a[k]).strip() for k in HOSTS if str(a.get(k) or '').strip()), '')
+    for group in (g for g in same.values() if len(g) > 1):
+        found = [by_id.get(c.get('id')) or {} for c in group]
+        for tells in (provider, host, card_detail, lambda a: ' · '.join(p for p in (provider(a), card_detail(a)) if p)):
+            values = [tells(a) for a in found]
+            if all(values) and len({v.casefold() for v in values}) == len(values):
+                break
+        else:  # nothing of their own differs: their order on the page
+            values = [f'{provider(a)} {at}'.strip() for at, a in enumerate(found, 1)]
+        for card, value in zip(group, values):
+            card['card_subtitle'] = ' · '.join(p for p in (card.get('card_subtitle'), value) if p)
+    return cards
 
 
 def agent_name(tool, default='The agent'):

@@ -111,6 +111,63 @@ class CardNames(unittest.TestCase):
         self.assertEqual(names.account_card(health, [health]), {'card_title': 'Machine health', 'card_subtitle': ''})
 
 
+def page(accounts, labels=None):
+    """The cards Connections shows for these accounts, as status makes them: each named, then told apart on its tab."""
+    from machine.store import views
+    cards = [{'id': x['id'], 'group': views.source_group(names.account_service(x)),
+              **names.account_card(x, accounts, None, labels or LABELS)} for x in accounts]
+    return names.tell_apart(cards, accounts)
+
+
+class NeverTheSame(unittest.TestCase):
+    def assertApart(self, cards):
+        seen = {}
+        for card in cards:
+            key = (names.page_tab(card['group']), card['card_title'], card['card_subtitle'])
+            self.assertNotIn(key, seen, f'{card["id"]} and {seen.get(key)} both read {key[1:]!r}')
+            seen[key] = card['id']
+
+    def test_no_two_cards_on_a_tab_read_the_same_for_any_kind(self):
+        # every kind twice under one name, as two workspaces of one company would be, and once more bare
+        accounts = []
+        for service in registry():
+            base = {'service': service, 'transport': 'api', 'boundary': 'work:Acme', 'display_name': 'Acme'}
+            accounts += [{**base, 'id': f'{service}-1', 'email': 'sam@acme.com'}, {**base, 'id': f'{service}-2', 'email': 'robin@acme.com'},
+                         {**base, 'id': f'{service}-3'}, {'service': service, 'transport': 'api', 'id': f'{service}-bare', 'boundary': 'personal:me'}]
+        cards = page(accounts)
+        self.assertApart(cards)
+        # nothing of their own differs: told apart all the same
+        twins = [{'id': f'slack-{n}', 'service': 'slack', 'boundary': 'work:Acme', 'display_name': 'Acme'} for n in (1, 2)]
+        self.assertApart(page(twins))
+
+    def test_what_the_owner_saw(self):
+        slack = {'id': 'acme-slack', 'service': 'slack', 'boundary': 'work:Acme', 'display_name': 'Acme', 'email': 'sam@acme.com', 'slack_host': 'acme.slack.com'}
+        x = {'id': 'acme-x', 'service': 'x', 'boundary': 'work:Acme', 'display_name': 'Acme on X', 'email': '@acme', 'handle': 'acme'}
+        desk = {'id': 'acme-intercom', 'service': 'intercom', 'boundary': 'work:Acme', 'display_name': 'Acme', 'workspace_name': 'Acme'}
+        shown = {c['id']: (c['card_title'], c['card_subtitle']) for c in page([slack, x, desk])}
+        # Slack and X on Chat: the provider; Intercom alone with that name on Other sources: as it was
+        self.assertEqual(shown, {'acme-slack': ('Acme', 'Work · Slack'), 'acme-x': ('Acme', 'Work · X'), 'acme-intercom': ('Acme', 'Work')})
+        # two workspaces of one name: each by its address
+        eu = {**slack, 'id': 'acme-eu-slack', 'slack_host': 'acme-eu.slack.com'}
+        shown = {c['id']: c['card_subtitle'] for c in page([slack, eu])}
+        self.assertEqual(shown, {'acme-slack': 'Work · acme.slack.com', 'acme-eu-slack': 'Work · acme-eu.slack.com'})
+        # without one: by who is signed in
+        shown = {c['id']: c['card_subtitle'] for c in page([{**slack, 'slack_host': ''}, {**eu, 'slack_host': '', 'email': 'robin@acme.com'}])}
+        self.assertEqual(shown, {'acme-slack': 'Work · sam@acme.com', 'acme-eu-slack': 'Work · robin@acme.com'})
+        # the same address on Email and Calendar: their own tabs tell them apart already
+        mail = {'id': 'work-mail', 'boundary': 'work:Acme', 'email': 'sam@acme.com'}
+        cal = {**mail, 'id': 'work-cal', 'service': 'calendar'}
+        self.assertEqual([c['card_subtitle'] for c in page([mail, cal])], ['Work', 'Work'])
+
+    def test_a_github_card_reads_its_name_else_its_handle(self):
+        hub = {'id': 'github', 'service': 'github', 'transport': 'gh', 'boundary': 'work:Acme', 'display_name': 'GitHub', 'email': 'SamExample', 'login': 'SamExample'}
+        self.assertEqual(names.account_card(hub, [hub], None, LABELS), {'card_title': '@SamExample', 'card_subtitle': 'Work · Acme'})
+        self.assertEqual(names.account_card(hub, [hub], {'account_name': 'Sam Example'}, LABELS), {'card_title': 'Sam Example', 'card_subtitle': 'Work · Acme'})
+        named = {**hub, 'login': 'robin-x', 'email': 'robin-x'}  # a login that looks like a key is still a handle
+        self.assertEqual(names.account_card(named, [named], None, LABELS)['card_title'], '@robin-x')
+        self.assertEqual(names.account_card(named, [named], {'account_name': 'Sam Example'}, LABELS)['card_subtitle'], 'Work · Acme · @robin-x')
+
+
 class StatusCarriesThem(unittest.TestCase):
     def test_the_card_shows_what_the_machine_named_it(self):
         js = (ROOT / 'dashboard' / 'connections-cards.js').read_text(encoding='utf-8')

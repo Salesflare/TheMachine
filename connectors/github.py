@@ -32,7 +32,7 @@ REASONS = {'assign', 'author', 'comment', 'mention', 'review_requested', 'team_m
 class Source:
     def __init__(self, config, account, helpers):
         self.config, self.account, self.helpers = config, account, helpers
-        self.verified = False
+        self.verified, self.name = False, ''
 
     def get(self, path):
         SourceError = self.helpers.SourceError
@@ -53,9 +53,10 @@ class Source:
     def verify(self):
         """gh must be logged in as the configured login, not whoever ran `gh auth login` last."""
         if not self.verified:
-            if (self.get('user') or {}).get('login', '').lower() != self.account['login'].lower():
+            user = self.get('user') or {}
+            if user.get('login', '').lower() != self.account['login'].lower():
                 raise self.helpers.SourceError('account_identity_mismatch')
-            self.verified = True
+            self.verified, self.name = True, ' '.join(str(user.get('name') or '').split())[:100]
 
 
 def html(url):
@@ -78,6 +79,8 @@ def sync(store, config, account, helpers, source=None):
     source = source or Source(config, account, helpers)
     source.verify()
     state = store.checkpoint(account['id']) or {}
+    if getattr(source, 'name', ''):
+        state['account_name'] = source.name  # the profile's name: what its Connections card is called (machine/names.py)
     since = state.get('since') or (dt.datetime.fromisoformat(helpers.now()) - dt.timedelta(days=int(config.get('bootstrap_days', 7)))).strftime('%Y-%m-%dT%H:%M:%SZ')
     repos = {r.lower() for r in account.get('repos', [])}
     me = account['login'].lower()
