@@ -42,7 +42,7 @@ Auf einer gehosteten Machine:
 
 Beim Einrichten hat auch die Einrichtungsseite **Connect Microsoft Teams**.
 
-Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle **Microsoft Teams** oder **Teams-Meetings** und drücke **Mit Microsoft anmelden**.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle **Microsoft Teams** oder **Teams-Meetings** und drücke **Mit Microsoft anmelden**. Dort liest es deine Chats und Meeting-Chats. Kanäle und Besprechungsnotizen gibt es dort noch nicht.
 
 ## Entfernen
 

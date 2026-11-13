@@ -91,8 +91,11 @@ function renderConnectAdd(){const box=$('#connect-add');if(connectRun)return ren
  // Teams: one Microsoft sign-in, two tiles. Its chats under Chat, its meeting notes under Meetings as Teams meetings; either
  // one connects both, and both show it connected. Its card on Connections keeps the whole line (connectors/teams.py).
  for(const x of connectList.sources){const teams=x.service==='teams'&&x.group==='chat';
-  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Reads only.')}:x,'',why.has(x.name)),x.last);
-  if(teams)add('meetings',t('Teams meetings'),connectTile({...x,label:t('Teams meetings'),what:t('Meeting notes and transcripts from Teams. Reads only.')}))}
+  add(x.group,x.label,connectTile(teams?{...x,what:t('Chats and meeting chats from Teams. Read-only.')}:x,'',why.has(x.name)),x.last);
+  // meeting notes and transcripts need the admin's step, which only a hosted Machine's account page adds: on a self-hosted
+  // one its Teams sign-in reads the meeting chats
+  if(teams)add('meetings',t('Teams meetings'),connectTile({...x,label:t('Teams meetings'),
+   what:connectList.manage_url?t('Meeting notes and transcripts from Teams. Read-only.'):t('Meeting chats from Teams. Read-only.')}))}
  add('work','Codex',codexTile());add('other','GBrain',gbrainTile());
  const picks=[...why].map(([n,w])=>connectTile(by.get(n),w));
  const order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'}),list=(h,tiles,cls='')=>html`<section class="connect-group${cls}"><h4>${h}</h4><div class="connect-sources">${tiles}</div></section>`;
@@ -178,7 +181,9 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
  microsoft_docs:{label:'Microsoft',title:'Microsoft OneDrive',about:'Word, OneDrive and SharePoint. Outlook isn’t needed. Edits wait for your OK.'},
  microsoft_docs_write:{label:'Microsoft',title:'Microsoft OneDrive',about:'Lets The Machine create and edit your Word documents. Each change waits for your OK.'},
  google_meet:{label:'Google',title:'Google Meet',about:'Transcripts and Gemini notes of your meetings. Reads only.'},
- microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Reads only.'},
+ // selfAbout: a self-hosted Machine's sign-in reads chats only (no channels or meeting notes step there yet)
+ microsoft_teams:{label:'Microsoft',title:'Microsoft Teams',about:'Your chats and meeting chats. Channels and meeting notes need your admin’s OK. Reads only.',
+  selfAbout:'Your chats and meeting chats. Read-only.'},
  google_docs:{label:'Google',title:'Google Docs',about:'Reads and edits the docs you point it to, and makes new ones. Edits wait for your OK.'},
  whatsapp:{label:'WhatsApp',about:'Your WhatsApp chats, as a linked device. Replies only when you press Send on a to-do.'},
  android:{about:'The notifications on your Android phone, through the OpenClaw app.'},
@@ -272,7 +277,7 @@ async function openConnectLinkNow(){const m=/^#connect=(google|microsoft|microso
  connectSignin=signinOf(x,command.startsWith('f_')?'checking':command?ON_DASHBOARD.includes(m[1])?'starting':'connecting':m[2]?'stopped':'intro',command);$('#connect-add').dataset.sig='';renderConnectSignin();hostedPoll();viewTop($('#connect-add'))}
 function renderConnectSignin(){const s=connectSignin,box=$('#connect-add'),paired=connectList?.paired;
  const back=html`<button type="button" data-connect-back>Back</button>`;let body;
- const copy=SIGNIN_COPY[s.provider]||{};
+ const base=SIGNIN_COPY[s.provider]||{},copy=!s.hosted&&base.selfAbout?{...base,about:base.selfAbout}:base;
  if(s.provider==='codex')body=codexBody(s,back);  // Codex: its own code, on a hosted or a self-hosted Machine
  else if(s.hosted)body=hostedSigninBody(s,copy,back);  // a hosted Machine: its own form, never the pairing one
  else if(s.state==='started')body=html`<p>Sign in at ${s.label} in the tab that opened. This updates by itself.</p><div class="actions"><button type="button" data-signin-go>Start again</button>${back}</div>`;

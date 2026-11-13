@@ -44,7 +44,7 @@ try{
   // two tiles, one sign-in: its chats under Chat, Teams meetings under Meetings
   const tiles=page.locator('#connect-add [data-connect-signin="teams"]');await tiles.first().waitFor();
   assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connect-add [data-connect-signin="teams"]')].map(n=>[n.closest('.connect-group').querySelector('h4').textContent,n.innerText.replace(/\s+/g,' ').trim()])),
-   [['Chat','Microsoft Teams Chats and meeting chats from Teams. Reads only. ›'],['Meetings','Teams meetings Meeting notes and transcripts from Teams. Reads only. ›']]);
+   [['Chat','Microsoft Teams Chats and meeting chats from Teams. Read-only. ›'],['Meetings','Teams meetings Meeting notes and transcripts from Teams. Read-only. ›']]);
   if(shots)await page.locator('#connect-add').screenshot({path:`${shots}/teams-add-${tag}.png`});
   const tile=tiles.nth(width>500?0:1);  // either one signs in the same way
   await tile.click();
