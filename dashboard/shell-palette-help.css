@@ -53,6 +53,11 @@ article.kb-on,article.kb-on:focus{outline:2px solid color-mix(in srgb,var(--c-ac
   #palette::backdrop{background:linear-gradient(transparent calc(var(--vv-top,0px) + 52px + env(safe-area-inset-top)),color-mix(in srgb,var(--c-bg) 92%,transparent) 0);-webkit-backdrop-filter:none;backdrop-filter:none}
   .pal-field input,.pal-field input:focus{font-size:16px}  /* no zoom on focus on an iPhone */
   .pal-item{min-height:44px}.pal-keys,.pal-foot{display:none}
+  /* A row with a second part (a message's sender and date, a person's address) puts it on its own line: side by side
+     both were cut to a few letters ("Today 1…") */
+  .pal-item:has(>small){flex-wrap:wrap;row-gap:1px}
+  .pal-item:has(>small) .pal-label{flex-basis:100%}
+  .pal-item>small{flex:1 1 100%}
 }
 /* Loading: until the first real data, a calm outline of the cards that were there last time (the count only; no
    content), never "All clear" (docs/architecture.md, "On the device") */
