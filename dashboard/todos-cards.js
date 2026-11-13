@@ -308,7 +308,7 @@ const picImg=(u,px,cors)=>html`<img src="${u}" alt="" width="${px}" height="${px
 const personPic=(n,big,cls='')=>{const u=PHOTO_URL.test(n.profile?.photo||'')?n.profile.photo:'';return html`<span class="person-pic${big?' big':''}${cls}" data-i="${initials(n.name)}" aria-hidden="true">${u?picImg(u,big?44:26):''}</span>`};
 // Small, the site's own square icon comes before a looked-up logo (often a wide wordmark); big, the other way round.
 const orgPic=(n,big,cls='')=>{const p=n.profile||{},u=(big?[p.logo,p.icon]:[p.icon,p.logo]).find(l=>LOGO_URL.test(l||'')||PHOTO_URL.test(l||''))||'';
- return html`<span class="org-pic${big?' big':''}${cls}" data-i="${(String(n.name||'').trim()[0]||'?').toUpperCase()}" aria-hidden="true">${u?picImg(u,big?36:22,LOGO_URL.test(u)):''}</span>`};
+ return html`<span class="org-pic${big?' big':''}${cls}" data-i="${(String(n.name||'').trim()[0]||'?').toUpperCase()}" aria-hidden="true">${u?picImg(u,big?44:26,LOGO_URL.test(u)):''}</span>`};
 // A logo reads small when it draws enough on the white tile, and isn't a wide wordmark (by its shape, or by what it
 // draws inside a square). One that fills its square edge to edge (an app icon) drops the tile's padding. A host that
 // refuses CORS leaves only its shape to judge.
