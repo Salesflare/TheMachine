@@ -311,3 +311,24 @@ def restart_self(delay=5):
         except OSError:
             unit = None
     return service.restart_later(unit or service.UNIT_NAME, delay)
+
+
+def restart_with_mirrors(delay=5, run=service.default_run):
+    """restart_self after the running code changed (a merged self-fix, or its undo): the other units that run this
+    checkout's code and run now (service.machine_units, the chat mirrors) restart too, as an install does
+    (installer.restart_machine_units). They are units of their own, so they restart right away, queued with systemd
+    (--no-block) so this process is not held up before its own restart. A self-fix leaves the database and its message
+    key as they are, so they need not wait for the service. A stopped one stays stopped. Returns whether the service's
+    own restart was scheduled; a mirror that could not restart is logged."""
+    if not restart_self(delay):
+        return False
+    for unit in service.machine_units(APP_ROOT):
+        if not service.active(unit, run=run):
+            continue
+        if service.manager() == 'launchd':
+            result = service.restart(unit, run=run)
+        else:
+            result = run(['systemctl', '--user', '--no-block', 'restart', unit], timeout=30)
+        if result.returncode:
+            LOG.warning('self-fix: %s did not restart exit=%s', unit, result.returncode)
+    return True

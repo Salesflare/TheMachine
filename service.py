@@ -261,6 +261,53 @@ def running_as_service():
     return bool(os.environ.get('INVOCATION_ID'))
 
 
+# Units a person sets up by hand from deploy/ (docs/operations.md): never restarted with The Machine. A new cdp-relay
+# process means a new Allow prompt in their Chrome; Caddy and the embedding server run no code of the checkout.
+BY_HAND = ('cdp-relay.service', 'caddy-machine.service', 'embeddinggemma.service')
+UPDATE_UNIT = 'the-machine-update.service'
+
+
+def unit_program(path):
+    """The command line of a systemd unit file (its first ExecStart) or launchd agent (ProgramArguments), [] when unreadable."""
+    try:
+        if path.suffix == '.plist':
+            return [str(p) for p in plistlib.loads(path.read_bytes()).get('ProgramArguments') or []]
+        for line in path.read_text().splitlines():
+            if line.startswith('ExecStart='):
+                return shlex.split(line.removeprefix('ExecStart=').lstrip('-@+!:'))
+    except (OSError, ValueError, plistlib.InvalidFileException):
+        pass
+    return []
+
+
+def runs_checkout(program, root):
+    """A command line that runs a file of the checkout at root (telegram_mirror.py, signal_mirror.py, ...)."""
+    root = Path(root).resolve()
+    return any(part.startswith('/') and Path(part).resolve().is_relative_to(root) for part in program)
+
+
+def machine_units(root, base=None):
+    """The Machine's other long-running units that run code from the checkout at root: today the Telegram and Signal
+    chat mirrors (onboarding.telegram_follow, signal_setup.follow), named after their account, and any later one
+    written the same way. Found by their command line. Not The Machine's own service (its restart is the caller's), not
+    the daily update (it is what runs an install), not agent jobs (systemd-run units that outlive an update on purpose,
+    and not in this folder), not WhatsApp's sync (wacli, a program of its own), and never anything of OpenClaw's. Code
+    that changed under them (an update, a merged self-fix) reaches them only through a restart."""
+    own = definition_path(UNIT_NAME, base)
+    folder = own.parent
+    launchd = manager() == 'launchd'
+    units = []
+    for path in sorted(folder.glob(LABEL_PREFIX + '*.plist' if launchd else '*.service')) if folder.is_dir() else []:
+        if path == own:
+            continue
+        unit = 'the-machine-' + path.stem.removeprefix(LABEL_PREFIX) + '.service' if launchd else path.name
+        if unit in (UNIT_NAME, UPDATE_UNIT, *BY_HAND) or 'openclaw' in unit.lower() or unit.startswith('the-machine-job-'):
+            continue
+        if runs_checkout(unit_program(path), root):
+            units.append(unit)
+    return units
+
+
 def restart_later(unit=UNIT_NAME, delay=5):
     """Restart the service a few seconds from now, from outside its own process. Returns whether it was scheduled."""
     if manager() == 'launchd':

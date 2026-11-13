@@ -187,6 +187,61 @@ class Faults(unittest.TestCase):
         self.assertEqual(metadata['outside'], {'service': 'The Machine Network', 'status': 503})
 
 
+class MergeRestartsMirrors(unittest.TestCase):
+    """A merged self-fix (or its undo) changes the running code: the chat mirrors that run now restart with the
+    service, as after an install. Fake systemctl only; nothing here touches this computer's units."""
+
+    def setUp(self):
+        import service
+        from machine import faults
+        self.service, self.faults = service, faults
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.home = Path(tmp.name)
+        units = self.home / '.config/systemd/user'
+        units.mkdir(parents=True)
+        root = faults.APP_ROOT
+        mirror = lambda name: f'[Service]\nExecStart=/usr/bin/python3 {root}/{name} --store /tmp/store follow\n'
+        for unit, text in (('personal-assistant.service', f'[Service]\nExecStart=/usr/bin/python3 {root}/assistant.py serve\n'),
+                           ('the-machine-personal-telegram.service', mirror('telegram_mirror.py')),
+                           ('the-machine-personal-signal.service', mirror('signal_mirror.py')),
+                           ('the-machine-second-telegram.service', mirror('telegram_mirror.py')),  # not running
+                           ('openclaw-gateway.service', f'[Service]\nExecStart=/usr/bin/node {root}/openclaw-root.mjs gateway\n')):
+            (units / unit).write_text(text)
+        self.active = {'personal-assistant.service', 'the-machine-personal-telegram.service', 'the-machine-personal-signal.service',
+                       'openclaw-gateway.service'}
+        self.calls = []
+        for patcher in (patch.dict('os.environ', {'HOME': str(self.home)}), patch.object(service, 'manager', return_value='systemd'),
+                        patch.object(service, 'available', return_value=True)):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def run_fake(self, args, **kwargs):
+        self.calls.append(' '.join(args))
+        on = args[-1] in self.active
+        return subprocess.CompletedProcess(args, 0 if on or 'is-active' not in args else 3, 'active\n' if on else 'inactive\n', '')
+
+    def test_running_mirrors_restart_after_a_merge_and_the_gateway_is_never_touched(self):
+        with patch.object(self.faults, 'restart_self', return_value=True) as own:
+            self.assertTrue(self.faults.restart_with_mirrors(run=self.run_fake))
+        own.assert_called_once_with(5)
+        restarts = [c for c in self.calls if 'restart' in c]
+        self.assertEqual(restarts, ['systemctl --user --no-block restart the-machine-personal-signal.service',
+                                    'systemctl --user --no-block restart the-machine-personal-telegram.service'])
+        self.assertEqual([c for c in self.calls if 'second-telegram' in c], ['systemctl --user is-active the-machine-second-telegram.service'])
+        self.assertFalse([c for c in self.calls if 'openclaw' in c or c.endswith('personal-assistant.service')], self.calls)
+
+    def test_no_restart_of_the_service_means_none_of_the_mirrors(self):
+        with patch.object(self.faults, 'restart_self', return_value=False):
+            self.assertFalse(self.faults.restart_with_mirrors(run=self.run_fake))
+        self.assertEqual(self.calls, [])
+
+    def test_merge_and_undo_restart_through_it(self):
+        from machine.app import action_runs
+        self.assertIs(action_runs.restart_with_mirrors, self.faults.restart_with_mirrors)
+        self.assertFalse(hasattr(action_runs, 'restart_self'))
+
+
 class FaultCardsSettle(unittest.TestCase):
     """A card about an error that an update fixed closes by itself."""
     def setUp(self):
