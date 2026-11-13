@@ -157,7 +157,7 @@ body.chat-open:has(#inbox:not([hidden])) #fixed-notice,body.chat-open:has(#inbox
 .chat-sendstate{margin:10px 0 0;font-size:var(--chat-meta);line-height:18px;color:var(--chat-quiet)}.chat-sendstate.ok{color:var(--mint);font-weight:600}.chat-sendstate.failed{color:var(--orange);font-weight:600}.chat-draft .send-progress{margin:6px 0 0}
 .chat-draft-subject{margin:0 0 2px;font-weight:600}
 .chat-draft-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin:10px 0 0}.chat-draft-foot>span{display:flex;gap:14px}
-.chat-draft-foot>button{min-height:34px;margin:0 0 0 auto;padding:6px 16px;border-radius:999px;font-size:.87rem}
+.chat-draft-foot>button{min-height:34px;margin:0 0 0 auto;padding:6px 16px;border-radius:var(--r-sm);font-size:.87rem}
 .chat-result .chat-options{margin-top:12px}
 .chat-diff{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:var(--sunken);white-space:pre-wrap;font-size:.88rem}
 .chat-diff ins{background:color-mix(in srgb,var(--c-accent) 22%,transparent);text-decoration:none;border-radius:3px}.chat-diff del{color:var(--muted);text-decoration:line-through}

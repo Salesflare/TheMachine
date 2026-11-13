@@ -234,7 +234,7 @@ try{
    assert.ok(b.f.width>=40&&b.f.left>b.t.right&&b.f.right<=b.p.left+1&&b.p.right>=b.bar.right-14,'the search icon sits left of the + at '+w+': '+JSON.stringify(b))}
   const palItems=()=>page.locator('#pal-list .pal-item .pal-label').allTextContents();
   await page.locator('#find-open').click();await page.locator('#palette[open]').waitFor();assert.equal(await page.evaluate(()=>document.activeElement.id),'pal-q','the field has focus');
-  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search');
   await page.keyboard.type('number 7');await page.waitForFunction(t=>[...document.querySelectorAll('#pal-list .pal-label')].some(e=>e.textContent===t),cards[7].title);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'search fits at '+w);
   await page.keyboard.press('Escape');assert.ok(!(await page.locator('#palette[open]').count())&&await page.evaluate(()=>document.activeElement.id)==='find-open','Esc closes it');

@@ -140,7 +140,7 @@
 .agent-full>summary::after{content:' ›'}.agent-full[open]>summary::after{content:' ‹'}.agent-full>summary:hover{color:var(--text)}
 .agent-full textarea,.agent-full textarea:focus{transition:none;display:block;width:100%;box-sizing:border-box;height:220px;margin:8px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);font:12px/1.5 var(--mono);color:var(--text);resize:vertical;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--text) 22%,transparent) transparent}
 .agent-full textarea::-webkit-scrollbar{width:6px}.agent-full textarea::-webkit-scrollbar-thumb{border-radius:6px;background:color-mix(in srgb,var(--text) 22%,transparent)}
-.agent-sheet-foot{display:flex;justify-content:flex-end;gap:8px}.agent-sheet-foot button{margin:0;min-height:36px;padding:6px 16px;border-radius:999px;font-size:.9rem}
+.agent-sheet-foot{display:flex;justify-content:flex-end;gap:8px}.agent-sheet-foot button{margin:0;min-height:36px;padding:6px 16px;border-radius:var(--r-sm);font-size:.9rem}
 /* Ask to review (dashboard/todos-review.js): what goes, the reviewer's editor, and the owner's tracked changes */
 .review-what{margin:0;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--bg)}.review-label{margin:0 0 4px;font-size:.78rem;font-weight:600;color:var(--faint)}
 .review-subject{margin:0 0 6px;font-weight:600;color:var(--text)}.review-text{max-height:9.5em;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.92rem;line-height:1.45;color:var(--muted)}
@@ -208,9 +208,10 @@
 /* On a phone it is a bottom sheet like the other editors */
 @media(max-width:560px){#send-dialog{width:100%;max-width:100%;max-height:92dvh;margin:auto 0 0;border-radius:16px 16px 0 0;padding:16px}}
 #send-dialog .send-act{display:flex;gap:6px;margin-top:12px}
-#send-dialog .send-act button{flex:1 1 0;min-height:46px;padding:8px 6px;border:0;border-radius:11px;background:var(--tile);color:var(--text);font-size:15px;font-weight:600}
-#send-dialog .send-act button:hover{background:var(--tile-hover)}
-#send-dialog .send-act button.primary{background:var(--mint);color:var(--charcoal)}
+/* Send now leads; the rest are the standard secondary button: the surface, an outline, 8px corners */
+#send-dialog .send-act button{flex:1 1 0;min-height:46px;padding:8px 6px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--surface-2);color:var(--text);font-size:15px;font-weight:600}
+#send-dialog .send-act button:hover{background:color-mix(in srgb,var(--surface-2),var(--text) 5%)}
+#send-dialog .send-act button.primary{background:var(--mint);border-color:var(--mint);color:var(--charcoal)}
 #send-dialog .send-ask{margin-top:12px}#send-dialog .send-ask label{display:block;color:var(--faint);font-size:.85rem;margin:0 0 6px}#send-dialog .send-ask textarea{width:100%;min-height:64px;background:var(--sunken);border:1px solid var(--border);border-radius:10px;font:inherit;font-size:.98rem;line-height:1.5;color:var(--text);resize:vertical}
 #finished-list .card{padding:12px 16px;border-radius:14px}
 #finished-list .card .actions>:is(button,a.open){flex:0 0 auto;min-width:0;min-height:36px;padding:6px 14px}

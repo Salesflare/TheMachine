@@ -84,8 +84,8 @@ actionAdd(
  {id:'card-project',group:'This to-do',label:'Put on a project',keywords:'project board link change',when:c=>!!c.card,run:c=>cardProjectPick(c.id,document.getElementById('task-'+c.id)||document.body)},
  {id:'card-snooze',group:'This to-do',label:'Snooze',keywords:'later remind',keys:'s',when:c=>!!kbBtn(c,'[data-choice="snooze"]'),run:c=>openSnooze(c.id)},
  {id:'card-done',group:'This to-do',label:'Mark done',keywords:'complete finish',keys:'d',when:c=>!!kbBtn(c,'[data-choice="complete"]'),run:c=>kbBtn(c,'[data-choice="complete"]').click()},
- {id:'card-change',group:'This to-do',label:'Ask for changes…',keywords:'edit feedback change how',when:c=>!!kbBtn(c,'[data-choice="change"]'),run:c=>kbBtn(c,'[data-choice="change"]').click()},
- {id:'card-reject',group:'This to-do',label:'Not needed…',keywords:'dismiss reject',when:c=>!!kbBtn(c,'[data-choice="reject"]'),run:c=>kbBtn(c,'[data-choice="reject"]').click()},
+ {id:'card-change',group:'This to-do',label:'Ask for changes',keywords:'edit feedback change how',when:c=>!!kbBtn(c,'[data-choice="change"]'),run:c=>kbBtn(c,'[data-choice="change"]').click()},
+ {id:'card-reject',group:'This to-do',label:'Not needed',keywords:'dismiss reject',when:c=>!!kbBtn(c,'[data-choice="reject"]'),run:c=>kbBtn(c,'[data-choice="reject"]').click()},
  {id:'card-handoff',group:'This to-do',label:'Hand off…',keywords:'teammate fleet delegate',review:true,when:c=>!!c.id&&!!document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`),run:c=>document.querySelector(`#suggestions [data-fleet-handoff="${CSS.escape(c.id)}"]`).click()},
  // Hand to Codex / Claude Code: opens the brief sheet to read and edit; only its own Send there hands it over.
  {id:'card-agent',group:'This to-do',review:true,each:c=>c.card&&canAgent(c.card)?agentTools().map(t=>({id:'card-agent-'+t.id,label:window.t('Hand to {}',t.name)+'…',keywords:'agent codex claude code',review:true,run:()=>agentHand(c.id,t.id)})):[]},
@@ -105,7 +105,7 @@ const pal={from:null,ctx:null,items:[],sel:0,q:'',seq:0,timer:0,found:null,msgs:
 // Only with a model (the one Settings, Model shows); once the Machine says there is none, Search reads as before.
 const palAskable=()=>!pal.askOff&&!!(state.model_status||state.chat_model?.models?.length);
 function palAskShow(){const on=palAskable(),h=$('#pal-hint'),q=$('#pal-q'),side=$('#side-find');
-  if(q)q.placeholder=t(on?'Search or ask anything':'Search or type a command');if(side)side.placeholder=t(on?'Search or ask':'Search');
+  const say=t(on?'Search or ask':'Search');if(q)q.placeholder=say;if(side)side.placeholder=say;  // one label for the field and its sidebar row
   if(h){h.hidden=!on||!!pal.q.trim()||!pal.hint;if(!h.hidden)h.textContent=t('Try: {}',pal.hint.q)}}
 
 // J/K (or ↓ ↑): the next or previous item in the page's list (cards, events, the Graph's rows); in a chat, the next

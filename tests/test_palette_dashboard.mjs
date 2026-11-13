@@ -175,7 +175,7 @@ try{
   assert.ok(!(await page.locator('#side-find').isVisible()),'no card search in the menu');assert.ok(await page.locator('#side-new').isVisible(),'New card stays in the menu');
   await page.keyboard.press('Escape');await page.waitForFunction(()=>document.documentElement.dataset.drawer!=='open'&&!document.querySelector('#app-side').getAnimations().length);
   await page.locator('#find-open').tap();await pal(page).waitFor();
-  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search or type a command');
+  assert.equal(await page.locator('#pal-q').getAttribute('placeholder'),'Search');
   const all=await labels(page);for(const l of ['New to-do','Calendar','People','Settings','Keyboard shortcuts'])assert.ok(all.includes(l),'reachable from the palette: '+l);
   const b=await pal(page).boundingBox();assert.ok(b.x>=0&&b.x+b.width<=390.5,'fits');
   // The sheet sits under the top bar, which stays in sight; with the keyboard open (a shorter window, as Android

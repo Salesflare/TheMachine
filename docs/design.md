@@ -85,7 +85,7 @@ Observed on claude.ai, claude.com and anthropic.com (public pages, light and dar
   under a fold that is remembered; a row opens that pane and the address keeps it (`#graph=orgs`). Below 1024px the
   same sidebar is a drawer under a slim top bar with a menu button: a swipe from the left edge or All tasks in a chat
   also opens it, and ✕, the shade, Esc, back or a swipe to the left closes it, as does picking a row. On a phone, the
-  search icon in the top bar (on every page) opens the palette: one field, "Search or type a command", with to-dos,
+  search icon in the top bar (on every page) opens the palette: one field, "Search or ask" (the sidebar's row says the same), with to-dos,
   the Graph, commands and a Messages group (the top matches from everything read, plus See all results, which opens the
   Messages results page; that page has no sidebar row) together. Each page has a serif title in the column, except To-dos: there the tagline is
   a quiet serif line at body size, muted, with the counts under it, so the to-dos lead; a phone starts at the first

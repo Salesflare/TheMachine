@@ -153,7 +153,7 @@ body:has(#browser-pane:not([hidden])) :is(#page-head,#needs-you,#notice,#limit-b
 .done-elsewhere{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:2px 0 8px;color:var(--muted);font-size:.86rem}
 .done-elsewhere>span:first-child{flex:1 1 180px;min-width:0}
 .done-elsewhere>.still-acts{display:flex;gap:6px;flex:0 0 auto}
-.done-elsewhere button{min-height:28px;margin:0;padding:2px 12px;font-size:.84rem;border:1px solid var(--c-line,var(--border));border-radius:999px;background:transparent}
+.done-elsewhere button{min-height:28px;margin:0;padding:2px 12px;font-size:.84rem;border:1px solid var(--c-line,var(--border));border-radius:var(--r-sm);background:transparent}
 /* A run's live browser in the chat (peekHTML): one fixed size, so a new picture never moves the thread */
 .chat-panel .chat-peek{margin:4px 0 0}.chat-panel .chat-peek .peek-thumb{width:min(100%,320px);cursor:pointer}.chat-panel .chat-peek .peek-thumb img{aspect-ratio:16/10;max-height:none;object-fit:cover;object-position:top}
 /* Rename: an input over the title, wherever the title is the card's own heading. */

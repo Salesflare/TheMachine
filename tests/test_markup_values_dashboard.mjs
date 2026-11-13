@@ -10,7 +10,7 @@ const dashboard=await dashboardPage(),en=await readFile(new URL('../i18n/en.json
 const server=createServer((req,res)=>{const u=new URL(req.url,'http://x');res.setHeader('Content-Type','application/json');
  if(u.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  if(u.pathname==='/i18n/en.json'){res.end(en);return}
- if(u.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[]}));return}
+ if(u.pathname==='/api/status'){res.end(JSON.stringify({suggestions:[],promises:[],connectors:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_runs:[],done_counts:{all:1}}));return}
  if(!u.pathname.startsWith('/api/')){res.statusCode=404;res.end();return}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -41,6 +41,9 @@ try{
  assert.deepEqual(attrs,{toastB:0,undo:'7"><b>x',selB:0,codes:['nl"><b>','en']});
  // the list still ends with Done / dismissed after the first look's place (firstLookFill runs after the whole list)
  await page.locator('#finished-list').waitFor();
+ // with nothing done or dismissed yet (a first run) there is no empty Done / dismissed fold
+ await page.evaluate(()=>{state.done_counts={all:0};render()});
+ assert.equal(await page.locator('#finished-list').count(),0,'no empty Done / dismissed');
  assert.deepEqual(errors,[]);
  console.log('ok first look counts and the usage link');
 }finally{await browser?.close();server.close()}
