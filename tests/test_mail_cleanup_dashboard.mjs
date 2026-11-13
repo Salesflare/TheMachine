@@ -22,8 +22,9 @@ const news=()=>({id:'cl1',title:'5 newsletters: keep or unsubscribe?',status:'pe
   {n:2,from:'Fieldkit Team',address:'hello@fieldkit.example',title:'New tents are in',count:1,state:'open',plan:'mailto'},
   {n:3,from:'Parcelly Deals',address:'deals@parcelly.example',title:'48 hours only',count:1,state:'open',plan:'page'},
   {n:4,from:'Lumen Labels',address:'news@lumen.example',title:'Custom labels, cut to shape',count:1,state:'open',plan:'page'},
-  // came through a group with no unsubscribe of the sender's own: the owner's from the start, no pick (mail_cleanup.record)
-  {n:5,from:'Lee Lamps via Info',address:'news@lamps.example',title:'Lamp news',count:1,state:'yours',how:'group',plan:'hand'}]}});
+  // came through a group with no unsubscribe of the sender's own: the owner's from the start, no pick (mail_cleanup.record);
+  // Unsubscribe by hand opens its mail, for its own footer
+  {n:5,from:'Lee Lamps via Info',address:'news@lamps.example',title:'Lamp news',event:15,count:1,state:'yours',how:'group',plan:'hand'}]}});
 // what the Machine's browser made of each unsubscribe page (unsubscribe_page.py): Parcelly's needs a login, Lumen's it finished
 const PAGES={3:{state:'yours',how:'login',link:'https://parcelly.example/unsubscribe'},4:{state:'done',how:'page'}};
 const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope:'work',created_at:now,event_ids:[2],
@@ -34,12 +35,13 @@ const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope
 let templates,cards;
 // the mails as the viewer gets them (api/originals); a row without event has no kept mail and no link
 const ORIGINALS={11:{kind:'email',event_id:11,from:'Brightpath Weekly <news@brightpath.example>',to:'owner@example.com',occurred_at:now,title:'This week in gardening',body:'Tomatoes, at last.'},
+ 15:{kind:'email',event_id:15,from:'Lee Lamps via Info <news@lamps.example>',to:'owner@example.com',occurred_at:now,title:'Lamp news',body:'New shades this week.'},
  21:{kind:'email',event_id:21,from:'Prize Desk <win@prize.example>',to:'owner@example.com',occurred_at:now,title:'You have been selected',body:'Claim your prize today.'}};
 // their full HTML, each with remote content: an image, a background, a font (a tracking pixel would tell the sender the
 // address is live, so a mail opened from Spam cleanup loads none of it; a newsletter loads as anywhere else)
 const remote=n=>`<style>@font-face{font-family:t;src:url(https://pixel.example/${n}.woff)}p{font-family:t}</style>`+
  `<div style="background:url(https://pixel.example/${n}-bg.png)"><img src="https://pixel.example/${n}.gif" width="1" height="1">`;
-const HTML={11:remote('news')+'<p>Tomatoes, at last.</p></div>',21:remote('spam')+'<p>Claim your prize today.</p></div>'};
+const HTML={11:remote('news')+'<p>Tomatoes, at last.</p></div>',15:'<p>New shades this week.</p>',21:remote('spam')+'<p>Claim your prize today.</p></div>'};
 const reset=()=>{templates=TEMPLATES();cards=[news(),spam()];posts.length=0};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
@@ -84,7 +86,10 @@ try{
   assert.equal((await text(card.locator('.cl-row').nth(4).locator('.cl-end'))),'Came through a group Unsubscribe by hand');
   assert.equal(await text(card.locator('.cl-row').first().locator('.cl-what')),'Brightpath Weekly 3 emails · This week in gardening');  // the count in words, on the subtitle line
   assert.equal(await card.getByRole('button',{name:'Do it',exact:true}).count(),0,'a cleanup to-do has no Do it');
-  assert.equal(await card.locator('[data-cl-open]').count(),1,'only a row with a kept mail opens');
+  assert.equal(await card.locator('[data-cl-open]').count(),3,'only a row with a kept mail opens');
+  await card.locator('.cl-hand').click();
+  await page.frameLocator('#email-dialog iframe.email-frame').getByText('New shades this week.').waitFor();
+  await page.keyboard.press('Escape');await page.locator('#email-dialog').waitFor({state:'hidden'});
   await card.locator('[data-cl-open="11"]').click();
   await page.frameLocator('#email-dialog iframe.email-frame').getByText('Tomatoes, at last.').waitFor();
   await page.waitForTimeout(500);
