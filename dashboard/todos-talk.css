@@ -79,6 +79,8 @@ body:has(#talk-view:not([hidden])) .site-footer{display:none}
 @media(max-width:860px){
   .chat-layout{grid-template-columns:minmax(0,1fr)}
   body.chat-open:has(#inbox:not([hidden])) .site-footer{display:none}
+  /* The chat column is fixed over the page here, so a banner left in the page would show through it over the messages */
+  body.chat-open:has(#inbox:not([hidden])) #banners{display:none}
   body.chat-open:has(#inbox:not([hidden])) main{padding:0 20px}
   /* The chat is one column the height of what you see, like the ChatGPT and Claude apps: the thread scrolls in its own
      box and the message box is the column's last row, so it never moves while you scroll. The page itself doesn't
