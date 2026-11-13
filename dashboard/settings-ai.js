@@ -32,7 +32,7 @@ function renderAi(){const box=$('#settings-ai');if(!box||!aiView)return;const v=
 // its certificate (r.shared): until then one muted row names both, with one line, above Get your address (aiAddress) or the
 // address's state. Folded under Or add it by address (aiAddresses): the shared address and this Machine's own one
 // (end to end, docs/ai-connections.md), each with Copy, and the steps to add one by hand. Unpair is in Settings, General,
-// Account (settings-general.js), next to Open your account: the official apps just work, so pairing has no section here.
+// Account (settings-general.js), next to Open account: the official apps just work, so pairing has no section here.
 const AI_CLAUDE_DIRECTORY='https://claude.ai/directory/the-machine';
 const AI_CHATGPT_APP='https://chatgpt.com/plugins/plugin_asdk_app_6ae74ac637d0819199400cd3750138b4';
 function aiApps(ready){

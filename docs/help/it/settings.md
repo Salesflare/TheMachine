@@ -8,8 +8,8 @@ order: 1
 ---
 Apri **Impostazioni** con l’ingranaggio in alto. Le sue schede:
 
-- **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza, ed **Esci**. Su una Machine in hosting anche piano, fatture, Machine, Fleet, indirizzo, amici, accesso e dati, ognuno con il suo pulsante. Vedi [Piani e fatturazione](plans-and-billing.md). **Esci** è in alto, **Annulla il piano** ed **Elimina l’account** in fondo. Su una Machine sul tuo computer, collegata al Network: la tua Fleet, nome utente, amici e accesso, ognuno con un link che apre quella parte del tuo account (accedi lì), ed **Elimina l’account** in fondo.
-- **Generale**: lingua e area geografica, input vocale, questo dispositivo, il browser della tua Machine, la tua Fleet, esportazione e importazione, la versione che esegue, e il tuo account.
+- **Account**: **I tuoi indirizzi**, quelli che contano come te, con la loro provenienza, ed **Esci**. Su una Machine in hosting anche piano, fatture, Machine, Fleet, indirizzo, amici, accesso e dati, ognuno con il suo pulsante. Vedi [Piani e fatturazione](plans-and-billing.md). **Esci** è in alto, **Annulla il piano** ed **Elimina l’account** in fondo. Su una Machine sul tuo computer, collegata al Network: la tua Fleet, nome utente, amici e accesso, ognuno con un link che apre quella parte del tuo account (accedi lì), ed **Elimina l’account** in fondo. Non ancora collegata: **Unisciti al Network**, in alto.
+- **Generale**: lingua e area geografica, input vocale, questo dispositivo, il browser della tua Machine, la tua Fleet, esportazione e importazione, e la versione che esegue. Senza la scheda Account, **Unisciti al Network** è in fondo.
 - **Sicurezza**: Standard o Prudente, e le impostazioni che applicano. Vedi [Livelli di sicurezza](security-levels.md). C’è anche **Accesso per l’assistenza**, finché è attivo: vedi [Ricevi assistenza](get-support.md#support-access).
 - **Movimenti**: tutto ciò che The Machine ha fatto per te, dal più recente. Vedi [Movimenti](activity.md).
 - **Notifiche**: cosa ti arriva e dove, e il tuo orario di lavoro. Vedi [Notifiche](notifications.md) e [Orario di lavoro](work-hours.md).

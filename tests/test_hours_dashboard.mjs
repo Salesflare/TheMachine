@@ -57,7 +57,7 @@ try{
   await tab.waitForURL(/\/pair\/fixture$/);await tab.close()}
  await page.locator('#notice',{hasText:'Paired with your account'}).waitFor({timeout:8000});
  assert.deepEqual([...new Set(pairing)],['ai_pair_start','ai_pair_state']);
- {const r=await page.evaluate(()=>{const t=document.querySelector('#settings-more').getBoundingClientRect(),b=document.querySelector('#settings-cloud').getBoundingClientRect();return b.top>=t.bottom-1});assert.equal(r,true)}  // below the text on a phone
+ {const r=await page.evaluate(()=>{const t=document.querySelector('#settings-more').getBoundingClientRect(),b=document.querySelector('#settings-cloud').getBoundingClientRect();return b.left>=t.right-1&&b.right<=innerWidth});assert.equal(r,true)}  // right of the text on a phone too, as every setting row
  // section notes sit under their titles, not off to the right
  const head=await page.locator('#settings .section-head:visible').first().evaluate(e=>{const h=e.querySelector('h2').getBoundingClientRect(),p=e.querySelector('p').getBoundingClientRect();return {below:p.top>=h.bottom-1,left:Math.abs(p.left-h.left)<2}});
  assert.deepEqual(head,{below:true,left:true});
