@@ -118,6 +118,8 @@ When the draft follows someone's input elsewhere, like a teammate's suggestion i
 
 A chat (Slack, WhatsApp, Telegram, Intercom…) reads as one conversation, oldest first: the messages before the one the to-do is about and the replies after it. In WhatsApp, Telegram or Signal your messages sit on the right, as in the app. The to-do's message is marked "This to-do" and opens in view. **Show earlier** adds older messages. An email shows the rest of its thread folded above and below it.
 
+An email's **Details** show only what its header doesn't, like full Cc addresses, Bcc or a different reply address; with nothing to add there are none.
+
 A reply in a Slack thread also shows what was said before the thread started. A to-do's link to its own message opens it here too, with **Open in Slack** at the bottom.
 
 **Details** shows its name, project and area (tap one to change it), your last note and a coding agent's result. **Chat ›** opens the chat. A done to-do stays short; the message it came from is under **Details**.

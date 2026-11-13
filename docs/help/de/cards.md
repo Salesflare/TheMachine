@@ -118,6 +118,8 @@ Folgt der Entwurf dem Hinweis von jemand anderem in einer anderen Nachricht, etw
 
 Ein Chat (Slack, WhatsApp, Telegram, Intercom…) liest sich als ein Gespräch, älteste zuerst, jede Nachricht einmal; die Nachricht, um die es in der Aufgabe geht, steht unter „Diese Aufgabe“. In WhatsApp, Telegram oder Signal stehen deine eigenen Nachrichten rechts, wie in der App.
 
+Bei einer E-Mail zeigt **Details** nur, was die Kopfzeile nicht sagt, etwa vollständige Cc-Adressen, Bcc oder eine andere Antwortadresse; gibt es nichts hinzuzufügen, fehlt es.
+
 Eine Antwort in einem Slack-Thread zeigt auch, was vor dem Thread gesagt wurde. Ein Link der Aufgabe zu ihrer eigenen Nachricht öffnet sie auch hier, mit **In Slack öffnen** unten.
 
 **Details** zeigt ihren Namen, ihr Projekt und ihren Bereich (tippe auf eins, um es zu ändern), deine letzte Notiz und das Ergebnis eines Coding-Agenten. **Chat ›** am Ende dieser Zeile öffnet den Chat. Eine erledigte Aufgabe bleibt kurz: ihr Titel, eine Zeile und was rausging; die Nachricht, aus der sie stammt, steht unter ihren **Details**.

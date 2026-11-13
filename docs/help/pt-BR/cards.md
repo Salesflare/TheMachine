@@ -118,6 +118,8 @@ Quando o rascunho segue o que outra pessoa disse em outra mensagem, como a suges
 
 Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa aparece sob "Esta tarefa". No WhatsApp, Telegram ou Signal suas próprias mensagens ficam à direita, como no app.
 
+Em um e-mail, **Detalhes** mostra só o que o cabeçalho não diz, como endereços completos em Cc, Cco ou outro endereço de resposta; sem nada a acrescentar, não aparece.
+
 Uma resposta em uma thread do Slack também mostra o que foi dito antes da thread. Um link da tarefa para a própria mensagem também a abre aqui, com **Abrir no Slack** embaixo.
 
 **Detalhes** mostra o nome, o projeto e a área dela (toque em um para mudar), sua última nota e o resultado de um agente de código. **Chat ›** no fim dessa linha abre o chat. Uma tarefa concluída fica curta: o título, uma linha e o que foi enviado; a mensagem de onde ela veio fica nos **Detalhes**.

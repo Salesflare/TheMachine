@@ -43,6 +43,30 @@ SAMPLES = {
                               'Hi,\n\nIs there still a stand free?\n\nPat',
                               **{'from': "\"'Pat Shop' via hello@team.example readers\" <hello@team.example>", 'to': 'hello@team.example',
                                  'source_url': 'https://mail.google.com/mail/u/0/#all/g3'}),
+    # Details only when it adds something: To that is the address the header line shows ('"x" <x>'), a Reply-To to the
+    # sender itself and a Sender on the sender's own domain add nothing, so no Details at all
+    'gmail.message#to-only': ev('mail', 'g4', 'gmail.message', 'Volunteer day in spring',
+                                'Hello,\n\nWe are planning a volunteer day.\n\nLee',
+                                **{'from': 'Lee Park <lee@cause.example>', 'to': '"desk@owner.example" <desk@owner.example>',
+                                   'reply-to': 'lee@cause.example', 'sender': 'bounces@lists.cause.example',
+                                   'source_url': 'https://mail.google.com/mail/u/0/#all/g4'}),
+    # a Reply-To elsewhere and a mail service's Sender: Details has those two rows, and no To row
+    'gmail.message#reply-to': ev('mail', 'g5', 'gmail.message', 'This week in the paper',
+                                 'Hi,\n\nHere is what we wrote this week.\n\nThe desk',
+                                 **{'from': 'News Desk <news@paper.example>', 'to': 'desk@owner.example',
+                                    'reply-to': 'Reader Team <readers@paper.example>', 'sender': 'bounce-77@mail2.sendhub.example',
+                                    'source_url': 'https://mail.google.com/mail/u/0/#all/g5'}),
+    # Cc with a name the header line shortens: a Cc row, no To row
+    'gmail.message#cc': ev('mail', 'g6', 'gmail.message', 'Studio photos are ready',
+                           'Hi,\n\nThe photos from the shoot are ready to pick.\n\nKai',
+                           **{'from': 'Kai Brook <kai@studio.example>', 'to': 'desk@owner.example',
+                              'cc': 'Noor Vance <noor@studio.example>, ops@studio.example', 'bcc': 'archive@owner.example',
+                              'source_url': 'https://mail.google.com/mail/u/0/#all/g6'}),
+    # Outlook mail reads through the same headers: it opens in Outlook, with Outlook's mark
+    'gmail.message#outlook': ev('mail', 'g7', 'gmail.message', 'Room booking for Thursday',
+                                'Hi,\n\nThe meeting room is booked for Thursday.\n\nJo',
+                                **{'from': 'Jo Marsh <jo@office.example>', 'to': 'desk@owner.example',
+                                   'source_url': 'https://outlook.office.com/mail/inbox/id/g7'}),
     'salesflare.email': ev('crm', 'email:1', 'salesflare.email', 'Checking in on your setup',
                            'From: Sam Rivera <sam@client.example>\nTo: Dana Reyes <dana@team.example>\nTo: Mira Holt <mira@team.example>\n\n'
                            'Hi Dana,\n\nHow is the setup going?\nAnything we can help with?\n\nThanks,\nSam',
@@ -227,6 +251,23 @@ class Rules(unittest.TestCase):
         self.assertEqual(o['to'], 'Dana Reyes <dana@team.example>, Mira Holt <mira@team.example>')
         self.assertTrue(o['body'].startswith('Hi Dana,'), o['body'])
         self.assertEqual(o['app'], 'Salesflare')
+
+    def test_email_details_carry_only_what_the_header_doesnt_say(self):
+        quiet = self.items['gmail.message#to-only']
+        self.assertNotIn('reply_to', quiet)  # Reply-To is the sender itself
+        self.assertNotIn('sent_via', quiet)  # sent from the sender's own domain
+        self.assertNotIn('sender', quiet)
+        loud = self.items['gmail.message#reply-to']
+        self.assertEqual(loud['reply_to'], 'Reader Team <readers@paper.example>')
+        self.assertEqual(loud['sent_via'], 'sendhub.example')
+        self.assertEqual(self.items['gmail.message#cc']['bcc'], 'archive@owner.example')
+        shaped = lambda **o: message_view.shape('gmail.message', {'title': 'Hi', 'body': 'Hello', **o}, {})
+        self.assertNotIn('sent_via', shaped(**{'from': 'Pat via hello@team.example <hello@team.example>', 'sender': 'hello+bnc@team.example'}))
+        self.assertEqual(shaped(**{'from': 'Shop <news@shop.example>', 'sender': 'b@em.mailer.co.uk'})['sent_via'], 'mailer.co.uk')
+        # a CRM copy's Reply-To and Bcc header lines move to the header like To and Cc
+        crm = message_view.shape('salesflare.email', {'title': 'Hi', 'from': 'sam@client.example', 'body':
+                                 'From: Sam <sam@client.example>\nTo: dana@team.example\nBcc: log@team.example\nReply-To: help@client.example\n\nHello'}, {})
+        self.assertEqual((crm['bcc'], crm['reply_to'], crm['body']), ('log@team.example', 'help@client.example', 'Hello'))
 
     def test_a_google_group_sender_reads_as_people_say_it(self):
         shown = lambda sender: message_view.shape('gmail.message', {'title': 'Hi', 'body': 'Hello', 'from': sender}, {})['from']

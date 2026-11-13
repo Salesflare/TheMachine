@@ -118,6 +118,8 @@ Volgt het concept wat iemand anders in een ander bericht zei, zoals een voorstel
 
 Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat staat onder "Deze to-do". In WhatsApp, Telegram of Signal staan je eigen berichten rechts, zoals in de app.
 
+Bij een e-mail toont **Details** alleen wat de kop niet zegt, zoals volledige Cc-adressen, Bcc of een ander antwoordadres; is er niets bij te zeggen, dan is er geen Details.
+
 Een antwoord in een Slack-thread toont ook wat er vóór de thread gezegd werd. Een link van de to-do naar zijn eigen bericht opent het ook hier, met **Openen in Slack** onderaan.
 
 **Details** toont zijn naam, project en gebied (tik erop om het te wijzigen), je laatste notitie en het resultaat van een codeeragent. **Chat ›** aan het eind van die regel opent de chat. Een afgeronde to-do blijft kort: de titel, één regel en wat er verstuurd is; het bericht waar hij uit komt staat onder zijn **Details**.

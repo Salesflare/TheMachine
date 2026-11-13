@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
+import {readFileSync} from 'node:fs';
 import {createServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {dashboardPage} from './dashboard-page.mjs';
@@ -39,6 +40,8 @@ const server=createServer((req,res)=>{const url=new URL(req.url,'http://fixture.
  if(url.pathname==='/api/status'){res.end(JSON.stringify(state));return}
  if(url.pathname==='/api/originals'){const o=byEvent[url.searchParams.get('event')];res.end(JSON.stringify({originals:o?[o]:[]}));return}
  if(url.pathname==='/api/email'){res.statusCode=404;res.end('{}');return}
+ const mark=url.pathname.match(/^\/brand\/logos\/mono\/([a-z0-9_-]+)\.svg$/);  // the sources' one-color marks, as the Machine serves them
+ if(mark){try{res.setHeader('Content-Type','image/svg+xml');res.end(readFileSync(new URL(`../dashboard/logos/mono/${mark[1]}.svg`,import.meta.url)))}catch{res.statusCode=404;res.end()}return}
  if(url.pathname.startsWith('/brand/')){res.statusCode=404;res.end();return}
  res.end(url.pathname==='/api/events'?'[]':'{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -64,7 +67,9 @@ try{
    if(await dialog.evaluate(d=>d.open))await dialog.evaluate(d=>d.close());
    await page.locator(`#suggestions [data-mc-event="${o.event_id}"]`).click();
    await box.locator('.convo-say,.email-text,.msg-md,.email-meta').first().waitFor();await page.waitForTimeout(120);
-   if(shots)await page.screenshot({path:`${shots}/${other?'before':'after'}-${k}-${width}x${height}-${scheme}.png`});
+   if(shots){await page.screenshot({path:`${shots}/${other?'before':'after'}-${k}-${width}x${height}-${scheme}.png`});
+    if(await box.locator('.email-headers').count()){await box.locator('.email-headers summary').click();
+     await page.screenshot({path:`${shots}/${other?'before':'after'}-${k}-details-${width}x${height}-${scheme}.png`});await box.locator('.email-headers summary').click()}}
    if(other)continue;
    const title=(await page.locator('#email-title').innerText()).trim(),text=await box.innerText();
    // every visible line once: the title, the header lines, each paragraph or chat turn
@@ -74,11 +79,18 @@ try{
    assert.ok(title.length>0&&!title.endsWith('…'),k);
    // "Open in …" sits left, under the content, for every kind
    const open=box.locator('.read-original').last();
+   if(await open.count()){  // its icon is the source's own mark and loads: no empty slot before the words
+    const ico=await open.evaluate(async a=>{const m=/url\("?([^")]+)"?\)/.exec(getComputedStyle(a).getPropertyValue('--ico'));
+     return m?{src:m[1],ok:m[1].startsWith('data:')||(await fetch(new URL(m[1],document.baseURI))).ok}:{src:'',ok:false}});
+    assert.ok(ico.ok,`${k}: the open link's icon doesn't load (${ico.src})`)}
    if(await open.count())assert.ok(await open.evaluate(a=>{const b=document.getElementById('email-content'),r=b.getBoundingClientRect();return Math.abs(a.getBoundingClientRect().left-r.left-parseFloat(getComputedStyle(b).paddingLeft))<=2}),`${k}: the open link is not left-aligned`);
    // nothing widens the dialog: long code scrolls inside it
    assert.ok(await dialog.evaluate(d=>d.scrollWidth<=d.clientWidth+1),`${k} widens the dialog`);
    // the address once, quiet; none when the name already says it ("Pat Shop via hello@…")
-   if(o.view==='email'){assert.equal(await box.locator('.email-addr').count(),/ via \S+@/.test(o.from)?0:1,k);assert.equal(title,o.title,k)}
+   if(o.view==='email'){assert.equal(await box.locator('.email-addr').count(),/ via \S+@/.test(o.from)?0:1,k);assert.equal(title,o.title,k)
+    // Details never says the To line again, nor an address in quotes
+    const det=await box.locator('.email-headers').count()?await box.locator('.email-headers').evaluate(d=>d.textContent):'';
+    assert.doesNotMatch(det,/"[^"]*@[^"]*"/,k);if(det&&await box.locator('.email-to').count())assert.ok(!norm(det).includes(norm(await box.locator('.email-to').innerText())),k)}
    if(o.view==='chat')assert.ok(await box.locator('.convo-say').count()>=1,k);
   }
   if(!other){const shown=k=>kinds.includes(k)?data[k]:undefined;  // only the kinds this run shows
@@ -94,6 +106,21 @@ try{
     assert.match(await box.locator('.email-headers').innerText(),/Dana Reyes <dana@team\.example>/);
     assert.doesNotMatch(await box.locator('.email-headers').innerText(),/From/);
     assert.equal(await box.locator('.email-open a').innerText(),'Open in Salesflare ↗')}
+   // Details only when it adds something, and only the rows that do: never To as the address the line already shows,
+   // never an address in quotes before itself
+   const rowsOf=async o=>{await dialog.evaluate(d=>d.close());await page.locator(`#suggestions [data-mc-event="${o.event_id}"]`).click();await box.locator('.email-meta').waitFor();
+    if(!await box.locator('.email-headers').count())return null;await box.locator('.email-headers summary').click();
+    return (await box.locator('.email-headers>div').allInnerTexts()).map(s=>s.replace(/\s+/g,' ').trim())};
+   const DETAILS={'gmail.message#to-only':null,'gmail.message#reply-to':['Reply to Reader Team <readers@paper.example>','Sent via sendhub.example'],
+    'gmail.message#cc':['Cc Noor Vance <noor@studio.example>, ops@studio.example','Bcc archive@owner.example'],
+    'gmail.message':['To Robin Hale <robin@owner.example>, Dana Reyes <dana@owner.example>','Cc Mira Holt <mira@owner.example>'],
+    'gmail.message#group':null};
+   for(const [k,want] of Object.entries(DETAILS))if(shown(k))assert.deepEqual(await rowsOf(data[k]),want,k);
+   // "Open in" carries the mailbox's own mark: Gmail's for Gmail, Outlook's for Outlook mail
+   for(const [k,cls,label] of [['gmail.message','via-gmail','Open in Gmail ↗'],['gmail.message#outlook','via-outlook','Open in Outlook ↗']])if(shown(k)){
+    await dialog.evaluate(d=>d.close());await page.locator(`#suggestions [data-mc-event="${data[k].event_id}"]`).click();const a=box.locator('.email-open a');await a.waitFor();
+    assert.match(await a.getAttribute('class'),new RegExp(`\\b${cls}\\b`),k);assert.equal(await a.innerText(),label,k)}
+   const quiet=shown('gmail.message#to-only');if(quiet){await rowsOf(quiet);assert.equal(await box.locator('.email-to').innerText(),'to desk@owner.example')}
    // Intercom: the customer on one side, the team named on the other, the bot marked, no system parts, via Facebook
    const ic=shown('intercom.conversation');if(ic){
     await dialog.evaluate(d=>d.close());await page.locator(`#suggestions [data-mc-event="${ic.event_id}"]`).click();await box.locator('.convo-say').first().waitFor();

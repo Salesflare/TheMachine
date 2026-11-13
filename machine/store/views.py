@@ -476,6 +476,8 @@ class ViewsStore(ConversationStore):
             media = {} if photo else message_view.media_shown(r['kind'], m, body)  # a photo not kept, a video: its chip
             result.append(message_view.shape(r['kind'], {'kind': source_kind(r['kind']), 'from': str(who)[:300], 'to': str(m.get('to') or '')[:500],
                            'cc': str(m.get('cc') or '')[:500], 'title': r['title'][:500], 'occurred_at': r['occurred_at'],
+                           **{key: str(m[head])[:500] for key, head in (('reply_to', 'reply-to'), ('bcc', 'bcc'), ('sender', 'sender'))
+                              if m.get(head) and message_view.view_of(r['kind']) == 'email'},
                            'body': body[:20000], 'clipped': len(body) > 20000 or bool(m.get('truncated')),
                            **({'details': details[:4000]} if details else {}),
                            'url': url if isinstance(url, str) and urllib.parse.urlsplit(url).scheme == 'https' else None,
@@ -487,12 +489,12 @@ class ViewsStore(ConversationStore):
         rest = [o for o in result if o.get('view') != 'email']
         # outside email a sender is only a name: a chat's, its turns' and a payment's by the graph's name for the address
         said = [o.get('from') for o in rest] + [o.get('chat') for o in rest] + [t.get('from') for o in rest for t in o.get('turns') or ()]
-        bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc')), *said)
+        bare = message_view.bare_addresses(*(o.get(k) for o in mail for k in ('from', 'to', 'cc', 'bcc', 'reply_to')), *said)
         if bare:  # people by the name the graph knows for them, the address only when none is known
             with self.connect() as db:
                 names = address_names(db, bare)
             for o in mail:
-                for key in ('from', 'to', 'cc'):
+                for key in ('from', 'to', 'cc', 'bcc', 'reply_to'):
                     o[key] = message_view.named(o.get(key), names)
             for o in rest:
                 for key in ('from', 'chat'):

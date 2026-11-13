@@ -233,15 +233,36 @@ def shape_email(o, m, title):
         froms = found.get('from') or []
         if froms and (not o.get('from') or '<' not in o['from'] or _address(froms[0]) == _address(o['from'])):
             o['from'] = froms[0][:300]
-        for key in ('to', 'cc'):
-            if found.get(key) and not o.get(key):
-                o[key] = ', '.join(found[key])[:500]
+        for key, head in (('to', 'to'), ('cc', 'cc'), ('bcc', 'bcc'), ('reply_to', 'reply-to')):
+            if found.get(head) and not o.get(key):
+                o[key] = ', '.join(found[head])[:500]
     # A Google Group's "'Sam Lee' via Sales" <sales@…> as people say it: Sam Lee via Sales <sales@…>
     name, cut, rest = str(o.get('from') or '').partition('<')
     shown = group_sender(name.strip().strip('"'))
     if shown != name.strip().strip('"'):
         o['from'] = shown + (' <' + rest if cut else '')
     o['body'] = drop_repeats(o['body'], title)
+    details_only(o)
+
+
+def _domain(address):
+    """The domain a mail service sends from, as Gmail's "via" says it: mail1.mcsv.example is mcsv.example."""
+    host = _address(address).partition('@')[2].split('.')
+    return '.'.join(host[-3:] if len(host) > 2 and len(host[-2]) <= 3 and len(host[-1]) == 2 else host[-2:])
+
+
+def details_only(o):
+    """An email's Details hold only what its header doesn't show (rule 2): a Reply-To only when it goes somewhere other
+    than the sender, and the service it was sent through (sent_via, from the Sender header) only when that isn't the
+    sender's own domain and the From doesn't already say it. Bcc stays (the header never shows it); To and Cc are the
+    dashboard's to judge (mailHead), as their header line is drawn there."""
+    sender = _address(o.get('from'))
+    replies = {_address(part) for part in str(o.get('reply_to') or '').split(',')} - {''}
+    if not replies or replies <= {sender}:
+        o.pop('reply_to', None)
+    via = _domain(o.pop('sender', '') or '')
+    if via and sender and via != _domain(sender) and via not in str(o.get('from') or '').lower():
+        o['sent_via'] = via
 
 
 # Slack's mrkdwn (and WhatsApp's, which writes bold, italic and strike the same way) as markdown the dashboard renders:

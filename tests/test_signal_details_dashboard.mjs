@@ -23,4 +23,7 @@ const mail=messageHTML({kind:'email',from:'Sam <sam@example.com>',to:'Dana Reyes
 assert.match(mail,/<summary>Details<\/summary><div><span>To<\/span> Dana Reyes &#60;dana@example\.com&#62;<\/div>/);
 const plain=messageHTML({kind:'email',from:'Sam <sam@example.com>',to:'owner@example.com',occurred_at:at,title:'Hi',body:'x'},'s1',1);
 assert.ok(!plain.includes('<summary>Details</summary>'),'nothing to add, no toggle');
+// a display name that is the address again is no name: the line shows the address, Details has nothing to add
+const quoted=messageHTML({kind:'email',from:'Sam <sam@example.com>',to:'"owner@example.com" <owner@example.com>',occurred_at:at,title:'Hi',body:'x'},'s1',1);
+assert.ok(!quoted.includes('<summary>Details</summary>'),'a quoted address repeats the to-line');
 console.log('signal details ok');

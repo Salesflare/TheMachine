@@ -152,8 +152,9 @@ def message_event(account, raw, config=None):
         return None
     body, quoted = trim_quoted_history(email_body('\n'.join(bodies['text/plain']), bodies['text/html']), headers.get('subject', ''))
     metadata = {key: headers.get(key, '') for key in ['from', 'to', 'cc', 'date', 'message-id', 'in-reply-to']}
-    if headers.get('reply-to'):
-        metadata['reply-to'] = headers['reply-to']
+    for key in ('reply-to', 'bcc', 'sender'):  # the viewer's Details: Bcc on sent mail, a Sender that isn't the From
+        if headers.get(key):
+            metadata[key] = headers[key]
     metadata.update(list_headers(headers))
     report = bounces.read_report(raw.get('payload'))  # a delivery report (bounce): its recipients, read from its structure
     if report:
