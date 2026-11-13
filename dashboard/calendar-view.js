@@ -337,9 +337,12 @@ function calView(m){const [a,b0]=calTimes(m),b=isNaN(b0)||b0<=a?new Date(a.getTi
    return w.node_id?html`<span class="cal-v-who cal-v-known"><a class="chip scope who" href="${graphHash(w.node_id)}"${w.email?html` title="${w.email}"`:''}>${raw(CHIP_ICON.person)}<span>${w.name||w.email}</span></a></span>`
     :html`<span class="cal-v-who"${w.email?html` title="${w.email}"`:''}>${label}</span>`})}${more>0?html`<span class="cal-v-who cal-v-mail">${t('and {} more',more)}</span>`:''}`;
  $('#cal-v-title').textContent=m.title||t('(No title)');
+ // Its open to-do (a briefing before it, a follow-up after it): one tap to that to-do's chat
+ const todo=m.shared?null:(state?.suggestions||[]).find(s=>!closed(s)&&eventIds(s).map(Number).includes(Number(m.id)));
  setHTML($('#cal-v-rows'),html`${rows.map(([k,v])=>html`<div><dt>${t(k)}</dt><dd>${v}</dd></div>`)}${met.length?html`<div><dt>${t('With')}</dt><dd class="cal-v-with">${withHtml}</dd></div>`:''}${
   [['Organization','Organizations','org',m.orgs],['Project','Projects','project',m.projects]].filter(r=>r[3]?.length).map(([one,many,icon,list])=>
-   html`<div><dt>${t(list.length>1?many:one)}</dt><dd class="cal-v-links">${list.map(n=>html`<a class="chip scope who" href="${graphHash(n.node_id)}">${raw(CHIP_ICON[icon])}<span>${n.name}</span></a>`)}</dd></div>`)}`);
+   html`<div><dt>${t(list.length>1?many:one)}</dt><dd class="cal-v-links">${list.map(n=>html`<a class="chip scope who" href="${graphHash(n.node_id)}">${raw(CHIP_ICON[icon])}<span>${n.name}</span></a>`)}</dd></div>`)}${
+  todo?html`<div><dt>${t('To-do')}</dt><dd><a class="cal-v-link cal-v-todo" href="#chat=${todo.id}" data-cal-todo="${todo.id}">${todo.title}</a></dd></div>`:''}`);
  const open=$('#cal-v-open');open.hidden=!m.url;if(m.url){open.href=m.url;open.textContent=t(calOpenLabel(m.url))}
  $('#cal-v-orig').onclick=()=>openOriginal(m.id,m.title,true);
  calNotesOpen(m);if(!$('#cal-view').open)$('#cal-view').showModal();calNotesFit()}
@@ -373,7 +376,8 @@ async function calNotesLoad(me){clearTimeout(calNotesRetry);me.loading=true;let 
 // Try again, the focus back after it gave up, or the network back: a fresh round of tries
 function calNotesAgain(){const n=calNote;if(!n||n.data||n.loading||!$('#cal-view').open)return;n.tries=0;n.failed=false;calNotesShow();calNotesLoad(n)}
 addEventListener('focus',()=>{if(calNote?.failed)calNotesAgain()});addEventListener('online',calNotesAgain);
-$('#cal-view').addEventListener('click',e=>{if(e.target.closest('[data-cal-notes-retry]'))calNotesAgain()});
+$('#cal-view').addEventListener('click',e=>{if(e.target.closest('[data-cal-notes-retry]'))calNotesAgain();
+ const todo=e.target.closest('[data-cal-todo]');if(todo&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){e.preventDefault();$('#cal-view').close();calReturn=!$('#calendar').hidden;chatGo(todo.dataset.calTodo)}});
 $('#cal-view').addEventListener('close',()=>{if(!$('#cal-view').open)clearTimeout(calNotesRetry)});  // a close event can come after it opened again
 // While The Machine writes the notes, the open dialog looks again every few seconds; closed, it stops (the writing goes on)
 const calWriting=d=>['queued','running','waiting'].includes(d?.writing?.status);

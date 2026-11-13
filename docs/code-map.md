@@ -120,6 +120,9 @@ The full list, computed from the code: `python3 tests/test_architecture.py --own
   - `calendar_clashes.py` with `machine/app/calendar_clashes.py` (`CalendarClashesApp`): a work meeting overlapping a
     personal event, found by plain code and raised once as a to-do that names only its own side; the owner's dashboard
     reads the other side at view time (`annotate`), so no Fleet sees it.
+  - `meeting_prep.py` with `machine/app/meeting_prep.py` (`MeetingPrepApp`): before a one-off meeting with people
+    from outside, one briefing to-do from what the Machine already has (the Graph, their latest messages, open
+    promises), written in one background turn, or none when there is nothing useful; once per meeting, by its iCalUID.
   - `machine/upkeep/agent_workspaces.py`: the nightly cleanup of Claude Code and Codex job folders nothing needs any
     more (retention.py runs it; it only reads `agent_jobs`, `suggestions` and `agent_relayed`).
   - `machine/app/knowledge_export.py` (`KnowledgeExportApp`): Knowledge for another AI (Settings, General, Export) and its

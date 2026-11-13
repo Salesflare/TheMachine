@@ -3,7 +3,7 @@ title: Calendar
 area: calendar
 summary: The week ahead in one place: meetings, to-dos that are due, snoozed to-dos and promises.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## What it shows
@@ -78,3 +78,19 @@ No meetings yet? Without a calendar, **Connect your calendar** opens Connections
 When a work meeting overlaps something in your personal calendar, or the other way around, The Machine makes one to-do about the newer of the two. It can draft a short note to move it, or offer to decline. Nothing goes out until you approve it.
 
 All-day, free and tentative events never count, and each clash comes up once. A Work to-do only says there is a conflict, so your team never sees the personal event. Only you see what it clashes with.
+
+## Ready for your meetings
+
+Before a meeting with people from outside your company, The Machine makes one to-do: **Prepare for** the meeting. It's a short briefing:
+
+- **Who:** who they are, from your Graph.
+- **Last contact:** your last exchange with them. That message is the to-do's source, after the meeting.
+- **Open promises:** what you or they still owe.
+- **Open questions:** what is still unanswered.
+- **Decide or bring:** what to settle or bring along.
+
+It comes on the morning of a work day: the meeting's own day when it's in the afternoon, else the work day before. It only uses what is already on your Machine.
+
+No useful history means no to-do. Recurring, internal, personal and declined meetings get none. A meeting that moves keeps its one to-do, at the new time. A dismissed one doesn't come back, and a canceled meeting's closes by itself.
+
+The meeting's details show its to-do under **To-do**, one tap from its chat.

@@ -3,7 +3,7 @@ title: Calendário
 area: calendar
 summary: A semana em um só lugar: reuniões, tarefas com prazo, tarefas adiadas e promessas.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## O que ele mostra
@@ -78,3 +78,19 @@ Ainda sem reuniões? Sem agenda, **Conecte seu calendário** abre Conexões: con
 Quando uma reunião de trabalho se sobrepõe a algo na sua agenda pessoal, ou o contrário, The Machine cria uma tarefa sobre o mais recente dos dois. Ela pode preparar um rascunho curto para remarcar, ou oferecer recusar. Nada sai antes da sua aprovação.
 
 Eventos de dia inteiro, livres ou provisórios nunca contam, e cada conflito aparece uma vez só. Uma tarefa de Trabalho diz só que há um conflito, então sua equipe nunca vê o evento pessoal. Só você vê com o que ele conflita.
+
+## Pronto para suas reuniões
+
+Antes de uma reunião com pessoas de fora da sua empresa, The Machine cria uma tarefa: **Preparar** a reunião. É um resumo curto:
+
+- **Quem:** quem são, pelo seu Graph.
+- **Último contato:** sua última troca com eles. Essa mensagem é a fonte da tarefa, depois da reunião.
+- **Promessas em aberto:** o que você ou eles ainda devem.
+- **Perguntas em aberto:** o que ainda está sem resposta.
+- **Decidir ou levar:** o que decidir ou levar.
+
+Ela chega de manhã em um dia útil: no próprio dia se a reunião for à tarde, senão no dia útil anterior. Ela usa só o que já está na sua Machine.
+
+Sem histórico útil, sem tarefa. Reuniões recorrentes, internas, pessoais e recusadas não têm. Uma reunião remarcada mantém sua única tarefa, no novo horário. Uma descartada não volta, e a de uma reunião cancelada fecha sozinha.
+
+Os detalhes da reunião mostram a tarefa em **Tarefa**, a um toque do chat.

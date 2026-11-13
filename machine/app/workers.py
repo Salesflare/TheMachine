@@ -393,6 +393,7 @@ class WorkersApp:
         self.summary_step()  # people's summaries, when their evidence changed (person_summary.py)
         self.about_step()  # project descriptions, when their evidence changed (project_about.py)
         self.stall_step()  # once a week: a next step for a few projects that went quiet with nothing on them (project_stall.py)
+        self.meeting_prep_step()  # a briefing to-do before a meeting with people from outside (meeting_prep.py)
         if seeded or learned:
             LOG.info('style learned voices=%s replies=%s', seeded, learned)
 

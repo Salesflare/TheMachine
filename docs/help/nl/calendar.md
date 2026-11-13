@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: De komende week op één plek: afspraken, to-do's die moeten gebeuren, gesnoozede to-do's en beloftes.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## Wat het toont
@@ -78,3 +78,19 @@ Nog geen afspraken? Zonder agenda opent **Koppel je agenda** Koppelingen: koppel
 Als een werkafspraak overlapt met iets in je persoonlijke agenda, of omgekeerd, maakt The Machine één to-do over de nieuwste van de twee. Hij kan een kort concept schrijven om die te verzetten, of aanbieden om af te zeggen. Er gaat niets weg tot je het goedkeurt.
 
 Afspraken van een hele dag, vrije en voorlopige afspraken tellen nooit mee, en elke botsing komt één keer. Een Werk-to-do zegt alleen dat er een conflict is, zodat je team de persoonlijke afspraak nooit ziet. Alleen jij ziet waarmee het botst.
+
+## Klaar voor je afspraken
+
+Voor een afspraak met mensen van buiten je bedrijf maakt The Machine één to-do: **Voorbereiden** op die afspraak. Het is een korte briefing:
+
+- **Wie:** wie ze zijn, uit je Graph.
+- **Laatste contact:** je laatste uitwisseling met hen. Dat bericht is de bron van de to-do, na de afspraak.
+- **Open beloftes:** wat jij of zij nog moeten doen.
+- **Open vragen:** wat nog onbeantwoord is.
+- **Beslissen of meebrengen:** wat je moet beslissen of meenemen.
+
+Hij komt op de ochtend van een werkdag: op de dag zelf als de afspraak 's middags is, anders de werkdag ervoor. Hij gebruikt alleen wat al op je Machine staat.
+
+Geen bruikbare geschiedenis betekent geen to-do. Terugkerende, interne, persoonlijke en afgezegde afspraken krijgen er geen. Verschuift een afspraak, dan blijft het bij één to-do, op het nieuwe uur. Een weggeklikte komt niet terug, en die van een geannuleerde afspraak sluit vanzelf.
+
+De details van de afspraak tonen de to-do onder **To-do**, één tik van de chat.
