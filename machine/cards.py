@@ -356,8 +356,8 @@ def card(row):
         handed = {}
     if row['status'] == 'snoozed' and checkin_line(row):  # with a teammate: when it comes back to check in, not a snooze
         status = checkin_line(row) + '.'
-    elif row.get('handoff_still') and not handoff_redirect(row):  # back to check in: still theirs, not handed back
-        status = t('Still with {} · check in?', row['handoff_still']['name'])
+    elif row.get('handoff_still') and not handoff_redirect(row) and not row.get('handoff_checkin'):  # back to check in: still theirs
+        status = t('Still with {}', row['handoff_still']['name'])
     if handed.get('delegated'):
         if row['status'] == 'snoozed' and row.get('snoozed_until'):
             status = t('Sent to {}. Waiting for their reply until {}; it closes when they answer.', handed['name'], locale_prefs.day_text(dt.datetime.fromisoformat(row['snoozed_until']).astimezone(local_tz())))

@@ -135,6 +135,7 @@ FLEET_REQUEST_ACTIONS = {
     *handoff_mail.ACTIONS,
     *task_pages.ACTIONS,
     'fleet_handoff',
+    'fleet_handoff_checkin',
     'fleet_handoff_draft',
     'fleet_handoff_email',
     'fleet_handoff_mine',

@@ -355,6 +355,9 @@ class CardChatApp:
                 if card and card['done_when']:
                     owner.append({'kind': 'event', 'text': outcomes.chat_line(card['done_when']), 'at': at})
                 continue
+            if r['id'].startswith('handoff-checkin:'):  # Check in now (fleet.py handoff_checkin): a tap, not the owner's words
+                owner.append({'kind': 'event', 'text': 'Asked for a check-in', 'choice': 'checkin', 'mine': True, 'at': at})
+                continue
             if r['source'] == 'plan':  # a newer message overturned its plan (Store.plan_changed); Undo takes this back like a tap
                 owner.append({'kind': 'event', 'text': i18n.t('Updated: {}', clamp(r['feedback'], 200)), 'choice': 'complete', 'at': at})
                 continue

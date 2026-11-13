@@ -57,7 +57,7 @@ from machine.store import graph_identifiers
 from machine import names, stamps
 from machine.store.cards import source_kind, source_lead, SOURCE_KIND, use_view
 from machine.store.conversation import ConversationStore
-from machine.store.decisions import handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
+from machine.store.decisions import checking_in, handoff_wait, owner_area_open, send_retry_ok, skill_update_view, UNDO_MERGE
 from machine.store.events import SET_ASIDE_AFTER
 from machine.store.facts import suggestion_scope
 from machine.store import message_view
@@ -598,6 +598,7 @@ class ViewsStore(ConversationStore):
         if wait:extra['handoff_wait']=wait
         still=handoff_wait(db,suggestion,awake=True)
         if still:extra['handoff_still']=still  # back on the list, still with them: the card says so, not "Needs you"
+        if still and checking_in(db,suggestion):extra['handoff_checkin']=True  # Check in now: its nudge is drafted like any Do it
         return extra
 
     def browser_view(self, db, suggestion, extra):

@@ -1,5 +1,7 @@
-// Back from a check-in while a teammate still has it: no Do it (that would prepare it all over again); Mark done leads
-const withTeammate=s=>!closed(s)&&s.status!=='snoozed'&&!s.handled_hint&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s);
+// Back for a check-in while a teammate still has it: no Do it (that would prepare it all over again); Check in now leads
+// (a nudge to them, drafted on the to-do). Once that nudge is being drafted or ready (handoff_checkin), it reads and acts
+// like any prepared to-do: Send leads.
+const withTeammate=s=>!closed(s)&&s.status!=='snoozed'&&!s.handled_hint&&!s.handoff_checkin&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&!redirect(s);
 // A new handoff text on a card a teammate still has (the owner asked to hand it to someone else): it waits for their review.
 const redirect=s=>!closed(s)&&s.status!=='snoozed'&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&taskActions(s).some(a=>a.kind==='handoff');
 const firstName=n=>String(n||'').split(' ')[0];
@@ -7,16 +9,19 @@ const firstName=n=>String(n||'').split(' ')[0];
 const handoffMachine=n=>n&&n!=='A teammate'?t('{}’s Machine',String(n).split(' ')[0]):t('a teammate’s Machine');
 const handoffFailed=s=>s.fleet_handoff_failed&&!s.fleet_handoff&&!closed(s)?html`<p class="note fleet handoff-failed" role="alert">${t('Handoff didn’t go out to {}',handoffMachine(s.fleet_handoff_failed.name))} · <button type="button" class="link" data-fleet-handoff="${s.id}">Try again</button></p>`:'';
 // Their Machine can't notify them (no phone, Telegram or email on): said under the handoff while it waits on them
+// What a check-in or handoff tap on this to-do has to say (it couldn't go): on this to-do, not in a toast over another
+const handoffNotes=new Map(),handoffNote=s=>handoffNotes.has(s.id)&&!closed(s)?html`<p class="note fleet handoff-note" role="status">${handoffNotes.get(s.id)}</p>`:'';
 const noPing=s=>s.fleet_handoff?.no_ping&&!closed(s)?html`<p class="note fleet no-ping" role="status">${t('{} won’t get a ping. Let them know.',firstName(s.fleet_handoff.name))}</p>`:'';
 function fleetHandoff(s){const contact=s.handoff_contact?html`<p class="note handoff-contact">${t('Contact: {}',s.handoff_contact)}</p>`:'';
  if(handoffFailed(s))return html`${contact}${handoffFailed(s)}`;
  if(s.handoff_silent&&!s.fleet_handoff&&!closed(s))return html`${contact}<p class="note fleet silent-note">${s.handoff_silent.line} · <button type="button" class="link" data-handoff-not-mine="${s.id}">Not mine</button></p>`;  // theirs by what they did; one tap undoes it
  if(s.handoff_mail&&!s.fleet_handoff)return html`${contact}${mailHandoff(s)}`;
  if(contact&&!s.fleet_handoff)return contact;
- if(s.fleet_handoff)return html`<p class="note${s.fleet_handoff.back?'':html` handled`} fleet">${handoffLine(s.fleet_handoff,s)}</p>${noPing(s)}${s.handoff_wait&&s.snoozed_until?html`<p class="checkin-line" title="${date(s.snoozed_until)}">${checkinLabel(s)}</p>`:''}`;  // also once it is done
+ if(s.fleet_handoff)return html`<p class="note${s.fleet_handoff.back?'':html` handled`} fleet">${handoffLine(s.fleet_handoff,s)}</p>${noPing(s)}${s.handoff_wait&&s.snoozed_until?html`<p class="checkin-line" title="${date(s.snoozed_until)}">${checkinLabel(s)}</p>`:''}${handoffNote(s)}`;  // also once it is done
  if(closed(s)||!state?.fleet?.on||s.scope!=='work')return'';
  if(s.fleet_handoff)return html`<p class="note handled fleet">${t('Handed off to {}: {}',s.fleet_handoff.name,t(s.fleet_handoff.stage))}</p>`;
  return''}  // the Hand off button sits with the card's other buttons (cardActions); its form with the other editors
+const handoffHolds=d=>d.to!=='email'&&(d.holding||[]).some(h=>h.fleet+'|'+h.member_id===d.to);
 // Hand off to a teammate: the same calm sheet as Hand to Codex / Claude Code (.agent-sheet). Who, then what they are
 // asked to do as editable lead text, what goes along as chips with a quiet ×, an optional note.
 function handoffEditor(s){const d=handingOff.get(s.id);if(!d||closed(s))return'';const id=s.id,mail=d.to==='email';
@@ -29,10 +34,16 @@ function handoffEditor(s){const d=handingOff.get(s.id);if(!d||closed(s))return''
   ...(d.sources||[]).map((v,n)=>d.dropped?.includes(n)?'':html`<span class="agent-get"><i class="via-ico via-${v.kind==='email'?'mail':'chat'}" aria-hidden="true"></i><span class="agent-get-label">${v.label}</span>${x(v.label,html`data-handoff-drop="${n}"`)}</span>`)]}`);
  const had=!mail&&['asked','waiting for them'].includes(s.fleet_handoff?.stage)&&(d.who.find(([f,m])=>f+'|'+m===d.to)||[])[2]!==s.fleet_handoff.name?[firstName(s.fleet_handoff.name),...(s.fleet_handoff.also||[])].join(' and '):'';
  const back=had?html`<label class="handoff-back"><input type="checkbox" name="replace"${d.replace===false?'':html` checked`}> Take it back from ${had}</label>`:'';
+ const err=d.error?html`<p class="handoff-error" role="alert">${d.error}</p>`:'';
+ // Someone who still has it: handing it to them again is a check-in on that handoff (Check in now), with an optional line
+ if(handoffHolds(d))return html`<form class="fleet-handoff-form agent-sheet handoff-checkin-form" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">Hand off to</span>${pick}</div>
+ <p class="agent-what">${t('{} still has this. Check in drafts a short nudge for you to send.',firstName(name))}</p>
+ <textarea name="note" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="600" placeholder="${t('Anything to add? Optional')}" aria-label="${t('Anything to add? Optional')}">${d.checkin_note||''}</textarea>${err}
+ <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary">${t('Check in')}</button></div></form>`;
  return html`<form class="fleet-handoff-form agent-sheet" data-card="${id}"><div class="agent-sheet-head"><span class="agent-sheet-title">Hand off to</span>${pick}</div><input type="hidden" name="title" value="${d.title}">
  ${mail?html`<input name="email" type="email" class="handoff-email" maxlength="254" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="handoff-team-${id}" value="${d.email||''}" placeholder="Their email" aria-label="Their email" required><ul class="cal-sug handoff-sug" id="handoff-team-${id}" role="listbox" aria-label="Teammates" hidden></ul>`:''}
  <textarea name="task" class="agent-note handoff-task" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="1000" aria-label="What they are asked to do">${d.task??d.summary}</textarea>${!mail&&chips?html`<div class="agent-gets" aria-label="Goes along">${chips}</div>`:''}
- <textarea name="note" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="600" placeholder="${t('Add a note for {}',name)}" aria-label="${t('Add a note for {}',name)}">${d.note||''}</textarea>${mail?mailParts(d):''}${back}
+ <textarea name="note" class="agent-note" spellcheck="true" autocapitalize="sentences" rows="1" maxlength="600" placeholder="${t('Add a note for {}',name)}" aria-label="${t('Add a note for {}',name)}">${d.note||''}</textarea>${mail?mailParts(d):''}${back}${err}
  <div class="agent-sheet-foot"><button type="button" class="ghost" data-handoff-cancel="${id}">Cancel</button><button class="primary"${mail&&d.parts?.mailbox===false?html` disabled`:''}>${mail?'Prepare email':'Hand off'}</button></div></form>`}
 // By email: what goes in the email (handoff_mail.parts), each ticked until the owner unticks it. Only what the Team Graph
 // shares with the team is offered; the email then waits on the to-do for the owner to read and send.

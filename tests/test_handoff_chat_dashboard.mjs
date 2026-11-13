@@ -54,6 +54,9 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
    fleets:[{id:'fl1',name:'Acme',members:[{member_id:'kim1',name:'Kim Doe'},{member_id:'pat1',name:'Pat Lee'}]}]}));return}
   if(call.action==='fleet_handoff_draft'){res.end(JSON.stringify({suggestion_id:call.args.suggestion_id,title:failed.title,summary:'Rotate the shared webhook secret today.',contact:'',sources:[],
    fleets:[{id:'fl1',name:'Acme',members:[{member_id:'pat1',name:'Pat Lee'}]}]}));return}
+  // Check in now: the back to-do has a channel to nudge Pat on, the waiting one has none
+  if(call.action==='fleet_handoff_checkin'){res.end(JSON.stringify(call.args.suggestion_id===back.id?{card:back.id,channel:'Slack',name:'Pat'}
+   :{chat:true,why:'Nothing connected here can message Pat. Check in from the chat.'}));return}
   res.end('{}');return}
  if(req.url.startsWith('/api/fleet')){res.end(JSON.stringify(view));return}
  res.statusCode=404;res.end('{}')});
@@ -103,11 +106,11 @@ try{
   // The card in the list, back on top with no answer: it asks for a check-in, Mark done first, no Do it
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   const w=page.locator('#task-'+waiting.id);await w.waitFor();
-  assert.equal((await w.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
+  assert.equal((await w.locator('.note.fleet').textContent()).trim(),'Still with Pat');
   assert.equal((await w.locator('.body').textContent()).trim(),'Asked Pat: '+ASKED);  // what was asked, not the old suggestion
   assert.ok((await w.locator('.body p').evaluate(p=>p.getBoundingClientRect().height/parseFloat(getComputedStyle(p).lineHeight)))<=2.1,'two lines at most');
   assert.equal(await w.locator('.more').count(),0);
-  assert.equal(await w.locator('.note.fleet a').getAttribute('href'),'#chat='+waiting.id);
+  assert.equal(await w.locator('.note.fleet a').count(),0);  // plain text: Check in now is the one way to check in
   assert.equal(await w.locator('button',{hasText:/^Do it$/}).count(),0);
   // Still with Pat, not handed back: Check in now leads with Snooze, Take it back and Hand off to someone else under …
   const visible=async c=>(await c.locator('.actions > button:not([hidden])').allTextContents()).map(x=>x.trim());
@@ -115,13 +118,21 @@ try{
   assert.deepEqual(await visible(w),['Check in now','Snooze']);
   {const m=await more(w);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   const b=page.locator('#task-'+back.id);
-  assert.equal((await b.locator('.note.fleet').textContent()).trim(),'Still with Pat · check in?');
+  assert.equal((await b.locator('.note.fleet').textContent()).trim(),'Still with Pat');
   assert.equal(await b.locator('.status-line').count(),0,'no older Needs you line');
   // when it was asked too, as one whole sentence
   assert.match((await b.locator('.body').textContent()).trim(),/^Asked Pat on Tue,? (Nov 3|3 Nov): Can you lock down the tag export today\?$/);
   assert.deepEqual(await visible(b),['Check in now','Snooze']);{const m=await more(b);assert.ok(m.includes('Take it back')&&m.includes('Hand off to someone else'),m.join('|'))}
   if(dir){await b.scrollIntoViewIfNeeded();await b.screenshot({path:`${dir}/handoff-still-with-${width}.png`})}
-  await b.locator('[data-handoff-checkin]').click();await page.waitForFunction(id=>location.hash==='#chat='+id,back.id);
+  // Check in now asks for a drafted nudge on the to-do (the service drafts it; Send stays the owner's): no chat, no toast
+  const before=calls.length;
+  await b.locator('[data-handoff-checkin]').click();
+  for(let i=0;i<50&&!calls.slice(before).some(c=>c.action==='fleet_handoff_checkin');i++)await page.waitForTimeout(50);
+  await page.waitForTimeout(300);
+  assert.deepEqual(calls.slice(before).filter(c=>c.action==='fleet_handoff_checkin').map(c=>c.args),[{suggestion_id:back.id}]);
+  assert.notEqual(await page.evaluate(()=>location.hash),'#chat='+back.id);
+  assert.equal(await page.locator('#toast.show').count(),0);
+  assert.equal(calls.slice(before).filter(c=>/send|approve/.test(c.action)).length,0);  // nothing goes out from here
   await page.goto('http://127.0.0.1:'+server.address().port+'/');await w.waitFor();
   if(dir){await w.scrollIntoViewIfNeeded();await w.screenshot({path:`${dir}/handoff-waiting-card-${width}.png`})}
   // Still with Pat: under Coming back later, "With Pat · waiting" and when it checks in
@@ -132,9 +143,16 @@ try{
   assert.match(await l.locator('.checkin-line').textContent(),/^Check in with Pat .+ if no answer$/);
   assert.equal(await page.locator('#suggestions > .card#task-'+later.id).count(),0);
   if(dir){await lat.scrollIntoViewIfNeeded();await lat.screenshot({path:`${dir}/handoff-later-${width}.png`})}
-  await w.locator('.note.fleet a').scrollIntoViewIfNeeded();await page.waitForTimeout(300);  // a tap, not the end of a scroll
-  await w.locator('.note.fleet a').click();
+  // Nothing connected can message Pat: the chat opens, and says why calmly, about this to-do (no Report a bug)
+  const wb=w.locator('[data-handoff-checkin]');await wb.scrollIntoViewIfNeeded();await page.waitForTimeout(300);  // a tap, not the end of a scroll
+  await wb.click();
   await page.locator('#chat-log .chat-handoff-wait').waitFor();
+  assert.equal(await page.evaluate(()=>location.hash),'#chat='+waiting.id);
+  const tst=page.locator('#toast');
+  assert.equal((await tst.textContent()).trim(),'Nothing connected here can message Pat. Check in from the chat.');
+  assert.equal(await tst.getAttribute('data-about'),waiting.id);
+  assert.equal(await tst.locator('button,a').filter({hasText:/Report/}).count(),0);
+  if(dir)await page.screenshot({path:`${dir}/handoff-checkin-chat-${width}.png`});
   // The card itself says it too
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   const c=page.locator('#task-'+failed.id);await c.waitFor();

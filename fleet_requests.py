@@ -26,6 +26,7 @@ import hashlib
 import json
 import logging
 import re
+import sqlite3
 
 import family
 import graph
@@ -519,8 +520,15 @@ class Requests:
                                '(SELECT value FROM json_each(?)) ORDER BY occurred_at DESC', (json.dumps(ids),)).fetchall()
             givers = {(r['fleet'], r['member_id']) for r in db.execute(
                 "SELECT fleet,member_id FROM fleet_requests WHERE card_id=? AND kind='handoff'", (card['id'],))}
+            # the owner's own note (a Check in now asks for a nudge: not a note for whoever takes it on)
             note = db.execute("SELECT feedback FROM decisions WHERE suggestion_id=? AND choice='other' AND source IN ('dashboard','telegram') "
-                              "AND trim(feedback)<>'' ORDER BY rowid DESC LIMIT 1", (card['id'],)).fetchone()
+                              "AND trim(feedback)<>'' AND id NOT LIKE 'handoff-checkin%' ORDER BY rowid DESC LIMIT 1", (card['id'],)).fetchone()
+            try:  # "Waiting on Sam: send the quote": what was promised is the task, not that title
+                promise = db.execute("SELECT what FROM promises WHERE suggestion_id=? AND direction='theirs' ORDER BY id DESC LIMIT 1",
+                                     (card['id'],)).fetchone()
+            except sqlite3.OperationalError:  # no promises yet
+                promise = None
+            holding = [{'fleet': r['fleet'], 'member_id': r['member_id']} for r in self.open_handoffs(db, card['id'])]
             prep = db.execute('SELECT status preparation_status,reason preparation_reason,error preparation_error,questions preparation_questions '
                               'FROM preparations WHERE suggestion_id=?', (card['id'],)).fetchone()
         mine = self.my_emails()
@@ -542,6 +550,9 @@ class Requests:
             task, mine_note = next_actions.body_text(ready['body']), ''
         else:
             task = (self.card_task or (lambda row: row.get('title') or ''))({**dict(card), **(dict(prep) if prep else {})})
+            what = ' '.join(str(promise['what'] if promise else '').split())
+            if what and _plain(task) == _plain(card['title']):  # the title only: what they are asked, in their words
+                task = sentences(what[:1].upper() + what[1:])
             mine_note = ' '.join(str(note['feedback']).split()) if note else ''
         refs = [ref for ref in self.work_fleets() if self.teammates(ref) and 'handoff' in self.fleets()[ref].get('asks', fleet.ASKS['work'])]
         allowed = self.handoff_accounts(refs)
@@ -568,6 +579,7 @@ class Requests:
         return {'suggestion_id': card['id'], 'title': fleet.clean(card['title'], 120), 'summary': fleet.clean(summary, 1000),
                 'task': fleet.clean(task, 1000), 'note': fleet.clean(mine_note, 600),
                 'contact': contact, 'due': card['due'] if 'due' in card.keys() else None, 'fleets': fleets,
+                'holding': holding,  # who still has it: handing it to them again is a check-in (Check in now), not a second handoff
                 'sources': [{'label': s['label'], 'kind': s['kind']} for s in self.handoff_sources(card['id'], allowed)]}
 
     def handoff_accounts(self, refs):

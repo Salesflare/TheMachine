@@ -131,9 +131,13 @@ waiting"), saying when it comes back if they haven't answered ("Check in with <t
   fields: about 3 hours later (within your hours, else the next morning) when it is due today, the morning of the work
   day before a nearer deadline, and the next work morning for an urgent to-do without a date. Urgency alone never brings
   it back the same day.
-- Back on top it says "Still with <teammate> · check in?", with **Check in now** (its chat), **Take it back** and
-  **Hand off to someone else**. Telegram says the same.
-- One open handoff per teammate: a second one to them is refused.
+- Back on top it says "Still with <teammate>", with **Check in now**, **Take it back** and **Hand off to someone
+  else**. Telegram says the same. **Check in now** (`fleet_handoff_checkin`) drafts a short nudge to them on the channel
+  the to-do was asked on (the first of its messages on an account that can send), like any prepared draft: nothing goes
+  before the owner's Send. Once sent, the to-do waits on them again until the next check-in. The check-in, its edits
+  and its send are no choice about the handoff: their answer still settles the to-do. With no channel that can send,
+  the to-do's chat opens and says so.
+- One open handoff per teammate: handing it to them again is a check-in (the form says so and offers **Check in**).
 
 The Fleet tab lists your handoffs in their own **Handoffs** box, both ways: open ones first (waiting, declined, or one
 waiting for you), accepted and done ones after, with **Open** to go to the to-do.
