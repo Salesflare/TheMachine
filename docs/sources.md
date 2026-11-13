@@ -179,7 +179,7 @@ Only events worth a look are stored: failed payments, disputes, ended subscripti
 
 Conversations updated in the last seven days (`bootstrap_days`), read in frozen search windows whose cursor commits with the conversations. Polls overlap six hours, the whole window is reread daily, and an expired cursor replays its window.
 
-Each conversation also keeps who on the team last closed or answered it and when the customer last wrote (admins only: bots, Fin and notes never count). An open to-do made only from Intercom closes by itself, with Undo, once someone on the team closed the conversation after the to-do was made, or answered it there and the customer hasn't written since, when a reply was all the to-do asked. The first sync after an update reads the conversations of open to-dos once more (up to 50) to fill this in.
+Each conversation also keeps who on the team last closed or answered it and when the customer last wrote (admins only: bots, Fin and notes never count). An open to-do made only from Intercom closes by itself, with Undo, once someone on the team closed the conversation after the to-do was made, or answered it there and the customer hasn't written since, when a reply was all the to-do asked. A close or reply from before the to-do that the sync read in only after it counts too (each keeps when it was first read, `seen`): the review that made the to-do never saw it. The first sync after an update reads the conversations of open to-dos once more (up to 50) to fill this in.
 
 **Read-only by design:**
 

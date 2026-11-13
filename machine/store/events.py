@@ -47,6 +47,29 @@ FOUND_NEWS_SLACK = dt.timedelta(hours=1)
 INTERCOM_FACTS = ('team_closed', 'team_reply', 'customer_at')
 
 
+def intercom_seen(old, metadata, stamp):
+    """`metadata` with `seen` on its team_closed and team_reply: when the Machine first had that close or reply. A reply
+    sent before a to-do was made but read in after it (the sync hadn't come round yet) is one the review that made it
+    never saw (Store.close_handled_intercom). The same one again keeps its stamp; one kept before stamps existed gets
+    none (it may well have been seen)."""
+    try:
+        old = json.loads(old) if isinstance(old, str) else old
+    except ValueError:
+        old = None
+    old = old if isinstance(old, dict) else None
+    out = dict(metadata)
+    for key in ('team_closed', 'team_reply'):
+        fact = out.get(key)
+        if not isinstance(fact, dict):
+            continue
+        before = old.get(key) if old else None
+        if isinstance(before, dict) and (before.get('at'), before.get('admin_id')) == (fact.get('at'), fact.get('admin_id')):
+            out[key] = {**fact, 'seen': before['seen']} if before.get('seen') else {k: v for k, v in fact.items() if k != 'seen'}
+        else:
+            out[key] = {**fact, 'seen': stamp}
+    return out
+
+
 def found_news_line(last_success):
     """From when found mail counts as news: the last sync less FOUND_NEWS_SLACK, None when the account never synced."""
     try:
@@ -278,8 +301,11 @@ class EventsStore:
                 if slack:  # its title names people as they become known: the same message, not an edit (slack_raw_title)
                     digest_event = {**event, 'title': slack_raw_title(event)}
                 digest = hashlib.sha256(encoded(digest_event).encode()).hexdigest()
-                old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + ' FROM events WHERE account_id=? AND source_id=?',
-                                 (account, event['source_id'])).fetchone()
+                facts = event['kind'] == 'intercom.conversation' and isinstance(event.get('metadata'), dict)
+                old = db.execute('SELECT id,content_hash' + (',title' if slack else '') + (',metadata' if facts else '')
+                                 + ' FROM events WHERE account_id=? AND source_id=?', (account, event['source_id'])).fetchone()
+                if facts and not history:
+                    event = {**event, 'metadata': intercom_seen(old['metadata'] if old else None, event['metadata'], now())}
                 if old and (history or old['content_hash'] == digest):
                     if history:
                         continue
