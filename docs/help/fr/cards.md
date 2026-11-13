@@ -102,7 +102,9 @@ Sur vos premières tâches, une courte ligne sous les boutons montre l’essenti
 
 Le premier jour, le haut des Tâches vous salue par votre prénom et indique qui attend votre réponse depuis le plus longtemps. The Machine rédige cette réponse en premier, pour qu’elle soit prête à votre arrivée. Rien ne part avant que vous l’envoyiez. La ligne disparaît après votre premier jour ou votre première tâche décidée.
 
-Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, l’organisation quand elle en concerne une (jamais seulement parce que quelqu’un y travaille), le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph. Un nom et une organisation affichent leur photo ou leur logo quand le Graph en a un. Sinon, ils affichent leurs initiales. Un logo illisible à cette taille, comme du blanc sur fond transparent ou un logotype très large, affiche aussi l’initiale.
+Chaque tâche commence par son titre. La ligne en dessous indique la personne concernée, l’organisation quand elle en concerne une (jamais seulement parce que quelqu’un y travaille), le projet, Travail ou Perso (sous **Tout**) et quand elle est arrivée, ainsi que son état quand son groupe ne le dit pas déjà. Appuyez sur un nom pour ouvrir sa page dans le Graph.
+
+Un nom et une organisation affichent leur photo ou leur logo quand le Graph en a un. Sinon, ils affichent leurs initiales. Un logo illisible à cette taille, comme du blanc sur fond transparent ou un logotype très large, affiche aussi l’initiale.
 
 Parfois, une ligne discrète sous le texte dit ce qui n'est pas connu, comme « Dernier contact il y a 12 jours par e-mail ; rien depuis. » Elle n'apparaît que si le dernier échange est ancien ou toujours sans réponse, et nomme les canaux non connectés où une réponse a pu arriver, comme WhatsApp. Votre Machine prépare avec les mêmes faits : elle dit ce qu'elle ne sait pas au lieu de deviner.
 

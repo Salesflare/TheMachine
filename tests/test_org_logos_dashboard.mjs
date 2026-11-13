@@ -41,10 +41,10 @@ try{
   assert.deepEqual(await img.evaluate(i=>[i.getAttribute('referrerpolicy'),i.getAttribute('loading'),i.width,i.height,i.alt]),['no-referrer','lazy',22,22,'']);
   await page.waitForFunction(()=>document.querySelector('article[data-node="org:globex.example"] .org-pic img')?.complete);
   await page.waitForFunction(()=>!document.querySelector('article[data-node="org:initech.example"] .org-pic img'));  // failed: the initial stays
-  assert.equal((await row('initech.example').textContent()).trim(),'I');
+  assert.equal(await row('initech.example').getAttribute('data-i'),'I');
   assert.equal(await row('hooli.example').locator('img').count(),0);  // not https: never loaded
   assert.equal(await row('acme.example').locator('img').count(),0);
-  assert.equal((await row('acme.example').textContent()).trim(),'A');
+  assert.equal(await row('acme.example').getAttribute('data-i'),'A');
   assert.ok(logoRequests.length&&logoRequests.every(r=>!r.referer&&r.url.startsWith('https://')),JSON.stringify(logoRequests));
   assert.ok(!logoRequests.some(r=>r.url.includes('plain.png')));
   if(process.env.SHOT_DIR){await mkdir(process.env.SHOT_DIR,{recursive:true});await page.screenshot({path:`${process.env.SHOT_DIR}/orgs-${width}-${scheme}.png`})}

@@ -102,7 +102,9 @@ Bij je eerste to-do's staat onder de knoppen één korte regel met wat je moet w
 
 Op je eerste dag zegt de bovenkant van To-do's hallo met je naam en wie het langst op je antwoord wacht. The Machine schrijft dat antwoord eerst, zodat het klaarstaat als je binnenkomt. Er gaat niets weg tot je het verstuurt. De regel verdwijnt na je eerste dag of je eerste besliste to-do.
 
-Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, de organisatie als hij over een organisatie gaat (nooit alleen omdat iemand daar werkt), het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen. Een naam en een organisatie tonen hun foto of logo als de Graph er een heeft. Anders tonen ze hun initialen. Een logo dat zo klein niet leesbaar is, zoals wit op een doorzichtige achtergrond of een breed woordmerk, toont ook de initiaal.
+Elke to-do begint met de titel. De regel eronder zegt over wie hij gaat, de organisatie als hij over een organisatie gaat (nooit alleen omdat iemand daar werkt), het project, Werk of Privé (onder **Alle**) en wanneer hij binnenkwam, en waar hij staat als de groep dat niet al zegt. Tik op een naam om de pagina in de Graph te openen.
+
+Een naam en een organisatie tonen hun foto of logo als de Graph er een heeft. Anders tonen ze hun initialen. Een logo dat zo klein niet leesbaar is, zoals wit op een doorzichtige achtergrond of een breed woordmerk, toont ook de initiaal.
 
 Soms zegt een rustige regel onder de tekst wat niet bekend is, zoals "Laatste contact 12 dagen geleden via e-mail; niets sindsdien." Die staat er alleen als het laatste contact oud is of nog onbeantwoord, en noemt kanalen die niet gekoppeld zijn waar ze misschien geantwoord hebben, zoals WhatsApp. Je Machine bereidt voor met dezelfde feiten, dus hij zegt wat hij niet weet in plaats van te gokken.
 

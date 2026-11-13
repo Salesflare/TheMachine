@@ -48,7 +48,7 @@ try{
   // Settled: every chip picture loaded or taken off
   await page.waitForFunction(()=>[...document.querySelectorAll('.card-badges .chip-av img')].every(i=>i.complete&&i.naturalWidth>0)&&!document.querySelector('#task-b1b1b1b1b1b1b1b1 .chip-av img'));
   const pic=async(id,isOrg)=>{const c=chip(id,isOrg);return {img:await c.locator('.chip-av img').count()?await c.locator('.chip-av img').getAttribute('src'):null,
-   text:(await c.locator('.chip-av').textContent()).trim(),h:Math.round((await c.boundingBox()).height),broken:await c.locator('img').evaluateAll(l=>l.some(i=>!i.naturalWidth))}};
+   text:await c.locator('.chip-av').getAttribute('data-i'),h:Math.round((await c.boundingBox()).height),broken:await c.locator('img').evaluateAll(l=>l.some(i=>!i.naturalWidth))}};
   const lee=await pic('a1a1a1a1a1a1a1a1'),brush=await pic('a1a1a1a1a1a1a1a1',true);
   assert.equal(lee.img,PHOTO);assert.equal(brush.img,LOGO);
   const look=await chip('a1a1a1a1a1a1a1a1').locator('.chip-av').evaluate(s=>{const i=s.querySelector('img'),r=s.getBoundingClientRect(),cs=getComputedStyle(i);

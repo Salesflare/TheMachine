@@ -297,16 +297,16 @@ const CHIP_ICON={person:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true">
  project:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/></svg>'};
 // Small pictures (a to-do's chips, the Graph's lists and pages): a person's photo round and cover-cropped, an
 // organization's logo contain-fit on a white tile, each with a faint ring that reads on either theme. Their initials sit
-// underneath: they show until the picture loads, when it can't, and when a logo wouldn't read this small (logoReads).
+// underneath (drawn from data-i, so they're never part of a name's text): they show until the picture loads, when it can't, and when a logo wouldn't read this small (logoReads).
 // Photos only as saved on this Machine; logos also as an https link, with no referrer, asked with CORS so its pixels can
 // be checked and asked again without when the host refuses that.
 const LOGO_URL=/^https:\/\/[^\s"'<>\\]+$/,PHOTO_URL=/^api\/person-photo\?p=[0-9a-f]{32}$/;
 const initials=name=>{const w=String(name||'').trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));return((w[0]?.[0]||'?')+(w.length>1?w.at(-1)[0]:'')).toUpperCase()};
 const picImg=(u,px,cors)=>html`<img src="${u}" alt="" width="${px}" height="${px}" loading="lazy" decoding="async" referrerpolicy="no-referrer"${cors?html` crossorigin="anonymous"`:''}>`;
-const personPic=(n,big,cls='')=>{const u=PHOTO_URL.test(n.profile?.photo||'')?n.profile.photo:'';return html`<span class="person-pic${big?' big':''}${cls}" aria-hidden="true">${initials(n.name)}${u?picImg(u,big?44:26):''}</span>`};
+const personPic=(n,big,cls='')=>{const u=PHOTO_URL.test(n.profile?.photo||'')?n.profile.photo:'';return html`<span class="person-pic${big?' big':''}${cls}" data-i="${initials(n.name)}" aria-hidden="true">${u?picImg(u,big?44:26):''}</span>`};
 // Small, the site's own square icon comes before a looked-up logo (often a wide wordmark); big, the other way round.
 const orgPic=(n,big,cls='')=>{const p=n.profile||{},u=(big?[p.logo,p.icon]:[p.icon,p.logo]).find(l=>LOGO_URL.test(l||'')||PHOTO_URL.test(l||''))||'';
- return html`<span class="org-pic${big?' big':''}${cls}" aria-hidden="true">${(String(n.name||'').trim()[0]||'?').toUpperCase()}${u?picImg(u,big?36:22,LOGO_URL.test(u)):''}</span>`};
+ return html`<span class="org-pic${big?' big':''}${cls}" data-i="${(String(n.name||'').trim()[0]||'?').toUpperCase()}" aria-hidden="true">${u?picImg(u,big?36:22,LOGO_URL.test(u)):''}</span>`};
 // A logo reads small when it draws enough on the white tile, and isn't a wide wordmark (by its shape, or by what it
 // draws inside a square). One that fills its square edge to edge (an app icon) drops the tile's padding. A host that
 // refuses CORS leaves only its shape to judge.
