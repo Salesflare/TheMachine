@@ -100,6 +100,83 @@ class Relayed(unittest.TestCase):
                                                  'list-unsubscribe': '<mailto:leave@blog.example>'})['mailto']['to'], 'leave@blog.example')
 
 
+# Lists that keep the sender's From (made-up names): only their headers say they relayed the mail
+KEPT_GROUP = {  # a Google Workspace group, as the mail reaches a member
+    'from': '"Tina, Helpers" <tina@helpers.example>', 'to': '"hello@team.example" <hello@team.example>',
+    'list-id': '<hello.team.example>', 'x-google-group-id': '312525710270',
+    'mailing-list': 'list hello@team.example; contact hello+owners@team.example',
+    'list-unsubscribe': '<mailto:googlegroups-manage+312525710270+unsubscribe@googlegroups.com>, <https://groups.google.com/a/team.example/group/hello/subscribe>',
+    'list-unsubscribe-post': 'List-Unsubscribe=One-Click'}
+M365_GROUP = {  # a Microsoft 365 group
+    'from': 'Vendor News <news@vendor.example>', 'to': 'Sales <sales@team.example>', 'sender': 'Sales <sales@team.example>',
+    'list-unsubscribe': '<https://outlook.office365.com/owa/sales@team.example/groupsubscription.ashx?action=unsubscribe>'}
+MAILMAN = {  # a Mailman list
+    'from': 'Ann <ann@uni.example>', 'to': 'dev@lists.project.example', 'list-id': 'Developers <dev.lists.project.example>',
+    'x-mailman-version': '3.3.8',
+    'list-unsubscribe': '<https://lists.project.example/mailman3/lists/dev.lists.project.example/>, <mailto:dev-leave@lists.project.example>'}
+DIRECT = {  # a newsletter sent straight to the owner through a mail service
+    'from': 'Shop <news@shop.example>', 'to': 'owner@acme.example', 'sender': 'bounce-7@esp.example',
+    'list-id': '<1234.list-id.esp.example>', 'list-unsubscribe': '<mailto:u-1@esp.example>, <https://esp.example/u/1>',
+    'list-unsubscribe-post': 'List-Unsubscribe=One-Click'}
+GROUP_FOOTER = ('<p>To unsubscribe from this group and stop receiving emails from it, send an email to '
+                '<a href="mailto:hello+unsubscribe@team.example">hello+unsubscribe@team.example</a>. '
+                '<a href="https://groups.google.com/a/team.example/d/msgid/hello/1">View this discussion</a></p>')
+
+
+class RelayHeaders(unittest.TestCase):
+    def test_a_list_that_keeps_the_senders_from_is_still_a_relay(self):
+        for fixture, relay, original in ((KEPT_GROUP, 'hello@team.example', 'tina@helpers.example'),
+                                         (M365_GROUP, 'sales@team.example', 'news@vendor.example'),
+                                         (MAILMAN, 'dev@lists.project.example', 'ann@uni.example')):
+            m = mc.header_meta(fixture)
+            self.assertEqual(mc.relay_of(m), relay, fixture)
+            self.assertEqual(mc.original_sender(m)[1], original, fixture)
+            self.assertEqual(mc.unsubscribe_ways_of(fixture), {}, fixture)  # never the list's own way
+        # mail as the sync keeps it (From, To and List-Id only): the group's address
+        self.assertEqual(mc.relay_of({'from': KEPT_GROUP['from'], 'to': KEPT_GROUP['to'], 'list_id': KEPT_GROUP['list-id']}), 'hello@team.example')
+        # one header alone is enough: the group's id, its Mailing-list, Mailman's version, or a list id at a group service
+        for one in ({'x-google-group-id': '1'}, {'mailing-list': 'list hello@team.example'}, {'x-mailman-version': '3.3.8'},
+                    {'list-id': '<hello.googlegroups.com>'}):
+            fixture = {'from': KEPT_GROUP['from'], 'to': 'owner@acme.example', 'list-unsubscribe': KEPT_GROUP['list-unsubscribe'], **one}
+            self.assertTrue(mc.relay_of(mc.header_meta(fixture)), one)
+            self.assertEqual(mc.unsubscribe_ways_of(fixture), {}, one)
+        # sent to the group as Bcc: the owner's own domain tells
+        bcc = {**KEPT_GROUP, 'to': 'undisclosed-recipients:;'}
+        bcc.pop('x-google-group-id'), bcc.pop('mailing-list')
+        self.assertEqual(mc.relay_of(mc.header_meta(bcc), own={'team.example'}), 'hello.team.example')
+        self.assertEqual(mc.unsubscribe_ways_of(bcc, own={'team.example'}), {})
+
+    def test_a_direct_newsletter_keeps_its_own_ways(self):
+        self.assertEqual(mc.relay_of(mc.header_meta(DIRECT)), '')  # a mail service's Sender is no list
+        self.assertEqual(mc.unsubscribe_ways_of(DIRECT, own={'acme.example'}),
+                         {'one_click': 'https://esp.example/u/1', 'link': 'https://esp.example/u/1',
+                          'mailto': {'to': 'u-1@esp.example', 'subject': 'unsubscribe', 'body': 'unsubscribe'}})
+
+    def test_never_a_group_service_or_the_owners_own_domain(self):
+        # whatever the other headers say: an unsubscribe at a group service or at the owner's own domains is never used
+        plain = {'from': 'Shop <news@shop.example>', 'list-unsubscribe': KEPT_GROUP['list-unsubscribe'], 'list-unsubscribe-post': 'List-Unsubscribe=One-Click'}
+        self.assertEqual(mc.unsubscribe_ways_of(plain), {})
+        own = {'from': 'Shop <news@shop.example>', 'list-unsubscribe': '<mailto:hello+unsubscribe@team.example>, <https://lists.team.example/leave>'}
+        self.assertEqual(mc.unsubscribe_ways_of(own, own={'team.example'}), {})
+        self.assertEqual(set(mc.unsubscribe_ways_of(own)), {'mailto', 'link'})
+
+    def test_the_senders_own_unsubscribe_link_from_the_text(self):
+        text = (GROUP_FOOTER + '<a href="https://www.helpers.example/news?id=1">Read more</a>'
+                '<a href="https://track.helpers.example/c?u=9&amp;l=unsubscribe">Unsubscribe</a>')
+        self.assertEqual(mc.body_link(text, 'tina@helpers.example', 'hello@team.example', {'team.example'}),
+                         'https://track.helpers.example/c?u=9&l=unsubscribe')
+        self.assertEqual(mc.body_link('<a href="https://www.helpers.example/afmelden">Afmelden</a>', 'tina@helpers.example', 'hello@team.example'),
+                         'https://www.helpers.example/afmelden')
+        # the group's footer, a link elsewhere, plain http, a link that isn't an unsubscribe: none
+        for bad in (GROUP_FOOTER, '<a href="https://esp.example/unsubscribe">Unsubscribe</a>',
+                    '<a href="http://helpers.example/unsubscribe">Unsubscribe</a>', '<a href="https://helpers.example/news">News</a>',
+                    '<a href="https://groups.google.com/unsubscribe">Unsubscribe</a>'):
+            self.assertEqual(mc.body_link(bad, 'tina@helpers.example', 'hello@team.example', {'team.example'}), '', bad)
+        # a sender at the owner's own domain: never
+        self.assertEqual(mc.body_link('<a href="https://team.example/unsubscribe">Unsubscribe</a>', 'news@team.example', 'hello@team.example',
+                                      {'team.example'}), '')
+
+
 class Cleanup(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -110,12 +187,13 @@ class Cleanup(unittest.TestCase):
         self.store.accounts = self.app.config['accounts']
         self.app.cleanup_inline = True
         self.now = T(2026, 11, 9, 6, 0)
-        self.ways, self.marks, self.clicked, self.moved = {}, False, [], []
+        self.ways, self.marks, self.clicked, self.moved, self.html = {}, False, [], [], {}
         for name, value in (('routines_now', lambda s: self.now), ('background_pause', lambda s, **k: None),
                             ('background_spaced', lambda s: True), ('background_started', lambda s: None),
                             ('preparation_gateway', lambda s, request: self.gateway(request)),
                             ('routine_spawn', lambda s, target, run_id: target(run_id)),
                             ('cleanup_headers', lambda s, account, message: self.ways.get(message, {})),
+                            ('cleanup_html', lambda s, account, message: self.html.get(message, '')),
                             ('cleanup_can_send', lambda s, account: False),
                             ('cleanup_can_mark', lambda s, account: self.marks)):
             p = patch.object(a.App, name, value); p.start(); self.addCleanup(p.stop)
@@ -248,6 +326,29 @@ class Cleanup(unittest.TestCase):
             old = {'account': 'w', 'message': 'm9', 'address': 'hello@team.example', 'from': "'Pat Shop' via hello@team.example readers"}
             self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
         self.assertEqual(self.clicked, [])
+
+    def test_a_group_that_kept_the_senders_from_never_gets_the_unsubscribe(self):
+        # the owner's team group relayed a newsletter with its From unchanged; its own unsubscribe is the group's
+        self.mail(KEPT_GROUP['from'], 'Autumn news', hours_ago=1, list_unsubscribe=True, list_id=KEPT_GROUP['list-id'], to=KEPT_GROUP['to'])
+        with self.store.connect() as db:
+            found = mc.newsletters(db, ['w'], stamp(5), mc.own_sites(db, self.app.config))
+        self.assertEqual([(i['address'], i['via']) for i in found], [('tina@helpers.example', 'hello@team.example')])
+        sends = []
+        with patch.object(mail_cleanup_app.Gmail, 'get', lambda s, resource, params=None: {'payload': {'headers': [
+                {'name': k.title(), 'value': v} for k, v in KEPT_GROUP.items()]}}), \
+                patch.object(a.App, 'cleanup_headers', mail_cleanup_app.MailCleanupApp.cleanup_headers), \
+                patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
+                patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
+            self.assertEqual(self.app.cleanup_ways(found), [])  # nothing safe: no row offers Unsubscribe
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('failed', None, None))
+            # a row from before this fix (no via): the headers read at the confirm still tell
+            old = {k: v for k, v in found[0].items() if k != 'via'}
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
+            # the sender's own unsubscribe page in the mail's text: for the owner to open
+            self.html[found[0]['message']] = GROUP_FOOTER + '<a href="https://helpers.example/unsubscribe?u=1">Unsubscribe</a>'
+            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['page'])
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('yours', 'page', 'https://helpers.example/unsubscribe?u=1'))
+        self.assertEqual((self.clicked, sends), ([], []))
 
     def test_what_the_review_sorted_as_a_notification_is_no_newsletter(self):
         self.mail('Payments <noreply@pay.example>', 'Money received', list_unsubscribe=True)
