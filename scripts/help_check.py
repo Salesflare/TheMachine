@@ -55,7 +55,7 @@ AREAS = {'getting-started': 'Getting started', 'cards': 'To-dos and chat', 'cale
 FEATURES = {
     'do-it': ('dashboard.html', 'Do it'),
     'history': ('machine/app/history.py', 'def history_step'),
-    'snooze': ('dashboard.html', 'Remind me later'),
+    'snooze': ('dashboard.html', 'id="snooze-dialog"'),
     'card-chat': ('dashboard.html', 'id="chat'),
     'hand-to-agent': ('dashboard.html', 'Hand to Codex'),
     'promises': ('dashboard.html', 'You promised'),

@@ -28,6 +28,8 @@ const measure=(page,sel)=>page.evaluate(sel=>{const d=document.querySelector(sel
   buttons:buttons.map(b=>({label:b.textContent,top:Math.round(r(b).top),bottom:Math.round(r(b).bottom)})),
   editor:ed&&!ed.closest('[hidden]')?{scrolls:ed.scrollHeight>ed.clientHeight+1,top:Math.round(r(ed).top),bottom:Math.round(r(ed).bottom)}:null,
   dialogScrolls:d.scrollHeight>d.clientHeight+1,page:getComputedStyle(document.documentElement).overflow,pageScrollY:scrollY}},sel);
+// How each Snooze row looks: one style for all
+const snoozeLooks=bs=>bs.map(b=>{const s=getComputedStyle(b);return [s.backgroundColor,s.borderTopWidth,s.font,s.textAlign,s.paddingLeft,s.width].join('|')});
 async function run(scheme,shots){
  const ctx=await browser.newContext({viewport:{width:390,height:844},colorScheme:scheme,locale:'en-US',isMobile:true,hasTouch:true});
  await ctx.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
@@ -56,9 +58,17 @@ async function run(scheme,shots){
  assert.deepEqual(m.dialog,[0,470,390]);
  for(const b of m.buttons)assert.ok(b.bottom<=470,JSON.stringify(b));
  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>innerHeight===844);await page.waitForTimeout(250);
- // Remind me later: the whole screen too
+ // Snooze is a short menu: a bottom sheet as tall as its rows, like a to-do's …, titled as its button; every time,
+ // Choose date too, is a row of one style; Choose date shows the month in the same sheet; a tap on the dimmed page closes it
  await page.evaluate(()=>{document.querySelector('#send-dialog').close();openSnooze('l1')});await page.locator('#snooze-dialog[open]').waitFor();
- m=await measure(page,'#snooze-dialog');assert.deepEqual(m.dialog,[0,844,390]);
+ m=await measure(page,'#snooze-dialog');assert.equal(m.dialog[1],844);assert.equal(m.dialog[2],390);assert.ok(m.dialog[0]>844/2,JSON.stringify(m.dialog));
+ assert.equal(m.dialogScrolls,false);assert.equal(await page.locator('#snooze-title').textContent(),'Snooze');
+ const looks=await page.locator('#snooze-quick button').evaluateAll(snoozeLooks);
+ assert.equal(looks.length,5);assert.equal(new Set(looks).size,1,looks.join('\n'));
+ await page.locator('#snooze-custom').click();assert.ok(await page.locator('#snooze-days').isVisible());assert.equal(await page.locator('#snooze-title').textContent(),'Snooze');
+ m=await measure(page,'#snooze-dialog');assert.equal(m.dialog[1],844);assert.ok(m.dialog[0]>0);
+ await page.locator('#snooze-back').click();await page.mouse.click(195,100);await page.waitForTimeout(150);
+ assert.equal(await page.locator('#snooze-dialog').evaluate(d=>d.open),false,'a tap beside the sheet closes it');
  await ctx.close();
 }
 try{
@@ -73,6 +83,12 @@ try{
  assert.equal(m.dialog[2],560);assert.ok(m.dialog[0]>0);
  assert.deepEqual(m.buttons.map(b=>b.label),['Send now','Ask for changes','Cancel']);
  assert.notEqual(m.page,'hidden');
+ // Snooze: a compact box with the same title and rows
+ await page.evaluate(()=>{document.querySelector('#send-dialog').close();openSnooze('l1')});await page.locator('#snooze-dialog[open]').waitFor();
+ const s=await measure(page,'#snooze-dialog');assert.ok(s.dialog[2]<=320&&s.dialog[0]>0&&s.dialog[1]<900,JSON.stringify(s.dialog));
+ assert.equal(await page.locator('#snooze-title').textContent(),'Snooze');
+ const looks=await page.locator('#snooze-quick button').evaluateAll(snoozeLooks);assert.equal(new Set(looks).size,1,looks.join('\n'));
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#snooze-dialog').evaluate(d=>d.open),false,'Esc closes it');
  await ctx.close();
  assert.deepEqual(errors,[]);
  console.log('ok');

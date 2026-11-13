@@ -8,7 +8,7 @@ order: 3
 ---
 ## Adiar uma tarefa
 
-Clique em **Adiar** em uma tarefa. **Lembrar mais tarde** oferece alguns horários, como em 2 horas, amanhã, em 3 dias ou em uma semana, ou **Escolher data** para outro dia e **Hora**, depois **Salvar horário**. Adiou sem querer? **Desfazer** na mensagem traz ela de volta na hora.
+Clique em **Adiar** em uma tarefa. O menu oferece alguns horários, como em 2 horas, amanhã, em 3 dias ou em uma semana, ou **Escolher data** para outro dia e **Hora**, depois **Salvar horário**. Adiou sem querer? **Desfazer** na mensagem traz ela de volta na hora.
 
 Tarefas adiadas por um dia ou mais voltam no seu horário de "Itens adiados voltam às", e as tarefas de trabalho esperam um dia de trabalho. Defina os dois em [Horário de trabalho](work-hours.md).
 

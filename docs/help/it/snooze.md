@@ -8,7 +8,7 @@ order: 3
 ---
 ## Posticipa un'attività
 
-Premi **Posticipa** su un'attività. **Ricordamelo più tardi** offre alcuni orari, come tra 2 ore, domani, tra 3 giorni o tra una settimana, oppure **Scegli una data** per un altro giorno e **Ora**, poi **Salva l’orario**. Posticipata per sbaglio? **Annulla** nel messaggio la riporta subito indietro.
+Premi **Posticipa** su un'attività. Il menu offre alcuni orari, come tra 2 ore, domani, tra 3 giorni o tra una settimana, oppure **Scegli una data** per un altro giorno e **Ora**, poi **Salva l’orario**. Posticipata per sbaglio? **Annulla** nel messaggio la riporta subito indietro.
 
 I posticipi di un giorno o più arrivano all'ora impostata in "I posticipi arrivano alle", e le attività di lavoro aspettano un giorno lavorativo. Imposta entrambe le cose in [Orario di lavoro](work-hours.md).
 
