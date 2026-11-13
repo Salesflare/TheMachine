@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Your WhatsApp chats, as a linked device of your phone's WhatsApp, like WhatsApp on a computer. When you connect it, WhatsApp also sends your older chats, often years of them. Your Machine keeps all of it, and only messages from the last 7 days turn into to-dos.
 
-A photo, voice message or file without a caption shows as what it is, like "Sent image". WhatsApp's own notices, such as the encryption notice or someone joining a group, have no text and are left out.
+A photo, voice message or file without a caption shows as what it is, like "Photo", with its icon. WhatsApp's own notices, such as the encryption notice or someone joining a group, have no text and are left out.
 
 ## Read photos
 

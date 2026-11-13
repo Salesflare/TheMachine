@@ -510,6 +510,9 @@ LAZY_CEILING['brief'] = 7_000
 # settings 136,000 -> 140,000 (2026-11-12): Work hours' Morning digest follows Snoozes land at, with its note under the
 # field (about 1.8 KB); main was 4 bytes under the old ceiling.
 LAZY_CEILING['settings'] = 140_000
+# msgview 18,000 -> 29,000 (2026-11-13): messenger chats read like their app, with link cards, media chips and their
+# style sheet (events-message.css, about 7.4 KB), which loads with the viewer instead of the first load.
+LAZY_CEILING['msgview'] = 29_000
 # 2026-11-12: out of the first load (FIRST_LOAD_CEILING 1,248,000), each part about this much bigger or new:
 # newtodo 26,000: New to-do's dialog (about 24.7 KB). palette 20,000: Search and Ask (about 18.8 KB).
 # compose 6,000 -> 34,000: the send dialog and a doc write's review (about 28.3 KB).

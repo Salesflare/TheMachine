@@ -93,6 +93,25 @@ def same(a, b):
     return bool(norm(a)) and norm(a) == norm(b)
 
 
+# A chat's photo, video or file without a caption is stored as the words "Sent image" (WhatsApp), "Sent a photo"
+# (Telegram, Signal): the viewer shows what it is as a media chip instead of those words (media). The body keeps
+# them for everything else that reads it (the to-do's chat, the model).
+MEDIA = {'image': 'photo', 'photo': 'photo', 'view-once media': 'photo', 'video': 'video', 'gif': 'video', 'video note': 'video',
+         'animation': 'video', 'audio': 'audio', 'voice': 'voice', 'ptt': 'voice', 'voice note': 'voice', 'sticker': 'sticker'}
+MEDIA_KINDS = {'whatsapp.message', 'telegram.message', 'signal.message'}
+
+
+def media_shown(kind, m, body):
+    """{'media': what a chat message sent ('photo', 'video', 'audio', 'voice', 'sticker' or 'file'), 'media_only':
+    True when its text is only the source's "Sent …" placeholder for it}, or {} when it sent none. A caption is
+    text of its own and reads under the chip."""
+    sent = str(m.get('media_type') or '').strip().lower().replace('_', ' ')
+    if kind not in MEDIA_KINDS or not sent:
+        return {}
+    only = bool(re.fullmatch(r'Sent (?:an? )?' + re.escape(sent), str(body or '').strip(), re.I))
+    return {'media': MEDIA.get(sent, 'file'), **({'media_only': True} if only else {})}
+
+
 def drop_repeats(body, *said):
     """The body without leading lines that repeat something already shown (the title, the sender)."""
     lines = str(body or '').split('\n')

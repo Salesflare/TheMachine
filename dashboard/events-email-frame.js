@@ -51,6 +51,8 @@ const inView=()=>{if(!keep)box.querySelector('.convo-main,.email-main')?.scrollI
 // A chat to-do: its conversation as one thread, with what was said around it (its other conversations after it); anything else still as related messages
 if(isChat(first)){const others=list.filter(o=>!isChat(o)),main=near.main??first.event_id;
  setHTML(box,html`${draftFilesBlock(s)}${chatThreads([...list,...near.before,...near.after]).map(c=>chatThreadHTML(c,{main,earlier:near.earlier&&c.some(o=>o.event_id===main)}))}${others.length?html`<h3 class="email-earlier">${t(['{} related message','{} related messages'],others.length)}</h3>${others.map(o=>html`<details class="email" data-msg="${at(o)}"><summary>${sender(o.from)||kindLabel(o.kind)} · ${localeDate(new Date(o.occurred_at),DL,{day:'numeric',month:'short'})}</summary>${messageHTML(o,id,at(o))}</details>`)}`:''}`);
+ // the conversation's line stays in view under the dialog's title (events-message.css): on a phone the title stays on top
+ const head=dialog.querySelector('form');box.style.setProperty('--convo-top',getComputedStyle(head).position==='sticky'?head.offsetHeight+'px':'-'+getComputedStyle(dialog).paddingTop);
  wire();inView();return}
 // An email: the thread's earlier mail folded above it and the replies below, the to-do's own one open and marked
 const chats=rest.filter(isChat),mails=rest.filter(o=>!isChat(o)),threaded=near.before.length||near.after.length||near.earlier;

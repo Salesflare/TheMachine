@@ -114,7 +114,7 @@ Sobre el borrador, una línea discreta nombra el mensaje del que viene, con el l
 
 Cuando el borrador sigue lo que otra persona dijo en otro mensaje, como la sugerencia de un compañero en Slack, una línea bajo la tarea lo indica, como "Según Sam en #ops". Tócala para leer ese mensaje aquí, con Abrir en Slack o Gmail dentro. Si ese mensaje es el origen de la propia tarea, la línea de origen ya lo muestra y no hay una segunda línea.
 
-Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea tiene una línea fina al lado.
+Un chat (Slack, WhatsApp, Telegram, Intercom…) se lee como una sola conversación, del más antiguo al más nuevo, cada mensaje una vez; el mensaje del que trata la tarea aparece bajo "Esta tarea". En WhatsApp, Telegram o Signal tus propios mensajes van a la derecha, como en la app.
 
 Una respuesta en un hilo de Slack también muestra lo que se dijo antes del hilo. Un enlace de la tarea a su propio mensaje también lo abre aquí, con **Abrir en Slack** abajo.
 

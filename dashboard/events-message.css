@@ -1,0 +1,52 @@
+/*@lazy*/
+/* The message viewer's chats (events-message.js chatThreadHTML), loaded with it. The conversation's line stays on top
+   while a to-do's thread scrolls (--convo-top: under the title where that stays, events-email-frame.js), a day reads as a
+   pill, the to-do's own message under "This to-do". */
+#email-dialog .convo-chat{position:sticky;top:var(--convo-top);z-index:2;margin:-6px 0 var(--sp-2);padding:8px 0;background:var(--surface-2);box-shadow:0 1px 0 var(--border)}
+.convo-chat>span[translate]{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.convo-chat .convo-app{flex:none;color:var(--faint);font-weight:400}.convo-chat .convo-app::before{content:"·";margin-right:8px}
+.convo .convo-day>span{display:inline-block;padding:3px 10px;border-radius:var(--r-pill);background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--muted)}
+.convo-this{display:flex;align-items:center;gap:6px;margin:8px 4px 2px;font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--muted)}
+.convo-this::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mint)}
+.convo-turn.me>.convo-this{flex-direction:row-reverse}
+/* A link as a card: the page's name over the site, or the site and path */
+.convo-link{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:100%;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--text) 6%,var(--surface-2));color:var(--text);text-decoration:none;line-height:1.35}
+.convo-link:hover{background:color-mix(in srgb,var(--text) 10%,var(--surface-2))}
+.convo-link-name{font-weight:var(--fw-medium);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.convo-link-site{display:flex;align-items:center;gap:6px;min-width:0;font-size:var(--fs-sm);color:var(--muted)}.convo-link-site>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.convo-link-site .via-ico{width:13px;height:13px}
+.convo-say .convo-link+.convo-link,.convo-said>*+.convo-link{margin-top:6px}
+/* What a message sent without a caption: a chip with its icon */
+.convo-media{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:var(--fs-sm);font-weight:var(--fw-medium)}
+.convo-media-ico{flex:none;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--text) 8%,transparent);position:relative}
+.convo-media-ico::after{content:"";position:absolute;inset:6px;background:currentColor;-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.convo-m-photo{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='15' rx='2.5'/%3E%3Ccircle cx='9' cy='10' r='1.8'/%3E%3Cpath d='m21 16-5-5-9 8.5'/%3E%3C/svg%3E")}
+.convo-m-video{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2.5' y='6' width='13' height='12' rx='2.5'/%3E%3Cpath d='m15.5 10.5 6-3.5v10l-6-3.5'/%3E%3C/svg%3E")}
+.convo-m-voice{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21'/%3E%3C/svg%3E")}
+.convo-m-audio{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l11-2v13'/%3E%3Ccircle cx='6.5' cy='18' r='2.5'/%3E%3Ccircle cx='17.5' cy='16' r='2.5'/%3E%3C/svg%3E")}
+.convo-m-sticker{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01'/%3E%3C/svg%3E")}
+.convo-m-file{--m:var(--i-file)}
+.convo-said>.convo-media+*{margin-top:6px}
+/* Messenger chats look like their app: bubbles on both sides without a line, the owner's in the accent, each with its
+   time in its corner, a run's bubbles close together */
+#email-content .convo-im .convo-turn{gap:3px}
+#email-content .convo-im .convo-turn>.convo-meta{display:flex;align-items:center;margin:0 0 1px}
+#email-content .convo-im .convo-turn .convo-say{display:flex;flex-wrap:wrap;align-items:flex-end;column-gap:10px;max-width:min(80%,52ch);padding:7px 12px 6px;border:0;border-radius:16px;box-shadow:none;background:color-mix(in srgb,var(--text) 7%,var(--surface-2))}
+#email-content .convo-im .convo-turn.me .convo-say{background:color-mix(in srgb,var(--mint) 32%,var(--surface-2))}
+#email-content .convo-im .convo-turn:not(.me) .convo-say{border-top-left-radius:5px;border-bottom-left-radius:5px}
+#email-content .convo-im .convo-turn:not(.me)>.convo-say:first-of-type{border-top-left-radius:16px}
+#email-content .convo-im .convo-turn:not(.me)>.convo-say:last-child{border-bottom-left-radius:16px}
+#email-content .convo-im .convo-turn.me .convo-say{border-top-right-radius:5px;border-bottom-right-radius:5px}
+#email-content .convo-im .convo-turn.me>.convo-say:first-of-type{border-top-right-radius:16px}
+#email-content .convo-im .convo-turn.me>.convo-say:last-child{border-bottom-right-radius:16px}
+#email-content .convo-im .convo-said{flex:0 1 auto;min-width:0;max-width:100%}
+#email-content .convo-im .convo-turn .convo-say>.convo-t{flex:none;margin:0 0 0 auto;font-size:11px;line-height:1.7;color:var(--faint);font-variant-numeric:tabular-nums}
+#email-content .convo-im .convo-turn.me .convo-say>.convo-t{color:color-mix(in srgb,var(--text) 55%,transparent)}
+#email-content .convo-im .convo-turn .convo-say.convo-main{margin-left:0;padding-left:12px;border-left:0;box-shadow:0 0 0 2px var(--mint)}
+#email-content .convo-im .convo-turn .convo-say:is(.convo-say-link,.convo-say-media){flex-wrap:nowrap}
+#email-content .convo-im .convo-say-link .convo-link{padding:0;background:none}
+#email-content .convo-im .convo-say-link .convo-link:hover .convo-link-name{text-decoration:underline}
+#email-content .convo-im .convo-turn .convo-say-media{align-items:center;padding:5px 12px 5px 5px}
+#email-content .convo-im .convo-turn+.convo-turn{margin-top:var(--sp-3)}
+#email-content .convo-im .convo-say .wa-photos{margin:2px 0}
+@media(max-width:560px){#email-content .convo-im .convo-turn .convo-say{max-width:86%}}

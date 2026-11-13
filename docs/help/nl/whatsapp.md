@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Je WhatsApp-chats, als gekoppeld apparaat van WhatsApp op je telefoon, zoals WhatsApp op een computer. Als je koppelt, stuurt WhatsApp ook je oudere chats, vaak jaren terug. Je Machine bewaart alles, en alleen berichten van de laatste 7 dagen worden to-do's.
 
-Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zoals "Afbeelding verstuurd". De eigen meldingen van WhatsApp, zoals die over versleuteling of over iemand die bij een groep komt, hebben geen tekst en worden weggelaten.
+Een foto, spraakbericht of bestand zonder bijschrift staat er als wat het is, zoals "Foto", met een icoontje. De eigen meldingen van WhatsApp, zoals die over versleuteling of over iemand die bij een groep komt, hebben geen tekst en worden weggelaten.
 
 ## Foto’s lezen
 

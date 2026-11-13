@@ -22,8 +22,8 @@ assert.equal(run.status,0,run.stderr);
 const data=JSON.parse(run.stdout);
 const other=process.env.CHAT_THREAD_PAGE,dashboard=await dashboardPage(other||undefined),shots=process.env.CHAT_THREAD_SHOTS;
 const now=new Date().toISOString();
-const SRC={slack:'Source: Slack DM from Rowan Vale',whatsapp:'Source: WhatsApp from Milo Grant',intercom:'Source: Intercom from Juno Park',email:'Source: email from Avery Stone'};
-const TITLE={slack:'Move the warmup tool billing to the company card',whatsapp:'Tell the climbing crew if you drive on Saturday',intercom:'Resend the October invoice to Harbor',email:'Reply to Avery about the booth quote'};
+const SRC={slack:'Source: Slack DM from Rowan Vale',whatsapp:'Source: WhatsApp from Milo Grant',wamedia:'Source: WhatsApp from Sasha Brook',intercom:'Source: Intercom from Juno Park',email:'Source: email from Avery Stone'};
+const TITLE={slack:'Move the warmup tool billing to the company card',whatsapp:'Tell the climbing crew if you drive on Saturday',wamedia:'Get the chalk and tape for Saturday',intercom:'Resend the October invoice to Harbor',email:'Reply to Avery about the booth quote'};
 const cards=Object.entries(data).map(([k,v])=>({id:v.id,title:TITLE[k],body:'',status:'pending',scope:'work',created_at:now,event_ids:v.originals.map(o=>o.event_id),source_line:SRC[k]}));
 const byId=Object.fromEntries(Object.values(data).map(v=>[v.id,v.originals]));
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
@@ -74,10 +74,25 @@ try{
   assert.ok(await box.evaluate(n=>n.closest('dialog').scrollWidth<=n.closest('dialog').clientWidth+1),'no sideways scroll');
   // WhatsApp group: the chat's name once, each sender's run under their name; the to-do's message mid-thread is tinted
   await open('whatsapp');
-  assert.equal(await box.locator('.convo-chat').innerText(),'Climbing crew');
-  assert.deepEqual(await box.locator('.convo-meta').allInnerTexts(),['Sasha Brook · 09:02','Milo Grant · 09:05','09:30']);
+  assert.equal(await box.locator('.convo-chat span[translate]').innerText(),'Climbing crew');assert.equal(await box.locator('.convo-chat .convo-app').innerText(),'WhatsApp');
+  // a messenger reads like its app: names over the other side's runs, the owner's bubbles on the right, each bubble its time
+  assert.equal(await box.locator('.convo.convo-im').count(),1);
+  assert.deepEqual(await box.locator('.convo-meta').allInnerTexts(),['Sasha Brook','Milo Grant']);
+  assert.deepEqual(await box.locator('.convo-say .convo-t').allInnerTexts(),['09:02','09:05','09:06','09:30']);
+  const [left,right]=await Promise.all(['.convo-turn:not(.me) .convo-say','.convo-turn.me .convo-say'].map(s=>box.locator(s).first().boundingBox()));
+  assert.ok(right.x+right.width>left.x+left.width+40,'the owner\'s bubble sits on the right');
   assert.match(await box.locator('.convo-main').innerText(),/^Me! 10:00/);
+  assert.equal(await box.locator('.convo-main').evaluate(n=>n.previousElementSibling.textContent),'This to-do');
   assert.equal(await box.locator('a.convo-source').count(),0,'no link when the source has none');
+  // A photo and a file without their own words are chips, never "Sent image"; links read as what they are
+  await open('wamedia');
+  assert.deepEqual(await box.locator('.convo-media').allInnerTexts(),['Photo','File']);
+  assert.doesNotMatch(await box.innerText(),/Sent image|Sent document|https:\/\//);
+  assert.match(await box.locator('.convo-say-media').first().innerText(),/^Photo\s*09:40$/);
+  assert.deepEqual(await box.locator('.convo-link-name').allInnerTexts(),['Climbing chalk bag large','Finger tape roll white']);
+  assert.deepEqual(await box.locator('.convo-link-site').allInnerTexts(),['shop.example','shop.example','wall.example/routes/north']);
+  assert.deepEqual(await box.locator('a.convo-link').evaluateAll(as=>as.map(a=>a.getAttribute('href'))),['https://shop.example/nl/p/climbing-chalk-bag-large/9300001/','https://www.shop.example/nl/p/finger-tape-roll-white/9300002/','https://wall.example/routes/north']);
+  assert.match(await box.locator('.convo-main .convo-said').innerText(),/^Chalk and tape from here:/);
   // Intercom: one conversation, its turns; the event-only parts left out, an internal note marked
   await open('intercom');
   assert.equal(await box.locator('.convo-chat').innerText(),'Juno Park');

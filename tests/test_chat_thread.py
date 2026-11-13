@@ -25,7 +25,8 @@ INTERCOM_BODY = ('Hi! Our invoices show the old company address since the update
 
 
 def fixture(folder):
-    """Four to-dos: a Slack DM (the to-do's message first of five, with one from the owner), a WhatsApp group, an
+    """Five to-dos: a Slack DM (the to-do's message first of five, with one from the owner), a WhatsApp group, one in
+    that group from its links, a photo and a file (wamedia), an
     Intercom conversation, and an email. Returns the app and each to-do's id."""
     store = a.Store(Path(folder) / 'events.sqlite')
 
@@ -35,11 +36,11 @@ def fixture(folder):
                 'metadata': {'channel_name': 'DM Rowan Vale', 'conversation_type': 'dm', 'channel_id': 'D0ROWAN', 'from_me': me,
                              'sender_display': '' if me else 'Rowan Vale', 'source_url': f'https://acme.slack.example/archives/D0ROWAN/p{i}'}}
 
-    def whatsapp(i, at, who, text):
+    def whatsapp(i, at, who, text, media=''):
         return {'account_id': 'home-wa', 'source_id': f'wa{i}', 'kind': 'whatsapp.message', 'occurred_at': DAY + at + ':00+00:00',
                 'title': 'Climbing crew', 'body': text, 'deleted': False,
                 'metadata': {'chat_name': 'Climbing crew', 'chat_id': '1203@g.us', 'from_me': who == 'You', 'sender_display': who,
-                             'from': who}}
+                             'from': who, 'media_type': media}}
     store.commit_page('work-slack', {}, [
         slack(1, '17:56', 'I just noticed we pay for the mail warmup tool with my personal credit card :upside_down_face:'),
         slack(2, '18:15', 'Could we move it to the company card asap?'),
@@ -50,7 +51,11 @@ def fixture(folder):
         whatsapp(1, '08:02', 'Sasha Brook', 'Who is in for Saturday?'),
         whatsapp(2, '08:05', 'Milo Grant', 'Me! 10:00 at the usual wall?'),
         whatsapp(3, '08:06', 'Milo Grant', 'I can drive'),
-        whatsapp(4, '08:30', 'You', 'Count me in')], None)
+        whatsapp(4, '08:30', 'You', 'Count me in'),
+        whatsapp(5, '08:40', 'Milo Grant', 'Sent image', 'image'),
+        whatsapp(6, '08:41', 'Milo Grant', 'The gear list', 'document'),
+        whatsapp(7, '08:42', 'Sasha Brook', 'Chalk and tape from here:\nhttps://shop.example/nl/p/climbing-chalk-bag-large/9300001/\n'
+                                            'https://www.shop.example/nl/p/finger-tape-roll-white/9300002/\nhttps://wall.example/routes/north')], None)
     store.commit_page('work-intercom', {}, [{
         'account_id': 'work-intercom', 'source_id': '9101', 'kind': 'intercom.conversation', 'occurred_at': DAY + '11:08:00+00:00',
         'title': 'Hi! Our invoices show the old company address since the update.', 'body': INTERCOM_BODY, 'deleted': False,
@@ -66,6 +71,8 @@ def fixture(folder):
                                     [ids['sl1'], ids['sl2'], ids['sl3'], ids['sl4'], ids['sl5']])['id'],
              'whatsapp': store.suggest('wa-card', 'Tell the climbing crew if you drive on Saturday', 'Milo offered.',
                                        [ids['wa2'], ids['wa1'], ids['wa3'], ids['wa4']])['id'],
+             'wamedia': store.suggest('wa-media-card', 'Get the chalk and tape for Saturday', 'Sasha sent links.',
+                                      [ids['wa7'], ids['wa5'], ids['wa6'], ids['wa4']])['id'],
              'intercom': store.suggest('ic-card', 'Resend the October invoice to Harbor', 'Juno asked.', [ids['9101']])['id'],
              'email': store.suggest('mail-card', 'Reply to Avery about the booth quote', 'Avery sent a quote.', [ids['m1']])['id']}
     app = object.__new__(a.App)
@@ -100,6 +107,22 @@ class ChatThread(unittest.TestCase):
         items = self.app.originals(self.cards['whatsapp'])
         self.assertEqual({i['chat'] for i in items}, {'Climbing crew'})
         self.assertNotIn('dm', items[0])
+
+    def test_a_photo_or_file_says_what_it_is_and_its_placeholder_words_never_read_as_a_message(self):
+        items = {i['body']: i for i in self.app.originals(self.cards['wamedia'])}
+        self.assertEqual((items['Sent image']['media'], items['Sent image']['media_only']), ('photo', True))
+        self.assertEqual(items['The gear list']['media'], 'file')
+        self.assertNotIn('media_only', items['The gear list'])  # a caption reads under the chip
+        self.assertNotIn('media', items['Count me in'])
+
+    def test_media_by_source(self):
+        from machine.store.message_view import media_shown as shown
+        self.assertEqual(shown('telegram.message', {'media_type': 'photo'}, 'Sent a photo'), {'media': 'photo', 'media_only': True})
+        self.assertEqual(shown('signal.message', {'media_type': 'audio'}, 'Sent audio'), {'media': 'audio', 'media_only': True})
+        self.assertEqual(shown('whatsapp.message', {'media_type': 'video_note'}, 'Sent video note'), {'media': 'video', 'media_only': True})
+        self.assertEqual(shown('whatsapp.message', {'media_type': 'ptt'}, 'Sent ptt'), {'media': 'voice', 'media_only': True})
+        self.assertEqual(shown('slack.message', {'media_type': 'image'}, 'Sent image'), {})
+        self.assertEqual(shown('whatsapp.message', {}, 'Sent image'), {})
 
     def test_an_intercom_conversation_is_its_turns_with_notes_marked_and_events_left_out(self):
         [item] = self.app.originals(self.cards['intercom'])

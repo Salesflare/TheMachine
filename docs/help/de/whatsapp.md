@@ -10,7 +10,7 @@ site: Show the QR code, Get a code, On your phone? Link with a code instead, Rem
 
 Deine WhatsApp-Chats, als verknüpftes Gerät des WhatsApp auf deinem Handy, wie WhatsApp auf einem Computer. Beim Verbinden schickt WhatsApp auch deine älteren Chats, oft über Jahre. Deine Machine behält alles, und nur Nachrichten der letzten 7 Tage werden zu Aufgaben.
 
-Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als das, was es ist, etwa „Bild gesendet“. Hinweise von WhatsApp selbst, etwa zur Verschlüsselung oder wenn jemand einer Gruppe beitritt, haben keinen Text und bleiben außen vor.
+Ein Foto, eine Sprachnachricht oder eine Datei ohne Beschriftung erscheint als das, was es ist, etwa „Foto“, mit einem Symbol. Hinweise von WhatsApp selbst, etwa zur Verschlüsselung oder wenn jemand einer Gruppe beitritt, haben keinen Text und bleiben außen vor.
 
 ## Fotos lesen
 

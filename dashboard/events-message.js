@@ -70,34 +70,67 @@ function emailRetry(container,box,o,id){const p=document.createElement('p');p.cl
 setHTML(p,html`${t('Couldn’t load the full email.')} <button type="button" class="link" data-email-retry>${t('Try again')}</button>`);box.append(p);
 p.querySelector('button').onclick=()=>{delete box.dataset.filled;setHTML(box,html`<p class="muted">Loading…</p>`);fillMessage(container,o,id)}}
 // Chats (Slack, WhatsApp, Telegram, Intercom and the rest: event_views' chat) read as one thread, oldest first: the
-// conversation named once on top, a day line when the day changes, each sender's run of messages under their name and
-// time once, a light time inside a run only after a pause. The to-do's own message is outlined when the thread holds more.
+// conversation named once on top (it stays in view while the thread scrolls), a day line when the day changes, each
+// sender's run of messages under their name and time once, a light time inside a run only after a pause. The to-do's
+// own message is outlined under a "This to-do" line when the thread holds more, and the viewer opens on it.
 // A Slack thread shown after the channel's messages before it (thread: true, machine/store/conversation.py) starts
 // under an In thread line. Each sender has the avatar circle with their initials, as people have elsewhere.
 // One link opens the whole thread where it lives. Slack's :emoji: codes read as emoji (chatEmoji).
-const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Signal:'Signal',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X'};
-const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Signal:'signal',Intercom:'intercom',LinkedIn:'linkedin','X message':'x'};
+const THREAD_APP={Slack:'Slack',WhatsApp:'WhatsApp',Telegram:'Telegram',Signal:'Signal',Intercom:'Intercom',LinkedIn:'LinkedIn','X message':'X',Teams:'Teams'};
+const THREAD_VIA={Slack:'slack',WhatsApp:'whatsapp',Telegram:'telegram',Signal:'signal',Intercom:'intercom',LinkedIn:'linkedin','X message':'x',Teams:'teams'};
+// Messenger chats (convo-im, events-message.css) read like their app: the other side's bubbles on the left under their
+// name and avatar, the owner's on the right in the accent, each bubble with its own time. Slack and Intercom keep a
+// run's time on its name line.
+const THREAD_IM=new Set(['WhatsApp','Telegram','Signal','LinkedIn','X message','Teams']);
 const isChat=o=>typeof o?.chat==='string';
 const chatTitle=o=>o.dm&&o.chat?t('DM with {}',o.chat):o.chat||'';
 const THREAD_PAUSE=10*6e4;
 const senderInitials=name=>{const w=String(name||'').trim().split(/\s+/).filter(x=>/^\p{L}/u.test(x));return((w[0]?.[0]||[...String(name||'?')][0])+(w.length>1?w.at(-1)[0]:'')).toUpperCase()};
+// A photo, video or file a chat message sent without a caption (message_view.media_shown: its text only said "Sent
+// image"): a chip with what it is, never those words as a message. A photo the Machine kept shows itself instead.
+// each kind's icon class written out whole, so the lazy CSS check (tests/test_dashboard_parts.py) finds it here
+const MEDIA_LABEL={photo:['convo-m-photo',()=>t('Photo')],video:['convo-m-video',()=>t('Video')],audio:['convo-m-audio',()=>t('Audio')],
+ voice:['convo-m-voice',()=>t('Voice message')],sticker:['convo-m-sticker',()=>t('Sticker')],file:['convo-m-file',()=>t('File')]};
+const mediaChip=m=>{const [ico,label]=MEDIA_LABEL[m]||MEDIA_LABEL.file;return html`<span class="convo-media"><i class="convo-media-ico ${ico}" aria-hidden="true"></i>${label()}</span>`};
+// A link on a line of its own, or ending one, reads as a card under the text: the page's name from its address when the
+// address carries one (".../p/oak-desk-lamp-with-dimmer/930..." is "Oak desk lamp with dimmer") over the site, else
+// the site and path, shortened. Three links to one shop read as three things, never three bare "shop.example"s.
+const LINK_END=/^(.*?)\s*\b(https?:\/\/[^\s<>"'`]+?)[.,;:!?)]*\s*$/;
+function chatLinks(text){const keep=[],links=[];
+ for(const line of String(text).split('\n')){const m=LINK_END.exec(line);
+  if(m&&safeURL(m[2])&&!/\]\($/.test(m[1])){if(m[1].trim())keep.push(m[1]);links.push(m[2])}else keep.push(line)}
+ return {text:keep.join('\n').trim(),links}}
+const linkName=u=>{let x;try{x=new URL(u)}catch{return ''}
+ const seg=x.pathname.split('/').map(s=>{try{return decodeURIComponent(s)}catch{return s}}).reverse()
+  .find(s=>/^[\p{L}\p{N}]+(?:[-_+][\p{L}\p{N}]+){2,}(?:\.html?)?$/u.test(s)&&!/^[\da-f-]+$/i.test(s)&&(s.match(/\p{L}{2,}/gu)||[]).length>=3);
+ if(!seg)return '';const w=seg.replace(/\.html?$/,'').split(/[-_+]+/).filter(w=>!/^\d{4,}$/.test(w)).join(' ');return w.charAt(0).toUpperCase()+w.slice(1)};
+const linkSite=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch{return ''}};
+const linkWhere=u=>{try{const x=new URL(u),s=linkSite(u)+x.pathname.replace(/\/+$/,'');return s.length>44?s.slice(0,43)+'…':s}catch{return u}};
+const linkCard=u=>{const name=linkName(u);return html`<a class="convo-link" href="${u}" target="_blank" rel="noreferrer" title="${u}">${name?html`<span class="convo-link-name">${name}</span>`:''}<span class="convo-link-site"><i class="via-ico via-link" aria-hidden="true"></i><span>${name?linkSite(u):linkWhere(u)}</span></span></a>`};
+// A day line as people say it: Today, Yesterday, else the date
+const convoDay=at=>{const d=new Date(at),n=Math.round((new Date().setHours(0,0,0,0)-new Date(at).setHours(0,0,0,0))/864e5);
+ return n===0?t('Today'):n===1?t('Yesterday'):localeDate(d,DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
 function chatThreadHTML(items,{main,names=true,head=true,src,earlier,titled}={}){
-const dayOf=at=>{const d=new Date(at);return localeDate(d,DL,{weekday:'long',day:'numeric',month:'long',...(d.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})})};
-const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
+const msgs=items.flatMap(o=>o.turns?.length?o.turns.map(x=>({...x,kind:o.kind})):[o]).filter(o=>String(o.body||'').trim()||o.photo||o.media).sort((a,b)=>Date.parse(a.occurred_at)-Date.parse(b.occurred_at));
+const first=items.find(o=>o.event_id===main)||items[0]||{},im=THREAD_IM.has(first.kind);
 const days=[];let prev=null,plain=false,inThread=false;
 // The owner's side on the right: their own messages, and in a support chat (Intercom) the team's and its bot's, each named
-for(const o of msgs){const at=Date.parse(o.occurred_at),day=dayOf(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',mark=main!=null&&o.event_id===main&&msgs.length>1;
+for(const o of msgs){const at=Date.parse(o.occurred_at),day=convoDay(at),you=o.from==='You',me=you||o.role==='team'||o.role==='bot',mark=main!=null&&o.event_id===main&&msgs.length>1;
  if(days.at(-1)?.day!==day){days.push({day,turns:[]});prev=null}
  if(o.thread&&plain&&!inThread){days.at(-1).turns.push({thread:true});prev=null}
  inThread||=Boolean(o.thread);plain||=!inThread;
- const who=!you&&names?sender(o.from):'',turns=days.at(-1).turns,say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${chatMarkdown(String(o.body||'').replace(/\r\n/g,'\n').trim())}${o.photo?photoThumbs([o.photo]):''}`;
- if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''} · `:''}<time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`});
- else if(at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at"><time datetime="${o.occurred_at}">${fmtHM(at)}</time></p>`);
- turns.at(-1).says.push(html`<div class="convo-say${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${say}</div>`);prev=o}
+ const said=chatLinks(o.media_only?'':String(o.body||'').replace(/\r\n/g,'\n').trim()),only=!said.text&&!o.photo;
+ const who=!you&&names?sender(o.from):'',turns=days.at(-1).turns,time=html`<time datetime="${o.occurred_at}">${fmtHM(at)}</time>`;
+ const say=html`${o.note?html`<span class="convo-tag">${t('Note')}</span>`:''}${o.media?mediaChip(o.media):''}${said.text?chatMarkdown(said.text):''}${said.links.map(linkCard)}${o.photo?photoThumbs([o.photo]):''}`;
+ if(!prev||prev.from!==o.from)turns.push({me,says:[],meta:im&&(me||!who)?'':html`<p class="convo-meta">${who&&!me?html`<span class="convo-av" data-av="${senderInitials(who)}" aria-hidden="true"></span>`:''}${who?html`<b translate="no">${who}</b>${o.role==='bot'?html` <span class="msg-bot">${t('Bot')}</span>`:''}${im?'':' · '}`:''}${im?'':time}</p>`});
+ else if(!im&&at-Date.parse(prev.occurred_at)>=THREAD_PAUSE)turns.at(-1).says.push(html`<p class="convo-at">${time}</p>`);
+ if(mark)turns.at(-1).says.push(html`<p class="convo-this" aria-hidden="true">${t('This to-do')}</p>`);
+ const kind=only&&o.media&&!said.links.length?' convo-say-media':only&&said.links.length?' convo-say-link':'';
+ turns.at(-1).says.push(html`<div class="convo-say${kind}${mark?' convo-main':''}${o.note?' convo-note':''}"${mark?html` aria-label="${t('The message this to-do is about')}"`:''}>${im?html`<div class="convo-said">${say}</div><span class="convo-t">${time}</span>`:say}</div>`);prev=o}
 // titled: the dialog's title names the conversation already, so the line above it names only the app (and its channel)
-const first=items.find(o=>o.event_id===main)||items[0]||{},app=THREAD_APP[first.kind]||first.app||src,title=titled?app:head?chatTitle(first):'';
+const app=THREAD_APP[first.kind]||first.app||src,title=titled?app:head?chatTitle(first):'';
 const url=[first,...[...items].reverse()].find(o=>o?.url&&safeURL(o.url))?.url;
-return html`<div class="convo">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span>${title}</span>${first.via?html`<span class="msg-via">${t('via {}',first.via)}</span>`:''}</p>`:''}${earlier?earlierButton():''}${days.map(d=>html`<p class="convo-day">${d.day}</p>${d.turns.map(x=>x.thread?html`<p class="convo-day convo-thread">${t('In thread')}</p>`:html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source read-original ${openVia(first)}" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
+return html`<div class="convo${im?' convo-im':''}">${title?html`<p class="convo-chat">${viaIco(THREAD_VIA[first.kind],true)}<span translate="no">${title}</span>${im&&app&&!sameText(app,title)?html`<span class="convo-app">${app}</span>`:''}${first.via?html`<span class="msg-via">${t('via {}',first.via)}</span>`:''}</p>`:''}${earlier?earlierButton():''}${days.map(d=>html`<p class="convo-day"><span>${d.day}</span></p>${d.turns.map(x=>x.thread?html`<p class="convo-day convo-thread"><span>${t('In thread')}</span></p>`:html`<div class="convo-turn${x.me?' me':''}">${x.meta}${x.says}</div>`)}`)}${url?html`<a class="convo-source read-original ${openVia(first)}" href="${url}" target="_blank" rel="noreferrer">${app?t('Open in {} ↗',app):t('Open original')}</a>`:''}</div>`}
 // A to-do's chat sources by conversation: the to-do's own conversation first, each one thread.
 function chatThreads(list){const by=new Map();for(const o of list.filter(isChat)){const k=o.kind+'\u0000'+o.chat;if(!by.has(k))by.set(k,[]);by.get(k).push(o)}return [...by.values()]}
 // A to-do's source opens with what was said around it (api/originals' around, machine/store/conversation.py): the
