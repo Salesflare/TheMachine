@@ -8,7 +8,7 @@ a reviewed signal that should have had one and got none never shows up there. Th
 Once a week (with the weekly recap's rhythm), within the usage budget like every background turn (model_budget), it:
 
 - samples up to SAMPLE reviewed signals of the last DAYS whose review left no to-do, no promise and no update to a
-  to-do in the same thread: emails, messages and meetings, stratified by channel and by area (Personal, or Work at one
+  to-do in the same thread, and the ones the review set aside unjudged (set_aside): emails, messages and meetings, stratified by channel and by area (Personal, or Work at one
   company), at least a couple from each stratum and the rest in proportion;
 - asks one separate, small model turn with its own prompt (EVALUATOR) whether there was work for the owner in each: a
   reply owed, a promise made to or by them, a deadline, a request. It never sees what the review decided, and every
@@ -200,6 +200,15 @@ def reviewed(db, since):
     return found
 
 
+def set_aside(db, since):
+    """{event_id: {'no_reply': False, 'set_aside': True}}: messages that came in since `since` and the review set aside
+    unjudged (put off SET_ASIDE_AFTER times, review_last_look.py), closed after their one more look or still waiting:
+    left without a to-do as much as a reviewed one, so the audit counts them too."""
+    from machine.store.events import SET_ASIDE_AFTER
+    return {r[0]: {'no_reply': False, 'version': r[1], 'set_aside': True} for r in db.execute(
+        'SELECT id,version FROM events WHERE history=0 AND analyzed_version<version AND deferrals>=? AND ingested_at>=?', (SET_ASIDE_AFTER, since))}
+
+
 def carded(db):
     """Event ids that are evidence on a to-do or a promise, and the conversations of to-do evidence: {(kind, account, key): [times]}."""
     ids = {r[0] for r in db.execute('SELECT DISTINCT value FROM suggestions, json_each(suggestions.event_ids)')}
@@ -236,7 +245,7 @@ def candidates(db, accounts, since, own=frozenset(), owned=None, bulk=None):
     title line (assistant.calendar_owned and bulk_kind, passed in by the caller: this module never loads assistant.py).
     Returns ([{id, channel, area, no_reply}], counts of what was left out and why)."""
     by_account = {a.get('id'): a for a in accounts or ()}
-    seen = reviewed(db, since)
+    seen = {**set_aside(db, since), **reviewed(db, since)}
     ids, threads = carded(db)
     out, skipped = [], collections.Counter()
     todo = sorted(set(seen) - ids)
@@ -267,7 +276,8 @@ def candidates(db, accounts, since, own=frozenset(), owned=None, bulk=None):
             if key and threads.get(key) and (key[0] == 'mail' or _near(r['occurred_at'], threads[key], CHAT_NEAR_DAYS)):
                 skipped['to_do_in_thread'] += 1
                 continue
-            out.append({'id': r['id'], 'channel': channel, 'area': area, 'no_reply': seen[r['id']]['no_reply']})
+            out.append({'id': r['id'], 'channel': channel, 'area': area, 'no_reply': seen[r['id']]['no_reply'],
+                        **({'set_aside': True} if seen[r['id']].get('set_aside') else {})})
     return out, dict(skipped)
 
 
@@ -481,7 +491,8 @@ def patterns(items):
     by_what = collections.Counter((i['what'], i['channel']) for i in items)
     return {'by_what': [{'what': w, 'channel': c, 'n': n} for (w, c), n in by_what.most_common()],
             'by_area': dict(collections.Counter(i['area'] for i in items).most_common()),
-            'review_said_no_reply': sum(1 for i in items if i.get('no_reply'))}
+            'review_said_no_reply': sum(1 for i in items if i.get('no_reply')),
+            'set_aside': sum(1 for i in items if i.get('set_aside'))}  # the review set it aside unjudged
 
 
 # ------------------------------------------------------------------ one audit

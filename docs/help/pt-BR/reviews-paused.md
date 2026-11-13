@@ -31,3 +31,7 @@ Nada se perde enquanto espera: o que chegou é verificado assim que for possíve
 ## Uma execução falhou
 
 **Execuções recentes** em **Verificações** mostra cada execução. Um lote que falhou é tentado de novo sozinho.
+
+## Deixados de lado
+
+Quando uma verificação adia uma mensagem duas vezes, ela é deixada de lado. **Conexões**, **Verificações** mostra quantas, e **Deixados de lado** lista todas. Uma de uma pessoa que escreve direto para você, de alguém que você conhece ou de um cliente recebe uma última olhada cerca de 3 dias depois de chegar. Essa olhada cria uma tarefa ou a fecha. O que você dispensou ou adiou continua assim.

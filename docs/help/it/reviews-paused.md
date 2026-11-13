@@ -31,3 +31,7 @@ Mentre aspetta non si perde nulla: quello che è arrivato viene controllato appe
 ## Un’esecuzione non è riuscita
 
 **Esecuzioni recenti** sotto **Controlli** mostra ogni esecuzione. Un gruppo non riuscito viene ritentato da solo.
+
+## Messi da parte
+
+Quando un controllo rimanda un messaggio due volte, viene messo da parte. **Connessioni**, **Controlli** mostra quanti, e **Messi da parte** li elenca. Uno da una persona che ti scrive direttamente, da qualcuno che conosci o da un cliente riceve un ultimo controllo circa 3 giorni dopo l’arrivo. Quel controllo crea un’attività o lo chiude. Ciò che hai scartato o posticipato resta così.

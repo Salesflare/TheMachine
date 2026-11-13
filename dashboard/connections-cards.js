@@ -11,7 +11,13 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.some(x=>x.s
 // A card's tab is its source's group in + Add (the status gives it: views.source_group), so a new source can't land on the wrong
 // tab: Email, Calendar, Chat, and Other sources for every other group. Android sits in Other: most phones have no feed to give.
 const HEALTH_TABS={mail:'mail',calendar:'calendar',chat:'chat'},healthGroup=c=>HEALTH_TABS[c.group]||'other';
-function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c)===g&&connectorTone(c)==='orange').length;
+// Set aside under Checks (review_last_look.py): what each message the checks put off twice is waiting for; each opens the message
+function renderSetAside(rh){const sa=rh.set_aside_list||[],day=s=>localeDate(new Date(s),DL,{day:'numeric',month:'short'});
+ if(!$('#set-aside')){const list=make('div',{id:'set-aside-list',class:'list sa-list'});$('#review-summary').after(make('details',{id:'set-aside',class:'sa-box'},make('summary',{},t('Set aside')),list));
+  list.addEventListener('click',e=>{const b=e.target.closest('[data-sa-open]');if(b)openEvent(b.dataset.saOpen,b.textContent)})}
+ $('#set-aside').hidden=!sa.length;
+ const why=x=>x.state==='closed'?t('Closed after one more look'):x.state==='left'?t('Left as is: no sign it needs you'):new Date(x.look_at)>new Date()?t('One more look on {}',day(x.look_at)):t('One more look with the next check');
+ $('#set-aside-list').replaceChildren(...sa.map(x=>make('div',{class:'sa-row'},make('button',{type:'button',class:'sa-open','data-sa-open':x.id},x.title||t('(no subject)')),make('small',{},why(x)))))}function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c)===g&&connectorTone(c)==='orange').length;
  const panes=[['mail','Email'],['calendar','Calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
  panes.push({id:'add',label:'+ Add'});
