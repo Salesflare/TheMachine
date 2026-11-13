@@ -69,15 +69,13 @@ Ein Tipp auf eine Benachrichtigung oder auf Öffnen in einer E-Mail oder in Tele
 Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfassung**, außer es gibt nichts zu sagen. Liegt diese vor **Zurückgestelltes kommt um**, wartet sie bis 5 Minuten danach, damit die Aufgaben, die an dem Morgen zurückkommen, darin stehen. **Vorschau** in ihrer Zeile zeigt sie, ohne sie zu senden. Standardmäßig kommt sie als Push und als E-Mail, kurz genug für einen Blick:
 
 - ein Gruß mit dem, was heute zählt, etwa "Guten Morgen Sam, 2 Antworten sind bereit zum Senden" oder, bei einer Aufgabe, "Guten Morgen Sam, wartet auf dein OK: Schick das Bestellformular";
-- höchstens drei Dinge zu tun, jedes mit einem Link Öffnen: zuerst fertige Entwürfe und heute fällige Versprechen;
+- die Aufgaben, die der Gruß zählt, jede mit einem Link Öffnen, und was heute fällig ist; sonst höchstens drei Dinge zu tun;
 - wie viele weitere warten können und wie lange sie in deinem Tempo dauern, etwa "12 weitere können warten, etwa 5 Min. zum Erledigen." Aufgaben, die auf deine Antwort warten, zählen bei der Zeit nicht mit.
 - deine Termine in einer Zeile.
 
 Öffnen zeigt die Aufgabe hervorgehoben in deiner Liste. Ist sie erledigt, zurückgestellt oder in einer anderen Ansicht, öffnet sich ihr Chat. Ein Versprechen öffnet seine Aufgabe oder, solange es keine hat, seine eigene Seite.
 
 Der Push sagt dasselbe ohne Links. Tippst du darauf oder auf den Link am Ende der E-Mail, liest du diese Zusammenfassung in **Aufgaben** noch einmal.
-
-Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe Text, den **Zusammenfassung** in den Aufgaben kopiert, ohne die Aufgaben, die schon oben stehen. Wenn Aufgabentext in Benachrichtigungen ausgeblendet ist, fehlen sie.
 
 ## Die abendliche Zusammenfassung
 

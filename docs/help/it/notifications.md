@@ -68,15 +68,13 @@ Un tocco su una notifica, o su Apri in un'email o su Telegram, mostra l'attivit�
 Arriva nei giorni lavorativi all'ora del **Riepilogo del mattino**, a meno che non ci sia niente da dire. Se è prima di **I posticipi arrivano alle**, aspetta fino a 5 minuti dopo, così include le attività che tornano quella mattina. **Anteprima**, nella sua riga, lo mostra senza inviarlo. Di default è una push e un'email, brevi da leggere con un colpo d'occhio:
 
 - un saluto con ciò che conta oggi, come "Buongiorno Sam, 2 risposte sono pronte da inviare" o, per un'attività, "Buongiorno Sam, da approvare: Invia il modulo d'ordine";
-- al massimo tre cose da fare, ognuna con un link Apri: prima le bozze pronte e le promesse in scadenza oggi;
+- le attività che il saluto conta, ognuna con un link Apri, e ciò che scade oggi; altrimenti al massimo tre cose da fare;
 - quante altre possono aspettare e quanto ti richiedono al tuo ritmo, come "Altre 12 possono aspettare, circa 5 min per sbrigarle." Le attività che aspettano la tua risposta non contano in quel tempo.
 - le tue riunioni in una riga.
 
 Apri mostra l'attività evidenziata nel tuo elenco. Se è fatta, posticipata o in un'altra vista, si apre la sua chat. Una promessa apre la sua attività, o la sua pagina se non ne ha ancora una.
 
 La push dice lo stesso senza link. Toccala, o tocca il link alla fine dell’email, per rileggere questo riepilogo in **Attività**.
-
-Alla fine ci sono i tuoi riepiloghi **Lavoro** e **Personale**, lo stesso testo che copia **Riepilogo** nelle attività, senza le attività già elencate sopra. Quando il testo delle attività è nascosto nelle notifiche, non ci sono.
 
 ## Il riepilogo della sera
 

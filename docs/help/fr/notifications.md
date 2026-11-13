@@ -68,15 +68,13 @@ Toucher une notification, ou Ouvrir dans un e-mail ou sur Telegram, affiche la t
 Il arrive les jours de travail à l’heure du **Récap du matin**, sauf s’il n’y a rien à dire. Si elle est avant **Les mises en attente reviennent à**, il attend 5 minutes après, pour inclure les tâches qui reviennent ce matin-là. **Aperçu**, sur sa ligne, l’affiche sans l’envoyer. Par défaut, c’est un push et un e-mail, assez courts pour se lire d’un coup d’œil :
 
 - un bonjour avec ce qui compte aujourd’hui, comme "Bonjour Sam, 2 réponses sont prêtes à envoyer" ou, pour une tâche, "Bonjour Sam, à valider : Envoyer le bon de commande" ;
-- au plus trois choses à faire, chacune avec un lien Ouvrir : d’abord les brouillons prêts et les promesses du jour ;
+- les tâches que compte le bonjour, chacune avec un lien Ouvrir, et ce qui est à faire aujourd’hui ; sinon au plus trois choses à faire ;
 - combien d’autres peuvent attendre, et le temps qu’elles vous prennent, comme "12 autres peuvent attendre, environ 5 min pour tout traiter." Les tâches qui attendent votre réponse ne comptent pas dans ce temps.
 - vos réunions en une ligne.
 
 Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mise en attente ou dans une autre vue, son chat s’ouvre. Une promesse ouvre sa tâche, ou sa propre page si elle n’en a pas encore.
 
 Le push dit la même chose sans liens. Touchez-le, ou le lien à la fin de l’e-mail, pour relire ce récap dans **Tâches**.
-
-À la fin viennent vos récaps **Travail** et **Perso**, le même texte que copie **Récap** dans les tâches, sans les tâches déjà listées plus haut. Quand le texte des tâches est masqué dans les notifications, ils sont omis.
 
 ## Le récap du soir
 

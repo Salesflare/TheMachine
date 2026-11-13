@@ -7536,12 +7536,20 @@
   "one": "{} more can wait.",
   "other": "{} more can wait."
  },
+ "{} more due today.": {
+  "one": "{} more due today.",
+  "other": "{} more due today."
+ },
  "{} more in Promises": "{} more in Promises",
  "{} more like this wait. Always shares them too.": {
   "one": "{} more like this waits. Always shares it too.",
   "other": "{} more like this wait. Always shares them too."
  },
  "{} more like this {}. Always shares {} too.": "{} more like this {}. Always shares {} too.",
+ "{} more ready for your OK.": {
+  "one": "{} more ready for your OK.",
+  "other": "{} more ready for your OK."
+ },
  "{} more, open the day": "{} more, open the day",
  "{} morning’s digest": "{} morning’s digest",
  "{} moved to {}": "{} moved to {}",
@@ -7626,6 +7634,14 @@
  "{} other signals": {
   "one": "{} other signal",
   "other": "{} other signals"
+ },
+ "{} others can wait, about {} min to clear.": {
+  "one": "{} other can wait, about {} min to clear.",
+  "other": "{} others can wait, about {} min to clear."
+ },
+ "{} others can wait.": {
+  "one": "{} other can wait.",
+  "other": "{} others can wait."
  },
  "{} owns it.": "{} owns it.",
  "{} pages": {

@@ -93,6 +93,7 @@ VISIT_EVERY = 600  # seconds: the kept visit time moves at most this often
 OWNER_SOURCES = ('dashboard', 'telegram', 'owner-chat', 'voice')  # decisions that show the owner is around
 PILE = 10  # this many waiting: the morning summary's headline names the pile and the time to clear it
 HEAD_TITLE = 50  # the one to-do the morning summary's headline names: at most this long
+HEAD_LISTED = 5  # the to-dos the morning summary's headline counts (ready, due today): listed under it up to this many
 LINKS = re.compile(r' · \[[^\]\n]+\]\([^)\s]+\)')  # a summary line's Open link: Telegram gets the line without it
 
 
@@ -671,27 +672,29 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), areas=(), area_rows=None):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=()):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
     It reads: a greeting with what makes today matter (headline, also the subject and the push's title), right under it
-    at most three lines that each start with what to do (a to-do's title says that) with one Open link, then how many
-    more can wait and the time they take at the owner's own pace ("12 more can wait, about 5 min to clear."; per:
-    seconds per action, clear_pace), then the day's meetings in a line when there are any (never between the headline
-    and its own list). The time counts only what clears at that pace: not the to-dos that wait on the owner's answer
-    (asking: their ids, as the dashboard's header leaves them out); with none left to count, the line says how many
-    wait and no time. No news, no tips.
+    the lines that each start with what to do (a to-do's title says that) with one Open link, then how many more can
+    wait and the time they take at the owner's own pace ("12 more can wait, about 5 min to clear."; per: seconds per
+    action, clear_pace), then the day's meetings in a line when there are any (never between the headline and its own
+    list). The time counts only what clears at that pace: not the to-dos that wait on the owner's answer (asking: their
+    ids, as the dashboard's header leaves them out); with none left to count, the line says how many wait and no time.
+    No news, no tips, no recap of the day before (that is the evening digest's).
 
-    The three: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
+    The numbers add up: a headline that counts to-dos ("6 to-dos ready for your OK", "3 due today") has exactly those
+    under it, up to HEAD_LISTED, the rest of them in a line of their own ("1 more ready for your OK."), and "N more
+    can wait" is every other waiting to-do. Under the ready ones what is due today still shows, each line saying so
+    ("Due today: Send the recap"), and isn't in that count either. Without such a count (a pile, the first meeting, what is new) at most three
+    lines, the first meeting among them, and "N more" is the rest of what waits.
+
+    The lines: ready [{id?, title}] (prepared, waiting for the owner's OK; replies: the ids of those that are a reply
     someone waits for) and promised [{id?, title}] (the owner's own promises due today; covers: the id of a to-do made
     from that promise) first, then what is due, the first meeting, what came in overnight, and the waiting to-dos in the
     dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
-    areas: [(area, text)], each area's digest (area_digest), after the rest under its name, email and Telegram only (not
-    the push); an empty one is left out. area_rows: {area: (done, open_items, today)}, what that text was made from: then
-    the digest lists a to-do once, so an area leaves out what the three lines above it already say (they carry its Open
-    link, and the push names them). Its Copy (sections) stays the whole area, as the To-dos digest copies it.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
@@ -719,14 +722,18 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     if not (meetings or todos or promised or total):
         return None
     per = per or 30
-    # the three lines: (to-do or None for the first meeting, text)
-    picks = [(i, i['title']) for i in ready + promised + due]
-    if meetings:
-        picks.append((None, clock(meetings[0]['at']) + ' ' + meetings[0]['title']))
-    picks += [(i, i['title']) for i in overnight + rest]
-    picks = picks[:3] if show_text else []
-    listed = sum(1 for i, _ in picks if counts(i))
-    more = max(0, total - listed)
+    # What the headline counts, in its own order (headline): the ready ones, else what is due today. Listed whole under
+    # it (up to HEAD_LISTED), so "6 ready" never shows 3 of them and counts the other 3 among what can wait
+    counted = (ready or promised + due) if show_text else []
+    # the lines: (to-do or None for the first meeting, text)
+    if counted:
+        # one left over is listed too: its own line says more than "1 more ready for your OK."
+        picks = [(i, i['title']) for i in counted[:HEAD_LISTED + (len(counted) == HEAD_LISTED + 1)]]
+        if ready:  # what is due today still shows under the ready ones, said as such, so the count still reads true
+            picks += [(i, t('Due today: {}', i['title'])) for i in (promised + due)[:3]]
+    else:
+        picks = [(None, clock(meetings[0]['at']) + ' ' + meetings[0]['title'])] if meetings else []
+        picks = (picks + [(i, i['title']) for i in overnight + rest])[:3] if show_text else []
     asking = set(asking)
 
     def about(count, shown):
@@ -739,6 +746,23 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         if beside:
             return t('{} more can wait, about {} min to clear.', count, took) if took else t('{} more can wait.', count)
         return t('{} waiting, about {} min to clear.', count, took) if took else t('{} waiting.', count)
+
+    def after(shown):
+        """The line after the listed ones (shown: [(to-do or None, text)]), so the numbers add up: the rest of what the
+        headline counts ("1 more ready for your OK."), then every other waiting to-do; nothing shown: all that waits."""
+        items = [i for i, _ in shown if i is not None]
+        if counted and items:
+            mine = lambda i: any(i is x for x in counted)
+            left = sum(1 for i in counted if not any(i is x for x in items))
+            whole = [(i, '') for i in counted] + [(i, '') for i in items if not mine(i)]  # with a due today line
+            others = max(0, total - sum(1 for i, _ in whole if counts(i)))
+            if not left:
+                return waits(others, whole, True) if others else ''
+            took = about(others, whole)
+            rest_line = (t('{} others can wait, about {} min to clear.', others, took) if took else t('{} others can wait.', others)) if others else ''
+            return ' '.join(x for x in [t('{} more ready for your OK.', left) if ready else t('{} more due today.', left), rest_line] if x)
+        left = max(0, total - sum(1 for i in items if counts(i)))
+        return waits(left, shown, bool(shown)) if left else ''
     first_at = clock(meetings[0]['at']) if meetings else ''
     # one ready for the owner's OK: the headline names it, so it says what waits ("1 ready for your OK" didn't)
     named = ready[0] if len(ready) == 1 and show_text else None
@@ -746,7 +770,7 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
                     total, about(total, []), first_at, len(overnight), title=named['title'] if named else '')
     about_meeting = bool(first_at) and not (ready or due or promised or total >= PILE)  # headline's own order
     opening = t('{} meetings today, the first at {}.', len(meetings), first_at) if meetings else ''
-    tail = waits(more, picks, bool(picks)) if more else ''
+    tail = after(picks)
 
     def link(item):
         """Open: the to-do in the dashboard's list, in view and highlighted (#card=); one no longer there (done,
@@ -770,17 +794,10 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         lines += [tail, '']
     if opening and not about_meeting:  # a headline about the first meeting already says it
         lines += [opening, '']
-    # Each area's digest (area_digest), the same text the To-dos digest copies: never without show_text (titles); without
-    # the to-dos listed above (picked: a promise by the to-do made from it)
-    picked = {str(i.get('covers') or i.get('id') or '') for i, _ in picks if i is not None} - {''}
-    for area, text in (areas or ()) if show_text else ():
-        if text and area_rows and area in area_rows:
-            text = area_digest(*area_rows[area], skip=picked)
-        if text:
-            lines += [AREA_TITLES[area](), text, '']
-    sections = [{'area': area, 'copy': text} for area, text in (areas or ()) if show_text and text]
+    # No Work and Personal recap below it: what got done is the evening digest's, and what is still open is the list
+    # and its count above (To-dos' Digest shows each area's, Today so far)
     read = read_text(lines)
-    blocks = read_blocks(lines, {f() for f in AREA_TITLES.values()}, {t('Done today'), t('Still open')}, {opening} - {''})
+    blocks = read_blocks(lines, set(), set(), {opening} - {''})
     if root:  # opens this digest again, as its notification does
         lines.append(t('Open The Machine: {}', root + DIGEST_VIEW))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
@@ -788,31 +805,31 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     shown = [(item, clip(text, 40) if item is not None else t('First meeting at {}', first_at)) for item, text in picks
              if (item is not None or not about_meeting) and (named is None or item is not named)]
     for keep in range(len(shown), -1, -1):
-        counted = sum(1 for i, _ in shown[:keep] if counts(i)) + bool(named)
-        left = max(0, total - counted)
-        said = shown[:keep] + ([(named, '')] if named else [])
-        last = waits(left, said, bool(said)) if left else ''
+        last = after(shown[:keep] + ([(named, '')] if named else []))
+        # the day's meetings close it when there is room (a headline about the first meeting already says it)
+        meet = opening if keep and not about_meeting and not any(i is None for i, _ in shown) else ''
         parts = [x for x in ([text for _, text in shown[:keep]] + [last] if keep else [last, opening]) if x] or [clip(named['title'], 40) if named else head]
+        if meet and len('\n'.join(parts + [meet])) <= APP_BODY:
+            parts.append(meet)
         if len('\n'.join(parts)) <= APP_BODY:
             break
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
     return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
-            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': sections}
+            'text': '\n'.join(lines).strip(), 'subject': head, 'read': read, 'blocks': blocks, 'sections': []}
 
 
 # -- an area's digest: Copy Work, Copy Personal
 AREAS = ('work', 'personal')  # the order of the areas' digests
-AREA_TITLES = {'work': lambda: t('Work'), 'personal': lambda: t('Personal')}
 AREA_LISTED = 8  # done and open to-dos listed in an area's digest, the rest as a count
 
 
 def area_digest(done, open_items, today='', skip=()):
     """One area's digest (Work or Personal): what got done today and what is still open there, as plain text to paste
-    somewhere else (no links). The To-dos digest shows and copies it, and the morning digest's email carries it.
+    somewhere else (no links). The To-dos digest shows and copies it (Today so far); the morning digest doesn't carry it.
     done: the to-dos finished today [{title}], the ones that matter first; open_items: the area's open to-dos [{title,
     due}] in the dashboard's order (open_order); today ('YYYY-MM-DD'): one due then says so. At most AREA_LISTED of
     each, the rest as a count. '' when the area has nothing worth listing: then no part of it shows anywhere.
-    skip: ids of open to-dos to leave out (the morning digest lists those above its areas)."""
+    skip: ids of open to-dos to leave out (listed elsewhere already)."""
     done = [i for i in done if str(i.get('title') or '').strip()]
     open_items = [i for i in open_items if str(i.get('title') or '').strip() and (not skip or i.get('id') not in skip)]
     out = []

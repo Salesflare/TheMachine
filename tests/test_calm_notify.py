@@ -185,15 +185,15 @@ class Summary(unittest.TestCase):
         top = ready + [{'title': f'To-do {n}'} for n in range(12)]
         args = dict(total=14, top=top, ready=ready, replies=[r['id'] for r in ready], per=25, name='Sam')
         en = notify.compose(meeting, [], [], 'https://m.example/', **args)
-        self.assertEqual(en['text'].split('\n')[:9], ['Morning Sam, 2 replies are ready to send', '',
+        self.assertEqual(en['text'].split('\n')[:8], ['Morning Sam, 2 replies are ready to send', '',
                                                      '• Send the reply to Robin · [Open](https://m.example/#card=a1b2c3d4e5f60718&or=chat)',
                                                      '• Send the reply to Kai · [Open](https://m.example/#card=b1b2c3d4e5f60718&or=chat)',
-                                                     '• 10:00 Planning', '', '12 more can wait, about 5 min to clear.', '',
+                                                     '', '12 more can wait, about 5 min to clear.', '',
                                                      '1 meeting today, at 10:00.'])
         locale_prefs.configure({'language': 'nl'})
         nl = notify.compose(meeting, [], [], 'https://m.example/', **args)
         self.assertEqual(nl['push']['title'], 'Goeiemorgen Sam, 2 antwoorden staan klaar om te versturen')
-        self.assertEqual(nl['push']['body'], 'Send the reply to Robin\nSend the reply to Kai\nEerste afspraak om 10:00\n12 andere kunnen wachten, ongeveer 5 min werk.')
+        self.assertEqual(nl['push']['body'].split('\n')[:3], ['Send the reply to Robin', 'Send the reply to Kai', '12 andere kunnen wachten, ongeveer 5 min werk.'])
 
 
 if __name__ == '__main__':

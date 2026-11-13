@@ -7536,12 +7536,20 @@
   "one": "{} andere kan wachten.",
   "other": "{} andere kunnen wachten."
  },
+ "{} more due today.": {
+  "one": "Nog {} voor vandaag.",
+  "other": "Nog {} voor vandaag."
+ },
  "{} more in Promises": "Nog {} in Beloftes",
  "{} more like this wait. Always shares them too.": {
   "one": "Er wacht nog {} zoals deze. Altijd deelt die ook.",
   "other": "Er wachten nog {} zoals deze. Altijd deelt die ook."
  },
  "{} more like this {}. Always shares {} too.": "Nog {} zoals deze {}. Altijd deelt ook {}.",
+ "{} more ready for your OK.": {
+  "one": "Nog {} klaargezet voor je akkoord.",
+  "other": "Nog {} klaargezet voor je akkoord."
+ },
  "{} more, open the day": "Nog {}, open de dag",
  "{} morning’s digest": "Ochtendoverzicht van {}",
  "{} moved to {}": "{} staat nu op {}",
@@ -7626,6 +7634,14 @@
  "{} other signals": {
   "one": "{} ander signaal",
   "other": "{} andere signalen"
+ },
+ "{} others can wait, about {} min to clear.": {
+  "one": "{} andere kan wachten, ongeveer {} min werk.",
+  "other": "{} andere kunnen wachten, ongeveer {} min werk."
+ },
+ "{} others can wait.": {
+  "one": "{} andere kan wachten.",
+  "other": "{} andere kunnen wachten."
  },
  "{} owns it.": "{} is eigenaar.",
  "{} pages": {

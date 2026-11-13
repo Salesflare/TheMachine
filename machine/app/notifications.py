@@ -195,25 +195,17 @@ class NotificationsApp:
             total = waiting_count(db)
             per = clear_pace.seconds(db, current)  # the owner's pace: "12 more can wait, about 5 min to clear."
             show = security_levels.notify_text(db, False)
-            show_work = security_levels.notify_text(db, True)  # a Careful Work Fleet keeps Work titles out of email
         promised = notify.promised_today(self.store.promises(), top, local.date().isoformat(), lambda p: promise_text(p)[0])
         root = 'https://' + self.config['dashboard_host'] + self.config.get('dashboard_path', '/') if self.config.get('dashboard_host') else ''
         when = lambda iso: locale_prefs.clock_text(dt.datetime.fromisoformat(iso).astimezone(local_tz()))
-        # Each area's digest after the rest: the email goes to the owner's own address only, so Personal goes along;
-        # Work as Work's own rules allow (a Careful Fleet: no Work titles in notifications)
-        counted = self.area_rows(current)
-        rows = dict(counted) if show else {}
-        if not show_work:
-            rows.pop('work', None)
-        areas = {a: notify.area_digest(*r) for a, r in rows.items()}
         digest = notify.compose(meetings, due, overnight, root, show, when, total=total, top=top, ready=ready, promised=promised,
-                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking,
-                                areas=[(a, areas.get(a, '')) for a in notify.AREAS], area_rows=rows)
+                                per=per, name=notify.first_name(self.config.get('owner_name')), replies=[r['id'] for r in ready if reply_waits(r)], asking=asking)
         if digest:  # the to-dos it speaks of, listed or counted: their held email lines go with it (digest_step)
             digest['covers'] = sorted({r['id'] for r in due + overnight + top if r.get('id')} |
                                       {p['covers'] for p in promised if p.get('covers')})
-            # how many each area had done and open, numbers only (no titles): To-dos' Digest row says them (notify.digest_row)
-            digest['counts'] = {a: {'done': len(r[0]), 'open': len(r[1])} for a, r in counted.items()}
+            # how many each area has open, numbers only (no titles): To-dos' Digest row says them (notify.digest_row).
+            # Nothing done: the morning digest doesn't recap the day (the evening digest does)
+            digest['counts'] = {a: {'done': 0, 'open': len(r[1])} for a, r in self.area_rows(current).items()}
         return digest
 
     def area_digests(self, current=None):
