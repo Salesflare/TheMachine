@@ -66,7 +66,7 @@ def account(folder):
 
 
 def mirror(folder, **answers):
-    cli = Cli(listContacts=[{'uuid': PAT, 'name': 'Pat Example', 'number': NUMBER}, {'uuid': LEE, 'profile': {'givenName': 'Lee'}}],
+    cli = Cli(listContacts=[{'uuid': PAT, 'name': 'Pat Example', 'number': '+15555550101'}, {'uuid': LEE, 'profile': {'givenName': 'Lee'}}],
               listGroups=[{'id': GROUP, 'name': 'Book club'}], **answers)
     m = sm.Mirror(cli, folder, ss.sealer(folder), NUMBER, sleep=lambda _: None, clock=lambda: 1000.0)
     ss.set_state(m.db, identity=ss.identity(NUMBER), account=NUMBER, uuid=OWN, linked_at=ss.now())
@@ -291,6 +291,24 @@ class Arriving(unittest.TestCase):
         self.m.call.answers['listContacts'] = [{'uuid': OWN, 'number': NUMBER}]  # no name: never the number instead
         self.m.refresh_names()
         self.assertEqual(ss.get_state(self.m.db)['name'], 'Sam Example')
+
+    def test_its_own_name_is_asked_for_by_its_number(self):
+        # signal-cli leaves the account itself out of its contact list, and getUserStatus can give its phone number
+        # identity rather than the ID the list shows: the own entry comes from asking for its number
+        cli, others = self.m.call, [{'uuid': PAT, 'name': 'Pat Example', 'number': '+15555550101'}]
+        own = [{'uuid': '44444444-4444-4444-8444-444444444444', 'number': NUMBER, 'profile': {'givenName': 'Robin', 'familyName': 'Example'}}]
+        cli.answers['listContacts'] = lambda: own if (cli.calls[-1][1] or {}).get('recipient') == [NUMBER] else others
+        self.m.refresh_names()
+        self.assertEqual(ss.get_state(self.m.db)['name'], 'Robin Example')
+        self.assertIn(('listContacts', {'recipient': [NUMBER], 'allRecipients': True}), cli.calls)
+        def refused():  # asking for its own entry fails: the chats' names still come
+            if (cli.calls[-1][1] or {}).get('recipient'):
+                raise sm.RpcError({'message': 'refused'})
+            return others
+        cli.answers['listContacts'] = refused
+        self.m.refresh_names()
+        self.assertEqual(ss.get_state(self.m.db)['name'], 'Robin Example')
+        self.assertTrue(ss.known_chat(self.m.db, PAT))
 
     def test_work_or_personal_and_the_graph_like_whatsapp(self):
         event = a.signal_event(account(self.store), {'chat_id': PAT, 'author': PAT, 'sent_at': NOW_MS, 'from_me': 0, 'text': 'Hi',

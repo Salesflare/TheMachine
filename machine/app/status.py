@@ -318,6 +318,10 @@ class StatusApp:
             elif 'microsoft_signin_expired' in (connector.get('error') or '') and by_id.get(connector['id'], {}).get('transport') == 'graph':
                 import onboarding
                 connector['sign_in_command'] = 'assistant connect ' + onboarding.connect_name(by_id[connector['id']], self.config)
+        try:  # two cards on one tab never read the same: each says what tells it apart (names.tell_apart)
+            display_names.tell_apart(result['connectors'], self.config['accounts'])
+        except Exception as error:  # noqa: BLE001 - a name never costs the status
+            LOG.error('card names apart error=%s', type(error).__name__)
         result['reviews_on'] = bool((self.config.get('review_worker') or {}).get('enabled'))  # off until activated
         result['reviews_auto'] = reviews_start_by_themselves(self.config)
         result['hours'] = self.hours()

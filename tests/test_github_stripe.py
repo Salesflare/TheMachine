@@ -192,6 +192,14 @@ class GitHub(Base):
         self.assertTrue(all(c == 'user' or c.startswith(('notifications?', 'repos/')) for c in source.calls))
         self.assertIn('participating=true', next(c for c in source.calls if c.startswith('notifications?')))
 
+    def test_the_profiles_name_names_its_card(self):
+        github.sync(self.store, {}, GITHUB, H, FakeGitHub(self.NOTES))
+        self.assertNotIn('account_name', self.store.checkpoint('test-github'))  # no name on the profile: its handle stays
+        source = FakeGitHub(self.NOTES)
+        source.get = lambda path, get=source.get: {'login': 'owner', 'name': ' Sam  Example '} if path == 'user' else get(path)
+        github.sync(self.store, {}, GITHUB, H, source)
+        self.assertEqual(self.store.checkpoint('test-github')['account_name'], 'Sam Example')  # its card's title (machine/names.py)
+
     def test_replay_adds_nothing_and_repo_filter_applies(self):
         github.sync(self.store, {}, GITHUB, H, FakeGitHub(self.NOTES))
         github.sync(self.store, {}, GITHUB, H, FakeGitHub(self.NOTES))

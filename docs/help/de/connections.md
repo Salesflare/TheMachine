@@ -14,7 +14,7 @@ Ein fehlgeschlagener Sync, den ein späterer ausgeglichen hat, steht in Grau; nu
 
 Ihre Zahlen zeigen alles, was sie hereingeholt hat, auch ihren [Verlauf](history.md), was in den letzten 24 Std. dazukam und was noch nicht geprüft ist. Ein Kalender zählt Termine: alle, die der nächsten 7 Tage und der letzten 24 Std.
 
-Jede Quelle heißt wie ihr Konto, so wie der Dienst es nennt: deine Adresse, ein X-Profil, ein Slack-Workspace oder wem das Signal oder Telegram gehört. Darunter steht **Arbeit** oder **Privat**, dazu die Adresse oder der Handle, wenn der Name sie noch nicht nennt.
+Jede Quelle heißt wie ihr Konto, so wie der Dienst es nennt: deine Adresse, ein X-Profil, ein Slack-Workspace oder wem das Signal oder Telegram gehört. Darunter steht **Arbeit** oder **Privat**, dazu die Adresse oder der Handle, wenn der Name sie noch nicht nennt. Haben zwei Quellen auf einem Tab denselben Namen, steht bei jeder auch, was sie unterscheidet, etwa Slack oder X oder die Adresse des Workspace.
 
 Unter dem Status sagt jede Quelle in einer Zeile, was sie hereinholt, und wenn sie etwas tun kann, dass sie es erst tut, wenn du auf **Senden** drückst oder zustimmst.
 

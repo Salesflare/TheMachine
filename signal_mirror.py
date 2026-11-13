@@ -171,12 +171,19 @@ class Mirror:
         """The names of people and groups, from signal-cli's contact and group lists (the phone syncs them). The
         account's own entry gives the name its Connections card goes by ("Sam’s Signal"), never its number."""
         own = ss.get_state(self.db)
-        for contact in self.call('listContacts') or ():
+        contacts = list(self.call('listContacts') or ())
+        try:  # the account itself is no contact, so the plain list leaves it out: asked for by its number
+            mine = list(self.call('listContacts', {'recipient': [self.account], 'allRecipients': True}) or ())
+        except RpcError:
+            mine = []
+        # by its number: the ID getUserStatus gives for it can be its phone number identity, not the one listed here
+        named = (display_name(c) for c in mine + contacts
+                 if c.get('number') == self.account or (own.get('uuid') and c.get('uuid') == own.get('uuid')))
+        name = next((n for n in named if n and n != self.account), '')
+        if name and name[:100] != own.get('name'):
+            ss.set_state(self.db, name=name[:100])
+        for contact in contacts:
             uuid = str(contact.get('uuid') or '')
-            if uuid == own.get('uuid') if own.get('uuid') else contact.get('number') and contact.get('number') == own.get('account'):
-                name = display_name(contact)
-                if name and name != contact.get('number') and name != own.get('name'):
-                    ss.set_state(self.db, name=name[:100])
             if ss.re_person(uuid) and not contact.get('isBlocked'):
                 self.save_chat(uuid, 'dm', display_name(contact))
         for group in self.call('listGroups') or ():
