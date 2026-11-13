@@ -278,14 +278,9 @@ class BriefTodos:
 
     def _brief_retitle(self, db, card_id, title, why):
         """A brief's own open to-do in the words its line has now (more specific than when it was made): its title
-        (unless the owner wrote one), its text and its Fleet evidence, so the chat on it reads the same."""
-        body = _sentence(why) + '.'
+        (unless the owner wrote one) and its text. Its Fleet evidence (a sealed event) keeps the words it was made with."""
         db.execute("UPDATE suggestions SET title=CASE WHEN title_source='user' THEN title ELSE ? END,body=? WHERE id=?",
-                   (title[:90], body[:700], str(card_id)))
-        row = db.execute('SELECT event_ids FROM suggestions WHERE id=?', (str(card_id),)).fetchone()
-        ids = [i for i in json.loads(row['event_ids'] or '[]')] if row else []
-        if ids:
-            db.execute(f"UPDATE events SET title=?,body=? WHERE kind='fleet.brief' AND id IN ({','.join('?' * len(ids))})", (title, body, *ids))
+                   (title[:90], (_sentence(why) + '.')[:700], str(card_id)))
 
     def _brief_repliers(self, ref, item):
         """The addresses of the people a waiting email went to (the teammates named on its line, and the owner when it
