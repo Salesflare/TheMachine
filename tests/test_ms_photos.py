@@ -177,7 +177,8 @@ class MicrosoftPhotos(unittest.TestCase):
         self.assertEqual((card['title'], card['status'], card['origin']),
                          ('Reconnect Microsoft to show your colleagues’ and contacts’ photos', 'pending', 'machine'))
         # Reconnect opens its sign-in: a hosted Machine's by provider, a self-hosted one's by its source under + Add
-        self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com', 'account': 'mail', 'source': 'outlook'})
+        self.assertEqual(card['reconnect'], {'provider': 'microsoft', 'email': 'sam@acme.com', 'account': 'mail', 'source': 'outlook',
+                                             'personal': False})
         self.assertEqual(card['body'], 'Reconnect sam@acme.com to show colleagues’ and contacts’ photos. Read-only.')
         self.assertIsNone(card['source_line'])  # its text names the account: no "Signal · date" line
         with self.store.connect() as db:
@@ -197,7 +198,9 @@ class MicrosoftPhotos(unittest.TestCase):
         config = {'accounts': [personal]}
         fake = Graph(granted={'User.Read', 'Mail.ReadWrite'}, offered=('User.ReadBasic.All', 'Contacts.Read'))
         self.step(fake, config=config)
+        self.store.accounts = [personal]
         [card] = self.todos()
+        self.assertTrue(card['reconnect']['personal'])  # no admin's approval link on its sign-in step
         self.assertEqual((card['title'], card['body']), ('Reconnect Microsoft to show your contacts’ photos',
                                                          'Reconnect sam@outlook.com to show your contacts’ photos. Read-only.'))
         fake.granted, fake.offered = {'User.Read', 'Mail.ReadWrite', 'Contacts.Read'}, {'User.ReadBasic.All'}

@@ -188,7 +188,8 @@ const SIGNIN_COPY={intercom:{label:'Intercom',about:'Reads your conversations. R
 // It opens Microsoft's approval page with a fresh signed state on each visit (the control plane's site), so it never expires.
 const MS_ADMIN_LINK='https://themachine.computer/m365-admin-consent';
 // Teams: its own link, which also approves channels, transcripts and Copilot's meeting notes for the organization
-const msAdmin=s=>{const link=s.provider==='microsoft_teams'?MS_ADMIN_LINK+'/teams':s.provider==='microsoft'?MS_ADMIN_LINK:'';return !link?'':html`<div class="connect-admin"><p>Need your admin’s approval? Send them this link.</p><div class="connect-admin-link"><a href="${link}" target="_blank" rel="noopener" translate="no">${link.replace('https://','')}</a><button type="button" data-copy-link="${link}">Copy link</button></div></div>`};
+// a reconnect for a personal Microsoft account (Outlook.com) has no admin to ask: no link then
+const msAdmin=s=>{if(s.personal)return '';const link=s.provider==='microsoft_teams'?MS_ADMIN_LINK+'/teams':s.provider==='microsoft'?MS_ADMIN_LINK:'';return !link?'':html`<div class="connect-admin"><p>Need your admin’s approval? Send them this link.</p><div class="connect-admin-link"><a href="${link}" target="_blank" rel="noopener" translate="no">${link.replace('https://','')}</a><button type="button" data-copy-link="${link}">Copy link</button></div></div>`};
 const signinOf=(x,state,command)=>{const hosted=!!(connectList?.manage_url&&x.hosted_signin),p=hosted?x.hosted_signin:x.signin===true?x.service:x.signin;
  return {source:x.name,provider:p,label:SIGNIN_COPY[p]?.label||x.label,own:!x.broker,hosted,another:!!x.connected,state,...(command?{command}:{}),...(!hosted&&x.signin_off?{off:true}:{})}};
 // A hosted Machine: Work or Personal here, then Sign in goes to the provider in this tab and comes back to this form.
@@ -306,7 +307,7 @@ async function phoneApprove(b){b.disabled=true;
 // Reconnect on a hosted Machine's card or in Needs you: that provider's sign-in form under + Add, which comes back to it
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-hosted-reconnect]');if(!b||!state.manage_url)return;
  connectRun=null;connectForm=null;showTab('health','add');await connectAdd(true);const p=b.dataset.hostedReconnect,x=connectList?.sources.find(v=>v.hosted_signin===p);
- connectSignin={...(x?signinOf(x,'intro'):{source:p,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,hosted:true,state:'intro'}),...(b.dataset.email?{email:b.dataset.email}:{}),...(p==='whatsapp'&&b.dataset.account?{account:b.dataset.account}:{})};
+ connectSignin={...(x?signinOf(x,'intro'):{source:p,provider:p,label:SIGNIN_COPY[p]?.label||p,own:false,hosted:true,state:'intro'}),...(b.dataset.email?{email:b.dataset.email}:{}),...(p==='whatsapp'&&b.dataset.account?{account:b.dataset.account}:{}),...(b.dataset.personal?{personal:true}:{})};
  $('#connect-add').dataset.sig='';renderConnectSignin();viewTop($('#connect-add'))});
 const hostedReconnect=(c,label,cls)=>html`<button type="button" class="${cls}" data-hosted-reconnect="${c.hosted_signin}"${c.email?html` data-email="${c.email}"`:''}${c.service==='whatsapp'?html` data-account="${c.id}"`:''}>${label}</button>`;
 // Reconnect on a card or in Needs you: the same steps as + Add, for that account, shown in the + Add pane.
@@ -314,7 +315,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-reco
  // a sign-in through the control plane (Docs from Microsoft on a self-hosted Machine): its Sign in step, in the + Add pane.
  // data-signin-source, not data-signin: that one opens the Machine browser's sign-in dialog (connections-signin.js).
  // start: the sign-in it asks for, which may not be the source's own (Allow edits: microsoft_docs_write, not microsoft_docs)
- if(b.dataset.signinSource){const p=b.dataset.signinSource;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,start:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro'};
+ if(b.dataset.signinSource){const p=b.dataset.signinSource;connectRun=null;connectSignin={source:b.dataset.reconnect,provider:p,start:p,label:SIGNIN_COPY[p]?.label||p,own:false,state:'intro',...(b.dataset.personal?{personal:true}:{})};
   showHealthPane('add');document.querySelector('nav button[data-tab="health"]')?.click();$('#connect-add').dataset.sig='';await connectAdd(true);
   if(connectSignin?.source===b.dataset.reconnect&&connectList?.sources.find(v=>v.name===b.dataset.reconnect)?.signin_off){connectSignin={...connectSignin,off:true};renderConnectSignin()}
   viewTop($('#connect-add'));return}

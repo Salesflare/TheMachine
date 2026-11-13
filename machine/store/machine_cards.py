@@ -6,6 +6,7 @@ import datetime as dt
 import hashlib
 import json
 
+import ms_graph
 import parked_fixes
 from machine import system_logs
 from timeutil import now
@@ -156,7 +157,10 @@ class MachineCardsStore:
             if card.get('origin') == 'machine' and card.get('status') in ('pending', 'snoozed'):
                 lead = reconnect_lead(db, card['id'])
                 if lead:
-                    card['reconnect'] = lead
+                    # personal: an Outlook.com account, which has no admin: its sign-in step shows no admin's approval link
+                    accounts = getattr(self, 'accounts', None) or (getattr(self, 'config', None) or {}).get('accounts') or []
+                    account = next((a for a in accounts if isinstance(a, dict) and a.get('id') == lead['account']), None)
+                    card['reconnect'] = {**lead, 'personal': bool(account and lead['provider'] == 'microsoft' and ms_graph.personal(account))}
 
     def machine_fix(self, job):
         """Do it on a to-do from the computer's logs (its preparation starting from the owner's Do it): runs its one

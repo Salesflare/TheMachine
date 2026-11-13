@@ -352,8 +352,8 @@ function cardActions(s,choices,smartButtons,unmerge,hint,smart){const skill=skil
  else if(useAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-card-use="${s.id}">${useText(s.preparation_use)}</button>`,...smartButtons];
  else if(connectAsk(s))smartButtons=[k=>html`<button class="${k('primary','button')}" data-connect-open="${s.preparation_connect}">${t('Connect {}',SERVICE_NAMES[s.preparation_connect]||s.preparation_connect)}</button>`,...smartButtons];
  // Reconnect: a hosted Machine's sign-in under + Add; a self-hosted one's is its source's, as on its Connections card
- else if(s.reconnect&&!closed(s))smartButtons=[k=>state.manage_url?html`<button class="${k('primary','button')}" data-hosted-reconnect="${s.reconnect.provider}" data-email="${s.reconnect.email}">${t('Reconnect')}</button>`
-  :html`<button class="${k('primary','button')}" data-reconnect="${s.reconnect.source||''}" data-account="${s.reconnect.account||''}" data-signin-source="${s.reconnect.provider}">${t('Reconnect')}</button>`,...smartButtons];
+ else if(s.reconnect&&!closed(s))smartButtons=[k=>state.manage_url?html`<button class="${k('primary','button')}" data-hosted-reconnect="${s.reconnect.provider}" data-email="${s.reconnect.email}"${s.reconnect.personal?html` data-personal="1"`:''}>${t('Reconnect')}</button>`
+  :html`<button class="${k('primary','button')}" data-reconnect="${s.reconnect.source||''}" data-account="${s.reconnect.account||''}" data-signin-source="${s.reconnect.provider}"${s.reconnect.personal?html` data-personal="1"`:''}>${t('Reconnect')}</button>`,...smartButtons];
  if(skill)smartButtons=[k=>skillButton(s,k),...smartButtons];
  else if(copy)smartButtons=[k=>html`<button class="${k('primary','button')}" data-id="${s.id}" data-result="copy">Copy draft</button>`,...smartButtons];
  const answered=s.status==='prepared'&&(()=>{try{return JSON.parse(s.outcome||'{}').state==='answered'}catch{return false}})();

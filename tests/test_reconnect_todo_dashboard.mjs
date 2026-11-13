@@ -16,7 +16,7 @@ const cards={
  // a personal Outlook.com account: no colleagues, so it asks only for its contacts' photos
  self:{id:'rc1',title:'Reconnect Microsoft to show your contacts’ photos',body:'Reconnect sam@outlook.example to show your contacts’ photos. Read-only.',
   status:'pending',scope:'personal',origin:'machine',owner_step:1,created_at:now,event_ids:[1],
-  reconnect:{provider:'microsoft',email:'sam@outlook.example',account:'o1',source:'outlook'}}};
+  reconnect:{provider:'microsoft',email:'sam@outlook.example',account:'o1',source:'outlook',personal:true}}};
 let mode='hosted';
 const hosted=()=>mode==='hosted';
 const state=()=>({suggestions:[cards[mode]],promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},
@@ -63,6 +63,9 @@ try{
    await page.locator('#connect-add').getByRole('button',{name:/Sign in/}).first().waitFor({timeout:5000});  // its Sign in step, in view
    assert.ok(await page.locator('#connect-add').isVisible());
   }
+  // a work account's sign-in offers the admin's approval link; a personal account has no admin, so it has none
+  if(m==='self')assert.equal(await page.locator('#connect-add .connect-admin').count(),0);
+  else await page.locator('#connect-add .connect-admin').waitFor({timeout:5000});
   if(shots){await page.waitForTimeout(400);await page.screenshot({path:`${shots}/reconnect-tapped-${name}.png`})}
   await context.close();
  }
