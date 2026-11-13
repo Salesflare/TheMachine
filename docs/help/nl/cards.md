@@ -36,7 +36,7 @@ Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hi
 
 De regel bovenaan de lijst schakelt ook meteen naar de andere: **Alleen privé · Werk · Alles tonen**.
 
-**Overzicht** bovenaan de lijst toont wat vandaag gedaan is en wat nog open staat, voor Werk en Privé, of alleen dat waarop je filtert. **Kopiëren** zet het op je klembord, als gewone tekst om overal te plakken. Het staat er alleen als er iets op te sommen is. Met **×** verberg je het op al je apparaten tot het volgende ochtend- of avondoverzicht, of tot de volgende dag.
+De rij bovenaan de lijst noemt je laatste ochtend- of avondoverzicht en wat erin stond, zoals **Avondoverzicht van gisteren** · 12 gedaan, 3 open. Tik erop om dat overzicht opnieuw te lezen, met **Kopiëren** om het overal te plakken. Zonder recent overzicht staat er **Vandaag tot nu toe**: wat vandaag gedaan is en wat nog open staat, voor Werk en Privé, of alleen dat waarop je filtert. Zodra je het opent of op **×** tikt, verdwijnt het op al je apparaten tot het volgende overzicht.
 
 Een to-do bij een project toont de naam van het project in de regel onder de titel; die opent het project. **Project** onder **Details** wijzigt het of haalt het weg. Zie [de to-do's van een project](projects.md#a-projects-to-dos).
 

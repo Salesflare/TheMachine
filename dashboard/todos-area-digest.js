@@ -1,5 +1,6 @@
-// A lazy part (dashboard_parts.LAZY 'areadigest'): the To-dos digest. Digest at the top of the list (digestEntry,
-// todos-learned.js) opens it: each area's done today and still open (notify.area_digest, the area_digest action), Work
+// A lazy part (dashboard_parts.LAZY 'areadigest'): the To-dos digest. The row at the top of the list (digestEntry,
+// todos-learned.js) opens the last digest sent (as below), or today's so far, "Today so far": each area's done today
+// and still open (notify.area_digest, the area_digest action), Work
 // and Personal or the filter's one, as plain text with Copy, the same text the morning digest's email carries. An area
 // with nothing in it isn't shown. Read from the Machine each time it opens, so it is never older than the list.
 // A tapped morning or evening digest notification, or its email's link (#digest=morning|evening, openDigestLink),
@@ -14,7 +15,7 @@ function adDialog(){let d=$('#area-digest');if(d)return d;
  return d}
 const adSentCopy=k=>k==='all'?adSent.title+'\n\n'+adSent.text:adSent.sections.find(s=>s.area===k)?.copy;
 function adDraw(){const d=adDialog();if(adSent)return adSentDraw(d);const areas=adAreas(),one=areas.length===1,shown=adText?areas.filter(a=>adText[a]):[];
- const title=one?(areas[0]==='work'?t('Work digest'):t('Personal digest')):t('Digest');
+ const title=digestName('today');  // the row's own name for it (todos-learned.js)
  const copy=a=>one?t('Copy'):a==='work'?t('Copy Work'):t('Copy Personal');
  setHTML(d,html`<div class="snooze-heading"><h2 id="area-digest-title">${title}</h2><button type="button" data-ad-close aria-label="${t('Close')}">×</button></div>
  ${!adText?html`<p class="ad-fine">${t('Loading…')}</p>`:!shown.length?html`<p class="ad-fine">${t('Nothing to list yet.')}</p>`
@@ -29,9 +30,10 @@ function adBlocks(blocks){const out=[];let li=[];const flush=()=>{if(li.length)o
  flush();return html`<div class="ad-read">${out}</div>`}
 // A hyphenated word ("to-dos") kept on one line, so a narrow headline never breaks it as "to-" and "dos"
 const adKeep=s=>String(s||'').split(/(\S+-\S+)/).map((x,i)=>i%2?html`<span class="ad-nw">${x}</span>`:x);
-// The digest as it went: its headline, when, its text, then Copy for each area it has (Copy Work, Copy Personal), else one Copy
+// The digest as it went: which one by when it went ("Yesterday evening's digest", the row's name; its headline when
+// that's unknown), when, its text, then Copy for each area it has (Copy Work, Copy Personal), else one Copy
 function adSentDraw(d){const s=adSent,parts=s.sections.filter(x=>x.copy&&/^(work|personal)$/.test(x.area));
- setHTML(d,html`<div class="snooze-heading"><h2 id="area-digest-title">${adKeep(s.title)}</h2><button type="button" data-ad-close aria-label="${t('Close')}">×</button></div>
+ setHTML(d,html`<div class="snooze-heading"><h2 id="area-digest-title">${s.at&&/^(morning|evening)$/.test(s.kind)?digestName(s.kind,s.at):adKeep(s.title)}</h2><button type="button" data-ad-close aria-label="${t('Close')}">×</button></div>
  ${s.at?html`<p class="ad-fine ad-when">${localeDate(s.at,DL,{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit',hour12:H12})}</p>`:''}
  ${s.blocks?.length?adBlocks(s.blocks):html`<pre class="ad-text">${s.text}</pre>`}<div class="actions">${parts.length?parts.map(x=>html`<button type="button" class="ad-copy" data-ad-copy="${x.area}">${x.area==='work'?t('Copy Work'):t('Copy Personal')}</button>`)
  :html`<button type="button" class="primary" data-ad-copy="all">${t('Copy')}</button>`}</div>`)}

@@ -36,7 +36,7 @@ Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide.
 
 La ligne en haut de la liste passe aussi directement à l’autre : **Perso uniquement · Travail · Tout afficher**.
 
-**Récap** en haut de la liste montre ce qui a été fait aujourd’hui et ce qui reste à faire, pour Travail et Perso, ou seulement celui que vous filtrez. **Copier** le met dans votre presse-papiers, en texte simple à coller partout. Il n’apparaît que s’il y a quelque chose à lister. Son **×** le masque sur tous vos appareils jusqu’au prochain récap du matin ou du soir, ou jusqu’au lendemain.
+La ligne en haut de la liste nomme votre dernier récap du matin ou du soir et ce qu’il a compté, par exemple **Récap d’hier soir** · 12 faites, 3 ouvertes. Touchez-la pour relire ce récap, avec **Copier** pour le coller partout. Sans récap récent, elle affiche **Aujourd’hui jusqu’ici** : ce qui a été fait aujourd’hui et ce qui reste à faire, pour Travail et Perso, ou seulement celui que vous filtrez. Dès que vous l’ouvrez ou touchez son **×**, elle disparaît sur tous vos appareils jusqu’au prochain récap.
 
 Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Projet** sous **Détails** le change ou le retire. Voir [les tâches d’un projet](projects.md#a-projects-to-dos).
 

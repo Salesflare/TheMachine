@@ -310,7 +310,7 @@ class StatusApp:
         result['reminders'] = reminder_channels(self.store, self.config)  # how a snooze comes back (Telegram, notifications)
         result['todo_channels'] = reminder_channels(self.store, self.config, 'todo')  # where a to-do held for later goes (its deliver_after chip)
         result['notify'] = self.notify_view()
-        result['digest_row_hidden'] = self.digest_row_view()  # To-dos' Digest row set aside with its ×, until the next digest
+        result['digest_row'] = self.digest_row_view()  # To-dos' Digest row: the last digest sent, or today's; None once opened or set aside
         result['setup_hints'] = self.setup_hints_view()
         result['phone_app_store'] = phone_app_nudge(self.store)
         try:  # the setup to-do at the top of To-dos (setup_card)
