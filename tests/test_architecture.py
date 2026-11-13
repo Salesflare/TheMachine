@@ -548,6 +548,9 @@ LAZY_CEILING['followups'] = 29_000
 # page's brand, tabs and controls rules moved out of base-layout.css (base-controls.css), which Connections' part
 # carried whole (111,261 -> 103,134).
 LAZY_CEILING['settings'] = 162_000
+# msshare 8,000 (2026-11-13): the milestone's share dialog (about 6.5 KB), which a computer now opens instead of its
+# share sheet, out of the milestone part that sat at its ceiling (19,994 -> 14,633).
+LAZY_CEILING['msshare'] = 8_000
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new

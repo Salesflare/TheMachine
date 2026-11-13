@@ -1,0 +1,15 @@
+/*@lazy*/
+/* The milestone's share dialog (todos-milestone-share.js), on a computer or where there is no share sheet: the title and × on top (the phone's sheet header), the image, its
+   size, Download image, Copy image (or Share image), what a button did, and the text to post */
+#ms-share{width:min(460px,calc(100vw - 24px));padding:var(--sp-5)}
+#ms-share .snooze-heading{margin-bottom:12px}#ms-share h2{margin:0;font-size:var(--fs-lg)}
+.ms-sizes{display:inline-flex;gap:2px;margin-bottom:12px;padding:3px;border-radius:var(--r-pill);background:var(--sunken)}
+.ms-sizes button{min-height:30px;padding:0 14px;border:0;border-radius:var(--r-pill);background:none;box-shadow:none;color:var(--muted);font-size:var(--fs-sm);font-weight:600}
+.ms-sizes button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 2px #0003}
+.ms-frame{display:grid;place-items:center;aspect-ratio:1;border-radius:var(--r-lg);background:var(--sunken);overflow:hidden}.ms-frame.wide{aspect-ratio:1200/630}
+.ms-preview{display:block;width:100%;height:100%;object-fit:contain}
+#ms-share .ms-acts{display:flex;gap:8px;margin-top:14px}#ms-share .ms-acts button{flex:1 1 0;min-height:40px}
+#ms-share .ms-said{margin:10px 0 0;color:var(--muted);font-size:var(--fs-sm)}#ms-share .ms-said.bad{color:var(--c-orange)}
+.ms-post{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:14px}.ms-post span{flex:1;color:var(--muted);font-size:var(--fs-xs);font-weight:600}
+.ms-post button{min-height:30px;padding:0 10px;font-size:var(--fs-sm)}
+.ms-post-text{flex:1 1 100%;margin:0;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--sunken);color:var(--text);font-size:var(--fs-sm);user-select:all;overflow-wrap:anywhere}

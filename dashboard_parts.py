@@ -65,6 +65,7 @@ LAZY = {
     'learning': ('learning-missed.css', 'learning-bring.js', 'learning-share.js', 'learning-missed.js'),
     'mailcheck': ('todos-mail-check.css', 'todos-mail-check.js'),
     'milestone': ('todos-milestone.css', 'todos-milestone.js'),
+    'msshare': ('todos-milestone-share.css', 'todos-milestone-share.js'),
     'recipe': ('todos-recipe.css', 'todos-recipe.js'),
     'routines': ('routines-page.css', 'routines-page.js'),
     'routinetodos': ('todos-cleanup.css', 'todos-cleanup.js', 'todos-routine-change.js', 'todos-facebook-birthdays.js'),
