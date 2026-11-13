@@ -8,7 +8,7 @@ The sign-in is the one the Machine already has for that address: Google through 
 Microsoft through its broker or the owner's own app (ms_graph.py). Gmail's and gog's scopes stay as they are. Reading
 documents needs one more scope, which the owner grants with its own consent (Connect Google Docs, or Connect Microsoft
 documents), and nothing else asks for it. Microsoft documents need no Outlook: without one on that address, the Docs
-connection has a sign-in of its own (`own_grant`, onboarding.connect_docs_grant), with only the Docs scopes, which the
+connection has a sign-in of its own (`own_grant`, microsoft_grants.docs), with only the Docs scopes, which the
 Outlook mail and calendar connectors never use:
 
 - Google: https://www.googleapis.com/auth/drive.readonly (Drive file list, comments, a doc's text and its suggestions).
@@ -59,7 +59,7 @@ SETUP = {
             'page, or Sign in with Microsoft here.',
     'ask': [('email', 'The Microsoft address that owns the files')],
     # a hosted Machine: its account page's Docs tile has the consent (Connect documents); on a paired self-hosted one,
-    # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, onboarding.connect_docs_grant)
+    # + Add signs in with Microsoft through the control plane (fleet.SIGNIN_OF, microsoft_grants.docs)
     'account_page': 'docs',
     'hints': {'docs_not_connected': 'Press Connect Microsoft documents to let it read Word files',
               'docs_no_signin': 'Sign in with Microsoft for this address',

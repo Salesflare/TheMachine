@@ -2704,6 +2704,7 @@
  "Microsoft OneDrive waits for your OK to read your files.": "Microsoft OneDrive espera tu OK para leer tus archivos.",
  "Microsoft Teams": "Microsoft Teams",
  "Microsoft didn't allow edits": "Microsoft no permitió editar",
+ "Microsoft didn't allow reading Teams chats": "Microsoft no permitió leer los chats de Teams",
  "Microsoft is still setting up access; it retries by itself": "Microsoft todavía está configurando el acceso; lo reintenta solo",
  "Microsoft sign-in failed: {}": "Falló el inicio de sesión de Microsoft: {}",
  "Microsoft sign-in for": "Inicio de sesión de Microsoft para",

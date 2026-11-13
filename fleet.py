@@ -252,9 +252,9 @@ CONTROL = 'https://app.themachine.computer'  # the control plane: the Account pa
 PAIR_PAGE = CONTROL + '/account?tab=fleet#devices'  # where a self-hosted Machine is paired with an account
 START_PREFIX = b'tm-device-connect-start/1\n'  # what a start request is signed as (the control plane's device_connect.start)
 # sign-ins through the control plane's own apps, from the dashboard. microsoft_docs: Docs (Word, OneDrive, SharePoint) for
-# a Microsoft account, Outlook here or not, Files.ReadWrite.All in one consent (onboarding.connect_docs_grant);
+# a Microsoft account, Outlook here or not, Files.ReadWrite.All in one consent (microsoft_grants.docs);
 # microsoft_docs_write: Allow edits on a Docs connection from before that reads only, the same way; microsoft_teams:
-# Teams chats for a work account, Outlook here or not, the hosted Teams consent's scopes (onboarding.connect_teams_grant)
+# Teams chats for a work account, Outlook here or not, the hosted Teams consent's scopes (microsoft_grants.teams)
 SIGNIN_SOURCES = {'intercom', 'google', 'microsoft', 'zoom', 'microsoft_docs', 'microsoft_docs_write', 'microsoft_teams', 'stripe', 'slack', 'trello',
                   'google_meet', 'salesforce'}
 # a dashboard source -> the sign-in that connects it (Google: Gmail and Calendar together; Microsoft: Outlook mail and calendar)

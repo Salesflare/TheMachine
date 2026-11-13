@@ -1,6 +1,6 @@
 """Microsoft Teams on a paired self-hosted Machine: + Add offers it (Chat and Meetings, one sign-in) once the control
 plane opens its sign-in (fleet.SIGNIN_SOURCES microsoft_teams), started as Docs is, with the hosted Teams consent's
-scopes. The sign-in comes back sealed (onboarding.connect_teams_grant): a Teams account of its own, or joined to that
+scopes. The sign-in comes back sealed (microsoft_grants.teams): a Teams account of its own, or joined to that
 address's Outlook sign-in, checked with a real read before it is kept. No live calls: the reads are stubbed and the
 control plane is a fake."""
 import json
