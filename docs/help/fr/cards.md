@@ -36,6 +36,8 @@ Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide.
 
 La ligne en haut de la liste passe aussi directement à l’autre : **Perso uniquement · Travail · Tout afficher**.
 
+**Récap** en haut de la liste montre ce qui a été fait aujourd’hui et ce qui reste à faire, pour Travail et Perso, ou seulement celui que vous filtrez. **Copier** le met dans votre presse-papiers, en texte simple à coller partout. Il n’apparaît que s’il y a quelque chose à lister.
+
 Une tâche liée à un projet affiche le nom du projet sur la ligne sous son titre ; il ouvre le projet. **Projet** sous **Détails** le change ou le retire. Voir [les tâches d’un projet](projects.md#a-projects-to-dos).
 
 **Domaine** sous **Détails** déplace la tâche vers votre autre espace. Ce qu’elle peut lire et d’où elle peut envoyer suit le déplacement ; les messages d’où elle vient restent où ils sont. **Annuler** dans le message qui suit la remet en place.

@@ -74,6 +74,8 @@ Openen toont die to-do gemarkeerd in je lijst. Is hij klaar, gesnoozed of in een
 
 De push zegt hetzelfde zonder links. Tik erop om vandaag te openen in de **Agenda**.
 
+Onderaan staan je overzichten voor **Werk** en **Privé**, dezelfde tekst die **Overzicht** bij To-do's kopieert. Is de tekst van to-do's verborgen in meldingen, dan vallen ze weg.
+
 ## Het avondoverzicht
 
 Het komt één keer op werkdagen op zijn tijdstip in **Werkuren**, standaard 15 minuten voor **Tot**, via de manieren die je hierboven in zijn rij kiest. Een dag zonder afgewerkte to-do of gehouden afspraak krijgt er geen. Het begint met je dag in een getal, zoals "Goeienavond Sam, vandaag 4 to-do's gedaan", en dan een deel **Werk** en een deel **Privé**. Een leeg deel valt weg. Elk deel heeft:

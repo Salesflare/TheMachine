@@ -462,6 +462,7 @@ DASHBOARD_ACTIONS = frozenset({
     *VOICE_ACTIONS,
     'app_push_register',
     'app_push_unregister',
+    'area_digest',
     'board_default',
     'board_delete',
     'board_dismiss',

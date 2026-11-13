@@ -36,6 +36,8 @@ Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerche
 
 Die Zeile oben in der Liste wechselt auch direkt zur anderen: **Nur privat · Arbeit · Alle anzeigen**.
 
+**Zusammenfassung** oben in der Liste zeigt, was heute erledigt wurde und was noch offen ist, für Arbeit und Privat oder nur für den Filter, der an ist. **Kopieren** legt sie als einfachen Text in die Zwischenablage, zum Einfügen überall. Sie erscheint nur, wenn es etwas aufzulisten gibt.
+
 Eine Aufgabe in einem Projekt zeigt den Projektnamen in der Zeile unter ihrem Titel; er öffnet das Projekt. **Projekt** unter **Details** ändert es oder entfernt es. Siehe [Aufgaben eines Projekts](projects.md#a-projects-to-dos).
 
 **Bereich** unter **Details** verschiebt die Aufgabe in deinen anderen Bereich. Was sie lesen und wovon sie senden darf, zieht mit; die Nachrichten, aus denen sie kam, bleiben, wo sie sind. **Rückgängig** in der Meldung danach verschiebt sie zurück.

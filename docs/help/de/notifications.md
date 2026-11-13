@@ -75,6 +75,8 @@ Sie kommt an Arbeitstagen zu deiner Uhrzeit für die **Morgendliche Zusammenfass
 
 Der Push sagt dasselbe ohne Links. Tippst du darauf, öffnet sich heute im **Kalender**.
 
+Am Ende stehen deine Zusammenfassungen für **Arbeit** und **Privat**, derselbe Text, den **Zusammenfassung** in den Aufgaben kopiert. Wenn Aufgabentext in Benachrichtigungen ausgeblendet ist, fehlen sie.
+
 ## Die abendliche Zusammenfassung
 
 Sie kommt an Arbeitstagen einmal zu ihrer Uhrzeit unter **Arbeitszeiten**, standardmäßig 15 Minuten vor **Bis**, auf den Wegen, die du oben in ihrer Zeile wählst. Ein Tag ohne erledigte Aufgabe oder gehaltenen Termin bekommt keine. Sie beginnt mit deinem Tag in einer Zahl, etwa "Guten Abend Sam, heute 4 Aufgaben erledigt", dann folgen ein Teil **Arbeit** und ein Teil **Privat**. Ein leerer Teil fällt weg. Jeder Teil hat:

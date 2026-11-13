@@ -74,6 +74,8 @@ Ouvrir affiche la tâche en surbrillance dans votre liste. Si elle est faite, mi
 
 Le push dit la même chose sans liens. Touchez-le pour ouvrir aujourd’hui dans l’**Agenda**.
 
+À la fin viennent vos récaps **Travail** et **Perso**, le même texte que copie **Récap** dans les tâches. Quand le texte des tâches est masqué dans les notifications, ils sont omis.
+
 ## Le récap du soir
 
 Il arrive une fois les jours de travail à son heure dans **Heures de travail**, par défaut 15 minutes avant **Jusqu’à**, par les moyens choisis dans sa ligne ci-dessus. Un jour sans tâche faite ni réunion tenue n’en reçoit pas. Il commence par votre journée en un chiffre, comme "Bonsoir Sam, 4 tâches faites aujourd’hui", puis une partie **Travail** et une partie **Perso**. Une partie vide est omise. Chacune contient :

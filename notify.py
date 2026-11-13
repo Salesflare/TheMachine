@@ -543,7 +543,7 @@ def headline(name, ready=0, replies=0, due=0, piled=0, minutes=0, first_at='', n
 
 
 def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso: iso[11:16], waiting=None, total=None,
-            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=()):
+            top=None, ready=(), promised=(), per=None, name='', replies=(), asking=(), areas=()):
     """The morning summary from its parts, short and scannable: meetings [{at, title}], due and overnight [{id?, title}].
     Returns None when there is nothing to say, else {push: {title, body, url, tag}, text, subject}.
 
@@ -560,6 +560,8 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     from that promise) first, then what is due, the first meeting, what came in overnight, and the waiting to-dos in the
     dashboard's order (top, open_order). A to-do is listed once (by id, else by title). total: how many to-dos wait
     (waiting_count); left out, the ones given here. waiting is kept for callers that pass it and not used.
+    areas: [(area, text)], each area's digest (area_digest), after the rest under its name, email and Telegram only (not
+    the push); an empty one is left out.
     Without show_text (Careful, or notify_text off) only counts and the meeting time: no titles anywhere. The push's
     body never names a meeting or a person's words beyond the to-do titles the lock screen already allows."""
     seen = set()
@@ -638,6 +640,10 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
         lines += [tail, '']
     if opening and not about_meeting:  # a headline about the first meeting already says it
         lines += [opening, '']
+    # Each area's digest (area_digest), the same text the To-dos digest copies: never without show_text (titles)
+    for area, text in (areas or ()) if show_text else ():
+        if text:
+            lines += [AREA_TITLES[area](), text, '']
     if root:
         lines.append(t('Open The Machine: {}', root))
     # The push: the same lines, without links; a meeting by its time only. Fewer lines when the phone has no room
@@ -655,6 +661,37 @@ def compose(meetings, due, overnight, root='', show_text=True, clock=lambda iso:
     body = '\n'.join(clip(x, APP_BODY) for x in parts)
     return {'push': {'title': head, 'body': body, 'url': (root or './') + DIGEST_VIEW, 'tag': 'digest'},
             'text': '\n'.join(lines).strip(), 'subject': head}
+
+
+# -- an area's digest: Copy Work, Copy Personal
+AREAS = ('work', 'personal')  # the order of the areas' digests
+AREA_TITLES = {'work': lambda: t('Work'), 'personal': lambda: t('Personal')}
+AREA_LISTED = 8  # done and open to-dos listed in an area's digest, the rest as a count
+
+
+def area_digest(done, open_items, today=''):
+    """One area's digest (Work or Personal): what got done today and what is still open there, as plain text to paste
+    somewhere else (no links). The To-dos digest shows and copies it, and the morning digest's email carries it.
+    done: the to-dos finished today [{title}], the ones that matter first; open_items: the area's open to-dos [{title,
+    due}] in the dashboard's order (open_order); today ('YYYY-MM-DD'): one due then says so. At most AREA_LISTED of
+    each, the rest as a count. '' when the area has nothing worth listing: then no part of it shows anywhere."""
+    done = [i for i in done if str(i.get('title') or '').strip()]
+    open_items = [i for i in open_items if str(i.get('title') or '').strip()]
+    out = []
+
+    def listed(items, more):
+        for i in items[:AREA_LISTED]:
+            title = clip(i['title'], 80)
+            out.append('• ' + (t('Due today: {}', title) if today and i.get('due') == today else title))
+        if len(items) > AREA_LISTED:
+            out.append(more(len(items) - AREA_LISTED))
+    if done:
+        out.append(t('Done today'))
+        listed(done, lambda n: t('{} more done.', n))
+    if open_items:
+        out.append(t('Still open'))
+        listed(open_items, lambda n: t('{} more open.', n))
+    return '\n'.join(out)
 
 
 # -- the evening digest

@@ -36,6 +36,8 @@ Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuot
 
 La riga in cima all'elenco passa anche direttamente all'altra: **Solo personale · Lavoro · Mostra tutto**.
 
+**Riepilogo** in cima all’elenco mostra cosa è stato fatto oggi e cosa è ancora aperto, per Lavoro e Personale, o solo quello che filtri. **Copia** lo mette negli appunti, come testo semplice da incollare ovunque. Compare solo quando c’è qualcosa da elencare.
+
 Un'attività su un progetto mostra il nome del progetto nella riga sotto il titolo; apre il progetto. **Progetto** in **Dettagli** lo cambia o lo toglie. Vedi [le attività di un progetto](projects.md#a-projects-to-dos).
 
 **Area** in **Dettagli** sposta l'attività nella tua altra area. Cosa può leggere e da dove può inviare segue lo spostamento; i messaggi da cui è nata restano dove sono. **Annulla** nell'avviso che segue la riporta indietro.

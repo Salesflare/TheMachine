@@ -520,6 +520,7 @@ LAZY_CEILING['settings'] = 140_000
 # 386,000: what only their pages draw (about 4.8 and 2.9 KB).
 LAZY_CEILING.update(newtodo=26_000, palette=20_000, compose=34_000, signin=18_000, voice=16_000, emailframe=10_000,
                     talk=56_000, settings=151_000, learning=42_000, fleet=100_000, graph=386_000)
+LAZY_CEILING['areadigest'] = 4_000  # the Work and Personal digest view with its Copy buttons
 
 
 # Python files: the same scan limit, and a line budget that keeps a module small enough to read and review. A new
