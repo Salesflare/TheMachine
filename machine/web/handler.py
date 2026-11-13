@@ -76,6 +76,12 @@ import whatsapp_images
 
 UPLOAD_REQUEST_BYTES = 9 * 1024 * 1024
 
+# The page's policy (every answer through output()). blob: is the page's own images and files made in the browser:
+# the milestone's share image shows as one (img-src), and the phone app reads it to save it (connect-src). Without it
+# the dialog showed a broken image on every Machine. tests/test_milestone_dashboard.mjs serves the page with it.
+PAGE_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' https: data: blob:; font-src 'self' https: data:; connect-src 'self' blob:; frame-ancestors 'none'")
+
 
 # What the dashboard says when an action fails on something other than a ValueError (which says what to do itself)
 ACTION_FAILED = 'That didn’t go through. Reload the page and try again.'
@@ -234,7 +240,7 @@ def make_handler(app):
                 self.etag = None
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', referrer)
-            self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' https: data:; frame-ancestors 'none'")
+            self.send_header('Content-Security-Policy', PAGE_CSP)
             self.end_headers()
             try:
                 self.wfile.write(data)
