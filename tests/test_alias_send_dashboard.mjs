@@ -122,15 +122,16 @@ try{
   await page.locator('#send-confirm').click();
   let c=await confirmed(page);
   assert.equal(c.args.revision,aliasRev);assert.equal(c.args.sender,alias);
-  // Pick the mailbox address instead
-  await page.locator('#send-dialog').evaluate(d=>d.open&&d.close());
+  // Pick the mailbox address instead. The dialog closes itself once Send's answer is in: wait for that, so a late close
+  // never shuts the next review (closing it here raced with it on a slow runner)
+  await page.locator('#send-dialog').waitFor({state:'hidden'});
   await open(page,aliasId,aliasRev);
   assert.equal(await fromValue(page),alias);  // each review starts at the draft's default
   await choose(page,mailbox);
   await page.locator('#send-confirm').click();
   c=await confirmed(page);assert.equal(c.args.sender,mailbox);
   // No alias to offer: From is plain text and Send now carries no sender
-  await page.locator('#send-dialog').evaluate(d=>d.open&&d.close());
+  await page.locator('#send-dialog').waitFor({state:'hidden'});
   await open(page,plainId,plainRev);
   assert.equal(await page.locator('#send-from').count(),0);
   assert.equal(await page.locator('#send-head dd').first().textContent(),mailbox);
