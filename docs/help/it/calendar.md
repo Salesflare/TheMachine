@@ -37,6 +37,8 @@ Fai clic su una riga per aprire la chat della sua attività, la promessa o la ri
 
 Una sala riunioni prenotata compare nel luogo, mai come persona né nel tuo Graph.
 
+Un link alla riunione compare come il suo servizio, come Zoom, Google Meet o Teams, o come **Videochiamata**. Apri la riunione per partecipare.
+
 ## Note e trascrizione della riunione
 
 I dettagli di una riunione hanno due parti. **Note** è il riepilogo: decisioni e azioni. **Trascrizione** è ciò che è stato detto, parola per parola. All’inizio è chiusa, con la sua durata; **Mostra** la apre.

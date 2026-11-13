@@ -37,6 +37,8 @@ Haz clic en una fila para abrir el chat de su tarea, la promesa o la reunión en
 
 Una sala de reuniones reservada aparece en el lugar, nunca como persona ni en tu Graph.
 
+Un enlace de reunión aparece como su servicio, como Zoom, Google Meet o Teams, o como **Videollamada**. Abre la reunión para unirte.
+
 ## Notas y transcripción de la reunión
 
 Los detalles de una reunión tienen dos partes. **Notas** es el resumen: decisiones y tareas. **Transcripción** es lo que se dijo, palabra por palabra. Empieza plegada, con su duración; **Mostrar** la abre.

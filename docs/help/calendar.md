@@ -37,6 +37,8 @@ Click a row to open its to-do's chat, the promise, or the meeting. A meeting you
 
 A meeting room booked on a meeting shows under where, never as a person or in your Graph.
 
+A meeting link shows as its service, like Zoom, Google Meet or Teams, or as **Video call**. Open the meeting to join.
+
 ## Meeting notes and transcript
 
 A meeting's details have two parts. **Notes** is the summary: decisions and action items. **Transcript** is what was said, word for word. It starts folded, with how long it runs; **Show** opens it.

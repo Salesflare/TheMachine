@@ -106,7 +106,11 @@ try{
   if(lang==='nl')assert.deepEqual(await page.evaluate(()=>[i18nLookup('nu een to-do'),i18nLookup('Je zei het di 27 okt · nu een to-do'),i18nLookup('3 to-dos')]),[null,null,'3 to-do\'s']);
   await context.close()}
  locale=view('en');[context,page]=await open('en-US');
- assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),rangeText('09:45','10:30'),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3)]),['Oct 26 – Nov 1, 2026','09:45 to 10:30','1 guest','3 guests']);
+ assert.deepEqual(await page.evaluate(()=>[calSpan(new Date(2026,9,26)),rangeText('09:45','10:30'),t(['{} guest','{} guests'],1),t(['{} guest','{} guests'],3)]),['26 Oct – 1 Nov 2026','09:45 to 10:30','1 guest','3 guests']);
+ // English week ranges follow the region's date order (Settings), as the day headings do: day first here (en-GB),
+ // US order in the US. Never one order in the range and the other in the headings under it.
+ assert.deepEqual(await page.evaluate(()=>{const w=d=>[calSpan(new Date(2026,10,9)),calSpan(new Date(2026,11,28)),calDate('2026-11-13')],gb=w();DL='en-US';const us=w();DL='en-GB';return [gb,us]}),
+  [['9 – 15 Nov 2026','28 Dec 2026 – 3 Jan 2027','Fri 13 Nov'],['Nov 9 – 15, 2026','Dec 28, 2026 – Jan 3, 2027','Fri, Nov 13']]);
  // A sync count with one sync reads as one, also in English (a failed one: a lone good sync draws no bars at all)
  const syncs=()=>[String(spark({sync_activity:[{status:'error',signals:0,at:'2026-10-26T10:00:00Z'}]})).match(/aria-label="([^"]*)/)[1],String(spark({sync_activity:[0,1,2,3,4].map(i=>({status:i<2?'error':'success',signals:1,at:'2026-10-26T10:00:00Z'}))})).match(/aria-label="([^"]*)/)[1],t(['{} signal','{} signals'],1)];
  assert.deepEqual(await page.evaluate(syncs),['Last sync: 1 failed','Last 5 syncs: 2 failed','1 signal']);

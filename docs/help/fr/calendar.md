@@ -37,6 +37,8 @@ Cliquez sur une ligne pour ouvrir le chat de sa tâche, la promesse, ou la réun
 
 Une salle de réunion réservée apparaît dans le lieu, jamais comme une personne ni dans votre Graph.
 
+Un lien de réunion apparaît sous le nom de son service, comme Zoom, Google Meet ou Teams, ou comme **Appel vidéo**. Ouvrez la réunion pour la rejoindre.
+
 ## Notes et transcription de réunion
 
 Les détails d’une réunion ont deux parties. **Notes** est le résumé : décisions et actions. **Transcription** est ce qui a été dit, mot pour mot. Elle est d’abord repliée, avec sa durée ; **Afficher** l’ouvre.

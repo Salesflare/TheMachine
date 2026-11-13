@@ -37,6 +37,8 @@ Clique em uma linha para abrir o chat da tarefa, a promessa ou a reunião na pr�
 
 Uma sala de reunião reservada aparece no local, nunca como pessoa nem no seu Graph.
 
+Um link de reunião aparece como o serviço, como Zoom, Google Meet ou Teams, ou como **Videochamada**. Abra a reunião para entrar.
+
 ## Notas e transcrição da reunião
 
 Os detalhes de uma reunião têm duas partes. **Notas** é o resumo: decisões e ações. **Transcrição** é o que foi dito, palavra por palavra. Ela começa recolhida, com a duração; **Mostrar** abre.

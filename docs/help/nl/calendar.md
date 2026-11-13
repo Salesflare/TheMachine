@@ -37,6 +37,8 @@ Klik op een rij om de chat van de to-do, de belofte of de afspraak in de eigen a
 
 Een geboekte vergaderzaal staat bij de plaats, nooit als persoon of in je Graph.
 
+Een vergaderlink staat er als de dienst, zoals Zoom, Google Meet of Teams, of als **Videogesprek**. Open de afspraak om deel te nemen.
+
 ## Vergadernotities en transcript
 
 De details van een vergadering hebben twee delen. **Notities** is de samenvatting: beslissingen en actiepunten. **Transcript** is wat er gezegd is, woord voor woord. Het staat dichtgeklapt, met hoe lang het duurt; **Tonen** opent het.
