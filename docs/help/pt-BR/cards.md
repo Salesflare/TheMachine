@@ -116,7 +116,7 @@ Acima do rascunho, uma linha discreta mostra a mensagem de onde ela veio, com o 
 
 Quando o rascunho segue o que outra pessoa disse em outra mensagem, como a sugestão de um colega no Slack, uma linha abaixo da tarefa diz isso, como "Com base em Sam no #ops". Toque nela para ler essa mensagem aqui, com Abrir no Slack ou no Gmail dentro dela. Quando essa mensagem é a própria origem da tarefa, a linha de origem já a mostra, então não aparece uma segunda linha.
 
-Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa aparece sob "Esta tarefa". No WhatsApp, Telegram ou Signal suas próprias mensagens ficam à direita, como no app.
+Um chat (Slack, WhatsApp, Telegram, Intercom…) aparece como uma única conversa, da mais antiga para a mais nova, cada mensagem uma vez; a mensagem de que trata a tarefa aparece sob "Esta tarefa". No WhatsApp, Telegram ou Signal suas próprias mensagens ficam à direita, como no app. Em um e-mail, **Detalhes** mostra só o que o cabeçalho não diz, como endereços completos em Cc, Cco ou outro endereço de resposta; sem nada a acrescentar, não aparece.
 
 Uma resposta em uma thread do Slack também mostra o que foi dito antes da thread. Um link da tarefa para a própria mensagem também a abre aqui, com **Abrir no Slack** embaixo.
 

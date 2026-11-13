@@ -116,7 +116,7 @@ Boven het concept noemt een rustige regel het bericht waar hij uit komt, met het
 
 Volgt het concept wat iemand anders in een ander bericht zei, zoals een voorstel van een collega in Slack, dan zegt een regel onder de to-do dat, zoals "Op basis van Sam in #ops". Tik erop om dat bericht hier te lezen, met Openen in Slack of Gmail erin. Is dat bericht de bron van de to-do zelf, dan toont de bronregel het al en komt er geen tweede regel.
 
-Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat staat onder "Deze to-do". In WhatsApp, Telegram of Signal staan je eigen berichten rechts, zoals in de app.
+Een chat (Slack, WhatsApp, Telegram, Intercom…) lees je als één gesprek, oudste eerst, elk bericht één keer; het bericht waar de to-do over gaat staat onder "Deze to-do". In WhatsApp, Telegram of Signal staan je eigen berichten rechts, zoals in de app. Bij een e-mail toont **Details** alleen wat de kop niet zegt, zoals volledige Cc-adressen, Bcc of een ander antwoordadres; is er niets bij te zeggen, dan is er geen Details.
 
 Een antwoord in een Slack-thread toont ook wat er vóór de thread gezegd werd. Een link van de to-do naar zijn eigen bericht opent het ook hier, met **Openen in Slack** onderaan.
 

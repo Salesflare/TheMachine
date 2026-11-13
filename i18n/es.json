@@ -4239,6 +4239,7 @@
  "Reply posted on X": "Respuesta publicada en X",
  "Reply posted on X at {}.": "Respuesta publicada en X a las {}.",
  "Reply posted on X.": "Respuesta publicada en X.",
+ "Reply to": "Responder a",
  "Replying to": "Respondiendo a",
  "Report a bug": "Informar de un error",
  "Report a problem": "Informar de un problema",
@@ -4589,6 +4590,7 @@
  "Sent to {}. They read it and decide.": "Enviado a {}. Lo leen y deciden.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Enviado a {}. Esperando su respuesta hasta {}; se cierra cuando responda.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Enviado a {}. Esperando su respuesta; se cierra cuando conteste.",
+ "Sent via": "Enviado vía",
  "Sent your review to {}": "Tu revisión se envió a {}",
  "Sent {}": "{} enviados",
  "Sent {} changes to {}": {

@@ -4239,6 +4239,7 @@
  "Reply posted on X": "Antwoord geplaatst op X",
  "Reply posted on X at {}.": "Antwoord geplaatst op X om {}.",
  "Reply posted on X.": "Antwoord geplaatst op X.",
+ "Reply to": "Antwoord aan",
  "Replying to": "Antwoord op",
  "Report a bug": "Een bug melden",
  "Report a problem": "Een probleem melden",
@@ -4589,6 +4590,7 @@
  "Sent to {}. They read it and decide.": "Verstuurd naar {}. Zij lezen het en beslissen.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord tot {}; het sluit zodra ze antwoorden.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Verstuurd naar {}. Wacht op hun antwoord; het sluit wanneer ze antwoorden.",
+ "Sent via": "Verzonden via",
  "Sent your review to {}": "Je review is naar {} gestuurd",
  "Sent {}": "{} verstuurd",
  "Sent {} changes to {}": {

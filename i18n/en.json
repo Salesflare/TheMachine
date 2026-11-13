@@ -4239,6 +4239,7 @@
  "Reply posted on X": "Reply posted on X",
  "Reply posted on X at {}.": "Reply posted on X at {}.",
  "Reply posted on X.": "Reply posted on X.",
+ "Reply to": "Reply to",
  "Replying to": "Replying to",
  "Report a bug": "Report a bug",
  "Report a problem": "Report a problem",
@@ -4589,6 +4590,7 @@
  "Sent to {}. They read it and decide.": "Sent to {}. They read it and decide.",
  "Sent to {}. Waiting for their reply until {}; it closes when they answer.": "Sent to {}. Waiting for their reply until {}; it closes when they answer.",
  "Sent to {}. Waiting for their reply; it closes when they answer.": "Sent to {}. Waiting for their reply; it closes when they answer.",
+ "Sent via": "Sent via",
  "Sent your review to {}": "Sent your review to {}",
  "Sent {}": "Sent {}",
  "Sent {} changes to {}": {
