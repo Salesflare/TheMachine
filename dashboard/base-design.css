@@ -70,7 +70,7 @@ nav button.active .badge,[data-theme="light"] nav button.active .badge{backgroun
 #needs-you li{padding:var(--sp-1) 0}
 #needs-you .head-link{min-height:30px;padding:0 12px}
 @media(max-width:560px){#needs-you li:has(>code){flex-direction:column;align-items:flex-start;gap:6px}#needs-you li>code{max-width:100%;overflow-x:auto}}  /* a command to run goes under its line on a phone */
-.notice-card{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);color:var(--text);font-size:var(--fs-sm);line-height:1.45}
+.notice-card{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);color:var(--text);font-size:var(--fs-sm);line-height:1.45}.nobr{white-space:nowrap}
 .notice-card>span{flex:1 1 16em;min-width:0;overflow-wrap:anywhere}
 .notice-card .head-link{flex:0 0 auto;margin:0 0 0 auto;min-height:30px;padding:0 12px;font:inherit;font-size:.85rem;cursor:pointer}
 @media(max-width:560px){#needs-you li:has(>code){flex-direction:column;align-items:flex-start;gap:6px}#needs-you li>code{max-width:100%;overflow-x:auto}}  /* a command to run goes under its line on a phone */
@@ -236,7 +236,7 @@ dialog h2,.snooze-heading h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight)
 .fleet-ho-sum{margin:0;color:var(--muted);font-size:var(--fs-sm);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .fleet-ho.tap{padding-right:32px!important}.fleet-ho.tap::after{right:4px}
 /* Lists inside a box: rows divided by a line, not boxes in a box. */
-.fleet-box .list{border:0;border-radius:0;background:transparent;box-shadow:none}
+.fleet-box .list{border:0;border-radius:0;background:transparent;box-shadow:none;overflow:visible}/* a row's keyboard ring shows whole, never clipped to one green line */
 .fleet-box .list>article{background:transparent;border:0;border-top:1px solid var(--border);border-radius:0;box-shadow:none;margin:0;padding:12px 0}
 .fleet-box .list>article p{margin:2px 0}
 /* Sub-tabs (Fleet, Graph, Connections): one pill row. On a phone it scrolls sideways with a fade on the side that

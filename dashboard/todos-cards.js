@@ -100,7 +100,9 @@ const tone=v=>({pending:'amber',accepted:'lavender',instructions:'lavender',prep
 // A blocker waiting on the owner (a sign-in in the kept tab) resumes with Continue; same rule as the service.
 const retryLabel=r=>/\b(?:sign(?:ed)?[ -]?in|log(?:ged)?[ -]?in|signed out|2fa|two-factor|authenticator|passkey|tap continue)\b/i.test(r||'')&&!/try again/i.test(r||'')?'Continue':'Try again';
 // One calm line at the top of a page, in a quiet card; with a button when there is somewhere to go (data: its data-* attributes).
-const pageNotice=(text,button,data={},cls='')=>html`<div class="notice-card${cls?' '+cls:''}" role="status"><span>${text}</span>${button?html`<button type="button" class="head-link"${Object.entries(data).map(([k,v])=>html` data-${k}="${v}"`)}>${button}</button>`:''}</div>`;
+// A hyphenated word ("To-dos") never breaks at its hyphen: it moves to the next line whole
+const noHyphenBreak=s=>typeof s==='string'?s.split(/(\S+-\S+)/).map((p,i)=>i%2?html`<span class="nobr">${p}</span>`:p):s;
+const pageNotice=(text,button,data={},cls='')=>html`<div class="notice-card${cls?' '+cls:''}" role="status"><span>${noHyphenBreak(text)}</span>${button?html`<button type="button" class="head-link"${Object.entries(data).map(([k,v])=>html` data-${k}="${v}"`)}>${button}</button>`:''}</div>`;
 const chip=(text,t)=>html`<span class="chip t-${t}"><span class="ct">${text}</span></span>`;
 // A closed to-do says when it closed, not when it came in: "Done 5 minutes ago" (a send counts as done then)
 const closedChip=s=>{const at=closedAt(s);return html`<span class="chip t-${lapsed(s)?'muted':tone(s.status)}" title="${date(at)}"><span class="ct">${t(s.status==='completed'&&!lapsed(s)?'Done {}':'Marked not needed {}',ago(at))}</span></span>`};

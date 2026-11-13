@@ -55,10 +55,12 @@ function fleetCardsOf(f){if(!f?.on)return[];const works=(f.fleets||[]).filter(x=
  const gname=p=>p.fleet_name||works.find(x=>x.id===p.fleet)?.name||'';
  const graphAsk={member:p=>t('{} joined {}. Share the team\'s Graph with them?',p.name,gname(p)),optout:p=>t('{} asks to stop sharing their Work with the team.',p.name),admin:p=>t('Confirm {} as an admin of {}?',p.name,gname(p))};
  for(const p of (f.shared?.prompts||[]).filter(p=>graphAsk[p.kind]))
-  out.push(card('share-'+p.id,p,graphAsk[p.kind](p),html`${p.email?html`<p class="muted">${p.email}</p>`:''}<p class="muted">${p.kind==='admin'?'Admins can share the team’s Graph and connections. Check it’s really them.':'Only admins decide this, once for the whole team.'}</p>${p.fp&&p.kind!=='optout'?html`<p class="share-fp mono" title="Their Machine's safety number">${p.fp}</p>`:''}`,
+  out.push(card('share-'+p.id,p,graphAsk[p.kind](p),html`${p.email?html`<p class="muted">${p.email}</p>`:''}<p class="muted">${p.kind==='admin'?'Admins can share the team’s Graph and connections. Check it’s really them.':'Only admins decide this, once for the whole team.'}</p>${p.kind!=='optout'?fleetFp(p.fp):''}`,
    html`<div class="actions"><button class="primary" data-share-ok="${p.id}" data-kind="${p.kind}" data-choice="yes">${p.kind==='member'?'Share':p.kind==='admin'?'Confirm':'Approve'}</button><button class="ghost" data-share-ok="${p.id}" data-choice="no">Not now</button></div>`));
  out.push(...networkCards(f));
  return out}
+// A teammate Machine's safety number: folded away, there to compare when it matters, never a raw code in the open
+const fleetFp=fp=>fp?html`<details class="share-fp"><summary>Their Machine's safety number</summary><p class="mono">${fp}</p></details>`:'';
 // Finding people you know on the Network (discovery.py): a permission card once, then a card per person only with a concrete reason
 const netBtn=(label,d,email='',rel='',cls='ghost',confirmText='')=>html`<button type="button" class="${cls}" data-net-do="${d}"${email?html` data-net-email="${email}"`:''}${rel?html` data-net-rel="${rel}"`:''}${confirmText?html` data-confirm-text="${confirmText}"`:''}>${label}</button>`;
 const netDay=at=>{const d=new Date(at);return isNaN(d)?'':localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};

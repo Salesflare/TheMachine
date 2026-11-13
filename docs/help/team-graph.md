@@ -98,6 +98,8 @@ Until then, the new person's Graph and Fleet say which admins they're waiting fo
 
 A new Machine of someone already in gets the team's Graph after 24 hours. Meanwhile admins can tap **Not theirs** to keep it out.
 
+Each of these asks keeps the Machine's safety number folded under **Their Machine's safety number**. It changes when that Machine's keys change.
+
 ## When someone leaves
 
 They get nothing new from that moment. What they shared stays with the team. An admin can also **Take out** someone, and **Share again** later.

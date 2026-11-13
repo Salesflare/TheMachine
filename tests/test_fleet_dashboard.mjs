@@ -51,7 +51,7 @@ try{
   assert.deepEqual(await page.locator('.fleet-tabs [data-fleet-pane]').allInnerTexts(),['Acme','Manage','Sharing','Activity']);
   assert.equal(await page.locator('.fleet-pane:not([hidden])').count(),1);
   const people=await page.locator('.fleet-people li').allInnerTexts();
-  assert.match(people[0],/^Sam Doe\s*you\s*owner\nsam@acme\.example · Self-hosted: Desk$/);assert.match(people[1],/Hosted: sam\.example\.test/);
+  assert.match(people[0],/^Sam Doe\s*you\s*Owner\nsam@acme\.example · Self-hosted: Desk$/);assert.match(people[1],/Hosted: sam\.example\.test/);
   assert.equal(people[2],'Kim Lee\nkim@acme.example\nSelf-hosted: Laptop\nHosted: kim.example.test');  // one person, two Machines: the name once
   // Each row: the name and its tags on one line, email and Machine muted below, lined up the same.
   const rows=await page.locator('.fleet-people li').evaluateAll(l=>l.map(li=>{const n=li.querySelector('.fp-name').getBoundingClientRect(),m=li.querySelector('.fp-meta').getBoundingClientRect();return [Math.round(m.left-n.left),m.top>=n.bottom-1]}));
