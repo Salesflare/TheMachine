@@ -30,6 +30,8 @@ Geht es bei einer Aufgabe um ein Ergebnis, das jemand anderes liefert, etwa eine
 
 Eine Aufgabe, die eine Woche niemand angefasst hat, fragt einmal: **Noch nötig?** **Nicht nötig** schließt sie, mit **Rückgängig**. **Behalten** behält sie, und sie fragt nie wieder. Öffnen, eine Chatnachricht, eine Änderung, Zurückstellen oder eine neue Nachricht dazu zählen als Anfassen. Kommt eine weitere Woche keine Antwort, wandert sie in Kommt später zurück, unter Noch nötig?, statt zu verschwinden. Dann zählen auch die Zahl am App-Symbol und die morgendliche Zusammenfassung sie nicht mehr mit. Anfassen holt sie zurück.
 
+Einmal pro Woche kann ein Projekt, bei dem es still geworden ist und nichts offen ist, eine Aufgabe mit einem konkreten nächsten Schritt bekommen, höchstens drei pro Woche. Siehe [Projekte](projects.md).
+
 Wenn dich nichts braucht, macht deine Machine auf der leeren Liste ein Nickerchen. Während sie prüft, wird sie wach und sagt es. Ist eine Prüfung fehlgeschlagen oder spät dran, sagt ihre Zeile das, mit **Jetzt prüfen** darunter.
 
 **Alle**, **Arbeit** und **Privat** über der Liste in der Seitenleiste zeigen alle Aufgaben oder nur eine Art. Deine Machine merkt sich die Wahl, sodass Handy und Computer dieselbe Liste zeigen. Wenn Arbeit oder Privat aktiv ist, steht das oben in der Liste, mit **Alle anzeigen** zum Zurückgehen. Eine Meldung über deine Machine selbst, etwa ein Teil, der immer wieder neu startet, ist weder Arbeit noch Privat und steht nur unter Alle.

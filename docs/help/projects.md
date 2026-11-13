@@ -48,6 +48,8 @@ A to-do can belong to one project. Your Machine picks it when its thread or the 
 
 A project's page lists its to-dos under **To-dos**, open ones first, and the board says how many are open. Linking a to-do to a shared project shares nothing more: your team still sees only what came from shared messages.
 
+Once a week, your Machine looks for projects that went quiet: nothing new for 10 days or more, no open to-do, nothing promised. For at most three, it adds a to-do with one specific next step, like "Send Sam the signed order form", linked to the message it picks up from. When it sees no clear step, it adds none. Dismiss one and that project isn't suggested again for four weeks.
+
 ## A project's organization
 
 Each project can be linked to one organization. Its page, the list and the board show it, with a link.

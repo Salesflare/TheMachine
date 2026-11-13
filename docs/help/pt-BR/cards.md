@@ -30,6 +30,8 @@ Quando uma tarefa é por um resultado que outra pessoa entrega, como um contrato
 
 Uma tarefa que ninguém tocou em uma semana pergunta uma vez: **Ainda precisa?** **Não precisa** fecha a tarefa, com **Desfazer**. **Manter** mantém a tarefa, e ela não pergunta de novo. Abrir, uma mensagem no chat, uma edição, adiar ou uma mensagem nova sobre ela contam como um toque. Sem resposta por mais uma semana, ela vai para Volta mais tarde, sob Ainda precisa?, em vez de sumir. Aí o número no ícone do app e o resumo da manhã deixam de contá-la. Um toque traz de volta.
 
+Uma vez por semana, um projeto que ficou parado sem nada em aberto pode ganhar uma tarefa com um próximo passo concreto, no máximo três por semana. Veja [Projetos](projects.md).
+
 Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquanto verifica, ela acorda e avisa. Se uma verificação falhou ou está atrasada, a linha dela diz isso, com **Verificar agora** embaixo.
 
 **Todos**, **Trabalho** e **Pessoal**, acima da lista na barra lateral, mostram todas as tarefas ou só um tipo. A sua Machine guarda a escolha, então o celular e o computador mostram a mesma lista. Enquanto Trabalho ou Pessoal estiver ativo, o topo da lista avisa, com **Mostrar todas** para voltar. Um alerta sobre a própria Machine, como uma parte que reinicia sem parar, não é Trabalho nem Pessoal e só aparece em Todos.

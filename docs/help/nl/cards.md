@@ -30,6 +30,8 @@ Gaat een to-do om een resultaat dat iemand anders levert, zoals een getekend con
 
 Een to-do die een week niemand aanraakte, vraagt één keer: **Nog nodig?** **Niet nodig** sluit hem, met **Ongedaan maken**. **Houden** houdt hem, en hij vraagt het nooit meer. Openen, een chatbericht, een aanpassing, snoozen of een nieuw bericht erover tellen allemaal als aanraken. Komt er een week later nog geen antwoord, dan vouwt hij weg in Komt later terug, onder Nog nodig?, in plaats van te verdwijnen. Dan telt hij ook niet meer mee in het getal op het app-icoon en het ochtendoverzicht. Aanraken haalt hem terug.
 
+Eén keer per week kan een project dat stil is gevallen en waar niets meer openstaat een to-do krijgen met één concrete volgende stap, hoogstens drie per week. Zie [Projecten](projects.md).
+
 Als er niets op je wacht, doet je Machine een dutje op de lege lijst. Terwijl hij checkt, wordt hij wakker en zegt hij dat. Is een check mislukt of laat, dan zegt zijn regel dat, met **Nu checken** eronder.
 
 **Alle**, **Werk** en **Privé** boven de lijst in de zijbalk tonen alle to-do's of maar één soort. Je Machine onthoudt de keuze, zodat je telefoon en computer dezelfde lijst tonen. Staat Werk of Privé aan, dan staat dat bovenaan de lijst, met **Alles tonen** om terug te gaan. Een melding over je Machine zelf, zoals een onderdeel dat steeds opnieuw start, is geen Werk en geen Privé en staat alleen onder Alle.

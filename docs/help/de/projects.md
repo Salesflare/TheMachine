@@ -48,6 +48,8 @@ Eine Aufgabe kann zu einem Projekt gehören. Deine Machine wählt es, wenn ihr T
 
 Die Seite eines Projekts listet seine Aufgaben unter **Aufgaben**, die offenen zuerst, und das Board sagt, wie viele offen sind. Eine Aufgabe mit einem geteilten Projekt zu verknüpfen teilt nichts weiter: Dein Team sieht weiterhin nur, was aus geteilten Nachrichten kam.
 
+Einmal pro Woche sucht deine Machine nach Projekten, bei denen es still geworden ist: seit 10 Tagen oder länger nichts Neues, keine offene Aufgabe, nichts versprochen. Für höchstens drei legt sie eine Aufgabe mit einem konkreten nächsten Schritt an, etwa „Sam das unterschriebene Bestellformular schicken“, verknüpft mit der Nachricht, an die sie anknüpft. Sieht sie keinen klaren Schritt, legt sie keine an. Verwirfst du eine, schlägt sie dieses Projekt vier Wochen lang nicht wieder vor.
+
 ## Die Organisation eines Projekts
 
 Jedes Projekt kann mit einer Organisation verknüpft sein. Seine Seite, die Liste und das Board zeigen sie, mit Link.

@@ -30,6 +30,8 @@ Cuando una tarea busca un resultado que entrega otra persona, como un contrato f
 
 Una tarea que nadie tocó en una semana pregunta una vez: **¿Aún hace falta?** **No hace falta** la cierra, con **Deshacer**. **Mantener** la mantiene, y no vuelve a preguntar. Abrirla, un mensaje en el chat, un cambio, posponerla o un mensaje nuevo sobre ella cuentan como tocarla. Si no hay respuesta en otra semana, se guarda en Vuelve más tarde, bajo ¿Aún hace falta?, en lugar de desaparecer. Entonces el número en el icono de la app y el resumen matutino dejan de contarla. Tocarla la trae de vuelta.
 
+Una vez por semana, un proyecto que se quedó en silencio sin nada abierto puede recibir una tarea con un siguiente paso concreto, tres por semana como mucho. Consulta [Proyectos](projects.md).
+
 Cuando nada te necesita, tu Machine se echa una siesta en la lista vacía. Mientras revisa, se despierta y lo dice. Si una revisión falló o va con retraso, su línea lo dice, con **Revisar ahora** debajo.
 
 **Todo**, **Trabajo** y **Personal**, encima de la lista en la barra lateral, muestran todas las tareas o solo un tipo. Tu Machine guarda la elección, así que tu teléfono y tu ordenador muestran la misma lista. Mientras Trabajo o Personal está activo, la parte de arriba de la lista lo indica, con **Mostrar todo** para volver. Un aviso sobre tu propia Machine, como una parte que se reinicia una y otra vez, no es ni Trabajo ni Personal y solo aparece en Todo.

@@ -30,6 +30,8 @@ Quand une tâche vise un résultat qu’une autre personne doit fournir, comme u
 
 Une tâche que personne n’a touchée depuis une semaine demande une fois : **Toujours utile ?** **Pas nécessaire** la ferme, avec **Annuler**. **Garder** la garde, et elle ne redemande jamais. L’ouvrir, un message dans le chat, une modification, la mettre en attente ou un nouveau message à son sujet comptent comme une action. Sans réponse une semaine de plus, elle se range dans Revient plus tard, sous Toujours utile ?, au lieu de disparaître. Le nombre sur l’icône de l’app et le récap du matin cessent alors de la compter. Une action la ramène.
 
+Une fois par semaine, un projet resté calme sans rien d’ouvert peut recevoir une tâche avec une prochaine étape précise, trois par semaine au plus. Voir [Projets](projects.md).
+
 Quand rien n’a besoin de vous, votre Machine fait la sieste sur la liste vide. Pendant qu’elle vérifie, elle se réveille et le dit. Si une vérification a échoué ou est en retard, sa ligne le dit, avec **Vérifier maintenant** en dessous.
 
 **Tout**, **Travail** et **Perso** au-dessus de la liste dans la barre latérale affichent toutes les tâches ou un seul type. Votre Machine garde ce choix, pour que votre téléphone et votre ordinateur affichent la même liste. Quand Travail ou Perso est actif, le haut de la liste l’indique, avec **Tout afficher** pour revenir. Une alerte sur votre Machine elle-même, comme une partie qui redémarre sans cesse, n’est ni Travail ni Perso et n’apparaît que sous Tout.
