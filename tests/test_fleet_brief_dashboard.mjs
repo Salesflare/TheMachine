@@ -101,6 +101,10 @@ try{
  assert.equal(await page.evaluate(()=>window.pwned),undefined);
  assert.equal(await card.locator('[data-choice-f="always"]').count(),0);
  assert.equal(await page.locator('#fleet-free-q_'+'1'.repeat(16)).inputValue(),'Yes, I have: 2 emails on this.');
+ // A longer drafted answer shows whole, also on a phone, not cut off after a line and a half
+ const free=page.locator('#fleet-free-q_'+'1'.repeat(16)),drafted=await free.inputValue();
+ await page.setViewportSize({width:390,height:844});await free.fill('Yes, I have: 5 emails and 1 message on this, most recently last week. They asked about the renewal twice and want an answer before the end of the month. Happy to tell you more about it.');
+ assert.ok(await free.evaluate(e=>e.scrollHeight<=e.clientHeight+1),'the whole answer shows');await free.fill(drafted);await page.setViewportSize({width:1000,height:900});
  // Answers to my question: per teammate, as text, in the Fleet tab
  await navClick(page.locator('nav [data-tab="fleet"]'));await page.locator('.fleet-free-form').waitFor();
  assert.equal(await page.locator('.list b').count(),0);

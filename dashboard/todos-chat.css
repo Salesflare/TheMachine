@@ -211,6 +211,8 @@ body.chat-open:has(#inbox:not([hidden])) #fixed-notice,body.chat-open:has(#inbox
 .chat-box:focus-within{border-color:color-mix(in srgb,var(--c-accent) 55%,var(--c-line-strong))}
 .chat-box textarea{flex:1;min-width:0;min-height:0;height:34px;max-height:160px;margin:0;padding:6px 0 6px 14px;box-sizing:border-box;border:0;border-radius:0;background:none;resize:none;box-shadow:none;outline:none;line-height:22px;font-size:1rem;text-indent:0;text-align:left;transition:none}
 .chat-box textarea::placeholder{text-indent:0;padding:0;opacity:1}
+/* The hint stays on its one line on a narrow screen: a second line peeked out under the box, cut in half */
+.chat-box textarea:placeholder-shown{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-tools{display:flex;align-items:center;gap:6px}.chat-tools .grow{display:none}
 .chat-send{display:grid;place-items:center;flex:none;width:34px;height:34px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:var(--c-accent);color:var(--c-accent-ink,#fff);box-shadow:none;cursor:pointer}.chat-send svg{width:17px;height:17px}
 .chat-send:disabled{background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--chat-quiet);cursor:default}
