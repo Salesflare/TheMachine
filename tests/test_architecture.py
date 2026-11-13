@@ -461,6 +461,7 @@ FIRST_LOAD_ROOM = 32_000
 # graph 336,000 -> 344,000 (2026-11-09): the Graph's rules that moved out of the first load now count in its part.
 # settings 124,000 -> 136,000 (2026-11-09): Connected AIs and Apps joined Settings' part.
 # whatsnew 12,000 (2026-11-10): its pictures are drawn in it (about 5 KB of SVG).
+# whatsnew 14,000 -> 20,000 (2026-11-13): six more pictures for the candidates shipped Nov 11 to 13 (about 4 KB).
 # graph 344,000 -> 348,000 (2026-11-10): a project's description, its Edit and Keep it updated (about 2.5 KB).
 # graph 348,000 -> 350,000 (2026-11-10): a board's header says who sees it, and the owner's locks (about 1.2 KB).
 # graph 350,000 -> 348,000 (2026-11-10): team boards no longer fold look-alike projects.
@@ -479,7 +480,7 @@ FIRST_LOAD_ROOM = 32_000
 # the first pick or Answer; the questions themselves draw with the to-do.
 # msgview 18,000 (2026-11-12): how each kind of message reads in the viewer and a chat as one thread (about 15.7 KB),
 # out of the first load when the viewer's per-kind reading put it over its ceiling.
-LAZY_CEILING = {'ask': 3_000, 'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'msgview': 18_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 14_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
+LAZY_CEILING = {'ask': 3_000, 'calendar': 96_000, 'clearrun': 12_000, 'compose': 6_000, 'digest': 8_000, 'emailframe': 6_000, 'connections': 108_000, 'fbpeople': 4_000, 'fleet': 96_000, 'game': 12_000, 'graph': 360_000, 'help': 40_000, 'learning': 24_000, 'mailcheck': 8_000, 'milestone': 20_000, 'msgview': 18_000, 'recipe': 4_000, 'routines': 33_000, 'routinetodos': 12_000, 'settings': 136_000, 'split': 12_000, 'talk': 52_000, 'whatsnew': 20_000}  # whatsnew: 14,000 for the pictures of each new candidate (#1156)
 
 
 def budget(name):

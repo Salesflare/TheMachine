@@ -40,6 +40,11 @@ const WN_ART={
   return `<rect class="c" x="50" y="${y}" width="340" height="44" rx="10"/><circle class="${i===1?'f':'m'}" cx="74" cy="${y+22}" r="11"/>`+wnBar(96,y+12,[150,120,138][i],'s')+wnBar(96,y+26,[110,140,96][i])
    +(([x,w])=>`<rect class="t" x="${x}" y="${y+10}" width="${w}" height="24" rx="12"/>`+wnBar(x+12,y+19,w-24,'m'))([[270,60],[282,48],[262,68]][i])
    +[0,1].map(j=>`<circle class="${j?'t':'f'}" cx="${356+j*14}" cy="${y+22}" r="8"/>`).join('')}).join(''),
+ // A chat as its messenger shows it: the app's mark and the chat's name, a day line, their bubble left, the owner's right
+ chats:()=>`<rect class="c" x="90" y="10" width="260" height="160" rx="12"/><circle class="m" cx="112" cy="30" r="9"/>`+wnBar(128,27,90,'s')+`<path class="e" d="M90 50h260"/>`
+  +`<rect class="t" x="190" y="60" width="60" height="16" rx="8"/>`+wnBar(204,65,32,'b')
+  +`<circle class="f" cx="112" cy="100" r="9"/><rect class="c" x="128" y="84" width="140" height="32" rx="14"/>`+wnBar(142,97,104)
+  +`<rect class="m" x="186" y="126" width="148" height="32" rx="14"/>`+wnBar(200,139,96,'t'),
  // A person's page with their address lit up, and the small composer it opens: To, subject, the message and Send
  compose:()=>`<rect class="c" x="30" y="38" width="160" height="104" rx="12"/><circle class="m" cx="58" cy="66" r="14"/>`+wnBar(80,58,84,'s')+wnBar(80,72,56)
   +`<rect class="t" x="44" y="96" width="132" height="28" rx="8"/><g class="l" transform="translate(52 101) scale(.75)"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></g>`+wnBar(76,107,88,'m')
