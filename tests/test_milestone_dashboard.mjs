@@ -31,8 +31,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const errors=[];let browser;
 const base=()=>'http://127.0.0.1:'+server.address().port;
 // share: what the page's navigator offers ('none': no Web Share, as on a computer's browser; 'files': a phone's sheet)
-const open=async(width,{share='none',motion='no-preference',theme,app,clip=true,canvas}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
+const open=async(width,{share='none',motion='no-preference',theme,app,clip=true,canvas,counts}={})=>{const context=await browser.newContext({viewport:{width,height:844},hasTouch:width<600,reducedMotion:motion});
  await context.route('**/*',route=>new URL(route.request().url()).hostname==='127.0.0.1'?route.continue():route.abort());
+ // counts: every number the count-up shows, with each frame's time 50 ms before the frame is asked for, the way a
+ // frame already under way hands its own start time
+ if(counts)await context.addInitScript(()=>{window.counts=[];const raf=window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame=f=>{const at=performance.now();return raf(()=>f(at-50))};
+  new MutationObserver(()=>{const b=document.querySelector('#milestone .ms-n');if(b&&window.counts.at(-1)!==b.textContent)window.counts.push(b.textContent)})
+   .observe(document,{childList:true,subtree:true,characterData:true})});
  await context.addInitScript(share=>{
   if(share==='none'){delete Navigator.prototype.share;delete Navigator.prototype.canShare}
   else{Navigator.prototype.canShare=d=>!!d?.files?.length;Navigator.prototype.share=async d=>{window.shared={files:d.files.map(f=>({name:f.name,type:f.type,size:f.size})),text:d.text,url:d.url}}}
@@ -59,8 +65,15 @@ try{
  for(const width of [1440,390]){
   // Due: the card on top of To-dos, inside the screen, with the count, a line, Share and ×
   milestone={count:500};seen=[];
-  {const {context,page}=await open(width);await card(page).waitFor();
+  {const {context,page}=await open(width,{counts:true});await card(page).waitFor();
    await page.waitForFunction(()=>document.querySelector('#milestone .ms-n')?.textContent==='500');
+   // The count-up: from 0 up to 500, never below 0, never back down, never past it, even when the first frame's
+   // time is earlier than when the count was asked for (as browsers hand it)
+   // (the first is the card as drawn, 500, before the count starts)
+   const counts=(await page.evaluate(()=>window.counts.map(c=>+c.replace(/\D/g,'')*(c.trim().startsWith('-')||c.includes('−')?-1:1)))).slice(1);
+   assert.ok(counts.length>2,JSON.stringify(counts));
+   assert.ok(counts.every((c,i)=>c>=0&&c<=500&&(!i||c>=counts[i-1])),JSON.stringify(counts));
+   assert.equal(counts.at(-1),500);
    assert.equal((await page.locator('#milestone h2').textContent()).trim(),'500 to-dos done');
    assert.equal(await page.locator('#milestone p').textContent(),'That’s a lot off your plate.');
    assert.deepEqual(await page.locator('#milestone button').evaluateAll(b=>b.map(x=>x.textContent||x.getAttribute('aria-label'))),['Share','Close']);
