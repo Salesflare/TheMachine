@@ -161,10 +161,12 @@ It also reads your first and latest messages with your closest people and notes 
 
 The installer offers a **preview**: your agent reviews the last 7 days once and shows the to-dos in the terminal and on the dashboard. Nothing is sent and nothing is done in your accounts.
 
-Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model can run (signed in or with a key):
+Skip it and the service starts that same preview by itself (the *first look*) once a source is connected and your main model answers one short fixed test call (no content of yours goes in). If the test fails, the dashboard says so with the provider's own error under Details, and tries again within minutes; signing in again starts it at once. If another AI is signed in and answers, the first look runs on that one meanwhile. It goes like this:
 
 1. a quick pass over the week's mail that most likely needs you, as soon as it starts coming in (people waiting on you first);
 2. then more of the week, a batch at a time, until it has three to-dos or has read the week (or used its share of your model's 5-hour limit).
+
+A pass that fails is tried again within five minutes (after a rate or usage limit, once the limit allows).
 
 The dashboard shows how far it is with one count over the whole week that moves as it reads, also between batches, and each to-do as soon as it is ready. When it is done, it says what it read (in counts, like 8 emails: 5 newsletters and 3 notifications) and suggests a next step, such as connecting your calendar.
 

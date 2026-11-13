@@ -48,6 +48,10 @@ textarea:focus,textarea.filled{height:84px;border-color:var(--border-strong)}
 @media (prefers-reduced-motion:reduce){.fl-names,.fl-bar.fl-on{animation:none}}
 .all-clear.first-look-empty .fl-bar{width:220px;max-width:70vw;margin:10px auto 4px}
 .all-clear.first-look-empty small{display:block;margin-top:6px}
+/* The AI's check failed: the provider's own error, folded */
+.fl-detail{flex-basis:100%;font-size:.8rem;color:var(--muted);margin-top:6px}
+.fl-detail summary{cursor:pointer}
+.fl-detail p{margin:4px 0 0;overflow-wrap:anywhere}
 
 /* Collapsibles */
 details{margin-top:10px}

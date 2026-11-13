@@ -88,7 +88,7 @@ class FirstLook(unittest.TestCase):
         runner = open(a.ROOT / 'preparation-run.mjs').read()
         self.assertIn(f'request.message.length>{a.PROMPT_LIMIT})', runner)
 
-    def test_a_failed_first_look_keeps_coming_back_at_most_half_an_hour_apart(self):
+    def test_a_failed_first_look_keeps_coming_back_at_most_five_minutes_apart(self):
         self.store.commit_page('work', {}, [signal('m1', days_ago=3)])
         for attempt in range(a.FIRST_LOOK_TRIES):
             with self.later(5 + attempt * 40):
@@ -96,9 +96,10 @@ class FirstLook(unittest.TestCase):
             with self.later(5 + attempt * 40), self.store.connect() as db:
                 db.execute("UPDATE review_runs SET status='error',finished_at=? WHERE finished_at IS NULL", (a.now(),))
             self.assertEqual(self.state(6 + attempt * 40)['why'], 'retry')
-        # Never given up on (2026-10-27: a first look that failed three times never came back): every half hour at most
-        self.assertEqual(self.state(5 + 2 * 40 + 7)['why'], 'retry')  # 2, 4, 8… minutes after a failure, at most 30
-        self.assertEqual(self.state(5 + 2 * 40 + 9)['state'], 'due')
+        # Never given up on (2026-10-27: a first look that failed three times never came back): every five minutes at
+        # most, since a new owner waits for their first to-do
+        self.assertEqual(self.state(5 + 2 * 40 + 4)['why'], 'retry')  # 2, 4, then 5 minutes after a failure
+        self.assertEqual(self.state(5 + 2 * 40 + 6)['state'], 'due')
         self.assertEqual(self.state(500)['state'], 'due')
 
     def test_a_first_look_a_gateway_restart_cut_off_is_not_a_try(self):

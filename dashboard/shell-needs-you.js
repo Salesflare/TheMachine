@@ -10,6 +10,8 @@ const aiConnecting=()=>{const live=state.review_live;return state.manage_url&&st
 const setupLine=()=>{const ai=aiConnecting();return ai?t('Connecting {}…',ai):t(SETUP_LINE)};
 const setupStep=()=>{const why=state.manage_url&&state.reviews_on===false&&state.review_live?.first_look?.why,mail=(state.connectors||[]).some(c=>['gmail','outlook','imap'].includes(c.service));
  if(why==='model'&&aiConnecting())return null;
+ // Signed in, but the AI's real check failed (model_check.py): back to the AI step, where its error shows
+ if(why==='model_check'&&typeof state.review_live.first_look.error==='string')return{url:state.manage_url+'#model',action:'Pick your AI',text:'Your AI didn’t answer a short test. Sign in again or use another AI.'};
  return why==='model'?{url:state.manage_url+'#model',action:'Pick your AI',text:'Pick your AI to get your first to-dos.'}:(why==='sources'||startsByItself())&&!mail?{url:state.manage_url+'#google',action:'Connect mail',text:'Connect your mail to get your first to-dos.'}:null};
 const turnOn=()=>{const step=setupStep();return step?{url:step.url,action:step.action}:state.manage_url?{url:state.manage_url+'#turn-on',action:'Turn on checks'}:{action:'Run: ./install.sh --activate'}};
 // Whose sign-in a source's sign-in problem is: Google (Gmail, Calendar) or Microsoft (Outlook and its calendar), else ''

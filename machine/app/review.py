@@ -26,6 +26,7 @@ from machine.app.first_look import (
     FIRST_DIG_HOURS,
     first_look_batch,
     FIRST_LOOK_NEXT_SIGNALS,
+    FIRST_LOOK_RETRY_SECONDS,
     FIRST_LOOK_SETTLE_SECONDS,
     QUICK_LOOK_HOURS,
     QUICK_LOOK_SIGNALS,
@@ -341,6 +342,14 @@ def first_cards_report(db, accounts=(), current=None):
                  + ','.join('?' for _ in approved) + ') ORDER BY created_at LIMIT 1', (since, *approved))
     out['first_approved_at'], out['first_approved'] = (acted[0][1], FIRST_ACTIONS[acted[0][0]]) if acted else (None, None)
     out.update(first_value(db, marks, since))
+    # The AI's real check (model_check.py), for the setup page's AI step: whether it answered, and the provider's own
+    # error (short, anything like a key taken out) when it didn't
+    try:
+        check = json.loads((marks.get('model_check') or (None, 'null'))[1] or 'null')
+    except ValueError:
+        check = None
+    if isinstance(check, dict):
+        out['model_check'] = {k: check.get(k) for k in ('model', 'ok', 'at', 'error', 'failed', 'fallback') if check.get(k) is not None}
     # Where the first look is now, and about when the first cards come
     try:
         state = json.loads((marks.get('first_look_state') or (None, 'null'))[1] or 'null')
@@ -458,6 +467,10 @@ class ReviewApp:
                 # The first review digs on (first_dig): its next batch right away, after a failure within the backoff above
                 dig = None if recovery else self.first_dig(db, stamp)
                 dig = dig if dig and 'left' in dig else None
+                # A first look still ahead or digging comes back within minutes, not the regular half hour: a new owner
+                # waits for their first to-do
+                if dig or not db.execute("SELECT 1 FROM review_runs WHERE status='ok' LIMIT 1").fetchone():
+                    retry = min(retry, FIRST_LOOK_RETRY_SECONDS)
                 # Projects the owner just put on a board are sorted within minutes, with or without new signals
                 sort_due = bool(graph_board_reviews.unsorted_projects(db, 1)) or graph_board_reviews.fit_due(db, now())
                 # A new board looks through the history in rounds a few minutes apart, while the model's limits have room
@@ -532,6 +545,12 @@ class ReviewApp:
             request['probe'] = True
         offered_edits = []
         if request['action'] == 'start':
+            # A first look's run while the main model fails: on another AI the owner signed in that answered (model_check.py)
+            with self.store.connect() as db:
+                other = self.first_look_model(run['run_id'], db)
+            if other:
+                request['provider'], request['model'] = other.split('/', 1)
+                LOG.info('first look on fallback provider=%s', request['provider'])
             self.store.note_rule_files(RULE_FILES)
             memory = recall(self, 'review', {'run': run['run_id']}, PROMPT_LIMIT)  # what was learned, as one list of what it read
             parts = dict(preferences=memory.text('history'), facts=memory.text('facts'), slipped=self.store.slipped(run['run_id']),
@@ -792,6 +811,8 @@ class ReviewApp:
         while not self.stop.wait(self.review_tick()):
             try:self.follow_config()
             except Exception as error:LOG.error('config follow error=%s',type(error).__name__)
+            try:self.model_check_kick()  # the AI's real check when one is due (model_check.py), in a thread of its own
+            except Exception as error:LOG.error('model check error=%s',type(error).__name__)
             try:
                 # The first look's next batch as soon as one ended, not a tick later (review_tick)
                 if self.review_step() in REVIEW_TERMINAL and self.review_tick() < REVIEW_TICK_SECONDS:
