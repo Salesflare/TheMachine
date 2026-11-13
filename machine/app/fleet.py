@@ -451,7 +451,8 @@ class FleetApp:
         disconnected: once no account on that sign-in is left, its refresh token is forgotten here (Google's revoked) and
         the control plane forgets this Machine had it, so nothing refreshes it again."""
         import mail_grants
-        provider = {'microsoft_docs': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')), fleet.SIGNIN_OF.get(account.get('service')))
+        provider = {'microsoft_docs': 'microsoft', 'microsoft_teams': 'microsoft'}.get(fleet.SIGNIN_OF.get(account.get('service')),
+                                                                                       fleet.SIGNIN_OF.get(account.get('service')))
         if account.get('transport') != 'broker' or provider not in ('google', 'microsoft', 'zoom', 'stripe', 'slack', 'google_meet', 'salesforce'):
             return
         import slack_api
@@ -459,8 +460,8 @@ class FleetApp:
         def signin_of(a):  # what the sign-in is kept under: Stripe's account id, Slack's team and user, else the address
             return slack_api.key(a) if provider == 'slack' else str(a.get('stripe_account' if provider == 'stripe' else 'email') or '').lower()
         email = signin_of(account)
-        # Docs for a Microsoft address reads with the same sign-in as its Outlook mail and calendar
-        services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider} | ({'docs'} if provider == 'microsoft' else set())
+        # Docs and Teams for a Microsoft address read with the same sign-in as its Outlook mail and calendar
+        services = {s for s, p in fleet.SIGNIN_OF.items() if p == provider} | ({'docs', 'teams'} if provider == 'microsoft' else set())
         if any(a.get('id') != account['id'] and a.get('service') in services and signin_of(a) == email for a in self.config.get('accounts', [])):
             return
         if provider == 'slack':

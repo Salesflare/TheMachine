@@ -42,7 +42,7 @@ Auf einer gehosteten Machine:
 
 Beim Einrichten hat auch die Einrichtungsseite **Connect Microsoft Teams**.
 
-Auf deinem eigenen Computer ist Teams noch nicht verfügbar.
+Auf deinem eigenen Computer, sobald er [mit deinem Konto gekoppelt](friends.md#a-machine-on-your-own-computer) ist: Öffne **Verbindungen**, dann **+ Hinzufügen**, wähle **Microsoft Teams** oder **Teams-Meetings** und drücke **Mit Microsoft anmelden**.
 
 ## Entfernen
 

@@ -42,7 +42,7 @@ Op een gehoste Machine:
 
 Tijdens het instellen heeft de instelpagina ook **Connect Microsoft Teams**.
 
-Op je eigen computer is Teams nog niet beschikbaar.
+Op je eigen computer, zodra hij [aan je account gekoppeld is](friends.md#a-machine-on-your-own-computer): open **Koppelingen**, dan **+ Toevoegen**, kies **Microsoft Teams** of **Teams-meetings** en druk op **Inloggen met Microsoft**.
 
 ## Verwijderen
 

@@ -42,7 +42,7 @@ On a hosted Machine:
 
 While setting up, the setup page has **Connect Microsoft Teams** too.
 
-On your own computer, Teams isn't available yet.
+On your own computer, once it's [paired with your account](friends.md#a-machine-on-your-own-computer): open **Connections**, then **+ Add**, pick **Microsoft Teams** or **Teams meetings** and press **Sign in with Microsoft**.
 
 ## Remove it
 

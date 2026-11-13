@@ -307,6 +307,8 @@ class StatusApp:
                 connector['signin'] = fleet.SIGNIN_OF['docs']  # self-hosted: Connect Microsoft documents signs in through the control plane
             if kind and 'edit' not in (connector.get('docs_writes') or ()) and not account.get('shared') and docs_write_offered(self.config, kind):
                 connector['docs_write_signin'] = 'microsoft_docs_write'  # Allow edits: Files.ReadWrite.All, its own consent
+            if connector.get('service') == 'teams' and not result['manage_url'] and 'connect_name' in connector:
+                connector['signin'] = fleet.SIGNIN_OF['teams']  # self-hosted: Reconnect is Teams' own Microsoft consent, through the control plane
             if connector.get('service') in SIGNIN_ONLY and not result['manage_url'] and 'connect_name' in connector:
                 connector['signin'] = connector['service']  # self-hosted: Reconnect is Sign in with it, through the control plane
             if result['manage_url']:
