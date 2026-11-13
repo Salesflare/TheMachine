@@ -306,15 +306,15 @@ class Cleanup(unittest.TestCase):
             found = mc.newsletters(db, ['w'], stamp(5))
         self.assertEqual([(i['from'], i['address'], i['count'], i['via']) for i in found],
                          [('Lee Lamps', 'news@lamps.example', 1, 'hello@team.example'), ('Pat Shop', 'orders@shop.example', 2, 'hello@team.example')])
-        # the headers read now are the group's own: no way left, so no row offers Unsubscribe
+        # the headers read now are the group's own: no way left, so no row offers Unsubscribe: each is by hand
         self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways_of(GROUP)
         sends = []
         with patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
                 patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
-            self.assertEqual(self.app.cleanup_ways(found), [])
+            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand', 'hand'])
             # even if the group's ways got through the header read, an item that came through it never uses them
             self.app.cleanup_headers = lambda account, message: mc.unsubscribe_ways(GROUP['list-unsubscribe'], GROUP['list-unsubscribe-post'])
-            self.assertEqual(self.app.cleanup_ways(found), [])
+            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand', 'hand'])
             self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[1]), ('failed', None, None))
         self.assertEqual((self.clicked, sends, self.pages), ([], [], []))  # nor the group's unsubscribe page
 
@@ -341,16 +341,34 @@ class Cleanup(unittest.TestCase):
                 patch.object(a.App, 'cleanup_headers', mail_cleanup_app.MailCleanupApp.cleanup_headers), \
                 patch.object(a.App, 'cleanup_can_send', lambda s, account: True), \
                 patch.object(a.App, 'cleanup_mailto', lambda s, account, mailto: sends.append(mailto['to']) or 'done'):
-            self.assertEqual(self.app.cleanup_ways(found), [])  # nothing safe: no row offers Unsubscribe
+            self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['hand'])  # nothing safe: by hand, said on its row
             self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('failed', None, None))
             # a row from before this fix (no via): the headers read at the confirm still tell
             old = {k: v for k, v in found[0].items() if k != 'via'}
             self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], old), ('failed', None, None))
-            # the sender's own unsubscribe page in the mail's text: for the owner to open
+            # the sender's own unsubscribe page in the mail's text: the Machine's browser opens it, else the owner does
             self.html[found[0]['message']] = GROUP_FOOTER + '<a href="https://helpers.example/unsubscribe?u=1">Unsubscribe</a>'
             self.assertEqual([i['how'] for i in self.app.cleanup_ways(found)], ['page'])
-            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('yours', 'page', 'https://helpers.example/unsubscribe?u=1'))
-        self.assertEqual((self.clicked, sends), ([], []))
+            self.assertEqual(self.app.cleanup_unsubscribe(ACCOUNTS[0], found[0]), ('yours', 'login', 'https://helpers.example/unsubscribe?u=1'))
+        self.assertEqual((self.clicked, sends, self.pages), ([], [], ['https://helpers.example/unsubscribe?u=1']))
+
+    def test_a_group_newsletter_with_no_way_of_its_own_is_a_row_to_unsubscribe_by_hand(self):
+        self.mail("\"'Lee Lamps' via hello@team.example readers\" <hello@team.example>", 'Lamp news', hours_ago=1, list_unsubscribe=True,
+                  list_id='<hello.team.example>', original_from='Lee Lamps <news@lamps.example>')
+        self.mail('Daily Deals <deals@shop.example>', 'Flash sale', hours_ago=2, list_unsubscribe=True)
+        self.ways['m2'] = {'one_click': 'https://shop.example/u/1', 'link': 'https://shop.example/u/1'}
+        self.add('newsletters')  # the group's mail has no way of its sender's own: none in its headers, none in its text
+        sid = self.todos()[0]['id']
+        _, extra = self.view(sid)
+        self.assertEqual([(i['address'], i['state'], i['how'], i['link']) for i in extra['cleanup']['items']],
+                         [('news@lamps.example', 'yours', 'group', None), ('deals@shop.example', 'open', None, None)])
+        self.act('routine_cleanup', suggestion_id=sid, picks={'0': 'go', '1': 'go'})  # only an open row is done
+        row, extra = self.view(sid)
+        self.assertEqual([i['state'] for i in extra['cleanup']['items']], ['yours', 'done'])
+        self.assertEqual((self.clicked, self.pages), (['https://shop.example/u/1'], []))
+        self.assertNotEqual(row['status'], 'completed')  # the owner unsubscribes by hand, then marks it done
+        with self.store.connect() as db:
+            self.assertIn('news@lamps.example', mc.asked(db, 'newsletters'))  # told once: not asked about again
 
     def test_what_the_review_sorted_as_a_notification_is_no_newsletter(self):
         self.mail('Payments <noreply@pay.example>', 'Money received', list_unsubscribe=True)

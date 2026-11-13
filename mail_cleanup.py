@@ -494,10 +494,15 @@ def picked_spam(candidates, picks):
 
 
 def record(db, suggestion_id, kind, items, stamp, start=0):
-    """A to-do's items, all open; start: the number of the first (items added to a to-do that has some)."""
+    """A to-do's items, open; start: the number of the first (items added to a to-do that has some). A newsletter that
+    came through a group with no way of its sender's own (how: hand) is the owner's from the start: its row says so,
+    with no pick (yours, how: group), and its sender is not asked about again."""
     for n, item in enumerate(items, start):
-        db.execute('INSERT OR IGNORE INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,state,updated_at) VALUES(?,?,?,?,?,?,?)',
-                   (suggestion_id, n, kind, item['account'], item['address'], 'open', stamp))
+        hand = item.get('how') == 'hand'
+        db.execute('INSERT OR IGNORE INTO mail_cleanup_items(suggestion_id,item,kind,account_id,address,state,how,updated_at) VALUES(?,?,?,?,?,?,?,?)',
+                   (suggestion_id, n, kind, item['account'], item['address'], 'yours' if hand else 'open', 'group' if hand else None, stamp))
+        if hand:
+            remember(db, kind, item['address'], 'gone', stamp)
 
 
 def open_todo(db, kind, area):

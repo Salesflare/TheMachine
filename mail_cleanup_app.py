@@ -409,7 +409,8 @@ class MailCleanupApp:
 
     def cleanup_ways(self, items):
         """Newsletters, each with how Unsubscribe will go (how: one_click, mailto or page), from its List-Unsubscribe
-        header read now. One without any way this Machine can use is left out."""
+        header read now; hand: one that came through a group with no way of its sender's own (mail_cleanup.record).
+        Any other without a way this Machine can use is left out."""
         out, sends = [], {}
         for item in items:
             account = self.cleanup_account(item['account'])
@@ -423,6 +424,8 @@ class MailCleanupApp:
             if 'mailto' in ways and account['id'] not in sends:
                 sends[account['id']] = self.cleanup_can_send(account)
             how = 'one_click' if 'one_click' in ways else 'mailto' if 'mailto' in ways and sends.get(account['id']) else 'page' if 'link' in ways else None
+            if not how and item.get('via') and not ways:  # through a group, no way of the sender's own: by hand, said on its row
+                how = 'hand'
             if how:
                 out.append({**item, 'how': how})
         return out
