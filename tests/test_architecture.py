@@ -454,7 +454,9 @@ OVER_BUDGET = {}
 # their frame, LAZY 'emailframe') and voice recording (LAZY 'voice'); also Talk's bar and view (LAZY 'talk'), Settings'
 # Notifications and Model panels, Learning's Share learnings and votes, and what only the Fleet, Graph and Learning
 # parts draw (first load about 1,394,000 -> 1,243,221). The ceiling is about that plus 7 KB.
-FIRST_LOAD_CEILING = 1_250_000
+# 1,250,000 -> 1,252,000 (2026-11-13): main sat 263 bytes under it. Back on a phone closes the open dialog or sheet
+# (shell-back.js, about 2 KB): it wraps showModal before any dialog opens, a push link's digest at load included.
+FIRST_LOAD_CEILING = 1_252_000
 # At most this much room under the ceiling: a change that makes the first load smaller lowers the ceiling with it, so
 # the room it made stays room, not a buffer for the next feature to fill.
 FIRST_LOAD_ROOM = 32_000

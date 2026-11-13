@@ -170,5 +170,6 @@ const lazyAll=()=>lazyAllRun??=(async()=>{for(const group of Object.keys(self.LA
 function lazySoon(){if(lazySoonRun||!self.LAZY_FILES)return;lazySoonRun=true;let gone=false;
  const go=()=>{if(gone)return;gone=true;self.requestIdleCallback?requestIdleCallback(()=>lazyAll(),{timeout:2000}):setTimeout(lazyAll,200)};
  if(document.readyState==='complete')go();else{addEventListener('load',go,{once:true});setTimeout(go,5000)}}
+addEventListener('popstate',e=>backPop(e));  // shell-back.js
 const lazyIn=group=>!self.LAZY_FILES?.[group]||!!lazyDone[group];
 function lazyRun(group,fn){if(lazyIn(group))return fn();lazyPart(group).then(fn,e=>toast(e.message,true))}

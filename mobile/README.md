@@ -21,6 +21,9 @@ dashboard release reaches the app at once, with no store update. The app itself 
 - **The Machine's browser**: the dashboard's Browser pane, closed with its X or Back. Opened on its own (an older
   dashboard, a link straight to it) it gets a floating X back to the dashboard (`www/inject.js`).
 
+- **Back** (Android): closes the dashboard's open dialog or sheet first (`machineBack`, `dashboard/shell-back.js`),
+  then goes back in the Machine's pages; from the first page it leaves the app.
+
 Native code is kept small and stable on purpose: new features belong in the dashboard.
 
 ## How the app finds the Machine
