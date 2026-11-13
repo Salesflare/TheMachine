@@ -30,6 +30,8 @@ Quando un’attività punta a un risultato che deve dare qualcun altro, come un 
 
 Un’attività che nessuno tocca da una settimana chiede una volta: **Serve ancora?** **Non serve** la chiude, con **Annulla**. **Tieni** la tiene, e non lo chiede più. Aprirla, un messaggio in chat, una modifica, posticiparla o un nuovo messaggio su di lei contano come un tocco. Senza risposta per un’altra settimana, finisce in Torna più tardi, sotto Serve ancora?, invece di sparire. Allora il numero sull’icona dell’app e il riepilogo del mattino smettono di contarla. Un tocco la riporta indietro.
 
+Una volta a settimana, un progetto rimasto fermo senza nulla di aperto può ricevere un’attività con un prossimo passo preciso, al massimo tre a settimana. Vedi [Progetti](projects.md).
+
 Quando niente ha bisogno di te, la tua Machine fa un pisolino sull’elenco vuoto. Mentre controlla, si sveglia e lo dice. Se un controllo non è riuscito o è in ritardo, la sua riga lo dice, con **Controlla ora** sotto.
 
 **Tutti**, **Lavoro** e **Personale** sopra l'elenco nella barra laterale mostrano tutte le attività o solo un tipo. La tua Machine ricorda la scelta, così telefono e computer mostrano lo stesso elenco. Quando è attivo Lavoro o Personale, la parte alta dell'elenco lo indica, con **Mostra tutto** per tornare indietro. Un avviso sulla tua Machine stessa, come una parte che continua a riavviarsi, non è né Lavoro né Personale e compare solo in Tutti.

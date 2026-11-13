@@ -30,6 +30,8 @@ When a to-do is for a result someone else delivers, like a signed contract, **De
 
 A to-do nobody touched for a week asks once: **Still needed?** **Not needed** closes it, with **Undo**. **Keep** keeps it, and it never asks again. With no answer for another week, it folds into Coming back later, and the number on the app icon and the morning digest stop counting it. Opening it, a chat message, an edit, a snooze or a new message brings it back.
 
+Once a week, a project that went quiet with nothing open on it can get a to-do with one specific next step, three a week at most. See [Projects](projects.md).
+
 When nothing needs you, your Machine naps on an empty list. While it checks, it wakes up and says so. If a check failed or is late, its line says that, with **Check now** under it.
 
 **All**, **Work** and **Personal** at the top of the sidebar list show all to-dos or only one kind. Your phone and computer show the same choice. While Work or Personal is on, **Show all** goes back. An alert about your Machine itself, like a part that keeps restarting, is neither Work nor Personal and shows under All only.

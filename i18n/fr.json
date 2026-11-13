@@ -3216,6 +3216,7 @@
  "Nothing goes until an admin confirms your Machine.": "Rien ne part tant qu’un admin n’a pas confirmé votre Machine.",
  "Nothing goes until then.": "Rien ne part d’ici là.",
  "Nothing goes without your OK.": "Rien ne part sans votre accord.",
+ "Nothing has moved on {} for {} days.": "Rien n'a bougé sur {0} depuis {1} jours.",
  "Nothing held back this week.": "Rien de retenu cette semaine.",
  "Nothing here": "Rien ici",
  "Nothing here needs you now.": "Rien ici ne vous attend pour l’instant.",

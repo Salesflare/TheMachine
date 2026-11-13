@@ -421,6 +421,26 @@ the organization's role.
 
 Columns: `projects.about` (sealed), `about_sources`, `about_by`, `about_at`, `about_basis`, `about_tried_at`.
 
+### Projects that went quiet
+
+`project_stall.py` proposes a next step for a project that stalled with nothing on it. The daily check
+(`project_success.monitor`) only covers projects with a Done when (an overdue promise, no reply in 10+ days), promises
+follow what someone promised, and reviews make to-dos for messages that need an answer.
+
+- Once a week, on a work day in the owner's hours (`SummariesApp.stall_step`), with the other background turns' spacing
+  and pause.
+- Plain code first: an open project (not won, lost, closed, at its board's last stage or Stalled) the owner wrote in,
+  with 3+ messages, the latest 10 to 45 days old; no open, snoozed or waiting-on to-do, no open promise, no blocker the
+  daily check has, no board follow-ups on it; no to-do on it dismissed in the last 4 weeks, and none from this check in
+  the last 4 weeks. The six strongest go on. None: no turn.
+- One turn on the background model with their pages (`project_about.evidence`), content as data, never instructions.
+  Quality or nothing: a step must cite a message or promise it was given, and the turn may give none. At most three.
+- Each step is a normal to-do (`Store.suggest`) on the project with the cited messages as evidence, keyed by the project
+  and its latest message, so the same quiet spell never gets a second one. Nothing is sent.
+- About 1k input tokens per project, up to six, plus ~500 prompt and ~300 output tokens: one turn a week at most.
+
+Tables: `project_stall_runs` (counts only), `project_stall_items` (which to-do went to which project).
+
 ### Summaries
 
 `person_summary.py` rewrites summaries in the background, never on every signal:

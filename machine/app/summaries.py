@@ -1,7 +1,8 @@
 """Person summaries in the service (person_summary.py has the summaries): now and then one background turn rewrites the
 lines of a few people whose evidence changed, and the owner's own change to a line. Moved out of assistant.App as is.
-Project descriptions the same way (project_about.py): one turn for a few projects whose evidence changed. A mixin of
-assistant.App (APP_MIXINS)."""
+Project descriptions the same way (project_about.py): one turn for a few projects whose evidence changed. And once a
+week a next step for a few projects that went quiet (project_stall.py). A mixin of assistant.App (APP_MIXINS)."""
+import datetime as dt
 import json
 import logging
 import sqlite3
@@ -13,6 +14,8 @@ import locale_prefs
 from models import background_model
 import person_summary
 import project_about
+import project_stall
+import timeutil
 from timeutil import now
 
 LOG = logging.getLogger('personal-assistant')
@@ -160,6 +163,80 @@ class SummariesApp:
             return 0
         LOG.info('project descriptions projects=%s written=%s', len(items), written)
         return written
+
+    STALL_SECONDS = 180
+
+    def stall_step(self):
+        """Once a week, on a work day in the owner's hours: projects that went quiet with nothing on them, plain code
+        first, then one background turn for a few of them only when there are any (project_stall.py). In a thread of
+        its own, within the usage budget like every background turn. None when not started."""
+        if not (self.config.get('review_worker') or {}).get('enabled'):
+            return None
+        thread = getattr(self, '_stall_thread', None)
+        if thread and thread.is_alive():
+            return None
+        local = dt.datetime.now(dt.timezone.utc).astimezone(timeutil.local_tz())
+        if not (timeutil.is_work_day(local) and timeutil.in_hours(local)):
+            return None
+        with self.store.connect() as db:
+            if not project_stall.due(db):
+                return None
+        if not self.background_spaced() or self.background_pause(job='project-stall'):
+            return None
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            if not project_stall.due(db):
+                return None
+            run_id = project_stall.begin(db)
+            items = project_stall.candidates(db)
+        if not items:  # nothing stalled: no turn at all
+            with self.store.connect() as db:
+                project_stall.finish(db, run_id, 0, 0)
+            return run_id
+        self.background_started()
+        self._stall_thread = threading.Thread(target=self.stall_run, args=(run_id, items), name='project-stall', daemon=True)
+        self._stall_thread.start()
+        return run_id
+
+    def stall_run(self, run_id, items):
+        """One run: the candidates' pages, one turn, a to-do for each specific step (Store.suggest, on the project)."""
+        import help_chat
+        stand_in = getattr(self, 'stall_model', None)  # a stand-in in the sandbox and tests: (config, prompt)
+        made, error = 0, None
+        try:
+            with self.store.connect() as db:
+                owner = graph.Owner({'accounts': self.config.get('accounts', [])}, db)
+                owner.slack |= set(getattr(self.store, 'owner_user_ids', None) or ())
+                found = project_stall.pages(db, owner, items)
+            text = project_stall.prompt(found, locale_prefs.language_of(self.config))
+            if stand_in:
+                answer = stand_in(self.config, text)
+            else:
+                swap = background_model(self.config)
+                answer = help_chat.openclaw_model_run(self.config, text, '/'.join(swap) if swap else None, timeout=self.STALL_SECONDS)
+            with self.store.connect() as db:
+                db.execute('BEGIN IMMEDIATE')
+                for step in project_stall.parse(db, answer, found):
+                    db.execute('SAVEPOINT project_stall')
+                    try:
+                        card = self.store.suggest(project_stall.dedupe(step), step['title'], project_stall.body(step), step['event_ids'],
+                                                  project=step['item']['name'], owner_step=True, _db=db)
+                        if not card.get('duplicate'):
+                            project_stall.made(db, run_id, step, card['id'])
+                            made += 1
+                        db.execute('RELEASE project_stall')
+                    except (sqlite3.Error, ValueError, TypeError, KeyError) as failure:
+                        db.execute('ROLLBACK TO project_stall')
+                        db.execute('RELEASE project_stall')
+                        LOG.warning('project stall to-do error=%s', type(failure).__name__)
+        except help_chat.Unavailable:
+            error = 'model'
+        except (sqlite3.Error, ValueError, KeyError, TypeError, OSError) as failure:
+            error = type(failure).__name__
+        with self.store.connect() as db:
+            project_stall.finish(db, run_id, len(items), made, error)
+        LOG.info('project stall candidates=%s made=%s status=%s', len(items), made, error or 'ok')
+        return made
 
     def about_change(self, args):
         """The owner on a project's description: op edit (their text, which then stays) or auto (Keep it updated)."""
