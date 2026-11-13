@@ -150,11 +150,17 @@ function scopeSet(v){if(!['all','work','personal'].includes(v))return;linkedCard
 const scopeNote=empty=>{if(scopeFilter==='all')return '';const work=scopeFilter==='work';
  return html`<p class="scope-note" role="status"><span>${work?(empty?'No work to-dos':'Work only'):(empty?'No personal to-dos':'Personal only')}</span> · <button type="button" class="link" data-scope="${work?'personal':'work'}" aria-label="${work?t('Switch to Personal'):t('Switch to Work')}">${work?'Personal':'Work'}</button> · <button type="button" class="link" data-scope="all">Show all</button></p>`};
 $('#suggestions').addEventListener('click',e=>{const b=e.target.closest('.scope-note [data-scope]');if(b){e.stopPropagation();scopeSet(b.dataset.scope)}});
-// Digest: a row atop the list opening the area's digest (todos-area-digest.js), when an area to-do is open or done today
-const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString();
- return (state?.suggestions||[]).some(s=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup&&(/^(pending|accepted|prepared|instructions)$/.test(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))
-  ?html`<p class="ad-entry"><button type="button" data-area-digest><b>${f==='work'?t('Work digest'):f==='personal'?t('Personal digest'):t('Digest')}</b><span>${t('Done today and still open')}</span>›</button></p>`:''};
-document.addEventListener('click',e=>{if(e.target.closest('[data-area-digest]'))lazyRun('areadigest',()=>areaDigestOpen())});
+// Digest: a row atop the list opening the area's digest (todos-area-digest.js), when an area to-do is open or done today.
+// Its × sets it aside on every device until the next digest goes out or the next day (state.digest_row_hidden, notify.py).
+let digestHiding=false;  // its × on its way to the Machine: a status read from before doesn't bring the row back
+const digestEntry=()=>{const f=scopeFilter,day=new Date().toDateString(),hide=t('Hide until the next digest');
+ return !state?.digest_row_hidden&&!digestHiding&&(state?.suggestions||[]).some(s=>/^(work|personal)$/.test(s.scope)&&(f==='all'||s.scope===f)&&!s.digest&&!s.cleanup&&(/^(pending|accepted|prepared|instructions)$/.test(s.status)||s.status==='completed'&&new Date(closedAt(s)).toDateString()===day))
+  ?html`<p class="ad-entry"><button type="button" data-area-digest><b>${f==='work'?t('Work digest'):f==='personal'?t('Personal digest'):t('Digest')}</b><span>${t('Done today and still open')}</span>›</button><button type="button" class="ad-x" data-digest-hide aria-label="${hide}" title="${hide}">×</button></p>`:''};
+document.addEventListener('click',async e=>{if(e.target.closest('[data-area-digest]'))lazyRun('areadigest',()=>areaDigestOpen());
+ if(!e.target.closest('[data-digest-hide]'))return;digestHiding=true;render();let ok=false;
+ try{await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'digest_row_hide',args:{}})});ok=true;toast(t('Hidden until the next digest.'))}
+ catch(err){errCaught(err);toast(err.message,true)}
+ digestHiding=false;if(ok)state.digest_row_hidden=true;else render()});
 // A tapped digest notification or its email's link (notify.DIGEST_VIEW, EVENING_VIEW; the phone app's tag, pushRoute):
 // To-dos with that digest open on top. The link goes once handled, so the same one opens it again.
 function openDigestLink(){const m=/^#digest=(morning|evening)$/.exec(location.hash);if(!m)return;

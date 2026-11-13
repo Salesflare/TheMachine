@@ -103,7 +103,8 @@ body main{padding-top:0}
 .scope-note span{color:var(--text);font-weight:var(--fw-medium,500)}
 .scope-note button.link{padding:0;min-height:0;border:0;background:none;box-shadow:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .scope-note button.link:hover{color:var(--text)}
-.ad-entry{margin:0 0 12px}.ad-entry button{display:flex;gap:8px;width:100%;min-height:40px;margin:0;padding:8px 12px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-surface);box-shadow:none;color:var(--c-text-3);font:inherit;font-size:var(--fs-sm)}.ad-entry button:hover{background:var(--c-hover)}
+.ad-entry{display:flex;margin:0 0 12px;border:1px solid var(--c-line);border-radius:var(--r-md);background:var(--c-surface);overflow:hidden}.ad-entry button{display:flex;gap:8px;flex:1;min-width:0;min-height:40px;margin:0;padding:8px 12px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--c-text-3);font:inherit;font-size:var(--fs-sm)}.ad-entry button:hover{background:var(--c-hover)}
+.ad-entry .ad-x{flex:none;width:40px;padding:0;justify-content:center;align-items:center;border-inline-start:1px solid var(--c-line);font-size:18px;line-height:1}.ad-entry .ad-x:hover{color:var(--text)}
 .ad-entry b{color:var(--text);font-weight:var(--fw-medium,500)}.ad-entry span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:start}
 /* All clear: the title's line says it, so the block below is only the robot and its line */
 #suggestions .all-clear:not(.first-look-empty){padding-top:24px}

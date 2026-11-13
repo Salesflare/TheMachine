@@ -36,7 +36,7 @@ Quando nada precisa de você, sua Machine tira uma soneca na lista vazia. Enquan
 
 A linha no topo da lista também muda direto para a outra: **Só pessoal · Trabalho · Mostrar todas**.
 
-**Resumo** no topo da lista mostra o que foi feito hoje e o que ainda está em aberto, para Trabalho e Pessoal, ou só o que você filtra. **Copiar** copia para a área de transferência, como texto simples para colar onde quiser. Ele só aparece quando há algo para listar.
+**Resumo** no topo da lista mostra o que foi feito hoje e o que ainda está em aberto, para Trabalho e Pessoal, ou só o que você filtra. **Copiar** copia para a área de transferência, como texto simples para colar onde quiser. Ele só aparece quando há algo para listar. O **×** o oculta em todos os seus dispositivos até o próximo resumo da manhã ou da noite, ou até o dia seguinte.
 
 Uma tarefa de um projeto mostra o nome do projeto na linha abaixo do título; ele abre o projeto. **Projeto** em **Detalhes** muda ou tira o projeto. Veja [as tarefas de um projeto](projects.md#a-projects-to-dos).
 
