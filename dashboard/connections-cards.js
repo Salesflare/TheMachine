@@ -8,10 +8,10 @@ function spark(c){const a=[...(c.sync_activity||[])].reverse();if(!a.some(x=>x.s
 // the owner's help (orange) shows how many (amber ones retry or catch up by themselves); the first such tab opens
 // unless one was picked. Like every tab row, a number means something needs you: Sign-ins has none (a saved sign-in never needs anything), Friends only when waiting.
 // A card's tab is its source's group in + Add (the status gives it: views.source_group), so a new source can't land on the wrong
-// tab: Mail and calendar, Chat, and Other sources for every other group. Android sits in Other: most phones have no feed to give.
-const HEALTH_TABS={mail:'mail',chat:'chat'},healthGroup=c=>HEALTH_TABS[c.group]||'other';
+// tab: Email, Calendar, Chat, and Other sources for every other group. Android sits in Other: most phones have no feed to give.
+const HEALTH_TABS={mail:'mail',calendar:'calendar',chat:'chat'},healthGroup=c=>HEALTH_TABS[c.group]||'other';
 function renderHealthTabs(){const cs=state.connectors||[],bad=g=>cs.filter(c=>healthGroup(c)===g&&connectorTone(c)==='orange').length;
- const panes=[['mail','Mail and calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
+ const panes=[['mail','Email'],['calendar','Calendar'],['chat','Chat'],['other','Other sources']].filter(([g])=>cs.some(c=>healthGroup(c)===g)).map(([id,label])=>({id,label,badge:bad(id),warn:true}));
  if(!panes.length)panes.push({id:'mail',label:'Sources'});
  panes.push({id:'add',label:'+ Add'});
  if(savedLoginCount||healthPicked&&healthPane==='signins')panes.push({id:'signins',label:'Sign-ins'});panes.push({id:'reviews',label:'Checks'});
@@ -52,7 +52,7 @@ $('#connect-add').addEventListener('click',e=>{const tile=e.target.closest('.con
 // The list: Suggested for you first, at most 3 (connect_suggested: only tiles with a signal, never a connected one), each
 // with its why; then every source under its group (onboarding.GROUPS), A to Z within it, a suggested one there too, tagged
 // Suggested, with what it brings in. Both rows open the same connect. A group with nothing to show is left out.
-const CONNECT_GROUPS=[['mail','Mail and calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
+const CONNECT_GROUPS=[['mail','Email'],['calendar','Calendar'],['chat','Chat'],['meetings','Meetings'],['docs','Docs and files'],['customers','Customers'],['work','Projects and code'],['other','Other']];
 const connectWhy=(s,x)=>s.why==='unfinished'?t('Setup didn’t finish'):s.why==='mail'?t(['{} email from {} in 30 days','{} emails from {} in 30 days'],s.count,x.label)
  :s.why==='meetings'?t(['{} {} meeting on your calendar','{} {} meetings on your calendar'],s.count,x.label):s.why==='links'?t(['{} message links to {}','{} messages link to {}'],s.count,x.label):'';
 // A row: the source's logo (dashboard/logos/, else a line icon below), its name (and a Suggested tag), why it is
@@ -66,7 +66,7 @@ Object.entries({outlook:ICONS.gmail,outlook_calendar:ICONS.calendar,teams:'<path
  .forEach(([k,v])=>{if(!ICONS[k])ICONS[k]=v});
 const CONNECT_ICON={google_meet:'zoom',google_docs:'docs',crm:'salesflare'};
 // The service's own logo (dashboard/logos, its NOTICE.md), loaded when shown; Machine health is our robot. Else a line icon.
-const LOGOS=/^(android|calendar|codex|crm|docs|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
+const LOGOS=/^(android|calendar|codex|crm|docs|exchange|github|gmail|google_docs|google_meet|icloud_calendar|intercom|linkedin|outlook|outlook_calendar|proton_calendar|rss|salesforce|shortcut|signal|slack|stripe|teams|telegram|trello|whatsapp|x|zoom)$/,
  connectLogo=(x,n=x.name)=>n==='gateway'||LOGOS.test(n)?html`<span class="icon brand${/^(x|github|intercom|codex)$/.test(n)?' mono':''}" aria-hidden="true"><img src="brand/${n==='gateway'?'avatar.png':'logos/'+n+(n==='zoom'?'.png':'.svg')}" alt="" loading="lazy" width="20" height="20"></span>`:icon(CONNECT_ICON[n]||x.service||n);
 // Already connected: which account, on the row ("Connected: kris@…"), and on the source's add view a line that this adds
 // another connection beside it, with a way to its card. Adding one more stays possible. Its own accounts only (not one a
@@ -554,9 +554,10 @@ ${connBackfill(c)}
 ${chatNote(c)}
 <div class="conn-more">${synced?html`<details id="sync-recent-${c.id}" ${open.has('sync-recent-'+c.id)?html`open`:''}><summary>Recent syncs</summary>${syncRows(c.sync_activity)}${(c.sync_activity||[]).length?'':html`<p>No recent syncs recorded yet.</p>`}</details>`:''}<details id="sync-details-${c.id}" ${open.has('sync-details-'+c.id)?html`open`:''}><summary>Details</summary>${!synced?'':c.failures_24h?html`<p>${t(['{} failed sync in the last 24 hours.','{} failed syncs in the last 24 hours.'],c.failures_24h)}${c.error?'':' '+t('The last sync worked.')}</p>`:html`<p>No failed syncs in the last 24 hours.</p>`}${synced&&c.last_failure?html`<p>${t('Last failure: {}, {}',syncError(c.last_failure.error),humanTime(c.last_failure.at))}</p>`:''}${synced&&c.error&&c.failures?html`<p>${t(['{} failed attempt in a row','{} failed attempts in a row'],c.failures)}</p>`:''}${synced?syncPlain(c).map(l=>html`<p class="conn-plain">${l}</p>`):''}${c.service==='intercom'&&c.replies_as&&c.replies_as!=='you'?html`<p class="conn-plain conn-replies-as">${t('Replies as {}, only after you press Send.',c.replies_as)}</p>`:''}${connAbilities(c)}${photosRow(c)}${scopeRow(c)}${connActions(c)}</details></div></article>`;
 }
-// The connection cards (a refresh keeps the opened ones open) and the disconnected ones
-function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id));
- setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected()}
+// The connection cards (a refresh keeps the opened ones open) and the disconnected ones: A to Z by their name on each tab,
+// a catch-all (Other email, Other calendar, a calendar link) after the rest, Machine health last
+function drawConnectors(){const expandedSync=new Set([...document.querySelectorAll('#connectors details[open]')].map(d=>d.id)),order=new Intl.Collator(I18N.lang||'en',{sensitivity:'base'});
+ setHTML($('#connectors'),html`${[...state.connectors].sort((a,b)=>(a.service==='gateway')-(b.service==='gateway')||!!a.last-!!b.last||order.compare(a.display_name||a.email||'',b.display_name||b.email||'')).map(c=>connectorCard(c,expandedSync))}`);renderDisconnected()}
 // Served as a part that loads when first needed (dashboard_parts.LAZY): a page drawn before it came draws Connections
 // now (render skipped it; it can't call render, which counts the part in only once this file has run). Inline (the
 // tests, the demo) this part runs before shell-render.js, which draws it itself.

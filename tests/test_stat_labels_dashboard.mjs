@@ -27,8 +27,8 @@ try{
   await page.goto('http://127.0.0.1:'+server.address().port+'/#connections');
   await page.locator('article .figures').first().waitFor();await page.evaluate(()=>document.fonts.ready);
   const seen=new Set();
-  for(const tab of ['Mail and calendar','Chat','Other sources',null]){
-   if(tab){const b=page.locator('button:visible',{hasText:tab});if(!await b.count())continue;await b.first().click()}
+  for(const tab of ['Email','Calendar','Chat','Other sources',null]){
+   if(tab){const b=page.locator('#health-tabs button:visible',{hasText:tab});if(!await b.count())continue;await b.first().click()}
    const found=await page.evaluate(()=>[...document.querySelectorAll('article .figures span')].filter(s=>s.getBoundingClientRect().width>0).map(s=>{
     const cs=getComputedStyle(s),ctx=document.createElement('canvas').getContext('2d');ctx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
     const inner=s.clientWidth,box=s.parentElement.getBoundingClientRect(),card=s.closest('article').getBoundingClientRect();

@@ -103,6 +103,7 @@ service.
 | `android.svg` | Android notifications (a phone) |
 | `bol.svg` | bol |
 | `docs.svg` | OneDrive (Word, OneDrive and SharePoint) |
+| `exchange.svg` | Exchange Server (its "E" beside the Exchange shape) |
 | `gateway.svg` | The Machine (its own health) |
 | `gbrain.svg` | GBrain |
 | `outlook.svg` | Outlook (its "O" beside an envelope) |

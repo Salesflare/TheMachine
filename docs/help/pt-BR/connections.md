@@ -8,7 +8,7 @@ order: 1
 ---
 ## Como elas estão
 
-A aba **Conexões** agrupa suas fontes em **E-mail e agenda**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
+A aba **Conexões** agrupa suas fontes em **E-mail**, **Calendário**, **Chat** e **Outras fontes**. Cada uma diz como está: Conectada, Aguardando a primeira sincronização, Reconectando automaticamente ou Precisa da sua ajuda. Abra **Detalhes** para ver **Sincronizações recentes**, onde a sincronização aparece em palavras simples (como "Em dia" ou "Primeira leitura"), e o que fazer.
 
 Uma sincronização que falhou e que uma posterior já compensou aparece em cinza; só uma falha que ainda é a mais recente aparece como problema, com quando tenta de novo.
 
@@ -22,7 +22,7 @@ Abra **+ Adicionar** e escolha uma fonte. Ela pede o que precisa, uma pergunta p
 
 Uma fonte que você já conectou mostra isso na lista, com a conta. Escolha-a para adicionar outra ao lado: o formulário avisa e leva até a que você já tem.
 
-A lista é agrupada (**E-mail e agenda**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo. Uma opção geral como **Outro e-mail** fica por último no grupo.
+A lista é agrupada (**E-mail**, **Calendário**, **Chat**, **Reuniões**, **Documentos e arquivos**, **Clientes**, **Projetos e código**, **Outras**), de A a Z em cada grupo. Uma opção geral como **Outro e-mail** fica por último no grupo.
 
 **Sugerido para você** aparece no topo quando sua Machine vê um motivo para uma fonte, com esse motivo em uma linha: e-mails da Stripe, reuniões no Zoom na sua agenda, mensagens com link para o Google Docs ou uma configuração que não terminou. A fonte também continua no próprio grupo, marcada como **Sugerido**. Ela conta isso na sua Machine; nada sai dela. Uma fonte conectada nunca é sugerida.
 

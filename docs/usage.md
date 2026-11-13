@@ -151,7 +151,7 @@ Links open a tab: `#settings`, `#settings/skills` or `#settings=skills` (also `a
 Graph and Connections have sub-tabs, like Fleet:
 
 - **Graph:** People, Projects and Organizations.
-- **Connections:** your sources by kind (Mail and calendar, Chat, Other sources with Android), **+ Add**, saved **Sign-ins** and **Reviews**. A sub-tab with a source that needs you shows how many and opens first.
+- **Connections:** your sources by kind (Email, Calendar, Chat, Other sources with Android), **+ Add**, saved **Sign-ins** and **Reviews**. A sub-tab with a source that needs you shows how many and opens first.
 
 Links open a tab or sub-tab: `#events`, `#graph`, `#graph=roles` (`people`, `projects`, `orgs`), `#connections`, `#connections=chat` (`mail`, `other`, `add`, `signins`, `reviews`; the old `phone` opens Other sources). The older `#people` and `#health` still work.
 

@@ -143,6 +143,7 @@ try{
   await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('e');await page.locator('.rename-box input').waitFor();await page.keyboard.press('Escape');
   // the done to-do leaves the list before J walks on: from where it was, J only goes down and never reaches the one above
   await focusOn(page.locator('#task-'+id(1)));await page.keyboard.press('d');await page.locator('#task-'+id(1)).waitFor({state:'hidden'});
+  await settled(()=>sent('decide').length,1,'the card hides before its request lands');
   assert.deepEqual([sent('decide')[0].args.suggestion_id,sent('decide')[0].args.choice],[id(1),'complete']);
   // Send-type actions: no key, and from the palette only the Send dialog opens; nothing is confirmed or sent
   await page.locator('#task-'+id(2)).waitFor();await page.locator('body').click({position:{x:700,y:5}});
