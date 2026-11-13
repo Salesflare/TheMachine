@@ -98,9 +98,27 @@ class Groups(unittest.TestCase):
         self.assertTrue(all(s['group'] in groups.GROUPS for s in found))
         of = {s['name']: s['group'] for s in found}
         self.assertEqual({n: of[n] for n in ('gmail', 'imap', 'calendar', 'slack', 'zoom', 'docs', 'stripe', 'crm', 'github', 'rss', 'gateway')},
-                         {'gmail': 'mail', 'imap': 'mail', 'calendar': 'mail', 'slack': 'chat', 'zoom': 'meetings', 'docs': 'docs', 'stripe': 'customers',
+                         {'gmail': 'mail', 'imap': 'mail', 'calendar': 'calendar', 'slack': 'chat', 'zoom': 'meetings', 'docs': 'docs', 'stripe': 'customers',
                           'crm': 'customers', 'github': 'work', 'rss': 'other', 'gateway': 'other'})
         self.assertEqual(groups.GROUPS[-1], 'other')
+
+    def test_email_and_calendar_are_groups_of_their_own(self):
+        # Email: the mailboxes; Calendar: every calendar, Exchange Server too (it reads meetings only, ews_calendar.py)
+        of = {s['service']: s['group'] for s in onboarding.catalog({})}
+        self.assertEqual(groups.GROUPS[:2], ('mail', 'calendar'))
+        self.assertEqual(sorted(s for s, g in of.items() if g == 'mail'), ['gmail', 'imap', 'outlook'])
+        self.assertEqual(sorted(s for s, g in of.items() if g == 'calendar'),
+                         ['caldav', 'calendar', 'exchange', 'icloud_calendar', 'ics', 'outlook_calendar', 'proton_calendar'])
+        self.assertEqual({s for s in groups.CATCH_ALL}, {'imap', 'ics', 'caldav'})  # Other email; Calendar link (ICS), Other calendar
+
+    def test_every_source_is_in_the_list_where_it_can_be_added(self):
+        # nothing drops out of + Add between the sources and the catalog: each one is listed once, in a known group.
+        # Teams is the one gated source: listed where its sign-in is offered (teams_consent, a hosted Machine).
+        everything = set(onboarding.sources())
+        offered = onboarding.catalog({'teams_consent': True})
+        self.assertEqual(sorted(s['name'] for s in offered), sorted(everything))
+        self.assertTrue(all(s['group'] in groups.GROUPS for s in offered))
+        self.assertEqual({s['name'] for s in onboarding.catalog({})}, everything - {'teams'})
 
     def test_a_catch_all_source_says_it_goes_last(self):
         # Other email (any other mail provider) closes its group in + Add and on Connections: the flag, never its name
@@ -117,9 +135,10 @@ class Groups(unittest.TestCase):
         self.assertEqual({s['service']: views.source_group(s['service']) for s in found}, {s['service']: s['group'] for s in found})
         with tempfile.TemporaryDirectory() as tmp:
             store = a.Store(Path(tmp) / 'events.sqlite')
-            accounts = [{'id': s, 'service': s, 'boundary': 'work'} for s in ('linkedin', 'x', 'telegram', 'whatsapp', 'gmail', 'stripe')]
+            accounts = [{'id': s, 'service': s, 'boundary': 'work'} for s in ('linkedin', 'x', 'telegram', 'whatsapp', 'gmail', 'exchange', 'stripe')]
             cards = {c['id']: c['group'] for c in store.snapshot(accounts)['connectors']}
-        self.assertEqual(cards, {'linkedin': 'chat', 'x': 'chat', 'telegram': 'chat', 'whatsapp': 'chat', 'gmail': 'mail', 'stripe': 'customers'})
+        self.assertEqual(cards, {'linkedin': 'chat', 'x': 'chat', 'telegram': 'chat', 'whatsapp': 'chat', 'gmail': 'mail', 'exchange': 'calendar',
+                                 'stripe': 'customers'})
 
     def test_an_unknown_source_is_other(self):
         self.assertEqual(groups.group_of('something_new'), 'other')

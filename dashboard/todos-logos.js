@@ -3,16 +3,15 @@
 // same brands as the colored logos in + Add, drawn in the text's color so they sit quietly in a line. Each is a file,
 // dashboard/logos/mono/<key>.svg (sources and terms in its NOTICE.md), loaded only when shown, as the mask of a
 // .via-ico. A new connector ships with its mark here: tests/test_source_icons.py fails on one without.
-const MONO=['airbnb','android','bol','booking','calendar','claude','discord','docs','dropbox','duolingo','etsy','facebook','fitbit','gateway',
+const MONO=['airbnb','android','bol','booking','calendar','claude','discord','docs','dropbox','duolingo','etsy','exchange','facebook','fitbit','gateway',
  'gbrain','github','gmail','google_docs','google_meet','googlechrome','googledrive','googlekeep','googlemaps','googlemessages','googlephotos',
  'googleplay','googletasks','hubspot','icloud_calendar','instagram','intercom','komoot','lastpass','linkedin','medium','messenger','netflix',
  'notion','openai','outlook','outlook_calendar','paypal','pinterest','podcastaddict','producthunt','proton_calendar','reddit','revolut','rss',
  'salesflare','salesforce','shopify','shortcut','signal','slack','snapchat','source','spotify','strava','stremio','stripe','tailscale','teams',
  'telegram','tiktok','trello','uber','vinted','waze','whatsapp','wise','x','youtube','zoom'];
 // Other names for a mark: a connector's own key, the older via- names; mail, cal and the rest are the line icons in
-// todos-chat.css (Other email is the plain envelope, Other calendar,
-// a calendar link and Exchange Server the plain calendar)
-const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',caldav:'cal',ics:'cal',exchange:'cal',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};
+// todos-chat.css (Other email is the plain envelope, Other calendar and a calendar link the plain calendar)
+const MONO_ALIAS={crm:'salesflare',codex:'openai',gdocs:'google_docs',gcal:'calendar',imap:'mail',caldav:'cal',ics:'cal',email:'mail',chatgpt:'openai',google:'gmail',microsoft:'outlook'};
 // A phone notification by the app that posted it, when it's a brand with a mark here (machine/sources/android.py names them):
 // the package's maker word when that is a mark's name (com.strava, com.whatsapp.w4b), else listed here
 const MONO_APPS={'com.google.android.gm':'gmail','com.google.android.apps.tasks':'googletasks','com.android.chrome':'googlechrome',

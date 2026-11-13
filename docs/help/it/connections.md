@@ -8,7 +8,7 @@ order: 1
 ---
 ## Come stanno andando
 
-La scheda **Connessioni** raggruppa le tue fonti in **Email e calendario**, **Chat** e **Altre fonti**. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
+La scheda **Connessioni** raggruppa le tue fonti in **Email**, **Calendario**, **Chat** e **Altre fonti**. Ognuna dice come sta andando: Connesso, In attesa della prima sincronizzazione, Riconnessione automatica o Serve il tuo aiuto. Apri **Dettagli** per vedere **Sincronizzazioni recenti**, dove la sincronizzazione è spiegata in parole semplici (come "In pari" o "Prima lettura"), e cosa fare.
 
 Una sincronizzazione fallita che una successiva ha recuperato appare in grigio; solo un errore che è ancora l’ultimo appare come problema, con quando riprova.
 
@@ -22,7 +22,7 @@ Apri **+ Aggiungi** e scegli una fonte. Chiede quello che le serve, una domanda 
 
 Una fonte già collegata lo indica nell’elenco, con il suo account. Sceglila per aggiungerne un’altra accanto: il modulo lo dice e rimanda a quella che hai già.
 
-L’elenco è diviso in gruppi (**Email e calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**), dalla A alla Z in ciascuno. Una voce generica come **Altra email** viene per ultima nel suo gruppo.
+L’elenco è diviso in gruppi (**Email**, **Calendario**, **Chat**, **Riunioni**, **Documenti e file**, **Clienti**, **Progetti e codice**, **Altro**), dalla A alla Z in ciascuno. Una voce generica come **Altra email** viene per ultima nel suo gruppo.
 
 **Suggerito per te** compare in alto quando la tua Machine vede un motivo per una fonte, con quel motivo in una riga: email da Stripe, riunioni Zoom nel tuo calendario, messaggi che rimandano a Google Docs, o una configurazione non finita. La fonte resta anche nel suo gruppo, segnata come **Suggerito**. Li conta sulla tua Machine; non esce nulla. Una fonte già collegata non viene mai suggerita.
 

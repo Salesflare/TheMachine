@@ -14,14 +14,19 @@ const dashboard=await dashboardPage();
 const S=(name,label,group,what,extra={})=>({name,service:name,label,group,what,connected:0,broker:false,...extra});
 const sources=[
  S('android','Android notifications','other','The notifications on your Android phone, through the OpenClaw app.'),
- S('calendar','Google Calendar','mail','Your meetings, so you go in prepared and follow up.',{connected:1,hosted_signin:'calendar'}),
+ S('calendar','Google Calendar','calendar','Your meetings, so you go in prepared and follow up.',{connected:1,hosted_signin:'calendar'}),
+ S('ics','Calendar link (ICS)','calendar','Any calendar that gives a link. Read-only.',{last:true}),  // catch-alls: last in Calendar, A to Z among them
+ S('caldav','Other calendar','calendar','Any CalDAV calendar. Read-only.',{last:true}),
+ S('exchange','Exchange Server','calendar','Meetings from your company’s own Exchange Server. Read-only.'),
+ S('icloud_calendar','iCloud Calendar','calendar','Meetings from your iCloud calendars. Read-only.'),
+ S('proton_calendar','Proton Calendar','calendar','A Proton calendar through its share link. Read-only.'),
  S('crm','Salesflare CRM','customers','Accounts, contacts and deals, so it knows who matters.'),
  S('gateway','Machine health','other',"Your Machine's own log, so it spots its own trouble.",{connected:1}),
  S('imap','Other email','mail','Mail from any other provider, over IMAP.',{last:true}),  // a catch-all: last in its group, not at O
  S('zzz_other','Other things','other','A made-up catch-all in Other.',{last:true}),
  S('gmail','Gmail','mail','Your email, what comes in and what you send.',{connected:1,hosted_signin:'gmail'}),
  S('outlook','Outlook','mail','Your Outlook email, what comes in and what you send.',{hosted_signin:'outlook'}),
- S('outlook_calendar','Outlook Calendar','mail','Your Outlook meetings, so you go in prepared and follow up.',{hosted_signin:'outlook_calendar'}),
+ S('outlook_calendar','Outlook Calendar','calendar','Your Outlook meetings, so you go in prepared and follow up.',{hosted_signin:'outlook_calendar'}),
  S('salesforce','Salesforce','customers','Deals, tasks and activity.',{hosted_signin:'salesforce'}),
  S('teams','Microsoft Teams','chat','Chats, meeting chats and meeting notes from Teams. Reads only.',{broker:true,connected:1,hosted_signin:'microsoft_teams'}),
  S('slack','Slack','chat','Your direct messages, mentions and the threads you are in.',{hosted_signin:'slack'}),
@@ -44,10 +49,13 @@ const sources=[
 const SUGGESTED=[{name:'trello',why:'unfinished',count:0},{name:'stripe',why:'mail',count:12},{name:'zoom',why:'meetings',count:9},
  {name:'gmail',why:'mail',count:40},{name:'nope',why:'mail',count:5},{name:'google_docs',why:'links',count:7}];
 let suggested=SUGGESTED;
-// Connections, Mail and calendar tab: the catch-all card (Other email) after the others, though the config lists it first
+// Connections, Email and Calendar tabs: A to Z by name, the catch-all cards (Other email; Other calendar, a calendar link)
+// after the others, though the config lists them first
 const now=new Date().toISOString();
-const CARDS=[{id:'imap',service:'imap',last:true,group:'mail',display_name:'Other email',email:'me@mail.example',transport:'imap',boundary:'personal',events:3,recent_events:1,last_success:now},
- {id:'gmail',service:'gmail',group:'mail',display_name:'Gmail',email:'me@gmail.example',transport:'broker',boundary:'personal',events:5,recent_events:2,last_success:now}];
+const CARD=(id,service,group,display_name,extra={})=>({id,service,group,display_name,email:'me@'+id+'.example',transport:'broker',boundary:'personal',events:3,recent_events:1,last_success:now,...extra});
+const CARDS=[CARD('imap','imap','mail','Other email',{last:true,transport:'imap'}),CARD('gmail','gmail','mail','Gmail'),
+ CARD('ics','ics','calendar','Team calendar',{last:true}),CARD('caldav','caldav','calendar','Other calendar',{last:true}),
+ CARD('gcal','calendar','calendar','Google Calendar'),CARD('ews','exchange','calendar','Exchange Server')];
 const server=createServer(async(req,res)=>{const url=new URL(req.url,'http://fixture.invalid');res.setHeader('Content-Type','application/json');
  if(url.pathname==='/'){res.setHeader('Content-Type','text/html');res.end(dashboard);return}
  const logo=/^\/brand\/logos\/([a-z_]+\.(svg|png))$/.exec(url.pathname);  // the logos, so the shots show them
@@ -84,7 +92,17 @@ try{
     assert.deepEqual(top.tiles.map(x=>[x.name,x.why,x.tag]),[['Trello','Setup didn’t finish',null],['Stripe','12 emails from Stripe in 30 days',null],
      ['Zoom','9 Zoom meetings on your calendar',null]],`${tag}: at most 3 suggestions with their why, connected and unknown ones left out`);
    }else assert.ok(!groups.some(g=>g.suggested)&&!heads.includes('Suggested for you'),`${tag}: no signal, no Suggested section`);
-   assert.deepEqual(rest.map(g=>g.head),['Mail and calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order`);
+   assert.deepEqual(rest.map(g=>g.head),['Email','Calendar','Chat','Meetings','Docs and files','Customers','Projects and code','Other'],`${tag}: the groups in order`);
+   // every source the list gives shows in a group, a two-group one (Teams) in each
+   const shown=new Set(rest.flatMap(g=>g.tiles.map(x=>x.name)));
+   for(const x of sources)assert.ok(shown.has(x.label),`${tag}: ${x.label} shows in + Add`);
+   assert.deepEqual(rest.filter(g=>g.tiles.some(x=>/Teams/.test(x.name))).map(g=>g.head),['Chat','Meetings'],`${tag}: Teams shows under Chat and Meetings`);
+   assert.deepEqual(rest.find(g=>g.head==='Email').tiles.map(x=>x.name),['Gmail','Outlook','Other email'],`${tag}: Email holds the mailboxes, Other email last`);
+   assert.deepEqual(rest.find(g=>g.head==='Calendar').tiles.map(x=>x.name),['Exchange Server','Google Calendar','iCloud Calendar','Outlook Calendar','Proton Calendar',
+    'Calendar link (ICS)','Other calendar'],`${tag}: Calendar holds every calendar, Exchange Server too, the catch-alls last`);
+   assert.equal(tile('Calendar','Exchange Server').logo,'brand/logos/exchange.svg',`${tag}: Exchange Server shows its own logo`);
+   assert.deepEqual(['iCloud Calendar','Proton Calendar','Calendar link (ICS)','Other calendar'].map(n=>tile('Calendar',n).logo),
+    ['brand/logos/icloud_calendar.svg','brand/logos/proton_calendar.svg',null,null],`${tag}: iCloud and Proton their logos, the catch-alls the calendar line icon`);
    for(const g of rest){const names=g.tiles.map(x=>x.name).filter(n=>!sources.some(s=>s.last&&s.label===n));
     assert.deepEqual(names,[...names].sort((a,b)=>a.localeCompare(b,'en',{sensitivity:'base'})),`${tag}: ${g.head} reads A to Z`);
     assert.ok(g.tiles.every(x=>x.why===null),`${tag}: ${g.head} shows what each brings in, not a why`)}
@@ -108,12 +126,18 @@ try{
    const lastOf=Object.fromEntries(sources.filter(x=>x.last).map(x=>[x.label,true]));
    for(const g of rest){const names=g.tiles.map(x=>x.name),k=names.findIndex(n=>lastOf[n]);
     if(k>=0)assert.ok(names.slice(k).every(n=>lastOf[n]),`${tag}: ${g.head}: the catch-all rows come last (${names.join(', ')})`)}
-   assert.equal(rest.find(g=>g.head==='Mail and calendar').tiles.at(-1).name,'Other email');
+   assert.equal(rest.find(g=>g.head==='Email').tiles.at(-1).name,'Other email');
    assert.equal(rest.find(g=>g.head==='Other').tiles.at(-1).name,'Other things');
    if(mode==='none'&&width===1440&&scheme==='light'){
     await page.goto(base+'/#connections');await page.locator('#connectors>article[data-conn="imap"]').waitFor({state:'attached'});
     assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connectors>article[data-group="mail"]')].map(a=>a.dataset.conn)),['gmail','imap'],'Connections: the catch-all card comes last in its tab');
-    await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith('Mail and calendar'))?.click());await page.locator('#connectors>article[data-conn="imap"]').waitFor();
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#connectors>article[data-group="calendar"]')].map(a=>a.dataset.conn)),['ews','gcal','caldav','ics'],
+     'Connections: Calendar reads A to Z, the catch-alls last');
+    assert.deepEqual(await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].map(b=>b.textContent.trim())).then(x=>x.slice(0,2)),['Email','Calendar'],
+     'Connections: Email and Calendar are tabs of their own');
+    assert.equal(await page.evaluate(()=>document.querySelector('#connectors>article[data-conn="ews"] .conn-head img')?.getAttribute('src')),'brand/logos/exchange.svg',
+     'Connections: the Exchange Server card shows its logo');
+    await page.evaluate(()=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith('Email'))?.click());await page.locator('#connectors>article[data-conn="imap"]').waitFor();
     if(shots)await page.screenshot({path:`${shots}/connections-mail-${width}-${scheme}.png`,fullPage:true});
     await page.goto(base+'/#connections=add');await page.locator('#connect-add .connect-group').first().waitFor()}
    // nothing wider than the screen

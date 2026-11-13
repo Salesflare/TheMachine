@@ -10,17 +10,21 @@ const {chromium}=await import('./browser.mjs');
 // Made-up data, a local fixture server. SHOTS=<folder> saves each tab at 390 and 1440, light and dark.
 const dashboard=await dashboardPage();
 const now=new Date().toISOString();
-// each source's group as the status gives it (views.source_group, the same as + Add): its tab is Mail and calendar, Chat or Other
-const GROUP={gmail:'mail',calendar:'mail',outlook:'mail',outlook_calendar:'mail',imap:'mail',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',
+// each source's group as the status gives it (views.source_group, the same as + Add): its tab is Email, Calendar, Chat or Other
+const GROUP={gmail:'mail',calendar:'calendar',outlook:'mail',outlook_calendar:'calendar',imap:'mail',exchange:'calendar',icloud_calendar:'calendar',
+ proton_calendar:'calendar',ics:'calendar',caldav:'calendar',slack:'chat',teams:'chat',whatsapp:'chat',telegram:'chat',signal:'chat',
  linkedin:'chat',x:'chat',zoom:'meetings',google_meet:'meetings',docs:'docs',salesflare:'customers',salesforce:'customers',stripe:'customers',
  intercom:'customers',github:'work',trello:'work',shortcut:'work'};
-const TAB={mail:'Mail and calendar',chat:'Chat'};
+const TAB={mail:'Email',calendar:'Calendar',chat:'Chat'};
 const C=(id,service,name,extra={})=>({id,service,group:GROUP[service]||'other',display_name:name,email:id+'@example.org',transport:'broker',boundary:'work',events:12,recent_events:3,last_success:now,...extra});
 // card id -> the logo file it must show (null: its line icon)
 const CARDS=[
  [C('gmail','gmail','Gmail'),'logos/gmail.svg'],[C('calendar','calendar','Google Calendar'),'logos/calendar.svg'],
  [C('outlook','outlook','Outlook'),'logos/outlook.svg'],[C('outlook_calendar','outlook_calendar','Outlook Calendar'),'logos/outlook_calendar.svg'],
  [C('imap','imap','Other email',{last:true,transport:'imap'}),null],
+ [C('ews','exchange','Exchange Server',{transport:'ews'}),'logos/exchange.svg'],[C('icloud','icloud_calendar','iCloud Calendar',{transport:'caldav'}),'logos/icloud_calendar.svg'],
+ [C('proton','proton_calendar','Proton Calendar',{transport:'ics'}),'logos/proton_calendar.svg'],
+ [C('ics','ics','Calendar link (ICS)',{last:true,transport:'ics'}),null],[C('caldav','caldav','Other calendar',{last:true,transport:'caldav'}),null],
  [C('slack','slack','Slack'),'logos/slack.svg'],[C('teams','teams','Microsoft Teams'),'logos/teams.svg'],[C('whatsapp','whatsapp','WhatsApp'),'logos/whatsapp.svg'],
  [C('telegram','telegram','Telegram chats'),'logos/telegram.svg'],[C('signal','signal','Signal chats'),'logos/signal.svg'],
  [C('linkedin','linkedin','LinkedIn'),'logos/linkedin.svg'],[C('x','x','X'),'logos/x.svg'],[C('zoom','zoom','Zoom'),'logos/zoom.png'],
@@ -52,7 +56,7 @@ try{
   const tag=`${width}-${scheme}`;
   await page.goto(base+'/#connections');
   await page.locator('#connectors>article[data-conn="gmail"]').waitFor({state:'attached'});
-  for(const [pane,file] of [['Mail and calendar','mail'],['Chat','chat'],['Other sources','other']]){
+  for(const [pane,file] of [['Email','mail'],['Calendar','calendar'],['Chat','chat'],['Other sources','other']]){
    await page.evaluate(p=>[...document.querySelectorAll('#health-tabs button')].find(b=>b.textContent.trim().startsWith(p))?.click(),pane);
    // every logo loaded, also the ones below the fold
    const seen=await page.evaluate(()=>Promise.all([...document.querySelectorAll('#connectors>article:not([hidden])')].map(async a=>{const i=a.querySelector('.conn-head img');

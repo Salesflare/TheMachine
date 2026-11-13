@@ -8,7 +8,7 @@ order: 1
 ---
 ## Leur état
 
-L’onglet **Connexions** regroupe vos sources en **Mail et agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
+L’onglet **Connexions** regroupe vos sources en **E-mail**, **Agenda**, **Chat** et **Autres sources**. Chacune indique son état : Connectée, En attente de la première synchro, Reconnexion automatique ou Besoin de votre aide. Ouvrez **Détails** pour voir les **Synchros récentes**, où sa synchro est décrite en mots simples (comme « À jour » ou « Première lecture »), et quoi faire.
 
 Une synchro échouée qu’une synchro suivante a rattrapée s’affiche en gris ; seul un échec qui reste le dernier s’affiche comme un problème, avec l’heure du prochain essai.
 
@@ -22,7 +22,7 @@ Ouvrez **+ Ajouter** et choisissez une source. Elle demande ce dont elle a besoi
 
 Une source déjà connectée l’indique dans la liste, avec son compte. Choisissez-la pour en ajouter une autre à côté : son formulaire le dit et renvoie vers celle que vous avez.
 
-La liste est groupée (**Mail et agenda**, **Chat**, **Réunions**, **Documents et fichiers**, **Clients**, **Projets et code**, **Autres**), de A à Z dans chaque groupe. Une entrée générale comme **Autre e-mail** vient en dernier dans son groupe.
+La liste est groupée (**E-mail**, **Agenda**, **Chat**, **Réunions**, **Documents et fichiers**, **Clients**, **Projets et code**, **Autres**), de A à Z dans chaque groupe. Une entrée générale comme **Autre e-mail** vient en dernier dans son groupe.
 
 **Suggéré pour vous** s’affiche en haut quand votre Machine voit une raison pour une source, avec cette raison en une ligne : des e-mails de Stripe, des réunions Zoom dans votre agenda, des messages qui renvoient vers Google Docs, ou une configuration qui n’a pas abouti. La source reste aussi dans son propre groupe, marquée **Suggéré**. Elle compte cela sur votre Machine ; rien n’en sort. Une source connectée n’est jamais suggérée.
 

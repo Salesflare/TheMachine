@@ -8,7 +8,7 @@ order: 1
 ---
 ## How they're doing
 
-The **Connections** tab groups your sources into **Mail and calendar**, **Chat** and **Other sources**. Each says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. **Details** shows **Recent syncs** in plain words (like "Caught up") and what to do.
+The **Connections** tab groups your sources into **Email**, **Calendar**, **Chat** and **Other sources**, A to Z within each. Each says how it's doing: Connected, Waiting for first sync, Reconnecting automatically, or Needs your help. **Details** shows **Recent syncs** in plain words (like "Caught up") and what to do.
 
 A failed sync that a later one made up for is shown in gray; only a failure that is still the latest one is shown as a problem, with when it tries again.
 
@@ -18,7 +18,7 @@ Each source also says in one line what it brings in and, if it can act, that it 
 
 ## Add one
 
-Open **+ Add** and pick a source. The list is grouped (**Mail and calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each. A catch-all like **Other email** comes last in its group.
+Open **+ Add** and pick a source. The list is grouped (**Email**, **Calendar**, **Chat**, **Meetings**, **Docs and files**, **Customers**, **Projects and code**, **Other**), A to Z within each. A catch-all comes last in its group: **Other email** under Email, **Calendar link (ICS)** and **Other calendar** under Calendar. Exchange Server reads meetings, so it's under Calendar.
 
 **Suggested for you** sits on top when your Machine sees a reason for a source, with that reason in one line: mail from Stripe, Zoom meetings on your calendar, messages that link to Google Docs, or a setup that didn't finish. The source also stays in its own group, marked **Suggested**. It counts these on your Machine; nothing leaves it. A connected source is never suggested.
 

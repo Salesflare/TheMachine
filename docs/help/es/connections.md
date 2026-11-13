@@ -8,7 +8,7 @@ order: 1
 ---
 ## Cómo van
 
-La pestaña **Conexiones** agrupa tus fuentes en **Correo y calendario**, **Chat** y **Otras fuentes**. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
+La pestaña **Conexiones** agrupa tus fuentes en **Correo**, **Calendario**, **Chat** y **Otras fuentes**. Cada una indica cómo va: Conectada, Esperando la primera sincronización, Reconectando automáticamente o Necesita tu ayuda. Abre **Detalles** para ver **Sincronizaciones recientes**, donde su sincronización se explica con palabras sencillas (como "Al día" o "Primera lectura"), y qué hacer.
 
 Una sincronización fallida que una posterior ya compensó se muestra en gris; solo un fallo que sigue siendo el último se muestra como problema, con cuándo vuelve a intentarlo.
 
@@ -22,7 +22,7 @@ Abre **+ Añadir** y elige una fuente. Te pregunta lo que necesita, una pregunta
 
 Una fuente que ya conectaste lo indica en la lista, con su cuenta. Elígela para añadir otra al lado: su formulario lo dice y enlaza a la que ya tienes.
 
-La lista está agrupada (**Correo y calendario**, **Chat**, **Reuniones**, **Documentos y archivos**, **Clientes**, **Proyectos y código**, **Otras**), de la A a la Z en cada grupo. Una opción general como **Otro correo** va al final de su grupo.
+La lista está agrupada (**Correo**, **Calendario**, **Chat**, **Reuniones**, **Documentos y archivos**, **Clientes**, **Proyectos y código**, **Otras**), de la A a la Z en cada grupo. Una opción general como **Otro correo** va al final de su grupo.
 
 **Sugerido para ti** aparece arriba cuando tu Machine ve un motivo para una fuente, con ese motivo en una línea: correos de Stripe, reuniones de Zoom en tu calendario, mensajes con enlaces a Google Docs o una configuración que no terminó. La fuente también sigue en su propio grupo, marcada como **Sugerido**. Lo cuenta en tu Machine; nada sale de ella. Nunca sugiere una fuente ya conectada.
 

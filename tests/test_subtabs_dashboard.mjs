@@ -16,7 +16,7 @@ let graph={people:['Ann Example','Bo Sample','Cy Test'].map(person),quiet:[],new
  projects:[{id:'project:1',kind:'project',name:'Renewal',state:'active',last_at:day,signals:3,people:['Ann Example']}],
  orgs:[{id:'org:example.org',kind:'org',name:'Example Org',signals:2,last_at:day}],warmup:[]};
 // each source's group as the status gives it (views.source_group): its Connections tab
-const GROUP={gmail:'mail',calendar:'mail',slack:'chat',whatsapp:'chat',salesflare:'customers'};
+const GROUP={gmail:'mail',calendar:'calendar',slack:'chat',whatsapp:'chat',salesflare:'customers'};
 const conn=(id,service,extra={})=>({id,service,group:GROUP[service]||'other',display_name:id,email:'owner@example.org',boundary:'work',last_success:now,state:'{}',...extra});
 const connectors=[conn('mail','gmail'),conn('cal','calendar'),conn('team-chat','slack',{error:'slack_auth_failed'}),conn('wa','whatsapp'),conn('phone','android'),conn('crm','salesflare')];
 const server=createServer(async(req,res)=>{
@@ -70,9 +70,9 @@ try{
  await page.goto(base+'/#people');await page.locator('#people:not([hidden])').waitFor();
  // Connections: sources by kind; the one with a failing source shows its count and opens first.
  await page.goto(base);await navClick(page.locator('nav [data-tab="health"]'));await page.locator('#health-tabs [role=tab]').first().waitFor();
- for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<6;i++)await page.waitForTimeout(20);
+ for(let i=0;i<100&&(await tabs(page,'#health-tabs')).length<7;i++)await page.waitForTimeout(20);
  // A number only where something needs you: Chat has a failing source; a saved sign-in needs nothing, so Sign-ins has none
- assert.deepEqual(await tabs(page,'#health-tabs'),['Mail and calendar','Chat\n1','Other sources','+ Add','Sign-ins','Checks']);
+ assert.deepEqual(await tabs(page,'#health-tabs'),['Email','Calendar','Chat\n1','Other sources','+ Add','Sign-ins','Checks']);
  assert.equal(await page.locator('#health-tabs [data-health-pane="signins"] .badge').count(),0);
  assert.equal(await page.locator('#health-tabs [data-health-pane="chat"] .badge.warn').count(),1);
  assert.equal(await selected(page,'#health-tabs'),'Chat\n1');
@@ -85,7 +85,7 @@ try{
  assert.equal(await selected(page,'#health-tabs'),'Checks');
  // Android is in Other sources; the old phone link opens it.
  await page.goto(base+'/#connections=phone');await page.locator('#connectors>article:not([hidden]) h3',{hasText:'phone'}).waitFor();
- assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['phone','crm']);
+ assert.deepEqual(await page.locator('#connectors>article:not([hidden]) h3').allInnerTexts(),['crm','phone']);  // A to Z
  await page.goto(base+'/#health');await page.locator('#health:not([hidden])').waitFor();
  // One column for every tab.
  const widths=[];

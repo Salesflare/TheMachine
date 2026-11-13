@@ -8,7 +8,7 @@ order: 1
 ---
 ## Hoe het ermee gaat
 
-Het tabblad **Koppelingen** groepeert je bronnen in **Mail en agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
+Het tabblad **Koppelingen** groepeert je bronnen in **E-mail**, **Agenda**, **Chat** en **Andere bronnen**. Elke bron zegt hoe het ermee gaat: Verbonden, Wacht op eerste sync, Verbindt automatisch opnieuw, of Heeft je hulp nodig. Open **Details** voor **Recente syncs**, waar de sync in gewone woorden staat (zoals "Bij" of "Eerste keer lezen"), en wat je moet doen.
 
 Een mislukte sync die een latere sync heeft goedgemaakt staat in grijs; alleen een mislukking die nog de laatste is, staat als probleem, met wanneer hij opnieuw probeert.
 
@@ -22,7 +22,7 @@ Open **+ Toevoegen** en kies een bron. Hij vraagt wat hij nodig heeft, één vra
 
 Een bron die je al koppelde zegt dat in de lijst, met het account. Kies hem om er nog een naast toe te voegen: het formulier zegt dat en linkt naar de koppeling die je al hebt.
 
-De lijst is gegroepeerd (**Mail en agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep. Een verzamelbron zoals **Andere e-mail** staat als laatste in zijn groep.
+De lijst is gegroepeerd (**E-mail**, **Agenda**, **Chat**, **Afspraken**, **Documenten en bestanden**, **Klanten**, **Projecten en code**, **Andere**), van A tot Z per groep. Een verzamelbron zoals **Andere e-mail** staat als laatste in zijn groep.
 
 **Voorgesteld voor jou** staat bovenaan als je Machine een reden ziet voor een bron, met die reden op één regel: mails van Stripe, Zoom-meetings in je agenda, berichten die naar Google Docs linken, of instellen dat niet is afgerond. De bron staat ook in zijn eigen groep, met het label **Voorgesteld**. Hij telt dat op je Machine; er gaat niets weg. Een gekoppelde bron wordt nooit voorgesteld.
 
