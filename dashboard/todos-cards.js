@@ -297,8 +297,8 @@ const SECONDARY={pending:['snooze','reject','complete','accept','change','handof
 const CHIP_ICON={person:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 19.5c.8-3.4 3.4-5.2 6.5-5.2s5.7 1.8 6.5 5.2"/></svg>',
  org:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20V5.5h8V20M14 9.5h4V20M4 20h16M9 9h2M9 12.5h2M9 16h2"/></svg>',
  project:'<svg class="ci" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5V18a1.5 1.5 0 0 0 1.5 1.5h13A1.5 1.5 0 0 0 20 18V9.5A1.5 1.5 0 0 0 18.5 8H12l-2-2.5H5.5A1.5 1.5 0 0 0 4 7z"/></svg>'};
-// Small pictures (a to-do's chips, the Graph's lists and pages): a person's photo round and cover-cropped, an
-// organization's logo contain-fit on a white tile, each with a faint ring that reads on either theme. Their initials sit
+// Small pictures (a to-do's chips, the Graph's lists and pages), all round (base-design.css): a person's photo
+// cover-cropped, an organization's logo contain-fit on a white disc, each with a faint ring that reads on either theme. Their initials sit
 // underneath (drawn from data-i, so they're never part of a name's text): they show until the picture loads, when it can't, and when a logo wouldn't read this small (logoReads).
 // Photos only as saved on this Machine; logos also as an https link, with no referrer, asked with CORS so its pixels can
 // be checked and asked again without when the host refuses that.
