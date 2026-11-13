@@ -33,6 +33,8 @@ Sconosciuto vuol dire che non gli hai mai scritto, e un “Re:” conta come con
 
 Nulla cambia finché non confermi sull’attività. Tocca un mittente per leggere prima l’email: resta da leggere e non cambia nulla. Da Pulizia spam le sue immagini dal web non si caricano, così il mittente non vede che è stata aperta. I mittenti già decisi non tornano. Un giorno senza newsletter né spam non crea attività, e queste attività non mandano mai una notifica.
 
+Quando ogni mittente è deciso, l’attività dice che è finita e c’è **Segna come fatto**.
+
 **Riepilogo giornaliero** sceglie una volta al giorno i pochi articoli delle tue newsletter che valgono il tuo tempo, in un’attività. Per ognuno c’è una riga sul perché conta per te. Toccalo per leggere l’email, oppure usa **Apri nella tua posta**. Solo newsletter: mai posta di persone, ricevute o mittenti da cui ti sei disiscritto, e mai quello che hai già letto. Quando niente spicca, nessuna attività.
 
 Impara cosa ti interessa da ciò che apri, metti in evidenza o archivi senza leggere, e da **Altri così** e **Meno così** su ogni articolo. Gli argomenti su cui sceglie sono sulla scheda della routine sotto **Più su** e **Meno su**. Togline uno con ×, o aggiungi i tuoi. Quelli tratteggiati li ha imparati da solo. Un nuovo riepilogo sostituisce quello aperto, e non invia mai una notifica.

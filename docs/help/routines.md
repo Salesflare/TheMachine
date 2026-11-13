@@ -35,6 +35,8 @@ Unknown means you never wrote to them, and a “Re:” only counts as a conversa
 
 Nothing changes until you confirm on the to-do. Tap a sender to read the email first: it stays unread and nothing changes. From Spam cleanup, its images from the web don’t load, so the sender can’t see it was opened. Senders you decided on aren’t asked again. A day without newsletters or spam makes no to-do, and these to-dos never send a notification.
 
+Once every sender is decided, the to-do says it’s finished and **Mark done** is on it.
+
 **Daily digest** picks the few newsletter pieces worth your time, once a day, in one to-do. Each one says in a line why it matters to you. Tap it to read the email, or use **Open in your mail**. Only newsletters: never mail from people, receipts or senders you unsubscribed from, and never what you already read. When nothing stands out, there is no to-do.
 
 It learns what you care about from what you open, star or archive unread, and from **More like this** and **Less like this** on each pick. The topics it picks for are on its routine’s card under **More of** and **Less of**. Remove one with ×, or add your own. Dashed ones it learned itself. A new digest replaces the open one, and it never sends a notification.
