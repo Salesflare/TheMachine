@@ -172,11 +172,9 @@ class Sealing:
         if not me:
             raise ValueError('This Machine is not in that group on The Machine Network; nothing was sent.')
         kind, question = body.get('kind'), body['question']
-        named = bool(body.get('to')) or kind == 'followup'
+        named = bool(body.get('to'))
         if body.get('to'):
             to = list(body['to'])
-        elif kind == 'followup':
-            to = sorted({i.get('member_id') for i in question.get('items', []) if i.get('member_id') and i.get('member_id') != me})
         else:
             to = [m['member_id'] for m in group.get('members', []) if not m.get('me')]
         sealed = {}

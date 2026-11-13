@@ -53,14 +53,14 @@ class ReviewCachePrefix(unittest.TestCase):
         stable_args = dict(preferences='- Dismissed 2 newsletters quickly', facts='- The owner prefers short replies.',
                            promises='- Send Sam the deck by Friday', sources='\n\nReading the connected sources: mail.')
         one = a.review_prompt('a' * 32, ['work'], **stable_args, slipped='- No answer for 8 days', roles='- Sam', unnamed='- two threads',
-                              notes='- not mine', handoffs='- ask_id q1', splits='- split s1', boards='- Acme sale', sorting='- p1',
+                              notes='- not mine', handoffs='- ask_id q1', boards='- Acme sale', sorting='- p1',
                               fitting='- p2', backfill='- org:x', first_look=True)
         two = a.review_prompt('b' * 32, ['work'], **stable_args)
         shared = shared_prefix(one, two)
         self.assertTrue(two[len(shared):].startswith('b' * 32), two[len(shared) - 40:len(shared) + 40])
         for slow in stable_args.values():
             self.assertIn(slow.strip(), shared)
-        for per_run in ('No answer for 8 days', 'ask_id q1', 'split s1', 'Acme sale', 'org:x', 'first look', 'Possibly slipped'):
+        for per_run in ('No answer for 8 days', 'ask_id q1', 'Acme sale', 'org:x', 'first look', 'Possibly slipped'):
             self.assertNotIn(per_run, shared)
             self.assertIn(per_run, one)
         # No clock in the prompt: the same inputs give the same bytes a minute later

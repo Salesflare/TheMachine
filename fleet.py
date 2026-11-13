@@ -122,7 +122,7 @@ KIND_RULES['brief'] = ('always', 'never')
 # The same for a teammate's other asks in a Standard Work Fleet (Fleet.kind_rules): who knows someone and meeting context
 # are answered by themselves with only what the Team Graph shares (Fleet.team_gate), names only of people it shares; who
 # handles a shared email goes as a claim both already see. A Careful Fleet keeps Ask me first. Requests to do something
-# (intros, handoffs, follow-ups) and free questions are not answers from the Graph: they keep their own rules.
+# (intros, handoffs) and free questions are not answers from the Graph: they keep their own rules.
 TEAM_ASKS = ('relationships', 'meeting', 'handling')
 NO_DETAILS = ('handling', 'brief', 'anything')  # kinds without a "how much they hear" choice
 QUIET = ('brief',)  # asks that wait in the Fleet tab only: no to-do, no badge, no phone, Telegram or digest; still nothing shared until the owner chooses
@@ -161,10 +161,10 @@ FLEET_ID = re.compile(r'fl_[0-9a-f]{16}')
 NOTICE_DAYS = 30
 DECIDED = {'once': 'Answered once', 'always': 'Answered, and always from now on', 'decline': 'Declined', 'never': 'Declined, and never from now on'}
 BY_RULE = {'answered': 'Shared automatically (your Always rule)', 'declined': 'Declined automatically (your Never rule)'}
-# Warm intros, handoffs and shared follow-ups: requests to do something (fleet_requests.py)
+# Warm intros and handoffs: requests to do something (fleet_requests.py)
 ASKS['work'] += fleet_requests.KINDS
 RULE_KINDS['work'] += fleet_requests.KINDS
-KIND_LABEL.update(intro='warm intros', handoff='handoffs', followup='shared follow-ups')
+KIND_LABEL.update(intro='warm intros', handoff='handoffs')
 # Friends (friends.py): one more group in the directory, its own rules per friend, apart from the Fleets
 FLEET_NAMES['friends'] = 'Friends'
 ASKS['friends'] = RULE_KINDS['friends'] = friends.KINDS
@@ -431,6 +431,10 @@ def ensure(db):
         # A saved Off stays what it was: Never.
         db.execute("UPDATE fleet_rules SET rule='never' WHERE kind='handling' AND rule='ask'")
         db.execute("INSERT INTO fleet_meta(key,value) VALUES('handling_three_way','1')")
+    if not db.execute("SELECT 1 FROM fleet_meta WHERE key='followup_splits_retired'").fetchone():
+        # 2026-11: the meeting follow-up split is gone; the review's own to-dos from the meeting stay
+        fleet_requests.retire_splits(db)
+        db.execute("INSERT INTO fleet_meta(key,value) VALUES('followup_splits_retired','1')")
 
 
 def clean(text, chars):
@@ -3055,7 +3059,6 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
         if stamp - self.last.get('requests', 0.0) > MEETINGS_EVERY or not wait:
             self.last['requests'] = stamp
             self.timed('requests', self.requests_round)
-            self.timed('follow-ups', self.followup_round)
             self.timed('family reminders', self.family_reminders)
             if self.task_pages:  # answers from task pages (task_pages.py)
                 try:
@@ -3562,7 +3565,7 @@ class Fleet(fleet_rounds.Rounds, fleet_requests.Requests, fleet_reviews.Reviews,
             waiting = db.execute("SELECT COUNT(*) FROM fleet_in WHERE status='waiting' AND kind NOT IN (%s)" % ','.join('?' * len(QUIET)), QUIET).fetchone()[0]
             waiting += db.execute("SELECT COUNT(*) FROM fleet_notices WHERE kind IN ('seat_request','friend_request') AND status='open'").fetchone()[0]
         # Which to-dos Ask to review is offered on: 'work', 'personal', by the Fleets whose Network carries reviews
-        return {'on': True, 'waiting': waiting + self.proposals(), 'reviews': [x for x in ('work', 'personal') if self.review_fleets(x)],
+        return {'on': True, 'waiting': waiting,'reviews': [x for x in ('work', 'personal') if self.review_fleets(x)],
                 'app_address': bool((self.meta('me_sent') or {}).get('app_address'))}  # Settings says it is shared
 
     def annotate(self, db, suggestions):

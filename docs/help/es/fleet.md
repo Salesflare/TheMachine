@@ -35,7 +35,7 @@ En un Work Fleet Estándar, tu Machine responde sola a **quién conoce a alguien
 
 Para pararla, ponla en **Nunca** en **Compartiendo**. Una regla guardada como **Pregúntame primero** ahora funciona como **Siempre**. Mientras el Graph del equipo de tu Fleet no comparte, quién conoce a alguien y contexto de reuniones siguen preguntándote antes.
 
-Los Work Fleets Prudentes, Amigos y Familia siguen preguntándote antes. Las presentaciones, los traspasos, los seguimientos compartidos y las preguntas libres mantienen sus propias reglas.
+Los Work Fleets Prudentes, Amigos y Familia siguen preguntándote antes. Las presentaciones, los traspasos y las preguntas libres mantienen sus propias reglas.
 
 ## Aprendizajes del equipo
 

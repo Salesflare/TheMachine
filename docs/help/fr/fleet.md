@@ -35,7 +35,7 @@ Dans une Fleet Travail Standard, votre Machine répond d’elle-même aux demand
 
 Pour en arrêter une, réglez-la sur **Jamais** sous **Partage**. Une règle enregistrée sur **Me demander d’abord** fonctionne désormais comme **Toujours**. Tant que le partage du Graph d’équipe de votre Fleet est désactivé, qui connaît quelqu’un et contexte de réunion continuent de vous demander d’abord.
 
-Les Fleets Travail Prudentes, Amis et Famille vous demandent toujours d’abord. Les mises en relation, transferts, suivis partagés et questions libres gardent leurs propres règles.
+Les Fleets Travail Prudentes, Amis et Famille vous demandent toujours d’abord. Les mises en relation, transferts et questions libres gardent leurs propres règles.
 
 ## Apprentissages de l’équipe
 

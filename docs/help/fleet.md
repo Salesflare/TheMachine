@@ -35,7 +35,7 @@ In a Standard Work Fleet, your Machine answers three kinds of teammate questions
 
 To stop one, set it to **Never** under **Sharing**. A rule saved as **Ask me first** works as **Always**. While Team Graph sharing is off, who knows someone and meeting context ask you first.
 
-Careful Work Fleets, Friends and Family still ask you first. Warm intros, handoffs, shared follow-ups and free questions keep their own rules.
+Careful Work Fleets, Friends and Family still ask you first. Warm intros, handoffs and free questions keep their own rules.
 
 ## Team learnings
 

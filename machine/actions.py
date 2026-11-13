@@ -130,7 +130,7 @@ OWNER_ACTIONS = {
     'whats_new_seen',
     'whatsapp_photos',
 }
-# Warm intros, handoffs and shared follow-ups (fleet_requests.py): the owner's own, from their dashboard only.
+# Warm intros and handoffs (fleet_requests.py): the owner's own, from their dashboard only.
 FLEET_REQUEST_ACTIONS = {
     *handoff_mail.ACTIONS,
     *task_pages.ACTIONS,
@@ -148,9 +148,6 @@ FLEET_REQUEST_ACTIONS = {
     'fleet_review_reply',
     'fleet_review_view',
     'fleet_review_withdraw',
-    'fleet_split',
-    'fleet_split_adjust',
-    'fleet_split_dismiss',
     'task_import',
 }
 OWNER_ACTIONS |= FLEET_REQUEST_ACTIONS

@@ -140,7 +140,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-details]')
 const cardLinks=(x,s,mark)=>(state.suggestions||[]).filter(o=>o.id!==s.id&&!closed(o)&&o.title.length>=12).sort((a,b)=>b.title.length-a.title.length).reduce((h,o)=>h.includes(o.title)?h.split(/(\u0000\d+\u0001)/).map((part,i)=>i%2?part:part.split(o.title).join(mark(html`<a class="card-link" href="#card=${o.id}">${o.title}</a>`))).join(''):h,x);
 // A confirmed step that didn't go through says so in one line instead of the earlier result (step_stopped in assistant.py).
 // Handed off and with them: the card's body is what was asked; the suggestion to hand it off stays in the chat.
-const askedBody=s=>{const h=s.fleet_handoff;return h?.asked&&!h.back&&['asked','waiting for them','accepted','accepted with a change'].includes(h.stage)&&!redirect(s)?html`<div class="body clamp handoff-asked" style="--lines:2" title="${h.asked}" translate="no"><p>${h.asked_at?t('Asked {} on {}: {}',firstName(h.name),splitDay(h.asked_at),h.asked):t('Asked {}: {}',firstName(h.name),h.asked)}</p></div>`:''};
+// When it was asked: "Tue, Nov 3" (a date or a timestamp; anything else as it came)
+const askedDay=v=>{const d=new Date(String(v).length<=10?v+'T12:00':v);return isNaN(d)?String(v):localeDate(d,DL,{weekday:'short',day:'numeric',month:'short'})};
+const askedBody=s=>{const h=s.fleet_handoff;return h?.asked&&!h.back&&['asked','waiting for them','accepted','accepted with a change'].includes(h.stage)&&!redirect(s)?html`<div class="body clamp handoff-asked" style="--lines:2" title="${h.asked}" translate="no"><p>${h.asked_at?t('Asked {} on {}: {}',firstName(h.name),askedDay(h.asked_at),h.asked):t('Asked {}: {}',firstName(h.name),h.asked)}</p></div>`:''};
 // A skill from notes (skill_clusters in assistant.py) or proposed in Settings (skills.py): a new one, maybe related to one
 // you have, or an Update to one of yours: the whole skill rewritten as one, shown before and after with what changed marked.
 const skillNotesList=p=>html`<ul>${p.notes.map(n=>html`<li>${n}</li>`)}</ul>`;

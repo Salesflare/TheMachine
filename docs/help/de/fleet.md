@@ -35,7 +35,7 @@ In einer Work Fleet mit Standard beantwortet deine Machine **wer jemanden kennt*
 
 Um eine zu stoppen, stell sie unter **Teilen** auf **Nie**. Eine Regel, die als **Erst mich fragen** gespeichert ist, wirkt jetzt wie **Immer**. Solange das Teilen im Team-Graph deiner Fleet aus ist, fragen wer jemanden kennt und Meeting-Kontext weiter zuerst dich.
 
-Work Fleets mit Vorsichtig, Freunde und Familie fragen weiter zuerst dich. Warme Vorstellungen, Übergaben, geteilte Follow-ups und freie Fragen behalten ihre eigenen Regeln.
+Work Fleets mit Vorsichtig, Freunde und Familie fragen weiter zuerst dich. Warme Vorstellungen, Übergaben und freie Fragen behalten ihre eigenen Regeln.
 
 ## Erkenntnisse des Teams
 

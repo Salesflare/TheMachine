@@ -35,7 +35,7 @@ In een standaard Werk-Fleet beantwoordt je Machine zelf vragen van een teamgenoo
 
 Elk antwoord staat in het tabblad Fleet, onder **Activiteit**. Om er een te stoppen, zet je het op **Nooit** onder **Delen**. Een regel die bewaard is als **Vraag het me eerst**, werkt nu als **Altijd**. Zolang delen via de Team-Graph van je Fleet uit staat, blijven wie iemand kent en context over afspraken het je eerst vragen.
 
-Voorzichtige Werk-Fleets, Vrienden en Familie vragen het je nog steeds eerst. Warme introducties, overdrachten, gedeelde opvolging en vrije vragen houden hun eigen regels.
+Voorzichtige Werk-Fleets, Vrienden en Familie vragen het je nog steeds eerst. Warme introducties, overdrachten en vrije vragen houden hun eigen regels.
 
 ## Inzichten van het team
 
