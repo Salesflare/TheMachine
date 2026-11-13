@@ -269,6 +269,13 @@ def first_sentence(text):
     return re.split(r'(?<=[.!?])\s', text, maxsplit=1)[0][:200]
 
 
+def no_you(reason):
+    """A review's reason, as a line under the to-do shows it: never with "You" as its subject ("Explained that…", not
+    "You explained that…"). A leading "You " goes and the next word takes the capital; "You and Sam…" stays as it is."""
+    found = re.match(r'you\s+(?!and\b)(\w)(.*)', str(reason or ''), re.I | re.S)
+    return found.group(1).upper() + found.group(2) if found else reason
+
+
 def body_after_title(title, body):
     """What a to-do's body says beyond its title: '' when it only repeats the title (New to-do's own words), the rest
     when its first line or sentence is the title (Talk's title, then a note), else all of it. Case, spacing and
