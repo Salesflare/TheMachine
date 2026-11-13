@@ -62,6 +62,11 @@ SAMPLES = {
                            **{'from': 'Kai Brook <kai@studio.example>', 'to': 'desk@owner.example',
                               'cc': 'Noor Vance <noor@studio.example>, ops@studio.example', 'bcc': 'archive@owner.example',
                               'source_url': 'https://mail.google.com/mail/u/0/#all/g6'}),
+    # Outlook mail reads through the same headers: it opens in Outlook, with Outlook's mark
+    'gmail.message#outlook': ev('mail', 'g7', 'gmail.message', 'Room booking for Thursday',
+                                'Hi,\n\nThe meeting room is booked for Thursday.\n\nJo',
+                                **{'from': 'Jo Marsh <jo@office.example>', 'to': 'desk@owner.example',
+                                   'source_url': 'https://outlook.office.com/mail/inbox/id/g7'}),
     'salesflare.email': ev('crm', 'email:1', 'salesflare.email', 'Checking in on your setup',
                            'From: Sam Rivera <sam@client.example>\nTo: Dana Reyes <dana@team.example>\nTo: Mira Holt <mira@team.example>\n\n'
                            'Hi Dana,\n\nHow is the setup going?\nAnything we can help with?\n\nThanks,\nSam',
