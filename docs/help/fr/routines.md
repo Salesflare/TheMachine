@@ -33,6 +33,8 @@ Inconnu veut dire que vous ne leur avez jamais écrit, et un « Re: » ne compte
 
 Rien ne change avant votre confirmation sur la tâche. Touchez un expéditeur pour lire d’abord l’e-mail : il reste non lu et rien ne change. Depuis Tri du spam, ses images du web ne se chargent pas : l’expéditeur ne voit pas qu’il a été ouvert. Les expéditeurs déjà décidés ne reviennent pas. Un jour sans newsletters ni spam ne crée aucune tâche, et ces tâches n’envoient jamais de notification.
 
+Une fois chaque expéditeur décidé, la tâche indique qu’elle est terminée et **Marquer comme fait** y figure.
+
 **Récap du jour** choisit une fois par jour les quelques articles de vos newsletters qui valent votre temps, dans une tâche. Chacun dit en une ligne pourquoi il compte pour vous. Touchez-le pour lire l’e-mail, ou utilisez **Ouvrir dans votre messagerie**. Seulement des newsletters : jamais d’e-mails de personnes, de reçus ou d’expéditeurs dont vous vous êtes désabonné, et jamais ce que vous avez déjà lu. Quand rien ne ressort, pas de tâche.
 
 Il apprend ce qui vous intéresse à partir de ce que vous ouvrez, marquez d’une étoile ou archivez sans lire, et de **Plus comme ça** et **Moins comme ça** sur chaque article. Les sujets sur lesquels il choisit sont sur la carte de la routine sous **Plus de** et **Moins de**. Retirez-en un avec ×, ou ajoutez les vôtres. Ceux en pointillés, il les a appris lui-même. Un nouveau récap remplace celui qui est ouvert, et il n’envoie jamais de notification.

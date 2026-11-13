@@ -33,6 +33,8 @@ Desconocido quiere decir que nunca le escribiste, y un “Re:” solo cuenta com
 
 Nada cambia hasta que confirmas en la tarea. Toca un remitente para leer antes el correo: sigue sin leer y nada cambia. Desde Limpieza de spam no se cargan sus imágenes de la web, así el remitente no ve que se abrió. Los remitentes ya decididos no vuelven a salir. Un día sin newsletters ni spam no crea tarea, y estas tareas nunca envían una notificación.
 
+Cuando todos los remitentes están decididos, la tarea dice que está terminada y **Marcar como hecha** está en ella.
+
 **Resumen diario** elige una vez al día las pocas piezas de tus newsletters que valen tu tiempo, en una tarea. Cada una dice en una línea por qué te importa. Tócala para leer el correo, o usa **Abrir en tu correo**. Solo newsletters: nunca correo de personas, recibos ni remitentes de los que te diste de baja, y nunca lo que ya leíste. Cuando nada destaca, no hay tarea.
 
 Aprende lo que te importa de lo que abres, marcas con estrella o archivas sin leer, y de **Más como esto** y **Menos como esto** en cada pieza. Los temas por los que elige están en la tarjeta de la rutina bajo **Más de** y **Menos de**. Quita uno con ×, o añade los tuyos. Los de línea discontinua los aprendió por su cuenta. Un resumen nuevo reemplaza al abierto, y nunca envía una notificación.

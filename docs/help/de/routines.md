@@ -35,6 +35,8 @@ Unbekannt heißt, du hast ihnen nie geschrieben, und ein „Re:“ zählt nur in
 
 Nichts ändert sich, bevor du auf dem To-do bestätigst. Tippe auf einen Absender, um die Mail vorher zu lesen: Sie bleibt ungelesen, und nichts ändert sich. Aus Spam aufräumen laden ihre Bilder aus dem Web nicht, damit der Absender nicht sieht, dass sie geöffnet wurde. Über entschiedene Absender wirst du nicht erneut gefragt. Ein Tag ohne Newsletter oder Spam ergibt kein To-do, und diese To-dos senden nie eine Benachrichtigung.
 
+Sobald über jeden Absender entschieden ist, sagt das To-do, dass es fertig ist, und **Als erledigt markieren** steht darauf.
+
 **Tägliche Zusammenfassung** wählt einmal am Tag die wenigen Newsletter-Beiträge, die deine Zeit wert sind, in einer Aufgabe. Zu jedem steht in einer Zeile, warum er für dich wichtig ist. Tippe darauf, um die Mail zu lesen, oder nutze **In deiner Mail öffnen**. Nur Newsletter: nie Mail von Menschen, Belege oder Absender, die du abbestellt hast, und nie, was du schon gelesen hast. Sticht nichts heraus, gibt es keine Aufgabe.
 
 Sie lernt, was dich interessiert, aus dem, was du öffnest, markierst oder ungelesen archivierst, und aus **Mehr davon** und **Weniger davon** bei jedem Beitrag. Die Themen, nach denen sie wählt, stehen auf der Karte der Routine unter **Mehr zu** und **Weniger zu**. Entferne eins mit × oder füge eigene hinzu. Gestrichelte hat sie selbst gelernt. Eine neue Zusammenfassung ersetzt die offene, und sie schickt nie eine Benachrichtigung.

@@ -33,6 +33,8 @@ Onbekend wil zeggen dat je hen nooit schreef, en een “Re:” telt alleen als g
 
 Er verandert niets tot je bevestigt op de to-do. Tik op een afzender om de mail eerst te lezen: die blijft ongelezen en er verandert niets. Vanuit Spam opruimen laden de afbeeldingen van het web niet, zodat de afzender niet ziet dat de mail geopend is. Afzenders waarover je besliste, komen niet terug. Een dag zonder nieuwsbrieven of spam geeft geen to-do, en deze to-do’s sturen nooit een melding.
 
+Is over elke afzender beslist, dan zegt de to-do dat hij klaar is en staat **Markeer als gedaan** erop.
+
 **Dagelijks overzicht** kiest één keer per dag de paar stukken uit je nieuwsbrieven die je tijd waard zijn, in één to-do. Bij elk staat in één regel waarom het voor jou ertoe doet. Tik erop om de mail te lezen, of gebruik **Openen in je mail**. Alleen nieuwsbrieven: nooit mail van mensen, bonnetjes of afzenders waarvoor je je hebt uitgeschreven, en nooit wat je al gelezen hebt. Springt er niets uit, dan komt er geen to-do.
 
 Het leert wat je belangrijk vindt uit wat je opent, een ster geeft of ongelezen archiveert, en uit **Meer zoals dit** en **Minder zoals dit** bij elk stuk. De onderwerpen waarop het kiest staan op de kaart van de routine onder **Meer over** en **Minder over**. Haal er een weg met ×, of voeg je eigen toe. Gestippelde heeft het zelf geleerd. Een nieuw overzicht vervangt het open overzicht, en het stuurt nooit een melding.
