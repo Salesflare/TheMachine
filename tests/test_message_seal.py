@@ -814,7 +814,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         import ai_app
         import missed_work
         import sealed_sql_scan
-        from machine.store import conversation, voices
+        from machine.store import conversation, review_last_look, voices
         with tempfile.TemporaryDirectory() as temp:
             with assistant.Store(Path(temp) / 'events.sqlite').connect() as db:
                 make_source_tables(db)
@@ -831,6 +831,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
             'machine/app/follow_ups.py': (1, 'thread_id, channel_id, chat_id or conversation_id, picked in the line above'),
             'machine/store/conversation.py': (2, 'a bound path made from conversation.CONTEXT_KEYS'),
             'machine/store/review.py': (1, "channel_id, chat_id or conversation_id from the function's own `keys`"),
+            'machine/store/review_last_look.py': (1, 'a key of review_last_look.THREAD_KEYS'),
             'machine/store/voices.py': (1, 'the keys of voices.CONVERSATION_KEYS'),
             'missed_work.py': (1, 'a key of missed_work.THREAD_KEYS'),
         }
@@ -841,6 +842,7 @@ class NothingOutsideTheSealedFields(unittest.TestCase):
         self.assertLessEqual(set(conversation.CONTEXT_KEYS.values()), plain)
         self.assertLessEqual({key for keys in voices.CONVERSATION_KEYS.values() for key in keys}, plain)
         self.assertLessEqual({key for key, _ in missed_work.THREAD_KEYS}, plain)
+        self.assertLessEqual(set(review_last_look.THREAD_KEYS), plain)
         for file, words in (('machine/app/follow_ups.py', ('thread_id', 'channel_id', 'chat_id', 'conversation_id')),
                             ('machine/store/review.py', ('channel_id', 'chat_id', 'conversation_id'))):
             self.assertLessEqual(set(words), plain)
