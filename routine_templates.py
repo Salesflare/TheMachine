@@ -93,10 +93,9 @@ def own(origin, text, steps=None):
 
 
 def view(db, spam_needs=None):
-    """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin. Spam
-    cleanup is always listed, so the owner knows it exists; spam_needs says why it can't be added when no mail account
-    may move mail to spam ('gmail': Gmail connected read-only, the hosted broker never asks gmail.modify; 'mail': no
-    mailbox it may move spam in), and the page shows that line in place of Add."""
+    """The Templates section: [{key, name, what, added}], added when a live routine (on or paused) has its origin. Every
+    template has an action on the page: Add, or for Spam cleanup with no mail account (spam_needs 'mail') a line saying
+    so with Connect mail."""
     live = {r[0] for r in db.execute("SELECT origin FROM routines WHERE origin LIKE 'template:%' AND state IN ('on','paused')")}
     return [{'key': key, 'name': i18n.t(t['name']), 'what': i18n.t(t['what']), 'added': 'template:' + key in live,
              **({'needs': spam_needs} if key == 'spam' and spam_needs else {})}

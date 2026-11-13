@@ -618,7 +618,7 @@ const statusLine=(()=>{const line=(text,cls='')=>html`<p class="note status-line
  if(closed(s)&&expiredLine(s))return line(expiredLine(s),' outcome done');
  if(closed(s))return doneLine(s);if(s.status==='snoozed')return '';let o=null;if(s.status==='prepared'&&s.outcome)try{o=JSON.parse(s.outcome)}catch{}
  if(o?.state==='already_done')return line('Looks done already. Mark it done if that’s right.',' outcome done');
- if(cleanupSettled(s)){const n=s.cleanup.items.filter(i=>i.state==='yours').length;return line(n?t('Done, except {} to unsubscribe by hand.',n):'Finished. Mark it done if it looks right.',' outcome done')}  // rows left by hand
+ if(cleanupSettled(s)){const n=s.cleanup.items.filter(i=>i.state==='yours').length;return line(n?t(s.cleanup.kind==='spam'?'Done, except {} to mark as spam yourself.':'Done, except {} to unsubscribe by hand.',n):'Finished. Mark it done if it looks right.',' outcome done')}  // rows left by hand
  // Back by itself after waiting on someone (return_waiting): why it is here again
  if(!hint&&stillWaiting(s))return line(stillWaiting(s),' outcome');
  if(hint)return line((handled.fleet?'Done: ':'Looks handled: ')+hint,' handled');

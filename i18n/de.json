@@ -1340,6 +1340,10 @@
  "Done when: one short line (up to 140 characters), like \"Listing is live with a link to us\"": "Fertig, wenn: eine kurze Zeile (bis 140 Zeichen), etwa \"Eintrag ist live mit einem Link zu uns\"",
  "Done when: {}": "Fertig, wenn: {}",
  "Done {}": "Erledigt {}",
+ "Done, except {} to mark as spam yourself.": {
+  "one": "Erledigt, bis auf {} zum selbst als Spam Markieren.",
+  "other": "Erledigt, bis auf {} zum selbst als Spam Markieren."
+ },
  "Done, except {} to unsubscribe by hand.": {
   "one": "Erledigt, bis auf {} zum selbst Abmelden.",
   "other": "Erledigt, bis auf {} zum selbst Abmelden."
@@ -1850,8 +1854,8 @@
  "Gmail could not give the message ({})": "Gmail konnte die Nachricht nicht liefern ({})",
  "Gmail couldn’t confirm this mailbox can send as {}. Nothing was sent.": "Gmail konnte nicht bestätigen, dass dieses Postfach als {} senden darf. Nichts wurde gesendet.",
  "Gmail has no signature for this address.": "Gmail hat keine Signatur für diese Adresse.",
- "Gmail is connected read-only here, so spam can’t be moved.": "Gmail ist hier nur mit Leserechten verbunden, daher kann Spam nicht verschoben werden.",
  "Gmail is connected read-only. Sending permission needs to be enabled for this account; nothing was sent.": "Gmail ist nur mit Leserechten verbunden. Die Berechtigung zum Senden muss für dieses Konto aktiviert werden; nichts wurde gesendet.",
+ "Gmail is read-only here, so Spam gives a link to mark it in Gmail.": "Gmail ist hier nur lesbar, daher gibt Spam einen Link, um sie in Gmail zu markieren.",
  "Gmail send-as": "Gmail senden als",
  "Gmail sender identity could not be verified. Nothing was sent.": "Die Absenderidentität bei Gmail ließ sich nicht prüfen. Nichts wurde gesendet.",
  "Gmail sends as it, but not as an alias": "Gmail sendet als diese Adresse, aber nicht als Alias",
@@ -2590,6 +2594,8 @@
  "Many providers need an app password. Server settings are filled in for most.": "Viele Anbieter wollen ein App-Passwort. Die Servereinstellungen werden für die meisten ausgefüllt.",
  "Mar": "Mär",
  "Mark all as spam": "Alle als Spam markieren",
+ "Mark as spam in Gmail": "In Gmail als Spam markieren",
+ "Mark as spam yourself": "Selbst als Spam markieren",
  "Mark done": "Als erledigt markieren",
  "Mark done (D)": "Als erledigt markieren (D)",
  "Mark done only an open item": "Als erledigt markieren geht nur bei einem offenen Eintrag",
@@ -2826,8 +2832,8 @@
  "Names and promises": "Namen und Versprechen",
  "Need your admin’s approval? Send them this link.": "Brauchst du die Freigabe deines Admins? Schick ihm oder ihr diesen Link.",
  "Needs OpenAI: a ChatGPT sign-in, or an API key.": "Braucht OpenAI: eine ChatGPT-Anmeldung oder einen API-Schlüssel.",
+ "Needs a connected mail account.": "Braucht ein verbundenes Mailkonto.",
  "Needs a login": "Braucht eine Anmeldung",
- "Needs a mailbox where spam can be moved, like Outlook.": "Braucht ein Postfach, in dem Spam verschoben werden kann, etwa Outlook.",
  "Needs an answer": "Braucht eine Antwort",
  "Needs its {}": "Braucht sein {}",
  "Needs me": "Wartet auf mich",
@@ -4940,7 +4946,7 @@
  "Spaced out so they don’t look automated · done around {}": "Zeitlich verteilt, damit sie nicht automatisch wirken · fertig gegen {}",
  "Spam": "Spam",
  "Spam cleanup": "Spam aufräumen",
- "Spam cleanup needs a mail account The Machine can move spam in.": "Spam aufräumen braucht ein Mailkonto, in dem The Machine Spam verschieben darf.",
+ "Spam cleanup needs a connected mail account.": "Spam aufräumen braucht ein verbundenes Mailkonto.",
  "Spam moves it to your spam folder.": "Spam verschiebt sie in deinen Spam-Ordner.",
  "Specialty": "Fachgebiet",
  "Specialty: {}": "Fachgebiet: {}",

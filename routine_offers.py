@@ -8,8 +8,7 @@ over the past WEEK. Quality or nothing: below the bar there is no offer, and an 
 
 Each template is offered at most once: Turn it on adds the template's routine as Templates' Add does (it runs once now;
 nothing is sent, unsubscribed or moved until the owner confirms on its to-do), No thanks never offers it again, and a
-template the owner ever had (on, paused or stopped) is never offered. Spam cleanup only where a mail account may move
-mail to spam (the caller passes only those accounts). One offer shows at a time, and the "Make this a recurring to-do?"
+template the owner ever had (on, paused or stopped) is never offered. One offer shows at a time, and the "Make this a recurring to-do?"
 offer (recurring.py) goes first.
 
 Table (this module owns it): routine_offers, one row per template: its count, open, added or declined."""
@@ -48,7 +47,7 @@ def worth(key, counts):
 
 def count(db, accounts, mark_accounts, now):
     """This week's counts: newsletters as (mails, senders) in the owner's mail accounts, and the owner's own spam marks in
-    the accounts The Machine may move spam in."""
+    the accounts Spam cleanup reads (mark_accounts)."""
     import mail_cleanup  # its tables and tests; imported here so the dashboard's status never needs it
     mail_cleanup.ensure(db)
     since = (now - WEEK).isoformat()

@@ -27,7 +27,7 @@ Bonnetjes, bestellingen en betalingsberichten blijven erbuiten. Mail die via een
 
 **Spam opruimen** maakt één to-do per gebied met mail van onbekende afzenders die op spam lijkt, elk met **Spam** of **Geen spam**. Outlook verplaatst spam naar Ongewenste e-mail en Gmail markeert het als spam. Het kijkt elk uur, zodat spam er meestal al staat voor jij eraan toekomt. Nieuwe spam komt op dezelfde to-do zolang die open staat.
 
-Het werkt alleen met mail die The Machine mag verplaatsen. Gmail met alleen leesrechten, zoals op een gehoste Machine, kan het niet: het sjabloon zegt dat in plaats van **Toevoegen**.
+Gmail met alleen leesrechten, zoals op een gehoste Machine, kan geen mail naar spam verplaatsen. Daar geeft **Spam** een link om het in Gmail te markeren, en The Machine onthoudt de afzender als spam. Zonder gekoppeld mailaccount toont het sjabloon **Mail koppelen** in plaats van **Toevoegen**.
 
 Onbekend wil zeggen dat je hen nooit schreef, en een “Re:” telt alleen als gesprek in een draad waarin jij schreef. Komt mail van een afzender die je als spam markeerde, op de to-do of in je mailbox, toch weer door, dan staat die op de volgende to-do als **Eerder als spam gemarkeerd**. Wat je zelf naar spam verplaatste, helpt ook om gelijkaardige mail te herkennen.
 

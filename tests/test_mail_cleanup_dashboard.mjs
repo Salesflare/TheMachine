@@ -8,7 +8,8 @@ const {chromium}=await import('./browser.mjs');
 
 // Routine templates (routine_templates.py, mail_cleanup.py): under Templates on the Routines page, Add turns one on and it
 // leaves the list. Its to-do has a row per newsletter with Keep or Unsubscribe; nothing is sent until the one confirm, which
-// names how many go, and then each row says how it went. A cleanup to-do has no Do it, and no row that only opens Gmail.
+// names how many go, and then each row says how it went. A cleanup to-do has no Do it. Spam in read-only Gmail links to
+// the mail in Gmail after the confirm, for the owner to mark there.
 //   SHOTS=<folder> also saves each step at 390 and 1440, light and dark.
 const SHOTS=process.env.SHOTS;if(SHOTS)await mkdir(SHOTS,{recursive:true});
 const dashboard=await dashboardPage();
@@ -32,6 +33,11 @@ const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope
  cleanup:{kind:'spam',items:[
   {n:1,from:'Prize Desk',address:'win@prize.example',title:'You have been selected',event:21,why:'Prize claim from a sender never seen',count:1,state:'open',plan:'junk'},
   {n:2,from:'Crypto Gains',address:'x@gains.example',title:'Double your money',why:'Investment pitch from an unknown sender',count:1,state:'open',plan:'junk'}]}});
+// Spam in Gmail connected read-only (in_mail): Spam is the owner's own step, a link to the mail in Gmail (mail_cleanup.mail_link)
+const GMAIL='https://mail.google.com/mail/u/?authuser=owner%40example.com#all/18c0ffee00000031';
+const readOnly=()=>({id:'cl3',title:'1 email looks like spam',status:'pending',scope:'personal',created_at:now,event_ids:[3],
+ body:'Pick Spam or Not spam for each one, then confirm. Nothing changes before that.',
+ cleanup:{kind:'spam',items:[{n:0,from:'Lead Lists',address:'sales@leads.example',title:'Verified leads',why:'Cold sales pitch',count:1,state:'open',plan:'in_mail'}]}});
 let templates,cards;
 // the mails as the viewer gets them (api/originals); a row without event has no kept mail and no link
 const ORIGINALS={11:{kind:'email',event_id:11,from:'Brightpath Weekly <news@brightpath.example>',to:'owner@example.com',occurred_at:now,title:'This week in gardening',body:'Tomatoes, at last.'},
@@ -42,7 +48,7 @@ const ORIGINALS={11:{kind:'email',event_id:11,from:'Brightpath Weekly <news@brig
 const remote=n=>`<style>@font-face{font-family:t;src:url(https://pixel.example/${n}.woff)}p{font-family:t}</style>`+
  `<div style="background:url(https://pixel.example/${n}-bg.png)"><img src="https://pixel.example/${n}.gif" width="1" height="1">`;
 const HTML={11:remote('news')+'<p>Tomatoes, at last.</p></div>',15:'<p>New shades this week.</p>',21:remote('spam')+'<p>Claim your prize today.</p></div>'};
-const reset=()=>{templates=TEMPLATES();cards=[news(),spam()];posts.length=0};reset();
+const reset=()=>{templates=TEMPLATES();cards=[news(),spam(),readOnly()];posts.length=0};reset();
 const state=()=>({suggestions:cards,promises:[],suggestion_counts:{},decisions:[],analyses:[],deliveries:[],review_health:{},review_runs:[],review_live:{runs:[]},connectors:[],fleet:{on:true,fleets:[]},
  locale:{locale:'en-US',region:'US',language:'en',language_set:true,clock:'auto',hour12:true,auto_hour12:true,date_locale:'en-US',languages:{en:'English'},saveable:true}});
 const routines=()=>JSON.stringify({routines:[],suggested:[],trying:[],templates});
@@ -56,7 +62,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_template'){templates=templates.map(x=>x.key===b.args.key?{...x,added:true}:x);res.end(routines());return}
   if(b.action==='routine_cleanup'){const c=cards.find(x=>x.id===b.args.suggestion_id);
-   c.cleanup.items=c.cleanup.items.map(i=>{const p=b.args.picks[i.n];return p==='keep'?{...i,state:'kept'}:p!=='go'?i:i.plan==='page'?{...i,...PAGES[i.n]}:{...i,state:'done',how:i.plan}});
+   c.cleanup.items=c.cleanup.items.map(i=>{const p=b.args.picks[i.n];return p==='keep'?{...i,state:'kept'}:p!=='go'?i:i.plan==='page'?{...i,...PAGES[i.n]}:i.plan==='in_mail'?{...i,state:'yours',how:'in_mail',link:GMAIL}:{...i,state:'done',how:i.plan}});
    res.end('{"ok":true}');return}}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -142,6 +148,18 @@ try{
   await sp.locator('[data-cl-n="1"][data-cl-to="go"]').click();await sp.locator('[data-cl-n="2"][data-cl-to="go"]').click();
   assert.equal(await text(sp.locator('[data-cl-go]')),'Mark 2 as spam');
   await shot('spam-todo');
+  // read-only Gmail: the line says what Spam does there; after the confirm, the row links to the mail in Gmail
+  const ro=page.locator('#task-cl3');await ro.scrollIntoViewIfNeeded();
+  assert.equal(await text(ro.locator('.cl-fine')),'Gmail is read-only here, so Spam gives a link to mark it in Gmail.');
+  await ro.locator('[data-cl-n="0"][data-cl-to="go"]').click();
+  await shot('spam-read-only-todo');
+  await ro.locator('[data-cl-go]').click();
+  const mark=ro.locator('.cl-end a');await mark.waitFor();
+  assert.equal(await text(mark),'Mark as spam in Gmail ↗');
+  assert.equal(await mark.getAttribute('href'),GMAIL);
+  assert.deepEqual(posts.filter(p=>p.suggestion_id==='cl3'),[{action:'routine_cleanup',suggestion_id:'cl3',picks:{0:'go'}}]);
+  assert.match(await text(ro),/Done, except 1 to mark as spam yourself\./);
+  await shot('spam-read-only-done');
   await context.close()}
  assert.deepEqual(errors,[]);
  console.log('mail cleanup dashboard ok');
