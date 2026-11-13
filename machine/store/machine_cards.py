@@ -6,12 +6,14 @@ import datetime as dt
 import hashlib
 import json
 
+import ms_graph
 import parked_fixes
 from machine import system_logs
 from timeutil import now
 
 # A sign-in from before a newer feature (machine/app/reconnect_asks.py): its to-do's signal, one per account and ask
 RECONNECT_KIND = 'machine.reconnect_ask'
+RECONNECT_SOURCES = {'microsoft': 'outlook'}  # a sign-in's source under + Add, which a self-hosted Machine's Reconnect redoes
 
 
 def reconnect_source(account, ask):
@@ -19,14 +21,24 @@ def reconnect_source(account, ask):
 
 
 def reconnect_lead(db, suggestion_id):
-    """{provider, email} of an open reconnect to-do, which its Reconnect opens the sign-in of, else None."""
-    row = db.execute("SELECT e.metadata FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
+    """{provider, email, account, source} of an open reconnect to-do, which its Reconnect opens the sign-in of, else
+    None. A hosted Machine's dashboard opens `provider`'s sign-in under + Add; a self-hosted one (no account page) signs
+    in its `source` again, the way its Connections card's Reconnect does."""
+    row = db.execute("SELECT e.metadata,e.account_id FROM suggestions s JOIN events e ON e.id=json_extract(s.event_ids,'$[0]') "
                      "WHERE s.id=? AND s.origin='machine' AND e.kind=?", (suggestion_id, RECONNECT_KIND)).fetchone()
     try:
         meta = json.loads(row['metadata'] or '{}') if row else {}
     except ValueError:
         return None
-    return {'provider': meta['provider'], 'email': meta.get('email') or ''} if isinstance(meta, dict) and meta.get('provider') else None
+    if not isinstance(meta, dict) or not meta.get('provider'):
+        return None
+    return {'provider': meta['provider'], 'email': meta.get('email') or '', 'account': row['account_id'] or '',
+            'source': RECONNECT_SOURCES.get(meta['provider'], meta['provider'])}
+
+
+def reconnect_reword(db, suggestion_id, title, body):
+    """An open reconnect to-do's words, made again to fit what reconnecting brings now (reconnect_asks.reword)."""
+    db.execute("UPDATE suggestions SET title=?,body=? WHERE id=? AND status IN ('pending','snoozed')", (title[:90], body[:699], suggestion_id))
 
 
 def reconnected(db, account, ask, at):
@@ -145,7 +157,10 @@ class MachineCardsStore:
             if card.get('origin') == 'machine' and card.get('status') in ('pending', 'snoozed'):
                 lead = reconnect_lead(db, card['id'])
                 if lead:
-                    card['reconnect'] = lead
+                    # personal: an Outlook.com account, which has no admin: its sign-in step shows no admin's approval link
+                    accounts = getattr(self, 'accounts', None) or (getattr(self, 'config', None) or {}).get('accounts') or []
+                    account = next((a for a in accounts if isinstance(a, dict) and a.get('id') == lead['account']), None)
+                    card['reconnect'] = {**lead, 'personal': bool(account and lead['provider'] == 'microsoft' and ms_graph.personal(account))}
 
     def machine_fix(self, job):
         """Do it on a to-do from the computer's logs (its preparation starting from the owner's Do it): runs its one
