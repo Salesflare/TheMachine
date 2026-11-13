@@ -188,10 +188,14 @@ dialog::backdrop{background:#15171bb3;backdrop-filter:blur(3px)}
 .snooze-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
 .snooze-heading h2{font-size:1.05rem}
 .snooze-heading button{padding:2px 10px;font-size:1.3rem;line-height:1.3;background:transparent;border-color:transparent;color:var(--muted)}
-.snooze-presets{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.snooze-presets button{padding:12px 8px;background:var(--sunken);border-color:var(--border)}
-.snooze-presets button:hover{border-color:var(--lavender)}
-#snooze-custom{width:100%;margin-top:8px;background:transparent}
+/* Snooze is a compact menu like a to-do's …: its title, then one row per time, Choose date last and alike (it opens
+   the month in place). On a phone it is a bottom sheet like the … (shell-sheets.js). */
+#snooze-dialog{width:300px;padding:14px 6px 6px}
+#snooze-dialog .snooze-heading{margin:0 4px 6px;padding-left:8px}
+#snooze-quick,.snooze-presets{display:flex;flex-direction:column;gap:1px}
+#snooze-quick button{width:100%;min-height:0;margin:0;padding:8px 12px;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--text);font:500 .92rem/1.35 var(--sans);text-align:left}
+#snooze-quick button:hover,#snooze-quick button:focus-visible{background:var(--tile)}
+#snooze-calendar,#snooze-error{padding:0 8px 6px}
 .snooze-time-row{display:flex;align-items:center;gap:12px;margin:12px 0 4px}
 .snooze-time-row input{width:auto;flex:1;min-width:0;margin:0;background:var(--sunken)}
 #snooze-error:empty{display:none}

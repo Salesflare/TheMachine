@@ -5,7 +5,8 @@
 // so its buttons sit at the bottom. Send: the message grows into the room there is and scrolls inside itself; the ×
 // closes, so Cancel goes when there is a Send; the editor is the message, so no Message label over it (screen readers
 // still read it). Help: the answers fill the screen, the question box at the bottom. The quick add composer (#new-card)
-// stays a sheet on the keyboard and the palette stays under the top bar. Two :not(#…) lift these over each dialog's own
+// stays a sheet on the keyboard and the palette stays under the top bar. Snooze is a short menu, so it is a bottom sheet
+// as tall as its rows, like a to-do's … (a tap on the dimmed page closes it). Two :not(#…) lift these over each dialog's own
 // #id rules. While one is open the page keeps no scrollbar gutter (html's stable one), so the sheet is the full width
 // where scrollbars take room (desktop browsers, Android with a mouse). Its own style sheet, after the page's (dashboard.html stays small enough to scan).
 document.head.append(Object.assign(document.createElement('style'),{id:'phone-sheets',textContent:`@media(max-width:560px){
@@ -35,4 +36,10 @@ document.head.append(Object.assign(document.createElement('style'),{id:'phone-sh
   #help-panel:not(#_) #help-ask-pane:not([hidden]){flex:1 1 0;min-height:0;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   #help-panel:not(#_) .help-log{flex:1 1 0;min-height:0;max-height:none;overflow:auto}
   #help-panel:not(#_) #help-bug-pane:not([hidden]),#help-panel:not(#_) #bug-form{display:flex;flex-direction:column;flex:1 0 auto}
+  #snooze-dialog:not(#_):not(#_){inset:auto 0 0;height:auto;max-height:min(85dvh,var(--vv-h,100dvh));padding:24px 10px calc(14px + env(safe-area-inset-bottom));border:solid var(--border);border-width:1px 0 0;border-radius:20px 20px 0 0;background:var(--surface);box-shadow:0 -10px 40px #0006;scroll-padding:0}
+  #snooze-dialog:not(#_):not(#_)::backdrop{background:#0009;backdrop-filter:none}
+  #snooze-dialog:not(#_):not(#_)::before{content:'';position:absolute;top:9px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--border-strong,var(--border))}
+  #snooze-dialog:not(#_):not(#_) .snooze-heading{position:static;margin:0 0 4px;padding:0 0 0 14px;background:none;box-shadow:none}
+  #snooze-dialog:not(#_):not(#_):not(#_) #snooze-calendar>.snooze-footer{position:static;margin:14px 0 0;padding:0;background:none;box-shadow:none}
+  #snooze-dialog:not(#_):not(#_) #snooze-quick button{min-height:48px;padding:12px 14px;font-size:1rem}
 }`}));

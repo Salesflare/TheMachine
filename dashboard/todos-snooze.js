@@ -1,5 +1,5 @@
 function renderMonth(){const y=snoozeMonth.getFullYear(),m=snoozeMonth.getMonth(),today=localDay(new Date()),start=(new Date(y,m,1).getDay()+6)%7,count=new Date(y,m+1,0).getDate();$('#snooze-month').textContent=localeDate(snoozeMonth,DL,{month:'long',year:'numeric'});setHTML($('#snooze-days'),html`${['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>html`<span>${d}</span>`)}${Array.from({length:start},()=>html`<span aria-hidden="true"></span>`)}${Array.from({length:count},(_,i)=>{const d=new Date(y,m,i+1,12),value=localDay(d);return html`<button type="button" data-day="${value}" aria-label="${localeDate(d,DL,{weekday:'long',day:'numeric',month:'long',year:'numeric'})}" aria-pressed="${value===snoozeDay}" class="${value===today?'today':''}" ${value<today?html`disabled`:''}>${i+1}</button>`})}`);const earliest=new Date();$('#month-prev').disabled=y===earliest.getFullYear()&&m===earliest.getMonth();}
-function snoozeStep(custom){$('#snooze-quick').hidden=custom;$('#snooze-calendar').hidden=!custom;$('#snooze-title').textContent=custom?'Choose date':'Remind me later';$('#snooze-error').textContent=''}
+function snoozeStep(custom){$('#snooze-quick').hidden=custom;$('#snooze-calendar').hidden=!custom;$('#snooze-error').textContent=''}
 function openSnooze(id,custom=false){snoozeId=id;const item=state.suggestions.find(s=>s.id===id);if(!item||closed(item))return;if(item.snooze_choices)setHTML($('.snooze-presets'),html`${item.snooze_choices.map(([o,t])=>html`<button type="button" data-snooze="${o}">${t}</button>`)}`);const due=new Date(item.snoozed_until||Date.now()+86400000);snoozeDay=localDay(due);snoozeMonth=new Date(due.getFullYear(),due.getMonth(),1);$('#snooze-time').value=state.hours?.morning||'09:00';$('#snooze-zone').textContent=t('Your time zone: {}',Intl.DateTimeFormat().resolvedOptions().timeZone);$('#snooze-error').textContent='';renderMonth();snoozeStep(custom);$('#snooze-dialog').showModal()}
 // How a snooze comes back, said honestly: the server's channels (state.reminders: Telegram, devices with notifications)
 // plus this browser's own subscription. With neither it waits here, and this device is offered notifications when it
@@ -23,11 +23,12 @@ async function saveSnooze(option){try{let args={suggestion_id:snoozeId,choice:'s
  if(atOnceOK(suggestion_id)){$('#snooze-dialog').close();try{await decideAtOnce(suggestion_id,rest,said)}catch(e){errCaught(e);toast(e.message,true)}return}
  const done=await decideOrWait(suggestion_id,[rest],'snooze');$('#snooze-dialog').close();if(done?.waiting)return;const s=state.suggestions.find(x=>x.id===suggestion_id);
  if(s){Object.assign(s,{status:'snoozed',snoozed_until:done?.snoozed_until||args.snoozed_until});localEdits++}said(done);await refresh()}catch(e){errCaught(e);$('#snooze-error').textContent=e.message}}
-$('#snooze-dialog').onclick=e=>{if(e.target.dataset.snooze)saveSnooze(e.target.dataset.snooze);if(e.target.dataset.day){snoozeDay=e.target.dataset.day;renderMonth()}};
+// A tap beside it (on the dimmed page) closes it, as it does the …; the sheet's own padding doesn't
+$('#snooze-dialog').onclick=e=>{const d=e.currentTarget,r=d.getBoundingClientRect();if(e.target===d&&(e.clientY<r.top||e.clientY>r.bottom||e.clientX<r.left||e.clientX>r.right)){d.close();return}if(e.target.dataset.snooze)saveSnooze(e.target.dataset.snooze);if(e.target.dataset.day){snoozeDay=e.target.dataset.day;renderMonth()}};
 $('#month-prev').onclick=()=>{snoozeMonth=new Date(snoozeMonth.getFullYear(),snoozeMonth.getMonth()-1,1);renderMonth()};
 $('#month-next').onclick=()=>{snoozeMonth=new Date(snoozeMonth.getFullYear(),snoozeMonth.getMonth()+1,1);renderMonth()};
-$('#snooze-custom').onclick=()=>snoozeStep(true);
-$('#snooze-back').onclick=()=>snoozeStep(false);
+$('#snooze-custom').onclick=()=>{snoozeStep(true);$('#snooze-days [aria-pressed="true"]')?.focus()};
+$('#snooze-back').onclick=()=>{snoozeStep(false);$('#snooze-custom').focus()};
 $('#snooze-save').onclick=()=>saveSnooze();
 // taglines:start  Each tagline names the sources it is about (any of them); no sources means it fits every install.
 // An optional third item limits when it shows: {days:[1]} is Monday only (1 Monday ... 7 Sunday, browser local time).

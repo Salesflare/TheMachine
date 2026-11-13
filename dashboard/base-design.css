@@ -208,8 +208,6 @@ summary:hover{color:var(--text)}
 dialog,[data-theme="light"] dialog{border:0;border-radius:var(--r-xl);background:var(--surface-2);box-shadow:var(--shadow-pop);padding:var(--sp-5)}
 dialog::backdrop,[data-theme="light"] dialog::backdrop{background:color-mix(in srgb,var(--c-bg) 55%,transparent);backdrop-filter:blur(2px)}
 dialog h2,.snooze-heading h2{font:var(--fw-heading) var(--fs-xl)/var(--lh-tight) var(--serif)}
-.snooze-presets button{background:var(--sunken);border-color:transparent}
-.snooze-presets button:hover{border-color:var(--border-strong)}
 .month-grid>button[aria-pressed="true"]{background:var(--mint);border-color:var(--mint);color:var(--charcoal);font-weight:var(--fw-strong)}
 .toast,[data-theme="light"] .toast{border-radius:var(--r-md);box-shadow:var(--shadow-pop);font-size:var(--fs-sm)}
 .alpha{font:var(--fw-strong) 10.5px/1.6 var(--sans);letter-spacing:.04em;background:color-mix(in srgb,var(--amber) 16%,transparent)}
