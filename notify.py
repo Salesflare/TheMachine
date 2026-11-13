@@ -483,6 +483,36 @@ def digest_shown(db, kind):
             'sections': [s for s in kept.get('sections') or () if isinstance(s, dict)], 'at': row[1]}
 
 
+# The Digest row at the top of To-dos, set aside with its ×: kept here (UTC ISO), so every device of the owner's hides it
+DIGEST_ROW_HIDDEN = '_digest_row_hidden'
+
+
+def digest_row_hide(db, at):
+    """The owner set the To-dos Digest row aside at `at` (UTC ISO): hidden until there is a new digest (digest_row_hidden)."""
+    ensure(db)
+    _stamp(db, DIGEST_ROW_HIDDEN, at)
+
+
+def digest_row_hidden(db, current, tz):
+    """Whether the To-dos Digest row stays set aside at `current`: it was hidden on the same local day and no morning or
+    evening digest went out since. The next digest sent, or the next day, brings it back."""
+    ensure(db)
+    row = db.execute('SELECT value FROM notify_prefs WHERE key=?', (DIGEST_ROW_HIDDEN,)).fetchone()
+    try:
+        hidden = dt.datetime.fromisoformat(row[0]) if row else None
+    except (TypeError, ValueError):
+        hidden = None
+    if not hidden or hidden.tzinfo is None or hidden.astimezone(tz).date() != current.astimezone(tz).date():
+        return False
+    for (at,) in db.execute("SELECT created_at FROM notify_digests WHERE status='sent' ORDER BY created_at DESC LIMIT 4"):
+        try:
+            if dt.datetime.fromisoformat(at) > hidden:
+                return False
+        except (TypeError, ValueError):
+            continue
+    return True
+
+
 def drop_covered(db, refs, before):
     """The morning digest email went and listed these to-dos (refs, 'suggestion:<id>'): the waiting-for-you email lines
     held for them before it (created up to `before`, epoch seconds) are dropped, so the next hourly email doesn't repeat

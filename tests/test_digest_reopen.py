@@ -94,6 +94,43 @@ class Reopen(unittest.TestCase):
             self.app.action('digest_sent', {'kind': 'evening'}, owner_dashboard=False)
         self.assertEqual(self.shown('weekly'), {})
 
+    def test_the_digest_row_hides_until_the_next_digest_or_day(self):
+        # To-dos' Digest row: its × keeps it hidden on the Machine (every device), until a digest goes out or the next day
+        at = lambda d, h, m=0: a.dt.datetime(2026, 11, d, h, m, tzinfo=BXL).astimezone(UTC)
+
+        def hidden(current):
+            with self.store.connect() as db:
+                return notify.digest_row_hidden(db, current, BXL)
+        self.assertFalse(hidden(at(13, 7)))  # never hidden
+        with self.assertRaises(ValueError):
+            self.app.action('digest_row_hide', {}, owner_dashboard=False)
+        self.assertIn('digest_row_hide', a.DASHBOARD_ACTIONS)
+        self.assertIn('digest_row_hide', a.OWNER_ACTIONS)  # never the CLI the agent runs
+        with self.store.connect() as db:
+            notify.digest_row_hide(db, at(13, 6, 45).isoformat())
+        self.assertTrue(hidden(at(13, 7)))
+        self.assertTrue(hidden(at(13, 23, 59)))
+        self.assertFalse(hidden(at(14, 0, 1)))  # the next day: back
+        with self.store.connect() as db:  # a digest that didn't go out changes nothing
+            notify.digest_claim(db, 'evening:2026-11-13', at(13, 17, 45).isoformat())
+        with self.store.connect() as db:
+            notify.digest_done(db, 'evening:2026-11-13', 'empty', [])
+        self.assertTrue(hidden(at(13, 18)))
+        with self.store.connect() as db:  # one sent before it was hidden neither
+            notify.digest_claim(db, '2026-11-13', at(13, 6, 30).isoformat())
+        with self.store.connect() as db:
+            notify.digest_done(db, '2026-11-13', 'sent', ['push'], notify.compose([], [{'title': 'Pay the invoice'}], []))
+        self.assertTrue(hidden(at(13, 18)))
+        with self.store.connect() as db:  # the evening digest sent after: back for it
+            db.execute("UPDATE notify_digests SET status='sent',created_at=? WHERE day='evening:2026-11-13'", (at(13, 17, 46).isoformat(),))
+        self.assertFalse(hidden(at(13, 18)))
+        # the action stamps now and the status says so
+        with self.store.connect() as db:
+            db.execute('DELETE FROM notify_digests')
+        self.assertEqual(self.app.action('digest_row_hide', {}, owner_dashboard=True), {'digest_row_hidden': True})
+        with patch_everywhere(a, 'local_tz', return_value=BXL):
+            self.assertTrue(self.app.digest_row_view())
+
 
 if __name__ == '__main__':
     unittest.main()

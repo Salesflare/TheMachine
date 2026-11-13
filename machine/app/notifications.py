@@ -56,7 +56,21 @@ class NotificationsApp:
                'push_test': 'push_test_action', 'app_push_register': 'app_push_action_handler',
                'app_push_unregister': 'app_push_action_handler', 'push_subscribe': 'push_subscribe_action',
                'push_unsubscribe': 'push_subscribe_action', 'area_digest': 'area_digest_action',
-               'digest_sent': 'digest_sent_action'}
+               'digest_sent': 'digest_sent_action', 'digest_row_hide': 'digest_row_hide_action'}
+
+    def digest_row_hide_action(self, name, args, owner_dashboard=False):
+        # To-dos, the Digest row's ×: hidden on every device until the next digest goes out or the next day
+        # (notify.digest_row_hidden, the status's digest_row_hidden). The owner's own dashboard only
+        if not owner_dashboard:
+            raise ValueError('The digest is read in the dashboard')
+        with self.store.connect() as db:
+            notify.digest_row_hide(db, now())
+        return {'digest_row_hidden': True}
+
+    def digest_row_view(self):
+        """Whether To-dos' Digest row stays set aside (notify.digest_row_hidden): the status's digest_row_hidden."""
+        with self.store.connect() as db:
+            return notify.digest_row_hidden(db, dt.datetime.fromisoformat(now()), local_tz())
 
     def digest_sent_action(self, name, args, owner_dashboard=False):
         # A tapped digest notification, or its email's link: the last morning or evening digest as it went
