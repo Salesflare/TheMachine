@@ -15,12 +15,15 @@ const dashboard=await dashboardPage();
 const now=new Date().toISOString(),posts=[];
 const TEMPLATES=()=>[{key:'newsletters',name:'Newsletter cleanup',what:'Every morning, one to-do with the past day’s newsletters. Keep or unsubscribe each one.',added:false},
  {key:'spam',name:'Spam cleanup',what:'Every morning, one to-do with spam that got through. Mark each one as spam or not.',added:false}];
-const news=()=>({id:'cl1',title:'3 newsletters: keep or unsubscribe?',status:'pending',scope:'work',created_at:now,event_ids:[1],
+const news=()=>({id:'cl1',title:'4 newsletters: keep or unsubscribe?',status:'pending',scope:'work',created_at:now,event_ids:[1],
  body:'Pick Keep or Unsubscribe for each one, then confirm. Nothing changes before that.\n\n- Brightpath Weekly: This week in gardening',
  cleanup:{kind:'newsletters',items:[
   {n:1,from:'Brightpath Weekly',address:'news@brightpath.example',title:'This week in gardening',event:11,count:3,state:'open',plan:'one_click'},
   {n:2,from:'Fieldkit Team',address:'hello@fieldkit.example',title:'New tents are in',count:1,state:'open',plan:'mailto'},
-  {n:3,from:'Parcelly Deals',address:'deals@parcelly.example',title:'48 hours only',count:1,state:'open',plan:'page'}]}});
+  {n:3,from:'Parcelly Deals',address:'deals@parcelly.example',title:'48 hours only',count:1,state:'open',plan:'page'},
+  {n:4,from:'Lumen Labels',address:'news@lumen.example',title:'Custom labels, cut to shape',count:1,state:'open',plan:'page'}]}});
+// what the Machine's browser made of each unsubscribe page (unsubscribe_page.py): Parcelly's needs a login, Lumen's it finished
+const PAGES={3:{state:'yours',how:'login',link:'https://parcelly.example/unsubscribe'},4:{state:'done',how:'page'}};
 const spam=()=>({id:'cl2',title:'2 emails look like spam',status:'pending',scope:'work',created_at:now,event_ids:[2],
  body:'Pick Spam or Not spam for each one, then confirm. Nothing changes before that.',
  cleanup:{kind:'spam',items:[
@@ -49,7 +52,7 @@ const server=createServer(async(req,res)=>{let body='';for await(const c of req)
  if(req.method==='POST'&&body){const b=JSON.parse(body);posts.push({action:b.action,...b.args});
   if(b.action==='routine_template'){templates=templates.map(x=>x.key===b.args.key?{...x,added:true}:x);res.end(routines());return}
   if(b.action==='routine_cleanup'){const c=cards.find(x=>x.id===b.args.suggestion_id);
-   c.cleanup.items=c.cleanup.items.map(i=>{const p=b.args.picks[i.n];return p==='keep'?{...i,state:'kept'}:p!=='go'?i:i.plan==='page'?{...i,state:'yours',link:'https://parcelly.example/unsubscribe'}:{...i,state:'done',how:i.plan}});
+   c.cleanup.items=c.cleanup.items.map(i=>{const p=b.args.picks[i.n];return p==='keep'?{...i,state:'kept'}:p!=='go'?i:i.plan==='page'?{...i,...PAGES[i.n]}:{...i,state:'done',how:i.plan}});
    res.end('{"ok":true}');return}}
  res.end('{}')});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -74,7 +77,7 @@ try{
   // The newsletter to-do: a row each, no Do it, confirm off until a pick
   await page.goto('http://127.0.0.1:'+server.address().port+'/#todos');
   const card=page.locator('#task-cl1');await card.waitFor();
-  assert.equal(await card.locator('.cl-row').count(),3);
+  assert.equal(await card.locator('.cl-row').count(),4);
   assert.equal(await text(card.locator('.cl-row').first().locator('.cl-what')),'Brightpath Weekly ×3 This week in gardening');
   assert.equal(await card.getByRole('button',{name:'Do it',exact:true}).count(),0,'a cleanup to-do has no Do it');
   assert.equal(await card.locator('[data-cl-open]').count(),1,'only a row with a kept mail opens');
@@ -87,16 +90,19 @@ try{
   await card.locator('[data-cl-n="1"][data-cl-to="go"]').click();
   await card.locator('[data-cl-n="2"][data-cl-to="keep"]').click();
   await card.locator('[data-cl-n="3"][data-cl-to="go"]').click();
-  assert.equal(await text(card.locator('[data-cl-go]')),'Unsubscribe from 2');
+  await card.locator('[data-cl-n="4"][data-cl-to="go"]').click();
+  assert.equal(await text(card.locator('[data-cl-go]')),'Unsubscribe from 3');
   assert.equal(await card.locator('[data-cl-all]').count(),0,'every row picked: no Unsubscribe from all');
   assert.equal(await card.locator('[data-cl-n="1"][data-cl-to="go"]').getAttribute('aria-pressed'),'true');
   assert.equal(posts.filter(p=>p.action==='routine_cleanup').length,0,'nothing goes before the confirm');
   await card.scrollIntoViewIfNeeded();await shot('newsletters-todo');
   await card.locator('[data-cl-go]').click();
   await card.locator('.cl-end.ok').first().waitFor();
-  assert.deepEqual(posts.filter(p=>p.action==='routine_cleanup'),[{action:'routine_cleanup',suggestion_id:'cl1',picks:{1:'go',2:'keep',3:'go'}}]);
-  assert.deepEqual(await card.locator('.cl-end').allInnerTexts(),['Unsubscribed','Kept','Open unsubscribe page ↗']);
-  assert.equal(await card.locator('a.cl-end').getAttribute('href'),'https://parcelly.example/unsubscribe');
+  assert.deepEqual(posts.filter(p=>p.action==='routine_cleanup'),[{action:'routine_cleanup',suggestion_id:'cl1',picks:{1:'go',2:'keep',3:'go',4:'go'}}]);
+  // a page the Machine finished says Unsubscribed like the rest; one it couldn't says why, with its link
+  assert.deepEqual((await card.locator('.cl-end').allInnerTexts()).map(s=>s.replace(/\s+/g,' ').trim()),
+   ['Unsubscribed','Kept','Needs a login Open unsubscribe page ↗','Unsubscribed']);
+  assert.equal(await card.locator('.cl-end a').getAttribute('href'),'https://parcelly.example/unsubscribe');
   await shot('newsletters-done');
   // Spam (only where mail can move to spam): Mark all as spam picks every row
   const sp=page.locator('#task-cl2');await sp.scrollIntoViewIfNeeded();
