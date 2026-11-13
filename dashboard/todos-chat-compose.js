@@ -70,16 +70,20 @@ function paintChat(){const log=$('#chat-log'),s=chatOpen();if(!log||!s)return;ch
  chatSendState();chatFades();chatPreviews();cmPaint('chat')}
 // The chat this device kept for the card: shown at once while the live one loads (that one replaces it in place)
 async function chatKept(id){const hit=await localCache.read('chat:'+id);if(!hit||id!==chatId||chat&&!(chat.unavailable&&!chat.items?.length))return;chat={...hit.value,cursor:null,active:false};paintChat();requestAnimationFrame(chatScrollStart)}
+// Reads that failed in a row on the open chat: each waits twice as long as the one before (4 s up to a minute), so a
+// chat the Machine can't read isn't asked again every few seconds
+let chatFails=0;
+const chatWait=()=>chatFails?Math.min(60000,4000*2**(chatFails-1)):chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000;
 async function chatPoll(){clearTimeout(chatTimer);const id=chatId;if(!id)return;
  if(!document.hidden&&!$('#inbox').hidden)try{const r=await request('api/action',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify({action:'card_chat',args:{suggestion_id:id,...(chat?.cursor&&chat.items?{cursor:chat.cursor}:{})}})});
-  if(id!==chatId)return;const was=chat?.active,first=!chat;
+  if(id!==chatId)return;chatFails=0;const was=chat?.active,first=!chat;
   // A read that failed while the chat was already on screen changes nothing but whether the run still goes: what was
   // shown stays (with the live answer), quietly, and the next ask catches up
   if(r.unavailable&&chat?.items?.length&&!chat.unavailable)chat={...chat,active:r.active,status:r.status,live:r.active?chat.live:null,stale:true};
-  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
+  else{const keep=r.unchanged;chat={...r,items:keep?chat.items:r.items,cursor:(keep?chat.cursor:r.cursor)||null}}paintChat();if(!r.unchanged&&!r.unavailable)localCache.put('chat:'+id,{...chat,cursor:null});if(first){requestAnimationFrame(chatScrollStart);setTimeout(chatScrollStart,150)}if(was&&!r.active){refresh();talkTurnDone()}}catch(e){errCaught(e);if(id===chatId)chatFails++;if(id===chatId&&!chat){chat={items:[],unavailable:true};paintChat()}
   // the to-do is gone from the Machine (a list kept from before): the fresh list closes its chat with the line, at once
   if(id===chatId&&e.status===400&&/^Unknown suggestion/.test(e.message||''))refresh()}
- if(id===chatId)chatTimer=setTimeout(chatPoll,chat?.active?1000:chat?.unavailable||chat?.stale?4000:10000)}
+ if(id===chatId)chatTimer=setTimeout(chatPoll,chatWait())}
 // Whether this page put the open chat on the history (so back can take it off again instead of adding an entry)
 let chatPushed=false;
 let chatGone=null;
@@ -97,7 +101,7 @@ const m=/^#chat=([a-f0-9]{16})$/.exec(location.hash),id=m&&state.suggestions.som
  // Only a link or a step back closes the chat on screen, never a refresh (a sent message, a job that starts or moves the
  // to-do to another list): an address that lost the chat's link on the way gets it back
  if(refreshed&&!location.hash&&chatId&&!$('#inbox').hidden&&chatOpen()){history.replaceState(history.state,'',location.pathname+location.search+'#chat='+chatId);return}
- if(id===chatId)return;if(id)toastNotAbout(id);const was=chatId;chatId=id;chat=null;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
+ if(id===chatId)return;if(id)toastNotAbout(id);const was=chatId;chatId=id;chat=null;chatFails=0;if(talk?.main){if(id&&talk.sid!==id)talkFocus(talk,id)}else if(talk&&talk.sid!==id)talkEnd();if(id)talkLoad();chatDrawer=false;chatDropFiles();chatOpenSet.clear();clearTimeout(chatTimer);if(!id)chatPushed=false;
  if(id){document.querySelector('nav [data-tab="inbox"]').click();render('view');scrollTo(0,0);chatKept(id);chatDraftBack(id);chatPoll();if(kbKeyed()&&matchMedia('(pointer:fine)').matches)$('#chat-input')?.focus({preventScroll:true})}else{render('view');const c=was&&document.getElementById('task-'+was);if(c){for(let d=c.parentElement;d;d=d.parentElement)if(d.tagName==='DETAILS')d.open=true;c.scrollIntoView({block:'center'});const a=document.activeElement;if(!a||a===document.body||!a.isConnected)kbFocus(c)}}}
 // A chat opens only on a real tap: not on the tap that stops a fling, nor on one that ends a scroll or a drag.
 let chatScrolledAt=0,chatDown=null;
