@@ -21,6 +21,7 @@ scopeSync(state.locale);try{talkFromStatus();if(lazyIn('talk'))talkViewPaint()}c
 const finishedOpen=listOpen('finished-list'),laterOpen=listOpen('later-list'),promisesOpen=listOpen('promises-list'),waitOpen=listOpen('waiting-list');
 const drafts=Object.fromEntries([...document.querySelectorAll('#suggestions textarea,#suggestions .fleet-card input[id]')].filter(t=>t.value).map(t=>[t.id,t.value]));
 const moreOpen=[...document.querySelectorAll('#suggestions article[id] .more-actions[open]')].map(d=>d.closest('article[id]').id);  // a refresh keeps an opened More menu open
+const pk=document.querySelector('.project-picker'),pkIn=pk?.closest('.chat-main,article[id]')?.id;  // and an open picker
 const shown=state.suggestions.filter(s=>scopeFilter==='all'||s.scope===scopeFilter);
 const outstanding=shown.filter(s=>!closed(s)&&s.status!=='snoozed').sort(openOrder),later=shown.filter(s=>s.status==='snoozed'),finished=shown.filter(closed);
 const lookDone=outstanding.filter(looksDone),waitingOn=outstanding.filter(waitsOnOthers),open=outstanding.filter(s=>!looksDone(s)&&!waitsOnOthers(s)&&!setAside(s));
@@ -63,6 +64,7 @@ sideCounts={foryou:sideForYou.filter(s=>!toRead(s)).length,preparing:fuv.ready.f
 {const c=chatOpen();document.body.classList.toggle('chat-open',!!c);if(c)chatMount(c.id,chatView(c,[[sideForYou,'For you','foryou'],[waitingOn,'Waiting on others','waiting'],[later,'Later','later'],[[...lookDone,...recent],'Done','done']]))}pageHead();
 for(const[id,v]of Object.entries(drafts)){const t=document.getElementById(id);if(t&&t.value!==v){t.value=v;t.classList.add('filled')}}
 for(const id of moreOpen){const menu=document.getElementById(id)?.querySelector('.more-actions');if(menu)menu.open=true}foldsBack();
+if(pk&&!pk.isConnected)(pkIn?document.getElementById(pkIn):$('.chat-main'))?.append(pk);
 fleetSync();graphCountsSet(state.graph_counts);
 // A page's first drawing on To-dos (the device's copy, else the Machine's first answer): the to-dos, the sidebar and a chat now,
 // and the rest (the Done list, Learning, Connections, Settings, the other tabs' parts) just after that first paint, not before it.
