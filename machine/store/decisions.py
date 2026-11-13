@@ -910,6 +910,11 @@ class DecisionsStore:
             db.execute("UPDATE deliveries SET status='cancelled',reminder=0 WHERE suggestion_id=? AND status='queued'",(suggestion_id,))
         return {'status': status, 'snoozed_until': until, 'note': 'Preference saved. Acceptance does not execute or authorize an unspecified external action.'}
 
+    @staticmethod
+    def move_moment(db, suggestion_id, at):
+        """A to-do whose moment moved (its meeting was rescheduled or canceled) now closes by itself at `at`."""
+        db.execute('UPDATE suggestions SET expires_at=? WHERE id=? AND expired_at IS NULL', (at, suggestion_id))
+
     def expire_passed(self, undo_hours=24):
         """To-dos whose whole point was a moment that has passed (a confirmation or reminder before a meeting: the review's
         expires_at) close by themselves: Done, "No longer needed", with Undo for a day. Not while a send of theirs is

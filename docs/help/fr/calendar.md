@@ -3,7 +3,7 @@ title: Agenda
 area: calendar
 summary: La semaine à venir en un seul endroit : réunions, tâches à échéance, tâches en attente et promesses.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## Ce qu’il affiche
@@ -78,3 +78,19 @@ Pas encore de réunions ? Sans agenda, **Connecter votre agenda** ouvre Connexio
 Quand une réunion de travail chevauche un événement de votre agenda personnel, ou l’inverse, The Machine crée une tâche sur le plus récent des deux. Elle peut préparer un court brouillon pour le déplacer, ou proposer de refuser. Rien ne part avant votre accord.
 
 Les événements sur toute la journée, libres ou provisoires ne comptent jamais, et chaque conflit n’apparaît qu’une fois. Une tâche Travail dit seulement qu’il y a un conflit, donc votre équipe ne voit jamais l’événement personnel. Il n’y a que vous pour voir avec quoi il entre en conflit.
+
+## Prêt pour vos réunions
+
+Avant une réunion avec des personnes extérieures à votre entreprise, The Machine crée une tâche : **Préparer** la réunion. C’est un court briefing :
+
+- **Qui :** qui ils sont, d’après votre Graph.
+- **Dernier contact :** votre dernier échange avec eux. Ce message est la source de la tâche, après la réunion.
+- **Promesses en cours :** ce que vous ou eux devez encore.
+- **Questions en suspens :** ce qui reste sans réponse.
+- **À décider ou à apporter :** ce qu’il faut trancher ou apporter.
+
+Elle arrive le matin d’un jour travaillé : le jour même si la réunion est l’après-midi, sinon le jour travaillé d’avant. Elle n’utilise que ce qui est déjà sur votre Machine. Elle sert seulement à lire : **Fait** une fois lue. Une promesse ou une question qui demande une action a sa propre tâche.
+
+Sans historique utile, pas de tâche. Les réunions récurrentes, internes, personnelles et refusées n’en ont pas. Une réunion déplacée garde sa tâche, à la nouvelle heure. Une tâche écartée ne revient pas, et celle d’une réunion annulée se ferme toute seule.
+
+Les détails de la réunion montrent sa tâche sous **Tâche**, à un geste du chat.

@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La settimana che arriva in un solo posto: riunioni, attività in scadenza, attività posticipate e promesse.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## Cosa mostra
@@ -78,3 +78,19 @@ Ancora nessuna riunione? Senza calendario, **Collega il tuo calendario** apre Co
 Quando una riunione di lavoro si sovrappone a qualcosa nel tuo calendario personale, o viceversa, The Machine crea un’attività sul più recente dei due. Può preparare una bozza breve per spostarlo, o proporre di rifiutare. Non parte nulla finché non approvi.
 
 Gli eventi di tutto il giorno, liberi o provvisori non contano mai, e ogni sovrapposizione compare una volta sola. Un’attività di Lavoro dice solo che c’è un conflitto, così il tuo team non vede mai l’evento personale. Solo tu vedi con cosa si sovrappone.
+
+## Pronto per le tue riunioni
+
+Prima di una riunione con persone esterne alla tua azienda, The Machine crea un’attività: **Preparare** la riunione. È un breve briefing:
+
+- **Chi:** chi sono, dal tuo Graph.
+- **Ultimo contatto:** il tuo ultimo scambio con loro. Quel messaggio è la fonte dell’attività, dopo la riunione.
+- **Promesse aperte:** cosa tu o loro dovete ancora.
+- **Domande aperte:** cosa resta senza risposta.
+- **Da decidere o portare:** cosa decidere o portare.
+
+Arriva la mattina di un giorno lavorativo: il giorno stesso se la riunione è nel pomeriggio, altrimenti il giorno lavorativo prima. Usa solo quello che è già sulla tua Machine. È solo da leggere: **Fatto** quando l’hai letta. Una promessa o una domanda che richiede qualcosa ha la sua attività.
+
+Senza una storia utile, nessuna attività. Le riunioni ricorrenti, interne, personali e rifiutate non ne hanno. Una riunione spostata tiene la sua unica attività, al nuovo orario. Una scartata non torna, e quella di una riunione annullata si chiude da sola.
+
+I dettagli della riunione mostrano la sua attività sotto **Attività**, a un tocco dalla chat.

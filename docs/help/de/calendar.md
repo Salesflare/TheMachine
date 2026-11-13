@@ -3,7 +3,7 @@ title: Kalender
 area: calendar
 summary: Die kommende Woche an einem Ort: Meetings, fällige Aufgaben, zurückgestellte Aufgaben und Versprechen.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## Was er zeigt
@@ -78,3 +78,19 @@ Noch keine Meetings? Ohne Kalender öffnet **Kalender verbinden** die Verbindung
 Wenn ein Arbeitstermin sich mit etwas in deinem privaten Kalender überschneidet, oder umgekehrt, macht The Machine eine Aufgabe zum neueren der beiden. Sie kann einen kurzen Entwurf schreiben, um ihn zu verschieben, oder eine Absage anbieten. Nichts geht raus, bevor du es freigibst.
 
 Ganztägige, freie und vorläufige Termine zählen nie, und jede Überschneidung kommt nur einmal. Eine Arbeitsaufgabe sagt nur, dass es einen Konflikt gibt, damit dein Team den privaten Termin nie sieht. Nur du siehst, womit er sich überschneidet.
+
+## Bereit für deine Meetings
+
+Vor einem Meeting mit Leuten außerhalb deiner Firma macht The Machine eine Aufgabe: **Vorbereiten** auf das Meeting. Es ist ein kurzes Briefing:
+
+- **Wer:** wer sie sind, aus deinem Graph.
+- **Letzter Kontakt:** dein letzter Austausch mit ihnen. Diese Nachricht ist die Quelle der Aufgabe, nach dem Meeting.
+- **Offene Versprechen:** was du oder sie noch schulden.
+- **Offene Fragen:** was noch unbeantwortet ist.
+- **Entscheiden oder mitbringen:** was zu klären oder mitzubringen ist.
+
+Sie kommt am Morgen eines Arbeitstags: am Tag des Meetings, wenn es nachmittags ist, sonst am Arbeitstag davor. Sie nutzt nur, was schon auf deiner Machine ist. Sie ist nur zum Lesen da: **Erledigt**, wenn du sie gelesen hast. Ein Versprechen oder eine Frage darin, die etwas zu tun gibt, hat eine eigene Aufgabe.
+
+Ohne nützlichen Verlauf gibt es keine Aufgabe. Wiederkehrende, interne, private und abgelehnte Meetings bekommen keine. Ein verschobenes Meeting behält seine eine Aufgabe, zur neuen Zeit. Eine verworfene kommt nicht zurück, und die eines abgesagten Meetings schließt sich von selbst.
+
+Die Details des Meetings zeigen seine Aufgabe unter **Aufgabe**, einen Tipp vom Chat entfernt.

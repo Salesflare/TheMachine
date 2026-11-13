@@ -3,7 +3,7 @@ title: Calendario
 area: calendar
 summary: La semana que viene en un solo sitio: reuniones, tareas que vencen, tareas pospuestas y promesas.
 covers: tab:calendar
-code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py
+code: dashboard.html, meeting_notes.py, meeting_writer.py, calendar_clashes.py, meeting_prep.py
 order: 1
 ---
 ## Qué muestra
@@ -78,3 +78,19 @@ Una tarea también puede ofrecer un cambio, como añadir una recogida. Muestra e
 Cuando una reunión de trabajo se solapa con algo de tu calendario personal, o al revés, The Machine crea una tarea sobre el más reciente de los dos. Puede preparar un borrador corto para moverlo, u ofrecer rechazarlo. No se envía nada hasta que lo apruebes.
 
 Los eventos de todo el día, libres o provisionales nunca cuentan, y cada coincidencia aparece una sola vez. Una tarea de Trabajo solo dice que hay un conflicto, así que tu equipo nunca ve el evento personal. Solo tú ves con qué coincide.
+
+## Listo para tus reuniones
+
+Antes de una reunión con personas de fuera de tu empresa, The Machine crea una tarea: **Preparar** la reunión. Es un resumen corto:
+
+- **Quién:** quiénes son, según tu Graph.
+- **Último contacto:** tu último intercambio con ellos. Ese mensaje es la fuente de la tarea, después de la reunión.
+- **Promesas pendientes:** lo que tú o ellos aún deben.
+- **Preguntas pendientes:** lo que sigue sin respuesta.
+- **Decidir o llevar:** lo que hay que decidir o llevar.
+
+Llega la mañana de un día laborable: el mismo día si la reunión es por la tarde, si no el día laborable anterior. Solo usa lo que ya está en tu Machine. Es solo para leer: **Hecho** cuando la leas. Una promesa o pregunta que pida algo tiene su propia tarea.
+
+Sin historial útil, no hay tarea. Las reuniones recurrentes, internas, personales y rechazadas no tienen. Una reunión que se mueve conserva su única tarea, a la nueva hora. Una descartada no vuelve, y la de una reunión cancelada se cierra sola.
+
+Los detalles de la reunión muestran su tarea en **Tarea**, a un toque del chat.
