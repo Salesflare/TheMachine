@@ -1,6 +1,6 @@
 """install.sh / installer.py against a temporary HOME with stub openclaw and systemctl.
 Nothing here touches the real user's systemd, OpenClaw or data directory."""
-import builtins, json, os, shutil, socket, stat, subprocess, sys, tempfile, unittest
+import builtins, json, os, re, shutil, socket, stat, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from unittest import mock
 
@@ -11,7 +11,8 @@ REINDEX_RUNNING = installer.reindex_running  # the real one: InstallerTest.setUp
 STUB = '''#!/bin/sh
 echo "{name} $*" >> "{log}"
 if [ "$*" = "$ASSISTANT_TEST_FAIL" ]; then echo "Synthetic failure" >&2; exit 1; fi
-case "$*" in --version) echo "OpenClaw 2026.11.2 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";; esac
+case "$*" in --version) echo "OpenClaw 2026.11.2 (test)";; *list-unit-files*) echo "openclaw-gateway.service enabled enabled";;
+  "--user is-active "*) case " $ASSISTANT_TEST_ACTIVE " in *" $3 "*) echo active;; *) echo inactive; exit 3;; esac;; esac
 exit 0
 '''
 ANSWERS = {'ASSISTANT_OWNER_NAME': 'Alex Owner', 'ASSISTANT_TELEGRAM_OWNER': '1000001',
@@ -1496,6 +1497,60 @@ exit 0
         self.assertEqual(self.install('--uninstall').returncode, 0)
         self.assertFalse((units / 'the-machine-update.service').exists())
         self.assertFalse((units / 'the-machine-update.timer').exists())
+
+    def machine_units(self):
+        """Units as onboarding and signal_setup write them, plus ones an install must leave alone."""
+        units = self.home / '.config/systemd/user'
+        units.mkdir(parents=True, exist_ok=True)
+        mirror = lambda name: f'[Service]\nExecStart={sys.executable} {ROOT}/{name} --store /tmp/store follow\n'
+        for unit, text in (('the-machine-personal-telegram.service', mirror('telegram_mirror.py')),
+                           ('the-machine-personal-signal.service', mirror('signal_mirror.py')),
+                           ('the-machine-second-telegram.service', mirror('telegram_mirror.py')),  # not running
+                           ('the-machine-wacli-x.service', '[Service]\nExecStart=/opt/wacli --store /tmp/w sync --follow\n'),
+                           ('openclaw-gateway.service', f'[Service]\nExecStart=/usr/bin/node {ROOT}/openclaw-root.mjs gateway\n'),
+                           ('cdp-relay.service', f'[Service]\nExecStart=/usr/bin/env node {ROOT}/deploy/cdp-relay.mjs\n')):
+            (units / unit).write_text(text)
+        return ' '.join(('personal-assistant.service', 'the-machine-personal-telegram.service', 'the-machine-personal-signal.service',
+                         'the-machine-wacli-x.service', 'openclaw-gateway.service', 'cdp-relay.service'))
+
+    def test_an_update_restarts_every_running_machine_unit_after_the_service(self):
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        active = self.machine_units()
+        self.log.unlink()
+        result = self.install(ASSISTANT_TEST_ACTIVE=active)
+        calls = self.calls()
+        service = calls.index('systemctl --user restart personal-assistant.service')
+        for unit in ('the-machine-personal-telegram.service', 'the-machine-personal-signal.service'):
+            self.assertGreater(calls.index(f'systemctl --user restart {unit}'), service, unit)
+            self.assertIn(f'{unit}: restarted on this release', result.stdout)
+        # not running: not started either
+        self.assertIn('systemctl --user is-active the-machine-second-telegram.service', calls)
+        self.assertFalse([c for c in calls if 'second-telegram' in c and 'is-active' not in c], calls)
+        # its own program, set up by hand, or OpenClaw's: never asked, never restarted
+        for unit in ('the-machine-wacli-x.service', 'cdp-relay.service', 'the-machine-update.service'):
+            self.assertFalse([c for c in calls if c.endswith(' ' + unit)], unit)
+        self.assertFalse([c for c in calls if 'openclaw-gateway' in c and re.search(r'\b(is-active|restart|try-restart|start|stop|kill)\b', c)], calls)
+
+    def test_a_machine_unit_that_does_not_restart_shows_in_the_health_lines(self):
+        self.assertEqual(self.install('--no-start').returncode, 0)
+        active = self.machine_units()
+        result = self.install(ASSISTANT_TEST_ACTIVE=active, ASSISTANT_TEST_FAIL='--user restart the-machine-personal-signal.service')
+        self.assertIn('Health: the-machine-personal-signal.service did not restart and may run the previous release;'
+                      ' check systemctl --user status the-machine-personal-signal.service', result.stdout)
+        self.assertIn('systemctl --user restart the-machine-personal-telegram.service', self.calls())  # the others still go
+        self.assertNotIn('Health: the-machine-personal-telegram.service', result.stdout)
+
+    def test_machine_units_are_found_by_their_launchd_agents_too(self):
+        agents = self.home / 'Library/LaunchAgents'
+        agents.mkdir(parents=True)
+        with mock.patch.object(installer.service, 'manager', return_value='launchd'):
+            paths = installer.Paths(self.home)
+            for unit, program in ((installer.UNIT_NAME, [sys.executable, str(ROOT / 'assistant.py'), 'serve']),
+                                  ('the-machine-personal-telegram.service', [sys.executable, str(ROOT / 'telegram_mirror.py'), 'follow']),
+                                  ('the-machine-wacli-x.service', ['/opt/wacli', 'sync'])):
+                installer.service.definition_path(unit, self.home).write_text(
+                    installer.service.plist_text(program, unit=unit, base=self.home))
+            self.assertEqual(installer.machine_units(paths), ['the-machine-personal-telegram.service'])
 
     def test_hosted_machines_get_no_update_timer(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(installer, 'HOSTED_AGENT', Path(tmp)), \

@@ -33,8 +33,10 @@ import argparse
 import hashlib
 import json
 import os
+import plistlib
 import re
 import secrets
+import shlex
 import shutil
 import subprocess
 import sys
@@ -837,6 +839,68 @@ def install_updates(config, facts, paths, start):
     say('Daily update: ' + ('signed releases only, every night' if result.returncode == 0
                             else 'could not turn on: ' + (result.stderr or result.stdout).strip()[:300]))
     return result.returncode == 0
+
+
+# Units a person sets up by hand from deploy/ (docs/operations.md): never restarted by an install. A new cdp-relay
+# process means a new Allow prompt in their Chrome; Caddy and the embedding server run no code of this checkout.
+BY_HAND = ('cdp-relay.service', 'caddy-machine.service', 'embeddinggemma.service')
+
+
+def unit_program(path):
+    """The command line of a systemd unit file (its first ExecStart) or launchd agent (ProgramArguments), [] when unreadable."""
+    try:
+        if path.suffix == '.plist':
+            return [str(p) for p in plistlib.loads(path.read_bytes()).get('ProgramArguments') or []]
+        for line in path.read_text().splitlines():
+            if line.startswith('ExecStart='):
+                return shlex.split(line.removeprefix('ExecStart=').lstrip('-@+!:'))
+    except (OSError, ValueError, plistlib.InvalidFileException):
+        pass
+    return []
+
+
+def runs_checkout(program, root=ROOT):
+    """A command line that runs a file of this checkout (telegram_mirror.py, signal_mirror.py, ...)."""
+    root = Path(root).resolve()
+    return any(part.startswith('/') and Path(part).resolve().is_relative_to(root) for part in program)
+
+
+def machine_units(paths):
+    """The Machine's other long-running units that run code from this checkout: today the Telegram and Signal chat
+    mirrors (onboarding.telegram_follow, signal_setup.follow), named after their account, and any later one written
+    the same way. Found by their command line. Not The Machine's own service (install_unit restarts it), not the daily
+    update (it is what runs this install), not agent jobs (systemd-run units that outlive an update on purpose, and not
+    in this folder), not WhatsApp's sync (wacli, a program of its own), and never anything of OpenClaw's."""
+    launchd = service.manager() == 'launchd'
+    folder = paths.unit.parent
+    units = []
+    for path in sorted(folder.glob(service.LABEL_PREFIX + '*.plist' if launchd else '*.service')) if folder.is_dir() else []:
+        if path == paths.unit:
+            continue
+        unit = 'the-machine-' + path.stem.removeprefix(service.LABEL_PREFIX) + '.service' if launchd else path.name
+        if unit in (UNIT_NAME, UPDATE_UNIT, *BY_HAND) or 'openclaw' in unit.lower() or unit.startswith('the-machine-job-'):
+            continue
+        if runs_checkout(unit_program(path)):
+            units.append(unit)
+    return units
+
+
+def restart_machine_units(paths):
+    """After an install or update: every unit of machine_units() that runs now restarts, so it runs this release's code
+    too, not the one it started with. Called once The Machine's own service is up again (its database and message key
+    come first: the mirrors read that key). A stopped or disabled unit stays as it is. Returns the units that did not
+    restart, for the health lines (next_steps)."""
+    failed = []
+    for unit in machine_units(paths):
+        if not service.active(unit, run=run):
+            continue
+        result = service.restart(unit, run=run, timeout=120)
+        if result.returncode:
+            failed.append(unit)
+            say(f'  {unit}: could not restart it: ' + (result.stderr or result.stdout or '').strip()[:300])
+        else:
+            say(f'  {unit}: restarted on this release')
+    return failed
 
 
 def install_cli(paths):
@@ -1788,12 +1852,14 @@ def guided(paths, since, ui=None):
     return config
 
 
-def next_steps(config, healthy, started, paths=None):
+def next_steps(config, healthy, started, paths=None, not_restarted=()):
     paths = paths or Paths()
     host, path = config.get('dashboard_host', ''), config.get('dashboard_path', '/assistant/')
     lines = ['', 'Your Machine is up. Next steps:' if started and healthy else 'Next steps:']
     if started:
         lines.append(f'  - Health: {"OK" if healthy else "not answering yet; check " + service.hint("logs")}')
+    for unit in not_restarted:  # still on the release before this one
+        lines.append(f'  - Health: {unit} did not restart and may run the previous release; check {service.hint("status", unit)}')
     for account in config.get('accounts', []):
         if onboarding.missing(config, account):
             lines.append(f'  - Connect {onboarding.label(account.get("service", "gmail"))}: assistant connect {onboarding.connect_name(account, config)}')
@@ -2019,13 +2085,15 @@ def main(argv=None):
     started = install_unit(config, facts, paths, start=not args.no_start)
     install_updates(config, facts, paths, start=not args.no_start)
     healthy = started and health(config, args.health_timeout)
+    # The service restarted on this release above; its other units that run now follow (after its health wait)
+    not_restarted = restart_machine_units(paths) if started else []
     if interactive and healthy:
         try:
             config = guided(paths, since)
         except (KeyboardInterrupt, EOFError):
             say('\nStopped the guided setup; everything done so far is saved. Pick it up with: assistant doctor')
             config = json.loads(paths.config.read_text())
-    next_steps(config, healthy, started, paths)
+    next_steps(config, healthy, started, paths, not_restarted)
     return 0 if (args.no_start and started is None) or (started and healthy) else 1
 
 
