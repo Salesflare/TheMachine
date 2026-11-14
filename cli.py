@@ -294,7 +294,7 @@ def cmd_doc_draft(config, args):
         else:
             changes = json.loads(read(args.changes))
             action = {'kind': 'doc_write', 'op': 'edit', 'changes': changes.get('changes') if isinstance(changes, dict) else changes}
-    result = call(config, 'doc_write_draft', {'job_id': args.job, 'event_id': args.event, 'next_action': action})
+    result = call(config, 'doc_write_draft', {'job_id': args.job, 'event_id': args.event, 'file_id': args.file, 'next_action': action})
     if args.json:
         return out_json(result)
     if 'paragraphs' in result:
@@ -1095,6 +1095,7 @@ def parser():
             cmd_doc_draft)
     c.add_argument('--job', required=True, help='the preparation job id')
     c.add_argument('--event', type=int, help="the doc event's id, for an edit")
+    c.add_argument('--file', help='the doc id (or its link), for an edit of a doc made for this to-do or linked in its messages')
     c.add_argument('--changes', help='JSON file (or -) with the edit: [{"find","replace"} | {"after","insert"} | {"append"}]')
     c.add_argument('--account', help='the Docs connection id, for a new doc')
     c.add_argument('--title', help='the new doc\'s title')

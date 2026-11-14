@@ -5325,6 +5325,7 @@
  "That didn’t work here. Download the image instead.": "Dat lukte hier niet. Download de afbeelding in de plaats.",
  "That didn’t work. Try again.": "Dat lukte niet. Probeer het opnieuw.",
  "That doc is not one of this task’s own doc events": "Dat document is geen van de eigen documentevents van deze taak",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "Dat document hoort niet bij deze to-do (een document dat ervoor gemaakt is, de documentevents van de to-do of een Google-document gelinkt in de berichten ervan)",
  "That doesn’t look like a Shortcut token": "Dat lijkt geen Shortcut-token",
  "That domain is yours already": "Dat domein is al van jou",
  "That draft changed or is no longer ready, so nothing was sent. Check the updated to-do.": "Dat concept is gewijzigd of niet meer klaar, dus er is niets verstuurd. Bekijk de bijgewerkte to-do.",

@@ -90,7 +90,8 @@ class DocsApp:
                              "WHERE p.job_id=? AND p.status IN ('queued','starting','running','blocked')", (job,)).fetchone()
             if not run:
                 raise ValueError('Doc drafts are checked only for a running preparation of the task the owner started')
-            files = doc_write_files(db, run['event_ids'], self.config, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]')))
+            files = doc_write_files(db, run['event_ids'], self.config, doc_writes.area(self.config, json.loads(run['account_ids'] or '[]')),
+                                    run['id'])
             file_id = None
             if args.get('event_id') is not None:
                 row = db.execute("SELECT metadata FROM events WHERE id=? AND kind LIKE 'docs.%' AND id IN (SELECT value FROM json_each(?))",
@@ -98,13 +99,18 @@ class DocsApp:
                 file_id = row and str(json.loads(row['metadata']).get('file_id') or '')
                 if not file_id:
                     raise OwnerError('That doc is not one of this task’s own doc events')
+            elif args.get('file_id'):
+                file_id = doc_writes.file_id_of(args['file_id'])
+                if file_id not in files:
+                    raise OwnerError('That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc '
+                                     'linked in its messages)')
         plugin = load_connector('docs')
         if not plugin or not hasattr(plugin, 'Writer'):
             raise ValueError('There is no Docs connection here')
         value = args.get('next_action')
         if not isinstance(value, dict):
             if not file_id:
-                raise ValueError('Give the event_id of the doc to edit, or a doc_write next_action to check')
+                raise ValueError('Give the event_id or file_id of the doc to edit, or a doc_write next_action to check')
             value = {'kind': doc_writes.KIND, 'op': 'edit', 'file_id': file_id, 'changes': []}
             context = doc_writes.context(self.config, plugin, CONNECTOR_HELPERS, files, value)
             found = (context or {}).get('snapshots', {}).get(file_id)

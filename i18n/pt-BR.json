@@ -5325,6 +5325,7 @@
  "That didn’t work here. Download the image instead.": "Não funcionou aqui. Baixe a imagem em vez disso.",
  "That didn’t work. Try again.": "Não funcionou. Tente de novo.",
  "That doc is not one of this task’s own doc events": "Esse documento não é um dos eventos de documento desta tarefa",
+ "That doc is not one of this to-do’s docs (one made for it, its doc events, or a Google Doc linked in its messages)": "Esse documento não é desta tarefa (um criado para ela, seus eventos de documento ou um Google Doc com link nas mensagens dela)",
  "That doesn’t look like a Shortcut token": "Isso não parece um token do Shortcut",
  "That domain is yours already": "Esse domínio já é seu",
  "That draft changed or is no longer ready, so nothing was sent. Check the updated to-do.": "Esse rascunho mudou ou não está mais pronto, então nada foi enviado. Confira a tarefa atualizada.",

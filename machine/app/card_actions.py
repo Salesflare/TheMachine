@@ -233,7 +233,7 @@ class CardActionsApp:
             signal_chats.update(owner_signal_chats(self.config,db,args.get('next_actions',args.get('next_action')),signal_chats))
             calendar_events=calendar_write_events(db,calendar_write_ids(args.get('next_actions',args.get('next_action'))),self.owner_emails())
             spots=reply_spots(self.config,db,row['event_ids'])  # a Slack reply in its message's thread, a WhatsApp one quoting it
-            doc_files=doc_write_files(db,row['event_ids'],self.config,doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))
+            doc_files=doc_write_files(db,row['event_ids'],self.config,doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')),args['suggestion_id'])
         # A doc write: the owner's Docs connections, and each doc an edit names read now, its version pinned (doc_writes.py)
         doc_context=doc_writes.context(self.config,load_connector('docs'),CONNECTOR_HELPERS,doc_files,args.get('next_actions',args.get('next_action')),
                                        doc_writes.area(self.config,json.loads(row['account_ids'] or '[]')))

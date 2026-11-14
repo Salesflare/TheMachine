@@ -228,6 +228,7 @@
  "This Machine isn’t linked to an account, so the report can’t go from here. Say they can email support@themachine.computer.",
  "This connection can only see {}",
  "This doc change is too long to read aloud. The owner reviews it on the screen.",
+ "This doc was made for this to-do with {}, which {}. Give the changes as text in the to-do instead",
  "This routine run is over: end the turn",
  "This sheet has no cell data",
  "This to-do has more than one draft. Ask which one, then call ask_to_send with its number.",

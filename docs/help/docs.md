@@ -71,7 +71,7 @@ Then your Machine:
 
 It doesn't search your Drive. It sees comments, shares and suggestions only on docs it made. More would need access to your whole Drive, which it doesn't ask for.
 
-On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments. **Docs and files** shows it as Google Docs, on that account.
+On your own computer, your Machine can make a new Google Doc in a Gmail account signed in there that already has Drive access. It doesn't read your other Google Docs or their comments. **Docs and files** shows it as Google Docs, on that account. It can also change a doc it made there for a to-do.
 
 ## Work or personal
 
