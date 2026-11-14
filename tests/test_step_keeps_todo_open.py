@@ -32,7 +32,7 @@ class StepKeepsTodoOpen(unittest.TestCase):
         return {a.next_actions.label(s): s for s in self.row()['next_actions']}
 
     def ready(self, steps):
-        """The to-do as Jeroen had it: a doc cleanup to confirm and the reply email to send."""
+        """The to-do as an owner had it: a doc cleanup to confirm and the reply email to send."""
         self.store.decide(self.sid, 'accept', '', 'tap', 'dashboard')
         with self.store.connect() as db:
             db.execute("UPDATE preparations SET status='running'")

@@ -171,7 +171,7 @@ def greeting_name(db, row):
 def owners_name(name, owner_name):
     """True when `name` is the owner's own full name ("Sam Lee <sam@other.example>" for owner Sam Lee): their other
     mailbox, which own_addresses rightly doesn't take on a name alone, still isn't someone else to name to them
-    (2026-11-09: "Jeroen has been waiting on your reply" to Jeroen). Full names only: a first name is no match."""
+    (2026-11-09: "Sam has been waiting on your reply" to Sam). Full names only: a first name is no match."""
     owner = graph.plain_name(owner_name)
     return bool(owner) and graph.plain_name(name) == owner
 

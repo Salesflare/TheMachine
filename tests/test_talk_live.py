@@ -334,7 +334,7 @@ class Tools(unittest.TestCase):
         self.assertIn('a clear yes to your confirm question', t.ASK_NOTE)
 
     def test_a_todos_own_talk_marks_it_done_itself(self):
-        # Jeroen, by voice in the payroll to-do's chat: "mark this as done" went to the chat, which only offered Mark done
+        # The owner, by voice in a to-do's chat: "mark this as done" went to the chat, which only offered Mark done
         # buttons. Its own Talk marks it done (the owner's own decision), and a sound is never a wrap-up.
         action = t.TOOL['todo_action']
         self.assertEqual(action['parameters']['properties']['action']['enum'], ['mark_done', 'dismiss', 'snooze', 'reopen'])
@@ -348,7 +348,7 @@ class Tools(unittest.TestCase):
         self.assertNotIn('—', text)
 
     def test_talk_sees_every_open_todo_and_starts_with_what_needs_the_owner(self):
-        # Jeroen, live: "let's go through the to-dos" said nothing needs him while one was still Preparing. Talk sees
+        # The owner, live: "let's go through the to-dos" said nothing needs them while one was still Preparing. Talk sees
         # them all, starts with prepared and needs you, says how many are preparing, and keeps it short.
         text = t.main_instructions('en', 'Thursday')
         for words in ('It has every open to-do and its state', 'how many are still preparing', 'you’ll tell them when one is ready',
@@ -366,7 +366,7 @@ class Tools(unittest.TestCase):
         self.assertNotIn('required', find)   # by state only: "anything preparing?"
 
     def test_new_things_become_a_new_todo_not_the_focused_chat(self):
-        # Jeroen, live: "create a new to-do: plan a trip to Antwerp" went into another to-do's chat
+        # The owner, live: "create a new to-do: plan a trip to Antwerp" went into another to-do's chat
         create = [x for x in t.MAIN_TOOLS if x['name'] == 'create_todo'][0]
         self.assertEqual(create['parameters']['required'], ['title'])
         self.assertIn('Nothing is sent', create['description'])
@@ -399,7 +399,7 @@ class Tools(unittest.TestCase):
         self.assertIn('ask the question again in a few words, without reading the draft again', text)
 
     def test_talk_never_claims_what_no_tool_did_and_routes_its_own_commands(self):
-        # Jeroen, live: "report a bug" became a to-do with "it's filed and being looked into"; "do it" marked a to-do
+        # The owner, live: "report a bug" became a to-do with "it's filed and being looked into"; "do it" marked a to-do
         # done; "move on to the next one" went to a to-do's chat; "azk" became a new to-do
         for text in (t.instructions('Reply to Dana', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
             for words in ('Never say something happened (sent, filed, done, started, reported) unless a tool result says it did.',
@@ -471,7 +471,7 @@ class Tools(unittest.TestCase):
         self.assertEqual(t.question({'kind': 'whatsapp', 'reply': True}, 'Sam'), 'Send this reply to Sam on WhatsApp?')
 
     def test_only_a_clear_yes_in_the_owners_languages_counts(self):
-        # Jeroen, live: "Jasne." and "Ja, ist gut, das endet." (noise, transcribed as Polish and German) sent a draft.
+        # The owner, live: "Jasne." and "Ja, ist gut, das endet." (noise, transcribed as Polish and German) sent a draft.
         # The Machine judges the owner's own words itself: plain yes words and fillers only, in their languages.
         yes = lambda text, langs=('en', 'nl'): t.clear_answer(text, langs, ['Dana'])
         for text in ('Yes, send it.', 'yes, send it', 'Ok, send it.', 'Ja, verstuur maar.', 'Ja.', 'Go ahead.', 'Yep',
@@ -977,7 +977,7 @@ class Api(unittest.TestCase):
             talk.get(main)
 
     def test_the_voice_and_the_undo_bar_count_the_same_seconds(self):
-        # Jeroen, live: the voice said "in ten seconds" while the bar counted "in 5 s". Both come from the outbox's own
+        # The owner, live: the voice said "in ten seconds" while the bar counted "in 5 s". Both come from the outbox's own
         # hold now (the job's retry_at): the seconds left when the yes went through, in the say and for the bar.
         talk_id, _ = self.asked('Yes.')
         sent = self.act('talk_send', {'id': talk_id})
@@ -990,7 +990,7 @@ class Api(unittest.TestCase):
         self.assertIn('not sent yet', sent['say'])
 
     def test_is_it_sent_comes_from_the_outbox_never_a_guess(self):
-        # Jeroen, live: "Is it sent?" got "I can't confirm it's sent yet", then "Probably, yes... I can't say for sure
+        # The owner, live: "Is it sent?" got "I can't confirm it's sent yet", then "Probably, yes... I can't say for sure
         # from here". send_status reads the outbox row: waiting with the seconds left, going out, sent at a time, or not.
         talk_id, _ = self.asked('Yes.')
         tool = lambda **args: self.act('talk_tool', {'id': talk_id, 'name': 'send_status', 'args': args})['output']
@@ -1028,7 +1028,7 @@ class Api(unittest.TestCase):
         self.assertIn('{why}', notes['not_sent'])
 
     def test_talk_says_results_plainly_without_narration(self):
-        # Jeroen, live: "Got it, thanks for confirming. Let me finish that step now." before the send went through
+        # The owner, live: "Got it, thanks for confirming. Let me finish that step now." before the send went through
         for text in (t.instructions('Reply to Dana', 'en', 'Thursday'), t.main_instructions('en', 'Thursday')):
             self.assertIn('never "thanks for confirming", "let me finish that step"', text)
 
@@ -1044,7 +1044,7 @@ class Api(unittest.TestCase):
     # Read once, seen counts: the owner approves what they saw or heard, and never hears the same draft twice
 
     def test_read_then_yes_sends_without_a_second_reading(self):
-        # Jeroen, live: Talk read the draft, then ask_to_send read it again and wanted another yes
+        # The owner, live: Talk read the draft, then ask_to_send read it again and wanted another yes
         self.ready_draft()
         talk_id = self.act('talk_start', {'suggestion_id': SID})['id']
         read = self.act('talk_ask_send', {'id': talk_id, 'revision': 'r1', 'read': True})

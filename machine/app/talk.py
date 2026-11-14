@@ -331,7 +331,7 @@ class TalkApp:
             with self.store.connect() as db:
                 card = db.execute('SELECT s.id,s.title,s.status,p.status preparation_status,s.handled_hint,s.outcome FROM suggestions s '
                                   'LEFT JOIN preparations p ON p.suggestion_id=s.id WHERE s.id=?', (suggestion_id,)).fetchone()
-                # Handed off and back on the list while the teammate still has it ("Still with Lieven · check in?")
+                # Handed off and back on the list while the teammate still has it ("Still with Pat · check in?")
                 still = handoff_wait(db, dict(card), awake=True) if card else None
             said, drafts = [], []
             for i in chat.get('items') or []:

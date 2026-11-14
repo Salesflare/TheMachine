@@ -1,7 +1,7 @@
 """Facts brought in from the owner's notes go on the person they are about, in the owner's own words.
 
 Bring these in (bring_in.py) saves the lines of MEMORY.md and USER.md the owner ticks as facts. A line about someone
-else ("My wife Juliana is gluten intolerant") then hangs loose under Learning, Facts: it is not on her page, a
+else ("My wife Robin is gluten intolerant") then hangs loose under Learning, Facts: it is not on her page, a
 preparation about her doesn't pick it by her record, and a date of birth in it never reaches the Birthdays routine. And
 notes written for an agent read "The owner ...", where the rest of Learning says "you". After each batch the owner
 keeps (and once for the facts brought in before this), one small turn on the background model reads the new ones:
@@ -55,7 +55,7 @@ JUDGE = '''These facts come from notes the owner kept for their AI assistant. {o
    meaning: the name, what they are to the owner ("wife", "daughter") and what is known of the candidate. Null when it
    is about the owner, their work or company, or the world; when the person is not among the candidates; or when you
    are unsure. A wrong pick costs more than null.
-2. "text": the same fact as one short plain sentence, saying "you" for the owner ("Your wife Juliana is Brazilian."),
+2. "text": the same fact as one short plain sentence, saying "you" for the owner ("Your wife Robin is Brazilian."),
    never "the owner", "I" or the owner's name. Keep every detail; change nothing else. In the fact's own language.
 3. "birthday": when the fact gives the date of birth of the person you picked, that date as YYYY-MM-DD (--MM-DD when
    the year is not given); else null.
@@ -140,7 +140,7 @@ def _close(db, allowed):
 
 
 def _describe(db, node_id):
-    """'Juliana Example (wife; Personal)': a candidate as the turn sees it."""
+    """'Robin Example (wife; Personal)': a candidate as the turn sees it."""
     row = db.execute('SELECT name,info FROM graph_nodes WHERE id=?', (node_id,)).fetchone()
     info = json.loads(row['info'] or '{}') if row else {}
     org = db.execute('SELECT name FROM graph_nodes WHERE id=?', (info['org'],)).fetchone() if info.get('org') else None

@@ -465,7 +465,7 @@ OWNER = ('the owner', 'The owner')
 
 
 def to_you(text, names):
-    """A why line from before the prompt said "you" names the owner ("Jeroen explicitly corrected the tax to-do"): shown
+    """A why line from before the prompt said "you" names the owner ("Sam explicitly corrected the tax to-do"): shown
     as "You corrected the tax to-do". Only where the grammar surely holds: the name's possessive, or the name before a
     past-tense verb (filler like "explicitly" goes). The stored line stays as it was; anything else is left alone."""
     text = str(text or '')

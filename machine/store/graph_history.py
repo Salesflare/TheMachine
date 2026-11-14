@@ -16,7 +16,7 @@ preparations, to-dos, the Team Graph) reads history; only Fleet's "who knows som
 import hashlib
 import threading
 
-STEP = 5000  # history rows a graph pass may add to the ones the Graph has (Jeroen's 27k: six passes, an hour)
+STEP = 5000  # history rows a graph pass may add to the ones the Graph has (a history of 27k: six passes, an hour)
 
 
 def live(alias=''):

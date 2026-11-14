@@ -134,7 +134,7 @@ The sidebar pages (renamed 2026-11-01): Suggestions is now *To-dos* (the plural 
 | sign in / sign out | inloggen / uitloggen | se connecter / se déconnecter | anmelden / abmelden | iniciar sesión / cerrar sesión | accedi / esci | entrar / sair |
 | thinking (a model's level) | denkwerk | réflexion | Nachdenken | razonamiento | ragionamento | raciocínio |
 
-## Open questions for Jeroen
+## Open questions for the maintainer
 
 - German *du* and French *vous*: right register for the customers?
 - *skill*: kept in Dutch and German, translated in French and Spanish.

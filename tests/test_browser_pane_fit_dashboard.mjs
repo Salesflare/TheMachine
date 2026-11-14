@@ -137,7 +137,7 @@ try{
   // Full size and back
   await p.locator('#bp-full').click();await fits(p,size+' full size');await shoot(p,size+'-full');
   await p.locator('#bp-full').click();await fits(p,size+' out of full size');
-  // Another view, the viewer reconnects meanwhile (at size 0), then Browser again: Jeroen's case
+  // Another view, the viewer reconnects meanwhile (at size 0), then Browser again: a case an owner hit
   await away();await (await viewer(p)).evaluate(()=>window.reconnect());await p.waitForTimeout(800);
   await open();await fits(p,size+' shown again after a reconnect');await shoot(p,size+'-reconnected');
   // Hidden and shown again without a reconnect: still framed
