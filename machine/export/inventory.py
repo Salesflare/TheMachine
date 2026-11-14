@@ -68,7 +68,7 @@ _BY_PART = {
         note_kinds memory_use'''),
     'preferences': _names('''learned_fixes learning_changes learning_signals learning_state rule_changes voices voice_merges voice_prefs
         pacing_prefs pacing_starts security_prefs enrich_prefs notify_prefs error_feed_prefs handoff_mail_prefs
-        whatsapp_photo_prefs team_learning_prefs digest_interests subs_kept'''),
+        whatsapp_photo_prefs team_learning_prefs digest_interests subs_kept touch_people'''),
     'graph': _names('''graph_nodes graph_identifiers graph_edits graph_events graph_history graph_history_events graph_imports graph_links graph_merges graph_names graph_offers
         graph_org_asks graph_relations graph_resources graph_role_asks graph_same graph_state graph_unnamed manual_nodes
         hidden_domains identity_names forgotten_people forgotten_salt owner_numbers person_edits person_facts person_orgs

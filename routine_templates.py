@@ -14,7 +14,10 @@ the new unread newsletters, and only when there are any does one small model cal
 interests the owner sees and edits on its card. Subscriptions and trials runs every month (MONTHLY;
 subscriptions.py, subscriptions_app.py): plain code finds recurring charges and trial, renewal and price notices in the
 mail, and only when there are any does one small model call confirm them; a daily plain-code check between runs warns
-about a charge within 7 days. A rename alone keeps this cheap path.
+about a charge within 7 days. Stay in touch (stay_in_touch.py, stay_in_touch_app.py): plain code shortlists the people
+the owner picked on its card who are due a nudge (a long gap and something concrete to say, at most two a week), and
+only when there are any does one small model call name a specific reason per person, or none. A rename alone keeps
+this cheap path.
 
 Once the owner edits its words (or adds script steps), it runs as a normal routine on them: a read-only turn each run.
 Its origin still names the template, so Templates shows it as added. An edited Newsletter or Spam cleanup still sees
@@ -56,6 +59,9 @@ TEMPLATES = {
                       'words': 'Find my subscriptions and free trials in receipts, invoices and renewal notices in my mail: what each '
                                'costs, when it charges next, trials that end and prices that go up. Put them in one to-do where I pick '
                                'Keep or Cancel for each, and warn me when one charges within 7 days.'},
+    'touch': {'name': 'Stay in touch', 'what': 'Now and then, a nudge to reach out to someone close, when there’s a real reason. At most two a week.',
+              'words': 'For the people I picked, when we haven’t talked in much longer than usual and there is something specific '
+                       'to follow up on, make a to-do with the reason and a short message to send. At most two a week.'},
 }
 CLEANUP = ('newsletters', 'spam')  # an edited one may still end in the cleanup to-do (mail_cleanup_app.routine_cleanup_lines)
 
@@ -64,7 +70,7 @@ class Template:
     """A routine template's code: its run while the routine's words are its own, the to-do kind that run ends in, and
     the dashboard actions on that to-do. One per App, made on first use (load).
     KEYS: the TEMPLATES keys it runs (their name, words and rhythm stay in TEMPLATES, which the Routines page reads
-      without the App). KIND: its to-do kind (machine/todo_kinds.py). ACTIONS: action name -> its method, called as
+      without the App). KIND: its to-do kind (machine/todo_kinds.py), or None when its to-dos are ordinary ones. ACTIONS: action name -> its method, called as
       method(name, args, owner_dashboard) (App.action). STEP: the name step() fails under in the routines worker, when
       it has a step of its own. START: the same for start(), its part of the service's start.
     A name it doesn't have itself is the App's (self.store, self.config, self.routine_spawn), so code moved here from

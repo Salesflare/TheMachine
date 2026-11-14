@@ -435,6 +435,7 @@ ROUTINE_ACTIONS = {
     'routine_try',
     'routine_when',
     'subs_pick',
+    'touch_people',
 }
 OWNER_ACTIONS |= ROUTINE_ACTIONS
 # What the dashboard (and any client that isn't the Gateway) may call through /api/action; everything else is 403.

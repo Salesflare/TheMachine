@@ -10,6 +10,14 @@
 .rt-form{margin-top:12px}.rt-form>:first-child{display:block;width:100%;margin:0}.rt-form-acts{display:flex;gap:8px;margin:8px 0 0}
 /* Folded: a short preview, as a to-do's text (todos-cards.css .body.clamp) */
 .rt-body{margin-top:14px}.rt-body>.rt-run:first-child{margin-top:0}.rt-body.clamp{max-height:7.5em;overflow:hidden;-webkit-mask-image:linear-gradient(#000 calc(100% - 2em),transparent);mask-image:linear-gradient(#000 calc(100% - 2em),transparent)}
+/* Stay in touch: who is in it, and close people to add */
+.rt-touch{display:flex;flex-direction:column;gap:6px;margin:10px 0 0;font-size:var(--fs-sm)}
+.rt-touch-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0}.rt-touch-line>span:first-child{margin-inline-end:2px;color:var(--c-text-3)}
+.rt-chip{display:inline-flex;align-items:center;gap:2px;min-height:28px;padding:1px 2px 1px 10px;border:1px solid var(--c-line-strong);border-radius:999px;color:var(--text)}
+.rt-chip button{min-width:24px;min-height:24px;margin:0;padding:0;border:0;border-radius:999px;background:none;box-shadow:none;color:var(--c-text-3);font-size:1rem;line-height:1}
+.rt-chip button:hover{color:var(--text)}
+.rt-chip.rt-chip-add{gap:4px;margin:0;padding:1px 12px 1px 10px;border-style:dashed;background:none;box-shadow:none;color:var(--c-text-2);font:inherit;cursor:pointer}
+.rt-chip.rt-chip-add:hover{border-style:solid;color:var(--text)}
 /*@eager*/
 .rt .more{margin-top:4px}.rt .more+.actions{margin-top:0}
 #routines-view .fine{margin:-8px 0 0;color:var(--c-text-3);font-size:var(--fs-sm)}
