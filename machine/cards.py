@@ -13,6 +13,7 @@ import next_actions
 from timeutil import WORK_HOURS, hour_minute, in_hours, is_work_day, local_tz, morning_label, next_work_day, now
 from machine import todo_states
 from machine.owner_error import OwnerError
+from machine import todo_kinds
 
 
 def snooze_time(option=None, explicit=None, hours=24, work=False, start=None):
@@ -629,8 +630,8 @@ def controls(row, root=''):
                  or (choice == 'retry' and redo))]
     actions=next_actions.visible_actions({'kind':'menu','actions':row['next_actions']}) if row.get('next_actions') is not None else next_actions.visible_actions(row.get('next_action'))
     if ask_question(row,actions):choices=[('Answer','other'),*([(retry_label(row.get('preparation_reason')),'retry')] if row.get('preparation_status')=='blocked' and not retry_pointless(row) else []),('Mark done','complete'),('Snooze','snooze'),('Not needed','reject')]
-    if (row.get('cleanup') or row.get('digest')) and row['status'] not in todo_states.CLOSED:
-        # A routine template's cleanup (mail_cleanup.py): its picks and their confirm are on the to-do; nothing to Do
+    if todo_kinds.close_only(row) and row['status'] not in todo_states.CLOSED:
+        # A kind whose picks and their confirm are on the to-do (todo_kinds.py: a cleanup, the digest); nothing to Do
         choices = [(label, choice) for label, choice in choices if choice in ('complete','snooze','reject')]
     choices = [(t(label), choice) for label, choice in choices]
     if row['status'] == 'pending' and row.get('labels'):

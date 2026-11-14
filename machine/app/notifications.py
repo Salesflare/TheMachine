@@ -26,6 +26,7 @@ from timeutil import hour_minute, in_hours, is_work_day, local_tz, next_work_day
 from machine import todo_states
 from machine.owner_error import OwnerError
 import timeutil
+from machine import todo_kinds
 
 
 def done_today(db, start, current):
@@ -42,15 +43,9 @@ def done_today(db, start, current):
 
 
 def to_read(db):
-    """The ids of the to-dos that are something to read or sort, not to do: a Daily digest's (reading_digest.py) and a
-    cleanup's (mail_cleanup.py). An area's digest leaves them out."""
-    ids = set()
-    for table in ('digest_items', 'mail_cleanup_items'):
-        try:
-            ids |= {r[0] for r in db.execute(f'SELECT DISTINCT suggestion_id FROM {table}')}
-        except sqlite3.OperationalError:  # a database before that table
-            pass
-    return ids
+    """The ids of the to-dos that are something to read or sort, not to do (todo_kinds.reading_ids: a Daily digest's
+    and a cleanup's). An area's digest leaves them out."""
+    return todo_kinds.reading_ids(db)
 
 
 class NotificationsApp:
